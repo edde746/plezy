@@ -18,6 +18,58 @@ internal object GpuVoPolicy {
    */
   fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean): Boolean = dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively
 
+  /**
+   * A MediaCodec decoder as [nativeP5Decoder] sees it: the component name,
+   * one MIME type it serves, the profiles it advertises for that type
+   * (`MediaCodecInfo.CodecProfileLevel` values) and the API 29+
+   * `isSoftwareOnly` flag (false below, where the platform does not classify).
+   */
+  data class DvDecoderCandidate(val name: String, val mime: String, val profiles: List<Int>, val isSoftwareOnly: Boolean)
+
+  /** The only MIME type the bundled FFmpeg asks MediaCodecList for a Dolby Vision decoder under. */
+  const val DV_MIME = "video/dolby-vision"
+
+  /** `MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn`: single-layer profile 5. */
+  const val DV_PROFILE_DVHE_STN = 0x20
+
+  /**
+   * The decoder the bundled FFmpeg's `hevc_mediacodec` will open for a
+   * single-layer P5 stream, or null when it opens none — in which case the
+   * base layer decodes as plain HEVC and scans out as SDR BT.2020 (inverted
+   * hue). Mirrors `ff_AMediaCodecList_getCodecNameByType` exactly, because
+   * the previous probe counted decoders FFmpeg never asks for and the two
+   * disagreed on real devices: only [DV_MIME] (`video/hevcdv` and
+   * `video/dv_hevc` are never probed), an exact [DV_PROFILE_DVHE_STN] match,
+   * `MediaCodecInfo.isSoftwareOnly` skipped, and FFmpeg's own software name
+   * blacklist skipped (`OMX.google*`, `OMX.ffmpeg*`, `OMX.SEC*.sw.*`,
+   * `OMX.qcom.video.decoder.hevcswvdec`). First match in list order, as
+   * FFmpeg takes it.
+   */
+  fun nativeP5Decoder(candidates: List<DvDecoderCandidate>): String? = candidates.firstOrNull { candidate ->
+    !candidate.isSoftwareOnly &&
+      !isFfmpegSoftwareDecoderName(candidate.name) &&
+      candidate.mime.equals(DV_MIME, ignoreCase = true) &&
+      DV_PROFILE_DVHE_STN in candidate.profiles
+  }?.name
+
+  /** FFmpeg's `mediacodec_wrapper.c` software-decoder name blacklist, substring-matched as it does. */
+  private fun isFfmpegSoftwareDecoderName(name: String): Boolean = name.contains("OMX.google") ||
+    name.contains("OMX.ffmpeg") ||
+    (name.contains("OMX.SEC") && name.contains(".sw.")) ||
+    name == "OMX.qcom.video.decoder.hevcswvdec"
+
+  /**
+   * Whether a decoder that has fallen back to software is handing mpv an
+   * unreshaped P5 base layer: [needsDvReshaping] predicted the native path
+   * (or another decoder failed to open), but `hwdec-current` says the
+   * stream is not on MediaCodec at all, so nothing composites the RPU
+   * unless gpu-next does. [dvProfile] is the pending video track's profile
+   * and [conversionMode] the session's; only `auto` routes, as in
+   * [needsDvReshaping]. Reacting to the outcome is what keeps a wrong
+   * prediction from scanning the base layer out as SDR BT.2020.
+   */
+  fun softwareDecodeNeedsDvReshaping(dvProfile: Long?, conversionMode: String, hwdecCurrent: String?): Boolean = needsSoftwareRender(hwdecCurrent) && dvProfile == 5L && conversionMode == "auto"
+
   /** `dolby_vision` and `dv_p7_mode` for the bundled FFmpeg's `vd-lavc-o`. */
   data class DvDecoderOptions(val dolbyVision: Boolean, val p7Mode: String)
 

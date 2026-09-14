@@ -106,6 +106,86 @@ class GpuVoPolicyTest {
     }
   }
 
+  // Native P5 support is whether the bundled FFmpeg will open a decoder,
+  // which is narrower than what the device advertises: the app once counted
+  // decoders FFmpeg never asks for and sent P5 to the plane as plain HEVC.
+
+  private fun candidate(
+    name: String,
+    mime: String = GpuVoPolicy.DV_MIME,
+    profiles: List<Int> = listOf(GpuVoPolicy.DV_PROFILE_DVHE_STN),
+    isSoftwareOnly: Boolean = false
+  ) = GpuVoPolicy.DvDecoderCandidate(name, mime, profiles, isSoftwareOnly)
+
+  @Test
+  fun `a hardware DvheStn decoder under the FFmpeg MIME type is the native P5 path`() {
+    assertEquals("c2.amlogic.dolby-vision.dvhe.decoder", GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.amlogic.dolby-vision.dvhe.decoder"))))
+    // Case-insensitive MIME match, as FFmpeg compares it.
+    assertEquals("OMX.MTK.VIDEO.DECODER.DV", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.MTK.VIDEO.DECODER.DV", mime = "video/Dolby-Vision"))))
+    // First match in list order, as FFmpeg takes it.
+    assertEquals("first", GpuVoPolicy.nativeP5Decoder(listOf(candidate("first"), candidate("second"))))
+  }
+
+  @Test
+  fun `a decoder registered only under a vendor DV MIME type is never opened`() {
+    // FFmpeg probes video/dolby-vision alone; a device whose DV decoder only
+    // answers to video/hevcdv "has DV" to MediaCodecList and none to FFmpeg.
+    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", mime = "video/hevcdv"))))
+    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", mime = "video/dv_hevc"))))
+  }
+
+  @Test
+  fun `only an exact DvheStn profile counts`() {
+    // P7 (DvheDtb) and P8 (DvheSt) decoders convert nothing for single-layer P5.
+    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", profiles = listOf(0x40, 0x100)))))
+    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", profiles = emptyList()))))
+    assertNull(GpuVoPolicy.nativeP5Decoder(emptyList()))
+  }
+
+  @Test
+  fun `software-only decoders are skipped as FFmpeg skips them`() {
+    // The API 29+ platform flag.
+    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.android.dolby-vision.decoder", isSoftwareOnly = true))))
+    // FFmpeg's own name blacklist on releases without the flag.
+    for (name in listOf(
+      "OMX.google.dolby-vision.decoder",
+      "OMX.ffmpeg.dv.decoder",
+      "OMX.SEC.hevc.sw.dec",
+      "OMX.qcom.video.decoder.hevcswvdec"
+    )) {
+      assertNull(name, GpuVoPolicy.nativeP5Decoder(listOf(candidate(name))))
+    }
+    // The blacklist is exact where FFmpeg's is: Samsung hardware and the
+    // Qualcomm hardware HEVC decoder are not software.
+    assertEquals("OMX.SEC.hevc.dec", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.SEC.hevc.dec"))))
+    assertEquals("OMX.qcom.video.decoder.hevc", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.qcom.video.decoder.hevc"))))
+    // A hardware decoder later in the list still wins over an earlier software one.
+    assertEquals("c2.vendor.dv.decoder", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.google.dv", isSoftwareOnly = true), candidate("c2.vendor.dv.decoder"))))
+  }
+
+  @Test
+  fun `a P5 file that lands in software decode needs reshaping whatever was predicted`() {
+    // hwdec-current is the outcome; a predicted native decoder that failed to
+    // open leaves the base layer unreshaped unless gpu-next takes it.
+    assertTrue(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "auto", hwdecCurrent = "no"))
+    assertTrue(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "auto", hwdecCurrent = "mediacodec-copy"))
+    // Still on the hardware decoder: nothing to react to.
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "auto", hwdecCurrent = "mediacodec"))
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "auto", hwdecCurrent = null))
+    // Base-layer-compatible profiles and explicit modes follow needsDvReshaping.
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(8L, "auto", hwdecCurrent = "no"))
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(null, "auto", hwdecCurrent = "no"))
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "native", hwdecCurrent = "no"))
+  }
+
+  @Test
+  fun `software decode with dv reshaping targets gpu-next, not gpu`() {
+    assertEquals(
+      "gpu-next",
+      GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SW_DECODE, GpuVoPolicy.REASON_DV_RESHAPE))
+    )
+  }
+
   @Test
   fun `hdr tone-mapping is needed only for a PQ or HLG signal on a non-HDR display`() {
     assertTrue(GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = false))

@@ -21,11 +21,30 @@ class MpvEndFileDiagnosticsTest {
       mapOf(
         "sourceId" to 7L,
         "reason" to EndFileReason.Error.id,
+        "error" to MpvError.AoInitFailed.code,
         "message" to "Audio output stopped responding; stopping playback.",
         "cause" to MpvEndFileDiagnostics.CAUSE_AUDIO_OUTPUT_FAILED
       ),
       data
     )
+  }
+
+  @Test
+  fun `a failure nothing logged at error level falls back to mpv's own error text`() {
+    diagnostics.onStartFile()
+    val data = diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error, 7, MpvError.LoadingFailed, "loading failed"))
+    assertEquals(
+      mapOf("sourceId" to 7L, "reason" to EndFileReason.Error.id, "error" to MpvError.LoadingFailed.code, "message" to "loading failed"),
+      data
+    )
+  }
+
+  @Test
+  fun `the latched error line is preferred over mpv's error text`() {
+    diagnostics.onStartFile()
+    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
+    val data = diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error, 7, MpvError.LoadingFailed, "loading failed"))
+    assertEquals("Invalid data found when processing input", data?.get("message"))
   }
 
   @Test

@@ -2,6 +2,7 @@ package com.edde746.plezy.mpv
 
 import android.content.ComponentCallbacks2
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -154,5 +155,91 @@ class DemuxerBudgetTest {
     // one applied, so this sequence is what a plain assignment would widen.
     assertTrue(low.aheadBytes > critical.aheadBytes)
     assertEquals(critical, steady.narrowedTo(critical).narrowedTo(low))
+  }
+
+  @Test
+  fun `the way back climbs read-ahead one rung at a time and restores the back cache last`() {
+    // One rung per poll is the ramp: each step is a fresh headroom decision,
+    // so a device that only half recovered stops half way.
+    val steady = DemuxerBudget.forHeapClassMB(1024)!!
+    val critical = steady.narrowedTo(DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!)
+    assertEquals(DemuxerBudget(32 * mib, 0), critical)
+
+    val steps = generateSequence(critical) { it.widenedToward(steady) }.toList()
+    assertEquals(
+      listOf(
+        DemuxerBudget(32 * mib, 0),
+        DemuxerBudget(64 * mib, 0),
+        DemuxerBudget(100 * mib, 0),
+        DemuxerBudget(100 * mib, 48 * mib)
+      ),
+      steps
+    )
+    assertNull(steady.widenedToward(steady))
+  }
+
+  @Test
+  fun `a stream-rate critical value between rungs steps to the next rung, not the top`() {
+    val steady = DemuxerBudget.forHeapClassMB(1024)!!
+    val midLadder = DemuxerBudget(60 * mib, 0)
+
+    assertEquals(DemuxerBudget(64 * mib, 0), midLadder.widenedToward(steady))
+  }
+
+  @Test
+  fun `the way back never exceeds a steady budget below a rung`() {
+    // The steady budget may be a snapshot of a user's mpv.conf, which need
+    // not sit on the tier ladder at all; it is the ceiling on both axes.
+    val steady = DemuxerBudget(50 * mib, 20 * mib)
+    val narrowed = DemuxerBudget(32 * mib, 0)
+
+    val ahead = narrowed.widenedToward(steady)!!
+    assertEquals(DemuxerBudget(50 * mib, 0), ahead)
+    assertEquals(steady, ahead.widenedToward(steady))
+    assertNull(steady.widenedToward(steady))
+
+    // Above every rung: the remaining distance is a single step.
+    val tall = DemuxerBudget(150 * mib, 50 * mib)
+    assertEquals(DemuxerBudget(150 * mib, 0), DemuxerBudget(100 * mib, 0).widenedToward(tall))
+  }
+
+  @Test
+  fun `every trim level round-trips back to steady`() {
+    for (heapClass in listOf(256, 512, 1024)) {
+      val steady = DemuxerBudget.forHeapClassMB(heapClass)!!
+      for (level in listOf(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)) {
+        val narrowed = steady.narrowedTo(DemuxerBudget.forTrimLevel(heapClass, level, streamByteRate = 10_000_000L)!!)
+        val restored = generateSequence(narrowed) { it.widenedToward(steady) }.last()
+
+        assertEquals("heap class $heapClass, level $level", steady, restored)
+      }
+    }
+  }
+
+  @Test
+  fun `widening needs four times the step above the killer threshold and never under low memory`() {
+    val current = DemuxerBudget(32 * mib, 0)
+    val next = DemuxerBudget(64 * mib, 0)
+    val threshold = 200 * mib
+    val needed = 4 * 32 * mib
+
+    assertTrue(current.canWiden(next, availMemBytes = threshold + needed, thresholdBytes = threshold, lowMemory = false))
+    assertFalse(current.canWiden(next, availMemBytes = threshold + needed - 1, thresholdBytes = threshold, lowMemory = false))
+    // Android's own verdict outranks the arithmetic.
+    assertFalse(current.canWiden(next, availMemBytes = threshold + 10 * needed, thresholdBytes = threshold, lowMemory = true))
+  }
+
+  @Test
+  fun `an unusable killer threshold is replaced by a fixed floor`() {
+    // A vendor LMK reporting no threshold would otherwise make every sample
+    // look like headroom.
+    val current = DemuxerBudget(32 * mib, 0)
+    val next = DemuxerBudget(64 * mib, 0)
+    val floor = 256 * mib
+    val needed = 4 * 32 * mib
+
+    assertTrue(current.canWiden(next, availMemBytes = floor + needed, thresholdBytes = 0, lowMemory = false))
+    assertFalse(current.canWiden(next, availMemBytes = floor + needed - 1, thresholdBytes = 0, lowMemory = false))
+    assertFalse(current.canWiden(next, availMemBytes = floor + needed - 1, thresholdBytes = -1, lowMemory = false))
   }
 }

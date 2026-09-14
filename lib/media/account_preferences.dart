@@ -331,27 +331,31 @@ class AccountPreferencesCapabilities {
   /// Jellyfin: `UserConfiguration`, plus [AccountPreferenceKey.rewatchingInNextUp]
   /// in the account's `DisplayPreferences` custom prefs.
   ///
-  /// [AccountPreferenceKey.rememberAudioSelections],
-  /// [AccountPreferenceKey.rememberSubtitleSelections] and
-  /// [AccountPreferenceKey.autoPlayNextEpisode] are read and round-tripped —
-  /// the whole-object write must never reset them — but are deliberately **not**
-  /// editable here. Plezy already owns each of those decisions locally
-  /// (`SettingsService.rememberTrackSelections`, `followServerTrackSelections`,
-  /// `autoPlayNextEpisode`, the last of which is also a toggle in the player's
-  /// settings sheet), those local prefs are the only ones the playback path
-  /// reads, and they are the only answer available for Plex, which stores no
-  /// twin. Surfacing a second switch for the same behaviour would let the two
-  /// disagree with no rule for which wins. Making the account authoritative
-  /// instead means threading per-account state into `TrackManager`,
-  /// `PlaybackProgressTracker` and the in-player sheet, and splitting one local
-  /// toggle into Jellyfin's separate audio/subtitle flags — a playback-path
-  /// change that belongs in its own commit, not in this section.
+  /// [AccountPreferenceKey.rememberAudioSelections] and
+  /// [AccountPreferenceKey.rememberSubtitleSelections] are storable but have
+  /// no row in the Account preferences screen: the local
+  /// `SettingsService.rememberTrackSelections` toggle is the one opt-in, the
+  /// only answer available for Plex, and the one the playback path reads. The
+  /// server, though, records and applies the stream indexes Plezy reports
+  /// only while these flags are on
+  /// ([MediaBrowserDialect.persistsTrackSelectionsViaAccountFlags]), so
+  /// `TrackManager` turns the flag for a picked track type on when the local
+  /// toggle needs it. One direction only — nothing here turns them off — which
+  /// is the rule for which side wins that a second switch would have lacked.
+  ///
+  /// [AccountPreferenceKey.autoPlayNextEpisode] is read and round-tripped —
+  /// the whole-object write must never reset it — but stays deliberately
+  /// **not** editable: Plezy owns that decision locally (`autoPlayNextEpisode`,
+  /// also a toggle in the player's settings sheet) and the server plays no part
+  /// in it.
   static const jellyfin = AccountPreferencesCapabilities(
     supportedKeys: {
       AccountPreferenceKey.preferredAudioLanguage,
       AccountPreferenceKey.autoSelectAudio,
       AccountPreferenceKey.preferredSubtitleLanguage,
       AccountPreferenceKey.subtitleMode,
+      AccountPreferenceKey.rememberAudioSelections,
+      AccountPreferenceKey.rememberSubtitleSelections,
       AccountPreferenceKey.displayMissingEpisodes,
       AccountPreferenceKey.hidePlayedInLatest,
       AccountPreferenceKey.displayCollectionsView,
@@ -362,8 +366,10 @@ class AccountPreferencesCapabilities {
 
   /// Emby: the same `UserConfiguration` field set, minus rewatching —
   /// `/Shows/NextUp` has no `EnableRewatching` there
-  /// ([MediaBrowserDialect.supportsNextUpRewatching]), so storing the switch
-  /// would promise behaviour the server cannot deliver.
+  /// ([MediaBrowserDialect.supportsNextUpRewatching]) — and minus the remember
+  /// flags, whose effect on Emby playback defaults is unverified
+  /// ([MediaBrowserDialect.persistsTrackSelectionsViaAccountFlags]); storing
+  /// either would promise behaviour the server may not deliver.
   static const emby = AccountPreferencesCapabilities(
     supportedKeys: {
       AccountPreferenceKey.preferredAudioLanguage,

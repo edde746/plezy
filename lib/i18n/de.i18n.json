@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} Minuten",
     "rememberTrackSelections": "Spurauswahl pro Serie/Film merken",
     "rememberTrackSelectionsDescription": "Audio- und Untertitelauswahl je Titel merken",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Serverseitige Spurauswahl pro Episode verwenden",
     "followServerTrackSelectionsDescription": "Beim Episodenwechsel die auf dem Server ausgewählten Audio- und Untertitelspuren übernehmen, statt die aktuelle Auswahl zu übertragen",
     "resumeMusicOnLaunch": "Musiksitzung merken",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Audio-Durchleitung",
     "audioPassthroughDescription": "Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.",
     "audioPassthroughDescriptionAppleTv": "Apples nativen Dolby-Decoder für Dolby Digital Plus einschließlich Atmos verwenden. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Deaktivieren, wenn kein Ton zu hören ist.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Auf Stereo heruntermischen",
     "audioDownmixDescription": "Surround-Ton für Stereolautsprecher oder Kopfhörer auf zwei Kanäle heruntermischen",
     "downmixCenterBoost": "Verstärkung des Center-Kanals",
@@ -779,6 +781,7 @@
     "playbackDataInvalid": "Der Server hat ungültige Wiedergabeinformationen zurückgegeben.",
     "playbackCancelled": "Die Wiedergabe wurde abgebrochen.",
     "playbackFailed": "Die Wiedergabe konnte nicht gestartet werden.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fehler beim Laden der Dateiinfo: ${error}",
@@ -1900,6 +1903,7 @@
     "audioOutputSpatial": "Räumliches Audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Lautstärke normalisieren",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Downmix auf Stereo"
   },
   "performanceOverlay": {

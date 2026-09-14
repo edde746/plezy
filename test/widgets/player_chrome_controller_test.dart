@@ -105,6 +105,76 @@ void main() {
       expect(controller.controlsVisible, isFalse);
     });
 
+    // A remote traverses the OSD one press at a time, reading each label in
+    // between; the playing chrome still auto-hides, but on the longer delay.
+    testWidgets('directional navigation auto-hides playing controls only after the full delay', (tester) async {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.configure(hideDelay: const Duration(seconds: 10), directionalNavigation: true);
+      controller.setPlaying(true);
+
+      await tester.pump(const Duration(seconds: 6));
+      expect(controller.controlsVisible, isTrue, reason: 'a remote traversal is still in progress at 6s');
+      await tester.pump(const Duration(seconds: 4));
+      expect(controller.controlsVisible, isFalse);
+    });
+
+    // A remote has no tap to bring the OSD back, so a paused D-pad viewer keeps
+    // the chrome until they dismiss it themselves (Back).
+    testWidgets('directional navigation never auto-hides paused controls', (tester) async {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.configure(hideDelay: const Duration(milliseconds: 100), directionalNavigation: true);
+      controller.setPlaying(true);
+      await tester.pump(const Duration(milliseconds: 50));
+      // Pausing must also disarm the playing timer that was already running.
+      controller.setPlaying(false);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(controller.controlsVisible, isTrue);
+
+      controller.show();
+      controller.restartAutoHideForCurrentPlaybackState();
+      await tester.pump(const Duration(seconds: 1));
+      expect(controller.controlsVisible, isTrue, reason: 'interaction restarts nothing there is to restart');
+
+      expect(controller.hide(), isTrue, reason: 'an explicit dismissal still works');
+      expect(controller.controlsVisible, isFalse);
+    });
+
+    testWidgets('turning directional navigation off while paused arms the paused auto-hide', (tester) async {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.configure(hideDelay: const Duration(milliseconds: 100), directionalNavigation: true);
+      controller.setPlaying(true);
+      controller.setPlaying(false);
+      await tester.pump(const Duration(seconds: 1));
+      expect(controller.controlsVisible, isTrue);
+
+      controller.configure(hideDelay: const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 99));
+      expect(controller.controlsVisible, isTrue);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(controller.controlsVisible, isFalse);
+    });
+
+    testWidgets('turning directional navigation on while paused disarms the pending paused auto-hide', (tester) async {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.configure(hideDelay: const Duration(milliseconds: 100));
+      controller.setPlaying(true);
+      controller.setPlaying(false);
+      await tester.pump(const Duration(milliseconds: 50));
+
+      controller.configure(hideDelay: const Duration(milliseconds: 100), directionalNavigation: true);
+      await tester.pump(const Duration(seconds: 1));
+      expect(controller.controlsVisible, isTrue);
+    });
+
     test('show stores play/pause focus request and notifies even when already visible', () {
       final controller = PlayerChromeController();
       addTearDown(controller.dispose);

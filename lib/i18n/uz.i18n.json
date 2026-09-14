@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} daqiqa",
     "rememberTrackSelections": "Har bir film/serial uchun ovoz/subtitr tanlovini eslab qolish",
     "rememberTrackSelectionsDescription": "Har bir media uchun ovoz va subtitr sozlamalarini saqlash",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Har bir epizod uchun serverdagi tanlovlardan foydalanish",
     "followServerTrackSelectionsDescription": "Epizod almashganda joriy tanlovni ko'chirish o'rniga serverda tanlangan ovoz va subtitrni qo'llash",
     "resumeMusicOnLaunch": "Musiqa seansini eslab qolish",
@@ -338,6 +339,7 @@
     "audioPassthrough": "Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus uchun Apple dekoderidan foydalanish.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Stereoga oʻtkazish (Downmix)",
     "audioDownmixDescription": "Koʻp kanalli ovozni stereo dinamiklar uchun ikki kanalga tushirish",
     "downmixCenterBoost": "Markaziy kanalni kuchaytirish",
@@ -779,6 +781,7 @@
     "playbackDataInvalid": "Server notoʻgʻri ijro maʼlumotlarini qaytardi.",
     "playbackCancelled": "Ijro bekor qilindi.",
     "playbackFailed": "Ijroni ishga tushirishda xatolik.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fayl maʼlumotlarini yuklashda xatolik: ${error}",
@@ -1900,6 +1903,7 @@
     "audioOutputSpatial": "Fazoviy audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ovoz balandligini meʼyorlashtirish",
+    "audioNormalizationDisablesPassthrough": "",
     "audioDownmix": "Stereoga oʻtkazish"
   },
   "performanceOverlay": {

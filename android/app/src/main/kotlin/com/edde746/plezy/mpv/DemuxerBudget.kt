@@ -15,17 +15,53 @@ import android.content.ComponentCallbacks2
  * Applied as pre-init *options* in [MpvPlayerCore], so a `demuxer-max-bytes`
  * line in the user's mpv.conf still wins; [forTrimLevel] re-derives it from
  * the same table when Android reports memory pressure, and the core writes
- * that as a property mid-session.
+ * that as a property mid-session. Android never says when pressure ends, so
+ * the core polls the LMK threshold and walks the budget back one rung at a
+ * time ([widenedToward], gated by [canWiden]).
  */
 data class DemuxerBudget(val aheadBytes: Long, val backBytes: Long) {
+  /** ahead+back: with `demuxer-donate-buffer` on, the resident ceiling. */
+  val totalBytes: Long get() = aheadBytes + backBytes
+
   /**
-   * This budget narrowed to [wanted], never widened. Pressure response is
-   * one-way inside a session: re-growing while the device is still thrashing
-   * is how the app got killed in the first place, and a milder trim level
-   * arriving after a harsher one asks for exactly that. The next
-   * initialization starts from the full tier again.
+   * This budget narrowed to [wanted], never widened. A milder trim level
+   * arriving after a harsher one asks for exactly the re-growing that got
+   * the app killed, and trim levels are not ordered; widening is only ever
+   * the restore poll's decision ([widenedToward]), taken against measured
+   * headroom rather than the level sequence.
    */
   fun narrowedTo(wanted: DemuxerBudget): DemuxerBudget = DemuxerBudget(aheadBytes = minOf(aheadBytes, wanted.aheadBytes), backBytes = minOf(backBytes, wanted.backBytes))
+
+  /**
+   * The next step back toward [steady], or null once there: read-ahead first,
+   * one tier rung at a time (a stream-rate critical value like 60 MiB steps
+   * to 64, not 100), then the back cache in one go. The back cache was shed
+   * first because it is the least valuable, so it comes back last. Never
+   * exceeds [steady] on either axis - a snapshot below a rung is the ceiling.
+   */
+  fun widenedToward(steady: DemuxerBudget): DemuxerBudget? = when {
+    aheadBytes < steady.aheadBytes -> {
+      val rung = TIERS.firstOrNull { it.aheadBytes > aheadBytes }?.aheadBytes ?: steady.aheadBytes
+      copy(aheadBytes = minOf(rung, steady.aheadBytes))
+    }
+    backBytes < steady.backBytes -> copy(backBytes = steady.backBytes)
+    else -> null
+  }
+
+  /**
+   * Whether widening to [next] is safe given `ActivityManager.MemoryInfo`:
+   * never while Android flags [lowMemory], and only when the free memory
+   * above the low-memory killer's [thresholdBytes] would still cover the
+   * step [RESTORE_HEADROOM_FACTOR] times over. That margin is the
+   * hysteresis: a box hovering near the threshold never re-grows into the
+   * kill it was just trimmed to avoid. A vendor reporting no threshold
+   * (<= 0) gets a fixed [UNKNOWN_THRESHOLD_BYTES] line instead.
+   */
+  fun canWiden(next: DemuxerBudget, availMemBytes: Long, thresholdBytes: Long, lowMemory: Boolean): Boolean {
+    if (lowMemory) return false
+    val threshold = if (thresholdBytes > 0) thresholdBytes else UNKNOWN_THRESHOLD_BYTES
+    return availMemBytes - threshold >= RESTORE_HEADROOM_FACTOR * (next.totalBytes - totalBytes)
+  }
 
   companion object {
     private const val MIB = 1024L * 1024L
@@ -33,6 +69,30 @@ data class DemuxerBudget(val aheadBytes: Long, val backBytes: Long) {
     /** Tier boundaries. */
     private const val TIGHT_TIER_MAX_MB = 256
     private const val MID_TIER_MAX_MB = 512
+
+    /** The tiers in ascending order; [widenedToward] climbs this ladder. */
+    private val TIERS = listOf(
+      DemuxerBudget(aheadBytes = 32 * MIB, backBytes = 16 * MIB),
+      DemuxerBudget(aheadBytes = 64 * MIB, backBytes = 32 * MIB),
+      DemuxerBudget(aheadBytes = 100 * MIB, backBytes = 48 * MIB)
+    )
+
+    /** How often the core samples memory while a budget is narrowed. */
+    const val RESTORE_POLL_MS = 30_000L
+
+    /**
+     * No widening within this long of the latest narrowing. Android repeats
+     * `RUNNING_*` levels only on mem-factor transitions, so a re-trim during
+     * the ramp restarting the window is what keeps an oscillating box from
+     * re-growing straight back into pressure.
+     */
+    const val RESTORE_QUIET_MS = 60_000L
+
+    /** Free memory above the LMK threshold per byte a restore step adds. */
+    private const val RESTORE_HEADROOM_FACTOR = 4L
+
+    /** The threshold assumed when `MemoryInfo.threshold` is unusable. */
+    private const val UNKNOWN_THRESHOLD_BYTES = 256L * 1024L * 1024L
 
     /**
      * The forward budget a critical device is held to. Named rather than
@@ -64,9 +124,9 @@ data class DemuxerBudget(val aheadBytes: Long, val backBytes: Long) {
     /** Null for an unknown class (<= 0): callers keep mpv's own defaults. */
     fun forHeapClassMB(largeMemoryClassMB: Int): DemuxerBudget? = when {
       largeMemoryClassMB <= 0 -> null
-      largeMemoryClassMB <= TIGHT_TIER_MAX_MB -> DemuxerBudget(aheadBytes = 32 * MIB, backBytes = 16 * MIB)
-      largeMemoryClassMB <= MID_TIER_MAX_MB -> DemuxerBudget(aheadBytes = 64 * MIB, backBytes = 32 * MIB)
-      else -> DemuxerBudget(aheadBytes = 100 * MIB, backBytes = 48 * MIB)
+      largeMemoryClassMB <= TIGHT_TIER_MAX_MB -> TIERS[0]
+      largeMemoryClassMB <= MID_TIER_MAX_MB -> TIERS[1]
+      else -> TIERS[2]
     }
 
     /**

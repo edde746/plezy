@@ -50,6 +50,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
 
     _firstFrame.markReady();
+    // This request is proven: a later in-place switch that fails restores it.
+    _workingOpenRequest = _currentOpenRequest;
     _http503Watchdog.disarm();
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
     final progressTracker = _progressTracker;

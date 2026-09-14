@@ -169,7 +169,9 @@ open class MpvPlayerPlugin(
   }
 
   private fun disposeCoreForTeardown() {
-    takeCoreForTeardown()?.dispose()
+    // Activity/engine detach never reaches Dart's clearVideoFrameRate, so
+    // the display mode is restored here or not at all.
+    takeCoreForTeardown()?.dispose(preserveDisplayMode = false)
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -416,6 +418,9 @@ open class MpvPlayerPlugin(
 
   private fun handleDispose(call: MethodCall, result: MethodChannel.Result) {
     val token = call.argument<Number>("instanceId")?.toLong()
+    // True across a player→player replacement: the successor inherits the
+    // window's display mode instead of renegotiating HDMI twice.
+    val preserveDisplayMode = call.argument<Boolean>("preserveDisplayMode") ?: false
     runOnMain {
       val owner = coreInstanceId
       if (playerCore != null && token != null && owner != null && token != owner) {
@@ -444,7 +449,7 @@ open class MpvPlayerPlugin(
       channels.mainHandler.postDelayed({
         completeOnce("Dispose watchdog fired after ${disposeWatchdogMs}ms; teardown continues in background")
       }, disposeWatchdogMs)
-      core.dispose { completeOnce("Disposed") }
+      core.dispose(preserveDisplayMode) { completeOnce("Disposed") }
     }
   }
 

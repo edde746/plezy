@@ -18,6 +18,11 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   void _onPlayerError(PlayerError err) {
     appLogger.e('[Player ERROR] ${err.message}');
     if (!mounted || _isExiting.value) return;
+    // The open already failed and its verdict is on screen: every further
+    // error is the same dead load (a playlist walk, a retrying reconnect)
+    // reporting again, and re-running the policy per event is what turned a
+    // failed HLS open into an ANR. A new open resets the latch.
+    if (_hasFatalPlaybackError) return;
 
     // A sidecar subtitle fetch can also log a status, but it never raises the
     // end-file error this handler is wired to, so a latched status belongs to
@@ -52,26 +57,146 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       case PlaybackFailureAction.liveInterrupted:
         showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
       case PlaybackFailureAction.fatal:
-        _latchFatalPlaybackError(action);
+        _latchFatalPlaybackError(action, cause: err.cause);
         // A failed core start carries only diagnostic text; _lastLogError is
-        // raw mpv/ffmpeg output, so neither is fit to show — use the
-        // localized copy instead.
-        showGlobalErrorSnackBar(switch (err.cause) {
-          PlayerError.playerInitFailed => t.messages.playbackFailed,
+        // raw mpv/ffmpeg output, so neither is fit to show bare — use the
+        // localized copy, with the redacted diagnostic as its detail.
+        final message = switch (err.cause) {
+          PlayerError.playerInitFailed || PlayerError.openTimedOut => t.messages.playbackFailed,
           PlayerError.audioOutputFailed => t.messages.audioOutputFailed,
-          _ => _redactPlayerError(_lastLogError ?? err.message),
-        });
-        unawaited(_handleBackButton());
+          _ => t.messages.playbackFailedDetail(error: _redactPlayerError(_lastLogError ?? err.message)),
+        };
+        // Live TV has no in-place reload to retry through: its own start
+        // flow leaves the route on failure, so a dead live session does too.
+        if (widget.isLive) {
+          showGlobalErrorSnackBar(message);
+          unawaited(_handleBackButton());
+          return;
+        }
+        _presentPlaybackFailure(message);
     }
   }
 
   /// A terminal player error: the attempt is no longer current, progress
-  /// reporting stops, and every waiter armed for its open collapses — the
-  /// error UI is the only thing left running for it.
-  void _latchFatalPlaybackError(PlaybackFailureAction action) {
+  /// reporting stops, every waiter armed for its open collapses, and the
+  /// backend is told to stop — the error UI is the only thing left running
+  /// for it. The stop is not optional: on a failed HLS open mpv falls back to
+  /// its playlist parser and walks the manifest's entries, each failing in
+  /// turn (46 end-file errors in 4 s on a Fire TV), and with the route no
+  /// longer popping nothing else halts that walk; a stalled load is likewise
+  /// still retrying and a late success must not play behind the failure
+  /// view. Further errors from the same dead open are ignored by
+  /// [_onPlayerError] until a new open resets the latch. The launch receipt
+  /// goes terminal here, not on exit: the route may never close (an
+  /// agent-launched player has nothing to pop to), and a caller polling the
+  /// receipt must not read a failed open as `opening` or, after Back, as a
+  /// user stop.
+  void _latchFatalPlaybackError(PlaybackFailureAction action, {String? cause}) {
     _hasFatalPlaybackError = true;
     _progressTracker?.stopTracking();
     _abortCurrentOpen('player error: ${action.name}');
+    final currentPlayer = player;
+    if (currentPlayer != null) {
+      unawaited(
+        currentPlayer.stop().catchError((Object e, StackTrace st) {
+          appLogger.w('Failed to stop the failed load', error: e, stackTrace: st);
+        }),
+      );
+    }
+    if (_ownsLaunchPlayback() && widget.launchObserver?.failure == null) {
+      widget.launchObserver?.mark(
+        'failed',
+        failure: switch (action) {
+          PlaybackFailureAction.serverLimitDialog => 'serverLimit',
+          PlaybackFailureAction.mediaUnreadableDialog => 'mediaUnreadable',
+          PlaybackFailureAction.serverBusyDialog => 'serverBusy',
+          _ => cause == PlayerError.audioOutputFailed ? 'audioOutputFailed' : 'playbackFailed',
+        },
+      );
+    }
+  }
+
+  /// Raise the persistent failure surface over the player. It stays until
+  /// Retry re-runs the open or Back leaves; a snackbar is neither focusable
+  /// nor on a remote's path, and it is gone in seconds. The spinner is
+  /// forced down so it cannot sit over the view, and Retry takes focus once
+  /// the view has built (see [_initializationErrorFocusNode]). The backend's
+  /// end-file verdict always lands; a thrown open only fills an empty view,
+  /// since the verdict that preceded it is the more specific of the two.
+  void _presentPlaybackFailure(String message) {
+    if (!mounted || _shuttingDown) return;
+    _firstFrame.forceUiReadyOnFailure();
+    _setPlayerState(() {
+      _playbackFailureMessage = message;
+      _playbackFailureRetry = _retryFailedPlayback;
+    });
+    _focusFailureActionAfterBuild();
+  }
+
+  void _dismissPlaybackFailure() {
+    if (_playbackFailureMessage == null) return;
+    _setPlayerState(() {
+      _playbackFailureMessage = null;
+      _playbackFailureRetry = null;
+    });
+  }
+
+  /// The button only exists after the next frame builds, so the request waits
+  /// for it; see [_initializationErrorFocusNode] for why autofocus alone
+  /// leaves the view with nothing focused.
+  void _focusFailureActionAfterBuild() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _shuttingDown || (_playerInitializationError == null && _playbackFailureMessage == null)) {
+        return;
+      }
+      if (_initializationErrorFocusNode.canRequestFocus) _initializationErrorFocusNode.requestFocus();
+    });
+  }
+
+  /// The open Retry re-runs for the failure on screen. A failed in-place
+  /// source switch restores the request that was playing before it — one
+  /// attempt, prompted; a restore that fails too leaves the failure view up.
+  /// Anything else re-runs the failed open itself, from the playhead when
+  /// that open had already rendered.
+  _PlaybackOpenRequest? _retryRequestForFailure() {
+    final current = _currentOpenRequest;
+    if (current == null) return null;
+    final working = _workingOpenRequest;
+    if (working != null && working.metadata.globalKey == current.metadata.globalKey && !working.sameSourceAs(current)) {
+      return working.resumingAt(current.resumePosition ?? working.resumePosition);
+    }
+    if (_firstFrame.rendered) return current.resumingAt(player?.state.position);
+    return current;
+  }
+
+  void _retryFailedPlayback() {
+    final request = _retryRequestForFailure();
+    if (request == null || player == null) {
+      // Nothing was ever dispatched (or the core is gone): start over.
+      _retryPlayerInitialization();
+      return;
+    }
+    unawaited(_reopenAfterFailure(request));
+  }
+
+  Future<void> _reopenAfterFailure(_PlaybackOpenRequest request) async {
+    final outcome = await _reloadMediaInPlace(
+      metadata: request.metadata,
+      selectedMediaIndex: request.mediaIndex,
+      selectedMediaSourceId: request.mediaSourceId,
+      qualityPreset: request.qualityPreset,
+      selectedAudioStreamId: request.audioStreamId,
+      useCurrentAudioStreamSelection: false,
+      resumePosition: request.resumePosition,
+      preferredSubtitleTrackOverride: SubtitlePreference.trackOrNull(_playbackSession?.subtitleSelection.primaryTrack),
+      // A failure before the open rolls the view back to the message it
+      // retried from; one after it raises its own through _onPlayerError.
+      showErrorUi: false,
+      reason: 'retry after playback failure',
+    );
+    if (outcome == MediaReloadOutcome.failed && mounted && _playbackFailureMessage == null) {
+      _presentPlaybackFailure(t.messages.playbackFailed);
+    }
   }
 
   void _onPlayerLog(PlayerLog log) {
@@ -102,6 +227,22 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       '${openHttp503Patience.inSeconds}s without a first frame — giving up on this open',
     );
     _onPlayerError(PlayerError(t.messages.serverBusyTitle, cause: PlayerError.serverHttp503));
+  }
+
+  /// The attempt's open deadline passed: the backend started the load and
+  /// then neither loaded, failed, nor died. Its waiters are already aborted;
+  /// synthesize the error the backend never raised so the failure policy
+  /// runs (which stops the still-retrying load) and the viewer is not left
+  /// on a spinner. Same guard as the 503 watchdog: a first frame or a
+  /// latched error already settled this open.
+  void _onOpenDeadlineExpired(Player currentPlayer, int generation) {
+    if (!_isCurrentPlaybackGeneration(generation, currentPlayer) || _firstFrame.rendered || _hasFatalPlaybackError) {
+      return;
+    }
+    appLogger.w(
+      'No first frame within ${VideoPlayerScreenState._openDeadline.inSeconds}s of load start — giving up on this open',
+    );
+    _onPlayerError(PlayerError(t.messages.playbackFailed, cause: PlayerError.openTimedOut));
   }
 
   String _redactPlayerError(String message) => LogRedactionManager.redact(message);

@@ -164,14 +164,16 @@ void main() {
           findsNothing,
           reason: 'the loading spinner must not survive behind the error dialog',
         );
-        // Only the start flow's own failure handling raises a snackbar here —
-        // the dialog branch of the error handler shows no message — so this is
-        // what says the failure was actually reported and not swallowed.
+        // The thrown open no longer lands in a snackbar behind the dialog:
+        // the failure view carries it, so it survives the dialog's close and
+        // is where Back/Retry live once the route stays.
+        expect(find.byType(SnackBar), findsNothing);
         expect(
-          find.descendant(of: find.byType(SnackBar), matching: find.textContaining('loadfile failed')),
+          find.textContaining('loadfile failed'),
           findsOneWidget,
           reason: 'the failed start owes the user the error it failed on',
         );
+        expect(find.widgetWithText(FilledButton, t.common.retry), findsOneWidget);
 
         var shutdownDone = false;
         final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);

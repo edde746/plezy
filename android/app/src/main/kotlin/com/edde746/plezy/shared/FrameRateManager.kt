@@ -127,10 +127,20 @@ class FrameRateManager(
 
   private fun restorePreferredDisplayMode() {
     // preferredDisplayModeId persists on the window; restore the default.
-    activity.window?.attributes?.let { attrs ->
-      attrs.preferredDisplayModeId = 0
-      activity.window?.attributes = attrs
-    }
+    val window = activity.window ?: return
+    val attrs = window.attributes ?: return
+    // Log.d, not [log]: reached after core dispose, when the Flutter-channel
+    // logger is gone. The window attribute is what this restores; the
+    // display lands on its default mode asynchronously, so the second line
+    // names the mode still active at the point of the request.
+    Log.d(
+      TAG,
+      "restorePreferredDisplayMode: preferredDisplayModeId=${attrs.preferredDisplayModeId} -> 0, " +
+        "before currentMode=${currentModeDescription()}"
+    )
+    attrs.preferredDisplayModeId = 0
+    window.attributes = attrs
+    Log.d(TAG, "restorePreferredDisplayMode: applied, after currentMode=${currentModeDescription()}")
   }
 
   private fun cancelPendingRestore() {
@@ -302,9 +312,16 @@ class FrameRateManager(
       currentMatchResolution
     )
     if (selection == null) {
+      // A panel that exposes no clean multiple of the content rate (a 60/50/30
+      // Hz-only set for 23.976 fps) is the usual reason; name it so a report
+      // separates "never asked" from "nothing to ask for".
+      val cleanMultiple = supportedModes.any { DisplayModeSelector.matchRefreshRate(it.refreshRate, fps) != null }
+      val lowestRate = supportedModes.minOfOrNull { it.refreshRate }
       log(
         "no matching display mode for ${fps}fps at ${currentMode.physicalWidth}x${currentMode.physicalHeight} " +
-          "(video=${currentVideoWidth}x$currentVideoHeight, matchResolution=$currentMatchResolution)"
+          "(video=${currentVideoWidth}x$currentVideoHeight, matchResolution=$currentMatchResolution)" +
+          (if (cleanMultiple) "" else "; no exposed mode is a clean multiple of ${fps}fps") +
+          " (lowest exposed rate=${lowestRate}Hz)"
       )
       onComplete(false)
       return

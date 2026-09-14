@@ -99,9 +99,21 @@ internal class SurfaceFrameRateVote(
   companion object {
     private const val TAG = "SurfaceFrameRateVote"
 
+    /** Whether the API gate below has been logged; once per process, since
+     * it is a property of the OS, not the session. Without it a log shows no
+     * difference between a vote never placed and one the OS cannot take. */
+    @Volatile private var apiGateLogged = false
+
     /** Media3 `VideoFrameReleaseHelper.Api30.setSurfaceFrameRate`. */
     private fun setSurfaceFrameRate(surface: Surface, frameRate: Float) {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || !surface.isValid) return
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        if (!apiGateLogged) {
+          apiGateLogged = true
+          Log.i(TAG, "Surface.setFrameRate unavailable below API 30 (SDK=${Build.VERSION.SDK_INT})")
+        }
+        return
+      }
+      if (!surface.isValid) return
       val compatibility = if (frameRate == 0f) Surface.FRAME_RATE_COMPATIBILITY_DEFAULT else Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE
       try {
         // Two-argument overload: CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS.

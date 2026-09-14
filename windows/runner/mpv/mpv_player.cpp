@@ -814,10 +814,19 @@ void MpvPlayer::MaybeRunAudioRecovery() {
   if (action.reason == plezy::mpv_common::AudioReloadReason::kNone) {
     return;
   }
+  if (action.reason == plezy::mpv_common::AudioReloadReason::kGiveUp) {
+    // audio-fallback-to-null means the core will never end the file over a
+    // dead device itself, so the outcome is produced here: stop, and let the
+    // END_FILE handler report it as the AO_INIT_FAILED error Dart handles.
+    LogRecovery("audio output failed after " + std::to_string(action.attempt) + " reloads; ending playback");
+    audio_output_failed_ = true;
+    Command({"stop"});
+    return;
+  }
   const char* reason = action.reason == plezy::mpv_common::AudioReloadReason::kResume ? "resume" : "null-fallback";
   TryAudioReload(reason, action.attempt, action.request_generation);
   if (action.exhausted) {
-    LogRecovery("audio recovery budget exhausted; waiting for device list change");
+    LogRecovery("audio recovery budget exhausted; ending playback if this reload fails");
   }
 }
 
@@ -885,13 +894,25 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_END_FILE: {
       audio_recovery_.SetFileLoaded(false);
+      // The stop that audio recovery issued on giving up ends the file with
+      // reason stop, which Dart would take for the user's own. It is reported
+      // as what it is - the AO_INIT_FAILED error the core would have raised
+      // without audio-fallback-to-null - under the cause tag Dart handles.
+      const bool audio_output_failed = audio_output_failed_;
+      audio_output_failed_ = false;
       auto* end = static_cast<mpv_event_end_file*>(event->data);
+      const int reason =
+          audio_output_failed ? static_cast<int>(MPV_END_FILE_REASON_ERROR) : static_cast<int>(end->reason);
+      const int error = audio_output_failed ? static_cast<int>(MPV_ERROR_AO_INIT_FAILED) : end->error;
       flutter::EncodableMap data;
       data[flutter::EncodableValue("sourceId")] = flutter::EncodableValue(end->playlist_entry_id);
-      data[flutter::EncodableValue("reason")] = flutter::EncodableValue(static_cast<int>(end->reason));
-      if (end->reason == MPV_END_FILE_REASON_ERROR) {
-        data[flutter::EncodableValue("error")] = flutter::EncodableValue(static_cast<int>(end->error));
-        data[flutter::EncodableValue("message")] = flutter::EncodableValue(SanitizeUtf8(mpv_error_string(end->error)));
+      data[flutter::EncodableValue("reason")] = flutter::EncodableValue(reason);
+      if (reason == MPV_END_FILE_REASON_ERROR) {
+        data[flutter::EncodableValue("error")] = flutter::EncodableValue(error);
+        data[flutter::EncodableValue("message")] = flutter::EncodableValue(SanitizeUtf8(mpv_error_string(error)));
+        if (audio_output_failed) {
+          data[flutter::EncodableValue("cause")] = flutter::EncodableValue(plezy::mpv_common::kAudioOutputFailedCause);
+        }
       }
       SendEvent("end-file", data);
       break;

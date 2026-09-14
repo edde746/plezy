@@ -70,6 +70,7 @@ import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
+import 'services/connectivity_probe.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
 import 'services/plex_api_cache.dart';
@@ -2080,19 +2081,8 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     }
 
     // Check network connectivity early to fast-path airplane mode.
-    // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
-    bool hasNetwork;
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Checking network connectivity', category: 'setup')));
-    try {
-      final connectivityResult = await Connectivity().checkConnectivity().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () => [ConnectivityResult.other],
-      );
-      hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
-    } catch (e) {
-      // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
-      hasNetwork = true;
-    }
+    final hasNetwork = !(await ConnectivityProbe.check()).contains(ConnectivityResult.none);
 
     unawaited(
       Sentry.addBreadcrumb(Breadcrumb(message: 'Network check done: hasNetwork=$hasNetwork', category: 'setup')),
