@@ -312,9 +312,16 @@ class FrameRateManager(
       currentMatchResolution
     )
     if (selection == null) {
+      // A panel that exposes no clean multiple of the content rate (a 60/50/30
+      // Hz-only set for 23.976 fps) is the usual reason; name it so a report
+      // separates "never asked" from "nothing to ask for".
+      val cleanMultiple = supportedModes.any { DisplayModeSelector.matchRefreshRate(it.refreshRate, fps) != null }
+      val lowestRate = supportedModes.minOfOrNull { it.refreshRate }
       log(
         "no matching display mode for ${fps}fps at ${currentMode.physicalWidth}x${currentMode.physicalHeight} " +
-          "(video=${currentVideoWidth}x$currentVideoHeight, matchResolution=$currentMatchResolution)"
+          "(video=${currentVideoWidth}x$currentVideoHeight, matchResolution=$currentMatchResolution)" +
+          (if (cleanMultiple) "" else "; no exposed mode is a clean multiple of ${fps}fps") +
+          " (lowest exposed rate=${lowestRate}Hz)"
       )
       onComplete(false)
       return

@@ -77,9 +77,15 @@ object DisplayModeSelector {
   }
 
   /**
-   * Ranks rate matches: an exact rate first; among integer multiples the
-   * mode already active, then the largest multiple, then the smaller
-   * multiplication error.
+   * Ranks rate matches: an exact rate first, the nearer one when two are
+   * within tolerance; among integer multiples the mode already active, then
+   * the largest multiple, then the smaller multiplication error.
+   *
+   * Within the exact tier the current mode earns nothing: [RATE_TOLERANCE]
+   * admits a neighbouring rate as "exact" (60.000004 for 59.94 content), and
+   * keeping it because it is active trades a true match for a permanent
+   * frame drop every ~17 s. The nearer rate wins; the active mode only
+   * settles an equal error.
    *
    * A clean multiple the display is already in is never traded for another
    * one, whatever its error: the switch would renegotiate the panel for the
@@ -94,9 +100,10 @@ object DisplayModeSelector {
    * layer voted Max.
    */
   private fun rateRanking(currentMode: ModeInfo): Comparator<Candidate> = compareBy<Candidate> { it.match.priority }
-    .thenBy { it.mode.modeId != currentMode.modeId }
+    .thenBy { it.match.priority != 0 && it.mode.modeId != currentMode.modeId }
     .thenByDescending { it.match.multiple }
     .thenBy { it.match.error }
+    .thenBy { it.mode.modeId != currentMode.modeId }
 
   /**
    * The cadence [fps] content presents with on a [refreshRate] display, or
