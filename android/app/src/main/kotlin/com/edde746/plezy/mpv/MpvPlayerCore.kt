@@ -5,6 +5,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.media.AudioAttributes
+import android.media.MediaCodecList
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -127,6 +128,46 @@ class MpvPlayerCore private constructor(
     /** `fw-bytes` inside mpv's JSON-serialised `demuxer-cache-state`. */
     private val FORWARD_CACHE_BYTES = Regex("\"fw-bytes\"\\s*:\\s*(\\d+)")
 
+    /** MIME types devices register Dolby Vision decoders under. FFmpeg only
+     * asks for the first; the others are enumerated so the routing log shows
+     * the decoder a device "has" but FFmpeg will never open. */
+    private val DV_MIME_TYPES = setOf(GpuVoPolicy.DV_MIME, "video/hevcdv", "video/dv_hevc")
+
+    /**
+     * Every decoder registered under [DV_MIME_TYPES], in MediaCodecList
+     * order, for [GpuVoPolicy.nativeP5Decoder]. One walk per process: the
+     * codec list is static. A type whose capabilities cannot be queried is
+     * dropped, as FFmpeg drops it.
+     */
+    private val dvDecoderCandidates: List<GpuVoPolicy.DvDecoderCandidate> by lazy {
+      val candidates = try {
+        MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.filterNot { it.isEncoder }.flatMap { info ->
+          info.supportedTypes.filter { it.lowercase(Locale.ROOT) in DV_MIME_TYPES }.mapNotNull { type ->
+            val profiles = try {
+              info.getCapabilitiesForType(type).profileLevels.map { it.profile }
+            } catch (e: IllegalArgumentException) {
+              Log.w(TAG, "Failed to query ${info.name} capabilities for $type", e)
+              return@mapNotNull null
+            }
+            // isSoftwareOnly exists from API 29; FFmpeg consults it only there too.
+            val softwareOnly = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) info.isSoftwareOnly else false
+            GpuVoPolicy.DvDecoderCandidate(name = info.name, mime = type, profiles = profiles, isSoftwareOnly = softwareOnly)
+          }
+        }
+      } catch (e: Exception) {
+        Log.w(TAG, "Failed to enumerate Dolby Vision decoders", e)
+        emptyList()
+      }
+      Log.i(
+        TAG,
+        "Dolby Vision decoders: " + candidates.joinToString(prefix = "[", postfix = "]") {
+          "${it.name} ${it.mime} profiles=${it.profiles.joinToString(",") { p -> "0x${p.toString(16)}" }}" +
+            (if (it.isSoftwareOnly) " software-only" else "")
+        }
+      )
+      candidates
+    }
+
     /**
      * The initial `vo` chain, decided by whether this session will hardware-
      * decode.
@@ -213,6 +254,11 @@ class MpvPlayerCore private constructor(
   /** Last `dv-conversion-mode` Dart applied; input to the per-file DV
    * routing policy. */
   @Volatile private var currentDvConversionMode: String = "auto"
+
+  /** `dolby-vision-profile` of the video track the current file selected
+   * (null when the bitstream carries no DOVI record); set per file by
+   * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome. */
+  @Volatile private var pendingDvProfile: Long? = null
 
   /** Whether this core already decided its GL surface colorspace; set by the
    * first `content-color-transfer` announcement ([applyContentColorTransfer]). */
@@ -659,6 +705,7 @@ class MpvPlayerCore private constructor(
       videoZoomLog2 = 0f
       pendingVideoRectUpdate.set(null)
       currentDvConversionMode = "auto"
+      pendingDvProfile = null
       hdrSurfaceDecided = false
       hdrDisplayActive = false
       displayHdrSupported = false
@@ -1293,14 +1340,42 @@ class MpvPlayerCore private constructor(
    * file, so a following non-P5 file restores hardware decode and returns
    * to the video plane. [track] is the pending video track, see
    * [pendingVideoTrack].
+   *
+   * Native P5 support is what the bundled FFmpeg will actually open
+   * ([GpuVoPolicy.nativeP5Decoder]), not what the device advertises under
+   * every DV MIME type: the two disagreed on devices whose only DV decoder
+   * FFmpeg never probes, and the P5 base layer then reached the plane as
+   * plain HEVC with inverted hue. [collectDecoderState] covers the case
+   * where even the predicted decoder fails to open.
+   *
+   * Verify the plane's DV output on the panel, never from a screencap or
+   * the SurfaceFlinger layer tags: on MediaTek (MT8696) and Amlogic the
+   * decoder's buffers carry the un-reshaped IPTPQc2 base layer tagged
+   * BT.2020 with an SDR transfer, and the HWC applies the RPU after the
+   * readback point. A capture shows inverted hue while the display is in
+   * Dolby Vision mode with correct colour - measured on a Google TV
+   * Streamer with this path and with ExoPlayer, identical captures, both
+   * correct on the panel. That capture once cost this file a MediaTek
+   * exclusion that sent every P5 file into software decode.
    */
   private suspend fun applyDvReshapePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
+    pendingDvProfile = profile
+    val mode = currentDvConversionMode
+    val nativeDecoder = GpuVoPolicy.nativeP5Decoder(dvDecoderCandidates)
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
-      conversionMode = currentDvConversionMode,
-      canPlayP5Natively = DoviBridge.canPlayDolbyVisionP5()
+      conversionMode = mode,
+      canPlayP5Natively = nativeDecoder != null
     )
+    if (profile != null) {
+      // Unconditional for every DV file: this line is what a wrong-colour
+      // report is diagnosed from, on the device and in the uploaded log.
+      val decision = "profile=$profile mode=$mode nativeP5Decoder=${nativeDecoder ?: "none"} " +
+        "displayDv=$displayDvSupported path=${if (needs) "software decode + gpu-next reshaping" else "video plane"}"
+      Log.i(TAG, "DV routing: $decision")
+      emitLog("info", "dv-route", decision)
+    }
     if (holdHwdec(p, GpuVoPolicy.REASON_DV_RESHAPE, needs) && needs) {
       Log.i(TAG, "DV P5 (bitstream) without native support: software decode + gpu-next reshaping")
     }
@@ -1467,11 +1542,21 @@ class MpvPlayerCore private constructor(
    * fresh decoder under the GL vo reports `mediacodec` again would send the
    * session back to the plane, whose rebuild re-creates the decoder, which
    * fails the same way — an endless plane/GL oscillation (#2272).
+   *
+   * A P5 file that lands in software decode also raises
+   * [GpuVoPolicy.REASON_DV_RESHAPE], whatever [applyDvReshapePolicy]
+   * predicted: plain `sw-decode` targets `gpu`, which composites no RPU, and
+   * the base layer would scan out as SDR BT.2020. That reason is per file
+   * too — the next file's hook re-evaluates it.
    */
   private fun collectDecoderState(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "hwdec-current" }.collect { change ->
         if (GpuVoPolicy.needsSoftwareRender(change.value)) setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, true)
+        if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, currentDvConversionMode, change.value)) {
+          Log.i(TAG, "DV P5 decoded in software (hwdec-current=${change.value}): gpu-next reshaping")
+          setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)
+        }
       }
     }
   }
