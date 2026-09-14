@@ -238,6 +238,19 @@ class FrameRateManager(
     "unavailable"
   }
 
+  /**
+   * The display's current mode and every mode it exposes, for the session
+   * log. [setDisplayMode] logs the same list, but only when the user matches
+   * frame rates; a report from a user who does not still needs to show what
+   * the panel offered (#2255).
+   */
+  fun describeDisplay(): String {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return "modes unavailable"
+    val display = currentDisplay() ?: return "display unavailable"
+    val supported = display.supportedModes ?: return "current=${describeMode(display.mode)} modes unavailable"
+    return "current=${describeMode(display.mode)} supported=${describeSupportedModes(supported)}"
+  }
+
   @RequiresApi(Build.VERSION_CODES.M)
   private fun currentDisplay(): Display? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
     activity.display

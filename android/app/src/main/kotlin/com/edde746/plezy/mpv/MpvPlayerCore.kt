@@ -656,12 +656,16 @@ class MpvPlayerCore private constructor(
       if (!audioOnly) {
         displayHdrSupported = DoviBridge.displaySupportsHdr(context)
         displayDvSupported = DoviBridge.displaySupportsDolbyVision(context)
-        emitLog("info", "display", "hdr=$displayHdrSupported dv=$displayDvSupported")
 
         frameRateManager = FrameRateManager(
           activity = activity,
           handler = handler,
           log = { emitLog("info", "framerate", it) }
+        )
+        emitLog(
+          "info",
+          "display",
+          "hdr=$displayHdrSupported dv=$displayDvSupported ${frameRateManager!!.describeDisplay()}"
         )
 
         surfaceContainer = PlayerSurfaceHost.createContainer(activity)

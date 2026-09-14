@@ -142,6 +142,77 @@ class DisplayModeSelectorTest {
     assertEquals(uhd30, selection?.mode)
   }
 
+  // --- Ranking among integer multiples ---
+
+  // A 120 Hz TV panel exposing a 48 Hz mode and no 23.976 one (#2255).
+  private val tv60 = ModeInfo(30, 1920, 1080, 60f)
+  private val tv48 = ModeInfo(31, 1920, 1080, 48f)
+  private val tv120 = ModeInfo(32, 1920, 1080, 120f)
+  private val tv24 = ModeInfo(33, 1920, 1080, 23.976f)
+  private val tv11988 = ModeInfo(34, 1920, 1080, 119.88f)
+
+  @Test
+  fun theHighestMultipleWinsWhenNoExactRateExists() {
+    // 48 is nearer to 2 x 23.976 than 120 is to 5x, but on a 120 Hz panel a
+    // 48 Hz mode is 2.5 refreshes per frame; 120 Hz is a whole 5:5.
+    val selection = select(23.976f, current = tv60, modes = listOf(tv60, tv48, tv120))
+    assertEquals(tv120, selection?.mode)
+  }
+
+  @Test
+  fun aCurrentCleanMultipleIsNotTradedForAnother() {
+    // Already at 120 Hz: 48 Hz's smaller error is not worth renegotiating
+    // the panel for the same cadence class.
+    val selection = select(23.976f, current = tv120, modes = listOf(tv60, tv48, tv120))
+    assertEquals(tv120, selection?.mode)
+    val stay = select(29.97f, current = tv60, modes = listOf(tv60, tv120))
+    assertEquals(tv60, stay?.mode)
+  }
+
+  @Test
+  fun anExactRateStillBeatsTheHighestMultiple() {
+    val selection = select(23.976f, current = tv60, modes = listOf(tv60, tv48, tv120, tv24))
+    assertEquals(tv24, selection?.mode)
+  }
+
+  @Test
+  fun theSmallerErrorSeparatesTheSameMultiple() {
+    val selection = select(23.976f, current = tv60, modes = listOf(tv60, tv120, tv11988))
+    assertEquals(tv11988, selection?.mode)
+  }
+
+  @Test
+  fun resolutionMatchingRanksMultiplesTheSameWay() {
+    val selection = select(
+      23.976f,
+      current = tv60,
+      modes = listOf(tv60, tv48, tv120, uhd60, uhd50),
+      videoWidth = 1920,
+      videoHeight = 1080,
+      matchResolution = true
+    )
+    assertEquals(tv120, selection?.mode)
+    val stay = select(
+      23.976f,
+      current = tv120,
+      modes = listOf(tv60, tv48, tv120),
+      videoWidth = 1920,
+      videoHeight = 1080,
+      matchResolution = true
+    )
+    assertEquals(tv120, stay?.mode)
+  }
+
+  @Test
+  fun cadenceTierTwoRanksMultiplesTheSameWay() {
+    // No 1080p multiple at all; both 4K multiples contain the video and
+    // share the resolution distance, so the higher rate wins.
+    val uhd48 = ModeInfo(35, 3840, 2160, 48f)
+    val uhd120 = ModeInfo(36, 3840, 2160, 120f)
+    val selection = select(23.976f, current = tv60, modes = listOf(tv60, uhd48, uhd120), videoWidth = 1920, videoHeight = 1080)
+    assertEquals(uhd120, selection?.mode)
+  }
+
   // --- Fractional cadence ---
 
   @Test
