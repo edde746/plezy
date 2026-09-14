@@ -13,8 +13,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private var mainBlankView: UIView?
   private var isVisible = false
   private static var activeDisplayCriteriaKey: String?
-  private var lastDisplayCriteriaMutation: DisplayCriteriaMutation = .skipped
   #if os(tvOS)
+    /// A `preferredDisplayCriteria` write (set or clear) not yet consumed by
+    /// `awaitDisplayModeSwitch`. Sticky on purpose: the file's commit lands at
+    /// PLAYBACK_RESTART, and the late observer deliveries that follow it run
+    /// dedup passes before Dart's wait arrives; "last pass wrote nothing" would
+    /// let that wait return before the switch has even started.
+    private var displayCriteriaWritePending = false
     private var displayModeSwitchWaiter: DisplayModeSwitchWaiter?
     private var displayModeSwitchWaiterGeneration = 0
   #endif
@@ -291,7 +296,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     colorMatrix: String?
   ) -> Bool {
     #if os(tvOS)
-      lastDisplayCriteriaMutation = .skipped
       guard let window = containerView?.window ?? self.window else { return false }
       let displayManager = window.avDisplayManager
 
@@ -365,7 +369,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       let criteriaKey =
         "\(displayRange.rawValue)|\(refreshRate)|\(width)x\(height)|\(doviProfile)|\(doviLevel)|\(doviCompatibilityId ?? -1)"
       if Self.activeDisplayCriteriaKey == criteriaKey && displayManager.preferredDisplayCriteria != nil {
-        lastDisplayCriteriaMutation = .unchanged
         return true
       }
 
@@ -375,7 +378,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       )
       displayManager.preferredDisplayCriteria = displayCriteria
       Self.activeDisplayCriteriaKey = criteriaKey
-      lastDisplayCriteriaMutation = .set
+      displayCriteriaWritePending = true
       Self.log(
         "preferredDisplayCriteria set to \(displayRange.rawValue) (source: \(sourceRange.rawValue), fps: \(refreshRate), \(width)x\(height), DV profile: \(doviProfile), level: \(doviLevel), compat: \(doviCompatibilityId ?? -1))"
       )
@@ -385,47 +388,21 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #endif
   }
 
-  func setServerDisplayCriteriaForPlayback(
-    _ criteria: ServerDisplayCriteria?,
-    extraDelayMs: Int,
-    completion: @escaping () -> Void
-  ) {
-    let apply = { [weak self] in
-      guard let self else {
-        completion()
-        return
-      }
-
-      self.setServerDisplayCriteria(criteria) { [weak self] applied in
-        guard let self else {
-          completion()
-          return
-        }
-
-        #if os(tvOS)
-          guard applied || self.lastDisplayCriteriaMutation == .cleared else {
-            completion()
-            return
-          }
-          self.waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
-        #else
-          completion()
-        #endif
-      }
-    }
-
-    if Thread.isMainThread {
-      apply()
-    } else {
-      DispatchQueue.main.async(execute: apply)
-    }
-  }
-
-  private enum DisplayCriteriaMutation {
-    case skipped
-    case unchanged
-    case set
-    case cleared
+  /// Completes once any HDMI mode switch triggered by the decoded stream's
+  /// display criteria has ended, plus settle and `extraDelayMs`. Dart calls
+  /// this after the first video frame of a newly opened file, while paused,
+  /// so playback resumes on the matched mode rather than mid-switch. Main
+  /// thread only; completes exactly once, promptly when nothing is pending.
+  func awaitDisplayModeSwitch(extraDelayMs: Int, completion: @escaping () -> Void) {
+    #if os(tvOS)
+      waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
+      // The waiter has consumed the pending write; a second call for the
+      // same file must not re-arm the start window for it. Resetting here
+      // (not on completion) keeps any write that lands during the wait.
+      displayCriteriaWritePending = false
+    #else
+      completion()
+    #endif
   }
 
   #if os(tvOS)
@@ -437,14 +414,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     private func clearDisplayCriteria(_ displayManager: AVDisplayManager, reason: String) {
-      if Self.activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil {
-        displayManager.preferredDisplayCriteria = nil
-        Self.activeDisplayCriteriaKey = nil
-        lastDisplayCriteriaMutation = .cleared
-        Self.log("preferredDisplayCriteria cleared (\(reason))")
-      } else {
-        lastDisplayCriteriaMutation = .unchanged
-      }
+      guard Self.activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil else { return }
+      displayManager.preferredDisplayCriteria = nil
+      Self.activeDisplayCriteriaKey = nil
+      displayCriteriaWritePending = true
+      Self.log("preferredDisplayCriteria cleared (\(reason))")
     }
 
     private func waitForDisplayModeSwitchIfNeeded(extraDelayMs: Int, completion: @escaping () -> Void) {
@@ -454,8 +428,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       }
 
       let displayManager = window.avDisplayManager
-      let mutation = lastDisplayCriteriaMutation
-      let shouldWaitForStart = mutation == .set || mutation == .cleared
+      let shouldWaitForStart = displayCriteriaWritePending
       if !shouldWaitForStart && !displayManager.isDisplayModeSwitchInProgress {
         completion()
         return
@@ -486,6 +459,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       private var startObserver: NSObjectProtocol?
       private var endObserver: NSObjectProtocol?
       private var startWatchdog: DispatchWorkItem?
+      private var endProbe: DispatchWorkItem?
       private var endWatchdog: DispatchWorkItem?
       private var settleWorkItem: DispatchWorkItem?
       private var finished = false
@@ -550,6 +524,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         if complete { completeOnce() }
       }
 
+      /// Entered once a switch is known to have begun: the start notification
+      /// arrived, or `isDisplayModeSwitchInProgress` read true. The flag lags
+      /// the start notification (measured 26 ms on tvOS 26 for a 2.5 s
+      /// switch), so it is not read here — doing so finished the wait before
+      /// the switch had begun and resumed playback into the HDMI blank. It is
+      /// trustworthy once settled: still false after the start window means
+      /// the switch ended before its end notification could be observed.
       private func beginWaitingForEnd(reason: String) {
         guard !finished else { return }
         startWatchdog?.cancel()
@@ -557,11 +538,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         if let startObserver {
           NotificationCenter.default.removeObserver(startObserver)
           self.startObserver = nil
-        }
-
-        guard displayManager?.isDisplayModeSwitchInProgress == true else {
-          finish(waited: true, reason: "ended before wait (\(reason))")
-          return
         }
 
         let center = NotificationCenter.default
@@ -572,6 +548,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         ) { [weak self] _ in
           self?.finish(waited: true, reason: "end notification")
         }
+
+        let probe = DispatchWorkItem { [weak self] in
+          guard let self, self.displayManager?.isDisplayModeSwitchInProgress != true else { return }
+          self.finish(waited: true, reason: "ended before wait (\(reason))")
+        }
+        endProbe = probe
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(Self.startWindowMs), execute: probe)
 
         let watchdog = DispatchWorkItem { [weak self] in
           self?.finish(waited: true, reason: "end watchdog")
@@ -611,9 +594,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
       private func cleanup() {
         startWatchdog?.cancel()
+        endProbe?.cancel()
         endWatchdog?.cancel()
         settleWorkItem?.cancel()
         startWatchdog = nil
+        endProbe = nil
         endWatchdog = nil
         settleWorkItem = nil
         if let startObserver {
@@ -817,26 +802,20 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     guard beginDisposal() else { return }
 
     #if os(tvOS)
+      // Between files the hint is held, not cleared (a torn-down stream says
+      // nothing about the next one), so leaving the player is what resets the
+      // link. Done synchronously while self is still alive and on main: an
+      // async-to-main dispatch here would be drained after dealloc (the plugin
+      // sets playerCore = nil right after this call returns), leaving the link
+      // stuck at the last clip's refresh rate. During video-to-video
+      // replacement, keep the hint so tvOS doesn't renegotiate back to default
+      // before the replacement route can set its next criteria.
       if preserveDisplayCriteria {
         Self.log("dispose preserving display criteria (key: \(Self.activeDisplayCriteriaKey ?? "nil"))")
+      } else if let window = containerView?.window ?? self.window {
+        clearDisplayCriteria(window.avDisplayManager, reason: "dispose")
       }
-    #endif
 
-    // Reset the HDMI mode hint synchronously while self is still alive
-    // and on main. An async-to-main dispatch here would be drained after
-    // dealloc (the plugin sets playerCore = nil right after this call
-    // returns), leaving the link stuck at the last clip's refresh rate.
-    // During video-to-video replacement, keep the hint so tvOS doesn't
-    // renegotiate back to default before the replacement route can set its
-    // next criteria.
-    if !preserveDisplayCriteria {
-      updateDisplayCriteria(
-        doviProfile: 0, doviLevel: 0, doviCompatibilityId: nil,
-        fps: 0, width: 0, height: 0, sigPeak: 0,
-        gamma: nil, primaries: nil, colorMatrix: nil)
-    }
-
-    #if os(tvOS)
       displayModeSwitchWaiter?.cancel(complete: true)
       displayModeSwitchWaiter = nil
     #endif

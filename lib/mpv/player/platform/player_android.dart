@@ -437,10 +437,17 @@ class PlayerAndroid extends PlayerBase {
         final stats = await getStats();
         final mode = stats['dvConversionDebugMode'];
         return mode?.toString().toLowerCase();
+      // ExoPlayer detects the rate from rendered frames (`videoFps`); its mpv
+      // fallback core reports mpv's own keys. Neither is observable, so the
+      // display-matching read goes through one stats round trip.
       case 'container-fps':
-        final fpsStats = await getStats();
-        final fps = fpsStats['videoFps'];
+        final stats = await getStats();
+        final fps = stats['container-fps'] ?? stats['videoFps'];
         return fps?.toString();
+      case 'estimated-vf-fps':
+      case 'deinterlace-active':
+        final stats = await getStats();
+        return stats[name]?.toString();
       case 'width':
       case 'dwidth':
         final stats = await getStats();

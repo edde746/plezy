@@ -205,9 +205,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       );
       _commitPlaybackSession(session);
 
-      // Primary refresh-rate path: when metadata provides FPS, Android players
-      // can switch before creating decoders. MPV still needs a startup refresh
-      // when MediaCodec has already produced its first paused frame.
+      // Display matching: mpv and Apple TV open paused and negotiate from the
+      // decoded stream at the first frame; ExoPlayer switches before creating
+      // its decoders when metadata provides an fps.
       final settingsService = await SettingsService.getInstance();
       if (!attempt.isCurrent) return;
       var audioFocusReady = false;
@@ -253,7 +253,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         ensureAudioFocus: ensureAudioFocus,
         clearFirstFrameForOpen: true,
         deferAutomotiveStart: true,
-        beforePrime: () async {
+        beforeColorHint: () async {
           // Request audio focus before starting playback (Android)
           // This causes other media apps (Spotify, podcasts, etc.) to pause.
           // Fired in parallel with MPV setup in `_initializePlayer`; we await

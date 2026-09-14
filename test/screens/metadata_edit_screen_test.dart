@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/focusable_tile_mixin.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -100,6 +102,42 @@ void main() {
     expect(_tileText('Use Original Title', 'Yes'), findsOneWidget);
     expect(requests.preferenceUpdatePayloads.last['useOriginalTitle'], '1');
     expect(requests.preferenceUpdatePayloads.map((payload) => payload['useOriginalTitle']), orderedEquals(['0', '1']));
+  });
+
+  testWidgets('D-pad arrows in a choice dialog move focus without committing a value', (tester) async {
+    final requests = _PlexMetadataRequests();
+    final harness = await _pumpEditor(tester, requests);
+    addTearDown(harness.dispose);
+
+    await _scrollToImmediateChoice(tester, 'Episode Sorting');
+    // Reach the row the way a remote does: a navigation key starts the keyboard
+    // session, then Select opens the picker with the current value focused.
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    tester
+        .state<FocusableTileStateMixin<FocusableListTile>>(_fieldTile('Episode Sorting'))
+        .effectiveFocusNode
+        .requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(_dialogOptionFocus(tester, 'Library default').hasPrimaryFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(_dialogOptionFocus(tester, 'Oldest first').hasPrimaryFocus, isTrue);
+    expect(requests.preferenceUpdateCalls, 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(_tileText('Episode Sorting', 'Newest first'), findsOneWidget);
+    expect(requests.preferenceUpdatePayloads.single['episodeSort'], '1');
   });
 
   testWidgets('immediate failure rolls back its value and re-enables controls', (tester) async {
@@ -277,6 +315,11 @@ Finder _tileText(String label, String value) {
   return find.descendant(of: _fieldTile(label), matching: find.text(value));
 }
 
+FocusNode _dialogOptionFocus(WidgetTester tester, String option) {
+  final tile = find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FocusableListTile, option));
+  return tester.state<FocusableTileStateMixin<FocusableListTile>>(tile).effectiveFocusNode;
+}
+
 Finder _artworkOption() {
   return find.descendant(of: find.byType(GridView), matching: find.byType(FocusableWrapper)).first;
 }
@@ -331,26 +374,28 @@ Future<_EditorHarness> _pumpEditor(WidgetTester tester, _PlexMetadataRequests re
   final metadata = ValueNotifier<MediaItem>(_show());
 
   await tester.pumpWidget(
-    TranslationProvider(
-      child: ChangeNotifierProvider<MultiServerProvider>.value(
-        value: provider,
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ValueListenableBuilder<MediaItem>(
-                          valueListenable: metadata,
-                          builder: (context, item, _) => MetadataEditScreen(metadata: item),
+    InputModeTracker(
+      child: TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => ValueListenableBuilder<MediaItem>(
+                            valueListenable: metadata,
+                            builder: (context, item, _) => MetadataEditScreen(metadata: item),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  child: const Text('Open editor'),
+                      );
+                    },
+                    child: const Text('Open editor'),
+                  ),
                 ),
               ),
             ),

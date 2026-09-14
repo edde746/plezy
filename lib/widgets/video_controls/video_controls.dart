@@ -1360,7 +1360,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       onSeekCompleted: widget.onSeekCompleted,
                                                       onPlayPause: () => unawaited(_playOrPause()),
                                                       onCancelAutoHide: widget.chromeController.cancelAutoHide,
-                                                      onStartAutoHide: widget.chromeController.startAutoHide,
+                                                      onStartAutoHide: _startHideTimer,
                                                       onBack: widget.onBack,
                                                       onNext: _abandoningBurst(widget.onNext),
                                                       onPrevious: _abandoningBurst(widget.onPrevious),

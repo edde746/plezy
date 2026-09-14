@@ -21,7 +21,7 @@ add_library(
 set_target_properties(
         mpv
         PROPERTIES IMPORTED_LOCATION
-        ${MPV_PREBUILT_ROOT}/jni/${ANDROID_ABI}/libmpv.so
+        ${MPV_PREBUILT_ROOT}/imported/${ANDROID_ABI}/libmpv.so
 )
 
 # av_jni_set_java_vm / av_jni_set_android_app_ctx (main.cpp) live in FFmpeg's
@@ -35,7 +35,7 @@ add_library(
 set_target_properties(
         avcodec
         PROPERTIES IMPORTED_LOCATION
-        ${MPV_PREBUILT_ROOT}/jni/${ANDROID_ABI}/libavcodec.so
+        ${MPV_PREBUILT_ROOT}/imported/${ANDROID_ABI}/libavcodec.so
 )
 
 # mpv public headers ride in the extracted tarballs next to libmpv.so; the

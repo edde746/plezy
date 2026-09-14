@@ -57,4 +57,25 @@ void main() {
       expect(matcher.suppressesMediaPause, isFalse);
     });
   });
+
+  test('a newer open abandons the pending first-frame hold instead of releasing it', () async {
+    final matcher = FrameRateMatcher();
+    final token = matcher.beginDisplayNegotiation();
+    final hold = matcher.displayNegotiation!;
+
+    // A reload resets per-item state while the old gate is still switching.
+    matcher.resetForNewItem();
+    expect(await hold, isFalse, reason: 'the old item must not reveal the new item\'s frame');
+    expect(matcher.displayNegotiation, isNull);
+
+    final next = matcher.beginDisplayNegotiation();
+    final nextHold = matcher.displayNegotiation!;
+    // The old gate finishing late cannot release the new item's hold.
+    matcher.endDisplayNegotiation(token);
+    expect(matcher.displayNegotiation, same(nextHold));
+    matcher.endDisplayNegotiation(next);
+    expect(await nextHold, isTrue);
+    expect(matcher.displayNegotiation, isNull);
+    matcher.dispose();
+  });
 }

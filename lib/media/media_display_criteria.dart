@@ -58,8 +58,12 @@ MediaDisplayColorType classifyMediaDisplayColor({
   return MediaDisplayColorType.unknown;
 }
 
-/// Backend-neutral display metadata used to prime native display matching
-/// before the decoder has emitted mpv/video properties.
+/// Backend-neutral description of a source's video stream as the server
+/// reports it. Display matching itself reads the decoded stream from mpv
+/// (server metadata is missing or wrong for transcodes and Live TV, and
+/// cannot see what the filter chain does to the rate); this feeds the HDR
+/// classification of stream details and ExoPlayer's pre-open switch, which
+/// has no decoded stream to read before it creates its renderers.
 class MediaDisplayCriteria {
   final double? fps;
   final int? width;
@@ -114,7 +118,9 @@ class MediaDisplayCriteria {
   bool get hasDisplayMetadata =>
       (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
 
-  bool get canPrimeNativeDisplayCriteria => hasDimensions && (hasDisplayMetadata || hasFrameRate);
+  /// Whether the server said enough to describe a stream: a rate, or
+  /// dimensions plus color/DoVi tags.
+  bool get isUsable => hasFrameRate || (hasDimensions && hasDisplayMetadata);
 
   MediaDisplayColorType get colorType => classifyMediaDisplayColor(
     isDolbyVision: (doviProfile ?? 0) > 0,
@@ -125,26 +131,6 @@ class MediaDisplayCriteria {
   );
 
   bool get isHdr => colorType.isHdr;
-
-  bool get isUsable => hasFrameRate || canPrimeNativeDisplayCriteria;
-
-  Map<String, Object> toJson() {
-    final json = <String, Object>{};
-    void put(String key, Object? value) {
-      if (value != null) json[key] = value;
-    }
-
-    put('fps', fps);
-    put('width', width);
-    put('height', height);
-    put('doviProfile', doviProfile);
-    put('doviLevel', doviLevel);
-    put('doviCompatibilityId', doviCompatibilityId);
-    put('transfer', transfer);
-    put('primaries', primaries);
-    put('matrix', matrix);
-    return json;
-  }
 }
 
 String? _stringOrNull(Object? value) {

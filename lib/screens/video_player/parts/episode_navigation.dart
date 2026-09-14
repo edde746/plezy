@@ -85,13 +85,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     _mediaControls.pushPlaybackState();
   }
 
-  /// Replace this screen with a fresh player route — the fallback for flows
-  /// the in-place reload cannot serve. Marks the screen as being replaced so
-  /// dispose skips the app-level player-exit side effects the replacement
-  /// route takes over (WT host-exit notify, sleep timer, system UI restore,
-  /// display mode).
+  /// Replace this screen when an in-place reload cannot serve the new item.
+  /// The route commit owns player-to-player teardown semantics.
   Future<void> _replaceScreenWithPlayer(MediaItem metadata, {WatchPlaybackLease? watchTogetherLease}) async {
-    _isReplacingWithVideo = true; // before any await — dispose can run mid-helper
     watchTogetherLease ??= _activeWatchTogetherSession()?.capturePlaybackLease(selection: true);
     try {
       await navigateToVideoPlayer(
@@ -102,10 +98,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         watchTogetherLease: watchTogetherLease,
       );
     } finally {
-      // Still mounted ⇒ no push happened (external-player branch or a
-      // throw): this screen stays, so restore normal-exit semantics.
+      // No route commit (external player or failure): keep this screen usable.
       if (mounted) {
-        _isReplacingWithVideo = false;
         _clearEpisodeLoadingFlags();
       }
     }

@@ -61,11 +61,12 @@ plugins {
 // The in-project :libmpv module owns the mpv-build pin (repo-root
 // mpv-build.lock.json assets + checksums, plus the plezy.localMpvDir/
 // PLEZY_LOCAL_MPV_DIR escape hatch) and extracts the per-ABI tarballs'
-// prebuilt native libraries. This file reads two of its output trees
-// back: FFmpeg .so files for the Media3 adapter link step, and the libc++
-// runtime packaged at PROJECT scope below.
+// prebuilt native libraries. This file reads FFmpeg .so files from both native
+// output trees for the Media3 adapter link step, and packages the libc++ runtime
+// at PROJECT scope below.
 val libmpvBuildDir = project(":libmpv").layout.buildDirectory.dir("libmpv").get().asFile
 val libmpvNativeJniDir = File(libmpvBuildDir, "native/jni")
+val libmpvNativeImportedDir = File(libmpvBuildDir, "native/imported")
 val libmpvLibcxxJniDir = File(libmpvBuildDir, "libcxx/jni")
 
 val media3Version = "1.11.0"
@@ -83,6 +84,7 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
   val abis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
   val libraries = listOf("avcodec", "avutil", "swresample")
   inputs.dir(libmpvNativeJniDir)
+  inputs.dir(libmpvNativeImportedDir)
   inputs.property("ffmpegVersion", mpvFfmpegVersion)
   inputs.property("sourceUrl", mpvFfmpegSourceUrl)
   inputs.property("sourceSha256", mpvFfmpegSourceSha256)
@@ -152,9 +154,11 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       )
 
       project.copy {
+        from(libmpvNativeImportedDir) {
+          include("*/libavcodec.so")
+        }
         from(libmpvNativeJniDir) {
           include(
-            "*/libavcodec.so",
             "*/libavutil.so",
             "*/libswresample.so"
           )

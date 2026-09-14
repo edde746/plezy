@@ -81,7 +81,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     widget.chromeController.hide();
   }
 
-  void _startHideTimer() => widget.chromeController.startAutoHide();
+  void _startHideTimer() {
+    // Sheet completion can arrive after the controls and their route retire.
+    if (!mounted) return;
+    widget.chromeController.startAutoHide();
+  }
 
   /// Restart the hide timer on user interaction for the current playback state.
   void _restartHideTimerForCurrentPlaybackState() => widget.chromeController.restartAutoHideForCurrentPlaybackState();

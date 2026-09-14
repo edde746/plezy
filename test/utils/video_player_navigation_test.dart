@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 
@@ -8,20 +10,83 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
+import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/mock_player_channels.dart';
+import '../test_helpers/pump.dart';
 
 void main() {
-  test('VOD and Live TV route contract is opaque, named, and transition-free', () {
-    final route = buildVideoPlayerRoute(builder: (_) => const SizedBox());
+  testWidgets('replacement releases the native owner and Back never exposes an abandoned player', (tester) async {
+    final navigator = GlobalKey<NavigatorState>();
+    final pages = <_PlaybackPageState>[];
+    int? nativeOwner;
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') {
+          if (nativeOwner != null) throw PlatformException(code: 'owner_still_active');
+          nativeOwner = (call.arguments as Map)['instanceId'] as int;
+          return true;
+        }
+        if (call.method == 'dispose') {
+          if (nativeOwner == (call.arguments as Map)['instanceId']) nativeOwner = null;
+        }
+        return null;
+      },
+      testBody: () async {
+        Future<bool?> launch(String name) => VideoPlayerRoute(
+          builder: (_) => _PlaybackPage(name: name, onCreate: pages.add),
+        ).push(navigator.currentState!);
 
-    expect(route.settings.name, kVideoPlayerRouteName);
-    expect(route.opaque, isTrue);
-    expect(route.transitionDuration, Duration.zero);
-    expect(route.reverseTransitionDuration, Duration.zero);
+        try {
+          await tester.pumpWidget(
+            MaterialApp(
+              navigatorKey: navigator,
+              home: const Scaffold(body: Text('Browse')),
+            ),
+          );
+          final first = launch('First');
+          await pumpUntil(tester, () => find.text('First ready').evaluate().isNotEmpty);
+
+          unawaited(launch('Second'));
+          await pumpUntil(tester, () => find.text('Second ready').evaluate().isNotEmpty);
+          expect(await first, isTrue, reason: 'the original caller must refresh its watch state after replacement');
+          expect(find.byType(_PlaybackPage, skipOffstage: false), findsOneWidget);
+
+          // A settings/detail route above the player is not ours to remove.
+          unawaited(
+            navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Cover')))),
+          );
+          await tester.pumpAndSettle();
+          unawaited(launch('Third'));
+          await pumpUntil(tester, () => find.text('Third ready').evaluate().isNotEmpty);
+          expect(find.byType(_PlaybackPage, skipOffstage: false), findsOneWidget);
+
+          // Neither incoming page has reached initState at the second commit.
+          unawaited(launch('Superseded'));
+          unawaited(launch('Latest'));
+          await pumpUntil(tester, () => find.text('Latest ready').evaluate().isNotEmpty);
+          expect(find.byType(_PlaybackPage, skipOffstage: false), findsOneWidget);
+
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+          expect(find.text('Cover'), findsOneWidget);
+          expect(find.byType(_PlaybackPage, skipOffstage: false), findsNothing);
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+          expect(find.text('Browse'), findsOneWidget);
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await pumpUntil(tester, () => pages.every((page) => page.retired));
+        }
+        expect(nativeOwner, isNull);
+      },
+    );
   });
 
   group('video player launch identity', () {
@@ -228,4 +293,46 @@ void main() {
       expect(await resolveSavedMediaVersionFor(episode), isNull);
     });
   });
+}
+
+/// A route-owned real Dart player: native calls are mocked, but ownership
+/// acquisition, event-channel handoff and asynchronous disposal are not.
+class _PlaybackPage extends StatefulWidget {
+  const _PlaybackPage({required this.name, required this.onCreate});
+
+  final String name;
+  final ValueChanged<_PlaybackPageState> onCreate;
+
+  @override
+  State<_PlaybackPage> createState() => _PlaybackPageState();
+}
+
+class _PlaybackPageState extends State<_PlaybackPage> {
+  late final PlayerNative player;
+  String status = 'loading';
+  bool retired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    player = PlayerNative();
+    widget.onCreate(this);
+    unawaited(() async {
+      try {
+        await player.setProperty('pause', 'no');
+        if (mounted) setState(() => status = 'ready');
+      } catch (_) {
+        if (mounted) setState(() => status = 'failed');
+      }
+    }());
+  }
+
+  @override
+  void dispose() {
+    unawaited(player.dispose().whenComplete(() => retired = true));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(body: Text('${widget.name} $status'));
 }

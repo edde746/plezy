@@ -78,6 +78,7 @@ import 'database/download_operations.dart';
 import 'database/tvos_database_recovery_store.dart';
 import 'screens/video_player_screen.dart';
 import 'utils/app_logger.dart';
+import 'utils/certificate_trust.dart';
 import 'utils/managed_http_client.dart';
 import 'utils/media_server_http_client.dart';
 import 'utils/orientation_helper.dart';
@@ -900,6 +901,10 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
   }
 
   AppDatabase? openedDatabase;
+  // Started first so the store walk overlaps the phases below. Every request
+  // to a user-entered server verifies against the result, so it is awaited
+  // before any client can exist (#2339); the load itself never throws.
+  final userAuthorities = Platform.isAndroid ? CertificateTrust.loadUserAuthorities() : null;
   try {
     // Slang builds the base locale eagerly, so `t` already resolves before
     // this runs; a failure here degrades to English rather than no app.
@@ -930,6 +935,10 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
         VideoDecodeCapabilities.getInstance(),
       ).wait;
     });
+
+    if (userAuthorities != null) {
+      await _optionalGatePhase(StartupPhase.certificateTrust, () => userAuthorities);
+    }
 
     final storage = await _gatePhase(StartupPhase.storage, StorageService.getInstance);
     markStartupPhase('platform-services');

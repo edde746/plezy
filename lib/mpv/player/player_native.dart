@@ -5,7 +5,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
-import '../../media/media_display_criteria.dart';
 import '../../services/device_performance.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
@@ -201,36 +200,6 @@ class PlayerNative extends PlayerBase {
         .map((e) => 'http-header-fields-append=${_fixedLengthQuote('${e.key}: ${e.value}')}')
         .join(',');
     return 'http-header-fields-clr=,$appends';
-  }
-
-  MediaDisplayCriteria? _effectiveDisplayCriteria(MediaDisplayCriteria? criteria) {
-    if (criteria == null || (criteria.doviProfile ?? 0) != 7) return criteria;
-
-    final convertToDv81 = _dvConversionMode == 'auto' || _dvConversionMode == 'dv81';
-    if (convertToDv81) {
-      return MediaDisplayCriteria(
-        fps: criteria.fps,
-        width: criteria.width,
-        height: criteria.height,
-        doviProfile: 8,
-        doviLevel: criteria.doviLevel,
-        doviCompatibilityId: 1,
-        transfer: criteria.transfer ?? 'smpte2084',
-        primaries: criteria.primaries ?? 'bt2020',
-        matrix: criteria.matrix ?? 'bt2020nc',
-      );
-    }
-
-    return MediaDisplayCriteria(
-      fps: criteria.fps,
-      width: criteria.width,
-      height: criteria.height,
-      doviProfile: 0,
-      doviCompatibilityId: criteria.doviCompatibilityId ?? 1,
-      transfer: criteria.transfer ?? 'smpte2084',
-      primaries: criteria.primaries ?? 'bt2020',
-      matrix: criteria.matrix ?? 'bt2020nc',
-    );
   }
 
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
@@ -923,13 +892,10 @@ class PlayerNative extends PlayerBase {
   bool get needsDecoderRefreshAfterDisplaySwitch => Platform.isAndroid;
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {
     if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('setDisplayCriteria', {
-      'criteria': _effectiveDisplayCriteria(criteria)?.toJson(),
-      'extraDelayMs': extraDelayMs,
-    });
+    await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs});
   }
 
   @override

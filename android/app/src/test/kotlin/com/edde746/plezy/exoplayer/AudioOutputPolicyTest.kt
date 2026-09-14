@@ -1,5 +1,6 @@
 package com.edde746.plezy.exoplayer
 
+import android.media.AudioManager
 import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import org.junit.Assert.assertEquals
@@ -304,6 +305,24 @@ class AudioOutputPolicyTest {
         )
       )
     }
+  }
+
+  @Test
+  fun rawTrackAcceptsAnOffloadFlaggedRouteWhereAnIecShapeDoesNot() {
+    // #2333's TCL C8K declares its only encoded-format port DIRECT|COMPRESS_OFFLOAD, so
+    // getDirectPlaybackSupport answers offload-only for the port ExoPlayer bitstreams E-AC3
+    // through. The raw AC3/E-AC3/DTS tracks open on that port; the IEC shapes keep demanding
+    // the bitstream bit (raw TrueHD behind #1804 reported offload-only and never drained).
+    val offloadOnly = AudioManager.DIRECT_PLAYBACK_OFFLOAD_GAPLESS_SUPPORTED
+    assertTrue(rawTrackDirectModeUsable(offloadOnly))
+    assertFalse(iecShapeDirectModeUsable(offloadOnly))
+
+    val bitstream = AudioManager.DIRECT_PLAYBACK_BITSTREAM_SUPPORTED or AudioManager.DIRECT_PLAYBACK_OFFLOAD_SUPPORTED
+    assertTrue(rawTrackDirectModeUsable(bitstream))
+    assertTrue(iecShapeDirectModeUsable(bitstream))
+
+    assertFalse(rawTrackDirectModeUsable(AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED))
+    assertFalse(iecShapeDirectModeUsable(AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED))
   }
 
   /** Every encoding the spdif table can ask for, i.e. a receiver that decodes all of them. */

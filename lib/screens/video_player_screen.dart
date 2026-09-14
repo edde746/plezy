@@ -93,6 +93,7 @@ import 'video_player/completion_latch.dart';
 import 'video_player/episode_session_state.dart';
 import 'video_player/first_frame_gate.dart';
 import 'video_player/frame_rate_matcher.dart';
+import 'video_player/player_output_format.dart';
 import 'video_player/companion_remote_binding.dart';
 import 'video_player/media_controls_screen_controller.dart';
 import 'video_player/media_reload_outcome.dart';
@@ -652,10 +653,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return [for (final subscription in subscriptions) subscription.cancel()];
   }
 
-  /// Set just before this screen replaces itself with another player route
-  /// (the fallback pushReplacement paths). Dispose then skips the app-level
-  /// player-exit side effects because the replacement continues the session.
-  bool _isReplacingWithVideo = false;
+  VideoPlayerRoute? _videoPlayerRoute;
+  bool get _isReplacingWithVideo => _videoPlayerRoute?.isReplacingWithVideo ?? false;
   ScrubPreviewSource? _scrubPreviewSource;
 
   /// Live TV session state (tune identity, heartbeats, capture buffer,
@@ -1061,6 +1060,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   void initState() {
     super.initState();
     PlaybackCoordinator.instance.registerVideoSession(shutdown: _shutdownVideo, stopAndExit: _stopVideoAndExit);
+    SleepTimerService().bindPlayback(
+      owner: this,
+      onComplete: () {
+        final currentPlayer = player;
+        if (mounted && !_shuttingDown && currentPlayer != null) {
+          unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        }
+      },
+    );
     final launchLease = widget.watchTogetherLease;
     if (launchLease != null) {
       final watchTogether = context.read<WatchTogetherProvider?>();
@@ -1263,6 +1271,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    _videoPlayerRoute = route is VideoPlayerRoute ? route : null;
 
     // Update video filter when dependencies change (orientation, screen size, etc.)
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1845,7 +1855,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() => _isPlayerInitialized = true);
 
         // Restart sleep timer if we're starting a new playback session
-        SleepTimerService().restartIfNeeded(() => unawaited(_pauseWithPlaybackIntent(currentPlayer)));
+        SleepTimerService().restartIfNeeded();
 
         // Enable wakelock to prevent screen from turning off during playback
         unawaited(_wakelockController.setEnabled(true));
@@ -2104,7 +2114,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }(),
     );
     widget.launchObserver?.detach();
-    unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.mainScreen));
     _playerInitializationGeneration++;
     _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -2115,7 +2124,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _companionRemote.unbind();
 
     final isReplacingWithVideo = _isReplacingWithVideo;
-    _detachFromWatchTogetherSession(exiting: !isReplacingWithVideo);
+    final successorLease = _videoPlayerRoute?.replacementWatchTogetherLease;
+    final continuesWatchTogether =
+        successorLease != null && _watchTogetherProvider?.isPlaybackLeaseCurrent(successorLease) == true;
+    _detachFromWatchTogetherSession(exiting: !continuesWatchTogether);
 
     // Snapshot while reporting readiness and the committed tracker still
     // belong to this route. The coalesced report owns its asynchronous work
@@ -2147,9 +2159,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     _scrubPreviewSource?.dispose();
 
-    if (!isReplacingWithVideo) {
-      SleepTimerService().markNeedsRestart();
-    }
+    SleepTimerService().unbindPlayback(this);
 
     // Teardown scope: every subscription the screen ever owns, including the
     // initState-owned sleep-timer and Apple TV ones that the rollback path
@@ -2249,7 +2259,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // player→player handoff; the replacement screen primes its own.
       _nativeDisposal = playerToDispose.dispose(preserveDisplayMode: isReplacingWithVideo);
     }
-    _activeRouteGuard.clear(this);
+    if (_activeRouteGuard.clear(this)) {
+      unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.mainScreen));
+    }
     super.dispose();
     _routeDisposed.complete();
   }

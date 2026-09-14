@@ -1,6 +1,5 @@
 import 'dart:io' show Platform;
 
-import '../../media/media_display_criteria.dart';
 import '../../media/playback_rate.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
@@ -205,12 +204,12 @@ abstract class Player {
   /// [args] - Command and arguments as a list of strings.
   Future<void> command(List<String> args);
 
-  /// Prime native display matching from server metadata before the decoder
-  /// emits stream properties. Unsupported platforms ignore this.
-  ///
-  /// [extraDelayMs] is added after a native display-switch completion event,
-  /// for TVs or AVRs that need extra HDMI settle time.
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0});
+  /// Wait out a display-mode switch the decoded stream triggered. On Apple
+  /// TV the native core hands mpv's stream properties to AVDisplayManager as
+  /// they arrive; this resolves once the resulting HDMI mode switch (if any)
+  /// has ended, plus the settle and [extraDelayMs] for TVs or AVRs that need
+  /// extra time. Immediate on every other platform.
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0});
 
   /// Configure subtitle fonts for libass rendering.
   ///

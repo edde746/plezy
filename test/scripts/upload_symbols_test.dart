@@ -124,7 +124,7 @@ void main() {
 
   test('packaged identities exclude unshipped ABI, stale intermediates and mixed targets', () async {
     android();
-    final rich = put('build/libmpv/libmpv/native/jni/arm64-v8a/libmpv.so', elf(30));
+    final rich = put('build/libmpv/libmpv/native/imported/arm64-v8a/libmpv.so', elf(30));
     put(
       'build/app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib/x86_64/libmpv.so',
       elf(40, machine: 62),

@@ -327,6 +327,7 @@ Future<SymbolPlan> createSymbolPlan(
     nativeRoots.addAll([
       (path.join(build, 'app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib'), 30),
       (path.join(build, 'libmpv/libmpv/native/jni'), 20),
+      (path.join(build, 'libmpv/libmpv/native/imported'), 20),
       (path.join(build, 'libmpv/libmpv/libcxx/jni'), 20),
     ]);
   } else if (platform.startsWith('linux-') || platform.startsWith('windows-')) {
