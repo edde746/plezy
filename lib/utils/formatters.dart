@@ -63,7 +63,7 @@ String formatDurationTextual(int milliseconds, {bool abbreviated = true}) {
     locale: durationLocale,
     delimiter: abbreviated ? ' ' : ', ',
     spacer: '',
-    tersity: DurationTersity.minute,
+    tersity: duration.inMinutes == 0 ? DurationTersity.second : DurationTersity.minute,
   );
 }
 
