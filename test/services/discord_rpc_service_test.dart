@@ -268,7 +268,7 @@ void main() {
       });
     });
 
-    test('a paused video keeps its card without a progress bar', () {
+    test('a paused video withdraws the card and resume brings it back', () {
       fakeAsync((async) {
         final rpcService = connectedService(async);
         final client = clients.single;
@@ -276,12 +276,20 @@ void main() {
 
         unawaited(rpcService.startPlayback(movie, _NoopClient()));
         async.flushMicrotasks();
+        expect(client.presences.single.details, 'Heat');
+
         unawaited(rpcService.pausePlayback());
         async.flushMicrotasks();
 
-        expect(client.clearPresenceCalls, 0);
+        // The card posted while playing stays a single log entry; pause
+        // withdraws it instead of re-posting a timer-less card.
+        expect(client.presences, hasLength(1));
+        expect(client.clearPresenceCalls, isPositive);
+
+        unawaited(rpcService.resumePlayback());
+        async.flushMicrotasks();
         expect(client.presences.last.details, 'Heat');
-        expect(client.presences.last.timestamps, isNull);
+        expect(client.presences.last.timestamps, isNotNull);
 
         unawaited(rpcService.dispose());
         async.flushMicrotasks();
