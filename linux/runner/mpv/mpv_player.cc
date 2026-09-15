@@ -1126,7 +1126,11 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
       if (!msg) break;
-      g_message("MPV [%s] %s: %s", msg->level, msg->prefix, msg->text);
+      // No journald mirror here: the record is forwarded to Dart below, where
+      // LogRedactionManager scrubs tokens and server URLs before it reaches
+      // the app log. A g_message() copy would put mpv's unredacted
+      // "Playing: <url>" - token and all - into the system journal, and at the
+      // "info" level this runner requests that is every line mpv emits.
 
       FlValue* data = fl_value_new_map();
       fl_value_set_string_take(data, "prefix", fl_value_new_string(SanitizeUtf8(msg->prefix).c_str()));
