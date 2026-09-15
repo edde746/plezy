@@ -1628,18 +1628,15 @@ class MpvPlayerCore private constructor(
   }
 
   /**
-   * Runs [block] — a `vo` write, which makes mpv rebuild the video chain —
-   * with the video track parked when [GpuVoPolicy.needsParkedRebuild] says
-   * the decoder must not be re-created inside the rebuild. Deselecting closes
-   * the decoder synchronously before the rebuild starts; re-selecting
-   * afterwards creates the next instance against the finished output.
-   * Measured on a Pixel 7: 30 consecutive ambient-lighting rebuilds without a
-   * vendor-service death, where the unparked rebuild killed it on the first
-   * try. [p] may be null before init, when there is nothing to park.
-   *
-   * Only the vo switch rebuilds. A surface handoff is absorbed by the fork
-   * vo in place (`VOCTRL_SET_WINDOW_ID` repoints the running decoder), so
-   * neither the chain nor the decoder is touched there.
+   * Runs [block] — a `vo` write, or a surface handoff under a GL renderer,
+   * each of which makes mpv rebuild the video chain — with the video track
+   * parked when [GpuVoPolicy.needsParkedRebuild] says the decoder must not
+   * be re-created inside the rebuild. Deselecting closes the decoder
+   * synchronously before the rebuild starts; re-selecting afterwards creates
+   * the next instance against the finished output. Measured on a Pixel 7:
+   * 30 consecutive ambient-lighting rebuilds without a vendor-service death,
+   * where the unparked rebuild killed it on the first try. [p] may be null
+   * before init, when there is nothing to park.
    *
    * mpv resyncs an unparked rebuild itself with an exact relative seek
    * (`command.c`, `UPDATE_VO`): audio and video restart together. With the
@@ -1664,6 +1661,21 @@ class MpvPlayerCore private constructor(
       writeProperty("vid", vid.toString())
       runCommand("seek", "0", "relative", "exact")
     }
+  }
+
+  /**
+   * A surface handoff — lock, unlock, screensaver, PiP. On the plane
+   * (`vo=mediacodec`) the fork vo repoints the running decoder at the new
+   * Surface in place (`VOCTRL_SET_WINDOW_ID`): nothing is rebuilt, nothing to
+   * park. Under a GL renderer (ambient lighting, shaders) the same `wid`
+   * write is still mpv's chain rebuild, decoder included, so it runs through
+   * [rebuildVideoOutput]: unparked, the lock/unlock cycle re-created the
+   * BigOcean AV1 decoder against its dying predecessor, the codec errored
+   * out (`flush failed, -10000`) and the session fell to mediacodec-copy —
+   * the green line from #2272, back under ambient lighting (#2361).
+   */
+  private suspend fun handOffSurfaces(p: MpvPlayer, video: Surface, osd: Surface?) {
+    if (appliedGpuVoTarget == null) attachSurfaces(p, video, osd) else rebuildVideoOutput(p) { attachSurfaces(p, video, osd) }
   }
 
   private suspend fun needsParkedRebuild(p: MpvPlayer): Boolean {
@@ -1919,7 +1931,7 @@ class MpvPlayerCore private constructor(
           val wasAttachedToPlaceholder = attachedToPlaceholder
           val wasPausedForSurfaceLoss = pausedForSurfaceLoss
           if (needsAttach) {
-            attachSurfaces(p, surface, osd)
+            handOffSurfaces(p, surface, osd)
             attachedOsdSurface = osd
             attachedSurface = surface
             hasAttachedSurface = true
@@ -2044,7 +2056,7 @@ class MpvPlayerCore private constructor(
             }
           }
           if (attachedSurface !== target || attachedOsdSurface !== osd) {
-            attachSurfaces(p, target, osd)
+            handOffSurfaces(p, target, osd)
           }
           attachedSurface = target
           attachedOsdSurface = osd
