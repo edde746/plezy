@@ -272,34 +272,18 @@ void main() {
   });
 
   group('PerformanceStatsService dropped frames', () {
-    // The fork's vo=mediacodec declares prepare_frame, so mpv admits frames a
-    // preparation lead before their pts and `frame-drop-count` can never
-    // reach vo.c's `end_time < now` condition. A confident 0 there sent
-    // reporters of visible stutter looking in the wrong place.
-    test('the mediacodec VO cannot count drops, so the overlay says N/A', () async {
+    test('sums the VO and decoder counts from the native stats', () async {
       final stats = await _firstStats(
-        _NativeStatsPlayer({
-          'playerType': 'mpv',
-          'current-vo': 'mediacodec',
-          'frame-drop-count': '0',
-          'decoder-frame-drop-count': '0',
-        }),
-      );
-
-      expect(stats.droppedFramesFormatted, 'N/A');
-    });
-
-    test("a GL VO keeps reporting mpv's real count", () async {
-      final stats = await _firstStats(
-        _NativeStatsPlayer({
-          'playerType': 'mpv',
-          'current-vo': 'gpu',
-          'frame-drop-count': '7',
-          'decoder-frame-drop-count': '2',
-        }),
+        _NativeStatsPlayer({'playerType': 'mpv', 'frame-drop-count': '7', 'decoder-frame-drop-count': '2'}),
       );
 
       expect(stats.droppedFramesFormatted, '9');
+    });
+
+    test('a count the sweep could not read is not a drop', () async {
+      final stats = await _firstStats(_NativeStatsPlayer({'playerType': 'mpv', 'frame-drop-count': '4'}));
+
+      expect(stats.droppedFramesFormatted, '4');
     });
 
     test('the desktop property path is unaffected', () async {

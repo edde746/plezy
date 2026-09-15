@@ -171,9 +171,12 @@ class FrameRateManagerSwitchTest {
   }
 
   @Test
-  fun aPanelAlreadyOnACleanMultipleIsNotRenegotiated() {
+  fun aPanelAlreadyOnACleanMultipleIsPinnedWithoutRenegotiation() {
     // A 120 Hz panel showing 23.976 fps as 5:5 keeps its mode: the 48 Hz mode's
-    // smaller multiplication error is not a better cadence (#2255).
+    // smaller multiplication error is not a better cadence (#2255). The mode
+    // is still requested, so the platform's own refresh policy cannot leave
+    // it mid-playback (#2361); the request completes at once, unswitched,
+    // and the restore hands the default back as after a real switch.
     val panel120 = mode(6, 1920, 1080, 120f)
     val panel48 = mode(7, 1920, 1080, 48f)
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
@@ -181,7 +184,10 @@ class FrameRateManagerSwitchTest {
     val manager = buildManager(activity)
 
     request(manager, 23.976f)
-    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
+    assertEquals(panel120.modeId, activity.window.attributes.preferredDisplayModeId)
     assertEquals(listOf(false), completions)
+
+    manager.clearVideoFrameRate()
+    assertEquals(0, activity.window.attributes.preferredDisplayModeId)
   }
 }
