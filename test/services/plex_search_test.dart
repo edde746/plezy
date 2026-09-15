@@ -27,7 +27,7 @@ void main() {
   PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
       testPlexClient(serverId: ServerId('plex-1'), serverName: 'Plex', handler: handler);
 
-  test('search defaults to 100 movie, TV, and music candidates', () async {
+  test('search defaults to 100 movie, TV, music, and personal-media candidates', () async {
     final captured = <Uri>[];
     final client = makeClient((request) async {
       captured.add(request.url);
@@ -54,7 +54,37 @@ void main() {
     expect(captured.single.path, '/library/search');
     expect(captured.single.queryParameters['limit'], '100');
     expect(captured.single.queryParameters['X-Plex-Container-Size'], '100');
-    expect(captured.single.queryParameters['searchTypes'], 'movies,tv,music');
+    expect(captured.single.queryParameters['searchTypes'], 'movies,tv,music,otherVideos');
+  });
+
+  test('personal media rows are kept as movies', () async {
+    // PMS answers `otherVideos` with `type: movie, subtype: clip` rows whose
+    // guid names the Personal Media agent instead of a metadata provider.
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/search') return http.Response('unexpected request', 500);
+      return _json({
+        'MediaContainer': {
+          'SearchResult': [
+            {
+              'score': 0.53,
+              'Metadata': {
+                'ratingKey': '8964',
+                'guid': 'tv.plex.agents.none://8964',
+                'type': 'movie',
+                'subtype': 'clip',
+                'title': '2004 Family',
+                'librarySectionTitle': 'Home Videos',
+              },
+            },
+          ],
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    final results = await client.searchItems('2004');
+
+    expect(results.map((item) => item.id), ['8964']);
   });
 
   test('search rows carry their library so hidden libraries can be filtered', () async {
@@ -118,7 +148,7 @@ void main() {
       captured.add(request.url);
       final searchTypes = request.url.queryParameters['searchTypes'];
       final searchResults = switch (searchTypes) {
-        'movies,tv,music' => primaryResults,
+        'movies,tv,music,otherVideos' => primaryResults,
         'tv' => [
           {
             'score': 100,
@@ -135,6 +165,17 @@ void main() {
             'Metadata': {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Target'},
           },
         ],
+        'otherVideos' => [
+          {
+            'score': 100,
+            'Metadata': {
+              'ratingKey': 'home-1',
+              'guid': 'tv.plex.agents.none://home-1',
+              'type': 'movie',
+              'title': 'Target Home Video',
+            },
+          },
+        ],
         _ => <Map<String, Object>>[],
       };
       return _json({
@@ -146,10 +187,54 @@ void main() {
     final results = await client.searchItems('Target');
     final ids = results.map((item) => item.id).toList();
 
-    expect(captured.map((uri) => uri.queryParameters['searchTypes']).toSet(), {'movies,tv,music', 'tv', 'music'});
+    expect(captured.map((uri) => uri.queryParameters['searchTypes']).toSet(), {
+      'movies,tv,music,otherVideos',
+      'tv',
+      'music',
+      'otherVideos',
+    });
     expect(ids.where((id) => id == 'movie-0'), hasLength(1));
-    expect(ids, containsAll(['show-1', 'artist-1']));
-    expect(ids, hasLength(101));
+    expect(ids, containsAll(['show-1', 'artist-1', 'home-1']));
+    expect(ids, hasLength(102));
+  });
+
+  test('saturated personal-media results still fetch the movies category', () async {
+    final captured = <String?>[];
+    final client = makeClient((request) async {
+      final searchTypes = request.url.queryParameters['searchTypes'];
+      captured.add(searchTypes);
+      final searchResults = switch (searchTypes) {
+        'movies,tv,music,otherVideos' => [
+          for (var index = 0; index < 100; index++)
+            {
+              'score': 90,
+              'Metadata': {
+                'ratingKey': 'home-$index',
+                'guid': 'tv.plex.agents.none://home-$index',
+                'type': 'movie',
+                'title': 'Target Clip $index',
+              },
+            },
+        ],
+        'movies' => [
+          {
+            'score': 100,
+            'Metadata': {'ratingKey': 'movie-1', 'guid': 'plex://movie/1', 'type': 'movie', 'title': 'Target'},
+          },
+        ],
+        _ => <Map<String, Object>>[],
+      };
+      return _json({
+        'MediaContainer': {'SearchResult': searchResults},
+      });
+    });
+    addTearDown(client.close);
+
+    final results = await client.searchItems('Target');
+
+    expect(captured.toSet(), {'movies,tv,music,otherVideos', 'movies', 'tv', 'music'});
+    expect(results.map((item) => item.id), contains('movie-1'));
+    expect(results, hasLength(101));
   });
 
   test('supplemental category failure keeps saturated primary results', () async {
@@ -168,7 +253,7 @@ void main() {
     final client = makeClient((request) async {
       final searchTypes = request.url.queryParameters['searchTypes'];
       capturedSearchTypes.add(searchTypes);
-      if (searchTypes == 'movies,tv,music') {
+      if (searchTypes == 'movies,tv,music,otherVideos') {
         return _json({
           'MediaContainer': {'SearchResult': primaryResults},
         });
@@ -179,7 +264,7 @@ void main() {
 
     final results = await client.searchItems('Target');
 
-    expect(capturedSearchTypes, ['movies,tv,music', 'tv']);
+    expect(capturedSearchTypes, ['movies,tv,music,otherVideos', 'tv', 'otherVideos']);
     expect(results, hasLength(100));
     expect(results.map((item) => item.id), containsAll(['movie-0', 'artist-1']));
   });

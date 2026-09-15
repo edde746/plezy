@@ -75,24 +75,31 @@ class MediaHub {
   }
 }
 
-bool _isContinueWatchingKey(String rawKey) {
+// Per-key memo: every card build and D-pad step re-asks these, and the
+// answer needs two regex passes over a key. The set of distinct hub keys a
+// session sees is small, so the maps stay small too.
+final Map<String, bool> _continueWatchingKeys = <String, bool>{};
+final Map<String, bool> _continueWatchingActionKeys = <String, bool>{};
+final RegExp _hubKeySeparators = RegExp(r'[^a-z0-9]+');
+
+bool _isContinueWatchingKey(String rawKey) => _continueWatchingKeys.putIfAbsent(rawKey, () {
   final compactKey = _compactHubKey(rawKey);
   if (compactKey == 'continuewatching') return true;
 
   final tokens = _hubKeyTokens(rawKey);
   return tokens.contains('inprogress') || _hasTailToken(tokens, 'continue');
-}
+});
 
-bool _usesContinueWatchingActionKey(String rawKey) {
+bool _usesContinueWatchingActionKey(String rawKey) => _continueWatchingActionKeys.putIfAbsent(rawKey, () {
   final tokens = _hubKeyTokens(rawKey);
   return _hasTailToken(tokens, 'nextup') || tokens.contains('ondeck');
-}
+});
 
 List<String> _hubKeyTokens(String rawKey) {
-  return rawKey.toLowerCase().split(RegExp(r'[^a-z0-9]+')).where((part) => part.isNotEmpty).toList(growable: false);
+  return rawKey.toLowerCase().split(_hubKeySeparators).where((part) => part.isNotEmpty).toList(growable: false);
 }
 
-String _compactHubKey(String rawKey) => rawKey.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+String _compactHubKey(String rawKey) => rawKey.toLowerCase().replaceAll(_hubKeySeparators, '');
 
 bool _hasTailToken(List<String> tokens, String token) => tokens.isNotEmpty && tokens.last == token;
 

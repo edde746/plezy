@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
@@ -127,6 +128,109 @@ void main() {
     });
   });
 
+  group('SettingsService skip marker modes', () {
+    test('default to showing the button, independently per marker kind', () async {
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.button);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+    });
+
+    test('migrate the legacy auto-skip booleans: on → auto, off → button (#2138)', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'auto_skip_intro': true, 'auto_skip_credits': false});
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.auto);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+      expect(settings.prefs.containsKey('auto_skip_intro'), isFalse, reason: 'migrated once, then forgotten');
+      expect(settings.prefs.containsKey('auto_skip_credits'), isFalse);
+
+      // An explicit choice still works after ordinary upgrade migration.
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+    });
+
+    test('canonical modes win over coexisting legacy booleans on first read', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: const {
+          'auto_skip_intro': true,
+          'skip_intro_mode': 'off',
+          'auto_skip_credits': false,
+          'skip_credits_mode': 'auto',
+        },
+      );
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+      expect(settings.prefs.containsKey('auto_skip_intro'), isFalse);
+      expect(settings.prefs.containsKey('auto_skip_credits'), isFalse);
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+    });
+
+    test('writing a mode before its first read replaces the legacy choice', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'auto_skip_intro': true, 'auto_skip_credits': false});
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      await settings.write(SettingsService.skipCreditsMode, SkipMarkerMode.auto);
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.auto);
+    });
+
+    for (final introAuto in [true, false]) {
+      for (final readBeforeReset in [false, true]) {
+        test('reset preserves intro=$introAuto before migration=${!readBeforeReset}', () async {
+          resetSharedPreferencesForTest(
+            initialAsync: {'auto_skip_intro': introAuto, 'auto_skip_credits': !introAuto, 'seek_time_small': 45},
+          );
+          var settings = await SettingsService.getInstance();
+          final introMode = introAuto ? SkipMarkerMode.auto : SkipMarkerMode.button;
+          final creditsMode = introAuto ? SkipMarkerMode.button : SkipMarkerMode.auto;
+          if (readBeforeReset) {
+            expect(settings.read(SettingsService.skipIntroMode), introMode);
+            expect(settings.read(SettingsService.skipCreditsMode), creditsMode);
+          }
+
+          await settings.resetAllSettings();
+
+          expect(settings.read(SettingsService.skipIntroMode), introMode);
+          expect(settings.read(SettingsService.skipCreditsMode), creditsMode);
+          expect(settings.read(SettingsService.seekTimeSmall), 10);
+
+          BaseSharedPreferencesService.resetForTesting();
+          SettingsService.resetForTesting();
+          settings = await SettingsService.getInstance();
+          expect(settings.read(SettingsService.skipIntroMode), introMode);
+          expect(settings.read(SettingsService.skipCreditsMode), creditsMode);
+        });
+      }
+    }
+
+    test('reset preserves canonical authority without materializing an absent mode', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'skip_intro_mode': 'off', 'auto_skip_intro': true});
+      final settings = await SettingsService.getInstance();
+
+      await settings.resetAllSettings();
+
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
+      expect(settings.prefs.containsKey('auto_skip_intro'), isFalse);
+      expect(settings.prefs.containsKey('skip_credits_mode'), isFalse);
+      expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+      expect(settings.prefs.containsKey('skip_credits_mode'), isFalse);
+    });
+  });
+
   group('SettingsService music quality', () {
     test('defaults to original and persists changes by enum name', () async {
       var settings = await SettingsService.getInstance();
@@ -141,6 +245,41 @@ void main() {
       settings = await SettingsService.getInstance();
 
       expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.medium);
+    });
+  });
+
+  group('SettingsService cellular quality', () {
+    test('defaults to null (follow the general default) and persists by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
+
+      await settings.write(SettingsService.cellularQualityPreset, TranscodeQualityPreset.p720_2mbps);
+      expect(settings.prefs.getString(SettingsService.cellularQualityPreset.key), 'p720_2mbps');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.cellularQualityPreset), TranscodeQualityPreset.p720_2mbps);
+    });
+
+    test('writing null removes the key', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.cellularQualityPreset, TranscodeQualityPreset.p1080_8mbps);
+      await settings.write(SettingsService.cellularQualityPreset, null);
+
+      expect(settings.prefs.containsKey(SettingsService.cellularQualityPreset.key), isFalse);
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
+    });
+
+    test('an unrecognized stored value reads as null, not a fallback preset', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.prefs.setString(SettingsService.cellularQualityPreset.key, 'p9999_removed');
+
+      expect(settings.read(SettingsService.cellularQualityPreset), isNull);
     });
   });
 
@@ -181,13 +320,23 @@ void main() {
       expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
     });
 
-    test('audio passthrough defaults off on a non-Android-TV host and honors explicit writes', () async {
+    test('audio passthrough defaults off on a non-TV host and honors explicit writes', () async {
       final settings = await SettingsService.getInstance();
-      // The Android-TV-on-ExoPlayer default-on branch depends on Platform.isAndroid,
-      // which is false (and unmockable) on the test host, so the default is off here.
+      // The Android-TV default-on branch depends on Platform.isAndroid, which
+      // is false (and unmockable) on the test host, so the default is off here.
       expect(settings.read(SettingsService.audioPassthrough), isFalse);
 
       await settings.write(SettingsService.audioPassthrough, true);
+      expect(settings.read(SettingsService.audioPassthrough), isTrue);
+
+      await settings.write(SettingsService.audioPassthrough, false);
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
+    });
+
+    test('audio passthrough defaults on for Apple TV until the viewer turns it off (#1300)', () async {
+      final settings = await SettingsService.getInstance();
+      TvDetectionService.debugSetAppleTVOverride(true);
+
       expect(settings.read(SettingsService.audioPassthrough), isTrue);
 
       await settings.write(SettingsService.audioPassthrough, false);

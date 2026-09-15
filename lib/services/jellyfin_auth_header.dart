@@ -44,6 +44,32 @@ String buildJellyfinAuthHeader({
   return 'MediaBrowser ${parts.join(', ')}';
 }
 
+/// The `Client` name for the same header, with the platform appended the way
+/// the first-party apps do (`Jellyfin Android TV`, `Swiftfin tvOS`). Neither
+/// Jellyfin nor Emby exposes a platform field on a session, so dashboards and
+/// session trackers derive the platform from this string by keyword; a bare
+/// `Plezy` on every platform makes every install look alike.
+String jellyfinClientName(DeviceIdentity identity) {
+  final platform = _meaningful(identity.platform);
+  if (platform.isEmpty) return 'Plezy';
+  if (identity.isTv && platform.toLowerCase() == 'android') return 'Plezy Android TV';
+  return 'Plezy $platform';
+}
+
+/// The `Device` name for the same header: the user-facing device name, else
+/// the hardware model, else the platform. An Apple TV whose name lookup failed
+/// should appear in the server's device list as `Apple TV`, not as a second
+/// `Plezy` next to the client name. Raw, not header-sanitized:
+/// [buildJellyfinAuthHeader] percent-encodes it, so the server shows the name
+/// verbatim.
+String jellyfinDeviceName(DeviceIdentity identity) {
+  for (final candidate in [identity.deviceName, identity.deviceModel, identity.platform].nonNulls) {
+    final name = _meaningful(candidate);
+    if (name.isNotEmpty) return name;
+  }
+  return 'Plezy';
+}
+
 final RegExp _controlCharacters = RegExp(r'[\x00-\x1f\x7f-\x9f]');
 
 /// Percent-encoding makes any byte transportable, so the only values worth

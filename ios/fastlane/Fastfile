@@ -15,7 +15,7 @@ platform :ios do
 
     sh("cd #{PROJECT_ROOT_ARG} && flutter build ipa --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit} --dart-define=SENTRY_ENVIRONMENT=app-store --dart-define=SENTRY_DIST=app-store --split-debug-info=debug-info/ios")
 
-    sh("cd #{PROJECT_ROOT_ARG} && SENTRY_DIST=app-store ./scripts/upload-symbols.sh ios")
+    sh("cd #{PROJECT_ROOT_ARG} && SENTRY_DIST=app-store BUGS_APPLE_ARCHIVE=build/ios/archive/Runner.xcarchive ./scripts/upload-symbols.sh ios")
 
     upload_to_app_store(
       ipa: "../build/ios/ipa/Plezy.ipa",

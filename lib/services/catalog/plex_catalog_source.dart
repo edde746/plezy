@@ -106,7 +106,7 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
     // Plex Discover matches on imdb/tmdb/tvdb only; an AniDB-only item has
     // nothing to send it.
     if (!external.hasCatalogIds) return null;
-    final metadata = await _client.match(external);
+    final metadata = await _client.match(external, kind: kind);
     final matchedKind = metadata == null ? null : _kindFor(metadata['type']);
     if (metadata == null || matchedKind != kind) return null;
     final ids = _idsFor(metadata);

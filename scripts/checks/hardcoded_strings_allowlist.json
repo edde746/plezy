@@ -36,7 +36,7 @@
     "mpv": "Intentional executable example",
     "/usr/bin/player": "Intentional executable path example"
   },
-  "lib/screens/settings/appearance_settings_screen.dart": {
+  "lib/screens/settings/general_settings_screen.dart": {
     "English": "Language endonym",
     "Svenska": "Language endonym",
     "Français": "Language endonym",

@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -55,6 +56,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
+import '../utils/tone_mapped_logo_image.dart';
 import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
@@ -105,6 +107,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
+
+  /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
+  FocusNode? _railClaimFocusOrigin;
 
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
@@ -253,6 +258,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     _pendingTvBrowseRailFocus = true;
+    _railClaimFocusOrigin = FocusManager.instance.primaryFocus;
     if (immediate && _tvBrowseHubs.isNotEmpty) {
       final rail = _tvBrowseRailKey.currentState;
       if (rail != null) {
@@ -276,8 +282,32 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
   }
 
+  /// A rail-focus request stays armed while the rail has no hubs to focus
+  /// (empty first load), so hubs landing later still receive it. It must not
+  /// outlive the user's own navigation: hubs arriving minutes later would
+  /// yank the remote off a sidebar item the user has since moved to.
+  ///
+  /// Where focus *sits* cannot tell those apart — MainScreen hands a tab over
+  /// while focus is still on the sidebar item that selected it, and that
+  /// request is as live as one made from a bare scope. What distinguishes a
+  /// stale claim is that focus *moved* after the request was armed and now
+  /// rests on a control off this screen. A bare scope — MainScreen's content
+  /// scope before any child has focus — is "nowhere yet", not a destination.
+  bool get _railClaimAbandoned {
+    final node = FocusManager.instance.primaryFocus;
+    if (identical(node, _railClaimFocusOrigin)) return false;
+    final focusContext = node?.context;
+    if (node == null || node is FocusScopeNode || focusContext == null) return false;
+    return !identical(focusContext.findAncestorStateOfType<_DiscoverScreenState>(), this);
+  }
+
   void _applyPendingTvBrowseRailFocus() {
-    if (_pendingTvBrowseRailFocus) _focusTvBrowseRailWhenReady();
+    if (!_pendingTvBrowseRailFocus) return;
+    if (_railClaimAbandoned) {
+      _pendingTvBrowseRailFocus = false;
+      return;
+    }
+    _focusTvBrowseRailWhenReady();
   }
 
   /// Handle vertical navigation between hubs
@@ -442,9 +472,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (state == AppLifecycleState.resumed) {
       // Restart auto-scroll only if discover tab is visible
       if (_isTabVisible && !_isAutoScrollPaused) _startAutoScroll();
+      // Stale hubs refetch on every resume — cheap timestamp check, and a
+      // desktop window-focus gain after hours away should refresh too (#1646).
+      final startedFullPass = _discover.refreshIfStale();
       // Refresh continue watching on mobile only
       // (on desktop, "resumed" fires on every window focus gain)
-      if (Platform.isIOS || Platform.isAndroid) {
+      if (!startedFullPass && (Platform.isIOS || Platform.isAndroid)) {
         unawaited(_discover.refreshContinueWatching());
       }
     } else if (state == AppLifecycleState.inactive || state == AppLifecycleState.hidden) {
@@ -536,6 +569,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void onTabShown() {
     _isTabVisible = true;
+    _discover.refreshIfStale();
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
@@ -588,7 +622,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
-    // Only refresh Continue Watching in background, not full screen reload
+    // A stale-resume refresh must also refetch the home hubs; otherwise new
+    // server-side media never appears until a restart (#1646). When fresh,
+    // only Continue Watching refetches — one on-deck call, zero hub calls.
+    if (_discover.refreshIfStale()) return;
     unawaited(_discover.refreshContinueWatching());
   }
 
@@ -1107,10 +1144,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final statusBarHeight = MediaQuery.paddingOf(context).top;
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
     final isTv = PlatformDetector.isTV();
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
+    // Mobile keeps its fixed hero, except that a landscape phone is shorter
+    // than the hero itself; fill the viewport there and let the item compact.
     final heroHeight = isTv
-        ? MediaQuery.sizeOf(context).height * 0.82
+        ? viewportHeight * 0.82
         : useSideNav
-        ? MediaQuery.sizeOf(context).height * 0.75
+        ? viewportHeight * 0.75
+        : isLandscape
+        ? math.min(500 + statusBarHeight, viewportHeight)
         : 500 + statusBarHeight;
     return SliverToBoxAdapter(
       child: Focus(
@@ -1246,8 +1289,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final alignLeft = isTv || isLargeScreen;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    // A landscape phone hands the hero the whole ~400dp viewport; the usual
+    // logo and bottom offset would push the content up into the top bar.
+    final compact = !isTv && heroHeight < 450;
     final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
-    final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
+    final heroLogoHeight = isTv
+        ? TvLayoutConstants.heroLogoHeight
+        : compact
+        ? 80.0
+        : 120.0;
     final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
       color: colorScheme.onSurface,
       fontWeight: .bold,
@@ -1352,6 +1402,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Positioned(
                 bottom: isTv
                     ? 88
+                    : compact
+                    ? 24
                     : isLargeScreen
                     ? 80
                     : 50,
@@ -1361,106 +1413,119 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     : isLargeScreen
                     ? 200
                     : 0,
-                child: Padding(
-                  padding: .symmetric(
-                    horizontal: isTv
-                        ? TvLayoutConstants.horizontalInset
-                        : isLargeScreen
-                        ? 40
-                        : 24,
-                  ),
-                  child: Align(
-                    alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                        mainAxisSize: .min,
-                        children: [
-                          // Show logo, falling back to the name/title
-                          ClearLogoImage(
-                            client: heroClient,
-                            logoPath: heroItem.clearLogoPath,
-                            width: heroLogoWidth,
-                            height: heroLogoHeight,
-                            alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                            fallbackBuilder: (context) => FittingTitleText(
-                              showName,
-                              style: heroTitleStyle,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                            ),
-                          ),
-
-                          // Metadata as dot-separated text with content type
-                          if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
-                            const SizedBox(height: 16),
-                            Text(
-                              [
-                                contentTypeLabel,
-                                if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
-                                if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
-                                if (heroItem.year != null) heroItem.year.toString(),
-                              ].join(' • '),
-                              style: TextStyle(
-                                color: colorScheme.onSurface,
-                                fontSize: isTv ? 18 : 14,
-                                fontWeight: .w600,
+                // Horizontal-only SafeArea: the PageView artwork behind stays
+                // full-bleed; the foreground text/buttons clear the landscape
+                // notch. Vertical placement is handled by `bottom` above.
+                child: SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Padding(
+                    padding: .symmetric(
+                      horizontal: isTv
+                          ? TvLayoutConstants.horizontalInset
+                          : isLargeScreen
+                          ? 40
+                          : 24,
+                    ),
+                    child: Align(
+                      alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                          mainAxisSize: .min,
+                          children: [
+                            // Show logo, falling back to the name/title
+                            ClearLogoImage(
+                              client: heroClient,
+                              logoPath: heroItem.clearLogoPath,
+                              width: heroLogoWidth,
+                              height: heroLogoHeight,
+                              alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                              // The hero scrim washes artwork toward the scaffold
+                              // background; light themes recolor light-toned logos.
+                              logoToneTarget: logoToneTargetFor(
+                                surface: theme.scaffoldBackgroundColor,
+                                foreground: colorScheme.onSurface,
                               ),
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                              fallbackBuilder: (context) => FittingTitleText(
+                                showName,
+                                style: heroTitleStyle,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                              ),
                             ),
-                          ],
 
-                          if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+                            // Metadata as dot-separated text with content type
+                            if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                [
+                                  contentTypeLabel,
+                                  if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
+                                  if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
+                                  if (heroItem.year != null) heroItem.year.toString(),
+                                ].join(' • '),
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: isTv ? 18 : 14,
+                                  fontWeight: .w600,
+                                ),
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                              ),
+                            ],
 
-                          if (heroItem.summary != null && !shouldHideSpoiler) ...[
-                            const SizedBox(height: 12),
-                            RichText(
-                              maxLines: isTv ? 3 : 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              text: TextSpan(
+                            if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+
+                            if (heroItem.summary != null && !shouldHideSpoiler) ...[
+                              const SizedBox(height: 12),
+                              RichText(
+                                maxLines: isTv ? 3 : 2,
+                                overflow: .ellipsis,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                    fontSize: isTv ? 18 : 14,
+                                    height: isTv ? 1.45 : 1.4,
+                                  ),
+                                  children: [
+                                    if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
+                                      TextSpan(
+                                        text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                        style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
+                                      ),
+                                    TextSpan(
+                                      text: heroItem.summary?.isNotEmpty == true
+                                          ? heroItem.summary!
+                                          : t.messages.noDescriptionAvailable,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else if (shouldHideSpoiler &&
+                                isEpisode &&
+                                heroItem.parentIndex != null &&
+                                heroItem.index != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
+                                maxLines: 2,
+                                overflow: .ellipsis,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                                 style: TextStyle(
                                   color: colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: isTv ? 18 : 14,
                                   height: isTv ? 1.45 : 1.4,
                                 ),
-                                children: [
-                                  if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
-                                    TextSpan(
-                                      text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                      style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
-                                    ),
-                                  TextSpan(
-                                    text: heroItem.summary?.isNotEmpty == true
-                                        ? heroItem.summary!
-                                        : t.messages.noDescriptionAvailable,
-                                  ),
-                                ],
                               ),
-                            ),
-                          ] else if (shouldHideSpoiler &&
-                              isEpisode &&
-                              heroItem.parentIndex != null &&
-                              heroItem.index != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
-                              maxLines: 2,
-                              overflow: .ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                              style: TextStyle(
-                                color: colorScheme.onSurface.withValues(alpha: 0.7),
-                                fontSize: isTv ? 18 : 14,
-                                height: isTv ? 1.45 : 1.4,
-                              ),
-                            ),
-                          ],
+                            ],
 
-                          if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
-                        ],
+                            if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
+                          ],
+                        ),
                       ),
                     ),
                   ),

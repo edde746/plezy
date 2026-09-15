@@ -129,6 +129,28 @@ class ExternalIds {
     return ExternalIds(imdb: imdb, tmdb: tmdb, tvdb: tvdb);
   }
 
+  /// The scalar `guid` a legacy-agent Plex item carrying these ids would
+  /// have, as `/library/all?guid=` filter values — the inverse of
+  /// [fromLegacyPlexGuid]. That filter is a literal prefix match (verified on
+  /// PMS 1.43), and every legacy guid ends in `?lang=xx`, so each value ends
+  /// in the `?` and cannot run into a longer id (`themoviedb://1` would
+  /// otherwise match every id starting with 1). HAMA's `anidb2`..`anidb9`
+  /// grouping modes are left out for the reason [fromLegacyPlexGuid] gives.
+  List<String> get legacyPlexGuidPrefixes => [
+    if (imdb case final imdb?) ...['com.plexapp.agents.imdb://$imdb?', 'com.plexapp.agents.hama://imdb-$imdb?'],
+    if (tmdb case final tmdb?) ...[
+      'com.plexapp.agents.themoviedb://$tmdb?',
+      'com.plexapp.agents.hama://tmdb-$tmdb?',
+      'com.plexapp.agents.hama://tsdb-$tmdb?',
+    ],
+    if (tvdb case final tvdb?) ...[
+      'com.plexapp.agents.thetvdb://$tvdb?',
+      'com.plexapp.agents.hama://tvdb-$tvdb?',
+      for (var mode = 2; mode <= 9; mode++) 'com.plexapp.agents.hama://tvdb$mode-$tvdb?',
+    ],
+    if (anidb case final anidb?) 'com.plexapp.agents.hama://anidb-$anidb?',
+  ];
+
   /// Build from a legacy Plex item's scalar `guid`.
   ///
   /// HAMA composes its guid as `<source>-<id>` over

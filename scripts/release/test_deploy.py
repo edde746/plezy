@@ -17,8 +17,8 @@ from deploy import (
     State,
     bump_pubspec_text,
     parse_env_text,
+    resolve_msstore_pricing,
     resolve_phases,
-    sanitize_msstore_pricing,
 )
 
 
@@ -634,31 +634,43 @@ class SplitPhaseListsTest(unittest.TestCase):
         self.assertIsNone(deploy._split_phase_lists([]))
 
 
-class SanitizeMsstorePricingTest(unittest.TestCase):
-    def test_drops_price_id_and_advanced_flag_but_keeps_the_rest(self) -> None:
+class ResolveMsstorePricingTest(unittest.TestCase):
+    def test_keeps_a_usable_tier_and_drops_the_read_only_advanced_flag(self) -> None:
         submission = {
             "pricing": {
                 "trialPeriod": "SevenDays",
                 "marketSpecificPricings": {"LB": "NotAvailable"},
                 "sales": [],
-                "priceId": "Base",
+                "priceId": "Tier1013",
                 "isAdvancedPricingModel": True,
             }
         }
-        sanitize_msstore_pricing(submission)
+        self.assertEqual(resolve_msstore_pricing(submission, None), "Tier1013")
         self.assertEqual(
             submission["pricing"],
             {
                 "trialPeriod": "SevenDays",
                 "marketSpecificPricings": {"LB": "NotAvailable"},
                 "sales": [],
+                "priceId": "Tier1013",
             },
         )
 
-    def test_tolerates_missing_pricing(self) -> None:
+    def test_refuses_the_base_tier_the_api_cannot_accept(self) -> None:
+        submission = {"pricing": {"priceId": "Base", "isAdvancedPricingModel": True}}
+        with self.assertRaises(DeployError) as caught:
+            resolve_msstore_pricing(submission, None)
+        self.assertIn("MSSTORE_PRICE_ID", str(caught.exception))
+
+    def test_configured_tier_replaces_the_base_tier(self) -> None:
+        submission = {"pricing": {"priceId": "Base", "isAdvancedPricingModel": True}}
+        self.assertEqual(resolve_msstore_pricing(submission, "Tier1013"), "Tier1013")
+        self.assertEqual(submission["pricing"], {"priceId": "Tier1013"})
+
+    def test_missing_pricing_never_submits_a_priceless_submission(self) -> None:
         submission: dict = {}
-        sanitize_msstore_pricing(submission)
-        self.assertEqual(submission, {})
+        with self.assertRaises(DeployError):
+            resolve_msstore_pricing(submission, None)
 
 
 if __name__ == "__main__":

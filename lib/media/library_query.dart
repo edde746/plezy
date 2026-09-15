@@ -98,12 +98,18 @@ int fallbackPageTotal({required int offset, required int itemCount, int? request
 /// back shorter than [pageSize]. The short-page break is for backends whose
 /// total is unreliable; leave it off when the total is authoritative.
 ///
+/// [onPage] receives the accumulated items after each intermediate page —
+/// i.e. only when another request will follow — so callers can render while
+/// pagination continues. It never fires for single-page listings or the final
+/// page; the returned list covers those.
+///
 /// [abort] is checked before and after every request. Errors propagate.
 Future<List<T>> drainPages<T>(
   Future<LibraryPage<T>> Function(int start, int size) fetchPage, {
   required int pageSize,
   AbortController? abort,
   bool stopOnShortPage = false,
+  void Function(List<T> accumulated)? onPage,
 }) async {
   final all = <T>[];
   var start = 0;
@@ -116,6 +122,7 @@ Future<List<T>> drainPages<T>(
     start += page.items.length;
     if (start >= page.totalCount) break;
     if (stopOnShortPage && page.items.length < pageSize) break;
+    onPage?.call(all);
   }
   return all;
 }

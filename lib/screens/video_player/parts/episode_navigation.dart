@@ -37,8 +37,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     _unfocusPlayNextPrompt();
     _dismissStillWatching();
 
-    _notifyWatchTogetherMediaChange(metadata: _episode.next);
-
     _setPlayerState(() {
       _episode.isLoadingNext = true;
       _episode.showPlayNextDialog = false;
@@ -53,8 +51,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   Future<void> _playPrevious() async {
     if (!_canNavigateMediaItems()) return;
     if (_episode.previous == null || _episode.isLoadingPrevious) return;
-
-    _notifyWatchTogetherMediaChange(metadata: _episode.previous);
 
     _setPlayerState(() {
       _episode.isLoadingPrevious = true;
@@ -86,29 +82,24 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     await _seekPlayback(target);
     if (!mounted || currentPlayer != player) return;
 
-    _notifyWatchTogetherSeek(target);
     _mediaControls.pushPlaybackState();
   }
 
-  /// Replace this screen with a fresh player route — the fallback for flows
-  /// the in-place reload cannot serve. Marks the screen as being replaced so
-  /// dispose skips the app-level player-exit side effects the replacement
-  /// route takes over (WT host-exit notify, sleep timer, system UI restore,
-  /// display mode).
-  Future<void> _replaceScreenWithPlayer(MediaItem metadata) async {
-    _isReplacingWithVideo = true; // before any await — dispose can run mid-helper
+  /// Replace this screen when an in-place reload cannot serve the new item.
+  /// The route commit owns player-to-player teardown semantics.
+  Future<void> _replaceScreenWithPlayer(MediaItem metadata, {WatchPlaybackLease? watchTogetherLease}) async {
+    watchTogetherLease ??= _activeWatchTogetherSession()?.capturePlaybackLease(selection: true);
     try {
       await navigateToVideoPlayer(
         context,
         metadata: metadata,
         usePushReplacement: true,
         isOffline: _offlineLibraryMode,
+        watchTogetherLease: watchTogetherLease,
       );
     } finally {
-      // Still mounted ⇒ no push happened (external-player branch or a
-      // throw): this screen stays, so restore normal-exit semantics.
+      // No route commit (external player or failure): keep this screen usable.
       if (mounted) {
-        _isReplacingWithVideo = false;
         _clearEpisodeLoadingFlags();
       }
     }
@@ -122,9 +113,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   /// [MediaReloadOutcome.rejected]: no in-place reload ran.
   Future<MediaReloadOutcome> _navigateToEpisode(MediaItem episodeMetadata) async {
     _episode.lastReloadFailureReason = null;
+    final watchTogether = _activeWatchTogetherSession();
+    final watchTogetherLease = watchTogether?.capturePlaybackLease(selection: true);
     final currentPlayer = player;
     if (currentPlayer == null) {
-      if (mounted) unawaited(_replaceScreenWithPlayer(episodeMetadata));
+      if (mounted) unawaited(_replaceScreenWithPlayer(episodeMetadata, watchTogetherLease: watchTogetherLease));
       return MediaReloadOutcome.rejected;
     }
 
@@ -144,6 +137,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // preferences, both audio and subtitles start at the server-selected
       // priority (#1717).
       final settingsService = await SettingsService.getInstance();
+      if (!mounted || currentPlayer != player || (watchTogetherLease != null && !watchTogetherLease.isCurrent)) {
+        return MediaReloadOutcome.superseded;
+      }
       final followServerSelections = settingsService.read(SettingsService.followServerTrackSelections);
       final committedSubtitleSelection = _playbackSession?.subtitleSelection;
       final primarySubtitlePreference = followServerSelections
@@ -176,6 +172,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         preservedAudioTrack: _sessionAudioPreference,
         preservedSubtitleTrack: primarySubtitlePreference,
         preservedSecondarySubtitleTrack: secondarySubtitlePreference,
+        watchTogetherLease: watchTogetherLease,
         reason: 'episode navigation',
       );
     } catch (e, stackTrace) {

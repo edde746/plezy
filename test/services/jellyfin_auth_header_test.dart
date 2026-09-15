@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/jellyfin_auth_header.dart';
+import 'package:plezy/utils/device_identity.dart';
 
 /// Every field value Jellyfin reads back out of the header, mirroring the
 /// server's own parse: split on the top-level commas, strip the quotes, then
@@ -109,6 +110,87 @@ void main() {
         expect(() => requireJellyfinDeviceId(deviceId), throwsArgumentError);
       }
       expect(requireJellyfinDeviceId('dev-1'), 'dev-1');
+    });
+  });
+
+  // Jellyfin and Emby sessions carry no platform field, so session trackers
+  // (Tracearr's `normalizeClient`, for one) keyword-match the Client string
+  // the way they do for `Jellyfin Android TV` and `Swiftfin tvOS`. Each
+  // expected value below was checked against that matcher.
+  group('jellyfinClientName', () {
+    test('appends the platform the way the first-party apps do', () {
+      for (final platform in ['iOS', 'Android', 'macOS', 'Windows', 'Linux']) {
+        expect(jellyfinClientName(DeviceIdentity(platform: platform)), 'Plezy $platform');
+      }
+    });
+
+    test('names the Android TV variant without repeating TV for tvOS', () {
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'Android', isTv: true)), 'Plezy Android TV');
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'tvOS', isTv: true)), 'Plezy tvOS');
+    });
+
+    test('keeps the TV suffix on the degraded lowercase OS name', () {
+      // DeviceIdentityService falls back to Platform.operatingSystem when the
+      // platform plugin fails, and that is lowercase.
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'android', isTv: true)), 'Plezy Android TV');
+    });
+
+    test('only Android gets a TV suffix', () {
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'Linux', isTv: true)), 'Plezy Linux');
+    });
+
+    test('falls back to the bare app name without a platform', () {
+      expect(jellyfinClientName(const DeviceIdentity(platform: '')), 'Plezy');
+      expect(jellyfinClientName(const DeviceIdentity(platform: ' \u0000 ')), 'Plezy');
+    });
+
+    test('survives the header round trip', () {
+      final header = buildJellyfinAuthHeader(
+        clientName: jellyfinClientName(const DeviceIdentity(platform: 'Android', isTv: true)),
+        clientVersion: '2.19.0',
+        deviceName: 'Living Room Shield',
+        deviceId: 'dev-1',
+      );
+      expect(parseAsJellyfinWould(header)['Client'], 'Plezy Android TV');
+    });
+  });
+
+  group('jellyfinDeviceName', () {
+    test('prefers the user-facing device name', () {
+      const identity = DeviceIdentity(platform: 'iOS', deviceModel: 'iPhone', deviceName: '  Bob\'s iPhone ');
+      expect(jellyfinDeviceName(identity), "Bob's iPhone");
+    });
+
+    test('falls back to the hardware model when the name lookup failed', () {
+      // An Apple TV without a resolvable name should be listed as `Apple TV`,
+      // not as a second `Plezy` next to the client name.
+      const identity = DeviceIdentity(platform: 'tvOS', deviceModel: 'Apple TV', isTv: true);
+      expect(jellyfinDeviceName(identity), 'Apple TV');
+      expect(
+        jellyfinDeviceName(const DeviceIdentity(platform: 'tvOS', deviceModel: 'Apple TV', deviceName: '   ')),
+        'Apple TV',
+      );
+    });
+
+    test('falls back to the platform when there is no model either', () {
+      expect(jellyfinDeviceName(const DeviceIdentity(platform: 'Linux')), 'Linux');
+      expect(jellyfinDeviceName(const DeviceIdentity(platform: 'Linux', deviceModel: '\u0000')), 'Linux');
+    });
+
+    test('falls back to the app name when nothing about the device is known', () {
+      expect(jellyfinDeviceName(const DeviceIdentity(platform: '')), 'Plezy');
+    });
+  });
+
+  group('jellyfinClientName and jellyfinDeviceName', () {
+    test('derive from the same resolved identity', () async {
+      // The production call sites resolve one identity and derive both names
+      // from it, so an override must steer both.
+      DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Android', deviceModel: 'AFTKM', isTv: true));
+      addTearDown(() => DeviceIdentityService.debugOverride(null));
+      final identity = await DeviceIdentityService.resolve();
+      expect(jellyfinClientName(identity), 'Plezy Android TV');
+      expect(jellyfinDeviceName(identity), 'AFTKM');
     });
   });
 }

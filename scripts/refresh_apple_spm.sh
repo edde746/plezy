@@ -17,7 +17,7 @@
 # without those flags updates the mirror, materializes the checkout, and leaves
 # the tracked locks untouched.
 #
-# Run this after scripts/set_mpvkit_revision.sh, or after pulling someone else's
+# Run this after scripts/set_native_revision.sh, or after pulling someone else's
 # pin bump, whenever a macOS build reports a commit it cannot find.
 #
 # Usage:

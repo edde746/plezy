@@ -519,10 +519,35 @@ void main() {
 
     final queue = await client.createPlayQueue(uri: 'server://items', type: 'video');
 
-    expect(queue?.playQueueID, 42);
-    expect(queue?.playQueueSelectedItemID, 7);
-    expect(queue?.playQueueTotalCount, 3);
-    expect(queue?.size, 3);
+    expect(queue.playQueueID, 42);
+    expect(queue.playQueueSelectedItemID, 7);
+    expect(queue.playQueueTotalCount, 3);
+    expect(queue.size, 3);
+  });
+
+  test('createPlayQueue propagates HTTP failure instead of returning null (#2141)', () async {
+    final client = makeClient((_) async => http.Response('boom', 500));
+    addTearDown(client.close);
+
+    await expectLater(
+      client.createPlayQueue(uri: 'server://items', type: 'audio'),
+      throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+    );
+  });
+
+  test('fetchInstantMix propagates a failed station play queue as a typed error (#2141)', () async {
+    final client = testPlexClient(
+      serverId: publicServerId,
+      profileScopeId: defaultProfileScopeId,
+      config: testPlexConfig(machineIdentifier: 'machine-1'),
+      handler: (_) async => http.Response('boom', 500),
+    );
+    addTearDown(client.close);
+
+    await expectLater(
+      client.fetchInstantMix('track-1'),
+      throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+    );
   });
 
   test('show play queue source URI honors the specials-ordering preference', () async {
@@ -739,6 +764,43 @@ void main() {
       expect(events, ['application:plex.example.com', 'probe:unreachable.example.com']);
       expect(exhausted, 1);
       expect(client.config.baseUrl, 'https://plex.example.com');
+    });
+
+    test('createPlayQueue POST validates and retries across endpoints (#2141)', () async {
+      const primary = 'https://plex.example.com';
+      const fallback = 'https://plex-fallback.example.com';
+      final events = <String>[];
+      final client = testPlexClient(
+        serverId: publicServerId,
+        profileScopeId: defaultProfileScopeId,
+        httpClient: MockClient((request) async {
+          events.add('${request.method}:${request.url.host}');
+          expect(request.method, 'POST');
+          expect(request.url.path, '/playQueues');
+          if (request.url.host == 'plex.example.com') {
+            throw TimeoutException('primary down');
+          }
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {'playQueueID': 7, 'playQueueVersion': 1, 'Metadata': <dynamic>[]},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+        prioritizedEndpoints: const [primary, fallback],
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          events.add('probe:${request.url.host}');
+          return identity('server-id');
+        }),
+      );
+      addTearDown(client.close);
+
+      final queue = await client.createPlayQueue(uri: 'server://items', type: 'audio');
+
+      expect(queue.playQueueID, 7);
+      expect(events, ['POST:plex.example.com', 'probe:plex-fallback.example.com', 'POST:plex-fallback.example.com']);
+      expect(client.config.baseUrl, fallback);
     });
   });
 
@@ -1312,6 +1374,133 @@ void main() {
     expect(requests.single.path, '/library/sections/7/all');
     expect(groups.single.kind, DiscographyGroupKind.albums);
     expect(groups.single.items.map((item) => item.id), ['album-1']);
+  });
+
+  group('committed Plex authentication session', () {
+    http.Response identityResponse({String? machineIdentifier}) => http.Response(
+      jsonEncode({
+        'MediaContainer': {'machineIdentifier': machineIdentifier ?? publicServerId.value},
+      }),
+      200,
+      headers: const {'content-type': 'application/json'},
+    );
+
+    http.Response providersResponse() => http.Response(
+      jsonEncode({
+        'MediaContainer': {'MediaProvider': <Object>[]},
+      }),
+      200,
+      headers: const {'content-type': 'application/json'},
+    );
+
+    String? requestToken(http.Request request) => request.headers.entries
+        .where((entry) => entry.key.toLowerCase() == 'x-plex-token')
+        .map((entry) => entry.value)
+        .firstOrNull;
+
+    test('only effective commits rotate identity, including scope-only changes and returning to A', () async {
+      final client = makeClient((request) async {
+        if (request.url.path == '/') return identityResponse();
+        expect(request.url.path, '/media/providers');
+        return providersResponse();
+      });
+      addTearDown(client.close);
+      final initial = client.authenticationSessionId;
+
+      client.applyLanguageUpdate('fr');
+      expect(client.authenticationSessionId, same(initial));
+      expect(await client.applyProfileUpdate(newToken: 'token', newProfileScopeId: defaultProfileScopeId), isTrue);
+      expect(client.authenticationSessionId, same(initial));
+
+      final scopeB = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-b');
+      expect(await client.applyProfileUpdate(newToken: 'token', newProfileScopeId: scopeB), isTrue);
+      final sessionB = client.authenticationSessionId;
+      expect(sessionB, isNot(same(initial)));
+
+      expect(await client.applyProfileUpdate(newToken: 'rotated-token', newProfileScopeId: scopeB), isTrue);
+      final rotatedB = client.authenticationSessionId;
+      expect(rotatedB, isNot(same(sessionB)));
+
+      expect(await client.applyProfileUpdate(newToken: 'token', newProfileScopeId: defaultProfileScopeId), isTrue);
+      expect(client.authenticationSessionId, isNot(same(initial)));
+      expect(client.authenticationSessionId, isNot(same(rotatedB)));
+    });
+
+    test('rejected credentials and mismatched servers preserve the committed session', () async {
+      final client = makeClient((request) async {
+        expect(request.url.path, '/');
+        if (requestToken(request) == 'rejected') return http.Response('Unauthorized', 401);
+        return identityResponse(machineIdentifier: 'other-server');
+      });
+      addTearDown(client.close);
+      final initial = client.authenticationSessionId;
+      final scopeB = buildPlexProfileScopeId(serverId: publicServerId, profileId: 'profile-b');
+
+      await expectLater(
+        client.applyProfileUpdate(newToken: 'rejected', newProfileScopeId: scopeB),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 401)),
+      );
+      expect(client.authenticationSessionId, same(initial));
+      await expectLater(
+        client.applyProfileUpdate(newToken: 'wrong-server', newProfileScopeId: scopeB),
+        throwsA(isA<MediaServerUrlException>()),
+      );
+      expect(client.authenticationSessionId, same(initial));
+      expect(client.config.token, 'token');
+      expect(client.profileScopeId, defaultProfileScopeId);
+    });
+
+    for (final blockedPath in ['/', '/media/providers']) {
+      test('a superseded update blocked at $blockedPath cannot replace the winning session', () async {
+        final started = Completer<void>();
+        final release = Completer<void>();
+        addTearDown(() {
+          if (!release.isCompleted) release.complete();
+        });
+        final client = makeClient((request) async {
+          if (requestToken(request) == 'older-token' && request.url.path == blockedPath) {
+            started.complete();
+            await release.future;
+          }
+          if (request.url.path == '/') return identityResponse();
+          expect(request.url.path, '/media/providers');
+          return providersResponse();
+        });
+        addTearDown(client.close);
+        final initial = client.authenticationSessionId;
+        final older = client.applyProfileUpdate(
+          newToken: 'older-token',
+          newProfileScopeId: buildPlexProfileScopeId(serverId: publicServerId, profileId: 'older'),
+        );
+        await started.future;
+        expect(client.authenticationSessionId, same(initial), reason: 'validation is not a commit');
+
+        expect(
+          await client.applyProfileUpdate(newToken: 'winning-token', newProfileScopeId: defaultProfileScopeId),
+          isTrue,
+        );
+        final winner = client.authenticationSessionId;
+        expect(winner, isNot(same(initial)));
+        release.complete();
+        expect(await older, isFalse);
+        expect(client.authenticationSessionId, same(winner));
+        expect(client.config.token, 'winning-token');
+        expect(client.profileScopeId, defaultProfileScopeId);
+      });
+    }
+
+    test('optional provider failure still commits a new authenticated session', () async {
+      final client = makeClient((request) async {
+        if (request.url.path == '/') return identityResponse();
+        expect(request.url.path, '/media/providers');
+        return http.Response('Unavailable', 503);
+      });
+      addTearDown(client.close);
+      final initial = client.authenticationSessionId;
+      expect(await client.applyProfileUpdate(newToken: 'new-token', newProfileScopeId: defaultProfileScopeId), isTrue);
+      expect(client.authenticationSessionId, isNot(same(initial)));
+      expect(client.config.token, 'new-token');
+    });
   });
 
   test('profile transition isolates metadata and every direct cache-only bypass', () async {

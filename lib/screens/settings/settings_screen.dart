@@ -16,6 +16,7 @@ import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
+import '../../providers/account_preferences_controller.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/libraries_provider.dart';
@@ -26,9 +27,11 @@ import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/seerr_account_provider.dart';
+import '../../services/account_preferences_accounts.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
+import '../../services/settings_mutation_service.dart';
 import '../../widgets/background_download_warning_banner.dart';
 import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
@@ -49,7 +52,9 @@ import '../../profiles/profile.dart';
 import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
+import 'account_preferences_screen.dart';
 import 'appearance_settings_screen.dart';
+import 'general_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
@@ -90,6 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   // Focus tracking keys
   static const _kDonate = 'donate';
+  static const _kGeneral = 'general';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
   static const _kManageLibraries = 'manage_libraries';
@@ -100,8 +106,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kBackgroundDownloads = 'background_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
+  static const _kCompanionRemoteServer = 'companion_remote_server';
   static const _kCrashReporting = 'crash_reporting';
   static const _kDebugLogging = 'debug_logging';
+  static const _kAutoHidePerformanceOverlay = 'auto_hide_performance_overlay';
   static const _kViewLogs = 'view_logs';
   static const _kClearImageCache = 'clear_image_cache';
   static const _kResetSettings = 'reset_settings';
@@ -111,6 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kWatchTogetherRelay = 'watch_together_relay';
   static const _kExportSettings = 'export_settings';
   static const _kImportSettings = 'import_settings';
+  static const _kAccountPreferences = 'account_preferences';
 
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
@@ -139,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   @override
   void focusActiveTabIfReady() {
     if (InputModeTracker.isKeyboardMode(context, listen: false)) {
-      _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kAppearance);
+      _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kGeneral);
     }
   }
 
@@ -189,6 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 SettingsGroup(
                   children: [
                     if (DonationService.isEnabled) _buildDonateTile(),
+                    _buildGeneralTile(),
                     _buildAppearanceTile(),
                     _buildPlaybackTile(),
                     if (hasLibraries) _buildManageLibrariesTile(sheetContext),
@@ -200,7 +210,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
                 if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
-                if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection()],
+                if (_keyboardShortcutsSupported || PlatformDetector.shouldActAsRemoteHost(sheetContext))
+                  _buildControlsSection(sheetContext),
 
                 _buildAdvancedSection(),
 
@@ -229,6 +240,16 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildGeneralTile() {
+    return SettingNavigationTile(
+      focusNode: _focusTracker.get(_kGeneral),
+      icon: Symbols.settings_rounded,
+      title: t.settings.general,
+      subtitle: t.settings.generalDescription,
+      destinationBuilder: (context) => const GeneralSettingsScreen(),
     );
   }
 
@@ -330,7 +351,26 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           },
         ),
         _buildProfilesTile(context),
+        if (context.select<AccountPreferencesController, bool>((c) => c.accounts.isNotEmpty))
+          _buildAccountPreferencesTile(context),
       ],
+    );
+  }
+
+  /// Server-stored preferences for the accounts the active profile signed in
+  /// with. Hidden when no account is reachable — an empty picker is noise.
+  Widget _buildAccountPreferencesTile(BuildContext context) {
+    final accounts = context.select<AccountPreferencesController, List<AccountPreferenceAccount>>((c) => c.accounts);
+    final subtitle = accounts.length == 1
+        ? t.accountPreferences.hubSubtitleSingle(account: accounts.single.target.label)
+        : t.accountPreferences.hubSubtitleMultiple(count: accounts.length);
+    return SettingNavigationTile(
+      focusNode: _focusTracker.get(_kAccountPreferences),
+      icon: Symbols.manage_accounts_rounded,
+      title: t.accountPreferences.sectionTitle,
+      subtitle: subtitle,
+      destinationBuilder: (context) =>
+          AccountPreferencesScreen(targets: [for (final account in accounts) account.target]),
     );
   }
 
@@ -395,6 +435,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
         ),
         if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
+        // TODO: "Remove orphaned downloads" toggle (#1413) goes here, next to
+        // autoRemoveWatchedDownloads.
       ],
     );
   }
@@ -442,12 +484,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Widget _buildKeyboardShortcutsSection() {
-    if (_keyboardService == null) return const SizedBox.shrink();
-
-    return SettingsGroup(
-      title: t.settings.keyboardShortcuts,
-      children: [
+  /// Input devices: keyboard shortcuts on platforms with a physical keyboard,
+  /// and the companion-remote host on surfaces that can be controlled from a
+  /// phone. Either half may be absent; the caller skips the section when both
+  /// are.
+  Widget _buildControlsSection(BuildContext context) {
+    final children = <Widget>[
+      if (_keyboardService != null) ...[
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kVideoPlayerControls),
           icon: Symbols.keyboard_rounded,
@@ -468,7 +511,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.videoPlayerNavigationDescription,
         ),
       ],
-    );
+      if (PlatformDetector.shouldActAsRemoteHost(context))
+        SettingSwitchTile(
+          focusNode: _focusTracker.get(_kCompanionRemoteServer),
+          pref: settings.SettingsService.enableCompanionRemoteServer,
+          icon: Symbols.phone_android_rounded,
+          title: t.settings.companionRemoteServer,
+          subtitle: t.settings.companionRemoteServerDescription,
+        ),
+    ];
+    // Keyboard platforms render nothing until the shortcuts service loads; an
+    // empty SettingsGroup would paint a bare section title.
+    if (children.isEmpty) return const SizedBox.shrink();
+    return SettingsGroup(title: t.settings.controls, children: children);
   }
 
   Widget _buildAdvancedSection() {
@@ -495,6 +550,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           icon: Symbols.bug_report_rounded,
           title: t.settings.debugLogging,
           subtitle: t.settings.debugLoggingDescription,
+        ),
+        SettingSwitchTile(
+          focusNode: _focusTracker.get(_kAutoHidePerformanceOverlay),
+          pref: settings.SettingsService.autoHidePerformanceOverlay,
+          icon: Symbols.speed_rounded,
+          title: t.settings.autoHidePerformanceOverlay,
+          subtitle: t.settings.autoHidePerformanceOverlayDescription,
         ),
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kViewLogs),
@@ -559,6 +621,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.importSettingsDescription,
           onTap: _showImportSettingsDialog,
         ),
+        // TODO: Cloud settings sync/backup (#1795, #1979) goes here once a
+        // sync backend exists (iCloud on Apple platforms, or the relay).
       ],
     );
   }
@@ -693,11 +757,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         }
         if (selectedPath == null) return false;
 
-        if (pathType == 'file') {
-          final dir = Directory(selectedPath);
-          final writableChecker =
-              widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable;
-          final isWritable = await writableChecker(dir);
+        final writableChecker = widget.downloadDirectoryWritableChecker;
+        if (pathType == 'file' && writableChecker != null) {
+          final isWritable = await writableChecker(Directory(selectedPath));
           if (!mounted) return false;
           if (!isWritable) {
             showErrorSnackBar(context, t.settings.downloadLocationInvalid);
@@ -755,9 +817,14 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       isDestructive: true,
     );
     if (!mounted || !confirmed) return;
+    final previousRootConfiguration = SettingsMutationService.captureRootConfiguration();
     await context.read<DownloadProvider>().resetDownloadLocation();
     await _settingsService.resetAllSettings();
-    await _keyboardService?.resetToDefaults();
+    if (!mounted) return;
+    await const SettingsMutationService().applyStoredEffects(
+      context,
+      previousRootConfiguration: previousRootConfiguration,
+    );
     if (mounted) showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
   }
 
@@ -792,24 +859,24 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         // The two typed import failures carry their own message, so they are
         // handled here instead of falling through to the generic guard.
         try {
+          final previousRootConfiguration = SettingsMutationService.captureRootConfiguration();
           final result = await (widget.settingsImporter ?? SettingsExportService.importFromFile)();
           if (!mounted) return;
           if (result == null) return; // user cancelled file picker
 
-          final themeProvider = context.read<ThemeProvider>();
           final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
           final librariesProvider = context.read<LibrariesProvider>();
 
           // Import wrote directly to SharedPreferences, bypassing `write`. Push
           // fresh values into active listenables before providers re-read settings.
           _settingsService.refreshListenables();
-          unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
-          await Future.wait([
-            themeProvider.reload(),
-            hiddenLibrariesProvider.refresh(),
-            if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
-          ]);
+          await hiddenLibrariesProvider.refresh();
           unawaited(librariesProvider.refresh());
+          if (!mounted) return;
+          await const SettingsMutationService().applyStoredEffects(
+            context,
+            previousRootConfiguration: previousRootConfiguration,
+          );
 
           if (!mounted) return;
           showSuccessSnackBar(context, t.settings.importSettingsSuccess);

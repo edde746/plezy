@@ -11,11 +11,14 @@ import '../screens/music/now_playing_screen.dart';
 import '../services/device_performance.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/playlist_items_loader.dart';
+import '../services/playback_initialization_types.dart';
 import '../theme/mono_motion.dart';
 import '../theme/mono_tokens.dart';
+import '../i18n/strings.g.dart';
 import 'app_logger.dart';
 import 'platform_detector.dart';
 import 'provider_extensions.dart';
+import 'snackbar_helper.dart';
 
 /// Route name of the now-playing screen — the mini-player's route observer
 /// suppresses itself while this (or the video player) is in the stack.
@@ -233,7 +236,29 @@ Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) as
 /// Fetch and play an instant mix seeded from [seed] (track/album/artist).
 /// Only call when the seed's server advertises
 /// `ServerCapabilities.instantMix`.
+///
+/// Owns the user feedback for a failed or empty mix (#2141): the tap site is
+/// the only surface guaranteed to be mounted while the mix loads, so the
+/// snackbar shows here. No double-snackbar with the now-playing screen's
+/// `errors`-stream listener — the service throws fetch failures to this
+/// caller instead of emitting them there, keeping the stream for
+/// mid-playback errors.
 Future<void> playInstantMix(BuildContext context, MediaItem seed) async {
-  await context.read<MusicPlaybackService>().playInstantMix(seed);
-  if (context.mounted) _autoOpenNowPlayingOnTv(context);
+  final InstantMixOutcome outcome;
+  try {
+    outcome = await context.read<MusicPlaybackService>().playInstantMix(seed);
+  } catch (error) {
+    if (!context.mounted) return;
+    showErrorSnackBar(context, error is PlaybackException ? error.message : t.music.instantMixFailed);
+    return;
+  }
+  if (!context.mounted) return;
+  switch (outcome) {
+    case InstantMixOutcome.started:
+      _autoOpenNowPlayingOnTv(context);
+    case InstantMixOutcome.empty:
+      showErrorSnackBar(context, t.music.instantMixEmpty);
+    case InstantMixOutcome.superseded:
+      break;
+  }
 }

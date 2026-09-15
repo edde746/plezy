@@ -147,7 +147,7 @@ class _PlayerTile extends StatelessWidget {
           ),
         ],
       ),
-      onTap: () => svc.write(SettingsService.selectedExternalPlayer, player),
+      onTap: () => svc.selectExternalPlayer(player),
     );
   }
 }
@@ -165,10 +165,7 @@ Future<void> _showAddCustomPlayerDialog(BuildContext context) async {
   final newPlayer = ExternalPlayer.custom(id: id, name: result.name, value: result.value, type: result.type);
 
   final svc = SettingsService.instance;
-  await svc.write(SettingsService.customExternalPlayers, [
-    ...svc.read(SettingsService.customExternalPlayers),
-    newPlayer,
-  ]);
+  await svc.replaceCustomExternalPlayers([...svc.read(SettingsService.customExternalPlayers), newPlayer]);
 }
 
 class _AddCustomPlayerDialog extends StatefulWidget {
@@ -197,7 +194,7 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     final value = _valueController.text.trim();
-    if (name.isEmpty || value.isEmpty) return;
+    if (!SettingsService.validCustomPlayerFields(name, value)) return;
     Navigator.pop(context, (name: name, value: value, type: _selectedType));
   }
 

@@ -21,6 +21,7 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/services/video_decode_capabilities.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
@@ -134,12 +135,14 @@ _initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferred
   return (client: client, requests: requests);
 }
 
+const _testIdentity = DeviceIdentity(platform: 'Test');
+
 /// URL-builder smoke tests. Without a live Jellyfin server, pin query keys and
 /// authentication parameters directly.
 void main() {
-  // Pin device identity so JellyfinClient.create's MediaBrowser header falls
-  // back to Device="Plezy" instead of resolving the host machine's name.
-  setUpAll(() => DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test')));
+  // Pin device identity so JellyfinClient.create's MediaBrowser header names
+  // the test platform instead of resolving the host machine's name.
+  setUpAll(() => DeviceIdentityService.debugOverride(_testIdentity));
   tearDownAll(() => DeviceIdentityService.debugOverride(null));
 
   group('JellyfinClient URL builders', () {
@@ -215,7 +218,7 @@ void main() {
       expect(detailFetches, 2);
     });
 
-    test('buildDirectStreamUrl includes static flag, api_key, and device id', () {
+    test('buildDirectStreamUrl uses the Jellyfin ApiKey query parameter', () {
       final url = client.buildDirectStreamUrl('item-99');
       final uri = Uri.parse(url);
 
@@ -223,7 +226,8 @@ void main() {
       expect(uri.host, 'jf.example.com');
       expect(uri.path, '/Videos/item-99/stream');
       expect(uri.queryParameters['Static'], 'true');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
+      expect(uri.queryParameters.containsKey('api_key'), isFalse);
       expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters.containsKey('Container'), isFalse);
     });
@@ -262,7 +266,7 @@ void main() {
 
       expect(uri.path, '/Audio/track-7/stream');
       expect(uri.queryParameters['Static'], 'true');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters.containsKey('Container'), isFalse);
       expect(uri.queryParameters.containsKey('MediaSourceId'), isFalse);
@@ -469,6 +473,48 @@ void main() {
       expect(body['IsPaused'], isTrue);
     });
 
+    test('reportPlaybackStopped sends stream indexes and omits the ones withheld', () async {
+      final bodies = <Map<String, dynamic>>[];
+      Uri? capturedUri;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      // The terminal report is the only one a pick made inside the last
+      // progress interval can ride, so the server has to learn the selection
+      // from it.
+      await scoped.reportPlaybackStopped(
+        itemId: 'item-1',
+        position: const Duration(seconds: 40),
+        playSessionId: 'play-1',
+        mediaSourceId: 'source-1',
+        audioStreamIndex: 2,
+        subtitleStreamIndex: 3,
+      );
+
+      expect(capturedUri!.path, '/Sessions/Playing/Stopped');
+      expect(bodies.single['AudioStreamIndex'], 2);
+      expect(bodies.single['SubtitleStreamIndex'], 3);
+
+      // A withheld subtitle index must leave the key out entirely: a present
+      // null would still overwrite the server's remembered choice.
+      await scoped.reportPlaybackStopped(
+        itemId: 'item-1',
+        position: const Duration(seconds: 40),
+        playSessionId: 'play-1',
+        mediaSourceId: 'source-1',
+        audioStreamIndex: 2,
+      );
+
+      expect(bodies.last.containsKey('SubtitleStreamIndex'), isFalse);
+    });
+
     test('live playback reports preserve the same server session identity', () async {
       final requests = <({String path, Map<String, dynamic> body})>[];
       final scoped = JellyfinClient.forTesting(
@@ -593,7 +639,7 @@ void main() {
       expect(subtitle.languageCode, 'eng');
       final subtitleUri = Uri.parse(subtitle.url);
       expect(subtitleUri.path, '/Videos/item-1/src-2/Subtitles/3/Stream.srt');
-      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+      expect(subtitleUri.queryParameters['ApiKey'], 'tok-abc');
 
       requests.clear();
       playbackInfoBody = null;
@@ -824,7 +870,7 @@ void main() {
       expect(uri.path, '/Videos/item-1/master.m3u8');
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters['PlaySessionId'], 'play-session-1');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.mediaInfo!.subtitleTracks.single.isExternalFile, isFalse);
@@ -1474,7 +1520,7 @@ void main() {
       expect(uri.path, '/Videos/item-1/stream');
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters.containsKey('PlaySessionId'), isFalse);
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.externalSubtitles, hasLength(1));
       expect(result.subtitleSidecars.single.sourceStreamId, 3);
@@ -1482,7 +1528,7 @@ void main() {
       expect(result.externalSubtitles.single.title, 'English');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
-      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+      expect(subtitleUri.queryParameters['ApiKey'], 'tok-abc');
     });
 
     test('getPlaybackInitialization maps semantic subtitle preferences to current source rows', () async {
@@ -1702,7 +1748,7 @@ void main() {
       expect(uri.queryParameters['Static'], 'true');
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters['Container'], 'mkv');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
       expect(uri.queryParameters.containsKey('PlaySessionId'), isFalse);
       expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
     });
@@ -2361,7 +2407,9 @@ void main() {
       expect(profile['DirectPlayProfiles'], isNotEmpty);
       final directPlayProfile = (profile['DirectPlayProfiles'] as List<dynamic>).first as Map<String, dynamic>;
       expect(directPlayProfile['VideoCodec'], contains('mpeg2video'));
-      expect(directPlayProfile['AudioCodec'], contains('mp2'));
+      // An omitted list means "any codec" to Jellyfin, so an audio stream can
+      // never be what blocks direct play.
+      expect(directPlayProfile.containsKey('AudioCodec'), isFalse);
       expect(profile['TranscodingProfiles'], isNotEmpty);
       expect(profile['CodecProfiles'], isEmpty);
       const textSubtitleFormats = ['srt', 'ass', 'ssa', 'vtt'];
@@ -2385,6 +2433,131 @@ void main() {
         subtitleProfiles.indexWhere((entry) => entry['Method'] == 'Embed'),
         lessThan(subtitleProfiles.indexWhere((entry) => entry['Method'] == 'External')),
       );
+    });
+
+    test('getPlaybackInfo negotiates video transcodes as fMP4 HLS with a ts fallback', () async {
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedBody = request.body;
+          return jsonResponse({'MediaSources': []});
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.getPlaybackInfo('item-1');
+
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final profile = body['DeviceProfile'] as Map<String, dynamic>;
+      final videoProfiles = (profile['TranscodingProfiles'] as List<dynamic>)
+          .map((entry) => entry as Map<String, dynamic>)
+          .where((entry) => entry['Type'] == 'Video')
+          .toList();
+      expect(videoProfiles, hasLength(2));
+      final videoTranscode = videoProfiles.first;
+      expect(videoTranscode['Type'], 'Video');
+      // fMP4 segments: MPEG-TS cannot carry AV1, so a server with an AV1
+      // encoder could never pick it (issue #2131). mpv consumes fMP4 HLS on
+      // every platform — the Plex VOD target already ships it.
+      expect(videoTranscode['Container'], 'mp4');
+      expect(videoTranscode['Protocol'], 'hls');
+      // Order-sensitive: the first listed codec wins when the server picks an
+      // output codec, and the server rotates codecs its admin has not enabled
+      // to the back. AV1 leads so an AV1-capable server actually emits it.
+      expect(videoTranscode['VideoCodec'], 'av1,hevc,h264');
+      // Every audio codec Jellyfin can put in an fMP4 segment, so a video
+      // transcode can still copy the audio track.
+      expect(videoTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,flac,opus,dts,truehd');
+      // The server echoes both lists into the transcode URL and validates them
+      // against this regex, so one character over 40 fails the playlist
+      // request with HTTP 400 — and `*` is not a wildcard.
+      for (final key in ['VideoCodec', 'AudioCodec']) {
+        final list = videoTranscode[key] as String;
+        expect(list.length, lessThanOrEqualTo(40), reason: '$key is too long for the server to accept: $list');
+        expect(list, matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')), reason: '$key has characters the server rejects');
+      }
+
+      // MPEG-TS fallback (#2198): live tuners with
+      // UseMostCompatibleTranscodingProfile — every HDHomeRun host, M3U by
+      // default — drop all non-ts transcoding profiles, so without this entry
+      // Live TV negotiates no HLS URL at all.
+      final tsTranscode = videoProfiles.last;
+      expect(tsTranscode['Container'], 'ts');
+      expect(tsTranscode['Protocol'], 'hls');
+      // Both ts codec lists must stay strict subsets of the fMP4 entry's, and
+      // the ts entry must stay listed second: the server ranks profiles with a
+      // stable sort, so this pairing guarantees ts can only win when the fMP4
+      // entry has been filtered out and VOD keeps negotiating fMP4.
+      for (final key in ['VideoCodec', 'AudioCodec']) {
+        final tsCodecs = (tsTranscode[key] as String).split(',');
+        final mp4Codecs = (videoTranscode[key] as String).split(',');
+        expect(mp4Codecs, containsAll(tsCodecs), reason: '$key of the ts profile must be a subset of the fMP4 one');
+        expect(tsCodecs.length, lessThan(mp4Codecs.length), reason: '$key of the ts profile must be a strict subset');
+        final list = tsTranscode[key] as String;
+        expect(list, matches(RegExp(r'^[a-zA-Z0-9\-\._,|]{0,40}$')), reason: '$key has characters the server rejects');
+      }
+      // av1 cannot ride in a TS segment; flac and truehd cannot either.
+      expect(tsTranscode['VideoCodec'], 'hevc,h264');
+      expect(tsTranscode['AudioCodec'], 'aac,mp3,ac3,eac3,opus,dts');
+    });
+
+    test('the hardware decoder probe narrows both video codec lists', () async {
+      addTearDown(VideoDecodeCapabilities.debugReset);
+      Future<Map<String, dynamic>> profileFor({required bool hevc, required bool av1}) async {
+        VideoDecodeCapabilities.debugReset(hardwareHevc: hevc, hardwareAv1: av1);
+        String? capturedBody;
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient((request) async {
+            capturedBody = request.body;
+            return jsonResponse({'MediaSources': []});
+          }),
+        );
+        addTearDown(scoped.close);
+        await scoped.getPlaybackInfo('item-1');
+        return (jsonDecode(capturedBody!) as Map<String, dynamic>)['DeviceProfile'] as Map<String, dynamic>;
+      }
+
+      String codecs(Map<String, dynamic> profile, String profileKey) =>
+          ((profile[profileKey] as List<dynamic>).first as Map<String, dynamic>)['VideoCodec'] as String;
+
+      // Advertising a codec the device can only software-decode is what makes
+      // the server hand the stream over instead of transcoding, so a missing
+      // hardware decoder has to drop it from both lists.
+      final noDecoders = await profileFor(hevc: false, av1: false);
+      expect(codecs(noDecoders, 'TranscodingProfiles'), 'h264');
+      expect(codecs(noDecoders, 'DirectPlayProfiles'), 'h264,vp8,vp9,mpeg4,mpeg2video');
+
+      final hevcOnly = await profileFor(hevc: true, av1: false);
+      expect(codecs(hevcOnly, 'TranscodingProfiles'), 'hevc,h264');
+      expect(codecs(hevcOnly, 'DirectPlayProfiles'), 'hevc,h264,h265,vp8,vp9,mpeg4,mpeg2video');
+    });
+
+    test('Emby never leads the transcode list with AV1 even when the device decodes it', () async {
+      // Desktop reports both decoders (the probe is deliberately unimplemented
+      // there). Jellyfin rotates AV1 to the back when the admin has not enabled
+      // it, Emby takes the first entry verbatim and has no AV1 encoder, so the
+      // HLS request failed with 500 `No video encoder found for 'av1'` (#2230).
+      addTearDown(VideoDecodeCapabilities.debugReset);
+      VideoDecodeCapabilities.debugReset(hardwareHevc: true, hardwareAv1: true);
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: testEmbyConnection(accessToken: 'tok-abc', baseUrl: 'https://emby.example.com'),
+        httpClient: MockClient((request) async {
+          capturedBody = request.body;
+          return jsonResponse({'MediaSources': []});
+        }),
+      );
+      addTearDown(scoped.close);
+      await scoped.getPlaybackInfo('item-1');
+
+      final profile = (jsonDecode(capturedBody!) as Map<String, dynamic>)['DeviceProfile'] as Map<String, dynamic>;
+      String codecs(String profileKey) =>
+          ((profile[profileKey] as List<dynamic>).first as Map<String, dynamic>)['VideoCodec'] as String;
+      expect(codecs('TranscodingProfiles'), 'hevc,h264');
+      // An AV1 *source* still direct-plays: only the encode target is gated.
+      expect(codecs('DirectPlayProfiles'), 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video');
     });
 
     test('image subtitle formats are declared Embed-only so a transcode burns them in', () async {
@@ -2499,7 +2672,7 @@ void main() {
       expect(requested, isFalse);
     });
 
-    test('getPlaybackInitialization URL-encodes appended api_key', () async {
+    test('getPlaybackInitialization URL-encodes the Jellyfin ApiKey', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(accessToken: 'tok+with spaces/?&'),
         httpClient: MockClient((request) async {
@@ -2538,8 +2711,10 @@ void main() {
         ),
       );
 
-      expect(result.videoUrl, contains('api_key=tok%2Bwith+spaces%2F%3F%26'));
-      expect(Uri.parse(result.videoUrl!).queryParameters['api_key'], 'tok+with spaces/?&');
+      expect(result.videoUrl, contains('ApiKey=tok%2Bwith+spaces%2F%3F%26'));
+      final query = Uri.parse(result.videoUrl!).queryParameters;
+      expect(query['ApiKey'], 'tok+with spaces/?&');
+      expect(query.containsKey('api_key'), isFalse);
     });
 
     test('getPlaybackInitialization builds fallback URL for external subtitle without DeliveryUrl', () async {
@@ -2590,7 +2765,7 @@ void main() {
       expect(result.playMethod, 'DirectPlay');
       final uri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(uri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
     });
 
     test('live TV playback start negotiates an HLS transcode', () async {
@@ -2623,21 +2798,24 @@ void main() {
       expect(negotiation.url.path, '/Items/channel-1/PlaybackInfo');
       expect(negotiation.url.queryParameters['AutoOpenLiveStream'], 'true');
       expect(negotiation.url.queryParameters['EnableTranscoding'], 'true');
-      expect(negotiation.url.queryParameters['EnableDirectPlay'], 'false');
-      expect(negotiation.url.queryParameters['EnableDirectStream'], 'false');
+      // Original quality asks for direct play; this server answers with a
+      // transcode (no SupportsDirectPlay on the source) and the session
+      // adopts it.
+      expect(negotiation.url.queryParameters['EnableDirectPlay'], 'true');
+      expect(negotiation.url.queryParameters['EnableDirectStream'], 'true');
       expect(negotiation.url.queryParameters['AllowVideoStreamCopy'], 'true');
       expect(negotiation.url.queryParameters['AllowAudioStreamCopy'], 'true');
       final body = jsonDecode(negotiation.body) as Map<String, dynamic>;
       expect(body['AutoOpenLiveStream'], isTrue);
       expect(body['EnableTranscoding'], isTrue);
-      expect(body['EnableDirectPlay'], isFalse);
-      expect(body['EnableDirectStream'], isFalse);
+      expect(body['EnableDirectPlay'], isTrue);
+      expect(body['EnableDirectStream'], isTrue);
 
       expect(session, isNotNull);
       final uri = Uri.parse((await session!.streamUrlAt())!);
       expect(uri.path, '/Videos/channel-1/live.m3u8');
       expect(uri.queryParameters['PlaySessionId'], 'live-session-1');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
 
       // The negotiated session identity is only observable on the heartbeat
       // wire, so drive one report and assert what reaches the server.
@@ -2705,14 +2883,15 @@ void main() {
       expect(await scoped.liveTv.startPlayback('channel-1'), isNull);
     });
 
-    test('buildTrickplayTileUrl wires width, sheet index, api_key, and DeviceId', () {
+    test('buildTrickplayTileUrl uses the Jellyfin ApiKey query parameter', () {
       final url = client.buildTrickplayTileUrl('item-99', 320, 4);
       final uri = Uri.parse(url);
 
       expect(uri.scheme, 'https');
       expect(uri.host, 'jf.example.com');
       expect(uri.path, '/Videos/item-99/Trickplay/320/4.jpg');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
+      expect(uri.queryParameters.containsKey('api_key'), isFalse);
       expect(uri.queryParameters['DeviceId'], 'dev-xyz');
       expect(uri.queryParameters.containsKey('MediaSourceId'), isFalse);
     });
@@ -2802,7 +2981,7 @@ void main() {
       final uri = Uri.parse(result.videoUrl!);
       expect(uri.path, '/jellyfin/Videos/item-1/stream');
       expect(uri.queryParameters['PlaySessionId'], 'play-session-direct');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters['ApiKey'], 'tok-abc');
     });
 
     test('selected source never inherits another source nested trickplay', () async {
@@ -2919,8 +3098,8 @@ void main() {
       final auth = headers['Authorization'];
       expect(auth, isNotNull);
       expect(auth, startsWith('MediaBrowser '));
-      expect(auth, contains('Client="Plezy"'));
-      expect(auth, contains('Device="Plezy"'));
+      expect(auth, contains('Client="Plezy%20Test"'));
+      expect(auth, contains('Device="Test"'));
       expect(auth, contains('DeviceId="dev-xyz"'));
       expect(auth, contains(RegExp(r'Version="[^"]+"')));
       expect(auth, contains('Token="tok-abc"'));
@@ -2929,6 +3108,33 @@ void main() {
       // older servers that prefer it.
       expect(headers['X-Emby-Token'], 'tok-abc');
       expect(headers['Accept'], 'application/json');
+    });
+
+    test('names the platform in Client and the device in Device', () async {
+      // Jellyfin sessions have no platform field: dashboards and session
+      // trackers keyword-match the Client string, the way they already do for
+      // `Jellyfin Android TV` and `Swiftfin tvOS`.
+      DeviceIdentityService.debugOverride(
+        const DeviceIdentity(platform: 'Android', deviceModel: 'SHIELD', deviceName: 'Living Room Shield', isTv: true),
+      );
+      addTearDown(() => DeviceIdentityService.debugOverride(_testIdentity));
+      final scoped = await JellyfinClient.create(_conn());
+      addTearDown(scoped.close);
+
+      final auth = scoped.defaultHeadersForTesting['Authorization'];
+      expect(auth, contains('Client="Plezy%20Android%20TV"'));
+      expect(auth, contains('Device="Living%20Room%20Shield"'));
+    });
+
+    test('falls back to the hardware model for Device when the name lookup failed', () async {
+      DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'tvOS', deviceModel: 'Apple TV', isTv: true));
+      addTearDown(() => DeviceIdentityService.debugOverride(_testIdentity));
+      final scoped = await JellyfinClient.create(_conn());
+      addTearDown(scoped.close);
+
+      final auth = scoped.defaultHeadersForTesting['Authorization'];
+      expect(auth, contains('Client="Plezy%20tvOS"'));
+      expect(auth, contains('Device="Apple%20TV"'));
     });
 
     test('fetchLibraryPagedContent sends a bounded paged Items request', () async {

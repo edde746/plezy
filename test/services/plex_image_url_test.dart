@@ -63,7 +63,7 @@ void main() {
         thumbPath: '/library/metadata/1/clearLogo',
         maxWidth: 400,
         maxHeight: 120,
-        devicePixelRatio: 3,
+        pixelRatio: 3,
         imageType: ImageType.heroLogo,
       );
 
@@ -77,7 +77,7 @@ void main() {
         thumbPath: '/library/metadata/1/thumb/2',
         maxWidth: 200,
         maxHeight: 300,
-        devicePixelRatio: 2,
+        pixelRatio: 2,
         imageType: ImageType.poster,
       );
 

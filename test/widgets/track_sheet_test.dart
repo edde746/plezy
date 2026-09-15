@@ -4,6 +4,7 @@ import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
@@ -100,6 +101,86 @@ void main() {
 
       await tester.tap(find.text('Stream zero'));
       expect(switchedChoice, const PlaybackSourceSubtitleChoice.source(0));
+    });
+
+    testWidgets('does not tick a source row the engine is not playing', (tester) async {
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(),
+        track: const TrackSelection(subtitle: SubtitleTrack.off),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: TrackControlsState(
+          isTranscoding: true,
+          sourceSubtitleTracks: [
+            MediaSubtitleTrack(id: 1, languageCode: 'eng', codec: 'srt', selected: true, forced: false),
+          ],
+          selectedSubtitleChoice: null,
+          onSwitchSubtitle: (_) async {},
+          subtitleSearchSupported: false,
+        ),
+      );
+
+      expect(_rowCheck('Off'), findsOneWidget);
+      expect(_rowCheck('English'), findsNothing);
+    });
+
+    testWidgets('keeps the tick on a burned-in source subtitle with no native track', (tester) async {
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(),
+        track: const TrackSelection(subtitle: SubtitleTrack.off),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: TrackControlsState(
+          isTranscoding: true,
+          sourceSubtitleTracks: [
+            MediaSubtitleTrack(id: 1, languageCode: 'eng', codec: 'srt', selected: true, forced: false),
+          ],
+          selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
+          sourceSubtitleSidecars: const [],
+          onSwitchSubtitle: (_) async {},
+          subtitleSearchSupported: false,
+        ),
+      );
+
+      expect(_rowCheck('English'), findsOneWidget);
+      expect(_rowCheck('Off'), findsNothing);
+    });
+
+    testWidgets('drops the tick when a sidecar-backed source subtitle never attached', (tester) async {
+      const sidecarUri = 'https://example.test/source/never-attached.srt';
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(),
+        track: const TrackSelection(subtitle: SubtitleTrack.off),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: TrackControlsState(
+          isTranscoding: true,
+          sourceSubtitleTracks: [
+            MediaSubtitleTrack(id: 1, languageCode: 'eng', codec: 'srt', selected: true, forced: false),
+          ],
+          selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
+          sourceSubtitleSidecars: [
+            PlaybackSubtitleSidecar(
+              sourceStreamId: 1,
+              track: SubtitleTrack.uri(sidecarUri, title: 'English', codec: 'srt'),
+            ),
+          ],
+          onSwitchSubtitle: (_) async {},
+          subtitleSearchSupported: false,
+        ),
+      );
+
+      expect(_rowCheck('Off'), findsOneWidget);
+      expect(_rowCheck('English'), findsNothing);
     });
 
     testWidgets('keeps an unloaded source sidecar selectable', (tester) async {
@@ -422,6 +503,68 @@ void main() {
     });
   });
 
+  group('TrackSheet source audio controls', () {
+    testWidgets('ticks the source row the engine is playing on a direct play', (tester) async {
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(
+          audio: [
+            AudioTrack(id: 'a1'),
+            AudioTrack(id: 'a2'),
+          ],
+        ),
+        track: const TrackSelection(
+          audio: AudioTrack(id: 'a2'),
+          subtitle: SubtitleTrack.off,
+        ),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: TrackControlsState(
+          sourceAudioTracks: [
+            MediaAudioTrack(id: 1, title: 'Server default', selected: true),
+            MediaAudioTrack(id: 2, title: 'External commentary', selected: false, external: true),
+          ],
+          selectedAudioStreamId: null,
+          onSwitchAudioStreamId: (_) async {},
+          subtitleSearchSupported: false,
+        ),
+      );
+
+      expect(_rowCheck('External commentary'), findsOneWidget);
+      expect(_rowCheck('Server default'), findsNothing);
+    });
+
+    testWidgets('keeps the server flag on a transcode, where mpv has no per-source track', (tester) async {
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(audio: [AudioTrack(id: 'a1')]),
+        track: const TrackSelection(
+          audio: AudioTrack(id: 'a1'),
+          subtitle: SubtitleTrack.off,
+        ),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: TrackControlsState(
+          isTranscoding: true,
+          sourceAudioTracks: [
+            MediaAudioTrack(id: 1, title: 'Japanese stereo', selected: false),
+            MediaAudioTrack(id: 2, title: 'English surround', selected: true),
+          ],
+          selectedAudioStreamId: null,
+          onSwitchAudioStreamId: (_) async {},
+          subtitleSearchSupported: false,
+        ),
+      );
+
+      expect(_rowCheck('English surround'), findsOneWidget);
+      expect(_rowCheck('Japanese stereo'), findsNothing);
+    });
+  });
+
   group('TrackSheet two-line labels', () {
     testWidgets('renders language as the primary line and tech detail below', (tester) async {
       final player = _FakeTrackSheetPlayer(
@@ -528,6 +671,12 @@ void main() {
     });
   });
 }
+
+/// The selection tick on the row whose primary label is [label].
+Finder _rowCheck(String label) => find.descendant(
+  of: find.ancestor(of: find.text(label), matching: find.byType(ListTile)).first,
+  matching: find.byIcon(Symbols.check_rounded),
+);
 
 Future<void> _pumpTrackSheet(
   WidgetTester tester, {

@@ -112,6 +112,7 @@ class PlaybackInitializationService {
   Future<PlaybackInitializationResult> getPlaybackData(
     PlaybackInitializationOptions options, {
     bool preferOffline = false,
+    bool requireOffline = false,
   }) async {
     final metadata = options.metadata;
     final serverId = metadata.serverId ?? client?.serverId;
@@ -140,6 +141,12 @@ class PlaybackInitializationService {
         offlineVideoPath: offlineSource.path,
         selectedMediaIndex: offlineSource.mediaIndex,
         selectedMediaSourceId: offlineSource.mediaSourceId,
+      );
+    }
+    if (requireOffline) {
+      throw const PlaybackException(
+        'The downloaded media file is unavailable.',
+        reason: PlaybackFailureReason.noPlayableSource,
       );
     }
 

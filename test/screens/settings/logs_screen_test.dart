@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
@@ -15,6 +17,8 @@ import 'package:plezy/services/log_upload_service.dart';
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 
 void main() {
   setUpAll(() {
@@ -224,6 +228,302 @@ void main() {
         final action = bar.actions.singleWhere((candidate) => candidate.tooltip == tooltip);
         expect(action.onPressed, isNotNull, reason: tooltip);
       }
+    });
+  });
+
+  group('log body rendering', () {
+    late DeviceInfoPlugin deviceInfo;
+
+    setUp(() {
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '1.2.3',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+      deviceInfo = DeviceInfoPlugin.setMockInitialValues(
+        linuxDeviceInfo: LinuxDeviceInfo(
+          name: 'Test Linux',
+          id: 'test-linux',
+          prettyName: 'Test Linux',
+          machineId: 'test-machine',
+        ),
+      );
+      const deviceInfoChannel = MethodChannel('dev.fluttercommunity.plus/device_info');
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(deviceInfoChannel, (call) async {
+        return <String, dynamic>{
+          'computerName': 'test-mac',
+          'hostName': 'test-mac.local',
+          'arch': 'arm64',
+          'model': 'Mac15,3',
+          'modelName': 'Mac',
+          'kernelVersion': 'test',
+          'osRelease': '15.0',
+          'majorVersion': 15,
+          'minorVersion': 0,
+          'patchVersion': 0,
+          'activeCPUs': 8,
+          'memorySize': 16 * 1024 * 1024 * 1024,
+          'cpuFrequency': 0,
+          'systemGUID': 'test-guid',
+        };
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(deviceInfoChannel, null));
+    });
+
+    // Stores entries without echoing thousands of lines to the test console.
+    void seedLogs(Iterable<String> messages) {
+      final printer = MemoryAwareLogPrinter(SimplePrinter());
+      for (final message in messages) {
+        printer.log(LogEvent(Level.debug, message));
+      }
+    }
+
+    Future<void> pumpLogs(WidgetTester tester) async {
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(home: LogsScreen(deviceInfoPlugin: deviceInfo)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    // Nested SelectionContainers (region > screen > scrollable > record > text)
+    // hand their selectables upward one level per frame through post-frame
+    // callbacks that do not schedule a frame themselves. The app always has
+    // frames in flight here (route transition); the test must pump them.
+    Future<void> pumpSelectionRegistration(WidgetTester tester) async {
+      for (var i = 0; i < 3; i++) {
+        tester.binding.scheduleFrame();
+        await tester.pump();
+      }
+    }
+
+    testWidgets('lays out only the visible slice of a large buffer', (tester) async {
+      // Rendering the whole buffer as one paragraph froze the frame for tens
+      // of seconds and OOM-killed low-memory devices; offscreen entries must
+      // never be materialized.
+      seedLogs(['oldest-entry-marker', for (var i = 1; i < 1999; i++) 'entry-$i payload', 'newest-entry-marker']);
+
+      await pumpLogs(tester);
+
+      // Newest entry renders at the top; the oldest is offscreen and unbuilt.
+      expect(find.textContaining('newest-entry-marker', findRichText: true), findsOneWidget);
+      expect(find.textContaining('oldest-entry-marker', findRichText: true), findsNothing);
+
+      // The tail is still reachable by scrolling.
+      final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      for (var i = 0; i < 10 && position.pixels < position.maxScrollExtent; i++) {
+        position.jumpTo(position.maxScrollExtent);
+        await tester.pump();
+      }
+      expect(find.textContaining('oldest-entry-marker', findRichText: true), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('caps the copied payload below the binder limit and keeps the newest lines', (tester) async {
+      String? clipboardText;
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboardText = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+      final filler = 'x' * 1024;
+      seedLogs(['oldest-copy-marker', for (var i = 1; i < 599; i++) 'copy-entry-$i $filler', 'newest-copy-marker']);
+
+      await pumpLogs(tester);
+      await tester.tap(find.byTooltip(t.logs.copyLogs));
+      await tester.pump();
+
+      expect(clipboardText, isNotNull);
+      expect(utf8.encode(clipboardText!).length, lessThanOrEqualTo(256 * 1024));
+      expect(clipboardText, contains('newest-copy-marker'));
+      expect(clipboardText, isNot(contains('oldest-copy-marker')));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('selection copy separates the header and each record with a newline', (tester) async {
+      // Each row is its own paragraph; SelectionArea glues adjacent
+      // paragraphs together, so a select-all copy used to read
+      // `---[t] newer-row[t] older-row`.
+      String? clipboardText;
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboardText = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+      seedLogs(['older-row', 'newer-row']);
+
+      await pumpLogs(tester);
+      await pumpSelectionRegistration(tester);
+      // `flutter test` runs as Android, whose text-editing shortcuts bind
+      // Ctrl+A / Ctrl+C; the region's own focus node is the shortcut target.
+      tester.widget<SelectableRegion>(find.byType(SelectableRegion)).focusNode!.requestFocus();
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(clipboardText, isNotNull);
+      expect(clipboardText, startsWith('Plezy'));
+      expect(clipboardText, matches(RegExp(r'---\n\[')));
+      expect(clipboardText, matches(RegExp(r'newer-row\n\[')));
+      expect(clipboardText, endsWith('older-row'));
+      expect(clipboardText, isNot(contains('newer-row[')));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a partial drag copy ends at the highlighted text, not at a record boundary', (tester) async {
+      String? clipboardText;
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboardText = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+
+      seedLogs(['older-row', 'newer-row']);
+
+      await pumpLogs(tester);
+      await pumpSelectionRegistration(tester);
+      final header = find.textContaining('Plezy', findRichText: true);
+      final newerRow = find.textContaining('newer-row', findRichText: true);
+      final gesture = await tester.startGesture(
+        tester.getTopLeft(header) + const Offset(1, 6),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      // Stop inside the newer row's timestamp: the drag covers the header
+      // and part of one record only.
+      await gesture.moveTo(tester.getTopLeft(newerRow) + const Offset(40, 6));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      tester.widget<SelectableRegion>(find.byType(SelectableRegion)).focusNode!.requestFocus();
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(clipboardText, isNotNull);
+      expect(clipboardText, matches(RegExp(r'---\n\[')));
+      expect(clipboardText, isNot(contains('newer-row')));
+      expect(clipboardText, isNot(contains('older-row')));
+      expect(clipboardText, isNot(endsWith('\n')));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('app-bar D-pad traversal', () {
+    // Android TV: `defaultTargetPlatform` is already Android under
+    // `flutter test`, which is what selects the Android text-editing shortcuts.
+    setUp(() async {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      await TvDetectionService.getInstance(forceTv: true);
+      TvDetectionService.setForceTVSync(true);
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '1.2.3',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+    });
+
+    tearDown(() {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      TvDetectionService.setForceTVSync(false);
+    });
+
+    testWidgets('ArrowRight from the app-bar back button reaches the action bar on TV', (tester) async {
+      // The back button only exists on a pushed route, which is how the
+      // screen is always reached from Settings.
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(
+              initialRoute: '/logs',
+              routes: {'/': (_) => const Scaffold(), '/logs': (_) => const LogsScreen()},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      final backButton = find.byType(AppBarBackButton);
+      expect(backButton, findsOneWidget);
+      final backNode = Focus.of(tester.element(find.descendant(of: backButton, matching: find.byType(Tooltip))));
+      backNode.requestFocus();
+      await tester.pumpAndSettle();
+      expect(backNode.hasPrimaryFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      final focused = FocusManager.instance.primaryFocus;
+      expect(
+        focused?.context?.findAncestorWidgetOfExactType<FocusableActionBar>(),
+        isNotNull,
+        reason: 'focus stayed on ${focused?.debugLabel}; Right should move it into the action bar',
+      );
+    });
+
+    testWidgets('Shift+ArrowRight from the app-bar back button is still consumed by the selection region', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(
+              initialRoute: '/logs',
+              routes: {'/': (_) => const Scaffold(), '/logs': (_) => const LogsScreen()},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      final backButton = find.byType(AppBarBackButton);
+      final backNode = Focus.of(tester.element(find.descendant(of: backButton, matching: find.byType(Tooltip))));
+      backNode.requestFocus();
+      await tester.pumpAndSettle();
+      expect(backNode.hasPrimaryFocus, isTrue);
+
+      // Nothing else on this screen handles Right, so "handled" can only come
+      // from the SelectionArea's extend-selection action: the override must
+      // defer to it rather than swallow every arrow.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      final handled = await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pumpAndSettle();
+
+      expect(handled, isTrue, reason: 'Shift+Right is a selection gesture and must reach the SelectionArea');
+      expect(backNode.hasPrimaryFocus, isTrue);
     });
   });
 }

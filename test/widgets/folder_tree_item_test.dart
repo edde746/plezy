@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/theme/mono_theme.dart';
 
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/screens/libraries/folder_tree_item.dart';
@@ -60,5 +63,51 @@ void main() {
 
     expect(played, isTrue);
     expect(shuffled, isTrue);
+  });
+
+  testWidgets('folder menu cancellation restores the row but play preserves its focus handoff', (tester) async {
+    final row = FocusNode();
+    final player = FocusNode();
+    addTearDown(row.dispose);
+    addTearDown(player.dispose);
+    var selected = false;
+    final item = testMediaItem(id: 'folder-1', backend: MediaBackend.jellyfin, title: 'Videos');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.windows),
+        home: Material(
+          child: Column(
+            children: [
+              FolderTreeItem(
+                item: item,
+                depth: 0,
+                isFolder: true,
+                focusNode: row,
+                onTap: () => selected = true,
+                onPlayAll: player.requestFocus,
+              ),
+              Focus(focusNode: player, child: const Text('Player')),
+            ],
+          ),
+        ),
+      ),
+    );
+    row.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
+    await tester.pumpAndSettle();
+    expect(find.text(t.common.play), findsOneWidget);
+    Navigator.of(tester.element(find.byType(FolderTreeItem))).pop();
+    await tester.pumpAndSettle();
+    expect(row.hasPrimaryFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    expect(selected, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.common.play));
+    await tester.pumpAndSettle();
+    expect(player.hasPrimaryFocus, isTrue);
+    expect(row.hasFocus, isFalse);
   });
 }

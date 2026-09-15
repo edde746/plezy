@@ -19,11 +19,19 @@ namespace plezy {
 namespace mpv_common {
 
 using StatusCallback = std::function<void(int error)>;
+// `result` is the command's return node (owned by the reply event, valid only
+// for the duration of the callback) or nullptr when the command failed or
+// returned nothing.
+using CommandCallback = std::function<void(int error, const mpv_node* result)>;
 using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
 
 static constexpr char kSetPropertyFailedCode[] = "SET_PROPERTY_FAILED";
 static constexpr char kSetPropertyNotInitializedCode[] = "NOT_INITIALIZED";
 static constexpr size_t kSetPropertyErrorDescriptionLimit = 160;
+// end-file `cause` for an audio device the recovery below gave up on. Dart
+// (PlayerError.audioOutputFailed) and Android
+// (MpvEndFileDiagnostics.CAUSE_AUDIO_OUTPUT_FAILED) carry the same tag.
+static constexpr char kAudioOutputFailedCause[] = "audio-output-failed";
 
 inline bool SetPropertyStatusSucceeded(int status) { return status >= 0; }
 
@@ -46,6 +54,7 @@ inline std::string SetPropertyErrorDescription(int status) {
 
 struct CancelledRequests {
   std::vector<StatusCallback> status;
+  std::vector<CommandCallback> commands;
   std::vector<GetPropertyCallback> properties;
 };
 
@@ -64,6 +73,22 @@ class AsyncRequestRegistry {
     if (it == status_.end()) return nullptr;
     auto callback = std::move(it->second);
     status_.erase(it);
+    return callback;
+  }
+
+  uint64_t RegisterCommand(CommandCallback callback) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const uint64_t request_id = next_id_++;
+    commands_[request_id] = std::move(callback);
+    return request_id;
+  }
+
+  CommandCallback TakeCommand(uint64_t request_id) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = commands_.find(request_id);
+    if (it == commands_.end()) return nullptr;
+    auto callback = std::move(it->second);
+    commands_.erase(it);
     return callback;
   }
 
@@ -92,6 +117,12 @@ class AsyncRequestRegistry {
         cancelled.status.push_back(std::move(request.second));
       }
     }
+    cancelled.commands.reserve(commands_.size());
+    for (auto& request : commands_) {
+      if (request.second) {
+        cancelled.commands.push_back(std::move(request.second));
+      }
+    }
     cancelled.properties.reserve(properties_.size());
     for (auto& request : properties_) {
       if (request.second) {
@@ -99,6 +130,7 @@ class AsyncRequestRegistry {
       }
     }
     status_.clear();
+    commands_.clear();
     properties_.clear();
     return cancelled;
   }
@@ -106,6 +138,7 @@ class AsyncRequestRegistry {
  private:
   uint64_t next_id_ = 1;
   std::map<uint64_t, StatusCallback> status_;
+  std::map<uint64_t, CommandCallback> commands_;
   std::map<uint64_t, GetPropertyCallback> properties_;
   std::mutex mutex_;
 };
@@ -117,7 +150,7 @@ class AsyncRequestRegistry {
 // handle guard stays with the callers: they own the lifecycle flags and the
 // error code they report when the handle is gone.
 inline void SubmitCommandAsync(
-    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::vector<std::string>& args, StatusCallback callback) {
+    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::vector<std::string>& args, CommandCallback callback) {
   std::vector<const char*> c_args;
   c_args.reserve(args.size() + 1);
   for (const auto& arg : args) {
@@ -125,13 +158,29 @@ inline void SubmitCommandAsync(
   }
   c_args.push_back(nullptr);
 
-  const uint64_t request_id = callback ? requests.RegisterStatus(std::move(callback)) : 0;
+  const uint64_t request_id = callback ? requests.RegisterCommand(std::move(callback)) : 0;
   // mpv_command_async returns immediately.
   const int result = mpv_command_async(mpv, request_id, c_args.data());
   if (result < 0) {
-    auto pending = requests.TakeStatus(request_id);
-    if (pending) pending(result);
+    auto pending = requests.TakeCommand(request_id);
+    if (pending) pending(result, nullptr);
   }
+}
+
+// The playlist entry a `loadfile` created, read from the command's result map.
+// mpv reports it as `playlist_entry_id`; other commands return no map, so a
+// caller gets false for them and answers with no id.
+inline bool PlaylistEntryIdFromCommandResult(const mpv_node* result, int64_t* playlist_entry_id) {
+  if (!result || !playlist_entry_id || result->format != MPV_FORMAT_NODE_MAP) return false;
+  const mpv_node_list* map = result->u.list;
+  if (!map || map->num <= 0 || !map->keys || !map->values) return false;
+  for (int i = 0; i < map->num; i++) {
+    if (!map->keys[i] || strcmp(map->keys[i], "playlist_entry_id") != 0) continue;
+    if (map->values[i].format != MPV_FORMAT_INT64) return false;
+    *playlist_entry_id = map->values[i].u.int64;
+    return true;
+  }
+  return false;
 }
 
 inline void SubmitSetPropertyAsync(
@@ -140,6 +189,18 @@ inline void SubmitSetPropertyAsync(
   const uint64_t request_id = callback ? requests.RegisterStatus(std::move(callback)) : 0;
   char* property_value = const_cast<char*>(value.c_str());
   const int result = mpv_set_property_async(mpv, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
+  if (result < 0) {
+    auto pending = requests.TakeStatus(request_id);
+    if (pending) pending(result);
+  }
+}
+
+// Typed rather than formatted: a double rendered to text goes through the
+// C locale's decimal separator, which a GTK process has usually replaced.
+inline void SubmitSetPropertyAsync(
+    mpv_handle* mpv, AsyncRequestRegistry& requests, const std::string& name, double value, StatusCallback callback) {
+  const uint64_t request_id = callback ? requests.RegisterStatus(std::move(callback)) : 0;
+  const int result = mpv_set_property_async(mpv, request_id, name.c_str(), MPV_FORMAT_DOUBLE, &value);
   if (result < 0) {
     auto pending = requests.TakeStatus(request_id);
     if (pending) pending(result);
@@ -163,7 +224,17 @@ inline void SubmitGetPropertyAsync(
 template <typename Sanitizer>
 inline bool DispatchReplyEvent(AsyncRequestRegistry& requests, const mpv_event* event, const Sanitizer& sanitize) {
   switch (event->event_id) {
-    case MPV_EVENT_COMMAND_REPLY:
+    case MPV_EVENT_COMMAND_REPLY: {
+      CommandCallback callback = requests.TakeCommand(event->reply_userdata);
+      if (callback) {
+        const mpv_node* result = nullptr;
+        if (event->error >= 0 && event->data) {
+          result = &static_cast<const mpv_event_command*>(event->data)->result;
+        }
+        callback(event->error, result);
+      }
+      return true;
+    }
     case MPV_EVENT_SET_PROPERTY_REPLY: {
       StatusCallback callback = requests.TakeStatus(event->reply_userdata);
       if (callback) {
@@ -370,7 +441,41 @@ inline bool ParseEnabledFlag(const std::string& value) { return value == "yes" |
 
 inline const char* TargetColorspaceHint(bool hdr_enabled) { return hdr_enabled ? "auto" : "no"; }
 
-enum class AudioReloadReason { kNone, kResume, kNullFallback };
+// Startup options shared by every desktop mpv core. Must run between
+// mpv_create() and mpv_initialize(); platform-specific options (vo, hwdec,
+// wid, HDR/tone-mapping, log level) stay with the caller.
+inline void ApplyCommonStartupOptions(mpv_handle* mpv, bool audio_only) {
+  if (audio_only) {
+    // Music core: no VO, no video decode. vid=no keeps embedded cover art
+    // from ever becoming a video track, and force-window/audio-display make
+    // sure mpv never opens a video output for it either.
+    mpv_set_option_string(mpv, "vid", "no");
+    mpv_set_option_string(mpv, "force-window", "no");
+    mpv_set_option_string(mpv, "audio-display", "no");
+    mpv_set_option_string(mpv, "gapless-audio", "weak");
+  }
+  mpv_set_option_string(mpv, "keep-open", "yes");
+  // When the audio device becomes unavailable (sleep, device unplug), fall
+  // back to the null audio output instead of permanently dropping the audio
+  // track. Recovery is handled by the platform event loop.
+  mpv_set_option_string(mpv, "audio-fallback-to-null", "yes");
+  mpv_set_option_string(mpv, "idle", "yes");
+  mpv_set_option_string(mpv, "input-default-bindings", "no");
+  mpv_set_option_string(mpv, "input-vo-keyboard", "no");
+  mpv_set_option_string(mpv, "osc", "no");
+  // Every URL Plezy opens is a media-server stream or a local file, never a
+  // site mpv's bundled ytdl_hook could resolve. Loading it costs an on_load
+  // hook per open and, on a failed open, spawns yt-dlp with the full stream
+  // URL — access token included — in its argv, where other processes can read
+  // it. mpv gates loading the builtin script on this option at mpv_initialize
+  // time, so it has to be set here rather than from Dart.
+  mpv_set_option_string(mpv, "ytdl", "no");
+}
+
+// kGiveUp is not a reload: the null-fallback budget is spent, the AO is still
+// null and nothing is in flight, so the runner is to end playback. Returned
+// once per outage episode; `attempt` then carries the number of reloads made.
+enum class AudioReloadReason { kNone, kResume, kNullFallback, kGiveUp };
 
 struct AudioReloadAction {
   AudioReloadReason reason = AudioReloadReason::kNone;
@@ -381,6 +486,13 @@ struct AudioReloadAction {
 
 enum class AudioOutputTransition { kNone, kFellBackToNull, kRecovered };
 
+// The null-fallback budget is per outage *episode*, not per null transition.
+// Every ao-reload takes current-ao through unavailable and, when the device is
+// still gone, straight back to "null", and a device that is flapping shows a
+// real AO for a moment in between; neither is the outage ending. An episode
+// starts when the AO falls back to null and ends either with the give-up or
+// once audio has been back for a whole stable window, so a flap inside it
+// continues the same budget and backoff instead of refilling them.
 class AudioRecoveryState {
  public:
   using Clock = std::chrono::steady_clock;
@@ -392,16 +504,15 @@ class AudioRecoveryState {
     if (!loaded) {
       resume_requested_ = false;
       resume_attempts_left_ = 0;
-      null_attempts_left_ = 0;
       reload_pending_ = false;
       pending_request_generation_ = 0;
+      // The give-up ended this file; the next one gets its own episode.
+      gave_up_ = false;
       return;
     }
-    if (!was_loaded && current_ao_is_null_) {
-      null_attempts_left_ = kNullRetryBudget;
-      null_backoff_ = NullFirstDelay();
-      null_next_attempt_ = now + NullFirstDelay();
-    }
+    // The budget itself survives the file boundary: a skip mid-outage is the
+    // same outage, so it resumes rather than refills.
+    if (!was_loaded && current_ao_is_null_) ArmNullRecoveryLocked(now);
   }
 
   void RequestResume() {
@@ -419,14 +530,13 @@ class AudioRecoveryState {
     if (is_null == current_ao_is_null_) return AudioOutputTransition::kNone;
     current_ao_is_null_ = is_null;
     if (is_null) {
-      if (file_loaded_) {
-        null_attempts_left_ = kNullRetryBudget;
-        null_backoff_ = NullFirstDelay();
-        null_next_attempt_ = now + NullFirstDelay();
-      }
+      if (file_loaded_) ArmNullRecoveryLocked(now);
       return AudioOutputTransition::kFellBackToNull;
     }
-    null_attempts_left_ = 0;
+    // Only the time is recorded; whether this was the outage ending is decided
+    // by how long it lasts, at the next fall back to null.
+    last_recovered_at_ = now;
+    recovered_in_episode_ = true;
     return AudioOutputTransition::kRecovered;
   }
 
@@ -439,6 +549,10 @@ class AudioRecoveryState {
     }
     null_attempts_left_ = kNullRetryBudget;
     null_backoff_ = NullFirstDelay();
+    // A new device is a new episode, whatever became of the last one.
+    episode_active_ = true;
+    recovered_in_episode_ = false;
+    gave_up_ = false;
     return true;
   }
 
@@ -460,11 +574,9 @@ class AudioRecoveryState {
       return {AudioReloadReason::kResume, attempt, false, pending_request_generation_};
     }
 
-    if (null_attempts_left_ > 0 && now >= null_next_attempt_) {
-      if (!current_ao_is_null_) {
-        null_attempts_left_ = 0;
-        return {};
-      }
+    if (!NullWorkOwedLocked()) return {};
+    if (null_attempts_left_ > 0) {
+      if (now < null_next_attempt_) return {};
       const int attempt = kNullRetryBudget - null_attempts_left_ + 1;
       --null_attempts_left_;
       null_next_attempt_ = now + null_backoff_;
@@ -473,7 +585,11 @@ class AudioRecoveryState {
       pending_request_generation_ = ++next_request_generation_;
       return {AudioReloadReason::kNullFallback, attempt, null_attempts_left_ == 0, pending_request_generation_};
     }
-    return {};
+    // The last reload has completed and the AO is still null: the episode's
+    // outcome, handed over exactly once.
+    gave_up_ = true;
+    episode_active_ = false;
+    return {AudioReloadReason::kGiveUp, kNullRetryBudget, true, 0};
   }
 
   bool CompleteReload(uint64_t request_generation) {
@@ -488,8 +604,7 @@ class AudioRecoveryState {
 
   bool HasPendingWork() const {
     std::lock_guard<std::mutex> lock(mutex_);
-    return file_loaded_ &&
-           (resume_requested_ || resume_attempts_left_ > 0 || null_attempts_left_ > 0 || reload_pending_);
+    return file_loaded_ && (resume_requested_ || resume_attempts_left_ > 0 || reload_pending_ || NullWorkOwedLocked());
   }
 
  private:
@@ -501,6 +616,30 @@ class AudioRecoveryState {
   static std::chrono::milliseconds NullFirstDelay() { return std::chrono::milliseconds(500); }
   static std::chrono::milliseconds NullBackoffCap() { return std::chrono::milliseconds(8000); }
   static std::chrono::milliseconds DeviceListDebounce() { return std::chrono::milliseconds(250); }
+  // How long audio has to stay on a real AO before a later fall back to null
+  // counts as a new outage rather than the same one flapping.
+  static std::chrono::seconds StableAudioWindow() { return std::chrono::seconds(10); }
+
+  // A reload is owed while the budget lasts, and the give-up once it is spent;
+  // both only while the AO is actually null, so a reload that has just brought
+  // a real AO back is not followed by another, nor by the give-up.
+  bool NullWorkOwedLocked() const { return file_loaded_ && current_ao_is_null_ && episode_active_ && !gave_up_; }
+
+  // The AO is null and the file is loaded: continue the episode in progress
+  // with what is left of its budget, or start one.
+  void ArmNullRecoveryLocked(Clock::time_point now) {
+    const bool same_outage =
+        episode_active_ && (!recovered_in_episode_ || now - last_recovered_at_ < StableAudioWindow());
+    if (same_outage) {
+      null_next_attempt_ = now + null_backoff_;
+      return;
+    }
+    null_attempts_left_ = kNullRetryBudget;
+    null_backoff_ = NullFirstDelay();
+    null_next_attempt_ = now + NullFirstDelay();
+    episode_active_ = true;
+    recovered_in_episode_ = false;
+  }
 
   bool resume_requested_ = false;
   bool file_loaded_ = false;
@@ -513,6 +652,15 @@ class AudioRecoveryState {
   int null_attempts_left_ = 0;
   Clock::time_point null_next_attempt_{};
   std::chrono::milliseconds null_backoff_{0};
+  // An outage episode has a budget granted and has not yet given up. Retired
+  // lazily: a fall back to null after a whole stable window on a real AO
+  // starts a new one in its place.
+  bool episode_active_ = false;
+  bool recovered_in_episode_ = false;
+  Clock::time_point last_recovered_at_{};
+  // The give-up has been handed to the runner; cleared when the file it ended
+  // is gone or a new device shows up.
+  bool gave_up_ = false;
   mutable std::mutex mutex_;
 };
 
@@ -526,17 +674,23 @@ struct AudioRecoveryNotice {
 
 // Feeds the audio-related properties of a PROPERTY_CHANGE event into the
 // recovery state machine, leaving the caller only the platform reporting.
+// `now` is injectable for the same reason SetFileLoaded's is: the schedule
+// the state machine derives from it is what the contract test asserts.
 inline AudioRecoveryNotice ObserveAudioRecoveryProperty(
-    AudioRecoveryState& state, const mpv_event* event, const mpv_event_property* prop) {
-  if (!event || !prop || !prop->name) return {};
+    AudioRecoveryState& state, const mpv_event* event, const mpv_event_property* prop,
+    AudioRecoveryState::Clock::time_point now = AudioRecoveryState::Clock::now()) {
+  if (!event || !prop || !prop->name || event->reply_userdata != 0) return {};
 
   if (std::strcmp(prop->name, "current-ao") == 0) {
-    const char* current_ao = nullptr;
-    if (prop->format == MPV_FORMAT_STRING && prop->data) {
-      current_ao = *static_cast<char**>(prop->data);
-    }
+    // Unavailable (MPV_FORMAT_NONE) is not an AO: the core has no AO at all
+    // for the duration of an ao-reload - uninit, then re-init - and reports
+    // exactly this in between. It says nothing about the outage either way,
+    // and reading it as a recovery is what refilled the budget on every
+    // reload and kept the watchdog going forever.
+    if (prop->format != MPV_FORMAT_STRING || !prop->data) return {};
+    const char* current_ao = *static_cast<char**>(prop->data);
     const bool is_null = current_ao && std::strcmp(current_ao, "null") == 0;
-    const auto transition = state.SetCurrentAudioOutputNull(is_null, AudioRecoveryState::Clock::now());
+    const auto transition = state.SetCurrentAudioOutputNull(is_null, now);
     if (transition == AudioOutputTransition::kFellBackToNull) {
       return {"current-ao fell back to null; starting recovery", true};
     }
@@ -545,8 +699,7 @@ inline AudioRecoveryNotice ObserveAudioRecoveryProperty(
     }
     return {};
   }
-  if (std::strcmp(prop->name, "audio-device-list") == 0 && event->reply_userdata == 0 &&
-      state.OnAudioDeviceListChanged(AudioRecoveryState::Clock::now())) {
+  if (std::strcmp(prop->name, "audio-device-list") == 0 && state.OnAudioDeviceListChanged(now)) {
     return {"audio-device-list changed while ao=null; rescheduling ao-reload", true};
   }
   return {};

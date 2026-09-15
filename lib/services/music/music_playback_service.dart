@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
+import '../playback_launch_observer.dart';
 
 /// Repeat behavior of the music queue.
 enum MusicRepeatMode { off, all, one }
@@ -13,6 +14,11 @@ enum MusicPlaybackStatus { idle, loading, playing, paused, error }
 /// artist/playlist/mix provenance stable, while album and ad-hoc queues use
 /// the active track's album for the "Playing from …" line.
 enum MusicPlayContextKind { album, artist, playlist, mix, tracks }
+
+/// Outcome of [MusicPlaybackService.playInstantMix]. Fetch failures throw
+/// instead of surfacing here; [superseded] means a newer play request claimed
+/// the session while the mix was loading, so the caller must stay silent.
+enum InstantMixOutcome { started, empty, superseded }
 
 /// Provenance of the current queue (album/artist/playlist/instant mix).
 class MusicPlayContext {
@@ -84,10 +90,19 @@ abstract class MusicPlaybackService extends ChangeNotifier {
     MediaItem? startTrack,
     required MusicPlayContext playContext,
     bool shuffle = false,
+    Duration? initialPosition,
+    bool offline = false,
+    PlaybackLaunchObserver? launchObserver,
   });
 
   /// Fetch an instant mix seeded from [seed] and play it.
-  Future<void> playInstantMix(MediaItem seed);
+  ///
+  /// Throws when the mix cannot be fetched (no reachable server, transport
+  /// or server error) and returns [InstantMixOutcome.empty] when the server
+  /// answered with no tracks — the tap site owns surfacing both (#2141). The
+  /// [errors] stream stays reserved for mid-playback failures, so the two
+  /// feedback paths never double up.
+  Future<InstantMixOutcome> playInstantMix(MediaItem seed);
 
   Future<void> play();
   Future<void> pause();

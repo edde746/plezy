@@ -33,13 +33,6 @@
 			</array>
 		</dict>
 	</array>
-	<!-- canOpenURL returns false for undeclared schemes, which both blocks the
-	     external-player handoff and hides the players from Settings. -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>vlc</string>
-		<string>infuse</string>
-	</array>
 	<key>GCSupportedGameControllers</key>
 	<array>
 		<dict>
@@ -57,10 +50,38 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- canOpenURL returns false for undeclared schemes, which both blocks the
+	     external-player handoff and hides the players from Settings. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>vlc</string>
+		<string>infuse</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
+	</dict>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

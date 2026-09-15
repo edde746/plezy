@@ -2,6 +2,7 @@ package com.edde746.plezy.watchnext
 
 import android.content.ContentProviderOperation
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -98,6 +99,22 @@ class WatchNextProvider internal constructor(
     private const val GRANTED_PACKAGES = "granted_packages"
     internal const val SHELF_SCHEMA_VERSION = 1
     private const val SHELF_SCHEMA_VERSION_KEY = "shelf_schema_version"
+    private val ROW_COLUMNS = arrayOf(
+      TvContractCompat.WatchNextPrograms._ID,
+      TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID,
+      TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA,
+      TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI,
+      TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI
+    )
+    private val METADATA_COLUMNS = arrayOf(
+      TvContractCompat.WatchNextPrograms.COLUMN_TYPE,
+      TvContractCompat.WatchNextPrograms.COLUMN_TITLE,
+      TvContractCompat.WatchNextPrograms.COLUMN_SHORT_DESCRIPTION,
+      TvContractCompat.WatchNextPrograms.COLUMN_EPISODE_TITLE,
+      TvContractCompat.WatchNextPrograms.COLUMN_SEASON_DISPLAY_NUMBER,
+      TvContractCompat.WatchNextPrograms.COLUMN_EPISODE_DISPLAY_NUMBER,
+      TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_ASPECT_RATIO
+    )
 
     internal fun forMaintenance(context: Context) = WatchNextProvider(context, null)
   }
@@ -122,11 +139,23 @@ class WatchNextProvider internal constructor(
   private data class CommittedRow(
     val id: Long,
     val contentId: String,
-    val posterUri: Uri?
+    val posterUri: Uri?,
+    val metadata: List<String?> = emptyList()
   )
 
   private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
   private val artwork = SystemShelfArtworkStore(context.cacheDir)
+  private data class CommittedPublication(
+    val ownerId: String,
+    val generation: Long,
+    val items: List<WatchNextItem>,
+    val rows: List<CommittedRow>,
+    val artworkIdentities: Map<Uri, SystemShelfArtworkStore.FileIdentity>,
+    val uris: Set<Uri>
+  )
+
+  // Access only at the lifecycle commit boundary. Failed or full replacement work invalidates it.
+  private var lastPublication: CommittedPublication? = null
 
   internal fun claimOwnership(ownerId: String, generation: Long): SystemShelfLifecycle.Ownership? = lifecycleLease?.let { SystemShelfLifecycle.claim(it, ownerId, generation) }
 
@@ -144,6 +173,9 @@ class WatchNextProvider internal constructor(
       operationOwnership,
       syncDurationMillis
     )
+
+    tryUpdateProgress(ownerId, generation, items, session, isOperationActive)?.let { return it }
+    if (!isOperationActive() || !session.isActive()) return false
 
     val previousArtwork = snapshotCommittedArtwork(ownerId) ?: return false
     if (!isOperationActive() || !session.isActive()) return false
@@ -187,14 +219,19 @@ class WatchNextProvider internal constructor(
         }
 
         val referencedFiles = LinkedHashSet<java.io.File>()
+        val artworkIdentities = LinkedHashMap<Uri, SystemShelfArtworkStore.FileIdentity>()
         preparedItems.forEach { item ->
           val posterUri = item.localPosterUri ?: return@forEach
+          val beforeValidation = artwork.fileIdentity(posterUri)
           val file = artwork.resolveOwned(ownerId, posterUri)
           if (file == null) {
             artwork.delete(publishedFiles)
             return@whileCurrent false
           }
           referencedFiles += file
+          if (beforeValidation != null && beforeValidation == artwork.fileIdentity(posterUri)) {
+            artworkIdentities[posterUri] = beforeValidation
+          }
         }
         if (session.isExpired()) {
           artwork.delete(publishedFiles)
@@ -240,6 +277,26 @@ class WatchNextProvider internal constructor(
 
         reconcileReadAccess(oldUris, oldPackages, newUris, newPackages)
         artwork.deleteExcept(referencedFiles)
+        // An unavailable source (including last-known-good fallback) must be retried, not cached.
+        if (preparedBySource.values.none { it == null } && artworkIdentities.size == newUris.size) {
+          val rows = queryCommittedRows(includeMetadata = true)
+          if (rows != null &&
+            rows.size == preparedItems.size &&
+            rows.indices.all { index ->
+              rows[index].contentId == preparedItems[index].metadata.contentId &&
+                rows[index].posterUri == preparedItems[index].localPosterUri
+            }
+          ) {
+            lastPublication = CommittedPublication(
+              ownerId,
+              generation,
+              items.toList(),
+              rows,
+              artworkIdentities,
+              newUris
+            )
+          }
+        }
         true
       } ?: false
     } finally {
@@ -257,6 +314,7 @@ class WatchNextProvider internal constructor(
     val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
     return SystemShelfLifecycle.whileCurrent(operationOwnership) {
       if (!isOperationActive()) return@whileCurrent false
+      lastPublication = null
       val rowsCleared = deleteRows()
       if (!rowsCleared) return@whileCurrent false
       val uris = storedUris()
@@ -274,6 +332,7 @@ class WatchNextProvider internal constructor(
 
   /** Removes only data from a shelf schema older than the current on-device contract. */
   fun migrateShelfSchema(): Boolean = SystemShelfLifecycle.exclusive {
+    lastPublication = null
     if (prefs.getInt(SHELF_SCHEMA_VERSION_KEY, 0) >= SHELF_SCHEMA_VERSION) {
       return@exclusive restoreReadGrantsOwned()
     }
@@ -321,20 +380,15 @@ class WatchNextProvider internal constructor(
     return snapshot
   }
 
-  private fun queryCommittedRows(): List<CommittedRow>? {
+  private fun queryCommittedRows(includeMetadata: Boolean = false): List<CommittedRow>? {
     return try {
+      val projection = if (includeMetadata) ROW_COLUMNS + METADATA_COLUMNS else ROW_COLUMNS
       val cursor = context.contentResolver.query(
         TvContractCompat.WatchNextPrograms.CONTENT_URI,
-        arrayOf(
-          TvContractCompat.WatchNextPrograms._ID,
-          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_ID,
-          TvContractCompat.WatchNextPrograms.COLUMN_INTERNAL_PROVIDER_DATA,
-          TvContractCompat.WatchNextPrograms.COLUMN_INTENT_URI,
-          TvContractCompat.PreviewPrograms.COLUMN_POSTER_ART_URI
-        ),
+        projection,
         null,
         null,
-        null
+        if (includeMetadata) "${TvContractCompat.WatchNextPrograms._ID} ASC" else null
       ) ?: return null
       cursor.use {
         val idIndex = it.getColumnIndex(TvContractCompat.WatchNextPrograms._ID)
@@ -357,6 +411,13 @@ class WatchNextProvider internal constructor(
         ) {
           return null
         }
+        val metadataIndices = if (includeMetadata) {
+          projection.map(it::getColumnIndex).also { indices ->
+            if (indices.any { index -> index < 0 }) return null
+          }
+        } else {
+          emptyList()
+        }
         val rows = ArrayList<CommittedRow>(it.count)
         while (it.moveToNext()) {
           val providerId = cursorString(it, providerIdIndex)
@@ -366,11 +427,16 @@ class WatchNextProvider internal constructor(
           val contentId = providerId
             ?: providerData
             ?: contentIdFromIntent(cursorString(it, intentIndex))
-            ?: continue
+            ?: if (includeMetadata) return null else continue
           val posterUri = it.getString(posterIndex)
             ?.takeIf(String::isNotBlank)
             ?.let(Uri::parse)
-          rows += CommittedRow(it.getLong(idIndex), contentId, posterUri)
+          rows += CommittedRow(
+            it.getLong(idIndex),
+            contentId,
+            posterUri,
+            metadataIndices.map { index -> cursorString(it, index) }
+          )
         }
         rows
       }
@@ -405,6 +471,7 @@ class WatchNextProvider internal constructor(
     val operationOwnership = ownership ?: claimOwnership(ownerId, generation) ?: return false
     return SystemShelfLifecycle.whileCurrent(operationOwnership) {
       if (!isOperationActive()) return@whileCurrent false
+      lastPublication = null
       removeItemOwned(ownerId, contentId)
     } ?: false
   }
@@ -450,6 +517,93 @@ class WatchNextProvider internal constructor(
     true
   } catch (_: Exception) {
     Log.e(TAG, "Failed to sync Watch Next programs")
+    false
+  }
+
+  /** Null requests the full path; false reports a fenced or failed progress commit. */
+  private fun tryUpdateProgress(
+    ownerId: String,
+    generation: Long,
+    items: List<WatchNextItem>,
+    session: SystemShelfSyncSession,
+    isOperationActive: () -> Boolean
+  ): Boolean? = SystemShelfLifecycle.whileCurrent(session.ownership) {
+    if (!isOperationActive() || session.isExpired()) return@whileCurrent false
+    val publication = lastPublication ?: return@whileCurrent null
+    lastPublication = null
+    if (
+      publication.ownerId != ownerId ||
+      publication.generation != generation ||
+      publication.items.size != items.size ||
+      items.indices.any { !sameMetadata(publication.items[it], items[it]) }
+    ) {
+      return@whileCurrent null
+    }
+    // Consumer/persistence transitions take the original grant and schema rollback path.
+    val packages = storedPackages()
+    if (
+      prefs.getInt(SHELF_SCHEMA_VERSION_KEY, 0) != SHELF_SCHEMA_VERSION ||
+      storedUris() != publication.uris ||
+      packages != consumerPackages()
+    ) {
+      return@whileCurrent null
+    }
+    val rows = queryCommittedRows(includeMetadata = true) ?: return@whileCurrent null
+    if (rows != publication.rows ||
+      publication.artworkIdentities.any { (uri, identity) ->
+        artwork.fileIdentity(uri) != identity
+      }
+    ) {
+      return@whileCurrent null
+    }
+    // Grants are reboot-volatile even if the persisted consumer set has not changed.
+    if (!grantReadAccess(publication.uris, packages)) return@whileCurrent false
+    if (!isOperationActive() || session.isExpired()) return@whileCurrent false
+    if (!updateProgressRows(items, rows)) return@whileCurrent false
+    lastPublication = publication
+    true
+  }
+
+  private fun sameMetadata(previous: WatchNextItem, current: WatchNextItem): Boolean = previous.contentId == current.contentId &&
+    previous.title == current.title &&
+    previous.episodeTitle == current.episodeTitle &&
+    previous.description == current.description &&
+    previous.posterSourceUri == current.posterSourceUri &&
+    previous.type == current.type &&
+    previous.seriesTitle == current.seriesTitle &&
+    previous.seasonNumber == current.seasonNumber &&
+    previous.episodeNumber == current.episodeNumber
+
+  private fun updateProgressRows(items: List<WatchNextItem>, rows: List<CommittedRow>): Boolean = try {
+    val operations = ArrayList<ContentProviderOperation>(items.size)
+    items.forEachIndexed { index, item ->
+      val values = ContentValues(4).apply {
+        put(
+          TvContractCompat.WatchNextPrograms.COLUMN_WATCH_NEXT_TYPE,
+          if (item.lastPlaybackPosition > 0) {
+            TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE
+          } else {
+            TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_NEXT
+          }
+        )
+        put(TvContractCompat.WatchNextPrograms.COLUMN_LAST_ENGAGEMENT_TIME_UTC_MILLIS, item.lastEngagementTime)
+        put(
+          TvContractCompat.WatchNextPrograms.COLUMN_DURATION_MILLIS,
+          item.duration.coerceIn(0, Int.MAX_VALUE.toLong()).toInt()
+        )
+        put(
+          TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS,
+          if (item.duration > 0) item.lastPlaybackPosition.coerceIn(0, Int.MAX_VALUE.toLong()).toInt() else 0
+        )
+      }
+      operations += ContentProviderOperation.newUpdate(
+        ContentUris.withAppendedId(TvContractCompat.WatchNextPrograms.CONTENT_URI, rows[index].id)
+      ).withValues(values).withExpectedCount(1).build()
+    }
+    context.contentResolver.applyBatch(TvContractCompat.AUTHORITY, operations)
+    true
+  } catch (_: Exception) {
+    Log.e(TAG, "Failed to update Watch Next progress")
     false
   }
 

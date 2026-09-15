@@ -64,7 +64,6 @@ import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
-import '../../utils/route_visibility.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
@@ -96,6 +95,7 @@ import '../../models/shader_preset.dart';
 import '../../providers/playback_state_provider.dart';
 import '../../providers/shader_provider.dart';
 import '../../services/shader_service.dart';
+import '../../watch_together/providers/watch_together_provider.dart';
 
 part 'parts/key_events.dart';
 part 'parts/markers.dart';
@@ -586,6 +586,11 @@ class PlexVideoControls extends StatefulWidget {
   /// playback state around the native player seek.
   final Future<void> Function(Duration position)? onSeekRequested;
 
+  /// Called for app-level playback-rate requests (speed sheet, keyboard
+  /// shortcuts, long-press 2x) so the owning screen can apply the rate and
+  /// declare it to a Watch Together room. Falls back to [Player.setRate].
+  final Future<void> Function(double rate)? onRateRequested;
+
   /// Called for app-level transport requests so the owning screen can track
   /// user playback intent separately from transient buffering state, and
   /// announce the accepted command.
@@ -645,11 +650,8 @@ class PlexVideoControls extends StatefulWidget {
   /// Whether playback is at the live edge
   final bool isAtLiveEdge;
 
-  /// Epoch seconds corresponding to player position 0 (for live TV)
-  final double streamStartEpoch;
-
-  /// Current playback position as absolute epoch seconds (for live TV)
-  final int? currentPositionEpoch;
+  /// Maps a player-local position to absolute epoch seconds for live TV.
+  final int Function(Duration position)? liveEpochForPosition;
 
   /// Seek callback for live TV time-shift (absolute epoch seconds; scrubber)
   final ValueChanged<int>? onLiveSeek;
@@ -721,6 +723,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
     this.onSeekRequested,
+    this.onRateRequested,
     this.onPlayPauseRequested,
     this.onSeekCompleted,
     this.onBack,
@@ -738,8 +741,7 @@ class PlexVideoControls extends StatefulWidget {
     this.liveChannelName,
     this.captureBuffer,
     this.isAtLiveEdge = true,
-    this.streamStartEpoch = 0,
-    this.currentPositionEpoch,
+    this.liveEpochForPosition,
     this.onLiveSeek,
     this.onLiveSeekBy,
     this.onJumpToLive,
@@ -818,6 +820,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   ));
   double? _edgeAdjustmentStartValue;
   bool _edgeAdjustmentWasActive = false;
+  MobileEdgeAdjustmentSide? _edgeAdjustmentActiveSide;
   MobileEdgeAdjustmentSide? _pendingEdgeAdjustmentSide;
   double _pendingEdgeAdjustmentDelta = 0.0;
   int? _pendingEdgeAdjustmentGeneration;
@@ -853,9 +856,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   StreamSubscription<bool>? _completedSubscription;
   // Position subscription for marker tracking
   StreamSubscription<Duration>? _positionSubscription;
-  // Auto-skip state
-  bool get _autoSkipIntro => _settings.read(SettingsService.autoSkipIntro);
-  bool get _autoSkipCredits => _settings.read(SettingsService.autoSkipCredits);
+  // Skip-marker state
+  SkipMarkerMode _skipModeFor(MediaMarker marker) =>
+      _settings.read(marker.isCredits ? SettingsService.skipCreditsMode : SettingsService.skipIntroMode);
   int get _autoSkipDelay => _settings.read(SettingsService.autoSkipDelay);
   Timer? _autoSkipTimer;
   final ValueNotifier<double> _autoSkipProgress = ValueNotifier<double>(0.0);
@@ -943,8 +946,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.scopedPlayerPrefValues,
       SettingsService.syncOffsetScope,
       SettingsService.rotationLocked,
-      SettingsService.autoSkipIntro,
-      SettingsService.autoSkipCredits,
+      SettingsService.skipIntroMode,
+      SettingsService.skipCreditsMode,
       SettingsService.autoSkipDelay,
       SettingsService.videoPlayerNavigationEnabled,
       SettingsService.showPerformanceOverlay,
@@ -952,6 +955,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.clickVideoTogglesPlayback,
       SettingsService.showChapterMarkersOnTimeline,
     ]);
+    // A marker kind switched Off while inside one of its markers must drop the
+    // prompt now, not on the next position tick (paused playback never ticks).
+    bindEffect(SettingsService.skipIntroMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
+    bindEffect(SettingsService.skipCreditsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     widget.chromeController.addListener(_onChromeChanged);
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);
@@ -960,12 +967,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _listenToPlayingState();
     _listenToCompleted();
     _checkPipSupport();
-    _deviceAdjustmentService.onResume = _refreshDeviceAdjustmentValues;
+    _deviceAdjustmentService.onResume = _handleDeviceAdjustmentResume;
     _deviceAdjustmentService.setRestoreSuppressed(_pipService.isPipActive.value);
     _pipService.isPipActive.addListener(_onEdgeAdjustmentPipChanged);
     _edgeAdjustmentLifecycleListener = AppLifecycleListener(
-      onResume: _refreshDeviceAdjustmentValues,
-      onShow: _refreshDeviceAdjustmentValues,
+      onResume: _handleDeviceAdjustmentResume,
+      onShow: _handleDeviceAdjustmentResume,
       onHide: _cancelEdgeAdjustmentGesture,
       onPause: _cancelEdgeAdjustmentGesture,
     );
@@ -1001,7 +1008,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       // shortcut.
       if (!_focusPlayPauseIfKeyboardMode()) _claimPlayerSurfaceFocus();
       if (PlatformDetector.isMobile(context) && !PlatformDetector.isTV()) {
-        _refreshDeviceAdjustmentValues();
+        _handleDeviceAdjustmentResume();
       }
     });
   }
@@ -1009,7 +1016,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _setControlsState(VoidCallback fn) => setStateIfMounted(fn);
 
   void _configureChromeController() {
-    widget.chromeController.configure(hideDelay: _hideDelay, hasFirstFrame: widget.hasFirstFrame?.value ?? true);
+    widget.chromeController.configure(
+      hideDelay: _hideDelay,
+      hasFirstFrame: widget.hasFirstFrame?.value ?? true,
+      directionalNavigation: playerDirectionalNavigationEnabled(),
+    );
   }
 
   @override
@@ -1180,10 +1191,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // reclaim re-tests `hasFocus` when it runs, so once the surface holds the
     // remote the two no longer compete.
     if (!mounted || _focusNode.hasFocus) return;
-    // A route pushed above the player still leaves these controls mounted —
-    // on this navigator or an ancestor one (root-navigator dialogs/picker);
-    // re-activating the window must not pull the remote off the top route.
-    if (!isRouteChainCurrent(context)) return;
+    // A route pushed above the player on this navigator still leaves these
+    // controls mounted; re-activating the window must not pull the remote off
+    // the top route. (A root-navigator cover is handled for the whole session
+    // by CoveredRouteFocusBoundary, which makes the claim a no-op.)
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     _claimPlayerSurfaceFocus();
   }
 
@@ -1194,6 +1206,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    // Auto-hide only fades the performance card out; the same flag also has to
+    // stop its 500 ms native stats poll, which would otherwise keep running
+    // behind a fully transparent widget.
+    final performanceOverlayVisible = !_autoHidePerformanceOverlay || _showControls;
 
     // Hide ALL controls when in PiP mode (except macOS where main window stays visible)
     return ValueListenableBuilder<bool>(
@@ -1348,7 +1364,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       onSeekCompleted: widget.onSeekCompleted,
                                                       onPlayPause: () => unawaited(_playOrPause()),
                                                       onCancelAutoHide: widget.chromeController.cancelAutoHide,
-                                                      onStartAutoHide: widget.chromeController.startAutoHide,
+                                                      onStartAutoHide: _startHideTimer,
                                                       onBack: widget.onBack,
                                                       onNext: _abandoningBurst(widget.onNext),
                                                       onPrevious: _abandoningBurst(widget.onPrevious),
@@ -1359,7 +1375,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       liveChannelName: widget.liveChannelName,
                                                       captureBuffer: widget.captureBuffer,
                                                       isAtLiveEdge: widget.isAtLiveEdge,
-                                                      streamStartEpoch: widget.streamStartEpoch,
+                                                      liveEpochForPosition: widget.liveEpochForPosition,
                                                       onLiveSeek: _liveSeekAbandoningBurst(widget.onLiveSeek),
                                                       serverId: widget.metadata.serverId,
                                                       showQueueTab: canShowQueue,
@@ -1494,9 +1510,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       child: Align(
                         alignment: Alignment.topLeft,
                         child: AnimatedOpacity(
-                          opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
+                          opacity: performanceOverlayVisible ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
-                          child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
+                          child: IgnorePointer(
+                            child: PlayerPerformanceOverlay(player: widget.player, active: performanceOverlayVisible),
+                          ),
                         ),
                       ),
                     ),

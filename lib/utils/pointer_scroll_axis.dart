@@ -1,6 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
+import 'semantics_tree_gate.dart';
+
 /// Collapses a diagonal scroll signal onto the axis the viewer actually moved.
 ///
 /// A wheel, trackpoint, trackball or button-scroll event expresses one-axis
@@ -52,8 +54,8 @@ mixin PointerScrollAxisLock on GestureBinding {
   }
 }
 
-/// The app's binding, which exists solely to install [PointerScrollAxisLock].
-class PlezyWidgetsBinding extends WidgetsFlutterBinding with PointerScrollAxisLock {
+/// The app's binding: installs [PointerScrollAxisLock] and [SemanticsTreeGate].
+class PlezyWidgetsBinding extends WidgetsFlutterBinding with PointerScrollAxisLock, SemanticsTreeGate {
   static bool _initialized = false;
 
   /// Creates the binding on first call and returns it afterwards, mirroring

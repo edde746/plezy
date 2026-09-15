@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -5,13 +7,20 @@ import 'package:provider/provider.dart';
 
 import '../../../focus/focusable_button.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../media/ids.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_item_types.dart';
 import '../../../providers/playback_state_provider.dart';
+import '../../../services/download_storage_service.dart';
 import '../../../services/pip_service.dart';
+import '../../../services/settings_service.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/provider_extensions.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
 import '../../../watch_together/widgets/watch_together_overlay.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/optimized_media_image.dart';
+import '../../../widgets/settings_builder.dart';
 import '../../../widgets/video_controls/player_chrome_controller.dart';
 
 class VideoPlayerMacPipPlaceholder extends StatelessWidget {
@@ -212,11 +221,18 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final episode = nextEpisode;
     if (episode == null) return const SizedBox.shrink();
+    // Resolved only while shown: the overlay sits in the player build with
+    // visible=false for the whole episode, and the lookup hashes the artwork
+    // path per call.
+    final backdrop = visible ? _buildThumbnailBackdrop(context, episode) : null;
     return _VideoPlayerPromptShell(
       visible: visible,
       chromeController: chromeController,
       focusNodes: [cancelFocusNode, confirmFocusNode],
+      backdrop: backdrop,
       children: [
+        // Clear region that keeps the still visible above the scrimmed text.
+        if (backdrop != null) const SizedBox(height: 110),
         _PlayNextEpisodeHeader(episode: episode),
         const SizedBox(height: 12),
         _VideoPlayerPromptActions(
@@ -243,6 +259,43 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  /// The next episode's 16:9 video-frame still, painted edge-to-edge behind
+  /// the prompt text under the card's scrim (#2166).
+  ///
+  /// Null keeps the original text-only card: the item has no thumb, or
+  /// nothing could serve one (no live client and no artwork directory for a
+  /// downloaded copy). A load that starts and fails degrades to the dark card
+  /// via the shrinking placeholder/error widgets instead of a fallback icon.
+  Widget? _buildThumbnailBackdrop(BuildContext context, MediaItem episode) {
+    final thumbPath = episode.thumbPath;
+    if (thumbPath == null) return null;
+    final serverId = serverIdOrNull(episode.serverId);
+    final client = context.tryGetMediaClientForServer(serverId);
+    final localFilePath = serverId == null
+        ? null
+        : DownloadStorageService.instance.getArtworkPathSync(serverId, thumbPath);
+    if (client == null && localFilePath == null) return null;
+    final image = OptimizedMediaImage.thumb(
+      client: client,
+      imagePath: thumbPath,
+      localFilePath: localFilePath,
+      fit: BoxFit.cover,
+      placeholder: (_, _) => const SizedBox.shrink(),
+      errorWidget: (_, _, _) => const SizedBox.shrink(),
+    );
+    // The next episode is unwatched by definition, so hide-spoilers users get
+    // the same blurred still as the queue strip and episode cards.
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.hideSpoilers,
+      builder: (context, hideSpoilers, _) {
+        if (!hideSpoilers || !episode.shouldHideSpoiler) return image;
+        return ClipRect(
+          child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: image),
+        );
+      },
     );
   }
 }
@@ -364,12 +417,16 @@ class _VideoPlayerPromptShell extends StatelessWidget {
   final bool visible;
   final PlayerChromeController chromeController;
   final List<FocusNode> focusNodes;
+
+  /// Full-bleed artwork painted behind [children] under a darkening scrim.
+  final Widget? backdrop;
   final List<Widget> children;
 
   const _VideoPlayerPromptShell({
     required this.visible,
     required this.chromeController,
     required this.focusNodes,
+    this.backdrop,
     required this.children,
   });
 
@@ -387,6 +444,7 @@ class _VideoPlayerPromptShell extends StatelessWidget {
             chromeController: chromeController,
             focusNodes: focusNodes,
             child: _VideoPlayerPromptCard(
+              backdrop: backdrop,
               child: Column(mainAxisSize: .min, crossAxisAlignment: .start, children: children),
             ),
           ),
@@ -487,20 +545,49 @@ class _VideoPlayerPromptPosition extends StatelessWidget {
 }
 
 class _VideoPlayerPromptCard extends StatelessWidget {
+  /// See [_VideoPlayerPromptShell.backdrop].
+  final Widget? backdrop;
   final Widget child;
 
-  const _VideoPlayerPromptCard({required this.child});
+  const _VideoPlayerPromptCard({this.backdrop, required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final backdrop = this.backdrop;
+    final content = Padding(padding: const EdgeInsets.all(16), child: child);
+    final decoration = BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.9),
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+    );
+    if (backdrop == null) {
+      return Container(width: 320, decoration: decoration, child: content);
+    }
     return Container(
       width: 320,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.9),
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      decoration: decoration,
+      child: Stack(
+        children: [
+          Positioned.fill(child: backdrop),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.35, 0.78],
+                  colors: [
+                    Colors.black.withValues(alpha: 0.05),
+                    Colors.black.withValues(alpha: 0.25),
+                    Colors.black.withValues(alpha: 0.92),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          content,
+        ],
       ),
-      child: child,
     );
   }
 }

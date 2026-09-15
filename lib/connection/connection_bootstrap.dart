@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
+import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
-import '../profiles/plex_home_cache_codec.dart';
 import '../profiles/profile_registry.dart';
 import '../services/plex_auth_service.dart';
 import '../services/server_registry.dart';
@@ -20,24 +20,23 @@ import 'plex_account_setup.dart';
 ///
 /// Plex Home users are NOT persisted here — the bootstrap copies the
 /// legacy `homeUsersCache` into the per-connection
-/// `plex_home_users_{connectionId}` SharedPreferences slot so
-/// [PlexHomeService] picks it up on cold start.
+/// `plex_home_users_{connectionId}` SharedPreferences slot and asks
+/// [PlexHomeService] to reload (or fetch) it.
 class ConnectionBootstrap {
   ConnectionBootstrap({
     required this.storage,
     required this.connectionRegistry,
     required this.serverRegistry,
     required this.profileRegistry,
-    Future<List<PlexHomeUser>> Function(String accountToken)? plexHomeUserFetcher,
+    required this.plexHome,
     Future<Map<String, dynamic>> Function(String accountToken)? plexUserInfoFetcher,
-  }) : _plexHomeUserFetcher = plexHomeUserFetcher ?? fetchPlexHomeUsers,
-       _plexUserInfoFetcher = plexUserInfoFetcher ?? _fetchPlexUserInfo;
+  }) : _plexUserInfoFetcher = plexUserInfoFetcher ?? _fetchPlexUserInfo;
 
   final StorageService storage;
   final ConnectionRegistry connectionRegistry;
   final ServerRegistry serverRegistry;
   final ProfileRegistry profileRegistry;
-  final Future<List<PlexHomeUser>> Function(String accountToken) _plexHomeUserFetcher;
+  final PlexHomeService plexHome;
   final Future<Map<String, dynamic>> Function(String accountToken) _plexUserInfoFetcher;
 
   static const String _keyProfileMigrationV1Done = 'profile_migration_v1_done';
@@ -63,6 +62,9 @@ class ConnectionBootstrap {
         final prepared = await _preparePlexVirtualProfile(account);
         if (!prepared) {
           if (migratedAccount != null && hadLegacyPlexToken) {
+            // A failed/empty fetch may have left an empty cache slot on disk
+            // for the id we are about to drop; don't leave it orphaned.
+            await storage.clearPlexHomeUsersCache(migratedAccount.id);
             await connectionRegistry.remove(migratedAccount.id);
           }
           appLogger.w('Migration: could not hydrate Plex Home profiles for ${account.id}; will retry later');
@@ -147,9 +149,12 @@ class ConnectionBootstrap {
   /// profile. Plex users are never persisted as local Plezy profiles.
   Future<bool> _preparePlexVirtualProfile(PlexAccountConnection account) async {
     final copied = await _migrateLegacyPlexHomeUsersCache(account.id);
-    var users = copied ? _readPlexHomeUsersCache(account.id) : null;
-    users ??= await _fetchAndCachePlexHomeUsers(account);
-    final hydratedUsers = users;
+    if (copied) {
+      await plexHome.reloadFromStorage();
+    } else {
+      await plexHome.refresh(account);
+    }
+    final hydratedUsers = plexHome.current[account.id] ?? const [];
     if (hydratedUsers.isEmpty) return false;
 
     final legacyActiveUuid = storage.getCurrentUserUUID();
@@ -193,31 +198,6 @@ class ConnectionBootstrap {
     } catch (e, st) {
       appLogger.w('Plex Home cache migration failed', error: e, stackTrace: st);
       return false;
-    }
-  }
-
-  List<PlexHomeUser>? _readPlexHomeUsersCache(String connectionId) {
-    final raw = storage.getPlexHomeUsersCacheJson(connectionId);
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      return decodePlexHomeUsersCache(raw);
-    } catch (e, st) {
-      appLogger.w('Migration: failed to read Plex Home cache for $connectionId', error: e, stackTrace: st);
-      return null;
-    }
-  }
-
-  Future<List<PlexHomeUser>> _fetchAndCachePlexHomeUsers(PlexAccountConnection account) async {
-    try {
-      final users = await _plexHomeUserFetcher(account.accountToken);
-      if (users.isNotEmpty) {
-        await storage.savePlexHomeUsersCache(account.id, encodePlexHomeUsersCache(users));
-        appLogger.i('Migration: fetched ${users.length} Plex Home users for ${account.id}');
-      }
-      return users;
-    } catch (e, st) {
-      appLogger.w('Migration: Plex Home fetch failed for ${account.id}', error: e, stackTrace: st);
-      return const [];
     }
   }
 

@@ -7,8 +7,10 @@ import '../media/media_server_client.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
+import '../utils/connectivity_link_type.dart';
 import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
+import 'connectivity_probe.dart';
 import 'download_manager_service.dart';
 import 'multi_server_manager.dart';
 import 'playlist_items_loader.dart';
@@ -88,7 +90,7 @@ class SyncRuleExecutor {
     }
 
     // Read connectivity once for both the WiFi-only gate and the cooldown pick.
-    final List<ConnectivityResult> connectivity = await _readConnectivity();
+    final List<ConnectivityResult> connectivity = await ConnectivityProbe.check();
     if (await DownloadManagerService.shouldBlockDownloadOnCellularWith(connectivity)) {
       appLogger.d('Skipping sync rules — cellular download blocked');
       return [];
@@ -96,8 +98,7 @@ class SyncRuleExecutor {
 
     final lastFullRunAt = _lastFullRunAtByProfile[profileId];
     if (!force && lastFullRunAt != null) {
-      final hasWifi =
-          connectivity.contains(ConnectivityResult.wifi) || connectivity.contains(ConnectivityResult.ethernet);
+      final hasWifi = connectivity.hasWifiOrEthernet;
       final cooldown = hasWifi ? _cooldownWifi : _cooldownCellular;
       final elapsed = DateTime.now().difference(lastFullRunAt);
       if (elapsed < cooldown) {
@@ -530,13 +531,4 @@ class SyncRuleExecutor {
           p.status == DownloadStatus.downloading ||
           p.status == DownloadStatus.queued ||
           p.status == DownloadStatus.paused);
-
-  Future<List<ConnectivityResult>> _readConnectivity() async {
-    try {
-      return await Connectivity().checkConnectivity();
-    } catch (_) {
-      // connectivity_plus can throw PlatformException on Windows — treat as unknown.
-      return const <ConnectivityResult>[];
-    }
-  }
 }

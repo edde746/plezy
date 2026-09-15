@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_button.dart';
@@ -14,6 +15,7 @@ import '../models/seerr/seerr_public_settings.dart';
 import '../models/seerr/seerr_request.dart';
 import '../models/seerr/seerr_session.dart';
 import '../models/seerr/seerr_service.dart';
+import '../providers/seerr_account_provider.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/seerr/seerr_constants.dart';
 import '../services/seerr/seerr_exceptions.dart';
@@ -26,21 +28,32 @@ import 'focusable_list_tile.dart';
 import 'overlay_sheet.dart';
 import 'stat_chip.dart';
 
+/// Why the sheet closed itself; a caller surfaces it on its own scaffold
+/// since the sheet is unmounting.
+enum SeerrRequestSheetClose {
+  /// The signed-in user lost permission to request this kind while open.
+  permissionRevoked,
+}
+
 /// Open the Seerr request sheet for a title. Pops with a success snackbar
-/// once the request is submitted.
+/// once the request is submitted, or an error snackbar when the sheet had to
+/// close because the user's request permission went away.
 Future<void> showSeerrRequestSheet(
   BuildContext context, {
   required SeerrCatalogSource source,
   required MediaKind kind,
   required int tmdbId,
   required String title,
-}) {
-  return OverlaySheetController.showAdaptive<void>(
+}) async {
+  final close = await OverlaySheetController.showAdaptive<SeerrRequestSheetClose>(
     context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => SeerrRequestSheet(source: source, kind: kind, tmdbId: tmdbId, title: title),
   );
+  if (close == SeerrRequestSheetClose.permissionRevoked && context.mounted) {
+    showErrorSnackBar(context, t.seerr.permissionRevoked);
+  }
 }
 
 /// The full Seerr request flow, mirroring the web UI: per-season selection
@@ -80,18 +93,49 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
   bool _is4k = false;
 
+  /// TV only: the TMDB anime keyword is present, so Seerr routes the series
+  /// to the Sonarr instance's anime defaults (profile, folder, language,
+  /// tags) and the sheet must seed its overrides from those.
+  bool _isAnime = false;
+
   /// Advanced options (REQUEST_ADVANCED): all configured instances of the
   /// matching service; the pickers filter by the 4K toggle.
   List<SeerrServiceInstance> _allServers = const [];
   SeerrServiceInstance? _server;
   SeerrServiceDetail? _serverDetail;
   bool _serverDetailLoading = false;
+
+  /// Bumped on every destination adoption (including null and the 4K
+  /// round-trip). A detail load that lands for an older generation is
+  /// dropped outright: an id-only check would let A→B→A or 4K on→off apply
+  /// the first A response over the second's in-flight load.
+  int _serverSelectionGeneration = 0;
   int? _profileId;
   String? _rootFolder;
   int? _languageProfileId;
 
+  /// Null until the service detail reports the instance's default tags; a
+  /// null is omitted from the payload so Seerr applies its own defaults.
+  List<int>? _tags;
+  bool _tagsExpanded = false;
+
   bool _submitting = false;
   String? _errorText;
+
+  /// The sheet never retargets selections or an in-flight write to a new
+  /// account client, even if that replacement is already connected.
+  SeerrAccountProvider? _account;
+  bool get _connected => _account == null || identical(_account!.catalogClient, widget.source.client);
+
+  /// The permission mask the sheet's state was last reconciled against, so
+  /// a grant or revocation while open is applied as a transition (servers
+  /// loaded, 4K/destination reset) rather than re-derived from scratch.
+  int? _reconciledPermissions;
+  bool _closing = false;
+  int _authorityGeneration = 0;
+  int _serverListGeneration = 0;
+  final FocusNode _variantFocusNode = FocusNode(debugLabel: 'seerr_variant');
+  final FocusNode _advancedFocusNode = FocusNode(debugLabel: 'seerr_advanced');
 
   bool get _isMovie => widget.kind == MediaKind.movie;
 
@@ -122,11 +166,79 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The client's session is updated in place (bind-time refresh, silent
+    // re-auth, a denied request's /auth/me probe); the provider's notify is
+    // what tells the sheet to look again. Nullable: hosts without the
+    // profile session scope (tests) still reconcile after a denied submit.
+    _account = context.watch<SeerrAccountProvider?>();
+    _reconcileAuthority();
+  }
+
+  /// Observe transitions even during loads/submits so late picker responses
+  /// cannot survive a revoke→grant round-trip. Only permission-driven closure
+  /// waits for the immutable in-flight request to settle.
+  void _reconcileAuthority() {
+    if (!_connected) {
+      _scheduleAuthorityClose();
+      return;
+    }
+    final permissions = _permissions;
+    final previous = _reconciledPermissions;
+    _reconciledPermissions = permissions;
+    if (previous != permissions) {
+      _authorityGeneration++;
+      final hadAdvanced = previous != null && seerrHasPermission(previous, [SeerrPermission.requestAdvanced]);
+      if (hadAdvanced != _advancedAllowed) _serverListGeneration++;
+      final restoreFocus =
+          (!_advancedAllowed && _advancedFocusNode.hasFocus) || (!_can4k && _variantFocusNode.hasFocus);
+      if (!_advancedAllowed && hadAdvanced) {
+        setState(() {
+          _allServers = const [];
+          _tagsExpanded = false;
+        });
+        _adoptServer(null);
+      } else if (_advancedAllowed && !hadAdvanced && !_loading && !_loadFailed) {
+        unawaited(_loadServers());
+      }
+      if (_is4k && !_can4k) _toggle4k(false);
+      if (restoreFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_connected || !widget.source.canRequest(widget.kind)) return;
+          if (_canSubmit) {
+            _focusRequestButton();
+          } else {
+            _seasonFocusNodes.firstOrNull?.requestFocus();
+          }
+        });
+      }
+    }
+    if (!_submitting && !widget.source.canRequest(widget.kind)) _scheduleAuthorityClose();
+  }
+
+  void _scheduleAuthorityClose() {
+    if (_closing) return;
+    _closing = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _closing = false;
+      if (!mounted) return;
+      if (!_connected) {
+        OverlaySheetController.closeAdaptive(context);
+      } else if (!_submitting && !widget.source.canRequest(widget.kind)) {
+        OverlaySheetController.closeAdaptive(context, SeerrRequestSheetClose.permissionRevoked);
+      }
+    });
+  }
+
+  @override
   void dispose() {
     for (final node in _seasonFocusNodes) {
       node.dispose();
     }
     _requestButtonFocusNode.dispose();
+    _variantFocusNode.dispose();
+    _advancedFocusNode.dispose();
     super.dispose();
   }
 
@@ -149,6 +261,9 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       _loadFailed = false;
     });
     final client = widget.source.client;
+    final authorityGeneration = _authorityGeneration;
+    final serverListGeneration = ++_serverListGeneration;
+    _reconciledPermissions = _permissions;
     try {
       final (settings, servers) = await (
         client.getPublicSettings(),
@@ -156,9 +271,11 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
             ? (_isMovie ? client.getRadarrServices() : client.getSonarrServices())
             : Future.value(const <SeerrServiceInstance>[]),
       ).wait;
+      if (!mounted || !_connected) return;
 
       SeerrMediaInfo? mediaInfo;
       var seasons = const <SeerrSeason>[];
+      var isAnime = false;
       if (_isMovie) {
         mediaInfo = (await client.getMovie(widget.tmdbId)).mediaInfo;
       } else {
@@ -168,25 +285,54 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           for (final season in tv.seasons ?? const <SeerrSeason>[])
             if (season.seasonNumber > 0 && (season.episodeCount ?? 0) > 0) season,
         ];
+        isAnime = tv.keywords?.any((k) => k.id == SeerrConstants.animeKeywordId) ?? false;
       }
-      if (!mounted) return;
+      if (!mounted || !_connected) return;
       _replaceSeasonFocusNodes(seasons);
       setState(() {
         _settings = settings;
         _mediaInfo = mediaInfo;
         _seasons = seasons;
-        _allServers = servers;
+        _isAnime = isAnime;
+        _allServers =
+            authorityGeneration == _authorityGeneration &&
+                serverListGeneration == _serverListGeneration &&
+                _advancedAllowed
+            ? servers
+            : const [];
         _loading = false;
       });
       _selectDefaultServer();
+      if (_advancedAllowed &&
+          (authorityGeneration != _authorityGeneration || serverListGeneration != _serverListGeneration)) {
+        unawaited(_loadServers());
+      }
     } catch (e) {
       appLogger.w('Seerr: request sheet load failed for tmdb ${widget.tmdbId}', error: e);
-      if (!mounted) return;
+      if (!mounted || !_connected) return;
       setState(() {
         _loading = false;
         _loadFailed = true;
       });
     }
+    _reconcileAuthority();
+  }
+
+  /// Servers-only reload for an advanced grant that landed after [_load]
+  /// skipped them; degrades like a failed detail load (defaults apply).
+  Future<void> _loadServers() async {
+    final generation = ++_serverListGeneration;
+    final client = widget.source.client;
+    final List<SeerrServiceInstance> servers;
+    try {
+      servers = _isMovie ? await client.getRadarrServices() : await client.getSonarrServices();
+    } catch (e) {
+      appLogger.w('Seerr: service list load failed', error: e);
+      return;
+    }
+    if (!mounted || !_connected || !_advancedAllowed || generation != _serverListGeneration) return;
+    setState(() => _allServers = servers);
+    _selectDefaultServer();
   }
 
   void _selectDefaultServer() {
@@ -195,36 +341,61 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     _adoptServer(next);
   }
 
+  /// The instance default the web requester preselects: the anime value when
+  /// the series is an anime and the instance configures one, else the
+  /// standard value.
+  int? _defaultProfileId(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeProfileId : null) ?? server?.activeProfileId;
+
+  String? _defaultRootFolder(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeDirectory : null) ?? server?.activeDirectory;
+
+  int? _defaultLanguageProfileId(SeerrServiceInstance? server) =>
+      (_isAnime ? server?.activeAnimeLanguageProfileId : null) ?? server?.activeLanguageProfileId;
+
+  List<int>? _defaultTags(SeerrServiceInstance? server) => _isAnime ? server?.activeAnimeTags : server?.activeTags;
+
   void _adoptServer(SeerrServiceInstance? server) {
+    final generation = ++_serverSelectionGeneration;
+    final loadsDetail = server != null && _advancedAllowed;
     setState(() {
       _server = server;
       _serverDetail = null;
-      _profileId = server?.activeProfileId;
-      _rootFolder = server?.activeDirectory;
-      _languageProfileId = server?.activeLanguageProfileId;
+      _serverDetailLoading = loadsDetail;
+      _profileId = _defaultProfileId(server);
+      _rootFolder = _defaultRootFolder(server);
+      _languageProfileId = _defaultLanguageProfileId(server);
+      // The list endpoint reports no usable tags; wait for the detail.
+      _tags = null;
     });
-    if (server != null && _advancedAllowed) unawaited(_loadServerDetail(server));
+    if (loadsDetail) unawaited(_loadServerDetail(server, generation));
   }
 
-  Future<void> _loadServerDetail(SeerrServiceInstance server) async {
-    setState(() => _serverDetailLoading = true);
+  Future<void> _loadServerDetail(SeerrServiceInstance server, int generation) async {
     final client = widget.source.client;
+    final SeerrServiceDetail detail;
     try {
-      final detail = _isMovie ? await client.getRadarrService(server.id) : await client.getSonarrService(server.id);
-      if (!mounted || _server?.id != server.id) return;
-      setState(() {
-        _serverDetail = detail;
-        _serverDetailLoading = false;
-        _profileId ??= detail.server?.activeProfileId;
-        _rootFolder ??= detail.server?.activeDirectory;
-        _languageProfileId ??= detail.server?.activeLanguageProfileId;
-      });
+      detail = _isMovie ? await client.getRadarrService(server.id) : await client.getSonarrService(server.id);
     } catch (e) {
       // Advanced pickers degrade to server defaults; the request still works.
       appLogger.w('Seerr: service detail load failed', error: e);
-      if (!mounted || _server?.id != server.id) return;
+      if (!mounted || !_connected || generation != _serverSelectionGeneration) return;
       setState(() => _serverDetailLoading = false);
+      return;
     }
+    if (!mounted || !_connected || !_advancedAllowed || generation != _serverSelectionGeneration) return;
+    // Runs once per accepted generation (adoption reset every default), so
+    // `??=` only fills what the list endpoint left null and an explicit
+    // `activeTags: []` hydrates to `[]`; user edits made afterwards are the
+    // last write.
+    setState(() {
+      _serverDetail = detail;
+      _serverDetailLoading = false;
+      _profileId ??= _defaultProfileId(detail.server);
+      _rootFolder ??= _defaultRootFolder(detail.server);
+      _languageProfileId ??= _defaultLanguageProfileId(detail.server);
+      if (detail.tags != null) _tags = [...?_defaultTags(detail.server)];
+    });
   }
 
   void _toggle4k(bool value) {
@@ -315,7 +486,7 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
   bool get _nothingToRequest => _isMovie ? _movieBlockedLabel != null : _requestableSeasons.isEmpty;
 
   bool get _canSubmit {
-    if (_submitting || _loading || _loadFailed || _nothingToRequest) return false;
+    if (!_connected || _submitting || _loading || _loadFailed || _nothingToRequest) return false;
     if (!_isMovie && _partialSeasons && _selectedSeasons.isEmpty) return false;
     return true;
   }
@@ -324,6 +495,14 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
 
   Future<void> _submit() async {
     if (!_canSubmit) return;
+    // The gates were derived when the sheet was built; the mask may have
+    // moved since (a refresh landing between build and press). Seerr would
+    // refuse anyway — fail locally, localized, without the round-trip.
+    if (!_connected || !widget.source.canRequest(widget.kind) || (_is4k && !_can4k)) {
+      setState(() => _errorText = t.seerr.permissionRevoked);
+      _reconcileAuthority();
+      return;
+    }
     setState(() {
       _submitting = true;
       _errorText = null;
@@ -338,28 +517,36 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
       profileId: advanced ? _profileId : null,
       rootFolder: advanced ? _rootFolder : null,
       languageProfileId: advanced ? _languageProfileId : null,
+      tags: advanced ? _tags : null,
     );
+    String? errorText;
     try {
       await widget.source.client.createRequest(payload);
-      if (!mounted) return;
+      if (!mounted || !_connected) return;
       // The sheet may be hosted by an OverlaySheetHost (no route of its own),
       // so a bare Navigator.pop would pop the screen underneath instead.
       OverlaySheetController.closeAdaptive(context);
       showSuccessSnackBar(context, t.seerr.requestSubmitted);
+      return;
     } on SeerrApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _errorText = e.message;
-      });
+      errorText = e.message;
+    } on SeerrPermissionException catch (e) {
+      // The client adopted the probe's mask before throwing; the reconcile
+      // below closes the sheet (request permission gone) or trims it (4K or
+      // advanced gone) from that authority.
+      errorText = e.display;
+    } on SeerrProxyException catch (e) {
+      errorText = e.display;
     } catch (e) {
       appLogger.w('Seerr: request submit failed', error: e);
-      if (!mounted) return;
-      setState(() {
-        _submitting = false;
-        _errorText = t.seerr.requestFailed(error: '$e');
-      });
+      errorText = t.seerr.requestFailed(error: '$e');
     }
+    if (!mounted || !_connected) return;
+    setState(() {
+      _submitting = false;
+      _errorText = errorText;
+    });
+    _reconcileAuthority();
   }
 
   bool get _hasVisibleAdvancedControls {
@@ -368,7 +555,8 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     return _serversForVariant.length > 1 ||
         (detail?.profiles?.isNotEmpty ?? false) ||
         (detail?.rootFolders?.isNotEmpty ?? false) ||
-        (detail?.languageProfiles?.isNotEmpty ?? false);
+        (detail?.languageProfiles?.isNotEmpty ?? false) ||
+        (detail?.tags?.isNotEmpty ?? false);
   }
 
   void _focusRequestButton() {
@@ -430,13 +618,19 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
               if (!_isMovie && _partialSeasons) ..._buildSeasonSection(theme),
               if (_can4k)
                 FocusableSwitchListTile(
+                  focusNode: _variantFocusNode,
                   value: _is4k,
                   onChanged: _submitting ? null : _toggle4k,
                   title: Text(t.seerr.request4k),
                   secondary: const AppIcon(Symbols.four_k_rounded, fill: 1),
                   contentPadding: EdgeInsets.zero,
                 ),
-              if (_advancedAllowed && _serversForVariant.isNotEmpty) ..._buildAdvancedSection(theme),
+              if (_advancedAllowed && _serversForVariant.isNotEmpty)
+                Focus(
+                  focusNode: _advancedFocusNode,
+                  canRequestFocus: false,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _buildAdvancedSection(theme)),
+                ),
               if (_errorText case final String error) ...[
                 const SizedBox(height: 8),
                 Text(error, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
@@ -537,12 +731,62 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
     );
   }
 
+  /// Option label, marking the instance default the way the web requester
+  /// does (`Anime (Default)`).
+  String _describeOption(String name, {required bool isDefault}) =>
+      isDefault ? t.seerr.defaultOption(name: name) : name;
+
+  String _tagsSummary(List<SeerrServiceTag> tags) {
+    final selected = _tags ?? const <int>[];
+    final labels = [
+      for (final tag in tags)
+        if (selected.contains(tag.id)) tag.label ?? '#${tag.id}',
+    ];
+    return labels.isEmpty ? t.seerr.noTags : labels.join(', ');
+  }
+
+  void _toggleTag(List<SeerrServiceTag> tags, int id, bool checked) {
+    final selected = {...?_tags};
+    if (checked) {
+      selected.add(id);
+    } else {
+      selected.remove(id);
+    }
+    // Keep the arr's tag order so the payload is stable across toggles.
+    setState(() {
+      _tags = [
+        for (final tag in tags)
+          if (selected.contains(tag.id)) tag.id,
+      ];
+    });
+  }
+
   List<Widget> _buildAdvancedSection(ThemeData theme) {
+    final authorityGeneration = _authorityGeneration;
+    final selectionGeneration = _serverSelectionGeneration;
+    bool canSelect() =>
+        mounted &&
+        _connected &&
+        _advancedAllowed &&
+        !_submitting &&
+        authorityGeneration == _authorityGeneration &&
+        selectionGeneration == _serverSelectionGeneration;
     final servers = _serversForVariant;
+    final server = _serverDetail?.server ?? _server;
     final detail = _serverDetail;
     final profiles = detail?.profiles ?? const <SeerrServiceProfile>[];
     final folders = detail?.rootFolders ?? const <SeerrRootFolder>[];
     final languages = detail?.languageProfiles ?? const <SeerrServiceProfile>[];
+    final tags = detail?.tags ?? const <SeerrServiceTag>[];
+    final defaultProfileId = _defaultProfileId(server);
+    final defaultRootFolder = _defaultRootFolder(server);
+    final defaultLanguageProfileId = _defaultLanguageProfileId(server);
+    String describeProfile(SeerrServiceProfile p) =>
+        _describeOption(p.name ?? '#${p.id}', isDefault: p.id == defaultProfileId);
+    String describeFolder(SeerrRootFolder f) =>
+        _describeOption(f.path ?? '#${f.id}', isDefault: f.path == defaultRootFolder);
+    String describeLanguage(SeerrServiceProfile p) =>
+        _describeOption(p.name ?? '#${p.id}', isDefault: p.id == defaultLanguageProfileId);
     return [
       const SizedBox(height: 8),
       Row(
@@ -560,41 +804,82 @@ class _SeerrRequestSheetState extends State<SeerrRequestSheet> {
           describe: (s) => s.name ?? '#${s.id}',
           isSelected: (s) => s.id == _server?.id,
           enabled: !_submitting,
-          onSelected: _adoptServer,
+          onSelected: (server) {
+            if (canSelect()) _adoptServer(server);
+          },
         ),
       if (profiles.isNotEmpty)
         _PickerTile<SeerrServiceProfile>(
           icon: Symbols.high_quality_rounded,
           label: t.seerr.qualityProfile,
-          value: profiles.firstWhereOrNull((p) => p.id == _profileId)?.name ?? '',
+          value: profiles.where((p) => p.id == _profileId).map(describeProfile).firstOrNull ?? '',
           options: profiles,
-          describe: (p) => p.name ?? '#${p.id}',
+          describe: describeProfile,
           isSelected: (p) => p.id == _profileId,
           enabled: !_submitting,
-          onSelected: (p) => setState(() => _profileId = p.id),
+          onSelected: (p) {
+            if (canSelect()) setState(() => _profileId = p.id);
+          },
         ),
       if (folders.isNotEmpty)
         _PickerTile<SeerrRootFolder>(
           icon: Symbols.folder_rounded,
           label: t.seerr.rootFolder,
-          value: _rootFolder ?? '',
+          value: folders.where((f) => f.path == _rootFolder).map(describeFolder).firstOrNull ?? _rootFolder ?? '',
           options: folders,
-          describe: (f) => f.path ?? '#${f.id}',
+          describe: describeFolder,
           isSelected: (f) => f.path == _rootFolder,
           enabled: !_submitting,
-          onSelected: (f) => setState(() => _rootFolder = f.path),
+          onSelected: (f) {
+            if (canSelect()) setState(() => _rootFolder = f.path);
+          },
         ),
       if (languages.isNotEmpty)
         _PickerTile<SeerrServiceProfile>(
           icon: Symbols.language_rounded,
           label: t.seerr.languageProfile,
-          value: languages.firstWhereOrNull((p) => p.id == _languageProfileId)?.name ?? '',
+          value: languages.where((p) => p.id == _languageProfileId).map(describeLanguage).firstOrNull ?? '',
           options: languages,
-          describe: (p) => p.name ?? '#${p.id}',
+          describe: describeLanguage,
           isSelected: (p) => p.id == _languageProfileId,
           enabled: !_submitting,
-          onSelected: (p) => setState(() => _languageProfileId = p.id),
+          onSelected: (p) {
+            if (canSelect()) setState(() => _languageProfileId = p.id);
+          },
         ),
+      // Tags stay inline rather than on a nested sheet page: the host builds
+      // only the top page, so pushing one would dispose this state and drop
+      // the season/4K/picker selections on the way back.
+      if (tags.isNotEmpty) ...[
+        FocusableListTile(
+          leading: const AppIcon(Symbols.label_rounded, fill: 1),
+          title: Text(t.seerr.tags),
+          subtitle: Text(_tagsSummary(tags), maxLines: 1, overflow: TextOverflow.ellipsis),
+          trailing: AppIcon(_tagsExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1),
+          contentPadding: EdgeInsets.zero,
+          enabled: !_submitting,
+          onTap: () => setState(() => _tagsExpanded = !_tagsExpanded),
+        ),
+        if (_tagsExpanded)
+          for (final tag in tags)
+            FocusableCheckboxListTile(
+              value: _tags?.contains(tag.id) ?? false,
+              onChanged: _submitting ? null : (checked) => _toggleTag(tags, tag.id, checked ?? false),
+              title: Text(tag.label ?? '#${tag.id}'),
+              contentPadding: const EdgeInsetsDirectional.only(start: 40),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+      ],
+      if (_isAnime) ...[
+        const SizedBox(height: 8),
+        Text(
+          t.seerr.animeNote,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontStyle: FontStyle.italic,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
     ];
   }
 }

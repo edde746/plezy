@@ -58,82 +58,33 @@ plugins {
   id("dev.flutter.flutter-gradle-plugin")
 }
 
-val mpvVersion = "v1.0.7"
-val mpvSha256 = "d55d440e587b2a9ffb91874d93069460a987be05fe72af8394849983f0df2d7a"
-val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
-val mpvAar = "libmpv-release.aar"
-val mpvUrl = "https://github.com/edde746/libmpv-android/releases/download/$mpvVersion/$mpvAar"
+// The in-project :libmpv module owns the mpv-build pin (repo-root
+// mpv-build.lock.json assets + checksums, plus the plezy.localMpvDir/
+// PLEZY_LOCAL_MPV_DIR escape hatch) and extracts the per-ABI tarballs'
+// prebuilt native libraries. This file reads FFmpeg .so files from both native
+// output trees for the Media3 adapter link step, and packages the libc++ runtime
+// at PROJECT scope below.
+val libmpvBuildDir = project(":libmpv").layout.buildDirectory.dir("libmpv").get().asFile
+val libmpvNativeJniDir = File(libmpvBuildDir, "native/jni")
+val libmpvNativeImportedDir = File(libmpvBuildDir, "native/imported")
+val libmpvLibcxxJniDir = File(libmpvBuildDir, "libcxx/jni")
 
 val media3Version = "1.11.0"
 val mpvFfmpegVersion = "8.0.1"
 val mpvFfmpegSourceSha256 = "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41"
 val mpvFfmpegSourceUrl = "https://ffmpeg.org/releases/ffmpeg-$mpvFfmpegVersion.tar.xz"
-val mpvFfmpegDevelopmentDir = File(mpvDir, "ffmpeg-development")
-
-val downloadLibmpv = tasks.register("downloadLibmpv") {
-  val aar = File(mpvDir, mpvAar)
-  val manifest = File(mpvDir, ".manifest")
-  inputs.property("version", mpvVersion)
-  inputs.property("sourceUrl", mpvUrl)
-  inputs.property("sha256", mpvSha256)
-  outputs.files(aar, manifest)
-  doLast {
-    mpvDir.parentFile.mkdirs()
-    val staging = File(mpvDir.parentFile, "${mpvDir.name}.staging-${UUID.randomUUID()}")
-    try {
-      staging.mkdirs()
-      val stagedAar = File(staging, mpvAar)
-      try {
-        providers.exec {
-          commandLine("curl", "-sfL", mpvUrl, "-o", stagedAar.absolutePath)
-        }.result.get().assertNormalExitValue()
-      } catch (error: Exception) {
-        throw GradleException("Failed to download $mpvAar $mpvVersion", error)
-      }
-      verifySha256(stagedAar, mpvSha256, "$mpvAar $mpvVersion")
-      File(staging, ".manifest").writeText("version=$mpvVersion\nsha256=$mpvSha256\n")
-      promoteDirectory(staging, mpvDir)
-    } finally {
-      staging.deleteRecursively()
-    }
-  }
-}
-
-// Extract libc++_shared.so from the libmpv AAR so the app source set can package
-// it with top merge priority (see packaging { jniLibs } and sourceSets below).
-val extractMpvLibcxx = tasks.register("extractMpvLibcxx") {
-  dependsOn(downloadLibmpv)
-  val aar = File(mpvDir, mpvAar)
-  val outDir = File(mpvDir, "libcxx")
-  inputs.file(aar)
-  outputs.dir(outDir)
-  doLast {
-    outDir.deleteRecursively() // drop stale ABIs from a previous AAR version
-    outDir.mkdirs()
-    providers.exec {
-      commandLine(
-        "unzip",
-        "-q",
-        "-o",
-        aar.absolutePath,
-        "jni/*/libc++_shared.so",
-        "-d",
-        outDir.absolutePath
-      )
-    }.result.get().assertNormalExitValue()
-  }
-}
+val mpvFfmpegDevelopmentDir = layout.buildDirectory.dir("libmpv-ffmpeg-development").get().asFile
 
 // Build the Media3 JNI adapter against the same shared FFmpeg libraries that
 // libmpv packages. Headers are pinned to libmpv's FFmpeg version and remain
 // build-only; the APK contains one FFmpeg implementation for both players.
 val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") {
-  dependsOn(downloadLibmpv)
-  val aar = File(mpvDir, mpvAar)
+  dependsOn(":libmpv:extractLibmpvNative")
   val manifest = File(mpvFfmpegDevelopmentDir, ".manifest")
   val abis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-  val libraries = listOf("avcodec", "avformat", "avutil", "swresample")
-  inputs.file(aar)
+  val libraries = listOf("avcodec", "avutil", "swresample")
+  inputs.dir(libmpvNativeJniDir)
+  inputs.dir(libmpvNativeImportedDir)
   inputs.property("ffmpegVersion", mpvFfmpegVersion)
   inputs.property("sourceUrl", mpvFfmpegSourceUrl)
   inputs.property("sourceSha256", mpvFfmpegSourceSha256)
@@ -145,7 +96,6 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
   outputs.files(
     File(mpvFfmpegDevelopmentDir, "include/libavcodec/avcodec.h"),
     File(mpvFfmpegDevelopmentDir, "include/libavutil/avconfig.h"),
-    File(mpvFfmpegDevelopmentDir, "include/libavformat/avformat.h"),
     File(mpvFfmpegDevelopmentDir, "include/libswresample/swresample.h"),
     manifest
   )
@@ -183,7 +133,7 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       } catch (error: Exception) {
         throw GradleException("Failed to extract FFmpeg $mpvFfmpegVersion headers", error)
       }
-      listOf("libavcodec", "libavformat", "libavutil", "libswresample").forEach { library ->
+      listOf("libavcodec", "libavutil", "libswresample").forEach { library ->
         project.copy {
           from(File(extractedSource, library)) {
             include("*.h")
@@ -204,16 +154,14 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       )
 
       project.copy {
-        from(zipTree(aar)) {
+        from(libmpvNativeImportedDir) {
+          include("*/libavcodec.so")
+        }
+        from(libmpvNativeJniDir) {
           include(
-            "jni/*/libavcodec.so",
-            "jni/*/libavformat.so",
-            "jni/*/libavutil.so",
-            "jni/*/libswresample.so"
+            "*/libavutil.so",
+            "*/libswresample.so"
           )
-          eachFile {
-            path = path.removePrefix("jni/")
-          }
         }
         includeEmptyDirs = false
         into(nativeDir)
@@ -224,11 +172,11 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       }.filterNot(File::isFile)
       if (missing.isNotEmpty()) {
         throw GradleException(
-          "libmpv $mpvVersion is missing FFmpeg libraries: ${missing.joinToString { it.relativeTo(staging).path }}"
+          "the :libmpv prebuilt tree is missing FFmpeg libraries: ${missing.joinToString { it.relativeTo(staging).path }}"
         )
       }
       File(staging, ".manifest").writeText(
-        "mpv=$mpvVersion\nffmpeg=$mpvFfmpegVersion\nsourceSha256=$mpvFfmpegSourceSha256\n"
+        "ffmpeg=$mpvFfmpegVersion\nsourceSha256=$mpvFfmpegSourceSha256\n"
       )
       sourceArchive.delete()
       extractedSource.deleteRecursively()
@@ -338,7 +286,7 @@ android {
 
   defaultConfig {
     applicationId = "com.edde746.plezy"
-    minSdk = 25 // Fire OS 6.x (API 25); overrides libmpv-android's minSdk=26
+    minSdk = 25 // Fire OS 6.x (API 25); :libmpv shares the same floor
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode
     versionName = flutter.versionName
@@ -437,8 +385,9 @@ android {
   packaging {
     jniLibs {
       // pickFirst only suppresses the duplicate libc++ merge error; the
-      // sourceSets rule below makes libmpv's newer runtime win for
-      // std::from_chars<float>, while older native consumers remain ABI-compatible.
+      // sourceSets rule below makes the runtime :libmpv extracts from the
+      // mpv-build tarballs win for std::from_chars<float>, while older
+      // native consumers remain ABI-compatible.
       pickFirsts.add("lib/*/libc++_shared.so")
     }
   }
@@ -446,8 +395,10 @@ android {
   sourceSets {
     getByName("main") {
       // PROJECT-scope jniLibs merge ahead of subprojects/AARs, so dependency
-      // order cannot accidentally select the older libc++ copy.
-      jniLibs.srcDir(File(mpvDir, "libcxx/jni"))
+      // order cannot accidentally select an older libc++ copy. The directory
+      // is :libmpv's extractLibmpvNative output (the tarballs' 16 KB-capable
+      // libc++), wired below via the JniLibFolders dependency.
+      jniLibs.srcDir(libmpvLibcxxJniDir)
     }
   }
 
@@ -503,16 +454,18 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative")
 }
 
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
-  dependsOn(downloadLibmpv, extractMpvLibcxx, prepareMpvFfmpegDevelopment)
+  dependsOn(prepareMpvFfmpegDevelopment)
 }
 // Gradle snapshots jniLibs source dirs before task execution; this keeps the
 // extracted libmpv libc++ directory present during input discovery.
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
-  dependsOn(extractMpvLibcxx)
+  dependsOn(":libmpv:extractLibmpvNative")
 }
 
 dependencies {
-  implementation(files(File(mpvDir, mpvAar)))
+  // mpv Kotlin API + JNI glue live in-project; the prebuilt libmpv/FFmpeg .so
+  // set rides along from the module's extracted mpv-build tarballs.
+  implementation(project(":libmpv"))
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
   // Android TV Watch Next integration

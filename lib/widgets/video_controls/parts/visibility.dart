@@ -61,15 +61,20 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     });
   }
 
-  /// Controls hide delay: 5s on mobile/TV/keyboard-nav, 3s on desktop with mouse.
-  /// Maestro builds extend the delay because accessibility-tree queries can take
-  /// longer than the production timeout on physical devices.
+  /// Controls hide delay: 10s under D-pad/keyboard navigation (the viewer reads
+  /// each label between presses, and a remote has no tap to bring the OSD
+  /// back), 5s on touch mobile, 3s on desktop with a mouse. Maestro builds
+  /// extend the delay because accessibility-tree queries can take longer than
+  /// the production timeout on physical devices.
   Duration get _hideDelay {
     if (const bool.fromEnvironment('PLEZY_MAESTRO_E2E')) {
       return const Duration(seconds: 30);
     }
+    if (playerDirectionalNavigationEnabled()) {
+      return const Duration(seconds: 10);
+    }
     final isMobile = (Platform.isIOS || Platform.isAndroid) && !PlatformDetector.isTV();
-    if (isMobile || playerDirectionalNavigationEnabled()) {
+    if (isMobile) {
       return const Duration(seconds: 5);
     }
     return const Duration(seconds: 3);
@@ -81,7 +86,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     widget.chromeController.hide();
   }
 
-  void _startHideTimer() => widget.chromeController.startAutoHide();
+  void _startHideTimer() {
+    // Sheet completion can arrive after the controls and their route retire.
+    if (!mounted) return;
+    widget.chromeController.startAutoHide();
+  }
 
   /// Restart the hide timer on user interaction for the current playback state.
   void _restartHideTimerForCurrentPlaybackState() => widget.chromeController.restartAutoHideForCurrentPlaybackState();
@@ -191,9 +200,15 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     await FullscreenStateManager().toggleFullscreen();
   }
 
-  /// Initialize always-on-top state from window manager (desktop only)
+  /// Initialize always-on-top state (desktop only). The toggle is remembered
+  /// across player sessions via [SettingsService.playerAlwaysOnTop] (#931) —
+  /// including episode transitions, which rebuild these controls — while the
+  /// window flag itself is only held while a player is open (dispose drops
+  /// the flag without touching the pref).
   Future<void> _initAlwaysOnTopState() async {
-    final isOnTop = await windowManager.isAlwaysOnTop();
+    final remembered = SettingsService.instance.read(SettingsService.playerAlwaysOnTop);
+    if (remembered) await windowManager.setAlwaysOnTop(true);
+    final isOnTop = remembered || await windowManager.isAlwaysOnTop();
     if (mounted && isOnTop != _isAlwaysOnTop) {
       _setControlsState(() {
         _isAlwaysOnTop = isOnTop;
@@ -207,6 +222,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
     final newValue = !_isAlwaysOnTop;
     await windowManager.setAlwaysOnTop(newValue);
+    unawaited(SettingsService.instance.write(SettingsService.playerAlwaysOnTop, newValue));
     if (!mounted) return;
     _setControlsState(() {
       _isAlwaysOnTop = newValue;

@@ -102,6 +102,7 @@ class RunnerConfig:
     host_jellyfin_url: str
     jellyfin_url: Optional[str]
     jellyfin_build_attempts: int
+    agent_control: bool = False
 
 
 def _positive_int(value: str) -> int:
@@ -146,6 +147,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--host-jellyfin-url")
     parser.add_argument("--jellyfin-url")
     parser.add_argument("--jellyfin-build-attempts", type=_positive_int)
+    parser.add_argument(
+        "--agent-control",
+        action="store_true",
+        help="explicitly opt this debug build into VM-service agent controls (no effect with --skip-build)",
+    )
     _add_bool_argument(parser, "skip-jellyfin", destination="skip_jellyfin")
     _add_bool_argument(parser, "skip-jellyfin-build", destination="skip_jellyfin_build")
     _add_bool_argument(parser, "skip-build", destination="skip_build")
@@ -241,6 +247,7 @@ def parse_config(argv: Optional[Sequence[str]] = None, environment: Optional[Map
             False,
         ),
         skip_build=_bool_option(args.skip_build, env, "MAESTRO_SKIP_BUILD", False),
+        agent_control=args.agent_control,
         jellyfin_fault=fault,
         use_adb_reverse=_bool_option(
             args.use_adb_reverse,
@@ -321,14 +328,17 @@ def _require_commands(names: Sequence[str]) -> None:
         raise RunnerError(f"Required command not found: {', '.join(missing)}")
 
 
-def flutter_build_command() -> tuple[str, ...]:
-    return (
+def flutter_build_command(*, agent_control: bool = False) -> tuple[str, ...]:
+    command = (
         "flutter",
         "build",
         "apk",
         "--debug",
         "--dart-define=PLEZY_MAESTRO_E2E=true",
     )
+    if agent_control:
+        command += ("--dart-define=PLEZY_AGENT_CONTROL=true",)
+    return command
 
 
 def build_jellyfin_image(config: RunnerConfig) -> None:
@@ -395,7 +405,7 @@ class MaestroRunner:
 
         if not self.config.skip_build:
             _run_checked(("flutter", "pub", "get"))
-            _run_checked(flutter_build_command())
+            _run_checked(flutter_build_command(agent_control=self.config.agent_control))
 
         self._prepare_device()
         _run_checked((*self.adb_prefix, "install", "-r", self.config.apk_path))

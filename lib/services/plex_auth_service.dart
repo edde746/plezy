@@ -6,7 +6,8 @@ import 'storage_service.dart';
 import 'plex_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
-import '../models/plex/plex_user_profile.dart';
+import '../media/account_preferences.dart';
+import '../models/plex/plex_account_preferences.dart';
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
 import '../models/plex/plex_switch_response.dart';
@@ -268,11 +269,34 @@ class PlexAuthService {
     return response.data as Map<String, dynamic>;
   }
 
-  /// Get user profile with preferences (audio/subtitle settings)
-  Future<PlexUserProfile> getUserProfile(String authToken) async {
-    final response = await _getClientsApi('/user', headers: _getCommonHeaders(authToken: authToken));
+  /// Fetch the account preferences stored by plex.tv.
+  ///
+  /// This reads `/user/profile`; it deliberately does not touch the per-device
+  /// `experience` settings blob or the PMS `/accounts/1` mirror.
+  Future<AccountPreferences> getAccountPreferences(String authToken) async {
+    final response = await _getClientsApi('/user/profile', headers: _getCommonHeaders(authToken: authToken));
     _checkStatus(response);
-    return PlexUserProfile.fromJson(response.data as Map<String, dynamic>);
+    return PlexAccountPreferences.fromProfileJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Update the account preferences stored by plex.tv.
+  ///
+  /// Plex requires a partial write shaped as query parameters with an empty
+  /// body. The `experience` settings blob and PMS `/accounts/1` mirror remain
+  /// deliberately untouched.
+  Future<AccountPreferences> updateAccountPreferences(String authToken, AccountPreferencesPatch patch) async {
+    final response = await _http.put(
+      '$_clientsApi/user/profile',
+      queryParameters: PlexAccountPreferences.queryParametersFor(patch),
+      headers: _getCommonHeaders(authToken: authToken),
+    );
+    _checkStatus(response);
+
+    final data = response.data;
+    if (data is Map<String, dynamic> && data.isNotEmpty) {
+      return PlexAccountPreferences.fromProfileJson(data);
+    }
+    return getAccountPreferences(authToken);
   }
 
   /// Get home users for the authenticated user

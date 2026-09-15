@@ -3,18 +3,24 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/mpv_sidecar_open_guard.dart';
+import 'package:plezy/services/playback_open_outcome.dart';
+
+/// A stream that never emits and never closes, for the signals a case does
+/// not drive: the open outcome treats any closed player stream as the player
+/// being gone.
+Stream<T> _idle<T>() => StreamController<T>.broadcast().stream;
 
 class _StreamPlayer implements Player {
   @override
   final PlayerStreams streams;
 
   _StreamPlayer({
-    Stream<void> fileStarted = const Stream.empty(),
+    Stream<void>? fileStarted,
     required Stream<void> primaryMediaReady,
     required Stream<void> fileLoaded,
-    Stream<void> fileLoadFailed = const Stream.empty(),
-    Stream<void> playbackRestart = const Stream.empty(),
-    Stream<void> backendSwitched = const Stream.empty(),
+    Stream<void>? fileLoadFailed,
+    Stream<void>? playbackRestart,
+    Stream<void>? backendSwitched,
     Stream<PlayerError> error = const Stream.empty(),
   }) : streams = PlayerStreams(
          playing: const Stream.empty(),
@@ -33,16 +39,29 @@ class _StreamPlayer implements Player {
          audioDevice: const Stream.empty(),
          audioDevices: const Stream.empty(),
          bufferRanges: const Stream.empty(),
-         playbackRestart: playbackRestart,
-         fileStarted: fileStarted,
+         playbackRestart: playbackRestart ?? _idle(),
+         fileStarted: fileStarted ?? _idle(),
          fileLoaded: fileLoaded,
-         fileLoadFailed: fileLoadFailed,
+         fileLoadFailed: fileLoadFailed ?? _idle(),
          primaryMediaReady: primaryMediaReady,
-         backendSwitched: backendSwitched,
+         backendSwitched: backendSwitched ?? _idle(),
        );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+MpvSidecarOpenGuard _arm(
+  Player player, {
+  required Duration discoveryTimeout,
+  required Duration fileLoadedTimeout,
+  bool startsOnAndroidExoPlayer = false,
+}) {
+  return MpvSidecarOpenGuard.armForTesting(
+    outcome: PlaybackOpenOutcome.armForTesting(player, startsOnAndroidExoPlayer: startsOnAndroidExoPlayer),
+    discoveryTimeout: discoveryTimeout,
+    fileLoadedTimeout: fileLoadedTimeout,
+  );
 }
 
 void main() {
@@ -53,8 +72,8 @@ void main() {
     addTearDown(primary.close);
     addTearDown(loaded.close);
     addTearDown(started.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
+    final guard = _arm(
+      _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
       discoveryTimeout: const Duration(milliseconds: 20),
       fileLoadedTimeout: const Duration(milliseconds: 20),
     );
@@ -73,8 +92,8 @@ void main() {
     addTearDown(primary.close);
     addTearDown(loaded.close);
     addTearDown(started.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
+    final guard = _arm(
+      _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
       discoveryTimeout: const Duration(milliseconds: 50),
       fileLoadedTimeout: const Duration(milliseconds: 50),
     );
@@ -95,8 +114,8 @@ void main() {
     addTearDown(primary.close);
     addTearDown(loaded.close);
     addTearDown(started.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
+    final guard = _arm(
+      _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
       discoveryTimeout: const Duration(milliseconds: 50),
       fileLoadedTimeout: const Duration(milliseconds: 10),
     );
@@ -117,8 +136,8 @@ void main() {
     addTearDown(loaded.close);
     addTearDown(started.close);
     addTearDown(errors.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(
+    final guard = _arm(
+      _StreamPlayer(
         fileStarted: started.stream,
         primaryMediaReady: primary.stream,
         fileLoaded: loaded.stream,
@@ -145,8 +164,8 @@ void main() {
     addTearDown(primary.close);
     addTearDown(loaded.close);
     addTearDown(failed.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(
+    final guard = _arm(
+      _StreamPlayer(
         fileStarted: started.stream,
         primaryMediaReady: primary.stream,
         fileLoaded: loaded.stream,
@@ -169,8 +188,8 @@ void main() {
     final loaded = StreamController<void>.broadcast();
     addTearDown(primary.close);
     addTearDown(loaded.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
+    final guard = _arm(
+      _StreamPlayer(primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
       discoveryTimeout: const Duration(milliseconds: 10),
       fileLoadedTimeout: const Duration(milliseconds: 10),
     );
@@ -189,8 +208,8 @@ void main() {
     addTearDown(restarted.close);
     addTearDown(switched.close);
     addTearDown(started.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(
+    final guard = _arm(
+      _StreamPlayer(
         fileStarted: started.stream,
         primaryMediaReady: primary.stream,
         fileLoaded: loaded.stream,
@@ -222,8 +241,8 @@ void main() {
     addTearDown(restarted.close);
     addTearDown(switched.close);
     addTearDown(started.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(
+    final guard = _arm(
+      _StreamPlayer(
         fileStarted: started.stream,
         primaryMediaReady: primary.stream,
         fileLoaded: loaded.stream,
@@ -258,8 +277,8 @@ void main() {
     addTearDown(restarted.close);
     addTearDown(switched.close);
     addTearDown(started.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(
+    final guard = _arm(
+      _StreamPlayer(
         fileStarted: started.stream,
         primaryMediaReady: primary.stream,
         fileLoaded: loaded.stream,
@@ -287,14 +306,39 @@ void main() {
     final primary = StreamController<void>.broadcast();
     final loaded = StreamController<void>.broadcast();
     addTearDown(loaded.close);
-    final guard = MpvSidecarOpenGuard.armForTesting(
-      player: _StreamPlayer(primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
+    final guard = _arm(
+      _StreamPlayer(primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
       discoveryTimeout: const Duration(milliseconds: 20),
       fileLoadedTimeout: const Duration(milliseconds: 10),
     );
 
     final outcome = guard.wait();
     await primary.close();
+
+    expect(await outcome, MpvSidecarOpenOutcome.aborted);
+  });
+
+  test('aborting the open outcome aborts the guard ahead of its timeouts', () async {
+    final primary = StreamController<void>.broadcast();
+    final loaded = StreamController<void>.broadcast();
+    final started = StreamController<void>.broadcast();
+    addTearDown(primary.close);
+    addTearDown(loaded.close);
+    addTearDown(started.close);
+    final openOutcome = PlaybackOpenOutcome.armForTesting(
+      _StreamPlayer(fileStarted: started.stream, primaryMediaReady: primary.stream, fileLoaded: loaded.stream),
+    );
+    final guard = MpvSidecarOpenGuard.armForTesting(
+      outcome: openOutcome,
+      discoveryTimeout: const Duration(seconds: 10),
+      fileLoadedTimeout: const Duration(seconds: 10),
+    );
+
+    final outcome = guard.wait();
+    started.add(null);
+    primary.add(null);
+    await Future<void>.delayed(Duration.zero);
+    openOutcome.abort('fatal player error');
 
     expect(await outcome, MpvSidecarOpenOutcome.aborted);
   });

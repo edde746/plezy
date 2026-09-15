@@ -12,6 +12,8 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
+import 'package:plezy/widgets/overlay_sheet.dart';
+import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/linux_keep_alive.dart';
@@ -32,6 +34,7 @@ void main() {
   group('hidden-chrome frame quiescence', () {
     late _IdlePlayer player;
     late PlayerChromeController chrome;
+    var chromeDisposed = false;
     late PlayerToastController toast;
     late VideoVolumeController volume;
     late PlaybackStateProvider playbackState;
@@ -51,6 +54,7 @@ void main() {
       database = AppDatabase.forTesting(NativeDatabase.memory());
       player = _IdlePlayer();
       chrome = PlayerChromeController();
+      chromeDisposed = false;
       toast = PlayerToastController();
       volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
       playbackState = PlaybackStateProvider();
@@ -64,7 +68,7 @@ void main() {
       volume.dispose();
       playbackState.dispose();
       watchTogether.dispose();
-      chrome.dispose();
+      if (!chromeDisposed) chrome.dispose();
       toast.dispose();
       await database.close();
     });
@@ -80,16 +84,19 @@ void main() {
           child: MaterialApp(
             theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
             home: Scaffold(
-              body: SizedBox(
-                width: 1280,
-                height: 720,
-                child: PlexVideoControls(
-                  player: player,
-                  volumeController: volume,
-                  metadata: testMediaItem(id: 'quiescence'),
-                  toastController: toast,
-                  chromeController: chrome,
-                  canNavigateMediaItems: false,
+              body: OverlaySheetHost(
+                canPop: true,
+                child: SizedBox(
+                  width: 1280,
+                  height: 720,
+                  child: PlexVideoControls(
+                    player: player,
+                    volumeController: volume,
+                    metadata: testMediaItem(id: 'quiescence'),
+                    toastController: toast,
+                    chromeController: chrome,
+                    canNavigateMediaItems: false,
+                  ),
                 ),
               ),
             ),
@@ -103,6 +110,29 @@ void main() {
       await tester.pump();
       expect(chrome.controlsVisible, isFalse);
     }
+
+    testWidgets('retiring controls with an open sheet cannot restart disposed chrome', (tester) async {
+      LinuxKeepAlive.debugIsLinuxOverride = false;
+      await pumpHiddenChrome(tester);
+      chrome.show();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.byTooltip(t.videoControls.settingsButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(VideoSettingsSheet), findsOneWidget);
+
+      // The player route disposes its controller synchronously; the host then
+      // completes the outstanding sheet future after its children unmount.
+      chrome.dispose();
+      chromeDisposed = true;
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Text('Browse'))));
+      await tester.pump(const Duration(seconds: 6));
+      expect(find.byType(VideoSettingsSheet), findsNothing);
+      expect(find.text('Browse'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      expect(tester.binding.hasScheduledFrame, isFalse);
+    });
 
     testWidgets('the player UI schedules no frames while chrome is hidden', (tester) async {
       LinuxKeepAlive.debugIsLinuxOverride = false;
@@ -150,6 +180,12 @@ void main() {
 class _IdlePlayer implements Player {
   @override
   String get playerType => 'mpv';
+
+  @override
+  Future<String?> getProperty(String name) async => null;
+
+  @override
+  Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
   @override
   PlayerState get state => PlayerState(

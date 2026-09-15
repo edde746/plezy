@@ -13,13 +13,13 @@ import '../../profiles/profile.dart';
 import '../../profiles/profile_connection_cleanup.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
+import '../../providers/account_preferences_controller.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/discover_provider.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/playback_state_provider.dart';
-import '../../providers/user_profile_provider.dart';
 import '../../services/api_cache.dart';
 import '../../services/multi_server_manager.dart';
 import '../../services/storage_service.dart';
@@ -198,6 +198,7 @@ Future<void> deleteProfile(BuildContext context, Profile profile) async {
     await scope.downloads.deleteDownloadsForProfile(profile.id);
     await scope.database.deleteSyncRulesForProfile(profile.id);
     await scope.database.deleteWatchActionsForProfile(profile.id);
+    await scope.database.deleteMusicSessionForProfile(profile.id);
     await scope.cleanup.removeAllProfileConnections(profile.id);
     await scope.profileRegistry.remove(profile.id);
     await scope.storage.clearProfileLastUsed(profile.id);
@@ -270,6 +271,7 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
       for (final profileId in removal.removedVirtualProfileIds) {
         await scope.database.deleteSyncRulesForProfile(profileId);
         await scope.database.deleteWatchActionsForProfile(profileId);
+        await scope.database.deleteMusicSessionForProfile(profileId);
       }
 
       return settleSessionAfterRemoval(scope, rebindIfActiveKept: true, endedShelfOwner: endedOwner);
@@ -292,7 +294,7 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
 /// confirms first.
 Future<void> logoutAllProfiles(BuildContext context) async {
   final scope = SessionTeardownScope.of(context);
-  final userProfileProvider = context.read<UserProfileProvider>();
+  final accountPreferences = context.read<AccountPreferencesController>();
   final companionRemote = context.read<CompanionRemoteProvider>();
   final playbackState = context.read<PlaybackStateProvider>();
 
@@ -302,7 +304,10 @@ Future<void> logoutAllProfiles(BuildContext context) async {
   }
 
   await companionRemote.resetForLogout();
-  await userProfileProvider.logout();
+  // Credentials and the signed-out users' server-side preferences go first so
+  // nothing below can read them back as the next sign-in's defaults.
+  await scope.storage.clearUserData();
+  accountPreferences.repository.clear();
   // Downloads are device-local data, not credentials. Keep their physical
   // files and pinned metadata, but detach profile ownership before deleting
   // the profiles so the next selected profile can adopt them.

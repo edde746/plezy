@@ -60,6 +60,7 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$bg dialog = _Translations$dialog$bg._(_root);
 	@override late final _Translations$profiles$bg profiles = _Translations$profiles$bg._(_root);
 	@override late final _Translations$connections$bg connections = _Translations$connections$bg._(_root);
+	@override late final _Translations$accountPreferences$bg accountPreferences = _Translations$accountPreferences$bg._(_root);
 	@override late final _Translations$discover$bg discover = _Translations$discover$bg._(_root);
 	@override late final _Translations$errors$bg errors = _Translations$errors$bg._(_root);
 	@override late final _Translations$libraries$bg libraries = _Translations$libraries$bg._(_root);
@@ -117,6 +118,7 @@ class _Translations$auth$bg extends Translations$auth$en {
 	@override String get useBrowser => 'Използвай браузър';
 	@override String get or => 'или';
 	@override String connectToMediaBrowser({required Object product}) => 'Свържи се с ${product}';
+	@override String get quickConnect => 'Quick Connect';
 	@override String get useQuickConnect => 'Използвай Quick Connect';
 	@override String get quickConnectInstructions => 'Отворете Quick Connect в Jellyfin и въведете този код.';
 	@override String get quickConnectWaiting => 'Изчакване на одобрение…';
@@ -165,6 +167,7 @@ class _Translations$common$bg extends Translations$common$en {
 	@override String get mute => 'Заглуши';
 	@override String get ok => 'OK';
 	@override String get off => 'Изкл.';
+	@override String get options => 'Опции';
 	@override String seasonNumber({required Object number}) => 'Сезон ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Епизод ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Глава ${number}';
@@ -249,6 +252,10 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get displayScale => 'Мащаб на дисплея';
 	@override String get compact => 'Компактна';
 	@override String get comfortable => 'Удобна';
+	@override String get gridSpacing => 'Разстояние на мрежата';
+	@override String get gridSpacingTight => 'Плътно';
+	@override String get gridSpacingNormal => 'Нормално';
+	@override String get gridSpacingSpacious => 'Просторно';
 	@override String get tvCornerSpotlightBackdrop => 'Фон с акцент в ъгъла';
 	@override String get tvCornerSpotlightBackdropDescription => 'Показвай акцентното изображение в горния десен ъгъл, вместо на целия екран';
 	@override String get viewMode => 'Режим на изглед';
@@ -292,16 +299,14 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Хардуерно декодиране';
 	@override String get hardwareDecodingDescription => 'Използвай хардуерно ускорение, когато е налично';
-	@override String get bufferSize => 'Размер на буфера';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Автоматично (препоръчително)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Налична памет: ${heap} MB. Буфер от ${size} MB може да повлияе на възпроизвеждането.';
 	@override String get playbackBuffer => 'Буфер за възпроизвеждане';
 	@override String get playbackBufferAuto => 'Автоматично (препоръчително)';
 	@override String get playbackBufferLarge => 'Голям';
 	@override String get playbackBufferExtraLarge => 'Изключително голям';
 	@override String get playbackBufferDescription => 'Буферира повече при нестабилни връзки. Също ограничен от размера на буфера.';
 	@override String get defaultQualityTitle => 'Качество по подразбиране';
+	@override String get cellularQualityTitle => 'Качество по подразбиране при мобилни данни';
+	@override String get cellularQualitySameAsDefault => 'Същото като качеството по подразбиране';
 	@override String get musicQualityTitle => 'Качество на музиката';
 	@override String get subtitleStyling => 'Стил на субтитрите';
 	@override String get subtitleStylingDescription => 'Настройване на вида на субтитрите';
@@ -315,6 +320,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие';
 	@override String get followServerTrackSelections => 'Използвай избора на пътечки от сървъра за всеки епизод';
 	@override String get followServerTrackSelectionsDescription => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор';
+	@override String get resumeMusicOnLaunch => 'Запомняне на музикалната сесия';
+	@override String get resumeMusicOnLaunchDescription => 'При стартиране на приложението отваряй последната песен на пауза от мястото, докъдето е стигнала';
 	@override String get showChapterMarkersOnTimeline => 'Показвай маркери на глави върху времевата линия';
 	@override String get showChapterMarkersOnTimelineDescription => 'Разделяй времевата линия на сегменти по границите на главите';
 	@override String get specialsOrdering => 'Специални епизоди в реда на епизодите';
@@ -368,11 +375,11 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Клавишната комбинация вече е назначена за ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Клавишната комбинация е обновена за ${action}';
 	@override String get saveFailed => 'Промените не можаха да бъдат запазени. Опитайте отново.';
-	@override String get autoSkip => 'Автоматично прескачане';
-	@override String get autoSkipIntro => 'Автоматично прескачане на интро';
-	@override String get autoSkipIntroDescription => 'Автоматично прескачай интро маркери след няколко секунди';
-	@override String get autoSkipCredits => 'Автоматично прескачане на финални надписи';
-	@override String get autoSkipCreditsDescription => 'Автоматично прескачай финалните надписи и пускай следващия епизод';
+	@override String get autoPlayAndSkip => 'Автоматично пускане и прескачане';
+	@override String get autoPlayNextEpisode => 'Автоматично пускане на следващия епизод';
+	@override String get autoPlayNextEpisodeDescription => 'Пускай следващия епизод автоматично, когато текущият свърши';
+	@override String get playNextCountdown => 'Отброяване до следващия епизод';
+	@override String get playNextCountdownImmediate => 'Пусни веднага';
 	@override String get forceSkipMarkerFallback => 'Принуди резервни маркери';
 	@override String get forceSkipMarkerFallbackDescription => 'Използвай шаблони в заглавията на главите дори когато Plex има маркери';
 	@override String get autoSkipDelay => 'Забавяне за автоматично прескачане';
@@ -443,10 +450,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване';
 	@override String get dvConversionDv81Description => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток';
-	@override String get demuxer => 'Демултиплексор на контейнера';
-	@override String get demuxerDescription => 'Кой демултиплексор анализира файловете при директно възпроизвеждане. Превключете на media3, ако даден файл създава проблеми.';
-	@override String get demuxerFfmpeg => 'FFmpeg (препоръчително)';
-	@override String get demuxerMedia3 => 'media3';
+	@override String get deinterlace => 'Деинтерлейсинг';
+	@override String get deinterlaceDescription => 'Премахва гребеновидните артефакти от интерлейсирано видео (само за mpv плейъра)';
 	@override String get requireProfileSelectionOnOpen => 'Питай за профил при отваряне на приложението';
 	@override String get requireProfileSelectionOnOpenDescription => 'Показвай избор на профил всеки път при отваряне на приложението';
 	@override String get forceTvMode => 'Принуди TV режим';
@@ -464,15 +469,31 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get showExploreTabDescription => 'Показва раздела „Открий“ със съдържание от Plex Discover и свързаните тракери';
 	@override String get liveTvDefaultFavorites => 'По подразбиране към любими канали';
 	@override String get liveTvDefaultFavoritesDescription => 'Показвай само любими канали при отваряне на телевизия на живо';
+	@override String get general => 'Общи';
+	@override String get generalDescription => 'Език, стартиране и поведение на прозореца';
+	@override String get languageAndRegion => 'Език и регион';
+	@override String get startup => 'Стартиране';
 	@override String get display => 'Дисплей';
+	@override String get libraryAndCards => 'Библиотека и карти';
 	@override String get homeScreen => 'Начален екран';
 	@override String get navigation => 'Навигация';
 	@override String get window => 'Прозорец';
-	@override String get content => 'Съдържание';
+	@override String get liveTv => 'Телевизия на живо';
 	@override String get player => 'Плейър';
-	@override String get subtitlesAndConfig => 'Субтитри и конфигурация';
+	@override String get videoAndDisplay => 'Видео и дисплей';
+	@override String get audio => 'Аудио';
+	@override String get quality => 'Качество';
+	@override String get subtitles => 'Субтитри';
 	@override String get seekAndTiming => 'Търсене и време';
 	@override String get behavior => 'Поведение';
+	@override String get gestures => 'Жестове';
+	@override String get gestureBrightnessSwipe => 'Плъзгане за яркост';
+	@override String get gestureBrightnessSwipeDescription => 'Плъзни нагоре или надолу по левия ръб, за да регулираш яркостта';
+	@override String get gestureVolumeSwipe => 'Плъзгане за сила на звука';
+	@override String get gestureVolumeSwipeDescription => 'Плъзни нагоре или надолу по десния ръб, за да регулираш силата на звука';
+	@override String get gesturePinchToZoom => 'Стискане за мащабиране';
+	@override String get gesturePinchToZoomDescription => 'Стисни видеото, за да увеличиш или намалиш мащаба';
+	@override String get controls => 'Контроли';
 	@override String get rememberPlayerChanges => 'Запомняне на промените в плейъра';
 	@override String get rememberPlayerChangesDescription => 'Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане';
 	@override String get scopePlaybackSpeed => 'Скорост на възпроизвеждане';
@@ -1086,6 +1107,49 @@ class _Translations$connections$bg extends Translations$connections$en {
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Добавете или премахнете URL адреси за ${serverName}. Plezy ще използва достъпния URL адрес с най-ниска латентност.';
 }
 
+// Path: accountPreferences
+class _Translations$accountPreferences$bg extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Предпочитания на акаунта';
+	@override String hubSubtitleSingle({required Object account}) => 'Опции за аудио, субтитри и библиотека, запазени на ${account}';
+	@override String hubSubtitleMultiple({required Object count}) => 'Опции за аудио, субтитри и библиотека, запазени на ${count} акаунта';
+	@override String get pickAccount => 'Всеки акаунт съхранява собствени предпочитания. Изберете кой да редактирате.';
+	@override String get storedOnAccount => 'Тези опции се запазват на самия акаунт, така че всяко приложение, вписано в него, ги използва — включително Plezy на другите ви устройства.';
+	@override String get noAccounts => 'Няма акаунти за настройка';
+	@override String get noAccountsHint => 'Влезте в Plex или свържете Jellyfin или Emby сървър и предпочитанията, запазени на този акаунт, ще се появят тук.';
+	@override String get unavailable => 'Акаунтът не може да бъде достигнат';
+	@override String get loadFailed => 'Предпочитанията не можаха да бъдат заредени';
+	@override String get noPreference => 'Без предпочитание';
+	@override String get notSet => 'Не е зададено';
+	@override late final _Translations$accountPreferences$groups$bg groups = _Translations$accountPreferences$groups$bg._(_root);
+	@override String get preferredAudioLanguage => 'Предпочитан аудио език';
+	@override String get autoSelectAudio => 'Избирай аудио по език';
+	@override String get autoSelectAudioDescription => 'При изключено се запазва аудиопътечката, която файлът маркира като подразбираща се.';
+	@override String get preferredSubtitleLanguage => 'Предпочитан език за субтитри';
+	@override String get subtitleMode => 'Включване на субтитри';
+	@override late final _Translations$accountPreferences$subtitleModes$bg subtitleModes = _Translations$accountPreferences$subtitleModes$bg._(_root);
+	@override String get subtitleAccessibility => 'SDH субтитри';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$bg subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$bg._(_root);
+	@override String get forcedSubtitles => 'Принудителни субтитри';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$bg forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$bg._(_root);
+	@override String get displayMissingEpisodes => 'Показвай липсващи епизоди';
+	@override String get displayMissingEpisodesDescription => 'Изброявай епизоди, за които сървърът знае, но няма файл.';
+	@override String get hidePlayedInLatest => 'Скривай изгледаните елементи в „Последни“';
+	@override String get hidePlayedInLatestDescription => 'Не включвай вече изгледаните елементи в редовете „Последни“ на сървъра.';
+	@override String get displayCollectionsView => 'Показвай изгледа „Колекции“';
+	@override String get displayCollectionsViewDescription => 'Предлагай изгледа „Колекции“ на сървъра редом с библиотеките ви.';
+	@override String get rewatchingInNextUp => 'Запазвай повторно гледаните сериали в „Следва“';
+	@override String get rewatchingInNextUpDescription => 'Когато завършите сериал и го пуснете отново, „Следва“ проследява повторното гледане, вместо да премахва сериала.';
+	@override String get watchedIndicator => 'Индикатори за изгледано';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$bg watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$bg._(_root);
+	@override String get mediaReviewsVisibility => 'Оценки и ревюта';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$bg mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$bg._(_root);
+}
+
 // Path: discover
 class _Translations$discover$bg extends Translations$discover$en {
 	_Translations$discover$bg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -1385,6 +1449,11 @@ class _Translations$liveTv$bg extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Неизвестен канал';
 	@override String get live => 'НА ЖИВО';
 	@override String get reloadGuide => 'Презареди ТВ програмата';
+	@override String get searchGuide => 'Търсене в програмата';
+	@override String get searchHint => 'Търсене на канали и предавания';
+	@override String searchNoResults({required Object query}) => 'Няма съвпадения за "${query}"';
+	@override String get channelsSection => 'Канали';
+	@override String get programsSection => 'Предавания';
 	@override String get now => 'Сега';
 	@override String get today => 'Днес';
 	@override String get tomorrow => 'Утре';
@@ -1545,6 +1614,8 @@ class _Translations$music$bg extends Translations$music$en {
 	@override String get repeatAll => 'Повтаряне на всички';
 	@override String get repeatOne => 'Повтаряне на една';
 	@override String get instantMixNoServer => 'Няма наличен сървър за незабавен микс';
+	@override String get instantMixFailed => 'Мигновеният микс не можа да бъде зареден';
+	@override String get instantMixEmpty => 'Мигновеният микс не върна песни';
 	@override String noAudioUrl({required Object track}) => 'Няма наличен URL за аудиото на ${track}';
 	@override late final _Translations$music$discography$bg discography = _Translations$music$discography$bg._(_root);
 }
@@ -2048,6 +2119,8 @@ class _Translations$seerr$bg extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'В списъка с блокирани';
 	@override String couldNotReach({required Object url, required Object error}) => 'Неуспешна връзка с ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'На ${url} няма инстанция на Seerr (HTTP ${status})';
+	@override String get invalidUrl => 'Въведете адрес на сървър като https://seerr.example.com';
+	@override String get quickConnectUnsupported => 'Тази Seerr инстанция не поддържа Quick Connect. Изисква се Seerr 3.4 или по-нова версия.';
 	@override String get notInitialized => 'Тази инстанция на Seerr не е завършила първоначалната настройка';
 	@override String get noPlexTokenForReauth => 'Няма наличен Plex токен за повторен вход';
 	@override String get noStoredCredentials => 'Няма запазени данни за повторен вход';
@@ -2067,6 +2140,7 @@ class _Translations$services$bg extends Translations$services$en {
 	// Translations
 	@override String get title => 'Услуги';
 	@override String get hubSubtitle => 'Синхронизирай прогреса на гледане и заявявай нови заглавия.';
+	@override String get integrations => 'Интеграции';
 	@override String get notConnected => 'Няма връзка';
 	@override String connectedAs({required Object username}) => 'Свързан като @${username}';
 	@override String get scrobble => 'Проследявай прогреса автоматично';
@@ -2227,6 +2301,89 @@ class _Translations$videoControls$pipErrors$bg extends Translations$videoControl
 	@override String get failed => 'Режимът картина в картината не успя да стартира';
 	@override String get prepareFailed => 'Режимът картина в картината не можа да бъде подготвен';
 	@override String unknown({required Object error}) => 'Възникна грешка: ${error}';
+}
+
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$bg extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => 'Аудио и субтитри';
+	@override String get libraryDisplay => 'Библиотека';
+	@override String get personalMedia => 'Лична медия';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$bg extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Ръчно избрани';
+	@override String get noneDescription => 'Никога не включвай субтитри автоматично.';
+	@override String get defaultMode => 'Следвай флаговете на пътечката';
+	@override String get defaultModeDescription => 'Използвай флаговете по подразбиране и принудителните, съхранени на всяка пътечка със субтитри.';
+	@override String get always => 'Винаги включени';
+	@override String get alwaysDescription => 'Включвай пътечка със субтитри на предпочитания език, когато има такава.';
+	@override String get onlyForced => 'Само принудителни субтитри';
+	@override String get onlyForcedDescription => 'Зареждай само пътечките, маркирани като принудителни.';
+	@override String get smart => 'Показване при чуждоезично аудио';
+	@override String get smartDescription => 'Включвай субтитри само когато аудиото е на друг език.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$bg extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'Предпочитай субтитри без SDH';
+	@override String get preferSdh => 'Предпочитай SDH субтитри';
+	@override String get onlySdh => 'Само SDH субтитри';
+	@override String get onlyNonSdh => 'Само субтитри без SDH';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$bg extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => 'Предпочитай субтитри без принудителни';
+	@override String get preferForced => 'Предпочитай принудителни субтитри';
+	@override String get onlyForced => 'Само принудителни субтитри';
+	@override String get onlyNonForced => 'Само субтитри без принудителни';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$bg extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Никога';
+	@override String get moviesAndShows => 'Филми и ТВ сериали';
+	@override String get movies => 'Само филми';
+	@override String get shows => 'Само ТВ сериали';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$bg extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => 'Потребители и критици';
+	@override String get usersOnly => 'Само потребители';
+	@override String get criticsOnly => 'Само критици';
+	@override String get nobody => 'Скрити';
 }
 
 // Path: libraries.tabs
@@ -2787,6 +2944,7 @@ extension on TranslationsBg {
 			'auth.useBrowser' => 'Използвай браузър',
 			'auth.or' => 'или',
 			'auth.connectToMediaBrowser' => ({required Object product}) => 'Свържи се с ${product}',
+			'auth.quickConnect' => 'Quick Connect',
 			'auth.useQuickConnect' => 'Използвай Quick Connect',
 			'auth.quickConnectInstructions' => 'Отворете Quick Connect в Jellyfin и въведете този код.',
 			'auth.quickConnectWaiting' => 'Изчакване на одобрение…',
@@ -2826,6 +2984,7 @@ extension on TranslationsBg {
 			'common.mute' => 'Заглуши',
 			'common.ok' => 'OK',
 			'common.off' => 'Изкл.',
+			'common.options' => 'Опции',
 			'common.seasonNumber' => ({required Object number}) => 'Сезон ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Епизод ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Глава ${number}',
@@ -2904,6 +3063,10 @@ extension on TranslationsBg {
 			'settings.displayScale' => 'Мащаб на дисплея',
 			'settings.compact' => 'Компактна',
 			'settings.comfortable' => 'Удобна',
+			'settings.gridSpacing' => 'Разстояние на мрежата',
+			'settings.gridSpacingTight' => 'Плътно',
+			'settings.gridSpacingNormal' => 'Нормално',
+			'settings.gridSpacingSpacious' => 'Просторно',
 			'settings.tvCornerSpotlightBackdrop' => 'Фон с акцент в ъгъла',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Показвай акцентното изображение в горния десен ъгъл, вместо на целия екран',
 			'settings.viewMode' => 'Режим на изглед',
@@ -2947,16 +3110,14 @@ extension on TranslationsBg {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Хардуерно декодиране',
 			'settings.hardwareDecodingDescription' => 'Използвай хардуерно ускорение, когато е налично',
-			'settings.bufferSize' => 'Размер на буфера',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Автоматично (препоръчително)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Налична памет: ${heap} MB. Буфер от ${size} MB може да повлияе на възпроизвеждането.',
 			'settings.playbackBuffer' => 'Буфер за възпроизвеждане',
 			'settings.playbackBufferAuto' => 'Автоматично (препоръчително)',
 			'settings.playbackBufferLarge' => 'Голям',
 			'settings.playbackBufferExtraLarge' => 'Изключително голям',
 			'settings.playbackBufferDescription' => 'Буферира повече при нестабилни връзки. Също ограничен от размера на буфера.',
 			'settings.defaultQualityTitle' => 'Качество по подразбиране',
+			'settings.cellularQualityTitle' => 'Качество по подразбиране при мобилни данни',
+			'settings.cellularQualitySameAsDefault' => 'Същото като качеството по подразбиране',
 			'settings.musicQualityTitle' => 'Качество на музиката',
 			'settings.subtitleStyling' => 'Стил на субтитрите',
 			'settings.subtitleStylingDescription' => 'Настройване на вида на субтитрите',
@@ -2970,6 +3131,8 @@ extension on TranslationsBg {
 			'settings.rememberTrackSelectionsDescription' => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие',
 			'settings.followServerTrackSelections' => 'Използвай избора на пътечки от сървъра за всеки епизод',
 			'settings.followServerTrackSelectionsDescription' => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор',
+			'settings.resumeMusicOnLaunch' => 'Запомняне на музикалната сесия',
+			'settings.resumeMusicOnLaunchDescription' => 'При стартиране на приложението отваряй последната песен на пауза от мястото, докъдето е стигнала',
 			'settings.showChapterMarkersOnTimeline' => 'Показвай маркери на глави върху времевата линия',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Разделяй времевата линия на сегменти по границите на главите',
 			'settings.specialsOrdering' => 'Специални епизоди в реда на епизодите',
@@ -3023,11 +3186,11 @@ extension on TranslationsBg {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Клавишната комбинация вече е назначена за ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Клавишната комбинация е обновена за ${action}',
 			'settings.saveFailed' => 'Промените не можаха да бъдат запазени. Опитайте отново.',
-			'settings.autoSkip' => 'Автоматично прескачане',
-			'settings.autoSkipIntro' => 'Автоматично прескачане на интро',
-			'settings.autoSkipIntroDescription' => 'Автоматично прескачай интро маркери след няколко секунди',
-			'settings.autoSkipCredits' => 'Автоматично прескачане на финални надписи',
-			'settings.autoSkipCreditsDescription' => 'Автоматично прескачай финалните надписи и пускай следващия епизод',
+			'settings.autoPlayAndSkip' => 'Автоматично пускане и прескачане',
+			'settings.autoPlayNextEpisode' => 'Автоматично пускане на следващия епизод',
+			'settings.autoPlayNextEpisodeDescription' => 'Пускай следващия епизод автоматично, когато текущият свърши',
+			'settings.playNextCountdown' => 'Отброяване до следващия епизод',
+			'settings.playNextCountdownImmediate' => 'Пусни веднага',
 			'settings.forceSkipMarkerFallback' => 'Принуди резервни маркери',
 			'settings.forceSkipMarkerFallbackDescription' => 'Използвай шаблони в заглавията на главите дори когато Plex има маркери',
 			'settings.autoSkipDelay' => 'Забавяне за автоматично прескачане',
@@ -3098,10 +3261,8 @@ extension on TranslationsBg {
 			'settings.dvConversionNativeDescription' => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване',
 			'settings.dvConversionDv81Description' => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток',
-			'settings.demuxer' => 'Демултиплексор на контейнера',
-			'settings.demuxerDescription' => 'Кой демултиплексор анализира файловете при директно възпроизвеждане. Превключете на media3, ако даден файл създава проблеми.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (препоръчително)',
-			'settings.demuxerMedia3' => 'media3',
+			'settings.deinterlace' => 'Деинтерлейсинг',
+			'settings.deinterlaceDescription' => 'Премахва гребеновидните артефакти от интерлейсирано видео (само за mpv плейъра)',
 			'settings.requireProfileSelectionOnOpen' => 'Питай за профил при отваряне на приложението',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показвай избор на профил всеки път при отваряне на приложението',
 			'settings.forceTvMode' => 'Принуди TV режим',
@@ -3119,15 +3280,31 @@ extension on TranslationsBg {
 			'settings.showExploreTabDescription' => 'Показва раздела „Открий“ със съдържание от Plex Discover и свързаните тракери',
 			'settings.liveTvDefaultFavorites' => 'По подразбиране към любими канали',
 			'settings.liveTvDefaultFavoritesDescription' => 'Показвай само любими канали при отваряне на телевизия на живо',
+			'settings.general' => 'Общи',
+			'settings.generalDescription' => 'Език, стартиране и поведение на прозореца',
+			'settings.languageAndRegion' => 'Език и регион',
+			'settings.startup' => 'Стартиране',
 			'settings.display' => 'Дисплей',
+			'settings.libraryAndCards' => 'Библиотека и карти',
 			'settings.homeScreen' => 'Начален екран',
 			'settings.navigation' => 'Навигация',
 			'settings.window' => 'Прозорец',
-			'settings.content' => 'Съдържание',
+			'settings.liveTv' => 'Телевизия на живо',
 			'settings.player' => 'Плейър',
-			'settings.subtitlesAndConfig' => 'Субтитри и конфигурация',
+			'settings.videoAndDisplay' => 'Видео и дисплей',
+			'settings.audio' => 'Аудио',
+			'settings.quality' => 'Качество',
+			'settings.subtitles' => 'Субтитри',
 			'settings.seekAndTiming' => 'Търсене и време',
 			'settings.behavior' => 'Поведение',
+			'settings.gestures' => 'Жестове',
+			'settings.gestureBrightnessSwipe' => 'Плъзгане за яркост',
+			'settings.gestureBrightnessSwipeDescription' => 'Плъзни нагоре или надолу по левия ръб, за да регулираш яркостта',
+			'settings.gestureVolumeSwipe' => 'Плъзгане за сила на звука',
+			'settings.gestureVolumeSwipeDescription' => 'Плъзни нагоре или надолу по десния ръб, за да регулираш силата на звука',
+			'settings.gesturePinchToZoom' => 'Стискане за мащабиране',
+			'settings.gesturePinchToZoomDescription' => 'Стисни видеото, за да увеличиш или намалиш мащаба',
+			'settings.controls' => 'Контроли',
 			'settings.rememberPlayerChanges' => 'Запомняне на промените в плейъра',
 			'settings.rememberPlayerChangesDescription' => 'Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане',
 			'settings.scopePlaybackSpeed' => 'Скорост на възпроизвеждане',
@@ -3269,6 +3446,8 @@ extension on TranslationsBg {
 			'fileInfo.optimizedVersion' => 'Оптимизирана версия',
 			'fileInfo.optimizationTarget' => 'Цел на оптимизацията',
 			'fileInfo.deletedAt' => 'Изтрит',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Отдалечен източник',
 			'fileInfo.infiniteStream' => 'Безкраен поток',
 			'fileInfo.directPlay' => 'Директно възпроизвеждане',
@@ -3289,8 +3468,6 @@ extension on TranslationsBg {
 			'fileInfo.flagOriginal' => 'Оригинал',
 			'fileInfo.channelsMono' => 'Моно',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Профил ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Маркирай като гледано',
 			'mediaMenu.markAsUnwatched' => 'Маркирай като негледано',
 			'mediaMenu.removeFromContinueWatching' => 'Премахни от продължаване на гледането',
@@ -3625,6 +3802,63 @@ extension on TranslationsBg {
 			'connections.signInAgain' => 'Влез отново',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Редактирай връзката с ${product}',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Добавете или премахнете URL адреси за ${serverName}. Plezy ще използва достъпния URL адрес с най-ниска латентност.',
+			'accountPreferences.sectionTitle' => 'Предпочитания на акаунта',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Опции за аудио, субтитри и библиотека, запазени на ${account}',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Опции за аудио, субтитри и библиотека, запазени на ${count} акаунта',
+			'accountPreferences.pickAccount' => 'Всеки акаунт съхранява собствени предпочитания. Изберете кой да редактирате.',
+			'accountPreferences.storedOnAccount' => 'Тези опции се запазват на самия акаунт, така че всяко приложение, вписано в него, ги използва — включително Plezy на другите ви устройства.',
+			'accountPreferences.noAccounts' => 'Няма акаунти за настройка',
+			'accountPreferences.noAccountsHint' => 'Влезте в Plex или свържете Jellyfin или Emby сървър и предпочитанията, запазени на този акаунт, ще се появят тук.',
+			'accountPreferences.unavailable' => 'Акаунтът не може да бъде достигнат',
+			'accountPreferences.loadFailed' => 'Предпочитанията не можаха да бъдат заредени',
+			'accountPreferences.noPreference' => 'Без предпочитание',
+			'accountPreferences.notSet' => 'Не е зададено',
+			'accountPreferences.groups.audioAndSubtitles' => 'Аудио и субтитри',
+			'accountPreferences.groups.libraryDisplay' => 'Библиотека',
+			'accountPreferences.groups.personalMedia' => 'Лична медия',
+			'accountPreferences.preferredAudioLanguage' => 'Предпочитан аудио език',
+			'accountPreferences.autoSelectAudio' => 'Избирай аудио по език',
+			'accountPreferences.autoSelectAudioDescription' => 'При изключено се запазва аудиопътечката, която файлът маркира като подразбираща се.',
+			'accountPreferences.preferredSubtitleLanguage' => 'Предпочитан език за субтитри',
+			'accountPreferences.subtitleMode' => 'Включване на субтитри',
+			'accountPreferences.subtitleModes.none' => 'Ръчно избрани',
+			'accountPreferences.subtitleModes.noneDescription' => 'Никога не включвай субтитри автоматично.',
+			'accountPreferences.subtitleModes.defaultMode' => 'Следвай флаговете на пътечката',
+			'accountPreferences.subtitleModes.defaultModeDescription' => 'Използвай флаговете по подразбиране и принудителните, съхранени на всяка пътечка със субтитри.',
+			'accountPreferences.subtitleModes.always' => 'Винаги включени',
+			'accountPreferences.subtitleModes.alwaysDescription' => 'Включвай пътечка със субтитри на предпочитания език, когато има такава.',
+			'accountPreferences.subtitleModes.onlyForced' => 'Само принудителни субтитри',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Зареждай само пътечките, маркирани като принудителни.',
+			'accountPreferences.subtitleModes.smart' => 'Показване при чуждоезично аудио',
+			'accountPreferences.subtitleModes.smartDescription' => 'Включвай субтитри само когато аудиото е на друг език.',
+			'accountPreferences.subtitleAccessibility' => 'SDH субтитри',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Предпочитай субтитри без SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Предпочитай SDH субтитри',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Само SDH субтитри',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Само субтитри без SDH',
+			'accountPreferences.forcedSubtitles' => 'Принудителни субтитри',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Предпочитай субтитри без принудителни',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Предпочитай принудителни субтитри',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Само принудителни субтитри',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Само субтитри без принудителни',
+			'accountPreferences.displayMissingEpisodes' => 'Показвай липсващи епизоди',
+			'accountPreferences.displayMissingEpisodesDescription' => 'Изброявай епизоди, за които сървърът знае, но няма файл.',
+			'accountPreferences.hidePlayedInLatest' => 'Скривай изгледаните елементи в „Последни“',
+			'accountPreferences.hidePlayedInLatestDescription' => 'Не включвай вече изгледаните елементи в редовете „Последни“ на сървъра.',
+			'accountPreferences.displayCollectionsView' => 'Показвай изгледа „Колекции“',
+			'accountPreferences.displayCollectionsViewDescription' => 'Предлагай изгледа „Колекции“ на сървъра редом с библиотеките ви.',
+			'accountPreferences.rewatchingInNextUp' => 'Запазвай повторно гледаните сериали в „Следва“',
+			'accountPreferences.rewatchingInNextUpDescription' => 'Когато завършите сериал и го пуснете отново, „Следва“ проследява повторното гледане, вместо да премахва сериала.',
+			'accountPreferences.watchedIndicator' => 'Индикатори за изгледано',
+			'accountPreferences.watchedIndicatorOptions.none' => 'Никога',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Филми и ТВ сериали',
+			'accountPreferences.watchedIndicatorOptions.movies' => 'Само филми',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'Само ТВ сериали',
+			'accountPreferences.mediaReviewsVisibility' => 'Оценки и ревюта',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Потребители и критици',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Само потребители',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Само критици',
+			'accountPreferences.mediaReviewsOptions.nobody' => 'Скрити',
 			'discover.title' => 'Открий',
 			'discover.noContentAvailable' => 'Няма налично съдържание',
 			'discover.addMediaToLibraries' => 'Добавете медия към библиотеките си',
@@ -3726,6 +3960,8 @@ extension on TranslationsBg {
 			'libraries.filterCategories.favorites' => 'Любими',
 			'libraries.sortLabels.title' => 'Заглавие',
 			'libraries.sortLabels.dateAdded' => 'Дата на добавяне',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Дата на излизане',
 			'libraries.sortLabels.rating' => 'Рейтинг',
 			'libraries.sortLabels.communityRating' => 'Оценка от общността',
@@ -3803,8 +4039,6 @@ extension on TranslationsBg {
 			'explore.rows.watchlist' => 'Списък за гледане',
 			'explore.rows.recommendedMovies' => 'Препоръчани филми',
 			'explore.rows.recommendedShows' => 'Препоръчани сериали',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Набиращи популярност филми',
 			'explore.rows.trendingShows' => 'Набиращи популярност сериали',
 			'explore.rows.popularMovies' => 'Популярни филми',
@@ -3957,6 +4191,11 @@ extension on TranslationsBg {
 			'liveTv.unknownChannel' => 'Неизвестен канал',
 			'liveTv.live' => 'НА ЖИВО',
 			'liveTv.reloadGuide' => 'Презареди ТВ програмата',
+			'liveTv.searchGuide' => 'Търсене в програмата',
+			'liveTv.searchHint' => 'Търсене на канали и предавания',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Няма съвпадения за "${query}"',
+			'liveTv.channelsSection' => 'Канали',
+			'liveTv.programsSection' => 'Предавания',
 			'liveTv.now' => 'Сега',
 			'liveTv.today' => 'Днес',
 			'liveTv.tomorrow' => 'Утре',
@@ -4094,6 +4333,8 @@ extension on TranslationsBg {
 			'music.repeatAll' => 'Повтаряне на всички',
 			'music.repeatOne' => 'Повтаряне на една',
 			'music.instantMixNoServer' => 'Няма наличен сървър за незабавен микс',
+			'music.instantMixFailed' => 'Мигновеният микс не можа да бъде зареден',
+			'music.instantMixEmpty' => 'Мигновеният микс не върна песни',
 			'music.noAudioUrl' => ({required Object track}) => 'Няма наличен URL за аудиото на ${track}',
 			'music.discography.singlesAndEps' => 'Сингли и EP',
 			'music.discography.live' => 'Концертни',
@@ -4233,6 +4474,8 @@ extension on TranslationsBg {
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
 			'downloads.editSyncFilter' => 'Филтър за синхронизация',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',
@@ -4317,8 +4560,6 @@ extension on TranslationsBg {
 			'companionRemote.pairing.noDevicesHint' => 'Отворете Plezy на настолен компютър и използвайте същата Wi-Fi мрежа',
 			'companionRemote.pairing.availableDevices' => 'Налични устройства',
 			'companionRemote.pairing.manualConnection' => 'Ръчно свързване',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.cryptoInitFailed' => 'Не може да се стартира защитена връзка. Първо влезте в Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Моля, въведете адрес на хоста',
 			'companionRemote.pairing.validationHostFormat' => 'Форматът трябва да е IP:port (напр. 192.168.1.100:48632)',
@@ -4579,6 +4820,8 @@ extension on TranslationsBg {
 			'seerr.statusBlocklisted' => 'В списъка с блокирани',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Неуспешна връзка с ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'На ${url} няма инстанция на Seerr (HTTP ${status})',
+			'seerr.invalidUrl' => 'Въведете адрес на сървър като https://seerr.example.com',
+			'seerr.quickConnectUnsupported' => 'Тази Seerr инстанция не поддържа Quick Connect. Изисква се Seerr 3.4 или по-нова версия.',
 			'seerr.notInitialized' => 'Тази инстанция на Seerr не е завършила първоначалната настройка',
 			'seerr.noPlexTokenForReauth' => 'Няма наличен Plex токен за повторен вход',
 			'seerr.noStoredCredentials' => 'Няма запазени данни за повторен вход',
@@ -4589,6 +4832,7 @@ extension on TranslationsBg {
 			'seerr.sessionRejectedAfterReauth' => 'Сесията беше отхвърлена след повторния вход',
 			'services.title' => 'Услуги',
 			'services.hubSubtitle' => 'Синхронизирай прогреса на гледане и заявявай нови заглавия.',
+			'services.integrations' => 'Интеграции',
 			'services.notConnected' => 'Няма връзка',
 			'services.connectedAs' => ({required Object username}) => 'Свързан като @${username}',
 			'services.scrobble' => 'Проследявай прогреса автоматично',

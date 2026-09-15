@@ -53,6 +53,20 @@ class ProfileRegistry {
     appLogger.d('ProfileRegistry: upserted ${profile.kind.id}/${profile.id}');
   }
 
+  /// Rename only the editable field; preserve concurrently changed PIN/config.
+  Future<void> rename(String id, String displayName, {void Function()? checkCurrent}) async {
+    final name = displayName.trim();
+    if (name.isEmpty) throw ArgumentError('A profile name is required.');
+    await _db.runIdentityMutation(() async {
+      checkCurrent?.call();
+      final count =
+          await (_db.update(_db.profiles)..where((t) => t.id.equals(id) & t.kind.equals(ProfileKind.local.id))).write(
+            ProfilesCompanion(displayName: Value(name)),
+          );
+      if (count != 1) throw StateError('The editable profile is unavailable.');
+    });
+  }
+
   Future<void> remove(String id) async {
     await _db.runIdentityMutation(() async {
       await (_db.delete(_db.profiles)..where((t) => t.id.equals(id))).go();

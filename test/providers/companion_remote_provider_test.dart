@@ -1006,7 +1006,7 @@ class _FakeCompanionRemotePeerService extends CompanionRemotePeerService {
   Future<void>? _disposeInFlight;
 
   /// Mirrors the real service's idempotent dispose (`_disposed` /
-  /// `_disposeInProgress` dedup): only the first call tears down, concurrent
+  /// `FutureCoalescer` dedup): only the first call tears down, concurrent
   /// and repeat calls join it. The provider relies on that contract instead of
   /// memoizing disposals itself, so [disposeCalls] counts effective disposals.
   @override

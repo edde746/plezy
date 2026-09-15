@@ -15,9 +15,12 @@ ANDROID_15_INSTRUMENTATION_CLASSES = (
     "com.edde746.plezy.exoplayer.PlezyAudioModePlaybackTest"
 )
 ANDROID_15_INSTRUMENTATION_TARGET = "android-15-instrumentation"
-# Separate R8 reachability from instrumentation: these suites exercise APIs the app
-# does not call directly, so shrinking them is expected. Covers name-based reachability (#1703).
-ANDROID_R8_REACHABILITY_CLASSES = "androidx.media3.decoder.ffmpeg.FfmpegDecoderReachabilityTest"
+# Keep reachability separate from the debug playback suites above: those exercise
+# APIs the app legitimately shrinks. This target guards FFmpeg and MPV's native paths.
+ANDROID_R8_REACHABILITY_CLASSES = (
+    "androidx.media3.decoder.ffmpeg.FfmpegDecoderReachabilityTest,"
+    "com.edde746.plezy.mpv.MpvPlayerReachabilityTest"
+)
 ANDROID_R8_REACHABILITY_TARGET = "android-r8-reachability"
 
 

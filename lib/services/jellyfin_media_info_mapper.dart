@@ -25,6 +25,7 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
   Map<String, dynamic> source, {
   Object? chapters,
   Object? trickplay,
+  int? mediaIndex,
 }) {
   final rawStreams = source['MediaStreams'];
   final parsedStreams = walkStreams(rawStreams is List ? rawStreams : null, const JellyfinFileInfoStreamReader());
@@ -68,6 +69,7 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
     partId: partId,
     displayCriteria: jellyfinDisplayCriteriaFromStream(source, parsedStreams.videoStream),
     mediaSourceId: mediaSourceId,
+    mediaIndex: mediaIndex,
     defaultAudioStreamIndex: defaultAudioStreamIndex,
     defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
     trickplayByWidth: trickplayByWidth,

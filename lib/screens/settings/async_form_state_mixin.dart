@@ -54,6 +54,15 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
     setState(() => _errorText = value);
   }
 
+  /// Focus [node] once the frame that rebuilt the form is on screen. Focus
+  /// targets created by this build don't exist yet when the caller returns.
+  void requestFocusAfterFrame(FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !node.canRequestFocus) return;
+      node.requestFocus();
+    });
+  }
+
   /// Run [body] surrounded by busy/error scaffolding. Returns the body's
   /// value, or `null` if the widget unmounted, the body threw, or the
   /// errorMapper translated the exception.

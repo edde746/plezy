@@ -148,7 +148,8 @@ class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
   }
 
   @override
-  Future<void> setActiveSource(CatalogSourceId id) async {
+  Future<void> setActiveSource(CatalogSourceId? id, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     if (_activeId == id) return;
     _activeId = id;
     notifyListeners();

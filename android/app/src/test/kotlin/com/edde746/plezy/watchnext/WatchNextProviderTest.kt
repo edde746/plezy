@@ -32,6 +32,7 @@ import java.io.Closeable
 import java.lang.reflect.Proxy
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.security.MessageDigest
 import java.util.ArrayDeque
 import java.util.Base64
 import java.util.concurrent.AbstractExecutorService
@@ -792,6 +793,193 @@ class WatchNextProviderTest {
   }
 
   @Test
+  @Config(sdk = [28])
+  fun progressUpdatesRetainLauncherRowsAndArtworkAndResetToNext() {
+    withServer("image/png", imageBytes) { source ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      registerHandler(homeIntent, "home.launcher")
+      val grantContext = RecordingGrantContext(context)
+      val provider = WatchNextProvider(grantContext)
+      val initial = item(source)
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial)))
+      val ids = tvProvider.ids()
+      val poster = committedPoster()!!
+      val updated = initial.copy(duration = 200, lastPlaybackPosition = 50, lastEngagementTime = 99)
+
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(updated)))
+      assertEquals(ids, tvProvider.ids())
+      assertEquals(poster, committedPoster())
+      val row = tvProvider.inserted.single()
+      assertEquals(200L, row.getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_DURATION_MILLIS))
+      assertEquals(50L, row.getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+      assertEquals(99L, row.getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_ENGAGEMENT_TIME_UTC_MILLIS))
+      assertEquals(
+        TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_CONTINUE,
+        row.getAsInteger(TvContractCompat.WatchNextPrograms.COLUMN_WATCH_NEXT_TYPE)
+      )
+
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(updated.copy(lastPlaybackPosition = 0))))
+      assertEquals(ids, tvProvider.ids())
+      assertEquals(0L, row.getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+      assertEquals(
+        TvContractCompat.WatchNextPrograms.WATCH_NEXT_TYPE_NEXT,
+        row.getAsInteger(TvContractCompat.WatchNextPrograms.COLUMN_WATCH_NEXT_TYPE)
+      )
+      assertArrayEquals(imageBytes, openArtwork(poster))
+      assertTrue(grantContext.packageRevocations.isEmpty())
+      assertTrue(grantContext.uriWideRevocations.isEmpty())
+    }
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun failedProgressAndFullCommitsRemainRetryable() {
+    val provider = WatchNextProvider(context)
+    val initial = item("").copy(posterSourceUri = null)
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial)))
+    val ids = tvProvider.ids()
+    val updated = initial.copy(lastPlaybackPosition = 50)
+    tvProvider.failBatch = true
+    assertFalse(provider.syncWatchNextPrograms("owner-a", 1, listOf(updated)))
+    assertEquals(ids, tvProvider.ids())
+    assertEquals(10L, tvProvider.inserted.single().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+    tvProvider.failBatch = false
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(updated)))
+    assertEquals(50L, tvProvider.inserted.single().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+
+    val replacement = updated.copy(title = "New metadata", lastPlaybackPosition = 60)
+    tvProvider.failBatch = true
+    assertFalse(provider.syncWatchNextPrograms("owner-a", 1, listOf(replacement)))
+    assertEquals(initial.title, tvProvider.inserted.single().getAsString(TvContractCompat.WatchNextPrograms.COLUMN_TITLE))
+    tvProvider.failBatch = false
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(replacement)))
+    assertEquals(replacement.title, tvProvider.inserted.single().getAsString(TvContractCompat.WatchNextPrograms.COLUMN_TITLE))
+    assertEquals(60L, tvProvider.inserted.single().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun metadataOrderMembershipAndOwnershipTransitionsRepublishRows() {
+    val provider = WatchNextProvider(context)
+    val initial = item("").copy(posterSourceUri = null)
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial)))
+    val firstIds = tvProvider.ids()
+    val renamed = initial.copy(title = "Changed title")
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(renamed)))
+    assertFalse(firstIds == tvProvider.ids())
+    assertEquals(renamed.title, tvProvider.inserted.single().getAsString(TvContractCompat.WatchNextPrograms.COLUMN_TITLE))
+
+    val second = initial.copy(contentId = "second")
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(renamed, second)))
+    assertEquals(listOf(initial.contentId, "second"), tvProvider.contentIds())
+    val orderedIds = tvProvider.ids()
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(second, renamed)))
+    assertEquals(listOf("second", initial.contentId), tvProvider.contentIds())
+    assertTrue(tvProvider.ids().none { it in orderedIds })
+
+    val ownerAIds = tvProvider.ids()
+    assertTrue(provider.syncWatchNextPrograms("owner-b", 2, listOf(second, renamed)))
+    assertTrue(tvProvider.ids().none { it in ownerAIds })
+    val generationTwoIds = tvProvider.ids()
+    assertTrue(provider.syncWatchNextPrograms("owner-b", 3, listOf(second, renamed)))
+    assertTrue(tvProvider.ids().none { it in generationTwoIds })
+    val beforeRestart = tvProvider.ids()
+    assertTrue(WatchNextProvider(context).syncWatchNextPrograms("owner-b", 3, listOf(second, renamed)))
+    assertTrue(tvProvider.ids().none { it in beforeRestart })
+    assertFalse(provider.syncWatchNextPrograms("owner-b", 3, listOf(second, renamed.copy(lastPlaybackPosition = 70))))
+    assertEquals(10L, tvProvider.inserted.last().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun externallyDeletedReplacedOrEditedRowsAreRepairedBeforeProgressUpdates() {
+    val provider = WatchNextProvider(context)
+    val initial = item("").copy(posterSourceUri = null)
+    val table = TvContractCompat.WatchNextPrograms.CONTENT_URI
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial)))
+    val originalId = tvProvider.ids().single()
+    tvProvider.delete(table.buildUpon().appendPath(originalId.toString()).build(), null, null)
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 20))))
+    assertEquals(listOf(initial.contentId), tvProvider.contentIds())
+    assertFalse(originalId == tvProvider.ids().single())
+
+    val replacementValues = ContentValues(tvProvider.inserted.single())
+    tvProvider.delete(table, null, null)
+    val externalUri = tvProvider.insert(table, replacementValues)
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 30))))
+    assertFalse(externalUri.lastPathSegment!!.toLong() == tvProvider.ids().single())
+
+    val editedId = tvProvider.ids().single()
+    tvProvider.update(
+      table.buildUpon().appendPath(editedId.toString()).build(),
+      ContentValues().apply { put(TvContractCompat.WatchNextPrograms.COLUMN_TITLE, "External title") },
+      null,
+      null
+    )
+    assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 40))))
+    assertEquals(initial.title, tvProvider.inserted.single().getAsString(TvContractCompat.WatchNextPrograms.COLUMN_TITLE))
+    assertEquals(40L, tvProvider.inserted.single().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+    assertFalse(editedId == tvProvider.ids().single())
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun progressSyncHonorsConsumerChangesAndGrantFailures() {
+    withServer("image/png", imageBytes) { source ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      registerHandler(homeIntent, "first.home")
+      val rejecting = mutableSetOf<String>()
+      val grantContext = RecordingGrantContext(context, rejecting)
+      val provider = WatchNextProvider(grantContext)
+      val initial = item(source)
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial)))
+      val poster = committedPoster()!!
+      val ids = tvProvider.ids()
+      rejecting += "first.home"
+      assertFalse(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 20))))
+      assertEquals(ids, tvProvider.ids())
+      assertEquals(10L, tvProvider.inserted.single().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+
+      registerHandler(homeIntent, "second.home")
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 30))))
+      assertTrue(grantContext.grants.any { it.packageName == "second.home" && it.uri == poster })
+      assertEquals(
+        setOf("first.home", "second.home"),
+        context.getSharedPreferences("system_shelf_state", 0).getStringSet("granted_packages", emptySet())
+      )
+      val committedIds = tvProvider.ids()
+      assertFalse(
+        provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 40)), isOperationActive = { false })
+      )
+      assertEquals(committedIds, tvProvider.ids())
+      assertEquals(30L, tvProvider.inserted.single().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+    }
+  }
+
+  @Test
+  @Config(sdk = [28])
+  fun changedCachedFileMetadataRequiresFullPublication() {
+    withServer("image/png", imageBytes) { source ->
+      val provider = WatchNextProvider(context)
+      val initial = item(source)
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial)))
+      val ids = tvProvider.ids()
+      val poster = committedPoster()!!
+      val file = artworkFiles().single()
+      assertTrue(file.setLastModified(file.lastModified() - 60_000))
+
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 20))))
+      assertFalse(ids == tvProvider.ids())
+      assertEquals(poster, committedPoster())
+      assertArrayEquals(imageBytes, openArtwork(poster))
+      assertEquals(20L, tvProvider.inserted.single().getAsLong(TvContractCompat.WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS))
+      val validatedIds = tvProvider.ids()
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(initial.copy(lastPlaybackPosition = 30))))
+      assertEquals(validatedIds, tvProvider.ids())
+    }
+  }
+
+  @Test
   fun repeatedSameSourceSyncReusesValidatedArtwork() {
     ScriptedHttpServer(
       listOf(
@@ -812,6 +1000,14 @@ class WatchNextProviderTest {
       val stableTimestamp = 1_600_000_000_000L
       assertTrue(firstFile.setLastModified(stableTimestamp))
       assertTrue(Regex("[a-f0-9]{64}\\.art").matches(firstPoster.lastPathSegment.orEmpty()))
+      val expectedOwner = MessageDigest.getInstance("SHA-256")
+        .digest("owner-a".toByteArray()).joinToString("") { "%02x".format(it) }
+      val expectedKey = MessageDigest.getInstance("SHA-256")
+        .digest("owner-a\u0000$stableSource".toByteArray()).joinToString("") { "%02x".format(it) } + ".art"
+      assertEquals(
+        Uri.parse("content://${SystemShelfArtworkProvider.AUTHORITY}/art/$expectedOwner/$expectedKey"),
+        firstPoster
+      )
 
       assertTrue(
         provider.syncWatchNextPrograms(
@@ -931,7 +1127,7 @@ class WatchNextProviderTest {
       assertTrue(
         provider.syncWatchNextPrograms(
           "owner-a",
-          2,
+          1,
           listOf(item(sourceB).copy(title = "Progress update", lastPlaybackPosition = 40))
         )
       )
@@ -953,8 +1149,8 @@ class WatchNextProviderTest {
         retryResult.set(
           provider.syncWatchNextPrograms(
             "owner-a",
-            3,
-            listOf(item(sourceB).copy(title = "Replacement ready"))
+            1,
+            listOf(item(sourceB).copy(title = "Progress update", lastPlaybackPosition = 50))
           )
         )
       }
@@ -986,7 +1182,7 @@ class WatchNextProviderTest {
       assertTrue(
         provider.syncWatchNextPrograms(
           "owner-a",
-          4,
+          1,
           listOf(item(sourceB).copy(posterSourceUri = null))
         )
       )
@@ -1030,6 +1226,7 @@ class WatchNextProviderTest {
   }
 
   @Test
+  @Config(sdk = [28])
   fun corruptContentAddressIsRefetchedWithoutPartialPublish() {
     val replacementRequested = CountDownLatch(1)
     val releaseReplacement = CountDownLatch(1)
@@ -1062,7 +1259,7 @@ class WatchNextProviderTest {
       val refetchResult = AtomicReference<Boolean>()
       val refetch = thread(start = true, name = "system-shelf-corrupt-refetch") {
         refetchResult.set(
-          provider.syncWatchNextPrograms("owner-a", 2, listOf(item(source)))
+          provider.syncWatchNextPrograms("owner-a", 1, listOf(item(source).copy(lastPlaybackPosition = 20)))
         )
       }
       try {
@@ -1082,15 +1279,15 @@ class WatchNextProviderTest {
       assertFalse(artworkFiles().any { it.name.endsWith(".tmp") })
 
       deterministicFile.writeBytes(corruptBytes)
-      assertTrue(provider.syncWatchNextPrograms("owner-a", 3, listOf(item(source))))
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(source).copy(lastPlaybackPosition = 30))))
       assertEquals(3, server.requestCount.get())
       assertNull(committedPoster())
       assertTrue(artworkFiles().isEmpty())
 
-      assertTrue(provider.syncWatchNextPrograms("owner-a", 4, listOf(item(source))))
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(source).copy(lastPlaybackPosition = 40))))
       assertEquals(stablePoster, committedPoster())
       assertTrue(deterministicFile.delete())
-      assertTrue(provider.syncWatchNextPrograms("owner-a", 5, listOf(item(source))))
+      assertTrue(provider.syncWatchNextPrograms("owner-a", 1, listOf(item(source).copy(lastPlaybackPosition = 50))))
       assertEquals(5, server.requestCount.get())
       assertNull(committedPoster())
       assertTrue(artworkFiles().isEmpty())
@@ -1480,6 +1677,7 @@ private class CapturingTvProvider : ContentProvider() {
         ?.getQueryParameter("content_id")
   }
   private val rowIds = mutableListOf<Long>()
+  fun ids(): List<Long> = rowIds.toList()
   private var nextRowId = 1L
   var deleteCount = 0
   var queryCount = 0
@@ -1583,7 +1781,13 @@ private class CapturingTvProvider : ContentProvider() {
     values: ContentValues?,
     selection: String?,
     selectionArgs: Array<out String>?
-  ): Int = 0
+  ): Int {
+    val id = uri.lastPathSegment?.toLongOrNull() ?: return 0
+    val index = rowIds.indexOf(id)
+    if (index < 0 || values == null) return 0
+    inserted[index].putAll(values)
+    return 1
+  }
 }
 
 private class RecordingResult : MethodChannel.Result {

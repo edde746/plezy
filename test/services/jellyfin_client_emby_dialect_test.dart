@@ -81,13 +81,11 @@ void main() {
 
       expect(await emby.checkHealth(), HealthStatus.online);
       expect(await emby.isHealthy(), isTrue);
-      expect(await emby.fetchUserProfile(), isNotNull);
       expect(await jellyfin.checkHealth(), HealthStatus.online);
       expect(await jellyfin.isHealthy(), isTrue);
-      expect(await jellyfin.fetchUserProfile(), isNotNull);
 
-      expect(embyRequests.log, ['GET /Users/user-1?', 'GET /Users/user-1?', 'GET /Users/user-1?']);
-      expect(jellyfinRequests.log, ['GET /Users/Me?', 'GET /Users/Me?', 'GET /Users/Me?']);
+      expect(embyRequests.log, ['GET /Users/user-1?', 'GET /Users/user-1?']);
+      expect(jellyfinRequests.log, ['GET /Users/Me?', 'GET /Users/Me?']);
       expect(embyRequests.log, isNot(contains('GET /Users/Me?')));
       expect(embyRequests.requests.every((request) => request.body.isEmpty), isTrue);
       expect(jellyfinRequests.requests.every((request) => request.body.isEmpty), isTrue);
@@ -1133,6 +1131,16 @@ void main() {
   });
 
   group('MediaBrowser playback session identity', () {
+    test('Emby direct streams keep the lowercase api_key query parameter', () {
+      final client = testEmbyClient();
+      addTearDown(client.close);
+
+      final query = Uri.parse(client.buildDirectStreamUrl('item-1')).queryParameters;
+
+      expect(query['api_key'], 'token');
+      expect(query.containsKey('ApiKey'), isFalse);
+    });
+
     test('Emby synthesizes one item-derived PlaySessionId for a replay triple', () async {
       final requests = _RequestCapture((_) => http.Response('', 204));
       final client = testEmbyClient(handler: requests.handle);

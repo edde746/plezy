@@ -42,8 +42,7 @@ class SubtitleStylingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Anchor-to-screen is an ExoPlayer text-subtitle knob; mpv already places
-    // plaintext subtitles in the letterbox margins by default.
+    // Each backend exposes its own text-subtitle placement preference.
     final exoActive = Platform.isAndroid && SettingsService.instance.read(SettingsService.useExoPlayer);
     return SettingsPage(
       title: Text(t.screens.subtitleStyling),
@@ -93,8 +92,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v',
               labelText: t.subtitlingStyling.fontSize,
               suffixText: '',
-              min: 10,
-              max: 80,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleTextColor,
@@ -108,9 +105,14 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: _formatPosition,
               labelText: t.subtitlingStyling.position,
               suffixText: '%',
-              min: 0,
-              max: 100,
             ),
+            if (!exoActive)
+              SettingSwitchTile(
+                pref: SettingsService.subtitleUseMargins,
+                icon: Symbols.fit_screen_rounded,
+                title: t.subtitlingStyling.useMargins,
+                subtitle: t.subtitlingStyling.useMarginsDescription,
+              ),
             if (exoActive)
               SettingSwitchTile(
                 pref: SettingsService.subtitleAnchorToScreen,
@@ -141,8 +143,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v',
               labelText: t.subtitlingStyling.borderSize,
               suffixText: '',
-              min: 0,
-              max: 5,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBorderColor,
@@ -162,8 +162,6 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: (v) => '$v%',
               labelText: t.subtitlingStyling.backgroundOpacity,
               suffixText: '%',
-              min: 0,
-              max: 100,
             ),
             SettingColorTile(
               pref: SettingsService.subtitleBackgroundColor,

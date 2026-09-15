@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
+import '../media/library_change_event.dart';
 import '../media/media_library.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
+import '../utils/library_content_notifier.dart';
 import '../utils/coalesced_load_coordinator.dart';
 import 'multi_server_provider.dart';
 
@@ -25,6 +30,9 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     // or restart. Removed in [dispose] so a profile switch can't leave a
     // stale listener on the app-global provider.
     _multiServer?.addOnlineServersListener(syncToOnlineServers);
+    // Server push events mark affected libraries stale; tabs consume the
+    // epoch when they are next shown. Cancelled in [dispose].
+    _libraryEventSubscription = LibraryContentNotifier().stream.listen(_onLibraryContentChanged);
   }
 
   static bool _neverBinding() => false;
@@ -73,6 +81,56 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
   /// Whether libraries are available
   bool get hasLibraries => _libraries.isNotEmpty;
+
+  /// Per-library content epochs, bumped when a server push reports that a
+  /// library's content changed (#1646). A tab records the epoch it loaded
+  /// under and reloads when it is next shown with a newer one — staleness is
+  /// consumed lazily, so a push never live-reloads a grid the user is
+  /// scrolled into. Deliberately does not notify listeners: bumping is
+  /// bookkeeping, not a UI change.
+  final Map<String, int> _contentEpochByGlobalKey = {};
+  StreamSubscription<LibraryChangeEvent>? _libraryEventSubscription;
+
+  /// The current content epoch for the library with [globalKey]; 0 until a
+  /// push event first marks it.
+  int libraryContentEpoch(String globalKey) => _contentEpochByGlobalKey[globalKey] ?? 0;
+
+  void _onLibraryContentChanged(LibraryChangeEvent event) {
+    if (isDisposed || !event.hasChanges) return;
+    // Resolved once per event, not per library: the loop below is the only
+    // hot consumer and resolution walks the named ids.
+    final coversServer = _eventCoversServer(event);
+    for (final library in _libraries) {
+      if (library.serverId != event.serverId.value) continue;
+      if (!coversServer && !event.libraryIds.contains(library.id)) continue;
+      _contentEpochByGlobalKey[library.globalKey] = (_contentEpochByGlobalKey[library.globalKey] ?? 0) + 1;
+    }
+  }
+
+  /// Single matcher for push events, shared with the visible tab's live pass
+  /// so epoch marking and live refreshes always agree (#1646). An event with
+  /// no library ids targets the whole server; so does one naming any id that
+  /// matches no loaded library on that server (a brand-new library, or a
+  /// backend id the app never sees as a library — Jellyfin reports physical
+  /// collection folders, and a grouped view's folders never appear as its
+  /// id). Partial resolution widens rather than narrows: the unresolved ids
+  /// may belong to any loaded library, so every one of them is marked
+  /// alongside the exact matches. Only a fully resolved id set stays precise.
+  bool eventTargetsLibrary(LibraryChangeEvent event, MediaLibrary library) {
+    if (library.serverId == null || library.serverId != event.serverId.value) return false;
+    return event.libraryIds.contains(library.id) || _eventCoversServer(event);
+  }
+
+  /// Whether [event] must be read as touching every loaded library on its
+  /// server: unidentified scope, or a named id that resolves to nothing.
+  bool _eventCoversServer(LibraryChangeEvent event) {
+    if (event.targetsWholeServer) return true;
+    _ensureLookups();
+    for (final id in event.libraryIds) {
+      if (!_byGlobalKey.containsKey(buildGlobalKey(event.serverId, id))) return true;
+    }
+    return false;
+  }
 
   /// Derived lookups, keyed on the identity of [_libraries]: every mutation
   /// reassigns the list, so an identical source means the maps are current.
@@ -331,11 +389,13 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   }
 
   /// Update the library order and persist it.
-  Future<void> updateLibraryOrder(List<MediaLibrary> orderedLibraries) async {
+  Future<void> updateLibraryOrder(
+    List<MediaLibrary> orderedLibraries, {
+    String? profileId,
+    void Function()? checkCurrent,
+  }) async {
     if (isDisposed) return;
-    _libraries = List.from(orderedLibraries);
-    safeNotifyListeners();
-
+    final previousLibraries = _libraries;
     // Save the new order
     var storage = _storageService;
     if (storage == null) {
@@ -344,10 +404,16 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       _storageService = storage;
     }
     if (isDisposed) return;
+    checkCurrent?.call();
     final libraryKeys = orderedLibraries.map((lib) => lib.globalKey).toList();
-    await storage.saveLibraryOrder(libraryKeys);
+    await storage.saveLibraryOrder(libraryKeys, profileId: profileId);
 
     if (isDisposed) return;
+    checkCurrent?.call();
+    _libraries = identical(_libraries, previousLibraries)
+        ? List.from(orderedLibraries)
+        : _applyLibraryOrder(_libraries, libraryKeys);
+    safeNotifyListeners();
     appLogger.d('LibrariesProvider: Updated library order');
   }
 
@@ -366,6 +432,8 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   @override
   void dispose() {
     _multiServer?.removeOnlineServersListener(syncToOnlineServers);
+    _libraryEventSubscription?.cancel();
+    _libraryEventSubscription = null;
     _loadCoordinator.dispose();
     super.dispose();
   }

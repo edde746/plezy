@@ -1,5 +1,30 @@
 import '../models.dart';
 
+/// A native MPV source identified by its lifetime-unique playlist entry id.
+class PlayerSourceStarted {
+  const PlayerSourceStarted(this.sourceId);
+
+  final int sourceId;
+}
+
+/// The first rendered position for one native MPV source.
+///
+/// [position] is sampled when MPV emits the source's first playback-restart,
+/// after its playback clock has been updated from decoded audio/video PTS.
+class PlayerSourceReady {
+  const PlayerSourceReady({required this.sourceId, required this.position});
+
+  final int sourceId;
+  final Duration position;
+}
+
+/// A source-qualified MPV load failure.
+class PlayerSourceFailed {
+  const PlayerSourceFailed(this.sourceId);
+
+  final int sourceId;
+}
+
 /// Reactive streams for player state changes.
 ///
 /// Subscribe to these streams to receive updates when the player state changes.
@@ -90,6 +115,18 @@ class PlayerStreams {
   /// mistaken for a media-open failure.
   final Stream<void> fileLoadFailed;
 
+  /// Emits when MPV starts a source whose native identity is known.
+  ///
+  /// Unlike [fileStarted], this is source-qualified and can safely delimit
+  /// property updates that cross asynchronous native dispatch queues.
+  final Stream<PlayerSourceStarted> sourceStarted;
+
+  /// Emits the first rendered player-clock position for an MPV source.
+  final Stream<PlayerSourceReady> sourceReady;
+
+  /// Emits when the active MPV source fails to load or play.
+  final Stream<PlayerSourceFailed> sourceFailed;
+
   /// Emits once mpv has discovered a non-external audio or video track for
   /// the current file. Unlike [fileLoaded], this can fire before remote
   /// subtitle sidecars finish opening.
@@ -137,6 +174,9 @@ class PlayerStreams {
     this.fileLoaded = const Stream<void>.empty(),
     this.fileStarted = const Stream<void>.empty(),
     this.fileLoadFailed = const Stream<void>.empty(),
+    this.sourceStarted = const Stream<PlayerSourceStarted>.empty(),
+    this.sourceReady = const Stream<PlayerSourceReady>.empty(),
+    this.sourceFailed = const Stream<PlayerSourceFailed>.empty(),
     this.primaryMediaReady = const Stream<void>.empty(),
     this.hdrOutputChanged = const Stream<void>.empty(),
     required this.backendSwitched,

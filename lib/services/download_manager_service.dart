@@ -19,6 +19,7 @@ import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import 'api_cache.dart';
+import 'connectivity_probe.dart';
 import 'download_artwork_helpers.dart';
 import 'download_artwork_service.dart';
 import 'jellyfin_cache_resolver.dart';
@@ -34,6 +35,7 @@ import '../utils/app_logger.dart';
 import '../utils/serial_future_queue.dart';
 import '../utils/active_client_scope.dart';
 import '../utils/codec_utils.dart';
+import '../utils/connectivity_link_type.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/storage_failure.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -235,27 +237,18 @@ class DownloadManagerService {
     }
   }
 
-  static Future<bool> shouldBlockDownloadOnCellular() async {
-    final List<ConnectivityResult> connectivity;
-    try {
-      connectivity = await Connectivity().checkConnectivity();
-    } catch (e) {
-      // connectivity_plus can throw PlatformException on Windows — don't block
-      return false;
-    }
-    return shouldBlockDownloadOnCellularWith(connectivity);
-  }
+  static Future<bool> shouldBlockDownloadOnCellular() async =>
+      shouldBlockDownloadOnCellularWith(await ConnectivityProbe.check());
 
   /// Same check as [shouldBlockDownloadOnCellular] but uses a pre-read
   /// connectivity result so callers that already queried connectivity don't
   /// pay for a second platform round-trip.
   static Future<bool> shouldBlockDownloadOnCellularWith(List<ConnectivityResult> connectivity) async {
+    // The link decides first: an empty or unknown snapshot is not
+    // cellular-only, so the preference is only consulted when it can matter.
+    if (!connectivity.isCellularOnly) return false;
     final settings = await SettingsService.getInstance();
-    if (!settings.read(SettingsService.downloadOnWifiOnly)) return false;
-    if (connectivity.isEmpty) return false;
-    return connectivity.contains(ConnectivityResult.mobile) &&
-        !connectivity.contains(ConnectivityResult.wifi) &&
-        !connectivity.contains(ConnectivityResult.ethernet);
+    return settings.read(SettingsService.downloadOnWifiOnly);
   }
 
   /// Future that completes when interrupted download recovery finishes.
@@ -375,18 +368,26 @@ class DownloadManagerService {
     return _safStorage.resolvePersistedPermissionUri(location.path!);
   }
 
-  Future<void> setDownloadLocation({required String path, required String pathType}) {
-    return _serializeSafOwnership(() => _installDownloadLocation((path: path, type: pathType)));
+  Future<void> setDownloadLocation({required String path, required String pathType, void Function()? checkCurrent}) {
+    if (path.trim().isEmpty || (pathType != 'file' && pathType != 'saf')) {
+      throw const FormatException('Invalid download location');
+    }
+    return _serializeSafOwnership(
+      () => _installDownloadLocation((path: path, type: pathType), checkCurrent: checkCurrent),
+    );
   }
 
-  Future<void> resetDownloadLocation() {
-    return _serializeSafOwnership(() => _installDownloadLocation((path: null, type: null)));
+  Future<void> resetDownloadLocation({void Function()? checkCurrent}) {
+    return _serializeSafOwnership(() => _installDownloadLocation((path: null, type: null), checkCurrent: checkCurrent));
   }
 
-  Future<void> _installDownloadLocation(DownloadLocationSnapshot next) async {
+  Future<void> _installDownloadLocation(DownloadLocationSnapshot next, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     final previous = _readDownloadLocation();
     final previousRoot = await _canonicalRootForLocation(previous);
+    checkCurrent?.call();
     final nextRoot = await _canonicalRootForLocation(next);
+    checkCurrent?.call();
     if (next.type == 'saf' && next.path != null && nextRoot == null) {
       throw DownloadStorageException(
         'Selected SAF root has no persisted permission',
@@ -394,26 +395,40 @@ class DownloadManagerService {
         StateError('Persisted SAF permission is unavailable'),
       );
     }
+    if (next.type == 'file' && next.path != null) {
+      final writable = await _storageService.isDirectoryWritable(Directory(next.path!));
+      checkCurrent?.call();
+      if (!writable) {
+        throw DownloadStorageException('Download directory is not writable', next.path!, StateError('Access denied'));
+      }
+    }
 
     var storageRefreshStarted = false;
     try {
+      checkCurrent?.call();
       await _writeDownloadPath(next.path);
+      checkCurrent?.call();
       await _writeDownloadPathType(next.type);
+      checkCurrent?.call();
       storageRefreshStarted = true;
       await _refreshDownloadStorage();
     } catch (error, stackTrace) {
+      checkCurrent?.call();
       Object? rollbackError;
       try {
+        checkCurrent?.call();
         await _writeDownloadPath(previous.path);
       } catch (error) {
         rollbackError = error;
       }
       try {
+        checkCurrent?.call();
         await _writeDownloadPathType(previous.type);
       } catch (error) {
         rollbackError ??= error;
       }
       try {
+        checkCurrent?.call();
         await _refreshDownloadStorage();
       } catch (error) {
         rollbackError ??= error;
@@ -422,12 +437,14 @@ class DownloadManagerService {
         appLogger.e('Failed to restore download location after transition failure', error: rollbackError);
       }
       if (!storageRefreshStarted && nextRoot != null && nextRoot != previousRoot) {
+        checkCurrent?.call();
         await _releaseSafRootIfUnowned(nextRoot);
       }
       Error.throwWithStackTrace(error, stackTrace);
     }
 
     if (previousRoot != null && previousRoot != nextRoot) {
+      checkCurrent?.call();
       await _releaseSafRootIfUnowned(previousRoot);
     }
   }
@@ -529,6 +546,10 @@ class DownloadManagerService {
     if (activeProfileId == null || activeProfileId.isEmpty) return null;
     final backend = await _backendForServer(serverId);
     if (backend == null) return null;
+    return _profileScopeIdForBackend(backend, serverId, activeProfileId);
+  }
+
+  Future<String?> _profileScopeIdForBackend(MediaBackend backend, ServerId serverId, String activeProfileId) async {
     if (backend.usesMediaBrowserApi) {
       final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
       return persisted ?? activeClientScopeIdForServer(serverId);
@@ -536,28 +557,60 @@ class DownloadManagerService {
     return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
   }
 
-  /// Bulk-load pinned metadata. Profile-visible hydration reads only exact
-  /// owner namespaces; it never pre-merges another user's rows.
-  Future<Map<String, MediaItem>> getAllPinnedMetadata({String? activeProfileId}) async {
-    if (activeProfileId == null || activeProfileId.isEmpty) return {};
+  /// Resolves the backend and the profile-visible cache namespace once per
+  /// distinct server in [serverIds]. Servers whose backend cannot be resolved
+  /// (no live client, no `connections` row) are omitted.
+  Future<Map<String, ({MediaBackend backend, String? scopeId})>> _profileScopesForServers(
+    Set<String> serverIds,
+    String activeProfileId,
+  ) async {
+    final scopes = <String, ({MediaBackend backend, String? scopeId})>{};
+    for (final rawServerId in serverIds) {
+      final serverId = ServerId(rawServerId);
+      final backend = await _backendForServer(serverId);
+      if (backend == null) continue;
+      scopes[rawServerId] = (
+        backend: backend,
+        scopeId: await _profileScopeIdForBackend(backend, serverId, activeProfileId),
+      );
+    }
+    return scopes;
+  }
+
+  /// Bulk-load pinned metadata for every download owned by [activeProfileId].
+  /// Profile-visible hydration reads only exact owner namespaces; it never
+  /// pre-merges another user's rows.
+  ///
+  /// [scopesByServer] maps each owned server id to the namespace used, so
+  /// callers can address the compound-scoped keys in [items] without
+  /// re-resolving the profile binding per download.
+  Future<({Map<String, MediaItem> items, Map<String, String?> scopesByServer})> getAllPinnedMetadata({
+    String? activeProfileId,
+  }) async {
+    if (activeProfileId == null || activeProfileId.isEmpty) {
+      return (items: const <String, MediaItem>{}, scopesByServer: const <String, String?>{});
+    }
     final ownerKeys = await _database.getDownloadOwnerKeysForProfile(activeProfileId);
+    final serverIds = <String>{
+      for (final row in await getAllDownloads())
+        if (ownerKeys.contains(row.globalKey)) row.serverId,
+    };
+    final scopes = await _profileScopesForServers(serverIds, activeProfileId);
     final allowedByBackend = <MediaBackend, Set<ServerId>>{
       for (final backend in MediaBackend.values) backend: <ServerId>{},
     };
-    for (final item in await _database.getAllDownloadedMetadata()) {
-      if (!ownerKeys.contains(item.globalKey)) continue;
-      final serverId = ServerId(item.serverId);
-      final backend = await _backendForServer(serverId);
-      if (backend == null) continue;
-      final scopeId = await profileClientScopeIdForServer(serverId, activeProfileId);
-      if (scopeId != null) allowedByBackend[backend]!.add(ServerId(scopeId));
+    for (final scope in scopes.values) {
+      if (scope.scopeId != null) allowedByBackend[scope.backend]!.add(ServerId(scope.scopeId!));
     }
     final results = await Future.wait(
       MediaBackend.values.map(
         (backend) => ApiCache.forBackend(backend).getAllPinnedMetadata(cacheServerIds: allowedByBackend[backend]),
       ),
     );
-    return {for (final result in results) ...result};
+    return (
+      items: {for (final result in results) ...result},
+      scopesByServer: {for (final entry in scopes.entries) entry.key: entry.value.scopeId},
+    );
   }
 
   Future<MediaItem?> lookupMetadata(
@@ -2026,6 +2079,8 @@ class DownloadManagerService {
             downloadFilePath = await _storageService.getMovieVideoPath(metadata, ext);
           } else if (metadata.isEpisode) {
             downloadFilePath = await _storageService.getEpisodeVideoPath(metadata, ext, showYear: showYear);
+          } else if (metadata.isTrack) {
+            downloadFilePath = await _storageService.getTrackAudioPath(metadata, ext);
           } else {
             downloadFilePath = await _storageService.getVideoFilePath(serverId, metadata.id, ext);
           }
@@ -3049,13 +3104,14 @@ class DownloadManagerService {
 
       if (metadata == null) {
         // Fallback deletion without progress
-        await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+        await _deleteMediaFilesWithMetadata(serverId, ratingKey, downloadRecord: downloadRecord, metadata: null);
         await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
         await _deleteDownloadRowAndRelease(globalKey);
         return;
       }
 
-      final totalItems = await _getTotalItemsToDelete(metadata, serverId, clientScopeId: clientScopeId);
+      final children = await _containerChildren(metadata, serverId);
+      final totalItems = children?.length ?? 1;
 
       _emitDeletionProgress(
         DeletionProgress(
@@ -3066,7 +3122,13 @@ class DownloadManagerService {
         ),
       );
 
-      await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+      await _deleteMediaFilesWithMetadata(
+        serverId,
+        ratingKey,
+        downloadRecord: downloadRecord,
+        metadata: metadata,
+        children: children,
+      );
 
       await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
 
@@ -3090,35 +3152,36 @@ class DownloadManagerService {
     _deletionProgressController.add(progress);
   }
 
-  /// Calculate total items to delete (for progress tracking)
-  Future<int> _getTotalItemsToDelete(MediaItem metadata, ServerId serverId, {String? clientScopeId}) async {
+  /// Downloaded leaf rows belonging to a container item, loaded once so the
+  /// deletion progress total and the file deletion share the same snapshot.
+  /// Null for leaf kinds.
+  Future<List<DownloadedMediaItem>?> _containerChildren(MediaItem metadata, ServerId serverId) {
     switch (metadata.kind) {
-      case MediaKind.episode:
-      case MediaKind.movie:
-        return 1;
       case MediaKind.season:
-        final episodes = await _database.getEpisodesBySeason(metadata.id, serverId: serverId);
-        return episodes.length;
+        return _database.getEpisodesBySeason(metadata.id, serverId: serverId);
       case MediaKind.show:
-        final episodes = await _database.getEpisodesByShow(metadata.id, serverId: serverId);
-        return episodes.length;
+        return _database.getEpisodesByShow(metadata.id, serverId: serverId);
       case MediaKind.album:
-        final tracks = await _database.getTracksByAlbum(metadata.id, serverId: serverId);
-        return tracks.length;
+        return _database.getTracksByAlbum(metadata.id, serverId: serverId);
       case MediaKind.artist:
-        final tracks = await _database.getTracksByArtist(metadata.id, serverId: serverId);
-        return tracks.length;
+        return _database.getTracksByArtist(metadata.id, serverId: serverId);
       default:
-        return 1;
+        return Future.value(null);
     }
   }
 
-  Future<void> _deleteMediaFilesWithMetadata(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
+  /// Delete the physical files for [ratingKey] using the already-loaded
+  /// [downloadRecord], [metadata] and container [children] (from
+  /// [_containerChildren]) so nothing is re-read from the database.
+  Future<void> _deleteMediaFilesWithMetadata(
+    ServerId serverId,
+    String ratingKey, {
+    required DownloadedMediaItem? downloadRecord,
+    required MediaItem? metadata,
+    List<DownloadedMediaItem>? children,
+  }) async {
     try {
-      final gk = buildGlobalKey(ServerId(serverId), ratingKey);
-      final downloadRecord = await _database.getDownloadedMedia(gk);
-      final scopeId = clientScopeId ?? downloadRecord?.clientScopeId;
-      final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: scopeId);
+      final scopeId = downloadRecord?.clientScopeId;
 
       if (metadata == null) {
         // Fallback: Try database record
@@ -3126,7 +3189,7 @@ class DownloadManagerService {
           await _deleteByFilePath(downloadRecord!);
           return;
         }
-        appLogger.w('Cannot delete - no metadata for $gk');
+        appLogger.w('Cannot delete - no metadata for ${buildGlobalKey(ServerId(serverId), ratingKey)}');
         return;
       }
 
@@ -3135,23 +3198,24 @@ class DownloadManagerService {
           await _deleteEpisodeFiles(metadata, serverId, clientScopeId: scopeId);
           break;
         case MediaKind.season:
-          await _deleteSeasonFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteSeasonFiles(metadata, serverId, episodes: children!, clientScopeId: scopeId);
           break;
         case MediaKind.show:
-          await _deleteShowFiles(metadata, serverId, clientScopeId: scopeId);
+          await _deleteShowFiles(metadata, serverId, episodes: children!, clientScopeId: scopeId);
           break;
         case MediaKind.movie:
           await _deleteMovieFiles(metadata, serverId, clientScopeId: scopeId);
           break;
-        // Tracks live in the generic downloads/{serverId}/{ratingKey}/ layout
-        // (both file and SAF mode), so deletion is DB-record-driven rather
-        // than storage-template-driven like movies/episodes.
+        // Track deletion is DB-record-driven rather than storage-template-driven
+        // like movies/episodes: the stored path covers both the current
+        // Music/{Artist}/{Album}/ layout and legacy {serverId}/{ratingKey}/
+        // downloads, and shared album/artist folders are only removed once empty.
         case MediaKind.track:
           if (downloadRecord != null) await _deleteTrackByRecord(downloadRecord);
           break;
         case MediaKind.album:
           await _deleteTracksInContainer(
-            tracks: await _database.getTracksByAlbum(metadata.id, serverId: serverId),
+            tracks: children!,
             serverId: serverId,
             clientScopeId: scopeId,
             containerKey: metadata.id,
@@ -3160,7 +3224,7 @@ class DownloadManagerService {
           break;
         case MediaKind.artist:
           await _deleteTracksInContainer(
-            tracks: await _database.getTracksByArtist(metadata.id, serverId: serverId),
+            tracks: children!,
             serverId: serverId,
             clientScopeId: scopeId,
             containerKey: metadata.id,
@@ -3326,19 +3390,22 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteSeasonFiles(MediaItem season, ServerId serverId, {String? clientScopeId}) async {
+  Future<void> _deleteSeasonFiles(
+    MediaItem season,
+    ServerId serverId, {
+    required List<DownloadedMediaItem> episodes,
+    String? clientScopeId,
+  }) async {
     try {
       final parentMetadata = season.parentId != null
           ? await _lookupMetadata(serverId, season.parentId!, clientScopeId: clientScopeId)
           : null;
       final showYear = parentMetadata?.year;
 
-      final episodesInSeason = await _database.getEpisodesBySeason(season.id, serverId: serverId);
-
       final storageLabel = _storageService.isUsingSaf ? ' (SAF)' : '';
-      appLogger.d('Deleting ${episodesInSeason.length} episodes in season ${season.id}$storageLabel');
+      appLogger.d('Deleting ${episodes.length} episodes in season ${season.id}$storageLabel');
       await _deleteEpisodesInCollection(
-        episodes: episodesInSeason,
+        episodes: episodes,
         serverId: serverId,
         clientScopeId: clientScopeId,
         parentKey: season.id,
@@ -3485,14 +3552,17 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteShowFiles(MediaItem show, ServerId serverId, {String? clientScopeId}) async {
+  Future<void> _deleteShowFiles(
+    MediaItem show,
+    ServerId serverId, {
+    required List<DownloadedMediaItem> episodes,
+    String? clientScopeId,
+  }) async {
     try {
-      final episodesInShow = await _database.getEpisodesByShow(show.id, serverId: serverId);
-
       final storageLabel = _storageService.isUsingSaf ? ' (SAF)' : '';
-      appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.id}$storageLabel');
+      appLogger.d('Deleting ${episodes.length} episodes in show ${show.id}$storageLabel');
       await _deleteEpisodesInCollection(
-        episodes: episodesInShow,
+        episodes: episodes,
         serverId: serverId,
         clientScopeId: clientScopeId,
         parentKey: show.id,

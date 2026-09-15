@@ -483,6 +483,9 @@ void main() {
         .timeout(_ioTimeout);
 
     expect(winner, hostAddress);
+    // The losing candidate's transport is released, not left to the deadline.
+    await _waitFor(() => stalledSockets.isNotEmpty);
+    await stalledSockets.single.drain<void>().timeout(_ioTimeout);
     final command = host.onCommandReceived.firstWhere((event) => event.type == RemoteCommandType.play);
     remote.sendCommand(const RemoteCommand(type: RemoteCommandType.play));
     expect((await command.timeout(_ioTimeout)).type, RemoteCommandType.play);
@@ -508,6 +511,8 @@ void main() {
           .timeout(_ioTimeout),
       throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.timeout)),
     );
+    await _waitFor(() => stalledSockets.isNotEmpty);
+    await stalledSockets.single.drain<void>().timeout(_ioTimeout);
   });
 
   test('disconnect does not hang while the managed connect is still pending', () async {
@@ -525,11 +530,12 @@ void main() {
     });
 
     final join = remote.joinSessionWithContexts('Test Remote', 'ios', '127.0.0.1:${blackHole.port}', [_authContext]);
-    // Settles with an error once teardown destroys the black-holed socket.
+    // Settles with an error once disconnect cancels the pending connect.
     unawaited(join.catchError((_) {}));
-    await _flushEventQueue();
+    await _waitFor(() => stalledSockets.isNotEmpty);
 
     await remote.disconnect().timeout(_ioTimeout);
+    await stalledSockets.single.drain<void>().timeout(_ioTimeout);
   });
 
   test('host and remote dispatch encrypted commands through the same contract', () async {
@@ -816,6 +822,14 @@ String _validAuthMessage(
 Future<void> _flushEventQueue() async {
   await Future<void>.delayed(Duration.zero);
   await Future<void>.delayed(Duration.zero);
+}
+
+Future<void> _waitFor(bool Function() condition) async {
+  final deadline = DateTime.now().add(_ioTimeout);
+  while (!condition()) {
+    if (DateTime.now().isAfter(deadline)) fail('condition not met in time');
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
 }
 
 class _RawWebSocketClient {

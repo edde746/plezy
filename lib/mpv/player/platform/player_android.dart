@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../../services/device_performance.dart';
@@ -12,12 +11,9 @@ class PlayerAndroid extends PlayerBase {
   static const _methodChannel = MethodChannel('com.plezy/exo_player');
   static const _eventChannel = EventChannel('com.plezy/exo_player/events');
 
-  int? _bufferSizeBytes;
-  bool _bufferSizeIsAuto = false;
   String _bufferTier = 'auto';
   bool _tunnelingEnabled = false;
   String _dvConversionMode = 'auto';
-  String _demuxerMode = 'ffmpeg';
   bool _audioNormalizationEnabled = false;
   bool _audioPassthroughEnabled = false;
   bool _downmixEnabled = false;
@@ -57,6 +53,11 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   String get playerType => 'exoplayer';
+
+  // ExoPlayerPlugin no-ops a dispose whose instanceId is not the core's
+  // creator, so a timed-out ownership wait may still force-dispose.
+  @override
+  bool get nativeDisposeIsStaleGuarded => true;
 
   @override
   bool get supportsSecondarySubtitles => false;
@@ -116,12 +117,10 @@ class PlayerAndroid extends PlayerBase {
   Future<void> _doInitialize() async {
     try {
       final result = await invoke<bool>('initialize', {
-        'bufferSizeBytes': _bufferSizeBytes,
-        'bufferSizeAuto': _bufferSizeIsAuto,
+        'instanceId': nativeInstanceId,
         'bufferTier': _bufferTier,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
-        'demuxerMode': _demuxerMode,
         'audioPassthroughEnabled': _audioPassthroughEnabled,
         // Cheap (32-bit) TV boxes run the hardware video path a frame behind a GL
         // subtitle overlay; render the ASS one frame earlier there to realign.
@@ -330,15 +329,6 @@ class PlayerAndroid extends PlayerBase {
       case 'speed':
         await setRate(double.tryParse(value) ?? 1.0);
         break;
-      case 'demuxer-max-bytes':
-        _bufferSizeBytes = int.tryParse(value);
-        break;
-      // Not an mpv property. The heap tiers Dart derives for mpv's demuxer are the wrong
-      // shape for ExoPlayer's sample allocator, so on Auto the native side sizes its own
-      // LoadControl target instead of reusing `demuxer-max-bytes` (#1618).
-      case 'demuxer-max-bytes-auto':
-        _bufferSizeIsAuto = value != 'no';
-        break;
       // Not an mpv property. mpv read-ahead is owned by the mpv.conf editor; this tier is
       // a named ExoPlayer read-ahead depth rather than a duration because the byte cap can
       // bind first (#1816).
@@ -358,10 +348,6 @@ class PlayerAndroid extends PlayerBase {
           () => invoke('setDvConversionMode', {'mode': value}),
           () => _dvConversionMode == value,
         );
-        break;
-      case 'demuxer-mode':
-        _demuxerMode = value;
-        await _applyWhenInitialized(() => invoke('setDemuxerMode', {'mode': value}), () => _demuxerMode == value);
         break;
       case 'sub-visibility':
         if (value == 'no') {
@@ -451,10 +437,17 @@ class PlayerAndroid extends PlayerBase {
         final stats = await getStats();
         final mode = stats['dvConversionDebugMode'];
         return mode?.toString().toLowerCase();
+      // ExoPlayer detects the rate from rendered frames (`videoFps`); its mpv
+      // fallback core reports mpv's own keys. Neither is observable, so the
+      // display-matching read goes through one stats round trip.
       case 'container-fps':
-        final fpsStats = await getStats();
-        final fps = fpsStats['videoFps'];
+        final stats = await getStats();
+        final fps = stats['container-fps'] ?? stats['videoFps'];
         return fps?.toString();
+      case 'estimated-vf-fps':
+      case 'deinterlace-active':
+        final stats = await getStats();
+        return stats[name]?.toString();
       case 'width':
       case 'dwidth':
         final stats = await getStats();
@@ -480,30 +473,6 @@ class PlayerAndroid extends PlayerBase {
       return {};
     }
   }
-
-  /// First successful (positive) [getHeapSize] result; the device heap is
-  /// immutable per process, so one channel round trip serves every caller.
-  static int? _cachedHeapSizeMB;
-
-  /// Returns the device's large heap size in MB, or 0 if unavailable (Android only).
-  ///
-  /// Successful positive results are memoized — the playback-open hot path asks
-  /// again on every open. Failures keep returning 0 without being cached, so a
-  /// transient channel error can't pin the fallback for the process lifetime.
-  static Future<int> getHeapSize() async {
-    final cached = _cachedHeapSizeMB;
-    if (cached != null) return cached;
-    try {
-      final result = await _methodChannel.invokeMethod<int>('getHeapSize');
-      if (result != null && result > 0) _cachedHeapSizeMB = result;
-      return result ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  @visibleForTesting
-  static void debugResetHeapSizeCache() => _cachedHeapSizeMB = null;
 
   @override
   Future<String> runtimePlayerType() async {

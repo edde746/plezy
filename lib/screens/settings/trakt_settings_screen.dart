@@ -7,7 +7,6 @@ import '../../models/trackers/device_code.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/settings_service.dart';
 import '../../services/trackers/tracker_constants.dart';
-import '../../services/trackers/trakt/trakt_tracker.dart';
 import '../../utils/dialogs.dart';
 import '../../widgets/device_code_dialog.dart';
 import '../../widgets/settings_page.dart';
@@ -74,14 +73,12 @@ class TraktSettingsScreen extends StatelessWidget {
               icon: Symbols.auto_timer_rounded,
               title: t.trakt.scrobble,
               subtitle: t.trakt.scrobbleDescription,
-              onAfterWrite: TraktTracker.instance.setEnabled,
             ),
             TrackerSettingsToggle(
               pref: SettingsService.enableTraktWatchedSync,
               icon: Symbols.check_circle_rounded,
               title: t.trakt.watchedSync,
               subtitle: t.trakt.watchedSyncDescription,
-              onAfterWrite: TraktTracker.instance.setWatchedSyncEnabled,
             ),
           ],
           onDisconnect: () => _disconnect(context, account),

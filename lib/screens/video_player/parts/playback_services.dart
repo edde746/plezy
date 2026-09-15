@@ -1,9 +1,5 @@
 part of '../../video_player_screen.dart';
 
-/// Fallback for OS skip commands that arrive without an interval (the
-/// platforms normally send one — Android hardcodes 15s).
-const _defaultMediaControlSkip = Duration(seconds: 15);
-
 extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   void _queueScrubPreviewLoad({
     required MediaItem metadata,
@@ -37,9 +33,25 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   Future<void> _markFirstFrameReady(Player currentPlayer, SettingsService settingsService) async {
-    if (!mounted || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError) return;
+    bool stale() =>
+        !mounted || _shuttingDown || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError;
+    if (stale()) return;
+
+    // The open is negotiating the display from this frame: keep it behind
+    // the loading UI until the mode switch (and decoder refresh) settled,
+    // as the spinner did while the metadata pre-load switch ran. Concurrent
+    // callers (restart event, position fallback) re-check after the wait so
+    // only one latches the frame. A negotiation abandoned by a newer open
+    // resolves false: that open holds and reveals its own first frame, and
+    // the same player instance makes the guards above blind to the swap.
+    final negotiation = _frameRate.displayNegotiation;
+    if (negotiation != null) {
+      if (!await negotiation || stale()) return;
+    }
 
     _firstFrame.markReady();
+    // This request is proven: a later in-place switch that fails restores it.
+    _workingOpenRequest = _currentOpenRequest;
     _http503Watchdog.disarm();
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
     final progressTracker = _progressTracker;
@@ -68,49 +80,61 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // to _initializeServices in this file and the sleep-timer/Apple TV ones to
     // initState; both outlive a re-wire.
     await Future.wait<void>(_cancelPlayerStreamSubscriptions(includeMediaControls: false));
-    if (!mounted || player != currentPlayer) return;
+    if (!mounted || _shuttingDown || player != currentPlayer) return;
     int? lastObservedPositionMs;
 
-    _playingSubscription = currentPlayer.streams.playing.listen(_onPlayingStateChanged);
+    // Anything that moves the playhead behind the accumulator's back retires
+    // its pinned target, so the next skip steps from where the viewer
+    // actually is (#1819). Re-attaching also drops a burst aimed at the
+    // outgoing player's timeline.
+    _relativeSkip.attachPlayheadJumps(currentPlayer.streams.playheadJump);
 
-    _completedSubscription = currentPlayer.streams.completed.listen((done) {
-      // completed=false means a file (re)loaded after a reconnect-seek or fresh
-      // open — re-arm the end-of-video latch so the real EOF can still show Play
-      // Next. But only when playback is clear of the end region: a stray
-      // completed=false while parked at EOF must NOT re-arm, or the position
-      // listener would immediately re-fire the Play Next prompt.
-      if (!done) {
-        lastObservedPositionMs = null;
-        final durMs = currentPlayer.state.duration.inMilliseconds;
-        final posMs = currentPlayer.state.position.inMilliseconds;
-        if (durMs <= 0 || posMs < durMs - _episode.completionLatch.rearmWindowMs) {
-          _rearmCompletionLatch();
+    _playerStreamSubscriptions.add(currentPlayer.streams.playing.listen(_onPlayingStateChanged));
+
+    _playerStreamSubscriptions.add(
+      currentPlayer.streams.completed.listen((done) {
+        // completed=false means a file (re)loaded after a reconnect-seek or fresh
+        // open — re-arm the end-of-video latch so the real EOF can still show Play
+        // Next. But only when playback is clear of the end region: a stray
+        // completed=false while parked at EOF must NOT re-arm, or the position
+        // listener would immediately re-fire the Play Next prompt.
+        if (!done) {
+          lastObservedPositionMs = null;
+          final durMs = currentPlayer.state.duration.inMilliseconds;
+          final posMs = currentPlayer.state.position.inMilliseconds;
+          if (durMs <= 0 || posMs < durMs - _episode.completionLatch.rearmWindowMs) {
+            _rearmCompletionLatch();
+          }
         }
-      }
-      // A mid-file EOF is the stream dying under us (#1520), not the media
-      // ending: it must never mark the item watched, prompt Play Next, or
-      // exit a movie. Intercepted here and not inside _onVideoCompleted
-      // because the credits-marker auto-skip legitimately calls
-      // _onVideoCompleted from mid-credits positions.
-      if (done && _eofRecovery.interceptEof(currentPlayer)) return;
-      _onVideoCompleted(done);
-    });
+        // A mid-file EOF is the stream dying under us (#1520), not the media
+        // ending: it must never mark the item watched, prompt Play Next, or
+        // exit a movie. Intercepted here and not inside _onVideoCompleted
+        // because the credits-marker auto-skip legitimately calls
+        // _onVideoCompleted from mid-credits positions.
+        if (done && _eofRecovery.interceptEof(currentPlayer)) return;
+        _onVideoCompleted(done);
+      }),
+    );
 
-    _errorSubscription = currentPlayer.streams.error.listen(_onPlayerError);
+    _playerStreamSubscriptions.add(currentPlayer.streams.error.listen(_onPlayerError));
 
     // warn is included so we can catch ffmpeg's "HTTP error 4xx/5xx" line in
     // _onPlayerLog — the error-level log that follows omits the status code.
-    _logSubscription = currentPlayer.streams.log
-        .where((log) => const {PlayerLogLevel.fatal, PlayerLogLevel.error, PlayerLogLevel.warn}.contains(log.level))
-        .listen(_onPlayerLog);
+    _playerStreamSubscriptions.add(
+      currentPlayer.streams.log
+          .where((log) => const {PlayerLogLevel.fatal, PlayerLogLevel.error, PlayerLogLevel.warn}.contains(log.level))
+          .listen(_onPlayerLog),
+    );
 
     if (Platform.isAndroid && useExoPlayer) {
-      _backendSwitchedSubscription = currentPlayer.streams.backendSwitched.listen((_) => _onBackendSwitched());
+      _playerStreamSubscriptions.add(currentPlayer.streams.backendSwitched.listen((_) => _onBackendSwitched()));
     }
 
-    _bufferingSubscription = currentPlayer.streams.buffering.listen((isBuffering) {
-      _isBuffering.value = isBuffering;
-    });
+    _playerStreamSubscriptions.add(
+      currentPlayer.streams.buffering.listen((isBuffering) {
+        _isBuffering.value = isBuffering;
+      }),
+    );
 
     // When server comes back online while buffering, force mpv to reconnect
     // immediately instead of waiting for ffmpeg's exponential backoff.
@@ -119,63 +143,87 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       if (serverId != null) {
         final serverManager = context.read<MultiServerProvider>().serverManager;
         bool wasOffline = false;
-        _serverStatusSubscription = serverManager.statusStream.listen((statusMap) {
-          final isOnline = statusMap[serverId] == true;
-          if (!isOnline) {
-            wasOffline = true;
-          } else if (wasOffline && (_isBuffering.value || _eofRecovery.parked)) {
-            wasOffline = false;
-            if (_eofRecovery.parked) {
-              // A parked stream is dead server-side; a seek-in-place would
-              // land in the drained cache — only a fresh resolve replaces it.
-              unawaited(_eofRecovery.retry(reason: 'server back online'));
-            } else {
-              _forceStreamReconnect();
+        _playerStreamSubscriptions.add(
+          serverManager.statusStream.listen((statusMap) {
+            final isOnline = statusMap[serverId] == true;
+            if (!isOnline) {
+              wasOffline = true;
+            } else if (wasOffline && (_isBuffering.value || _eofRecovery.parked)) {
+              wasOffline = false;
+              if (_eofRecovery.parked) {
+                // A parked stream is dead server-side; a seek-in-place would
+                // land in the drained cache — only a fresh resolve replaces it.
+                unawaited(_eofRecovery.retry(reason: 'server back online'));
+              } else {
+                _forceStreamReconnect();
+              }
             }
-          }
-        });
+          }),
+        );
       }
     }
 
-    _playbackRestartSubscription = currentPlayer.streams.playbackRestart.listen((_) async {
-      if (!mounted || player != currentPlayer) return;
-      _lastLogError = null;
-      _fatalHttpStatuses.clear();
-      _resetLiveLadderOnPlaybackRestart();
-      final markFirstFrameReady = _markFirstFrameReady(currentPlayer, settingsService);
-      _trackManager?.onPlaybackRestart();
-      await markFirstFrameReady;
-    });
-
-    _positionSubscription = currentPlayer.streams.position.listen((position) {
-      final activePlayer = player;
-      if (activePlayer == null || activePlayer != currentPlayer) return;
-
-      // Fallback for MPV backends whose playbackRestart event is unavailable.
-      // Android ExoPlayer position can advance on its standalone clock without
-      // a renderer, so it may infer readiness only after switching to MPV.
-      final canInferRenderedFrameFromPosition =
-          !(Platform.isAndroid && useExoPlayer) || (currentPlayer is PlayerAndroid && currentPlayer.usingMpvFallback);
-      if (canInferRenderedFrameFromPosition && !_firstFrame.rendered) {
-        if (lastObservedPositionMs != null && position.inMilliseconds != lastObservedPositionMs) {
-          unawaited(_markFirstFrameReady(currentPlayer, settingsService));
-        }
-        lastObservedPositionMs = position.inMilliseconds;
-      }
-
-      // A recovered stream that progressed well past the recovery point
-      // proves the reload worked — restore the full spurious-EOF retry
-      // budget for the next stream death.
-      _eofRecovery.onPositionAdvanced(position.inMilliseconds);
-
-      final duration = activePlayer.state.duration;
-      _episode.completionLatch.classifyPosition(
-        positionMs: position.inMilliseconds,
-        durationMs: duration.inMilliseconds,
-        promptVisible: _episode.showPlayNextDialog,
-        countdownActive: _episode.autoPlayTimer?.isActive == true,
+    if (widget.isLive) {
+      _playerStreamSubscriptions.add(
+        currentPlayer.streams.sourceReady.listen((source) {
+          if (!mounted || player != currentPlayer) return;
+          if (_live.calibrateClockSource(source)) {
+            _setPlayerState(() {});
+          }
+        }),
       );
-    });
+      _playerStreamSubscriptions.add(
+        currentPlayer.streams.sourceFailed.listen((source) {
+          if (!mounted || player != currentPlayer) return;
+          _live.failClockSource(source);
+          _setPlayerState(() {});
+        }),
+      );
+    }
+
+    _playerStreamSubscriptions.add(
+      currentPlayer.streams.playbackRestart.listen((_) async {
+        if (!mounted || player != currentPlayer) return;
+        _lastLogError = null;
+        _fatalHttpStatuses.clear();
+        _resetLiveLadderOnPlaybackRestart();
+        final markFirstFrameReady = _markFirstFrameReady(currentPlayer, settingsService);
+        _trackManager?.onPlaybackRestart();
+        await markFirstFrameReady;
+      }),
+    );
+
+    _playerStreamSubscriptions.add(
+      currentPlayer.streams.position.listen((position) {
+        final activePlayer = player;
+        if (activePlayer == null || activePlayer != currentPlayer) return;
+
+        // Fallback for MPV backends whose playbackRestart event is unavailable.
+        // Android ExoPlayer position can advance on its standalone clock without
+        // a renderer, so it may infer readiness only after switching to MPV.
+        final canInferRenderedFrameFromPosition =
+            !(Platform.isAndroid && useExoPlayer) || (currentPlayer is PlayerAndroid && currentPlayer.usingMpvFallback);
+        if (canInferRenderedFrameFromPosition && !_firstFrame.rendered) {
+          if (lastObservedPositionMs != null && position.inMilliseconds != lastObservedPositionMs) {
+            unawaited(_markFirstFrameReady(currentPlayer, settingsService));
+          }
+          lastObservedPositionMs = position.inMilliseconds;
+        }
+
+        // A recovered stream that progressed well past the recovery point
+        // proves the reload worked — restore the full spurious-EOF retry
+        // budget for the next stream death.
+        _eofRecovery.onPositionAdvanced(position.inMilliseconds);
+
+        final duration = activePlayer.state.duration;
+        _episode.completionLatch.classifyPosition(
+          positionMs: position.inMilliseconds,
+          durationMs: duration.inMilliseconds,
+          promptVisible: _episode.showPlayNextDialog,
+          countdownActive: _episode.autoPlayTimer?.isActive == true,
+        );
+      }),
+    );
   }
 
   /// Roll the screen back to a re-runnable state after a failed player
@@ -187,16 +235,18 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   Future<void> _tearDownFailedPlayerAttempt(Player attemptPlayer) async {
     final activePlayer = player;
     if (activePlayer != null && !identical(activePlayer, attemptPlayer)) return;
+    if (!mounted || _shuttingDown) return;
 
-    // Rollback scope: the player streams plus the five media-controls
-    // listeners — see [_cancelPlayerStreamSubscriptions] for the ownership
-    // boundary that keeps the sleep-timer and Apple TV subscriptions alive.
+    // Rollback scope: the player streams plus the media-controls listeners —
+    // see [_cancelPlayerStreamSubscriptions] for the ownership boundary that
+    // keeps the sleep-timer and Apple TV subscriptions alive.
     final cancellationFutures = _cancelPlayerStreamSubscriptions(includeMediaControls: true);
     try {
       await Future.wait(cancellationFutures);
     } catch (e, st) {
       appLogger.w('Failed to cancel player subscriptions during initialization rollback', error: e, stackTrace: st);
     }
+    if (!mounted || _shuttingDown) return;
 
     final progressTracker = _progressTracker;
     _progressTracker = null;
@@ -217,6 +267,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }
       mediaControlsManager.dispose();
     }
+    if (!mounted || _shuttingDown) return;
 
     _stopLiveTimelineUpdates();
     _detachPipStateListener();
@@ -230,6 +281,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to disable auto-PiP during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
 
     final ambientLightingService = _ambientLightingService;
     _ambientLightingService = null;
@@ -240,6 +292,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to disable ambient lighting during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
     _shaderService?.ambientLightingService = null;
     _shaderService = null;
     _videoFilterManager?.ambientLightingService = null;
@@ -271,6 +324,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         appLogger.w('Failed to stop scrobblers during initialization rollback', error: e, stackTrace: st);
       }
     }
+    if (!mounted || _shuttingDown) return;
     await _wakelockController.setEnabled(false);
 
     if (mounted) {
@@ -298,7 +352,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     MediaSourceInfo? mediaInfo,
   }) {
     final currentPlayer = player;
-    if (_hasFatalPlaybackError) return;
+    if (_shuttingDown || _hasFatalPlaybackError) return;
 
     if (currentPlayer == null) return;
 
@@ -345,7 +399,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     MediaSourceInfo? mediaInfo,
   }) {
     final currentPlayer = player;
-    if (_hasFatalPlaybackError) return;
+    if (_shuttingDown || _hasFatalPlaybackError) return;
 
     if (currentPlayer == null) return;
 
@@ -406,7 +460,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// Initialize the service layer
   Future<void> _initializeServices() async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null || _hasFatalPlaybackError) return;
+    if (!mounted || _shuttingDown || currentPlayer == null || _hasFatalPlaybackError) return;
 
     // Live TV: send timeline heartbeats to keep transcode session alive
     if (widget.isLive) {
@@ -424,7 +478,88 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     final mediaControlsManager = MediaControlsManager();
     _mediaControlsManager = mediaControlsManager;
 
-    final mediaControlRouter = MediaControlRouter(
+    final mediaControlRouter = _buildMediaControlRouter();
+
+    // Set up media control event handling
+    _mediaControlSubscriptions.add(
+      mediaControlsManager.controlEvents.listen((event) {
+        if (_mediaControls.suspendedForTvBackground) {
+          appLogger.d('Media control: ${event.runtimeType} ignored while Android TV background-suspended');
+          return;
+        }
+
+        if (_isAppleAudioSessionEvent(event)) {
+          unawaited(_handleAppleAudioSessionEvent(event));
+          return;
+        }
+
+        if (PlatformDetector.isAppleTV() && _isPlaybackMediaControlEvent(event)) {
+          appLogger.d('Media control: ${event.runtimeType} ignored on Apple TV; using native remote bridge');
+          return;
+        }
+
+        mediaControlRouter.route(event);
+      }),
+    );
+
+    // Wire progress tracker, media-controls metadata, and the
+    // Discord/Trakt/Tracker scrobblers. Shared with [_reloadMediaInPlace]
+    // so the two flows can't drift.
+    _wirePerItemPlaybackServices(
+      metadata: _currentMetadata,
+      mediaClient: mediaClient,
+      offlineWatchService: offlineWatchService,
+      playSessionId: _playbackPlaySessionId,
+      playMethod: _playbackPlayMethod,
+      mediaInfo: _currentMediaInfo,
+    );
+
+    if (!mounted) return;
+
+    await _mediaControls.syncAvailability();
+    if (!mounted || player != currentPlayer || _mediaControlsManager != mediaControlsManager) return;
+
+    // Listen to playing state and update media controls
+    _mediaControlSubscriptions.add(
+      currentPlayer.streams.playing.listen((isPlaying) {
+        _mediaControls.pushPlaybackState();
+      }),
+    );
+
+    // Listen to position updates for media controls and Discord
+    _mediaControlSubscriptions.add(
+      currentPlayer.streams.position.listen((position) {
+        mediaControlsManager.updatePlaybackState(
+          isPlaying: currentPlayer.state.isActive,
+          position: position,
+          speed: currentPlayer.state.rate,
+        );
+        DiscordRPCService.instance.updatePosition(position);
+        TrackerCoordinator.instance.updatePosition(position);
+        // Keep the trackers' known duration current — mpv only emits on the
+        // duration stream once per load, but this is cheap and avoids an extra
+        // listener.
+        TrackerCoordinator.instance.updateDuration(currentPlayer.state.duration);
+      }),
+    );
+
+    // Listen to playback rate changes for Discord Rich Presence
+    _mediaControlSubscriptions.add(
+      currentPlayer.streams.rate.listen((rate) {
+        DiscordRPCService.instance.updatePlaybackSpeed(rate);
+      }),
+    );
+
+    _mediaControlSubscriptions.add(
+      currentPlayer.streams.seekable.listen((_) {
+        unawaited(_mediaControls.syncAvailability());
+      }),
+    );
+  }
+
+  /// The screen's authorization + command policy for OS media-session events.
+  MediaControlRouter _buildMediaControlRouter() {
+    return MediaControlRouter(
       // Authority stays Watch Together's. The automotive gate lives in the
       // playback-intent wrappers below, so `onPause` can never be denied: a
       // gated `canControlPlayback` would make the router swallow `PauseEvent`.
@@ -475,79 +610,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       },
       onPrevious: () => unawaited(_restartOrPlayPrevious()),
       onStop: () => unawaited(_handleBackButton()),
-      onSkipForward: (interval) => unawaited(_seekRelative(interval ?? _defaultMediaControlSkip)),
-      onSkipBackward: (interval) => unawaited(_seekRelative(-(interval ?? _defaultMediaControlSkip))),
-      onSetSpeed: (speed) {
-        final currentPlayer = player;
-        if (currentPlayer != null) unawaited(currentPlayer.setRate(speed));
-      },
+      // The platform-reported interval is ignored on purpose; see
+      // [_configuredSkipStep].
+      onSkipForward: (_) => _skipByConfiguredStep(forward: true),
+      onSkipBackward: (_) => _skipByConfiguredStep(forward: false),
+      onSetSpeed: (speed) => unawaited(_setPlaybackRate(speed)),
     );
-
-    // Set up media control event handling
-    _mediaControlSubscription = mediaControlsManager.controlEvents.listen((event) {
-      if (_mediaControls.suspendedForTvBackground) {
-        appLogger.d('Media control: ${event.runtimeType} ignored while Android TV background-suspended');
-        return;
-      }
-
-      if (_isAppleAudioSessionEvent(event)) {
-        unawaited(_handleAppleAudioSessionEvent(event));
-        return;
-      }
-
-      if (PlatformDetector.isAppleTV() && _isPlaybackMediaControlEvent(event)) {
-        appLogger.d('Media control: ${event.runtimeType} ignored on Apple TV; using native remote bridge');
-        return;
-      }
-
-      mediaControlRouter.route(event);
-    });
-
-    // Wire progress tracker, media-controls metadata, and the
-    // Discord/Trakt/Tracker scrobblers. Shared with [_reloadMediaInPlace]
-    // so the two flows can't drift.
-    _wirePerItemPlaybackServices(
-      metadata: _currentMetadata,
-      mediaClient: mediaClient,
-      offlineWatchService: offlineWatchService,
-      playSessionId: _playbackPlaySessionId,
-      playMethod: _playbackPlayMethod,
-      mediaInfo: _currentMediaInfo,
-    );
-
-    if (!mounted) return;
-
-    await _mediaControls.syncAvailability();
-    if (!mounted || player != currentPlayer || _mediaControlsManager != mediaControlsManager) return;
-
-    // Listen to playing state and update media controls
-    _mediaControlsPlayingSubscription = currentPlayer.streams.playing.listen((isPlaying) {
-      _mediaControls.pushPlaybackState();
-    });
-
-    // Listen to position updates for media controls and Discord
-    _mediaControlsPositionSubscription = currentPlayer.streams.position.listen((position) {
-      mediaControlsManager.updatePlaybackState(
-        isPlaying: currentPlayer.state.isActive,
-        position: position,
-        speed: currentPlayer.state.rate,
-      );
-      DiscordRPCService.instance.updatePosition(position);
-      TrackerCoordinator.instance.updatePosition(position);
-      // Keep the trackers' known duration current — mpv only emits on the
-      // duration stream once per load, but this is cheap and avoids an extra
-      // listener.
-      TrackerCoordinator.instance.updateDuration(currentPlayer.state.duration);
-    });
-
-    // Listen to playback rate changes for Discord Rich Presence
-    _mediaControlsRateSubscription = currentPlayer.streams.rate.listen((rate) {
-      DiscordRPCService.instance.updatePlaybackSpeed(rate);
-    });
-
-    _mediaControlsSeekableSubscription = currentPlayer.streams.seekable.listen((_) {
-      unawaited(_mediaControls.syncAvailability());
-    });
   }
 
   void _onPlayingStateChanged(bool isPlaying) {

@@ -14,6 +14,7 @@ struct wl_callback;
 struct wl_compositor;
 struct wl_display;
 struct wl_egl_window;
+struct wl_output;
 struct wl_subcompositor;
 struct wl_subsurface;
 struct wl_surface;
@@ -193,6 +194,15 @@ class WaylandVideoSurface {
   // changes — a monitor move, or HDR being switched on or off under us.
   void SetPreferredChangedCallback(std::function<void()> callback) { on_preferred_changed_ = std::move(callback); }
 
+  // Invoked on the GTK main thread when the compositor places the plane on an
+  // output, with GDK's monitor for it. This is the only word the plugin gets
+  // that the plane moved: dragging the window to another monitor of the same
+  // scale raises no GTK signal on Wayland, and the preferred-description
+  // feedback above exists only under a colour-managing compositor.
+  void SetMonitorEnteredCallback(std::function<void(GdkMonitor*)> callback) {
+    on_monitor_entered_ = std::move(callback);
+  }
+
   // Number of bits per colour channel the plane actually got: 16 on a
   // half-float plane, 10 on a 10-bit unorm one, otherwise 8. PQ in 8 bits
   // bands badly, so HDR needs at least 10.
@@ -287,6 +297,13 @@ class WaylandVideoSurface {
   void SettleTransition(bool ok);
 
   static void HandleFrameDone(void* data, wl_callback* callback, uint32_t time);
+  static void HandleSurfaceEnter(void* data, wl_surface* surface, wl_output* output);
+  static void HandleSurfaceLeave(void* data, wl_surface* surface, wl_output* output);
+  // wl_surface v6 events, informational for a plane whose scale Dart sets
+  // from the toplevel's. Present rather than null, for the reason given
+  // beside the description listener in BuildImageDescription().
+  static void HandleSurfacePreferredBufferScale(void* data, wl_surface* surface, int32_t factor);
+  static void HandleSurfacePreferredBufferTransform(void* data, wl_surface* surface, uint32_t transform);
   // Interface version 1 only; version 2 and later send ready2 in its place.
   static void HandleImageDescriptionReady(void* data, wp_image_description_v1* desc, uint32_t identity);
   // Interface version 2+. Must be present rather than null, for the reason
@@ -427,6 +444,7 @@ class WaylandVideoSurface {
   wl_callback* frame_callback_ = nullptr;
   std::function<void()> on_frame_;
   std::function<void()> on_forced_render_;
+  std::function<void(GdkMonitor*)> on_monitor_entered_;
 
   wp_color_manager_v1* color_manager_ = nullptr;
   wp_color_management_surface_v1* color_surface_ = nullptr;

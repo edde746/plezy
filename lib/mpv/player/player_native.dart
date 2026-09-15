@@ -5,7 +5,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
-import '../../media/media_display_criteria.dart';
+import '../../services/device_performance.dart';
+import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
@@ -28,7 +29,8 @@ class PlayerNative extends PlayerBase {
   ///
   /// [hardwareDecoding] mirrors the session's hardware-decoding setting so
   /// the Android core can pick its initial video output before mpv
-  /// initializes: gpu for hardware sessions, gpu-next for software ones (see
+  /// initializes: the fork's vo=mediacodec (with gpu behind it) for hardware
+  /// sessions, gpu-next for software ones (see
   /// MpvPlayerCore.initialVideoOutput; #2010). Other platforms ignore it.
   PlayerNative({this._hardwareDecoding = true})
     : methodChannel = const MethodChannel('com.plezy/mpv_player'),
@@ -77,6 +79,33 @@ class PlayerNative extends PlayerBase {
   /// tests agree on which path is live without reading a test-only field.
   static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
 
+  /// First successful (positive) [getHeapSize] result; the device heap is
+  /// immutable per process, so one channel round trip serves every caller.
+  static int? _cachedHeapSizeMB;
+
+  /// Returns the device's large heap size in MB, or 0 if unavailable (Android only).
+  ///
+  /// Served by the always-registered mpv plugin, so it works whichever backend
+  /// is playing. Successful positive results are memoized — the playback-open
+  /// hot path asks again on every open. Failures keep returning 0 without
+  /// being cached, so a transient channel error can't pin the fallback for the
+  /// process lifetime.
+  static Future<int> getHeapSize() async {
+    final cached = _cachedHeapSizeMB;
+    if (cached != null) return cached;
+    try {
+      const channel = MethodChannel('com.plezy/mpv_player');
+      final result = await channel.invokeMethod<int>('getHeapSize');
+      if (result != null && result > 0) _cachedHeapSizeMB = result;
+      return result ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  @visibleForTesting
+  static void debugResetHeapSizeCache() => _cachedHeapSizeMB = null;
+
   // Set by open() and consumed by that load's file-loaded event, so it is
   // not mistaken for a gapless advance (see _handleAudioFileLoaded).
   bool _expectOpenFileLoad = false;
@@ -98,6 +127,11 @@ class PlayerNative extends PlayerBase {
 
   @override
   bool get providesNativeStats => Platform.isAndroid;
+
+  // The Android plugin no-ops a dispose whose instanceId is not the core's
+  // creator; other platforms' handlers do not read the token yet.
+  @override
+  bool get nativeDisposeIsStaleGuarded => Platform.isAndroid;
 
   @override
   bool get attachesExternalSubtitlesAtOpen => true;
@@ -168,36 +202,6 @@ class PlayerNative extends PlayerBase {
     return 'http-header-fields-clr=,$appends';
   }
 
-  MediaDisplayCriteria? _effectiveDisplayCriteria(MediaDisplayCriteria? criteria) {
-    if (criteria == null || (criteria.doviProfile ?? 0) != 7) return criteria;
-
-    final convertToDv81 = _dvConversionMode == 'auto' || _dvConversionMode == 'dv81';
-    if (convertToDv81) {
-      return MediaDisplayCriteria(
-        fps: criteria.fps,
-        width: criteria.width,
-        height: criteria.height,
-        doviProfile: 8,
-        doviLevel: criteria.doviLevel,
-        doviCompatibilityId: 1,
-        transfer: criteria.transfer ?? 'smpte2084',
-        primaries: criteria.primaries ?? 'bt2020',
-        matrix: criteria.matrix ?? 'bt2020nc',
-      );
-    }
-
-    return MediaDisplayCriteria(
-      fps: criteria.fps,
-      width: criteria.width,
-      height: criteria.height,
-      doviProfile: 0,
-      doviCompatibilityId: criteria.doviCompatibilityId ?? 1,
-      transfer: criteria.transfer ?? 'smpte2084',
-      primaries: criteria.primaries ?? 'bt2020',
-      matrix: criteria.matrix ?? 'bt2020nc',
-    );
-  }
-
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
   // parallel `requestAudioFocus()` and `setProperty()` paths kicked off in
   // VideoPlayerScreen._initializePlayer) share one `invoke('initialize')`.
@@ -205,6 +209,8 @@ class PlayerNative extends PlayerBase {
   // to dispose-and-recreate the in-flight core, hanging playback (#930).
   Future<void>? _initFuture;
   Future<void> _audioStateTail = Future<void>.value();
+  String _requestedLogLevel = 'warn';
+  Future<void> _logLevelTail = Future<void>.value();
   Future<void>? _disposeFuture;
   bool _disposing = false;
 
@@ -226,9 +232,25 @@ class PlayerNative extends PlayerBase {
   Future<void> _doInitialize() async {
     try {
       // The video core carries the session's decode intent so Android can
-      // choose its vo before mpv_initialize; every other platform's handler
-      // ignores initialize arguments.
-      final result = await invoke<Object>('initialize', audioOnly ? null : {'hardwareDecoding': _hardwareDecoding});
+      // choose its vo before mpv_initialize, and the subtitle "Render
+      // Resolution" fraction for its vo=mediacodec OSD plane (the same knob the
+      // ExoPlayer overlay honors; other platforms size the OSD themselves).
+      // `osdVsyncDelay` is the codec->display lag that plane compensates, in
+      // display periods, from the same perf-tier proxy player_android.dart
+      // hands the ExoPlayer overlay as assVideoLatencyFrames. `instanceId`
+      // names this Dart instance so a later `dispose` that lost the ownership
+      // race is provably stale; handlers that predate any of these arguments
+      // ignore them.
+      final result = await invoke<Object>('initialize', {
+        if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
+        if (!audioOnly && Platform.isAndroid)
+          'subtitleRenderScale': SettingsService.instance
+              .read(SettingsService.subtitleRenderResolution)
+              .androidRenderScale,
+        if (!audioOnly && Platform.isAndroid) 'osdVsyncDelay': DevicePerformance.isLowEndHardware ? 1 : 0,
+        if (Platform.isAndroid) 'logLevel': _requestedLogLevel,
+        'instanceId': nativeInstanceId,
+      });
       if (result != true) {
         throw const PlayerInitializationException();
       }
@@ -237,31 +259,38 @@ class PlayerNative extends PlayerBase {
       // Subscribe to MPV properties before flipping `initialized` so partial
       // failures don't leave us in a half-initialized state that the memoized
       // future would falsely treat as ready.
-      await observeCoreProperties(trackListFormat: _nodeFormat);
-      await observeProperty('secondary-sid', 'string');
-      await observeProperty('demuxer-cache-state', _nodeFormat);
-      await observeProperty('audio-device-list', _nodeFormat);
-      await observeProperty('audio-device', 'string');
-
       if (audioOnly) {
-        // Debug aid only: raw playlist positions in the log trail. Gapless
-        // advance DETECTION rides the file-loaded event instead — see
-        // _handleAudioFileLoaded for why property edges are unreliable.
+        // Only what the music service consumes (position/duration/playing/
+        // completed). Every observation costs an initial notification plus a
+        // channel event per edge; the video set's track-list,
+        // demuxer-cache-state, and audio-device-list decode structured nodes
+        // into models nobody on the music path reads.
+        await observeProperty('time-pos', 'double');
+        await observeProperty('duration', 'double');
+        await observeProperty('pause', 'flag');
+        await observeProperty('eof-reached', 'flag');
+        // Debug aid plus the freeze point for the outgoing track's final
+        // position (see handlePropertyChange). Gapless advance DETECTION
+        // rides the file-loaded event instead — see _handleAudioFileLoaded
+        // for why property edges are unreliable.
         await observeProperty('playlist-pos', _nodeFormat);
-        // The Apple audio core sets this at context init; set it defensively
-        // here so every mpv audio backend behaves identically. Direct invoke —
-        // setProperty() would await _ensureInitialized and deadlock on the
-        // memoized future of this very _doInitialize call.
-        await invoke('setProperty', {'name': 'gapless-audio', 'value': 'weak'});
         // ao_audiounit requests mixWithOthers unless audio-exclusive is set,
         // and a mixable session disqualifies the app from iOS Now Playing —
         // no lock-screen/headphone controls (#1921). Same contract as the
         // video path (VideoPlayerScreen sets it at playback start). iOS-only:
         // elsewhere audio-exclusive means exclusive device access (hog-mode
-        // CoreAudio on macOS, exclusive WASAPI on Windows).
+        // CoreAudio on macOS, exclusive WASAPI on Windows). Direct invoke —
+        // setProperty() would await _ensureInitialized and deadlock on the
+        // memoized future of this very _doInitialize call.
         if (Platform.isIOS) {
           await invoke('setProperty', {'name': 'audio-exclusive', 'value': 'yes'});
         }
+      } else {
+        await observeCoreProperties(trackListFormat: _nodeFormat);
+        await observeProperty('secondary-sid', 'string');
+        await observeProperty('demuxer-cache-state', _nodeFormat);
+        await observeProperty('audio-device-list', _nodeFormat);
+        await observeProperty('audio-device', 'string');
       }
 
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
@@ -315,17 +344,30 @@ class PlayerNative extends PlayerBase {
     return ('fdclose://$fd', fd);
   }
 
+  /// Opens [media] and resolves with the id of the mpv playlist entry the
+  /// `loadfile` created — the `sourceId` that entry's `start-file`,
+  /// `playback-restart` and `end-file` events carry — or null when the load
+  /// never reached mpv (core unavailable) or the core did not report one.
+  ///
+  /// Method-channel contract: the `command` reply for `loadfile` is
+  /// `{'playlistEntryId': int}` on every native core; every other command
+  /// replies null.
+  ///
+  /// [startLivePlaylistFromBeginning] makes mpv start server-positioned live
+  /// HLS at its first available segment instead of FFmpeg's default live position.
+  /// It applies only to this live open, preserving later opens' defaults.
   @override
-  Future<void> open(
+  Future<int?> open(
     Media media, {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    bool startLivePlaylistFromBeginning = false,
   }) async {
-    if (_nativeCoreUnavailable) return;
+    if (_nativeCoreUnavailable) return null;
     await _ensureInitialized();
-    if (_nativeCoreUnavailable) return;
+    if (_nativeCoreUnavailable) return null;
     // `loadfile replace` (below) clears the native playlist, dropping any
     // gapless entry armed via setNext — settle its content-fd claim first.
     // No transition is surfaced: the caller is replacing playback anyway.
@@ -333,6 +375,7 @@ class PlayerNative extends PlayerBase {
     final startPosition = media.start ?? Duration.zero;
     configureTimeline(duration: timelineDuration);
     clearTracks();
+    deferTrackListUntilLoadStarts();
     setExternalSubtitleMetadata(externalSubtitles);
     resetPlaybackProgress(startPosition);
     setSeekable(false);
@@ -376,11 +419,6 @@ class PlayerNative extends PlayerBase {
       if (!play) {
         await setProperty('pause', 'yes');
       }
-
-      // Prevent mpv's own default subtitle selection from racing the
-      // server-backed TrackManager decision applied after tracks are discovered.
-      await setProperty('sid', 'no');
-      await setProperty('secondary-sid', 'no');
     } catch (e) {
       appLogger.w('MPV: pre-open playback defaults not applied', error: e);
     }
@@ -391,12 +429,36 @@ class PlayerNative extends PlayerBase {
     final (uri, _) = await _toPlayableUri(media.uri);
 
     final loadfileArgs = ['loadfile', uri, 'replace'];
-    final loadfileOption = _externalSubtitlesLoadfileOption(externalSubtitles);
-    if (loadfileOption != null) {
-      loadfileArgs.addAll(['-1', loadfileOption]);
-    }
+    final loadfileOptions = <String>[
+      ?_externalSubtitlesLoadfileOption(externalSubtitles),
+      // Suppress mpv's own default subtitle selection so it cannot race the
+      // server-backed TrackManager decision. File-local, never a property
+      // write: writing `sid` while the outgoing file is still loaded
+      // deselects its subtitle, and the track-list update that follows
+      // re-seeded the previous item's tracks over the list this open had
+      // already cleared (#2323).
+      'sid=no',
+      'secondary-sid=no',
+      // A server-positioned live playlist already starts at the requested
+      // offset. FFmpeg's default (-3) can skip much of it before decoding.
+      // Keep this file-local and append so other demuxer options survive.
+      if (isLive && startLivePlaylistFromBeginning) 'demuxer-lavf-o-append=live_start_index=0',
+    ];
+    loadfileArgs.addAll(['-1', loadfileOptions.join(',')]);
     if (audioOnly) _expectOpenFileLoad = true;
-    await command(loadfileArgs);
+    // The core can be torn down while the awaits above were suspended; the
+    // `command` path makes the same re-check before dispatching.
+    if (_nativeCoreUnavailable) return null;
+    final Map? loadfileReply;
+    try {
+      loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
+    } catch (_) {
+      // Nothing loaded, so no `start-file` will release the track-list gate,
+      // and the file still playing needs to keep publishing its tracks.
+      resumeTrackListAdoption();
+      rethrow;
+    }
+    final playlistEntryId = loadfileReply?['playlistEntryId'];
 
     // mpv's pause property survives loadfile; in-place reloads pause the old
     // file before resolving, so explicitly unpause for the replacement. Set
@@ -405,6 +467,7 @@ class PlayerNative extends PlayerBase {
     if (play) {
       await setProperty('pause', 'no');
     }
+    return playlistEntryId is int ? playlistEntryId : null;
   }
 
   @override
@@ -576,7 +639,7 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  void handlePropertyChange(String name, dynamic value) {
+  void handlePropertyChange(String name, dynamic value, {int? sourceId}) {
     if (audioOnly && name == 'playlist-pos') {
       // Detection still belongs to _handleAudioFileLoaded, but this is the last
       // point ordered ahead of the new source's own position reports: they ride
@@ -586,7 +649,7 @@ class PlayerNative extends PlayerBase {
       appLogger.d('MPV-audio: playlist-pos=$value (armed=$_hasArmedNext)');
       return;
     }
-    super.handlePropertyChange(name, value);
+    super.handlePropertyChange(name, value, sourceId: sourceId);
   }
 
   @override
@@ -829,18 +892,27 @@ class PlayerNative extends PlayerBase {
   bool get needsDecoderRefreshAfterDisplaySwitch => Platform.isAndroid;
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {
     if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('setDisplayCriteria', {
-      'criteria': _effectiveDisplayCriteria(criteria)?.toJson(),
-      'extraDelayMs': extraDelayMs,
-    });
+    await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs});
   }
 
   @override
   Future<void> setLogLevel(String level) async {
     if (_nativeCoreUnavailable) return;
+    if (Platform.isAndroid) {
+      // Carry the preference into native creation, even if another operation
+      // starts initialization before this ordered runtime write gets its turn.
+      _requestedLogLevel = level;
+      final request = _logLevelTail.then((_) async {
+        if (_nativeCoreUnavailable) return;
+        await _ensureInitialized();
+        await invoke('setLogLevel', {'level': level});
+      });
+      _logLevelTail = request.catchError((Object _) {});
+      return request;
+    }
     await _ensureInitialized();
     await invoke('setLogLevel', {'level': level});
   }
@@ -996,10 +1068,19 @@ class PlayerNative extends PlayerBase {
     bool forceNormalization = false,
   }) async {
     if (_nativeCoreUnavailable) return;
-    final passthroughShouldBeActive = target.passthrough && target.rate == 1.0 && !target.downmix;
+    // Normalization wins over passthrough: loudnorm is a filter and filters
+    // cannot process a bitstream, so honouring the user's normalization choice
+    // means decoding every track to PCM (AC3/DTS/TrueHD included). mpv also
+    // cannot scaletempo compressed audio. Passthrough therefore only engages
+    // when nothing else claims the decoded stream.
+    final passthroughShouldBeActive =
+        target.passthrough && target.rate == 1.0 && !target.downmix && !target.normalization;
+    final normalizationShouldBeActive = target.normalization;
 
-    // mpv cannot scaletempo compressed audio and filters cannot process a
-    // bitstream. Always leave passthrough before applying either state.
+    // Ordering keeps loudnorm off a bitstream in both directions: leave
+    // passthrough before `af` is written below, and when normalization turns
+    // off with passthrough requested, `af` is cleared before `audio-spdif` is
+    // rewritten at the end.
     if (_passthroughActive && !passthroughShouldBeActive) {
       await _applyPassthrough(false);
     }
@@ -1021,7 +1102,6 @@ class PlayerNative extends PlayerBase {
       _activeDownmixCenterBoostDb = target.downmixCenterBoostDb;
       _activeDownmixNormalize = target.downmixNormalize;
     }
-    final normalizationShouldBeActive = target.normalization && !passthroughShouldBeActive;
     if (forceNormalization || _normalizationActive != normalizationShouldBeActive) {
       await super.setAudioNormalization(normalizationShouldBeActive);
       _normalizationActive = normalizationShouldBeActive;

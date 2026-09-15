@@ -52,6 +52,11 @@ class TrackControlsState {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
+
+  /// Applies a playback rate chosen in the settings sheet. Supplied by the
+  /// player surface so a Watch Together room hears about it; the sheet falls
+  /// back to [Player.setRate] when absent.
+  final Future<void> Function(double rate)? onRateRequested;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
   final String? serverId;
@@ -115,6 +120,7 @@ class TrackControlsState {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
+    this.onRateRequested,
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.serverId,
@@ -142,6 +148,19 @@ class TrackControlsState {
   /// captions, issue #1590).
   bool get canUseSourceSubtitles =>
       (isTranscoding || isLive) && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
+
+  /// Whether the selected source subtitle reaches the screen as burned-in
+  /// pixels rather than as a native track. Rationale, including why live
+  /// counts as a transcode, on [PlaybackSubtitleResolver.burnsCurrentSelection].
+  ///
+  /// When this is true the engine exposes no subtitle track for the selection
+  /// and can never confirm it, so an engine cross-check must not be applied.
+  bool get burnsSelectedSubtitle => PlaybackSubtitleResolver.burnsCurrentSelection(
+    isTranscoding: isTranscoding,
+    isLive: isLive,
+    choice: selectedSubtitleChoice,
+    sidecars: sourceSubtitleSidecars,
+  );
 
   /// Direct play keeps embedded/native switching instant while still exposing
   /// unloaded server sidecars that require one source reopen when selected.

@@ -61,6 +61,14 @@ class ServerCapabilities {
   /// (`POST /playQueues?type=audio&uri=...station...`).
   final bool instantMix;
 
+  /// Server pushes library-content change notifications over a websocket the
+  /// app can subscribe to (#1646). Plex: `/:/websockets/notifications`
+  /// timeline entries; Jellyfin/Emby: `LibraryChanged` on the session socket.
+  /// Whether a *specific* server's socket is reachable (reverse proxies may
+  /// not upgrade) is a runtime concern handled by [LibraryEventService]'s
+  /// silent degradation.
+  final bool libraryChangeEvents;
+
   const ServerCapabilities({
     this.liveTv = false,
     this.liveTvDvr = false,
@@ -74,6 +82,7 @@ class ServerCapabilities {
     this.scrubThumbnails = false,
     this.folderGrouping = false,
     this.instantMix = false,
+    this.libraryChangeEvents = false,
   });
 
   /// Defaults for a fully-featured Plex server.
@@ -90,6 +99,7 @@ class ServerCapabilities {
     scrubThumbnails: true,
     folderGrouping: true,
     instantMix: true,
+    libraryChangeEvents: true,
   );
 
   /// Defaults for a Jellyfin server.
@@ -113,6 +123,7 @@ class ServerCapabilities {
     scrubThumbnails: true,
     folderGrouping: true,
     instantMix: true,
+    libraryChangeEvents: true,
   );
 
   /// Defaults for an Emby server.
@@ -142,6 +153,7 @@ class ServerCapabilities {
     scrubThumbnails: true,
     folderGrouping: true,
     instantMix: true,
+    libraryChangeEvents: true,
   );
 
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
@@ -162,6 +174,7 @@ class ServerCapabilities {
       scrubThumbnails: scrubThumbnails,
       folderGrouping: folderGrouping,
       instantMix: instantMix,
+      libraryChangeEvents: libraryChangeEvents,
     );
   }
 }

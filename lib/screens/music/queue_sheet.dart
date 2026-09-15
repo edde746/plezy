@@ -11,7 +11,7 @@ import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
-import '../../widgets/bottom_sheet_header.dart';
+import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/music/repeat_mode.dart';
 import '../../widgets/music/track_row.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -34,51 +34,46 @@ class QueueSheet extends StatelessWidget {
     final service = context.watch<MusicPlaybackService>();
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        BottomSheetHeader(
-          title: t.music.queue,
-          action: Row(
-            mainAxisSize: .min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Text(
-                  t.music.trackCount(n: service.queue.length),
-                  style: TextStyle(fontSize: 13, color: tk.textMuted),
-                ),
+    return BottomSheetPageScaffold(
+      title: t.music.queue,
+      action: Row(
+        mainAxisSize: .min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Text(
+              t.music.trackCount(n: service.queue.length),
+              style: TextStyle(fontSize: 13, color: tk.textMuted),
+            ),
+          ),
+          FocusableActionBar(
+            actions: [
+              FocusableAction(
+                icon: Symbols.shuffle_rounded,
+                iconColor: service.shuffled ? colorScheme.primary : tk.textMuted,
+                iconSize: 20,
+                tooltip: t.common.shuffle,
+                onPressed: service.toggleShuffle,
               ),
-              FocusableActionBar(
-                actions: [
-                  FocusableAction(
-                    icon: Symbols.shuffle_rounded,
-                    iconColor: service.shuffled ? colorScheme.primary : tk.textMuted,
-                    iconSize: 20,
-                    tooltip: t.common.shuffle,
-                    onPressed: service.toggleShuffle,
-                  ),
-                  FocusableAction(
-                    icon: repeatModeIcon(service.repeatMode),
-                    iconColor: service.repeatMode == MusicRepeatMode.off ? tk.textMuted : colorScheme.primary,
-                    iconSize: 20,
-                    tooltip: repeatModeLabel(service.repeatMode),
-                    onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
-                  ),
-                  FocusableAction(
-                    icon: Symbols.clear_all_rounded,
-                    iconColor: tk.textMuted,
-                    iconSize: 20,
-                    tooltip: t.music.clearQueue,
-                    onPressed: service.clearUpcoming,
-                  ),
-                ],
+              FocusableAction(
+                icon: repeatModeIcon(service.repeatMode),
+                iconColor: service.repeatMode == MusicRepeatMode.off ? tk.textMuted : colorScheme.primary,
+                iconSize: 20,
+                tooltip: repeatModeLabel(service.repeatMode),
+                onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
+              ),
+              FocusableAction(
+                icon: Symbols.clear_all_rounded,
+                iconColor: tk.textMuted,
+                iconSize: 20,
+                tooltip: t.music.clearQueue,
+                onPressed: service.clearUpcoming,
               ),
             ],
           ),
-        ),
-        const Flexible(child: QueueList(autofocusCurrent: true)),
-      ],
+        ],
+      ),
+      child: const QueueList(autofocusCurrent: true),
     );
   }
 }

@@ -199,13 +199,19 @@ class _MemoryFavoriteChannelsRepository implements FavoriteChannelsRepository {
   int writeCount = 0;
 
   @override
-  Future<List<FavoriteChannel>> read({required String key, required String legacyKey}) async {
+  Future<List<FavoriteChannel>> read({
+    required String key,
+    required String legacyKey,
+    bool migrate = true,
+    void Function()? checkCurrent,
+  }) async {
     if (readError case final error?) throw error;
     return List.of(current);
   }
 
   @override
-  Future<void> write(String key, List<FavoriteChannel> channels) async {
+  Future<void> write(String key, List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     writeAttempts++;
     if (writeError case final error?) throw error;
     current = List.of(channels);

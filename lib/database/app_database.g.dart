@@ -5769,6 +5769,647 @@ class ProfileConnectionsCompanion
   }
 }
 
+class $MusicSessionsTable extends MusicSessions
+    with TableInfo<$MusicSessionsTable, MusicSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MusicSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _queueJsonMeta = const VerificationMeta(
+    'queueJson',
+  );
+  @override
+  late final GeneratedColumn<String> queueJson = GeneratedColumn<String>(
+    'queue_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _orderJsonMeta = const VerificationMeta(
+    'orderJson',
+  );
+  @override
+  late final GeneratedColumn<String> orderJson = GeneratedColumn<String>(
+    'order_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
+  @override
+  late final GeneratedColumn<int> cursor = GeneratedColumn<int>(
+    'cursor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _shuffledMeta = const VerificationMeta(
+    'shuffled',
+  );
+  @override
+  late final GeneratedColumn<bool> shuffled = GeneratedColumn<bool>(
+    'shuffled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("shuffled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _repeatModeMeta = const VerificationMeta(
+    'repeatMode',
+  );
+  @override
+  late final GeneratedColumn<String> repeatMode = GeneratedColumn<String>(
+    'repeat_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('off'),
+  );
+  static const VerificationMeta _contextTitleMeta = const VerificationMeta(
+    'contextTitle',
+  );
+  @override
+  late final GeneratedColumn<String> contextTitle = GeneratedColumn<String>(
+    'context_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contextKindMeta = const VerificationMeta(
+    'contextKind',
+  );
+  @override
+  late final GeneratedColumn<String> contextKind = GeneratedColumn<String>(
+    'context_kind',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _positionMsMeta = const VerificationMeta(
+    'positionMs',
+  );
+  @override
+  late final GeneratedColumn<int> positionMs = GeneratedColumn<int>(
+    'position_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    profileId,
+    queueJson,
+    orderJson,
+    cursor,
+    shuffled,
+    repeatMode,
+    contextTitle,
+    contextKind,
+    positionMs,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'music_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MusicSessionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('queue_json')) {
+      context.handle(
+        _queueJsonMeta,
+        queueJson.isAcceptableOrUnknown(data['queue_json']!, _queueJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_queueJsonMeta);
+    }
+    if (data.containsKey('order_json')) {
+      context.handle(
+        _orderJsonMeta,
+        orderJson.isAcceptableOrUnknown(data['order_json']!, _orderJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderJsonMeta);
+    }
+    if (data.containsKey('cursor')) {
+      context.handle(
+        _cursorMeta,
+        cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cursorMeta);
+    }
+    if (data.containsKey('shuffled')) {
+      context.handle(
+        _shuffledMeta,
+        shuffled.isAcceptableOrUnknown(data['shuffled']!, _shuffledMeta),
+      );
+    }
+    if (data.containsKey('repeat_mode')) {
+      context.handle(
+        _repeatModeMeta,
+        repeatMode.isAcceptableOrUnknown(data['repeat_mode']!, _repeatModeMeta),
+      );
+    }
+    if (data.containsKey('context_title')) {
+      context.handle(
+        _contextTitleMeta,
+        contextTitle.isAcceptableOrUnknown(
+          data['context_title']!,
+          _contextTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('context_kind')) {
+      context.handle(
+        _contextKindMeta,
+        contextKind.isAcceptableOrUnknown(
+          data['context_kind']!,
+          _contextKindMeta,
+        ),
+      );
+    }
+    if (data.containsKey('position_ms')) {
+      context.handle(
+        _positionMsMeta,
+        positionMs.isAcceptableOrUnknown(data['position_ms']!, _positionMsMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId};
+  @override
+  MusicSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MusicSessionRow(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      queueJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}queue_json'],
+      )!,
+      orderJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_json'],
+      )!,
+      cursor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cursor'],
+      )!,
+      shuffled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}shuffled'],
+      )!,
+      repeatMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}repeat_mode'],
+      )!,
+      contextTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}context_title'],
+      ),
+      contextKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}context_kind'],
+      ),
+      positionMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position_ms'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $MusicSessionsTable createAlias(String alias) {
+    return $MusicSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class MusicSessionRow extends DataClass implements Insertable<MusicSessionRow> {
+  /// Active Plezy profile that owns this session snapshot.
+  final String profileId;
+
+  /// Canonical queue tracks (insertion order) as a JSON array of MediaItem
+  /// JSON — self-contained so restore never depends on volatile cache rows.
+  final String queueJson;
+
+  /// Playback-order permutation into [queueJson] as a JSON int array
+  /// (identity while unshuffled).
+  final String orderJson;
+
+  /// Position of the current track within the playback order.
+  final int cursor;
+  final bool shuffled;
+
+  /// Stable repeat-mode id ('off' | 'all' | 'one') — not the enum `.name`.
+  final String repeatMode;
+
+  /// Play-context provenance ("Playing from …"); kind is a stable id.
+  final String? contextTitle;
+  final String? contextKind;
+
+  /// Playhead within the current track in milliseconds.
+  final int positionMs;
+
+  /// Timestamp of the last write (milliseconds since epoch).
+  final int updatedAt;
+  const MusicSessionRow({
+    required this.profileId,
+    required this.queueJson,
+    required this.orderJson,
+    required this.cursor,
+    required this.shuffled,
+    required this.repeatMode,
+    this.contextTitle,
+    this.contextKind,
+    required this.positionMs,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<String>(profileId);
+    map['queue_json'] = Variable<String>(queueJson);
+    map['order_json'] = Variable<String>(orderJson);
+    map['cursor'] = Variable<int>(cursor);
+    map['shuffled'] = Variable<bool>(shuffled);
+    map['repeat_mode'] = Variable<String>(repeatMode);
+    if (!nullToAbsent || contextTitle != null) {
+      map['context_title'] = Variable<String>(contextTitle);
+    }
+    if (!nullToAbsent || contextKind != null) {
+      map['context_kind'] = Variable<String>(contextKind);
+    }
+    map['position_ms'] = Variable<int>(positionMs);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  MusicSessionsCompanion toCompanion(bool nullToAbsent) {
+    return MusicSessionsCompanion(
+      profileId: Value(profileId),
+      queueJson: Value(queueJson),
+      orderJson: Value(orderJson),
+      cursor: Value(cursor),
+      shuffled: Value(shuffled),
+      repeatMode: Value(repeatMode),
+      contextTitle: contextTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contextTitle),
+      contextKind: contextKind == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contextKind),
+      positionMs: Value(positionMs),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory MusicSessionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MusicSessionRow(
+      profileId: serializer.fromJson<String>(json['profileId']),
+      queueJson: serializer.fromJson<String>(json['queueJson']),
+      orderJson: serializer.fromJson<String>(json['orderJson']),
+      cursor: serializer.fromJson<int>(json['cursor']),
+      shuffled: serializer.fromJson<bool>(json['shuffled']),
+      repeatMode: serializer.fromJson<String>(json['repeatMode']),
+      contextTitle: serializer.fromJson<String?>(json['contextTitle']),
+      contextKind: serializer.fromJson<String?>(json['contextKind']),
+      positionMs: serializer.fromJson<int>(json['positionMs']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<String>(profileId),
+      'queueJson': serializer.toJson<String>(queueJson),
+      'orderJson': serializer.toJson<String>(orderJson),
+      'cursor': serializer.toJson<int>(cursor),
+      'shuffled': serializer.toJson<bool>(shuffled),
+      'repeatMode': serializer.toJson<String>(repeatMode),
+      'contextTitle': serializer.toJson<String?>(contextTitle),
+      'contextKind': serializer.toJson<String?>(contextKind),
+      'positionMs': serializer.toJson<int>(positionMs),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  MusicSessionRow copyWith({
+    String? profileId,
+    String? queueJson,
+    String? orderJson,
+    int? cursor,
+    bool? shuffled,
+    String? repeatMode,
+    Value<String?> contextTitle = const Value.absent(),
+    Value<String?> contextKind = const Value.absent(),
+    int? positionMs,
+    int? updatedAt,
+  }) => MusicSessionRow(
+    profileId: profileId ?? this.profileId,
+    queueJson: queueJson ?? this.queueJson,
+    orderJson: orderJson ?? this.orderJson,
+    cursor: cursor ?? this.cursor,
+    shuffled: shuffled ?? this.shuffled,
+    repeatMode: repeatMode ?? this.repeatMode,
+    contextTitle: contextTitle.present ? contextTitle.value : this.contextTitle,
+    contextKind: contextKind.present ? contextKind.value : this.contextKind,
+    positionMs: positionMs ?? this.positionMs,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  MusicSessionRow copyWithCompanion(MusicSessionsCompanion data) {
+    return MusicSessionRow(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      queueJson: data.queueJson.present ? data.queueJson.value : this.queueJson,
+      orderJson: data.orderJson.present ? data.orderJson.value : this.orderJson,
+      cursor: data.cursor.present ? data.cursor.value : this.cursor,
+      shuffled: data.shuffled.present ? data.shuffled.value : this.shuffled,
+      repeatMode: data.repeatMode.present
+          ? data.repeatMode.value
+          : this.repeatMode,
+      contextTitle: data.contextTitle.present
+          ? data.contextTitle.value
+          : this.contextTitle,
+      contextKind: data.contextKind.present
+          ? data.contextKind.value
+          : this.contextKind,
+      positionMs: data.positionMs.present
+          ? data.positionMs.value
+          : this.positionMs,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MusicSessionRow(')
+          ..write('profileId: $profileId, ')
+          ..write('queueJson: $queueJson, ')
+          ..write('orderJson: $orderJson, ')
+          ..write('cursor: $cursor, ')
+          ..write('shuffled: $shuffled, ')
+          ..write('repeatMode: $repeatMode, ')
+          ..write('contextTitle: $contextTitle, ')
+          ..write('contextKind: $contextKind, ')
+          ..write('positionMs: $positionMs, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    profileId,
+    queueJson,
+    orderJson,
+    cursor,
+    shuffled,
+    repeatMode,
+    contextTitle,
+    contextKind,
+    positionMs,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MusicSessionRow &&
+          other.profileId == this.profileId &&
+          other.queueJson == this.queueJson &&
+          other.orderJson == this.orderJson &&
+          other.cursor == this.cursor &&
+          other.shuffled == this.shuffled &&
+          other.repeatMode == this.repeatMode &&
+          other.contextTitle == this.contextTitle &&
+          other.contextKind == this.contextKind &&
+          other.positionMs == this.positionMs &&
+          other.updatedAt == this.updatedAt);
+}
+
+class MusicSessionsCompanion extends UpdateCompanion<MusicSessionRow> {
+  final Value<String> profileId;
+  final Value<String> queueJson;
+  final Value<String> orderJson;
+  final Value<int> cursor;
+  final Value<bool> shuffled;
+  final Value<String> repeatMode;
+  final Value<String?> contextTitle;
+  final Value<String?> contextKind;
+  final Value<int> positionMs;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const MusicSessionsCompanion({
+    this.profileId = const Value.absent(),
+    this.queueJson = const Value.absent(),
+    this.orderJson = const Value.absent(),
+    this.cursor = const Value.absent(),
+    this.shuffled = const Value.absent(),
+    this.repeatMode = const Value.absent(),
+    this.contextTitle = const Value.absent(),
+    this.contextKind = const Value.absent(),
+    this.positionMs = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MusicSessionsCompanion.insert({
+    required String profileId,
+    required String queueJson,
+    required String orderJson,
+    required int cursor,
+    this.shuffled = const Value.absent(),
+    this.repeatMode = const Value.absent(),
+    this.contextTitle = const Value.absent(),
+    this.contextKind = const Value.absent(),
+    this.positionMs = const Value.absent(),
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       queueJson = Value(queueJson),
+       orderJson = Value(orderJson),
+       cursor = Value(cursor),
+       updatedAt = Value(updatedAt);
+  static Insertable<MusicSessionRow> custom({
+    Expression<String>? profileId,
+    Expression<String>? queueJson,
+    Expression<String>? orderJson,
+    Expression<int>? cursor,
+    Expression<bool>? shuffled,
+    Expression<String>? repeatMode,
+    Expression<String>? contextTitle,
+    Expression<String>? contextKind,
+    Expression<int>? positionMs,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (queueJson != null) 'queue_json': queueJson,
+      if (orderJson != null) 'order_json': orderJson,
+      if (cursor != null) 'cursor': cursor,
+      if (shuffled != null) 'shuffled': shuffled,
+      if (repeatMode != null) 'repeat_mode': repeatMode,
+      if (contextTitle != null) 'context_title': contextTitle,
+      if (contextKind != null) 'context_kind': contextKind,
+      if (positionMs != null) 'position_ms': positionMs,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MusicSessionsCompanion copyWith({
+    Value<String>? profileId,
+    Value<String>? queueJson,
+    Value<String>? orderJson,
+    Value<int>? cursor,
+    Value<bool>? shuffled,
+    Value<String>? repeatMode,
+    Value<String?>? contextTitle,
+    Value<String?>? contextKind,
+    Value<int>? positionMs,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return MusicSessionsCompanion(
+      profileId: profileId ?? this.profileId,
+      queueJson: queueJson ?? this.queueJson,
+      orderJson: orderJson ?? this.orderJson,
+      cursor: cursor ?? this.cursor,
+      shuffled: shuffled ?? this.shuffled,
+      repeatMode: repeatMode ?? this.repeatMode,
+      contextTitle: contextTitle ?? this.contextTitle,
+      contextKind: contextKind ?? this.contextKind,
+      positionMs: positionMs ?? this.positionMs,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (queueJson.present) {
+      map['queue_json'] = Variable<String>(queueJson.value);
+    }
+    if (orderJson.present) {
+      map['order_json'] = Variable<String>(orderJson.value);
+    }
+    if (cursor.present) {
+      map['cursor'] = Variable<int>(cursor.value);
+    }
+    if (shuffled.present) {
+      map['shuffled'] = Variable<bool>(shuffled.value);
+    }
+    if (repeatMode.present) {
+      map['repeat_mode'] = Variable<String>(repeatMode.value);
+    }
+    if (contextTitle.present) {
+      map['context_title'] = Variable<String>(contextTitle.value);
+    }
+    if (contextKind.present) {
+      map['context_kind'] = Variable<String>(contextKind.value);
+    }
+    if (positionMs.present) {
+      map['position_ms'] = Variable<int>(positionMs.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MusicSessionsCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('queueJson: $queueJson, ')
+          ..write('orderJson: $orderJson, ')
+          ..write('cursor: $cursor, ')
+          ..write('shuffled: $shuffled, ')
+          ..write('repeatMode: $repeatMode, ')
+          ..write('contextTitle: $contextTitle, ')
+          ..write('contextKind: $contextKind, ')
+          ..write('positionMs: $positionMs, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5787,6 +6428,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $ProfileConnectionsTable profileConnections =
       $ProfileConnectionsTable(this);
+  late final $MusicSessionsTable musicSessions = $MusicSessionsTable(this);
   late final Index idxDownloadedMediaStatus = Index(
     'idx_downloaded_media_status',
     'CREATE INDEX idx_downloaded_media_status ON downloaded_media (status)',
@@ -5858,6 +6500,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     connections,
     profiles,
     profileConnections,
+    musicSessions,
     idxDownloadedMediaStatus,
     idxDownloadedMediaServer,
     idxDownloadedMediaParent,
@@ -9190,6 +9833,309 @@ typedef $$ProfileConnectionsTableProcessedTableManager =
       ProfileConnectionRow,
       PrefetchHooks Function({bool connectionId})
     >;
+typedef $$MusicSessionsTableCreateCompanionBuilder =
+    MusicSessionsCompanion Function({
+      required String profileId,
+      required String queueJson,
+      required String orderJson,
+      required int cursor,
+      Value<bool> shuffled,
+      Value<String> repeatMode,
+      Value<String?> contextTitle,
+      Value<String?> contextKind,
+      Value<int> positionMs,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$MusicSessionsTableUpdateCompanionBuilder =
+    MusicSessionsCompanion Function({
+      Value<String> profileId,
+      Value<String> queueJson,
+      Value<String> orderJson,
+      Value<int> cursor,
+      Value<bool> shuffled,
+      Value<String> repeatMode,
+      Value<String?> contextTitle,
+      Value<String?> contextKind,
+      Value<int> positionMs,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$MusicSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $MusicSessionsTable> {
+  $$MusicSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get queueJson => $composableBuilder(
+    column: $table.queueJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orderJson => $composableBuilder(
+    column: $table.orderJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cursor => $composableBuilder(
+    column: $table.cursor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get shuffled => $composableBuilder(
+    column: $table.shuffled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get repeatMode => $composableBuilder(
+    column: $table.repeatMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contextTitle => $composableBuilder(
+    column: $table.contextTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contextKind => $composableBuilder(
+    column: $table.contextKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get positionMs => $composableBuilder(
+    column: $table.positionMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MusicSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MusicSessionsTable> {
+  $$MusicSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get queueJson => $composableBuilder(
+    column: $table.queueJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get orderJson => $composableBuilder(
+    column: $table.orderJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cursor => $composableBuilder(
+    column: $table.cursor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get shuffled => $composableBuilder(
+    column: $table.shuffled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get repeatMode => $composableBuilder(
+    column: $table.repeatMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contextTitle => $composableBuilder(
+    column: $table.contextTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contextKind => $composableBuilder(
+    column: $table.contextKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get positionMs => $composableBuilder(
+    column: $table.positionMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MusicSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MusicSessionsTable> {
+  $$MusicSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get queueJson =>
+      $composableBuilder(column: $table.queueJson, builder: (column) => column);
+
+  GeneratedColumn<String> get orderJson =>
+      $composableBuilder(column: $table.orderJson, builder: (column) => column);
+
+  GeneratedColumn<int> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => column);
+
+  GeneratedColumn<bool> get shuffled =>
+      $composableBuilder(column: $table.shuffled, builder: (column) => column);
+
+  GeneratedColumn<String> get repeatMode => $composableBuilder(
+    column: $table.repeatMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contextTitle => $composableBuilder(
+    column: $table.contextTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contextKind => $composableBuilder(
+    column: $table.contextKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get positionMs => $composableBuilder(
+    column: $table.positionMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$MusicSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MusicSessionsTable,
+          MusicSessionRow,
+          $$MusicSessionsTableFilterComposer,
+          $$MusicSessionsTableOrderingComposer,
+          $$MusicSessionsTableAnnotationComposer,
+          $$MusicSessionsTableCreateCompanionBuilder,
+          $$MusicSessionsTableUpdateCompanionBuilder,
+          (
+            MusicSessionRow,
+            BaseReferences<_$AppDatabase, $MusicSessionsTable, MusicSessionRow>,
+          ),
+          MusicSessionRow,
+          PrefetchHooks Function()
+        > {
+  $$MusicSessionsTableTableManager(_$AppDatabase db, $MusicSessionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MusicSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MusicSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MusicSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> profileId = const Value.absent(),
+                Value<String> queueJson = const Value.absent(),
+                Value<String> orderJson = const Value.absent(),
+                Value<int> cursor = const Value.absent(),
+                Value<bool> shuffled = const Value.absent(),
+                Value<String> repeatMode = const Value.absent(),
+                Value<String?> contextTitle = const Value.absent(),
+                Value<String?> contextKind = const Value.absent(),
+                Value<int> positionMs = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MusicSessionsCompanion(
+                profileId: profileId,
+                queueJson: queueJson,
+                orderJson: orderJson,
+                cursor: cursor,
+                shuffled: shuffled,
+                repeatMode: repeatMode,
+                contextTitle: contextTitle,
+                contextKind: contextKind,
+                positionMs: positionMs,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileId,
+                required String queueJson,
+                required String orderJson,
+                required int cursor,
+                Value<bool> shuffled = const Value.absent(),
+                Value<String> repeatMode = const Value.absent(),
+                Value<String?> contextTitle = const Value.absent(),
+                Value<String?> contextKind = const Value.absent(),
+                Value<int> positionMs = const Value.absent(),
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => MusicSessionsCompanion.insert(
+                profileId: profileId,
+                queueJson: queueJson,
+                orderJson: orderJson,
+                cursor: cursor,
+                shuffled: shuffled,
+                repeatMode: repeatMode,
+                contextTitle: contextTitle,
+                contextKind: contextKind,
+                positionMs: positionMs,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MusicSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MusicSessionsTable,
+      MusicSessionRow,
+      $$MusicSessionsTableFilterComposer,
+      $$MusicSessionsTableOrderingComposer,
+      $$MusicSessionsTableAnnotationComposer,
+      $$MusicSessionsTableCreateCompanionBuilder,
+      $$MusicSessionsTableUpdateCompanionBuilder,
+      (
+        MusicSessionRow,
+        BaseReferences<_$AppDatabase, $MusicSessionsTable, MusicSessionRow>,
+      ),
+      MusicSessionRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9214,4 +10160,6 @@ class $AppDatabaseManager {
       $$ProfilesTableTableManager(_db, _db.profiles);
   $$ProfileConnectionsTableTableManager get profileConnections =>
       $$ProfileConnectionsTableTableManager(_db, _db.profileConnections);
+  $$MusicSessionsTableTableManager get musicSessions =>
+      $$MusicSessionsTableTableManager(_db, _db.musicSessions);
 }

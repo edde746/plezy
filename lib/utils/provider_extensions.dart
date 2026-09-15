@@ -7,12 +7,9 @@ import '../media/media_server_client.dart';
 import '../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/user_profile_provider.dart';
 import 'app_logger.dart';
 
 extension ProviderExtensions on BuildContext {
-  UserProfileProvider get userProfile => Provider.of<UserProfileProvider>(this, listen: false);
-
   /// Internal: resolve a [PlexClient] from a serverId or fall back to the
   /// first online server. Returns null if neither yields a Plex client.
   /// Non-Plex servers (Jellyfin) are skipped — these helpers exist for

@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
+import 'package:plezy/media/account_preferences.dart';
+import 'package:plezy/models/jellyfin/jellyfin_account_preferences.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
@@ -304,9 +305,8 @@ void main() {
       ],
     });
 
-    JellyfinUserProfile profileWithMode(String mode) => JellyfinUserProfile.fromUserDto({
-      'Configuration': {'SubtitleMode': mode, 'PlayDefaultAudioTrack': true},
-    });
+    AccountPreferences profileWithMode(String mode) =>
+        JellyfinAccountPreferences.fromConfiguration({'SubtitleMode': mode, 'PlayDefaultAudioTrack': true});
 
     test('a user who turned subtitles off on the server gets none (#1779)', () {
       final result = PlaybackSubtitleResolver.resolve(
@@ -739,6 +739,63 @@ void main() {
 
       expect(result.primarySourceStreamId, 4);
       expect(result.declinedPreference, isNull);
+    });
+  });
+
+  group('issue #2323 write-back provenance', () {
+    test("the server-selected row is not the caller's choice", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(3, language: 'eng'),
+          _sourceSubtitle(4, language: 'fre', selected: true),
+        ]),
+        sidecars: const [],
+      );
+
+      expect(result.primarySourceStreamId, 4);
+      expect(result.primaryHonorsPreference, isFalse);
+    });
+
+    test("a carry the catalog serves is the caller's choice", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(3, language: 'eng'),
+          _sourceSubtitle(4, language: 'fre', selected: true),
+        ]),
+        sidecars: const [],
+        preferredSubtitleTrack: const SubtitlePreference.intent(
+          SubtitleIntent(language: 'eng', forced: false, title: 'Subtitle 3', codec: 'srt'),
+        ),
+        preserveSourceIdentity: false,
+      );
+
+      expect(result.primarySourceStreamId, 3);
+      expect(result.primaryHonorsPreference, isTrue);
+    });
+
+    test("a carried off stays the caller's choice so it can be persisted", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng', selected: true)]),
+        sidecars: const [],
+        preferredSubtitleTrack: const SubtitlePreference.off(),
+      );
+
+      expect(result.isOff, isTrue);
+      expect(result.primaryHonorsPreference, isTrue);
+    });
+
+    test("a server off decision is not the caller's choice", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng')]),
+        sidecars: const [],
+      );
+
+      expect(result.isOff, isTrue);
+      expect(result.primaryHonorsPreference, isFalse);
     });
   });
 

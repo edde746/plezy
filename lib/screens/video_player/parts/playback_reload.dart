@@ -167,7 +167,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 
-      if ((isSubtitleChange && isPlexBacked) || (isAudioChange && isPlexBacked)) {
+      // Writing the part's stream selection is persistence, not delivery —
+      // the reload carries the audio id and the subtitle intent itself. So it
+      // answers to the same setting the in-player track handlers gate on,
+      // instead of promising remembered selections the user switched off.
+      if (isPlexBacked && (isSubtitleChange || isAudioChange) && await TrackManager.shouldPersistTrackSelections()) {
         final partId = _currentMediaInfo?.partId;
         if (streamSelectClient == null || partId == null) {
           throw PlaybackException(
@@ -357,8 +361,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     bool useCurrentAudioStreamSelection = true,
     bool showErrorUi = true,
     PlaybackTransitionLease? transitionLease,
+    WatchPlaybackLease? watchTogetherLease,
     String reason = 'media reload',
   }) async {
+    if (_shuttingDown) return MediaReloadOutcome.superseded;
     if (widget.isLive) {
       _clearEpisodeLoadingFlags();
       return MediaReloadOutcome.rejected;
@@ -368,6 +374,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       if (mounted) _clearEpisodeLoadingFlags();
       return MediaReloadOutcome.rejected;
     }
+    final initialWatchTogether = _activeWatchTogetherSession();
+    final roomLease = watchTogetherLease ?? initialWatchTogether?.capturePlaybackLease();
+    if (roomLease != null && !roomLease.isCurrent) return MediaReloadOutcome.superseded;
 
     final reloadLease = transitionLease == null
         ? _transitionGate.tryAcquire(PlaybackTransition.reloadingMedia)
@@ -386,18 +395,25 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     try {
       final currentPlayer = existingPlayer;
       final attempt = _beginPlaybackAttempt(currentPlayer, isMediaReload: true);
-      bool isCurrentReload() => attempt.isCurrent && !_hasFatalPlaybackError && !_isExiting.value;
+      // A reload wants termination to stop it too: unlike a start, it has a
+      // committed previous session to roll back to rather than an error view
+      // to raise.
+      bool isCurrentReload() =>
+          attempt.isCurrent && !_hasFatalPlaybackError && (roomLease == null || roomLease.isCurrent);
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)
       // and the first-frame flag.
-      final previousMetadata = _currentMetadata;
+      final previousMetadata = _playbackSession?.metadata ?? _currentMetadata;
       final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
       final previousPartId = _currentMediaInfo?.partId;
       final previousMediaSourceId = _currentMediaInfo?.mediaSourceId;
       final previousFirstFrame = _firstFrame.snapshot();
       final previousHasFatalPlaybackError = _hasFatalPlaybackError;
+      final previousOpenRequest = _currentOpenRequest;
+      final previousPlaybackFailureMessage = _playbackFailureMessage;
       _hasFatalPlaybackError = false;
+      _dismissPlaybackFailure();
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
 
       final currentAudioTrack = preserveCurrentTrackSelection
@@ -413,25 +429,24 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
                 SubtitlePreference.trackOrNull(currentPlayer.state.track.secondarySubtitle)
           : null;
       final wasPlayingBeforeReload = _playbackIntentShouldPlay;
+      Completer<void>? reloadStartupHold;
       var didOpenReplacement = false;
 
       // Capture context-dependent values before async gaps. The neutral
       // [PlaybackInitializationService] consumes [mediaClient] regardless of
-      // backend. We still narrow to [plexClient] for [TrackManager]'s
-      // server-side track persistence, which is Plex-only — Jellyfin
-      // sessions get a null `getPlexClient` and skip that path.
+      // backend; [TrackManager] narrows it per backend for its server-side
+      // track persistence.
       late final OfflineWatchSyncService offlineWatchService;
-      late final UserProfileProvider userProfileProvider;
+      late final AccountPreferencesController accountPreferences;
       late final PlaybackStateProvider playbackState;
       late final AppDatabase database;
       late final MultiServerManager serverManager;
       late final WatchTogetherProvider? watchTogether;
-      late final bool watchTogetherWasAttached;
-      late final bool cycleWatchTogetherAttachment;
+      late final Object? watchTogetherBinding;
       late final bool wtOwnsStart;
       try {
         offlineWatchService = context.read<OfflineWatchSyncService>();
-        userProfileProvider = context.read<UserProfileProvider>();
+        accountPreferences = context.read<AccountPreferencesController>();
         playbackState = context.read<PlaybackStateProvider>();
         database = context.read<AppDatabase>();
         serverManager = context.read<MultiServerProvider>().serverManager;
@@ -440,9 +455,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // as user intents. Readiness re-handshakes on re-attach (item changes
         // start a new media epoch; same-item source switches group-wait while
         // we reload).
-        watchTogether = _activeWatchTogetherSession();
-        watchTogetherWasAttached = watchTogether?.hasAttachedPlayer ?? false;
-        cycleWatchTogetherAttachment = watchTogetherWasAttached;
+        watchTogether = initialWatchTogether;
+        watchTogetherBinding = _watchTogetherBinding;
         wtOwnsStart = _watchTogetherOwnsPlaybackStart();
       } catch (e, stackTrace) {
         appLogger.e('Failed to prepare media reload during $reason', error: e, stackTrace: stackTrace);
@@ -474,6 +488,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         isOffline: _offlineLibraryMode,
         routeKind: VideoPlayerRouteKind.vod,
       );
+      _currentOpenRequest = _PlaybackOpenRequest(
+        metadata: metadata,
+        mediaIndex: targetMediaIndex,
+        mediaSourceId: selectedMediaSourceId,
+        qualityPreset: targetQualityPreset,
+        audioStreamId: targetAudioStreamId,
+        resumePosition: resumePosition,
+      );
       final preservesRequestedSubtitleSource =
           !isItemChange &&
           targetMediaIndex == _effectiveSelectedMediaIndex &&
@@ -501,8 +523,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
         // Detach before pausing so the reload's internal pause can't broadcast
         // a party-wide pause; the finally below restores the attachment.
-        if (cycleWatchTogetherAttachment) {
-          watchTogether!.detachPlayer();
+        if (watchTogether != null && watchTogetherBinding != null) {
+          watchTogether.unbindPlayer(expectedBinding: watchTogetherBinding);
         }
         try {
           await currentPlayer.pause();
@@ -545,7 +567,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final result = playbackContext.result;
         final mediaClient = playbackContext.reportingClient;
-        final plexClient = mediaClient is PlexClient ? mediaClient : null;
         final streamHeaders = playbackContext.streamHeaders;
 
         if (result.videoUrl == null) {
@@ -595,7 +616,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // ([_openResolvedMedia]) — including the Android MPV startup decoder
         // refresh, whose gate is armed before open and released after track
         // setup.
-        final flow = await _openResolvedMedia(
+        final opened = await _openResolvedMedia(
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           metadata: metadata,
@@ -607,15 +628,17 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           // onOpened, so the getter still describes the previous item here.
           isLocalMedia: _offlineLibraryMode || result.usesLocalMedia,
           isCurrent: isCurrentReload,
+          outcome: attempt.outcome,
           staleGuard: isCurrentReload,
           // Captured before the reload detached the player from the sync
           // layer; a live read would see the detached state.
           watchTogetherOwnsStart: () => wtOwnsStart,
           resolveShouldAutoStart: (_) => shouldAutoStart,
           resumePosition: () => openResumePosition,
-          plexClient: () => plexClient,
-          getProfileSettings: () => userProfileProvider.profileSettings,
+          mediaClient: () => mediaClient,
+          getProfileSettings: () => accountPreferences.activePreferences,
           preferredAudioTrack: initializationAudioTrack,
+          wtStartupHold: () => reloadStartupHold,
           primarySubtitleTranscoding: () => result.isTranscoding,
           ensureAudioFocus: () => currentPlayer.requestAudioFocus(),
           clearFirstFrameForOpen: false,
@@ -635,9 +658,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             // reusing the player for replacement media, otherwise its late
             // completion can mutate the replacement item's tracks.
             await attempt.trackMutationDrain;
+            await watchTogether?.pendingRateCommands;
+            // Native seeks must finish before a replacement source opens. The
+            // EOF delegate's reload is not a native seek and never joins this drain.
+            await _nativeSeekDrain?.future;
             return isCurrentReload();
           },
-          afterMediaOpened: (_, _, _) async {
+          afterMediaOpened: (_, holdPlaybackStart, _) async {
+            if (wtOwnsStart && holdPlaybackStart) reloadStartupHold = Completer<void>();
             _episode.completionLatch.reset();
             if (isItemChange) {
               // Same-item reloads (including the spurious-EOF recovery itself
@@ -675,10 +703,12 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             // The player now owns the new file — publish the session at the
             // same boundary so identity and source state flip together.
             didOpenReplacement = true;
+            if (!attempt.isCurrent) return;
             _commitPlaybackSession(session);
+            _commitWatchTogetherSelection(watchTogether, roomLease, metadata, openResumePosition ?? Duration.zero);
           },
         );
-        if (flow == null) return MediaReloadOutcome.superseded;
+        if (!opened) return MediaReloadOutcome.superseded;
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Same helper as the initial start flow, so any future change lands in
@@ -735,10 +765,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           }
           _firstFrame.restore(previousFirstFrame);
           _hasFatalPlaybackError = previousHasFatalPlaybackError;
+          _currentOpenRequest = previousOpenRequest;
           // If the stop report already went out, un-latch the tracker so the
           // resumed session keeps reporting (and its eventual real stop sends).
           _progressTracker?.resumeAfterStoppedReport();
-          if (wasPlayingBeforeReload && mounted && player == currentPlayer) {
+          if (!wtOwnsStart && wasPlayingBeforeReload && mounted && player == currentPlayer) {
             unawaited(_playWithPlaybackIntent(currentPlayer));
           }
         }
@@ -763,10 +794,19 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // Unconditional setState — beyond the flags this also publishes the
         // rolled-back identity (_clearEpisodeLoadingFlags skips the rebuild
         // when no loading flags are set).
+        final restoresPlaybackFailure =
+            !didOpenReplacement && previousPlaybackFailureMessage != null && _playbackFailureMessage == null;
         _setPlayerState(() {
           _episode.isLoadingNext = false;
           _episode.isLoadingPrevious = false;
+          // A retry that failed before its open shows the failure it retried
+          // from again, not a dead player behind a snackbar.
+          if (restoresPlaybackFailure) {
+            _playbackFailureMessage = previousPlaybackFailureMessage;
+            _playbackFailureRetry = _retryFailedPlayback;
+          }
         });
+        if (restoresPlaybackFailure) _focusFailureActionAfterBuild();
         if (isItemChange) _showChromeForSwappedItem();
         appLogger.e('Failed to reload media in-place during $reason', error: e);
         if (mounted && showErrorUi) {
@@ -774,28 +814,26 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         }
         return didOpenReplacement ? MediaReloadOutcome.opened : MediaReloadOutcome.failed;
       } finally {
-        // Restore Watch Together sync on every exit: after a successful item
-        // change (readiness re-handshakes for the new item), after a failed
-        // reload (the still-playing old item must stay synced), and when the
-        // controller auto-detached itself on a mid-reload player failure.
-        // _currentMetadata is correct on both the success and rollback paths
-        // by the time we get here.
+        if (attempt.isCurrent && !didOpenReplacement && _currentMetadata.globalKey != previousMetadata.globalKey) {
+          _currentMetadata = previousMetadata;
+          if (previousLaunchIdentity != null) {
+            VideoPlayerScreenState._activeRouteGuard.update(this, previousLaunchIdentity);
+          }
+          _firstFrame.restore(previousFirstFrame);
+        }
+        // Only the current screen/session/open may restore its committed source.
+        // A pre-open failure restores A; successful open commits B. Superseded
+        // work never binds either over its successor.
         try {
-          final reattachServerId = _currentMetadata.serverId;
-          if (watchTogetherWasAttached &&
-              watchTogether != null &&
-              watchTogether.isInSession &&
-              mounted &&
-              player == currentPlayer &&
-              reattachServerId != null &&
+          if (watchTogether != null &&
+              roomLease != null &&
+              isCurrentReload() &&
+              watchTogether.isPlaybackLeaseCurrent(roomLease) &&
+              (watchTogetherBinding == null || watchTogether.ownsBinding(watchTogetherBinding)) &&
               !watchTogether.hasAttachedPlayer) {
-            watchTogether.attachPlayer(
-              currentPlayer,
-              ratingKey: _currentMetadata.id,
-              serverId: reattachServerId,
-              mediaTitle: _currentMetadata.displayTitle,
-              hasFirstFrame: _firstFrame.uiReady.value,
-              remoteSeek: _seekPlayback,
+            _attachToWatchTogetherSession(
+              lease: roomLease,
+              startupHold: didOpenReplacement ? reloadStartupHold?.future : null,
             );
           }
         } catch (e, stackTrace) {

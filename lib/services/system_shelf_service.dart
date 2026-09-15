@@ -62,9 +62,14 @@ class SystemShelfService {
   @visibleForTesting
   int get debugGeneration => _generation;
 
+  /// Forgets the owner and drops the mutation queue. Deliberately does not
+  /// await the old tail: a widget test's FakeAsync zone ends without
+  /// flushing the microtasks that settle a chained future, so the previous
+  /// test's final clear would leave a tail that never completes and hang the
+  /// next test's setUp. Tests own their channel fakes, so nothing native is
+  /// lost by abandoning the chain.
   @visibleForTesting
-  Future<void> debugReset() async {
-    await _mutationTail;
+  void debugReset() {
     _activeOwner = null;
     _generation = 0;
     _mutationTail = Future<void>.value();

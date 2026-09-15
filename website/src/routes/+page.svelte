@@ -5,6 +5,7 @@
   import Reviews from '$lib/components/Reviews.svelte';
   import FAQ from '$lib/components/FAQ.svelte';
   import Footer from '$lib/components/Footer.svelte';
+  import PageMetadata from '$lib/components/PageMetadata.svelte';
   import { faqSchemaMainEntity } from '$lib/content/faqs';
   import { buildSoftwareApplicationOffers } from '$lib/content/software_app_offers';
 
@@ -13,7 +14,6 @@
   const title = "Plezy - A Beautiful Plex & Jellyfin Client";
   const description = "Plezy is a beautiful client for Plex and Jellyfin, available on iOS, Android, Android TV, tvOS, Windows, macOS, and Linux. HDR, Dolby Vision, offline downloads, and more.";
   const url = "https://plezy.app/";
-  const image = "https://plezy.app/og/plezy-social.png";
 
   const softwareAppSchema = $derived.by(() => {
     const schema: Record<string, unknown> = {
@@ -50,23 +50,9 @@
   };
 </script>
 
+<PageMetadata {title} {description} {url} />
+
 <svelte:head>
-  <title>{title}</title>
-  <meta name="description" content={description} />
-  <link rel="canonical" href={url} />
-
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Plezy" />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:url" content={url} />
-  <meta property="og:image" content={image} />
-
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content={title} />
-  <meta name="twitter:description" content={description} />
-  <meta name="twitter:image" content={image} />
-
   {@html `<script type="application/ld+json">${JSON.stringify(softwareAppSchema)}</script>`}
   {@html `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>`}
 </svelte:head>

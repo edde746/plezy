@@ -132,6 +132,10 @@ struct _MpvPlugin {
   // against the display's current peak so a move between two HDR outputs is not
   // mistaken for no change at all.
   uint32_t applied_target_peak = 0;
+  // The refresh rate mpv was last told through display-fps-override, in the
+  // millihertz GDK reports, so a move between two outputs of the same rate
+  // writes nothing. 0 until the first write.
+  int applied_display_fps_mhz = 0;
   // Set when a transaction ended in kUnknown: mpv stopped answering partway
   // through being put back, so what the plane emits cannot be named and the
   // surface carries no description. Recorded rather than inferred from the
@@ -304,6 +308,7 @@ static void release_video_resources(MpvPlugin* self) {
   self->hdr_tone_mapping = mpv::HdrToneMapping::kCompositor;
   self->hdr_tone_mapping_desired = mpv::HdrToneMapping::kCompositor;
   self->applied_target_peak = 0;
+  self->applied_display_fps_mhz = 0;
   // The quarantine belongs to the mpv instance that stopped answering, not to
   // the app. A new plane and a new player have said nothing yet, so nothing
   // about them is unnameable, and leaving this set would hide the next session
@@ -918,6 +923,21 @@ static void handle_preferred_changed(MpvPlugin* self) {
   request_hdr_reapply(self);
 }
 
+// Tells mpv the refresh rate of the output the plane is on. vo=libmpv has no
+// window of its own, so its VOCTRL_GET_DISPLAY_FPS goes unanswered: display-fps
+// reads 0 - the performance overlay's "Display FPS: N/A" - and display-sync has
+// no vsync interval to work from. display-fps-override is the embedder's
+// channel for exactly this. Written only when the rate differs from what mpv
+// already holds; GDK reports it in millihertz.
+static void apply_display_fps(MpvPlugin* self, GdkMonitor* monitor) {
+  if (monitor == nullptr || !self->player) return;
+  const int refresh_mhz = gdk_monitor_get_refresh_rate(monitor);
+  if (refresh_mhz <= 0 || refresh_mhz == self->applied_display_fps_mhz) return;
+  self->applied_display_fps_mhz = refresh_mhz;
+  g_message("MPV video plane: display refresh rate %d mHz", refresh_mhz);
+  self->player->SetPropertyAsync("display-fps-override", refresh_mhz / 1000.0, nullptr);
+}
+
 // Brings up the native Wayland video plane, the only way this runner renders
 // video. Returns false with |error| set to the specific reason: there is no
 // second path to fall through to, so the reason is what the user is told.
@@ -962,6 +982,12 @@ static gboolean start_video_plane(MpvPlugin* self, FlView* view, std::string* er
   self->video_surface->SetFrameCallback([self]() { render_video_plane(self, FALSE); });
   self->video_surface->SetForcedRenderCallback([self]() { render_video_plane(self, TRUE); });
   self->video_surface->SetPreferredChangedCallback([self]() { handle_preferred_changed(self); });
+  // The plane reports its output once its first frame is up; until then the
+  // toplevel's monitor is the answer, and thereafter every move re-applies.
+  self->video_surface->SetMonitorEnteredCallback([self](GdkMonitor* monitor) { apply_display_fps(self, monitor); });
+  if (GdkWindow* window = toplevel != nullptr ? gtk_widget_get_window(toplevel) : nullptr) {
+    apply_display_fps(self, gdk_display_get_monitor_at_window(gtk_widget_get_display(widget), window));
+  }
   self->player->SetRedrawCallback([self]() { render_video_plane(self, FALSE); });
   // playback-restart is not ordered against the video reconfigure that gives the
   // source its colour space, so the re-apply observe_event_for_hdr asks for can
@@ -1054,8 +1080,8 @@ MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar, const gchar* channel_nam
 }
 
 // Static references to keep the plugin instances alive.
-static MpvPlugin* g_mpv_plugin = nullptr;
-static MpvPlugin* g_mpv_audio_plugin = nullptr;
+[[maybe_unused]] static MpvPlugin* g_mpv_plugin = nullptr;
+[[maybe_unused]] static MpvPlugin* g_mpv_audio_plugin = nullptr;
 
 void mpv_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
   g_mpv_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_player", FALSE);
@@ -1138,13 +1164,22 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
           }
         }
         g_object_ref(method_call);
-        self->player->CommandAsync(command_args, [method_call](int error) {
+        self->player->CommandAsync(command_args, [method_call](int error, const mpv_node* command_result) {
           g_autoptr(FlMethodResponse) async_response = nullptr;
           if (error < 0) {
             async_response =
                 FL_METHOD_RESPONSE(fl_method_error_response_new("COMMAND_FAILED", "MPV command failed", nullptr));
           } else {
-            async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+            // `loadfile` answers with the playlist entry it created so Dart can
+            // tie the load to that source's start-file/playback-restart/end-file
+            // events; every other command answers null.
+            int64_t playlist_entry_id = 0;
+            g_autoptr(FlValue) reply = nullptr;
+            if (plezy::mpv_common::PlaylistEntryIdFromCommandResult(command_result, &playlist_entry_id)) {
+              reply = fl_value_new_map();
+              fl_value_set_string_take(reply, "playlistEntryId", fl_value_new_int(playlist_entry_id));
+            }
+            async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(reply));
           }
           fl_method_call_respond(method_call, async_response, nullptr);
           g_object_unref(method_call);

@@ -169,4 +169,85 @@ void main() {
       expect(extras.markers.single.startTimeOffset, 0);
     });
   });
+
+  group('PlaybackExtras.withChapterFallback intro duration cap', () {
+    const cap = PlaybackExtras.maxChapterIntroDuration;
+    const movieEnd = 7200000;
+
+    test('a movie-length "Opening Credits" chapter does not become an intro', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 480000, title: 'Opening Credits'),
+          MediaChapter(id: 2, startTimeOffset: 480000, endTimeOffset: movieEnd, title: 'Chapter 2'),
+        ],
+        markers: [],
+      );
+
+      expect(extras.markers, isEmpty);
+    });
+
+    test('a chapter exactly at the cap still qualifies; one millisecond over does not', () {
+      final atCap = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 1000, endTimeOffset: 1000 + cap.inMilliseconds, title: 'Intro'),
+        ],
+        markers: [],
+      );
+      final overCap = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 1000, endTimeOffset: 1001 + cap.inMilliseconds, title: 'Intro'),
+        ],
+        markers: [],
+      );
+
+      expect(atCap.markers.map((m) => m.type), ['intro']);
+      expect(overCap.markers, isEmpty);
+    });
+
+    test('the cap uses the next chapter start when the chapter has no end', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, title: 'Opening'),
+          MediaChapter(id: 2, startTimeOffset: 600000, title: 'Chapter 2'),
+        ],
+        markers: [],
+      );
+
+      expect(extras.markers, isEmpty);
+    });
+
+    test('long credits chapters are still derived', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 6600000, title: 'Chapter 1'),
+          MediaChapter(id: 2, startTimeOffset: 6600000, endTimeOffset: movieEnd, title: 'End Credits'),
+        ],
+        markers: [],
+      );
+
+      expect(extras.markers.map((m) => m.type), ['credits']);
+      expect(extras.markers.single.endTimeOffset, movieEnd);
+    });
+
+    test('server-supplied intro markers are never capped', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [],
+        markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 0, endTimeOffset: 600000)],
+      );
+
+      expect(extras.markers.map((m) => m.type), ['intro']);
+      expect(extras.markers.single.endTimeOffset, 600000);
+    });
+
+    test('a dropped chapter intro leaves native markers intact under forced fallback', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 480000, title: 'Opening Credits')],
+        markers: [MediaMarker(id: 9, type: 'credits', startTimeOffset: 6600000, endTimeOffset: movieEnd)],
+        forceChapterFallback: true,
+      );
+
+      expect(extras.markers.map((m) => m.type), ['credits']);
+      expect(extras.markers.single.id, 9);
+    });
+  });
 }

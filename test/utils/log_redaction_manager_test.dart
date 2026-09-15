@@ -39,8 +39,8 @@ void main() {
       expect(result.contains('fmt=jpg'), isTrue);
     });
 
-    test('api_key redaction is case-insensitive', () {
-      final result = LogRedactionManager.redact('API_KEY=topsecret&z=1');
+    test('ApiKey redaction is case-insensitive', () {
+      final result = LogRedactionManager.redact('https://example.com/Items?ApiKey=topsecret&z=1');
       expect(result.contains('topsecret'), isFalse);
       expect(result.contains('[REDACTED]'), isTrue);
     });

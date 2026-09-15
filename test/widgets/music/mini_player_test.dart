@@ -72,6 +72,7 @@ class _FakeMusicService extends StubMusicPlaybackService {
   int toggleCalls = 0;
   int nextCalls = 0;
   int stopCalls = 0;
+  final List<Duration> seekCalls = [];
 
   _FakeMusicService({this.track});
 
@@ -128,6 +129,11 @@ class _FakeMusicService extends StubMusicPlaybackService {
   }
 
   @override
+  Future<void> seek(Duration position) async {
+    seekCalls.add(position);
+  }
+
+  @override
   void dispose() {
     _positionController.close();
     super.dispose();
@@ -155,6 +161,8 @@ void main() {
     NavigatorObserver? navigatorObserver,
     ActiveProfileProvider? activeProfileProvider,
     DownloadProvider? downloadProvider,
+    MiniPlayerInsetController? insets,
+    TextDirection textDirection = TextDirection.ltr,
   }) {
     addTearDown(service.dispose);
     addTearDown(observer.suppress.dispose);
@@ -165,7 +173,10 @@ void main() {
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<MusicPlaybackService>.value(value: service),
-          ChangeNotifierProvider<MiniPlayerInsetController>(create: (_) => MiniPlayerInsetController()),
+          if (insets != null)
+            ChangeNotifierProvider<MiniPlayerInsetController>.value(value: insets)
+          else
+            ChangeNotifierProvider<MiniPlayerInsetController>(create: (_) => MiniPlayerInsetController()),
           Provider<MusicUiRouteObserver>.value(value: observer),
           if (activeProfileProvider != null)
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
@@ -174,6 +185,7 @@ void main() {
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: platform),
           navigatorObservers: [?navigatorObserver],
+          builder: (context, child) => Directionality(textDirection: textDirection, child: child!),
           home: const Stack(
             children: [
               SizedBox.expand(),
@@ -196,6 +208,83 @@ void main() {
     expect(find.text('Test Artist'), findsOneWidget);
     expect(find.byType(IconButton), findsNWidgets(2)); // play/pause + next (mobile layout)
   });
+
+  testWidgets('floats above the bottom bar in portrait and beside the rail in landscape', (tester) async {
+    final service = _FakeMusicService(track: _track);
+    final observer = MusicUiRouteObserver();
+    final insets = MiniPlayerInsetController();
+    addTearDown(insets.dispose);
+
+    await tester.pumpWidget(wrap(service: service, observer: observer, insets: insets));
+    await tester.pumpAndSettle();
+    final card = find.byKey(const ValueKey('mini_player_card'));
+    final screen = tester.getSize(find.byType(MaterialApp));
+
+    insets.setNavInsets(bottom: 80, start: 0);
+    await tester.pumpAndSettle();
+    var rect = tester.getRect(card);
+    expect(rect.left, 12);
+    expect(screen.height - rect.bottom, 12 + 80);
+
+    insets.setNavInsets(bottom: 0, start: 80);
+    await tester.pumpAndSettle();
+    rect = tester.getRect(card);
+    expect(rect.left, 12 + 80);
+    expect(rect.right, screen.width - 12);
+    expect(screen.height - rect.bottom, 12);
+
+    // A pushed route covers the shell: both insets fall away together.
+    insets.setNavBarSuspended(true);
+    await tester.pumpAndSettle();
+    rect = tester.getRect(card);
+    expect(rect.left, 12);
+    expect(screen.height - rect.bottom, 12);
+  });
+
+  for (final direction in TextDirection.values) {
+    testWidgets('keeps landscape controls clear of system insets in ${direction.name}', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(900, 410);
+      tester.view.padding = const FakeViewPadding(left: 24, right: 48, bottom: 20);
+      addTearDown(tester.view.reset);
+      final service = _FakeMusicService(track: _track);
+      final observer = MusicUiRouteObserver();
+      final insets = MiniPlayerInsetController()..setNavInsets(bottom: 0, start: 80);
+      addTearDown(insets.dispose);
+
+      await tester.pumpWidget(wrap(service: service, observer: observer, insets: insets, textDirection: direction));
+      await tester.pumpAndSettle();
+      final card = find.byKey(const ValueKey('mini_player_card'));
+      var rect = tester.getRect(card);
+      final isLtr = direction == TextDirection.ltr;
+      expect(rect.left, 12 + (isLtr ? 80 : 24));
+      expect(rect.right, 900 - 12 - (isLtr ? 48 : 80));
+      expect(rect.bottom, 410 - 12 - 20);
+
+      // Pushing content hides the rail, not the operating system's insets.
+      insets.setNavBarSuspended(true);
+      await tester.pumpAndSettle();
+      rect = tester.getRect(card);
+      expect(rect.left, 12 + 24);
+      expect(rect.right, 900 - 12 - 48);
+      final next = find.ancestor(
+        of: find.byWidgetPredicate((widget) => widget is AppIcon && widget.icon == Symbols.skip_next_rounded),
+        matching: find.byType(IconButton),
+      );
+      final target = tester.getRect(next);
+      expect(target.left, greaterThanOrEqualTo(24));
+      expect(target.right, lessThanOrEqualTo(900 - 48));
+      await tester.tap(next);
+      await tester.pump();
+      expect(service.nextCalls, 1);
+
+      insets.setNavBarSuspended(false);
+      await tester.pumpAndSettle();
+      rect = tester.getRect(card);
+      expect(rect.left, 12 + (isLtr ? 80 : 24));
+      expect(rect.right, 900 - 12 - (isLtr ? 48 : 80));
+    });
+  }
 
   testWidgets('details control announces the current title and artist exactly once', (tester) async {
     final semantics = tester.ensureSemantics();

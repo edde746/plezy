@@ -128,8 +128,8 @@ class SyncMessage {
     );
   }
 
-  /// Create a JOIN message (carries the sender's protocol version, and the
-  /// room's control mode when the sender is the host)
+  /// Create a JOIN message (carries the sender's protocol version and the
+  /// room's control mode when the sender is the host).
   factory SyncMessage.join({
     required String peerId,
     required String displayName,

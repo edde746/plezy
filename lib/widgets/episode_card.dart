@@ -214,12 +214,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ),
 
                           Positioned.fill(
-                            child: WatchedIndicator(
-                              item: episode,
-                              size: WatchedIndicatorSize.compact,
-                              // Progress isn't tracked offline.
-                              progressAvailable: !widget.isOffline,
-                            ),
+                            child: WatchedIndicator(item: episode, size: WatchedIndicatorSize.compact),
                           ),
                         ],
                       ),
@@ -330,7 +325,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
       return OptimizedMediaImage.thumb(
         client: widget.client,
         imagePath: episode.thumbPath,
-        filterQuality: FilterQuality.medium,
         fit: BoxFit.cover,
         placeholder: (context, url) => const PlaceholderContainer(),
         errorWidget: (context, url, error) =>

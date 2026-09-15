@@ -264,11 +264,11 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
                 useBackgroundFocus: true,
                 descendantsAreFocusable: false,
                 borderRadius: 20,
-                onSelect: () => downloadProvider.setSyncRuleEnabled(rule.globalKey, !rule.enabled),
+                onSelect: () => downloadProvider.updateSyncRuleOptions(rule.globalKey, enabled: !rule.enabled),
                 onNavigateLeft: () => _rowFocusNode.requestFocus(),
                 child: Switch(
                   value: rule.enabled,
-                  onChanged: (value) => downloadProvider.setSyncRuleEnabled(rule.globalKey, value),
+                  onChanged: (value) => downloadProvider.updateSyncRuleOptions(rule.globalKey, enabled: value),
                 ),
               ),
               onTap: () => _onTap(context),

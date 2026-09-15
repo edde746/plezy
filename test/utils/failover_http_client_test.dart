@@ -11,8 +11,9 @@ import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
 
 /// Pins the shared failover semantics both backends now ride on (see the
-/// class doc): GET-only single-step cascades, generation stamping, two-phase
-/// persistence, and exhaustion behavior. Backend-level coverage lives in
+/// class doc): single-step cascades for GETs (and opted-in replay-safe
+/// POSTs), generation stamping, two-phase persistence, and exhaustion
+/// behavior. Backend-level coverage lives in
 /// jellyfin_client_failures_test.dart's failover group.
 void main() {
   setUp(() {
@@ -205,6 +206,177 @@ void main() {
     expect(h.exhausted, isEmpty);
   });
 
+  group('connection error on a live endpoint (stale pooled socket, #2056)', () {
+    test('re-probes the current endpoint and retries in place without switching', () async {
+      final validations = <String>[];
+      var primaryAttempts = 0;
+      final h = build(
+        handler: (request, _) async {
+          expect(request.url.host, 'primary.example.com');
+          if (++primaryAttempts == 1) throw http.ClientException('connection reset', request.url);
+          return ok('primary');
+        },
+        validateCandidate: (candidateBaseUrl, _) async {
+          validations.add(candidateBaseUrl);
+          return true;
+        },
+      );
+
+      final response = await h.client.get('/path');
+
+      expect(response.data, {'id': 'primary'});
+      expect(validations, [primary]);
+      expect(h.requests, hasLength(2));
+      expect(h.switches, isEmpty);
+      expect(h.exhausted, isEmpty);
+      expect(h.client.baseUrl, primary);
+    });
+
+    test('a 4xx from the in-place retry is an answer, not a reason to cascade', () async {
+      var primaryAttempts = 0;
+      final h = build(
+        handler: (request, _) async {
+          if (++primaryAttempts == 1) throw http.ClientException('connection reset', request.url);
+          return http.Response('nope', 404);
+        },
+        validateCandidate: (_, _) async => true,
+      );
+
+      final response = await h.client.get('/path');
+
+      expect(response.statusCode, 404);
+      expect(h.requests.map((u) => u.host), ['primary.example.com', 'primary.example.com']);
+      expect(h.switches, isEmpty);
+    });
+
+    test('a single endpoint that still answers does not flip to exhausted', () async {
+      var primaryAttempts = 0;
+      final h = build(
+        endpoints: const [primary],
+        handler: (request, _) async {
+          if (++primaryAttempts == 1) throw http.ClientException('connection reset', request.url);
+          return ok();
+        },
+        validateCandidate: (_, _) async => true,
+      );
+
+      final response = await h.client.get('/path');
+
+      expect(response.statusCode, 200);
+      expect(h.exhausted, isEmpty);
+      expect(h.switches, isEmpty);
+    });
+
+    test('cascades when the current endpoint fails its probe', () async {
+      final validations = <String>[];
+      final h = build(
+        handler: (request, _) async {
+          if (request.url.host == 'primary.example.com') {
+            throw http.ClientException('connection refused', request.url);
+          }
+          return ok();
+        },
+        validateCandidate: (candidateBaseUrl, _) async {
+          validations.add(candidateBaseUrl);
+          return candidateBaseUrl != primary;
+        },
+      );
+
+      final response = await h.client.get('/path');
+
+      expect(response.statusCode, 200);
+      expect(validations, [primary, fallback]);
+      expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
+      expect(h.switches, [(url: fallback, persist: false), (url: fallback, persist: true)]);
+      expect(h.client.baseUrl, fallback);
+    });
+
+    test('cascades when the in-place retry fails again', () async {
+      final h = build(
+        handler: (request, _) async {
+          if (request.url.host == 'primary.example.com') {
+            throw http.ClientException('connection reset', request.url);
+          }
+          return ok();
+        },
+        validateCandidate: (_, _) async => true,
+      );
+
+      final response = await h.client.get('/path');
+
+      expect(response.statusCode, 200);
+      expect(h.requests.map((u) => u.host), ['primary.example.com', 'primary.example.com', 'fallback.example.com']);
+      expect(h.switches, [(url: fallback, persist: false), (url: fallback, persist: true)]);
+      expect(h.client.baseUrl, fallback);
+    });
+
+    test('timeouts skip the in-place retry and cascade directly', () async {
+      final validations = <String>[];
+      final h = build(
+        handler: (request, _) async {
+          if (request.url.host == 'primary.example.com') throw TimeoutException('slow');
+          return ok();
+        },
+        validateCandidate: (candidateBaseUrl, _) async {
+          validations.add(candidateBaseUrl);
+          return true;
+        },
+      );
+
+      await h.client.get('/path');
+
+      expect(validations, [fallback]);
+      expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
+    });
+
+    test('without a validator the cascade runs as before', () async {
+      final h = build(
+        handler: (request, _) async {
+          if (request.url.host == 'primary.example.com') {
+            throw http.ClientException('connection reset', request.url);
+          }
+          return ok();
+        },
+      );
+
+      await h.client.get('/path');
+
+      expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
+      expect(h.client.baseUrl, fallback);
+    });
+
+    test('a promotion landing during the probe surfaces the failure instead of cascading off it', () async {
+      final probeStarted = Completer<void>();
+      final releaseProbe = Completer<bool>();
+      final h = build(
+        endpoints: const [primary, fallback, tertiary],
+        handler: (request, _) async {
+          if (request.url.host == 'primary.example.com') {
+            throw http.ClientException('connection reset', request.url);
+          }
+          return ok(request.url.host);
+        },
+        validateCandidate: (_, _) {
+          probeStarted.complete();
+          return releaseProbe.future;
+        },
+      );
+
+      final pending = h.client.get('/path');
+      await probeStarted.future;
+      // Background optimization promotes a different endpoint mid-probe.
+      h.client.resetEndpoints(const [tertiary, primary, fallback], currentBaseUrl: tertiary);
+      h.client.baseUrl = tertiary;
+      releaseProbe.complete(false);
+
+      await expectLater(pending, throwsA(isA<MediaServerHttpException>()));
+      expect(h.requests.map((u) => u.host), ['primary.example.com']);
+      expect(h.switches, isEmpty);
+      expect(h.exhausted, isEmpty);
+      expect(h.client.baseUrl, tertiary);
+    });
+  });
+
   test('allowEndpointFailover: false rethrows without switching', () async {
     final h = build(handler: (request, _) async => throw TimeoutException('down'));
 
@@ -314,6 +486,39 @@ void main() {
     expect(h.switches, isEmpty);
     expect(h.client.baseUrl, fallback);
     expect(h.exhausted, hasLength(2));
+  });
+
+  test('POST fails fast by default even on a transient failure', () async {
+    final h = build(
+      handler: (request, _) async {
+        if (request.url.host == 'primary.example.com') throw TimeoutException('down');
+        return ok();
+      },
+    );
+
+    await expectLater(
+      h.client.post('/playQueues'),
+      throwsA(isA<MediaServerHttpException>().having((e) => e.isTransient, 'isTransient', isTrue)),
+    );
+    expect(h.requests.map((u) => u.host), ['primary.example.com']);
+    expect(h.switches, isEmpty);
+  });
+
+  test('replay-safe POST opts into the cascade and persists the winner', () async {
+    final h = build(
+      handler: (request, _) async {
+        expect(request.method, 'POST');
+        if (request.url.host == 'primary.example.com') throw TimeoutException('down');
+        return ok();
+      },
+    );
+
+    final response = await h.client.post('/playQueues', allowEndpointFailover: true);
+
+    expect(response.statusCode, 200);
+    expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
+    expect(h.switches, [(url: fallback, persist: false), (url: fallback, persist: true)]);
+    expect(h.exhausted, isEmpty);
   });
 
   test('resetEndpoints replaces the cascade list', () async {

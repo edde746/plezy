@@ -478,35 +478,17 @@ class JellyfinEndpointDiscovery {
   static List<String> expandInputToBaseUrls(
     String input, {
     MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
-  }) {
-    final trimmed = canonicalizeBaseUrl(input);
-    if (trimmed.isEmpty) return const [];
-    if (_hasScheme(trimmed)) return [trimmed];
+  }) => expandBaseUrlCandidates(input, guesses: _schemelessGuesses(dialect));
 
-    final parsed = Uri.tryParse('http://$trimmed');
-    if (parsed == null || parsed.host.isEmpty) return [trimmed];
-
-    final result = <String>[];
-    final seen = <String>{};
-    void add(Uri uri) {
-      final normalized = stripTrailingSlash(uri.replace(query: null, fragment: null).toString());
-      if (normalized.isEmpty || !seen.add(normalized)) return;
-      result.add(normalized);
-    }
-
-    if (parsed.hasPort) {
-      add(parsed.replace(scheme: 'http'));
-      add(parsed.replace(scheme: 'https'));
-    } else {
-      add(parsed.replace(scheme: 'http', port: defaultPort));
-      add(parsed.replace(scheme: 'https'));
-      for (final port in dialect.httpsPortGuesses) {
-        add(parsed.replace(scheme: 'https', port: port));
-      }
-      add(parsed.replace(scheme: 'http'));
-    }
-    return List.unmodifiable(result);
-  }
+  /// Ordered guesses for a schemeless entry: the default HTTP install port
+  /// first (the overwhelmingly common LAN case), then TLS on the default port
+  /// and on the dialect's TLS ports, then plain HTTP on port 80.
+  static List<BaseUrlGuess> _schemelessGuesses(MediaBrowserDialect dialect) => [
+    (scheme: 'http', port: defaultPort),
+    (scheme: 'https', port: null),
+    for (final port in dialect.httpsPortGuesses) (scheme: 'https', port: port),
+    (scheme: 'http', port: null),
+  ];
 
   /// Splits a raw add/edit form field into the individual URLs the user typed.
   /// Entries are separated by newlines and/or commas; blanks are dropped.
@@ -539,7 +521,7 @@ class JellyfinEndpointDiscovery {
     for (final raw in input) {
       final normalized = normalizeBaseUrl(raw);
       if (normalized.isEmpty) continue;
-      if (_hasScheme(normalized)) {
+      if (hasUrlScheme(normalized)) {
         addProbe(normalized);
         addExplicit(normalized);
         validationBaseUrlGroups.add([normalized]);
@@ -581,8 +563,6 @@ class JellyfinEndpointDiscovery {
     }
     return List.unmodifiable(result);
   }
-
-  static bool _hasScheme(String input) => RegExp(r'^[a-zA-Z][a-zA-Z\d+.-]*://').hasMatch(input);
 
   static List<String> _activeFirst(String activeBaseUrl, List<String> urls) {
     final result = <String>[];

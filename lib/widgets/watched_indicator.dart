@@ -55,7 +55,9 @@ enum WatchedIndicatorSize {
 /// Watched/progress overlay for media artwork: watched checkmark,
 /// unwatched-count pill (shows/seasons), active-progress bar, and season
 /// completion bar. The single implementation behind every surface that
-/// stamps watch state onto a poster/thumbnail.
+/// stamps watch state onto a poster/thumbnail. Callers that must react to
+/// [SettingsService.showWatchedIndicators] or [SettingsService.showUnwatchedCount]
+/// flipping wrap themselves in a [SettingsBuilder] on those prefs.
 class WatchedIndicator extends StatelessWidget {
   final MediaItem item;
   final WatchedIndicatorSize size;
@@ -65,22 +67,18 @@ class WatchedIndicator extends StatelessWidget {
   /// visibility updates reactively with the caller's rebuilds.
   final bool? showUnwatchedCount;
 
-  /// When false, in-progress state is ignored (no bar; checkmark still shown
-  /// for watched items) — pass false where progress isn't tracked (offline).
-  final bool progressAvailable;
-
   const WatchedIndicator({
     super.key,
     required this.item,
     this.size = WatchedIndicatorSize.standard,
     this.showUnwatchedCount,
-    this.progressAvailable = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool showCount = showUnwatchedCount ?? SettingsService.instance.read(SettingsService.showUnwatchedCount);
-    final hasActiveProgress = progressAvailable && item.hasActiveProgress;
+    final bool showWatched = SettingsService.instance.read(SettingsService.showWatchedIndicators);
+    final hasActiveProgress = item.hasActiveProgress;
     final unwatched = item.unwatchedCount;
     final barRadius = BorderRadius.only(
       bottomLeft: Radius.circular(size.barRadius),
@@ -90,7 +88,7 @@ class WatchedIndicator extends StatelessWidget {
     return Stack(
       children: [
         // Watched checkmark
-        if (item.isWatched && !hasActiveProgress)
+        if (showWatched && item.isWatched && !hasActiveProgress)
           Positioned(
             top: size.checkInset,
             right: size.checkInset,

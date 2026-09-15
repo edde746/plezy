@@ -21,7 +21,7 @@ import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'app_menu.dart';
-import 'bottom_sheet_header.dart';
+import 'bottom_sheet_page_scaffold.dart';
 import 'overlay_sheet.dart';
 
 /// A menu action item for context menus
@@ -298,10 +298,10 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   @override
   int get lastReorderColumn => 2;
 
-  /// Only the TV dialog scrolls the focused row into view; the bottom sheet
-  /// list is not keyboard-driven.
+  /// Both layouts scroll the focused row into view: the TV dialog is the D-pad
+  /// surface, and the sheet still shows the same cursor to a keyboard user.
   @override
-  ScrollController? get reorderScrollController => widget.isDialog ? _dialogScrollController : null;
+  ScrollController? get reorderScrollController => widget.isDialog ? _dialogScrollController : _sheetScrollController;
 
   @override
   void onReorderMoveConfirmed() => widget.onReorder(_tempLibraries);
@@ -401,26 +401,22 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
       );
     }
 
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        BottomSheetHeader(title: t.libraries.manageLibraries, icon: Symbols.edit_rounded),
-        Flexible(
-          child: Focus(
-            focusNode: _listFocusNode,
-            descendantsAreFocusable: false,
-            autofocus: InputModeTracker.isKeyboardMode(context),
-            onKeyEvent: handleReorderKeyEvent,
-            child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys, shrinkWrap: true),
-          ),
-        ),
-      ],
+    return BottomSheetPageScaffold(
+      title: t.libraries.manageLibraries,
+      icon: Symbols.edit_rounded,
+      child: Focus(
+        focusNode: _listFocusNode,
+        descendantsAreFocusable: false,
+        autofocus: InputModeTracker.isKeyboardMode(context),
+        onKeyEvent: handleReorderKeyEvent,
+        child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys, shrinkWrap: true),
+      ),
     );
   }
 
   /// Build flat library list with a server subtitle when multiple servers are
-  /// connected. The TV dialog passes [_dialogScrollController] so focused rows
-  /// can be scrolled into view; the bottom sheet passes its own controller.
+  /// connected. Each layout passes its own controller, which is also what
+  /// [reorderScrollController] scrolls when the keyboard cursor moves.
   Widget _buildFlatLibraryList(
     ScrollController scrollController,
     Set<String> hiddenLibraryKeys, {

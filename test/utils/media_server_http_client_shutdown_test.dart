@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/utils/managed_http_client.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
-import 'package:plezy/utils/platform_http_client_io.dart';
 
 void main() {
   group('MediaServerHttpClient shutdown', () {
@@ -126,17 +125,6 @@ void main() {
       await closing;
       expect(closed, isTrue);
     });
-
-    test('AndroidPlatformHttpClient keeps the graceful-drain contract and rejects sends once closing', () async {
-      final client = AndroidPlatformHttpClient();
-      expect(client, isA<GracefulHttpClient>(), reason: 'per-server awaited drains dispatch on GracefulHttpClient');
-
-      await client.closeGracefully(drainTimeout: Duration.zero);
-      expect(
-        () => client.send(http.Request('GET', Uri.parse('https://example.test/library/sections'))),
-        throwsA(isA<http.ClientException>()),
-      );
-    });
   });
 }
 
@@ -178,7 +166,7 @@ class _HangingBodyClient extends http.BaseClient {
   }
 }
 
-/// Delegating client (the AndroidPlatformHttpClient shape) whose drain
+/// Delegating [GracefulHttpClient] whose drain
 /// completes only when the test says so.
 class _ManualDrainClient extends http.BaseClient implements GracefulHttpClient {
   final _drained = Completer<void>();

@@ -3,6 +3,24 @@ import 'dart:math';
 import '../../media/media_item.dart';
 import 'music_playback_service.dart';
 
+/// Immutable copy of the queue's full state, for session persistence (#2148).
+/// [order] indexes into [items] (canonical order); [cursor] indexes [order].
+class MusicQueueState {
+  final List<MediaItem> items;
+  final List<int> order;
+  final int cursor;
+  final bool shuffled;
+  final MusicRepeatMode repeatMode;
+
+  const MusicQueueState({
+    required this.items,
+    required this.order,
+    required this.cursor,
+    required this.shuffled,
+    required this.repeatMode,
+  });
+}
+
 /// Pure, deterministic queue state for the music session — no I/O, no player.
 ///
 /// Holds the canonical track list ([_items], insertion order) plus a playback
@@ -44,6 +62,40 @@ class MusicQueueController {
 
   MediaItem? trackAt(int queueIndex) =>
       queueIndex >= 0 && queueIndex < _order.length ? _items[_order[queueIndex]] : null;
+
+  /// Full state copy for persistence — includes the canonical order and the
+  /// shuffle permutation the public [queue] getter flattens away, so a
+  /// restored session can still un-shuffle back to the original order.
+  MusicQueueState captureState() => MusicQueueState(
+    items: List.of(_items),
+    order: List.of(_order),
+    cursor: _cursor,
+    shuffled: _shuffled,
+    repeatMode: repeatMode,
+  );
+
+  /// Restore a captured state. Returns false and leaves the queue untouched
+  /// when the state violates queue invariants (order not a permutation of the
+  /// items, cursor out of range) — a corrupt snapshot must not produce a
+  /// half-valid session.
+  bool restoreState(MusicQueueState state) {
+    final length = state.items.length;
+    if (length == 0 || state.order.length != length) return false;
+    if (state.cursor < 0 || state.cursor >= length) return false;
+    final seen = List<bool>.filled(length, false);
+    for (final index in state.order) {
+      if (index < 0 || index >= length || seen[index]) return false;
+      seen[index] = true;
+    }
+    _items
+      ..clear()
+      ..addAll(state.items);
+    _order = List.of(state.order);
+    _cursor = state.cursor;
+    _shuffled = state.shuffled;
+    repeatMode = state.repeatMode;
+    return true;
+  }
 
   /// Replace the queue with [tracks], starting at [startIndex]. A null
   /// [startIndex] (the default) means *no explicit start* — playback simply

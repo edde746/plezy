@@ -1,8 +1,10 @@
 #include "mpv_player.h"
 
 #include <commctrl.h>
+#include <dxgi.h>
 #include <windowsx.h>
 
+#include <cmath>
 #include <unordered_map>
 
 #include "sanitize_utf8.h"
@@ -25,6 +27,48 @@ struct InnerWindowSubclassState {
 };
 
 namespace {
+
+// Whether any GPU on this system is a Qualcomm Adreno.
+//
+// libplacebo regenerates its tone-mapping shader LUT whenever the tone-map
+// parameters change, and the reuse key (pl_tone_map_params_equal) includes the
+// frame's raw HDR metadata by exact float comparison. Two sources move it
+// every frame: dynamic peak detection (hdr-compute-peak), and HDR10+
+// per-scene metadata (scene_max/scene_avg/ootf), which mpv maps from decoder
+// side data on every frame. Qualcomm's D3D11 driver has no host-visible
+// upload path (its libplacebo caps report buf_transfer and max_mapped_size as
+// zero), so each regeneration costs tens of milliseconds: 4K HDR→SDR playback
+// starves to single-digit fps and the swinging tone curve reads as brightness
+// flicker (#2191). Initialize therefore silences both dynamic sources on this
+// GPU; tone mapping falls back to the static HDR10 mastering metadata and the
+// LUT is generated once.
+//
+// The whole adapter list is scanned rather than predicting mpv's choice: mpv
+// takes the DXGI default adapter, and no supported machine pairs an Adreno
+// with another GPU, so presence is equivalent to use. This also covers the
+// x64 build running emulated on Windows-on-ARM, which an architecture check
+// would miss.
+bool SystemHasQualcommGpu() {
+  // Qualcomm's Windows driver reports the FourCC 'QCOM' as its DXGI vendor
+  // id (seen in the wild on the Adreno X1-85); 0x5143 is Qualcomm's PCI-SIG
+  // id, matched in case a driver reports that instead.
+  constexpr UINT kQualcommFourCc = 0x4D4F4351;
+  constexpr UINT kQualcommPci = 0x5143;
+  IDXGIFactory1* factory = nullptr;
+  if (FAILED(::CreateDXGIFactory1(IID_PPV_ARGS(&factory)))) return false;
+  bool found = false;
+  IDXGIAdapter1* adapter = nullptr;
+  for (UINT i = 0; !found && SUCCEEDED(factory->EnumAdapters1(i, &adapter)); ++i) {
+    DXGI_ADAPTER_DESC1 desc;
+    if (SUCCEEDED(adapter->GetDesc1(&desc))) {
+      found = desc.VendorId == kQualcommFourCc || desc.VendorId == kQualcommPci;
+    }
+    adapter->Release();
+    adapter = nullptr;
+  }
+  factory->Release();
+  return found;
+}
 
 // Adapts the shared, bounded mpv_node walk onto Flutter's encodable values.
 struct EncodableNodeBuilder {
@@ -514,6 +558,8 @@ bool MpvPlayer::Initialize(HWND view) {
   if (mpv_) {
     return true;  // Already initialized.
   }
+  active_source_id_ = 0;
+  has_active_source_id_ = false;
 
   // Create mpv instance.
   mpv_ = mpv_create();
@@ -521,16 +567,9 @@ bool MpvPlayer::Initialize(HWND view) {
     return false;
   }
 
-  if (audio_only_) {
-    // Windowless music core: no HWND, no VO, no video decode. vid=no keeps
-    // embedded cover art from ever becoming a video track, and
-    // force-window/audio-display make sure mpv never opens a video output
-    // for it either.
-    mpv_set_option_string(mpv_, "vid", "no");
-    mpv_set_option_string(mpv_, "force-window", "no");
-    mpv_set_option_string(mpv_, "audio-display", "no");
-    mpv_set_option_string(mpv_, "gapless-audio", "weak");
-  } else {
+  plezy::mpv_common::ApplyCommonStartupOptions(mpv_, audio_only_);
+
+  if (!audio_only_) {
     // Create a child window for mpv to render into, parented to the Flutter
     // |view|. The video child then sits in the view's own per-window layer
     // stack, above the view's (never-painted) layer-1 content and below the
@@ -561,35 +600,28 @@ bool MpvPlayer::Initialize(HWND view) {
     // hwdec is set from Flutter via setProperty based on user preference
   }
 
-  // Configure mpv for embedded playback.
-  mpv_set_option_string(mpv_, "keep-open", "yes");
-  mpv_set_option_string(mpv_, "idle", "yes");
-  mpv_set_option_string(mpv_, "input-default-bindings", "no");
-  mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
   // Hardware media keys are owned by the SMTC integration (os_media_controls);
   // mpv's default handling would double-handle Play/Pause.
   mpv_set_option_string(mpv_, "input-media-keys", "no");
-  mpv_set_option_string(mpv_, "osc", "no");
-  // Never resolve URLs through mpv's bundled ytdl_hook: Plezy only ever opens
-  // media-server streams and local files, the hook adds a per-open on_load
-  // round trip, and on a failed open it spawns yt-dlp with the access token in
-  // its argv. mpv decides whether to load the builtin script during
-  // mpv_initialize, so this must be an option, not a Dart setProperty.
-  mpv_set_option_string(mpv_, "ytdl", "no");
 
   if (!audio_only_) {
     // Let mpv use display/context detection instead of forcing HDR signaling.
     mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
 
-    // Fallback tone mapping when display doesn't support HDR
+    // Fallback tone mapping when display doesn't support HDR. On Adreno,
+    // per-frame tone-map LUT regeneration is pathological — see
+    // SystemHasQualcommGpu — so both dynamic inputs to the LUT key are
+    // silenced: the peak detector, and HDR10+ per-scene metadata, which
+    // vf=format:hdr10plus=no zeroes before it reaches the renderer. Dolby
+    // Vision L1 metadata could still churn the LUT, but stripping it
+    // (dovi=no) would break profile-5 rendering outright, so it stays.
     mpv_set_option_string(mpv_, "tone-mapping", "auto");
-    mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+    adreno_tone_map_workaround_ = SystemHasQualcommGpu();
+    mpv_set_option_string(mpv_, "hdr-compute-peak", adreno_tone_map_workaround_ ? "no" : "auto");
+    if (adreno_tone_map_workaround_) {
+      mpv_set_option_string(mpv_, "vf", "format:hdr10plus=no");
+    }
   }
-
-  // When WASAPI becomes unavailable (sleep, device unplug), fall back to null
-  // audio output instead of permanently dropping the audio track. Recovery is
-  // handled by MaybeRunAudioRecovery in the event loop.
-  mpv_set_option_string(mpv_, "audio-fallback-to-null", "yes");
 
   // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
   mpv_request_log_messages(mpv_, "warn");
@@ -626,6 +658,9 @@ void MpvPlayer::Dispose() {
   for (auto& callback : cancelled.status) {
     callback(MPV_ERROR_UNINITIALIZED);
   }
+  for (auto& callback : cancelled.commands) {
+    callback(MPV_ERROR_UNINITIALIZED, nullptr);
+  }
   for (auto& callback : cancelled.properties) {
     callback(-1, "");
   }
@@ -658,7 +693,7 @@ void MpvPlayer::Command(const std::vector<std::string>& args) { CommandAsync(arg
 
 void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (!mpv_) {
-    if (callback) callback(0);
+    if (callback) callback(0, nullptr);
     return;
   }
 
@@ -751,10 +786,22 @@ void MpvPlayer::LogRecovery(const std::string& text) {
   SendEvent("log-message", data);
 }
 
+void MpvPlayer::LogHdrPipelineOnce() {
+  if (hdr_config_logged_ || audio_only_) return;
+  hdr_config_logged_ = true;
+  const char* text = adreno_tone_map_workaround_ ? "Qualcomm GPU: hdr-compute-peak=no, vf=format:hdr10plus=no"
+                                                 : "hdr-compute-peak=auto";
+  flutter::EncodableMap data;
+  data[flutter::EncodableValue("prefix")] = flutter::EncodableValue("hdr-config");
+  data[flutter::EncodableValue("level")] = flutter::EncodableValue("info");
+  data[flutter::EncodableValue("text")] = flutter::EncodableValue(text);
+  SendEvent("log-message", data);
+}
+
 void MpvPlayer::TryAudioReload(const char* reason, int attempt, uint64_t request_generation) {
   LogRecovery("issuing ao-reload (reason=" + std::string(reason) + ", attempt " + std::to_string(attempt) + ")");
   const std::string reason_copy = reason;
-  CommandAsync({"ao-reload"}, [this, reason_copy, attempt, request_generation](int error) {
+  CommandAsync({"ao-reload"}, [this, reason_copy, attempt, request_generation](int error, const mpv_node*) {
     audio_recovery_.CompleteReload(request_generation);
     LogRecovery(
         "ao-reload completed (reason=" + reason_copy + ", attempt " + std::to_string(attempt) +
@@ -767,10 +814,19 @@ void MpvPlayer::MaybeRunAudioRecovery() {
   if (action.reason == plezy::mpv_common::AudioReloadReason::kNone) {
     return;
   }
+  if (action.reason == plezy::mpv_common::AudioReloadReason::kGiveUp) {
+    // audio-fallback-to-null means the core will never end the file over a
+    // dead device itself, so the outcome is produced here: stop, and let the
+    // END_FILE handler report it as the AO_INIT_FAILED error Dart handles.
+    LogRecovery("audio output failed after " + std::to_string(action.attempt) + " reloads; ending playback");
+    audio_output_failed_ = true;
+    Command({"stop"});
+    return;
+  }
   const char* reason = action.reason == plezy::mpv_common::AudioReloadReason::kResume ? "resume" : "null-fallback";
   TryAudioReload(reason, action.attempt, action.request_generation);
   if (action.exhausted) {
-    LogRecovery("audio recovery budget exhausted; waiting for device list change");
+    LogRecovery("audio recovery budget exhausted; ending playback if this reload fails");
   }
 }
 
@@ -799,8 +855,8 @@ void MpvPlayer::EventLoop() {
     if (event->event_id != MPV_EVENT_NONE) {
       HandleMpvEvent(event);
     }
-    // Runs on every iteration including wait timeouts: this ~100ms tick is
-    // the clock that drives scheduled audio reload attempts.
+    // Idle waits are bounded at 100 ms; queued events can wake us sooner.
+    // Audio recovery owns its elapsed-time deadlines.
     MaybeRunAudioRecovery();
   }
 }
@@ -838,31 +894,57 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     }
     case MPV_EVENT_END_FILE: {
       audio_recovery_.SetFileLoaded(false);
+      // The stop that audio recovery issued on giving up ends the file with
+      // reason stop, which Dart would take for the user's own. It is reported
+      // as what it is - the AO_INIT_FAILED error the core would have raised
+      // without audio-fallback-to-null - under the cause tag Dart handles.
+      const bool audio_output_failed = audio_output_failed_;
+      audio_output_failed_ = false;
       auto* end = static_cast<mpv_event_end_file*>(event->data);
+      const int reason =
+          audio_output_failed ? static_cast<int>(MPV_END_FILE_REASON_ERROR) : static_cast<int>(end->reason);
+      const int error = audio_output_failed ? static_cast<int>(MPV_ERROR_AO_INIT_FAILED) : end->error;
       flutter::EncodableMap data;
-      data[flutter::EncodableValue("reason")] = flutter::EncodableValue(static_cast<int>(end->reason));
-      if (end->reason == MPV_END_FILE_REASON_ERROR) {
-        data[flutter::EncodableValue("error")] = flutter::EncodableValue(static_cast<int>(end->error));
-        data[flutter::EncodableValue("message")] = flutter::EncodableValue(SanitizeUtf8(mpv_error_string(end->error)));
+      data[flutter::EncodableValue("sourceId")] = flutter::EncodableValue(end->playlist_entry_id);
+      data[flutter::EncodableValue("reason")] = flutter::EncodableValue(reason);
+      if (reason == MPV_END_FILE_REASON_ERROR) {
+        data[flutter::EncodableValue("error")] = flutter::EncodableValue(error);
+        data[flutter::EncodableValue("message")] = flutter::EncodableValue(SanitizeUtf8(mpv_error_string(error)));
+        if (audio_output_failed) {
+          data[flutter::EncodableValue("cause")] = flutter::EncodableValue(plezy::mpv_common::kAudioOutputFailedCause);
+        }
       }
       SendEvent("end-file", data);
       break;
     }
     case MPV_EVENT_START_FILE: {
-      SendEvent("start-file");
+      auto* start = static_cast<mpv_event_start_file*>(event->data);
+      active_source_id_ = start->playlist_entry_id;
+      has_active_source_id_ = true;
+      SendActiveSourceEvent("start-file");
       break;
     }
     case MPV_EVENT_FILE_LOADED: {
       audio_recovery_.SetFileLoaded(true);
-      SendEvent("file-loaded");
+      // Deferred to here rather than Initialize: the Dart event callback is
+      // wired by the time a file loads, and the synthetic event bypasses the
+      // mpv log level, so the applied HDR pipeline options always land in an
+      // uploaded log (#2191 was undiagnosable without this).
+      LogHdrPipelineOnce();
+      SendActiveSourceEvent("file-loaded");
       break;
     }
     case MPV_EVENT_PLAYBACK_RESTART: {
+      double position_seconds = 0.0;
+      const double* position = nullptr;
+      if (mpv_ && mpv_get_property(mpv_, "time-pos", MPV_FORMAT_DOUBLE, &position_seconds) >= 0) {
+        position = &position_seconds;
+      }
       // mpv's inner window exists by now (vo is configured); make sure the
       // DComp-mode input forwarding subclass is installed. SetRect alone can
       // miss it: the rect often settles before mpv creates the window.
       EnsureMpvInnerSubclassed();
-      SendEvent("playback-restart");
+      SendPlaybackRestartEvent(position);
       break;
     }
     default:
@@ -881,11 +963,35 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
   flutter::EncodableList list;
   list.push_back(flutter::EncodableValue(id));
   list.push_back(NodeToEncodableValue(data));
+  if (has_active_source_id_) {
+    list.push_back(flutter::EncodableValue(active_source_id_));
+  } else {
+    list.push_back(flutter::EncodableValue());
+  }
 
   std::lock_guard<std::mutex> lock(callback_mutex_);
   if (event_callback_) {
     event_callback_(flutter::EncodableValue(list));
   }
+}
+
+void MpvPlayer::SendActiveSourceEvent(const std::string& name) {
+  flutter::EncodableMap data;
+  if (has_active_source_id_) {
+    data[flutter::EncodableValue("sourceId")] = flutter::EncodableValue(active_source_id_);
+  }
+  SendEvent(name, data);
+}
+
+void MpvPlayer::SendPlaybackRestartEvent(const double* position_seconds) {
+  flutter::EncodableMap data;
+  if (has_active_source_id_) {
+    data[flutter::EncodableValue("sourceId")] = flutter::EncodableValue(active_source_id_);
+  }
+  if (position_seconds && std::isfinite(*position_seconds)) {
+    data[flutter::EncodableValue("positionSeconds")] = flutter::EncodableValue(*position_seconds);
+  }
+  SendEvent("playback-restart", data);
 }
 
 void MpvPlayer::SendEvent(const std::string& name, const flutter::EncodableMap& data) {

@@ -14,9 +14,11 @@ invisible to R8 and gets shrunk or renamed away. Four such surfaces exist:
   private ``MatroskaExtractor`` fields this way), in every ``android/**/src/main``
   source root including the ``libass`` module.
 
-None of these lookups leaves a reference R8 can see, so only
-``android/app/proguard-rules.pro`` keeps their targets, and losing a keep surfaces
-solely as broken behaviour in a release build.
+None of these lookups leaves a reference R8 can see, so only the keep rules R8
+actually receives — ``android/app/proguard-rules.pro`` plus each library module's
+``consumer-rules.pro`` — protect their targets, and losing a keep surfaces solely
+as broken behaviour in a release build. Both the native and JVM checks cover every
+module under ``android/``.
 """
 
 from __future__ import annotations
@@ -28,7 +30,6 @@ from pathlib import Path
 
 PROGUARD_RULES = Path("android/app/proguard-rules.pro")
 ANDROID_ROOT = Path("android")
-CPP_ROOT = Path("android/app/src/main/cpp")
 NATIVE_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp"}
 JVM_SUFFIXES = {".kt", ".java"}
 # Dependency namespaces reached only through reflection have no direct callers.
@@ -142,10 +143,14 @@ def _binary_name(jni_name: str) -> str:
 
 
 def _native_sources(root: Path) -> list[Path]:
-    cpp_root = root / CPP_ROOT
-    if not cpp_root.is_dir():
-        return []
-    return sorted(path for path in cpp_root.rglob("*") if path.suffix in NATIVE_SUFFIXES)
+    """Native sources in every module's ``src/main/cpp`` under ``android/``."""
+    return sorted(
+        path
+        for main in _main_source_dirs(root)
+        if (main / "cpp").is_dir()
+        for path in (main / "cpp").rglob("*")
+        if path.suffix in NATIVE_SUFFIXES
+    )
 
 
 def _main_source_dirs(root: Path) -> list[Path]:
@@ -202,6 +207,9 @@ def _check_native_lookups(root: Path, keeps: list[Keep], errors: list[str]) -> N
         label = source.relative_to(root).as_posix()
 
         for owner in sorted(set(owners.values())):
+            if owner.startswith(PLATFORM_PREFIXES):
+                # Bootclasspath classes are not in the app dex; R8 cannot touch them.
+                continue
             if not any(keep.keeps_class_name and keep.matches_class(owner) for keep in keeps):
                 errors.append(f"{label} resolves {owner} with FindClass but no -keep covers it")
 
@@ -213,6 +221,8 @@ def _check_native_lookups(root: Path, keeps: list[Keep], errors: list[str]) -> N
                     f"{label} looks up member '{member}' on '{variable}', which this check cannot trace "
                     f"back to a FindClass call; assign the jclass from FindClass or extend {Path(__file__).name}"
                 )
+                continue
+            if owner.startswith(PLATFORM_PREFIXES):
                 continue
             matching = [keep for keep in keeps if keep.matches_class(owner)]
             if not any(keep.keeps_member_alive and keep.keeps_member(member) for keep in matching):
@@ -327,7 +337,12 @@ def validate(root: Path) -> list[str]:
             f"builds{': ' + ', '.join(reflected) if reflected else ''}"
         ]
 
-    keeps = _parse_keeps(rules_path.read_text(encoding="utf-8"))
+    rules_text = rules_path.read_text(encoding="utf-8")
+    # AGP feeds every library module's consumer rules into the app's R8
+    # invocation, so keeps there are as effective as the app's own.
+    for consumer_rules in sorted((root / ANDROID_ROOT).glob("*/consumer-rules.pro")):
+        rules_text += "\n" + consumer_rules.read_text(encoding="utf-8")
+    keeps = _parse_keeps(rules_text)
     errors = []
     for binary_name in reflected:
         if not any(keep.keeps_class_name and keep.matches_class(binary_name) for keep in keeps):

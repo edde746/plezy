@@ -5,6 +5,7 @@ import '../models/livetv_dvr.dart';
 import '../models/livetv_program.dart';
 import '../models/media_grab_operation.dart';
 import '../models/media_subscription.dart';
+import '../models/transcode_quality_preset.dart';
 
 /// Program info captured when a live session starts. Plex's tune response
 /// carries the airing program; Jellyfin streams the channel without a
@@ -20,6 +21,27 @@ class LiveProgramInfo {
   const LiveProgramInfo({this.id, this.durationMs, this.beginsAt});
 
   static const none = LiveProgramInfo();
+}
+
+/// What a live heartbeat learned from the server. Both windows are
+/// `TranscodeSession` snapshots (epoch origin plus min/max offsets), but they
+/// describe different things:
+///
+/// - [captureBuffer]: the tuner's seekable history — the coordinate system
+///   for time-shift offsets and the timeline's range.
+/// - [playbackStream]: the transcode currently feeding the player. Its
+///   `startedAt` is the epoch of stream position zero, i.e. the exact clock
+///   anchor for `epoch = startedAt + player position`. Plex's own client
+///   derives the playhead from this object, not from wall clock (#2100).
+///
+/// Either may be null when the backend does not report it.
+class LiveTimelineUpdate {
+  final CaptureBuffer? captureBuffer;
+  final CaptureBuffer? playbackStream;
+
+  const LiveTimelineUpdate({this.captureBuffer, this.playbackStream});
+
+  bool get isEmpty => captureBuffer == null && playbackStream == null;
 }
 
 /// One live-TV playback session, produced by [LiveTvSupport.startPlayback].
@@ -79,14 +101,17 @@ abstract class LiveTvPlaybackSession {
 
   /// Send a playback heartbeat (`'playing'` / `'paused'` / `'stopped'`).
   /// [positionMs] is elapsed playback time; [durationMs] the program
-  /// duration when known. Returns an updated capture buffer when the backend
-  /// supplies one, null otherwise.
-  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs});
+  /// duration when known. Returns what the backend reported back (capture
+  /// window, playback-stream origin), null when it reports nothing.
+  Future<LiveTimelineUpdate?> reportTimeline({required String state, required int positionMs, required int durationMs});
 
   /// Re-establish playback after stream death. Plex re-tunes (the previous
   /// capture session expires while the player exhausts its reconnect
-  /// attempts) applying the degradation flags; Jellyfin returns itself so
-  /// its negotiated HLS URL is re-opened. Returns `null` on failure.
+  /// attempts) applying the degradation flags. Jellyfin re-negotiates a
+  /// forced transcode when a direct-play session is asked to drop
+  /// [directStream] — releasing the direct session's live stream — and
+  /// otherwise returns itself so its negotiated HLS URL is re-opened.
+  /// Returns `null` on failure.
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio});
 }
 
@@ -160,9 +185,17 @@ abstract class LiveTvSupport {
 
   /// Start a playback session for [channelKey] — the single entry the player
   /// uses for initial launch and channel switching. Plex requires [dvrKey]
-  /// (tune + transcode-session setup); Jellyfin ignores it and negotiates an
-  /// HLS transcode URL. Returns `null` when the channel can't be started.
-  Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey});
+  /// (tune + transcode-session setup); Jellyfin ignores it. [quality] is the
+  /// viewer's preset: on `original` Jellyfin asks the server for direct play
+  /// with no bitrate ceiling and falls back to an uncapped transcode, while a
+  /// capped preset forces a transcode at that ceiling. Plex does not consume
+  /// [quality] yet — its live path still hardcodes a transcode (#2072).
+  /// Returns `null` when the channel can't be started.
+  Future<LiveTvPlaybackSession?> startPlayback(
+    String channelKey, {
+    String? dvrKey,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+  });
 
   /// Source URI to stamp into [FavoriteChannel] entries. Plex uses
   /// `server://{machineId}/{providerId}` so its cloud-synced favorites are
@@ -181,13 +214,13 @@ abstract class LiveTvSupport {
   /// cloud-synced list; Jellyfin reads its locally stored ordering. A
   /// successful read returns the complete list, including `[]` when no
   /// favorites are stored. Unavailable or invalid reads complete with an error.
-  Future<List<FavoriteChannel>> fetchFavoriteChannels();
+  Future<List<FavoriteChannel>> fetchFavoriteChannels({bool migrate = true, void Function()? checkCurrent});
 
   /// Persist the favorites list (and order, where supported). Plex pushes
   /// to its cloud sync endpoint; Jellyfin POSTs/DELETEs the
   /// `/UserFavoriteItems/{channelId}?userId=...` flag and saves the order
   /// locally.
-  Future<void> setFavoriteChannels(List<FavoriteChannel> channels);
+  Future<void> setFavoriteChannels(List<FavoriteChannel> channels, {void Function()? checkCurrent});
 }
 
 /// Recording and DVR administration capability.
@@ -204,7 +237,11 @@ abstract class LiveTvDvrSupport {
   Future<List<SubscriptionTemplate>> getSubscriptionTemplate(String guid);
   Future<List<MediaSubscription>> fetchRecordingRules({bool includeGrabs = true, bool includeStorage = true});
   Future<MediaSubscription?> createRecordingRule(MediaSubscriptionCreateRequest request);
-  Future<MediaSubscription?> updateRecordingRule(String subscriptionId, Map<String, Object?> prefs);
+  Future<MediaSubscription?> updateRecordingRule(
+    String subscriptionId,
+    Map<String, Object?> prefs, {
+    void Function()? checkCurrent,
+  });
   Future<void> deleteRecordingRule(String subscriptionId);
 
   /// Whether [processRecordingRules] triggers real server-side work. Plex's
