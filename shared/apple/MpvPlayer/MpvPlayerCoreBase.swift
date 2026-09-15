@@ -326,7 +326,7 @@ class MpvPlayerCoreBase: NSObject {
     let fieldOutput =
       cachedDeinterlaceActive
       || Self.presentsFields(container: cachedContainerFps, presented: cachedEstimatedFps)
-    let fps = fieldOutput ? cachedContainerFps * 2 : cachedContainerFps
+    let fps = Self.nominalRefreshRate(fieldOutput ? cachedContainerFps * 2 : cachedContainerFps)
     let width = Int32(cachedWidth)
     let height = Int32(cachedHeight)
     let sigPeak = cachedLastSigPeak
@@ -375,6 +375,26 @@ class MpvPlayerCoreBase: NSObject {
     guard container > 0, presented > 0 else { return false }
     let ratio = presented / container
     return ratio > 1.7 && ratio < 2.3
+  }
+
+  /// Rates a TV advertises display modes for, in Hz.
+  private static let nominalRefreshRates: [Double] = [
+    23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60, 100, 119.88, 120,
+  ]
+
+  /// The rate to ask AVDisplayManager for: the nearest nominal rate when the
+  /// presented rate is within 1% of one (FFmpeg's own band for rounding a
+  /// guessed frame rate to a standard one), otherwise `fps` unchanged.
+  /// Container rates are declared or averaged, never measured — a 29.97i
+  /// capture reads 29.95784, an MKV with a 42 ms DefaultDuration 23.8095 —
+  /// and the TV only has modes for the nominal rates. Android and Windows
+  /// tolerate the raw rate because they pick the mode themselves
+  /// (`DisplayModeSelector`, `DisplayModeService`); tvOS delegates the pick
+  /// to the display manager, so the request itself has to be nominal.
+  static func nominalRefreshRate(_ fps: Double) -> Double {
+    guard fps > 0 else { return 0 }
+    guard let nearest = nominalRefreshRates.min(by: { abs($0 - fps) < abs($1 - fps) }) else { return fps }
+    return abs(nearest - fps) / nearest < 0.01 ? nearest : fps
   }
 
   func setupMpv() -> Bool {

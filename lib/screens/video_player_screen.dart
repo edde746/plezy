@@ -108,6 +108,7 @@ import 'video_player/wakelock_controller.dart';
 import 'video_player/playback_failure_action.dart';
 import 'video_player/playback_transition_gate.dart';
 import 'video_player/open_http_503_watchdog.dart';
+import 'video_player/open_failure_log.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';

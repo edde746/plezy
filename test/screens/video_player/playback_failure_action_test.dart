@@ -119,6 +119,13 @@ void main() {
     });
   });
 
+  test('a stream mpv gave up on at open is a failed open, not a device fault', () {
+    // No status and no dead output: on-demand playback fails; live TV rides
+    // its ladder, since a different stream may decode where this one did not.
+    expect(resolve(cause: PlayerError.streamInitFailed), PlaybackFailureAction.fatal);
+    expect(resolve(cause: PlayerError.streamInitFailed, isLive: true), PlaybackFailureAction.liveRetry);
+  });
+
   test('an error with no server status is fatal for on-demand playback', () {
     expect(resolve(), PlaybackFailureAction.fatal);
     expect(resolve(statuses: {503}), PlaybackFailureAction.fatal);
