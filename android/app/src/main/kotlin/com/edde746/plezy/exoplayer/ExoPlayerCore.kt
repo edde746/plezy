@@ -124,9 +124,6 @@ class ExoPlayerCore(private val activity: Activity) :
      *  [HttpDataSource.InvalidResponseCodeException]. */
     private val RESPONSE_CODE_PATTERN = Regex("""\bResponse code: (\d{3})\b""")
 
-    /** Per-frame "video is at X" logcat stream (tag AssFrameCb) for diagnosing
-     *  ASS subtitle lag against the libass pipeline's render/swap lines. */
-    private const val ASS_FRAME_LOGS = false
     private const val ASS_SYNC_LOG_INTERVAL_FRAMES = 120L
 
     /** Auto-calibrate the subtitle/video layer offset per device (API 34+) by measuring the
@@ -939,18 +936,6 @@ class ExoPlayerCore(private val activity: Activity) :
               "prefetch=${assView.prefetchCount} blankClears=${assView.blankClearCount} " +
               "coalesced=${assView.coalescedRequestCount} stale=${assView.staleGenerationCount}/${assView.staleBeforeSwapCount} " +
               "superseded=${assView.supersededBeforeSwapCount}"
-          )
-        }
-        if (ASS_FRAME_LOGS) {
-          // Reference stream for subtitle-lag diagnosis: the video frame ExoPlayer
-          // is releasing right now and how far ahead of its vsync we are. Subtitle
-          // "render pts=" lines lagging these pts values = pipeline behind;
-          // budgetMs far from ~10-50 = release-time clock-domain trouble.
-          val budgetMs = (releaseTimeNs - System.nanoTime()) / 1_000_000
-          Log.d(
-            "AssFrameCb",
-            "video pts=${presentationTimeUs / 1000}ms budgetMs=$budgetMs" +
-              (subtitleDelayUs.get().takeIf { it != 0L }?.let { " subDelayMs=${it / 1000}" } ?: "")
           )
         }
         val count = fpsTimestampCount
