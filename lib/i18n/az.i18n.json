@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Səsin gurluğunu normallaşdır",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Stereo-ya çevir"
   },
   "performanceOverlay": {

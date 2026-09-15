@@ -870,9 +870,10 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
   switch (event->event_id) {
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
-      char log_msg[512];
-      snprintf(log_msg, sizeof(log_msg), "MPV [%s] %s: %s", msg->level, msg->prefix, msg->text);
-      OutputDebugStringA(log_msg);
+      // No OutputDebugStringA mirror here: the record is forwarded to Dart
+      // below, where LogRedactionManager scrubs tokens and server URLs. The
+      // duplicate also cost a 512-byte stack buffer and an snprintf per mpv
+      // log record, on the event loop.
 
       flutter::EncodableMap data;
       data[flutter::EncodableValue("prefix")] = flutter::EncodableValue(SanitizeUtf8(msg->prefix));

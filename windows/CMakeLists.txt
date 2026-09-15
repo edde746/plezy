@@ -235,7 +235,15 @@ install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
 
-# Install mpv DLL
+# Install mpv DLL. Always re-copied: file(INSTALL) skips a destination whose
+# size and mtime match the source, and every pin's libmpv-2.dll is the same
+# 108,717,056 bytes with the archive's fixed 2019-12-31T23:00:00Z stamp
+# (DOWNLOAD_EXTRACT_TIMESTAMP above keeps it), so an incremental build over
+# an existing tree fetched the new pin and shipped the previous DLL. Same
+# pattern as the flutter_assets re-copy.
+install(CODE "
+  file(REMOVE \"${INSTALL_BUNDLE_LIB_DIR}/libmpv-2.dll\")
+  " COMPONENT Runtime)
 install(FILES "${MPV_LIB_DIR}/libmpv-2.dll"
   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)

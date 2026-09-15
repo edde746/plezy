@@ -179,7 +179,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       !playerCore.isPipStarting
     else { return }
 
-    print("[MpvPlayerPlugin] Restoring inline player after PiP")
+    MpvLog.debug("[MpvPlayerPlugin] Restoring inline player after PiP")
     playerCore.setVisible(true)
     playerCore.updateFrame()
     if playerCore.isPaused {
@@ -302,7 +302,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       if isSceneActive {
         restoreInlinePlayerAfterPip()
       } else {
-        print("[MpvPlayerPlugin] Deferring inline restore until scene activation")
+        MpvLog.debug("[MpvPlayerPlugin] Deferring inline restore until scene activation")
       }
     }
     if notify { pipChannel?.invokeMethod("onPipChanged", arguments: false) }
@@ -392,7 +392,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     let preserveDisplayMode = args?["preserveDisplayMode"] as? Bool ?? false
     DispatchQueue.main.async { [weak self] in
       guard let self = self else { result(nil); return }
-      NSLog("[MpvPlayerPlugin] dispose preserveDisplayMode=%@", preserveDisplayMode.description)
+      MpvLog.debug("[MpvPlayerPlugin] dispose preserveDisplayMode=\(preserveDisplayMode.description)")
       self.pipController?.teardown()
       self.pipController = nil
       self.autoPipEnabled = false
@@ -496,9 +496,9 @@ extension MpvPlayerPlugin: MpvPipDelegate {
   func pipWillStart() {
     // If PiP was system-initiated (not via our enterPip), prepare the shared layer now.
     guard let playerCore = playerCore, !playerCore.isPipStarting else { return }
-    print("[MpvPlayerPlugin] System-initiated PiP detected, preparing shared layer")
+    MpvLog.debug("[MpvPlayerPlugin] System-initiated PiP detected, preparing shared layer")
     if preparePip() == nil {
-      print("[MpvPlayerPlugin] PiP preparation failed for system-initiated PiP")
+      MpvLog.debug("[MpvPlayerPlugin] PiP preparation failed for system-initiated PiP")
       pipController?.stopPip()
     }
   }

@@ -8,6 +8,7 @@ import com.edde746.plezy.mpv.completeMpvPropertyNotInitialized
 import com.edde746.plezy.mpv.completeMpvPropertyResult
 import com.edde746.plezy.shared.MpvContentUriResolver
 import com.edde746.plezy.shared.PlayerChannelBinding
+import com.edde746.plezy.shared.PlayerDebugLog
 import com.edde746.plezy.shared.PlayerDelegate
 import com.edde746.plezy.shared.ResolvedMpvUri
 import com.edde746.plezy.shared.SurfacePlayerCore
@@ -273,7 +274,9 @@ class ExoPlayerPlugin :
       "setMpvProperty" -> handleSetMpvProperty(call, result)
       "setLogLevel" -> {
         val level = call.argument<String>("level") ?: "warn"
-        debugLoggingEnabled = (level == "v" || level == "debug" || level == "trace")
+        debugLoggingEnabled = PlayerDebugLog.isVerbose(level)
+        // The shared player helpers this backend calls read the process-wide gate.
+        PlayerDebugLog.enabled = debugLoggingEnabled
         playerCore?.debugLoggingEnabled = debugLoggingEnabled
         result.success(null)
       }

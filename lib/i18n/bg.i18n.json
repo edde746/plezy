@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализиране на силата на звука",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Смесване до стерео"
   },
   "performanceOverlay": {

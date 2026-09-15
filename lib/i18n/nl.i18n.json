@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Volume normaliseren",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Downmixen naar stereo"
   },
   "performanceOverlay": {

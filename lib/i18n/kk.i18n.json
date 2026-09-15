@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Дыбыс деңгейін нормалау",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Стереоға түрлендіру"
   },
   "performanceOverlay": {

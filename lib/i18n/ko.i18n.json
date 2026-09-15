@@ -1893,6 +1893,7 @@
     "audioOutputStereo": "스테레오",
     "audioNormalization": "음량 정규화",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "스테레오로 다운믹스"
   },
   "performanceOverlay": {

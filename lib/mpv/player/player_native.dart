@@ -444,6 +444,11 @@ class PlayerNative extends PlayerBase {
       // Keep this file-local and append so other demuxer options survive.
       if (isLive && startLivePlaylistFromBeginning) 'demuxer-lavf-o-append=live_start_index=0',
     ];
+    // Always the 4-argument form (`loadfile <url> replace <index> <options>`),
+    // which needs mpv >= 0.38: 0.37 has no index parameter and rejects the
+    // literal `-1` as unparsable options, so nothing opens on that core.
+    // Every shipped build bundles the pinned libmpv; a source or AUR build
+    // against an older system libmpv is explicitly out of scope.
     loadfileArgs.addAll(['-1', loadfileOptions.join(',')]);
     if (audioOnly) _expectOpenFileLoad = true;
     // The core can be torn down while the awaits above were suspended; the

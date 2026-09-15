@@ -13,7 +13,7 @@ class MpvAudioPlayerCore: MpvPlayerCoreBase {
 
   func initialize() -> Bool {
     guard !isInitialized else {
-      print("[MpvAudioPlayerCore] Already initialized")
+      MpvLog.debug("[MpvAudioPlayerCore] Already initialized")
       return true
     }
 
@@ -33,7 +33,7 @@ class MpvAudioPlayerCore: MpvPlayerCoreBase {
     guard created else { return false }
 
     isInitialized = true
-    print("[MpvAudioPlayerCore] Initialized successfully")
+    MpvLog.debug("[MpvAudioPlayerCore] Initialized successfully")
     return true
   }
 
@@ -42,7 +42,7 @@ class MpvAudioPlayerCore: MpvPlayerCoreBase {
 
     disposeSharedState(destroySynchronously: false)
     isInitialized = false
-    print("[MpvAudioPlayerCore] Disposed")
+    MpvLog.debug("[MpvAudioPlayerCore] Disposed")
   }
 
   deinit {

@@ -83,6 +83,10 @@ class AgentPlaybackCommands {
     }
   }
 
+  /// `item` is the launched target until the owner reports one: a video
+  /// session that advanced to the next episode in place (or that a Next
+  /// press moved) names the item it is on now, so a reader can tell it from
+  /// the one `playback.start` accepted.
   Map<String, dynamic> _status(AgentCommandContext context) {
     final coordinator = PlaybackCoordinator.instance;
     final music = context.context.read<MusicPlaybackService>();

@@ -26,13 +26,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   var isPipStarting = false
 
-  private static func log(_ message: String) {
-    NSLog("[MpvPlayerCore] %@", message)
+  private static func log(_ message: @autoclosure () -> String) {
+    guard MpvLog.isDebugEnabled else { return }
+    NSLog("[MpvPlayerCore] %@", message())
   }
 
   func initialize(in window: UIWindow) -> Bool {
     guard !isInitialized else {
-      print("[MpvPlayerCore] Already initialized")
+      MpvLog.debug("[MpvPlayerCore] Already initialized")
       return true
     }
 
@@ -56,7 +57,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     window.insertSubview(container, at: 0)
 
     guard setupMpv() else {
-      print("[MpvPlayerCore] Failed to setup MPV")
+      MpvLog.debug("[MpvPlayerCore] Failed to setup MPV")
       layer.removeFromSuperlayer()
       container.removeFromSuperview()
       videoLayer = nil
@@ -70,7 +71,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #endif
 
     isInitialized = true
-    print("[MpvPlayerCore] Initialized successfully with MPV")
+    MpvLog.debug("[MpvPlayerCore] Initialized successfully with MPV")
     return true
   }
 
@@ -881,22 +882,22 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   @objc private func enterBackground() {
     setBackgrounded(true)
     if isPipActive || isPipStarting {
-      print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
+      MpvLog.debug("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
       return
     }
 
-    print("[MpvPlayerCore] Entering background - disabling video")
+    MpvLog.debug("[MpvPlayerCore] Entering background - disabling video")
     setProperty("vid", value: "no")
   }
 
   @objc private func enterForeground() {
     setBackgrounded(false)
     if isPipActive {
-      print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
+      MpvLog.debug("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
       return
     }
 
-    print("[MpvPlayerCore] Entering foreground - enabling video")
+    MpvLog.debug("[MpvPlayerCore] Entering foreground - enabling video")
     setProperty("vid", value: "auto")
   }
 

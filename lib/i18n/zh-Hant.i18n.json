@@ -1893,6 +1893,7 @@
     "audioOutputStereo": "立體聲",
     "audioNormalization": "音量標準化",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "下混為立體聲"
   },
   "performanceOverlay": {

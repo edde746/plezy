@@ -1893,6 +1893,7 @@
     "audioOutputStereo": "立体声",
     "audioNormalization": "响度标准化",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "下混为立体声"
   },
   "performanceOverlay": {

@@ -58,6 +58,15 @@ void main() {
     expect(classify('Disabling filter loudnorm because it has failed.', prefix: 'af'), isNull);
   });
 
+  test('a libavfilter graph that refused to run leaves its chain stuck', () {
+    // f_lavfi.c logs the AVERROR and ignores it: the filter is neither
+    // failed nor bypassed, so the stream behind it never produces a frame
+    // and no playback-restart follows (loudnorm ENOMEM on 32-bit Android).
+    expect(classify('error on filtering (-12)', prefix: 'lavfi'), PlayerError.streamInitFailed);
+    // Only the wrapper's own prefix: the text is not mpv's elsewhere.
+    expect(classify('error on filtering (-12)', prefix: 'af'), isNull);
+  });
+
   test('one failed hwdec probe is not a failure', () {
     // vd_lavc.c logs this per attempted hwdec method before the next one
     // (or software decoding) takes over.

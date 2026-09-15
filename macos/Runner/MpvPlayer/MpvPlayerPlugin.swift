@@ -48,7 +48,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     eventChannel.setStreamHandler(instance)
     pipChannel.setMethodCallHandler(instance.handlePipCall)
 
-    print("[MpvPlayerPlugin] Registered with Flutter")
+    MpvLog.debug("[MpvPlayerPlugin] Registered with Flutter")
   }
 
   // MARK: - FlutterStreamHandler
@@ -57,13 +57,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     -> FlutterError?
   {
     self.eventSink = events
-    print("[MpvPlayerPlugin] Event stream connected")
+    MpvLog.debug("[MpvPlayerPlugin] Event stream connected")
     return nil
   }
 
   func onCancel(withArguments arguments: Any?) -> FlutterError? {
     self.eventSink = nil
-    print("[MpvPlayerPlugin] Event stream disconnected")
+    MpvLog.debug("[MpvPlayerPlugin] Event stream disconnected")
     return nil
   }
 
@@ -197,14 +197,14 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       !pc.isPaused,
       pipController?.autoPipEnabled == true
     else { return }
-    print("[MpvPlayerPlugin] Auto-PiP: app resigned active, entering PiP")
+    MpvLog.debug("[MpvPlayerPlugin] Auto-PiP: app resigned active, entering PiP")
     enterPip(manual: false)
   }
 
   /// App became active — auto-exit PiP if it was entered automatically
   @objc private func appDidBecomeActive() {
     guard enteredPipViaAuto, let pip = pipController, pip.isActive else { return }
-    print("[MpvPlayerPlugin] Auto-PiP: app became active, exiting PiP")
+    MpvLog.debug("[MpvPlayerPlugin] Auto-PiP: app became active, exiting PiP")
     pip.stopPip()
   }
 
@@ -218,13 +218,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       }
 
       if self.playerCore?.isInitialized == true {
-        print("[MpvPlayerPlugin] Already initialized")
+        MpvLog.debug("[MpvPlayerPlugin] Already initialized")
         result(true)
         return
       }
 
       guard let (window, _, _) = self.findFlutterWindow() else {
-        print("[MpvPlayerPlugin] Failed to find Flutter window")
+        MpvLog.debug("[MpvPlayerPlugin] Failed to find Flutter window")
         result(
           FlutterError(
             code: "NO_WINDOW", message: "Could not find Flutter window", details: nil))
@@ -235,7 +235,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       core.delegate = self
 
       guard core.initialize(in: window) else {
-        print("[MpvPlayerPlugin] Failed to initialize MPV")
+        MpvLog.debug("[MpvPlayerPlugin] Failed to initialize MPV")
         result(
           FlutterError(
             code: "MPV_INIT_FAILED", message: "Failed to initialize MPV", details: nil))
@@ -246,7 +246,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
       core.setVisible(false)
 
-      print("[MpvPlayerPlugin] Initialized successfully")
+      MpvLog.debug("[MpvPlayerPlugin] Initialized successfully")
       result(true)
     }
   }
@@ -266,7 +266,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         self, name: NSApplication.didBecomeActiveNotification, object: nil)
       self.playerCore?.dispose()
       self.playerCore = nil
-      print("[MpvPlayerPlugin] Disposed")
+      MpvLog.debug("[MpvPlayerPlugin] Disposed")
       result(nil)
     }
   }
@@ -308,15 +308,15 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 extension MpvPlayerPlugin: MpvPipDelegate {
 
   func pipWillStart() {
-    print("[MpvPlayerPlugin] PiP will start")
+    MpvLog.debug("[MpvPlayerPlugin] PiP will start")
   }
 
   func pipDidStart() {
-    print("[MpvPlayerPlugin] PiP did start")
+    MpvLog.debug("[MpvPlayerPlugin] PiP did start")
   }
 
   func pipDidStop(restored: Bool) {
-    print("[MpvPlayerPlugin] PiP did stop (restored: \(restored))")
+    MpvLog.debug("[MpvPlayerPlugin] PiP did stop (restored: \(restored))")
     playerCore?.isPipActive = false
     enteredPipViaAuto = false
 
