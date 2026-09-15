@@ -60,11 +60,17 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
         _latchFatalPlaybackError(action, cause: err.cause);
         // A failed core start carries only diagnostic text; _lastLogError is
         // raw mpv/ffmpeg output, so neither is fit to show bare — use the
-        // localized copy, with the redacted diagnostic as its detail.
+        // localized copy, with the redacted diagnostic as its detail. A timed
+        // out open raised nothing itself, but the last error line mpv logged
+        // on the way to the stall (a chain that failed, a stream that never
+        // produced) is the only diagnosis there is, so it rides along too.
+        final lastLogError = _lastLogError;
         final message = switch (err.cause) {
-          PlayerError.playerInitFailed || PlayerError.openTimedOut => t.messages.playbackFailed,
+          PlayerError.playerInitFailed => t.messages.playbackFailed,
+          PlayerError.openTimedOut =>
+            lastLogError == null ? t.messages.playbackFailed : t.messages.playbackFailedDetail(error: lastLogError),
           PlayerError.audioOutputFailed => t.messages.audioOutputFailed,
-          _ => t.messages.playbackFailedDetail(error: _redactPlayerError(_lastLogError ?? err.message)),
+          _ => t.messages.playbackFailedDetail(error: _redactPlayerError(lastLogError ?? err.message)),
         };
         // Live TV has no in-place reload to retry through: its own start
         // flow leaves the route on failure, so a dead live session does too.
@@ -215,6 +221,22 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
       _lastLogError = _redactPlayerError(log.text.trim());
     }
+    // A stream mpv gives up on at open (`error_on_track`) ends the file only
+    // when the other stream is gone too; otherwise the load lives on with no
+    // end-file and the viewer waits out the open deadline for an error mpv
+    // logged seconds earlier. Fail the open on that line instead. Same guard
+    // as the deadline: a first frame or a latched error already settled this
+    // open, and a superseded attempt's lines are not this open's business.
+    if (_firstFrame.rendered || _hasFatalPlaybackError || !(_playbackAttempt?.isCurrent ?? false)) return;
+    final cause = openFailureCauseFromLog(
+      level: log.level,
+      prefix: log.prefix,
+      text: log.text,
+      isAndroid: Platform.isAndroid,
+    );
+    if (cause == null) return;
+    appLogger.w('mpv gave up on a stream while opening — giving up on this open');
+    _onPlayerError(PlayerError(log.text.trim(), cause: cause));
   }
 
   /// The open-phase 503 watchdog's deadline passed with no first frame: the

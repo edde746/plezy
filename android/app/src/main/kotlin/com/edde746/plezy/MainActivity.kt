@@ -783,22 +783,41 @@ class MainActivity : FlutterActivity() {
   // the show's pending animation (`cancelAnimation: types=navigationBars`)
   // and the taskbar never retracted, whereas a transient that runs to
   // completion does retract it. So the show is allowed to complete, as a
-  // swipe-reveal would, and the hide is a fresh transition after it. Flutter's
-  // legacy flags are untouched, so the engine remains the owner of the
-  // system-UI mode; the hide re-checks that mode, since the player may have
-  // been left meanwhile. Outside immersive mode (edge-to-edge screens) there
-  // is nothing to re-assert.
+  // swipe-reveal would, and the hide is a fresh transition after it.
+  // The show also rewrites Flutter's legacy flags: once the bar is visible
+  // with control, ViewRootImpl.updateCompatSysUiVisibility marks
+  // HIDE_NAVIGATION as a local change and View.updateLocalSystemUiVisibility
+  // clears it on the DecorView. A flag-gated controller.hide() therefore
+  // never ran, and every later fold failed the entry guard. So the hide is a
+  // restore of the flags snapshotted before the show: putting HIDE_NAVIGATION
+  // back is a flag transition, so ViewRootImpl.controlInsetsForCompatibility
+  // issues the hide itself — the path Flutter takes to enter immersive — and
+  // the engine's flags are coherent again for the next fold. Ownership is a
+  // flag comparison rather than a HIDE_NAVIGATION check: leaving the player
+  // meanwhile writes edge-to-edge flags, which also drop FULLSCREEN and
+  // IMMERSIVE_STICKY, so they mismatch the snapshot even with HIDE_NAVIGATION
+  // added back. Outside immersive mode (edge-to-edge screens) there is
+  // nothing to re-assert.
+  @Suppress("DEPRECATION")
   private fun reassertHiddenSystemBars() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
     if (!navigationHiddenByFlags()) return
     val controller = window.insetsController ?: return
     Log.i(TAG, "Re-asserting hidden navigation bars after a fold-class configuration change")
     cancelPendingSystemBarsHide()
+    val immersiveFlags = window.decorView.systemUiVisibility
     controller.show(WindowInsets.Type.navigationBars())
     val hide = Runnable {
       pendingSystemBarsHide = null
-      if (!navigationHiddenByFlags()) return@Runnable
-      window.insetsController?.hide(WindowInsets.Type.navigationBars())
+      val current = window.decorView.systemUiVisibility
+      if ((current or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != immersiveFlags) return@Runnable
+      if (current == immersiveFlags) {
+        // The show never reached the compat sync (no control at that instant), so
+        // the flags carry no transition to replay; hide the bar directly.
+        window.insetsController?.hide(WindowInsets.Type.navigationBars())
+      } else {
+        window.decorView.systemUiVisibility = immersiveFlags
+      }
     }
     pendingSystemBarsHide = hide
     window.decorView.postDelayed(hide, SYSTEM_BARS_SETTLE_MS)
