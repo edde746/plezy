@@ -49,12 +49,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       if (!await negotiation || stale()) return;
     }
 
-    // The persisted ambient-lighting setting applies here, not in the start
-    // flow: mpv reports the picture geometry only once this frame reached the
-    // VO, and the surface is still behind the loading UI, so the viewer never
-    // sees the letterboxed frame the effect replaces. Concurrent callers await
-    // the same restore and re-check staleness after it.
-    await _visualEffects.restoreAmbientLightingAtFirstFrame();
+    // Effects that need the decoded picture — the persisted ambient-lighting
+    // restore, its subtitle placement after a swap, the NVScaler HDR skip —
+    // apply here, not in the open flow: mpv reports geometry and colour only
+    // once this frame reached the VO, and at start the surface is still
+    // behind the loading UI, so the viewer never sees the frame they
+    // replace. Concurrent callers await the same pass and re-check
+    // staleness after it.
+    await _visualEffects.onFirstFrame();
     if (stale()) return;
 
     _firstFrame.markReady();

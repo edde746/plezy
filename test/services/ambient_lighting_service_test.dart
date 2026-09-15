@@ -91,6 +91,26 @@ void main() {
     expect(service.isEnabled, isFalse);
     expect(player.propertyWrites.map((write) => write.$1), isNot(contains('video-aspect-override')));
   });
+
+  test('a swapped picture re-points subtitle placement without touching the frame override', () async {
+    final player = _AmbientPlayer();
+    final service = AmbientLightingService(player);
+
+    await service.enable(16 / 9, 20 / 9);
+    player.propertyWrites.clear();
+    await service.updateVideoAspect(2.39);
+
+    expect(player.propertyWrites, [('sub-video-rect-aspect', '2.39')]);
+  });
+
+  test('the subtitle placement refresh is inert while ambient lighting is off', () async {
+    final player = _AmbientPlayer();
+    final service = AmbientLightingService(player);
+
+    await service.updateVideoAspect(2.39);
+
+    expect(player.propertyWrites, isEmpty);
+  });
 }
 
 class _AmbientPlayer implements Player {
