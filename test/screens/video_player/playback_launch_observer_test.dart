@@ -20,6 +20,7 @@ import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
+import 'package:plezy/services/episode_navigation_service.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/playback_launch_observer.dart';
@@ -175,6 +176,59 @@ void main() {
         await tester.pump();
         expect(screen.key.currentState, isNull);
         expect(observer.snapshot(), containsPair('stage', 'completed'));
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+      },
+    );
+  });
+
+  testWidgets('an auto-advance keeps the receipt live and names the episode now playing', (tester) async {
+    // The most-reproduced finding of the 2.20 test round: after an EOF the
+    // receipt read `completed` for the launched episode forever while the
+    // next one demonstrably played, and a scoped stop no longer owned it.
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    final fakePlayer = _ObservedPlayer();
+    await SettingsService.instance.write(SettingsService.autoPlayNextEpisode, true);
+    await SettingsService.instance.write(SettingsService.playNextCountdown, 0);
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final screen = await _pushObservedScreen(tester, db: db, fakePlayer: fakePlayer, observer: observer);
+        expect(observer.snapshot(), containsPair('item', containsPair('itemId', 'observed')));
+        screen.key.currentState!.debugCommitAdjacentEpisodesForTesting(
+          AdjacentEpisodes(
+            next: testMediaItem(id: 'next', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+            nextStatus: QueueNavigationStatus.found,
+            previousStatus: QueueNavigationStatus.boundary,
+          ),
+        );
+
+        fakePlayer.setPosition(fakePlayer.state.duration);
+        fakePlayer.emitCompleted(true);
+        // The in-place reload needs real-event-loop yields for its database
+        // work, like the source switches above.
+        for (var i = 0; i < 400 && fakePlayer.openCalls == 0; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
+          if (fakePlayer.openCalls == 0) {
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+          }
+        }
+        await tester.pump();
+        expect(fakePlayer.openCalls, 1);
+        expect(screen.key.currentState, isNotNull);
+        expect(observer.snapshot(), containsPair('stage', 'playing'));
+        expect(observer.snapshot(), containsPair('item', containsPair('itemId', 'next')));
+        expect(observer.ownsPlayback, isTrue, reason: 'playback.stop must still reach the advanced session');
+
+        // Leaving mid-episode ends the session stopped, on the item it was on.
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump();
+        expect(screen.key.currentState, isNull);
+        expect(observer.snapshot(), containsPair('stage', 'stopped'));
+        expect(observer.snapshot(), containsPair('item', containsPair('itemId', 'next')));
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
       },

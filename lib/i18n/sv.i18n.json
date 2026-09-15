@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisera ljudstyrka",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Nedmixning till stereo"
   },
   "performanceOverlay": {

@@ -4673,6 +4673,9 @@ class Translations$videoSettings$en {
 	/// en: 'Decodes audio to PCM; passthrough is off while this is on'
 	String get audioNormalizationDisablesPassthrough => 'Decodes audio to PCM; passthrough is off while this is on';
 
+	/// en: 'Decodes audio to a stereo mix; passthrough is off while this is on'
+	String get audioNormalizationStereoMix => 'Decodes audio to a stereo mix; passthrough is off while this is on';
+
 	/// en: 'Downmix to Stereo'
 	String get audioDownmix => 'Downmix to Stereo';
 }
@@ -8773,6 +8776,7 @@ extension on Translations {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
+			'videoSettings.audioNormalizationStereoMix' => 'Decodes audio to a stereo mix; passthrough is off while this is on',
 			'videoSettings.audioDownmix' => 'Downmix to Stereo',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',

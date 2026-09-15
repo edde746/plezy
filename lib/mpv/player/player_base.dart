@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -1319,7 +1320,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// chain back to 48 kHz float, so the conversion runs once on the buffered
   /// decode side. mpv's own `format` filter is used instead of lavfi
   /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
-  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
+  ///
+  /// Android downmixes to stereo *ahead* of loudnorm. The filter's f64/192 kHz
+  /// pass costs CPU per channel, and the Android SoCs measured cannot afford
+  /// the multichannel bill: on the 32-bit TV boxes (Fire TV Stick 4K Max,
+  /// Google TV Streamer, Box R 4K Plus) 8ch adds +2.62 CPU-s per media second
+  /// against ~1 core, so 5.1 holds 0.35–0.57x and 7.1 0.33x real time under an
+  /// underrun storm while stereo holds 0.985x; arm64 (Pixel 7, SHIELD) still
+  /// underruns 5–20 times a minute at 8ch. Downmixing at the AO
+  /// (`audio-channels=stereo`, the "Downmix to Stereo" setting) does not help
+  /// because it lands after the filter. Desktop and Apple measured clean at
+  /// 7.1 and keep the multichannel chain. `format=channels=` remixes through
+  /// swresample, so the downmix options (`audio-swresample-o`,
+  /// `audio-normalize-downmix`) apply to it as well.
+  static final String _loudnormFilter =
+      '${Platform.isAndroid ? 'format=channels=stereo,' : ''}'
+      'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
   @override
   Future<void> setAudioNormalization(bool enabled) async {

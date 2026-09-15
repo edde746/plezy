@@ -185,6 +185,9 @@ class _IdlePlayer implements Player {
   Future<String?> getProperty(String name) async => null;
 
   @override
+  Future<bool> isHdrOutputSupported() async => false;
+
+  @override
   Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
   @override

@@ -92,8 +92,8 @@ const _plexVideoHlsProtocol = 'hls';
 
 /// VOD transcode target: HLS with fragmented-MP4 segments.
 ///
-/// Every non-Original request pins `directStream=0`, so this codec list is a
-/// menu of *encode* outputs, never copy targets. HEVC must not be offered in
+/// Every non-Original VOD request pins `directStream=0`, so this codec list is
+/// a menu of *encode* outputs, never copy targets. HEVC must not be offered in
 /// an mpegts target: a Plex Pass server with HEVC encoding enabled obliges,
 /// and its hardware HEVC encode → TS segmenter path emits parameter sets mpv
 /// rejects ("PPS changed between slices", issue #1859). Apple's HLS spec
@@ -119,9 +119,10 @@ const _plexHlsVodTsVideoTranscodeTarget =
 /// copy targets, and HEVC *copy* into TS is verified clean), so this
 /// deliberately does not follow the VOD target to fMP4. Residual risk
 /// accepted: a Plex Pass server electing to HEVC-*encode* an Original live
-/// channel would hit the same TS bug. A capped live preset pins
-/// `directStream=0` and therefore uses [_plexHlsVodTsVideoTranscodeTarget]
-/// instead, where HEVC is not on the encode menu.
+/// channel would hit the same TS bug. A capped live preset also asks for
+/// `directStream=1` but carries a bitrate ceiling the server may have to
+/// encode down to, so it uses [_plexHlsVodTsVideoTranscodeTarget] instead,
+/// where HEVC is not on the encode menu.
 const _plexHlsLiveVideoTranscodeTarget =
     'add-transcode-target(type=videoProfile&context=streaming'
     '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'

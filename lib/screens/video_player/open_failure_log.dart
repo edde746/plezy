@@ -15,6 +15,17 @@ import '../../mpv/models.dart';
 // - filters/f_decoder_wrapper.c: "Failed to initialize a decoder for codec
 //   '%s'." — after the whole decoder list was tried.
 //
+// One line is terminal without deselecting anything: filters/f_lavfi.c
+// "error on filtering (%d)" — libavfilter refused to run the graph
+// (AVERROR code in the parentheses; -12 is ENOMEM). mpv's read_output_pads
+// logs it under "Real error - ignore it": the filter is neither failed nor
+// bypassed, so the chain simply never produces a frame again. During an
+// open that means the stream behind it (audio for loudnorm, video for
+// bwdif) never reaches READY and mpv never fires playback-restart — video
+// sits on its first frame and only the open deadline ends it, ~26 s after
+// the line (Fire TV / Google TV Streamer / Box R, TrueHD 7.1 + loudnorm on
+// the pre-pool-fix FFmpeg).
+//
 // Deliberately absent: "Disabling filter %s because it has failed."
 // (f_output_chain.c — the filter is bypassed, the chain continues), "Could
 // not open codec." (video/decode/vd_lavc.c — one hwdec probe, the next
@@ -26,6 +37,7 @@ const String _videoChainFailedLine = 'Could not initialize video chain.';
 const String _outputConversionFailedLine =
     'Cannot convert decoder/filter output to any format supported by the output.';
 const String _decoderInitFailedPrefix = 'Failed to initialize a decoder for codec';
+const String _lavfiRunFailedPrefix = 'error on filtering (';
 const List<String> _streamInitFailedLines = [
   'Audio filter initialized failed!',
   'Error reinitializing audio.',
@@ -64,5 +76,8 @@ String? openFailureCauseFromLog({
   if (_streamInitFailedLines.contains(line) || line.startsWith(_decoderInitFailedPrefix)) {
     return PlayerError.streamInitFailed;
   }
+  // The libavfilter wrapper logs under its own prefix whichever chain hosts
+  // it; other filters never produce this text.
+  if (prefix == 'lavfi' && line.startsWith(_lavfiRunFailedPrefix)) return PlayerError.streamInitFailed;
   return null;
 }

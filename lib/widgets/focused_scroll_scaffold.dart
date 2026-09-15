@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import 'desktop_app_bar.dart';
-import 'ios_status_bar_tap_scroll_to_top.dart';
 import 'system_bottom_inset.dart';
 
 /// A scaffold widget that wraps Focus + Scaffold + CustomScrollView
@@ -102,32 +101,30 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
       },
       child: FocusScope(
         node: _scopeNode,
-        child: IosStatusBarTapScrollToTop(
-          child: Scaffold(
-            body: CustomScrollView(
-              slivers: [
-                if (!widget.focusableAppBarActions || !_appBarFocusEnabled)
-                  ExcludeFocus(
-                    child: CustomAppBar(
-                      title: widget.title,
-                      pinned: widget.pinned,
-                      actions: widget.actions,
-                      automaticallyImplyLeading: widget.automaticallyImplyLeading,
-                    ),
-                  )
-                else
-                  CustomAppBar(
+        child: Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              if (!widget.focusableAppBarActions || !_appBarFocusEnabled)
+                ExcludeFocus(
+                  child: CustomAppBar(
                     title: widget.title,
                     pinned: widget.pinned,
                     actions: widget.actions,
                     automaticallyImplyLeading: widget.automaticallyImplyLeading,
                   ),
-                ...widget.slivers,
-                // Keeps the last row scrollable clear of the Android
-                // navigation bar / iOS home indicator; zero-height elsewhere.
-                const SliverSystemBottomInset(),
-              ],
-            ),
+                )
+              else
+                CustomAppBar(
+                  title: widget.title,
+                  pinned: widget.pinned,
+                  actions: widget.actions,
+                  automaticallyImplyLeading: widget.automaticallyImplyLeading,
+                ),
+              ...widget.slivers,
+              // Keeps the last row scrollable clear of the Android
+              // navigation bar / iOS home indicator; zero-height elsewhere.
+              const SliverSystemBottomInset(),
+            ],
           ),
         ),
       ),

@@ -325,6 +325,36 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('iOS status-bar tap scrolls the log back to the newest entry', (tester) async {
+      seedLogs([for (var i = 0; i < 400; i++) 'entry-$i payload']);
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(
+              theme: ThemeData(platform: TargetPlatform.iOS),
+              home: MediaQuery(
+                data: const MediaQueryData(padding: EdgeInsets.only(top: 25)),
+                child: LogsScreen(deviceInfoPlugin: deviceInfo),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+      expect(position.pixels, greaterThan(0));
+
+      tester.simulateStatusBarTap();
+      await tester.pumpAndSettle();
+
+      expect(position.pixels, 0);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('caps the copied payload below the binder limit and keeps the newest lines', (tester) async {
       String? clipboardText;
       final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;

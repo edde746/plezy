@@ -26,7 +26,6 @@ import '../../utils/platform_detector.dart';
 import '../../utils/download_utils.dart';
 import '../../utils/scroll_utils.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/listenable_selector.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
@@ -721,10 +720,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       },
       child: PrimaryScrollController(
         controller: scrollController,
-        child: IosStatusBarTapScrollToTop(
-          controller: scrollController,
-          child: Scaffold(body: scrollView),
-        ),
+        child: Scaffold(body: scrollView),
       ),
     );
   }

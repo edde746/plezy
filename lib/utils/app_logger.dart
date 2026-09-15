@@ -94,13 +94,22 @@ class ProductionFilter extends LogFilter {
     _currentLevel = level;
   }
 
+  bool isEnabledFor(Level level) => level.value >= _currentLevel.value;
+
   @override
-  bool shouldLog(LogEvent event) {
-    return event.level.value >= _currentLevel.value;
-  }
+  bool shouldLog(LogEvent event) => isEnabledFor(event.level);
 }
 
 final _productionFilter = ProductionFilter();
+
+/// Whether [appLogger].d would actually emit.
+///
+/// Dart builds a log call's message argument *before* the filter can drop it,
+/// so a `.d()` whose message costs real work — string interpolation in a loop,
+/// `redact()`, `jsonEncode`, a collection `toString()` — pays that cost on
+/// every call in release, where the line is then discarded. Guard those call
+/// sites with this; plain constant or cheap messages need no guard.
+bool get debugLoggingEnabled => _productionFilter.isEnabledFor(Level.debug);
 
 /// Centralized logger instance for the application.
 ///
