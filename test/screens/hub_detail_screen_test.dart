@@ -71,6 +71,43 @@ void main() {
     expect(find.text('Item 203'), findsNothing);
   });
 
+  testWidgets('iOS status-bar tap scrolls the hub grid to top', (tester) async {
+    final items = List.generate(60, (index) => _item(index, backend: MediaBackend.jellyfin));
+    final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
+
+    await tester.pumpWidget(
+      harness.wrap(
+        MediaQuery(
+          data: const MediaQueryData(padding: EdgeInsets.only(top: 25)),
+          child: HubDetailScreen(
+            hub: MediaHub(
+              id: 'home.recent',
+              title: 'Recent',
+              type: 'movie',
+              items: items.take(5).toList(),
+              size: items.length,
+              more: true,
+              libraryId: '7',
+              serverId: 'server_1',
+            ),
+          ),
+        ),
+        platform: TargetPlatform.iOS,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final position = tester.state<ScrollableState>(find.byType(Scrollable)).position;
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(position.pixels, greaterThan(0));
+
+    tester.simulateStatusBarTap();
+    await tester.pumpAndSettle();
+
+    expect(position.pixels, 0);
+  });
+
   testWidgets('Jellyfin Recently Added fetches every page only as the user reaches the end', (tester) async {
     final items = List.generate(450, (index) => _item(index, backend: MediaBackend.jellyfin));
     final harness = await _createHarness(items, backend: MediaBackend.jellyfin);
@@ -264,12 +301,12 @@ class _HubHarness {
   final _PagedHubClient client;
   final MultiServerProvider provider;
 
-  Widget wrap(Widget child) => TranslationProvider(
+  Widget wrap(Widget child, {TargetPlatform? platform}) => TranslationProvider(
     child: ChangeNotifierProvider<MultiServerProvider>.value(
       value: provider,
       child: InputModeTracker(
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(dark: true).copyWith(platform: platform),
           home: SizedBox(width: 1280, height: 720, child: child),
         ),
       ),
