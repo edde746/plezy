@@ -45,6 +45,11 @@ enum PlaybackFailureAction {
 /// An audio-output failure is checked first: the device stopped taking audio,
 /// so a latched status or the live ladder would only re-open a stream into the
 /// same dead output.
+///
+/// [PlayerError.openTimedOut] and [PlayerError.streamInitFailed] name no
+/// status and no device fault, so they take the default path like any other
+/// failed open: live TV climbs its ladder (a different stream may well decode),
+/// on-demand playback is fatal.
 PlaybackFailureAction resolvePlaybackFailureAction({
   required String? cause,
   required Set<int> fatalHttpStatuses,

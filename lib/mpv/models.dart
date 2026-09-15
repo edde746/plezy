@@ -57,9 +57,17 @@ sealed class PlayerError with _$PlayerError {
 
   /// Cause tag for an open the backend started and then neither loaded,
   /// failed, nor died within the attempt's deadline. Synthesized by the
-  /// player screen; the backend raised nothing, so there is no message to
-  /// show beyond the localized copy.
+  /// player screen; the backend raised nothing, so the localized copy is the
+  /// headline and the last error line mpv logged, if any, is the detail.
   static const String openTimedOut = 'open-timed-out';
+
+  /// Cause tag for a stream mpv gave up on while opening: its `error_on_track`
+  /// deselected the audio or video track after the chain failed to initialize
+  /// (decoder, filter output conversion, `--vo`). The other stream may keep the
+  /// file alive, so no `end-file` follows; the player screen synthesizes this
+  /// from the log line mpv emits just before deselecting, and that line is the
+  /// error's message.
+  static const String streamInitFailed = 'stream-init-failed';
 
   /// Cause tag for an audio device that stopped taking audio (or never
   /// could) after the native core's own bounded recovery. A device fault, not
