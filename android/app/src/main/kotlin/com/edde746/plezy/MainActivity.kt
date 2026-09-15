@@ -18,7 +18,6 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.util.Rational
-import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -53,7 +52,6 @@ class MainActivity : FlutterActivity() {
 
   companion object {
     private const val TAG = "MainActivity"
-    private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
 
     // Flutter's TextInputPlugin issues showSoftInput before the FlutterView is
     // the IMM's served view (the InputConnection restart is deferred to the
@@ -138,12 +136,6 @@ class MainActivity : FlutterActivity() {
   private val userCertificateChannel = UserCertificateChannel()
   private val exitDiagnosticsRequested = AtomicBoolean(false)
 
-  private inline fun logTextInputDiag(message: () -> String) {
-    if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
-      Log.i(TAG, "TextInputDiag ${message()}")
-    }
-  }
-
   private var autoPipReady = false
   private var autoPipWidth: Int = 16
   private var autoPipHeight: Int = 9
@@ -155,24 +147,6 @@ class MainActivity : FlutterActivity() {
   private fun isImeVisible(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
     return window.decorView.rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true
-  }
-
-  private fun keyActionName(action: Int): String = when (action) {
-    KeyEvent.ACTION_DOWN -> "down"
-    KeyEvent.ACTION_UP -> "up"
-    KeyEvent.ACTION_MULTIPLE -> "multiple"
-    else -> "unknown($action)"
-  }
-
-  private fun sourceNames(source: Int): String {
-    val names = mutableListOf<String>()
-    if ((source and InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD) names.add("keyboard")
-    if ((source and InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD) names.add("dpad")
-    if ((source and InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) names.add("gamepad")
-    if ((source and InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) names.add("joystick")
-    if ((source and InputDevice.SOURCE_TOUCHSCREEN) == InputDevice.SOURCE_TOUCHSCREEN) names.add("touchscreen")
-    if ((source and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE) names.add("mouse")
-    return names.ifEmpty { listOf("unknown") }.joinToString("+")
   }
 
   private fun isDpadKeyCode(keyCode: Int): Boolean = when (keyCode) {
@@ -187,29 +161,9 @@ class MainActivity : FlutterActivity() {
     else -> false
   }
 
-  private fun describeDevice(event: KeyEvent): String {
-    val device = event.device ?: return "device=null deviceId=${event.deviceId}"
-    return "deviceId=${event.deviceId} name=${device.name} vendor=${device.vendorId} product=${device.productId} " +
-      "keyboardType=${device.keyboardType} sources=0x${Integer.toHexString(device.sources)}[${sourceNames(device.sources)}]"
-  }
-
-  private fun describeKeyEvent(event: KeyEvent): String = "action=${keyActionName(event.action)} key=${KeyEvent.keyCodeToString(event.keyCode)}(${event.keyCode}) " +
-    "scan=${event.scanCode} repeat=${event.repeatCount} source=0x${Integer.toHexString(event.source)}[${sourceNames(event.source)}] " +
-    "flags=0x${Integer.toHexString(event.flags)} meta=0x${Integer.toHexString(event.metaState)} ${describeDevice(event)}"
-
-  private fun describeImeState(): String {
-    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    val focus = currentFocus
-    return "nativeTextInputFocused=$nativeTextInputFocused imeVisible=${isImeVisible()} " +
-      "acceptingText=${imm.isAcceptingText} activeDecor=${imm.isActive(window.decorView)} " +
-      "decorHasFocus=${window.decorView.hasFocus()} currentFocus=${focus?.javaClass?.name} " +
-      "currentFocusHasFocus=${focus?.hasFocus()} currentFocusFocused=${focus?.isFocused}"
-  }
-
   private fun shouldForwardDpadBeforeIme(): Boolean {
     val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     val forward = !nativeTextInputFocused && !isImeVisible() && !imm.isAcceptingText
-    logTextInputDiag { "shouldForwardDpadBeforeIme=$forward ${describeImeState()}" }
     return forward
   }
 
@@ -229,10 +183,7 @@ class MainActivity : FlutterActivity() {
       val view = flutterView()
       val imm = inputMethodManager()
       if (view != null && imm.isActive(view)) {
-        logTextInputDiag { "imeShowRetry re-showing attempt=$imeShowAttempts ${describeImeState()}" }
         imm.showSoftInput(view, 0)
-      } else {
-        logTextInputDiag { "imeShowRetry waiting attempt=$imeShowAttempts served=${view != null && imm.isActive(view)}" }
       }
       imeShowAttempts++
       if (imeShowAttempts < IME_SHOW_RETRY_LIMIT) {
@@ -253,9 +204,8 @@ class MainActivity : FlutterActivity() {
     imeRecoveryHandler.removeCallbacks(imeShowRetry)
   }
 
-  private fun restartNativeTextInput(reason: String) {
+  private fun restartNativeTextInput() {
     val view = flutterView() ?: return
-    logTextInputDiag { "restartInput reason=$reason ${describeImeState()}" }
     inputMethodManager().restartInput(view)
   }
 
@@ -282,10 +232,9 @@ class MainActivity : FlutterActivity() {
       if (now - lastImeLeakRestartUptime >= IME_LEAK_RESTART_MIN_INTERVAL_MS) {
         lastImeLeakRestartUptime = now
         imeLeakRestartBudget--
-        restartNativeTextInput("leaked-dpad-while-ime-visible")
+        restartNativeTextInput()
       }
     }
-    logTextInputDiag { "consuming leaked IME key ${describeKeyEvent(event)} budget=$imeLeakRestartBudget" }
     return true
   }
 
@@ -523,9 +472,6 @@ class MainActivity : FlutterActivity() {
     val content = findViewById<ViewGroup>(android.R.id.content)
     val wrapper = object : FrameLayout(this) {
       override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
-        if (isDpadKeyCode(event.keyCode)) {
-          logTextInputDiag { "preIme received ${describeKeyEvent(event)} ${describeImeState()}" }
-        }
         when (event.keyCode) {
           KeyEvent.KEYCODE_DPAD_UP,
           KeyEvent.KEYCODE_DPAD_DOWN,
@@ -533,18 +479,12 @@ class MainActivity : FlutterActivity() {
           KeyEvent.KEYCODE_DPAD_RIGHT,
           KeyEvent.KEYCODE_DPAD_CENTER -> {
             if (shouldForwardDpadBeforeIme()) {
-              logTextInputDiag { "preIme forwarding-to-Flutter-and-consuming ${describeKeyEvent(event)}" }
               super.dispatchKeyEvent(event)
               return true
             }
-            logTextInputDiag { "preIme letting-IME-handle ${describeKeyEvent(event)}" }
           }
         }
-        val handled = super.dispatchKeyEventPreIme(event)
-        if (isDpadKeyCode(event.keyCode)) {
-          logTextInputDiag { "preIme superResult=$handled ${describeKeyEvent(event)} ${describeImeState()}" }
-        }
-        return handled
+        return super.dispatchKeyEventPreIme(event)
       }
     }
     while (content.childCount > 0) {
@@ -585,10 +525,9 @@ class MainActivity : FlutterActivity() {
       val visible = isImeVisible()
       if (visible == imeWasVisible) return@OnGlobalLayoutListener
       imeWasVisible = visible
-      logTextInputDiag { "ime visibility changed visible=$visible ${describeImeState()}" }
       if (visible && nativeTextInputFocused && !imeRestartedOnShow) {
         imeRestartedOnShow = true
-        restartNativeTextInput("first-show-rebind")
+        restartNativeTextInput()
       }
     }
     window.decorView.viewTreeObserver.addOnGlobalLayoutListener(visibilityListener)
@@ -605,19 +544,10 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-    if (isDpadKeyCode(event.keyCode)) {
-      logTextInputDiag { "activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}" }
-    }
     // Reaching the activity means the ImeInputStage already declined this
     // key, so consumption below cannot starve a healthy IME.
     if (consumeLeakedImeNavigationKey(event)) return true
-    val handled = super.dispatchKeyEvent(event)
-    if (isDpadKeyCode(event.keyCode)) {
-      logTextInputDiag {
-        "activity.dispatchKeyEvent after handled=$handled ${describeKeyEvent(event)} ${describeImeState()}"
-      }
-    }
-    return handled
+    return super.dispatchKeyEvent(event)
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -934,9 +864,6 @@ class MainActivity : FlutterActivity() {
         "setNativeTextInputFocused" -> {
           val oldValue = nativeTextInputFocused
           nativeTextInputFocused = call.arguments as? Boolean ?: false
-          logTextInputDiag {
-            "methodChannel setNativeTextInputFocused old=$oldValue new=$nativeTextInputFocused ${describeImeState()}"
-          }
           if (nativeTextInputFocused && !oldValue) {
             startNativeTextInputSession()
           } else if (!nativeTextInputFocused && oldValue) {
