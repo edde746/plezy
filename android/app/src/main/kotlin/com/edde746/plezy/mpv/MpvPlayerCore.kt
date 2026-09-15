@@ -196,6 +196,54 @@ class MpvPlayerCore private constructor(
     internal fun initialVideoOutput(hardwareDecoding: Boolean): String = if (hardwareDecoding) "mediacodec,gpu" else "gpu,gpu-next"
 
     /**
+     * The bundled FFmpeg's MediaCodec decoder options for a video core.
+     *
+     * `ndk_codec=1`: NDK MediaCodec, never the Java wrapper (#2255).
+     *
+     * `ndk_async=1` from API 31: the codec reports free input slots and
+     * finished frames on its own thread instead of being polled. Without it
+     * a decoder that has fallen behind (Tensor's AV1 block on a grainy
+     * high-bitrate scene) holds mpv's playloop inside the decode call for as
+     * long as the hardware takes, and that thread also feeds the audio
+     * device and hands frames to the vo: audio underruns and late frames
+     * follow (#2361). Asynchronous, the decoder answers EAGAIN and wakes the
+     * decoder filter when it can move again. The threshold is Media3's:
+     * `DefaultMediaCodecAdapterFactory` trusts asynchronous MediaCodec by
+     * default from API 31 only, for the same device-quirk history. Below it
+     * the decoder still bounds its wait (8 ms) and is polled.
+     */
+    internal fun initialDecoderOptions(sdkInt: Int): String = if (sdkInt >= Build.VERSION_CODES.S) "ndk_codec=1,ndk_async=1" else "ndk_codec=1"
+
+    /**
+     * mpv's decoder thread and frame queue, for hardware sessions.
+     *
+     * A MediaCodec decoder is a pipeline with a declared output delay, and
+     * Tensor's AV1 block declares 12 frames (`output.delay.value = 12` in
+     * its Codec2 configuration): a frame may leave it half a second of 24p
+     * after it went in. mpv's playloop decodes on demand and looks ahead two
+     * frames plus the vo's 100 ms preparation lead, so with that decoder
+     * 13-15% of frames reached the vo after their display time and were
+     * shown a vsync late (#2361); the `c2.exynos` HEVC decoder, with a short
+     * pipeline, showed none. Media3 hides the same latency by keeping the
+     * codec's whole output pool in flight. This runs the decoder on its own
+     * thread with up to half a second of decoded frames queued ahead, which
+     * took the same clip to zero late frames on a Pixel 7.
+     *
+     * Hardware frames are codec buffers, so the queue holds at most what the
+     * codec's pool leaves free; a smaller pool simply fills the queue less,
+     * because every frame the queue holds is released back when displayed.
+     * The byte bound only ever binds a session that fell back to software
+     * frames (`mediacodec-copy`, dav1d), where it caps the queue's memory.
+     * The option applies when a decoder is created, which every file does.
+     */
+    internal val DECODER_QUEUE_OPTIONS: List<Pair<String, String>> = listOf(
+      "vd-queue-enable" to "yes",
+      "vd-queue-max-samples" to "12",
+      "vd-queue-max-secs" to "0.5",
+      "vd-queue-max-bytes" to "48MiB"
+    )
+
+    /**
      * The `-append` list-option suffixes are not exposed through the property
      * interface, so the app's decoder options replace the whole list. FFmpeg
      * keeps the last duplicate key, so any user mpv.conf entries go first.
@@ -898,14 +946,20 @@ class MpvPlayerCore private constructor(
                   setOption("gpu-context", "android")
                   setOption("opengl-es", "yes")
                   // FFmpeg's auto backend chooses Java when a JVM is registered.
-                  // Use synchronous NDK MediaCodec so per-frame decode/release
-                  // calls do not wait on ART JIT code-cache collection (#2255).
-                  // This belongs to every video core, not the DV or vo=mediacodec
-                  // policy: GPU/copy hardware paths use the same decoder. Software
-                  // decoders ignore this unknown AVOption without failing open.
-                  // Set before init; DV writes merge it, while a later custom
-                  // vd-lavc-o keeps the existing whole-list override precedence.
-                  setOption("vd-lavc-o", "ndk_codec=1")
+                  // Use NDK MediaCodec so per-frame decode/release calls do not
+                  // wait on ART JIT code-cache collection (#2255), and drive it
+                  // asynchronously where the platform is trusted to (see
+                  // initialDecoderOptions). This belongs to every video core,
+                  // not the DV or vo=mediacodec policy: GPU/copy hardware paths
+                  // use the same decoder. Software decoders ignore these unknown
+                  // AVOptions without failing open. Set before init; DV writes
+                  // merge it, while a later custom vd-lavc-o keeps the existing
+                  // whole-list override precedence.
+                  setOption("vd-lavc-o", initialDecoderOptions(Build.VERSION.SDK_INT))
+                  if (hardwareDecoding) {
+                    // Rationale on DECODER_QUEUE_OPTIONS.
+                    for ((name, value) in DECODER_QUEUE_OPTIONS) setOption(name, value)
+                  }
                   // Keep AV1 film grain inside the decoder (dav1d). `auto` hands it
                   // to any vo claiming VO_CAP_FILM_GRAIN, and gpu-next claims it on
                   // GLES where libplacebo's raster grain fallback fetches luma by
@@ -1574,15 +1628,27 @@ class MpvPlayerCore private constructor(
   }
 
   /**
-   * Runs [block] — a surface handoff and/or vo write, each of which makes
-   * mpv rebuild the video chain — with the video track parked when
-   * [GpuVoPolicy.needsParkedRebuild] says the decoder must not be re-created
-   * inside the rebuild. Deselecting closes the decoder synchronously before
-   * the rebuild starts; re-selecting afterwards creates the next instance
-   * against the finished output. Measured on a Pixel 7: 30 consecutive
-   * ambient-lighting and lock/unlock rebuilds without a vendor-service death,
-   * where the unparked rebuild killed it on the first try. [p] may be null
-   * before init, when there is nothing to park.
+   * Runs [block] — a `vo` write, which makes mpv rebuild the video chain —
+   * with the video track parked when [GpuVoPolicy.needsParkedRebuild] says
+   * the decoder must not be re-created inside the rebuild. Deselecting closes
+   * the decoder synchronously before the rebuild starts; re-selecting
+   * afterwards creates the next instance against the finished output.
+   * Measured on a Pixel 7: 30 consecutive ambient-lighting rebuilds without a
+   * vendor-service death, where the unparked rebuild killed it on the first
+   * try. [p] may be null before init, when there is nothing to park.
+   *
+   * Only the vo switch rebuilds. A surface handoff is absorbed by the fork
+   * vo in place (`VOCTRL_SET_WINDOW_ID` repoints the running decoder), so
+   * neither the chain nor the decoder is touched there.
+   *
+   * mpv resyncs an unparked rebuild itself with an exact relative seek
+   * (`command.c`, `UPDATE_VO`): audio and video restart together. With the
+   * track parked that seek is skipped — no video track exists while the vo is
+   * written — and a re-selected track instead chases the running audio clock
+   * from the previous keyframe, arriving seconds late with mpv's A/V delay
+   * model already off by the audio played meanwhile. The same seek is issued
+   * here once the track is back, so the parked rebuild ends where mpv's own
+   * would.
    */
   private suspend fun rebuildVideoOutput(p: MpvPlayer?, block: suspend () -> Unit) {
     val vid = if (p != null && needsParkedRebuild(p)) p.getString("vid")?.toLongOrNull() else null
@@ -1596,6 +1662,7 @@ class MpvPlayerCore private constructor(
       block()
     } finally {
       writeProperty("vid", vid.toString())
+      runCommand("seek", "0", "relative", "exact")
     }
   }
 
@@ -1852,7 +1919,7 @@ class MpvPlayerCore private constructor(
           val wasAttachedToPlaceholder = attachedToPlaceholder
           val wasPausedForSurfaceLoss = pausedForSurfaceLoss
           if (needsAttach) {
-            rebuildVideoOutput(p) { attachSurfaces(p, surface, osd) }
+            attachSurfaces(p, surface, osd)
             attachedOsdSurface = osd
             attachedSurface = surface
             hasAttachedSurface = true
@@ -1977,7 +2044,7 @@ class MpvPlayerCore private constructor(
             }
           }
           if (attachedSurface !== target || attachedOsdSurface !== osd) {
-            rebuildVideoOutput(p) { attachSurfaces(p, target, osd) }
+            attachSurfaces(p, target, osd)
           }
           attachedSurface = target
           attachedOsdSurface = osd
@@ -2217,6 +2284,17 @@ class MpvPlayerCore private constructor(
     } else {
       val currentPlayer = player ?: throw CancellationException("MPV player unavailable")
       currentPlayer.setProperty(name, value)
+    }
+  }
+
+  /** The command counterpart of [writeProperty], on the same write operation. */
+  private suspend fun runCommand(vararg args: String) {
+    val runner = commandRunnerOverride
+    if (runner != null) {
+      runner(arrayOf(*args))
+    } else {
+      val currentPlayer = player ?: throw CancellationException("MPV player unavailable")
+      currentPlayer.command(*args)
     }
   }
 
@@ -2598,7 +2676,6 @@ class MpvPlayerCore private constructor(
       "deinterlace-active" to readProperty("deinterlace-active"),
       "video-bitrate" to readProperty("video-bitrate"),
       "hwdec-current" to readProperty("hwdec-current"),
-      "current-vo" to readProperty("current-vo"),
       "audio-codec-name" to readProperty("audio-codec-name"),
       "audio-params/samplerate" to readProperty("audio-params/samplerate"),
       "audio-params/hr-channels" to readProperty("audio-params/hr-channels"),

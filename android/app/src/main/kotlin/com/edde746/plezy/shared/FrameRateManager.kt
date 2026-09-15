@@ -331,14 +331,25 @@ class FrameRateManager(
       onComplete(false)
       return
     }
+    val window = activity.window
     if (modeToUse.modeId == currentMode.modeId) {
-      log("current mode already matches ${fps}fps (${selection.reason}), no switch needed")
+      // Nothing to switch, but the choice still has to be pinned: without an
+      // app request the platform's own policy (idle timer, brightness zones,
+      // thermal) is free to leave this mode mid-playback, and on a panel
+      // whose modes switch seamlessly it does — 120 Hz for 23.976 fps came
+      // and went on a Pixel 7 Pro, dragging the vo's release grid along
+      // (#2361). clearVideoFrameRate restores the default, as after a switch.
+      if (window != null && window.attributes.preferredDisplayModeId != modeToUse.modeId) {
+        log("current mode already matches ${fps}fps (${selection.reason}), pinning it")
+        window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
+      } else {
+        log("current mode already matches ${fps}fps (${selection.reason}), no switch needed")
+      }
       onComplete(false)
       return
     }
 
     log("switching to ${describeMode(modeToUse)} for ${fps}fps (${selection.reason})")
-    val window = activity.window
     if (window == null) {
       log("window unavailable")
       onComplete(false)
