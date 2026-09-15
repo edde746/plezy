@@ -11,7 +11,9 @@ import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/serial_future_queue.dart';
+import '../../utils/web_socket_connect.dart';
 import '../base_peer_service.dart';
+import '../trackers/future_coalescer.dart';
 import 'remote_auth_context.dart';
 import 'remote_auth_service.dart';
 
@@ -80,7 +82,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
        _raceProbeFactory = raceProbeFactory ?? _openRaceProbe;
 
   static _RaceProbeConnection _openRaceProbe(Uri uri) {
-    final channel = IOWebSocketChannel.connect(uri, connectTimeout: const Duration(seconds: 5));
+    final attempt = WebSocketConnectAttempt(uri, connectTimeout: const Duration(seconds: 5));
+    final channel = IOWebSocketChannel(attempt.socket);
     var connected = false;
     unawaited(
       channel.ready.then((_) {
@@ -93,13 +96,12 @@ class CompanionRemotePeerService with KeepaliveMixin {
           await channel.sink.close();
           return;
         }
-        // web_socket_channel 3.x never completes a pre-connection
-        // `sink.close()`: its future waits on an internal stream listener
-        // that only the connect-success path attaches. Awaiting it here
-        // serialized race cleanup behind one unreachable candidate forever,
-        // so the managed join after a won race never started (#2077). A
-        // still-pending candidate holds no host admission slot, so defer its
-        // close to whenever the connect settles instead of waiting.
+        // A still-pending candidate holds no host admission slot: cancel
+        // releases its transport now and fails `ready`, without awaiting a
+        // pre-connection `sink.close()` that web_socket_channel 3.x never
+        // completes (#2077). A socket delivered in this same turn is past
+        // cancelling and is closed once the channel reports it.
+        attempt.cancel();
         unawaited(channel.ready.then((_) => channel.sink.close(), onError: (Object _) {}));
       },
       ready: channel.ready,
@@ -128,18 +130,18 @@ class CompanionRemotePeerService with KeepaliveMixin {
   final Map<String, int> _hostAdmissionsBySource = {};
   int _hostAdmissionCount = 0;
   int _authenticationCommitGeneration = 0;
-  Future<void> _hostAuthenticationCommitTail = Future<void>.value();
+  final SerialFutureQueue _hostAuthCommitQueue = SerialFutureQueue();
   bool _acceptingHostConnections = false;
   bool _isDisconnecting = false;
-  Future<void>? _disconnectInProgress;
-  Future<void>? _disposeInProgress;
+  final FutureCoalescer<void> _disconnectCoalescer = FutureCoalescer();
+  final FutureCoalescer<void> _disposeCoalescer = FutureCoalescer();
   bool _disposed = false;
 
   // Client-side (remote) fields
   IOWebSocketChannel? _channel;
-  // Whether the current [_channel]'s connection has been established; a
-  // pre-connection `sink.close()` future never completes (see
-  // [_closeManagedChannel]).
+  // The connect behind [_channel]; cancelled when the channel is dropped
+  // before it established (see [_closeManagedChannel]).
+  WebSocketConnectAttempt? _channelAttempt;
   bool _channelConnected = false;
   StreamSubscription<dynamic>? _channelSubscription;
   int _remoteConnectionGeneration = 0;
@@ -602,11 +604,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     );
   }
 
-  Future<void> _serializeHostAuthenticationCommit(Future<void> Function() commit) {
-    final operation = _hostAuthenticationCommitTail.then((_) => commit());
-    _hostAuthenticationCommitTail = operation.catchError((Object _, StackTrace _) {});
-    return operation;
-  }
+  Future<void> _serializeHostAuthenticationCommit(Future<void> Function() commit) => _hostAuthCommitQueue.run(commit);
 
   Future<void> _commitAuthenticatedHostAdmission({
     required _HostAdmission admission,
@@ -776,18 +774,20 @@ class CompanionRemotePeerService with KeepaliveMixin {
     return !_disposed && generation == _remoteConnectionGeneration && identical(_channel, channel);
   }
 
-  /// Closes the managed channel without ever awaiting a `sink.close()` on a
-  /// connection that never established. web_socket_channel 3.x completes that
-  /// close future only after the connect-success path attaches the channel's
-  /// internal stream listener; on a pending or failed connect it never
-  /// completes, and awaiting it hung disconnects and join timeouts forever
-  /// (#2077). An unestablished channel is instead closed whenever its
-  /// connection settles, which also covers a connect that succeeds late.
-  Future<void> _closeManagedChannel(IOWebSocketChannel channel) async {
+  /// Closes the managed channel. An established one closes normally; a
+  /// pending or failed connect is cancelled instead, which releases its
+  /// transport now and fails `ready`. Nothing awaits a pre-connection
+  /// `sink.close()`: web_socket_channel 3.x completes that future only after
+  /// the connect-success path attaches the channel's internal stream
+  /// listener, and awaiting it hung disconnects and join timeouts forever
+  /// (#2077). A socket delivered in this same turn is past cancelling and is
+  /// closed once the channel reports it.
+  Future<void> _closeManagedChannel(IOWebSocketChannel channel, WebSocketConnectAttempt attempt) async {
     if (_channelConnected && identical(_channel, channel)) {
       await channel.sink.close();
       return;
     }
+    attempt.cancel();
     unawaited(channel.ready.then((_) => channel.sink.close(), onError: (Object _) {}));
   }
 
@@ -826,9 +826,11 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
       _connectionStateController.add(RemoteSessionStatus.connecting);
 
-      final channel = IOWebSocketChannel.connect(Uri.parse(url), connectTimeout: _remoteConnectTimeout);
+      final attempt = WebSocketConnectAttempt(Uri.parse(url), connectTimeout: _remoteConnectTimeout);
+      final channel = IOWebSocketChannel(attempt.socket);
       attemptedChannel = channel;
       _channel = channel;
+      _channelAttempt = attempt;
       _channelConnected = false;
       try {
         await channel.ready;
@@ -1029,6 +1031,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           _connectionStateController.add(RemoteSessionStatus.disconnected);
           _isAuthenticated = false;
           _channel = null;
+          _channelAttempt = null;
           _channelConnected = false;
           _channelSubscription = null;
           _sessionEncKey = null;
@@ -1047,6 +1050,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
           _isAuthenticated = false;
           _channel = null;
+          _channelAttempt = null;
           _channelConnected = false;
           _channelSubscription = null;
           _sessionEncKey = null;
@@ -1099,12 +1103,13 @@ class CompanionRemotePeerService with KeepaliveMixin {
       onTimeout: () async {
         if (_ownsRemoteChannel(channel, connectionGeneration)) {
           try {
-            await _closeManagedChannel(channel);
+            await _closeManagedChannel(channel, _channelAttempt!);
           } catch (e) {
             appLogger.d('CompanionRemote: channel close on timeout failed', error: e);
           }
           if (_ownsRemoteChannel(channel, connectionGeneration)) {
             _channel = null;
+            _channelAttempt = null;
             _channelConnected = false;
           }
         }
@@ -1389,17 +1394,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
   Future<void> disconnect() {
     if (_disposed) return Future<void>.value();
-    final existing = _disconnectInProgress;
-    if (existing != null) return existing;
-
-    late final Future<void> tracked;
-    tracked = _disconnect().whenComplete(() {
-      if (identical(_disconnectInProgress, tracked)) {
-        _disconnectInProgress = null;
-      }
-    });
-    _disconnectInProgress = tracked;
-    return tracked;
+    return _disconnectCoalescer.run(_disconnect);
   }
 
   Future<void> _disconnect() async {
@@ -1413,6 +1408,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     stopKeepalive();
 
     final channel = _channel;
+    final attempt = _channelAttempt;
     final server = _server;
     _server = null;
     final serverClose = server?.close(force: true);
@@ -1430,7 +1426,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       await _sendQueue.settled;
       await _encryptQueue.settled;
 
-      await _runDisconnectCleanup(channel == null ? null : _closeManagedChannel(channel), 'channel');
+      await _runDisconnectCleanup(channel == null ? null : _closeManagedChannel(channel, attempt!), 'channel');
       await _runDisconnectCleanup(serverClose, 'server');
     } finally {
       for (final admission in List<_HostAdmission>.of(_hostAdmissions)) {
@@ -1442,6 +1438,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       _currentHostAdmission = null;
       _clientSocket = null;
       _channel = null;
+      _channelAttempt = null;
       _channelConnected = false;
       _myPeerId = null;
       _hostAddress = null;
@@ -1482,18 +1479,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
   bool get isServerRunning => _server != null;
 
   Future<void> dispose() {
-    final existing = _disposeInProgress;
-    if (existing != null) return existing;
     if (_disposed) return Future<void>.value();
-
-    late final Future<void> tracked;
-    tracked = _dispose().whenComplete(() {
-      if (identical(_disposeInProgress, tracked)) {
-        _disposeInProgress = null;
-      }
-    });
-    _disposeInProgress = tracked;
-    return tracked;
+    return _disposeCoalescer.run(_dispose);
   }
 
   Future<void> _dispose() async {

@@ -122,4 +122,17 @@ void main() {
       expect((call.arguments as Map)['format'], structuredFormat);
     }
   });
+
+  test('audio-only mpv registers only the properties the music path consumes', () async {
+    final player = PlayerNative.audio();
+    final observations = await capturedObservations(
+      channelName: 'com.plezy/mpv_audio_player',
+      initialize: () => player.setLogLevel('warn'), // forces _ensureInitialized
+      dispose: () => player.dispose(),
+    );
+
+    expect(names(observations), {'time-pos', 'duration', 'pause', 'eof-reached', 'playlist-pos'});
+    final playlistPos = observations.singleWhere((call) => (call.arguments as Map)['name'] == 'playlist-pos');
+    expect((playlistPos.arguments as Map)['format'], Platform.isAndroid ? 'string' : 'node');
+  });
 }

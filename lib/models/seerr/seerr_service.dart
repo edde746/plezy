@@ -15,6 +15,17 @@ class SeerrServiceInstance {
   /// Sonarr only.
   final int? activeLanguageProfileId;
 
+  /// Sonarr only: the defaults Seerr routes anime series to instead of the
+  /// standard ones. Each is absent when the instance has no anime override.
+  final String? activeAnimeDirectory;
+  final int? activeAnimeProfileId;
+  final int? activeAnimeLanguageProfileId;
+
+  /// Tag ids applied by default. Only the detail endpoint reports the real
+  /// values; the list endpoint reports `[]` for `activeTags` on Sonarr.
+  final List<int>? activeTags;
+  final List<int>? activeAnimeTags;
+
   const SeerrServiceInstance({
     required this.id,
     this.name,
@@ -23,13 +34,18 @@ class SeerrServiceInstance {
     this.activeDirectory,
     this.activeProfileId,
     this.activeLanguageProfileId,
+    this.activeAnimeDirectory,
+    this.activeAnimeProfileId,
+    this.activeAnimeLanguageProfileId,
+    this.activeTags,
+    this.activeAnimeTags,
   });
 
   factory SeerrServiceInstance.fromJson(Map<String, dynamic> json) => _$SeerrServiceInstanceFromJson(json);
 }
 
-/// Quality profile / root folder / language profile options of one instance
-/// (`GET /service/radarr|sonarr/{id}`).
+/// Quality profile / root folder / language profile / tag options of one
+/// instance (`GET /service/radarr|sonarr/{id}`).
 @JsonSerializable(createToJson: false)
 class SeerrServiceDetail {
   final SeerrServiceInstance? server;
@@ -38,8 +54,9 @@ class SeerrServiceDetail {
 
   /// Sonarr v3 only; absent on Radarr and newer Sonarr.
   final List<SeerrServiceProfile>? languageProfiles;
+  final List<SeerrServiceTag>? tags;
 
-  const SeerrServiceDetail({this.server, this.profiles, this.rootFolders, this.languageProfiles});
+  const SeerrServiceDetail({this.server, this.profiles, this.rootFolders, this.languageProfiles, this.tags});
 
   factory SeerrServiceDetail.fromJson(Map<String, dynamic> json) => _$SeerrServiceDetailFromJson(json);
 }
@@ -63,4 +80,15 @@ class SeerrRootFolder {
   const SeerrRootFolder({required this.id, this.path});
 
   factory SeerrRootFolder.fromJson(Map<String, dynamic> json) => _$SeerrRootFolderFromJson(json);
+}
+
+/// Arr tag option `{id, label}`.
+@JsonSerializable(createToJson: false)
+class SeerrServiceTag {
+  final int id;
+  final String? label;
+
+  const SeerrServiceTag({required this.id, this.label});
+
+  factory SeerrServiceTag.fromJson(Map<String, dynamic> json) => _$SeerrServiceTagFromJson(json);
 }

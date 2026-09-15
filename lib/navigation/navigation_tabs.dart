@@ -17,8 +17,27 @@ class NavigationTab {
 
   const NavigationTab({required this.id, required this.onlineOnly, required this.icon, required this.getLabel});
 
-  NavigationDestination toDestination() {
-    return NavigationDestination(icon: AppIcon(icon, fill: 1), selectedIcon: AppIcon(icon, fill: 1), label: getLabel());
+  /// A bottom-bar destination whose label is pinned to one line.
+  ///
+  /// [NavigationDestination] paints a bare [Text] that fills the destination's
+  /// share of the bar with no horizontal padding, so a long localized label or
+  /// an enlarged system font wraps and the wrapped destination's icon rides up
+  /// out of line with its siblings (#2316, #2281). The clamp has to sit here,
+  /// on the destination: [NavigationBar]'s own [Material] reinstalls the
+  /// ambient text style, so a [DefaultTextStyle] wrapped around the whole bar
+  /// never reaches the labels. [NavigationLabelScale] shrinks the text so the
+  /// full word usually still fits before this ellipsis applies.
+  Widget toDestination() {
+    return DefaultTextStyle.merge(
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      child: NavigationDestination(
+        icon: AppIcon(icon, fill: 1),
+        selectedIcon: AppIcon(icon, fill: 1),
+        label: getLabel(),
+      ),
+    );
   }
 
   /// Get tabs filtered by offline mode and feature availability

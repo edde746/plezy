@@ -45,8 +45,11 @@ import java.util.concurrent.atomic.AtomicInteger
 internal class IecCarrierSink(
   private val defaultSink: AudioSink,
   private val carrierSink: AudioSink,
-  /** Whether the current route can bitstream the carrier tuple. Evaluated per format. */
-  private val carrierRouteAvailable: () -> Boolean,
+  /**
+   * Whether the current route can bitstream this format on the carrier. Per format: the tuple is
+   * shared, but a route carrying it does not necessarily advertise every codec riding it.
+   */
+  private val carrierRouteAvailable: (Format) -> Boolean,
   /** Whether policy currently forbids bitstreaming at all (downmix, normalization, user setting). */
   private val directOutputBlocked: (Format) -> Boolean,
   private val log: ((String, String, String) -> Unit)? = null
@@ -126,7 +129,7 @@ internal class IecCarrierSink(
     if (!isCarrierRateFamily(format.sampleRate)) return false
     if (playbackParameters.speed != 1f) return false
     if (directOutputBlocked(format)) return false
-    return carrierRouteAvailable()
+    return carrierRouteAvailable(format)
   }
 
   /**
@@ -172,14 +175,14 @@ internal class IecCarrierSink(
   override fun supportsFormat(format: Format): Boolean = when {
     shouldUseCarrier(format) -> true
     isTrueHd(format) -> false
-    isDtsHd(format) && carrierRouteAvailable() -> false
+    isDtsHd(format) && carrierRouteAvailable(format) -> false
     else -> defaultSink.supportsFormat(format)
   }
 
   override fun getFormatSupport(format: Format): Int = when {
     shouldUseCarrier(format) -> AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
     isTrueHd(format) -> AudioSink.SINK_FORMAT_UNSUPPORTED
-    isDtsHd(format) && carrierRouteAvailable() -> AudioSink.SINK_FORMAT_UNSUPPORTED
+    isDtsHd(format) && carrierRouteAvailable(format) -> AudioSink.SINK_FORMAT_UNSUPPORTED
     else -> defaultSink.getFormatSupport(format)
   }
 

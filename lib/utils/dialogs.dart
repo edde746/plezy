@@ -14,20 +14,51 @@ import 'focus_utils.dart';
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
 const _buttonShape = StadiumBorder();
 
+final _dialogOwners = <Route<dynamic>, Set<Route<dynamic>>>{};
+
 /// Shows a dialog on the nearest navigator instead of Flutter's default root
 /// navigator. Use this for profile/session-owned modal routes so they are
-/// disposed when the active profile session is replaced.
+/// disposed when the active profile session is replaced. Ownership is captured
+/// when the route is pushed, before the dialog's builder runs.
 Future<T?> showScopedDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool barrierDismissible = true,
 }) {
-  return showDialog<T>(
+  assert(debugCheckHasMaterialLocalizations(context));
+  final navigator = Navigator.of(context);
+  final owner = ModalRoute.of(context);
+  final route = DialogRoute<T>(
     context: context,
     builder: builder,
+    themes: InheritedTheme.capture(from: context, to: navigator.context),
+    barrierColor: DialogTheme.of(context).barrierColor ?? Theme.of(context).dialogTheme.barrierColor ?? Colors.black54,
     barrierDismissible: barrierDismissible,
-    useRootNavigator: false,
+    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
   );
+  if (owner != null) {
+    // Snapshot ancestry so descendants remain owned even if their parent dialog
+    // completes first and its registration is removed.
+    _dialogOwners[route] = {owner, ...?_dialogOwners[owner]};
+  }
+  return navigator.push(route).whenComplete(() => _dialogOwners.remove(route));
+}
+
+/// Cancels only scoped dialogs opened by [owner], including nested dialogs.
+///
+/// Remove exact routes rather than popping the navigator: another dialog or
+/// page may now be above them, and a pending dialog may not have built yet.
+void dismissDialogsOwnedBy(Route<dynamic> owner) {
+  final dialogs = _dialogOwners.entries
+      .where((entry) => entry.value.contains(owner))
+      .map((entry) => entry.key)
+      .toList();
+  for (final dialog in dialogs.reversed) {
+    _dialogOwners.remove(dialog);
+    if (dialog.isActive) {
+      dialog.navigator!.removeRoute(dialog);
+    }
+  }
 }
 
 /// Shows a confirmation dialog with consistent button sizing and autofocus.

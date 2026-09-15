@@ -6,7 +6,7 @@ import '../media/media_item_types.dart';
 import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/media_quality_labels.dart';
-import 'bottom_sheet_header.dart';
+import 'bottom_sheet_page_scaffold.dart';
 import 'fitted_metadata_line.dart';
 import 'media_rating_badge.dart';
 
@@ -27,7 +27,12 @@ class MediaDetailsSheet extends StatefulWidget {
   /// more than the hero was allowed to.
   final String? description;
 
-  const MediaDetailsSheet({super.key, required this.item, this.description});
+  /// Genres of the title the hero belongs to. Episodes rarely carry their
+  /// own, so a hero that follows an episode passes the show's; the TV hero
+  /// itself no longer renders them (#2217).
+  final List<String> genres;
+
+  const MediaDetailsSheet({super.key, required this.item, this.description, this.genres = const []});
 
   @override
   State<MediaDetailsSheet> createState() => _MediaDetailsSheetState();
@@ -77,66 +82,66 @@ class _MediaDetailsSheetState extends State<MediaDetailsSheet> {
     final item = widget.item;
     final labels = _metadataLabels(item);
     final ratings = mediaRatingsFor(item);
-    final genres = item.genres ?? const <String>[];
+    final genres = widget.genres;
+    final episodeTitle = item.isEpisode ? item.title : null;
     final description = widget.description;
     final metadataStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.1);
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        BottomSheetHeader(title: item.displayTitle, showBorder: false),
-        Flexible(
-          // One chrome-less focus stop around the viewport: like the file-info
-          // sheet's fields there is nothing to activate, so no focus chrome is
-          // drawn — the arrows only page the content beneath.
-          child: FocusableWrapper(
-            onNavigateUp: () => _scrollBy(-1),
-            onNavigateDown: () => _scrollBy(1),
-            delegateFocusBorder: true,
-            disableScale: true,
-            autoScroll: false,
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (labels.isNotEmpty || ratings.isNotEmpty)
-                    // The hero line's free-flowing look, but wrapping instead
-                    // of shedding: plain bulleted text with the badge run
-                    // riding the line as one more segment.
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(text: labels.join(FittedMetadataLine.separator)),
-                          if (labels.isNotEmpty && ratings.isNotEmpty)
-                            const TextSpan(text: FittedMetadataLine.separator),
-                          if (ratings.isNotEmpty)
-                            WidgetSpan(
-                              alignment: PlaceholderAlignment.middle,
-                              child: InlineRatingBadges(ratings: ratings, textStyle: metadataStyle),
-                            ),
-                        ],
-                      ),
-                      style: metadataStyle,
-                    ),
-                  if (genres.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      genres.join(FittedMetadataLine.separator),
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                  if (description != null && description.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(description, style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
-                  ],
-                ],
-              ),
-            ),
+    return BottomSheetPageScaffold(
+      title: item.displayTitle,
+      showHeaderBorder: false,
+      // One chrome-less focus stop around the viewport: like the file-info
+      // sheet's fields there is nothing to activate, so no focus chrome is
+      // drawn — the arrows only page the content beneath.
+      child: FocusableWrapper(
+        onNavigateUp: () => _scrollBy(-1),
+        onNavigateDown: () => _scrollBy(1),
+        delegateFocusBorder: true,
+        disableScale: true,
+        autoScroll: false,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (episodeTitle != null && episodeTitle.isNotEmpty) ...[
+                Text(episodeTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+              ],
+              if (labels.isNotEmpty || ratings.isNotEmpty)
+                // The hero line's free-flowing look, but wrapping instead
+                // of shedding: plain bulleted text with the badge run
+                // riding the line as one more segment.
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: labels.join(FittedMetadataLine.separator)),
+                      if (labels.isNotEmpty && ratings.isNotEmpty) const TextSpan(text: FittedMetadataLine.separator),
+                      if (ratings.isNotEmpty)
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: InlineRatingBadges(ratings: ratings, textStyle: metadataStyle),
+                        ),
+                    ],
+                  ),
+                  style: metadataStyle,
+                ),
+              if (genres.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  genres.join(FittedMetadataLine.separator),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
+              if (description != null && description.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(description, style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
+              ],
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

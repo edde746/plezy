@@ -1,28 +1,47 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:dart_discord_presence/dart_discord_presence.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/mpv/models.dart';
+import 'package:plezy/models/download_models.dart';
 import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
+import 'package:plezy/providers/download_provider.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/agent_control_protocol.dart';
+import 'package:plezy/services/agent_playback_commands.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/discord_rpc_service.dart';
 import 'package:plezy/services/media_controls_manager.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/music/music_playback_service_impl.dart';
+import 'package:plezy/services/music/music_queue_controller.dart';
+import 'package:plezy/services/music/music_session_store.dart';
 import 'package:plezy/services/music/music_source_resolver.dart';
+import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_coordinator.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/playback_launch_observer.dart';
+import 'package:provider/provider.dart';
+import '../../test_helpers/discord_rpc_fakes.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/playback_report_fakes.dart';
+import '../../test_helpers/prefs.dart';
 
 const _trackDuration = Duration(minutes: 3);
 
@@ -79,6 +98,9 @@ class FakePlayer implements Player {
   final fileLoadedCtrl = StreamController<void>.broadcast(sync: true);
   final backendSwitchedCtrl = StreamController<void>.broadcast(sync: true);
   final trackTransitionCtrl = StreamController<String>.broadcast(sync: true);
+  final sourceStartedCtrl = StreamController<PlayerSourceStarted>.broadcast(sync: true);
+  final sourceReadyCtrl = StreamController<PlayerSourceReady>.broadcast(sync: true);
+  final sourceFailedCtrl = StreamController<PlayerSourceFailed>.broadcast(sync: true);
 
   late final PlayerStreams _streams = PlayerStreams(
     playing: playingCtrl.stream,
@@ -102,11 +124,18 @@ class FakePlayer implements Player {
     fileLoaded: fileLoadedCtrl.stream,
     backendSwitched: backendSwitchedCtrl.stream,
     trackTransition: trackTransitionCtrl.stream,
+    sourceStarted: sourceStartedCtrl.stream,
+    sourceReady: sourceReadyCtrl.stream,
+    sourceFailed: sourceFailedCtrl.stream,
   );
 
   PlayerState _state = const PlayerState();
 
   final List<String> openedUris = [];
+
+  /// `Media.start` of each open, index-aligned with [openedUris] — how a
+  /// restored session's resume offset reaches the player (#2148).
+  final List<Duration?> openStarts = [];
   final List<Media?> setNextCalls = [];
   final List<Duration> seeks = [];
   final List<double> volumes = [];
@@ -150,7 +179,7 @@ class FakePlayer implements Player {
   }
 
   void emitCompleted() {
-    _state = _state.copyWith(completed: true, position: _trackDuration);
+    _state = _state.copyWith(completed: true, position: _state.duration);
     completedCtrl.add(true);
   }
 
@@ -193,6 +222,9 @@ class FakePlayer implements Player {
     fileLoadedCtrl.close();
     backendSwitchedCtrl.close();
     trackTransitionCtrl.close();
+    sourceStartedCtrl.close();
+    sourceReadyCtrl.close();
+    sourceFailedCtrl.close();
   }
 
   @override
@@ -233,6 +265,7 @@ class FakePlayer implements Player {
     // Clear before recording the committed replacement open.
     _armedMedia = null;
     openedUris.add(media.uri);
+    openStarts.add(media.start);
     _state = _state.copyWith(playing: play, completed: false, position: Duration.zero, duration: _trackDuration);
     if (play) playingCtrl.add(true);
   }
@@ -335,7 +368,7 @@ class FakePlayer implements Player {
   Future<void> command(List<String> args) async {}
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {}
 
   @override
   Future<void> configureSubtitleFonts() async {}
@@ -476,7 +509,7 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
   }
 
   @override
-  Future<MusicSource> resolve(MediaItem track) async {
+  Future<MusicSource> resolve(MediaItem track, {bool offline = false}) async {
     resolveCounts[track.id] = (resolveCounts[track.id] ?? 0) + 1;
     final gates = _resolveGates[track.id];
     final gate = gates == null || gates.isEmpty ? null : gates.removeAt(0);
@@ -625,7 +658,7 @@ class _Harness {
 
   FakePlayer get player => players.last;
 
-  factory _Harness.create({Future<void> Function(double)? volumePersistenceWriter}) {
+  factory _Harness.create({Future<void> Function(double)? volumePersistenceWriter, MusicSessionStore? sessionStore}) {
     final queueRandom = _ScriptedRandom();
     final client = FakeMediaServerClient();
     final resolver = FakeMusicSourceResolver(client: client);
@@ -635,6 +668,7 @@ class _Harness {
     late final _Harness harness;
     final service = MusicPlaybackServiceImpl(
       serverManager: serverManager,
+      sessionStore: sessionStore,
       resolver: resolver,
       audioPlayerFactory: () {
         final player = FakePlayer();
@@ -662,6 +696,89 @@ class _Harness {
     );
     await pumpEventQueue();
   }
+}
+
+class _AgentDownloads extends Fake with ChangeNotifier implements DownloadProvider {
+  _AgentDownloads(this.track);
+  final MediaItem track;
+
+  @override
+  Future<MediaItem?> lookupOfflineMetadata(ServerId serverId, String itemId) async => track;
+
+  @override
+  Future<DownloadedMediaItem?> getCompletedDownload(String globalKey) async => DownloadedMediaItem(
+    id: 1,
+    serverId: track.serverId!,
+    ratingKey: track.id,
+    globalKey: track.globalKey,
+    type: 'track',
+    status: DownloadStatus.completed.index,
+    progress: 100,
+    downloadedBytes: 1,
+    retryCount: 0,
+    mediaIndex: 0,
+  );
+
+  @override
+  Future<String?> getVideoFilePath(String globalKey, {int? mediaIndex, String? mediaSourceId}) async => _urlFor(track);
+}
+
+class _AgentResume extends Fake with ChangeNotifier implements OfflineWatchSyncService {
+  final entered = Completer<void>();
+  final result = Completer<int?>();
+
+  @override
+  Future<int?> getLocalViewOffset(String globalKey, {String? clientScopeId}) {
+    entered.complete();
+    return result.future;
+  }
+}
+
+class _AgentLaunchHarness {
+  final commands = AgentPlaybackCommands();
+  late AgentCommandContext context;
+
+  Future<void> mount(WidgetTester tester, _Harness music, MediaItem track, {_AgentResume? resume}) async {
+    final servers = testMultiServerProvider(music.serverManager);
+    final downloads = _AgentDownloads(track);
+    addTearDown(() {
+      commands.dispose();
+      servers.dispose();
+      downloads.dispose();
+      resume?.dispose();
+    });
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: servers),
+          ChangeNotifierProvider<DownloadProvider>.value(value: downloads),
+          ChangeNotifierProvider<MusicPlaybackService>.value(value: music.service),
+          if (resume != null) ChangeNotifierProvider<OfflineWatchSyncService>.value(value: resume),
+        ],
+        child: Builder(
+          builder: (buildContext) {
+            context = AgentCommandContext(
+              context: buildContext,
+              requestId: 'playback-regression',
+              sessionToken: 'profile',
+              hasProfile: true,
+              isCurrent: () => true,
+            );
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> start(MediaItem track, {bool resume = false}) async =>
+      await commands.handle('playback.start', {
+            'serverId': track.serverId,
+            'itemId': track.id,
+            'offline': true,
+            'start': resume ? 'resume' : 'beginning',
+          }, context)
+          as Map<String, dynamic>;
 }
 
 void main() {
@@ -830,6 +947,191 @@ void main() {
     // Track services bound: session started + OS metadata pushed.
     expect(h.client.reportsFor('started').map((r) => r.itemId), ['t1']);
     expect(h.controls.metadataTitles, ['Track t1']);
+  });
+
+  test('launch readiness requires the matching native source, not optimistic playing intent', () async {
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    await h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      initialPosition: Duration.zero,
+      launchObserver: observer,
+    );
+    expect(h.player.openStarts, [Duration.zero]);
+    expect(observer.snapshot()['playing'], isFalse);
+    h.player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 6, position: Duration.zero));
+    expect(observer.snapshot()['ready'], isFalse);
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    expect(observer.snapshot()['stage'], 'playing');
+    await h.service.stop();
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    expect(observer.snapshot()['stage'], 'stopped');
+    expect(observer.snapshot()['playing'], isFalse);
+  });
+
+  test('native completion survives queue parking and retains the final native playhead until stop', () async {
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    await h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      launchObserver: observer,
+    );
+    h.player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+    h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    const nativeDuration = Duration(seconds: 197);
+    h.player.setOutgoingPlayhead(position: nativeDuration, duration: nativeDuration);
+    h.player.emitCompleted();
+    await pumpEventQueue();
+
+    expect(h.service.status, MusicPlaybackStatus.paused);
+    expect(observer.snapshot(), containsPair('stage', 'completed'));
+    expect(observer.snapshot(), containsPair('positionMs', nativeDuration.inMilliseconds));
+    expect(observer.snapshot(), containsPair('durationMs', nativeDuration.inMilliseconds));
+    expect(observer.snapshot(), containsPair('playing', false));
+    // Ordinary UI replay must not turn the finished operation into a live
+    // observation of the replacement native open.
+    await h.service.play();
+    expect(observer.snapshot(), containsPair('stage', 'completed'));
+    expect(observer.snapshot(), containsPair('positionMs', nativeDuration.inMilliseconds));
+    await h.service.stop();
+    expect(observer.snapshot(), containsPair('stage', 'stopped'));
+  });
+
+  test('native error before source failure survives teardown with sanitized failure and native playhead', () async {
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    await h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      launchObserver: observer,
+    );
+    final player = h.player;
+    player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+    player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+    const failurePosition = Duration(seconds: 42);
+    const nativeDuration = Duration(seconds: 197);
+    player.setOutgoingPlayhead(position: failurePosition, duration: nativeDuration);
+    // Match PlayerBase's end-file(error) ordering: generic error tears down
+    // the session before the source-qualified event is delivered.
+    player.emitError('https://private.example/track?token=secret');
+    player.sourceFailedCtrl.add(const PlayerSourceFailed(7));
+    await pumpEventQueue();
+
+    expect(h.service.status, MusicPlaybackStatus.error);
+    expect(h.service.currentTrack, isNull);
+    expect(player.disposed, isTrue);
+    expect(observer.snapshot(), {
+      'stage': 'failed',
+      'playing': false,
+      'buffering': false,
+      'positionMs': failurePosition.inMilliseconds,
+      'durationMs': nativeDuration.inMilliseconds,
+      'failure': {'code': 'playbackFailed'},
+    });
+    await h.service.stop();
+    expect(observer.snapshot(), containsPair('stage', 'stopped'));
+    expect(observer.snapshot().containsKey('failure'), isFalse);
+  });
+
+  test('ending a replaced source receipt leaves the screen lifetime current', () {
+    var nativePosition = 12;
+    final observer = PlaybackLaunchObserver(isCurrent: () => true);
+    observer.attach(
+      () => {'stage': 'playing', 'playing': true, 'positionMs': nativePosition},
+      ownsPlayback: () => true,
+    );
+    observer.detach();
+    nativePosition = 73;
+    expect(observer.snapshot(), {'stage': 'cancelled', 'playing': false, 'buffering': false});
+    expect(observer.ownsPlayback, isFalse);
+    expect(observer.isCurrent, isTrue, reason: 'ending A observation must not invalidate B UI opens');
+  });
+
+  testWidgets('scoped stop cannot stop music that replaced the agent operation; unscoped stop can', (tester) async {
+    final agent = _AgentLaunchHarness();
+    await agent.mount(tester, h, t1);
+    await tester.runAsync(() async {
+      final accepted = await agent.start(t1);
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, t1.id);
+      await h.playTracks([t2]);
+      h.player.setPosition(const Duration(seconds: 23));
+      final scope = {'operationId': accepted['operationId']};
+      final status = await agent.commands.handle('playback.status', scope, agent.context) as Map<String, dynamic>;
+      expect(status['stage'], 'cancelled');
+      expect(status.containsKey('positionMs'), isFalse);
+      await expectLater(
+        agent.commands.handle('playback.stop', scope, agent.context),
+        throwsA(isA<AgentControlException>().having((error) => error.code, 'code', 'operationChanged')),
+      );
+      expect(h.service.currentTrack?.id, t2.id);
+      expect(h.player.state.isActive, isTrue);
+      expect(h.player.stopCalls, 0);
+
+      await agent.commands.handle('playback.stop', const {}, agent.context);
+      expect(h.service.currentTrack, isNull);
+      expect(h.player.disposed, isTrue);
+    });
+  });
+
+  testWidgets('scoped stop still owns a completed parked agent track', (tester) async {
+    final agent = _AgentLaunchHarness();
+    await agent.mount(tester, h, t1);
+    await tester.runAsync(() async {
+      final accepted = await agent.start(t1);
+      await pumpEventQueue();
+      h.player.sourceStartedCtrl.add(const PlayerSourceStarted(7));
+      h.player.sourceReadyCtrl.add(const PlayerSourceReady(sourceId: 7, position: Duration.zero));
+      h.player.emitCompleted();
+      await pumpEventQueue();
+      final scope = {'operationId': accepted['operationId']};
+      final status = await agent.commands.handle('playback.status', scope, agent.context) as Map<String, dynamic>;
+      expect(status['stage'], 'completed');
+      final stopped = await agent.commands.handle('playback.stop', scope, agent.context) as Map<String, dynamic>;
+      expect(stopped['stage'], 'stopped');
+      expect(h.service.currentTrack, isNull);
+      expect(h.player.disposed, isTrue);
+    });
+  });
+
+  testWidgets('UI playback started during offline resume lookup is not replaced by an agent launch', (tester) async {
+    final agent = _AgentLaunchHarness();
+    // The launch runs in real async; create its gates in that zone too.
+    final resume = (await tester.runAsync(() async => _AgentResume()))!;
+    await agent.mount(tester, h, t1, resume: resume);
+    await tester.runAsync(() async {
+      final accepted = await agent.start(t1, resume: true);
+      await resume.entered.future;
+      await h.playTracks([t2]);
+      resume.result.complete(42000);
+      await pumpEventQueue();
+
+      final status =
+          await agent.commands.handle('playback.status', {'operationId': accepted['operationId']}, agent.context)
+              as Map<String, dynamic>;
+      expect(status['stage'], 'blocked');
+      expect(status['blocker'], 'playbackActive');
+      expect(h.service.currentTrack?.id, t2.id);
+      expect(h.player.openedUris, [_urlFor(t2)]);
+      expect(h.player.state.isActive, isTrue);
+    });
+  });
+
+  test('invalidating a launch during source resolution prevents native open', () async {
+    var current = true;
+    final observer = PlaybackLaunchObserver(isCurrent: () => current);
+    final gate = h.resolver._gateNextResolve(t1.id);
+    final launching = h.service.playFromList(
+      tracks: [t1],
+      playContext: const MusicPlayContext(title: 'Track', kind: MusicPlayContextKind.tracks),
+      launchObserver: observer,
+    );
+    await gate.entered;
+    current = false;
+    gate.release();
+    await launching;
+    expect(h.player.openedUris, isEmpty);
+    expect(observer.snapshot()['stage'], 'cancelled');
   });
 
   test('a superseded slow gapless resolve cannot overwrite the newly requested arm', () async {
@@ -1530,6 +1832,237 @@ void main() {
       await pumpEventQueue();
       expect(await simulateKeyDownEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
       expect(await simulateKeyUpEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
+    });
+  });
+
+  group('Discord presence', () {
+    late FakeDiscordRPC rpc;
+    late DiscordRPCService rpcService;
+
+    setUp(() {
+      rpc = FakeDiscordRPC();
+      rpcService = DiscordRPCService.forTesting(rpcFactory: () => rpc);
+      DiscordRPCService.debugOverrideInstance(rpcService);
+      unawaited(rpcService.setEnabled(true));
+      rpc.emitReady();
+    });
+
+    tearDown(() {
+      DiscordRPCService.debugOverrideInstance(null);
+      unawaited(rpcService.dispose());
+    });
+
+    test('a session publishes Listening, withdraws on pause, returns on resume, and clears on stop', () async {
+      await h.playTracks([t1, t2]);
+
+      var presence = rpc.presences.last;
+      expect(presence.type, DiscordActivityType.listening);
+      expect(presence.details, 'Track t1');
+      expect(presence.state, 'Artist');
+      expect(presence.timestamps, isNotNull, reason: 'audible playback runs the progress bar');
+
+      final published = rpc.presences.length;
+      await h.service.pause();
+      await pumpEventQueue();
+      expect(rpc.clearPresenceCalls, 1, reason: 'a paused session can sit in the mini-player for hours');
+      expect(rpc.presences, hasLength(published));
+
+      await h.service.play();
+      await pumpEventQueue();
+      presence = rpc.presences.last;
+      expect(presence.details, 'Track t1');
+      expect(presence.timestamps, isNotNull);
+
+      h.player.emitTransition(_urlFor(t2));
+      await pumpEventQueue();
+      presence = rpc.presences.last;
+      expect(presence.details, 'Track t2');
+      expect(presence.timestamps, isNotNull);
+
+      // Regression: the player subscriptions are cancelled before the player
+      // stops, so no playing=false reaches the service — the teardown itself
+      // must clear presence or the last track sticks to the profile.
+      await h.service.stop();
+      expect(rpc.clearPresenceCalls, 2);
+    });
+
+    test('a queue that plays out withdraws the card', () async {
+      await h.playTracks([t1]);
+      expect(rpc.presences.last.timestamps, isNotNull);
+      final published = rpc.presences.length;
+
+      h.player.emitCompleted();
+      await pumpEventQueue();
+
+      expect(h.service.status, MusicPlaybackStatus.paused);
+      expect(rpc.clearPresenceCalls, isPositive);
+      expect(rpc.presences, hasLength(published));
+    });
+  });
+
+  group('session restore (#2148)', () {
+    late AppDatabase db;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+    });
+
+    tearDown(() async {
+      await db.close();
+    });
+
+    MusicSessionStore store() => MusicSessionStore(database: db, profileId: 'profile-1');
+
+    _Harness harnessWithStore() {
+      final harness = _Harness.create(sessionStore: store());
+      addTearDown(() {
+        harness.service.dispose();
+        for (final player in harness.players) {
+          player.closeControllers();
+        }
+        harness.controls.closeControllers();
+        harness.serverManager.dispose();
+      });
+      return harness;
+    }
+
+    Future<void> seedParkedSession({
+      required List<MediaItem> tracks,
+      int cursor = 0,
+      Duration position = Duration.zero,
+    }) {
+      return store().save(
+        MusicSessionSnapshot(
+          queue: MusicQueueState(
+            items: tracks,
+            order: [for (var i = 0; i < tracks.length; i++) i],
+            cursor: cursor,
+            shuffled: false,
+            repeatMode: MusicRepeatMode.off,
+          ),
+          playContext: const MusicPlayContext(title: 'Album', kind: MusicPlayContextKind.album),
+          position: position,
+        ),
+      );
+    }
+
+    test('a played session restores parked-paused without spinning up the audio core', () async {
+      final first = harnessWithStore();
+      await first.playTracks([t1, t2, t3], startTrack: t2);
+      first.player.setPosition(const Duration(seconds: 42));
+      await first.service.pause();
+      await pumpEventQueue();
+      first.service.dispose();
+
+      final second = harnessWithStore();
+      await pumpEventQueue();
+
+      expect(second.service.status, MusicPlaybackStatus.paused);
+      expect(second.service.currentTrack?.id, 't2');
+      expect(second.service.queue.map((t) => t.id), ['t1', 't2', 't3']);
+      expect(second.service.currentIndex, 1);
+      expect(second.service.position, const Duration(seconds: 42));
+      expect(second.service.playContext?.kind, MusicPlayContextKind.album);
+      expect(second.players, isEmpty, reason: 'restore must not create a player or resolve sources');
+      expect(second.resolver.resolveCounts, isEmpty);
+    });
+
+    test('first play opens the restored track at the persisted offset', () async {
+      final first = harnessWithStore();
+      await first.playTracks([t1, t2, t3], startTrack: t2);
+      first.player.setPosition(const Duration(seconds: 42));
+      await first.service.pause();
+      await pumpEventQueue();
+      first.service.dispose();
+
+      final second = harnessWithStore();
+      await pumpEventQueue();
+      await second.service.play();
+      await pumpEventQueue();
+
+      expect(second.players, hasLength(1));
+      expect(second.player.openedUris, [_urlFor(t2)]);
+      expect(second.player.openStarts, [const Duration(seconds: 42)]);
+      expect(second.service.isPlaying, isTrue);
+    });
+
+    test('seek while parked moves the resume point', () async {
+      await seedParkedSession(tracks: [t1, t2], position: const Duration(seconds: 10));
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+      expect(harness.service.position, const Duration(seconds: 10));
+
+      await harness.service.seek(const Duration(seconds: 90));
+      expect(harness.service.position, const Duration(seconds: 90));
+
+      await harness.service.play();
+      await pumpEventQueue();
+      expect(harness.player.openStarts, [const Duration(seconds: 90)]);
+    });
+
+    test('previous while parked restarts the current track from the top', () async {
+      await seedParkedSession(tracks: [t1, t2], position: const Duration(seconds: 100));
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+      await harness.service.previous();
+      await pumpEventQueue();
+
+      expect(harness.player.openedUris, [_urlFor(t1)]);
+      expect(harness.player.openStarts, [null], reason: 'previous discards the resume offset');
+    });
+
+    test('next while parked advances and plays the following track from the top', () async {
+      await seedParkedSession(tracks: [t1, t2], position: const Duration(seconds: 100));
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+      await harness.service.next();
+      await pumpEventQueue();
+
+      expect(harness.service.currentTrack?.id, 't2');
+      expect(harness.player.openedUris, [_urlFor(t2)]);
+      expect(harness.player.openStarts, [null]);
+    });
+
+    test('a user play racing the restore read wins', () async {
+      await seedParkedSession(tracks: [t1], position: const Duration(seconds: 30));
+
+      final harness = harnessWithStore();
+      // Explicit playback before the restore read lands must never be
+      // clobbered by the restored snapshot.
+      await harness.playTracks([t2, t3]);
+      await pumpEventQueue();
+
+      expect(harness.service.currentTrack?.id, 't2');
+      expect(harness.service.queue.map((t) => t.id), ['t2', 't3']);
+    });
+
+    test('stop clears the persisted session', () async {
+      final harness = harnessWithStore();
+      await harness.playTracks([t1, t2]);
+      await pumpEventQueue();
+      expect(await store().load(), isNotNull);
+
+      await harness.service.stop();
+      await pumpEventQueue();
+      expect(await store().load(), isNull);
+    });
+
+    test('restore is skipped when the setting is off', () async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      addTearDown(BaseSharedPreferencesService.resetForTesting);
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.resumeMusicOnLaunch, false);
+      await seedParkedSession(tracks: [t1]);
+
+      final harness = harnessWithStore();
+      await pumpEventQueue();
+
+      expect(harness.service.status, MusicPlaybackStatus.idle);
+      expect(harness.service.currentTrack, isNull);
     });
   });
 }

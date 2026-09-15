@@ -26,6 +26,7 @@ import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
+import '../utils/focus_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
@@ -1011,12 +1012,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       // Restore focus to the previously focused item after the menu closes,
       // but only if no navigation occurred and the focus node is still valid
-      if (!didNavigate && previousFocus != null && previousFocus.canRequestFocus) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (previousFocus.canRequestFocus) {
-            previousFocus.requestFocus();
-          }
-        });
+      if (!didNavigate && previousFocus != null) {
+        FocusUtils.restoreFocusAfterBuild(this, previousFocus);
       }
     }
   }
@@ -1704,30 +1701,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final item = _mediaItem!;
-
-    try {
-      // Backend-agnostic resolve so Jellyfin items can be downloaded too.
-      final client = context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
-      final result = await showDownloadOptionsAndQueue(
-        context,
-        metadata: item,
-        client: client,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !context.mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (context.mounted) {
-        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
-    } catch (e) {
-      appLogger.e('Failed to queue download', error: e);
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
+    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+    final client = _getMediaClientForItem();
+    await queueDownloadWithFeedback(context, metadata: _mediaItem!, client: client, downloadProvider: downloadProvider);
   }
 
   /// Handle delete download action

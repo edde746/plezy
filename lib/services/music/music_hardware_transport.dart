@@ -88,14 +88,20 @@ class MusicHardwareTransportHandler {
         TransportCommand.toggle => _onTogglePlayPause,
       };
     }
-    if (key == LogicalKeyboardKey.mediaTrackNext) return _onNext;
-    if (key == LogicalKeyboardKey.mediaTrackPrevious) return _onPrevious;
-    if (key == LogicalKeyboardKey.mediaStop) return _onStop;
-    if (key == LogicalKeyboardKey.mediaFastForward || key == LogicalKeyboardKey.mediaSkipForward) {
-      return _onSkipForward;
+    final track = classifyMediaTrackKey(key);
+    if (track != null) {
+      return switch (track) {
+        MediaSeekDirection.forward => _onNext,
+        MediaSeekDirection.backward => _onPrevious,
+      };
     }
-    if (key == LogicalKeyboardKey.mediaRewind || key == LogicalKeyboardKey.mediaSkipBackward) {
-      return _onSkipBackward;
+    if (key == LogicalKeyboardKey.mediaStop) return _onStop;
+    final skip = classifyMediaSeekKey(key);
+    if (skip != null) {
+      return switch (skip) {
+        MediaSeekDirection.forward => _onSkipForward,
+        MediaSeekDirection.backward => _onSkipBackward,
+      };
     }
     return null;
   }

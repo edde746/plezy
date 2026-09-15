@@ -102,6 +102,8 @@ mixin PlaybackReportRecorder {
     String? playSessionId,
     String? liveStreamId,
     String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) {
     return onPlaybackReport(
@@ -113,6 +115,8 @@ mixin PlaybackReportRecorder {
         playSessionId: playSessionId,
         liveStreamId: liveStreamId,
         mediaSourceId: mediaSourceId,
+        audioStreamIndex: audioStreamIndex,
+        subtitleStreamIndex: subtitleStreamIndex,
         report: report,
       ),
     );

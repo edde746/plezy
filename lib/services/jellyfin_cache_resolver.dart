@@ -145,11 +145,18 @@ class JellyfinCacheResolver {
                 (t) => OrderingTerm.asc(t.connectionId),
               ]))
             .get();
+    if (bindings.isEmpty) return null;
+    // One select for every bound connection; bindings keep their precedence
+    // order above, so the first matching binding still wins.
+    final connections = {
+      for (final connection in await (database.select(
+        database.connections,
+      )..where((t) => t.id.isIn(bindings.map((binding) => binding.connectionId)) & _mediaBrowserKind(t.kind))).get())
+        connection.id: connection,
+    };
     for (final binding in bindings) {
       if (binding.userIdentifier.isEmpty) continue;
-      final connection = await (database.select(
-        database.connections,
-      )..where((t) => t.id.equals(binding.connectionId) & _mediaBrowserKind(t.kind))).getSingleOrNull();
+      final connection = connections[binding.connectionId];
       if (connection == null) continue;
 
       final connectionScope = _splitScope(connection.id);

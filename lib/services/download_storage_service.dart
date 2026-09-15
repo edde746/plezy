@@ -276,6 +276,32 @@ class DownloadStorageService {
     return _formatTitleWithYear(title, year);
   }
 
+  /// Artist folder for a track: sanitized album-artist (grandparent) title.
+  /// Grouping by album artist keeps every track of an album in one folder
+  /// even when individual tracks credit different artists.
+  String _getTrackArtistFolderName(MediaItem track) {
+    final artist = _sanitizeFileName(track.albumArtistTitle ?? '');
+    return artist.isEmpty ? 'Unknown Artist' : artist;
+  }
+
+  /// Album folder for a track: sanitized parent (album) title.
+  String _getTrackAlbumFolderName(MediaItem track) {
+    final album = _sanitizeFileName(track.albumTitle ?? '');
+    return album.isEmpty ? 'Unknown Album' : album;
+  }
+
+  /// Format track filename base: {NN} - {Title}, prefixed with the disc
+  /// number on multi-disc albums: {D}-{NN} - {Title}. A track without an
+  /// index is just the sanitized title.
+  String _formatTrackFileName(MediaItem track) {
+    final title = _sanitizeFileName(track.title!);
+    final trackNumber = track.trackNumber;
+    if (trackNumber == null) return title;
+    final number = padNumber(trackNumber, 2);
+    final disc = track.discNumber;
+    return disc != null && disc > 1 ? '$disc-$number - $title' : '$number - $title';
+  }
+
   Future<Directory> getMovieDirectory(MediaItem movie) async {
     final baseDir = await getDownloadsDirectory();
     final movieFolder = _getMovieFolderName(movie);
@@ -350,6 +376,20 @@ class DownloadStorageService {
   Future<String> getMovieSubtitlePath(MediaItem movie, int trackId, String extension) async {
     final subsDir = await getMovieSubtitlesDirectory(movie);
     return path.join(subsDir.path, '$trackId.$extension');
+  }
+
+  /// Get album directory for a track: downloads/Music/{Artist}/{Album}/
+  Future<Directory> getTrackAlbumDirectory(MediaItem track) async {
+    final baseDir = await getDownloadsDirectory();
+    return _ensureDirectoryExists(
+      Directory(path.join(baseDir.path, 'Music', _getTrackArtistFolderName(track), _getTrackAlbumFolderName(track))),
+    );
+  }
+
+  /// Get track audio file path: .../Music/{Artist}/{Album}/{NN} - {Title}.{ext}
+  Future<String> getTrackAudioPath(MediaItem track, String extension) async {
+    final albumDir = await getTrackAlbumDirectory(track);
+    return path.join(albumDir.path, '${_formatTrackFileName(track)}.$extension');
   }
 
   /// Convert an absolute file path to a relative path (for database storage)
@@ -500,6 +540,11 @@ class DownloadStorageService {
     return ['TV Shows', showFolder, 'Season $seasonNum'];
   }
 
+  /// Get SAF path components for a track: ['Music', {Artist}, {Album}]
+  List<String> getTrackSafPathComponents(MediaItem track) {
+    return ['Music', _getTrackArtistFolderName(track), _getTrackAlbumFolderName(track)];
+  }
+
   String getMovieSafFileName(MediaItem movie, String extension) {
     return '${_getMovieFolderName(movie)}.$extension';
   }
@@ -507,6 +552,10 @@ class DownloadStorageService {
   String getEpisodeSafFileName(MediaItem episode, String extension) {
     final fileName = _formatEpisodeFileName(episode);
     return '$fileName.$extension';
+  }
+
+  String getTrackSafFileName(MediaItem track, String extension) {
+    return '${_formatTrackFileName(track)}.$extension';
   }
 
   /// Get the extension-less episode filename used for SAF lookups.
@@ -530,6 +579,9 @@ class DownloadStorageService {
         components: getEpisodeSafPathComponents(metadata, showYear: showYear),
         fileName: getEpisodeSafFileName(metadata, extension),
       );
+    }
+    if (metadata.isTrack) {
+      return (components: getTrackSafPathComponents(metadata), fileName: getTrackSafFileName(metadata, extension));
     }
     return (components: [serverId!, metadata.id], fileName: 'video.$extension');
   }

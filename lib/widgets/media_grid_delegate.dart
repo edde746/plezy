@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../media/media_item.dart' show CardShape;
+import '../services/settings_service.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
@@ -19,7 +22,7 @@ class MediaGridDelegate {
   ///
   /// This is the single widening scheme: wide cells widen the max extent
   /// BEFORE the integral column packing. Nothing multiplies the resolved cell
-  /// afterwards — horizontal rows adopt the packed cell via [wideCellWidth]
+  /// afterwards — horizontal rows adopt the packed cell via [cellWidth]
   /// so a hub row and a grid of the same items match at equal width.
   static double _maxCrossAxisExtentFor({
     required BuildContext context,
@@ -37,13 +40,23 @@ class MediaGridDelegate {
     return maxCrossAxisExtent;
   }
 
-  /// The cell width the grid formula resolves for a wide (16:9) surface —
-  /// the wide analogue of [GridSizeCalculator.getCellWidth]. Horizontal hub
-  /// rows use this instead of scaling the poster cell so episode rows match
-  /// the episode grid behind their "see all" page (#2039, plan item 3).
-  static double wideCellWidth(BuildContext context, double availableWidth, int density) {
-    final maxCrossAxisExtent = _maxCrossAxisExtentFor(context: context, density: density, useWideAspectRatio: true);
-    final spacing = spacingFor(context: context, useWideAspectRatio: true);
+  /// The cell width the grid formula resolves for [availableWidth] — the same
+  /// packing [MediaGridGeometry.resolve] performs, including the user's
+  /// grid-spacing gutter. Horizontal hub rows use this so a row and the grid
+  /// behind its "see all" page render the same card at equal width (#2039),
+  /// at every grid-spacing setting (#2226).
+  static double cellWidth({
+    required BuildContext context,
+    required double availableWidth,
+    required int density,
+    bool useWideAspectRatio = false,
+  }) {
+    final maxCrossAxisExtent = _maxCrossAxisExtentFor(
+      context: context,
+      density: density,
+      useWideAspectRatio: useWideAspectRatio,
+    );
+    final spacing = spacingFor(context: context, useWideAspectRatio: useWideAspectRatio);
     final columnCount = GridSizeCalculator.getColumnCount(
       availableWidth,
       maxCrossAxisExtent,
@@ -52,10 +65,13 @@ class MediaGridDelegate {
     return GridSizeCalculator.getCellWidthForColumnCount(availableWidth, columnCount, crossAxisSpacing: spacing);
   }
 
-  /// Inter-cell gutter for the resolved shape. Square (music) grids get
-  /// [GridLayoutConstants.squareGridSpacing] so cards have breathing room;
-  /// every other shape keeps the platform default (0, or 24 on automotive).
-  /// Full-bleed TV grids use the scaled full-card gutter.
+  /// Inter-cell gutter for the resolved shape. Square (music) grids get at
+  /// least [GridLayoutConstants.squareGridSpacing] so cards have breathing
+  /// room; every other shape starts from the platform default (0, or 24 on
+  /// automotive). Full-bleed TV grids use the scaled full-card gutter.
+  ///
+  /// On top of the non-automotive, non-full-bleed base, the user's
+  /// [SettingsService.gridSpacing] setting widens the gutter (#2083).
   static double spacingFor({
     required BuildContext context,
     bool useWideAspectRatio = false,
@@ -63,12 +79,11 @@ class MediaGridDelegate {
     CardShape? shape,
   }) {
     if (PlatformDetector.isAutomotive()) return GridLayoutConstants.crossAxisSpacing;
-    if (!fullBleedImage) {
-      return _resolveShape(shape, useWideAspectRatio) == CardShape.square
-          ? GridLayoutConstants.squareGridSpacing
-          : GridLayoutConstants.crossAxisSpacing;
-    }
-    return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
+    if (fullBleedImage) return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
+    final base = _resolveShape(shape, useWideAspectRatio) == CardShape.square
+        ? GridLayoutConstants.squareGridSpacing
+        : GridLayoutConstants.crossAxisSpacing;
+    return math.max(base, SettingsService.instance.read(SettingsService.gridSpacing).gridGap);
   }
 
   static double aspectRatioFor({bool useWideAspectRatio = false, bool fullBleedImage = false, CardShape? shape}) {

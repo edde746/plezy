@@ -60,21 +60,20 @@ String _normalize(String title) {
 /// title is the only candidate filter available and a sequel entry's own
 /// title — `You and I Are Polar Opposites Season 2` — never matches the parent
 /// show. Each input contributes itself plus its season-stripped form; the
-/// caller tries them in order and stops at the first candidate whose external
-/// ids verify, so a broader title can never widen what actually matches.
+/// backend searches every candidate concurrently and verifies external ids,
+/// so a candidate can only ever add genuine copies.
 ///
-/// [limit] bounds the request fan-out, and 2 is deliberate: the entry's own
-/// title plus its season-stripped form matched 77 of 113 real sequel entries
-/// against a 267-show Plex library, where the unexpanded title alone matched
-/// 3. Raising it to 6 (adding romaji/native/synonym variants) reached only 81
-/// — four more entries for up to five more requests per lookup that finds
-/// nothing, which is the common case on a discovery tab. Two candidates cost
-/// the same two requests the single-title lookup already spent.
+/// [limit] bounds logical title searches per server per lookup. Four admits
+/// two families when both have stripped partners; families without a suffix
+/// leave room for more aliases. The caller supplies original/display titles
+/// first, then best-effort alternatives (`CatalogLibraryMatcher.lookupTitles`).
+/// A source's original title is not necessarily native, and neither source nor
+/// server metadata guarantees that every alias fits or reaches every copy.
 ///
 /// Each title is emitted immediately followed by its stripped form rather than
 /// in two passes, so the cap can never spend every slot on unstripped titles
 /// and never try the one candidate that actually reaches the parent show.
-List<String> titleMatchCandidates(Iterable<String?> titles, {int limit = 2}) {
+List<String> titleMatchCandidates(Iterable<String?> titles, {int limit = 4}) {
   final out = <String>[];
   final seen = <String>{};
 

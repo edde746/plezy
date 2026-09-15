@@ -96,19 +96,21 @@ void main() {
       });
     });
 
-    test('rate acks are consumed, user rate changes are intents', () {
+    test('cache-pause-wait is written for mpv and skipped for other cores', () {
       fakeAsync((async) {
         final (attached, player, _) = build(async);
-        final intents = <double>[];
-        attached.rateIntents.listen(intents.add);
-
-        attached.setRate(1.04);
+        bool? result;
+        attached.setCachePauseWait(const Duration(seconds: 4)).then((v) => result = v);
         async.flushMicrotasks();
-        expect(intents, isEmpty);
+        expect(result, isTrue);
+        expect(player.properties, {'cache-pause-wait': '4'});
 
-        player.emitRate(2.0);
+        player.properties.clear();
+        player.playerType = 'exoplayer';
+        attached.setCachePauseWait(const Duration(seconds: 4)).then((v) => result = v);
         async.flushMicrotasks();
-        expect(intents, [2.0]);
+        expect(result, isTrue);
+        expect(player.properties, isEmpty);
         attached.dispose();
       });
     });
@@ -224,16 +226,21 @@ void main() {
       });
     });
 
-    test('falls back to player.seek when the delegate throws', () {
+    test('a failed delegate never falls back against a replacement source', () {
       fakeAsync((async) {
-        final (attached, player, lostEvents) = build(async, remoteSeek: (_) async => throw StateError('screen gone'));
-
+        final pending = Completer<void>();
+        final (attached, player, lostEvents) = build(async, remoteSeek: (_) => pending.future);
         bool? result;
         attached.seek(const Duration(seconds: 30)).then((v) => result = v);
         async.flushMicrotasks();
-
-        expect(result, isTrue);
-        expect(player.state.position, const Duration(seconds: 30));
+        attached.unbind();
+        attached.observeBinding(ratingKey: 'B', serverId: 'srv', hasFirstFrame: true);
+        player.setPosition(const Duration(seconds: 5));
+        pending.completeError(StateError('old screen gone'));
+        async.flushMicrotasks();
+        expect(result, isFalse);
+        expect(player.currentPosition, const Duration(seconds: 5));
+        expect(player.commandLog.where((command) => command.startsWith('seek:')), isEmpty);
         expect(lostEvents, isEmpty);
         attached.dispose();
       });

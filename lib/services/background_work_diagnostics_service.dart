@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../mixins/disposable_change_notifier_mixin.dart';
+import 'connectivity_probe.dart';
 import 'download_manager_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -497,8 +498,13 @@ class BackgroundWorkDiagnosticsService extends ChangeNotifier
     final probe = _networkProbeOverride;
     if (probe != null) return probe();
     try {
-      final connectivity = await Connectivity().checkConnectivity();
-      if (connectivity.isEmpty || connectivity.contains(ConnectivityResult.none)) return false;
+      final connectivity = await ConnectivityProbe.check();
+      // `other` is also what the probe reports when the platform cannot answer.
+      if (connectivity.isEmpty ||
+          connectivity.contains(ConnectivityResult.none) ||
+          connectivity.contains(ConnectivityResult.other)) {
+        return false;
+      }
       return !await DownloadManagerService.shouldBlockDownloadOnCellularWith(connectivity);
     } catch (_) {
       // Unknown connectivity or policy is inconclusive, not proof of a stall.

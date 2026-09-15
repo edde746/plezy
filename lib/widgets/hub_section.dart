@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:plezy/widgets/app_icon.dart';
@@ -10,7 +12,6 @@ import '../focus/focus_navigation_intent.dart';
 import '../focus/key_event_utils.dart';
 import '../services/settings_service.dart';
 import 'settings_builder.dart';
-import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
@@ -150,10 +151,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     return serverId == null ? widget.hub.id : '$serverId:${widget.hub.id}';
   }
 
-  // Native tvOS focus-engine scroll settles over ~450-900ms of ease-out
-  // (FocusProbe capture, issue #2006); successive steps retarget the
+  // Per-step scroll glide; platform-specific, see
+  // FocusTheme.navigationScrollDuration. Successive steps retarget the
   // animation so a drag chains into one continuous glide.
-  static const _navigationScrollDuration = Duration(milliseconds: 500);
+  static Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration();
   final _selectLongPress = DpadSelectLongPressController();
 
   @override
@@ -462,6 +463,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     int density,
     double leadingPadding,
     bool useWideLayout,
+    double gridGap,
   ) {
     return TvBrowseRailLayout.cardWidthFor(
       availableWidth: availableWidth,
@@ -469,7 +471,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       useWideLayout: useWideLayout,
       scale: TvLayoutConstants.scaleOf(context),
       horizontalPadding: leadingPadding * 2,
-      itemGap: 0,
+      itemGap: gridGap,
     );
   }
 
@@ -559,7 +561,11 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
               focusNode: _hubFocusNode,
               onKeyEvent: _handleKeyEvent,
               child: SettingsBuilder(
-                prefs: const [SettingsService.libraryDensity, SettingsService.episodePosterMode],
+                prefs: const [
+                  SettingsService.libraryDensity,
+                  SettingsService.episodePosterMode,
+                  SettingsService.gridSpacing,
+                ],
                 builder: (context) => LayoutBuilder(
                   builder: (context, constraints) {
                     final svc = SettingsService.instanceOrNull;
@@ -586,13 +592,25 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                         widget.hub.items.isNotEmpty &&
                         widget.hub.items.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
 
-                    // One widening scheme (MediaGridDelegate): wide cells come
-                    // from the grid's packed cell, never poster cell x 1.5.
+                    // A hub row is one row of the grid: cells pack with the
+                    // same gutter the grid uses, so a row and the "see all"
+                    // grid behind it render the same card at equal width.
+                    final gridGap = svc.read(SettingsService.gridSpacing).gridGap;
                     final cardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
-                        ? _getTvCardWidth(context, constraints.maxWidth, density, leadingPadding, useWideLayout)
-                        : useWideLayout
-                        ? MediaGridDelegate.wideCellWidth(context, constraints.maxWidth, density)
-                        : GridSizeCalculator.getCellWidth(constraints.maxWidth, context, density);
+                        ? _getTvCardWidth(
+                            context,
+                            constraints.maxWidth,
+                            density,
+                            leadingPadding,
+                            useWideLayout,
+                            gridGap,
+                          )
+                        : MediaGridDelegate.cellWidth(
+                            context: context,
+                            availableWidth: constraints.maxWidth,
+                            density: density,
+                            useWideAspectRatio: useWideLayout,
+                          );
                     final posterWidth = cardWidth - 6; // 3px padding on each side
                     final posterHeight = useWideLayout
                         ? posterWidth *
@@ -601,15 +619,25 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                         ? posterWidth // 1:1 for music artwork
                         : posterWidth * 1.5; // 2:3 for poster layout
 
+                    // Rendered gap between neighbouring cards. The row has
+                    // always carried 4px (2px each side) on top of the card's
+                    // own 3px padding, so Tight stays byte-identical and the
+                    // wider settings render exactly the grid gutter (#2226).
+                    final cardGap = math.max(4.0, gridGap);
+                    final cardPadding = widget.inset
+                        ? EdgeInsets.only(right: cardGap)
+                        : EdgeInsets.symmetric(horizontal: cardGap / 2);
+
                     final containerHeight = posterHeight + (isTv ? 48 : 33);
                     final focusBorderWidth = FocusTheme.focusBorderWidth;
                     final focusExtra = focusBorderWidth * 2; // border on both sides
-                    _itemExtent = cardWidth + focusExtra + 4;
+                    _itemExtent = cardWidth + focusExtra + cardGap;
 
                     // Everything the card closures capture; a change flushes
                     // the memo so cached cards can't carry stale geometry.
                     final cardEpoch = (
                       cardWidth,
+                      cardGap,
                       posterHeight,
                       useWideLayout,
                       isMixedHub,
@@ -649,9 +677,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                             if (index == widget.hub.items.length) {
                               return Padding(
                                 key: _itemKeyFor(index),
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: cardPadding,
                                 child: FocusBuilders.buildLockedFocusWrapper(
                                   context: context,
                                   isFocused: isItemFocused,
@@ -689,36 +715,27 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
                             final item = widget.hub.items[index];
 
-                            final cached = _cardMemo.tryGet(index, item, epoch: cardEpoch, salt: isItemFocused);
-                            if (cached != null) return cached;
                             // Budget fresh inflations while an enclosing
                             // scrollable is moving (rows enter on the parent's
                             // vertical scroll); skeletons upgrade a frame
-                            // later. Keyboard mode is exempt — skeletons
-                            // aren't focus targets.
-                            if (!isKeyboardMode &&
-                                CardInflationBudget.isScrollingContext(context) &&
-                                !CardInflationBudget.tryTake()) {
-                              scheduleSkeletonUpgrade();
-                              return Padding(
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
-                                child: SizedBox(width: cardWidth, child: const SkeletonMediaCard()),
-                              );
-                            }
-                            return _cardMemo.widgetFor(
+                            // later.
+                            return realizeBudgeted(
+                              _cardMemo,
+                              context,
                               index,
                               item,
                               epoch: cardEpoch,
                               // Focus moves only rebuild the two affected
                               // indices instead of the whole realized row.
                               salt: isItemFocused,
+                              keyboardMode: isKeyboardMode,
+                              skeleton: () => Padding(
+                                padding: cardPadding,
+                                child: SizedBox(width: cardWidth, child: const SkeletonMediaCard()),
+                              ),
                               build: () => Padding(
                                 key: _itemKeyFor(index),
-                                padding: widget.inset
-                                    ? const EdgeInsets.only(right: 4)
-                                    : const EdgeInsets.symmetric(horizontal: 2),
+                                padding: cardPadding,
                                 child: FocusBuilders.buildLockedFocusWrapper(
                                   context: context,
                                   isFocused: isItemFocused,

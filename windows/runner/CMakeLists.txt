@@ -32,7 +32,7 @@ target_compile_features(simdutf PUBLIC cxx_std_17)
 target_compile_options(simdutf PRIVATE /W0)
 
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app flutter_wrapper_plugin)
-target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "comctl32.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "comctl32.lib" "dxgi.lib")
 target_link_libraries(${BINARY_NAME} PRIVATE "${MPV_LIB_DIR}/libmpv.dll.a")
 target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -63,7 +63,7 @@ if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS)
   target_compile_definitions(mpv_player_property_contract_test PRIVATE "NOMINMAX")
   target_link_libraries(
     mpv_player_property_contract_test
-    PRIVATE flutter_wrapper_plugin "${MPV_LIB_DIR}/libmpv.dll.a" simdutf "comctl32.lib" "user32.lib"
+    PRIVATE flutter_wrapper_plugin "${MPV_LIB_DIR}/libmpv.dll.a" simdutf "comctl32.lib" "user32.lib" "dxgi.lib"
   )
   target_include_directories(
     mpv_player_property_contract_test

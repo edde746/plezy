@@ -34,6 +34,11 @@ class VideoControlsHeader extends StatelessWidget {
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
 
+  /// Whether to show the system clock. Off for a portrait phone, where the
+  /// header is too narrow to fit the clock beside the title and trailing
+  /// controls.
+  final bool showClock;
+
   const VideoControlsHeader({
     super.key,
     required this.metadata,
@@ -42,6 +47,7 @@ class VideoControlsHeader extends StatelessWidget {
     this.onBack,
     this.onCancelAutoHide,
     this.onStartAutoHide,
+    this.showClock = true,
   });
 
   @override
@@ -69,12 +75,13 @@ class VideoControlsHeader extends StatelessWidget {
             );
           },
         ),
-        Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: SystemClock(
-            style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: .w500),
+        if (showClock)
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: SystemClock(
+              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: .w500),
+            ),
           ),
-        ),
         ?trailing,
       ],
     );

@@ -34,14 +34,41 @@ static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   }
 }
 
+// GetWindowPlacement with Aero Snap folded in. A snapped window is "arranged":
+// Windows keeps the pre-snap rect in rcNormalPosition and still reports
+// SW_SHOWNORMAL, so persisting the raw placement restores the window where it
+// was *before* the snap. Substitute the on-screen rect instead; there is no
+// API to re-enter the snapped state, so relaunch lands a normal window on the
+// same rect. IsWindowArranged is exported by user32 since Windows 10 1903 but
+// has no header/import-lib declaration; older builds fall through unchanged.
+static bool QueryWindowPlacement(HWND hwnd, WINDOWPLACEMENT* wp) {
+  wp->length = sizeof(*wp);
+  if (!GetWindowPlacement(hwnd, wp)) return false;
+
+  using IsWindowArrangedFn = BOOL(WINAPI*)(HWND);
+  static const IsWindowArrangedFn is_window_arranged =
+      reinterpret_cast<IsWindowArrangedFn>(GetProcAddress(GetModuleHandleW(L"user32.dll"), "IsWindowArranged"));
+  if (!is_window_arranged || IsIconic(hwnd) || IsZoomed(hwnd) || !is_window_arranged(hwnd)) return true;
+
+  // rcNormalPosition uses the window monitor's workspace inset, not the
+  // primary work area's screen origin. LoadWindowPlacement reverses this.
+  RECT rect{};
+  if (!GetWindowRect(hwnd, &rect)) return true;
+  MONITORINFO mi{};
+  mi.cbSize = sizeof(mi);
+  if (!GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi)) return true;
+  OffsetRect(&rect, mi.rcMonitor.left - mi.rcWork.left, mi.rcMonitor.top - mi.rcWork.top);
+  wp->rcNormalPosition = rect;
+  return true;
+}
+
 static void SaveWindowPlacement(HWND hwnd) {
   // Never persist a hidden window: the exit path hides the window before its
   // multi-second teardown, and a save landing in that gap would record
   // SW_HIDE over the user's real show state.
   if (!IsWindowVisible(hwnd)) return;
   WINDOWPLACEMENT wp{};
-  wp.length = sizeof(wp);
-  if (!GetWindowPlacement(hwnd, &wp)) return;
+  if (!QueryWindowPlacement(hwnd, &wp)) return;
   WriteWindowPlacement(wp);
 }
 
@@ -65,21 +92,30 @@ static bool LoadWindowPlacement(HWND hwnd) {
     wasMaximized = wp.showCmd == SW_SHOWMAXIMIZED || (wp.flags & WPF_RESTORETOMAXIMIZED) != 0;
 
     // The saved monitor may be gone (undocked laptop, powered-off TV).
-    // rcNormalPosition is in workspace coordinates — screen coordinates offset
-    // by the primary work area — so convert before testing against monitors.
+    // Resolve the saved rect's monitor before reversing its workspace inset.
     // On a miss, keep the size but fall back to the default creation position
     // so the window never restores invisible.
-    RECT workArea{};
-    SystemParametersInfoW(SPI_GETWORKAREA, 0, &workArea, 0);
     RECT screenRect = wp.rcNormalPosition;
-    OffsetRect(&screenRect, workArea.left, workArea.top);
-    if (MonitorFromRect(&screenRect, MONITOR_DEFAULTTONULL) == nullptr) {
-      RECT current{};
-      GetWindowRect(hwnd, &current);
+    MONITORINFO mi{};
+    mi.cbSize = sizeof(mi);
+    bool on_screen = false;
+    if (GetMonitorInfoW(MonitorFromRect(&screenRect, MONITOR_DEFAULTTONEAREST), &mi)) {
+      OffsetRect(&screenRect, mi.rcWork.left - mi.rcMonitor.left, mi.rcWork.top - mi.rcMonitor.top);
+      on_screen = MonitorFromRect(&screenRect, MONITOR_DEFAULTTONULL) != nullptr;
+    }
+    if (!on_screen) {
+      // GetWindowPlacement already expresses the creation rect in its own
+      // monitor's workspace, including when the default monitor has an inset.
+      WINDOWPLACEMENT current{};
+      current.length = sizeof(current);
+      if (!GetWindowPlacement(hwnd, &current)) {
+        RegCloseKey(hKey);
+        return false;
+      }
       const LONG width = wp.rcNormalPosition.right - wp.rcNormalPosition.left;
       const LONG height = wp.rcNormalPosition.bottom - wp.rcNormalPosition.top;
-      wp.rcNormalPosition.left = current.left - workArea.left;
-      wp.rcNormalPosition.top = current.top - workArea.top;
+      wp.rcNormalPosition.left = current.rcNormalPosition.left;
+      wp.rcNormalPosition.top = current.rcNormalPosition.top;
       wp.rcNormalPosition.right = wp.rcNormalPosition.left + width;
       wp.rcNormalPosition.bottom = wp.rcNormalPosition.top + height;
     }
@@ -102,7 +138,11 @@ static void DebounceSaveWindowPlacement(HWND hwnd) {
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project) : project_(project) {}
 
-FlutterWindow::~FlutterWindow() {}
+FlutterWindow::~FlutterWindow() {
+  // Clear the controller before destroying its child HWND can re-enter the
+  // window procedure. Implicit member destruction leaves it visible there.
+  Destroy();
+}
 
 bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
@@ -150,6 +190,7 @@ void FlutterWindow::OnDestroy() {
     KillTimer(nullptr, g_saveTimerId);
     g_saveTimerId = 0;
   }
+  g_mainHwnd = nullptr;
   // If still fullscreen at shutdown, persist the pre-fullscreen placement
   // rather than the fullscreen rect so the next launch restores correctly.
   if (is_fullscreen_ && placement_before_fullscreen_.length != 0) {
@@ -183,12 +224,14 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
       mpv::DisplayModeManager::RecoverIfNeeded();
       break;
     case WM_FONTCHANGE:
-      flutter_controller_->engine()->ReloadSystemFonts();
+      if (flutter_controller_) {
+        flutter_controller_->engine()->ReloadSystemFonts();
+      }
       break;
     case WM_WINDOWPOSCHANGED:
       // Don't persist placement while fullscreen, mid-toggle, or hidden — the
       // rect would overwrite the user's real window position or show state.
-      if (!is_fullscreen_ && !g_suppressPlacementSave && IsWindowVisible(hwnd)) {
+      if (flutter_controller_ && !is_fullscreen_ && !g_suppressPlacementSave && IsWindowVisible(hwnd)) {
         DebounceSaveWindowPlacement(hwnd);
       }
       break;
@@ -272,8 +315,7 @@ void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
 
     // Save pre-fullscreen state (showCmd inside the placement carries the
     // maximize bit, so no separate flag is needed).
-    placement_before_fullscreen_.length = sizeof(WINDOWPLACEMENT);
-    ::GetWindowPlacement(hwnd, &placement_before_fullscreen_);
+    QueryWindowPlacement(hwnd, &placement_before_fullscreen_);
     style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_STYLE);
     ex_style_before_fullscreen_ = ::GetWindowLongPtr(hwnd, GWL_EXSTYLE);
 

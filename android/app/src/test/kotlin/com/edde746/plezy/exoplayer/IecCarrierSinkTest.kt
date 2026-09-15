@@ -126,6 +126,20 @@ class IecCarrierSinkTest {
     assertEquals(AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY, carrierSink.getFormatSupport(dtsHdFormat()))
   }
 
+  /** The tuple is shared, so the gate is per format: TrueHD keeps the carrier while DTS-HD leaves. */
+  @Test
+  fun theCarrierGateIsEvaluatedPerFormat() {
+    val carrier = FakeSink()
+    val normal = FakeSink()
+    val carrierSink = IecCarrierSink(normal, carrier, { it.sampleMimeType != MimeTypes.AUDIO_DTS_HD }, { false })
+
+    carrierSink.configure(audioSinkConfig(trueHdFormat()))
+    assertEquals(IecCarrier.SAMPLE_RATE, checkNotNull(carrier.configuredConfig).format.sampleRate)
+
+    carrierSink.configure(audioSinkConfig(dtsHdFormat()))
+    assertEquals(MimeTypes.AUDIO_DTS_HD, checkNotNull(normal.configuredConfig).format.sampleMimeType)
+  }
+
   /** DTS Express shares the DTS-HD mime prefix but carries `;profile=lbr`; it keeps decoding. */
   @Test
   fun dtsExpressIsLeftToTheNormalSink() {

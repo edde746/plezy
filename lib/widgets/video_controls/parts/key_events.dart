@@ -9,24 +9,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     widget.toastController.show(Symbols.photo_camera_rounded, t.videoControls.screenshotSaved);
   }
 
-  bool _isDirectionalKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.arrowUp ||
-        key == LogicalKeyboardKey.arrowDown ||
-        key == LogicalKeyboardKey.arrowLeft ||
-        key == LogicalKeyboardKey.arrowRight;
-  }
-
-  bool _isHorizontalKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
-  }
-
-  bool _isSelectKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.select ||
-        key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.numpadEnter ||
-        key == LogicalKeyboardKey.gameButtonA;
-  }
-
   /// Resolve the transport intent for a key event, or null when the key is not
   /// a transport key. Hardware `mediaPlay`/`mediaPause` stay *directed*; the
   /// configured hotkey is always a toggle.
@@ -49,17 +31,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return TransportCommand.toggle;
     }
     return null;
-  }
-
-  bool _isMediaSeekKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.mediaFastForward ||
-        key == LogicalKeyboardKey.mediaRewind ||
-        key == LogicalKeyboardKey.mediaSkipForward ||
-        key == LogicalKeyboardKey.mediaSkipBackward;
-  }
-
-  bool _isMediaTrackKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.mediaTrackNext || key == LogicalKeyboardKey.mediaTrackPrevious;
   }
 
   TransportCommand? _playPauseActivation(KeyEvent event) {
@@ -180,6 +151,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onSpeedPersist: (rate) =>
           unawaited(ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, widget.metadata, rate)),
       onSeekRequested: widget.onSeekRequested,
+      onRateRequested: widget.onRateRequested,
       onSeekBy: _keyboardSeekBy,
     );
   }
@@ -252,8 +224,30 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     //  - any key holding a pending target commits it now, so rebound shortcuts
     //    and Shift+arrow large seeks land promptly rather than on the debounce.
     if (event is KeyUpEvent &&
-        ((!_showControls && _isHorizontalKey(event.logicalKey)) || _hiddenSeek.pendingPosition != null)) {
+        ((!_showControls && (event.logicalKey.isLeftKey || event.logicalKey.isRightKey)) ||
+            _hiddenSeek.pendingPosition != null)) {
       _flushHiddenDirectionalSeek();
+    }
+
+    // Hardware media seek/track keys (Android TV remotes, HID media
+    // keyboards). Tested ahead of the actionable filter below and consumed
+    // for down, repeat and up alike: anything that escapes this node reaches
+    // Android's own MediaSession, whose fixed 15-second fast-forward re-enters
+    // the screen once per auto-repeat and drags the playhead minutes away
+    // (#1375). Only the initial press acts — the repeats are the same press.
+    final seekDirection = classifyPlayerSkipKey(event.logicalKey);
+    if (seekDirection != null) {
+      // Same chrome treatment every other key reaching here gets: a visible
+      // OSD stays up for the press, a hidden one stays down (#1676).
+      if (_showControls && event.isActionable) {
+        _restartHideTimerForCurrentPlaybackState();
+      }
+      // Uses chapter navigation when the item has chapters, otherwise a
+      // coalesced skip by the configured time.
+      if (event is KeyDownEvent && widget.canControl) {
+        _seekToChapterWithFeedback(forward: seekDirection == MediaSeekDirection.forward);
+      }
+      return KeyEventResult.handled;
     }
 
     // Only handle KeyDown and KeyRepeat events.
@@ -283,31 +277,12 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return KeyEventResult.handled;
     }
 
-    // Handle media seek keys (Android TV remotes).
-    // Uses chapter navigation if chapters are available, otherwise seeks by configured time.
-    if (event is KeyDownEvent && _isMediaSeekKey(key)) {
-      if (widget.canControl) {
-        final isForward = key == LogicalKeyboardKey.mediaFastForward || key == LogicalKeyboardKey.mediaSkipForward;
-        _seekToChapterWithFeedback(forward: isForward);
-      }
-      return KeyEventResult.handled;
-    }
-
-    // Handle next/previous track keys (Android TV remotes).
-    // Uses same behavior as seek keys: chapter navigation or time-based seek.
-    if (event is KeyDownEvent && _isMediaTrackKey(key)) {
-      if (widget.canControl) {
-        _seekToChapterWithFeedback(forward: key == LogicalKeyboardKey.mediaTrackNext);
-      }
-      return KeyEventResult.handled;
-    }
-
     // Select on the player surface. Only intercept when this Focus node itself
     // holds primary focus — a focused OSD control owns its own activation.
     // Whether the raised chrome also takes focus is the key's own answer, so
     // mode and focus can never disagree: a remote OK starts a focus session, a
     // physical-keyboard Enter just shows the controls and toggles playback.
-    if (_isSelectKey(key) && _focusNode.hasPrimaryFocus) {
+    if (key.isSelectKey && _focusNode.hasPrimaryFocus) {
       return handleOneShotSelect(
         event,
         () => _activatePlayerSurfaceSelect(requestFocus: eventRequestsFocusNavigation(event, focused: _focusNode)),
@@ -330,9 +305,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // On desktop/TV, directional input drives the player without the chrome.
     // LEFT/RIGHT seeks in place with a transient badge; UP/DOWN is the
     // deliberate "show me the controls" gesture.
-    if (!isMobile && _isDirectionalKey(key) && playerDirectionalNavigationEnabled()) {
+    if (!isMobile && key.isDpadDirection && playerDirectionalNavigationEnabled()) {
       if (!_showControls) {
-        if (_isHorizontalKey(key)) {
+        if (key.isLeftKey || key.isRightKey) {
           if (shouldStartHiddenDirectionalSeek(event)) {
             _hiddenDirectionalSeek(forward: key == LogicalKeyboardKey.arrowRight, isRepeat: event is KeyRepeatEvent);
           }

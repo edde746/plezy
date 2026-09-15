@@ -32,7 +32,9 @@ void main() {
     await db.close();
   });
 
-  test('tries later titles and verifies the matching provider id', () async {
+  test('searches every title and unions the id-verified copies each one reaches', () async {
+    // #2098: a copy filed under another language's title is only reachable
+    // through that title, so a title that hit must not stop its siblings.
     final searchTerms = <String>[];
     final client = testJellyfinClient(
       httpClient: MockClient((request) async {
@@ -40,7 +42,11 @@ void main() {
           final searchTerm = request.url.queryParameters['SearchTerm']!;
           searchTerms.add(searchTerm);
           return _json({
-            'Items': searchTerm == 'Parent Series' ? [_series()] : <Object>[],
+            'Items': switch (searchTerm) {
+              'Parent Series' => [_series()],
+              'Oya Series' => [_series(), _series(id: 'series-romaji')],
+              _ => <Object>[],
+            },
           });
         }
         if (request.url.path == '/Items/series-1/Ancestors') {
@@ -48,22 +54,22 @@ void main() {
             {'Id': 'library-1', 'Name': 'Shows', 'Type': 'CollectionFolder'},
           ]);
         }
+        if (request.url.path == '/Items/series-romaji/Ancestors') return _json(<Object>[]);
         fail('Unexpected request: ${request.url}');
       }),
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
-      titles: const ['Parent Series Season 2', 'Parent Series'],
-    );
+      titles: const ['Parent Series Season 2', 'Parent Series', 'Oya Series'],
+    ))!;
 
-    expect(searchTerms, ['Parent Series Season 2', 'Parent Series']);
-    expect(matches, hasLength(1));
-    expect(matches.single.id, 'series-1');
-    expect(matches.single.libraryId, 'library-1');
-    expect(matches.single.libraryTitle, 'Shows');
+    expect(searchTerms, ['Parent Series Season 2', 'Parent Series', 'Oya Series']);
+    expect(matches.map((item) => item.id), ['series-1', 'series-romaji'], reason: 'the shared copy appears once');
+    expect(matches.first.libraryId, 'library-1');
+    expect(matches.first.libraryTitle, 'Shows');
   });
 
   test('rejects a title hit whose provider ids do not intersect', () async {
@@ -77,16 +83,16 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series'],
-    );
+    ))!;
 
     expect(matches, isEmpty);
   });
 
-  test('uses the year window only for the first title and broadens the later limit', () async {
+  test('applies the year window to the first title only', () async {
     final searches = <Uri>[];
     final client = testJellyfinClient(
       httpClient: MockClient((request) async {
@@ -103,19 +109,17 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series Season 2', 'Parent Series'],
       year: 2024,
-    );
+    ))!;
 
     expect(matches.map((item) => item.id), ['series-1']);
     expect(searches, hasLength(2));
     expect(searches.first.queryParameters['years'], '2023,2024,2025');
-    expect(searches.first.queryParameters['Limit'], '20');
     expect(searches.last.queryParameters.containsKey('years'), isFalse);
-    expect(searches.last.queryParameters['Limit'], '50');
   });
 
   test('requires an agreed sequel season to exist in the matched series', () async {
@@ -141,13 +145,13 @@ void main() {
       );
       addTearDown(client.close);
 
-      final matches = await client.findByExternalIds(
+      final matches = (await client.findByExternalIds(
         const ExternalIds(tmdb: 42),
         kind: MediaKind.show,
         titles: const ['Parent Series'],
         year: 2024,
         season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
-      );
+      ))!;
       return [for (final item in matches) item.id];
     }
 
@@ -169,12 +173,12 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series'],
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 1),
-    );
+    ))!;
 
     expect(matches.map((item) => item.id), ['series-1']);
   });
@@ -215,11 +219,11 @@ void main() {
     );
     addTearDown(client.close);
 
-    final matches = await client.findByExternalIds(
+    final matches = (await client.findByExternalIds(
       const ExternalIds(tmdb: 603),
       kind: MediaKind.movie,
       titles: const ['The Matrix'],
-    );
+    ))!;
 
     expect(matches.map((item) => (item.id, item.libraryId, item.libraryTitle)), [
       ('movie-4k', 'library-4k', 'Movies 4K'),

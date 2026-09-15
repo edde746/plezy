@@ -60,6 +60,7 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$sv dialog = _Translations$dialog$sv._(_root);
 	@override late final _Translations$profiles$sv profiles = _Translations$profiles$sv._(_root);
 	@override late final _Translations$connections$sv connections = _Translations$connections$sv._(_root);
+	@override late final _Translations$accountPreferences$sv accountPreferences = _Translations$accountPreferences$sv._(_root);
 	@override late final _Translations$discover$sv discover = _Translations$discover$sv._(_root);
 	@override late final _Translations$errors$sv errors = _Translations$errors$sv._(_root);
 	@override late final _Translations$libraries$sv libraries = _Translations$libraries$sv._(_root);
@@ -117,6 +118,7 @@ class _Translations$auth$sv extends Translations$auth$en {
 	@override String get useBrowser => 'Använd webbläsare';
 	@override String get or => 'eller';
 	@override String connectToMediaBrowser({required Object product}) => 'Anslut till ${product}';
+	@override String get quickConnect => 'Quick Connect';
 	@override String get useQuickConnect => 'Använd Quick Connect';
 	@override String get quickConnectInstructions => 'Öppna Quick Connect i Jellyfin och ange den här koden.';
 	@override String get quickConnectWaiting => 'Väntar på godkännande…';
@@ -165,6 +167,7 @@ class _Translations$common$sv extends Translations$common$en {
 	@override String get mute => 'Stäng av ljudet';
 	@override String get ok => 'OK';
 	@override String get off => 'Av';
+	@override String get options => 'Alternativ';
 	@override String seasonNumber({required Object number}) => 'Säsong ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => 'Avsnitt ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapitel ${number}';
@@ -249,6 +252,10 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get displayScale => 'Skalning';
 	@override String get compact => 'Kompakt';
 	@override String get comfortable => 'Luftig';
+	@override String get gridSpacing => 'Rutnätsavstånd';
+	@override String get gridSpacingTight => 'Tätt';
+	@override String get gridSpacingNormal => 'Normal';
+	@override String get gridSpacingSpacious => 'Rymligt';
 	@override String get tvCornerSpotlightBackdrop => 'Bakgrundsbild för utvalt innehåll i hörnet';
 	@override String get tvCornerSpotlightBackdropDescription => 'Visa bakgrundsbilden för utvalt innehåll i övre högra hörnet i stället för över hela skärmen';
 	@override String get viewMode => 'Visningsläge';
@@ -292,16 +299,14 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
-	@override String get bufferSize => 'Buffertstorlek';
-	@override String bufferSizeMB({required Object size}) => '${size} MB';
-	@override String get bufferSizeAuto => 'Automatiskt (rekommenderas)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap} MB minne är tillgängligt. En buffert på ${size} MB kan påverka uppspelningen.';
 	@override String get playbackBuffer => 'Uppspelningsbuffert';
 	@override String get playbackBufferAuto => 'Auto (rekommenderas)';
 	@override String get playbackBufferLarge => 'Stor';
 	@override String get playbackBufferExtraLarge => 'Extra stor';
 	@override String get playbackBufferDescription => 'Buffrar mer mot instabila anslutningar. Begränsas även av buffertstorleken.';
 	@override String get defaultQualityTitle => 'Standardkvalitet';
+	@override String get cellularQualityTitle => 'Standardkvalitet på mobildata';
+	@override String get cellularQualitySameAsDefault => 'Samma som standardkvalitet';
 	@override String get musicQualityTitle => 'Musikkvalitet';
 	@override String get subtitleStyling => 'Utseende för undertexter';
 	@override String get subtitleStylingDescription => 'Anpassa undertexternas utseende';
@@ -315,6 +320,8 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => 'Kom ihåg ljud- och undertextval per titel';
 	@override String get followServerTrackSelections => 'Använd serverns spårval per avsnitt';
 	@override String get followServerTrackSelectionsDescription => 'Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet';
+	@override String get resumeMusicOnLaunch => 'Kom ihåg musiksession';
+	@override String get resumeMusicOnLaunchDescription => 'Öppna den senaste låten pausad där den slutade när appen startar';
 	@override String get showChapterMarkersOnTimeline => 'Visa kapitelmarkörer på tidslinjen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Dela upp tidslinjen vid kapitelgränser';
 	@override String get specialsOrdering => 'Specialavsnitt i episodordning';
@@ -368,11 +375,11 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Genvägen används redan för ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Genvägen för ${action} har uppdaterats';
 	@override String get saveFailed => 'Det gick inte att spara ändringarna. Försök igen.';
-	@override String get autoSkip => 'Hoppa över automatiskt';
-	@override String get autoSkipIntro => 'Hoppa över intro automatiskt';
-	@override String get autoSkipIntroDescription => 'Hoppa automatiskt över intromarkörer efter några sekunder';
-	@override String get autoSkipCredits => 'Hoppa över eftertexter automatiskt';
-	@override String get autoSkipCreditsDescription => 'Hoppa automatiskt över eftertexterna och spela nästa avsnitt';
+	@override String get autoPlayAndSkip => 'Autouppspelning och hoppa över';
+	@override String get autoPlayNextEpisode => 'Spela nästa avsnitt automatiskt';
+	@override String get autoPlayNextEpisodeDescription => 'Starta nästa avsnitt automatiskt när det aktuella avsnittet slutar';
+	@override String get playNextCountdown => 'Nedräkning för nästa avsnitt';
+	@override String get playNextCountdownImmediate => 'Spela direkt';
 	@override String get forceSkipMarkerFallback => 'Tvinga reservmarkörer';
 	@override String get forceSkipMarkerFallbackDescription => 'Använd mönster i kapiteltitlar även när Plex har markörer';
 	@override String get autoSkipDelay => 'Fördröjning före automatiskt hopp';
@@ -443,10 +450,8 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Tvinga inbyggd DV7 och förhindra nya försök med DV-konvertering';
 	@override String get dvConversionDv81Description => 'Tvinga direkt RPU-konvertering till Dolby Vision-profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Ta bort Dolby Visions RPU-/EL-lager och använd vanlig HEVC';
-	@override String get demuxer => 'Container-demuxer';
-	@override String get demuxerDescription => 'Vilken demuxer som läser direktuppspelade filer. Byt till media3 om en fil krånglar.';
-	@override String get demuxerFfmpeg => 'FFmpeg (rekommenderas)';
-	@override String get demuxerMedia3 => 'media3';
+	@override String get deinterlace => 'Deinterlacing';
+	@override String get deinterlaceDescription => 'Ta bort kamningsartefakter från interlaced video (endast mpv)';
 	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
 	@override String get forceTvMode => 'Tvinga TV-läge';
@@ -464,15 +469,31 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get showExploreTabDescription => 'Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster';
 	@override String get liveTvDefaultFavorites => 'Öppna med favoriter';
 	@override String get liveTvDefaultFavoritesDescription => 'Visa endast favoritkanaler när Live-TV öppnas';
+	@override String get general => 'Allmänt';
+	@override String get generalDescription => 'Språk, start och fönsterbeteende';
+	@override String get languageAndRegion => 'Språk och region';
+	@override String get startup => 'Start';
 	@override String get display => 'Skärm';
+	@override String get libraryAndCards => 'Bibliotek och kort';
 	@override String get homeScreen => 'Hemskärm';
 	@override String get navigation => 'Navigering';
 	@override String get window => 'Fönster';
-	@override String get content => 'Innehåll';
+	@override String get liveTv => 'Live-TV';
 	@override String get player => 'Spelare';
-	@override String get subtitlesAndConfig => 'Undertexter och konfiguration';
+	@override String get videoAndDisplay => 'Video och skärm';
+	@override String get audio => 'Ljud';
+	@override String get quality => 'Kvalitet';
+	@override String get subtitles => 'Undertexter';
 	@override String get seekAndTiming => 'Spolning och tidsinställningar';
 	@override String get behavior => 'Beteende';
+	@override String get gestures => 'Gester';
+	@override String get gestureBrightnessSwipe => 'Svep för ljusstyrka';
+	@override String get gestureBrightnessSwipeDescription => 'Svep uppåt eller nedåt i vänsterkanten för att justera ljusstyrkan';
+	@override String get gestureVolumeSwipe => 'Svep för volym';
+	@override String get gestureVolumeSwipeDescription => 'Svep uppåt eller nedåt i högerkanten för att justera volymen';
+	@override String get gesturePinchToZoom => 'Nyp för att zooma';
+	@override String get gesturePinchToZoomDescription => 'Nyp på videon för att zooma in eller ut';
+	@override String get controls => 'Kontroller';
 	@override String get rememberPlayerChanges => 'Kom ihåg spelarändringar';
 	@override String get rememberPlayerChangesDescription => 'Var en ändring under uppspelning sparas och tillämpas igen';
 	@override String get scopePlaybackSpeed => 'Uppspelningshastighet';
@@ -1086,6 +1107,49 @@ class _Translations$connections$sv extends Translations$connections$en {
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL:en med lägst latens.';
 }
 
+// Path: accountPreferences
+class _Translations$accountPreferences$sv extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Kontoinställningar';
+	@override String hubSubtitleSingle({required Object account}) => 'Ljud-, undertext- och biblioteksalternativ sparade på ${account}';
+	@override String hubSubtitleMultiple({required Object count}) => 'Ljud-, undertext- och biblioteksalternativ sparade på ${count} konton';
+	@override String get pickAccount => 'Varje konto lagrar sina egna inställningar. Välj det du vill redigera.';
+	@override String get storedOnAccount => 'Dessa alternativ sparas på själva kontot, så alla appar som är inloggade på det använder dem — inklusive Plezy på dina andra enheter.';
+	@override String get noAccounts => 'Inga konton att konfigurera';
+	@override String get noAccountsHint => 'Logga in på Plex, eller anslut en Jellyfin- eller Emby-server, så visas de inställningar som lagras på det kontot här.';
+	@override String get unavailable => 'Det går inte att nå detta konto';
+	@override String get loadFailed => 'Det gick inte att läsa in dessa inställningar';
+	@override String get noPreference => 'Ingen preferens';
+	@override String get notSet => 'Inte angiven';
+	@override late final _Translations$accountPreferences$groups$sv groups = _Translations$accountPreferences$groups$sv._(_root);
+	@override String get preferredAudioLanguage => 'Föredraget ljudspråk';
+	@override String get autoSelectAudio => 'Välj ljud efter språk';
+	@override String get autoSelectAudioDescription => 'Av behåller det ljudspår som filen markerar som standard.';
+	@override String get preferredSubtitleLanguage => 'Föredraget undertextspråk';
+	@override String get subtitleMode => 'Aktivera undertexter';
+	@override late final _Translations$accountPreferences$subtitleModes$sv subtitleModes = _Translations$accountPreferences$subtitleModes$sv._(_root);
+	@override String get subtitleAccessibility => 'SDH-undertexter';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$sv subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$sv._(_root);
+	@override String get forcedSubtitles => 'Forcerade undertexter';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$sv forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$sv._(_root);
+	@override String get displayMissingEpisodes => 'Visa saknade avsnitt';
+	@override String get displayMissingEpisodesDescription => 'Lista avsnitt som servern känner till men som saknar fil.';
+	@override String get hidePlayedInLatest => 'Dölj sedda objekt i Senaste';
+	@override String get hidePlayedInLatestDescription => 'Lämna objekt du redan har sett utanför serverns Senaste-rader.';
+	@override String get displayCollectionsView => 'Visa vyn Samlingar';
+	@override String get displayCollectionsViewDescription => 'Visa serverns Samlingar-vy tillsammans med dina bibliotek.';
+	@override String get rewatchingInNextUp => 'Behåll omtittade serier i Nästa';
+	@override String get rewatchingInNextUpDescription => 'När du har sett klart en serie och börjar om följer Nästa med i omtittningen i stället för att släppa serien.';
+	@override String get watchedIndicator => 'Seddmarkeringar';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$sv watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$sv._(_root);
+	@override String get mediaReviewsVisibility => 'Betyg och recensioner';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$sv mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$sv._(_root);
+}
+
 // Path: discover
 class _Translations$discover$sv extends Translations$discover$en {
 	_Translations$discover$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -1385,6 +1449,11 @@ class _Translations$liveTv$sv extends Translations$liveTv$en {
 	@override String get unknownChannel => 'Okänd kanal';
 	@override String get live => 'LIVE';
 	@override String get reloadGuide => 'Ladda om programguide';
+	@override String get searchGuide => 'Sök i programguiden';
+	@override String get searchHint => 'Sök kanaler och program';
+	@override String searchNoResults({required Object query}) => 'Inga träffar för "${query}"';
+	@override String get channelsSection => 'Kanaler';
+	@override String get programsSection => 'Program';
 	@override String get now => 'Nu';
 	@override String get today => 'Idag';
 	@override String get tomorrow => 'I morgon';
@@ -1545,6 +1614,8 @@ class _Translations$music$sv extends Translations$music$en {
 	@override String get repeatAll => 'Upprepa alla';
 	@override String get repeatOne => 'Upprepa en låt';
 	@override String get instantMixNoServer => 'Ingen server är tillgänglig för en snabbmix';
+	@override String get instantMixFailed => 'Det gick inte att läsa in snabbmixen';
+	@override String get instantMixEmpty => 'Snabbmixen innehöll inga låtar';
 	@override String noAudioUrl({required Object track}) => 'Ingen ljud-URL är tillgänglig för ${track}';
 	@override late final _Translations$music$discography$sv discography = _Translations$music$discography$sv._(_root);
 }
@@ -2047,6 +2118,8 @@ class _Translations$seerr$sv extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'På blockeringslistan';
 	@override String couldNotReach({required Object url, required Object error}) => 'Kunde inte nå ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Det finns ingen Seerr-instans på ${url} (HTTP ${status})';
+	@override String get invalidUrl => 'Ange en serveradress, t.ex. https://seerr.example.com';
+	@override String get quickConnectUnsupported => 'Den här Seerr-instansen stöder inte Quick Connect. Den kräver Seerr 3.4 eller nyare.';
 	@override String get notInitialized => 'Den här Seerr-instansen har inte slutfört den inledande konfigurationen';
 	@override String get noPlexTokenForReauth => 'Det finns ingen Plex-token tillgänglig för att logga in igen';
 	@override String get noStoredCredentials => 'Det finns inga sparade inloggningsuppgifter för att logga in igen';
@@ -2066,6 +2139,7 @@ class _Translations$services$sv extends Translations$services$en {
 	// Translations
 	@override String get title => 'Tjänster';
 	@override String get hubSubtitle => 'Synkronisera visningsstatus och begär nya titlar.';
+	@override String get integrations => 'Integrationer';
 	@override String get notConnected => 'Inte ansluten';
 	@override String connectedAs({required Object username}) => 'Ansluten som @${username}';
 	@override String get scrobble => 'Spåra uppspelningen automatiskt';
@@ -2226,6 +2300,89 @@ class _Translations$videoControls$pipErrors$sv extends Translations$videoControl
 	@override String get failed => 'Bild-i-bild kunde inte starta';
 	@override String get prepareFailed => 'Bild-i-bild kunde inte förberedas';
 	@override String unknown({required Object error}) => 'Ett fel uppstod: ${error}';
+}
+
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$sv extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => 'Ljud och undertexter';
+	@override String get libraryDisplay => 'Bibliotek';
+	@override String get personalMedia => 'Personliga media';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$sv extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Manuellt vald';
+	@override String get noneDescription => 'Slår aldrig på undertexter av sig själv.';
+	@override String get defaultMode => 'Följ spårens flaggor';
+	@override String get defaultModeDescription => 'Använd de standard- och forcerade flaggor som lagras på varje undertextspår.';
+	@override String get always => 'Alltid aktiverad';
+	@override String get alwaysDescription => 'Slå på ett undertextspår på det föredragna språket när ett sådant finns.';
+	@override String get onlyForced => 'Endast forcerade undertexter';
+	@override String get onlyForcedDescription => 'Ladda endast spår som är markerade som forcerade.';
+	@override String get smart => 'Visas med ljud på främmande språk';
+	@override String get smartDescription => 'Slå på undertexter endast när ljudet är på ett annat språk.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$sv extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'Föredra icke-SDH-undertexter';
+	@override String get preferSdh => 'Föredra SDH-undertexter';
+	@override String get onlySdh => 'Endast SDH-undertexter';
+	@override String get onlyNonSdh => 'Endast icke-SDH-undertexter';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$sv extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => 'Föredra icke-forcerade undertexter';
+	@override String get preferForced => 'Föredra forcerade undertexter';
+	@override String get onlyForced => 'Endast forcerade undertexter';
+	@override String get onlyNonForced => 'Endast icke-forcerade undertexter';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$sv extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Aldrig';
+	@override String get moviesAndShows => 'Filmer och TV-serier';
+	@override String get movies => 'Endast filmer';
+	@override String get shows => 'Endast TV-serier';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$sv extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => 'Användare och kritiker';
+	@override String get usersOnly => 'Endast användare';
+	@override String get criticsOnly => 'Endast kritiker';
+	@override String get nobody => 'Dolda';
 }
 
 // Path: libraries.tabs
@@ -2786,6 +2943,7 @@ extension on TranslationsSv {
 			'auth.useBrowser' => 'Använd webbläsare',
 			'auth.or' => 'eller',
 			'auth.connectToMediaBrowser' => ({required Object product}) => 'Anslut till ${product}',
+			'auth.quickConnect' => 'Quick Connect',
 			'auth.useQuickConnect' => 'Använd Quick Connect',
 			'auth.quickConnectInstructions' => 'Öppna Quick Connect i Jellyfin och ange den här koden.',
 			'auth.quickConnectWaiting' => 'Väntar på godkännande…',
@@ -2825,6 +2983,7 @@ extension on TranslationsSv {
 			'common.mute' => 'Stäng av ljudet',
 			'common.ok' => 'OK',
 			'common.off' => 'Av',
+			'common.options' => 'Alternativ',
 			'common.seasonNumber' => ({required Object number}) => 'Säsong ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Avsnitt ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapitel ${number}',
@@ -2903,6 +3062,10 @@ extension on TranslationsSv {
 			'settings.displayScale' => 'Skalning',
 			'settings.compact' => 'Kompakt',
 			'settings.comfortable' => 'Luftig',
+			'settings.gridSpacing' => 'Rutnätsavstånd',
+			'settings.gridSpacingTight' => 'Tätt',
+			'settings.gridSpacingNormal' => 'Normal',
+			'settings.gridSpacingSpacious' => 'Rymligt',
 			'settings.tvCornerSpotlightBackdrop' => 'Bakgrundsbild för utvalt innehåll i hörnet',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Visa bakgrundsbilden för utvalt innehåll i övre högra hörnet i stället för över hela skärmen',
 			'settings.viewMode' => 'Visningsläge',
@@ -2946,16 +3109,14 @@ extension on TranslationsSv {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => 'Hårdvaruavkodning',
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
-			'settings.bufferSize' => 'Buffertstorlek',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size} MB',
-			'settings.bufferSizeAuto' => 'Automatiskt (rekommenderas)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap} MB minne är tillgängligt. En buffert på ${size} MB kan påverka uppspelningen.',
 			'settings.playbackBuffer' => 'Uppspelningsbuffert',
 			'settings.playbackBufferAuto' => 'Auto (rekommenderas)',
 			'settings.playbackBufferLarge' => 'Stor',
 			'settings.playbackBufferExtraLarge' => 'Extra stor',
 			'settings.playbackBufferDescription' => 'Buffrar mer mot instabila anslutningar. Begränsas även av buffertstorleken.',
 			'settings.defaultQualityTitle' => 'Standardkvalitet',
+			'settings.cellularQualityTitle' => 'Standardkvalitet på mobildata',
+			'settings.cellularQualitySameAsDefault' => 'Samma som standardkvalitet',
 			'settings.musicQualityTitle' => 'Musikkvalitet',
 			'settings.subtitleStyling' => 'Utseende för undertexter',
 			'settings.subtitleStylingDescription' => 'Anpassa undertexternas utseende',
@@ -2969,6 +3130,8 @@ extension on TranslationsSv {
 			'settings.rememberTrackSelectionsDescription' => 'Kom ihåg ljud- och undertextval per titel',
 			'settings.followServerTrackSelections' => 'Använd serverns spårval per avsnitt',
 			'settings.followServerTrackSelectionsDescription' => 'Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet',
+			'settings.resumeMusicOnLaunch' => 'Kom ihåg musiksession',
+			'settings.resumeMusicOnLaunchDescription' => 'Öppna den senaste låten pausad där den slutade när appen startar',
 			'settings.showChapterMarkersOnTimeline' => 'Visa kapitelmarkörer på tidslinjen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Dela upp tidslinjen vid kapitelgränser',
 			'settings.specialsOrdering' => 'Specialavsnitt i episodordning',
@@ -3022,11 +3185,11 @@ extension on TranslationsSv {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Genvägen används redan för ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Genvägen för ${action} har uppdaterats',
 			'settings.saveFailed' => 'Det gick inte att spara ändringarna. Försök igen.',
-			'settings.autoSkip' => 'Hoppa över automatiskt',
-			'settings.autoSkipIntro' => 'Hoppa över intro automatiskt',
-			'settings.autoSkipIntroDescription' => 'Hoppa automatiskt över intromarkörer efter några sekunder',
-			'settings.autoSkipCredits' => 'Hoppa över eftertexter automatiskt',
-			'settings.autoSkipCreditsDescription' => 'Hoppa automatiskt över eftertexterna och spela nästa avsnitt',
+			'settings.autoPlayAndSkip' => 'Autouppspelning och hoppa över',
+			'settings.autoPlayNextEpisode' => 'Spela nästa avsnitt automatiskt',
+			'settings.autoPlayNextEpisodeDescription' => 'Starta nästa avsnitt automatiskt när det aktuella avsnittet slutar',
+			'settings.playNextCountdown' => 'Nedräkning för nästa avsnitt',
+			'settings.playNextCountdownImmediate' => 'Spela direkt',
 			'settings.forceSkipMarkerFallback' => 'Tvinga reservmarkörer',
 			'settings.forceSkipMarkerFallbackDescription' => 'Använd mönster i kapiteltitlar även när Plex har markörer',
 			'settings.autoSkipDelay' => 'Fördröjning före automatiskt hopp',
@@ -3097,10 +3260,8 @@ extension on TranslationsSv {
 			'settings.dvConversionNativeDescription' => 'Tvinga inbyggd DV7 och förhindra nya försök med DV-konvertering',
 			'settings.dvConversionDv81Description' => 'Tvinga direkt RPU-konvertering till Dolby Vision-profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Ta bort Dolby Visions RPU-/EL-lager och använd vanlig HEVC',
-			'settings.demuxer' => 'Container-demuxer',
-			'settings.demuxerDescription' => 'Vilken demuxer som läser direktuppspelade filer. Byt till media3 om en fil krånglar.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (rekommenderas)',
-			'settings.demuxerMedia3' => 'media3',
+			'settings.deinterlace' => 'Deinterlacing',
+			'settings.deinterlaceDescription' => 'Ta bort kamningsartefakter från interlaced video (endast mpv)',
 			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
 			'settings.forceTvMode' => 'Tvinga TV-läge',
@@ -3118,15 +3279,31 @@ extension on TranslationsSv {
 			'settings.showExploreTabDescription' => 'Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster',
 			'settings.liveTvDefaultFavorites' => 'Öppna med favoriter',
 			'settings.liveTvDefaultFavoritesDescription' => 'Visa endast favoritkanaler när Live-TV öppnas',
+			'settings.general' => 'Allmänt',
+			'settings.generalDescription' => 'Språk, start och fönsterbeteende',
+			'settings.languageAndRegion' => 'Språk och region',
+			'settings.startup' => 'Start',
 			'settings.display' => 'Skärm',
+			'settings.libraryAndCards' => 'Bibliotek och kort',
 			'settings.homeScreen' => 'Hemskärm',
 			'settings.navigation' => 'Navigering',
 			'settings.window' => 'Fönster',
-			'settings.content' => 'Innehåll',
+			'settings.liveTv' => 'Live-TV',
 			'settings.player' => 'Spelare',
-			'settings.subtitlesAndConfig' => 'Undertexter och konfiguration',
+			'settings.videoAndDisplay' => 'Video och skärm',
+			'settings.audio' => 'Ljud',
+			'settings.quality' => 'Kvalitet',
+			'settings.subtitles' => 'Undertexter',
 			'settings.seekAndTiming' => 'Spolning och tidsinställningar',
 			'settings.behavior' => 'Beteende',
+			'settings.gestures' => 'Gester',
+			'settings.gestureBrightnessSwipe' => 'Svep för ljusstyrka',
+			'settings.gestureBrightnessSwipeDescription' => 'Svep uppåt eller nedåt i vänsterkanten för att justera ljusstyrkan',
+			'settings.gestureVolumeSwipe' => 'Svep för volym',
+			'settings.gestureVolumeSwipeDescription' => 'Svep uppåt eller nedåt i högerkanten för att justera volymen',
+			'settings.gesturePinchToZoom' => 'Nyp för att zooma',
+			'settings.gesturePinchToZoomDescription' => 'Nyp på videon för att zooma in eller ut',
+			'settings.controls' => 'Kontroller',
 			'settings.rememberPlayerChanges' => 'Kom ihåg spelarändringar',
 			'settings.rememberPlayerChangesDescription' => 'Var en ändring under uppspelning sparas och tillämpas igen',
 			'settings.scopePlaybackSpeed' => 'Uppspelningshastighet',
@@ -3268,6 +3445,8 @@ extension on TranslationsSv {
 			'fileInfo.optimizedVersion' => 'Optimerad version',
 			'fileInfo.optimizationTarget' => 'Optimeringsmål',
 			'fileInfo.deletedAt' => 'Raderad',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Fjärrkälla',
 			'fileInfo.infiniteStream' => 'Oändlig ström',
 			'fileInfo.directPlay' => 'Direktuppspelning',
@@ -3288,8 +3467,6 @@ extension on TranslationsSv {
 			'fileInfo.flagOriginal' => 'Original',
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => 'Markera som sedd',
 			'mediaMenu.markAsUnwatched' => 'Markera som osedd',
 			'mediaMenu.removeFromContinueWatching' => 'Ta bort från Fortsätt titta',
@@ -3624,6 +3801,63 @@ extension on TranslationsSv {
 			'connections.signInAgain' => 'Logga in igen',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Redigera ${product}-anslutning',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL:en med lägst latens.',
+			'accountPreferences.sectionTitle' => 'Kontoinställningar',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Ljud-, undertext- och biblioteksalternativ sparade på ${account}',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Ljud-, undertext- och biblioteksalternativ sparade på ${count} konton',
+			'accountPreferences.pickAccount' => 'Varje konto lagrar sina egna inställningar. Välj det du vill redigera.',
+			'accountPreferences.storedOnAccount' => 'Dessa alternativ sparas på själva kontot, så alla appar som är inloggade på det använder dem — inklusive Plezy på dina andra enheter.',
+			'accountPreferences.noAccounts' => 'Inga konton att konfigurera',
+			'accountPreferences.noAccountsHint' => 'Logga in på Plex, eller anslut en Jellyfin- eller Emby-server, så visas de inställningar som lagras på det kontot här.',
+			'accountPreferences.unavailable' => 'Det går inte att nå detta konto',
+			'accountPreferences.loadFailed' => 'Det gick inte att läsa in dessa inställningar',
+			'accountPreferences.noPreference' => 'Ingen preferens',
+			'accountPreferences.notSet' => 'Inte angiven',
+			'accountPreferences.groups.audioAndSubtitles' => 'Ljud och undertexter',
+			'accountPreferences.groups.libraryDisplay' => 'Bibliotek',
+			'accountPreferences.groups.personalMedia' => 'Personliga media',
+			'accountPreferences.preferredAudioLanguage' => 'Föredraget ljudspråk',
+			'accountPreferences.autoSelectAudio' => 'Välj ljud efter språk',
+			'accountPreferences.autoSelectAudioDescription' => 'Av behåller det ljudspår som filen markerar som standard.',
+			'accountPreferences.preferredSubtitleLanguage' => 'Föredraget undertextspråk',
+			'accountPreferences.subtitleMode' => 'Aktivera undertexter',
+			'accountPreferences.subtitleModes.none' => 'Manuellt vald',
+			'accountPreferences.subtitleModes.noneDescription' => 'Slår aldrig på undertexter av sig själv.',
+			'accountPreferences.subtitleModes.defaultMode' => 'Följ spårens flaggor',
+			'accountPreferences.subtitleModes.defaultModeDescription' => 'Använd de standard- och forcerade flaggor som lagras på varje undertextspår.',
+			'accountPreferences.subtitleModes.always' => 'Alltid aktiverad',
+			'accountPreferences.subtitleModes.alwaysDescription' => 'Slå på ett undertextspår på det föredragna språket när ett sådant finns.',
+			'accountPreferences.subtitleModes.onlyForced' => 'Endast forcerade undertexter',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Ladda endast spår som är markerade som forcerade.',
+			'accountPreferences.subtitleModes.smart' => 'Visas med ljud på främmande språk',
+			'accountPreferences.subtitleModes.smartDescription' => 'Slå på undertexter endast när ljudet är på ett annat språk.',
+			'accountPreferences.subtitleAccessibility' => 'SDH-undertexter',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Föredra icke-SDH-undertexter',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Föredra SDH-undertexter',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Endast SDH-undertexter',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Endast icke-SDH-undertexter',
+			'accountPreferences.forcedSubtitles' => 'Forcerade undertexter',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Föredra icke-forcerade undertexter',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Föredra forcerade undertexter',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Endast forcerade undertexter',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Endast icke-forcerade undertexter',
+			'accountPreferences.displayMissingEpisodes' => 'Visa saknade avsnitt',
+			'accountPreferences.displayMissingEpisodesDescription' => 'Lista avsnitt som servern känner till men som saknar fil.',
+			'accountPreferences.hidePlayedInLatest' => 'Dölj sedda objekt i Senaste',
+			'accountPreferences.hidePlayedInLatestDescription' => 'Lämna objekt du redan har sett utanför serverns Senaste-rader.',
+			'accountPreferences.displayCollectionsView' => 'Visa vyn Samlingar',
+			'accountPreferences.displayCollectionsViewDescription' => 'Visa serverns Samlingar-vy tillsammans med dina bibliotek.',
+			'accountPreferences.rewatchingInNextUp' => 'Behåll omtittade serier i Nästa',
+			'accountPreferences.rewatchingInNextUpDescription' => 'När du har sett klart en serie och börjar om följer Nästa med i omtittningen i stället för att släppa serien.',
+			'accountPreferences.watchedIndicator' => 'Seddmarkeringar',
+			'accountPreferences.watchedIndicatorOptions.none' => 'Aldrig',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmer och TV-serier',
+			'accountPreferences.watchedIndicatorOptions.movies' => 'Endast filmer',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'Endast TV-serier',
+			'accountPreferences.mediaReviewsVisibility' => 'Betyg och recensioner',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Användare och kritiker',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Endast användare',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Endast kritiker',
+			'accountPreferences.mediaReviewsOptions.nobody' => 'Dolda',
 			'discover.title' => 'Upptäck',
 			'discover.noContentAvailable' => 'Inget innehåll tillgängligt',
 			'discover.addMediaToLibraries' => 'Lägg till medieinnehåll i dina bibliotek',
@@ -3725,6 +3959,8 @@ extension on TranslationsSv {
 			'libraries.filterCategories.favorites' => 'Favoriter',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tillagd',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Releasedatum',
 			'libraries.sortLabels.rating' => 'Betyg',
 			'libraries.sortLabels.communityRating' => 'Användarbetyg',
@@ -3802,8 +4038,6 @@ extension on TranslationsSv {
 			'explore.rows.watchlist' => 'Bevakningslista',
 			'explore.rows.recommendedMovies' => 'Rekommenderade filmer',
 			'explore.rows.recommendedShows' => 'Rekommenderade serier',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => 'Populära filmer just nu',
 			'explore.rows.trendingShows' => 'Populära serier just nu',
 			'explore.rows.popularMovies' => 'Populära filmer',
@@ -3956,6 +4190,11 @@ extension on TranslationsSv {
 			'liveTv.unknownChannel' => 'Okänd kanal',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
+			'liveTv.searchGuide' => 'Sök i programguiden',
+			'liveTv.searchHint' => 'Sök kanaler och program',
+			'liveTv.searchNoResults' => ({required Object query}) => 'Inga träffar för "${query}"',
+			'liveTv.channelsSection' => 'Kanaler',
+			'liveTv.programsSection' => 'Program',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.tomorrow' => 'I morgon',
@@ -4093,6 +4332,8 @@ extension on TranslationsSv {
 			'music.repeatAll' => 'Upprepa alla',
 			'music.repeatOne' => 'Upprepa en låt',
 			'music.instantMixNoServer' => 'Ingen server är tillgänglig för en snabbmix',
+			'music.instantMixFailed' => 'Det gick inte att läsa in snabbmixen',
+			'music.instantMixEmpty' => 'Snabbmixen innehöll inga låtar',
 			'music.noAudioUrl' => ({required Object track}) => 'Ingen ljud-URL är tillgänglig för ${track}',
 			'music.discography.singlesAndEps' => 'Singlar och EP',
 			'music.discography.live' => 'Live',
@@ -4232,6 +4473,8 @@ extension on TranslationsSv {
 			'downloads.manageSyncRule' => 'Hantera synkronisering',
 			'downloads.editEpisodeCount' => 'Antal avsnitt',
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Synkroniserar alla objekt',
 			'downloads.syncUnwatchedItems' => 'Synkroniserar osedda objekt',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
@@ -4316,8 +4559,6 @@ extension on TranslationsSv {
 			'companionRemote.pairing.availableDevices' => 'Tillgängliga enheter',
 			'companionRemote.pairing.manualConnection' => 'Manuell anslutning',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kunde inte starta säker anslutning. Logga in på Plex först.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => 'Ange värdadress',
 			'companionRemote.pairing.validationHostFormat' => 'Formatet måste vara IP:port (t.ex. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Anslutningen tog för lång tid. Använd samma nätverk på båda enheterna.',
@@ -4577,6 +4818,8 @@ extension on TranslationsSv {
 			'seerr.statusBlocklisted' => 'På blockeringslistan',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Kunde inte nå ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Det finns ingen Seerr-instans på ${url} (HTTP ${status})',
+			'seerr.invalidUrl' => 'Ange en serveradress, t.ex. https://seerr.example.com',
+			'seerr.quickConnectUnsupported' => 'Den här Seerr-instansen stöder inte Quick Connect. Den kräver Seerr 3.4 eller nyare.',
 			'seerr.notInitialized' => 'Den här Seerr-instansen har inte slutfört den inledande konfigurationen',
 			'seerr.noPlexTokenForReauth' => 'Det finns ingen Plex-token tillgänglig för att logga in igen',
 			'seerr.noStoredCredentials' => 'Det finns inga sparade inloggningsuppgifter för att logga in igen',
@@ -4587,6 +4830,7 @@ extension on TranslationsSv {
 			'seerr.sessionRejectedAfterReauth' => 'Sessionen avvisades efter den nya inloggningen',
 			'services.title' => 'Tjänster',
 			'services.hubSubtitle' => 'Synkronisera visningsstatus och begär nya titlar.',
+			'services.integrations' => 'Integrationer',
 			'services.notConnected' => 'Inte ansluten',
 			'services.connectedAs' => ({required Object username}) => 'Ansluten som @${username}',
 			'services.scrobble' => 'Spåra uppspelningen automatiskt',

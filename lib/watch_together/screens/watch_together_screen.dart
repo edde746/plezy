@@ -606,7 +606,13 @@ class _ActiveSessionContent extends StatelessWidget {
                           color: participant.isHost ? Colors.amber : theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 12),
-                        Text(participant.displayName, style: theme.textTheme.bodyMedium),
+                        Flexible(
+                          child: Text(
+                            participant.displayName,
+                            style: theme.textTheme.bodyMedium,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         if (participant.isHost) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -627,6 +633,17 @@ class _ActiveSessionContent extends StatelessWidget {
                             width: 12,
                             height: 12,
                             child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
+                          ),
+                        ],
+                        if (watchTogether.canTransferHostTo(participant)) ...[
+                          const Spacer(),
+                          FocusableButton(
+                            useBackgroundFocus: true,
+                            onPressed: () => _confirmTransferHost(context, participant),
+                            child: TextButton(
+                              onPressed: () => _confirmTransferHost(context, participant),
+                              child: Text(t.watchTogether.makeHost),
+                            ),
                           ),
                         ],
                       ],
@@ -681,6 +698,17 @@ class _ActiveSessionContent extends StatelessWidget {
     } catch (error, stackTrace) {
       appLogger.e('WatchTogether: Session leave failed', error: error, stackTrace: stackTrace);
     }
+  }
+
+  Future<void> _confirmTransferHost(BuildContext context, Participant participant) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.watchTogether.makeHostQuestion,
+      message: t.watchTogether.makeHostConfirm(name: participant.displayName),
+      confirmText: t.watchTogether.transfer,
+    );
+    if (!confirmed) return;
+    watchTogether.transferHost(participant);
   }
 }
 

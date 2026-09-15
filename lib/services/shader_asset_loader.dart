@@ -236,21 +236,23 @@ class ShaderAssetLoader {
 
   /// Import a custom shader file into the custom shaders directory.
   /// Returns the stored file name (UUID-based to avoid collisions).
-  static Future<String> importCustomShader(String sourcePath) async {
+  static Future<String> importCustomShader(String sourcePath, {void Function()? checkCurrent}) async {
     if (path.extension(sourcePath).toLowerCase() != '.glsl') {
       throw ArgumentError.value(sourcePath, 'sourcePath', 'Custom shaders must use the .glsl extension');
     }
 
     final customDir = await _getCustomShaderDirectory();
+    checkCurrent?.call();
     final storedName = '${const Uuid().v4()}.glsl';
     await File(sourcePath).copy(path.join(customDir, storedName));
     return storedName;
   }
 
   /// Delete a custom shader file from the custom shaders directory.
-  static Future<void> deleteCustomShader(String fileName) async {
+  static Future<void> deleteCustomShader(String fileName, {void Function()? checkCurrent}) async {
     final file = await _resolveManagedCustomShaderFile(fileName);
     if (file != null && await file.exists()) {
+      checkCurrent?.call();
       await file.delete();
     }
   }

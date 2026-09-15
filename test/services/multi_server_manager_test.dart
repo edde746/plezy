@@ -1136,6 +1136,106 @@ void main() {
     });
   });
 
+  group('reoptimizeDemotedServers', () {
+    test('re-races a server sitting on remote while it publishes a local connection', () async {
+      final storage = await _prepareFreshPlexManagerTest();
+      final local = _plexEndpoint('demoted-local');
+      final remote = _plexRemoteEndpoint('demoted-remote');
+      final server = _ControlledPlexServer(
+        serverId: 'demoted-server',
+        endpoints: [local, remote],
+        discoveryStreams: [
+          () => Stream.value(remote), // bind: LAN was unreachable
+          () => Stream.value(local), // resume: LAN is back
+        ],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      expect(await manager.refreshTokensForProfile(_plexAccount('demoted-account', [server]), profileId: 'profile-a'), {
+        'demoted-server',
+      });
+      await pumpEventQueue(times: 20);
+      final client = factory.clients['demoted-server']!;
+      expect(client.config.baseUrl, remote.uri);
+      expect(storage.getServerEndpoint(ServerId('demoted-server')), remote.uri);
+      expect(server.discoveryCalls, 1);
+
+      await manager.reoptimizeDemotedServers(reason: 'resume');
+      await pumpEventQueue(times: 20);
+
+      expect(server.discoveryCalls, 2);
+      expect(client.config.baseUrl, local.uri);
+      expect(storage.getServerEndpoint(ServerId('demoted-server')), local.uri);
+
+      // Back on local: a second resume is a no-op.
+      await manager.reoptimizeDemotedServers(reason: 'resume');
+      expect(server.discoveryCalls, 2);
+    });
+
+    test('leaves alone a server on local and a remote-only server', () async {
+      await _prepareFreshPlexManagerTest();
+      final onLocal = _ControlledPlexServer(
+        serverId: 'on-local',
+        endpoints: [_plexEndpoint('on-local-lan'), _plexRemoteEndpoint('on-local-wan')],
+        discoveryStreams: [() => Stream.value(_plexEndpoint('on-local-lan'))],
+      );
+      final remoteOnly = _ControlledPlexServer(
+        serverId: 'remote-only',
+        endpoints: [_plexRemoteEndpoint('remote-only-wan')],
+        discoveryStreams: [() => Stream.value(_plexRemoteEndpoint('remote-only-wan'))],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      expect(
+        await manager.refreshTokensForProfile(_plexAccount('mixed-account', [onLocal, remoteOnly]), profileId: 'p'),
+        {'on-local', 'remote-only'},
+      );
+      await pumpEventQueue(times: 20);
+
+      await manager.reoptimizeDemotedServers(reason: 'resume');
+
+      expect(onLocal.discoveryCalls, 1);
+      expect(remoteOnly.discoveryCalls, 1);
+    });
+
+    test('skips offline servers — the reconnect path owns those', () async {
+      await _prepareFreshPlexManagerTest();
+      final local = _plexEndpoint('offline-lan');
+      final remote = _plexRemoteEndpoint('offline-wan');
+      final server = _ControlledPlexServer(
+        serverId: 'offline-server',
+        endpoints: [local, remote],
+        discoveryStreams: [() => Stream.value(remote)],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      expect(await manager.refreshTokensForProfile(_plexAccount('offline-account', [server]), profileId: 'p'), {
+        'offline-server',
+      });
+      await pumpEventQueue(times: 20);
+      manager.updateServerStatus(ServerId('offline-server'), false);
+
+      await manager.reoptimizeDemotedServers(reason: 'resume');
+
+      expect(server.discoveryCalls, 1);
+    });
+  });
+
   group('Jellyfin connection updates', () {
     test('persists refreshed admin status discovered during health checks', () async {
       final persisted = <JellyfinConnection>[];
@@ -1862,6 +1962,17 @@ PlexConnection _plexRelayEndpoint(String label) => PlexConnection(
   uri: 'https://$label.invalid:8443',
   local: false,
   relay: true,
+  ipv6: false,
+);
+
+/// A plex.tv-published WAN connection: `local: false`, direct (not relay).
+PlexConnection _plexRemoteEndpoint(String label) => PlexConnection(
+  protocol: 'https',
+  address: '$label.invalid',
+  port: 32400,
+  uri: 'https://$label.invalid:32400',
+  local: false,
+  relay: false,
   ipv6: false,
 );
 

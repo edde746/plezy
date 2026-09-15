@@ -100,6 +100,26 @@ void main() {
     });
   });
 
+  group('ExternalIds.legacyPlexGuidPrefixes', () {
+    test('every prefix names a guid fromLegacyPlexGuid reads back to the same id', () {
+      const ids = ExternalIds(imdb: 'tt0245429', tmdb: 129, tvdb: 276, anidb: 112);
+      final prefixes = ids.legacyPlexGuidPrefixes;
+      expect(prefixes, isNotEmpty);
+      for (final prefix in prefixes) {
+        expect(prefix, endsWith('?'), reason: 'a literal prefix filter must stop at the lang argument');
+        final parsed = ExternalIds.fromLegacyPlexGuid('${prefix}lang=en');
+        expect(parsed.intersects(ids), isTrue, reason: prefix);
+      }
+      expect(prefixes, contains('com.plexapp.agents.thetvdb://276?'));
+      expect(prefixes, contains('com.plexapp.agents.hama://tvdb4-276?'));
+      expect(prefixes, contains('com.plexapp.agents.hama://anidb-112?'));
+    });
+
+    test('is empty without ids', () {
+      expect(const ExternalIds().legacyPlexGuidPrefixes, isEmpty);
+    });
+  });
+
   group('ExternalIds.fillFrom', () {
     test('keeps its own ids and only fills the ones it is missing', () {
       const modern = ExternalIds(tvdb: 315500);

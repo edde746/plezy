@@ -32,6 +32,7 @@ import '../../../utils/snackbar_helper.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../../../watch_together/providers/watch_together_provider.dart';
 import '../models/track_controls_state.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
@@ -157,9 +158,16 @@ class _SettingsToggleItem extends StatefulWidget {
   final Pref<bool> pref;
   final IconData icon;
   final String title;
+  final String? subtitle;
   final FutureOr<void> Function(bool value)? onAfterWrite;
 
-  const _SettingsToggleItem({required this.pref, required this.icon, required this.title, this.onAfterWrite});
+  const _SettingsToggleItem({
+    required this.pref,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.onAfterWrite,
+  });
 
   @override
   State<_SettingsToggleItem> createState() => _SettingsToggleItemState();
@@ -232,6 +240,9 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
         return FocusableListTile(
           leading: AppIcon(widget.icon, fill: 1, color: displayedValue ? Colors.amber : tokens(context).textMuted),
           title: Text(widget.title),
+          subtitle: widget.subtitle == null
+              ? null
+              : Text(widget.subtitle!, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
           trailing: Switch(value: displayedValue, onChanged: isPending ? null : _write, activeThumbColor: Colors.amber),
           onTap: isPending ? null : () => _write(!displayedValue),
         );
@@ -671,10 +682,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   String _versionQualityValueText() {
+    final showVersions = _state.availableVersions.length > 1;
     final values = <String>[];
-    if (_state.availableVersions.length > 1) values.add(_selectedVersionLabel());
-    if (_state.serverSupportsTranscoding) values.add(qualityPresetLabel(_state.selectedQualityPreset));
+    if (showVersions) values.add(_selectedVersionLabel());
+    if (_state.serverSupportsTranscoding) {
+      values.add(
+        qualityPresetLabel(
+          _state.selectedQualityPreset,
+          sourceBitrateKbps: showVersions ? null : _selectedSourceBitrateKbps(),
+        ),
+      );
+    }
     return values.join(' / ');
+  }
+
+  int? _selectedSourceBitrateKbps() {
+    final index = _state.selectedMediaIndex;
+    if (index < 0 || index >= _state.availableVersions.length) {
+      return null;
+    }
+    final bitrate = _state.availableVersions[index].bitrate;
+    return bitrate != null && bitrate > 0 ? bitrate : null;
   }
 
   String _selectedVersionLabel() {
@@ -698,7 +726,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             stream: widget.player.streams.rate,
             initialData: widget.player.state.rate,
             builder: (context, snapshot) {
-              final currentRate = snapshot.data ?? 1.0;
+              final currentRate = _displayedRate(snapshot.data ?? 1.0);
               return _SettingsMenuItem(
                 icon: Symbols.speed_rounded,
                 title: t.videoSettings.playbackSpeed,
@@ -815,6 +843,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           pref: SettingsService.audioNormalization,
           icon: Symbols.graphic_eq_rounded,
           title: t.videoSettings.audioNormalization,
+          // Normalization wins over passthrough; say so where passthrough exists.
+          subtitle: PlatformDetector.supportsAudioPassthrough()
+              ? t.videoSettings.audioNormalizationDisablesPassthrough
+              : null,
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 
@@ -956,12 +988,24 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
+  /// The rate the user chose, as opposed to what the player is momentarily
+  /// running at: a Watch Together drift nudge is not a speed setting.
+  double _displayedRate(double playerRate) {
+    try {
+      final session = context.read<WatchTogetherProvider>();
+      if (session.syncOwnsRate) return session.roomRate ?? playerRate;
+    } catch (_) {
+      // No session provider above this sheet.
+    }
+    return playerRate;
+  }
+
   Widget _buildSpeedView() {
     return StreamBuilder<double>(
       stream: widget.player.streams.rate,
       initialData: widget.player.state.rate,
       builder: (context, snapshot) {
-        final currentRate = snapshot.data ?? 1.0;
+        final currentRate = _displayedRate(snapshot.data ?? 1.0);
         const speeds = <double>[
           0.5,
           0.75,
@@ -996,7 +1040,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
               trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () async {
-                await widget.player.setRate(speed);
+                await (_state.onRateRequested ?? widget.player.setRate)(speed);
                 // Save at the configured persistence scope (global by default).
                 await ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, _state.metadata, speed);
                 if (context.mounted) {
@@ -1011,7 +1055,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildZoomView() {
-    const zoomPresets = [0.5, 0.75, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0];
+    const zoomPresets = [0.5, 0.75, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.75, 2.0];
     final primary = Theme.of(context).colorScheme.primary;
 
     return ListView(
@@ -1040,11 +1084,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget _buildSleepView() {
     final sleepTimer = SleepTimerService();
 
-    return SleepTimerContent(
-      player: widget.player,
-      sleepTimer: sleepTimer,
-      onCancel: () => OverlaySheetController.of(context).close(),
-    );
+    return SleepTimerContent(sleepTimer: sleepTimer, onCancel: () => OverlaySheetController.of(context).close());
   }
 
   Widget _buildVersionQualityView() {

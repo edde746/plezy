@@ -48,8 +48,8 @@ class LibraryRecommendedTab extends BaseLibraryTab<MediaHub> {
 
 class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryRecommendedTab>
     with ItemUpdatable, WatchStateAware, DeletionAware, DeletionMirrorsWatchState {
-  /// GlobalKeys for each hub section to enable vertical navigation
-  final List<GlobalKey<HubSectionState>> _hubKeys = [];
+  /// Navigation belongs to the rendered hub snapshot, never an in-flight load.
+  final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final TvSpotlightController _spotlight = TvSpotlightController();
   HubFocusMemory _hubFocusMemory = HubFocusMemory();
@@ -60,6 +60,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   void didUpdateWidget(LibraryRecommendedTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.library.globalKey != widget.library.globalKey) {
+      _hubKeysByIdentity.clear();
       _hubFocusMemory = HubFocusMemory();
     }
   }
@@ -75,6 +76,9 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   /// Every item on screen, across all hubs.
   Iterable<MediaItem> get _visibleItems => items.expand((hub) => hub.items);
+
+  @override
+  bool get hasFocusableContent => _visibleItems.isNotEmpty;
 
   // Deletion mirrors these via DeletionMirrorsWatchState: each visible item
   // plus its parents, so deleting a season/show also matches the episodes it
@@ -135,17 +139,16 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     // item in place, so it must not evict anything here.
     if (event.isDownloadOnly) return;
 
-    // Drop the item and any descendants (season/show deletions take their
-    // episodes with them) from every hub, then resync with the server for
-    // parent leaf counts and replacement on-deck items — same
-    // remove-in-place-then-reload shape as the removedFromContinueWatching
-    // path above.
+    // Eviction is immediate for both origins. Push reconciliation belongs to
+    // the coarse library event and its visibility/playback-aware pacer.
     _removeItemsFromHubs(
       hubMatches: (_) => true,
       itemMatches: (item) =>
           item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId,
     );
-    unawaited(loadItems());
+    if (event.origin == DeletionOrigin.local) {
+      unawaited(loadItems());
+    }
   }
 
   void _removeItemsFromHubs({
@@ -161,6 +164,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
           items[i] = hub.copyWith(items: newItems, size: newItems.length);
         }
       }
+      items.removeWhere((hub) => hub.items.isEmpty);
     });
   }
 
@@ -183,9 +187,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   Future<void> loadItems() => runLoadTransaction(_loadRecommendedHubs);
 
   Future<List<MediaHub>> _loadRecommendedHubs() async {
-    // Clear hub keys before loading new hubs to prevent stale references
-    _hubKeys.clear();
-
     // Backend-aware fetch: Plex hits /hubs/sections, Jellyfin synthesises
     // Continue Watching + Next Up + Recently Added.
     final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
@@ -199,6 +200,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               libraryKind: widget.library.kind,
             ),
           );
+    hubs.removeWhere((hub) => hub.items.isEmpty);
 
     // Move Continue Watching hub to the front if present
     final cwIndex = hubs.indexWhere(_isContinueWatchingHub);
@@ -210,22 +212,30 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     return hubs;
   }
 
-  /// Ensure we have enough GlobalKeys for all hubs
-  void _ensureHubKeys(int count) {
-    while (_hubKeys.length < count) {
-      _hubKeys.add(GlobalKey<HubSectionState>());
+  List<GlobalKey<HubSectionState>> _keysForHubs(List<MediaHub> hubs) {
+    final occurrences = <String, int>{};
+    final liveIdentities = <String>{};
+    final keys = <GlobalKey<HubSectionState>>[];
+    for (final hub in hubs) {
+      var identity = '${hub.serverId ?? ''}:${hub.identifier ?? hub.id}';
+      final occurrence = occurrences.update(identity, (n) => n + 1, ifAbsent: () => 0);
+      if (occurrence > 0) identity = '$identity#$occurrence';
+      liveIdentities.add(identity);
+      keys.add(_hubKeysByIdentity.putIfAbsent(identity, GlobalKey<HubSectionState>.new));
     }
+    _hubKeysByIdentity.removeWhere((identity, _) => !liveIdentities.contains(identity));
+    return keys;
   }
 
   /// Handle vertical navigation between hubs
-  bool _handleVerticalNavigation(int hubIndex, bool isUp) {
+  bool _handleVerticalNavigation(List<GlobalKey<HubSectionState>> keys, int hubIndex, bool isUp) {
     return navigateVerticalHubRows(
-      hubCount: items.length,
+      hubCount: keys.length,
       hubIndex: hubIndex,
       isUp: isUp,
       propagateTopBoundary: true,
       requestFocus: (targetIndex) {
-        _hubKeys[targetIndex].currentState?.requestFocusFromMemory();
+        keys[targetIndex].currentState?.requestFocusFromMemory();
       },
     );
   }
@@ -250,8 +260,8 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       });
       return;
     }
-    if (_hubKeys.isNotEmpty && items.isNotEmpty) {
-      _hubKeys.first.currentState?.requestFocusAt(0);
+    if (items.isNotEmpty) {
+      _keysForHubs(items).first.currentState?.requestFocusAt(0);
     }
   }
 
@@ -265,7 +275,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   @override
   Widget buildContent(List<MediaHub> items) {
-    _ensureHubKeys(items.length);
+    final hubKeys = _keysForHubs(items);
 
     if (PlatformDetector.isTV()) {
       return SettingsBuilder(
@@ -283,13 +293,17 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
           padding: const EdgeInsets.fromLTRB(0, _focusDecorationPadding, 0, 8),
           sliver: SliverList.builder(
             itemCount: items.length,
+            findChildIndexCallback: (key) {
+              final index = hubKeys.indexOf(key as GlobalKey<HubSectionState>);
+              return index < 0 ? null : index;
+            },
             itemBuilder: (context, index) {
               final hub = items[index];
               final isContinueWatching = _isContinueWatchingHub(hub);
               final usesContinueWatchingAction = _usesContinueWatchingAction(hub);
 
               return HubSection(
-                key: _hubKeys[index],
+                key: hubKeys[index],
                 hub: hub,
                 focusMemory: _hubFocusMemory,
                 icon: hubIconFor(hub),
@@ -297,7 +311,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                 usesContinueWatchingAction: usesContinueWatchingAction,
                 onRefresh: updateItem,
                 onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
-                onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
+                onVerticalNavigation: (isUp) => _handleVerticalNavigation(hubKeys, index, isUp),
                 onBack: widget.onBack,
                 onNavigateUp: index == 0 ? widget.onBack : null,
                 onNavigateToSidebar: _navigateToSidebar,

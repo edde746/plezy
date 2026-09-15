@@ -85,8 +85,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleObserveProperty(call: call, result: result)
     case "command":
       handleCommand(call: call, result: result)
-    case "setDisplayCriteria":
-      handleSetDisplayCriteria(call: call, result: result)
+    case "awaitDisplayModeSwitch":
+      handleAwaitDisplayModeSwitch(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
     case "setVideoZoom":
@@ -410,40 +410,16 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     if playerCore?.isPipActive == true { syncPipTimebase() }
   }
 
-  private func handleSetDisplayCriteria(call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard let args = call.arguments as? [String: Any] else {
-      result(FlutterError(code: "INVALID_ARGS", message: "Missing arguments", details: nil))
-      return
-    }
-
+  private func handleAwaitDisplayModeSwitch(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let core = playerCore else {
       result(nil)
       return
     }
 
-    let extraDelayMs = int64Value(args["extraDelayMs"]).map { Int(clamping: $0) } ?? 0
-    guard let raw = args["criteria"] as? [String: Any] else {
-      DispatchQueue.main.async {
-        core.setServerDisplayCriteriaForPlayback(nil, extraDelayMs: extraDelayMs) {
-          result(nil)
-        }
-      }
-      return
-    }
-
-    let criteria = ServerDisplayCriteria(
-      doviProfile: int64Value(raw["doviProfile"]) ?? 0,
-      doviLevel: int64Value(raw["doviLevel"]) ?? 0,
-      doviCompatibilityId: int64Value(raw["doviCompatibilityId"]),
-      fps: doubleValue(raw["fps"]) ?? 0,
-      width: Int32(truncatingIfNeeded: int64Value(raw["width"]) ?? 0),
-      height: Int32(truncatingIfNeeded: int64Value(raw["height"]) ?? 0),
-      gamma: stringValue(raw["transfer"]),
-      primaries: stringValue(raw["primaries"]),
-      colorMatrix: stringValue(raw["matrix"])
-    )
+    let args = call.arguments as? [String: Any]
+    let extraDelayMs = int64Value(args?["extraDelayMs"]).map { Int(clamping: $0) } ?? 0
     DispatchQueue.main.async {
-      core.setServerDisplayCriteriaForPlayback(criteria, extraDelayMs: extraDelayMs) {
+      core.awaitDisplayModeSwitch(extraDelayMs: extraDelayMs) {
         result(nil)
       }
     }
@@ -486,12 +462,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     default:
       return nil
     }
-  }
-
-  private func stringValue(_ value: Any?) -> String? {
-    guard let value else { return nil }
-    let string = String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
-    return string.isEmpty ? nil : string
   }
 
   // MARK: - Helpers

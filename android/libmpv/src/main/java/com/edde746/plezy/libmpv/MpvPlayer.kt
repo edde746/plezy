@@ -1,0 +1,426 @@
+package com.edde746.plezy.libmpv
+
+import android.content.Context
+import android.os.Looper
+import android.view.Surface
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+
+/**
+ * Kotlin face of one native player session. Sessions are independent: the JNI
+ * layer gives each its own mpv handle, event thread and Surfaces, so a wrapper
+ * whose [close] is stuck in a wedged decoder's teardown holds nothing the next
+ * session needs.
+ *
+ * The JNI layer refuses any call that names a session it has retired, and
+ * Kotlin routes every callback to the wrapper registered for the session it
+ * carries. Together they make a retiring wrapper's in-flight work (a hook
+ * handler still reshaping tracks, a queued property write, a late hook
+ * continuation) inert against every other session, and keep its tail events
+ * out of their flows.
+ */
+class MpvPlayer private constructor(
+  /** Identity of the native session this wrapper owns; see nativeCreate. */
+  val session: Long
+) : AutoCloseable {
+
+  companion object {
+    /** Upper bound for a hook handler; longer stalls playback start. */
+    private const val HOOK_TIMEOUT_MS = 3_000L
+
+    init {
+      System.loadLibrary("mpv")
+      System.loadLibrary("player")
+    }
+
+    private val sessions = ConcurrentHashMap<Long, MpvPlayer>()
+
+    /**
+     * Creates and initializes a native player session off the Android main
+     * thread. It is independent of every other session, including one that is
+     * still terminating.
+     */
+    suspend fun create(
+      context: Context,
+      configure: MpvPlayerConfig.() -> Unit = {}
+    ): MpvPlayer = withContext(Dispatchers.IO) {
+      checkNotMainThread("MPV initialization")
+      val player = MpvPlayer(nativeCreate(context.applicationContext))
+      sessions[player.session] = player
+      try {
+        MpvPlayerConfig(player.session).apply(configure)
+        val result = nativeInit(player.session)
+        if (result < 0) throw MpvException("Failed to initialize mpv: error $result")
+        ensureActive()
+        player
+      } catch (e: Throwable) {
+        player.close()
+        throw e
+      }
+    }
+
+    // JNI callbacks — called from the native event thread. Each names the
+    // session it originated from; only the wrapper published for that
+    // session may receive it.
+
+    private fun target(session: Long): MpvPlayer? = sessions[session]
+
+    @JvmStatic
+    fun onPropertyChanged(session: Long, name: String, sourceId: Long, hasSourceId: Boolean) {
+      target(session)?.rawPropertyChanges?.trySend(
+        PropertyChange.None(name, sourceId.takeIf { hasSourceId })
+      )
+    }
+
+    @JvmStatic
+    fun onPropertyChanged(session: Long, name: String, value: Boolean, sourceId: Long, hasSourceId: Boolean) {
+      target(session)?.rawPropertyChanges?.trySend(
+        PropertyChange.Flag(name, value, sourceId.takeIf { hasSourceId })
+      )
+    }
+
+    @JvmStatic
+    fun onPropertyChanged(session: Long, name: String, value: Long, sourceId: Long, hasSourceId: Boolean) {
+      target(session)?.rawPropertyChanges?.trySend(
+        PropertyChange.Int64(name, value, sourceId.takeIf { hasSourceId })
+      )
+    }
+
+    @JvmStatic
+    fun onPropertyChanged(session: Long, name: String, value: Double, sourceId: Long, hasSourceId: Boolean) {
+      target(session)?.rawPropertyChanges?.trySend(
+        PropertyChange.Double(name, value, sourceId.takeIf { hasSourceId })
+      )
+    }
+
+    @JvmStatic
+    fun onPropertyChanged(session: Long, name: String, value: String, sourceId: Long, hasSourceId: Boolean) {
+      target(session)?.rawPropertyChanges?.trySend(
+        PropertyChange.Str(name, value, sourceId.takeIf { hasSourceId })
+      )
+    }
+
+    @JvmStatic
+    fun onEvent(
+      session: Long,
+      eventId: Int,
+      sourceId: Long,
+      hasSourceId: Boolean,
+      positionSeconds: Double,
+      hasPositionSeconds: Boolean
+    ) {
+      val event = MpvEvent.fromId(
+        eventId,
+        sourceId.takeIf { hasSourceId },
+        positionSeconds.takeIf { hasPositionSeconds && it.isFinite() }
+      ) ?: return
+      target(session)?.rawEvents?.trySend(event)
+    }
+
+    @JvmStatic
+    fun onEndFile(
+      session: Long,
+      reason: Int,
+      sourceId: Long,
+      hasSourceId: Boolean,
+      error: Int,
+      errorMessage: String?
+    ) {
+      target(session)?.rawEvents?.trySend(
+        MpvEvent.EndFile(
+          EndFileReason.fromId(reason),
+          sourceId.takeIf { hasSourceId },
+          MpvError.fromCode(error),
+          errorMessage?.takeIf { it.isNotBlank() }
+        )
+      )
+    }
+
+    @JvmStatic
+    fun onLogMessage(session: Long, prefix: String, level: Int, text: String) {
+      val logLevel = LogLevel.fromNative(level) ?: return
+      target(session)?.rawLogMessages?.trySend(LogMessage(prefix, logLevel, text.trimEnd()))
+    }
+
+    @JvmStatic
+    fun onHook(session: Long, name: String, id: Long) {
+      val player = target(session)
+      if (player == null || player.closed || !player.rawHooks.trySend(Hook(name, id)).isSuccess) {
+        // Nobody will answer: release mpv rather than leave it waiting. The
+        // native side drops this if the session has since been retired.
+        nativeHookContinue(session, id)
+      }
+    }
+
+    private fun checkNotMainThread(operation: String) {
+      check(Looper.myLooper() != Looper.getMainLooper()) {
+        "$operation must not run on the Android main thread"
+      }
+    }
+
+    // JNI native declarations — private to avoid internal name mangling.
+    // Every entry after nativeCreate names the session it acts for; the
+    // native side refuses a retired one.
+
+    /** Publishes a new native session and returns its identity. */
+    @JvmStatic private external fun nativeCreate(appctx: Context): Long
+
+    /** 0 on success, otherwise a negative mpv error. */
+    @JvmStatic private external fun nativeInit(session: Long): Int
+
+    @JvmStatic private external fun nativeDestroy(session: Long)
+
+    /** Negative mpv error, the playlist entry id a `loadfile` created, or 0 when the command returned none. */
+    @JvmStatic private external fun nativeCommand(session: Long, cmd: Array<out String>): Long
+
+    @JvmStatic private external fun nativeSetLogLevel(session: Long, level: String): Int
+
+    @JvmStatic private external fun nativeHookContinue(session: Long, id: Long)
+
+    @JvmStatic private external fun nativeSetOptionString(session: Long, name: String, value: String): Int
+
+    @JvmStatic private external fun nativeAttachSurfaces(
+      session: Long,
+      surface: Surface,
+      osdSurface: Surface?,
+      videoGeneration: Long,
+      osdGeneration: Long,
+      videoOutput: String?
+    ): Int
+
+    @JvmStatic private external fun nativeGetPropertyInt(session: Long, name: String): Int?
+
+    @JvmStatic private external fun nativeGetPropertyDouble(session: Long, name: String): Double?
+
+    @JvmStatic private external fun nativeGetPropertyBoolean(session: Long, name: String): Boolean?
+
+    @JvmStatic private external fun nativeGetPropertyString(session: Long, name: String): String?
+
+    @JvmStatic private external fun nativeSetPropertyInt(session: Long, name: String, value: Int): Int
+
+    @JvmStatic private external fun nativeSetPropertyDouble(session: Long, name: String, value: Double): Int
+
+    @JvmStatic private external fun nativeSetPropertyBoolean(session: Long, name: String, value: Boolean): Int
+
+    @JvmStatic private external fun nativeSetPropertyString(session: Long, name: String, value: String): Int
+
+    @JvmStatic private external fun nativeObserveProperty(session: Long, name: String, format: Int): Int
+
+    internal fun setOptionString(session: Long, name: String, value: String): Int = nativeSetOptionString(session, name, value)
+
+    internal fun requestLogMessages(session: Long, level: String) {
+      checkNotMainThread("MPV log level change")
+      val result = nativeSetLogLevel(session, level)
+      if (result < 0) {
+        throw MpvException("Failed to set log level: error $result")
+      }
+    }
+  }
+
+  // The native event thread hands everything to unbounded channels: trySend
+  // on them cannot fail (until close) and cannot block mpv's event loop. A
+  // pump per stream re-emits into the SharedFlow, whose SUSPEND overflow
+  // parks the pump - not the native thread - while a collector catches up.
+  // The previous design tryEmit-ed straight into the 64-slot SharedFlow
+  // buffer, which silently dropped whatever arrived during a burst; losing
+  // e.g. the one cplayer log line that signals a failed video chain.
+  private val rawEvents = Channel<MpvEvent>(Channel.UNLIMITED)
+  private val rawHooks = Channel<Hook>(Channel.UNLIMITED)
+  private val rawPropertyChanges = Channel<PropertyChange>(Channel.UNLIMITED)
+  private val rawLogMessages = Channel<LogMessage>(Channel.UNLIMITED)
+
+  private val events = MutableSharedFlow<MpvEvent>(extraBufferCapacity = 64)
+  private val propertyChanges = MutableSharedFlow<PropertyChange>(extraBufferCapacity = 64)
+  private val logMessages = MutableSharedFlow<LogMessage>(extraBufferCapacity = 64)
+
+  private val pumpScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+  private class Hook(val name: String, val id: Long)
+
+  /**
+   * Handler for mpv hooks the native side registered (`on_preloaded`). mpv
+   * holds playback until the handler returns; a handler that throws or
+   * overruns [HOOK_TIMEOUT_MS] is abandoned and playback continues. Set it
+   * before loading a file; unset, hooks continue immediately.
+   */
+  @Volatile var hookHandler: (suspend (name: String) -> Unit)? = null
+
+  init {
+    pumpScope.launch { for (e in rawEvents) events.emit(e) }
+    pumpScope.launch {
+      for (hook in rawHooks) {
+        try {
+          val handler = if (closed) null else hookHandler
+          if (handler != null) {
+            withTimeoutOrNull(HOOK_TIMEOUT_MS) { handler(hook.name) }
+              ?: android.util.Log.w("MpvPlayer", "Hook ${hook.name} handler overran; continuing playback")
+          }
+        } catch (e: Exception) {
+          android.util.Log.w("MpvPlayer", "Hook ${hook.name} handler failed; continuing playback", e)
+        } finally {
+          // Validated natively against this session, atomically with its
+          // retirement: a continuation that lost the race is dropped, never
+          // delivered to a successor's core.
+          nativeHookContinue(session, hook.id)
+        }
+      }
+    }
+    pumpScope.launch { for (c in rawPropertyChanges) propertyChanges.emit(c) }
+    pumpScope.launch { for (m in rawLogMessages) logMessages.emit(m) }
+  }
+
+  val eventFlow: SharedFlow<MpvEvent> = events.asSharedFlow()
+  val propertyFlow: SharedFlow<PropertyChange> = propertyChanges.asSharedFlow()
+  val logFlow: SharedFlow<LogMessage> = logMessages.asSharedFlow()
+
+  // Commands
+
+  /**
+   * Runs an mpv command. `loadfile` returns the id of the playlist entry it created — the
+   * `sourceId` carried by that source's start-file / playback-restart / end-file events; every
+   * other command returns null. A command mpv rejects throws [MpvException]: a rejected load
+   * never produces a source, so the caller must not wait for one.
+   */
+  suspend fun command(vararg args: String): Long? {
+    checkNotClosed()
+    val status = withContext(Dispatchers.IO) { nativeCommand(session, args) }
+    if (status < 0) throw MpvException("Command '${args.firstOrNull() ?: ""}' failed: error $status")
+    return if (status > 0) status else null
+  }
+
+  /** Called on the core's ordered IO writer, without suspending between writes. */
+  fun setLogLevel(level: String) {
+    checkNotClosed()
+    requestLogMessages(session, level)
+  }
+
+  /** Retires changed consumers before returning; generations name Surface lifetimes, not refresh requests. */
+  fun attachSurfaces(
+    surface: Surface,
+    osdSurface: Surface?,
+    videoGeneration: Long,
+    osdGeneration: Long,
+    videoOutput: String? = null
+  ) {
+    checkNotClosed()
+    checkNotMainThread("MPV surface handoff")
+    val result = nativeAttachSurfaces(session, surface, osdSurface, videoGeneration, osdGeneration, videoOutput)
+    if (result < 0) throw MpvException("Failed to attach MPV surfaces: error $result")
+  }
+
+  // Property getters
+
+  suspend fun getInt(name: String): Int? {
+    checkNotClosed()
+    return withContext(Dispatchers.IO) { nativeGetPropertyInt(session, name) }
+  }
+
+  suspend fun getDouble(name: String): Double? {
+    checkNotClosed()
+    return withContext(Dispatchers.IO) { nativeGetPropertyDouble(session, name) }
+  }
+
+  suspend fun getFlag(name: String): Boolean? {
+    checkNotClosed()
+    return withContext(Dispatchers.IO) { nativeGetPropertyBoolean(session, name) }
+  }
+
+  suspend fun getString(name: String): String? {
+    checkNotClosed()
+    return withContext(Dispatchers.IO) { nativeGetPropertyString(session, name) }
+  }
+
+  // Property setters
+  //
+  // A rejected write throws, like every sibling native call (command,
+  // attachSurfaces, setLogLevel, nativeInit). Swallowing the status made a
+  // typo'd or unsupported key in the user's mpv.conf log "Applied custom MPV
+  // property" while mpv had refused it.
+
+  suspend fun setProperty(name: String, value: Int) {
+    checkNotClosed()
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyInt(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
+  }
+
+  suspend fun setProperty(name: String, value: Double) {
+    checkNotClosed()
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyDouble(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
+  }
+
+  suspend fun setProperty(name: String, value: Boolean) {
+    checkNotClosed()
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyBoolean(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
+  }
+
+  suspend fun setProperty(name: String, value: String) {
+    checkNotClosed()
+    val result = withContext(Dispatchers.IO) { nativeSetPropertyString(session, name, value) }
+    if (result < 0) throw MpvException("Failed to set property '$name': error $result")
+  }
+
+  // Property observation
+  //
+  // Also throws on refusal: an observation is a write-shaped call, and a
+  // property mpv does not know reports success while nothing will ever be
+  // delivered for it.
+
+  suspend fun observeProperty(name: String, format: PropertyFormat) {
+    checkNotClosed()
+    val result = withContext(Dispatchers.IO) {
+      checkNotMainThread("MPV property observation")
+      nativeObserveProperty(session, name, format.nativeValue)
+    }
+    if (result < 0) throw MpvException("Failed to observe property '$name': error $result")
+  }
+
+  // Lifecycle
+
+  private val closeLock = Any()
+
+  @Volatile
+  private var closed = false
+
+  /**
+   * Blocks until this session's native teardown finishes, which on a wedged
+   * decoder may be forever. Callers must keep it off the Android main thread;
+   * no other session waits on it.
+   */
+  override fun close() {
+    synchronized(closeLock) {
+      if (closed) return
+      checkNotMainThread("MPV destruction")
+      closed = true
+      hookHandler = null
+      sessions.remove(session, this)
+    }
+    // Closed before the native call, not after: nativeDestroy blocks through
+    // decoder teardown and on a wedged decoder never returns, which would
+    // leave the four pumps parked in `for (x in channel)` for the life of the
+    // process, holding this wrapper and its SharedFlows. The event thread
+    // joined inside nativeDestroy is the only producer, a trySend on a closed
+    // channel simply fails, and a hook already queued still answers through
+    // nativeHookContinue, which the native side admits until retirement.
+    rawEvents.close()
+    rawHooks.close()
+    rawPropertyChanges.close()
+    rawLogMessages.close()
+    nativeDestroy(session)
+  }
+
+  private fun checkNotClosed() {
+    check(!closed) { "MpvPlayer has been closed" }
+  }
+}

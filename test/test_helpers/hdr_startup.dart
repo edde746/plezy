@@ -452,6 +452,54 @@ Future<void> expectSubtitleStyleRefusalDoesNotAbortStartup(WidgetTester tester) 
   );
 }
 
+/// A libmpv older than the pinned build refuses a property it does not know
+/// with MPV_ERROR_PROPERTY_NOT_FOUND (`sub-ass-video-aspect-override` is
+/// mpv 0.39+; Ubuntu 24.04 ships 0.37). The refusal is a preference, not a
+/// reason to fail playback: the sibling writes still land and no error
+/// screen appears.
+Future<void> expectUnknownSubtitlePropertyRefusalDoesNotAbortStartup(WidgetTester tester) async {
+  final refusal = PlatformException(
+    code: 'SET_PROPERTY_FAILED',
+    message: "setProperty 'sub-ass-video-aspect-override'='1' failed: property not found",
+  );
+  final calls = <MethodCall>[];
+  final eventCalls = <MethodCall>[];
+
+  await withMockPlayerChannels(
+    methodChannelName: 'com.plezy/mpv_player',
+    eventChannelName: 'com.plezy/mpv_player/events',
+    methodHandler: _refusingPlane(calls, refusal, property: 'sub-ass-video-aspect-override'),
+    eventHandler: (call) async {
+      eventCalls.add(call);
+      return null;
+    },
+    testBody: () async {
+      await _mountPlayerScreen(tester, 'Distro libmpv unknown property video');
+      await pumpUntil(
+        tester,
+        () => _propertyWrites(calls).contains('volume-max'),
+        describe: () => 'writes=${_propertyWrites(calls)} calls=${calls.map((c) => c.method).toList()}',
+      );
+
+      // Attempted, refused, and the write after it still ran: one refusal
+      // must neither abort startup nor skip its siblings.
+      expect(
+        _propertyWrites(calls),
+        containsAllInOrder(['sub-ass-override', 'sub-ass-video-aspect-override', 'sub-pos', 'volume-max']),
+      );
+      expect(find.text('Retry'), findsNothing, reason: 'an unknown-property refusal must not show the error screen');
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await pumpUntil(
+        tester,
+        () => calls.any((call) => call.method == 'dispose') && eventCalls.any((call) => call.method == 'cancel'),
+        describe: () =>
+            'calls=${calls.map((c) => c.method).toList()} events=${eventCalls.map((c) => c.method).toList()}',
+      );
+    },
+  );
+}
+
 /// The stored subtitle colours are free-form strings and mpv 0.40's OPT_COLOR
 /// parser rejects anything but #RRGGBB/#AARRGGBB, so startup sanitizes the
 /// values before writing: parseable hex passes through, everything else is

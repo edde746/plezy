@@ -9,6 +9,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../mixins/tab_navigation_mixin.dart';
+import '../../mixins/tab_visibility_aware.dart';
 import '../../media/ids.dart';
 import '../../media/media_library.dart';
 import '../../providers/hidden_libraries_provider.dart';
@@ -32,10 +33,11 @@ import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
 import 'tabs/library_playlists_tab.dart';
+import 'tabs/base_library_tab.dart';
 
 enum LibraryTabType { recommended, browse, collections, playlists }
 
-List<LibraryTabType> _getVisibleTabs(MediaLibrary library) {
+List<LibraryTabType> visibleLibraryTabs(MediaLibrary library) {
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
   return LibraryTabType.values;
 }
@@ -51,7 +53,14 @@ class LibrariesScreen extends StatefulWidget {
 }
 
 class _LibrariesScreenState extends State<LibrariesScreen>
-    with Refreshable, FullRefreshable, FocusableTab, LibraryLoadable, TickerProviderStateMixin, TabNavigationMixin {
+    with
+        Refreshable,
+        FullRefreshable,
+        FocusableTab,
+        LibraryLoadable,
+        TickerProviderStateMixin,
+        TabNavigationMixin,
+        TabVisibilityAware {
   final _recommendedTabKey = GlobalKey();
   final _browseTabKey = GlobalKey();
   final _collectionsTabKey = GlobalKey();
@@ -127,10 +136,22 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Initialize the screen with libraries from the provider.
   /// This handles initial library selection and content loading.
+  ///
+  /// An existing selection is authoritative. A sidebar library selection that
+  /// mounts this screen (`MainScreen._selectLibrary`) applies its target from a
+  /// post-frame callback registered *before* the one in [initState], so this
+  /// runs second and must not replace the requested library — which may be
+  /// hidden, and so is never the saved or topmost-visible default — with a
+  /// default. The re-checks cover the reverse interleaving, where a selection
+  /// lands while this is suspended on an await ([refresh]'s stale-resume
+  /// entry point).
   Future<void> _initializeWithLibraries() async {
+    if (_selectedLibraryGlobalKey != null) return;
+
     final librariesProvider = context.read<LibrariesProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
     await hiddenLibrariesProvider.ensureInitialized();
+    if (!mounted || _selectedLibraryGlobalKey != null) return;
     final allLibraries = librariesProvider.libraries;
 
     if (allLibraries.isEmpty) {
@@ -142,6 +163,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     final storage = await StorageService.getInstance();
+    if (!mounted || _selectedLibraryGlobalKey != null) return;
     final savedLibraryKey = storage.getSelectedLibraryKey();
 
     String? libraryGlobalKeyToLoad;
@@ -156,7 +178,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       libraryGlobalKeyToLoad = visibleLibraries.first.globalKey;
     }
 
-    if (libraryGlobalKeyToLoad != null && mounted) {
+    if (libraryGlobalKeyToLoad != null) {
       unawaited(_loadLibraryContent(libraryGlobalKeyToLoad));
     }
   }
@@ -419,7 +441,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Update visible tabs and state in the same synchronous block so no
     // intermediate rebuild can see a mismatched controller/key pair.
-    _updateVisibleTabs(_getVisibleTabs(selectedLibrary));
+    _updateVisibleTabs(visibleLibraryTabs(selectedLibrary));
 
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
@@ -484,6 +506,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
     _refreshSelectedLibraryTabs();
   }
+
+  /// Returning to the Libraries tab consumes push-marked staleness (#1646)
+  /// for the visible library tab only; hidden tabs consume on their own
+  /// activation, and a library switch reloads unconditionally anyway.
+  @override
+  void onTabShown() {
+    if (_selectedLibraryGlobalKey == null) return;
+    final Object? tabState = _getTabState(tabController.index);
+    if (tabState is BaseLibraryTabState) tabState.refreshIfLibraryContentStale();
+  }
+
+  @override
+  // ignore: no-empty-block - visibility mixin contract; nothing to pause.
+  void onTabHidden() {}
 
   // Refresh every loaded tab for the selected library.
   void _refreshSelectedLibraryTabs() {

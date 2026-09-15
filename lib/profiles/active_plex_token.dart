@@ -16,7 +16,7 @@ class ActivePlexToken {
   final String token;
 }
 
-/// THE resolver for the active profile's effective Plex credential.
+/// Resolve the active profile's effective Plex credential for cloud callers.
 ///
 /// One policy: the profile's per-user token (the `ProfileConnection` row
 /// bound to the identity's account, minted via `/home/users/{uuid}/switch`)
@@ -24,11 +24,9 @@ class ActivePlexToken {
 ///
 /// [allowAccountTokenForHomeUser] controls the owner-token fallback for Plex
 /// Home profiles. Cloud Discover and Seerr pass `true` — any credential on
-/// the account is acceptable there. User-settings resolution passes `false`
-/// because the owner's token belongs to a *different* plex.tv user, so a
-/// Home profile without its switched token resolves to `null` instead of
-/// silently impersonating the owner. Local profiles always fall back: their
-/// selected account *is* the profile's identity.
+/// the account is acceptable there. Account preferences resolve separately:
+/// their Home principal requires its exact parent's switched token, without
+/// owner or other-account fallback. Local profiles retain owner-token fallback.
 Future<ActivePlexToken?> resolveActivePlexToken({
   required ActiveProfileProvider activeProfile,
   required ConnectionRegistry connections,

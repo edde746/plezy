@@ -159,12 +159,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Ensures persisted downloads have been loaded from disk.
   Future<void> ensureInitialized() => _initFuture;
 
-  Future<void> setDownloadLocation({required String path, required String pathType}) {
-    return _downloadManager.setDownloadLocation(path: path, pathType: pathType);
+  Future<void> setDownloadLocation({required String path, required String pathType, void Function()? checkCurrent}) {
+    return _downloadManager.setDownloadLocation(path: path, pathType: pathType, checkCurrent: checkCurrent);
   }
 
-  Future<void> resetDownloadLocation() {
-    return _downloadManager.resetDownloadLocation();
+  Future<void> resetDownloadLocation({void Function()? checkCurrent}) {
+    return _downloadManager.resetDownloadLocation(checkCurrent: checkCurrent);
   }
 
   /// Switch the visible sync-rule scope to [profileId]. Physical downloads are
@@ -401,7 +401,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       // Bulk-load all pinned metadata across every backend in a single pass
       // instead of per-item DB calls.
-      final allMetadata = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
+      final pinned = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
 
       for (final item in downloads) {
         _downloads[item.globalKey] = DownloadProgress(
@@ -416,7 +416,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         _artworkPaths[item.globalKey] = DownloadedArtwork(thumbPath: item.thumbPath);
 
         if (_ownsDownloadKey(item.globalKey)) {
-          await _hydrateDownloadMetadata(item.globalKey, allMetadata);
+          await _hydrateDownloadMetadata(item.globalKey, pinned);
         }
       }
 
@@ -456,15 +456,20 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Future<_MetadataHydrationResult> _hydrateDownloadMetadata(
     String globalKey,
-    Map<String, MediaItem> allMetadata, {
+    ({Map<String, MediaItem> items, Map<String, String?> scopesByServer}) pinned, {
     bool fetchOnMiss = false,
     bool Function()? isStale,
   }) async {
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return (metadata: null, networkFilled: false, stale: false);
 
+    // MediaBrowser bulk keys are compound-scoped (`machine/user:item`); Plex
+    // keys are public. Try the exact profile namespace first, then the public
+    // key, then the per-item lookup (which also finds cached-but-unpinned rows).
+    final clientScopeId = pinned.scopesByServer[parsed.serverId];
     var cached =
-        allMetadata[globalKey] ??
+        (clientScopeId == null ? null : pinned.items[buildGlobalKey(ServerId(clientScopeId), parsed.ratingKey)]) ??
+        pinned.items[globalKey] ??
         await _downloadManager.lookupMetadata(
           parsed.serverId,
           parsed.ratingKey,
@@ -493,9 +498,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (cached != null) {
       _metadata[globalKey] = cached;
       if (cached.isEpisode || cached.kind == MediaKind.track) {
-        final clientScopeId = await _downloadManager.profileClientScopeIdForServer(parsed.serverId, _activeProfileId);
-        if (isStale?.call() ?? false) return (metadata: null, networkFilled: false, stale: true);
-        _loadParentMetadataFromMap(cached, allMetadata, clientScopeId: clientScopeId);
+        _loadParentMetadataFromMap(cached, pinned.items, clientScopeId: clientScopeId);
       }
     }
     return (metadata: cached, networkFilled: networkFilled, stale: false);
@@ -1659,7 +1662,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return;
     }
 
-    final allMetadata = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
+    final pinned = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
     if (isStale()) return;
     int cacheHits = 0;
     int networkFills = 0;
@@ -1667,7 +1670,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     for (final globalKey in keys) {
       try {
-        final result = await _hydrateDownloadMetadata(globalKey, allMetadata, fetchOnMiss: true, isStale: isStale);
+        final result = await _hydrateDownloadMetadata(globalKey, pinned, fetchOnMiss: true, isStale: isStale);
         if (result.stale) return;
         if (result.metadata == null) {
           misses++;
@@ -1748,6 +1751,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// All sync rules for the active profile (profile-scoped globalKey -> SyncRuleItem).
   Map<String, SyncRuleItem> get syncRules => Map.unmodifiable(_syncRules);
+
+  bool get syncRulesSupported => _downloadManager.downloadsSupported;
 
   String syncRuleKeyFor(ServerId serverId, String ratingKey, {String? profileId}) {
     final owner = profileId ?? _activeProfileId;
@@ -1879,40 +1884,81 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     );
   }
 
-  /// Update the episode count for an existing show/season sync rule.
-  Future<void> updateSyncRuleCount(String globalKey, int episodeCount) async {
-    _requireActiveProfileId();
-    await _database.updateSyncRuleCount(globalKey, episodeCount);
-    final existing = _syncRules[globalKey];
-    if (existing != null) {
-      _syncRules[globalKey] = existing.copyWith(episodeCount: episodeCount);
-      safeNotifyListeners();
+  /// Validate the options actually consumed by each sync-rule kind.
+  static void validateSyncRuleOptions(
+    SyncRuleItem rule, {
+    int? episodeCount,
+    String? downloadFilter,
+    bool? includeSpecials,
+    int? mediaIndex,
+  }) {
+    final isList = rule.targetType == ContentTypes.collection || rule.targetType == ContentTypes.playlist;
+    if (episodeCount != null) {
+      if (isList) throw UnsupportedError('List rules do not use episode counts');
+      if (episodeCount < 0) throw ArgumentError('Episode count must be nonnegative');
     }
-    appLogger.i('Updated sync rule $globalKey: keep $episodeCount');
+    if (downloadFilter != null) {
+      if (!isList) throw UnsupportedError('Episode rules always select unwatched episodes');
+      if (downloadFilter != SyncRuleFilter.all && downloadFilter != SyncRuleFilter.unwatched) {
+        throw ArgumentError('Invalid sync rule filter');
+      }
+    }
+    if (includeSpecials != null && rule.targetType != ContentTypes.show) {
+      throw UnsupportedError('Only show rules use includeSpecials');
+    }
+    if (mediaIndex != null) {
+      if (isList) throw UnsupportedError('List rules always use the default version');
+      if (mediaIndex < 0) throw ArgumentError('Version index must be nonnegative');
+    }
   }
 
-  /// Update the download filter for an existing collection/playlist sync rule.
-  Future<void> updateSyncRuleFilter(String globalKey, String downloadFilter) async {
-    _requireActiveProfileId();
-    await _database.updateSyncRuleFilter(globalKey, downloadFilter);
-    final existing = _syncRules[globalKey];
-    if (existing != null) {
-      _syncRules[globalKey] = existing.copyWith(downloadFilter: downloadFilter);
-      safeNotifyListeners();
+  /// Edit existing configuration only; this never executes or creates a rule.
+  Future<SyncRuleItem> updateSyncRuleOptions(
+    String globalKey, {
+    int? episodeCount,
+    String? downloadFilter,
+    bool? enabled,
+    bool? includeSpecials,
+    int? mediaIndex,
+    void Function()? checkCurrent,
+  }) async {
+    final profileId = _requireActiveProfileId();
+    final generation = _profileGeneration;
+    final expected = _syncRules[globalKey];
+    if (expected == null || expected.profileId != profileId) throw StateError('Sync rule is not owned by this profile');
+    validateSyncRuleOptions(
+      expected,
+      episodeCount: episodeCount,
+      downloadFilter: downloadFilter,
+      includeSpecials: includeSpecials,
+      mediaIndex: mediaIndex,
+    );
+    void guard({bool requireIdle = true}) {
+      checkCurrent?.call();
+      if (isDisposed || _activeProfileId != profileId || _profileGeneration != generation) {
+        throw StateError('Download profile changed');
+      }
+      if (requireIdle &&
+          (_syncRuleCleanupInProgress || _syncRuleExecutor.isExecuting || _removingSyncRuleKeys.contains(globalKey))) {
+        throw const SyncRuleCleanupBusyException();
+      }
+      if (_syncRules[globalKey]?.id != expected.id) throw StateError('Sync rule no longer exists');
     }
-    appLogger.i('Updated sync rule $globalKey: filter=$downloadFilter');
-  }
 
-  /// Toggle a sync rule's enabled state.
-  Future<void> setSyncRuleEnabled(String globalKey, bool enabled) async {
-    _requireActiveProfileId();
-    await _database.updateSyncRuleEnabled(globalKey, enabled);
-    final existing = _syncRules[globalKey];
-    if (existing != null) {
-      _syncRules[globalKey] = existing.copyWith(enabled: enabled);
-      safeNotifyListeners();
-    }
-    appLogger.i('${enabled ? 'Enabled' : 'Disabled'} sync rule: $globalKey');
+    guard();
+    final updated = await _database.updateSyncRuleOptions(
+      expected,
+      episodeCount: episodeCount,
+      downloadFilter: downloadFilter,
+      enabled: enabled,
+      includeSpecials: includeSpecials,
+      mediaIndex: mediaIndex,
+      checkCurrent: guard,
+    );
+    guard(requireIdle: false);
+    _syncRules[globalKey] = updated;
+    safeNotifyListeners();
+    return updated;
   }
 
   /// Delete a sync rule. Downloaded episodes are kept.

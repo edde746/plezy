@@ -50,27 +50,26 @@ void main() {
   });
 
   group('titleMatchCandidates', () {
-    test('emits a title immediately followed by its stripped form', () {
+    test('emits each title immediately followed by its stripped form', () {
       final candidates = titleMatchCandidates([
         'You and I Are Polar Opposites Season 2',
         'Seihantai na Kimi to Boku 2nd Season',
       ]);
-      // Capped at two, so the second provider title never gets a slot — the
-      // stripped form of the first is worth far more than an alias.
-      expect(candidates, ['You and I Are Polar Opposites Season 2', 'You and I Are Polar Opposites']);
-    });
-
-    test('honours a wider cap by interleaving, never by listing raw titles first', () {
-      final candidates = titleMatchCandidates([
-        'You and I Are Polar Opposites Season 2',
-        'Seihantai na Kimi to Boku 2nd Season',
-      ], limit: 4);
+      // Two families, each carrying its own parent-show form.
       expect(candidates, [
         'You and I Are Polar Opposites Season 2',
         'You and I Are Polar Opposites',
         'Seihantai na Kimi to Boku 2nd Season',
         'Seihantai na Kimi to Boku',
       ]);
+    });
+
+    test('honours a narrower cap by interleaving, never by listing raw titles first', () {
+      final candidates = titleMatchCandidates([
+        'You and I Are Polar Opposites Season 2',
+        'Seihantai na Kimi to Boku 2nd Season',
+      ], limit: 2);
+      expect(candidates, ['You and I Are Polar Opposites Season 2', 'You and I Are Polar Opposites']);
     });
     test('normalizes typographic punctuation both backends miss on', () {
       // Verified live: Plex and Jellyfin both return 0 for the curly form.
@@ -95,15 +94,22 @@ void main() {
     });
 
     test('the preferred title\'s stripped form survives a long alias list', () {
-      // MAL synonyms routinely exceed the cap. Emitting every raw alias first
-      // would spend every slot without ever reaching the parent show.
+      // Emitting every raw title first would spend every slot without ever
+      // reaching the parent show.
       final candidates = titleMatchCandidates([
         'Mushoku Tensei: Jobless Reincarnation Season 2',
         'Mushoku Tensei II: Isekai Ittara Honki Dasu',
         'Mushoku Tensei 2',
         'MT2',
       ]);
-      expect(candidates, ['Mushoku Tensei: Jobless Reincarnation Season 2', 'Mushoku Tensei: Jobless Reincarnation']);
+      // `II:` mid-title is not a sequel suffix, so the second family has no
+      // stripped form and the third title takes the last slot.
+      expect(candidates, [
+        'Mushoku Tensei: Jobless Reincarnation Season 2',
+        'Mushoku Tensei: Jobless Reincarnation',
+        'Mushoku Tensei II: Isekai Ittara Honki Dasu',
+        'Mushoku Tensei 2',
+      ]);
     });
   });
 }

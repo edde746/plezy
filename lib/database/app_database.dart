@@ -58,6 +58,7 @@ final class AppDatabaseBootstrap {
     Connections,
     Profiles,
     ProfileConnections,
+    MusicSessions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -365,7 +366,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration {
@@ -735,6 +736,10 @@ class AppDatabase extends _$AppDatabase {
           appLogger.i('Dropping unused Connections.isDefault column (v21 migration)');
           await m.alterTable(TableMigration(connections));
         }
+        if (from < 22) {
+          appLogger.i('Adding MusicSessions table (v22 migration)');
+          await _ignoreAlreadyExists('MusicSessions table', () => m.createTable(musicSessions));
+        }
       },
     );
   }
@@ -1094,6 +1099,38 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  // ===========================================================================
+  // Music session persistence (#2148)
+  // ===========================================================================
+
+  /// Full snapshot write: replaces the profile's persisted music session.
+  Future<void> upsertMusicSession(MusicSessionRow row) {
+    return into(musicSessions).insertOnConflictUpdate(row);
+  }
+
+  /// Cheap write-through for playhead/cursor changes — leaves the (possibly
+  /// large) queue JSON untouched. No-op when no snapshot row exists.
+  Future<void> updateMusicSessionProgress({
+    required String profileId,
+    required int cursor,
+    required int positionMs,
+    required int updatedAt,
+  }) async {
+    await (update(musicSessions)..where((t) => t.profileId.equals(profileId))).write(
+      MusicSessionsCompanion(cursor: Value(cursor), positionMs: Value(positionMs), updatedAt: Value(updatedAt)),
+    );
+  }
+
+  Future<MusicSessionRow?> getMusicSession(String profileId) {
+    return (select(musicSessions)..where((t) => t.profileId.equals(profileId))).getSingleOrNull();
+  }
+
+  /// Drop a profile's persisted music session (user session end or profile
+  /// teardown).
+  Future<void> deleteMusicSessionForProfile(String profileId) async {
+    await (delete(musicSessions)..where((t) => t.profileId.equals(profileId))).go();
+  }
+
   Future<List<SyncRuleItem>> getSyncRules({String? profileId}) {
     final query = select(syncRules);
     if (profileId != null) {
@@ -1257,14 +1294,41 @@ class AppDatabase extends _$AppDatabase {
     await (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(values);
   }
 
-  Future<void> updateSyncRuleCount(String globalKey, int episodeCount) =>
-      _writeSyncRule(globalKey, SyncRulesCompanion(episodeCount: Value(episodeCount)));
-
-  Future<void> updateSyncRuleFilter(String globalKey, String downloadFilter) =>
-      _writeSyncRule(globalKey, SyncRulesCompanion(downloadFilter: Value(downloadFilter)));
-
   Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) =>
       _writeSyncRule(globalKey, SyncRulesCompanion(enabled: Value(enabled)));
+
+  /// Patch one existing rule without replacing concurrent execution metadata.
+  /// The id check rejects delete/recreate races for the same target.
+  Future<SyncRuleItem> updateSyncRuleOptions(
+    SyncRuleItem expected, {
+    int? episodeCount,
+    String? downloadFilter,
+    bool? enabled,
+    bool? includeSpecials,
+    int? mediaIndex,
+    required void Function() checkCurrent,
+  }) => transaction(() async {
+    checkCurrent();
+    final current = await getSyncRule(expected.globalKey);
+    checkCurrent();
+    if (current == null || current.id != expected.id || current.profileId != expected.profileId) {
+      throw StateError('Sync rule no longer exists');
+    }
+    await (update(syncRules)..where((t) => t.id.equals(expected.id) & t.profileId.equals(expected.profileId))).write(
+      SyncRulesCompanion(
+        episodeCount: episodeCount == null ? const Value.absent() : Value(episodeCount),
+        downloadFilter: downloadFilter == null ? const Value.absent() : Value(downloadFilter),
+        enabled: enabled == null ? const Value.absent() : Value(enabled),
+        includeSpecials: includeSpecials == null ? const Value.absent() : Value(includeSpecials),
+        mediaIndex: mediaIndex == null ? const Value.absent() : Value(mediaIndex),
+      ),
+    );
+    checkCurrent();
+    final updated = await getSyncRule(expected.globalKey);
+    checkCurrent();
+    if (updated == null) throw StateError('Sync rule no longer exists');
+    return updated;
+  });
 
   Future<void> completeSyncRuleExecution(String globalKey) {
     return (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(

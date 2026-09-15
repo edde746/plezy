@@ -113,7 +113,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       showLoading: showLoadingIndicator,
       actionLabel: t.common.shuffle,
       execute: (dismissLoading) async {
-        PlayQueueResponse? playQueue;
+        PlayQueueResponse playQueue;
         final sourceLibraryId = facts.isCollection && item is MediaItem ? item.libraryId : null;
         final sourceLibraryTitle = facts.isCollection && item is MediaItem ? item.libraryTitle : null;
         // Plex's `key` param positions the queue's selected item — passed
@@ -263,12 +263,12 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
 
   /// Creation sometimes returns a queue without its items; re-read it by ID
   /// and keep the refetched copy only when it actually carries items.
-  Future<PlayQueueResponse?> _refetchIfEmpty(
-    PlayQueueResponse? playQueue, {
+  Future<PlayQueueResponse> _refetchIfEmpty(
+    PlayQueueResponse playQueue, {
     String? libraryId,
     String? libraryTitle,
   }) async {
-    if (playQueue == null || (playQueue.items != null && playQueue.items!.isNotEmpty)) {
+    if (playQueue.items != null && playQueue.items!.isNotEmpty) {
       return playQueue;
     }
     final fetchedQueue = await client.getPlayQueue(

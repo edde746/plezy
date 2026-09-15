@@ -4,6 +4,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../services/plex_client.dart';
+import '../services/plex_constants.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
 import 'metadata_edit_models.dart';
@@ -82,7 +83,8 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
     final success = await client.updateMetadata(
       sectionId: sectionId,
       ratingKey: draft.sourceItem.id,
-      typeNumber: _plexTypeNumberForKind(draft.sourceItem.kind),
+      // supportsKind restricts drafts to the four video kinds.
+      typeNumber: PlexMetadataType.forKind(draft.sourceItem.kind) ?? 0,
       title: _changedString(draft, 'title'),
       titleSort: _changedString(draft, 'titleSort'),
       originalTitle: _changedString(draft, 'originalTitle'),
@@ -328,14 +330,6 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
 
   String? _prefKey(String fieldId) => fieldId.startsWith('pref:') ? fieldId.substring(5) : null;
 }
-
-int _plexTypeNumberForKind(MediaKind kind) => switch (kind) {
-  MediaKind.movie => 1,
-  MediaKind.show => 2,
-  MediaKind.season => 3,
-  MediaKind.episode => 4,
-  _ => 0,
-};
 
 const _plexLocaleCodes = [
   'ar-SA',

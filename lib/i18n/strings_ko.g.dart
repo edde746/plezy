@@ -60,6 +60,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$ko dialog = _Translations$dialog$ko._(_root);
 	@override late final _Translations$profiles$ko profiles = _Translations$profiles$ko._(_root);
 	@override late final _Translations$connections$ko connections = _Translations$connections$ko._(_root);
+	@override late final _Translations$accountPreferences$ko accountPreferences = _Translations$accountPreferences$ko._(_root);
 	@override late final _Translations$discover$ko discover = _Translations$discover$ko._(_root);
 	@override late final _Translations$errors$ko errors = _Translations$errors$ko._(_root);
 	@override late final _Translations$libraries$ko libraries = _Translations$libraries$ko._(_root);
@@ -117,6 +118,7 @@ class _Translations$auth$ko extends Translations$auth$en {
 	@override String get useBrowser => '브라우저 사용';
 	@override String get or => '또는';
 	@override String connectToMediaBrowser({required Object product}) => '${product}에 연결';
+	@override String get quickConnect => 'Quick Connect';
 	@override String get useQuickConnect => 'Quick Connect 사용';
 	@override String get quickConnectInstructions => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.';
 	@override String get quickConnectWaiting => '승인 대기 중…';
@@ -165,6 +167,7 @@ class _Translations$common$ko extends Translations$common$en {
 	@override String get mute => '음소거';
 	@override String get ok => '확인';
 	@override String get off => '꺼짐';
+	@override String get options => '옵션';
 	@override String seasonNumber({required Object number}) => '시즌 ${number}';
 	@override String episodeNumberTitle({required Object number, required Object title}) => '${number}화 - ${title}';
 	@override String chapterNumber({required Object number}) => '챕터 ${number}';
@@ -249,6 +252,10 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get displayScale => '표시 배율';
 	@override String get compact => '조밀하게';
 	@override String get comfortable => '여유롭게';
+	@override String get gridSpacing => '그리드 간격';
+	@override String get gridSpacingTight => '조밀하게';
+	@override String get gridSpacingNormal => '보통';
+	@override String get gridSpacingSpacious => '여유롭게';
 	@override String get tvCornerSpotlightBackdrop => '모서리 스포트라이트 배경';
 	@override String get tvCornerSpotlightBackdropDescription => '화면 전체를 채우는 대신 오른쪽 상단에 스포트라이트 아트워크를 표시합니다';
 	@override String get viewMode => '보기 모드';
@@ -292,16 +299,14 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get mpv => 'mpv';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
-	@override String get bufferSize => '버퍼 크기';
-	@override String bufferSizeMB({required Object size}) => '${size}MB';
-	@override String get bufferSizeAuto => '자동 (권장)';
-	@override String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.';
 	@override String get playbackBuffer => '재생 버퍼';
 	@override String get playbackBufferAuto => '자동 (권장)';
 	@override String get playbackBufferLarge => '대형';
 	@override String get playbackBufferExtraLarge => '초대형';
 	@override String get playbackBufferDescription => '불안정한 연결에 대비해 더 많은 버퍼를 사용합니다. 버퍼 크기에 의해서도 제한됩니다.';
 	@override String get defaultQualityTitle => '기본 화질';
+	@override String get cellularQualityTitle => '셀룰러에서 기본 화질';
+	@override String get cellularQualitySameAsDefault => '기본 화질과 동일';
 	@override String get musicQualityTitle => '음악 음질';
 	@override String get subtitleStyling => '자막 스타일';
 	@override String get subtitleStylingDescription => '자막 모양을 사용자 지정합니다';
@@ -315,6 +320,8 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get rememberTrackSelectionsDescription => '작품별 오디오 및 자막 선택 기억';
 	@override String get followServerTrackSelections => '서버의 에피소드별 트랙 선택 사용';
 	@override String get followServerTrackSelectionsDescription => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다';
+	@override String get resumeMusicOnLaunch => '음악 세션 기억';
+	@override String get resumeMusicOnLaunchDescription => '앱 시작 시 마지막 곡을 멈춘 위치에서 일시정지 상태로 엽니다';
 	@override String get showChapterMarkersOnTimeline => '탐색 막대에 챕터 마커 표시';
 	@override String get showChapterMarkersOnTimelineDescription => '챕터 경계에서 탐색 막대 구분';
 	@override String get specialsOrdering => '에피소드 순서로 스페셜 표시';
@@ -368,11 +375,11 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => '단축키가 이미 ${action}에 할당되었습니다';
 	@override String shortcutUpdated({required Object action}) => '${action} 단축키가 업데이트되었습니다';
 	@override String get saveFailed => '변경 사항을 저장하지 못했습니다. 다시 시도하세요.';
-	@override String get autoSkip => '자동 건너뛰기';
-	@override String get autoSkipIntro => '자동으로 오프닝 건너뛰기';
-	@override String get autoSkipIntroDescription => '몇 초 후 오프닝을 자동으로 건너뛰기';
-	@override String get autoSkipCredits => '자동으로 엔딩 건너뛰기';
-	@override String get autoSkipCreditsDescription => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생';
+	@override String get autoPlayAndSkip => '자동 재생 및 건너뛰기';
+	@override String get autoPlayNextEpisode => '다음 에피소드 자동 재생';
+	@override String get autoPlayNextEpisodeDescription => '에피소드가 끝나면 다음 에피소드를 자동으로 재생';
+	@override String get playNextCountdown => '다음 재생 카운트다운';
+	@override String get playNextCountdownImmediate => '즉시 재생';
 	@override String get forceSkipMarkerFallback => '대체 마커 강제 사용';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex에 마커가 있어도 챕터 제목 패턴 사용';
 	@override String get autoSkipDelay => '자동 건너뛰기 지연';
@@ -443,10 +450,8 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다';
 	@override String get dvConversionDv81Description => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다';
-	@override String get demuxer => '컨테이너 디먹서';
-	@override String get demuxerDescription => '다이렉트 재생 파일을 분석할 디먹서입니다. 파일이 제대로 재생되지 않으면 media3으로 전환하세요.';
-	@override String get demuxerFfmpeg => 'FFmpeg (권장)';
-	@override String get demuxerMedia3 => 'media3';
+	@override String get deinterlace => '디인터레이싱';
+	@override String get deinterlaceDescription => '인터레이스 비디오의 빗살 무늬 아티팩트를 제거합니다 (mpv 플레이어만 해당)';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get forceTvMode => 'TV 모드 강제 사용';
@@ -464,15 +469,31 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get showExploreTabDescription => 'Plex Discover와 연결된 트래커의 콘텐츠가 포함된 둘러보기 탭을 표시합니다';
 	@override String get liveTvDefaultFavorites => '즐겨찾기 채널 기본 설정';
 	@override String get liveTvDefaultFavoritesDescription => '라이브 TV를 열 때 즐겨찾기 채널만 표시';
+	@override String get general => '일반';
+	@override String get generalDescription => '언어, 시작 및 창 동작';
+	@override String get languageAndRegion => '언어 및 지역';
+	@override String get startup => '시작';
 	@override String get display => '디스플레이';
+	@override String get libraryAndCards => '라이브러리 및 카드';
 	@override String get homeScreen => '홈 화면';
 	@override String get navigation => '탐색';
 	@override String get window => '창';
-	@override String get content => '콘텐츠';
+	@override String get liveTv => '라이브 TV';
 	@override String get player => '플레이어';
-	@override String get subtitlesAndConfig => '자막 및 구성';
+	@override String get videoAndDisplay => '비디오 및 디스플레이';
+	@override String get audio => '오디오';
+	@override String get quality => '화질';
+	@override String get subtitles => '자막';
 	@override String get seekAndTiming => '탐색 및 타이밍';
 	@override String get behavior => '동작';
+	@override String get gestures => '제스처';
+	@override String get gestureBrightnessSwipe => '밝기 스와이프';
+	@override String get gestureBrightnessSwipeDescription => '왼쪽 가장자리에서 위아래로 스와이프하여 밝기를 조절합니다';
+	@override String get gestureVolumeSwipe => '볼륨 스와이프';
+	@override String get gestureVolumeSwipeDescription => '오른쪽 가장자리에서 위아래로 스와이프하여 볼륨을 조절합니다';
+	@override String get gesturePinchToZoom => '핀치 줌';
+	@override String get gesturePinchToZoomDescription => '비디오에서 핀치하여 확대하거나 축소합니다';
+	@override String get controls => '컨트롤';
 	@override String get rememberPlayerChanges => '플레이어 변경 사항 기억';
 	@override String get rememberPlayerChangesDescription => '재생 중 변경한 사항을 저장하고 다시 적용할 위치';
 	@override String get scopePlaybackSpeed => '재생 속도';
@@ -1082,6 +1103,49 @@ class _Translations$connections$ko extends Translations$connections$en {
 	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
 }
 
+// Path: accountPreferences
+class _Translations$accountPreferences$ko extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => '계정 기본 설정';
+	@override String hubSubtitleSingle({required Object account}) => '${account}에 저장된 오디오, 자막 및 라이브러리 옵션';
+	@override String hubSubtitleMultiple({required Object count}) => '${count}개 계정에 저장된 오디오, 자막 및 라이브러리 옵션';
+	@override String get pickAccount => '각 계정은 고유한 기본 설정을 저장합니다. 편집할 계정을 선택하세요.';
+	@override String get storedOnAccount => '이 옵션은 계정 자체에 저장되므로 해당 계정으로 로그인한 모든 앱에서 사용됩니다 — 다른 기기의 Plezy를 포함합니다.';
+	@override String get noAccounts => '구성할 계정이 없습니다';
+	@override String get noAccountsHint => 'Plex에 로그인하거나 Jellyfin 또는 Emby 서버에 연결하면 해당 계정에 저장된 기본 설정이 여기에 표시됩니다.';
+	@override String get unavailable => '이 계정에 연결할 수 없습니다';
+	@override String get loadFailed => '이 기본 설정을 불러올 수 없습니다';
+	@override String get noPreference => '기본 설정 없음';
+	@override String get notSet => '설정되지 않음';
+	@override late final _Translations$accountPreferences$groups$ko groups = _Translations$accountPreferences$groups$ko._(_root);
+	@override String get preferredAudioLanguage => '선호 오디오 언어';
+	@override String get autoSelectAudio => '언어별로 오디오 선택';
+	@override String get autoSelectAudioDescription => '끄면 파일이 기본으로 표시한 오디오 트랙을 유지합니다.';
+	@override String get preferredSubtitleLanguage => '선호 자막 언어';
+	@override String get subtitleMode => '자막 자동 켜기';
+	@override late final _Translations$accountPreferences$subtitleModes$ko subtitleModes = _Translations$accountPreferences$subtitleModes$ko._(_root);
+	@override String get subtitleAccessibility => 'SDH 자막';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$ko subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$ko._(_root);
+	@override String get forcedSubtitles => '강제 자막';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$ko forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$ko._(_root);
+	@override String get displayMissingEpisodes => '누락된 에피소드 표시';
+	@override String get displayMissingEpisodesDescription => '서버가 알고 있지만 파일이 없는 에피소드를 나열합니다.';
+	@override String get hidePlayedInLatest => '최신 항목에서 시청한 항목 숨기기';
+	@override String get hidePlayedInLatestDescription => '이미 시청한 항목은 서버의 최신 행에서 제외합니다.';
+	@override String get displayCollectionsView => '컬렉션 보기 표시';
+	@override String get displayCollectionsViewDescription => '라이브러리와 함께 서버의 컬렉션 보기를 제공합니다.';
+	@override String get rewatchingInNextUp => '재시청한 프로그램을 다음 에피소드에 유지';
+	@override String get rewatchingInNextUpDescription => '프로그램을 끝까지 본 뒤 다시 시작하면, 목록에서 제거하는 대신 다음 에피소드가 재시청을 따라갑니다.';
+	@override String get watchedIndicator => '시청 표시';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$ko watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$ko._(_root);
+	@override String get mediaReviewsVisibility => '평점 및 리뷰';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$ko mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$ko._(_root);
+}
+
 // Path: discover
 class _Translations$discover$ko extends Translations$discover$en {
 	_Translations$discover$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -1378,6 +1442,11 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	@override String get unknownChannel => '알 수 없는 채널';
 	@override String get live => '실시간';
 	@override String get reloadGuide => '편성표 새로고침';
+	@override String get searchGuide => '편성표 검색';
+	@override String get searchHint => '채널 및 프로그램 검색';
+	@override String searchNoResults({required Object query}) => '「${query}」와(과) 일치하는 항목이 없습니다';
+	@override String get channelsSection => '채널';
+	@override String get programsSection => '프로그램';
 	@override String get now => '지금';
 	@override String get today => '오늘';
 	@override String get tomorrow => '내일';
@@ -1537,6 +1606,8 @@ class _Translations$music$ko extends Translations$music$en {
 	@override String get repeatAll => '전체 반복';
 	@override String get repeatOne => '한 곡 반복';
 	@override String get instantMixNoServer => '즉석 믹스에 사용할 수 있는 서버가 없습니다';
+	@override String get instantMixFailed => '인스턴트 믹스를 불러오지 못했습니다';
+	@override String get instantMixEmpty => '인스턴트 믹스에 트랙이 없습니다';
 	@override String noAudioUrl({required Object track}) => '${track}에 사용할 수 있는 오디오 URL이 없습니다';
 	@override late final _Translations$music$discography$ko discography = _Translations$music$discography$ko._(_root);
 }
@@ -2039,6 +2110,8 @@ class _Translations$seerr$ko extends Translations$seerr$en {
 	@override String get statusBlocklisted => '차단 목록에 있음';
 	@override String couldNotReach({required Object url, required Object error}) => '${url}에 연결할 수 없습니다: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})';
+	@override String get invalidUrl => 'https://seerr.example.com과 같은 서버 주소를 입력하세요';
+	@override String get quickConnectUnsupported => '이 Seerr 인스턴스는 Quick Connect를 지원하지 않습니다. Seerr 3.4 이상이 필요합니다.';
 	@override String get notInitialized => '이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다';
 	@override String get noPlexTokenForReauth => '다시 로그인하는 데 사용할 수 있는 Plex 토큰이 없습니다';
 	@override String get noStoredCredentials => '다시 로그인하는 데 사용할 수 있는 저장된 인증 정보가 없습니다';
@@ -2058,6 +2131,7 @@ class _Translations$services$ko extends Translations$services$en {
 	// Translations
 	@override String get title => '서비스';
 	@override String get hubSubtitle => '시청 진행률을 동기화하고 새 작품을 요청하세요.';
+	@override String get integrations => '연동';
 	@override String get notConnected => '연결되지 않음';
 	@override String connectedAs({required Object username}) => '@${username}(으)로 연결됨';
 	@override String get scrobble => '진행률 자동 추적';
@@ -2218,6 +2292,89 @@ class _Translations$videoControls$pipErrors$ko extends Translations$videoControl
 	@override String get failed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String get prepareFailed => '화면 속 화면을 준비할 수 없습니다';
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
+}
+
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$ko extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => '오디오 및 자막';
+	@override String get libraryDisplay => '라이브러리';
+	@override String get personalMedia => '개인 미디어';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$ko extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => '수동 선택';
+	@override String get noneDescription => '자동으로 자막을 켜지 않습니다.';
+	@override String get defaultMode => '트랙 플래그 따르기';
+	@override String get defaultModeDescription => '각 자막 트랙에 저장된 기본 및 강제 플래그를 사용합니다.';
+	@override String get always => '항상 활성화';
+	@override String get alwaysDescription => '선호 언어의 자막 트랙이 있으면 항상 켭니다.';
+	@override String get onlyForced => '강제 자막만';
+	@override String get onlyForcedDescription => '강제로 표시된 트랙만 로드합니다.';
+	@override String get smart => '외국어 오디오 시 표시';
+	@override String get smartDescription => '오디오가 다른 언어일 때만 자막을 켭니다.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$ko extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'SDH가 아닌 자막 선호';
+	@override String get preferSdh => 'SDH 자막 선호';
+	@override String get onlySdh => 'SDH 자막만';
+	@override String get onlyNonSdh => 'SDH가 아닌 자막만';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$ko extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => '강제가 아닌 자막 선호';
+	@override String get preferForced => '강제 자막 선호';
+	@override String get onlyForced => '강제 자막만';
+	@override String get onlyNonForced => '강제가 아닌 자막만';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$ko extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => '안 함';
+	@override String get moviesAndShows => '영화 및 TV 프로그램';
+	@override String get movies => '영화만';
+	@override String get shows => 'TV 프로그램만';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$ko extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => '사용자 및 평론가';
+	@override String get usersOnly => '사용자만';
+	@override String get criticsOnly => '평론가만';
+	@override String get nobody => '숨김';
 }
 
 // Path: libraries.tabs
@@ -2776,6 +2933,7 @@ extension on TranslationsKo {
 			'auth.useBrowser' => '브라우저 사용',
 			'auth.or' => '또는',
 			'auth.connectToMediaBrowser' => ({required Object product}) => '${product}에 연결',
+			'auth.quickConnect' => 'Quick Connect',
 			'auth.useQuickConnect' => 'Quick Connect 사용',
 			'auth.quickConnectInstructions' => 'Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.',
 			'auth.quickConnectWaiting' => '승인 대기 중…',
@@ -2815,6 +2973,7 @@ extension on TranslationsKo {
 			'common.mute' => '음소거',
 			'common.ok' => '확인',
 			'common.off' => '꺼짐',
+			'common.options' => '옵션',
 			'common.seasonNumber' => ({required Object number}) => '시즌 ${number}',
 			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '${number}화 - ${title}',
 			'common.chapterNumber' => ({required Object number}) => '챕터 ${number}',
@@ -2893,6 +3052,10 @@ extension on TranslationsKo {
 			'settings.displayScale' => '표시 배율',
 			'settings.compact' => '조밀하게',
 			'settings.comfortable' => '여유롭게',
+			'settings.gridSpacing' => '그리드 간격',
+			'settings.gridSpacingTight' => '조밀하게',
+			'settings.gridSpacingNormal' => '보통',
+			'settings.gridSpacingSpacious' => '여유롭게',
 			'settings.tvCornerSpotlightBackdrop' => '모서리 스포트라이트 배경',
 			'settings.tvCornerSpotlightBackdropDescription' => '화면 전체를 채우는 대신 오른쪽 상단에 스포트라이트 아트워크를 표시합니다',
 			'settings.viewMode' => '보기 모드',
@@ -2936,16 +3099,14 @@ extension on TranslationsKo {
 			'settings.mpv' => 'mpv',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
-			'settings.bufferSize' => '버퍼 크기',
-			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
-			'settings.bufferSizeAuto' => '자동 (권장)',
-			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB 메모리를 사용할 수 있습니다. ${size}MB 버퍼는 재생에 영향을 줄 수 있습니다.',
 			'settings.playbackBuffer' => '재생 버퍼',
 			'settings.playbackBufferAuto' => '자동 (권장)',
 			'settings.playbackBufferLarge' => '대형',
 			'settings.playbackBufferExtraLarge' => '초대형',
 			'settings.playbackBufferDescription' => '불안정한 연결에 대비해 더 많은 버퍼를 사용합니다. 버퍼 크기에 의해서도 제한됩니다.',
 			'settings.defaultQualityTitle' => '기본 화질',
+			'settings.cellularQualityTitle' => '셀룰러에서 기본 화질',
+			'settings.cellularQualitySameAsDefault' => '기본 화질과 동일',
 			'settings.musicQualityTitle' => '음악 음질',
 			'settings.subtitleStyling' => '자막 스타일',
 			'settings.subtitleStylingDescription' => '자막 모양을 사용자 지정합니다',
@@ -2959,6 +3120,8 @@ extension on TranslationsKo {
 			'settings.rememberTrackSelectionsDescription' => '작품별 오디오 및 자막 선택 기억',
 			'settings.followServerTrackSelections' => '서버의 에피소드별 트랙 선택 사용',
 			'settings.followServerTrackSelectionsDescription' => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다',
+			'settings.resumeMusicOnLaunch' => '음악 세션 기억',
+			'settings.resumeMusicOnLaunchDescription' => '앱 시작 시 마지막 곡을 멈춘 위치에서 일시정지 상태로 엽니다',
 			'settings.showChapterMarkersOnTimeline' => '탐색 막대에 챕터 마커 표시',
 			'settings.showChapterMarkersOnTimelineDescription' => '챕터 경계에서 탐색 막대 구분',
 			'settings.specialsOrdering' => '에피소드 순서로 스페셜 표시',
@@ -3012,11 +3175,11 @@ extension on TranslationsKo {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '단축키가 이미 ${action}에 할당되었습니다',
 			'settings.shortcutUpdated' => ({required Object action}) => '${action} 단축키가 업데이트되었습니다',
 			'settings.saveFailed' => '변경 사항을 저장하지 못했습니다. 다시 시도하세요.',
-			'settings.autoSkip' => '자동 건너뛰기',
-			'settings.autoSkipIntro' => '자동으로 오프닝 건너뛰기',
-			'settings.autoSkipIntroDescription' => '몇 초 후 오프닝을 자동으로 건너뛰기',
-			'settings.autoSkipCredits' => '자동으로 엔딩 건너뛰기',
-			'settings.autoSkipCreditsDescription' => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생',
+			'settings.autoPlayAndSkip' => '자동 재생 및 건너뛰기',
+			'settings.autoPlayNextEpisode' => '다음 에피소드 자동 재생',
+			'settings.autoPlayNextEpisodeDescription' => '에피소드가 끝나면 다음 에피소드를 자동으로 재생',
+			'settings.playNextCountdown' => '다음 재생 카운트다운',
+			'settings.playNextCountdownImmediate' => '즉시 재생',
 			'settings.forceSkipMarkerFallback' => '대체 마커 강제 사용',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex에 마커가 있어도 챕터 제목 패턴 사용',
 			'settings.autoSkipDelay' => '자동 건너뛰기 지연',
@@ -3087,10 +3250,8 @@ extension on TranslationsKo {
 			'settings.dvConversionNativeDescription' => '네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다',
 			'settings.dvConversionDv81Description' => 'Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다',
-			'settings.demuxer' => '컨테이너 디먹서',
-			'settings.demuxerDescription' => '다이렉트 재생 파일을 분석할 디먹서입니다. 파일이 제대로 재생되지 않으면 media3으로 전환하세요.',
-			'settings.demuxerFfmpeg' => 'FFmpeg (권장)',
-			'settings.demuxerMedia3' => 'media3',
+			'settings.deinterlace' => '디인터레이싱',
+			'settings.deinterlaceDescription' => '인터레이스 비디오의 빗살 무늬 아티팩트를 제거합니다 (mpv 플레이어만 해당)',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
@@ -3108,15 +3269,31 @@ extension on TranslationsKo {
 			'settings.showExploreTabDescription' => 'Plex Discover와 연결된 트래커의 콘텐츠가 포함된 둘러보기 탭을 표시합니다',
 			'settings.liveTvDefaultFavorites' => '즐겨찾기 채널 기본 설정',
 			'settings.liveTvDefaultFavoritesDescription' => '라이브 TV를 열 때 즐겨찾기 채널만 표시',
+			'settings.general' => '일반',
+			'settings.generalDescription' => '언어, 시작 및 창 동작',
+			'settings.languageAndRegion' => '언어 및 지역',
+			'settings.startup' => '시작',
 			'settings.display' => '디스플레이',
+			'settings.libraryAndCards' => '라이브러리 및 카드',
 			'settings.homeScreen' => '홈 화면',
 			'settings.navigation' => '탐색',
 			'settings.window' => '창',
-			'settings.content' => '콘텐츠',
+			'settings.liveTv' => '라이브 TV',
 			'settings.player' => '플레이어',
-			'settings.subtitlesAndConfig' => '자막 및 구성',
+			'settings.videoAndDisplay' => '비디오 및 디스플레이',
+			'settings.audio' => '오디오',
+			'settings.quality' => '화질',
+			'settings.subtitles' => '자막',
 			'settings.seekAndTiming' => '탐색 및 타이밍',
 			'settings.behavior' => '동작',
+			'settings.gestures' => '제스처',
+			'settings.gestureBrightnessSwipe' => '밝기 스와이프',
+			'settings.gestureBrightnessSwipeDescription' => '왼쪽 가장자리에서 위아래로 스와이프하여 밝기를 조절합니다',
+			'settings.gestureVolumeSwipe' => '볼륨 스와이프',
+			'settings.gestureVolumeSwipeDescription' => '오른쪽 가장자리에서 위아래로 스와이프하여 볼륨을 조절합니다',
+			'settings.gesturePinchToZoom' => '핀치 줌',
+			'settings.gesturePinchToZoomDescription' => '비디오에서 핀치하여 확대하거나 축소합니다',
+			'settings.controls' => '컨트롤',
 			'settings.rememberPlayerChanges' => '플레이어 변경 사항 기억',
 			'settings.rememberPlayerChangesDescription' => '재생 중 변경한 사항을 저장하고 다시 적용할 위치',
 			'settings.scopePlaybackSpeed' => '재생 속도',
@@ -3258,6 +3435,8 @@ extension on TranslationsKo {
 			'fileInfo.optimizedVersion' => '최적화 버전',
 			'fileInfo.optimizationTarget' => '최적화 대상',
 			'fileInfo.deletedAt' => '삭제됨',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.remoteSource' => '원격 소스',
 			'fileInfo.infiniteStream' => '무한 스트림',
 			'fileInfo.directPlay' => 'Direct Play',
@@ -3278,8 +3457,6 @@ extension on TranslationsKo {
 			'fileInfo.flagOriginal' => '원본',
 			'fileInfo.channelsMono' => '모노',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => '프로파일 ${profile}',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.markAsWatched' => '시청 완료로 표시',
 			'mediaMenu.markAsUnwatched' => '미시청으로 표시',
 			'mediaMenu.removeFromContinueWatching' => '계속 보기에서 제거',
@@ -3614,6 +3791,63 @@ extension on TranslationsKo {
 			'connections.signInAgain' => '다시 로그인',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product} 연결 편집',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
+			'accountPreferences.sectionTitle' => '계정 기본 설정',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => '${account}에 저장된 오디오, 자막 및 라이브러리 옵션',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => '${count}개 계정에 저장된 오디오, 자막 및 라이브러리 옵션',
+			'accountPreferences.pickAccount' => '각 계정은 고유한 기본 설정을 저장합니다. 편집할 계정을 선택하세요.',
+			'accountPreferences.storedOnAccount' => '이 옵션은 계정 자체에 저장되므로 해당 계정으로 로그인한 모든 앱에서 사용됩니다 — 다른 기기의 Plezy를 포함합니다.',
+			'accountPreferences.noAccounts' => '구성할 계정이 없습니다',
+			'accountPreferences.noAccountsHint' => 'Plex에 로그인하거나 Jellyfin 또는 Emby 서버에 연결하면 해당 계정에 저장된 기본 설정이 여기에 표시됩니다.',
+			'accountPreferences.unavailable' => '이 계정에 연결할 수 없습니다',
+			'accountPreferences.loadFailed' => '이 기본 설정을 불러올 수 없습니다',
+			'accountPreferences.noPreference' => '기본 설정 없음',
+			'accountPreferences.notSet' => '설정되지 않음',
+			'accountPreferences.groups.audioAndSubtitles' => '오디오 및 자막',
+			'accountPreferences.groups.libraryDisplay' => '라이브러리',
+			'accountPreferences.groups.personalMedia' => '개인 미디어',
+			'accountPreferences.preferredAudioLanguage' => '선호 오디오 언어',
+			'accountPreferences.autoSelectAudio' => '언어별로 오디오 선택',
+			'accountPreferences.autoSelectAudioDescription' => '끄면 파일이 기본으로 표시한 오디오 트랙을 유지합니다.',
+			'accountPreferences.preferredSubtitleLanguage' => '선호 자막 언어',
+			'accountPreferences.subtitleMode' => '자막 자동 켜기',
+			'accountPreferences.subtitleModes.none' => '수동 선택',
+			'accountPreferences.subtitleModes.noneDescription' => '자동으로 자막을 켜지 않습니다.',
+			'accountPreferences.subtitleModes.defaultMode' => '트랙 플래그 따르기',
+			'accountPreferences.subtitleModes.defaultModeDescription' => '각 자막 트랙에 저장된 기본 및 강제 플래그를 사용합니다.',
+			'accountPreferences.subtitleModes.always' => '항상 활성화',
+			'accountPreferences.subtitleModes.alwaysDescription' => '선호 언어의 자막 트랙이 있으면 항상 켭니다.',
+			'accountPreferences.subtitleModes.onlyForced' => '강제 자막만',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => '강제로 표시된 트랙만 로드합니다.',
+			'accountPreferences.subtitleModes.smart' => '외국어 오디오 시 표시',
+			'accountPreferences.subtitleModes.smartDescription' => '오디오가 다른 언어일 때만 자막을 켭니다.',
+			'accountPreferences.subtitleAccessibility' => 'SDH 자막',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'SDH가 아닌 자막 선호',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'SDH 자막 선호',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'SDH 자막만',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'SDH가 아닌 자막만',
+			'accountPreferences.forcedSubtitles' => '강제 자막',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => '강제가 아닌 자막 선호',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => '강제 자막 선호',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => '강제 자막만',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => '강제가 아닌 자막만',
+			'accountPreferences.displayMissingEpisodes' => '누락된 에피소드 표시',
+			'accountPreferences.displayMissingEpisodesDescription' => '서버가 알고 있지만 파일이 없는 에피소드를 나열합니다.',
+			'accountPreferences.hidePlayedInLatest' => '최신 항목에서 시청한 항목 숨기기',
+			'accountPreferences.hidePlayedInLatestDescription' => '이미 시청한 항목은 서버의 최신 행에서 제외합니다.',
+			'accountPreferences.displayCollectionsView' => '컬렉션 보기 표시',
+			'accountPreferences.displayCollectionsViewDescription' => '라이브러리와 함께 서버의 컬렉션 보기를 제공합니다.',
+			'accountPreferences.rewatchingInNextUp' => '재시청한 프로그램을 다음 에피소드에 유지',
+			'accountPreferences.rewatchingInNextUpDescription' => '프로그램을 끝까지 본 뒤 다시 시작하면, 목록에서 제거하는 대신 다음 에피소드가 재시청을 따라갑니다.',
+			'accountPreferences.watchedIndicator' => '시청 표시',
+			'accountPreferences.watchedIndicatorOptions.none' => '안 함',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => '영화 및 TV 프로그램',
+			'accountPreferences.watchedIndicatorOptions.movies' => '영화만',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'TV 프로그램만',
+			'accountPreferences.mediaReviewsVisibility' => '평점 및 리뷰',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => '사용자 및 평론가',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => '사용자만',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => '평론가만',
+			'accountPreferences.mediaReviewsOptions.nobody' => '숨김',
 			'discover.title' => '둘러보기',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
 			'discover.addMediaToLibraries' => '미디어 라이브러리에 미디어를 추가해 주세요',
@@ -3715,6 +3949,8 @@ extension on TranslationsKo {
 			'libraries.filterCategories.favorites' => '즐겨찾기',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => '출시일',
 			'libraries.sortLabels.rating' => '평점',
 			'libraries.sortLabels.communityRating' => '커뮤니티 평점',
@@ -3792,8 +4028,6 @@ extension on TranslationsKo {
 			'explore.rows.watchlist' => '관심 목록',
 			'explore.rows.recommendedMovies' => '추천 영화',
 			'explore.rows.recommendedShows' => '추천 TV 프로그램',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.trendingMovies' => '지금 뜨는 영화',
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
 			'explore.rows.popularMovies' => '인기 영화',
@@ -3946,6 +4180,11 @@ extension on TranslationsKo {
 			'liveTv.unknownChannel' => '알 수 없는 채널',
 			'liveTv.live' => '실시간',
 			'liveTv.reloadGuide' => '편성표 새로고침',
+			'liveTv.searchGuide' => '편성표 검색',
+			'liveTv.searchHint' => '채널 및 프로그램 검색',
+			'liveTv.searchNoResults' => ({required Object query}) => '「${query}」와(과) 일치하는 항목이 없습니다',
+			'liveTv.channelsSection' => '채널',
+			'liveTv.programsSection' => '프로그램',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
 			'liveTv.tomorrow' => '내일',
@@ -4083,6 +4322,8 @@ extension on TranslationsKo {
 			'music.repeatAll' => '전체 반복',
 			'music.repeatOne' => '한 곡 반복',
 			'music.instantMixNoServer' => '즉석 믹스에 사용할 수 있는 서버가 없습니다',
+			'music.instantMixFailed' => '인스턴트 믹스를 불러오지 못했습니다',
+			'music.instantMixEmpty' => '인스턴트 믹스에 트랙이 없습니다',
 			'music.noAudioUrl' => ({required Object track}) => '${track}에 사용할 수 있는 오디오 URL이 없습니다',
 			'music.discography.singlesAndEps' => '싱글 및 EP',
 			'music.discography.live' => '라이브',
@@ -4222,6 +4463,8 @@ extension on TranslationsKo {
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
 			'downloads.editSyncFilter' => '동기화 필터',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',
@@ -4306,8 +4549,6 @@ extension on TranslationsKo {
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
 			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
@@ -4567,6 +4808,8 @@ extension on TranslationsKo {
 			'seerr.statusBlocklisted' => '차단 목록에 있음',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url}에 연결할 수 없습니다: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})',
+			'seerr.invalidUrl' => 'https://seerr.example.com과 같은 서버 주소를 입력하세요',
+			'seerr.quickConnectUnsupported' => '이 Seerr 인스턴스는 Quick Connect를 지원하지 않습니다. Seerr 3.4 이상이 필요합니다.',
 			'seerr.notInitialized' => '이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다',
 			'seerr.noPlexTokenForReauth' => '다시 로그인하는 데 사용할 수 있는 Plex 토큰이 없습니다',
 			'seerr.noStoredCredentials' => '다시 로그인하는 데 사용할 수 있는 저장된 인증 정보가 없습니다',
@@ -4577,6 +4820,7 @@ extension on TranslationsKo {
 			'seerr.sessionRejectedAfterReauth' => '다시 로그인한 후 세션이 거부되었습니다',
 			'services.title' => '서비스',
 			'services.hubSubtitle' => '시청 진행률을 동기화하고 새 작품을 요청하세요.',
+			'services.integrations' => '연동',
 			'services.notConnected' => '연결되지 않음',
 			'services.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
 			'services.scrobble' => '진행률 자동 추적',

@@ -1,29 +1,44 @@
 package com.edde746.plezy.mpv
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.content.ComponentCallbacks2
+import android.content.Context
+import android.graphics.SurfaceTexture
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.view.Display
+import android.view.Surface
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
+import com.edde746.plezy.libmpv.EndFileReason
+import com.edde746.plezy.libmpv.LogLevel
+import com.edde746.plezy.libmpv.LogMessage
+import com.edde746.plezy.libmpv.MpvEvent
+import com.edde746.plezy.libmpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
-import dev.jdtech.mpv.EndFileReason
-import dev.jdtech.mpv.LogLevel
-import dev.jdtech.mpv.LogMessage
-import dev.jdtech.mpv.MpvEvent
+import com.edde746.plezy.shared.FrameRateManager
+import com.edde746.plezy.shared.PlayerDelegate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.time.Duration
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -31,6 +46,8 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDisplayManager
 
 @RunWith(RobolectricTestRunner::class)
 class MpvPlayerPluginTest {
@@ -49,6 +66,22 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun commandWithoutNativePlayerReportsFailureInsteadOfSilentSuccess() {
+    // A load that never reached mpv produces no source; answering success
+    // would leave Dart waiting on a start-file that never comes.
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore(null))
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("command", mapOf("args" to listOf("loadfile", "x", "replace"))), result)
+    awaitCompletion(result)
+
+    assertEquals("COMMAND_FAILED", result.errorCode)
+    assertEquals(1, result.completionCount)
+    assertNull(result.successValue)
+  }
+
+  @Test
   fun audioSpdifCodecsWithoutContextAnswersEmptySoMpvDecodes() {
     // mpv force-passthroughs every codec named in audio-spdif with no decode fallback, so
     // with no context to inspect the audio route the only safe answer is "" (#1703, #1991).
@@ -62,14 +95,17 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun hardwareDecodeSessionsKeepTheLegacyGpuVo() {
-    // gpu-next under hwdec=mediacodec fails every frame on Tegra (the
-    // cross-stage samplerExternalOES linker bug): solid blue screen with
-    // audio on the Shield (#2010). DV reshaping — the reason gpu-next exists
-    // on Android (#1902) — only happens under software decode anyway, so
-    // gpu-next is offered exactly there and nowhere else.
-    assertEquals("gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = true))
-    assertEquals("gpu-next,gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = false))
+  fun hdrSurfaceIsWantedOnlyForPqAndHlgTransfers() {
+    // Rationale on MpvPlayerCore.wantsHdrSurface: both render into a PQ
+    // target; anything else stays on the sRGB surface, which renders every
+    // content correctly.
+    assertTrue(MpvPlayerCore.wantsHdrSurface("smpte2084"))
+    assertTrue(MpvPlayerCore.wantsHdrSurface("arib-std-b67"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("bt709"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("bt1886"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface("unknown"))
+    assertFalse(MpvPlayerCore.wantsHdrSurface(""))
+    assertFalse(MpvPlayerCore.wantsHdrSurface(null))
   }
 
   @Test
@@ -623,6 +659,123 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun staleDisposeIsAcknowledgedWithoutTearingDownTheCore() {
+    // A dispose whose instanceId is not the core creator's lost the ownership
+    // race to a successor; tearing the core down anyway would kill that
+    // successor's session. It must be acknowledged as a no-op instead.
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 2L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 1)), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNotNull(getPluginField(plugin, "playerCore"))
+    assertEquals(2L, getPluginField(plugin, "coreInstanceId"))
+  }
+
+  @Test
+  fun matchingDisposeTearsDownTheCoreAndClearsTheToken() {
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 7L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 7)), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertNull(getPluginField(plugin, "coreInstanceId"))
+  }
+
+  @Test
+  fun tokenlessDisposeKeepsLegacySemanticsAndTearsDownTheCore() {
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { _, _ -> })
+    setPluginField(plugin, "coreInstanceId", 7L)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("dispose", null), result)
+    awaitCompletion(result)
+
+    assertNull(result.errorCode)
+    assertNull(getPluginField(plugin, "playerCore"))
+  }
+
+  // Display-mode restore on teardown. The window's preferredDisplayModeId
+  // persists past the player, so a session that switched the panel and is
+  // then torn down without restoring leaves the TV at the content rate.
+
+  private fun coreWithAppliedDisplayMode(activity: Activity, modeId: Int): MpvPlayerCore {
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
+    setCoreField(core, "frameRateManager", FrameRateManager(activity, Handler(Looper.getMainLooper())))
+    val attrs = activity.window.attributes
+    attrs.preferredDisplayModeId = modeId
+    activity.window.attributes = attrs
+    return core
+  }
+
+  private fun preferredModeId(activity: Activity): Int = activity.window.attributes.preferredDisplayModeId
+
+  @Test
+  fun disposeRestoresTheDisplayModeUnlessTheReplacementPreservesIt() {
+    // Leaving playback: Dart's dispose(preserveDisplayMode=false) is the only
+    // restore trigger the mpv backend has, so it must reach the window.
+    val leaving = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val leavingPlugin = MpvPlayerPlugin()
+    installCore(leavingPlugin, coreWithAppliedDisplayMode(leaving, 4))
+    val leavingResult = RecordingResult()
+    leavingPlugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to false)), leavingResult)
+    awaitCompletion(leavingResult)
+    assertEquals(0, preferredModeId(leaving))
+
+    // Player→player replacement: the successor inherits the rate instead of
+    // renegotiating HDMI twice.
+    val replacing = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val replacingPlugin = MpvPlayerPlugin()
+    installCore(replacingPlugin, coreWithAppliedDisplayMode(replacing, 4))
+    val replacingResult = RecordingResult()
+    replacingPlugin.onMethodCall(MethodCall("dispose", mapOf("preserveDisplayMode" to true)), replacingResult)
+    awaitCompletion(replacingResult)
+    assertEquals(4, preferredModeId(replacing))
+  }
+
+  @Test
+  fun activityDetachRestoresTheDisplayMode() {
+    // Activity teardown never reaches Dart's clearVideoFrameRate; the native
+    // teardown path is the only chance to give the panel back.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, coreWithAppliedDisplayMode(activity, 4))
+    setPluginField(plugin, "activity", activity)
+
+    plugin.onDetachedFromActivity()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(0, preferredModeId(activity))
+  }
+
+  @Test
+  fun hdrSessionDisposeDefersTheRestorePastTheHdrExit() {
+    // Dispose clears the core's own handler wholesale; the deferred HDR-exit
+    // restore (#2172) must live on the manager's, or an HDR session's display
+    // mode is never restored.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val core = coreWithAppliedDisplayMode(activity, 4)
+    setBoolean(core, "hdrDisplayActive", true)
+
+    core.dispose()
+    shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(4, preferredModeId(activity))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+    assertEquals(0, preferredModeId(activity))
+  }
+
+  @Test
   fun configDetachThenEngineDetachTearsDownVideoCoreAndPendingInitOnce() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     activity.setContentView(FrameLayout(activity))
@@ -687,6 +840,189 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun concurrentInitializeCallersShareOneAttemptAndOneOutcome() {
+    // Two `initialize` calls must build one core and answer both callers
+    // with its outcome; the second tearing down the in-flight core was #930.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val core = MpvPlayerCore(activity)
+    var created = 0
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ ->
+      created++
+      core
+    }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val first = RecordingResult()
+    val second = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), first)
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), second)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, created)
+    assertEquals(0, first.completionCount)
+    assertEquals(0, second.completionCount)
+
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(true, first.successValue)
+    assertEquals(true, second.successValue)
+    assertEquals(1, first.completionCount)
+    assertEquals(1, second.completionCount)
+    assertEquals(core, getPluginField(plugin, "playerCore"))
+
+    // The settled attempt cancelled its watchdog; it must not re-answer.
+    shadowOf(Looper.getMainLooper()).idleFor(30, TimeUnit.SECONDS)
+    assertEquals(1, first.completionCount)
+    assertEquals(1, second.completionCount)
+    core.dispose()
+  }
+
+  @Test
+  fun initializationThatNeverAnswersIsBoundedByTheWatchdog() {
+    // A core that never calls back must not leave the Dart future waiting
+    // forever, and its late answer must still retire the orphaned core.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val core = MpvPlayerCore(activity)
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ -> core }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), result)
+    shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(0, result.completionCount)
+
+    shadowOf(Looper.getMainLooper()).idleFor(30, TimeUnit.SECONDS)
+
+    assertEquals(false, result.successValue)
+    assertEquals(1, result.completionCount)
+    assertFalse(getPluginField(plugin, "isInitializing") as Boolean)
+
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, result.completionCount)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertTrue(getCoreField(core, "disposing") as Boolean)
+  }
+
+  @Test
+  fun successfulInitializationArrivingAfterDisposeIsDisposedExactlyOnce() {
+    // The core answers after its session was torn down: the plugin owns the
+    // orphan, must not publish it, and must not build a replacement.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val core = MpvPlayerCore(activity)
+    var created = 0
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ ->
+      created++
+      core
+    }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val init = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), init)
+    shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(1, created)
+
+    val dispose = RecordingResult()
+    plugin.onMethodCall(MethodCall("dispose", mapOf("instanceId" to 1)), dispose)
+    awaitCompletion(dispose)
+    assertEquals(false, init.successValue)
+
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, created)
+    assertEquals(1, init.completionCount)
+    assertNull(getPluginField(plugin, "playerCore"))
+    assertTrue(getCoreField(core, "disposing") as Boolean)
+  }
+
+  @Test
+  fun aCondemnedSessionDoesNotStopTheNextOneFromInitializing() {
+    // A write that never returned condemns the session it was issued for and
+    // nothing else. Its teardown runs on its own thread - on a wedged decoder,
+    // forever - while the successor gets its own mpv session, so Retry works
+    // instead of the viewer being told to restart the app (#2290).
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val condemned = MpvPlayerCore(activity)
+    condemnNativeOperations(condemned)
+
+    val plugin = MpvPlayerPlugin()
+    setPluginField(plugin, "activity", activity)
+    val successor = MpvPlayerCore(activity)
+    var initialized: ((Boolean) -> Unit)? = null
+    plugin.createCore = { _, _, _, _, _ -> successor }
+    plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), result)
+    shadowOf(Looper.getMainLooper()).idle()
+    initialized!!(true)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertNull(result.errorCode)
+    assertEquals(true, result.successValue)
+    assertEquals(successor, getPluginField(plugin, "playerCore"))
+    successor.dispose()
+    condemned.dispose()
+  }
+
+  @Test
+  fun aCondemnedSessionRefusesFurtherInitializationOfItsOwnCore() {
+    // The verdict is still terminal for the core that earned it: its mpv
+    // state is unknown, so it must not be reinitialized in place.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val condemned = MpvPlayerCore(activity)
+    condemnNativeOperations(condemned)
+
+    var accepted: Boolean? = null
+    condemned.initialize { accepted = it }
+
+    assertEquals(false, accepted)
+    condemned.dispose()
+  }
+
+  private fun condemnNativeOperations(core: MpvPlayerCore) {
+    MpvPlayerCore::class.java.getDeclaredMethod("failNativeOperations", Exception::class.java).apply {
+      isAccessible = true
+      invoke(core, MpvOperationTimeout("property write"))
+    }
+  }
+
+  // Instrumenting libmpv lets Robolectric no-op System.loadLibrary, which
+  // MpvPlayer's companion runs on class initialization; see fakeNativePlayer.
+  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Test
+  fun repeatedDisposalSharesTheFirstRetirementInsteadOfReportingItDone() {
+    // A second dispose must join the retirement already running: answering
+    // it while the native close is still in flight tells the caller a
+    // teardown finished that has not.
+    val core = testVideoCore { _, _ -> }
+    setCoreField(core, "player", fakeNativePlayer())
+    val settled = mutableListOf<String>()
+
+    core.dispose { settled += "first" }
+    core.dispose { settled += "second" }
+
+    // Native teardown runs on a worker and settles its callers through the
+    // main looper, which Robolectric leaves paused until the test idles it.
+    assertEquals(emptyList<String>(), settled)
+
+    awaitCondition { settled.size == 2 }
+    assertEquals(listOf("first", "second"), settled)
+  }
+
+  @Test
   fun engineDetachAlsoTerminatesApplicationContextAudioCore() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val plugin = MpvAudioPlayerPlugin()
@@ -700,15 +1036,53 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun setLogLevelReportsUnsupported() {
+  fun setLogLevelWithoutCoreReportsNotInitializedForVideoAndAudio() {
+    for (plugin in listOf(MpvPlayerPlugin(), MpvAudioPlayerPlugin())) {
+      val result = RecordingResult()
+
+      plugin.onMethodCall(MethodCall("setLogLevel", mapOf("level" to "warn")), result)
+
+      assertEquals("NOT_INITIALIZED", result.errorCode)
+      assertEquals(1, result.completionCount)
+      assertNull(result.successValue)
+    }
+  }
+
+  @Test
+  fun setLogLevelRejectsMissingOrNonStringLevel() {
+    for (level in listOf(null, 42)) {
+      val result = RecordingResult()
+
+      MpvPlayerPlugin().onMethodCall(MethodCall("setLogLevel", mapOf("level" to level)), result)
+
+      assertEquals("INVALID_ARGS", result.errorCode)
+      assertEquals(1, result.completionCount)
+    }
+  }
+
+  @Test
+  fun disposeCompletesQueuedLogLevelChangeOnceWithoutAnActiveNativePlayer() {
+    val blockerStarted = CountDownLatch(1)
+    val releaseBlocker = CountDownLatch(1)
+    val core = testCore { _, _ ->
+      blockerStarted.countDown()
+      check(releaseBlocker.await(2, TimeUnit.SECONDS))
+    }
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, core)
     val result = RecordingResult()
+    try {
+      core.setProperty("block", "value")
+      assertTrue(blockerStarted.await(1, TimeUnit.SECONDS))
+      plugin.onMethodCall(MethodCall("setLogLevel", mapOf("level" to "v")), result)
+      core.dispose()
+    } finally {
+      releaseBlocker.countDown()
+    }
+    awaitCompletion(result)
 
-    MpvPlayerPlugin().onMethodCall(
-      MethodCall("setLogLevel", mapOf("level" to "warn")),
-      result
-    )
-
-    assertEquals("UNSUPPORTED", result.errorCode)
+    assertEquals("NOT_INITIALIZED", result.errorCode)
+    assertEquals(1, result.completionCount)
     assertNull(result.successValue)
   }
 
@@ -720,10 +1094,11 @@ class MpvPlayerPluginTest {
 
     assertEquals(
       mapOf(
+        "sourceId" to 73L,
         "reason" to 4,
         "message" to "Invalid data found when processing input"
       ),
-      diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error))
+      diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error, 73L))
     )
   }
 
@@ -733,9 +1108,10 @@ class MpvPlayerPluginTest {
     diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "old failure"))
     diagnostics.onStartFile()
 
-    assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof)))
-    assertEquals(mapOf("reason" to 4), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error)))
-    assertNull(diagnostics.onEndFile(MpvEvent.EndFile(null)))
+    assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof, null)))
+    assertEquals(mapOf("reason" to 4), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Error, null)))
+    assertEquals(mapOf("sourceId" to 81L), diagnostics.onEndFile(MpvEvent.EndFile(null, 81L)))
+    assertNull(diagnostics.onEndFile(MpvEvent.EndFile(null, null)))
   }
 
   @Test
@@ -747,6 +1123,7 @@ class MpvPlayerPluginTest {
     plugin.onEvent(
       "end-file",
       mapOf(
+        "sourceId" to 92L,
         "reason" to 4,
         "message" to "Failed to open stream"
       )
@@ -757,12 +1134,322 @@ class MpvPlayerPluginTest {
         "type" to "event",
         "name" to "end-file",
         "data" to mapOf(
+          "sourceId" to 92L,
           "reason" to 4,
           "message" to "Failed to open stream"
         )
       ),
       sink.successValue
     )
+  }
+
+  @Test
+  fun sourceQualifiedLifecycleAndPropertiesKeepTheirDequeueIdentity() {
+    val sink = RecordingEventSink()
+    val plugin = MpvPlayerPlugin()
+    plugin.onListen(null, sink)
+    // This test owns event routing, not native observation admission.
+    setPluginField(plugin, "nameToId", mutableMapOf("time-pos" to 7))
+
+    plugin.onPropertyChange("time-pos", 0.0)
+    plugin.onEvent("start-file", mapOf("sourceId" to 202L))
+    plugin.onEvent("file-loaded", mapOf("sourceId" to 202L))
+    plugin.onPropertyChange("time-pos", 12.5, 101L)
+    plugin.onEvent(
+      "playback-restart",
+      mapOf("sourceId" to 202L, "positionSeconds" to 18.75)
+    )
+
+    assertEquals(
+      listOf(
+        listOf(7, 0.0, null),
+        mapOf(
+          "type" to "event",
+          "name" to "start-file",
+          "data" to mapOf("sourceId" to 202L)
+        ),
+        mapOf(
+          "type" to "event",
+          "name" to "file-loaded",
+          "data" to mapOf("sourceId" to 202L)
+        ),
+        listOf(7, 12.5, 101L),
+        mapOf(
+          "type" to "event",
+          "name" to "playback-restart",
+          "data" to mapOf("sourceId" to 202L, "positionSeconds" to 18.75)
+        )
+      ),
+      sink.successValues
+    )
+  }
+
+  @Test
+  fun hardwareOsdUsesLaidOutContainCoverFillAndZoomBounds() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = testVideoCore { name, value -> writes.add(name to value) }
+    val container = installVideoRectViews(core)
+    setCoreField(core, "videoDisplayWidth", 1000)
+    setCoreField(core, "videoDisplayHeight", 500)
+
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,0,100,1001,600") }
+
+    // CENTER truncates odd negative differences towards zero, not floor.
+    setCoreField(core, "videoPanscan", 1f)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,-200,0,1202,701") }
+
+    // A stretched display aspect fills the viewport without OSD resizing.
+    setCoreField(core, "videoPanscan", 0f)
+    setCoreField(core, "videoDisplayWidth", 1001)
+    setCoreField(core, "videoDisplayHeight", 701)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,0,0,1001,701") }
+
+    setCoreField(core, "videoZoomLog2", 1f)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,-500,-350,1502,1052") }
+    val osd = getCoreField(core, "osdSurfaceView") as SurfaceView
+    assertEquals(1001, osd.width)
+    assertEquals(701, osd.height)
+    setCoreField(core, "videoZoomLog2", 0f)
+    setCoreField(core, "videoDisplayWidth", 500)
+    setCoreField(core, "videoDisplayHeight", 1000)
+    applyAndLayoutVideoRect(core, container)
+    awaitCondition { writes.contains("vo-mediacodec-video-rect" to "1001,701,325,0,675,701") }
+    core.dispose()
+  }
+
+  @Test
+  fun pausedGeometryCoalescesLayoutAndReplaysForNewOutput() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = testVideoCore { name, value -> writes.add(name to value) }
+    val container = installVideoRectViews(core)
+    setBoolean(core, "cachedPaused", true)
+    setCoreField(core, "videoDisplayWidth", 1000)
+    setCoreField(core, "videoDisplayHeight", 500)
+    applyAndLayoutVideoRect(core, container)
+    drainGeometryWrites(core)
+    repeat(3) { invokeVideoRectLayout(core) }
+    drainGeometryWrites(core)
+    fun rectangles() = writes.filter { it.first == "vo-mediacodec-video-rect" }
+    assertEquals(listOf("vo-mediacodec-video-rect" to "1001,701,0,100,1001,600"), rectangles())
+
+    setCoreField(core, "videoOutputEpoch", 1L)
+    invokeVideoRectLayout(core)
+    drainGeometryWrites(core)
+    assertEquals(2, rectangles().size)
+    // Fractional buffer pixels must not replace the full OSD view viewport.
+    val callback = getCoreField(core, "osdSurfaceCallback") as SurfaceHolder.Callback
+    val osd = getCoreField(core, "osdSurfaceView") as SurfaceView
+    callback.surfaceChanged(osd.holder, 0, 334, 234)
+    drainGeometryWrites(core)
+    assertEquals(3, rectangles().size)
+    assertEquals("1001,701,0,100,1001,600", rectangles().last().second)
+    // Resize while paused: layout, not decoder progress, publishes the change.
+    layoutVideoRectViews(container, 701, 1001)
+    invokeVideoRectLayout(core)
+    layoutVideoRectViews(container, 701, 1001)
+    invokeVideoRectLayout(core)
+    drainGeometryWrites(core)
+    assertEquals("701,1001,0,325,701,675", rectangles().last().second)
+    assertTrue(writes.none { it.first == "pause" })
+    core.dispose()
+  }
+
+  @Test
+  fun pendingGeometryDropsSupersededLayoutsAndRetiredSurfaceEpochs() {
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val blockerStarted = CountDownLatch(1)
+    val releaseBlocker = CountDownLatch(1)
+    val core = testVideoCore { name, value ->
+      if (name == "block") {
+        blockerStarted.countDown()
+        check(releaseBlocker.await(2, TimeUnit.SECONDS))
+      }
+      writes.add(name to value)
+    }
+    val container = installVideoRectViews(core)
+    core.setProperty("block", "yes")
+    assertTrue(blockerStarted.await(1, TimeUnit.SECONDS))
+    try {
+      setCoreField(core, "videoDisplayWidth", 1000)
+      setCoreField(core, "videoDisplayHeight", 500)
+      applyAndLayoutVideoRect(core, container)
+      setCoreField(core, "videoPanscan", 1f)
+      applyAndLayoutVideoRect(core, container)
+      // Both queued snapshots belong to a surface which has now retired.
+      setCoreField(core, "videoOutputEpoch", 1L)
+    } finally {
+      releaseBlocker.countDown()
+    }
+    drainGeometryWrites(core)
+    assertTrue(writes.none { it.first == "vo-mediacodec-video-rect" })
+    invokeVideoRectLayout(core)
+    drainGeometryWrites(core)
+    assertEquals(
+      listOf("vo-mediacodec-video-rect" to "1001,701,-200,0,1202,701"),
+      writes.filter { it.first == "vo-mediacodec-video-rect" }
+    )
+    core.dispose()
+  }
+
+  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Test
+  fun osdRetirementDuringAGpuRefreshDoesNotStrandVideoReadiness() {
+    // A session that has moved to a GPU vo retires its OSD plane while a
+    // video refresh is still queued. Bumping the epoch cancels that queued
+    // refresh, and a bump with no replacement work leaves
+    // videoOutputRestoring true forever: hasReadyVideoOutput() never turns
+    // true again and the deferred resume never reaches mpv. Nothing else
+    // can clear it either — the transition hides the OSD view, so no
+    // osdSurfaceCreated will follow to schedule a refresh.
+    val core = testVideoCore { _, _ -> }
+    installVideoRectViews(core)
+    setCoreField(core, "player", fakeNativePlayer())
+    setCoreField(core, "activeGpuVoTarget", "gpu")
+    setCoreField(core, "appliedGpuVoTarget", "gpu")
+    setCoreField(core, "attachedOsdSurface", null)
+    setCoreField(core, "videoOutputEpoch", 4L)
+    setCoreField(core, "lastKnownSurfaceWidth", 0)
+    setCoreField(core, "lastKnownSurfaceHeight", 0)
+    // A refresh is in flight against epoch 4.
+    setBoolean(core, "videoOutputRestoring", true)
+
+    val osdCallback = getCoreField(core, "osdSurfaceCallback") as SurfaceHolder.Callback
+    val osdView = getCoreField(core, "osdSurfaceView") as SurfaceView
+    osdCallback.surfaceDestroyed(osdView.holder)
+
+    // The retirement invalidated the queued refresh and issued a
+    // replacement: with no candidate surface in this harness the
+    // replacement re-parks the latch, but it re-reads the video view's
+    // size on the way there and nothing else in the retirement path does.
+    assertEquals(5L, getCoreField(core, "videoOutputEpoch"))
+    assertEquals(1001, getCoreField(core, "lastKnownSurfaceWidth"))
+    assertEquals(701, getCoreField(core, "lastKnownSurfaceHeight"))
+    assertTrue(getBoolean(core, "videoOutputRestoring"))
+    core.dispose()
+  }
+
+  /**
+   * A display-mode switch destroys the SurfaceView while a renderer transition
+   * holds the core: the retirement queues behind that write and outlives the
+   * main thread's handoff budget. Android takes the surface back either way.
+   * Condemning the session used to close the queue on the retirement itself
+   * and end playback that was merely slow; the session must stay alive with
+   * its output restoring, and the retirement must still run once the core
+   * answers.
+   */
+  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Test
+  fun aSurfaceRetirementOutlivingTheHandoffBudgetKeepsTheSessionAndStillRuns() {
+    val blockerStarted = CountDownLatch(1)
+    val releaseBlocker = CountDownLatch(1)
+    val events = ConcurrentLinkedQueue<String>()
+    val core = testVideoCore { name, _ ->
+      if (name == "block") {
+        blockerStarted.countDown()
+        check(releaseBlocker.await(10, TimeUnit.SECONDS))
+      }
+    }
+    core.delegate = object : PlayerDelegate {
+      override fun onPropertyChange(name: String, value: Any?) = Unit
+      override fun onEvent(name: String, data: Map<String, Any>?) {
+        events.add(name)
+      }
+    }
+    installVideoRectViews(core)
+    setCoreField(core, "player", fakeNativePlayer())
+    // Already parked on the placeholder, so the retirement has nothing to
+    // attach through the closed fake player; it still resets the size.
+    val placeholder = Surface(SurfaceTexture(0))
+    setCoreField(core, "placeholderSurface", placeholder)
+    setCoreField(core, "attachedSurface", placeholder)
+    setBoolean(core, "hasAttachedSurface", true)
+    setBoolean(core, "attachedToPlaceholder", true)
+    setCoreField(core, "lastAppliedSurfaceSize", "1920x1080")
+
+    core.setProperty("block", "yes")
+    assertTrue(blockerStarted.await(1, TimeUnit.SECONDS))
+    try {
+      // Blocks the test (main) thread for the full handoff budget.
+      core.surfaceDestroyed((getCoreField(core, "surfaceView") as SurfaceView).holder)
+
+      assertNull(getCoreField(core, "videoOutputFailure"))
+      assertNull((getCoreField(core, "nativeFailure") as AtomicReference<*>).get())
+      assertTrue(getBoolean(core, "videoOutputRestoring"))
+      assertEquals("1920x1080", getCoreField(core, "lastAppliedSurfaceSize"))
+    } finally {
+      releaseBlocker.countDown()
+    }
+
+    awaitCondition { getCoreField(core, "lastAppliedSurfaceSize") == null }
+    shadowOf(Looper.getMainLooper()).idle()
+    assertNull(getCoreField(core, "videoOutputFailure"))
+    assertNull((getCoreField(core, "nativeFailure") as AtomicReference<*>).get())
+    assertTrue(getBoolean(core, "videoOutputRestoring"))
+    assertFalse(events.contains("end-file"))
+    core.dispose()
+  }
+
+  /**
+   * An adopted native session, without libmpv: Robolectric no-ops
+   * `System.loadLibrary`, and pre-closing the wrapper makes [MpvPlayer.close]
+   * return before its JNI call, so the core's lifecycle paths that require a
+   * player can run on the JVM.
+   */
+  private fun fakeNativePlayer(): MpvPlayer {
+    val player = MpvPlayer::class.java.getDeclaredConstructor(Long::class.javaPrimitiveType).run {
+      isAccessible = true
+      newInstance(1L)
+    }
+    MpvPlayer::class.java.getDeclaredField("closed").apply {
+      isAccessible = true
+      setBoolean(player, true)
+    }
+    return player
+  }
+
+  private fun installVideoRectViews(core: MpvPlayerCore): FrameLayout {
+    val context = getCoreField(core, "context") as Activity
+    val container = FrameLayout(context)
+    val video = SurfaceView(context)
+    val osd = SurfaceView(context)
+    container.addView(video, FrameLayout.LayoutParams(-1, -1))
+    container.addView(osd, FrameLayout.LayoutParams(-1, -1))
+    setCoreField(core, "surfaceContainer", container)
+    setCoreField(core, "surfaceView", video)
+    setCoreField(core, "osdSurfaceView", osd)
+    layoutVideoRectViews(container)
+    return container
+  }
+
+  private fun layoutVideoRectViews(container: FrameLayout, width: Int = 1001, height: Int = 701) {
+    container.measure(
+      View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+      View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+    )
+    container.layout(0, 0, width, height)
+  }
+
+  private fun applyAndLayoutVideoRect(core: MpvPlayerCore, container: FrameLayout) {
+    invokeVideoRectLayout(core)
+    layoutVideoRectViews(container)
+    invokeVideoRectLayout(core)
+  }
+
+  private fun invokeVideoRectLayout(core: MpvPlayerCore, force: Boolean = false) {
+    MpvPlayerCore::class.java.getDeclaredMethod("applyVideoRectLayout", Boolean::class.javaPrimitiveType).apply {
+      isAccessible = true
+      invoke(core, force)
+    }
+  }
+
+  private fun drainGeometryWrites(core: MpvPlayerCore) {
+    var completed = false
+    core.setProperty("geometry-test-barrier", "yes") { completed = true }
+    awaitCondition { completed }
   }
 
   private fun propertyCall() = MethodCall(
@@ -886,9 +1573,493 @@ class MpvPlayerPluginTest {
     }
   }
 
+  /** Stands in for the budget `initialize` applies from the same tier table. */
+  private fun setAppliedDemuxerBudget(core: MpvPlayerCore, budget: DemuxerBudget) {
+    setCoreField(core, "appliedDemuxerBudget", budget)
+    setCoreField(core, "steadyDemuxerBudget", budget)
+  }
+
+  /** What `ActivityManager.getMemoryInfo` reports to the core under test. */
+  private fun setMemoryInfo(activity: Activity, availMem: Long, threshold: Long, lowMemory: Boolean) {
+    val manager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    shadowOf(manager).setMemoryInfo(
+      ActivityManager.MemoryInfo().also {
+        it.availMem = availMem
+        it.threshold = threshold
+        it.lowMemory = lowMemory
+      }
+    )
+  }
+
   private fun getBoolean(core: MpvPlayerCore, name: String): Boolean = MpvPlayerCore::class.java.getDeclaredField(name).run {
     isAccessible = true
     getBoolean(core)
+  }
+
+  private fun invokeSetGpuVoRequirement(core: MpvPlayerCore, reason: String, active: Boolean) {
+    MpvPlayerCore::class.java
+      .getDeclaredMethod("setGpuVoRequirement", String::class.java, Boolean::class.javaPrimitiveType)
+      .apply {
+        isAccessible = true
+        invoke(core, reason, active)
+      }
+  }
+
+  @Test
+  fun voTargetFollowsTheActiveReasonSet() {
+    // Reason precedence through the real property-write path: DV reshaping
+    // outranks HDR-on-SDR, dropping the winner falls back to the reason still
+    // active, and dropping the last one returns the session to the plane.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+
+    fun lastVo(): String? = writes.toList().lastOrNull { it.first == "vo" }?.second
+
+    // HDR-on-SDR raises first, then the DV router wins the arbitration.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, true)
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_DV_RESHAPE, true)
+    awaitCondition { lastVo() == "gpu-next" }
+    assertEquals("gpu-next", lastVo())
+
+    // Dropping the winning reason must fall back to the one still active,
+    // not to the plane.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_DV_RESHAPE, false)
+    awaitCondition { lastVo() == "gpu" }
+    assertEquals("gpu", lastVo())
+
+    // Last reason dropping returns the session to the video plane.
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, false)
+    awaitCondition { lastVo() == "mediacodec" }
+    assertEquals("mediacodec", lastVo())
+  }
+
+  @Test
+  fun everyVideoRouteReasonChangeIsLogged() {
+    // The reason set is what diagnoses a session that left the video plane
+    // (#2302), so a change has to reach the uploadable log even when the
+    // target does not move.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
+    setBoolean(core, "isInitialized", true)
+    val routes = ConcurrentLinkedQueue<String>()
+    core.delegate = object : PlayerDelegate {
+      override fun onPropertyChange(name: String, value: Any?) = Unit
+      override fun onEvent(name: String, data: Map<String, Any>?) {
+        if (name == "log-message" && data?.get("prefix") == "video-route") {
+          routes.add(data["text"] as String)
+        }
+      }
+    }
+
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_HDR_SDR, true)
+    invokeSetGpuVoRequirement(core, GpuVoPolicy.REASON_SHADERS, true)
+
+    val logged = routes.toList()
+    assertEquals(2, logged.size)
+    assertTrue(logged[0].contains("mediacodec -> gpu"))
+    assertTrue(logged[1].contains(GpuVoPolicy.REASON_HDR_SDR))
+    assertTrue(logged[1].contains(GpuVoPolicy.REASON_SHADERS))
+  }
+
+  @Test
+  fun hwdecWritesParkWhileAPerFileHoldIsActive() {
+    // While DV P5 reshaping or Hi10 routing holds hwdec at `no`, a session
+    // write of a hardware value must not reach mpv (it would re-enable the
+    // decoder that was just refused) but must be kept for the restore.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    setBoolean(core, "hwdecHeld", true)
+
+    var outcome: Result<Unit>? = null
+    core.setProperty("hwdec", "mediacodec,mediacodec-copy") { outcome = it }
+    awaitCondition { outcome != null }
+    assertTrue(outcome!!.isSuccess)
+    assertTrue(writes.isEmpty())
+    val parked = MpvPlayerCore::class.java.getDeclaredField("parkedHwdec").run {
+      isAccessible = true
+      @Suppress("UNCHECKED_CAST")
+      (get(core) as java.util.concurrent.atomic.AtomicReference<String?>).get()
+    }
+    assertEquals("mediacodec,mediacodec-copy", parked)
+
+    // Once the hold is gone, hwdec writes flow through again.
+    setBoolean(core, "hwdecHeld", false)
+    outcome = null
+    core.setProperty("hwdec", "no") { outcome = it }
+    awaitCondition { outcome != null }
+    assertEquals(listOf("hwdec" to "no"), writes.toList())
+  }
+
+  @Test
+  fun memoryPressureWritesTheDemuxerBoundsAndProbesOnlyWhenNarrowing() {
+    // Nothing else in the app hands native buffers back, so the two bounds
+    // actually reaching mpv is the whole reclaim. Robolectric reports a 16 MB
+    // large heap class, i.e. the tight tier, which is the device class this
+    // exists for.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    val steady = DemuxerBudget.forHeapClassMB(16)!!
+    setAppliedDemuxerBudget(core, steady)
+    // A trim that cannot narrow this session must not read a property at all:
+    // Android repeats the level under sustained pressure, and every probe
+    // would sit on the read queue in front of playback's own reads.
+    val probes = java.util.concurrent.atomic.AtomicInteger()
+    core.propertyReaderOverride = { _ ->
+      probes.incrementAndGet()
+      null
+    }
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+    awaitCondition { writes.size == 2 }
+    assertEquals(
+      listOf("demuxer-max-bytes" to steady.aheadBytes.toString(), "demuxer-max-back-bytes" to "0"),
+      writes.toList()
+    )
+    val probed = probes.get()
+
+    // Neither of these may reach mpv: the first level asks for nothing back,
+    // and the session already holds what the harsher one would ask for on
+    // this tier. Fenced behind a later write on the same serialized queue
+    // rather than a pump: if either had queued a pair, it would be ahead of
+    // the fence and already recorded by the time its callback fires.
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN)
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    var fenced: Result<Unit>? = null
+    core.setProperty("volume", "50") { fenced = it }
+    awaitCondition { fenced != null }
+    assertEquals("a trim with nothing to narrow still probed the core", probed, probes.get())
+    assertEquals(
+      listOf(
+        "demuxer-max-bytes" to steady.aheadBytes.toString(),
+        "demuxer-max-back-bytes" to "0",
+        "volume" to "50"
+      ),
+      writes.toList()
+    )
+  }
+
+  @Test
+  fun recoveredMemoryWalksTheDemuxerBudgetBackOneRungPerPoll() {
+    // Android has no "pressure cleared" callback, so the way back is the
+    // poll's own decision against the killer threshold: nothing inside the
+    // quiet window, then one rung per poll, and nothing once steady is back.
+    // Robolectric's 16 MB heap class floors RUNNING_CRITICAL at 32/0 whatever
+    // the session holds, so the full tier stands in for a ladder to climb.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      if (name != "fence") writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    val steady = DemuxerBudget.forHeapClassMB(1024)!!
+    setAppliedDemuxerBudget(core, steady)
+    core.propertyReaderOverride = { _ -> null }
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = false)
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 2 }
+    assertEquals(bounds(32 * mib, 0), writes.toList())
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("widened inside the quiet window", bounds(32 * mib, 0), fencedWrites(core, writes))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_QUIET_MS - DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 4 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 6 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 8 }
+    assertEquals(
+      bounds(32 * mib, 0) + bounds(64 * mib, 0) + bounds(100 * mib, 0) + bounds(100 * mib, 48 * mib),
+      writes.toList()
+    )
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(4 * DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("kept writing past steady", 8, fencedWrites(core, writes).size)
+  }
+
+  @Test
+  fun aLowMemorySampleHoldsTheNarrowedDemuxerBudget() {
+    // Silence from Android is not recovery; the sample is. Re-growing on a
+    // box still at the threshold is how the app got killed in the first
+    // place.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      if (name != "fence") writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    setAppliedDemuxerBudget(core, DemuxerBudget.forHeapClassMB(1024)!!)
+    core.propertyReaderOverride = { _ -> null }
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = true)
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 2 }
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_QUIET_MS + 4 * DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals(bounds(32 * mib, 0), fencedWrites(core, writes))
+
+    // The poll keeps sampling: the first clear sample resumes the ramp.
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = false)
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 4 }
+    assertEquals(bounds(32 * mib, 0) + bounds(64 * mib, 0), writes.toList())
+  }
+
+  @Test
+  fun aTrimMidRampNarrowsAgainAndKeepsTheSnapshotTarget() {
+    // The first narrowing snapshots what mpv held - an mpv.conf line rather
+    // than the tier - as the restore target. A trim landing mid-ramp reads
+    // the half-restored bounds back and must neither adopt them as the target
+    // nor widen inside its own quiet window.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      if (name != "fence") writes.add(name to value)
+    })
+    setBoolean(core, "isInitialized", true)
+    setAppliedDemuxerBudget(core, DemuxerBudget.forHeapClassMB(1024)!!)
+    val conf = DemuxerBudget(80 * mib, 40 * mib)
+    core.propertyReaderOverride = { name ->
+      // mpv answers with whatever was written last, else the conf line.
+      when (name) {
+        "demuxer-max-bytes" -> writes.lastOrNull { it.first == name }?.second ?: conf.aheadBytes.toString()
+        "demuxer-max-back-bytes" -> writes.lastOrNull { it.first == name }?.second ?: conf.backBytes.toString()
+        else -> null
+      }
+    }
+    setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = false)
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 2 }
+    assertEquals(conf, getCoreField(core, "steadyDemuxerBudget"))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_QUIET_MS))
+    awaitCondition { writes.size == 4 }
+    assertEquals(bounds(32 * mib, 0) + bounds(64 * mib, 0), writes.toList())
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { writes.size == 6 }
+    assertEquals(bounds(32 * mib, 0), writes.toList().takeLast(2))
+    assertEquals(conf, getCoreField(core, "steadyDemuxerBudget"))
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("widened inside the restarted quiet window", 6, fencedWrites(core, writes).size)
+
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 8 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 10 }
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_POLL_MS))
+    awaitCondition { writes.size == 12 }
+    assertEquals(
+      bounds(64 * mib, 0) + bounds(80 * mib, 0) + bounds(80 * mib, 40 * mib),
+      writes.toList().takeLast(6)
+    )
+    shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2 * DemuxerBudget.RESTORE_POLL_MS))
+    assertEquals("kept writing past the snapshot", 12, fencedWrites(core, writes).size)
+  }
+
+  private val mib = 1024L * 1024L
+
+  private fun bounds(ahead: Long, back: Long): List<Pair<String, String>> = listOf("demuxer-max-bytes" to ahead.toString(), "demuxer-max-back-bytes" to back.toString())
+
+  /**
+   * The budget writes recorded so far, fenced behind a write on the same
+   * serialized queue rather than a pump: anything queued ahead of the fence
+   * is recorded by the time its callback fires. The recorder drops the fence.
+   */
+  private fun fencedWrites(core: MpvPlayerCore, writes: ConcurrentLinkedQueue<Pair<String, String>>): List<Pair<String, String>> {
+    var fenced: Result<Unit>? = null
+    core.setProperty("fence", "1") { fenced = it }
+    awaitCondition { fenced != null }
+    return writes.toList()
+  }
+
+  @Test
+  fun criticalMemoryPressureSizesReadAheadFromTheStreamByteRate() {
+    // #2314 was diagnosed by reconstructing the budget from mkv seek offsets.
+    // Robolectric reports the tight tier, whose forward bound already is the
+    // floor, so what this pins is the measured rate reaching the decision and
+    // the log; DemuxerBudgetTest owns the floor arithmetic.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { _, _ -> })
+    setBoolean(core, "isInitialized", true)
+    setAppliedDemuxerBudget(core, DemuxerBudget.forHeapClassMB(16)!!)
+    core.propertyReaderOverride = { name ->
+      when (name) {
+        "demuxer-cache-state" -> """{"eof":false,"fw-bytes":33500000,"cache-duration":3.35}"""
+        "demuxer-cache-duration" -> "3.35"
+        "file-size" -> "45000000000"
+        "duration" -> "6250.0"
+        else -> null
+      }
+    }
+    val lines = ConcurrentLinkedQueue<String>()
+    core.delegate = object : PlayerDelegate {
+      override fun onPropertyChange(name: String, value: Any?) = Unit
+      override fun onEvent(name: String, data: Map<String, Any>?) {
+        if (name == "log-message" && data?.get("prefix") == "memory") lines.add(data["text"] as String)
+      }
+    }
+
+    core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+    awaitCondition { lines.isNotEmpty() }
+
+    // 33.5 MB cached over 3.35 s is the stretch playing; 7.2 MB/s is what a
+    // file-size-only estimate would have believed.
+    val line = lines.first()
+    assertTrue(line, line.contains("32MB ahead, 0MB back"))
+    assertTrue(line, line.contains("3.4s at 10.0 MB/s"))
+  }
+
+  @Test
+  fun aStatsSweepDoesNotDelayARealPropertyRead() {
+    // mpv_get_property waits on the core thread, so on a core decoding 4K in
+    // software one sweep's ~38 reads can take seconds. Queued behind the
+    // overlay, a real read waited out the whole sweep - not just the read
+    // deadline, because the worker cannot be interrupted out of a blocking
+    // JNI call. Diagnostics must not delay the playback they measure.
+    val core = testVideoCore { _, _ -> }
+    setBoolean(core, "isInitialized", true)
+    val sweepEntered = java.util.concurrent.atomic.AtomicBoolean()
+    val releaseSweep = CountDownLatch(1)
+    core.propertyReaderOverride = { name ->
+      if (name == "volume") {
+        "50"
+      } else {
+        sweepEntered.set(true)
+        releaseSweep.await(5, TimeUnit.SECONDS)
+        null
+      }
+    }
+
+    var sweep: Map<String, Any?>? = null
+    core.getStatsAsync { sweep = it }
+    awaitCondition { sweepEntered.get() }
+    assertTrue("sweep did not start", sweepEntered.get())
+    var read: String? = null
+    var answered = false
+    core.getPropertyAsync("volume") {
+      read = it
+      answered = true
+    }
+    awaitCondition { answered }
+    assertTrue("the read waited for the sweep", answered)
+    assertEquals("50", read)
+    assertNull("the sweep answered early", sweep)
+
+    releaseSweep.countDown()
+    awaitCondition { sweep != null }
+    assertEquals("mpv", sweep?.get("playerType"))
+  }
+
+  @Test
+  fun dvConversionModeMapsOntoForkDecoderOptions() {
+    // The app-level `dv-conversion-mode` property must translate to the fork
+    // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
+    // modes. Robolectric reports no Dolby Vision display, so `auto` takes the
+    // no-DV branch deterministically.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+
+    fun apply(mode: String): Result<Unit> {
+      writes.clear()
+      var outcome: Result<Unit>? = null
+      core.setProperty("dv-conversion-mode", mode) { outcome = it }
+      awaitCondition { outcome != null }
+      return outcome!!
+    }
+
+    assertTrue(apply("auto").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    assertTrue(apply("disabled").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=native"), writes.toList())
+
+    assertTrue(apply("dv81").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=convert"), writes.toList())
+
+    assertTrue(apply("hevc_strip").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=strip"), writes.toList())
+
+    val invalid = apply("bogus")
+    assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun displayChangeRepublishesTheRefreshRateToMpvUntilDispose() {
+    // The fork vo builds its vsync grid from display-fps-override. A mode
+    // switch the app did not make (the TV's own content matching, an HDR
+    // mode change) must still reach mpv, and a disposed core must not write
+    // into a session it no longer owns.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+    MpvPlayerCore::class.java.getDeclaredMethod("registerDisplayListener").apply {
+      isAccessible = true
+      invoke(core)
+    }
+
+    ShadowDisplayManager.changeDisplay(Display.DEFAULT_DISPLAY, "w1920dp-h1080dp")
+    awaitCondition { writes.isNotEmpty() }
+    val refreshRate = activity.windowManager.defaultDisplay.mode.refreshRate.toString()
+    assertEquals(listOf("display-fps-override" to refreshRate), writes.toList())
+
+    core.dispose()
+    writes.clear()
+    ShadowDisplayManager.changeDisplay(Display.DEFAULT_DISPLAY, "w1280dp-h720dp")
+    shadowOf(Looper.getMainLooper()).idle()
+    Thread.sleep(50)
+    shadowOf(Looper.getMainLooper()).idle()
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun decoderOptionsMergePreservesBackendChoiceAcrossDvChanges() {
+    // FFmpeg applies duplicate AVOptions in order; inspect the effective
+    // settings rather than requiring a particular serialization of the list.
+    fun effective(options: String): Map<String, String> = options.split(',').associate {
+      it.substringBefore('=') to it.substringAfter('=')
+    }
+
+    val converted = MpvPlayerCore.mergeDecoderOptions(
+      "ndk_codec=1,threads=4,dolby_vision=0,dv_p7_mode=strip",
+      "dolby_vision=1,dv_p7_mode=convert"
+    )
+    assertEquals(
+      mapOf("ndk_codec" to "1", "threads" to "4", "dolby_vision" to "1", "dv_p7_mode" to "convert"),
+      effective(converted)
+    )
+
+    // A user can explicitly choose Java and tune unrelated AVOptions. A later
+    // DV change must replace only the DV choices, not reinstate the NDK default.
+    val nativeDv = MpvPlayerCore.mergeDecoderOptions(
+      "$converted,ndk_codec=0,threads=2",
+      "dolby_vision=1,dv_p7_mode=native"
+    )
+    assertEquals(
+      mapOf("ndk_codec" to "0", "threads" to "2", "dolby_vision" to "1", "dv_p7_mode" to "native"),
+      effective(nativeDv)
+    )
   }
 
   private fun awaitQueueEntry(
@@ -952,9 +2123,11 @@ class MpvPlayerPluginTest {
 
   private class RecordingEventSink : EventChannel.EventSink {
     var successValue: Any? = null
+    val successValues = mutableListOf<Any?>()
 
     override fun success(event: Any?) {
       successValue = event
+      successValues += event
     }
 
     override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) = Unit

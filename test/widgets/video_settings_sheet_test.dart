@@ -68,7 +68,7 @@ void main() {
     expect(find.text('Выкл.'), findsOneWidget);
 
     final sleepTimer = SleepTimerService();
-    sleepTimer.startTimer(const Duration(hours: 1), () {});
+    sleepTimer.startTimer(const Duration(hours: 1));
     try {
       await tester.pump();
       expect(find.textContaining('Активен ('), findsOneWidget);

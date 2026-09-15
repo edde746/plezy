@@ -1,100 +1,49 @@
 import 'dart:async';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/platform/player_android.dart';
-import '../mpv/player/player_native.dart';
+import 'playback_open_outcome.dart';
 
 enum MpvSidecarOpenOutcome { loaded, stalled, inconclusive, aborted }
-
-enum _MpvSidecarOpenMode { directMpv, androidFallback }
 
 /// Watches an mpv open that includes remote subtitle sidecars.
 ///
 /// mpv discovers the primary audio/video tracks before it synchronously waits
 /// for external files. Once that milestone is observed, a missing file-loaded
 /// event can be attributed to the sidecar phase and recovered safely.
+///
+/// The signals come from the attempt's [PlaybackOpenOutcome] — including the
+/// Android rule that nothing ExoPlayer reports before it hands the file to
+/// mpv counts as mpv readiness — so this guard adds only the two bounded
+/// waits.
 class MpvSidecarOpenGuard {
-  final Player player;
+  MpvSidecarOpenGuard._(this._outcome, this.discoveryTimeout, this.fileLoadedTimeout);
+
+  final PlaybackOpenOutcome _outcome;
   final Duration discoveryTimeout;
   final Duration fileLoadedTimeout;
-  final _MpvSidecarOpenMode _mode;
-
-  final Completer<void> _primaryReady = Completer<void>();
-  final Completer<void> _fileLoaded = Completer<void>();
-  final Completer<void> _playbackRestart = Completer<void>();
-  final Completer<void> _backendSwitched = Completer<void>();
-  final Completer<void> _fileLoadFailed = Completer<void>();
-  final Completer<void> _aborted = Completer<void>();
-  StreamSubscription<void>? _fileStartedSubscription;
-  StreamSubscription<void>? _primaryReadySubscription;
-  StreamSubscription<void>? _fileLoadedSubscription;
-  StreamSubscription<void>? _fileLoadFailedSubscription;
-  StreamSubscription<void>? _playbackRestartSubscription;
-  StreamSubscription<void>? _backendSwitchedSubscription;
-  bool _mpvLoadStarted = false;
-
-  MpvSidecarOpenGuard._(this.player, this._mode, this.discoveryTimeout, this.fileLoadedTimeout) {
-    _fileStartedSubscription = player.streams.fileStarted.listen((_) {
-      if (_mpvSignalsAreActive) _mpvLoadStarted = true;
-    });
-    _primaryReadySubscription = player.streams.primaryMediaReady.listen((_) {
-      if (_mpvLoadStarted && !_primaryReady.isCompleted) _primaryReady.complete();
-    }, onDone: _abort);
-    _fileLoadedSubscription = player.streams.fileLoaded.listen((_) {
-      if (_mpvLoadStarted && !_fileLoaded.isCompleted) _fileLoaded.complete();
-    }, onDone: _abort);
-    _fileLoadFailedSubscription = player.streams.fileLoadFailed.listen((_) {
-      if (_mpvLoadStarted && !_fileLoadFailed.isCompleted) {
-        _fileLoadFailed.complete();
-      }
-    });
-    if (_mode == _MpvSidecarOpenMode.androidFallback) {
-      _playbackRestartSubscription = player.streams.playbackRestart.listen((_) {
-        if (!_backendSwitched.isCompleted && !_playbackRestart.isCompleted) {
-          _playbackRestart.complete();
-        }
-      }, onDone: _abort);
-      _backendSwitchedSubscription = player.streams.backendSwitched.listen((_) {
-        if (!_backendSwitched.isCompleted) _backendSwitched.complete();
-      }, onDone: _abort);
-    }
-  }
 
   static MpvSidecarOpenGuard? armIfNeeded({
-    required Player player,
+    required PlaybackOpenOutcome outcome,
     required List<SubtitleTrack>? subtitles,
     Duration discoveryTimeout = const Duration(seconds: 10),
     Duration fileLoadedTimeout = const Duration(seconds: 10),
   }) {
     if (!_hasRemoteSidecar(subtitles)) return null;
-    final mode = switch (player) {
-      PlayerNative() => _MpvSidecarOpenMode.directMpv,
-      PlayerAndroid(usingMpvFallback: true) => _MpvSidecarOpenMode.directMpv,
-      PlayerAndroid() => _MpvSidecarOpenMode.androidFallback,
-      _ => null,
-    };
-    if (mode == null) return null;
-    return MpvSidecarOpenGuard._(player, mode, discoveryTimeout, fileLoadedTimeout);
+    return MpvSidecarOpenGuard._(outcome, discoveryTimeout, fileLoadedTimeout);
   }
 
   static MpvSidecarOpenGuard armForTesting({
-    required Player player,
+    required PlaybackOpenOutcome outcome,
     required Duration discoveryTimeout,
     required Duration fileLoadedTimeout,
-    bool startsOnAndroidExoPlayer = false,
   }) {
-    return MpvSidecarOpenGuard._(
-      player,
-      startsOnAndroidExoPlayer ? _MpvSidecarOpenMode.androidFallback : _MpvSidecarOpenMode.directMpv,
-      discoveryTimeout,
-      fileLoadedTimeout,
-    );
+    return MpvSidecarOpenGuard._(outcome, discoveryTimeout, fileLoadedTimeout);
   }
 
   Future<MpvSidecarOpenOutcome> wait() async {
     final discoveryClock = Stopwatch()..start();
     try {
-      if (_mode == _MpvSidecarOpenMode.androidFallback) {
+      if (_outcome.startsOnAndroidExoPlayer) {
         final androidOutcome = await _waitForAndroidBackendDecision();
         if (androidOutcome != null) return androidOutcome;
       }
@@ -103,21 +52,23 @@ class MpvSidecarOpenGuard {
       return await _waitForMpvLoad(remainingDiscoveryTime);
     } finally {
       discoveryClock.stop();
-      await dispose();
     }
   }
 
+  /// ExoPlayer rendering the file settles the open; a backend switch hands
+  /// the remaining discovery budget to the mpv wait (null).
   Future<MpvSidecarOpenOutcome?> _waitForAndroidBackendDecision() async {
     try {
       final signal = await Future.any([
-        _playbackRestart.future.then((_) => _MpvSidecarOpenSignal.playbackRestart),
-        _backendSwitched.future.then((_) => _MpvSidecarOpenSignal.backendSwitched),
-        _aborted.future.then((_) => _MpvSidecarOpenSignal.aborted),
+        _outcome.firstFrame.then(
+          (rendered) => rendered ? _MpvSidecarOpenSignal.playbackRestart : _MpvSidecarOpenSignal.terminal,
+        ),
+        _outcome.backendSwitched.then((_) => _MpvSidecarOpenSignal.backendSwitched),
       ]).timeout(discoveryTimeout);
       return switch (signal) {
         _MpvSidecarOpenSignal.playbackRestart => MpvSidecarOpenOutcome.loaded,
         _MpvSidecarOpenSignal.backendSwitched => null,
-        _MpvSidecarOpenSignal.aborted => MpvSidecarOpenOutcome.aborted,
+        _MpvSidecarOpenSignal.terminal => _terminalOutcome(),
         _ => throw StateError('Unexpected Android sidecar-open signal: $signal'),
       };
     } on TimeoutException {
@@ -129,58 +80,32 @@ class MpvSidecarOpenGuard {
     final _MpvSidecarOpenSignal first;
     try {
       first = await Future.any([
-        _primaryReady.future.then((_) => _MpvSidecarOpenSignal.primaryReady),
-        _fileLoaded.future.then((_) => _MpvSidecarOpenSignal.fileLoaded),
-        _fileLoadFailed.future.then((_) => _MpvSidecarOpenSignal.fileLoadFailed),
-        _aborted.future.then((_) => _MpvSidecarOpenSignal.aborted),
+        _outcome.primaryMediaReady.then(
+          (ready) => ready ? _MpvSidecarOpenSignal.primaryReady : _MpvSidecarOpenSignal.terminal,
+        ),
+        _outcome.fileLoaded.then(
+          (loaded) => loaded ? _MpvSidecarOpenSignal.fileLoaded : _MpvSidecarOpenSignal.terminal,
+        ),
       ]).timeout(remainingDiscoveryTime);
     } on TimeoutException {
       return MpvSidecarOpenOutcome.inconclusive;
     }
 
     if (first == _MpvSidecarOpenSignal.fileLoaded) return MpvSidecarOpenOutcome.loaded;
-    if (first == _MpvSidecarOpenSignal.aborted) return MpvSidecarOpenOutcome.aborted;
-    if (first == _MpvSidecarOpenSignal.fileLoadFailed) return MpvSidecarOpenOutcome.inconclusive;
+    if (first == _MpvSidecarOpenSignal.terminal) return _terminalOutcome();
 
     try {
-      final afterPrimary = await Future.any([
-        _fileLoaded.future.then((_) => _MpvSidecarOpenSignal.fileLoaded),
-        _fileLoadFailed.future.then((_) => _MpvSidecarOpenSignal.fileLoadFailed),
-        _aborted.future.then((_) => _MpvSidecarOpenSignal.aborted),
-      ]).timeout(fileLoadedTimeout);
-      return switch (afterPrimary) {
-        _MpvSidecarOpenSignal.fileLoaded => MpvSidecarOpenOutcome.loaded,
-        _MpvSidecarOpenSignal.fileLoadFailed => MpvSidecarOpenOutcome.inconclusive,
-        _MpvSidecarOpenSignal.aborted => MpvSidecarOpenOutcome.aborted,
-        _ => throw StateError('Unexpected post-discovery sidecar-open signal: $afterPrimary'),
-      };
+      final loaded = await _outcome.fileLoaded.timeout(fileLoadedTimeout);
+      return loaded ? MpvSidecarOpenOutcome.loaded : _terminalOutcome();
     } on TimeoutException {
       return MpvSidecarOpenOutcome.stalled;
     }
   }
 
-  Future<void> dispose() async {
-    await Future.wait(<Future<void>>[
-      ?_fileStartedSubscription?.cancel(),
-      ?_primaryReadySubscription?.cancel(),
-      ?_fileLoadedSubscription?.cancel(),
-      ?_fileLoadFailedSubscription?.cancel(),
-      ?_playbackRestartSubscription?.cancel(),
-      ?_backendSwitchedSubscription?.cancel(),
-    ]);
-    _fileStartedSubscription = null;
-    _primaryReadySubscription = null;
-    _fileLoadedSubscription = null;
-    _fileLoadFailedSubscription = null;
-    _playbackRestartSubscription = null;
-    _backendSwitchedSubscription = null;
-  }
-
-  void _abort() {
-    if (!_aborted.isCompleted) _aborted.complete();
-  }
-
-  bool get _mpvSignalsAreActive => _mode == _MpvSidecarOpenMode.directMpv || _backendSwitched.isCompleted;
+  /// A load that failed on its own is inconclusive about the sidecar; an
+  /// aborted or disposed open has no verdict to give.
+  MpvSidecarOpenOutcome _terminalOutcome() =>
+      _outcome.isAborted ? MpvSidecarOpenOutcome.aborted : MpvSidecarOpenOutcome.inconclusive;
 
   static bool _hasRemoteSidecar(List<SubtitleTrack>? subtitles) {
     for (final subtitle in subtitles ?? const <SubtitleTrack>[]) {
@@ -191,4 +116,4 @@ class MpvSidecarOpenGuard {
   }
 }
 
-enum _MpvSidecarOpenSignal { primaryReady, fileLoaded, playbackRestart, backendSwitched, fileLoadFailed, aborted }
+enum _MpvSidecarOpenSignal { primaryReady, fileLoaded, playbackRestart, backendSwitched, terminal }

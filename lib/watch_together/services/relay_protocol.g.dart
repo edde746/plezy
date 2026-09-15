@@ -6,13 +6,16 @@ abstract final class RelayProtocol {
 
   static const String create = 'create';
   static const String join = 'join';
+  static const String resume = 'resume';
   static const String broadcast = 'broadcast';
   static const String sendTo = 'sendTo';
   static const String ping = 'ping';
   static const String leave = 'leave';
   static const String endSession = 'endSession';
+  static const String transferHost = 'transferHost';
   static const String created = 'created';
   static const String joined = 'joined';
+  static const String resumed = 'resumed';
   static const String peerJoined = 'peerJoined';
   static const String peerLeft = 'peerLeft';
   static const String message = 'message';
@@ -20,6 +23,8 @@ abstract final class RelayProtocol {
   static const String pong = 'pong';
   static const String left = 'left';
   static const String ended = 'ended';
+  static const String hostChanged = 'hostChanged';
+  static const String hostTransferEligibility = 'hostTransferEligibility';
   static const String rateLimitedCode = 'rate_limited';
   static const String invalidMessageCode = 'invalid_message';
   static const String roomExistsCode = 'room_exists';
@@ -29,17 +34,29 @@ abstract final class RelayProtocol {
   static const String alreadyInRoomCode = 'already_in_room';
   static const String peerIdUnavailableCode = 'peer_id_unavailable';
   static const String protocolMismatchCode = 'protocol_mismatch';
+  static const String notHostCode = 'not_host';
+  static const String peerNotFoundCode = 'peer_not_found';
+  static const String hostTransferUnavailableCode = 'host_transfer_unavailable';
+  static const String atomicHostTransferFeature = 'atomicHostTransfer';
+  static const String authenticatedResumeFeature = 'authenticatedResume';
+  static const String hostTransferCapability = 'hostTransfer';
 
   static const int maxRoomSize = 8;
   static const int maxMessageSize = 65536;
   static const int maxSessionIdLength = 64;
   static const int maxPeerIdLength = 128;
 
+  static const int reconnectTokenBytes = 32;
+  static const int reconnectTokenLength = 43;
+
   static final RegExp _idPattern = RegExp(r'^[A-Za-z0-9_-]+$');
+  static final RegExp _reconnectTokenPattern = RegExp(r'^[A-Za-z0-9_-]{43}$');
 
   static bool isValidSessionId(String value) =>
       value.isNotEmpty && value.length <= maxSessionIdLength && _idPattern.hasMatch(value);
 
   static bool isValidPeerId(String value) =>
       value.isNotEmpty && value.length <= maxPeerIdLength && _idPattern.hasMatch(value);
+
+  static bool isValidReconnectToken(String value) => _reconnectTokenPattern.hasMatch(value);
 }

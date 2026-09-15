@@ -25,7 +25,7 @@ class _StubPlexClient implements PlexClient {
   final PlayQueueResponse? response;
 
   @override
-  Future<PlayQueueResponse?> createPlayQueue({
+  Future<PlayQueueResponse> createPlayQueue({
     String? uri,
     int? playlistID,
     required String type,
@@ -36,7 +36,7 @@ class _StubPlexClient implements PlexClient {
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
-    return response;
+    return response!;
   }
 
   @override

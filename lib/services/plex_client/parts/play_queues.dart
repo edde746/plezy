@@ -43,7 +43,12 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
     );
   }
 
-  Future<PlayQueueResponse?> createPlayQueue({
+  /// Create a server-side play queue. Failures propagate as typed exceptions
+  /// (usually [MediaServerHttpException]) instead of collapsing into null, so
+  /// callers can tell "the server said no" (#2141) from a queue that is
+  /// genuinely empty. The POST rides the shared endpoint failover: replaying
+  /// it is safe because an orphaned duplicate queue on the server is inert.
+  Future<PlayQueueResponse> createPlayQueue({
     String? uri,
     int? playlistID,
     required String type,
@@ -64,16 +69,15 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
         'playlistID': ?playlistID,
         'key': ?key,
       };
-      final response = await _http.post('/playQueues', queryParameters: queryParameters);
-      throwIfHttpError(response);
+      final response = await _postWithFailover('/playQueues', queryParameters: queryParameters);
       return _parsePlayQueueResponse(
         response.data,
         librarySectionID: _librarySectionIdFromString(librarySectionID),
         librarySectionTitle: librarySectionTitle,
       );
-    } catch (e) {
-      appLogger.e('Failed to create play queue', error: e);
-      return null;
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to create play queue', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 
@@ -130,6 +134,9 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
         librarySectionTitle: librarySectionTitle,
       );
     } catch (e) {
+      // Deliberately best-effort: both callers (the video player's episode
+      // queue and shuffled-show launch) degrade to a local/empty queue on
+      // null rather than failing playback outright.
       appLogger.e('Failed to create show play queue', error: e);
       return null;
     }

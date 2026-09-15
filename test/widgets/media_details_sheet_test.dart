@@ -23,6 +23,7 @@ void main() {
     WidgetTester tester, {
     required MediaItem item,
     String? description,
+    List<String> genres = const [],
     Size size = const Size(700, 800),
   }) async {
     tester.view.physicalSize = size;
@@ -34,7 +35,7 @@ void main() {
         child: MaterialApp(
           home: InputModeTracker(
             child: Scaffold(
-              body: MediaDetailsSheet(item: item, description: description),
+              body: MediaDetailsSheet(item: item, description: description, genres: genres),
             ),
           ),
         ),
@@ -87,7 +88,7 @@ void main() {
 
     // Narrow enough that the TV hero's fitted line would shed the trailing
     // rating badges; the sheet must still show every one of them.
-    await pumpSheet(tester, item: movie, description: summary, size: const Size(500, 800));
+    await pumpSheet(tester, item: movie, description: summary, genres: movie.genres!, size: const Size(500, 800));
 
     expect(find.text('The Last House'), findsOneWidget);
     // One free-flowing bulleted line (the trailing placeholder is the inline
@@ -107,22 +108,30 @@ void main() {
     expect(descriptionText.overflow, isNot(TextOverflow.ellipsis));
   });
 
-  testWidgets('labels an episode with its number and air date instead of the year', (tester) async {
+  testWidgets('names an episode and labels it with its number and air date instead of the year', (tester) async {
     const episode = MediaItem.plex(
       id: 'episode_1',
       kind: MediaKind.episode,
       title: 'Chapter Three',
+      grandparentTitle: 'The Show',
       parentIndex: 1,
       index: 3,
       originallyAvailableAt: '2026-02-14',
       year: 2026,
     );
 
-    await pumpSheet(tester, item: episode);
+    await pumpSheet(tester, item: episode, genres: const ['Drama']);
 
+    // Header is the show; the episode's own title leads the body, above the
+    // metadata line, and the show's genres follow it (#2217).
+    expect(find.text('The Show'), findsOneWidget);
+    final title = find.text('Chapter Three');
     final metadataLine = tester.widget<Text>(find.textContaining('S1 E3'));
+    expect(title, findsOneWidget);
+    expect(tester.getBottomLeft(title).dy, lessThanOrEqualTo(tester.getTopLeft(find.textContaining('S1 E3')).dy));
     // Episode label and air date only — no appended standalone year.
     expect(metadataLine.textSpan!.toPlainText(), 'S1 E3  •  ${formatAbbreviatedDate('2026-02-14')}');
+    expect(find.text('Drama'), findsOneWidget);
   });
 
   testWidgets('D-pad up and down page a description taller than the sheet', (tester) async {

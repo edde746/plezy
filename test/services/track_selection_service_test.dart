@@ -1,11 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/account_preferences.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_user_profile.dart';
 import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
-import 'package:plezy/models/plex/plex_user_profile.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/services/track_selection_service.dart';
@@ -15,41 +14,31 @@ import '../test_helpers/media_items.dart';
 // including fallback and ambiguity rules. `selectAndApplyTracks` is excluded
 // because it requires a real Player and SettingsService singleton.
 
-MediaItem _meta({MediaBackend backend = MediaBackend.plex, String? audioLanguage, String? subtitleLanguage}) =>
-    testMediaItem(
-      id: 'rk1',
-      backend: backend,
-      kind: MediaKind.movie,
-      audioLanguage: audioLanguage,
-      subtitleLanguage: subtitleLanguage,
-    );
+MediaItem _meta({MediaBackend backend = MediaBackend.plex}) =>
+    testMediaItem(id: 'rk1', backend: backend, kind: MediaKind.movie);
 
-PlexUserProfile _profile({
+AccountPreferences _profile({
   bool autoSelectAudio = true,
   String? defaultAudioLanguage,
-  List<String>? defaultAudioLanguages,
   String? defaultSubtitleLanguage,
-  List<String>? defaultSubtitleLanguages,
 }) {
-  return PlexUserProfile(
-    autoSelectAudio: autoSelectAudio,
-    defaultAudioLanguage: defaultAudioLanguage,
-    defaultAudioLanguages: defaultAudioLanguages,
-    defaultSubtitleLanguage: defaultSubtitleLanguage,
-    defaultSubtitleLanguages: defaultSubtitleLanguages,
+  return AccountPreferences(
+    playDefaultAudioTrack: autoSelectAudio,
+    preferredAudioLanguage: defaultAudioLanguage,
+    preferredSubtitleLanguage: defaultSubtitleLanguage,
   );
 }
 
-JellyfinUserProfile _jellyfinProfile({
+AccountPreferences _jellyfinProfile({
   String? defaultAudioLanguage,
   String? defaultSubtitleLanguage,
   SubtitlePlaybackMode? subtitleMode,
 }) {
-  return JellyfinUserProfile(
-    autoSelectAudio: true,
-    defaultAudioLanguage: defaultAudioLanguage,
-    defaultSubtitleLanguage: defaultSubtitleLanguage,
-    subtitleMode: subtitleMode,
+  return AccountPreferences(
+    playDefaultAudioTrack: true,
+    preferredAudioLanguage: defaultAudioLanguage,
+    preferredSubtitleLanguage: defaultSubtitleLanguage,
+    subtitlePlaybackMode: subtitleMode,
   );
 }
 
@@ -214,26 +203,20 @@ void main() {
       expect(svc.findAudioTrackByProfile([_audio('1', lang: 'eng')], profile), isNull);
     });
 
-    test('returns null when no preferred languages are configured', () {
-      final profile = _profile(); // autoSelect=true, but no languages.
+    test('returns null when no preferred language is configured', () {
+      final profile = _profile(); // autoSelect=true, but no language.
       expect(svc.findAudioTrackByProfile([_audio('1', lang: 'eng')], profile), isNull);
     });
 
-    test('matches the primary defaultAudioLanguage first', () {
+    test('matches the defaultAudioLanguage', () {
       final tracks = [_audio('1', lang: 'fre'), _audio('2', lang: 'eng')];
-      final profile = _profile(defaultAudioLanguage: 'eng', defaultAudioLanguages: const ['fre']);
+      final profile = _profile(defaultAudioLanguage: 'eng');
       expect(svc.findAudioTrackByProfile(tracks, profile), tracks[1]);
     });
 
-    test('falls back to next language in list when primary is missing', () {
-      final tracks = [_audio('1', lang: 'spa')];
-      final profile = _profile(defaultAudioLanguage: 'eng', defaultAudioLanguages: const ['spa']);
-      expect(svc.findAudioTrackByProfile(tracks, profile), tracks[0]);
-    });
-
-    test('returns null when none of the preferred languages match', () {
+    test('returns null when the preferred language does not match', () {
       final tracks = [_audio('1', lang: 'jpn')];
-      final profile = _profile(defaultAudioLanguage: 'eng', defaultAudioLanguages: const ['fre']);
+      final profile = _profile(defaultAudioLanguage: 'eng');
       expect(svc.findAudioTrackByProfile(tracks, profile), isNull);
     });
 
@@ -384,15 +367,7 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
-    test('Priority 3: per-media audioLanguage from metadata', () {
-      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
-      final result = _svc(metadata: _meta(audioLanguage: 'fre')).selectAudioTrack(tracks, null);
-      expect(result, isNotNull);
-      expect(result!.priority, TrackSelectionPriority.perMedia);
-      expect(result.track.language, 'fre');
-    });
-
-    test('Priority 4: user profile when nothing higher matches', () {
+    test('Priority 3: user profile when nothing higher matches', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final profile = _profile(defaultAudioLanguage: 'eng');
       final result = _svc(profile: profile).selectAudioTrack(tracks, null);
@@ -401,7 +376,7 @@ void main() {
       expect(result.track.language, 'eng');
     });
 
-    test('Priority 5: default-flagged track as last resort', () {
+    test('Priority 4: default-flagged track as last resort', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre', isDefault: true)];
       final result = _svc().selectAudioTrack(tracks, null);
       expect(result, isNotNull);
@@ -409,7 +384,7 @@ void main() {
       expect(result.track.id, 'B');
     });
 
-    test('Priority 5: first track when none flagged default', () {
+    test('Priority 4: first track when none flagged default', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final result = _svc().selectAudioTrack(tracks, null);
       expect(result, isNotNull);
@@ -419,7 +394,7 @@ void main() {
 
     test('preferred mismatch falls through to lower priority', () {
       // preferred has a language that is NOT in the available tracks — Priority 1
-      // misses; Priority 5 picks the first track.
+      // misses; Priority 4 picks the first track.
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final result = _svc().selectAudioTrack(tracks, _audio('Z', lang: 'jpn'));
       expect(result, isNotNull);
@@ -858,6 +833,30 @@ void main() {
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, 'no');
+    });
+
+    test('Plex account subtitle mode is not re-applied client-side; PMS already folded it into selected', () {
+      // No plexMediaInfo (nothing server-selected to trust) is the only way a
+      // Plex item reaches the profile pass. `none` would force off, `always`
+      // would force on — both would override a decision the server made.
+      final tracks = [_sub('1', lang: 'eng', isDefault: true)];
+      final plexProfile = AccountPreferences(
+        preferredSubtitleLanguage: 'eng',
+        subtitlePlaybackMode: SubtitlePlaybackMode.none,
+      );
+      final result = _svc(metadata: _meta(), profile: plexProfile).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.defaultTrack);
+      expect(result.track.id, '1');
+
+      final always = AccountPreferences(
+        preferredSubtitleLanguage: 'eng',
+        subtitlePlaybackMode: SubtitlePlaybackMode.always,
+      );
+      final noDefault = _svc(
+        metadata: _meta(),
+        profile: always,
+      ).selectSubtitleTrack([_sub('1', lang: 'eng')], null, null)!;
+      expect(noDefault.priority, TrackSelectionPriority.off);
     });
 
     test('Jellyfin SubtitleMode.OnlyForced selects matching forced subtitle', () {

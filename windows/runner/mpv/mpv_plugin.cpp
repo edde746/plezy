@@ -235,11 +235,22 @@ void MpvPlayerPlugin::HandleMethodCall(
     auto result_ptr =
         std::make_shared<std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>(std::move(result));
     std::string cmd_name = command_args.empty() ? "unknown" : command_args[0];
-    player_->CommandAsync(command_args, [this, result_ptr, cmd_name](int error) {
-      PostToPlatformThread([result_ptr, cmd_name, error]() {
+    player_->CommandAsync(command_args, [this, result_ptr, cmd_name](int error, const mpv_node* command_result) {
+      // `loadfile` answers with the playlist entry it created so Dart can tie
+      // the load to that source's start-file/playback-restart/end-file events;
+      // every other command answers null. The node belongs to the reply event,
+      // so the id is read here, before the hop to the platform thread.
+      int64_t playlist_entry_id = 0;
+      const bool has_playlist_entry =
+          error >= 0 && plezy::mpv_common::PlaylistEntryIdFromCommandResult(command_result, &playlist_entry_id);
+      PostToPlatformThread([result_ptr, cmd_name, error, has_playlist_entry, playlist_entry_id]() {
         if (error < 0) {
           (*result_ptr)
               ->Error("COMMAND_FAILED", "MPV command failed: " + cmd_name + " (error " + std::to_string(error) + ")");
+        } else if (has_playlist_entry) {
+          flutter::EncodableMap reply;
+          reply[flutter::EncodableValue("playlistEntryId")] = flutter::EncodableValue(playlist_entry_id);
+          (*result_ptr)->Success(flutter::EncodableValue(reply));
         } else {
           (*result_ptr)->Success();
         }

@@ -2,33 +2,49 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _onVideoCompleted(bool completed, {bool skipAutoPlayCountdown = false}) async {
+    if (!completed) return;
     // Live TV streams are continuous — ignore transient EOF events while an
     // HLS playlist refreshes or crosses a discontinuity.
-    if (widget.isLive) return;
-    if (!completed) return;
+    if (widget.isLive) {
+      _logVideoCompleted('live');
+      return;
+    }
     // Ignore spurious EOF from the old file during an in-place media-source
     // transition (episode swap, transcode restart, channel switch).
-    if (_transitionGate.transition != PlaybackTransition.idle) return;
-    if (_episode.isResolvingCompletionAdjacency) return;
+    if (_transitionGate.transition != PlaybackTransition.idle) {
+      _logVideoCompleted('transition=${_transitionGate.transition.name}');
+      return;
+    }
+    if (_episode.isResolvingCompletionAdjacency) {
+      _logVideoCompleted('resolvingAdjacency');
+      return;
+    }
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
     unawaited(_wakelockController.setEnabled(false));
-    final duration = player?.state.duration;
-    unawaited(
-      duration != null && duration.inMilliseconds > 0
-          ? _sendStoppedProgressOnce(positionOverride: duration)
-          : _sendStoppedProgressOnce(),
-    );
+    // A known, positive duration stands in for the EOF position everywhere
+    // below — the position stream can stop a beat short of it on EOF.
+    final duration = switch (player?.state.duration) {
+      final value? when value.inMilliseconds > 0 => value,
+      _ => null,
+    };
+    unawaited(_sendStoppedProgressOnce(positionOverride: duration));
+    // The item played out: the launch receipt ends here, whatever the screen
+    // does next (prompt, auto-play, exit).
+    if (_ownsLaunchPlayback()) {
+      final durationMs = duration?.inMilliseconds;
+      widget.launchObserver?.mark('completed', positionMs: durationMs, durationMs: durationMs);
+    }
     _mediaControls.pushPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
     // The item finished, so real-time trackers get a terminal report now rather
     // than whenever the screen happens to tear down: a completion prompt or
     // end-of-video sleep timer can leave it open for minutes, and until then
     // the service would still show the item as playing. Seed the known duration
-    // first — the position stream can stop a beat short of it on EOF. A later
-    // dispose or in-place reload finds no context and does nothing.
-    if (duration != null && duration.inMilliseconds > 0) {
+    // first. A later dispose or in-place reload finds no context and does
+    // nothing.
+    if (duration != null) {
       TrackerCoordinator.instance.updatePosition(duration);
     }
     unawaited(TrackerCoordinator.instance.stopPlayback());
@@ -40,11 +56,13 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // dialogs: the user explicitly asked to stop after this item.
     final sleepTimerService = SleepTimerService();
     if (sleepTimerService.isEndOfVideoMode && !_episode.completionLatch.triggered) {
+      _logVideoCompleted('sleepTimer');
       _episode.completionLatch.latch();
       sleepTimerService.notifyVideoCompleted();
       return;
     }
     if (!_canNavigateMediaItems()) {
+      _logVideoCompleted('cannotNavigate');
       if (!_episode.completionLatch.triggered) _episode.completionLatch.latch();
       return;
     }
@@ -54,6 +72,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       adjacentStatus: _episode.nextStatus,
     );
     if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+      _logVideoCompleted('action=retryAdjacent');
       _episode.isResolvingCompletionAdjacency = true;
       try {
         await _loadAdjacentEpisodes();
@@ -66,6 +85,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         adjacentStatus: _episode.nextStatus,
       );
       if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+        _logVideoCompleted('action=retryAdjacent latched');
         _episode.completionLatch.latch();
         showGlobalErrorSnackBar(t.messages.errorLoadingSeries);
         return;
@@ -80,6 +100,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value) {
+        _logVideoCompleted('action=presentNext pip');
         unawaited(_playNext());
         return;
       }
@@ -90,15 +111,20 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       final settings = await SettingsService.getInstance();
       if (!mounted) return;
       final autoPlayEnabled = settings.read(SettingsService.autoPlayNextEpisode);
+      final countdownSeconds = settings.read(SettingsService.playNextCountdown);
 
-      if (skipAutoPlayCountdown && autoPlayEnabled) {
+      // A zero countdown (#1827) behaves like the PiP path above: no prompt,
+      // straight into the next episode.
+      if (autoPlayEnabled && (skipAutoPlayCountdown || countdownSeconds == 0)) {
+        _logVideoCompleted('action=presentNext autoplay');
         unawaited(_playNext());
         return;
       }
 
+      _logVideoCompleted('action=presentNext prompt');
       _setPlayerState(() {
         _episode.showPlayNextDialog = true;
-        _episode.autoPlayCountdown.value = autoPlayEnabled ? 5 : -1;
+        _episode.autoPlayCountdown.value = autoPlayEnabled ? countdownSeconds : -1;
       });
 
       // Auto-focus Play Next button on TV when dialog appears (only in keyboard/TV mode)
@@ -114,9 +140,23 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         _startAutoPlayTimer();
       }
     } else if (navigationAction == CompletionNavigationAction.exit && !_episode.completionLatch.triggered) {
+      _logVideoCompleted('action=exit');
       _episode.completionLatch.latch();
       unawaited(_handleBackButton());
+    } else {
+      _logVideoCompleted('action=${navigationAction.name} latched');
     }
+  }
+
+  /// The completion chain used to run silently; one line per accepted EOF
+  /// names what the screen decided, for field diagnosis of items that never
+  /// advance or exit.
+  void _logVideoCompleted(String branch) {
+    final state = player?.state;
+    appLogger.i(
+      'Video completed: $branch '
+      '(position=${state?.position.inMilliseconds}ms duration=${state?.duration.inMilliseconds}ms)',
+    );
   }
 
   void _startAutoPlayTimer() {
@@ -176,6 +216,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
     _setPlayerState(() {
       _episode.showPlayNextDialog = true;
+      // Deliberately not [SettingsService.playNextCountdown]: this countdown
+      // spaces transient-failure retries (see completion_latch.dart), so a
+      // user preference of 0 must not collapse it into a hot retry loop.
       _episode.autoPlayCountdown.value = countdown ? 5 : -1;
     });
 
@@ -189,6 +232,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   }
 
   void _cancelAutoPlay() {
+    if (_shuttingDown) return;
     _episode.autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
     _progressTracker?.resumeAfterStoppedReport();

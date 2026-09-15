@@ -111,6 +111,81 @@ void main() {
     await tester.pump();
     semantics.dispose();
   });
+
+  testWidgets('host promotes a guest from the session sheet', (tester) async {
+    final harness = _OverlayHarness(isHost: true);
+    harness.provider.extraParticipants = [const Participant(peerId: 'g1', displayName: 'Guest One', isHost: false)];
+    addTearDown(harness.dispose);
+    await tester.pumpWidget(harness.build());
+
+    await tester.tap(find.byKey(_OverlayHarness.indicatorKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guest One'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.watchTogether.makeHostQuestion), findsOneWidget);
+    await tester.tap(find.text(t.watchTogether.transfer));
+    await tester.pumpAndSettle();
+
+    expect(harness.provider.transferredTo.single.peerId, 'g1');
+    expect(harness.sheetController.isOpen, isFalse, reason: 'the sheet closes once the transfer is requested');
+  });
+
+  testWidgets('an open session sheet follows relay eligibility revocation and restoration', (tester) async {
+    final harness = _OverlayHarness(isHost: true);
+    harness.provider.extraParticipants = [const Participant(peerId: 'g1', displayName: 'Guest One', isHost: false)];
+    addTearDown(harness.dispose);
+    await tester.pumpWidget(harness.build());
+    await tester.tap(find.byKey(_OverlayHarness.indicatorKey));
+    await tester.pumpAndSettle();
+
+    harness.provider.updateTransferEligibility(false);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guest One'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(find.text(t.watchTogether.makeHostQuestion), findsNothing);
+    expect(harness.provider.transferredTo, isEmpty);
+
+    harness.provider.updateTransferEligibility(true);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guest One'));
+    await tester.pumpAndSettle();
+    expect(find.text(t.watchTogether.makeHostQuestion), findsOneWidget);
+    await tester.tap(find.text(t.watchTogether.transfer));
+    await tester.pumpAndSettle();
+    expect(harness.provider.transferredTo.single.peerId, 'g1');
+  });
+
+  testWidgets('cancelling the promote confirmation transfers nothing', (tester) async {
+    final harness = _OverlayHarness(isHost: true);
+    harness.provider.extraParticipants = [const Participant(peerId: 'g1', displayName: 'Guest One', isHost: false)];
+    addTearDown(harness.dispose);
+    await tester.pumpWidget(harness.build());
+
+    await tester.tap(find.byKey(_OverlayHarness.indicatorKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guest One'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.common.cancel));
+    await tester.pumpAndSettle();
+
+    expect(harness.provider.transferredTo, isEmpty);
+  });
+
+  testWidgets('guests see fellow participants without a promote affordance', (tester) async {
+    final harness = _OverlayHarness(isHost: false);
+    harness.provider.extraParticipants = [const Participant(peerId: 'g1', displayName: 'Guest One', isHost: false)];
+    addTearDown(harness.dispose);
+    await tester.pumpWidget(harness.build());
+
+    await tester.tap(find.byKey(_OverlayHarness.indicatorKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guest One'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.watchTogether.makeHostQuestion), findsNothing);
+    expect(harness.provider.transferredTo, isEmpty);
+  });
 }
 
 Future<void> _openLeaveConfirmation(WidgetTester tester, _OverlayHarness harness) async {
@@ -159,6 +234,7 @@ class _FakeWatchTogetherProvider extends WatchTogetherProvider {
 
   bool isHostValue;
   bool isSyncingValue = false;
+  bool transferEligible = true;
   final Object? leaveError;
   var leaveCalls = 0;
   var _isDisposing = false;
@@ -178,7 +254,21 @@ class _FakeWatchTogetherProvider extends WatchTogetherProvider {
   @override
   List<Participant> get participants => [
     Participant(peerId: 'local', displayName: 'Local viewer', isHost: isHostValue),
+    ...extraParticipants,
   ];
+
+  /// Participants appended after the local viewer row.
+  List<Participant> extraParticipants = const [];
+
+  /// Transfer requests forwarded by the sheet.
+  final List<Participant> transferredTo = [];
+
+  @override
+  bool canTransferHostTo(Participant participant) =>
+      transferEligible && isHostValue && !participant.isHost && participant.peerId != 'local';
+
+  @override
+  void transferHost(Participant participant) => transferredTo.add(participant);
 
   @override
   int get participantCount => participants.length;
@@ -186,6 +276,11 @@ class _FakeWatchTogetherProvider extends WatchTogetherProvider {
   void updateStatus({required bool isHost, required bool isSyncing}) {
     isHostValue = isHost;
     isSyncingValue = isSyncing;
+    notifyListeners();
+  }
+
+  void updateTransferEligibility(bool value) {
+    transferEligible = value;
     notifyListeners();
   }
 

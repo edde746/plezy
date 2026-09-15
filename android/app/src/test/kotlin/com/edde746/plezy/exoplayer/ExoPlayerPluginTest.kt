@@ -236,7 +236,8 @@ class ExoPlayerPluginTest {
   fun openDuringFallbackDispatchesOnlyTheNewestMediaGeneration() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val exoCore = ExoPlayerCore(activity)
-    val mpvCore = MpvPlayerCore(activity, true) { _, _ -> Unit }
+    val loads = ConcurrentLinkedQueue<List<String>>()
+    val mpvCore = MpvPlayerCore(activity, true, { _, _ -> Unit }, recordingLoads(loads))
     val plugin = ExoPlayerPlugin()
     val sink = RecordingEventSink()
     plugin.onListen(null, sink)
@@ -273,15 +274,30 @@ class ExoPlayerPluginTest {
     assertEquals(1, superseded.completionCount)
     assertEquals("OPEN_SUPERSEDED", superseded.errorCode)
     assertEquals(0, active.completionCount)
+    assertTrue(loads.isEmpty())
 
     initializeCallback!!(true)
     mpvCore.delegate?.onEvent("file-loaded", null)
     awaitCompletion(active)
 
     assertEquals(null, active.errorCode)
-    assertEquals(true, getField(plugin, "usingMpvFallback"))
-    assertEquals(false, getField(plugin, "fallbackInProgress"))
-    assertNull(getField(plugin, "pendingOpen"))
+    // mpv received exactly the newest open, with its play intent; neither the
+    // failed Exo URI nor the superseded episode was ever loaded.
+    assertEquals(listOf("https://example.test/episode-3.mkv"), loads.map { it[1] })
+    assertEquals("pause=no", loads.single()[4].split(",")[1])
+    assertEquals(listOf("backend-switched", "file-loaded"), sink.eventNames)
+
+    // The fallback owns subsequent opens: they reach mpv directly, without
+    // another backend switch.
+    val next = RecordingResult()
+    plugin.onMethodCall(
+      MethodCall("open", mapOf("uri" to "https://example.test/episode-4.mkv", "autoPlay" to false)),
+      next
+    )
+    awaitCompletion(next)
+    assertEquals(null, next.errorCode)
+    assertEquals("https://example.test/episode-4.mkv", loads.last()[1])
+    assertEquals("pause=yes", loads.last()[4].split(",")[1])
     assertEquals(listOf("backend-switched", "file-loaded"), sink.eventNames)
 
     val disposeResult = RecordingResult()
@@ -643,7 +659,9 @@ class ExoPlayerPluginTest {
   fun reusedHeldFallbackSynchronouslyBlocksAutoResumeWithoutPausePropertyWrite() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
-    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
+    val loads = ConcurrentLinkedQueue<List<String>>()
+    val core = MpvPlayerCore(activity, true, { name, value -> writes += name to value }, recordingLoads(loads))
+    // A reused core that lost its surface mid-playback with a resume still deferred.
     core.setPrivateField("desiredPaused", false)
     core.setPrivateField("cachedPaused", false)
     core.setPrivateField("resumeBlockedByPublicPause", false)
@@ -664,11 +682,10 @@ class ExoPlayerPluginTest {
 
     assertEquals(1, result.completionCount)
     assertNull(result.errorCode)
-    assertEquals(true, core.getPrivateField("desiredPaused"))
-    assertEquals(true, core.getPrivateField("cachedPaused"))
-    assertEquals(true, core.getPrivateField("resumeBlockedByPublicPause"))
-    assertEquals(false, core.getPrivateField("pausedForSurfaceLoss"))
-    assertEquals(false, core.getPrivateField("deferredResumeRequested"))
+    // The load itself carries the hold; the stale deferred resume must not
+    // undo it with a late pause write.
+    assertEquals("https://example.test/video.mkv", loads.single()[1])
+    assertEquals("pause=yes", loads.single()[4].split(",")[1])
     assertFalse(awaitPauseWriteCount(writes, 1))
     core.dispose()
   }
@@ -677,10 +694,10 @@ class ExoPlayerPluginTest {
   fun reusedAutoplayFallbackClearsIntentBeforeLoadWithoutLatePausePropertyWrite() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
-    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
-    core.setPrivateField("desiredPaused", true)
-    core.setPrivateField("cachedPaused", true)
-    core.setPrivateField("resumeBlockedByPublicPause", true)
+    val loads = ConcurrentLinkedQueue<List<String>>()
+    val core = MpvPlayerCore(activity, true, { name, value -> writes += name to value }, recordingLoads(loads))
+    // A reused core whose previous load was explicitly held.
+    core.setPauseIntentForLoad(true)
     val plugin = reusedFallbackPlugin(activity, core)
     val result = RecordingResult()
 
@@ -695,9 +712,10 @@ class ExoPlayerPluginTest {
 
     assertEquals(1, result.completionCount)
     assertNull(result.errorCode)
-    assertEquals(false, core.getPrivateField("desiredPaused"))
-    assertEquals(false, core.getPrivateField("cachedPaused"))
-    assertEquals(false, core.getPrivateField("resumeBlockedByPublicPause"))
+    // The new load carries the play intent; the earlier hold is not replayed
+    // as a separate pause write before or after it.
+    assertEquals("https://example.test/video.mkv", loads.single()[1])
+    assertEquals("pause=no", loads.single()[4].split(",")[1])
     assertFalse(awaitPauseWriteCount(writes, 1))
     assertEquals(emptyList<Pair<String, String>>(), writes.filter { it.first == "pause" })
     core.dispose()
@@ -953,6 +971,14 @@ class ExoPlayerPluginTest {
       isAccessible = true
       invoke(core, reason)
     }
+  }
+
+  /** Accepts every native command, recording each one; a `loadfile` yields playlist entry 1. */
+  private fun recordingLoads(
+    loads: ConcurrentLinkedQueue<List<String>>
+  ): suspend (Array<String>) -> Long? = { args ->
+    loads += args.toList()
+    if (args.firstOrNull() == "loadfile") 1L else null
   }
 
   private fun awaitQueueEntry(

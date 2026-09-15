@@ -65,6 +65,13 @@ class GuestPlaybackReconciler {
   static const int eofClampMs = 200;
   static const int eofToleranceMs = 1000;
 
+  /// A state just delivered by the host carries an anchor stamped at most a
+  /// heartbeat plus one relay hop ago. Reading it as older than this means
+  /// our clock offset is wrong (a clock step on either side), not that the
+  /// room moved: correcting position against it would seek by the size of
+  /// the step.
+  static const int implausibleAnchorAgeMs = 10000;
+
   final String myPeerId;
   final void Function(SyncMessage message) _sendToHost;
   final ClockSync _clock;
@@ -87,6 +94,13 @@ class GuestPlaybackReconciler {
   bool _backgrounded = false;
   bool _disposed = false;
 
+  /// Generation of this engine's authority over its player. Bumped on
+  /// attach, detach, epoch end, and disposal; every async continuation
+  /// captures it before its await and bails when stale, so a command issued
+  /// as a guest never lands on a player that has since changed hands.
+  int _authority = 0;
+  int _operation = 0;
+
   // Correction state.
   bool _settling = false;
   Timer? _settleTimer;
@@ -98,6 +112,7 @@ class GuestPlaybackReconciler {
   double? _nudgeTargetRate;
   int _lastHardSeekMs = -hardSeekCooldownMs;
   final List<int> _driftSamples = [];
+  bool _clockSuspect = false;
 
   // Scheduled group start.
   Timer? _scheduledStartTimer;
@@ -113,6 +128,10 @@ class GuestPlaybackReconciler {
 
   PlaybackState? get latestState => _latestState;
 
+  /// Whether the sync layer currently owns the player's rate (a drift nudge
+  /// is in flight). The player's rate stream is not user feedback while true.
+  bool get nudging => _nudging;
+
   // ---------------------------------------------------------------------
   // Public inputs
   // ---------------------------------------------------------------------
@@ -125,6 +144,7 @@ class GuestPlaybackReconciler {
     Future<void>? startupHold,
   }) {
     detachPlayer();
+    final authority = _authority;
     _player = player;
     _attachedMediaKey = PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId);
     _firstFrameSeen = hasFirstFrame;
@@ -132,7 +152,7 @@ class GuestPlaybackReconciler {
 
     if (startupHold != null) {
       startupHold.then((_) {
-        if (_disposed || !identical(_player, player)) return;
+        if (authority != _authority) return;
         _startupHoldResolved = true;
         _maybeBecomeReady();
       });
@@ -156,7 +176,7 @@ class GuestPlaybackReconciler {
       }),
     );
     _playerSubscriptions.add(player.playingIntents.listen(_onLocalPlayingIntent));
-    _playerSubscriptions.add(player.rateIntents.listen(_onLocalRateIntent));
+    _playerSubscriptions.add(player.playingAcks.listen((_) => _reconcile()));
 
     _tickTimer = Timer.periodic(const Duration(milliseconds: tickMs), (_) => _onTick());
     if (_firstFrameSeen && _startupHoldResolved) {
@@ -176,6 +196,8 @@ class GuestPlaybackReconciler {
   }
 
   void detachPlayer() {
+    _authority++;
+    _cancelRoomOperations();
     for (final subscription in _playerSubscriptions) {
       unawaited(subscription.cancel());
     }
@@ -191,6 +213,14 @@ class GuestPlaybackReconciler {
           peerId: myPeerId,
         ),
       );
+    }
+
+    // A nudge owns the player's rate only while this reconciler runs. Leave
+    // the player at the room rate so a promoted host, or the next attachment
+    // of the same player, does not inherit a 4% correction as its base.
+    final state = _latestState;
+    if (_nudging && _player != null && state != null) {
+      unawaited(_player!.setRate(state.rate));
     }
 
     _player = null;
@@ -218,9 +248,29 @@ class GuestPlaybackReconciler {
     _setCorrecting(false);
   }
 
+  /// The host left the video player: the media epoch is over. The last state
+  /// no longer describes a room anyone authors, so a promotion after this
+  /// adopts nothing and starts clean. Sequence numbering is kept — the same
+  /// host may open the next item.
+  void endEpoch() {
+    _authority++;
+    _cancelRoomOperations();
+    _latestState = null;
+    _reportedPhase = null;
+    _reportedWaitingOn = const [];
+  }
+
   /// Latest authoritative state from the host (already host-authenticated).
   void onState(PlaybackState state) {
     if (state.seq <= _lastSeq) return; // Stale or reordered.
+    final previous = _latestState;
+    if (previous != null &&
+        (previous.mediaKey != state.mediaKey ||
+            previous.phase != state.phase ||
+            previous.rate != state.rate ||
+            state.actionHint != null)) {
+      _cancelRoomOperations();
+    }
     _lastSeq = state.seq;
     _latestState = state;
 
@@ -262,14 +312,55 @@ class GuestPlaybackReconciler {
       return;
     }
 
+    _checkClockPlausibility(state);
     _reconcile();
+  }
+
+  /// Flags (and re-converges) the clock offset when a freshly received
+  /// playing anchor reads as implausibly old. Drift corrections are held
+  /// until an anchor reads as fresh again; play/pause/rate still follow.
+  void _checkClockPlausibility(PlaybackState state) {
+    if (_clock.offsetMs == null || state.phase != PlaybackPhase.playing) return;
+    final ageMs = _clock.hostNowMs() - state.anchorHostTimeMs;
+    if (ageMs > implausibleAnchorAgeMs) {
+      if (!_clockSuspect) {
+        appLogger.w('WatchTogether: Host anchor reads ${ageMs}ms old on arrival; re-converging clock');
+        _clockSuspect = true;
+        _clock.reset();
+      }
+    } else if (_clockSuspect) {
+      appLogger.d('WatchTogether: Clock offset plausible again (anchor age ${ageMs}ms)');
+      _clockSuspect = false;
+      _driftSamples.clear();
+    }
   }
 
   /// User seek on this guest (the screen already executed it locally).
   void onLocalSeekIntent(Duration position) {
-    if (_latestState == null) return;
+    if (_latestState == null || _latestState!.mediaKey != _attachedMediaKey) return;
+    _cancelRoomOperations();
     if (_canControl) {
       _sendControl(ControlRequest(kind: ControlRequestKind.seek, positionMs: position.inMilliseconds));
+    } else {
+      _reconcile(); // Snap back.
+    }
+  }
+
+  /// User rate change on this guest (the screen already applied it locally).
+  ///
+  /// Declared by the screen rather than inferred from the player's rate
+  /// stream, so a sync nudge, a default-speed apply, or a late command ack
+  /// can never be mistaken for the user asking to change the room's speed.
+  void onLocalRateIntent(double rate) {
+    if (_latestState == null || _latestState!.mediaKey != _attachedMediaKey) return;
+    _cancelRoomOperations();
+    // The user set the rate deliberately; a nudge in flight would re-assert
+    // its own target next tick, so end the episode without touching the rate.
+    _nudging = false;
+    _nudgeTargetRate = null;
+    if (_canControl) {
+      appLogger.d('WatchTogether: Requesting room rate $rate');
+      _sendControl(ControlRequest(kind: ControlRequestKind.rate, rate: rate));
     } else {
       _reconcile(); // Snap back.
     }
@@ -281,9 +372,29 @@ class GuestPlaybackReconciler {
     if (!value) _reconcile();
   }
 
-  /// Host session restarted (fresh join observed) — accept its new counter.
+  /// New host authority: revoke corrections and await its fresh state.
   void resetSequence() {
+    _cancelRoomOperations();
+    _latestState = null;
     _lastSeq = -1;
+  }
+
+  void _cancelRoomOperations() {
+    _operation++;
+    _optimisticUntilSeq = null;
+    _optimisticDeadlineMs = 0;
+    _scheduledStartTimer?.cancel();
+    _scheduledStartTimer = null;
+    _scheduledStartSeq = null;
+    _settleTimer?.cancel();
+    _settleTimer = null;
+    _settling = false;
+    _nudgeConfirmTimer?.cancel();
+    _nudgeConfirmTimer = null;
+    _nudgeTargetRate = null;
+    _nudgeConfirmed = false;
+    _driftSamples.clear();
+    _setCorrecting(false);
   }
 
   void onReconnected() {
@@ -291,6 +402,9 @@ class GuestPlaybackReconciler {
   }
 
   void dispose() {
+    // Revoke first: continuations still in flight must find the authority
+    // gone before the player they were issued on is handed over.
+    _authority++;
     _disposed = true;
     detachPlayer();
   }
@@ -302,7 +416,8 @@ class GuestPlaybackReconciler {
   bool get _canControl => _latestState?.controlMode == ControlMode.anyone;
 
   void _onLocalPlayingIntent(bool playing) {
-    if (_latestState == null) return;
+    if (_latestState == null || _latestState!.mediaKey != _attachedMediaKey) return;
+    _cancelRoomOperations();
     if (_canControl) {
       _sendControl(
         ControlRequest(
@@ -312,15 +427,6 @@ class GuestPlaybackReconciler {
       );
     } else {
       _reconcile(); // Snap back to the room state.
-    }
-  }
-
-  void _onLocalRateIntent(double rate) {
-    if (_latestState == null) return;
-    if (_canControl) {
-      _sendControl(ControlRequest(kind: ControlRequestKind.rate, rate: rate));
-    } else {
-      _reconcile();
     }
   }
 
@@ -433,6 +539,7 @@ class GuestPlaybackReconciler {
     }
 
     if (!player.seekable) return; // Live: play/pause/rate only.
+    if (_clockSuspect) return; // No trustworthy target to correct against.
 
     final drift = _smoothedDrift(player.position.inMilliseconds - targetMs);
     if (drift == null) return;
@@ -464,9 +571,19 @@ class GuestPlaybackReconciler {
     _setCorrecting(true);
     _beginSettle();
     appLogger.d('WatchTogether: Hard sync seek to ${targetMs}ms');
+    final authority = _authority;
+    final operation = _operation;
     unawaited(
       player.seek(Duration(milliseconds: targetMs.clamp(0, 1 << 48))).then((didSeek) async {
-        if (didSeek && thenPlay) await player.play();
+        // Authority moved while the seek was in flight (a promotion, a detach):
+        // its follow-on play must not reach an output this engine no longer owns.
+        if (didSeek &&
+            thenPlay &&
+            authority == _authority &&
+            operation == _operation &&
+            _latestState?.phase == PlaybackPhase.playing) {
+          await player.play();
+        }
       }),
     );
   }
@@ -493,6 +610,7 @@ class GuestPlaybackReconciler {
     final targetRate = state.rate * factor;
     if (_nudging && (player.rate - targetRate).abs() < 0.001) return;
 
+    if (!_nudging) appLogger.d('WatchTogether: Nudging rate to $targetRate for ${drift}ms drift');
     _nudging = true;
     _nudgeTargetRate = targetRate;
     unawaited(player.setRate(targetRate));
@@ -522,6 +640,7 @@ class GuestPlaybackReconciler {
     if (!_nudging) return;
     _nudging = false;
     _nudgeTargetRate = null;
+    appLogger.d('WatchTogether: Nudge done, rate back to ${state.rate}');
     final player = _player;
     if (player != null) {
       unawaited(player.setRate(state.rate));

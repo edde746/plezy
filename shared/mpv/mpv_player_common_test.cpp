@@ -20,28 +20,117 @@ using plezy::mpv_common::AudioReloadReason;
 void TestRequestRegistry() {
   plezy::mpv_common::AsyncRequestRegistry registry;
   bool status_called = false;
+  bool command_called = false;
   bool property_called = false;
 
   const auto status_id = registry.RegisterStatus([&](int error) { status_called = error == -7; });
+  mpv_node command_node{};
+  const auto command_id = registry.RegisterCommand(
+      [&](int error, const mpv_node* result) { command_called = error == -9 && result == &command_node; });
   const auto property_id = registry.RegisterProperty(
       [&](int error, const std::string& value) { property_called = error == -8 && value == "value"; });
 
   auto status = registry.TakeStatus(status_id);
+  auto command = registry.TakeCommand(command_id);
   auto property = registry.TakeProperty(property_id);
   assert(status);
+  assert(command);
   assert(property);
   status(-7);
+  command(-9, &command_node);
   property(-8, "value");
   assert(status_called);
+  assert(command_called);
   assert(property_called);
   assert(!registry.TakeStatus(status_id));
+  assert(!registry.TakeCommand(command_id));
   assert(!registry.TakeProperty(property_id));
+  // Ids are one namespace: a command id must not surface as another type.
+  assert(!registry.TakeStatus(command_id));
 
   registry.RegisterStatus([](int) {});
+  registry.RegisterCommand([](int, const mpv_node*) {});
   registry.RegisterProperty([](int, const std::string&) {});
   auto cancelled = registry.CancelAll();
   assert(cancelled.status.size() == 1);
+  assert(cancelled.commands.size() == 1);
   assert(cancelled.properties.size() == 1);
+}
+
+// The command reply hands the registered callback mpv's result node only for
+// a successful reply; `PlaylistEntryIdFromCommandResult` then reads the entry
+// `loadfile` created and refuses anything that is not that map.
+void TestCommandReplyResultContract() {
+  using namespace plezy::mpv_common;
+  const auto sanitize = [](const char* value) { return std::string(value); };
+
+  AsyncRequestRegistry registry;
+  const mpv_node* seen_result = nullptr;
+  int seen_error = 0;
+  const auto id = registry.RegisterCommand([&](int error, const mpv_node* result) {
+    seen_error = error;
+    seen_result = result;
+  });
+
+  const char* keys[] = {"playlist_entry_id"};
+  mpv_node values[1]{};
+  values[0].format = MPV_FORMAT_INT64;
+  values[0].u.int64 = 9000000005LL;
+  mpv_node_list map{};
+  map.num = 1;
+  map.keys = const_cast<char**>(keys);
+  map.values = values;
+  mpv_event_command command{};
+  command.result.format = MPV_FORMAT_NODE_MAP;
+  command.result.u.list = &map;
+  mpv_event reply{};
+  reply.event_id = MPV_EVENT_COMMAND_REPLY;
+  reply.reply_userdata = id;
+  reply.data = &command;
+  assert(DispatchReplyEvent(registry, &reply, sanitize));
+  assert(seen_error == 0);
+  assert(seen_result == &command.result);
+  int64_t entry_id = 0;
+  assert(PlaylistEntryIdFromCommandResult(seen_result, &entry_id));
+  assert(entry_id == 9000000005LL);
+
+  // A failed reply never exposes the result slot.
+  const auto failed_id = registry.RegisterCommand([&](int error, const mpv_node* result) {
+    seen_error = error;
+    seen_result = result;
+  });
+  reply.reply_userdata = failed_id;
+  reply.error = MPV_ERROR_COMMAND;
+  assert(DispatchReplyEvent(registry, &reply, sanitize));
+  assert(seen_error == MPV_ERROR_COMMAND);
+  assert(seen_result == nullptr);
+
+  // A SET_PROPERTY_REPLY with a command's id completes nothing: the types are
+  // distinct registries sharing one id space.
+  const auto stranded_id = registry.RegisterCommand([&](int, const mpv_node*) { assert(false); });
+  mpv_event property_reply{};
+  property_reply.event_id = MPV_EVENT_SET_PROPERTY_REPLY;
+  property_reply.reply_userdata = stranded_id;
+  assert(DispatchReplyEvent(registry, &property_reply, sanitize));
+  assert(registry.TakeCommand(stranded_id));
+
+  // Only an INT64 `playlist_entry_id` inside a map counts.
+  assert(!PlaylistEntryIdFromCommandResult(nullptr, &entry_id));
+  mpv_node none{};
+  none.format = MPV_FORMAT_NONE;
+  assert(!PlaylistEntryIdFromCommandResult(&none, &entry_id));
+  const char* other_keys[] = {"other"};
+  mpv_node_list other_map{};
+  other_map.num = 1;
+  other_map.keys = const_cast<char**>(other_keys);
+  other_map.values = values;
+  mpv_node other{};
+  other.format = MPV_FORMAT_NODE_MAP;
+  other.u.list = &other_map;
+  assert(!PlaylistEntryIdFromCommandResult(&other, &entry_id));
+  values[0].format = MPV_FORMAT_DOUBLE;
+  values[0].u.double_ = 1.0;
+  assert(!PlaylistEntryIdFromCommandResult(&command.result, &entry_id));
 }
 
 void TestConcurrentRequestCompletion() {
@@ -299,8 +388,18 @@ void TestNullFallbackRecoverySchedule() {
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 5);
   assert(action.exhausted);
+  // Nothing else may be issued while the last reload is in flight, and the
+  // give-up is owed - not issued - until it has completed.
+  assert(state.NextReload(start + std::chrono::hours(1)).reason == AudioReloadReason::kNone);
+  assert(state.HasPendingWork());
   assert(state.CompleteReload(action.request_generation));
+  assert(state.HasPendingWork());
+
+  action = state.NextReload(start + std::chrono::milliseconds(8100));
+  assert(action.reason == AudioReloadReason::kGiveUp);
+  assert(action.attempt == 5);
   assert(!state.HasPendingWork());
+  assert(state.NextReload(start + std::chrono::hours(1)).reason == AudioReloadReason::kNone);
 
   assert(state.OnAudioDeviceListChanged(start + std::chrono::milliseconds(9000)));
   action = state.NextReload(start + std::chrono::milliseconds(9250));
@@ -312,6 +411,128 @@ void TestNullFallbackRecoverySchedule() {
       state.SetCurrentAudioOutputNull(false, start + std::chrono::milliseconds(9300)) ==
       AudioOutputTransition::kRecovered);
   assert(!state.HasPendingWork());
+}
+
+// A current-ao PROPERTY_CHANGE as libmpv delivers it: a string value, or
+// MPV_FORMAT_NONE while the core has no AO at all (mid ao-reload).
+plezy::mpv_common::AudioRecoveryNotice ObserveCurrentAo(
+    AudioRecoveryState& state, const char* value, AudioRecoveryState::Clock::time_point now) {
+  char* data = const_cast<char*>(value);
+  mpv_event_property prop{};
+  prop.name = "current-ao";
+  prop.format = value ? MPV_FORMAT_STRING : MPV_FORMAT_NONE;
+  prop.data = value ? static_cast<void*>(&data) : nullptr;
+  mpv_event event{};
+  event.event_id = MPV_EVENT_PROPERTY_CHANGE;
+  event.data = &prop;
+  return plezy::mpv_common::ObserveAudioRecoveryProperty(state, &event, &prop, now);
+}
+
+// Every ao-reload takes current-ao through unavailable and back to "null"
+// when the device is still gone. That round trip is the reload itself, not a
+// recovery: the budget must count down through it to the give-up rather than
+// refill on every pass.
+void TestTransientUnavailableAoDoesNotResetBudget() {
+  AudioRecoveryState state;
+  const auto start = AudioRecoveryState::Clock::time_point{};
+  state.SetFileLoaded(true, start);
+  const auto fell_back = ObserveCurrentAo(state, "null", start);
+  assert(fell_back.message != nullptr && fell_back.scheduled_work);
+
+  const int schedule_ms[] = {500, 1000, 2000, 4000, 8000};
+  for (int attempt = 1; attempt <= 5; ++attempt) {
+    const auto due = start + std::chrono::milliseconds(schedule_ms[attempt - 1]);
+    assert(state.NextReload(due - std::chrono::milliseconds(1)).reason == AudioReloadReason::kNone);
+    const auto action = state.NextReload(due);
+    assert(action.reason == AudioReloadReason::kNullFallback);
+    assert(action.attempt == attempt);
+    assert(action.exhausted == (attempt == 5));
+
+    const auto unavailable = ObserveCurrentAo(state, nullptr, due + std::chrono::milliseconds(10));
+    assert(unavailable.message == nullptr && !unavailable.scheduled_work);
+    const auto still_null = ObserveCurrentAo(state, "null", due + std::chrono::milliseconds(20));
+    assert(still_null.message == nullptr && !still_null.scheduled_work);
+    assert(state.CompleteReload(action.request_generation));
+  }
+
+  assert(state.HasPendingWork());
+  const auto give_up = state.NextReload(start + std::chrono::milliseconds(8100));
+  assert(give_up.reason == AudioReloadReason::kGiveUp);
+  assert(give_up.attempt == 5);
+  assert(!state.HasPendingWork());
+  assert(state.NextReload(start + std::chrono::hours(1)).reason == AudioReloadReason::kNone);
+}
+
+// A real AO that shows up between reloads and is gone again inside the stable
+// window is the same outage flapping, so the episode continues with its
+// remaining attempts and backoff; one that lasts the whole window ended it,
+// and the next fall back to null starts afresh.
+void TestBriefRealAoInsideWindowKeepsEpisodeBudget() {
+  AudioRecoveryState state;
+  const auto start = AudioRecoveryState::Clock::time_point{};
+  state.SetFileLoaded(true, start);
+  assert(ObserveCurrentAo(state, "null", start).scheduled_work);
+
+  auto action = state.NextReload(start + std::chrono::milliseconds(500));
+  assert(action.reason == AudioReloadReason::kNullFallback && action.attempt == 1);
+  assert(state.CompleteReload(action.request_generation));
+
+  const auto recovered = ObserveCurrentAo(state, "pulse", start + std::chrono::seconds(1));
+  assert(recovered.message != nullptr && !recovered.scheduled_work);
+  assert(!state.HasPendingWork());
+  assert(state.NextReload(start + std::chrono::milliseconds(1500)).reason == AudioReloadReason::kNone);
+
+  assert(ObserveCurrentAo(state, "null", start + std::chrono::seconds(2)).scheduled_work);
+  assert(state.HasPendingWork());
+  assert(state.NextReload(start + std::chrono::milliseconds(2999)).reason == AudioReloadReason::kNone);
+  action = state.NextReload(start + std::chrono::milliseconds(3000));
+  assert(action.reason == AudioReloadReason::kNullFallback);
+  assert(action.attempt == 2);
+  assert(state.CompleteReload(action.request_generation));
+
+  ObserveCurrentAo(state, "pulse", start + std::chrono::milliseconds(3100));
+  assert(ObserveCurrentAo(state, "null", start + std::chrono::milliseconds(13100)).scheduled_work);
+  assert(state.NextReload(start + std::chrono::milliseconds(13599)).reason == AudioReloadReason::kNone);
+  action = state.NextReload(start + std::chrono::milliseconds(13600));
+  assert(action.reason == AudioReloadReason::kNullFallback);
+  assert(action.attempt == 1);
+}
+
+void TestGiveUpFiresOnceAndRearms() {
+  AudioRecoveryState state;
+  const auto start = AudioRecoveryState::Clock::time_point{};
+  state.SetFileLoaded(true, start);
+  assert(state.SetCurrentAudioOutputNull(true, start) == AudioOutputTransition::kFellBackToNull);
+
+  const auto exhaust = [&state](AudioRecoveryState::Clock::time_point from) {
+    const int schedule_ms[] = {500, 1000, 2000, 4000, 8000};
+    for (int attempt = 1; attempt <= 5; ++attempt) {
+      const auto action = state.NextReload(from + std::chrono::milliseconds(schedule_ms[attempt - 1]));
+      assert(action.reason == AudioReloadReason::kNullFallback && action.attempt == attempt);
+      assert(state.CompleteReload(action.request_generation));
+    }
+    const auto give_up = state.NextReload(from + std::chrono::milliseconds(8100));
+    assert(give_up.reason == AudioReloadReason::kGiveUp);
+    assert(state.NextReload(from + std::chrono::milliseconds(8200)).reason == AudioReloadReason::kNone);
+    assert(!state.HasPendingWork());
+  };
+  exhaust(start);
+
+  // The device list moving is the one thing worth a second episode without a
+  // file boundary, and it owes its own give-up in turn.
+  assert(state.OnAudioDeviceListChanged(start + std::chrono::seconds(9)));
+  assert(state.HasPendingWork());
+  exhaust(start + std::chrono::milliseconds(8750));
+
+  // The file the give-up ended is gone; the next one gets a fresh budget even
+  // though the AO never left null.
+  state.SetFileLoaded(false, start + std::chrono::seconds(18));
+  assert(!state.HasPendingWork());
+  state.SetFileLoaded(true, start + std::chrono::seconds(19));
+  assert(state.HasPendingWork());
+  const auto retry = state.NextReload(start + std::chrono::milliseconds(19500));
+  assert(retry.reason == AudioReloadReason::kNullFallback);
+  assert(retry.attempt == 1);
 }
 
 void TestUnloadedResumeIsConsumed() {
@@ -335,9 +556,13 @@ void TestStaleReloadCompletionCannotClearCurrentRequest() {
   assert(old_request.reason == AudioReloadReason::kNullFallback);
 
   state.SetFileLoaded(false, start + std::chrono::milliseconds(600));
+  // The skip is inside the outage, so the next file resumes the episode: its
+  // second attempt, after the 1000 ms backoff the first one left behind.
   state.SetFileLoaded(true, start + std::chrono::milliseconds(700));
-  const auto current_request = state.NextReload(start + std::chrono::milliseconds(1200));
+  assert(state.NextReload(start + std::chrono::milliseconds(1699)).reason == AudioReloadReason::kNone);
+  const auto current_request = state.NextReload(start + std::chrono::milliseconds(1700));
   assert(current_request.reason == AudioReloadReason::kNullFallback);
+  assert(current_request.attempt == 2);
   assert(current_request.request_generation != old_request.request_generation);
 
   assert(!state.CompleteReload(old_request.request_generation));
@@ -448,6 +673,7 @@ void TestHdrHelpers() {
 
 int main() {
   TestRequestRegistry();
+  TestCommandReplyResultContract();
   TestConcurrentRequestCompletion();
   TestSetPropertyResultContract();
   TestPropertyObservationRegistry();
@@ -455,6 +681,9 @@ int main() {
   TestResumeRecoverySchedule();
   TestConcurrentAudioRecoveryState();
   TestNullFallbackRecoverySchedule();
+  TestTransientUnavailableAoDoesNotResetBudget();
+  TestBriefRealAoInsideWindowKeepsEpisodeBudget();
+  TestGiveUpFiresOnceAndRearms();
   TestFileBoundaryRestartsNullRecoveryOnlyAfterLoad();
   TestUnloadedResumeIsConsumed();
   TestStaleReloadCompletionCannotClearCurrentRequest();

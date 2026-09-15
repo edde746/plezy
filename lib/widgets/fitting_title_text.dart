@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../utils/platform_detector.dart';
+import '../utils/text_measure_cache.dart';
 
 class FittingTitleText extends StatelessWidget {
   final String text;
@@ -57,6 +60,22 @@ class FittingTitleText extends StatelessWidget {
     );
   }
 
+  /// Sizes that differ by less than this are indistinguishable on screen, so
+  /// the bisection stops there instead of running a fixed iteration count.
+  static const double _fontSizeTolerance = 0.25;
+
+  /// The largest font size, down to [minFontSize], at which [text] fits the
+  /// box.
+  ///
+  /// The box can only overflow vertically: [Text] wraps and ellipsizes at
+  /// [maxLines], so a title fits whenever [maxLines] lines of the base style
+  /// do. That is settled from one cached one-glyph line height, without
+  /// shaping the title — which the render tree is about to do anyway and
+  /// which is the single most expensive thing a TV spotlight swap does on a
+  /// low-end box. Only a box shorter than [maxLines] lines needs the search,
+  /// and it is bracketed: layout height scales with the font size at a fixed
+  /// line count, so the proportional shrink of the base layout is a fitting
+  /// lower bound and the bisection only refines between it and the base size.
   double _fitFontSize({
     required String text,
     required TextStyle style,
@@ -68,37 +87,52 @@ class FittingTitleText extends StatelessWidget {
     final baseFontSize = style.fontSize ?? 14;
     if (baseFontSize <= minFontSize) return baseFontSize;
 
-    bool fits(double fontSize) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: style.copyWith(fontSize: fontSize),
-        ),
-        maxLines: maxLines,
-        ellipsis: overflow == TextOverflow.ellipsis ? '\u2026' : null,
-        textDirection: textDirection,
-        textScaler: textScaler,
-        textAlign: textAlign ?? TextAlign.start,
-      )..layout(maxWidth: maxWidth);
-      final result = painter.height <= maxHeight + 0.1 && painter.width <= maxWidth + 0.1;
-      painter.dispose();
-      return result;
-    }
+    final lineHeight = cachedSingleLineTextSize(
+      'X',
+      style: style,
+      textScaler: textScaler,
+      textDirection: textDirection,
+    ).height;
+    if (maxLines * lineHeight <= maxHeight + 0.1) return baseFontSize;
 
-    if (fits(baseFontSize)) return baseFontSize;
-
-    if (!fits(minFontSize)) return minFontSize;
-
-    var low = minFontSize;
-    var high = baseFontSize;
-    for (var i = 0; i < 12; i++) {
-      final mid = (low + high) / 2;
-      if (fits(mid)) {
-        low = mid;
-      } else {
-        high = mid;
+    final painter = TextPainter(
+      maxLines: maxLines,
+      ellipsis: overflow == TextOverflow.ellipsis ? '\u2026' : null,
+      textDirection: textDirection,
+      textScaler: textScaler,
+      textAlign: textAlign ?? TextAlign.start,
+    );
+    try {
+      bool fits(double fontSize) {
+        painter
+          ..text = TextSpan(
+            text: text,
+            style: style.copyWith(fontSize: fontSize),
+          )
+          ..layout(maxWidth: maxWidth);
+        return painter.height <= maxHeight + 0.1 && painter.width <= maxWidth + 0.1;
       }
+
+      if (fits(baseFontSize)) return baseFontSize;
+      final shrink = math.min(maxHeight / painter.height, maxWidth / painter.width);
+
+      var low = math.max(minFontSize, baseFontSize * shrink);
+      if (low <= minFontSize || !fits(low)) {
+        if (!fits(minFontSize)) return minFontSize;
+        low = minFontSize;
+      }
+      var high = baseFontSize;
+      while (high - low > _fontSizeTolerance) {
+        final mid = (low + high) / 2;
+        if (fits(mid)) {
+          low = mid;
+        } else {
+          high = mid;
+        }
+      }
+      return low;
+    } finally {
+      painter.dispose();
     }
-    return low;
   }
 }

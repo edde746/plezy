@@ -36,16 +36,5 @@ void main() {
       map['cm'] = 99;
       expect(SyncMessage.fromJson(jsonEncode(map)).controlMode, isNull);
     });
-
-    test('the relay sender stamp preserves the control mode', () {
-      final stamped = SyncMessage.join(
-        peerId: 'p1',
-        displayName: 'Host',
-        isHost: true,
-        controlMode: ControlMode.hostOnly,
-      ).copyWith(peerId: 'relay-stamped');
-      expect(stamped.controlMode, ControlMode.hostOnly);
-      expect(stamped.peerId, 'relay-stamped');
-    });
   });
 }

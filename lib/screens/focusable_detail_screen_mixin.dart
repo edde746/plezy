@@ -26,8 +26,8 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   // Action bar key for accessing focus nodes
   final GlobalKey<FocusableActionBarState> actionBarKey = GlobalKey<FocusableActionBarState>();
 
-  // Grid item focus
-  final FocusNode firstItemFocusNode = FocusNode(debugLabel: 'detail_first_item');
+  // The first item shares grid ownership and can move to another index.
+  FocusNode get firstItemFocusNode => getGridItemFocusNode(0, debugLabel: 'detail_first_item');
 
   // App bar focus state
   bool isAppBarFocused = false;
@@ -44,7 +44,6 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// Dispose focus-related resources. Call this from your dispose() method.
   void disposeFocusResources() {
     scrollController.dispose();
-    firstItemFocusNode.dispose();
     disposeGridFocusNodes();
   }
 
@@ -91,7 +90,19 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// [SliverSystemBottomInset] is appended so the last row clears the system
   /// navigation bar. Screens that add their own trailing spacer (the music
   /// detail screens reserve the floating mini-player) stack on top of it.
-  Widget buildDetailScaffold({required List<Widget> slivers}) {
+  ///
+  /// [behind] and [above] are painted in a Stack under and over the scroll
+  /// view — artwork that must be taller than the header sliver, or chrome
+  /// pinned to the viewport. Both are usually [Positioned].
+  Widget buildDetailScaffold({
+    required List<Widget> slivers,
+    List<Widget> behind = const [],
+    List<Widget> above = const [],
+  }) {
+    Widget body = CustomScrollView(primary: true, slivers: [...slivers, const SliverSystemBottomInset()]);
+    if (behind.isNotEmpty || above.isNotEmpty) {
+      body = Stack(children: [...behind, body, ...above]);
+    }
     return PrimaryScrollController(
       controller: scrollController,
       child: IosStatusBarTapScrollToTop(
@@ -104,9 +115,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
               Navigator.pop(context);
             }
           },
-          child: Scaffold(
-            body: CustomScrollView(primary: true, slivers: [...slivers, const SliverSystemBottomInset()]),
-          ),
+          child: Scaffold(body: body),
         ),
       ),
     );

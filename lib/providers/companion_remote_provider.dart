@@ -19,6 +19,7 @@ import '../services/companion_remote/remote_auth_context.dart';
 import '../services/companion_remote/remote_auth_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
+import '../utils/serial_future_queue.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
 export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
@@ -101,7 +102,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   // Serializes host start/stop/crypto-rebuild so overlapping lifecycle calls
   // (a user action and a live auth-context refresh) can't interleave and
   // corrupt the peer service.
-  Future<void> _lifecycleLock = Future<void>.value();
+  final SerialFutureQueue _lifecycle = SerialFutureQueue();
 
   int get reconnectAttempts => _reconnectAttempts;
 
@@ -199,11 +200,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   /// Run [action] after every previously-queued lifecycle action settles, so
   /// start/stop/crypto-rebuild never overlap. The chain survives a throwing
   /// action (errors surface to that action's caller, not the next in line).
-  Future<T> _serializeLifecycle<T>(Future<T> Function() action) {
-    final result = _lifecycleLock.then((_) => action());
-    _lifecycleLock = result.then((_) {}, onError: (_) {});
-    return result;
-  }
+  Future<T> _serializeLifecycle<T>(Future<T> Function() action) => _lifecycle.run(action);
 
   RemoteAuthContext? get _primaryAuthContext => _authContexts.isEmpty ? null : _authContexts.first;
 
@@ -221,6 +218,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     ActivePlexIdentity? identity,
     PlexAccountConnection? account,
     PlexHomeResolver? plexHomeForConnection,
+    void Function()? checkCurrent,
   }) {
     return _serializeLifecycle(
       () => _ensureCryptoReadyLocked(
@@ -231,6 +229,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         identity: identity,
         account: account,
         plexHomeForConnection: plexHomeForConnection,
+        checkCurrent: checkCurrent,
       ),
     );
   }
@@ -243,8 +242,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     ActivePlexIdentity? identity,
     PlexAccountConnection? account,
     PlexHomeResolver? plexHomeForConnection,
+    void Function()? checkCurrent,
   }) async {
+    checkCurrent?.call();
     await activeProfile.initialize();
+    checkCurrent?.call();
     final profile = activeProfile.active;
     if (profile == null) {
       appLogger.w('CompanionRemote: Cannot init crypto — no active profile');
@@ -260,6 +262,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       preferredAccount: account,
       plexHomeForConnection: plexHomeForConnection,
     );
+    checkCurrent?.call();
 
     if (nextContexts.isEmpty) {
       if (isCryptoReady) await _prepareForCryptoRebuild();
@@ -272,6 +275,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     }
 
     await _prepareForCryptoRebuild();
+    checkCurrent?.call();
     _authContexts = nextContexts;
     _cryptoProfileId = profile.id;
     appLogger.d('CompanionRemote: Crypto contexts initialized (${nextContexts.length})');
@@ -577,9 +581,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   @visibleForTesting
   bool get debugIsDiscoveryListening => _discoveryService?.isListening ?? false;
 
-  Future<void> startHostServer() => _serializeLifecycle(_startHostServerLocked);
+  Future<void> startHostServer({void Function()? checkCurrent}) =>
+      _serializeLifecycle(() => _startHostServerLocked(checkCurrent: checkCurrent));
 
-  Future<void> _startHostServerLocked() async {
+  Future<void> _startHostServerLocked({void Function()? checkCurrent}) async {
+    checkCurrent?.call();
     if (_peerService?.isServerRunning == true) return;
     if (!isCryptoReady) {
       appLogger.w('CompanionRemote: Cannot start host — crypto not initialized');
@@ -594,6 +600,14 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     try {
       final contexts = List<RemoteAuthContext>.unmodifiable(_authContexts);
       final result = await _peerService!.createSessionForContexts(_deviceName, _platform, contexts);
+      try {
+        checkCurrent?.call();
+      } catch (_) {
+        // The serialized start still owns this candidate. Retire it instead
+        // of leaving a stale authorized listener running after a profile switch.
+        if (identical(_peerService, peer)) await _stopHostServerLocked();
+        rethrow;
+      }
       _hostServerAddresses = result.addresses;
 
       _session = RemoteSession(
@@ -613,9 +627,16 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         wsPort: result.port,
         ips: localIps,
       );
+      try {
+        checkCurrent?.call();
+      } catch (_) {
+        if (identical(_peerService, peer)) await _stopHostServerLocked();
+        rethrow;
+      }
 
       appLogger.d('CompanionRemote: Host server running, broadcasting on LAN');
     } catch (e) {
+      checkCurrent?.call();
       appLogger.e('CompanionRemote: Failed to start host server', error: e);
       _hostServerAddresses = const [];
       _session = RemoteSession(
@@ -629,7 +650,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   /// Stop the host server and LAN broadcasting.
-  Future<void> stopHostServer() => _serializeLifecycle(_stopHostServerLocked);
+  Future<void> stopHostServer({void Function()? checkCurrent}) => _serializeLifecycle(() async {
+    checkCurrent?.call();
+    await _stopHostServerLocked();
+  });
 
   Future<void> _stopHostServerLocked() async {
     final stopGeneration = _remoteGeneration;

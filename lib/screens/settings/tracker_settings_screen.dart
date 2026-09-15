@@ -5,11 +5,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/trackers/device_code.dart';
 import '../../providers/trackers_provider.dart';
-import '../../services/trackers/anilist/anilist_tracker.dart';
-import '../../services/trackers/mal/mal_tracker.dart';
-import '../../services/trackers/mdblist/mdblist_tracker.dart';
 import '../../services/trackers/oauth_proxy_client.dart';
-import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../services/settings_service.dart';
 import '../../utils/dialogs.dart';
@@ -82,7 +78,6 @@ class TrackerConfig {
   final String displayName;
   final bool Function(TrackersProvider) isConnected;
   final String? Function(TrackersProvider) username;
-  final Future<void> Function(bool) onScrobbleChanged;
   final Future<void> Function(TrackersProvider) disconnect;
 
   const TrackerConfig({
@@ -90,7 +85,6 @@ class TrackerConfig {
     required this.displayName,
     required this.isConnected,
     required this.username,
-    required this.onScrobbleChanged,
     required this.disconnect,
   });
 
@@ -101,7 +95,6 @@ class TrackerConfig {
     displayName: t.services.names.mal,
     isConnected: (a) => a.isMalConnected,
     username: (a) => a.malUsername,
-    onScrobbleChanged: MalTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectMal(),
   );
 
@@ -110,7 +103,6 @@ class TrackerConfig {
     displayName: t.services.names.anilist,
     isConnected: (a) => a.isAnilistConnected,
     username: (a) => a.anilistUsername,
-    onScrobbleChanged: AnilistTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectAnilist(),
   );
 
@@ -119,7 +111,6 @@ class TrackerConfig {
     displayName: t.services.names.simkl,
     isConnected: (a) => a.isSimklConnected,
     username: (a) => a.simklUsername,
-    onScrobbleChanged: SimklTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectSimkl(),
   );
 
@@ -128,7 +119,6 @@ class TrackerConfig {
     displayName: t.services.names.mdblist,
     isConnected: (a) => a.isMdblistConnected,
     username: (a) => a.mdblistUsername,
-    onScrobbleChanged: MdblistTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectMdblist(),
   );
 }
@@ -179,7 +169,6 @@ class TrackerSettingsScreen extends StatelessWidget {
               icon: Symbols.auto_timer_rounded,
               title: t.services.scrobble,
               subtitle: t.services.scrobbleDescription,
-              onAfterWrite: config.onScrobbleChanged,
             ),
           ],
           onDisconnect: () => _disconnect(context, account),

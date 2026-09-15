@@ -38,6 +38,10 @@ import MediaPlayer
       MpvAudioPlayerPlugin.register(with: registrar)
     }
 
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "VideoDecodeCapabilitiesPlugin") {
+      VideoDecodeCapabilitiesPlugin.register(with: registrar)
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "DeviceAdjustmentChannel") {
       registerDeviceAdjustmentChannel(messenger: registrar.messenger())
     }

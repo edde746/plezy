@@ -3,10 +3,19 @@ part of '../../video_player_screen.dart';
 extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
   Future<void> _startPlayback() async {
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null) return;
+    if (!mounted || _shuttingDown || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
+    final watchTogether = _activeWatchTogetherSession();
+    final watchTogetherLease = widget.watchTogetherLease;
+    _watchTogetherLease = watchTogetherLease;
+    if (watchTogether != null && watchTogetherLease != null && watchTogetherLease.isCurrent) {
+      _watchTogetherProvider = watchTogether;
+      watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+    }
+    bool isCurrentStart() => attempt.isCurrent && (watchTogetherLease == null || watchTogetherLease.isCurrent);
     _firstFrame.resetRenderedForAttempt();
     _hasFatalPlaybackError = false;
+    _dismissPlaybackFailure();
     // 503s observed from here on belong to this attempt's open.
     _http503Watchdog.disarm();
 
@@ -50,8 +59,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             'beginsAt=$programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
           );
           if (elapsed > 60) {
+            widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
             final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
-            if (!mounted) return;
+            widget.launchObserver?.mark('opening');
+            if (!mounted || !attempt.isCurrent) return;
             if (watchFromStart == true) {
               offsetSeconds = useProgramStart ? offsetProgramStart : captureBuffer.seekStartSeconds.round();
             }
@@ -60,31 +71,38 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         // Build the stream URL (with optional offset for time-shift)
         final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
+        if (!attempt.isCurrent) return;
         if (streamUrl == null || !mounted) {
           throw PlaybackException(t.liveTv.failedToBuildStreamUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
 
-        // Track stream start epoch for position calculations
+        // Track the requested epoch separately from MPV's source-local clock.
+        int? targetEpoch;
         if (offsetSeconds != null) {
-          _live.streamStartEpoch = captureBuffer!.startedAt + offsetSeconds;
+          targetEpoch = (captureBuffer!.startedAt + offsetSeconds).round();
+          if (currentPlayer is! PlayerNative) {
+            _live.streamStartEpoch = captureBuffer.startedAt + offsetSeconds;
+          }
           _live.atLiveEdge = false;
           _live.playbackStartTime = DateTime.now();
         } else {
-          _live.markStreamRestartedAtLiveEdge();
+          _live.markStreamRestartedAtLiveEdge(captureBuffer);
+          targetEpoch = captureBuffer == null ? null : _live.streamStartEpoch.round();
         }
 
-        await currentPlayer.setProperty('force-seekable', 'no');
-        await currentPlayer.open(
-          Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+        await _openLiveStream(
+          currentPlayer,
+          streamUrl,
+          targetEpoch: targetEpoch,
           play: !PlatformDetector.isAutomotive(),
-          isLive: true,
+          timeShifted: offsetSeconds != null,
         );
         if (!attempt.isCurrent) return;
 
         _trackManager?.cacheExternalSubtitles(const []);
 
         await _initVideoFilterAndPip();
-        if (!mounted || player != currentPlayer) return;
+        if (!mounted || !attempt.isCurrent) return;
 
         if (mounted) {
           // Live TV never commits a PlaybackSession, so the session-derived
@@ -100,7 +118,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));
-        if (mounted) {
+        widget.launchObserver?.mark('failed', failure: 'playbackFailed');
+        if (mounted && !_shuttingDown) {
           showErrorSnackBar(context, e.toString());
           unawaited(_handleBackButton());
         }
@@ -108,9 +127,24 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       return;
     }
 
+    // Remembered before anything can fail so the failure view's Retry can
+    // re-run exactly this open, resolve included.
+    _currentOpenRequest = _PlaybackOpenRequest(
+      metadata: _currentMetadata,
+      mediaIndex: _effectiveSelectedMediaIndex,
+      mediaSourceId: _requestedMediaSourceId,
+      qualityPreset: _selectedQualityPreset,
+      audioStreamId: _selectedAudioStreamId,
+      resumePosition: widget.initialPosition,
+    );
+
     // Capture providers before async gaps
     final offlineWatchService = context.read<OfflineWatchSyncService>();
     var primaryMediaOpened = false;
+    // Created by afterMediaOpened when the sync layer owns a gated start;
+    // released by the startup gate, or by the finally below if the open
+    // aborted, threw, or was superseded before the gate ran.
+    Completer<void>? wtStartupHold;
 
     try {
       PlaybackContext playbackContext;
@@ -155,6 +189,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
       }
       final result = playbackContext.result;
+      if (!attempt.isCurrent) return;
+      if (widget.strictMediaSelection &&
+          (result.selectedMediaIndex != widget.selectedMediaIndex ||
+              (widget.selectedMediaSourceId != null &&
+                  (result.selectedMediaSourceId ?? result.selectedVersion?.id) != widget.selectedMediaSourceId))) {
+        widget.launchObserver?.mark('failed', failure: 'staleMediaSelection');
+        throw PlaybackException(t.messages.playbackFailed);
+      }
       final streamHeaders = playbackContext.streamHeaders;
       final subtitleSelection = await _resolveSubtitleSelectionForOpen(
         metadata: _currentMetadata,
@@ -175,9 +217,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       );
       _commitPlaybackSession(session);
 
-      // Primary refresh-rate path: when metadata provides FPS, Android players
-      // can switch before creating decoders. MPV still needs a startup refresh
-      // when MediaCodec has already produced its first paused frame.
+      // Display matching: mpv and Apple TV open paused and negotiate from the
+      // decoded stream at the first frame; ExoPlayer switches before creating
+      // its decoders when metadata provides an fps.
       final settingsService = await SettingsService.getInstance();
       if (!attempt.isCurrent) return;
       var audioFocusReady = false;
@@ -195,10 +237,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
 
       Duration? resumePosition;
-      PlexClient? plexClientForTracks;
-      Completer<void>? wtStartupHold;
+      MediaServerClient? mediaClientForTracks;
 
-      final flow = await _openResolvedMedia(
+      // A null result (staleness guard or hook aborted the flow) needs no
+      // handling here: the finally below is the only post-open work.
+      await _openResolvedMedia(
         currentPlayer: currentPlayer,
         settingsService: settingsService,
         metadata: _currentMetadata,
@@ -207,21 +250,22 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         subtitleSelection: subtitleSelection,
         headers: streamHeaders,
         isLocalMedia: _isOfflinePlayback,
-        isCurrent: () => attempt.isCurrent,
+        isCurrent: isCurrentStart,
+        outcome: attempt.outcome,
         // When a Watch Together session is active the sync layer owns the
         // start: open paused everywhere and let the host coordinate one
         // simultaneous group start.
-        watchTogetherOwnsStart: _watchTogetherOwnsPlaybackStart,
+        watchTogetherOwnsStart: () => watchTogetherLease != null && _watchTogetherOwnsPlaybackStart(),
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
-        plexClient: () => plexClientForTracks,
-        getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
+        mediaClient: () => mediaClientForTracks,
+        getProfileSettings: () => context.read<AccountPreferencesController>().activePreferences,
         preferredAudioTrack: _preferredAudioTrack,
         primarySubtitleTranscoding: () => _isTranscoding,
         ensureAudioFocus: ensureAudioFocus,
         clearFirstFrameForOpen: true,
         deferAutomotiveStart: true,
-        beforePrime: () async {
+        beforeColorHint: () async {
           // Request audio focus before starting playback (Android)
           // This causes other media apps (Spotify, podcasts, etc.) to pause.
           // Fired in parallel with MPV setup in `_initializePlayer`; we await
@@ -233,6 +277,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             metadata: _currentMetadata,
             isOffline: _isOfflinePlayback,
             offlineWatchService: offlineWatchService,
+            requested: widget.initialPosition,
           );
           return mounted && player == currentPlayer;
         },
@@ -240,12 +285,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // Attach player to Watch Together session for sync (if in session).
           // With a frame-rate startup gate pending, sync readiness waits for
           // its release so the group start can't fire mid display switch.
-          if (mounted && !_isOfflinePlayback) {
-            if (wtOwnsStart && holdPlaybackStart) {
-              wtStartupHold = Completer<void>();
-            }
-            _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
-            _notifyWatchTogetherMediaChange();
+          if (isCurrentStart() && !_isOfflinePlayback && watchTogetherLease != null) {
+            _commitWatchTogetherSelection(
+              watchTogether,
+              watchTogetherLease,
+              _currentMetadata,
+              resumePosition ?? Duration.zero,
+            );
+            if (wtOwnsStart && holdPlaybackStart) wtStartupHold = Completer<void>();
+            _attachToWatchTogetherSession(lease: watchTogetherLease, startupHold: wtStartupHold?.future);
           }
           if (shouldAutoPlay && PlatformDetector.isAutomotive()) {
             await _playWithPlaybackIntent(currentPlayer);
@@ -258,7 +306,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           // controls pick them up.
           if (!mounted) return false;
           final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
-          plexClientForTracks = mediaClient is PlexClient ? mediaClient : null;
+          mediaClientForTracks = mediaClient;
           _resetScrubPreviewForNewItem(
             metadata: _currentMetadata,
             mediaInfo: result.mediaInfo,
@@ -301,35 +349,48 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         wtStartupHold: () => wtStartupHold,
         onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
       );
-      if (flow == null) return;
-      // Backstop: if the gate never ran its resume path (unmounted race),
-      // don't leave Watch Together readiness held forever.
+    } on PlaybackException catch (e, st) {
+      if (attempt.isCurrent && widget.launchObserver?.failure == null) {
+        widget.launchObserver?.mark('failed', failure: e.reason.name);
+      }
+      appLogger.w('Playback initialization failed', error: e, stackTrace: st);
+      if (attempt.isCurrent && mounted) _reportStartFailure(e.message, primaryMediaOpened: primaryMediaOpened);
+    } catch (e, st) {
+      if (attempt.isCurrent) widget.launchObserver?.mark('failed', failure: 'playbackFailed');
+      appLogger.e('Failed to start playback', error: e, stackTrace: st);
+      if (attempt.isCurrent && mounted) {
+        // The init sentinel carries no prose — the UI owns the wording.
+        _reportStartFailure(
+          e is PlayerInitializationException
+              ? t.messages.playbackFailed
+              : t.messages.playbackFailedDetail(error: _redactPlayerError(e.toString())),
+          primaryMediaOpened: primaryMediaOpened,
+        );
+      }
+    } finally {
+      // Backstop: whether the gate never ran its resume path, the open
+      // aborted, or the flow threw, never leave Watch Together readiness
+      // held forever.
       final startupHold = wtStartupHold;
       if (startupHold != null && !startupHold.isCompleted) {
         startupHold.complete();
       }
-    } on PlaybackException catch (e, st) {
-      appLogger.w('Playback initialization failed', error: e, stackTrace: st);
-      if (attempt.isCurrent && mounted) {
-        if (!primaryMediaOpened) {
-          _hasFatalPlaybackError = true;
-        }
-        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
-        showErrorSnackBar(context, e.message);
-      }
-    } catch (e, st) {
-      appLogger.e('Failed to start playback', error: e, stackTrace: st);
-      if (attempt.isCurrent && mounted) {
-        if (!primaryMediaOpened) {
-          _hasFatalPlaybackError = true;
-        }
-        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
-        // The init sentinel carries no prose — the UI owns the wording.
-        showErrorSnackBar(
-          context,
-          e is PlayerInitializationException ? t.messages.playbackFailed : t.messages.errorLoading(error: e.toString()),
-        );
-      }
     }
+  }
+
+  /// A current start threw. Before the backend took the file there is nothing
+  /// on screen but a spinner, so the failure view replaces it — a snackbar
+  /// would leave a dead black player behind it. After the open (track setup,
+  /// services) the picture may well be playing, so the error is only
+  /// reported. A backend verdict that already raised the view keeps its
+  /// more specific message.
+  void _reportStartFailure(String message, {required bool primaryMediaOpened}) {
+    if (primaryMediaOpened) {
+      _firstFrame.forceUiReadyOnFailure();
+      showErrorSnackBar(context, message);
+      return;
+    }
+    _hasFatalPlaybackError = true;
+    if (_playbackFailureMessage == null) _presentPlaybackFailure(message);
   }
 }

@@ -50,9 +50,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   PlaybackSourceSubtitleChoice? _selectedSourceSubtitleChoiceForControls(List<MediaSubtitleTrack> tracks) {
     if (tracks.isEmpty) return null;
     if (widget.isLive) {
-      // Live selection is owned by the session state, not a PlaybackSession;
-      // tune metadata may carry stale server-side `selected` flags, so the
-      // fallback loop below must not run for live.
+      // Live selection is owned by the session state, not a PlaybackSession.
       final selected = _live.selectedSubtitle;
       return selected == null
           ? const PlaybackSourceSubtitleChoice.off()
@@ -66,9 +64,12 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
         return PlaybackSourceSubtitleChoice.source(sourceId);
       }
     }
-    for (final track in tracks) {
-      if (track.selected) return PlaybackSourceSubtitleChoice.source(track.id);
-    }
+    // No fallback to `MediaSubtitleTrack.selected`. That flag is the server's
+    // *request* (Plex `Stream.selected`, Jellyfin `DefaultSubtitleStreamIndex`)
+    // and feeds `TrackSelectionService.selectSubtitleTrack` Priority 2 as an
+    // input; it is never a report of what the resolver settled on, and live
+    // tune metadata can carry it stale. Reading it back here ticked rows that
+    // were never selected.
     return const PlaybackSourceSubtitleChoice.off();
   }
 
@@ -96,7 +97,13 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     );
   }
 
-  Widget _buildInitializationError(String message) {
+  /// The screen's failure surface, shared by a core that failed to start and
+  /// a media open that failed after it did. Retry is the primary action and
+  /// takes focus explicitly: a child `autofocus` never fires here, because
+  /// the screen-level [Focus] claims the scope while the loading spinner is
+  /// up and Flutter drops a later autofocus request once the scope already
+  /// has a focused child. See [VideoPlayerScreenState._initializationErrorFocusNode].
+  Widget _buildPlaybackFailure(String message, {required VoidCallback onRetry}) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
@@ -119,9 +126,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   mainAxisAlignment: .center,
                   children: [
                     FocusableButton(
-                      autofocus: true,
-                      onPressed: _retryPlayerInitialization,
-                      child: FilledButton(onPressed: _retryPlayerInitialization, child: Text(t.common.retry)),
+                      focusNode: _initializationErrorFocusNode,
+                      onPressed: onRetry,
+                      child: FilledButton(onPressed: onRetry, child: Text(t.common.retry)),
                     ),
                     const SizedBox(width: 12),
                     FocusableButton(
@@ -142,6 +149,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   }
 
   void _startMobileZoomGesture() {
+    // Pinch-to-zoom is one of the optional touch gestures (#1810).
+    if (!SettingsService.instance.read(SettingsService.gesturePinchToZoom)) return;
     final filterManager = _videoFilterManager;
     if (filterManager == null || _isPinchZooming) return;
 
@@ -312,8 +321,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
                         onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
                         onSeekRequested: _seekPlayback,
+                        onRateRequested: _setPlaybackRate,
                         onPlayPauseRequested: _handleControlsTransport,
-                        onSeekCompleted: _notifyWatchTogetherSeek,
                         onBack: _handleBackButton,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
@@ -331,8 +340,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         liveChannelName: _live.channelName,
                         captureBuffer: _live.captureBuffer,
                         isAtLiveEdge: _live.atLiveEdge,
-                        streamStartEpoch: _live.streamStartEpoch,
-                        currentPositionEpoch: widget.isLive ? _currentPositionEpoch : null,
+                        liveEpochForPosition: widget.isLive ? _liveEpochForPosition : null,
                         onLiveSeek: _live.captureBuffer != null ? _seekLiveToEpoch : null,
                         onLiveSeekBy: _live.captureBuffer != null ? _liveSeek.seekBy : null,
                         onJumpToLive: _live.captureBuffer != null && !_live.atLiveEdge ? _jumpToLiveEdge : null,

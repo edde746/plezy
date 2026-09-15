@@ -406,10 +406,10 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
     if (localArt == null) {
       localCoverImage = null;
     } else {
-      final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+      final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: ImageType.square);
       final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
-        displayWidth: (48 * dpr).round(),
-        displayHeight: (48 * dpr).round(),
+        displayWidth: (48 * pixelRatio).round(),
+        displayHeight: (48 * pixelRatio).round(),
         imageType: ImageType.square,
       );
       localCoverImage = MediaImageHelper.boundedDecode(
@@ -437,6 +437,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
                     width: 48,
                     height: 48,
                     fit: BoxFit.cover,
+                    filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.square),
                     errorBuilder: (_, _, _) => fallbackCover(),
                   )
                 : fallbackCover(),

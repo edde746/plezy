@@ -20,7 +20,6 @@ REPOSITORY = Path(__file__).resolve().parents[2]
 FIXTURES = (
     "pubspec.lock",
     "linux/CMakeLists.txt",
-    "linux/packaging/build-libmpv.sh",
     "linux/packaging/native-inputs.json",
     "packages/wakelock_plus/pubspec.yaml",
     "packages/wakelock_plus/pubspec.lock",
@@ -122,14 +121,14 @@ class RuntimeInputVerifierTest(unittest.TestCase):
 
     def test_rejects_malformed_native_pin_and_version_url_drift(self) -> None:
         manifest = self._json("linux/packaging/native-inputs.json")
-        manifest["inputs"]["ffmpeg"]["sha256"] = "not-a-digest"
-        manifest["inputs"]["mpv"]["url"] = "https://example.invalid/mpv-current.tar.gz"
+        manifest["inputs"]["simdutf"]["sha256"] = "not-a-digest"
+        manifest["inputs"]["simdutf"]["url"] = "https://example.invalid/singleheader-current.zip"
         self._write_json("linux/packaging/native-inputs.json", manifest)
 
         errors = CHECKER.validate(self.root)
 
-        self.assertTrue(any("ffmpeg.sha256" in error for error in errors))
-        self.assertTrue(any("mpv.url" in error and "declared version" in error for error in errors))
+        self.assertTrue(any("simdutf.sha256" in error for error in errors))
+        self.assertTrue(any("simdutf.url" in error and "declared version" in error for error in errors))
 
     def test_reports_missing_simdutf_fields_without_crashing(self) -> None:
         manifest = self._json("linux/packaging/native-inputs.json")
@@ -142,20 +141,6 @@ class RuntimeInputVerifierTest(unittest.TestCase):
 
         self.assertTrue(any("simdutf.url" in error and "non-empty text" in error for error in errors))
         self.assertTrue(any("simdutf.sha256" in error and "lowercase full SHA-256" in error for error in errors))
-
-    def test_rejects_disconnected_production_acquisition(self) -> None:
-        path = self.root / "linux/packaging/build-libmpv.sh"
-        path.write_text(
-            path.read_text(encoding="utf-8").replace(
-                'download_verified "$MPV_URL" "$MPV_SHA256"',
-                'curl "$MPV_URL"',
-            ),
-            encoding="utf-8",
-        )
-
-        errors = CHECKER.validate(self.root)
-
-        self.assertTrue(any("MPV_URL" in error and "manifest-backed" in error for error in errors))
 
     def test_rejects_binding_source_or_output_drift(self) -> None:
         schema = self.root / "packages/wakelock_plus/pigeons/messages.dart"
@@ -214,7 +199,7 @@ class RuntimeInputVerifierTest(unittest.TestCase):
     def test_accepts_benign_prose_contract_edits(self) -> None:
         native = self._json("linux/packaging/native-inputs.json")
         native["refreshContract"] = {"rules": ["Reworded maintainer guidance."]}
-        native["inputs"]["ffmpeg"]["provenance"] = "Reviewed release evidence."
+        native["inputs"]["simdutf"]["provenance"] = "Reviewed release evidence."
         self._write_json("linux/packaging/native-inputs.json", native)
 
         provenance = self._json("packages/wakelock_plus/provenance.json")

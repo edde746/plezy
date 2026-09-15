@@ -19,6 +19,11 @@ const _HubRetryPolicy _continueWatchingRetry = (
   deadline: MediaServerTimeouts.homeHubDeadline,
 );
 
+const _HubRetryPolicy _libraryLookupRetry = (
+  operation: 'Jellyfin library lookup',
+  deadline: MediaServerTimeouts.libraryLookup,
+);
+
 List<Map<String, dynamic>> _itemsArray(Object? data) {
   if (data is Map<String, dynamic>) {
     final items = data['Items'];
@@ -723,6 +728,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       'userId': connection.userId,
       'Limit': '1',
       'Fields': _episodeRowFields,
+      if (sendNextUpRewatching) 'EnableRewatching': 'true',
       ...jellyfinImageQueryParameters,
     });
     final onDeckEpisode = nextUp.isEmpty ? null : _mapItem(nextUp.first);
@@ -897,36 +903,27 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // Generic direct-children query: works for season → episodes,
     // collection → items, etc. Page it so large seasons/folders don't truncate
     // at Jellyfin's per-request limit.
-    final allRaw = <Map<String, dynamic>>[];
-    var startIndex = 0;
-    int? totalRecordCount;
-    while (totalRecordCount == null || startIndex < totalRecordCount) {
-      final response = await _http.get(
-        '/Items',
-        queryParameters: {
-          'userId': connection.userId,
-          'ParentId': parentId,
-          'Fields': _episodeRowFields,
-          'StartIndex': '$startIndex',
-          'Limit': '$_childrenPageSize',
-          ..._episodeOrderQueryParameters,
-          ...jellyfinImageQueryParameters,
-        },
-      );
-      throwIfHttpError(response);
-      final data = response.data;
-      final page = _itemsArray(data);
-      allRaw.addAll(page);
-      if (data is Map<String, dynamic>) {
-        final rawTotal = data['TotalRecordCount'];
-        if (rawTotal is int) totalRecordCount = rawTotal;
-      }
-      if (page.isEmpty || page.length < _childrenPageSize) break;
-      startIndex += page.length;
-      if (onPage != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
-        onPage(_mapItems(allRaw));
-      }
-    }
+    final allRaw = await drainPages<Map<String, dynamic>>(
+      (start, size) async {
+        final response = await _http.get(
+          '/Items',
+          queryParameters: {
+            'userId': connection.userId,
+            'ParentId': parentId,
+            'Fields': _episodeRowFields,
+            'StartIndex': '$start',
+            'Limit': '$size',
+            ..._episodeOrderQueryParameters,
+            ...jellyfinImageQueryParameters,
+          },
+        );
+        throwIfHttpError(response);
+        return _pagedItems(response.data, offset: start, requestedSize: size, map: (rows) => rows);
+      },
+      pageSize: _childrenPageSize,
+      stopOnShortPage: true,
+      onPage: onPage == null ? null : (raw) => onPage(_mapItems(raw)),
+    );
     try {
       await cache.put(ServerId(cacheServerId), childrenKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
     } catch (e, st) {
@@ -1082,42 +1079,32 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     Map<String, String> typeParams,
     String fields, {
     void Function(List<Map<String, dynamic>> rowsSoFar)? onRawPage,
-  }) async {
-    final out = <Map<String, dynamic>>[];
-    var startIndex = 0;
-    int? totalRecordCount;
-    while (totalRecordCount == null || startIndex < totalRecordCount) {
-      final response = await _http.get(
-        '/Items',
-        queryParameters: {
-          'userId': connection.userId,
-          'ParentId': parentId,
-          'Recursive': 'false',
-          'StartIndex': '$startIndex',
-          'Limit': '$_childrenPageSize',
-          'EnableTotalRecordCount': 'true',
-          'SortBy': 'SortName',
-          'SortOrder': 'Ascending',
-          'Fields': fields,
-          ...typeParams,
-          ...jellyfinImageQueryParameters,
-        },
-      );
-      throwIfHttpError(response);
-      final data = response.data;
-      final page = _itemsArray(data);
-      out.addAll(page);
-      if (data is Map<String, dynamic>) {
-        final rawTotal = data['TotalRecordCount'];
-        if (rawTotal is int) totalRecordCount = rawTotal;
-      }
-      if (page.isEmpty || page.length < _childrenPageSize) break;
-      startIndex += page.length;
-      if (onRawPage != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
-        onRawPage(out);
-      }
-    }
-    return out;
+  }) {
+    return drainPages<Map<String, dynamic>>(
+      (start, size) async {
+        final response = await _http.get(
+          '/Items',
+          queryParameters: {
+            'userId': connection.userId,
+            'ParentId': parentId,
+            'Recursive': 'false',
+            'StartIndex': '$start',
+            'Limit': '$size',
+            'EnableTotalRecordCount': 'true',
+            'SortBy': 'SortName',
+            'SortOrder': 'Ascending',
+            'Fields': fields,
+            ...typeParams,
+            ...jellyfinImageQueryParameters,
+          },
+        );
+        throwIfHttpError(response);
+        return _pagedItems(response.data, offset: start, requestedSize: size, map: (rows) => rows);
+      },
+      pageSize: _childrenPageSize,
+      stopOnShortPage: true,
+      onPage: onRawPage,
+    );
   }
 
   Future<List<MediaItem>> _fetchFolderChildren(
@@ -1297,39 +1284,30 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// a complete client-side next/previous queue without one huge response.
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {AbortController? abort}) async {
-    final all = <MediaItem>[];
-    var startIndex = 0;
-    int? totalRecordCount;
-
-    while (totalRecordCount == null || startIndex < totalRecordCount) {
-      abort?.throwIfAborted();
-      final response = await _http.get(
-        '/Shows/${_segment(seriesId)}/Episodes',
-        queryParameters: {
-          'userId': connection.userId,
-          'Fields': _queueFields,
-          'StartIndex': '$startIndex',
-          'Limit': '$_episodeQueuePageSize',
-          'IsMissing': 'false',
-          'IsVirtualUnaired': 'false',
-          ..._episodeOrderQueryParameters,
-          ...jellyfinImageQueryParameters,
-        },
-        abort: abort,
-      );
-      abort?.throwIfAborted();
-      throwIfHttpError(response);
-      final data = response.data;
-      final page = _mapItems(_itemsArray(data));
-      abort?.throwIfAborted();
-      all.addAll(page);
-      if (data is Map<String, dynamic>) {
-        final rawTotal = data['TotalRecordCount'];
-        if (rawTotal is int) totalRecordCount = rawTotal;
-      }
-      if (page.length < _episodeQueuePageSize) break;
-      startIndex += page.length;
-    }
+    final all = await drainPages<MediaItem>(
+      (start, size) async {
+        final response = await _http.get(
+          '/Shows/${_segment(seriesId)}/Episodes',
+          queryParameters: {
+            'userId': connection.userId,
+            'Fields': _queueFields,
+            'StartIndex': '$start',
+            'Limit': '$size',
+            'IsMissing': 'false',
+            'IsVirtualUnaired': 'false',
+            ..._episodeOrderQueryParameters,
+            ...jellyfinImageQueryParameters,
+          },
+          abort: abort,
+        );
+        abort?.throwIfAborted();
+        throwIfHttpError(response);
+        return _pagedItems(response.data, offset: start, requestedSize: size, map: _mapItems);
+      },
+      pageSize: _episodeQueuePageSize,
+      abort: abort,
+      stopOnShortPage: true,
+    );
 
     abort?.throwIfAborted();
     final ordering = effectiveSpecialsOrdering();
@@ -1472,16 +1450,21 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// each candidate's inline `ProviderIds`. [plexGuid] is a Plex-only hint and
   /// has no meaning in Jellyfin's provider-id model, so it is ignored.
   ///
-  /// Every id-verified candidate of the first matching title is returned, not
-  /// just the first: one movie can sit in both a 4K library and an HD library
-  /// as two separate items, and the caller shows the user each copy (#1754).
+  /// Every title runs concurrently and every id-verified candidate of every
+  /// title is returned: one movie can sit in both a 4K library and an HD
+  /// library as two separate items (#1754), and a copy filed under another
+  /// language's title is only reachable through that title (#2098). Id
+  /// verification is the only correctness gate, so a title that hit cannot
+  /// make its siblings redundant. [year] narrows the entry's own title to a
+  /// ±1 window — `SearchTerm` is a substring match and the first page of a
+  /// short title can fill with other shows.
   ///
   /// Jellyfin cannot report season ordering to a non-admin: on 10.11.10,
   /// `/Library/VirtualFolders` returns 403 and Series items omit
   /// `DisplayOrder`. Resolve against an unknown provider rather than guessing
   /// from `ProviderIds`, so only seasons on which TVDB and TMDB agree are gated.
   @override
-  Future<List<MediaItem>> findByExternalIds(
+  Future<List<MediaItem>?> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -1494,7 +1477,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       MediaKind.show => 'Series',
       _ => null,
     };
-    if (itemType == null || !ids.hasAny || titles.isEmpty) return const [];
+    if (itemType == null || !ids.hasAny || titles.isEmpty) return null;
 
     final seasonIndex = season?.agreedSeason;
     final shouldGateSeason = kind == MediaKind.show && seasonIndex != null && seasonIndex > 1;
@@ -1503,30 +1486,32 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // sequel's own year excludes the parent show (its year is season one's).
     final skipYearWindow = season?.isSequel ?? false;
 
-    for (var index = 0; index < titles.length; index++) {
-      final isFirstCandidate = index == 0;
-      final years = isFirstCandidate && year != null && !skipYearWindow ? '${year - 1},$year,${year + 1}' : null;
-      final candidates = await _fetchItemsArray('/Items', {
-        'userId': connection.userId,
-        'SearchTerm': titles[index],
-        'Recursive': 'true',
-        'Limit': isFirstCandidate ? '20' : '50',
-        'IncludeItemTypes': itemType,
-        'Fields': 'ProviderIds,$_browseFields',
-        'years': ?years,
-        ...jellyfinImageQueryParameters,
-      });
-      final matches = _mapItems(ExternalIds.jellyfinCandidatesMatching(candidates, ids));
-      if (matches.isEmpty) continue;
+    // The window narrows the entry's own title only; broader forms are meant
+    // to reach the parent show, whose year is not the entry's.
+    final years = year != null && !skipYearWindow ? '${year - 1},$year,${year + 1}' : null;
+    final pages = await Future.wait([
+      for (var index = 0; index < titles.length; index++)
+        _fetchItemsArray('/Items', {
+          'userId': connection.userId,
+          'SearchTerm': titles[index],
+          'Recursive': 'true',
+          'Limit': '50',
+          'IncludeItemTypes': itemType,
+          'Fields': 'ProviderIds,$_browseFields',
+          'years': ?(index == 0 ? years : null),
+          ...jellyfinImageQueryParameters,
+        }, retry: _libraryLookupRetry),
+    ]);
+    final seen = <String>{};
+    final matches = [
+      for (final page in pages)
+        for (final item in _mapItems(ExternalIds.jellyfinCandidatesMatching(page, ids)))
+          if (seen.add(item.id)) item,
+    ];
+    if (matches.isEmpty) return const [];
 
-      final kept = shouldGateSeason ? await _keepMatchesWithSeason(matches, seasonIndex) : matches;
-      // A title that verified but has no season-gated survivor is a definitive
-      // "this server has the show, just not that season"; broader title forms
-      // would only reach other shows.
-      if (kept.isEmpty) return const [];
-      return Future.wait([for (final item in kept) _withLibraryFromAncestors(item)]);
-    }
-    return const [];
+    final kept = shouldGateSeason ? await _keepMatchesWithSeason(matches, seasonIndex) : matches;
+    return Future.wait([for (final item in kept) _withLibraryFromAncestors(item)]);
   }
 
   /// Keep only the series that actually have [seasonIndex]. One
@@ -1652,6 +1637,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'Fields': _hubRowFields,
         'EnableResumable': 'false',
         'NextUpDateCutoff': _nextUpDateCutoff(),
+        if (sendNextUpRewatching) 'EnableRewatching': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }, retry: _continueWatchingRetry),
@@ -1812,6 +1798,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
                 'Fields': _hubRowFields,
                 'EnableResumable': 'false',
                 'NextUpDateCutoff': _nextUpDateCutoff(),
+                if (sendNextUpRewatching) 'EnableRewatching': 'true',
                 'EnableTotalRecordCount': 'false',
                 ...jellyfinImageQueryParameters,
               },
@@ -2051,6 +2038,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               'ParentId': ?parentId,
               'EnableResumable': 'false',
               'NextUpDateCutoff': _nextUpDateCutoff(),
+              if (sendNextUpRewatching) 'EnableRewatching': 'true',
               'EnableTotalRecordCount': 'true',
               ...jellyfinImageQueryParameters,
             },

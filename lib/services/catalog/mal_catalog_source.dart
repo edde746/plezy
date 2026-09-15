@@ -189,14 +189,16 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
     String? background,
   }) {
     final title = anime.displayTitle;
-    final originalTitle = anime.title;
+    final nativeTitle = anime.alternativeTitles?.ja?.trim();
+    final originalTitle = nativeTitle != null && nativeTitle.isNotEmpty ? nativeTitle : anime.title;
     return CatalogItem(
       source: CatalogSourceId.mal,
       kind: anime.isMovie ? MediaKind.movie : MediaKind.show,
       title: title,
-      // Set literal: insertion-ordered and deduped. MAL repeats the English
-      // and romaji titles inside `synonyms`, and a duplicate candidate costs
-      // the reverse library lookup a wasted request.
+      // Retain romaji even when it is also the display title. The typed native
+      // title leads library matching; alternatives remain bounded fallbacks.
+      // MAL repeats these titles in synonyms, so preserve insertion order and
+      // deduplicate before exposing them as descriptive aliases.
       altTitles: <String>{
         for (final candidate in <String?>[
           anime.alternativeTitles?.en,
@@ -204,7 +206,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
           anime.alternativeTitles?.ja,
           ...?anime.alternativeTitles?.synonyms,
         ])
-          if (candidate != null && candidate.isNotEmpty && candidate != title) candidate,
+          if (candidate != null && candidate.isNotEmpty && (candidate != title || candidate == anime.title)) candidate,
       }.toList(),
       year: anime.year,
       overview: anime.synopsis,

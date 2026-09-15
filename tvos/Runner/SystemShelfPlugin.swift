@@ -264,7 +264,7 @@ import TVServices
     let notifyChange: () -> Void
   }
 
-  final class SystemShelfPlugin: NSObject, FlutterPlugin {
+  final class SystemShelfPlugin: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate {
     static let schemaVersion = 3
     static let appGroupIdentifier = "group.com.edde746.plezy"
     static let cacheDataKey = "PlezySystemShelfCacheData"
@@ -297,7 +297,10 @@ import TVServices
       }
       methodChannel = channel
       deepLinkDelivery.bindEngine()
-      registrar.addMethodCallDelegate(SystemShelfPlugin(engineEpoch: engineEpoch), channel: channel)
+      let instance = SystemShelfPlugin(engineEpoch: engineEpoch)
+      registrar.addMethodCallDelegate(instance, channel: channel)
+      // Top Shelf links are delivered through UIScene once that lifecycle is enabled.
+      registrar.addSceneDelegate(instance)
       mutationQueue.async { scrubLegacyPayload() }
     }
 
@@ -310,6 +313,33 @@ import TVServices
         break
       }
       return true
+    }
+
+    static func handleSceneURLs(
+      _ urls: [URL],
+      using handler: (URL) -> Bool = SystemShelfPlugin.handleOpenURL
+    ) -> Bool {
+      var handled = false
+      for url in urls where handler(url) {
+        handled = true
+      }
+      return handled
+    }
+
+    func scene(
+      _ scene: UIScene,
+      willConnectTo session: UISceneSession,
+      options connectionOptions: UIScene.ConnectionOptions?
+    ) -> Bool {
+      guard let connectionOptions else { return false }
+      return Self.handleSceneURLs(connectionOptions.urlContexts.map(\.url))
+    }
+
+    func scene(
+      _ scene: UIScene,
+      openURLContexts URLContexts: Set<UIOpenURLContext>
+    ) -> Bool {
+      Self.handleSceneURLs(URLContexts.map(\.url))
     }
 
     private static func contentId(from url: URL) -> String? {

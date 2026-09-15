@@ -102,7 +102,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     final name = _nameController.text.trim();
     if (name.isEmpty || name == _profile.displayName) return;
     final updated = _profile.copyWith(displayName: name);
-    await context.read<ProfileRegistry>().upsert(updated);
+    await context.read<ProfileRegistry>().rename(_profile.id, name);
     if (!mounted) return;
     setState(() => _profile = updated);
     showSuccessSnackBar(context, t.profiles.profileRenamed);

@@ -1,0 +1,166 @@
+#include <jni.h>
+#include <mpv/client.h>
+
+#include <cmath>
+
+#include "globals.h"
+#include "jni_utils.h"
+#include "log.h"
+#include "session.h"
+
+// Every callback names the session it originated from. Kotlin drops a callback
+// whose session is not the wrapper it published for, so a retiring core's tail
+// - end-file, property changes, a hook raised just before teardown - can never
+// be read as another session's. The thread borrows its session's immutable
+// handle until joined, including the interval after admission is revoked, so a
+// callback that reenters through a SessionGuard is simply refused.
+
+static void sendPropertyUpdateToJava(
+    JNIEnv* env, jlong jsession, mpv_event_property* prop, int64_t source_id, bool has_source_id) {
+  jstring jprop = new_java_string(env, prop->name);
+  jstring jvalue = NULL;
+  const jboolean jhas_source_id = has_source_id ? JNI_TRUE : JNI_FALSE;
+  switch (prop->format) {
+    case MPV_FORMAT_NONE:
+      env->CallStaticVoidMethod(
+          mpv_MpvPlayer, mpv_MpvPlayer_onPropertyChanged_SJZ, jsession, jprop, (jlong)source_id, jhas_source_id);
+      break;
+    case MPV_FORMAT_FLAG:
+      env->CallStaticVoidMethod(
+          mpv_MpvPlayer, mpv_MpvPlayer_onPropertyChanged_SZJZ, jsession, jprop, (jboolean) * (int*)prop->data,
+          (jlong)source_id, jhas_source_id);
+      break;
+    case MPV_FORMAT_INT64:
+      env->CallStaticVoidMethod(
+          mpv_MpvPlayer, mpv_MpvPlayer_onPropertyChanged_SJJZ, jsession, jprop, (jlong) * (int64_t*)prop->data,
+          (jlong)source_id, jhas_source_id);
+      break;
+    case MPV_FORMAT_DOUBLE:
+      env->CallStaticVoidMethod(
+          mpv_MpvPlayer, mpv_MpvPlayer_onPropertyChanged_SDJZ, jsession, jprop, (jdouble) * (double*)prop->data,
+          (jlong)source_id, jhas_source_id);
+      break;
+    case MPV_FORMAT_STRING:
+      jvalue = new_java_string(env, *(const char**)prop->data);
+      env->CallStaticVoidMethod(
+          mpv_MpvPlayer, mpv_MpvPlayer_onPropertyChanged_SSJZ, jsession, jprop, jvalue, (jlong)source_id,
+          jhas_source_id);
+      break;
+    default:
+      break;
+  }
+  if (jprop) env->DeleteLocalRef(jprop);
+  if (jvalue) env->DeleteLocalRef(jvalue);
+}
+
+static void sendEventToJava(
+    JNIEnv* env, jlong jsession, int event, int64_t source_id, bool has_source_id, double position_seconds = 0.0,
+    bool has_position_seconds = false) {
+  env->CallStaticVoidMethod(
+      mpv_MpvPlayer, mpv_MpvPlayer_onEvent, jsession, (jint)event, (jlong)source_id,
+      has_source_id ? JNI_TRUE : JNI_FALSE, (jdouble)position_seconds, has_position_seconds ? JNI_TRUE : JNI_FALSE);
+}
+
+static void sendEndFileToJava(JNIEnv* env, jlong jsession, mpv_event* event) {
+  mpv_event_end_file* end_file = (mpv_event_end_file*)event->data;
+  const int reason = end_file ? end_file->reason : -1;
+  const int64_t source_id = end_file ? end_file->playlist_entry_id : 0;
+  // mpv_error code when reason is MPV_END_FILE_REASON_ERROR, 0 otherwise.
+  const int error = end_file ? end_file->error : 0;
+  // Its text, for a failure no error-level log line described.
+  jstring jerror_message = reason == MPV_END_FILE_REASON_ERROR ? new_java_string(env, mpv_error_string(error)) : NULL;
+  env->CallStaticVoidMethod(
+      mpv_MpvPlayer, mpv_MpvPlayer_onEndFile, jsession, (jint)reason, (jlong)source_id, end_file ? JNI_TRUE : JNI_FALSE,
+      (jint)error, jerror_message);
+  if (jerror_message) env->DeleteLocalRef(jerror_message);
+}
+
+static void sendLogMessageToJava(JNIEnv* env, jlong jsession, mpv_event_log_message* msg) {
+  jstring jprefix = new_java_string(env, msg->prefix);
+  jstring jtext = new_java_string(env, msg->text);
+
+  env->CallStaticVoidMethod(mpv_MpvPlayer, mpv_MpvPlayer_onLogMessage, jsession, jprefix, (jint)msg->log_level, jtext);
+
+  if (jprefix) env->DeleteLocalRef(jprefix);
+  if (jtext) env->DeleteLocalRef(jtext);
+}
+
+// A hook holds mpv (playback does not proceed) until Kotlin answers with
+// nativeHookContinue(session, id); MpvPlayer guarantees that answer for every
+// hook it is handed, and mpv itself continues any hook still held when the
+// handle is destroyed.
+static void sendHookToJava(JNIEnv* env, jlong jsession, mpv_event_hook* hook) {
+  jstring jname = new_java_string(env, hook->name);
+  env->CallStaticVoidMethod(mpv_MpvPlayer, mpv_MpvPlayer_onHook, jsession, jname, (jlong)hook->id);
+  if (jname) env->DeleteLocalRef(jname);
+}
+
+void* event_thread(void* arg) {
+  // Borrowed, not owned: the retirement that frees the session joins this
+  // thread first (nativeDestroy), so the pointer outlives the loop.
+  Session* session = (Session*)arg;
+  const jlong jsession = (jlong)session->id;
+  mpv_handle* const mpv = session->handle;
+
+  JNIEnv* env = NULL;
+  acquire_jni_env(g_vm, &env);
+  if (!env) die("failed to acquire java env");
+
+  int64_t source_id = 0;
+  bool has_source_id = false;
+
+  while (true) {
+    mpv_event* mp_event;
+    mpv_event_property* mp_property;
+    mpv_event_log_message* msg;
+
+    mp_event = mpv_wait_event(mpv, -1.0);
+
+    if (session->event_thread_exit) break;
+
+    if (mp_event->event_id == MPV_EVENT_NONE) continue;
+
+    switch (mp_event->event_id) {
+      case MPV_EVENT_LOG_MESSAGE:
+        msg = (mpv_event_log_message*)mp_event->data;
+        sendLogMessageToJava(env, jsession, msg);
+        break;
+      case MPV_EVENT_PROPERTY_CHANGE:
+        mp_property = (mpv_event_property*)mp_event->data;
+        sendPropertyUpdateToJava(env, jsession, mp_property, source_id, has_source_id);
+        break;
+      case MPV_EVENT_END_FILE:
+        sendEndFileToJava(env, jsession, mp_event);
+        break;
+      case MPV_EVENT_START_FILE: {
+        mpv_event_start_file* start_file = (mpv_event_start_file*)mp_event->data;
+        has_source_id = start_file != NULL;
+        source_id = start_file ? start_file->playlist_entry_id : 0;
+        sendEventToJava(env, jsession, mp_event->event_id, source_id, has_source_id);
+        break;
+      }
+      case MPV_EVENT_FILE_LOADED:
+        sendEventToJava(env, jsession, mp_event->event_id, source_id, has_source_id);
+        break;
+      case MPV_EVENT_HOOK:
+        sendHookToJava(env, jsession, (mpv_event_hook*)mp_event->data);
+        break;
+      case MPV_EVENT_PLAYBACK_RESTART: {
+        double position_seconds = 0.0;
+        const bool has_position_seconds =
+            mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position_seconds) >= 0 &&
+            std::isfinite(position_seconds);
+        sendEventToJava(
+            env, jsession, mp_event->event_id, source_id, has_source_id, position_seconds, has_position_seconds);
+        break;
+      }
+      default:
+        // Nothing on the Kotlin side consumes the remaining ids (MpvEvent.fromId).
+        break;
+    }
+  }
+
+  g_vm->DetachCurrentThread();
+
+  return NULL;
+}

@@ -42,9 +42,9 @@ class _GatedResolver extends music_fakes.FakeMusicSourceResolver {
   Completer<void>? gate;
 
   @override
-  Future<MusicSource> resolve(MediaItem track) async {
+  Future<MusicSource> resolve(MediaItem track, {bool offline = false}) async {
     await gate?.future;
-    return super.resolve(track);
+    return super.resolve(track, offline: offline);
   }
 }
 

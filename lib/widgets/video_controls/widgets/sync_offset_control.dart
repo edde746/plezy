@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../focus/focusable_slider.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../mpv/mpv.dart';
+import '../../../services/scoped_player_prefs.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/app_logger.dart';
@@ -52,8 +53,8 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   // Range constants
   static const double _sliderMin = -10_000; // ±10s slider range for fine control
   static const double _sliderMax = 10_000;
-  static const double _absoluteMin = -60_000; // ±60s absolute limit, reachable via the step buttons
-  static const double _absoluteMax = 60_000;
+  static const double _absoluteMin = ScopedPlayerPrefs.minimumSyncOffsetMs * 1.0;
+  static const double _absoluteMax = ScopedPlayerPrefs.maximumSyncOffsetMs * 1.0;
   static const double _tapStep = 50; // 50ms per tap
   static const double _longPressStep = 1000; // 1s per long-press tick
   static const int _sliderDivisions = 400; // 50ms steps for ±10s range

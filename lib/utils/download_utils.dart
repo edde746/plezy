@@ -214,6 +214,40 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   );
 }
 
+/// Run [showDownloadOptionsAndQueue] and surface the outcome: a success
+/// snackbar for a queued download, dedicated copy for cellular-blocked
+/// downloads, and a generic error snackbar otherwise. The dialog → snackbar
+/// shape shared by the detail screen buttons and the context menu.
+Future<void> queueDownloadWithFeedback(
+  BuildContext context, {
+  required MediaItem metadata,
+  required MediaServerClient client,
+  required DownloadProvider downloadProvider,
+  Future<void> Function()? onDelete,
+}) async {
+  try {
+    final result = await showDownloadOptionsAndQueue(
+      context,
+      metadata: metadata,
+      client: client,
+      downloadProvider: downloadProvider,
+      onDelete: onDelete,
+    );
+    if (result == null || !context.mounted) return;
+
+    showSuccessSnackBar(context, result.toSnackBarMessage());
+  } on CellularDownloadBlockedException {
+    if (context.mounted) {
+      showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+    }
+  } catch (e) {
+    appLogger.e('Failed to queue download', error: e);
+    if (context.mounted) {
+      showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+    }
+  }
+}
+
 /// Shows download options dialog for a collection or playlist, then queues
 /// the download. Offers both one-time download and "Keep Synced" (creates or
 /// updates a sync rule for the target).
@@ -254,7 +288,7 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   if (syncChoice == _SyncChoice.keepSynced) {
     final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(serverId), rootMetadata.id);
     if (downloadProvider.hasSyncRule(ruleKey)) {
-      await downloadProvider.updateSyncRuleFilter(ruleKey, filterString);
+      await downloadProvider.updateSyncRuleOptions(ruleKey, downloadFilter: filterString);
       syncRuleUpdated = true;
     } else {
       await downloadProvider.createSyncRule(
@@ -413,7 +447,7 @@ Future<bool> editSyncRuleCount(
     return false;
   }
 
-  await downloadProvider.updateSyncRuleCount(globalKey, count);
+  await downloadProvider.updateSyncRuleOptions(globalKey, episodeCount: count);
   return true;
 }
 
@@ -432,7 +466,7 @@ Future<bool> editSyncRuleFilter(
   );
   if (selected == null || selected == currentFilter || !context.mounted) return false;
 
-  await downloadProvider.updateSyncRuleFilter(globalKey, selected);
+  await downloadProvider.updateSyncRuleOptions(globalKey, downloadFilter: selected);
   return true;
 }
 

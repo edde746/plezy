@@ -5,7 +5,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show listEquals, protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
-import '../../media/media_display_criteria.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
@@ -162,8 +161,39 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
 
+  /// Whether the current load reached `file-loaded`, and the last error-level
+  /// log line since its `start-file`: a load that ends `stop` before loading
+  /// was abandoned mid-open (a newer open, a stop, a disposal), and mpv
+  /// reports its underlying failure only in the log, never in the event.
+  bool _primaryFileLoaded = false;
+  String? _lastErrorLogText;
+  int? _activeSourceId;
+  bool _activeSourceReadyEmitted = false;
+
+  /// Set between an open's [clearTracks] and the incoming load's `start-file`:
+  /// until that event every `track-list` mpv publishes still describes the
+  /// OUTGOING file (#2323).
+  bool _deferringTrackList = false;
+
+  /// How long a disposing player waits for its predecessor's native release
+  /// before force-disposing with its own [nativeInstanceId] (the native side
+  /// no-ops a stale token, so this can never tear down a successor's core).
   @visibleForTesting
   static Duration debugNativeOwnershipDisposeTimeout = const Duration(seconds: 3);
+
+  /// How long a command waits for a predecessor's native release before
+  /// giving up. Longer than the dispose-side wait: a slow but healthy
+  /// teardown should delay the next session's first command, not fail it.
+  @visibleForTesting
+  static Duration debugNativeOwnershipInvokeTimeout = const Duration(seconds: 8);
+
+  /// Identifies this instance to the native side across `initialize` and
+  /// `dispose`, so a dispose that lost the ownership race is provably stale
+  /// and can be sent anyway instead of being skipped. Skipping is what used
+  /// to leave a hung predecessor's release chained forever (the permanent
+  /// "Playback could not be started" wedge).
+  static int _nativeInstanceCounter = 0;
+  final int nativeInstanceId = ++_nativeInstanceCounter;
 
   static const _maximumDurationMilliseconds = 9223372036854775;
 
@@ -286,12 +316,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   void _handleEvent(dynamic event) {
     if (_disposed) return;
-    if (event is List && event.length == 2) {
+    if (event is List && event.length >= 2) {
       final propertyId = event.first;
       if (propertyId is! int) return;
       final name = _propIdToName[propertyId];
       if (name != null) {
-        handlePropertyChange(name, event[1]);
+        final sourceId = event.length >= 3 ? _finiteInt(event[2]) : null;
+        handlePropertyChange(name, event[1], sourceId: sourceId);
       }
     } else if (event is Map) {
       final type = event['type'];
@@ -303,7 +334,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
-  void handlePropertyChange(String name, dynamic value) {
+  void handlePropertyChange(String name, dynamic value, {int? sourceId}) {
     if (_disposed) return;
     switch (name) {
       case 'pause':
@@ -314,6 +345,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'eof-reached':
         final completed = value == true;
+        if (completed) {
+          appLogger.i(
+            '[$logPrefix] eof-reached at ${_state.position.inMilliseconds}ms/${_state.duration.inMilliseconds}ms',
+          );
+        }
         _state = _state.copyWith(completed: completed);
         completedController.add(completed);
         break;
@@ -325,6 +361,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'time-pos':
+        if (sourceId != null && sourceId != _activeSourceId) break;
         final positionMs = _millisecondsFromSeconds(value, round: true);
         if (positionMs != null) {
           final pos = Duration(milliseconds: positionMs);
@@ -400,6 +437,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'track-list':
+        if (_deferringTrackList) break;
         final trackList = MpvNodeDecoder.decodeList(value);
         if (trackList != null) {
           if (_primaryMediaLoadStarted && !_primaryMediaReadyEmitted && _hasPrimaryMediaTrack(trackList)) {
@@ -519,14 +557,25 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   void handlePlayerEvent(String name, Map? data) {
     if (_disposed) return;
+    final sourceId = _finiteInt(data?['sourceId']);
     switch (name) {
       case 'start-file':
+        _deferringTrackList = false;
+        _activeSourceId = sourceId;
+        _activeSourceReadyEmitted = false;
         _primaryMediaLoadStarted = true;
         _primaryMediaReadyEmitted = false;
+        _primaryFileLoaded = false;
+        _lastErrorLogText = null;
         fileStartedController.add(null);
+        if (sourceId != null) {
+          sourceStartedController.add(PlayerSourceStarted(sourceId));
+        }
         break;
 
       case 'end-file':
+        if (sourceId != null && _activeSourceId != null && sourceId != _activeSourceId) break;
+        final loadAbandoned = _primaryMediaLoadStarted && !_primaryFileLoaded;
         _primaryMediaLoadStarted = false;
         setSeekable(false);
         final rawReason = data?['reason'];
@@ -539,30 +588,67 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           final String s => s,
           _ => null,
         };
+        final rawCause = data?['cause'];
+        appLogger.i(
+          '[$logPrefix] end-file reason=${reason ?? rawReason} source=$sourceId'
+          '${rawCause is String ? ' cause=$rawCause' : ''}',
+        );
         if (reason == 'eof') {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
         } else if (reason == 'error') {
           fileLoadFailedController.add(null);
           final rawMessage = data?['message'];
-          final rawCause = data?['cause'];
+          final rawError = data?['error'];
           errorController.add(
             PlayerError(
-              rawMessage is String ? rawMessage : 'Playback error',
+              rawMessage is String && rawMessage.isNotEmpty
+                  ? rawMessage
+                  : (rawError is int ? _mpvErrorDescription(rawError) : null) ?? 'Playback error',
               cause: rawCause is String ? rawCause : null,
             ),
           );
+          if (sourceId != null) {
+            sourceFailedController.add(PlayerSourceFailed(sourceId));
+          }
+        } else if (reason == 'stop' && loadAbandoned) {
+          // App-initiated (a newer open, a stop, a disposal), so not an error
+          // to the screen — but an open that failed and was then abandoned
+          // ends exactly like this, with its real failure only in the log.
+          appLogger.w(
+            '[$logPrefix] load stopped before file-loaded source=$sourceId'
+            '${_lastErrorLogText == null ? '' : ' lastError=$_lastErrorLogText'}',
+          );
         }
+        _activeSourceId = null;
+        _activeSourceReadyEmitted = false;
         break;
 
       case 'file-loaded':
+        if (sourceId != null && sourceId != _activeSourceId) break;
+        _primaryFileLoaded = true;
         _state = _state.copyWith(completed: false);
         completedController.add(false);
         fileLoadedController.add(null);
         break;
 
       case 'playback-restart':
+        if (sourceId != null && sourceId != _activeSourceId) break;
         playbackRestartController.add(null);
+        if (sourceId != null && !_activeSourceReadyEmitted) {
+          final positionMs = _millisecondsFromSeconds(data?['positionSeconds'], round: true);
+          if (positionMs != null) {
+            _positionMs = positionMs;
+            _lastPositionWriter = _backendReportedWriter;
+            _lastReportedPositionMs = positionMs;
+            _lastEmitMs = _throttleSw.elapsedMilliseconds;
+            final position = Duration(milliseconds: positionMs);
+            _state = _state.copyWith(position: position);
+            positionController.add(position);
+            _activeSourceReadyEmitted = true;
+            sourceReadyController.add(PlayerSourceReady(sourceId: sourceId, position: position));
+          }
+        }
         break;
 
       case 'hdr-output-changed':
@@ -576,10 +662,28 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         final prefix = rawPrefix is String ? rawPrefix : '';
         final level = parseLogLevel(rawLevel is String ? rawLevel : 'info');
         final text = rawText is String ? rawText : '';
+        if (level == PlayerLogLevel.error || level == PlayerLogLevel.fatal) {
+          final trimmed = text.trim();
+          if (trimmed.isNotEmpty) _lastErrorLogText = trimmed;
+        }
         logController.add(PlayerLog(level: level, prefix: prefix, text: text));
         break;
     }
   }
+
+  /// `mpv_error_string` for the codes an end-file event can carry, for a
+  /// backend that forwarded the code but latched no message.
+  static String? _mpvErrorDescription(int code) => switch (code) {
+    -13 => 'loading failed',
+    -14 => 'audio output initialization failed',
+    -15 => 'video output initialization failed',
+    -16 => 'no audio or video data played',
+    -17 => 'unrecognized file format',
+    -18 => 'not supported',
+    -19 => 'operation not implemented',
+    -20 => 'something happened',
+    _ => null,
+  };
 
   bool _hasPrimaryMediaTrack(List trackList) {
     for (final track in trackList) {
@@ -753,6 +857,21 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     const empty = Tracks();
     _state = _state.copyWith(tracks: empty, track: const TrackSelection());
     tracksController.add(empty);
+  }
+
+  /// Ignore `track-list` updates until the next load's `start-file`. Property
+  /// updates reach Dart asynchronously, so one describing the file an open is
+  /// replacing can land after it and re-seed the list [clearTracks] emptied.
+  @protected
+  void deferTrackListUntilLoadStarts() {
+    _deferringTrackList = true;
+  }
+
+  /// Lift [deferTrackListUntilLoadStarts] when no load started, so the file
+  /// still playing keeps publishing its tracks.
+  @protected
+  void resumeTrackListAdoption() {
+    _deferringTrackList = false;
   }
 
   @protected
@@ -1066,7 +1185,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_disposed) return null;
     if (_nativeOwnershipReady case final ready?) {
       try {
-        await ready.timeout(debugNativeOwnershipDisposeTimeout);
+        await ready.timeout(debugNativeOwnershipInvokeTimeout);
       } on TimeoutException {
         return null;
       }
@@ -1086,7 +1205,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {}
 
   @override
   Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
@@ -1407,6 +1526,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     errorController.add(PlayerError('HTTP $status', cause: cause));
   }
 
+  /// Whether this backend's native `dispose` handler validates the
+  /// `instanceId` token and no-ops a stale one. Only a guarded handler may
+  /// receive a dispose after the ownership wait times out — an unguarded
+  /// handler would tear down whatever core is current, including a
+  /// successor's. Unguarded platforms keep the historical skip-and-chain
+  /// behavior (and with it the theoretical wedge) until they gain the guard.
+  @protected
+  bool get nativeDisposeIsStaleGuarded => false;
+
+  /// Returns whether the native `dispose` may be sent.
   Future<bool> _waitForNativeOwnershipForDispose() async {
     final ready = _nativeOwnershipReady;
     if (ready == null) return true;
@@ -1414,6 +1543,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       await ready.timeout(debugNativeOwnershipDisposeTimeout);
       return true;
     } on TimeoutException catch (error, stackTrace) {
+      if (nativeDisposeIsStaleGuarded) {
+        appLogger.w(
+          'Timed out waiting for the previous player to release the native channel; '
+          'force-disposing with a stale-guarded token',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        return true;
+      }
       appLogger.w(
         'Timed out waiting for the previous player to release the native channel; skipping native dispose',
         error: error,
@@ -1450,11 +1588,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
     _eventSubscription = null;
     await _logSubscription?.cancel();
-    final ownsNativeChannel = await _waitForNativeOwnershipForDispose();
+    final sendNativeDispose = await _waitForNativeOwnershipForDispose();
     try {
-      if (ownsNativeChannel) {
+      if (sendNativeDispose) {
+        // Sent even when the ownership wait timed out on a guarded backend:
+        // the token makes a stale dispose provable, so the native side no-ops
+        // it rather than tearing down a successor's core. Skipping instead
+        // used to chain this release onto a predecessor that might never
+        // complete, wedging every future playback session until the app was
+        // killed.
         await methodChannel.invokeMethod('dispose', {
           'preserveDisplayMode': preserveDisplayMode,
+          'instanceId': nativeInstanceId,
         }); // Direct call — invoke() is disabled once _disposed is set.
       }
     } on PlatformException catch (e, st) {
@@ -1462,11 +1607,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     } on MissingPluginException catch (e, st) {
       appLogger.w('Player native dispose plugin missing during teardown', error: e, stackTrace: st);
     } finally {
-      if (ownsNativeChannel && !_nativeRelease.isCompleted) _nativeRelease.complete();
+      if (sendNativeDispose && !_nativeRelease.isCompleted) _nativeRelease.complete();
     }
 
-    // A timed-out predecessor is still represented by this release future.
-    // Do not expose an empty ownership slot until that chained release settles.
+    // On the skip path the release above was completed *with* the
+    // predecessor's future, so the ownership slot stays occupied until that
+    // chain settles; on every other path it settles in the finally.
     if (_nativeRelease.isCompleted) {
       unawaited(
         _nativeRelease.future.whenComplete(() {

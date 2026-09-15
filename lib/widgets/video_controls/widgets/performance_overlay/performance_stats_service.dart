@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform, ProcessInfo;
 
 import 'package:flutter/scheduler.dart';
@@ -164,14 +165,18 @@ class PerformanceStatsService {
         actualFps: _parseDouble(statsMap['estimated-vf-fps'] as String?),
         videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
         hwdecCurrent: statsMap['hwdec-current'] as String?,
+        currentVo: statsMap['current-vo'] as String?,
         audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
         audioSamplerate: audio.samplerate,
         audioChannels: audio.channels,
         audioPassthroughFormat: audio.passthroughFormat,
         audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
         avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
-        cacheUsed: _parseInt(statsMap['cache-used'] as String?),
-        cacheLimit: _parseInt(statsMap['demuxer-max-bytes'] as String?),
+        cacheUsed: _parseCacheForwardBytes(statsMap['demuxer-cache-state'] as String?),
+        cacheLimit: _parseCacheLimitBytes(
+          statsMap['demuxer-max-bytes'] as String?,
+          statsMap['demuxer-max-back-bytes'] as String?,
+        ),
         cacheSpeed: _parseDouble(statsMap['cache-speed'] as String?),
         displayFps: _parseDouble(statsMap['display-fps'] as String?),
         frameDropCount: _parseInt(statsMap['frame-drop-count'] as String?),
@@ -254,7 +259,7 @@ class PerformanceStatsService {
       player.getProperty('audio-params/hr-channels'), // 9
       player.getProperty('audio-bitrate'), // 10
       player.getProperty('total-avsync-change'), // 11
-      player.getProperty('cache-used'), // 12
+      player.getProperty('demuxer-cache-state'), // 12
       player.getProperty('demuxer-max-bytes'), // 13
       player.getProperty('cache-speed'), // 14
       player.getProperty('frame-drop-count'), // 15
@@ -263,6 +268,7 @@ class PerformanceStatsService {
       player.getProperty('audio-params/format'), // 18
       player.getProperty('current-tracks/audio/demux-samplerate'), // 19
       player.getProperty('current-tracks/audio/demux-channel-count'), // 20
+      player.getProperty('demuxer-max-back-bytes'), // 21
     ]);
 
     final hasVideo = results[1] != null;
@@ -321,8 +327,8 @@ class PerformanceStatsService {
       audioPassthroughFormat: audio.passthroughFormat,
       audioBitrate: _parseInt(results[10]),
       avsyncChange: _parseDouble(results[11]),
-      cacheUsed: _parseInt(results[12]),
-      cacheLimit: _parseInt(results[13]),
+      cacheUsed: _parseCacheForwardBytes(results[12]),
+      cacheLimit: _parseCacheLimitBytes(results[13], results[21]),
       cacheSpeed: _parseDouble(results[14]),
       frameDropCount: _parseInt(results[15]),
       decoderFrameDropCount: _parseInt(results[16]),
@@ -355,6 +361,47 @@ class PerformanceStatsService {
   int? _parseInt(String? value) {
     if (value == null || value.isEmpty) return null;
     return int.tryParse(value);
+  }
+
+  /// Reads `fw-bytes` out of mpv's `demuxer-cache-state`.
+  ///
+  /// `cache-used` was deleted with mpv's stream cache (v0.41.0), so polling it
+  /// answered NOT_FOUND every tick and rendered a permanent "N/A". The
+  /// replacement quantity lives in `demuxer-cache-state`, which mpv serialises
+  /// as JSON when read as a string — a `demuxer-cache-state/fw-bytes` property
+  /// path does *not* work, because that property implements neither
+  /// `m_property_read_sub` nor a key action and answers PROPERTY_ERROR.
+  ///
+  /// Parsed here rather than in Kotlin so Android and the desktop/Apple
+  /// property path share one parser. `fw-bytes` is exactly the quantity
+  /// `demuxer-max-bytes` (shown as the cache limit) bounds.
+  int? _parseCacheForwardBytes(String? json) {
+    if (json == null || json.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! Map) return null;
+      final fwBytes = decoded['fw-bytes'];
+      if (fwBytes is int) return fwBytes;
+      if (fwBytes is num) return fwBytes.toInt();
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The resident demuxer ceiling: the forward bound plus the back bound.
+  ///
+  /// `demuxer-donate-buffer` defaults on, so mpv lets the back cache absorb
+  /// forward bytes the reader has not claimed; `demuxer-max-bytes` alone is
+  /// not a ceiling on anything the process holds, and reporting it read a
+  /// Fire TV's 96 MB budget as 64 MB. Null only when neither bound is
+  /// available, so a libmpv that answers one and not the other still shows
+  /// a number.
+  int? _parseCacheLimitBytes(String? maxBytes, String? maxBackBytes) {
+    final ahead = _parseInt(maxBytes);
+    final back = _parseInt(maxBackBytes);
+    if (ahead == null && back == null) return null;
+    return (ahead ?? 0) + (back ?? 0);
   }
 
   /// Resolves the displayed audio sample rate and channel layout.
