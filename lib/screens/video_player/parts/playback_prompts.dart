@@ -30,12 +30,11 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       _ => null,
     };
     unawaited(_sendStoppedProgressOnce(positionOverride: duration));
-    // The item played out: the launch receipt ends here, whatever the screen
-    // does next (prompt, auto-play, exit).
-    if (_ownsLaunchPlayback()) {
-      final durationMs = duration?.inMilliseconds;
-      widget.launchObserver?.mark('completed', positionMs: durationMs, durationMs: durationMs);
-    }
+    // The launch receipt is not ended here: the session may go on to the next
+    // episode in place, and a receipt marked `completed` now would report the
+    // finished item while the next one plays. It reads the live EOF state
+    // meanwhile and ends `completed` from _retireLaunchObserver when the
+    // screen leaves on this item.
     _mediaControls.pushPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
     // The item finished, so real-time trackers get a terminal report now rather
