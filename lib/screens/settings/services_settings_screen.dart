@@ -50,6 +50,12 @@ class ServicesSettingsScreen extends StatelessWidget {
                     title: t.settings.discordRichPresence,
                     subtitle: t.settings.discordRichPresenceDescription,
                   ),
+                  SettingSwitchTile(
+                    pref: SettingsService.hideDiscordRPCOnPause,
+                    icon: Symbols.pause_rounded,
+                    title: t.settings.discordRichPresenceHideOnPause,
+                    subtitle: t.settings.discordRichPresenceHideOnPauseDescription,
+                  ),
                 ],
               ),
             const SizedBox(height: 24),

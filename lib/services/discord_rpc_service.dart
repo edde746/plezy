@@ -77,6 +77,7 @@ class DiscordRPCService {
   bool _isConnected = false;
   bool _isEnabled = false;
   bool _isInitialized = false;
+  bool _hideOnPause = false;
   bool get isEnabled => _isEnabled;
   bool get isConnected => _isConnected;
   MediaItem? _currentMetadata;
@@ -120,6 +121,7 @@ class DiscordRPCService {
 
     final settings = await SettingsService.getInstance();
     _isEnabled = settings.read(SettingsService.enableDiscordRPC);
+    _hideOnPause = settings.read(SettingsService.hideDiscordRPCOnPause);
 
     if (_isEnabled) {
       await _connect();
@@ -139,6 +141,14 @@ class DiscordRPCService {
       }
     } else {
       _disconnect();
+    }
+  }
+
+  Future<void> setHideOnPause(bool hideToggle) async {
+    if (_hideOnPause == hideToggle) return;
+    _hideOnPause == hideToggle;
+    if (_isEnabled && _isConnected) {
+      await _updatePresence();
     }
   }
 
@@ -194,6 +204,7 @@ class DiscordRPCService {
 
   /// Pause - clear timestamp. Video keeps showing what's playing; a music
   /// track's card is withdrawn instead (see [_updatePresence]).
+  /// Optionally hideOnPause can be set to disable the view.
   Future<void> pausePlayback() async {
     _playbackStartTime = null;
 
@@ -439,7 +450,9 @@ class DiscordRPCService {
     // reads as still playing — and a music session sits paused in the
     // mini-player for hours, unlike a paused video screen. Same convention
     // as Spotify's integration: gone on pause, back on resume.
-    if (_currentMetadata!.kind == MediaKind.track && _playbackStartTime == null) {
+    // Optionally, if hideOnPause is true then on a pause, the activity will disappear
+    // and reappear on playback.
+    if ((_currentMetadata!.kind == MediaKind.track || _hideOnPause) && _playbackStartTime == null) {
       await clearPresence();
       return;
     }

@@ -182,7 +182,7 @@ class AgentSettingsCommands {
         if (!KeyboardShortcutsService.isPlatformSupported()) {
           return 'Keyboard customization requires a desktop platform.';
         }
-      case 'enable_discord_rpc':
+      case 'enable_discord_rpc' || 'hide_discord_rpc_on_pause':
         if (!DiscordRPCService.isAvailable) return 'Discord rich presence is unavailable on this platform.';
       case 'auto_check_updates_on_startup':
         if (!UpdateService.isUpdateCheckAvailable) return 'Updates are managed externally on this platform.';

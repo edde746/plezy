@@ -68,6 +68,8 @@ class SettingsMutationService {
         DevicePerformance.setOverrideSync(settings.read(SettingsService.visualEffects));
       case 'enable_discord_rpc':
         await DiscordRPCService.instance.setEnabled(settings.read(SettingsService.enableDiscordRPC));
+      case 'hide_discord_rpc_on_pause':
+        await DiscordRPCService.instance.setHideOnPause(settings.read(SettingsService.hideDiscordRPCOnPause));
       case 'music_volume':
         await context.read<MusicPlaybackService?>()?.setVolume(
           settings.read(SettingsService.musicVolume),

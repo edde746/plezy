@@ -609,6 +609,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showPerformanceOverlay = BoolPref('show_performance_overlay');
   static const autoHidePerformanceOverlay = BoolPref('auto_hide_performance_overlay', defaultValue: true);
   static const enableDiscordRPC = BoolPref('enable_discord_rpc');
+  static const hideDiscordRPCOnPause = BoolPref('hide_discord_rpc_on_pause');
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const matchContentResolution = BoolPref('match_content_resolution');
@@ -1305,6 +1306,7 @@ class SettingsService extends BaseSharedPreferencesService {
     showPerformanceOverlay,
     autoHidePerformanceOverlay,
     enableDiscordRPC,
+    hideDiscordRPCOnPause,
     enableTraktWatchedSync,
     // Scrobble toggle, one per tracker service.
     for (final s in TrackerService.values) scrobblePref(s),

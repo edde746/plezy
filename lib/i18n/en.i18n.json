@@ -318,6 +318,8 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Show what you're watching on Discord",
+    "discordRichPresenceHideOnPause": "Discord Rich Presence - Hide On Paused",
+    "discordRichPresenceHideOnPauseDescription": "Hide Discord activity while playback is paused",
     "services": "Services",
     "servicesDescription": "Connect Trakt, MyAnimeList, Seerr, and more",
     "manageLibrariesDescription": "Reorder and hide libraries",
