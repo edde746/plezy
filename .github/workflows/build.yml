@@ -840,6 +840,24 @@ jobs:
         shell: bash
         run: python3 linux/packaging/check-package-deps.py "$GITHUB_WORKSPACE" --arch ${{ matrix.arch }}
 
+      - name: Install Flatpak packaging dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+
+      - name: Build Flatpak bundle
+        shell: bash
+        run: python3 linux/packaging/build-flatpak.py --bundle "$BUNDLE_DIR" --arch ${{ matrix.arch }} --output "$GITHUB_WORKSPACE"
+
+      - name: Verify installed Flatpak runtime dependencies
+        shell: bash
+        run: |
+          flatpak install --user --noninteractive "plezy-linux-${{ matrix.arch }}.flatpak"
+          dbus-run-session -- python3 linux/packaging/check-flatpak.py --arch ${{ matrix.arch }}
+
       - name: Create tarball
         shell: bash
         run: |
@@ -854,6 +872,7 @@ jobs:
             plezy-linux-${{ matrix.arch }}.deb
             plezy-linux-${{ matrix.arch }}.rpm
             plezy-linux-${{ matrix.arch }}.pkg.tar.zst
+            plezy-linux-${{ matrix.arch }}.flatpak
 
       - name: Upload Linux ${{ matrix.arch }} artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -864,6 +883,7 @@ jobs:
             plezy-linux-${{ matrix.arch }}.deb
             plezy-linux-${{ matrix.arch }}.rpm
             plezy-linux-${{ matrix.arch }}.pkg.tar.zst
+            plezy-linux-${{ matrix.arch }}.flatpak
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
