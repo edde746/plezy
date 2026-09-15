@@ -53,6 +53,13 @@ env:
   TRACKED_BRANCH: main
   # Branches the propagation job never touches, as space-separated shell globs.
   EXCLUDED_BRANCHES: "tmp/* revert-*"
+  # Paths that belong to this fork alone, as space-separated pathspecs. The
+  # propagation job strips them back out of every branch it updates: topic
+  # branches are the heads of pull requests against the parent repository, so
+  # anything the merge carries into them is proposed to upstream in the pull
+  # request diff. This workflow only ever runs from the default branch, so the
+  # topic branches have no use for it either.
+  FORK_ONLY_PATHS: ".github/workflows/sync-fork.yml"
 
 jobs:
   sync-tracked-branch:
@@ -186,21 +193,49 @@ jobs:
               continue
             fi
 
+            # A branch that already contains the tracked branch still gets the
+            # fork-only strip below, which is what cleans up branches that were
+            # updated before this workflow learned to strip them.
+            MERGE_NEEDED=true
             if git merge-base --is-ancestor "$TRACKED_REF" "$REMOTE_REF"; then
-              record "$BRANCH" "up to date" "already contains \`$TRACKED_BRANCH\`"
-              continue
+              MERGE_NEEDED=false
             fi
 
             git checkout --quiet --force -B "$BRANCH" "$REMOTE_REF"
-            # --no-stat: a 90-file diffstat per branch buries the merge result in the log.
-            if ! git merge --no-edit --no-stat -m "chore: merge $TRACKED_BRANCH into $BRANCH" "$TRACKED_REF"; then
+
+            if [ "$MERGE_NEEDED" = true ]; then
+              # --no-commit so the fork-only paths can be dropped from the merge
+              # result before it is committed; --no-stat because a 90-file
+              # diffstat per branch buries the merge result in the log.
+              git merge --no-commit --no-stat "$TRACKED_REF" >/dev/null 2>&1 || true
+            fi
+
+            # read -a keeps the pathspecs unexpanded, as with EXCLUDED_BRANCHES.
+            read -r -a FORK_ONLY <<< "$FORK_ONLY_PATHS"
+            git rm --quiet --force --ignore-unmatch -- "${FORK_ONLY[@]}" >/dev/null 2>&1 || true
+
+            # Whatever is still unmerged is a real conflict: the removal above
+            # already resolved the modify/delete cases on the fork-only paths.
+            if [ -n "$(git ls-files --unmerged)" ]; then
               git merge --abort || true
               record "$BRANCH" "conflict" "resolve by hand; branch left untouched"
               FAILURES=$((FAILURES + 1))
               continue
             fi
 
+            if git rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
+              git commit --quiet --no-edit -m "chore: merge $TRACKED_BRANCH into $BRANCH"
+            elif ! git diff --cached --quiet; then
+              # Fast-forwarded, or already current: the strip stands on its own.
+              git commit --quiet -m "chore: keep fork-only paths off $BRANCH"
+            fi
+
             AHEAD=$(git rev-list --count "$REMOTE_REF..HEAD")
+
+            if [ "$AHEAD" -eq 0 ]; then
+              record "$BRANCH" "up to date" "already contains \`$TRACKED_BRANCH\`"
+              continue
+            fi
 
             if [ "$DRY_RUN" = "true" ]; then
               record "$BRANCH" "would update" "$AHEAD commit(s), not pushed"
