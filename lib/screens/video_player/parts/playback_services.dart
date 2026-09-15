@@ -49,6 +49,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       if (!await negotiation || stale()) return;
     }
 
+    // The persisted ambient-lighting setting applies here, not in the start
+    // flow: mpv reports the picture geometry only once this frame reached the
+    // VO, and the surface is still behind the loading UI, so the viewer never
+    // sees the letterboxed frame the effect replaces. Concurrent callers await
+    // the same restore and re-check staleness after it.
+    await _visualEffects.restoreAmbientLightingAtFirstFrame();
+    if (stale()) return;
+
     _firstFrame.markReady();
     // This request is proven: a later in-place switch that fails restores it.
     _workingOpenRequest = _currentOpenRequest;
@@ -283,6 +291,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
     if (!mounted || _shuttingDown) return;
 
+    _visualEffects.disarmAmbientRestore();
     final ambientLightingService = _ambientLightingService;
     _ambientLightingService = null;
     if (ambientLightingService != null) {

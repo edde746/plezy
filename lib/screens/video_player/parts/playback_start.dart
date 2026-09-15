@@ -341,7 +341,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
               _videoFilterManager?.ambientLightingService = _ambientLightingService;
 
               await _visualEffects.applySavedPreset();
-              await _visualEffects.restoreAmbientLighting();
+              // Applied at the first frame, once mpv reports the picture
+              // geometry — see [VisualEffectsController.armAmbientRestore].
+              _visualEffects.armAmbientRestore();
             }
           }
           return attempt.isCurrent;

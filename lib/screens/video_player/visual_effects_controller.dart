@@ -116,6 +116,42 @@ class VisualEffectsController {
     if (_isMounted()) _requestRebuild();
   }
 
+  /// Whether the start flow armed [restoreAmbientLightingAtFirstFrame].
+  bool _ambientRestoreArmed = false;
+
+  /// The restore this attempt ran at its first frame; every first-frame
+  /// caller awaits the same one.
+  Future<void>? _ambientRestore;
+
+  /// Arm the persisted-setting restore for this playback attempt's first
+  /// frame.
+  ///
+  /// `dwidth`/`dheight` only exist once mpv has pushed a decoded frame to
+  /// the VO, which is after the start flow's hooks run: restoring there read
+  /// null and silently never applied the setting. The first-frame latch
+  /// consumes the arm exactly once — a later in-place reload must not
+  /// re-enable an effect the viewer switched off through a zoom or box-fit
+  /// change, which never persist.
+  void armAmbientRestore() {
+    _ambientRestoreArmed = true;
+    _ambientRestore = null;
+  }
+
+  void disarmAmbientRestore() {
+    _ambientRestoreArmed = false;
+    _ambientRestore = null;
+  }
+
+  /// Run the armed restore, or return the one already in flight so the
+  /// frame is revealed only after it lands.
+  Future<void> restoreAmbientLightingAtFirstFrame() {
+    if (_ambientRestoreArmed) {
+      _ambientRestoreArmed = false;
+      _ambientRestore = restoreAmbientLighting();
+    }
+    return _ambientRestore ?? Future<void>.value();
+  }
+
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void cycleBoxFitMode() {
     // Disable ambient lighting when switching boxfit modes
