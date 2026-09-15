@@ -431,7 +431,7 @@ void main() {
       expect(uri.queryParameters['X-Plex-Client-Profile-Extra'], isNot(contains('add-limitation')));
     });
 
-    test('a capped preset forces an h264 encode at that ceiling and survives recovery', () async {
+    test('a capped preset asks for a remux under a bitrate ceiling and survives recovery', () async {
       final decisions = <Uri>[];
       final client = makeClient((request) async {
         if (request.url.path.endsWith('/tune')) {
@@ -452,16 +452,21 @@ void main() {
       ))!;
       final uri = Uri.parse((await session.streamUrlAt())!);
 
-      // Without a client ceiling a remote session lands on the server's own
-      // top transcode tier (#2072): the cap must reach both the decision and
-      // the start request, as bitrate limitation plus resolution/quality caps.
-      expect(uri.queryParameters['directStream'], '0');
+      // A preset is a ceiling, not a re-encode request: the remux is still
+      // asked for so the server copies a channel that already fits (pinning
+      // directStream=0 re-encoded an in-cap 1080p channel at 0.40x). Without
+      // a client ceiling a remote session lands on the server's own top
+      // transcode tier (#2072): the cap must reach both the decision and the
+      // start request, as bitrate limitation plus resolution/quality caps.
+      expect(uri.queryParameters['directPlay'], '0');
+      expect(uri.queryParameters['directStream'], '1');
       expect(uri.queryParameters['videoResolution'], '1280x720');
       expect(uri.queryParameters['videoQuality'], '60');
       final profile = uri.queryParameters['X-Plex-Client-Profile-Extra']!;
       expect(profile, contains('name=video.bitrate&value=2000'));
-      // Every target codec is now an encode output; HEVC into TS is the #1859
-      // corruption, so the h264-only TS target replaces the broadcast one.
+      // The ceiling can force an encode, so the codec list doubles as the
+      // encode menu; HEVC into TS is the #1859 corruption, so the h264-only
+      // TS target replaces the broadcast one.
       expect(profile, contains('container=mpegts&videoCodec=h264&'));
       expect(profile, isNot(contains('hevc')));
       expect(decisions.single.queryParameters['videoResolution'], '1280x720');
@@ -470,7 +475,7 @@ void main() {
       // A re-tune keeps the cap; dropping it would reopen the uncapped shape.
       final recovered = await session.recover(directStream: true, directStreamAudio: true);
       final recoveredUri = Uri.parse((await recovered!.streamUrlAt())!);
-      expect(recoveredUri.queryParameters['directStream'], '0');
+      expect(recoveredUri.queryParameters['directStream'], '1');
       expect(recoveredUri.queryParameters['X-Plex-Client-Profile-Extra'], contains('value=2000'));
     });
   });
