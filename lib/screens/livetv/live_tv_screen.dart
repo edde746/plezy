@@ -48,7 +48,7 @@ class LiveTvScreen extends StatefulWidget {
 
 class _LiveTvScreenState extends State<LiveTvScreen>
     with TickerProviderStateMixin, TabNavigationMixin
-    implements FocusableTab {
+    implements FocusableTab, ManualRefreshable {
   final _guideTabFocusNode = FocusNode(debugLabel: 'tab_chip_guide');
   final _whatsOnTabFocusNode = FocusNode(debugLabel: 'tab_chip_whats_on');
   final _recordingsTabFocusNode = FocusNode(debugLabel: 'tab_chip_recordings');
@@ -185,6 +185,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (tabController.index < 0 || tabController.index >= _visibleTabs.length) return null;
     return _visibleTabs[tabController.index];
   }
+
+  @override
+  void manualRefresh() => unawaited(_onRefresh());
 
   /// Tab-aware refresh handler bound to the AppBar refresh button.
   /// - Guide / What's On: server-side `reloadGuide` per DVR-capable client +
@@ -761,7 +764,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               FocusableAction(
                 icon: Symbols.refresh_rounded,
                 tooltip: isRecordings ? t.common.refresh : t.liveTv.reloadGuide,
-                onPressed: _onRefresh,
+                onPressed: manualRefresh,
               ),
             ],
           ),

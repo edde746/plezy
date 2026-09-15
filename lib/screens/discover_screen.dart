@@ -75,7 +75,7 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, FullRefreshable, TabVisibilityAware, FocusableTab, WidgetsBindingObserver {
+    with Refreshable, ManualRefreshable, FullRefreshable, TabVisibilityAware, FocusableTab, WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
   static const Duration _indicatorUpdateInterval = Duration(milliseconds: 200);
 
@@ -619,6 +619,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return 8.0; // Normal size
   }
 
+  @override
+  void manualRefresh() => unawaited(_refreshFromToolbar());
+
+  Future<void> _refreshFromToolbar() async {
+    final outcome = await _discover.refreshNow();
+    if (!mounted) return;
+    switch (outcome) {
+      case DiscoverRefreshOutcome.failed:
+        showErrorSnackBar(context, t.errors.unableToLoad(context: t.discover.title));
+      case DiscoverRefreshOutcome.degraded:
+        appLogger.w('Discover refresh completed with partial server failures');
+      case DiscoverRefreshOutcome.cancelled:
+      case DiscoverRefreshOutcome.refreshed:
+        break;
+    }
+  }
+
   // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
@@ -800,23 +817,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
-                  FocusableAction(
-                    icon: Symbols.refresh_rounded,
-                    iconColor: foregroundColor,
-                    onPressed: () async {
-                      final outcome = await _discover.refreshNow();
-                      if (!context.mounted) return;
-                      switch (outcome) {
-                        case DiscoverRefreshOutcome.failed:
-                          showErrorSnackBar(context, t.errors.unableToLoad(context: t.discover.title));
-                        case DiscoverRefreshOutcome.degraded:
-                          appLogger.w('Discover refresh completed with partial server failures');
-                        case DiscoverRefreshOutcome.cancelled:
-                        case DiscoverRefreshOutcome.refreshed:
-                          break;
-                      }
-                    },
-                  ),
+                  FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
                   // Watch Together
                   FocusableAction(
                     onPressed: () =>

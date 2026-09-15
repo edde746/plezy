@@ -55,7 +55,7 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class ExploreScreenState extends State<ExploreScreen>
-    with FullRefreshable, TabVisibilityAware, FocusableTab, DebouncedMediaSearch {
+    with ManualRefreshable, FullRefreshable, TabVisibilityAware, FocusableTab, DebouncedMediaSearch {
   late ExploreProvider _explore;
   late CatalogSourcesProvider _sources;
   CatalogSourceId? _activeSourceId;
@@ -108,6 +108,9 @@ class ExploreScreenState extends State<ExploreScreen>
     if (query.isEmpty) return;
     unawaited(runSearch(query));
   }
+
+  @override
+  void manualRefresh() => unawaited(_handleRefresh());
 
   /// Pull-to-refresh and the toolbar refresh action: re-run the query that is
   /// actually on screen, not the hidden rows behind it.
@@ -306,11 +309,7 @@ class ExploreScreenState extends State<ExploreScreen>
           key: _actionBarKey,
           onNavigateDown: searchFocusNode.requestFocus,
           actions: [
-            FocusableAction(
-              icon: Symbols.refresh_rounded,
-              tooltip: t.common.refresh,
-              onPressed: () => unawaited(_handleRefresh()),
-            ),
+            FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
           ],
         ),
       ],
