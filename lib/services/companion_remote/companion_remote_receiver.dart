@@ -31,6 +31,7 @@ class CompanionRemoteReceiver {
   VoidCallback? onTabSettings;
   VoidCallback? onHome;
   void Function(String? query)? onSearchAction;
+  void Function(Map<String, dynamic>? data)? onPlayMedia;
   VoidCallback? onNextTrack;
   VoidCallback? onPreviousTrack;
   VoidCallback? onStop;
@@ -109,6 +110,8 @@ class CompanionRemoteReceiver {
       case RemoteCommandType.search:
         final query = command.data?['query'] as String?;
         onSearchAction?.call(query);
+      case RemoteCommandType.playMedia:
+        onPlayMedia?.call(command.data);
 
       case RemoteCommandType.stop:
         onStop?.call();
@@ -163,6 +166,7 @@ bool _isViewerInput(RemoteCommandType type) => switch (type) {
   RemoteCommandType.pause ||
   RemoteCommandType.playPause ||
   RemoteCommandType.stop ||
+  RemoteCommandType.playMedia ||
   RemoteCommandType.seekForward ||
   RemoteCommandType.seekBackward ||
   RemoteCommandType.nextTrack ||

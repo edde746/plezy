@@ -616,7 +616,8 @@
     "mediaFailedToDelete": "Medya ögesi silinemedi",
     "rate": "Oyla",
     "playFromBeginning": "Baştan Oynat",
-    "playVersion": "Sürümü Oynat..."
+    "playVersion": "Sürümü Oynat...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Oyla",
@@ -1807,6 +1808,7 @@
     "title": "Yardımcı Kumanda",
     "connectedTo": "${name} cihazına bağlandı",
     "unknownDevice": "Bilinmeyen Cihaz",
+    "playSentToDevice": "",
     "session": {
       "startingServer": "Uzaktan kumanda sunucusu başlatılıyor...",
       "hostAddress": "Ana Bilgisayar Adresi",

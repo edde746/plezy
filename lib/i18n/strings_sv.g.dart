@@ -1824,6 +1824,7 @@ class _Translations$companionRemote$sv extends Translations$companionRemote$en {
 	@override String get title => 'Fjärrkontroll';
 	@override String connectedTo({required Object name}) => 'Ansluten till ${name}';
 	@override String get unknownDevice => 'Okänd enhet';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$sv session = _Translations$companionRemote$session$sv._(_root);
 	@override late final _Translations$companionRemote$pairing$sv pairing = _Translations$companionRemote$pairing$sv._(_root);
 	@override late final _Translations$companionRemote$remote$sv remote = _Translations$companionRemote$remote$sv._(_root);
@@ -4538,6 +4539,7 @@ extension on TranslationsSv {
 			'companionRemote.title' => 'Fjärrkontroll',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Ansluten till ${name}',
 			'companionRemote.unknownDevice' => 'Okänd enhet',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'Startar fjärrserver...',
 			'companionRemote.session.hostAddress' => 'Värdadress',
 			'companionRemote.session.connected' => 'Ansluten',

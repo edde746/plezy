@@ -1804,6 +1804,9 @@ class Translations$mediaMenu$en {
 
 	/// en: 'Play Version...'
 	String get playVersion => 'Play Version...';
+
+	/// en: 'Play on Connected Device'
+	String get playOnConnectedDevice => 'Play on Connected Device';
 }
 
 // Path: rateSheet
@@ -4583,6 +4586,9 @@ class Translations$companionRemote$en {
 
 	/// en: 'Unknown Device'
 	String get unknownDevice => 'Unknown Device';
+
+	/// en: 'Sent to ${device}'
+	String playSentToDevice({required Object device}) => 'Sent to ${device}';
 
 	late final Translations$companionRemote$session$en session = Translations$companionRemote$session$en.internal(_root);
 	late final Translations$companionRemote$pairing$en pairing = Translations$companionRemote$pairing$en.internal(_root);
@@ -7629,6 +7635,7 @@ extension on Translations {
 			'mediaMenu.rate' => 'Rate',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'mediaMenu.playVersion' => 'Play Version...',
+			'mediaMenu.playOnConnectedDevice' => 'Play on Connected Device',
 			'rateSheet.title' => 'Rate',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favorite',
@@ -8068,9 +8075,9 @@ extension on Translations {
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
-			'libraries.selectLibrary' => 'Select library',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.selectLibrary' => 'Select library',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
 			'libraries.noRecommendations' => 'No recommendations available',
 			'libraries.noCollections' => 'No collections in this library',
@@ -8582,9 +8589,9 @@ extension on Translations {
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
-			'downloads.deleting' => 'Deleting...',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.deleting' => 'Deleting...',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			'downloads.queuedTooltip' => 'Queued',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
@@ -8686,6 +8693,7 @@ extension on Translations {
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
 			'companionRemote.unknownDevice' => 'Unknown Device',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'Starting remote server...',
 			'companionRemote.session.hostAddress' => 'Host Address',
 			'companionRemote.session.connected' => 'Connected',

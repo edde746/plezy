@@ -616,7 +616,8 @@
     "mediaFailedToDelete": "Medienelement konnte nicht gelöscht werden",
     "rate": "Bewerten",
     "playFromBeginning": "Von Anfang an abspielen",
-    "playVersion": "Version abspielen …"
+    "playVersion": "Version abspielen …",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Bewerten",
@@ -1807,6 +1808,7 @@
     "title": "Companion-Fernbedienung",
     "connectedTo": "Verbunden mit ${name}",
     "unknownDevice": "Unbekanntes Gerät",
+    "playSentToDevice": "Sent to ${device}",
     "session": {
       "startingServer": "Remote-Server wird gestartet...",
       "hostAddress": "Host-Adresse",

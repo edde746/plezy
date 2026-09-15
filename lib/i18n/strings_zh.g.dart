@@ -1816,6 +1816,7 @@ class Translations$companionRemote$zh extends Translations$companionRemote$en {
 	@override String get title => '遥控器';
 	@override String connectedTo({required Object name}) => '已连接到 ${name}';
 	@override String get unknownDevice => '未知设备';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final Translations$companionRemote$session$zh session = Translations$companionRemote$session$zh.internal(_root);
 	@override late final Translations$companionRemote$pairing$zh pairing = Translations$companionRemote$pairing$zh.internal(_root);
 	@override late final Translations$companionRemote$remote$zh remote = Translations$companionRemote$remote$zh.internal(_root);
@@ -4528,6 +4529,7 @@ extension on TranslationsZh {
 			'companionRemote.title' => '遥控器',
 			'companionRemote.connectedTo' => ({required Object name}) => '已连接到 ${name}',
 			'companionRemote.unknownDevice' => '未知设备',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => '正在启动远程服务器…',
 			'companionRemote.session.hostAddress' => '主机地址',
 			'companionRemote.session.connected' => '已连接',

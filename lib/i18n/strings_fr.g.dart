@@ -1824,6 +1824,7 @@ class _Translations$companionRemote$fr extends Translations$companionRemote$en {
 	@override String get title => 'Télécommande compagnon';
 	@override String connectedTo({required Object name}) => 'Connecté à ${name}';
 	@override String get unknownDevice => 'Appareil inconnu';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$fr session = _Translations$companionRemote$session$fr._(_root);
 	@override late final _Translations$companionRemote$pairing$fr pairing = _Translations$companionRemote$pairing$fr._(_root);
 	@override late final _Translations$companionRemote$remote$fr remote = _Translations$companionRemote$remote$fr._(_root);
@@ -4538,6 +4539,7 @@ extension on TranslationsFr {
 			'companionRemote.title' => 'Télécommande compagnon',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connecté à ${name}',
 			'companionRemote.unknownDevice' => 'Appareil inconnu',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'Démarrage du serveur de télécommande…',
 			'companionRemote.session.hostAddress' => 'Adresse de l’hôte',
 			'companionRemote.session.connected' => 'Connecté',

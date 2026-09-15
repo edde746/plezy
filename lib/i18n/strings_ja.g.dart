@@ -1816,6 +1816,7 @@ class _Translations$companionRemote$ja extends Translations$companionRemote$en {
 	@override String get title => 'コンパニオンリモート';
 	@override String connectedTo({required Object name}) => '${name}に接続中';
 	@override String get unknownDevice => '不明なデバイス';
+	@override String playSentToDevice({required Object device}) => 'Sent to ${device}';
 	@override late final _Translations$companionRemote$session$ja session = _Translations$companionRemote$session$ja._(_root);
 	@override late final _Translations$companionRemote$pairing$ja pairing = _Translations$companionRemote$pairing$ja._(_root);
 	@override late final _Translations$companionRemote$remote$ja remote = _Translations$companionRemote$remote$ja._(_root);
@@ -4528,6 +4529,7 @@ extension on TranslationsJa {
 			'companionRemote.title' => 'コンパニオンリモート',
 			'companionRemote.connectedTo' => ({required Object name}) => '${name}に接続中',
 			'companionRemote.unknownDevice' => '不明なデバイス',
+			'companionRemote.playSentToDevice' => ({required Object device}) => 'Sent to ${device}',
 			'companionRemote.session.startingServer' => 'リモートサーバーを起動中…',
 			'companionRemote.session.hostAddress' => 'ホストアドレス',
 			'companionRemote.session.connected' => '接続済み',

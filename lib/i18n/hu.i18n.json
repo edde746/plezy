@@ -616,7 +616,8 @@
     "mediaFailedToDelete": "Nem sikerült a médiaelem törlése",
     "rate": "Értékelés",
     "playFromBeginning": "Lejátszás az elejétől",
-    "playVersion": "Verzió lejátszása..."
+    "playVersion": "Verzió lejátszása...",
+    "playOnConnectedDevice": ""
   },
   "rateSheet": {
     "title": "Értékelés",
@@ -1807,6 +1808,7 @@
     "title": "Kísérőtávirányító",
     "connectedTo": "Csatlakoztatva a következőhöz: ${name}",
     "unknownDevice": "Ismeretlen eszköz",
+    "playSentToDevice": "",
     "session": {
       "startingServer": "Távirányító-szerver indítása...",
       "hostAddress": "Gazdagép címe",
