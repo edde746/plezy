@@ -139,8 +139,9 @@ internal object GpuVoPolicy {
   }
 
   /**
-   * Whether a vo switch (the plane to a GL renderer or back) must run with
-   * the video track deselected. mpv re-creates the decoder inside that
+   * Whether a video-chain rebuild — a vo switch (the plane to a GL renderer
+   * or back), or a surface handoff while a GL renderer is live — must run
+   * with the video track deselected. mpv re-creates the decoder inside that
    * rebuild, and Tensor's BigOcean AV1 service (`c2.google.av1.decoder`)
    * crashes when the next instance starts while the previous one is still
    * shutting down; mpv then lands on mediacodec-copy or software, and the
@@ -148,10 +149,10 @@ internal object GpuVoPolicy {
    * instance, the rebuild runs without a decoder, and re-selecting creates
    * the next one against the finished output. Only an AV1 session that asks
    * for hardware decoding on that decoder pays the extra track switch.
-   * Surface handoffs never rebuild: the fork vo repoints the running decoder
-   * at the new Surface in place. [codec] is the current video track's codec;
-   * [hwdec] is the `hwdec` option (not `hwdec-current`, which lags a freshly
-   * re-selected decoder).
+   * A surface handoff on the plane is not a rebuild: the fork vo repoints
+   * the running decoder at the new Surface in place. [codec] is the current
+   * video track's codec; [hwdec] is the `hwdec` option (not `hwdec-current`,
+   * which lags a freshly re-selected decoder).
    */
   fun needsParkedRebuild(codec: String?, hwdec: String?, bigOceanAv1: Boolean): Boolean = bigOceanAv1 && codec == "av1" && !hwdec.isNullOrBlank() && hwdec != "no"
 
