@@ -5,7 +5,6 @@ import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Handler
-import android.util.Log
 import android.view.Display
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
@@ -13,7 +12,7 @@ import androidx.annotation.RequiresApi
 class FrameRateManager(
   private val activity: Activity,
   private val handler: Handler,
-  private val log: (String) -> Unit = { Log.d(TAG, it) }
+  private val log: (String) -> Unit = { message -> PlayerDebugLog.d(TAG) { message } }
 ) {
   companion object {
     private const val TAG = "FrameRateManager"
@@ -79,7 +78,7 @@ class FrameRateManager(
     currentMatchResolution = matchResolution
     val hasResolutionTarget = matchResolution && videoWidth > 0 && videoHeight > 0
     if (fps <= 0f && !hasResolutionTarget) {
-      Log.d(TAG, "setVideoFrameRate: no usable target (fps=$fps, video=${videoWidth}x$videoHeight), skipping")
+      PlayerDebugLog.d(TAG) { "setVideoFrameRate: no usable target (fps=$fps, video=${videoWidth}x$videoHeight), skipping" }
       onComplete(false)
       return
     }
@@ -101,7 +100,7 @@ class FrameRateManager(
   // by [HDR_EXIT_SETTLE_MS] so the caller's surface teardown can commit the
   // HDR exit first — see [HDR_EXIT_SETTLE_MS] for why stacking them is slow.
   fun clearVideoFrameRate(hdrActive: Boolean = false) {
-    Log.d(TAG, "clearVideoFrameRate(hdrActive=$hdrActive)")
+    PlayerDebugLog.d(TAG) { "clearVideoFrameRate(hdrActive=$hdrActive)" }
     currentVideoFps = 0f
     // Resolve any pending setVideoFrameRate future as "not switched" so
     // the Dart caller's await doesn't hang on player dispose.
@@ -113,9 +112,9 @@ class FrameRateManager(
     if (hdrActive) {
       val restore = Runnable {
         pendingRestoreRunnable = null
-        // Log.d, not [log]: this fires after core dispose, when the
+        // PlayerDebugLog, not [log]: this fires after core dispose, when the
         // Flutter-channel logger is already gone.
-        Log.d(TAG, "restoring default display mode after HDR exit")
+        PlayerDebugLog.d(TAG) { "restoring default display mode after HDR exit" }
         restorePreferredDisplayMode()
       }
       pendingRestoreRunnable = restore
@@ -129,18 +128,17 @@ class FrameRateManager(
     // preferredDisplayModeId persists on the window; restore the default.
     val window = activity.window ?: return
     val attrs = window.attributes ?: return
-    // Log.d, not [log]: reached after core dispose, when the Flutter-channel
+    // PlayerDebugLog, not [log]: reached after core dispose, when the Flutter-channel
     // logger is gone. The window attribute is what this restores; the
     // display lands on its default mode asynchronously, so the second line
     // names the mode still active at the point of the request.
-    Log.d(
-      TAG,
+    PlayerDebugLog.d(TAG) {
       "restorePreferredDisplayMode: preferredDisplayModeId=${attrs.preferredDisplayModeId} -> 0, " +
         "before currentMode=${currentModeDescription()}"
-    )
+    }
     attrs.preferredDisplayModeId = 0
     window.attributes = attrs
-    Log.d(TAG, "restorePreferredDisplayMode: applied, after currentMode=${currentModeDescription()}")
+    PlayerDebugLog.d(TAG) { "restorePreferredDisplayMode: applied, after currentMode=${currentModeDescription()}" }
   }
 
   private fun cancelPendingRestore() {
@@ -154,7 +152,7 @@ class FrameRateManager(
   // window-scoped preferredDisplayModeId persists across the SurfaceView swap,
   // letting MPV inherit the rate without a second HDMI renegotiation.
   fun releasePending() {
-    Log.d(TAG, "releasePending")
+    PlayerDebugLog.d(TAG) { "releasePending" }
     currentVideoFps = 0f
     firePendingCompletion("release", switched = false)
   }

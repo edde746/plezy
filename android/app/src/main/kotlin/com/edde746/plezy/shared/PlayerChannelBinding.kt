@@ -2,7 +2,6 @@ package com.edde746.plezy.shared
 
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
@@ -28,7 +27,7 @@ internal class PlayerChannelBinding(
     eventChannel = EventChannel(binding.binaryMessenger, "$channelBase/events").also {
       it.setStreamHandler(streamHandler)
     }
-    Log.d(logTag, "Attached to engine")
+    PlayerDebugLog.d(logTag) { "Attached to engine" }
   }
 
   fun detach() {
@@ -37,17 +36,17 @@ internal class PlayerChannelBinding(
     methodChannel = null
     eventChannel = null
     eventSink = null
-    Log.d(logTag, "Detached from engine")
+    PlayerDebugLog.d(logTag) { "Detached from engine" }
   }
 
   fun listen(events: EventChannel.EventSink?) {
     eventSink = events
-    Log.d(logTag, "Event stream connected")
+    PlayerDebugLog.d(logTag) { "Event stream connected" }
   }
 
   fun cancel() {
     eventSink = null
-    Log.d(logTag, "Event stream disconnected")
+    PlayerDebugLog.d(logTag) { "Event stream disconnected" }
   }
 
   fun runOnMain(block: () -> Unit) {

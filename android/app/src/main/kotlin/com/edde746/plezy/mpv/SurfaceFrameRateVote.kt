@@ -3,6 +3,7 @@ package com.edde746.plezy.mpv
 import android.os.Build
 import android.util.Log
 import android.view.Surface
+import com.edde746.plezy.shared.PlayerDebugLog
 
 /**
  * The seamless frame-rate vote Media3's `VideoFrameReleaseHelper` places on
@@ -118,7 +119,7 @@ internal class SurfaceFrameRateVote(
       try {
         // Two-argument overload: CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS.
         surface.setFrameRate(frameRate, compatibility)
-        Log.d(TAG, "Surface.setFrameRate($frameRate, compatibility=$compatibility)")
+        PlayerDebugLog.d(TAG) { "Surface.setFrameRate($frameRate, compatibility=$compatibility)" }
       } catch (e: IllegalStateException) {
         // The Surface was abandoned between the validity check and the call.
         Log.w(TAG, "Surface.setFrameRate($frameRate) failed", e)

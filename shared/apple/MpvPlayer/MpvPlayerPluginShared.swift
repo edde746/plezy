@@ -161,6 +161,9 @@ extension MpvPluginShared {
       result(FlutterError(code: "INVALID_ARGS", message: "Missing 'level'", details: nil))
       return
     }
+    // The same switch drives mpv's own verbosity and the Swift-side traces, so
+    // enabling "Debug Logging" in the app opens both.
+    MpvLog.isDebugEnabled = MpvLog.isVerbose(level)
     coreBase?.setLogLevel(level)
     result(nil)
   }
