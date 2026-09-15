@@ -188,6 +188,9 @@ class _IdlePlayer implements Player {
   Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
   @override
+  Future<bool> isHdrOutputSupported() async => false;
+
+  @override
   PlayerState get state => PlayerState(
     playing: true,
     position: const Duration(minutes: 10),
