@@ -57,12 +57,13 @@ dependencies:
   web_socket_channel: ^3.0.1
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
-  # Fork 41c16be fixes upstream #649's missing desktop temp parent.
+  # Fork 41c16be fixes upstream #649's missing desktop temp parent; c52103f
+  # survives a host with no documents directory (Linux without xdg-user-dirs).
   # Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 12ef3ff758709e3ceab8eccd6d43e0dea1c68ca1
+      ref: c52103f4a2d683c22ce3b8b8661da610644bfef1
   sentry_flutter: ^9.25.0
   auto_updater:
     git:
