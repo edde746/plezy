@@ -1893,6 +1893,7 @@
     "audioOutputStereo": "ステレオ",
     "audioNormalization": "ラウドネス正規化",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "ステレオにダウンミックス"
   },
   "performanceOverlay": {

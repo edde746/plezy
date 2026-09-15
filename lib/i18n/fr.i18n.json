@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Stéréo",
     "audioNormalization": "Normaliser le volume",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Conversion en stéréo"
   },
   "performanceOverlay": {

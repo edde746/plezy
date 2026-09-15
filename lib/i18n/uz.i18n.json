@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ovoz balandligini meʼyorlashtirish",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Stereoga oʻtkazish"
   },
   "performanceOverlay": {

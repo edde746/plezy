@@ -1904,6 +1904,7 @@
     "audioOutputStereo": "Sztereó",
     "audioNormalization": "Hangerő normalizálása",
     "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Lekeverés sztereóra"
   },
   "performanceOverlay": {
