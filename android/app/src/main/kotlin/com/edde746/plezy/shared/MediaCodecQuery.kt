@@ -105,6 +105,8 @@ internal object MediaCodecQuery {
     else -> null
   }
 
+  private val PERFORMANCE_POINT_RATES = intArrayOf(240, 120, 90, 60, 50, 30, 25, 24)
+
   /**
    * The highest frame rate the hardware decoder for [mimeType] advertises at
    * [width]x[height]: the manufacturer's performance points on API 31+, the
@@ -112,8 +114,6 @@ internal object MediaCodecQuery {
    * size is outside what it declares, or the platform answers nothing —
    * the caller then applies its own ceiling.
    */
-  private val PERFORMANCE_POINT_RATES = intArrayOf(240, 120, 90, 60, 50, 30, 25, 24)
-
   fun maxDecoderFrameRate(mimeType: String, width: Int, height: Int): Int? {
     if (width <= 0 || height <= 0) return null
     val info = findHardwareDecoder(mimeType) ?: return null

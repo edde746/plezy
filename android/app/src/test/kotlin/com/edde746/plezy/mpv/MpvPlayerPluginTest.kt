@@ -2037,13 +2037,12 @@ class MpvPlayerPluginTest {
   fun asynchronousMediaCodecFollowsMedia3sPlatformThreshold() {
     // Media3 trusts asynchronous MediaCodec from API 31; below it the decoder
     // stays synchronous (bounded waits, polled), on the NDK either way.
-    fun effective(options: String): Map<String, String> = options.split(',').associate {
-      it.substringBefore('=') to it.substringAfter('=')
-    }
-    assertEquals(mapOf("ndk_codec" to "1", "ndk_async" to "1"), effective(MpvPlayerCore.initialDecoderOptions(31)))
-    assertEquals(mapOf("ndk_codec" to "1", "ndk_async" to "1"), effective(MpvPlayerCore.initialDecoderOptions(36)))
-    assertEquals(mapOf("ndk_codec" to "1"), effective(MpvPlayerCore.initialDecoderOptions(30)))
-    assertEquals(mapOf("ndk_codec" to "1"), effective(MpvPlayerCore.initialDecoderOptions(25)))
+    fun entries(sdkInt: Int): Map<String, String> = MpvPlayerCore.initialDecoderEntries(sdkInt).toMap()
+    assertEquals("1", entries(31)["ndk_async"])
+    assertEquals("1", entries(36)["ndk_async"])
+    assertNull(entries(30)["ndk_async"])
+    assertNull(entries(25)["ndk_async"])
+    assertEquals("1", entries(25)["ndk_codec"])
   }
 
   private fun awaitQueueEntry(

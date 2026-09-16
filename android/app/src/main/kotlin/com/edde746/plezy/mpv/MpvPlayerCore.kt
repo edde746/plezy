@@ -188,7 +188,8 @@ class MpvPlayerCore private constructor(
     internal fun initialVideoOutput(hardwareDecoding: Boolean): String = if (hardwareDecoding) "mediacodec,gpu" else "gpu,gpu-next"
 
     /**
-     * The bundled FFmpeg's MediaCodec decoder options for a video core.
+     * The bundled FFmpeg's MediaCodec decoder options every video core
+     * starts with (see [DecoderOptions]).
      *
      * `ndk_codec=1`: NDK MediaCodec, never the Java wrapper (#2255).
      *
@@ -203,8 +204,17 @@ class MpvPlayerCore private constructor(
      * `DefaultMediaCodecAdapterFactory` trusts asynchronous MediaCodec by
      * default from API 31 only, for the same device-quirk history. Below it
      * the decoder still bounds its wait (8 ms) and is polled.
+     *
+     * `priority=0`: realtime (MediaFormat `priority`), what Media3 declares
+     * beside an operating rate and what some vendors require beside one (a
+     * decoder on s5e8835/SA8155P refuses to configure with a rate and no
+     * priority).
      */
-    internal fun initialDecoderOptions(sdkInt: Int): String = if (sdkInt >= Build.VERSION_CODES.S) "ndk_codec=1,ndk_async=1" else "ndk_codec=1"
+    internal fun initialDecoderEntries(sdkInt: Int): List<Pair<String, String>> = buildList {
+      add("ndk_codec" to "1")
+      if (sdkInt >= Build.VERSION_CODES.S) add("ndk_async" to "1")
+      add("priority" to "0")
+    }
 
     /**
      * mpv's decoder thread and frame queue, for hardware sessions.
@@ -234,10 +244,6 @@ class MpvPlayerCore private constructor(
       "vd-queue-max-secs" to "0.5",
       "vd-queue-max-bytes" to "48MiB"
     )
-
-    /** The `vd-lavc-o` entries every video core starts with; see [DecoderOptions]. */
-    internal fun initialDecoderEntries(sdkInt: Int): List<Pair<String, String>> =
-      initialDecoderOptions(sdkInt).split(',').map { it.substringBefore('=') to it.substringAfter('=') }
 
     /**
      * Whether content with this transfer is worth an HDR (BT.2020 PQ) GL
@@ -286,26 +292,14 @@ class MpvPlayerCore private constructor(
    * [writeOperations]; the user's line arrives through [setProperty]. */
   private val decoderOptions = DecoderOptions()
 
-  /** Per-file inputs of the MediaCodec operating rate ([DecoderOperatingRate]):
-   * the track's rate and the decoder's advertised maximum at its size, set by
-   * [applyDecoderOperatingRate] before the decoder exists; the speed follows
-   * mpv's `speed`. Read wherever the rate is re-derived. */
-  @Volatile private var fileContainerFps: Double = 0.0
+  /** The MediaCodec operating rate the session declares ([DecoderOperatingRate]).
+   * Mutated and written under [writeOperations]; a user config line pins it
+   * through [setProperty]. */
+  private val operatingRate = DecoderOperatingRate()
 
-  @Volatile private var fileCodecMaxFps: Int? = null
-
-  @Volatile private var playbackSpeed: Double = 1.0
-
-  /** The rate last written to `hwdec-mediacodec-operating-rate`, 0 when none. */
-  @Volatile private var appliedOperatingRate: Int = 0
-
-  /** A `hwdec-mediacodec-operating-rate` line in the user's mpv config pins
-   * the rate (0: leave the platform's default) and switches the policy off;
-   * null while the user has not spoken. */
-  @Volatile private var userOperatingRate: Int? = null
-
-  /** Turns the plane's late-frame count into the one raise and restore of the rate. */
-  private val deficitMonitor = DecoderDeficitMonitor()
+  /** A `framedrop` line in the user's config; the per-file policy stands
+   * down. Set and read under [writeOperations]. */
+  private var userFramedrop = false
 
   /** Whether the missing `pending-vid` property was logged; hook-serial. */
   private var pendingVidUnavailableLogged = false
@@ -964,7 +958,7 @@ class MpvPlayerCore private constructor(
                   // Use NDK MediaCodec so per-frame decode/release calls do not
                   // wait on ART JIT code-cache collection (#2255), and drive it
                   // asynchronously where the platform is trusted to (see
-                  // initialDecoderOptions). This belongs to every video core,
+                  // initialDecoderEntries). This belongs to every video core,
                   // not the DV or vo=mediacodec policy: GPU/copy hardware paths
                   // use the same decoder. Software decoders ignore these unknown
                   // AVOptions without failing open. Every later write of the
@@ -1046,7 +1040,7 @@ class MpvPlayerCore private constructor(
                   val track = pendingVideoTrack(p)
                   applyDvReshapePolicy(p, track)
                   applySoftwareDecodePolicy(p, track)
-                  applyDecoderOperatingRate(p, track)
+                  applyDecoderOperatingRate(track)
                   applyFramedropPolicy()
                 }
               }
@@ -1090,9 +1084,6 @@ class MpvPlayerCore private constructor(
             if (usesMediaCodecVo) {
               p.observeProperty("dwidth", PropertyFormat.Int64)
               p.observeProperty("dheight", PropertyFormat.Int64)
-              // The plane's late-frame count, the deficit signal behind the
-              // operating-rate raise (DecoderDeficitMonitor).
-              p.observeProperty("frame-drop-count", PropertyFormat.Int64)
               p.observeProperty("hwdec-current", PropertyFormat.String)
               p.observeProperty("glsl-shaders", PropertyFormat.String)
               p.observeProperty("video-params/gamma", PropertyFormat.String)
@@ -1167,9 +1158,6 @@ class MpvPlayerCore private constructor(
           }
           is MpvEvent.PlaybackRestart -> {
             if (!audioOnly) measureFieldOutput()
-            // A start, seek or unpause refills the decoder's pipeline; the
-            // late frames of that refill are not a deficit.
-            deficitMonitor.onPlaybackStarted(SystemClock.elapsedRealtime())
             delegate?.onEvent(
               "playback-restart",
               lifecycleData(event.sourceId, event.positionSeconds)
@@ -1204,26 +1192,16 @@ class MpvPlayerCore private constructor(
           } else {
             frameRateVote.onStarted()
             if (!audioOnly) measureFieldOutput()
-            deficitMonitor.onPlaybackStarted(SystemClock.elapsedRealtime())
           }
         }
         if (change.name == "speed" && change is PropertyChange.Double) {
           frameRateVote.onPlaybackSpeed(change.value.toFloat())
-          if (change.value.isFinite() && change.value > 0.0 && change.value != playbackSpeed) {
-            playbackSpeed = change.value
-            // The decoder was told a rate for 1x; at 8x it needs eight times it.
-            rederiveOperatingRate("speed ${change.value}")
+          // The decoder was told a rate for the previous speed; at 8x it needs eight times it.
+          if (usesMediaCodecVo) {
+            launchMpvWrite("operating rate") {
+              operatingRate.onSpeed(change.value)?.let { writeOperatingRate(it, "speed ${change.value}") }
+            }
           }
-        }
-        if (change.name == "frame-drop-count" && change is PropertyChange.Int64) {
-          // Native only: Dart polls this counter for the overlay and does
-          // not observe it, so no double delivery.
-          when (deficitMonitor.onDropCount(change.value, SystemClock.elapsedRealtime())) {
-            DecoderDeficitMonitor.Decision.RAISE -> rederiveOperatingRate("late frames at the declared rate")
-            DecoderDeficitMonitor.Decision.RESTORE -> rederiveOperatingRate("calm again")
-            null -> {}
-          }
-          return@collect
         }
         delegate?.onPropertyChange(change.name, value, change.sourceId)
       }
@@ -1569,59 +1547,28 @@ class MpvPlayerCore private constructor(
    * Tells the file's MediaCodec decoder what rate to be ready for, before it
    * is created ([DecoderOperatingRate]): the track's own rate and the
    * decoder's advertised maximum at its size are known here and nowhere
-   * earlier. The stream rate (`frame_rate`) and a realtime `priority` ride
-   * along on the decoder options; the operating rate itself is mpv's
-   * `hwdec-mediacodec-operating-rate`, the one option the player keeps
-   * current on a running decoder when the speed changes or a deficit is
-   * measured. Inert for a software decoder, so it is set regardless of the
-   * hwdec hold.
+   * earlier. The stream rate rides along on the decoder options
+   * (`frame_rate`, Media3's KEY_FRAME_RATE); the operating rate itself is
+   * mpv's `hwdec-mediacodec-operating-rate`, which the player keeps current
+   * on a running decoder when the speed changes. Inert for a software
+   * decoder, so it is set regardless of the hwdec hold.
    */
-  private suspend fun applyDecoderOperatingRate(p: MpvPlayer, track: org.json.JSONObject?) {
+  private suspend fun applyDecoderOperatingRate(track: org.json.JSONObject?) {
     val fps = track?.optDouble("demux-fps", 0.0)?.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
     val width = track?.optInt("demux-w", 0) ?: 0
     val height = track?.optInt("demux-h", 0) ?: 0
     val mime = MediaCodecQuery.mimeTypeForCodec(track?.optString("codec"))
     val codecMax = mime?.let { MediaCodecQuery.maxDecoderFrameRate(it, width, height) }
-    fileContainerFps = fps
-    fileCodecMaxFps = codecMax
-    deficitMonitor.reset()
-    appliedOperatingRate = 0
-
-    decoderOptions.put(
-      "frame_rate" to fps.takeIf { it > 0.0 }?.let { String.format(Locale.ROOT, "%.3f", it) },
-      "priority" to "0"
-    )
+    decoderOptions.put("frame_rate" to fps.takeIf { it > 0.0 }?.let { String.format(Locale.ROOT, "%.3f", it) })
     writeProperty("vd-lavc-o", decoderOptions.compose())
-    val pinned = userOperatingRate
-    if (pinned != null) {
-      Log.i(TAG, "Decoder operating rate pinned by the user's config: $pinned")
-      if (pinned > 0) writeOperatingRate(pinned, "user")
-      return
+    operatingRate.onFile(fps, codecMax)?.let {
+      writeOperatingRate(it, "file: fps=$fps ${width}x$height codecMax=${codecMax ?: "unknown"}")
     }
-    val rate = DecoderOperatingRate.declared(fps, playbackSpeed, codecMax)
-    writeOperatingRate(rate, "file: fps=$fps ${width}x$height codecMax=${codecMax ?: "unknown"}")
   }
 
-  /** Hand [rate] to mpv unless it is what the decoder already has. */
   private suspend fun writeOperatingRate(rate: Int, reason: String) {
-    if (rate <= 0 || rate == appliedOperatingRate) return
-    appliedOperatingRate = rate
     writeProperty("hwdec-mediacodec-operating-rate", rate.toString())
     Log.i(TAG, "Decoder operating rate $rate ($reason)")
-  }
-
-  /** Re-derive the rate for the current file: the speed or the deficit state changed. */
-  private fun rederiveOperatingRate(reason: String) {
-    if (!isInitialized || disposing || !scope.isActive || userOperatingRate != null) return
-    val fps = fileContainerFps
-    val codecMax = fileCodecMaxFps
-    val speed = playbackSpeed
-    val rate = if (deficitMonitor.boosted) {
-      DecoderOperatingRate.boosted(fps, speed, codecMax)
-    } else {
-      DecoderOperatingRate.declared(fps, speed, codecMax)
-    }
-    submitMpvOperation(writeOperations, "operating rate", {}) { writeOperatingRate(rate, reason) }
   }
 
   /**
@@ -1635,6 +1582,7 @@ class MpvPlayerCore private constructor(
    * dropping is documented to mistime frames.
    */
   private suspend fun applyFramedropPolicy() {
+    if (userFramedrop) return
     val hardwarePlane = usesMediaCodecVo && !hwdecHeld
     writeProperty("framedrop", if (hardwarePlane) "decoder+vo" else "vo")
   }
@@ -2583,13 +2531,17 @@ class MpvPlayerCore private constructor(
       return
     }
 
-    // The user's word on the operating rate pins it for the session and
-    // takes the per-file policy and the deficit raise out of the loop; 0
-    // leaves the platform default, which is how a decoder-bound collapse
-    // is reproduced on purpose. The write itself still reaches mpv.
-    if (name == "hwdec-mediacodec-operating-rate") {
-      userOperatingRate = value.trim().toIntOrNull()?.coerceAtLeast(0)
-      appliedOperatingRate = userOperatingRate ?: 0
+    // The user's word on the two per-file options the session otherwise
+    // owns pins them: the policy stands down for the rest of the session.
+    // An operating rate of 0 leaves the platform default, which is how a
+    // decoder-bound collapse is reproduced on purpose.
+    if (name == "hwdec-mediacodec-operating-rate" || name == "framedrop") {
+      submitMpvOperation(writeOperations, "pinned $name", { onComplete?.invoke(it) }) {
+        writeProperty(name, value)
+        Log.i(TAG, "$name pinned by the user's config: $value")
+        if (name == "framedrop") userFramedrop = true else operatingRate.pin()
+      }
+      return
     }
 
     // View geometry on the plane (see VideoRectPolicy), but both still fall

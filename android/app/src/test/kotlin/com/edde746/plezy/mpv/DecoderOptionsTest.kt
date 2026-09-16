@@ -14,18 +14,19 @@ class DecoderOptionsTest {
   @Test
   fun aUserLineWinsPerKeyAndTheSessionsOtherKeysSurvive() {
     val options = DecoderOptions()
-      .putAll(MpvPlayerCore.initialDecoderEntries(36))
-      .put("dolby_vision" to "0", "dv_p7_mode" to "strip")
-    // The custom mpv config line a reporter used: it must not discard the
-    // asynchronous backend or the DV routing along with the key it names.
-    options.setUser("operating_rate=120,ndk_async=0")
+    options.putAll(MpvPlayerCore.initialDecoderEntries(36))
+    options.put("dolby_vision" to "0", "dv_p7_mode" to "strip")
+    // A custom mpv config line naming one session key must not discard the
+    // DV routing or the NDK backend along with it.
+    options.setUser("threads=2,ndk_async=0")
     assertEquals(
       mapOf(
         "ndk_codec" to "1",
         "ndk_async" to "0",
+        "priority" to "0",
         "dolby_vision" to "0",
         "dv_p7_mode" to "strip",
-        "operating_rate" to "120"
+        "threads" to "2"
       ),
       effective(options.compose())
     )
@@ -33,35 +34,42 @@ class DecoderOptionsTest {
 
   @Test
   fun aLaterSessionWriteKeepsTheUsersLine() {
-    val options = DecoderOptions().putAll(MpvPlayerCore.initialDecoderEntries(31)).setUser("threads=2")
+    val options = DecoderOptions()
+    options.putAll(MpvPlayerCore.initialDecoderEntries(31))
+    options.setUser("threads=2")
     options.put("dolby_vision" to "1", "dv_p7_mode" to "convert")
-    options.put("frame_rate" to "23.976", "priority" to "0")
+    options.put("frame_rate" to "23.976")
     assertEquals(
       mapOf(
         "ndk_codec" to "1",
         "ndk_async" to "1",
+        "priority" to "0",
         "dolby_vision" to "1",
         "dv_p7_mode" to "convert",
         "frame_rate" to "23.976",
-        "priority" to "0",
         "threads" to "2"
       ),
       effective(options.compose())
     )
     // A DV change replaces only the DV choices.
     options.put("dolby_vision" to "0", "dv_p7_mode" to "native")
-    assertEquals("0", effective(options.compose())["dolby_vision"])
-    assertEquals("native", effective(options.compose())["dv_p7_mode"])
-    assertEquals("2", effective(options.compose())["threads"])
+    val composed = effective(options.compose())
+    assertEquals("0", composed["dolby_vision"])
+    assertEquals("native", composed["dv_p7_mode"])
+    assertEquals("2", composed["threads"])
   }
 
   @Test
   fun clearingTheUserLineAndRemovingKeys() {
-    val options = DecoderOptions().put("ndk_codec" to "1", "frame_rate" to "25.000").setUser("x=1")
+    val options = DecoderOptions()
+    options.put("ndk_codec" to "1", "frame_rate" to "25.000")
+    options.setUser("x=1")
     options.setUser("   ")
     options.put("frame_rate" to null)
     assertEquals("ndk_codec=1", options.compose())
     assertEquals("", DecoderOptions().compose())
-    assertEquals("x=1", DecoderOptions().setUser("x=1").compose())
+    val userOnly = DecoderOptions()
+    userOnly.setUser("x=1")
+    assertEquals("x=1", userOnly.compose())
   }
 }
