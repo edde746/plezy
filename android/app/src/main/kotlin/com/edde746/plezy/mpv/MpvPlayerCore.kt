@@ -235,12 +235,9 @@ class MpvPlayerCore private constructor(
       "vd-queue-max-bytes" to "48MiB"
     )
 
-    /**
-     * The `-append` list-option suffixes are not exposed through the property
-     * interface, so the app's decoder options replace the whole list. FFmpeg
-     * keeps the last duplicate key, so any user mpv.conf entries go first.
-     */
-    internal fun mergeDecoderOptions(current: String?, ours: String): String = if (current.isNullOrBlank()) ours else "$current,$ours"
+    /** The `vd-lavc-o` entries every video core starts with; see [DecoderOptions]. */
+    internal fun initialDecoderEntries(sdkInt: Int): List<Pair<String, String>> =
+      initialDecoderOptions(sdkInt).split(',').map { it.substringBefore('=') to it.substringAfter('=') }
 
     /**
      * Whether content with this transfer is worth an HDR (BT.2020 PQ) GL
@@ -283,6 +280,32 @@ class MpvPlayerCore private constructor(
   @Volatile private var hwdecHeld: Boolean = false
 
   private val parkedHwdec = java.util.concurrent.atomic.AtomicReference<String?>()
+
+  /** The `vd-lavc-o` list mpv sees: the session's keys composed with the
+   * user's own line ([DecoderOptions]). Mutated and written under
+   * [writeOperations]; the user's line arrives through [setProperty]. */
+  private val decoderOptions = DecoderOptions()
+
+  /** Per-file inputs of the MediaCodec operating rate ([DecoderOperatingRate]):
+   * the track's rate and the decoder's advertised maximum at its size, set by
+   * [applyDecoderOperatingRate] before the decoder exists; the speed follows
+   * mpv's `speed`. Read wherever the rate is re-derived. */
+  @Volatile private var fileContainerFps: Double = 0.0
+
+  @Volatile private var fileCodecMaxFps: Int? = null
+
+  @Volatile private var playbackSpeed: Double = 1.0
+
+  /** The rate last written to `hwdec-mediacodec-operating-rate`, 0 when none. */
+  @Volatile private var appliedOperatingRate: Int = 0
+
+  /** A `hwdec-mediacodec-operating-rate` line in the user's mpv config pins
+   * the rate (0: leave the platform's default) and switches the policy off;
+   * null while the user has not spoken. */
+  @Volatile private var userOperatingRate: Int? = null
+
+  /** Turns the plane's late-frame count into the one raise and restore of the rate. */
+  private val deficitMonitor = DecoderDeficitMonitor()
 
   /** Whether the missing `pending-vid` property was logged; hook-serial. */
   private var pendingVidUnavailableLogged = false
@@ -944,10 +967,12 @@ class MpvPlayerCore private constructor(
                   // initialDecoderOptions). This belongs to every video core,
                   // not the DV or vo=mediacodec policy: GPU/copy hardware paths
                   // use the same decoder. Software decoders ignore these unknown
-                  // AVOptions without failing open. Set before init; DV writes
-                  // merge it, while a later custom vd-lavc-o keeps the existing
-                  // whole-list override precedence.
-                  setOption("vd-lavc-o", initialDecoderOptions(Build.VERSION.SDK_INT))
+                  // AVOptions without failing open. Every later write of the
+                  // list (per-file DV routing, the stream rate, the user's own
+                  // line) goes through decoderOptions, so none of them loses
+                  // the others' keys.
+                  decoderOptions.putAll(initialDecoderEntries(Build.VERSION.SDK_INT))
+                  setOption("vd-lavc-o", decoderOptions.compose())
                   if (hardwareDecoding) {
                     // Rationale on DECODER_QUEUE_OPTIONS.
                     for ((name, value) in DECODER_QUEUE_OPTIONS) setOption(name, value)
@@ -1021,6 +1046,8 @@ class MpvPlayerCore private constructor(
                   val track = pendingVideoTrack(p)
                   applyDvReshapePolicy(p, track)
                   applySoftwareDecodePolicy(p, track)
+                  applyDecoderOperatingRate(p, track)
+                  applyFramedropPolicy()
                 }
               }
             }
@@ -1063,6 +1090,9 @@ class MpvPlayerCore private constructor(
             if (usesMediaCodecVo) {
               p.observeProperty("dwidth", PropertyFormat.Int64)
               p.observeProperty("dheight", PropertyFormat.Int64)
+              // The plane's late-frame count, the deficit signal behind the
+              // operating-rate raise (DecoderDeficitMonitor).
+              p.observeProperty("frame-drop-count", PropertyFormat.Int64)
               p.observeProperty("hwdec-current", PropertyFormat.String)
               p.observeProperty("glsl-shaders", PropertyFormat.String)
               p.observeProperty("video-params/gamma", PropertyFormat.String)
@@ -1137,6 +1167,9 @@ class MpvPlayerCore private constructor(
           }
           is MpvEvent.PlaybackRestart -> {
             if (!audioOnly) measureFieldOutput()
+            // A start, seek or unpause refills the decoder's pipeline; the
+            // late frames of that refill are not a deficit.
+            deficitMonitor.onPlaybackStarted(SystemClock.elapsedRealtime())
             delegate?.onEvent(
               "playback-restart",
               lifecycleData(event.sourceId, event.positionSeconds)
@@ -1171,10 +1204,26 @@ class MpvPlayerCore private constructor(
           } else {
             frameRateVote.onStarted()
             if (!audioOnly) measureFieldOutput()
+            deficitMonitor.onPlaybackStarted(SystemClock.elapsedRealtime())
           }
         }
         if (change.name == "speed" && change is PropertyChange.Double) {
           frameRateVote.onPlaybackSpeed(change.value.toFloat())
+          if (change.value.isFinite() && change.value > 0.0 && change.value != playbackSpeed) {
+            playbackSpeed = change.value
+            // The decoder was told a rate for 1x; at 8x it needs eight times it.
+            rederiveOperatingRate("speed ${change.value}")
+          }
+        }
+        if (change.name == "frame-drop-count" && change is PropertyChange.Int64) {
+          // Native only: Dart polls this counter for the overlay and does
+          // not observe it, so no double delivery.
+          when (deficitMonitor.onDropCount(change.value, SystemClock.elapsedRealtime())) {
+            DecoderDeficitMonitor.Decision.RAISE -> rederiveOperatingRate("late frames at the declared rate")
+            DecoderDeficitMonitor.Decision.RESTORE -> rederiveOperatingRate("calm again")
+            null -> {}
+          }
+          return@collect
         }
         delegate?.onPropertyChange(change.name, value, change.sourceId)
       }
@@ -1514,6 +1563,80 @@ class MpvPlayerCore private constructor(
       Log.i(TAG, "$codec profile=$codecProfile without hardware support: native software decode on the GL vo")
     }
     setGpuVoRequirement(GpuVoPolicy.REASON_CODEC_SW_DECODE, needs)
+  }
+
+  /**
+   * Tells the file's MediaCodec decoder what rate to be ready for, before it
+   * is created ([DecoderOperatingRate]): the track's own rate and the
+   * decoder's advertised maximum at its size are known here and nowhere
+   * earlier. The stream rate (`frame_rate`) and a realtime `priority` ride
+   * along on the decoder options; the operating rate itself is mpv's
+   * `hwdec-mediacodec-operating-rate`, the one option the player keeps
+   * current on a running decoder when the speed changes or a deficit is
+   * measured. Inert for a software decoder, so it is set regardless of the
+   * hwdec hold.
+   */
+  private suspend fun applyDecoderOperatingRate(p: MpvPlayer, track: org.json.JSONObject?) {
+    val fps = track?.optDouble("demux-fps", 0.0)?.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
+    val width = track?.optInt("demux-w", 0) ?: 0
+    val height = track?.optInt("demux-h", 0) ?: 0
+    val mime = MediaCodecQuery.mimeTypeForCodec(track?.optString("codec"))
+    val codecMax = mime?.let { MediaCodecQuery.maxDecoderFrameRate(it, width, height) }
+    fileContainerFps = fps
+    fileCodecMaxFps = codecMax
+    deficitMonitor.reset()
+    appliedOperatingRate = 0
+
+    decoderOptions.put(
+      "frame_rate" to fps.takeIf { it > 0.0 }?.let { String.format(Locale.ROOT, "%.3f", it) },
+      "priority" to "0"
+    )
+    writeProperty("vd-lavc-o", decoderOptions.compose())
+    val pinned = userOperatingRate
+    if (pinned != null) {
+      Log.i(TAG, "Decoder operating rate pinned by the user's config: $pinned")
+      if (pinned > 0) writeOperatingRate(pinned, "user")
+      return
+    }
+    val rate = DecoderOperatingRate.declared(fps, playbackSpeed, codecMax)
+    writeOperatingRate(rate, "file: fps=$fps ${width}x$height codecMax=${codecMax ?: "unknown"}")
+  }
+
+  /** Hand [rate] to mpv unless it is what the decoder already has. */
+  private suspend fun writeOperatingRate(rate: Int, reason: String) {
+    if (rate <= 0 || rate == appliedOperatingRate) return
+    appliedOperatingRate = rate
+    writeProperty("hwdec-mediacodec-operating-rate", rate.toString())
+    Log.i(TAG, "Decoder operating rate $rate ($reason)")
+  }
+
+  /** Re-derive the rate for the current file: the speed or the deficit state changed. */
+  private fun rederiveOperatingRate(reason: String) {
+    if (!isInitialized || disposing || !scope.isActive || userOperatingRate != null) return
+    val fps = fileContainerFps
+    val codecMax = fileCodecMaxFps
+    val speed = playbackSpeed
+    val rate = if (deficitMonitor.boosted) {
+      DecoderOperatingRate.boosted(fps, speed, codecMax)
+    } else {
+      DecoderOperatingRate.declared(fps, speed, codecMax)
+    }
+    submitMpvOperation(writeOperations, "operating rate", {}) { writeOperatingRate(rate, reason) }
+  }
+
+  /**
+   * `--framedrop` for the file. On the plane the VO owns late-frame policy
+   * (it declares VO_CAP_FRAMEDROP and shows a late frame at the next vsync),
+   * so the `vo` bit is inert there and `decoder` is what matters: the fork's
+   * MediaCodec decoder sheds the shown frame no later frame references when
+   * the core measures itself behind, which is the only way a hardware
+   * decoder can make time up. A software decode on the GL vo keeps mpv's
+   * default, where the renderer can be the bottleneck and decoder-side
+   * dropping is documented to mistime frames.
+   */
+  private suspend fun applyFramedropPolicy() {
+    val hardwarePlane = usesMediaCodecVo && !hwdecHeld
+    writeProperty("framedrop", if (hardwarePlane) "decoder+vo" else "vo")
   }
 
   /**
@@ -2359,9 +2482,8 @@ class MpvPlayerCore private constructor(
         "dolby_vision=$dolbyVision dv_p7_mode=${options.p7Mode}"
     )
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
-      val ours = "dolby_vision=$dolbyVision,dv_p7_mode=${options.p7Mode}"
-      val merged = mergeDecoderOptions(player?.getString("vd-lavc-o"), ours)
-      writeProperty("vd-lavc-o", merged)
+      decoderOptions.put("dolby_vision" to dolbyVision, "dv_p7_mode" to options.p7Mode)
+      writeProperty("vd-lavc-o", decoderOptions.compose())
     }
   }
 
@@ -2447,6 +2569,27 @@ class MpvPlayerCore private constructor(
     if (name == "content-color-transfer") {
       applyContentColorTransfer(value, onComplete)
       return
+    }
+
+    // The user's custom decoder line composes with the session's own keys
+    // (DecoderOptions) instead of replacing them: an `ndk_async=0` in it
+    // still wins for that key, while the DV routing, the stream rate and
+    // the NDK backend the session set stay in force.
+    if (name == "vd-lavc-o") {
+      submitMpvOperation(writeOperations, "decoder options", { onComplete?.invoke(it) }) {
+        decoderOptions.setUser(value)
+        writeProperty("vd-lavc-o", decoderOptions.compose())
+      }
+      return
+    }
+
+    // The user's word on the operating rate pins it for the session and
+    // takes the per-file policy and the deficit raise out of the loop; 0
+    // leaves the platform default, which is how a decoder-bound collapse
+    // is reproduced on purpose. The write itself still reaches mpv.
+    if (name == "hwdec-mediacodec-operating-rate") {
+      userOperatingRate = value.trim().toIntOrNull()?.coerceAtLeast(0)
+      appliedOperatingRate = userOperatingRate ?: 0
     }
 
     // View geometry on the plane (see VideoRectPolicy), but both still fall

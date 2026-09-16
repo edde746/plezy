@@ -2034,35 +2034,6 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun decoderOptionsMergePreservesBackendChoiceAcrossDvChanges() {
-    // FFmpeg applies duplicate AVOptions in order; inspect the effective
-    // settings rather than requiring a particular serialization of the list.
-    fun effective(options: String): Map<String, String> = options.split(',').associate {
-      it.substringBefore('=') to it.substringAfter('=')
-    }
-
-    val converted = MpvPlayerCore.mergeDecoderOptions(
-      "ndk_codec=1,threads=4,dolby_vision=0,dv_p7_mode=strip",
-      "dolby_vision=1,dv_p7_mode=convert"
-    )
-    assertEquals(
-      mapOf("ndk_codec" to "1", "threads" to "4", "dolby_vision" to "1", "dv_p7_mode" to "convert"),
-      effective(converted)
-    )
-
-    // A user can explicitly choose Java and tune unrelated AVOptions. A later
-    // DV change must replace only the DV choices, not reinstate the NDK default.
-    val nativeDv = MpvPlayerCore.mergeDecoderOptions(
-      "$converted,ndk_codec=0,threads=2",
-      "dolby_vision=1,dv_p7_mode=native"
-    )
-    assertEquals(
-      mapOf("ndk_codec" to "0", "threads" to "2", "dolby_vision" to "1", "dv_p7_mode" to "native"),
-      effective(nativeDv)
-    )
-  }
-
-  @Test
   fun asynchronousMediaCodecFollowsMedia3sPlatformThreshold() {
     // Media3 trusts asynchronous MediaCodec from API 31; below it the decoder
     // stays synchronous (bounded waits, polled), on the NDK either way.
