@@ -38,7 +38,7 @@ object DisplayModeSelector {
     val area: Long get() = width.toLong() * height
   }
 
-  data class RefreshRateMatch(val reason: String, val priority: Int, val error: Float)
+  data class RefreshRateMatch(val reason: String, val priority: Int, val error: Float, val multiple: Int)
 
   data class Selection(val mode: ModeInfo, val reason: String)
 
@@ -58,7 +58,7 @@ object DisplayModeSelector {
 
     val exactError = abs(refreshRate - fps)
     if (exactError < RATE_TOLERANCE) {
-      return RefreshRateMatch(reason = "exact", priority = 0, error = exactError)
+      return RefreshRateMatch(reason = "exact", priority = 0, error = exactError, multiple = 1)
     }
 
     // The error is measured after multiplication, so the tolerance has to
@@ -69,12 +69,41 @@ object DisplayModeSelector {
     if (multiple > 1) {
       val multipleError = abs(refreshRate - (fps * multiple))
       if (multipleError < RATE_TOLERANCE * multiple) {
-        return RefreshRateMatch(reason = "${multiple}x", priority = 1, error = multipleError)
+        return RefreshRateMatch(reason = "${multiple}x", priority = 1, error = multipleError, multiple = multiple)
       }
     }
 
     return null
   }
+
+  /**
+   * Ranks rate matches: an exact rate first, the nearer one when two are
+   * within tolerance; among integer multiples the mode already active, then
+   * the largest multiple, then the smaller multiplication error.
+   *
+   * Within the exact tier the current mode earns nothing: [RATE_TOLERANCE]
+   * admits a neighbouring rate as "exact" (60.000004 for 59.94 content), and
+   * keeping it because it is active trades a true match for a permanent
+   * frame drop every ~17 s. The nearer rate wins; the active mode only
+   * settles an equal error.
+   *
+   * A clean multiple the display is already in is never traded for another
+   * one, whatever its error: the switch would renegotiate the panel for the
+   * same cadence. Between multiples, higher is better. A 120 Hz panel drives
+   * itself at 120; a 48 Hz mode on it is 2.5 panel refreshes per input frame,
+   * a permanent 2:3 (#2255), where 120 Hz is a whole 5:5, and the fractional
+   * drift's occasional repeated vsync costs 1/120 s instead of 1/48 s. Smaller
+   * error only separates the same multiple, 119.88 from 120.
+   *
+   * Deliberately not SurfaceFlinger's tie-break: its layer-vote scoring
+   * ranks 48 and 120 equal for 23.976 and settles on the lower rate unless a
+   * layer voted Max.
+   */
+  private fun rateRanking(currentMode: ModeInfo): Comparator<Candidate> = compareBy<Candidate> { it.match.priority }
+    .thenBy { it.match.priority != 0 && it.mode.modeId != currentMode.modeId }
+    .thenByDescending { it.match.multiple }
+    .thenBy { it.match.error }
+    .thenBy { it.mode.modeId != currentMode.modeId }
 
   /**
    * The cadence [fps] content presents with on a [refreshRate] display, or
@@ -174,11 +203,7 @@ object DisplayModeSelector {
     if (fps > 0f) {
       bucket
         .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
-        .minWithOrNull(
-          compareBy<Candidate> { it.match.priority }
-            .thenBy { it.match.error }
-            .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
-        )
+        .minWithOrNull(rateRanking(currentMode))
         ?.let { return Selection(it.mode, "resolution + ${it.match.reason} rate, error=${it.match.error}") }
 
       // No mode at this resolution divides the content rate: take the shortest
@@ -209,11 +234,7 @@ object DisplayModeSelector {
     supportedModes.asSequence()
       .filter { it.width == currentMode.width && it.height == currentMode.height }
       .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
-      .minWithOrNull(
-        compareBy<Candidate> { it.match.priority }
-          .thenBy { it.match.error }
-          .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
-      )
+      .minWithOrNull(rateRanking(currentMode))
       ?.let { return Selection(it.mode, "${it.match.reason}, error=${it.match.error}") }
 
     // Tier 2 — no same-resolution match (e.g. a 4K panel with no 4K@24 mode, but a
@@ -226,10 +247,8 @@ object DisplayModeSelector {
         .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
         .minWithOrNull(
           // Prefer the resolution closest to the panel's current one (least change,
-          // keeps panel-native res when a high-res match exists), then refresh match.
-          compareBy<Candidate> { abs(it.mode.area - currentMode.area) }
-            .thenBy { it.match.priority }
-            .thenBy { it.match.error }
+          // keeps panel-native res when a high-res match exists), then the rate ranking.
+          compareBy<Candidate> { abs(it.mode.area - currentMode.area) }.then(rateRanking(currentMode))
         )
         ?.let { return Selection(it.mode, "${it.match.reason}, error=${it.match.error}") }
     }

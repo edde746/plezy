@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} minuter",
     "rememberTrackSelections": "Kom ihåg spårval per serie/film",
     "rememberTrackSelectionsDescription": "Kom ihåg ljud- och undertextval per titel",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Använd serverns spårval per avsnitt",
     "followServerTrackSelectionsDescription": "Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet",
     "resumeMusicOnLaunch": "Kom ihåg musiksession",
@@ -340,6 +341,7 @@
     "audioPassthrough": "Ljudgenomströmning",
     "audioPassthroughDescription": "Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.",
     "audioPassthroughDescriptionAppleTv": "Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Nedmixning till stereo",
     "audioDownmixDescription": "Mixa ned surroundljud till två kanaler för stereohögtalare eller hörlurar",
     "downmixCenterBoost": "Förstärkning av centerkanal",
@@ -781,6 +783,7 @@
     "playbackDataInvalid": "Servern returnerade ogiltig uppspelningsinformation.",
     "playbackCancelled": "Uppspelningen avbröts.",
     "playbackFailed": "Det gick inte att starta uppspelningen.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fel vid laddning av filinformation: ${error}",
@@ -1906,6 +1909,8 @@
     "audioOutputSpatial": "Rumsligt ljud",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisera ljudstyrka",
+    "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Nedmixning till stereo"
   },
   "performanceOverlay": {

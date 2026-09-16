@@ -6,7 +6,6 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
-import android.util.Log
 
 class AudioFocusManager(
   context: Context,
@@ -14,7 +13,7 @@ class AudioFocusManager(
   private val onPause: () -> Unit,
   private val onResume: () -> Unit,
   private val isPaused: () -> Boolean,
-  private val log: (String) -> Unit = { Log.d(TAG, it) },
+  private val log: (String) -> Unit = { message -> PlayerDebugLog.d(TAG) { message } },
   private val contentType: Int = AudioAttributes.CONTENT_TYPE_MOVIE
 ) {
   companion object {
@@ -56,7 +55,7 @@ class AudioFocusManager(
   }
 
   fun requestAudioFocus(): Boolean {
-    Log.d(TAG, "Requesting audio focus")
+    PlayerDebugLog.d(TAG) { "Requesting audio focus" }
 
     val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -81,12 +80,12 @@ class AudioFocusManager(
     }
 
     hasAudioFocus = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-    Log.d(TAG, "Audio focus request result: $result, granted: $hasAudioFocus")
+    PlayerDebugLog.d(TAG) { "Audio focus request result: $result, granted: $hasAudioFocus" }
     return hasAudioFocus
   }
 
   fun abandonAudioFocus() {
-    Log.d(TAG, "Abandoning audio focus")
+    PlayerDebugLog.d(TAG) { "Abandoning audio focus" }
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }

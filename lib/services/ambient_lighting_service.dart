@@ -104,6 +104,18 @@ class AmbientLightingService {
     }());
   }
 
+  /// Re-point subtitle placement at a new picture: the shader adapts to the
+  /// swapped item through `input_size`, but `sub-video-rect-aspect` was
+  /// written from the item [enable] saw.
+  Future<void> updateVideoAspect(double videoAspect) async {
+    if (!_enabled) return;
+    try {
+      await _player.setProperty('sub-video-rect-aspect', videoAspect.toString());
+    } catch (error, stackTrace) {
+      appLogger.w('AmbientLightingService: Failed to update video aspect', error: error, stackTrace: stackTrace);
+    }
+  }
+
   /// Generate a static multi-pass GLSL shader.
   ///
   /// Uses MPV's built-in `input_size` (video dimensions) and `target_size`

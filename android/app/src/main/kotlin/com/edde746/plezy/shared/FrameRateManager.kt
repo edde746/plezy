@@ -5,7 +5,6 @@ import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Handler
-import android.util.Log
 import android.view.Display
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
@@ -13,7 +12,7 @@ import androidx.annotation.RequiresApi
 class FrameRateManager(
   private val activity: Activity,
   private val handler: Handler,
-  private val log: (String) -> Unit = { Log.d(TAG, it) }
+  private val log: (String) -> Unit = { message -> PlayerDebugLog.d(TAG) { message } }
 ) {
   companion object {
     private const val TAG = "FrameRateManager"
@@ -79,7 +78,7 @@ class FrameRateManager(
     currentMatchResolution = matchResolution
     val hasResolutionTarget = matchResolution && videoWidth > 0 && videoHeight > 0
     if (fps <= 0f && !hasResolutionTarget) {
-      Log.d(TAG, "setVideoFrameRate: no usable target (fps=$fps, video=${videoWidth}x$videoHeight), skipping")
+      PlayerDebugLog.d(TAG) { "setVideoFrameRate: no usable target (fps=$fps, video=${videoWidth}x$videoHeight), skipping" }
       onComplete(false)
       return
     }
@@ -101,7 +100,7 @@ class FrameRateManager(
   // by [HDR_EXIT_SETTLE_MS] so the caller's surface teardown can commit the
   // HDR exit first — see [HDR_EXIT_SETTLE_MS] for why stacking them is slow.
   fun clearVideoFrameRate(hdrActive: Boolean = false) {
-    Log.d(TAG, "clearVideoFrameRate(hdrActive=$hdrActive)")
+    PlayerDebugLog.d(TAG) { "clearVideoFrameRate(hdrActive=$hdrActive)" }
     currentVideoFps = 0f
     // Resolve any pending setVideoFrameRate future as "not switched" so
     // the Dart caller's await doesn't hang on player dispose.
@@ -113,9 +112,9 @@ class FrameRateManager(
     if (hdrActive) {
       val restore = Runnable {
         pendingRestoreRunnable = null
-        // Log.d, not [log]: this fires after core dispose, when the
+        // PlayerDebugLog, not [log]: this fires after core dispose, when the
         // Flutter-channel logger is already gone.
-        Log.d(TAG, "restoring default display mode after HDR exit")
+        PlayerDebugLog.d(TAG) { "restoring default display mode after HDR exit" }
         restorePreferredDisplayMode()
       }
       pendingRestoreRunnable = restore
@@ -127,10 +126,19 @@ class FrameRateManager(
 
   private fun restorePreferredDisplayMode() {
     // preferredDisplayModeId persists on the window; restore the default.
-    activity.window?.attributes?.let { attrs ->
-      attrs.preferredDisplayModeId = 0
-      activity.window?.attributes = attrs
+    val window = activity.window ?: return
+    val attrs = window.attributes ?: return
+    // PlayerDebugLog, not [log]: reached after core dispose, when the Flutter-channel
+    // logger is gone. The window attribute is what this restores; the
+    // display lands on its default mode asynchronously, so the second line
+    // names the mode still active at the point of the request.
+    PlayerDebugLog.d(TAG) {
+      "restorePreferredDisplayMode: preferredDisplayModeId=${attrs.preferredDisplayModeId} -> 0, " +
+        "before currentMode=${currentModeDescription()}"
     }
+    attrs.preferredDisplayModeId = 0
+    window.attributes = attrs
+    PlayerDebugLog.d(TAG) { "restorePreferredDisplayMode: applied, after currentMode=${currentModeDescription()}" }
   }
 
   private fun cancelPendingRestore() {
@@ -144,7 +152,7 @@ class FrameRateManager(
   // window-scoped preferredDisplayModeId persists across the SurfaceView swap,
   // letting MPV inherit the rate without a second HDMI renegotiation.
   fun releasePending() {
-    Log.d(TAG, "releasePending")
+    PlayerDebugLog.d(TAG) { "releasePending" }
     currentVideoFps = 0f
     firePendingCompletion("release", switched = false)
   }
@@ -238,6 +246,19 @@ class FrameRateManager(
     "unavailable"
   }
 
+  /**
+   * The display's current mode and every mode it exposes, for the session
+   * log. [setDisplayMode] logs the same list, but only when the user matches
+   * frame rates; a report from a user who does not still needs to show what
+   * the panel offered (#2255).
+   */
+  fun describeDisplay(): String {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return "modes unavailable"
+    val display = currentDisplay() ?: return "display unavailable"
+    val supported = display.supportedModes ?: return "current=${describeMode(display.mode)} modes unavailable"
+    return "current=${describeMode(display.mode)} supported=${describeSupportedModes(supported)}"
+  }
+
   @RequiresApi(Build.VERSION_CODES.M)
   private fun currentDisplay(): Display? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
     activity.display
@@ -289,9 +310,16 @@ class FrameRateManager(
       currentMatchResolution
     )
     if (selection == null) {
+      // A panel that exposes no clean multiple of the content rate (a 60/50/30
+      // Hz-only set for 23.976 fps) is the usual reason; name it so a report
+      // separates "never asked" from "nothing to ask for".
+      val cleanMultiple = supportedModes.any { DisplayModeSelector.matchRefreshRate(it.refreshRate, fps) != null }
+      val lowestRate = supportedModes.minOfOrNull { it.refreshRate }
       log(
         "no matching display mode for ${fps}fps at ${currentMode.physicalWidth}x${currentMode.physicalHeight} " +
-          "(video=${currentVideoWidth}x$currentVideoHeight, matchResolution=$currentMatchResolution)"
+          "(video=${currentVideoWidth}x$currentVideoHeight, matchResolution=$currentMatchResolution)" +
+          (if (cleanMultiple) "" else "; no exposed mode is a clean multiple of ${fps}fps") +
+          " (lowest exposed rate=${lowestRate}Hz)"
       )
       onComplete(false)
       return
@@ -303,14 +331,25 @@ class FrameRateManager(
       onComplete(false)
       return
     }
+    val window = activity.window
     if (modeToUse.modeId == currentMode.modeId) {
-      log("current mode already matches ${fps}fps (${selection.reason}), no switch needed")
+      // Nothing to switch, but the choice still has to be pinned: without an
+      // app request the platform's own policy (idle timer, brightness zones,
+      // thermal) is free to leave this mode mid-playback, and on a panel
+      // whose modes switch seamlessly it does — 120 Hz for 23.976 fps came
+      // and went on a Pixel 7 Pro, dragging the vo's release grid along
+      // (#2361). clearVideoFrameRate restores the default, as after a switch.
+      if (window != null && window.attributes.preferredDisplayModeId != modeToUse.modeId) {
+        log("current mode already matches ${fps}fps (${selection.reason}), pinning it")
+        window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
+      } else {
+        log("current mode already matches ${fps}fps (${selection.reason}), no switch needed")
+      }
       onComplete(false)
       return
     }
 
     log("switching to ${describeMode(modeToUse)} for ${fps}fps (${selection.reason})")
-    val window = activity.window
     if (window == null) {
       log("window unavailable")
       onComplete(false)

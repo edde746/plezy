@@ -139,7 +139,7 @@ import UIKit
         try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
         try AVAudioSession.sharedInstance().setActive(true)
       } catch {
-        print("[MpvPipController] Failed to configure audio session: \(error)")
+        MpvLog.debug("[MpvPipController] Failed to configure audio session: \(error)")
       }
 
       createPipController()
@@ -176,7 +176,7 @@ import UIKit
     /// Ensure the layer has MPVKit's renderer-owned timebase before PiP starts.
     func warmLayer(currentTime: Double, isPlaying: Bool) {
       if sampleBufferLayer?.controlTimebase == nil {
-        print("[MpvPipController] Waiting for MPVKit renderer timebase before PiP")
+        MpvLog.debug("[MpvPipController] Waiting for MPVKit renderer timebase before PiP")
       }
     }
 
@@ -254,7 +254,7 @@ import UIKit
           let pipController,
           ObjectIdentifier(pipController) == controllerIdentifier
         else { return }
-        print("[MpvPipController] PiP start produced no delegate outcome before the deadline")
+        MpvLog.debug("[MpvPipController] PiP start produced no delegate outcome before the deadline")
         pendingStartCompletion = nil
         startRequested = false
         systemStartExpected = false
@@ -273,7 +273,7 @@ import UIKit
       if readiness.possible && readiness.timebase && readiness.frame {
         guard !startRequested else { return }
         startRequested = true
-        print("[MpvPipController] vo_avfoundation ready after \(attempts) retries, starting PiP")
+        MpvLog.debug("[MpvPipController] vo_avfoundation ready after \(attempts) retries, starting PiP")
         pipController.startPictureInPicture()
         scheduleStartTimeout(
           generation: generation,
@@ -285,7 +285,7 @@ import UIKit
             generation: generation, waitForFrame: waitForFrame, attempts: attempts + 1)
         }
       } else {
-        print(
+        MpvLog.debug(
           "[MpvPipController] PiP not ready after \(attempts) retries "
             + "(possible=\(readiness.possible), timebase=\(readiness.timebase))"
         )
@@ -425,21 +425,21 @@ import UIKit
     func pictureInPictureControllerWillStartPictureInPicture(
       _ pictureInPictureController: AVPictureInPictureController
     ) {
-      print("[MpvPipController] PiP will start")
+      MpvLog.debug("[MpvPipController] PiP will start")
       controller?.pictureInPictureWillStart(from: pictureInPictureController)
     }
 
     func pictureInPictureControllerDidStartPictureInPicture(
       _ pictureInPictureController: AVPictureInPictureController
     ) {
-      print("[MpvPipController] PiP did start")
+      MpvLog.debug("[MpvPipController] PiP did start")
       controller?.pictureInPictureDidStart(from: pictureInPictureController)
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(
       _ pictureInPictureController: AVPictureInPictureController
     ) {
-      print("[MpvPipController] PiP did stop")
+      MpvLog.debug("[MpvPipController] PiP did stop")
       controller?.pictureInPictureDidStop(from: pictureInPictureController)
     }
 
@@ -447,7 +447,7 @@ import UIKit
       _ pictureInPictureController: AVPictureInPictureController,
       failedToStartPictureInPictureWithError error: Error
     ) {
-      print("[MpvPipController] PiP failed to start: \(error)")
+      MpvLog.debug("[MpvPipController] PiP failed to start: \(error)")
       controller?.pictureInPictureFailedToStart(
         from: pictureInPictureController,
         error: error
@@ -459,7 +459,7 @@ import UIKit
       restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler:
         @escaping (Bool) -> Void
     ) {
-      print("[MpvPipController] PiP restore user interface")
+      MpvLog.debug("[MpvPipController] PiP restore user interface")
       guard let controller,
         controller.isCurrentController(pictureInPictureController)
       else {
@@ -473,7 +473,7 @@ import UIKit
       _ pictureInPictureController: AVPictureInPictureController
     ) {
       guard controller?.isCurrentController(pictureInPictureController) == true else { return }
-      print("[MpvPipController] PiP will stop")
+      MpvLog.debug("[MpvPipController] PiP will stop")
     }
     // MARK: - AVPictureInPictureSampleBufferPlaybackDelegate
 
@@ -484,7 +484,7 @@ import UIKit
       guard let controller,
         controller.isCurrentController(pictureInPictureController)
       else { return }
-      print("[MpvPipController] PiP setPlaying: \(playing)")
+      MpvLog.debug("[MpvPipController] PiP setPlaying: \(playing)")
       controller.delegate?.pipSetPlaying(playing)
     }
 
@@ -532,7 +532,7 @@ import UIKit
         return
       }
       let seconds = CMTimeGetSeconds(skipInterval)
-      print("[MpvPipController] PiP skip by \(seconds)s")
+      MpvLog.debug("[MpvPipController] PiP skip by \(seconds)s")
       guard let delegate = controller.delegate else {
         completionHandler()
         return

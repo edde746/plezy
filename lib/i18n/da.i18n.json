@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} minutter",
     "rememberTrackSelections": "Husk sporvalg for hver serie/film",
     "rememberTrackSelectionsDescription": "Husk valget af lyd og undertekster for hver titel",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Brug serverens sporvalg for hvert afsnit",
     "followServerTrackSelectionsDescription": "Ved afsnitsskift anvendes lyden og underteksterne valgt på serveren i stedet for at videreføre det aktuelle valg",
     "resumeMusicOnLaunch": "Husk musiksession",
@@ -340,6 +341,7 @@
     "audioPassthrough": "Lyd-passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.",
     "audioPassthroughDescriptionAppleTv": "Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Downmix til stereo",
     "audioDownmixDescription": "Mix surroundlyd ned til to kanaler til stereohøjttalere eller hovedtelefoner",
     "downmixCenterBoost": "Forstærkning af centerkanal",
@@ -781,6 +783,7 @@
     "playbackDataInvalid": "Serveren returnerede ugyldige afspilningsoplysninger.",
     "playbackCancelled": "Afspilningen blev annulleret.",
     "playbackFailed": "Afspilningen kunne ikke startes.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Fejl ved indlæsning af filinfo: ${error}",
@@ -1906,6 +1909,8 @@
     "audioOutputSpatial": "Rumlig lyd",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisér lydstyrke",
+    "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Downmix til stereo"
   },
   "performanceOverlay": {

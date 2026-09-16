@@ -15,7 +15,6 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/models/livetv_channel.dart';
-import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -762,7 +761,7 @@ class _ReloadPlayer extends FakeSyncPlayer {
   Future<void> updateFrame() async {}
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {}
 
   @override
   Future<bool> requestAudioFocus() async => true;
@@ -780,6 +779,7 @@ class _ReloadPlayer extends FakeSyncPlayer {
     setPosition(media.start ?? Duration.zero);
     setCompleted(false);
     emitPlaying(play);
+    emitFileStarted();
     emitPlaybackRestart();
   }
 

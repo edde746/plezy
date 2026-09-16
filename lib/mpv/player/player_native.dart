@@ -5,7 +5,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
-import '../../media/media_display_criteria.dart';
 import '../../services/device_performance.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
@@ -201,36 +200,6 @@ class PlayerNative extends PlayerBase {
         .map((e) => 'http-header-fields-append=${_fixedLengthQuote('${e.key}: ${e.value}')}')
         .join(',');
     return 'http-header-fields-clr=,$appends';
-  }
-
-  MediaDisplayCriteria? _effectiveDisplayCriteria(MediaDisplayCriteria? criteria) {
-    if (criteria == null || (criteria.doviProfile ?? 0) != 7) return criteria;
-
-    final convertToDv81 = _dvConversionMode == 'auto' || _dvConversionMode == 'dv81';
-    if (convertToDv81) {
-      return MediaDisplayCriteria(
-        fps: criteria.fps,
-        width: criteria.width,
-        height: criteria.height,
-        doviProfile: 8,
-        doviLevel: criteria.doviLevel,
-        doviCompatibilityId: 1,
-        transfer: criteria.transfer ?? 'smpte2084',
-        primaries: criteria.primaries ?? 'bt2020',
-        matrix: criteria.matrix ?? 'bt2020nc',
-      );
-    }
-
-    return MediaDisplayCriteria(
-      fps: criteria.fps,
-      width: criteria.width,
-      height: criteria.height,
-      doviProfile: 0,
-      doviCompatibilityId: criteria.doviCompatibilityId ?? 1,
-      transfer: criteria.transfer ?? 'smpte2084',
-      primaries: criteria.primaries ?? 'bt2020',
-      matrix: criteria.matrix ?? 'bt2020nc',
-    );
   }
 
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
@@ -475,6 +444,11 @@ class PlayerNative extends PlayerBase {
       // Keep this file-local and append so other demuxer options survive.
       if (isLive && startLivePlaylistFromBeginning) 'demuxer-lavf-o-append=live_start_index=0',
     ];
+    // Always the 4-argument form (`loadfile <url> replace <index> <options>`),
+    // which needs mpv >= 0.38: 0.37 has no index parameter and rejects the
+    // literal `-1` as unparsable options, so nothing opens on that core.
+    // Every shipped build bundles the pinned libmpv; a source or AUR build
+    // against an older system libmpv is explicitly out of scope.
     loadfileArgs.addAll(['-1', loadfileOptions.join(',')]);
     if (audioOnly) _expectOpenFileLoad = true;
     // The core can be torn down while the awaits above were suspended; the
@@ -923,13 +897,10 @@ class PlayerNative extends PlayerBase {
   bool get needsDecoderRefreshAfterDisplaySwitch => Platform.isAndroid;
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {
     if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('setDisplayCriteria', {
-      'criteria': _effectiveDisplayCriteria(criteria)?.toJson(),
-      'extraDelayMs': extraDelayMs,
-    });
+    await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs});
   }
 
   @override
@@ -1102,10 +1073,19 @@ class PlayerNative extends PlayerBase {
     bool forceNormalization = false,
   }) async {
     if (_nativeCoreUnavailable) return;
-    final passthroughShouldBeActive = target.passthrough && target.rate == 1.0 && !target.downmix;
+    // Normalization wins over passthrough: loudnorm is a filter and filters
+    // cannot process a bitstream, so honouring the user's normalization choice
+    // means decoding every track to PCM (AC3/DTS/TrueHD included). mpv also
+    // cannot scaletempo compressed audio. Passthrough therefore only engages
+    // when nothing else claims the decoded stream.
+    final passthroughShouldBeActive =
+        target.passthrough && target.rate == 1.0 && !target.downmix && !target.normalization;
+    final normalizationShouldBeActive = target.normalization;
 
-    // mpv cannot scaletempo compressed audio and filters cannot process a
-    // bitstream. Always leave passthrough before applying either state.
+    // Ordering keeps loudnorm off a bitstream in both directions: leave
+    // passthrough before `af` is written below, and when normalization turns
+    // off with passthrough requested, `af` is cleared before `audio-spdif` is
+    // rewritten at the end.
     if (_passthroughActive && !passthroughShouldBeActive) {
       await _applyPassthrough(false);
     }
@@ -1127,7 +1107,6 @@ class PlayerNative extends PlayerBase {
       _activeDownmixCenterBoostDb = target.downmixCenterBoostDb;
       _activeDownmixNormalize = target.downmixNormalize;
     }
-    final normalizationShouldBeActive = target.normalization && !passthroughShouldBeActive;
     if (forceNormalization || _normalizationActive != normalizationShouldBeActive) {
       await super.setAudioNormalization(normalizationShouldBeActive);
       _normalizationActive = normalizationShouldBeActive;

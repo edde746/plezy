@@ -86,7 +86,7 @@ final class ExternalDisplayManager {
     externalScene = scene
     let window = ensureWindow(for: scene)
     activeCore?.externalDisplayDidChange()
-    print("[ExternalDisplayManager] External display connected")
+    MpvLog.debug("[ExternalDisplayManager] External display connected")
     return window
   }
 
@@ -98,7 +98,7 @@ final class ExternalDisplayManager {
     externalRootViewController = nil
     externalScene = nil
     activeCore?.externalDisplayDidChange()
-    print("[ExternalDisplayManager] External display disconnected")
+    MpvLog.debug("[ExternalDisplayManager] External display disconnected")
   }
 
   func update(scene: UIWindowScene) {

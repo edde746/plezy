@@ -18,6 +18,43 @@ struct MpvLifecycleUnavailableError: LocalizedError {
   }
 }
 
+/// Runtime gate for the player's native debug logging.
+///
+/// Swift `print`/`NSLog` are not compiled out of a release build, and the
+/// caller builds the interpolated string before the call runs, so an ungated
+/// trace on a frame, layout, or surface callback costs real work on every
+/// user's device. Debug traces go through `MpvLog.debug`, whose `@autoclosure`
+/// message is never evaluated while the gate is shut.
+///
+/// The gate follows the app's "Debug Logging" setting: Dart pushes the mpv log
+/// level over `setLogLevel`, and a verbose level opens this too. DEBUG builds
+/// start open and release builds start silent, matching the `defaultLogLevel`
+/// that `createMpvContext` requests from mpv.
+enum MpvLog {
+  #if DEBUG
+    static var isDebugEnabled = true
+  #else
+    static var isDebugEnabled = false
+  #endif
+
+  /// Whether `level` - an mpv log level as delivered by `setLogLevel` - means
+  /// the user asked for verbose diagnostics.
+  static func isVerbose(_ level: String) -> Bool {
+    level == "v" || level == "debug" || level == "trace"
+  }
+
+  /// A diagnostic trace. Dropped - argument unevaluated - while the gate is shut.
+  static func debug(_ message: @autoclosure () -> String) {
+    guard isDebugEnabled else { return }
+    print(message())
+  }
+
+  /// A failure worth keeping in a release device log. Always emitted.
+  static func error(_ message: String) {
+    print(message)
+  }
+}
+
 protocol MpvPlayerDelegate: AnyObject {
   func onPropertyChange(name: String, value: Any?, sourceId: Int64?)
   func onEvent(name: String, data: [String: Any]?)
@@ -70,24 +107,6 @@ func safeString(_ cstr: UnsafePointer<CChar>) -> String {
   return String(buffer.map { Character(Unicode.Scalar($0)) })
 }
 
-struct ServerDisplayCriteria {
-  let doviProfile: Int64
-  let doviLevel: Int64
-  let doviCompatibilityId: Int64?
-  let fps: Double
-  let width: Int32
-  let height: Int32
-  let gamma: String?
-  let primaries: String?
-  let colorMatrix: String?
-
-  /// Whether the server metadata carried actual color/DoVi information —
-  /// only then may the prime lock out mpv-derived color updates.
-  var hasColorInfo: Bool {
-    doviProfile > 0 || gamma != nil || primaries != nil || colorMatrix != nil
-  }
-}
-
 final class MpvWakeupCallbackContext {
   private let lock = NSLock()
   private weak var core: MpvPlayerCoreBase?
@@ -134,12 +153,18 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedDoviProfile: Int64 = 0
   private var cachedDoviLevel: Int64 = 0
   private var cachedContainerFps: Double = 0
+  private var cachedDeinterlaceActive = false
+  private var cachedEstimatedFps: Double = 0
+  private var displayCriteriaUpdateScheduled = false
+  /// No stream is being presented: between a file's END_FILE (or START_FILE)
+  /// and the next PLAYBACK_RESTART, and before the first file. While held,
+  /// `applyDisplayCriteriaFromCaches` commits nothing, so the previous
+  /// file's criteria stay on the HDMI link until the next file's first frame
+  /// proves whether they need to change.
+  private var displayCriteriaHeld = true
   private var cachedVideoGamma: String?
   private var cachedVideoPrimaries: String?
   private var cachedVideoColorMatrix: String?
-  private var serverDisplayCriteriaActive = false
-  private var serverCriteriaLocksColor = false
-  private var lastServerCriteria: ServerDisplayCriteria?
   private var cachedDvConversionMode = "auto"
   private var cachedDvConversionLogEnabled = false
   var hdrEnabled: Bool {
@@ -182,6 +207,7 @@ class MpvPlayerCoreBase: NSObject {
   private static let internalVideoGammaObserverId: UInt64 = UInt64.max - 7
   private static let internalVideoPrimariesObserverId: UInt64 = UInt64.max - 8
   private static let internalVideoColorMatrixObserverId: UInt64 = UInt64.max - 9
+  private static let internalDeinterlaceActiveObserverId: UInt64 = UInt64.max - 10
   private static let internalObserverIds: Set<UInt64> = [
     internalSigPeakObserverId,
     internalWidthObserverId,
@@ -192,6 +218,7 @@ class MpvPlayerCoreBase: NSObject {
     internalVideoGammaObserverId,
     internalVideoPrimariesObserverId,
     internalVideoColorMatrixObserverId,
+    internalDeinterlaceActiveObserverId,
   ]
 
   let queue = DispatchQueue(label: "mpv", qos: .userInitiated)
@@ -276,6 +303,11 @@ class MpvPlayerCoreBase: NSObject {
 
   func updateEDRMode(sigPeak: Double) {}
 
+  /// Platform hook fed by `scheduleDisplayCriteriaUpdate` with the decoded
+  /// stream's properties (mpv is the only source — no server metadata). The
+  /// tvOS core drives `AVDisplayManager.preferredDisplayCriteria` from it;
+  /// other platforms ignore it. Always called on the main thread. Returns
+  /// whether criteria were applied.
   @discardableResult
   func updateDisplayCriteria(
     doviProfile: Int64,
@@ -290,137 +322,116 @@ class MpvPlayerCoreBase: NSObject {
     colorMatrix: String?
   ) -> Bool { false }
 
-  /// Whether the mpv-derived caches indicate an HDR/DV source — mirrors the
-  /// Dart-side MediaDisplayCriteria.isHdr tag check. Call under cacheLock.
-  private static func looksHdr(
-    doviProfile: Int64, sigPeak: Double, gamma: String?, primaries: String?, colorMatrix: String?
-  ) -> Bool {
-    if doviProfile > 0 || sigPeak > 1 { return true }
-    let tags = [gamma, primaries, colorMatrix]
-      .compactMap { $0?.lowercased() }
-      .joined(separator: " ")
-      .replacingOccurrences(of: "[^a-z0-9]", with: "", options: .regularExpression)
-    return ["hlg", "arib", "pq", "smpte2084", "st2084", "bt2020"].contains { tags.contains($0) }
-  }
-
+  /// Re-evaluate the display criteria from the cached mpv properties. Every
+  /// observer feeding those caches calls this, as does the tvOS HDR toggle:
+  /// there the toggle only reaches the HDMI link through this path, so it
+  /// switches DV/HDR ⇄ SDR without reloading.
+  ///
+  /// Coalesced: a video reconfig delivers fps, dimensions, and every color
+  /// tag as separate notifications; one main-thread pass snapshots the
+  /// caches instead of applying each partial delivery. Coalescing is best
+  /// effort — the main thread can run between two deliveries — so it is not
+  /// what keeps the snapshot coherent. That is `displayCriteriaHeld` plus
+  /// the synchronous PLAYBACK_RESTART read: no commit happens between files,
+  /// and the first commit for a file comes from one authoritative snapshot.
   func scheduleDisplayCriteriaUpdate() {
     cacheLock.lock()
-    if serverDisplayCriteriaActive {
-      // A color-bearing server prime owns the display mode for the item. An
-      // fps-only prime is just an early hint: demote it once the decoded
-      // stream proves HDR/DV so the real color tags reach the display,
-      // otherwise keep suppressing redundant SDR re-applies.
-      if serverCriteriaLocksColor
-        || !Self.looksHdr(
-          doviProfile: cachedDoviProfile,
-          sigPeak: cachedLastSigPeak,
-          gamma: cachedVideoGamma,
-          primaries: cachedVideoPrimaries,
-          colorMatrix: cachedVideoColorMatrix
-        )
-      {
-        cacheLock.unlock()
-        return
-      }
-      serverDisplayCriteriaActive = false
-      serverCriteriaLocksColor = false
-      lastServerCriteria = nil
+    let alreadyScheduled = displayCriteriaUpdateScheduled
+    displayCriteriaUpdateScheduled = true
+    cacheLock.unlock()
+    if alreadyScheduled { return }
+
+    DispatchQueue.main.async { [weak self] in
+      self?.applyDisplayCriteriaFromCaches()
     }
-    let profile = cachedDoviProfile
-    let level = cachedDoviLevel
-    let fps = cachedContainerFps
+  }
+
+  private func applyDisplayCriteriaFromCaches() {
+    cacheLock.lock()
+    displayCriteriaUpdateScheduled = false
+    if displayCriteriaHeld {
+      cacheLock.unlock()
+      return
+    }
+    var profile = cachedDoviProfile
+    var level = cachedDoviLevel
+    var compatibilityId: Int64?
+    // The stream is presented one frame per field when mpv's own
+    // deinterlacer is active (bwdif send_field, d3d11vpp, vavpp all emit
+    // fields) or when the measured cadence says the decoder did it; either
+    // way the presented rate is twice the container rate (#2322).
+    let fieldOutput =
+      cachedDeinterlaceActive
+      || Self.presentsFields(container: cachedContainerFps, presented: cachedEstimatedFps)
+    let fps = Self.nominalRefreshRate(fieldOutput ? cachedContainerFps * 2 : cachedContainerFps)
     let width = Int32(cachedWidth)
     let height = Int32(cachedHeight)
     let sigPeak = cachedLastSigPeak
-    let gamma = cachedVideoGamma
-    let primaries = cachedVideoPrimaries
-    let colorMatrix = cachedVideoColorMatrix
+    var gamma = cachedVideoGamma
+    var primaries = cachedVideoPrimaries
+    var colorMatrix = cachedVideoColorMatrix
+    if profile == 7 {
+      // The track property reports the bitstream's profile 7, but the fork
+      // converts P7 to 8.1 in `auto`/`dv81` and strips it to its HDR10 base
+      // layer otherwise — ask the display for what the decoder emits.
+      if cachedDvConversionMode == "auto" || cachedDvConversionMode == "dv81" {
+        profile = 8
+      } else {
+        profile = 0
+        level = 0
+      }
+      compatibilityId = 1
+      gamma = gamma ?? "smpte2084"
+      primaries = primaries ?? "bt2020"
+      colorMatrix = colorMatrix ?? "bt2020nc"
+    }
     cacheLock.unlock()
 
-    DispatchQueue.main.async { [weak self] in
-      self?.updateDisplayCriteria(
-        doviProfile: profile,
-        doviLevel: level,
-        doviCompatibilityId: nil,
-        fps: fps,
-        width: width,
-        height: height,
-        sigPeak: sigPeak,
-        gamma: gamma,
-        primaries: primaries,
-        colorMatrix: colorMatrix
-      )
-    }
+    updateDisplayCriteria(
+      doviProfile: profile,
+      doviLevel: level,
+      doviCompatibilityId: compatibilityId,
+      fps: fps,
+      width: width,
+      height: height,
+      sigPeak: sigPeak,
+      gamma: gamma,
+      primaries: primaries,
+      colorMatrix: colorMatrix
+    )
   }
 
-  func setServerDisplayCriteria(_ criteria: ServerDisplayCriteria?, completion: ((Bool) -> Void)? = nil) {
-    cacheLock.lock()
-    serverDisplayCriteriaActive = criteria != nil
-    serverCriteriaLocksColor = criteria?.hasColorInfo ?? false
-    lastServerCriteria = criteria
-    cacheLock.unlock()
-
-    let apply = { [weak self] in
-      guard let self else { return }
-      guard let criteria else {
-        let applied = self.updateDisplayCriteria(
-          doviProfile: 0,
-          doviLevel: 0,
-          doviCompatibilityId: nil,
-          fps: 0,
-          width: 0,
-          height: 0,
-          sigPeak: 0,
-          gamma: nil,
-          primaries: nil,
-          colorMatrix: nil
-        )
-        completion?(applied)
-        return
-      }
-
-      let applied = self.updateDisplayCriteria(
-        doviProfile: criteria.doviProfile,
-        doviLevel: criteria.doviLevel,
-        doviCompatibilityId: criteria.doviCompatibilityId,
-        fps: criteria.fps,
-        width: criteria.width,
-        height: criteria.height,
-        sigPeak: 0,
-        gamma: criteria.gamma,
-        primaries: criteria.primaries,
-        colorMatrix: criteria.colorMatrix
-      )
-      if !applied {
-        self.cacheLock.lock()
-        self.serverDisplayCriteriaActive = false
-        self.serverCriteriaLocksColor = false
-        self.cacheLock.unlock()
-        self.scheduleDisplayCriteriaUpdate()
-      }
-      completion?(applied)
-    }
-
-    if Thread.isMainThread {
-      apply()
-    } else {
-      DispatchQueue.main.async(execute: apply)
-    }
+  /// Whether the measured output cadence (`estimated-vf-fps`, one sample
+  /// already at the first shown frame) is the container rate doubled. The
+  /// band absorbs Matroska's millisecond timestamp rounding (a 16.68 ms
+  /// field reads as 16 or 17 ms) and one duplicated timestamp in a ten-frame
+  /// window (2.22) while rejecting duplicate-every-frame, dropped, or
+  /// telecined cadences (3.0, 0.5, 1.25). Mirrors Dart's
+  /// `PlayerOutputFormat.presentsFields`.
+  static func presentsFields(container: Double, presented: Double) -> Bool {
+    guard container > 0, presented > 0 else { return false }
+    let ratio = presented / container
+    return ratio > 1.7 && ratio < 2.3
   }
 
-  /// Re-evaluate the tvOS HDMI display mode using the most recent criteria.
-  /// On tvOS the HDR toggle only reaches the display through this path, so the
-  /// runtime toggle calls this to switch DV/HDR ⇄ SDR without reloading.
-  func reapplyDisplayCriteria() {
-    cacheLock.lock()
-    let criteria = lastServerCriteria
-    cacheLock.unlock()
+  /// Rates a TV advertises display modes for, in Hz.
+  private static let nominalRefreshRates: [Double] = [
+    23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60, 100, 119.88, 120,
+  ]
 
-    if let criteria {
-      setServerDisplayCriteria(criteria)
-    } else {
-      scheduleDisplayCriteriaUpdate()
-    }
+  /// The rate to ask AVDisplayManager for: the nearest nominal rate when the
+  /// presented rate is within 1% of one (FFmpeg's own band for rounding a
+  /// guessed frame rate to a standard one), otherwise `fps` unchanged.
+  /// Container rates are declared or averaged, never measured — a 29.97i
+  /// capture reads 29.95784, an MKV with a 42 ms DefaultDuration 23.8095 —
+  /// and the TV only has modes for the nominal rates. Android and Windows
+  /// tolerate the raw rate because they pick the mode themselves
+  /// (`DisplayModeSelector`, `DisplayModeService`); tvOS delegates the pick
+  /// to the display manager, so the request itself has to be nominal.
+  static func nominalRefreshRate(_ fps: Double) -> Double {
+    guard fps > 0 else { return 0 }
+    guard let nearest = nominalRefreshRates.min(by: { abs($0 - fps) < abs($1 - fps) }) else { return fps }
+    return abs(nearest - fps) / nearest < 0.01 ? nearest : fps
   }
 
   func setupMpv() -> Bool {
@@ -454,6 +465,9 @@ class MpvPlayerCoreBase: NSObject {
       mpv_observe_property(
         mpv, Self.internalContainerFpsObserverId,
         "container-fps", MPV_FORMAT_DOUBLE)
+      mpv_observe_property(
+        mpv, Self.internalDeinterlaceActiveObserverId,
+        "deinterlace-active", MPV_FORMAT_FLAG)
       mpv_observe_property(mpv, Self.internalVideoGammaObserverId, "video-params/gamma", MPV_FORMAT_STRING)
       mpv_observe_property(mpv, Self.internalVideoPrimariesObserverId, "video-params/primaries", MPV_FORMAT_STRING)
       mpv_observe_property(
@@ -470,7 +484,7 @@ class MpvPlayerCoreBase: NSObject {
   /// an independent context and be created/destroyed at any time.
   func createMpvContext(configure: (OpaquePointer) -> Void) -> Bool {
     guard let mpv = mpv_create() else {
-      print("[MpvPlayerCore] Failed to create MPV context")
+      MpvLog.error("[MpvPlayerCore] Failed to create MPV context")
       return false
     }
 
@@ -485,7 +499,7 @@ class MpvPlayerCoreBase: NSObject {
 
     let initResult = mpv_initialize(mpv)
     if initResult < 0 {
-      print("[MpvPlayerCore] mpv_initialize failed: \(safeString(mpv_error_string(initResult)))")
+      MpvLog.error("[MpvPlayerCore] mpv_initialize failed: \(safeString(mpv_error_string(initResult)))")
       mpv_terminate_destroy(mpv)
       return false
     }
@@ -542,7 +556,7 @@ class MpvPlayerCoreBase: NSObject {
     #if targetEnvironment(simulator)
       if name == "hwdec" {
         if value != "no" {
-          print("[MpvPlayerCore] Simulator does not support hardware decoding; forcing hwdec=no")
+          MpvLog.debug("[MpvPlayerCore] Simulator does not support hardware decoding; forcing hwdec=no")
         }
         setRawStringPropertyAsync(name, value: "no", completion: completion)
         return
@@ -550,7 +564,7 @@ class MpvPlayerCoreBase: NSObject {
     #endif
 
     if isManagedRendererProperty(name) {
-      print("[MpvPlayerCore] Ignoring managed renderer property: \(name)=\(value)")
+      MpvLog.debug("[MpvPlayerCore] Ignoring managed renderer property: \(name)=\(value)")
       completeOnMain { completion(.success(())) }
       return
     }
@@ -629,7 +643,7 @@ class MpvPlayerCoreBase: NSObject {
 
     applyDvConversionModeEnvironment()
     if logEnabled {
-      print("[MpvPlayerCore] DV conversion mode: \(normalized)")
+      MpvLog.debug("[MpvPlayerCore] DV conversion mode: \(normalized)")
     }
   }
 
@@ -641,7 +655,7 @@ class MpvPlayerCoreBase: NSObject {
 
     applyDvConversionModeEnvironment()
     if enabled {
-      print("[MpvPlayerCore] DV conversion logging enabled (mode: \(mode))")
+      MpvLog.debug("[MpvPlayerCore] DV conversion logging enabled (mode: \(mode))")
     }
   }
 
@@ -676,7 +690,7 @@ class MpvPlayerCoreBase: NSObject {
     let sigPeak = cachedLastSigPeak
     cacheLock.unlock()
 
-    print("[MpvPlayerCore] HDR enabled: \(enabled)")
+    MpvLog.debug("[MpvPlayerCore] HDR enabled: \(enabled)")
 
     setRawStringPropertyAsync(
       "target-colorspace-hint",
@@ -692,9 +706,7 @@ class MpvPlayerCoreBase: NSObject {
     // (target-colorspace-hint is inert in the avfoundation VO and EDR is
     // iOS-only), so re-evaluate the display criteria with the new flag.
     #if os(tvOS)
-      DispatchQueue.main.async {
-        self.reapplyDisplayCriteria()
-      }
+      scheduleDisplayCriteriaUpdate()
     #endif
   }
 
@@ -705,7 +717,7 @@ class MpvPlayerCoreBase: NSObject {
       let value = enabled ? "yes" : "no"
       setRawStringPropertyAsync("avfoundation-pip-composite-osd", value: value) { result in
         if case .failure(let error) = result {
-          print(
+          MpvLog.debug(
             "[MpvPlayerCore] Failed to set PiP subtitle compositing "
               + "to \(value): \(error.localizedDescription)"
           )
@@ -829,6 +841,7 @@ class MpvPlayerCoreBase: NSObject {
     cancelPendingRequests()
 
     cacheLock.lock()
+    displayCriteriaHeld = true
     cachedDoviProfile = 0
     cachedDoviLevel = 0
     cachedContainerFps = 0
@@ -836,7 +849,8 @@ class MpvPlayerCoreBase: NSObject {
     cachedVideoGamma = nil
     cachedVideoPrimaries = nil
     cachedVideoColorMatrix = nil
-    serverDisplayCriteriaActive = false
+    cachedDeinterlaceActive = false
+    cachedEstimatedFps = 0
     cacheLock.unlock()
 
     lifecycleLock.lock()
@@ -1184,6 +1198,10 @@ class MpvPlayerCoreBase: NSObject {
       completeGetPropertyRequest(event)
 
     case MPV_EVENT_START_FILE:
+      cacheLock.lock()
+      cachedEstimatedFps = 0
+      displayCriteriaHeld = true
+      cacheLock.unlock()
       if let startFilePtr = event.data?.assumingMemoryBound(to: mpv_event_start_file.self) {
         let sourceId = startFilePtr.pointee.playlist_entry_id
         activeSourceId = sourceId
@@ -1197,6 +1215,12 @@ class MpvPlayerCoreBase: NSObject {
       dispatchDelegateEvent(name: "file-loaded", data: nil, sourceId: activeSourceId)
 
     case MPV_EVENT_END_FILE:
+      // Queued after the video chain is torn down but before this client can
+      // receive any teardown-valued property change, so the hold is in place
+      // before those deliveries could commit a partial snapshot.
+      cacheLock.lock()
+      displayCriteriaHeld = true
+      cacheLock.unlock()
       if let endFilePtr = event.data?.assumingMemoryBound(to: mpv_event_end_file.self) {
         let endFile = endFilePtr.pointee
         var data: [String: Any] = ["reason": Int(endFile.reason.rawValue)]
@@ -1214,11 +1238,44 @@ class MpvPlayerCoreBase: NSObject {
       }
 
     case MPV_EVENT_SHUTDOWN:
-      print("[MpvPlayerCore] MPV shutdown event")
+      MpvLog.debug("[MpvPlayerCore] MPV shutdown event")
 
     case MPV_EVENT_PLAYBACK_RESTART:
+      // The first shown frame after a load or seek: the moment the presented
+      // cadence is known (mpv decodes two frames before showing one).
+      // `estimated-vf-fps` changes every frame, so it is read here instead
+      // of observed. Every other display-criteria input is read with it and
+      // taken as authoritative — unavailable means the stream lacks it. mpv
+      // delivers queued events before pending property changes and replaces
+      // an undelivered value with a later read, so the observer caches can
+      // hold the previous file's values or its teardown nils here; criteria
+      // built from that mix would start one mode switch and then another,
+      // or clear and re-set the mode already on the link. This snapshot
+      // releases `displayCriteriaHeld`, making it the file's first commit;
+      // scheduling it before the delegate dispatch keeps it ahead of the
+      // `playback-restart` Dart gates its mode-switch wait on.
+      let estimatedFps = readDoubleProperty("estimated-vf-fps") ?? 0
+      let containerFps = readDoubleProperty("container-fps") ?? 0
+      let deinterlaceActive = readFlagProperty("deinterlace-active") ?? false
+      let videoParams = readMapProperty("video-params") ?? [:]
+      let videoTrack = readMapProperty("current-tracks/video") ?? [:]
+      cacheLock.lock()
+      cachedEstimatedFps = estimatedFps
+      cachedContainerFps = containerFps
+      cachedDeinterlaceActive = deinterlaceActive
+      cachedWidth = Double((videoParams["w"] as? Int64) ?? 0)
+      cachedHeight = Double((videoParams["h"] as? Int64) ?? 0)
+      cachedLastSigPeak = (videoParams["sig-peak"] as? Double) ?? 0
+      cachedVideoGamma = videoParams["gamma"] as? String
+      cachedVideoPrimaries = videoParams["primaries"] as? String
+      cachedVideoColorMatrix = videoParams["colormatrix"] as? String
+      cachedDoviProfile = (videoTrack["dolby-vision-profile"] as? Int64) ?? 0
+      cachedDoviLevel = (videoTrack["dolby-vision-level"] as? Int64) ?? 0
+      displayCriteriaHeld = false
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
       var data: [String: Any]?
-      if let position = playbackRestartPosition() {
+      if let position = readDoubleProperty("time-pos") {
         data = ["positionSeconds": position]
       }
       dispatchDelegateEvent(
@@ -1246,19 +1303,43 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  /// Synchronous `time-pos` read for PLAYBACK_RESTART. `mpv_get_property` round-trips
+  /// Synchronous double read for PLAYBACK_RESTART. `mpv_get_property` round-trips
   /// through the core, which on iOS/tvOS can be blocked behind the avfoundation VO
   /// waiting on the main thread; the main thread in turn takes `lifecycleLock` in
   /// `isLifecycleActive`. Snapshot the handle under the lock, then query without it.
   /// Must run on `queue`: destruction is serialized on the same queue, so the handle
   /// cannot be torn down between the snapshot and the read.
-  private func playbackRestartPosition() -> Double? {
+  private func readDoubleProperty(_ name: String) -> Double? {
     dispatchPrecondition(condition: .onQueue(queue))
     guard let mpv = withActiveMpv({ $0 }) else { return nil }
-    var position = 0.0
-    let status = mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &position)
-    guard status >= 0, position.isFinite else { return nil }
-    return position
+    var value = 0.0
+    let status = mpv_get_property(mpv, name, MPV_FORMAT_DOUBLE, &value)
+    guard status >= 0, value.isFinite else { return nil }
+    return value
+  }
+
+  /// Synchronous flag read for PLAYBACK_RESTART; same constraints as
+  /// `readDoubleProperty`. Nil when the property is unavailable.
+  private func readFlagProperty(_ name: String) -> Bool? {
+    dispatchPrecondition(condition: .onQueue(queue))
+    guard let mpv = withActiveMpv({ $0 }) else { return nil }
+    var value: Int32 = 0
+    let status = mpv_get_property(mpv, name, MPV_FORMAT_FLAG, &value)
+    guard status >= 0 else { return nil }
+    return value != 0
+  }
+
+  /// Synchronous node-map read for PLAYBACK_RESTART; same constraints as
+  /// `readDoubleProperty`. Nil when the property is unavailable. One read of
+  /// `video-params` or a track entry replaces a core round-trip per field.
+  private func readMapProperty(_ name: String) -> [String: Any]? {
+    dispatchPrecondition(condition: .onQueue(queue))
+    guard let mpv = withActiveMpv({ $0 }) else { return nil }
+    var node = mpv_node()
+    let status = mpv_get_property(mpv, name, MPV_FORMAT_NODE, &node)
+    guard status >= 0 else { return nil }
+    defer { mpv_free_node_contents(&node) }
+    return convertNode(node) as? [String: Any]
   }
 
   private func handlePropertyChange(
@@ -1313,39 +1394,57 @@ class MpvPlayerCoreBase: NSObject {
       scheduleDisplayCriteriaUpdate()
     }
 
+    // Display-criteria caches take only available values from observers. An
+    // unavailable delivery is ambiguous — the file being torn down, a stale
+    // read superseded before delivery, or genuinely absent — and only the
+    // synchronous PLAYBACK_RESTART snapshot can tell; it writes the defaults
+    // itself. Committing on nil here is what cleared the link between two
+    // files of the same mode.
     switch name {
     case "current-tracks/video/dolby-vision-profile":
+      guard let profile = value as? Int64 else { break }
       cacheLock.lock()
-      cachedDoviProfile = (value as? Int64) ?? 0
+      cachedDoviProfile = profile
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "current-tracks/video/dolby-vision-level":
+      guard let level = value as? Int64 else { break }
       cacheLock.lock()
-      cachedDoviLevel = (value as? Int64) ?? 0
+      cachedDoviLevel = level
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "container-fps":
+      guard let fps = value as? Double else { break }
       cacheLock.lock()
-      cachedContainerFps = (value as? Double) ?? 0
+      cachedContainerFps = fps
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "deinterlace-active":
+      guard let active = value as? Bool else { break }
+      cacheLock.lock()
+      cachedDeinterlaceActive = active
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "video-params/gamma":
+      guard let gamma = value as? String else { break }
       cacheLock.lock()
-      cachedVideoGamma = value as? String
+      cachedVideoGamma = gamma
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "video-params/primaries":
+      guard let primaries = value as? String else { break }
       cacheLock.lock()
-      cachedVideoPrimaries = value as? String
+      cachedVideoPrimaries = primaries
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "video-params/colormatrix":
+      guard let colorMatrix = value as? String else { break }
       cacheLock.lock()
-      cachedVideoColorMatrix = value as? String
+      cachedVideoColorMatrix = colorMatrix
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "width", "height":
-      scheduleDisplayCriteriaUpdate()
+      if value != nil { scheduleDisplayCriteriaUpdate() }
     default:
       break
     }
@@ -1581,7 +1680,7 @@ class MpvPlayerCoreBase: NSObject {
 
   func checkError(_ status: CInt) {
     if status < 0 {
-      print("[MpvPlayerCore] MPV error: \(safeString(mpv_error_string(status)))")
+      MpvLog.error("[MpvPlayerCore] MPV error: \(safeString(mpv_error_string(status)))")
     }
   }
 }

@@ -174,7 +174,9 @@ class AgentResourceSettingsCommands {
     AccountPreferenceKey.preferredAudioLanguage ||
     AccountPreferenceKey.autoSelectAudio ||
     AccountPreferenceKey.preferredSubtitleLanguage ||
-    AccountPreferenceKey.subtitleMode => 'nextPlayback',
+    AccountPreferenceKey.subtitleMode ||
+    AccountPreferenceKey.rememberAudioSelections ||
+    AccountPreferenceKey.rememberSubtitleSelections => 'nextPlayback',
     _ => 'nextCatalogRefresh',
   };
 

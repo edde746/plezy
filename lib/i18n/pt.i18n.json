@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} minutos",
     "rememberTrackSelections": "Lembrar seleção de faixas por série/filme",
     "rememberTrackSelectionsDescription": "Lembrar escolhas de áudio e legendas por título",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Usar a seleção de faixas do servidor por episódio",
     "followServerTrackSelectionsDescription": "Ao mudar de episódio, aplicar o áudio e as legendas selecionados no servidor em vez de manter a escolha atual",
     "resumeMusicOnLaunch": "Lembrar a sessão de música",
@@ -340,6 +341,7 @@
     "audioPassthrough": "Passagem direta de áudio",
     "audioPassthroughDescription": "Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.",
     "audioPassthroughDescriptionAppleTv": "Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Conversão para estéreo",
     "audioDownmixDescription": "Converter o áudio surround em dois canais para alto-falantes estéreo ou fones de ouvido",
     "downmixCenterBoost": "Reforço do canal central",
@@ -781,6 +783,7 @@
     "playbackDataInvalid": "O servidor retornou informações de reprodução inválidas.",
     "playbackCancelled": "A reprodução foi cancelada.",
     "playbackFailed": "Não foi possível iniciar a reprodução.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Erro ao carregar as informações do arquivo: ${error}",
@@ -1906,6 +1909,8 @@
     "audioOutputSpatial": "Áudio espacial",
     "audioOutputStereo": "Estéreo",
     "audioNormalization": "Normalizar intensidade sonora",
+    "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Conversão para estéreo"
   },
   "performanceOverlay": {

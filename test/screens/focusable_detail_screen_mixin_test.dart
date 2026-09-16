@@ -22,28 +22,25 @@ void main() {
     BackKeyCoordinator.clear();
   });
 
-  testWidgets('detail scaffold scrolls to top on iOS top safe-area tap', (tester) async {
-    var topTargetTaps = 0;
+  testWidgets('detail scaffold scrolls to top on the iOS status-bar tap', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.iOS),
-        home: MediaQuery(
-          data: const MediaQueryData(padding: EdgeInsets.only(top: 25)),
-          child: SizedBox(width: 390, height: 844, child: _TestDetailScreen(onTopTargetTap: () => topTargetTaps++)),
+        home: const MediaQuery(
+          data: MediaQueryData(padding: EdgeInsets.only(top: 25)),
+          child: SizedBox(width: 390, height: 844, child: _TestDetailScreen()),
         ),
       ),
     );
-
-    await tester.tapAt(const Offset(20, 10));
-    await tester.pumpAndSettle();
-    expect(topTargetTaps, 0);
 
     final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -2500));
     await tester.pumpAndSettle();
     expect(scrollable.position.pixels, greaterThan(0));
 
-    await tester.tapAt(const Offset(20, 10));
+    // iOS reports a status-bar tap as a `handleScrollToTop` channel call, not
+    // a pointer event; Scaffold handles it only when nothing covers its origin.
+    tester.simulateStatusBarTap();
     await tester.pumpAndSettle();
 
     expect(scrollable.position.pixels, 0);
@@ -167,11 +164,10 @@ Future<void> _pushDetailSurface(WidgetTester tester, {required String surfaceNam
 }
 
 class _TestDetailScreen extends StatefulWidget {
-  final VoidCallback? onTopTargetTap;
   final String surfaceName;
   final bool hasActions;
 
-  const _TestDetailScreen({this.onTopTargetTap, this.surfaceName = 'detail', this.hasActions = false});
+  const _TestDetailScreen({this.surfaceName = 'detail', this.hasActions = false});
 
   @override
   State<_TestDetailScreen> createState() => _TestDetailScreenState();
@@ -201,11 +197,6 @@ class _TestDetailScreenState extends State<_TestDetailScreen>
         SliverToBoxAdapter(
           child: Column(
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.onTopTargetTap,
-                child: const SizedBox(height: 80, child: Text('Top target')),
-              ),
               Builder(
                 builder: (sheetContext) => TextButton(
                   onPressed: () async {

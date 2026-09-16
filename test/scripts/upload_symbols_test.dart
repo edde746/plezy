@@ -219,6 +219,21 @@ void main() {
     expect(() => batchSymbolArtifacts([two], maxBytes: 319), throwsA(isA<SymbolFailure>()));
   });
 
+  test('artifacts beyond bounded upload capacity are dropped and reported', () {
+    final file = put('fat', elf(1));
+    SymbolArtifact artifact(String id, int count) =>
+        SymbolArtifact(file, 'elf', List.generate(count, (i) => SymbolVariant('$id$i', 'arm64', null)), {'debug'}, 0);
+    final one = artifact('a', 1);
+    final two = artifact('b', 2);
+    final warnings = StringBuffer();
+    expect(withinUploadCapacity([one, two], maxBytes: 480, warnings: warnings), [one, two]);
+    expect(warnings.toString(), isEmpty);
+    // 'two' is charged once per slice, so it alone exceeds a 319-byte bound.
+    expect(withinUploadCapacity([one, two], maxBytes: 319, warnings: warnings), [one]);
+    expect(warnings.toString(), contains('Skipping artifact beyond bounded upload capacity'));
+    expect(withinUploadCapacity([one, two], maxObjects: 1, maxBytes: 480), [one]);
+  });
+
   test('native, Dart, map and release errors stop before later phases', () async {
     android();
     final selected = await plan();

@@ -19,6 +19,7 @@ import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import 'api_cache.dart';
+import 'connectivity_probe.dart';
 import 'download_artwork_helpers.dart';
 import 'download_artwork_service.dart';
 import 'jellyfin_cache_resolver.dart';
@@ -271,25 +272,18 @@ class DownloadManagerService {
     }
   }
 
-  static Future<bool> shouldBlockDownloadOnCellular() async {
-    final List<ConnectivityResult> connectivity;
-    try {
-      connectivity = await Connectivity().checkConnectivity();
-    } catch (e) {
-      // connectivity_plus can throw PlatformException on Windows — don't block
-      return false;
-    }
-    return shouldBlockDownloadOnCellularWith(connectivity);
-  }
+  static Future<bool> shouldBlockDownloadOnCellular() async =>
+      shouldBlockDownloadOnCellularWith(await ConnectivityProbe.check());
 
   /// Same check as [shouldBlockDownloadOnCellular] but uses a pre-read
   /// connectivity result so callers that already queried connectivity don't
   /// pay for a second platform round-trip.
   static Future<bool> shouldBlockDownloadOnCellularWith(List<ConnectivityResult> connectivity) async {
+    // The link decides first: an empty or unknown snapshot is not
+    // cellular-only, so the preference is only consulted when it can matter.
+    if (!connectivity.isCellularOnly) return false;
     final settings = await SettingsService.getInstance();
-    if (!settings.read(SettingsService.downloadOnWifiOnly)) return false;
-    // An empty snapshot is not cellular-only, so it needs no separate guard.
-    return connectivity.isCellularOnly;
+    return settings.read(SettingsService.downloadOnWifiOnly);
   }
 
   /// Future that completes when interrupted download recovery finishes.

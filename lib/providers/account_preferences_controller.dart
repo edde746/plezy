@@ -134,6 +134,30 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     await _loadActive(ref);
   }
 
+  /// Make [ref]'s server remember the track picks playback reports for [key]
+  /// ([AccountPreferenceKey.rememberAudioSelections] or
+  /// [AccountPreferenceKey.rememberSubtitleSelections]) by turning the account
+  /// flag on when it is off — the user opted in through the local
+  /// Remember-track-selections toggle, and the server records and applies
+  /// reported stream indexes only behind that flag. Returns whether the server
+  /// will remember; false without a request when the dialect cannot
+  /// ([MediaBrowserDialect.persistsTrackSelectionsViaAccountFlags]).
+  ///
+  /// A flag already on is answered from the cache, so a session writes each
+  /// account at most once per key. Failures propagate: the caller decides
+  /// whether the pick counts as session-only.
+  Future<bool> ensureRemembersTrackSelections(AccountRef ref, AccountPreferenceKey key) async {
+    assert(
+      key == AccountPreferenceKey.rememberAudioSelections || key == AccountPreferenceKey.rememberSubtitleSelections,
+      'Not a track-selection memory flag: ${key.name}',
+    );
+    if (!(ref.backend.dialect?.persistsTrackSelectionsViaAccountFlags ?? false)) return false;
+    if ((await repository.load(ref))[key] == true) return true;
+    appLogger.i('Turning ${key.name} on for ${ref.key}: the local track-selection memory needs it');
+    final updated = await repository.update(ref, AccountPreferencesPatch.of(key, true));
+    return updated[key] == true;
+  }
+
   /// Wire dependencies; safe to call repeatedly from a proxy provider.
   void attach({
     required ConnectionRegistry connections,

@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show listEquals, protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
-import '../../media/media_display_criteria.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
@@ -161,6 +161,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Map<String, List<SubtitleTrack>> _externalSubtitleMetadataByUri = const {};
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
+
+  /// Whether the current load reached `file-loaded`, and the last error-level
+  /// log line since its `start-file`: a load that ends `stop` before loading
+  /// was abandoned mid-open (a newer open, a stop, a disposal), and mpv
+  /// reports its underlying failure only in the log, never in the event.
+  bool _primaryFileLoaded = false;
+  String? _lastErrorLogText;
   int? _activeSourceId;
   bool _activeSourceReadyEmitted = false;
 
@@ -339,6 +346,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'eof-reached':
         final completed = value == true;
+        if (completed) {
+          appLogger.i(
+            '[$logPrefix] eof-reached at ${_state.position.inMilliseconds}ms/${_state.duration.inMilliseconds}ms',
+          );
+        }
         _state = _state.copyWith(completed: completed);
         completedController.add(completed);
         break;
@@ -554,6 +566,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         _activeSourceReadyEmitted = false;
         _primaryMediaLoadStarted = true;
         _primaryMediaReadyEmitted = false;
+        _primaryFileLoaded = false;
+        _lastErrorLogText = null;
         fileStartedController.add(null);
         if (sourceId != null) {
           sourceStartedController.add(PlayerSourceStarted(sourceId));
@@ -562,6 +576,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'end-file':
         if (sourceId != null && _activeSourceId != null && sourceId != _activeSourceId) break;
+        final loadAbandoned = _primaryMediaLoadStarted && !_primaryFileLoaded;
         _primaryMediaLoadStarted = false;
         setSeekable(false);
         final rawReason = data?['reason'];
@@ -574,22 +589,37 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           final String s => s,
           _ => null,
         };
+        final rawCause = data?['cause'];
+        appLogger.i(
+          '[$logPrefix] end-file reason=${reason ?? rawReason} source=$sourceId'
+          '${rawCause is String ? ' cause=$rawCause' : ''}',
+        );
         if (reason == 'eof') {
           _state = _state.copyWith(completed: true);
           completedController.add(true);
         } else if (reason == 'error') {
           fileLoadFailedController.add(null);
           final rawMessage = data?['message'];
-          final rawCause = data?['cause'];
+          final rawError = data?['error'];
           errorController.add(
             PlayerError(
-              rawMessage is String ? rawMessage : 'Playback error',
+              rawMessage is String && rawMessage.isNotEmpty
+                  ? rawMessage
+                  : (rawError is int ? _mpvErrorDescription(rawError) : null) ?? 'Playback error',
               cause: rawCause is String ? rawCause : null,
             ),
           );
           if (sourceId != null) {
             sourceFailedController.add(PlayerSourceFailed(sourceId));
           }
+        } else if (reason == 'stop' && loadAbandoned) {
+          // App-initiated (a newer open, a stop, a disposal), so not an error
+          // to the screen — but an open that failed and was then abandoned
+          // ends exactly like this, with its real failure only in the log.
+          appLogger.w(
+            '[$logPrefix] load stopped before file-loaded source=$sourceId'
+            '${_lastErrorLogText == null ? '' : ' lastError=$_lastErrorLogText'}',
+          );
         }
         _activeSourceId = null;
         _activeSourceReadyEmitted = false;
@@ -597,6 +627,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'file-loaded':
         if (sourceId != null && sourceId != _activeSourceId) break;
+        _primaryFileLoaded = true;
         _state = _state.copyWith(completed: false);
         completedController.add(false);
         fileLoadedController.add(null);
@@ -632,10 +663,28 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         final prefix = rawPrefix is String ? rawPrefix : '';
         final level = parseLogLevel(rawLevel is String ? rawLevel : 'info');
         final text = rawText is String ? rawText : '';
+        if (level == PlayerLogLevel.error || level == PlayerLogLevel.fatal) {
+          final trimmed = text.trim();
+          if (trimmed.isNotEmpty) _lastErrorLogText = trimmed;
+        }
         logController.add(PlayerLog(level: level, prefix: prefix, text: text));
         break;
     }
   }
+
+  /// `mpv_error_string` for the codes an end-file event can carry, for a
+  /// backend that forwarded the code but latched no message.
+  static String? _mpvErrorDescription(int code) => switch (code) {
+    -13 => 'loading failed',
+    -14 => 'audio output initialization failed',
+    -15 => 'video output initialization failed',
+    -16 => 'no audio or video data played',
+    -17 => 'unrecognized file format',
+    -18 => 'not supported',
+    -19 => 'operation not implemented',
+    -20 => 'something happened',
+    _ => null,
+  };
 
   bool _hasPrimaryMediaTrack(List trackList) {
     for (final track in trackList) {
@@ -1157,7 +1206,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {}
 
   @override
   Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async {
@@ -1271,7 +1320,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// chain back to 48 kHz float, so the conversion runs once on the buffered
   /// decode side. mpv's own `format` filter is used instead of lavfi
   /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
-  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
+  ///
+  /// Android downmixes to stereo *ahead* of loudnorm. The filter's f64/192 kHz
+  /// pass costs CPU per channel, and the Android SoCs measured cannot afford
+  /// the multichannel bill: on the 32-bit TV boxes (Fire TV Stick 4K Max,
+  /// Google TV Streamer, Box R 4K Plus) 8ch adds +2.62 CPU-s per media second
+  /// against ~1 core, so 5.1 holds 0.35–0.57x and 7.1 0.33x real time under an
+  /// underrun storm while stereo holds 0.985x; arm64 (Pixel 7, SHIELD) still
+  /// underruns 5–20 times a minute at 8ch. Downmixing at the AO
+  /// (`audio-channels=stereo`, the "Downmix to Stereo" setting) does not help
+  /// because it lands after the filter. Desktop and Apple measured clean at
+  /// 7.1 and keep the multichannel chain. `format=channels=` remixes through
+  /// swresample, so the downmix options (`audio-swresample-o`,
+  /// `audio-normalize-downmix`) apply to it as well.
+  static final String _loudnormFilter =
+      '${Platform.isAndroid ? 'format=channels=stereo,' : ''}'
+      'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
   @override
   Future<void> setAudioNormalization(bool enabled) async {

@@ -35,7 +35,11 @@ internal class MpvEndFileDiagnostics {
     event.reason?.let { reason ->
       data["reason"] = reason.id
       if (reason == EndFileReason.Error) {
-        errorMessage?.let { data["message"] = it }
+        event.error?.let { data["error"] = it.code }
+        // The latched log line names the actual failure (an ffmpeg/demuxer
+        // message); mpv's own error string only classifies it, so it is the
+        // fallback for a failure nothing logged at error level.
+        (errorMessage ?: event.errorMessage)?.let { data["message"] = it }
         if (event.error == MpvError.AoInitFailed) data["cause"] = CAUSE_AUDIO_OUTPUT_FAILED
       }
     }

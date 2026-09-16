@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes}분",
     "rememberTrackSelections": "시리즈/영화별 트랙 선택 기억",
     "rememberTrackSelectionsDescription": "작품별 오디오 및 자막 선택 기억",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "서버의 에피소드별 트랙 선택 사용",
     "followServerTrackSelectionsDescription": "에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다",
     "resumeMusicOnLaunch": "음악 세션 기억",
@@ -340,6 +341,7 @@
     "audioPassthrough": "오디오 패스스루",
     "audioPassthroughDescription": "Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "스테레오로 다운믹스",
     "audioDownmixDescription": "서라운드 오디오를 스테레오 스피커나 헤드폰용 2채널로 믹스합니다",
     "downmixCenterBoost": "센터 채널 부스트",
@@ -777,6 +779,7 @@
     "playbackDataInvalid": "서버에서 잘못된 재생 정보를 반환했습니다.",
     "playbackCancelled": "재생이 취소되었습니다.",
     "playbackFailed": "재생을 시작할 수 없습니다.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "파일 정보 로딩 중 오류: ${error}",
@@ -1895,6 +1898,8 @@
     "audioOutputSpatial": "공간 음향",
     "audioOutputStereo": "스테레오",
     "audioNormalization": "음량 정규화",
+    "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "스테레오로 다운믹스"
   },
   "performanceOverlay": {

@@ -703,12 +703,17 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   /// [burnSubtitle] asks the transcoder to burn the part's server-selected
   /// subtitle stream into the video; the caller must have confirmed that
   /// selection first (see [_PlexLiveTvPlaybackSession._confirmBurnSelection]).
-  /// [preset] is the viewer's quality ceiling. Original leaves the server free
-  /// to remux (`directStream=1`, no ceiling); a capped preset forces an encode
-  /// at that bitrate/resolution, the same way the library path does. Without a
-  /// client ceiling a remote session lands on the server's own top transcode
-  /// tier, because a live source has no bitrate the server can verify against
-  /// its remote-stream limit (issue #2072).
+  /// [preset] is the viewer's quality ceiling, not a request to re-encode:
+  /// every preset asks for a remux (`directStream=1`, video and audio copy)
+  /// and a capped one adds the bitrate ceiling as a client-profile limitation
+  /// plus the encode resolution/quality, so the server copies a channel that
+  /// already fits and encodes only one that does not — the same call
+  /// MediaBrowser Live TV leaves to its server (#2306/#2307). Pinning
+  /// `directStream=0` under a cap turned a free `copy/copy` remux of an
+  /// already-1080p channel into a 0.40x re-encode that could not hold the
+  /// live edge. Without a client ceiling a remote session lands on the
+  /// server's own top transcode tier, because a live source has no bitrate
+  /// the server can verify against its remote-stream limit (issue #2072).
   Future<String?> _buildLiveStreamPath({
     required String sessionPath,
     required String sessionIdentifier,
@@ -733,7 +738,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         // (`directStream=1`), not direct play — the Generic profile has no
         // direct-play entry for hls/mpegts and the server says so in its MDE.
         'directPlay': '0',
-        'directStream': directStream && isOriginal ? '1' : '0',
+        'directStream': directStream ? '1' : '0',
         'subtitleSize': '100',
         'audioBoost': '100',
         'location': 'lan',
@@ -762,10 +767,13 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         'Accept-Language': 'en',
         'X-Plex-Session-Identifier': sessionIdentifier,
         'X-Plex-Client-Profile-Extra': _buildPlexHlsClientProfileExtra(
-          // A capped preset pins `directStream=0`, so every codec in the target
-          // becomes an *encode* output. HEVC must not be one in an mpegts
-          // target (issue #1859), hence the h264-only TS target; the live
-          // target's hevc/mpeg2video entries are copy codecs for Original only.
+          // With the ceiling expressed as a limitation, the codecs in the
+          // target are copy *and* encode outputs. HEVC must never be an encode
+          // output in an mpegts target (issue #1859), so a capped preset —
+          // where the ceiling can force an encode — keeps the h264-only TS
+          // target and gives up HEVC/MPEG-2 copy; Original, which the server
+          // only encodes when the codec is unplayable, keeps the broadcast
+          // copy codecs.
           videoTranscodeTarget: isOriginal ? _plexHlsLiveVideoTranscodeTarget : _plexHlsVodTsVideoTranscodeTarget,
           maxVideoBitrateKbps: isOriginal ? null : preset.videoBitrateKbps,
         ),

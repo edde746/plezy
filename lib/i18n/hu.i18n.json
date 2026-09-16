@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} perc",
     "rememberTrackSelections": "Sávválasztások megjegyzése sorozatonként/filmenként",
     "rememberTrackSelectionsDescription": "Hang- és feliratválasztások megjegyzése címenként",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "A szerver epizódonkénti sávválasztásának használata",
     "followServerTrackSelectionsDescription": "Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett",
     "resumeMusicOnLaunch": "Zenei munkamenet megjegyzése",
@@ -340,6 +341,7 @@
     "audioPassthrough": "Hangtovábbítás (passthrough)",
     "audioPassthroughDescription": "Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.",
     "audioPassthroughDescriptionAppleTv": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Lekeverés sztereóra",
     "audioDownmixDescription": "A térhangzás lekeverése két csatornára sztereó hangszórókhoz vagy fejhallgatókhoz",
     "downmixCenterBoost": "Középső csatorna kiemelése",
@@ -781,6 +783,7 @@
     "playbackDataInvalid": "A szerver érvénytelen lejátszási adatokat küldött.",
     "playbackCancelled": "A lejátszás megszakítva.",
     "playbackFailed": "Nem sikerült elindítani a lejátszást.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Hiba a fájlinformációk betöltésekor: ${error}",
@@ -1906,6 +1909,8 @@
     "audioOutputSpatial": "Térbeli hang",
     "audioOutputStereo": "Sztereó",
     "audioNormalization": "Hangerő normalizálása",
+    "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Lekeverés sztereóra"
   },
   "performanceOverlay": {

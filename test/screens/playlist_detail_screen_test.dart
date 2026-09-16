@@ -185,7 +185,7 @@ void main() {
     expect(find.text('Item ${playlistItemsPageSize * 2 + 4}'), findsOneWidget);
   });
 
-  testWidgets('iOS top safe-area tap scrolls long playlists to top', (tester) async {
+  testWidgets('iOS status-bar tap scrolls long playlists to top', (tester) async {
     final items = _mediaItems(playlistItemsPageSize + 5);
     final harness = await _createHarness(items);
 
@@ -209,7 +209,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(scrollable.position.pixels, greaterThan(0));
 
-    await tester.tapAt(const Offset(20, 10));
+    tester.simulateStatusBarTap();
     await tester.pumpAndSettle();
 
     expect(scrollable.position.pixels, 0);

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
@@ -18,7 +21,38 @@ Map<String, dynamic> _connectionJson({
   required String uri,
   bool local = false,
   bool relay = false,
-}) => {'protocol': protocol, 'address': address, 'port': port, 'uri': uri, 'local': local, 'relay': relay};
+  bool? ipv6,
+}) => {
+  'protocol': protocol,
+  'address': address,
+  'port': port,
+  'uri': uri,
+  'local': local,
+  'relay': relay,
+  'IPv6': ?ipv6,
+};
+
+/// Loopback stand-in for a PMS root endpoint; [delay] shapes measured latency.
+Future<HttpServer> _startPlexRoot({Duration delay = Duration.zero}) async {
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  server.listen((request) async {
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
+    request.response
+      ..statusCode = HttpStatus.ok
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'MediaContainer': <String, Object?>{}}));
+    await request.response.close();
+  });
+  return server;
+}
+
+/// A loopback port nothing listens on, so a probe fails with connection refused.
+Future<int> _closedPort() async {
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  final port = server.port;
+  await server.close(force: true);
+  return port;
+}
 
 void main() {
   group('PlexServer connection candidates', () {
@@ -177,6 +211,84 @@ void main() {
       expect(server.networkClassForUrl(preferred), PlexNetworkClass.unknown);
       expect(urls.first, preferred);
       expect(urls, contains(localPlexDirect));
+    });
+
+    test('orders IPv4 candidates before IPv6 siblings within each failover bucket', () {
+      const ipv4PlexDirect = 'https://192-168-1-50.abc.plex.direct:32400';
+      const flaggedPlexDirect = 'https://fd21-0-0-0-0-0-0-1.abc.plex.direct:32400';
+      const unflaggedPlexDirect = 'https://fd21-0-0-0-0-0-0-2.abc.plex.direct:32400';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(
+            protocol: 'https',
+            address: 'fd21::1',
+            port: 32400,
+            uri: flaggedPlexDirect,
+            local: true,
+            ipv6: true,
+          ),
+          _connectionJson(protocol: 'https', address: 'fd21::2', port: 32400, uri: unflaggedPlexDirect, local: true),
+          _connectionJson(protocol: 'https', address: '192.168.1.50', port: 32400, uri: ipv4PlexDirect, local: true),
+        ]),
+      );
+
+      final urls = server.prioritizedEndpointUrls();
+
+      expect(urls, [
+        ipv4PlexDirect,
+        flaggedPlexDirect,
+        unflaggedPlexDirect,
+        'http://192.168.1.50:32400',
+        'http://192-168-1-50.abc.plex.direct:32400',
+        'http://[fd21::1]:32400',
+        'http://fd21-0-0-0-0-0-0-1.abc.plex.direct:32400',
+        'http://[fd21::2]:32400',
+        'http://fd21-0-0-0-0-0-0-2.abc.plex.direct:32400',
+      ]);
+    });
+  });
+
+  group('PlexServer connection discovery', () {
+    test('keeps a slower IPv4 endpoint over a faster IPv6 sibling in both race phases', () async {
+      final ipv4 = await _startPlexRoot(delay: const Duration(milliseconds: 100));
+      final ipv6 = await _startPlexRoot();
+      addTearDown(() => ipv4.close(force: true));
+      addTearDown(() => ipv6.close(force: true));
+      final ipv4Uri = 'http://127.0.0.1:${ipv4.port}';
+      final ipv6Uri = 'http://127.0.0.1:${ipv6.port}';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'http', address: '::1', port: ipv6.port, uri: ipv6Uri, local: true, ipv6: true),
+          _connectionJson(protocol: 'http', address: '127.0.0.1', port: ipv4.port, uri: ipv4Uri, local: true),
+        ]),
+      );
+
+      final emitted = await server.findBestWorkingConnection().map((c) => c.uri).toList();
+
+      expect(emitted, [ipv4Uri]);
+    });
+
+    test('accepts an IPv6 endpoint once every IPv4 sibling has failed', () async {
+      final ipv6 = await _startPlexRoot();
+      addTearDown(() => ipv6.close(force: true));
+      final ipv4Port = await _closedPort();
+      final ipv6Uri = 'http://127.0.0.1:${ipv6.port}';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'http', address: '::1', port: ipv6.port, uri: ipv6Uri, local: true, ipv6: true),
+          _connectionJson(
+            protocol: 'http',
+            address: '127.0.0.1',
+            port: ipv4Port,
+            uri: 'http://127.0.0.1:$ipv4Port',
+            local: true,
+          ),
+        ]),
+      );
+
+      final emitted = await server.findBestWorkingConnection().map((c) => c.uri).toList();
+
+      expect(emitted, [ipv6Uri]);
     });
   });
 }

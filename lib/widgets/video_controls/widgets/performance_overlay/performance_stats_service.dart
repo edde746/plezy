@@ -165,7 +165,6 @@ class PerformanceStatsService {
         actualFps: _parseDouble(statsMap['estimated-vf-fps'] as String?),
         videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
         hwdecCurrent: statsMap['hwdec-current'] as String?,
-        currentVo: statsMap['current-vo'] as String?,
         audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
         audioSamplerate: audio.samplerate,
         audioChannels: audio.channels,

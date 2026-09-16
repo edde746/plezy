@@ -13,13 +13,21 @@ import 'shader_asset_loader.dart';
 /// in the chain after any upscaling/processing shaders.
 class ShaderService {
   final Player _player;
+
+  /// The preset in mpv's chain. Differs from [_requestedPreset] only while
+  /// NVScaler is auto-skipped on HDR content.
   ShaderPreset _currentPreset = ShaderPreset.none;
+
+  /// The preset the caller last asked for; what [reapplyForContent]
+  /// re-decides against the picture mpv actually presents.
+  ShaderPreset _requestedPreset = ShaderPreset.none;
 
   /// Reference to ambient lighting service for re-appending its shader after chain rebuilds.
   AmbientLightingService? ambientLightingService;
 
   ShaderService(this._player);
 
+  /// The preset applied to the chain — none while NVScaler is auto-skipped.
   ShaderPreset get currentPreset => _currentPreset;
 
   static bool get isPlatformSupported => !Platform.isIOS;
@@ -30,50 +38,72 @@ class ShaderService {
   /// Apply a shader preset to the video player.
   ///
   /// For NVScaler with auto-HDR skip enabled, will check video colorspace
-  /// and skip shader application for HDR content.
+  /// and skip shader application for HDR content. That check reads the
+  /// decoded picture, so a call before the item's first frame (the start
+  /// flow, an in-place swap) decides on stale or absent params;
+  /// [reapplyForContent] settles it once a frame exists.
   Future<void> applyPreset(ShaderPreset preset) async {
     if (!isSupported) {
       appLogger.d('ShaderService: Shaders not supported on ${_player.playerType}');
       return;
     }
 
+    _requestedPreset = preset;
     try {
-      if (preset.type == ShaderPresetType.nvscaler && preset.nvscalerConfig?.autoHdrSkip == true) {
-        final isHdr = await _isHdrContent();
-        if (isHdr) {
-          appLogger.d('ShaderService: Skipping NVScaler on HDR content');
-          await _clearShaders();
-          _currentPreset = ShaderPreset.none;
-          await _reappendAmbientLighting();
-          return;
-        }
-      }
-
-      final shaderPaths = await ShaderAssetLoader.getShadersForPreset(preset);
-
-      if (shaderPaths.isEmpty) {
-        // No shaders - clear any existing ones
-        await _clearShaders();
-        _currentPreset = preset;
-        await _reappendAmbientLighting();
+      if (_skipsOnHdr(preset) && await _isHdrContent()) {
+        appLogger.d('ShaderService: Skipping NVScaler on HDR content');
+        await _applyChain(ShaderPreset.none);
         return;
       }
-
-      await _clearShaders();
-
-      for (final shaderPath in shaderPaths) {
-        await _player.command(['change-list', 'glsl-shaders', 'append', shaderPath]);
-      }
-
-      _currentPreset = preset;
-
-      // Re-append ambient lighting shader at end of chain
-      await _reappendAmbientLighting();
-
-      appLogger.d('ShaderService: Applied ${preset.name} with ${shaderPaths.length} shaders');
+      await _applyChain(preset);
     } catch (e, st) {
       appLogger.w('ShaderService: Failed to apply preset', error: e, stackTrace: st);
       // Don't rethrow - shader failure shouldn't stop playback
+    }
+  }
+
+  /// Re-decide the requested preset against the picture now decoded. Only
+  /// an HDR-skipping NVScaler request depends on the content; anything else
+  /// is a no-op. Returns whether the applied preset changed.
+  Future<bool> reapplyForContent() async {
+    final requested = _requestedPreset;
+    if (!isSupported || !_skipsOnHdr(requested)) return false;
+
+    try {
+      final target = await _isHdrContent() ? ShaderPreset.none : requested;
+      if (target == _currentPreset) return false;
+      appLogger.d(
+        target.isEnabled
+            ? 'ShaderService: Applying ${requested.name}, content is SDR'
+            : 'ShaderService: Skipping ${requested.name} on HDR content',
+      );
+      await _applyChain(target);
+      return true;
+    } catch (e, st) {
+      appLogger.w('ShaderService: Failed to re-apply preset for content', error: e, stackTrace: st);
+      return false;
+    }
+  }
+
+  static bool _skipsOnHdr(ShaderPreset preset) =>
+      preset.type == ShaderPresetType.nvscaler && preset.nvscalerConfig?.autoHdrSkip == true;
+
+  /// Rebuild mpv's chain for [preset]: clear, append its shaders, keep
+  /// ambient lighting last.
+  Future<void> _applyChain(ShaderPreset preset) async {
+    final shaderPaths = await ShaderAssetLoader.getShadersForPreset(preset);
+
+    await _clearShaders();
+    for (final shaderPath in shaderPaths) {
+      await _player.command(['change-list', 'glsl-shaders', 'append', shaderPath]);
+    }
+    _currentPreset = preset;
+
+    // Re-append ambient lighting shader at end of chain
+    await _reappendAmbientLighting();
+
+    if (shaderPaths.isNotEmpty) {
+      appLogger.d('ShaderService: Applied ${preset.name} with ${shaderPaths.length} shaders');
     }
   }
 

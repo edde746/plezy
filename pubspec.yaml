@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.19.1+149
+version: 2.20.0+150
 
 environment:
   # Dart floor stays 3.12: freezed 3.x emits `final` constructor parameters,
@@ -57,13 +57,14 @@ dependencies:
   web_socket_channel: ^3.0.1
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
-  # Fork 41c16be fixes upstream #649's missing desktop temp parent.
+  # Fork 41c16be fixes upstream #649's missing desktop temp parent; c52103f
+  # survives a host with no documents directory (Linux without xdg-user-dirs).
   # Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 12ef3ff758709e3ceab8eccd6d43e0dea1c68ca1
-  sentry_flutter: ^9.25.0
+      ref: c52103f4a2d683c22ce3b8b8661da610644bfef1
+  sentry_flutter: ^9.30.0
   auto_updater:
     git:
       url: https://github.com/edde746/auto_updater
@@ -93,6 +94,7 @@ dev_dependencies:
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
   path_provider_platform_interface: ^2.1.0
+  connectivity_plus_platform_interface: ^2.1.0
   # Exercise vendored desktop preference stores against real file I/O,
   # including #1732 repair and atomic writes.
   shared_preferences_linux: ^2.4.1
@@ -145,3 +147,12 @@ flutter:
     - assets/shaders/anime4k/
     - assets/player_icons/
     - assets/rating_icons/
+  # Registered as UI font families so the Linux build, whose fontconfig may
+  # lack CJK fonts, can fall back to the bundled subtitle fonts (mono_theme).
+  fonts:
+    - family: Go Noto Current
+      fonts:
+        - asset: assets/go-noto-current-regular.ttf
+    - family: Go Noto Current Hangul
+      fonts:
+        - asset: assets/go-noto-kurrent-hangul.ttf

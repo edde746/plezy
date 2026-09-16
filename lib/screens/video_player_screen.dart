@@ -29,6 +29,9 @@ import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
 import '../services/plex_client.dart';
+import '../services/jellyfin_client.dart';
+import '../media/account_preferences.dart';
+import '../media/account_ref.dart';
 import '../utils/session_identifier.dart';
 import '../database/app_database.dart';
 import '../media/media_version.dart';
@@ -80,6 +83,7 @@ import '../providers/account_preferences_controller.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/log_redaction_manager.dart';
+import '../utils/immersive_mode_guard.dart';
 import '../utils/live_tv_player_navigation.dart';
 import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
@@ -93,6 +97,7 @@ import 'video_player/completion_latch.dart';
 import 'video_player/episode_session_state.dart';
 import 'video_player/first_frame_gate.dart';
 import 'video_player/frame_rate_matcher.dart';
+import 'video_player/player_output_format.dart';
 import 'video_player/companion_remote_binding.dart';
 import 'video_player/media_controls_screen_controller.dart';
 import 'video_player/media_reload_outcome.dart';
@@ -103,6 +108,7 @@ import 'video_player/wakelock_controller.dart';
 import 'video_player/playback_failure_action.dart';
 import 'video_player/playback_transition_gate.dart';
 import 'video_player/open_http_503_watchdog.dart';
+import 'video_player/open_failure_log.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';
@@ -347,6 +353,44 @@ class _PlaybackAttempt {
   bool get isCurrent => _owner._isCurrentPlaybackGeneration(generation, player);
 }
 
+/// What one media open asked for. Remembered so the failure view's Retry can
+/// re-run a failed open, and so a failed in-place source switch can restore
+/// the request that was playing before it.
+class _PlaybackOpenRequest {
+  const _PlaybackOpenRequest({
+    required this.metadata,
+    required this.mediaIndex,
+    required this.mediaSourceId,
+    required this.qualityPreset,
+    required this.audioStreamId,
+    required this.resumePosition,
+  });
+
+  final MediaItem metadata;
+  final int? mediaIndex;
+  final String? mediaSourceId;
+  final TranscodeQualityPreset qualityPreset;
+  final int? audioStreamId;
+  final Duration? resumePosition;
+
+  /// Same item and source selection; where it resumes from is incidental.
+  bool sameSourceAs(_PlaybackOpenRequest other) =>
+      metadata.globalKey == other.metadata.globalKey &&
+      mediaIndex == other.mediaIndex &&
+      mediaSourceId == other.mediaSourceId &&
+      qualityPreset == other.qualityPreset &&
+      audioStreamId == other.audioStreamId;
+
+  _PlaybackOpenRequest resumingAt(Duration? position) => _PlaybackOpenRequest(
+    metadata: metadata,
+    mediaIndex: mediaIndex,
+    mediaSourceId: mediaSourceId,
+    qualityPreset: qualityPreset,
+    audioStreamId: audioStreamId,
+    resumePosition: position,
+  );
+}
+
 class _PlaybackOpenTiming {
   final Duration? mediaStart;
   final Duration? timelineDuration;
@@ -366,23 +410,35 @@ _PlaybackOpenTiming _playbackOpenTiming({
 }
 
 /// Builds a [TrackPreferencePersister] that writes the per-episode stream
-/// selection out to a [PlexClient] resolved lazily on each call. Returns a
-/// no-op-on-null persister so the [TrackManager] doesn't have to import
-/// [PlexClient] itself; the resolver returning null (e.g. when the active
-/// server is Jellyfin) makes the call short-circuit.
+/// selection out to [client], so the [TrackManager] doesn't have to import
+/// [PlexClient] itself. Reports the server's verdict: the PUT throws on a
+/// refusal and returns false when the server answered without storing.
 ///
 /// Only the current episode's part is touched — we deliberately do NOT write
 /// the show-wide audio/subtitle language default (#1393): an in-player track
 /// change should not silently rewrite the whole series' Plex prefs. The
 /// explicit path for that lives in the metadata-edit UI.
-TrackPreferencePersister _plexTrackPersister(PlexClient? Function() resolve) {
-  return ({required int partId, required String trackType, required int streamID}) async {
-    final client = resolve();
-    if (client == null) return;
-    await (trackType == 'audio'
-        ? client.selectStreams(partId, audioStreamID: streamID)
-        : client.selectStreams(partId, subtitleStreamID: streamID));
-  };
+TrackPreferencePersister _plexTrackPersister(PlexClient client) {
+  return ({required int partId, required String trackType, required int streamID}) => trackType == 'audio'
+      ? client.selectStreams(partId, audioStreamID: streamID)
+      : client.selectStreams(partId, subtitleStreamID: streamID);
+}
+
+/// Builds a [TrackSelectionMemoryEnabler] for the MediaBrowser account
+/// [client] plays as. The pick itself reaches the server in the progress
+/// reports; this turns on the account flag the server needs to keep it
+/// ([AccountPreferencesController.ensureRemembersTrackSelections]).
+TrackSelectionMemoryEnabler _mediaBrowserTrackMemoryEnabler(
+  JellyfinClient client,
+  AccountPreferencesController accountPreferences,
+) {
+  final ref = AccountRef.mediaBrowser(backend: client.dialect.backend, connectionId: client.connection.id);
+  return (trackType) => accountPreferences.ensureRemembersTrackSelections(
+    ref,
+    trackType == 'audio'
+        ? AccountPreferenceKey.rememberAudioSelections
+        : AccountPreferenceKey.rememberSubtitleSelections,
+  );
 }
 
 class VideoPlayerScreen extends StatefulWidget {
@@ -464,7 +520,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPlayerInitialized = false;
   String? _playerInitializationError;
 
-  /// Focus target for the initialization-error view's primary action.
+  /// The persistent failure surface for a media open that failed after the
+  /// core started (the initialization-error view covers the core itself).
+  /// Set by [_presentPlaybackFailure]; any new open dismisses it. [build]
+  /// renders it over the video, so a failed open never leaves a dead player
+  /// with only a snackbar behind it.
+  String? _playbackFailureMessage;
+  VoidCallback? _playbackFailureRetry;
+
+  /// The open the screen last dispatched (initial start or in-place reload)
+  /// and the last one that reached a first frame. Retry re-runs the former;
+  /// a failed in-place source switch restores the latter.
+  _PlaybackOpenRequest? _currentOpenRequest;
+  _PlaybackOpenRequest? _workingOpenRequest;
+
+  /// Focus target for the failure views' primary action.
   ///
   /// A child `autofocus` cannot do this job: the screen-level [Focus] claims
   /// focus while the loading spinner is up, and Flutter drops an autofocus
@@ -488,19 +558,68 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool get _shuttingDown => _isExiting.value;
   final Completer<void> _routeDisposed = Completer<void>();
   Future<void>? _nativeDisposal;
+
+  /// The generation the launch receipt describes. Follows every attempt this
+  /// screen starts in place — same-item reloads (quality, version, track
+  /// switches), episode advances, Retry — so the receipt keeps reading the
+  /// live session; only a teardown leaves it behind.
   int? _observedLaunchGeneration;
 
   bool get _launchCurrent => (widget.isLaunchCurrent?.call() ?? true) && (widget.launchObserver?.isCurrent ?? true);
 
+  /// The receipt describes the playback session this screen hosts, not the
+  /// item it was launched with: an auto-advance or Next press replaces the
+  /// item in place and the session — the thing `playback.stop` must still be
+  /// able to stop — lives on. The snapshot names the item now playing.
   bool _ownsLaunchPlayback() =>
       mounted &&
       _activeRouteGuard.identityFor(this) != null &&
-      _currentMetadata.globalKey == widget.metadata.globalKey &&
       (_observedLaunchGeneration == null || _transitionGate.generation == _observedLaunchGeneration);
+
+  /// Retire the launch receipt on the way out. A session this screen still
+  /// owns ends `completed` when its current item played out (a movie that
+  /// exited on EOF, a Play Next prompt dismissed with Back), `failed` when
+  /// playback died on it — so a failed open that the exit reaches before the
+  /// error path marked it cannot read as a user stop — and `stopped`
+  /// otherwise; one that was replaced by another owner (player→player
+  /// replacement) ends `cancelled`, matching the music service's
+  /// replaced-source contract. A receipt that already ended keeps its stage.
+  /// Idempotent: shutdown and dispose both call it.
+  void _retireLaunchObserver() {
+    final observer = widget.launchObserver;
+    if (observer == null) return;
+    if (!_ownsLaunchPlayback()) {
+      observer.detach();
+      return;
+    }
+    if (!observer.isTerminal) {
+      final state = player?.state;
+      if (_hasFatalPlaybackError || _playerInitializationError != null) {
+        observer.mark('failed', failure: observer.failure ?? 'playbackFailed');
+      } else if (state?.completed == true) {
+        // The duration stands in for the EOF position: the position stream
+        // can stop a beat short of it.
+        final durationMs = state!.duration.inMilliseconds > 0 ? state.duration.inMilliseconds : null;
+        observer.mark('completed', positionMs: durationMs, durationMs: durationMs, item: _launchItem());
+      } else {
+        observer.mark('stopped', item: _launchItem());
+      }
+    }
+    observer.detach(stage: 'stopped');
+  }
+
+  /// The item this session currently plays, in the shape `playback.start`
+  /// accepted it, so a status reader can tell an advanced episode from the
+  /// one it launched.
+  Map<String, dynamic> _launchItem() => {
+    'serverId': _currentMetadata.serverId,
+    'itemId': _currentMetadata.id,
+    'targetKind': widget.isLive ? 'channel' : 'item',
+  };
 
   Map<String, dynamic> _launchSnapshot() {
     final current = player;
-    if (!_launchCurrent || !mounted || _currentMetadata.globalKey != widget.metadata.globalKey) {
+    if (!_launchCurrent || !mounted) {
       return const {'stage': 'cancelled', 'playing': false, 'buffering': false};
     }
     if (_observedLaunchGeneration != null && _transitionGate.generation != _observedLaunchGeneration) {
@@ -514,6 +633,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         : (_showStillWatchingPrompt || _episode.showPlayNextDialog)
         ? 'confirmationRequired'
         : widget.launchObserver?.blocker;
+    // An EOF the screen is already acting on — resolving the adjacent
+    // episode, loading the next one — is the next item opening, not the
+    // session ending; `completed` is reserved for a session with nothing
+    // after it.
+    final advancing =
+        state?.completed == true &&
+        (_episode.isResolvingCompletionAdjacency ||
+            _episode.isLoadingNext ||
+            _transitionGate.transition != PlaybackTransition.idle);
     return {
       'stage': failed
           ? 'failed'
@@ -521,6 +649,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           ? 'stopped'
           : blocker != null
           ? 'blocked'
+          : advancing
+          ? 'opening'
           : state?.completed == true
           ? 'completed'
           : ready && state?.buffering == true
@@ -530,6 +660,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           : ready
           ? 'paused'
           : 'opening',
+      'item': _launchItem(),
       'ready': ready,
       'playing': ready && state?.isActive == true && !failed && !_shuttingDown,
       'buffering': state?.buffering ?? false,
@@ -908,6 +1039,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// collapses its waiters. Superseded by every [_beginPlaybackAttempt].
   _PlaybackAttempt? _playbackAttempt;
 
+  /// How long the backend may sit on a started load without loading,
+  /// failing, or dying before the attempt gives up on it.
+  static const Duration _openDeadline = Duration(seconds: 30);
+
   /// Start a new playback attempt: aborts the previous attempt's open,
   /// invalidates automatic track selection, bumps the generation, arms the
   /// open outcome, and captures the owning player so async continuations can
@@ -917,8 +1052,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   _PlaybackAttempt _beginPlaybackAttempt(Player currentPlayer, {bool isMediaReload = false}) {
     _playbackAttempt?.outcome.abort('superseded by a newer playback attempt');
     final trackMutationDrain = _trackManager?.invalidatePendingSelection() ?? Future<void>.value();
+    final previousGeneration = _transitionGate.generation;
     final generation = _transitionGate.beginGeneration(isMediaReload: isMediaReload);
-    _observedLaunchGeneration ??= generation;
+    // Every attempt this screen starts in place continues the observed
+    // session under a new generation, and one that follows a terminal mark
+    // (Retry after a failed open) reopens the receipt; the failure code it
+    // carried belongs to the attempt that failed.
+    if (_observedLaunchGeneration == previousGeneration) {
+      _observedLaunchGeneration = generation;
+      final observer = widget.launchObserver;
+      if (observer != null && observer.isTerminal && _ownsLaunchPlayback()) observer.mark('opening');
+    } else {
+      _observedLaunchGeneration ??= generation;
+    }
     return _playbackAttempt = _PlaybackAttempt._(
       this,
       generation,
@@ -927,8 +1073,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // than the sidecar guard's discovery + file-loaded budget, so it cannot
       // pre-empt a sidecar-stall verdict. It arms from the backend's load
       // start, so an open that never starts one is bounded by
-      // [OpenHttp503Watchdog] instead, not by this.
-      PlaybackOpenOutcome.arm(currentPlayer, deadline: const Duration(seconds: 30)),
+      // [OpenHttp503Watchdog] instead, not by this. A passed deadline is a
+      // failure the user sees, not just aborted waiters.
+      PlaybackOpenOutcome.arm(
+        currentPlayer,
+        deadline: _openDeadline,
+        onDeadline: () => _onOpenDeadlineExpired(currentPlayer, generation),
+      ),
       Future.wait<void>([
         trackMutationDrain,
         _userRateMutation.catchError((Object error) {
@@ -1047,6 +1198,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
       _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
+
+  /// Adjacency otherwise arrives from the backend's queue containers, which
+  /// no widget test stands up; this seeds what [_loadAdjacentEpisodes] would
+  /// have committed so an EOF can take the present-next path.
+  @visibleForTesting
+  void debugCommitAdjacentEpisodesForTesting(AdjacentEpisodes adjacent) =>
+      _commitAdjacentEpisodes(_currentMetadata, adjacent, null);
 
   /// The same router the OS media-session subscription feeds, built without
   /// standing up the full service layer.
@@ -1634,9 +1792,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       } catch (e) {
         appLogger.w('VideoPlayerScreen: subtitle styling not applied', error: e);
       }
-      await currentPlayer.setProperty('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name);
-      await currentPlayer.setProperty('sub-ass-video-aspect-override', '1');
-      await currentPlayer.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
+      // ASS policy and placement are preferences too. `sub-ass-video-aspect-
+      // override` only exists from mpv 0.39 (libmpv 2.4): a runner linked
+      // against a distro libmpv 2.2 (mpv 0.37, Ubuntu 24.04) refuses it with
+      // MPV_ERROR_PROPERTY_NOT_FOUND, and unwrapped that refusal was a failed
+      // initialization whose Retry failed the same way. Each write is
+      // contained on its own so one refusal does not skip the others.
+      for (final (name, value) in [
+        ('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name),
+        ('sub-ass-video-aspect-override', '1'),
+        ('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString()),
+      ]) {
+        try {
+          await currentPlayer.setProperty(name, value);
+        } catch (e) {
+          appLogger.w('VideoPlayerScreen: $name not applied', error: e);
+        }
+      }
 
       // Placement policy is MPV-only and independent of ASS styling. Keep the
       // last accepted/default value on refusal; custom mpv.conf still wins below.
@@ -1880,6 +2052,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
             unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
           }
+          // Immersive mode is requested once; a fold/unfold or display switch
+          // keeps the activity resumed and lets Android re-show the bars. The
+          // guard answers the engine's re-show callback until release.
+          ImmersiveModeGuard.acquire(this);
         } catch (e) {
           appLogger.w('Failed to set orientation', error: e);
           // Don't crash if orientation fails - video can still play
@@ -1921,13 +2097,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _isPlayerInitialized = false;
         _playerInitializationError = failureMessage;
       });
-      // The button only exists after this frame builds, so the request waits
-      // for it. See [_initializationErrorFocusNode] for why autofocus alone
-      // leaves the view with nothing focused.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _isExiting.value || _playerInitializationError == null) return;
-        if (_initializationErrorFocusNode.canRequestFocus) _initializationErrorFocusNode.requestFocus();
-      });
+      _focusFailureActionAfterBuild();
     }
   }
 
@@ -2082,6 +2252,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// requests, and the route guard is what refuses to start at all once
   /// another player owns the screen.
   Future<void> _restoreSystemUiAndOrientation() {
+    // Before the overlays are shown below: the re-show callback that follows
+    // must find no owner, or it would hide them again.
+    ImmersiveModeGuard.release(this);
     final existing = _systemUiRestoreOperation;
     if (existing != null) return existing;
     if (_activeRouteGuard.identityFor(this) == null) return Future<void>.value();
@@ -2112,7 +2285,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await Future.wait<void>([?_playerInitializationOperation, ?_shutdownOperation, ?_nativeDisposal]);
       }(),
     );
-    widget.launchObserver?.detach();
+    _retireLaunchObserver();
     _playerInitializationGeneration++;
     _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -2231,9 +2404,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Clear frame rate matching and abandon audio focus before disposing player (Android only)
     if (Platform.isAndroid && player != null) {
-      // Native dispose deliberately leaves the display mode for Dart to clear
-      // (ExoPlayerCore.releasePending) — skip it during a player→player
-      // replacement, the Android analog of preserveDisplayMode below.
+      // ExoPlayerCore.releasePending leaves the display mode for this call;
+      // MpvPlayerCore restores it natively on dispose and the call is
+      // idempotent there. Skip it during a player→player replacement, the
+      // Android analog of preserveDisplayMode below.
       if (!isReplacingWithVideo) {
         player!.clearVideoFrameRate();
       }
@@ -2243,6 +2417,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     unawaited(_wakelockController.setEnabled(false));
     appLogger.d('Wakelock disabled');
 
+    // A replacement acquires the guard once its own immersive request goes
+    // out; until then nobody owns it, and a stale owner would keep hiding
+    // the bars on whatever screen comes next.
+    ImmersiveModeGuard.release(this);
     if (!isReplacingWithVideo) {
       unawaited(_restoreSystemUiAndOrientation());
     }
@@ -2589,6 +2767,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Shared by accepted route exit and app shutdown, not resumable suspension.
     _isExiting.value = true;
     _playbackIntentShouldPlay = false;
+    // While the receipt can still tell this session apart from a replaced
+    // one: the generation bump below would read as a replacement.
+    _retireLaunchObserver();
     _playerInitializationGeneration++;
     _transitionGate.bumpGeneration();
     _transitionGate.completeIdleWaiters();
@@ -2754,11 +2935,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         },
         child: Builder(
           key: _overlayChildKey,
-          builder: (sheetContext) => _isPlayerInitialized && player != null
-              ? _buildVideoPlayer(sheetContext)
-              : (_playerInitializationError != null
-                    ? _buildInitializationError(_playerInitializationError!)
-                    : _buildLoadingSpinner()),
+          builder: (sheetContext) {
+            final playbackFailure = _playbackFailureMessage;
+            if (playbackFailure != null) {
+              return _buildPlaybackFailure(playbackFailure, onRetry: _playbackFailureRetry!);
+            }
+            if (_isPlayerInitialized && player != null) return _buildVideoPlayer(sheetContext);
+            final initializationError = _playerInitializationError;
+            if (initializationError != null) {
+              return _buildPlaybackFailure(initializationError, onRetry: _retryPlayerInitialization);
+            }
+            return _buildLoadingSpinner();
+          },
         ),
       ),
     );

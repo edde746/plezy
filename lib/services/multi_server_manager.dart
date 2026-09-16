@@ -10,6 +10,7 @@ import '../i18n/app_locale_utils.dart';
 import '../media/media_server_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
+import 'connectivity_probe.dart';
 import 'jellyfin_client.dart';
 import 'jellyfin_endpoint_discovery.dart';
 import 'plex_client.dart';
@@ -56,7 +57,7 @@ class MultiServerManager {
 
   MultiServerManager._(this._plexClientFactory, this._connectivityChanges, this._connectivityDebounceDuration);
 
-  static Stream<List<ConnectivityResult>> _defaultConnectivityChanges() => Connectivity().onConnectivityChanged;
+  static Stream<List<ConnectivityResult>> _defaultConnectivityChanges() => ConnectivityProbe.changes;
 
   final PlexClientFactory _plexClientFactory;
   final Stream<List<ConnectivityResult>> Function() _connectivityChanges;

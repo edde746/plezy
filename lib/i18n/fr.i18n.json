@@ -213,6 +213,7 @@
     "minutesUnit": "${minutes} minutes",
     "rememberTrackSelections": "Mémoriser les pistes choisies pour chaque série ou film",
     "rememberTrackSelectionsDescription": "Mémoriser les choix audio et sous-titres par titre",
+    "rememberTrackSelectionsBackendRule": "",
     "followServerTrackSelections": "Utiliser les pistes sélectionnées sur le serveur pour chaque épisode",
     "followServerTrackSelectionsDescription": "Au changement d'épisode, appliquer l'audio et les sous-titres sélectionnés sur le serveur au lieu de conserver le choix en cours",
     "resumeMusicOnLaunch": "Mémoriser la session musicale",
@@ -340,6 +341,7 @@
     "audioPassthrough": "Transmission audio directe",
     "audioPassthroughDescription": "Envoyer l’audio Dolby/DTS à votre ampli ou téléviseur sans le réencoder afin de préserver le son surround. Désactivez cette option en l’absence de son.",
     "audioPassthroughDescriptionAppleTv": "Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.",
+    "audioPassthroughOverriddenByNormalization": "",
     "audioDownmix": "Conversion en stéréo",
     "audioDownmixDescription": "Convertir le son surround en deux canaux pour les enceintes stéréo ou le casque",
     "downmixCenterBoost": "Renforcement du canal central",
@@ -781,6 +783,7 @@
     "playbackDataInvalid": "Le serveur a renvoyé des informations de lecture non valides.",
     "playbackCancelled": "La lecture a été annulée.",
     "playbackFailed": "Impossible de démarrer la lecture.",
+    "playbackFailedDetail": "",
     "audioOutputFailed": "",
     "mediaUnavailable": "",
     "errorLoadingFileInfo": "Erreur lors du chargement des informations sur le fichier : ${error}",
@@ -1906,6 +1909,8 @@
     "audioOutputSpatial": "Audio spatial",
     "audioOutputStereo": "Stéréo",
     "audioNormalization": "Normaliser le volume",
+    "audioNormalizationDisablesPassthrough": "",
+    "audioNormalizationStereoMix": "",
     "audioDownmix": "Conversion en stéréo"
   },
   "performanceOverlay": {
