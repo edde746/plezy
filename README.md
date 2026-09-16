@@ -48,7 +48,7 @@ winget install edde746.Plezy
 
 ### Linux — Flatpak
 
-Plezy's `.flatpak` downloads are self-distributed release bundles, not a Flathub listing. Flathub supplies the Freedesktop runtime only. Install Flatpak using your distribution's package manager, download the bundle for your architecture above, then run:
+Install Flatpak with your distribution's package manager, download the bundle for your architecture above, then run:
 
 ```bash
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
@@ -57,15 +57,17 @@ flatpak install --user ./plezy-linux-x64.flatpak
 flatpak run com.edde746.plezy
 ```
 
-On arm64, replace `plezy-linux-x64.flatpak` with `plezy-linux-arm64.flatpak`. The runtime installation defaults to your host architecture.
+On arm64, install `plezy-linux-arm64.flatpak`.
 
-Video playback requires a Wayland session, as in the native Linux release. A pure X11 session can display the interface but cannot create the video plane.
+<details>
+<summary>Sandbox, playback, and folder access</summary>
 
-The sandbox does not request broad host or home filesystem access. App data is isolated under `~/.var/app/com.edde746.plezy/`, separate from a native installation.
+- Not on Flathub — the remote supplies the Freedesktop runtime only.
+- Video playback needs a Wayland session; a pure X11 session shows the interface but cannot create the video plane.
+- No host or home filesystem access; app data lives in `~/.var/app/com.edde746.plezy/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
+- Network, display, audio, and device access are enabled. `--device=all` (Flatpak 1.14 compatibility) exposes more than GPUs and controllers; session-bus access stays filtered.
 
-Select custom host folders through the desktop file chooser portal; download folders must be writable. Existing or imported host paths are not automatically accessible inside the sandbox. Folder selection requires a working `xdg-desktop-portal` service and a compatible desktop backend.
-
-Network, display, audio, and device access are enabled for streaming, hardware decoding, and evdev gamepads. Device access uses `--device=all` for compatibility with Flatpak 1.14; that permission exposes more than just GPUs and controllers. Session-bus access stays filtered, with one MPRIS name and narrow runtime paths for media artwork and Discord integration.
+</details>
 
 ### Arch Linux — Pacman
 
@@ -212,7 +214,8 @@ scripts/codegen.sh
 flutter run
 ```
 
-### Code Generation
+<details>
+<summary>Code generation</summary>
 
 After modifying model classes or other generated sources:
 
@@ -226,11 +229,14 @@ After modifying translations:
 dart run slang
 ```
 
-### Building a Flatpak package
+</details>
 
-Run on Linux, preferably on the same architecture as the bundle. This packages an **already fully resolved Linux release bundle**, including the pinned libmpv and its bundled libraries; it is not a Flathub source-build manifest. Follow the bundle preparation steps in [the Linux release workflow](.github/workflows/build.yml) first: `flutter build linux` alone does not produce all the required bundled libraries.
+<details>
+<summary>Packaging a Flatpak bundle</summary>
 
-Install the packaging tools (Debian/Ubuntu shown) and the native-architecture SDK and runtime in your user installation:
+Packages an **already fully resolved Linux release bundle** — pinned libmpv and bundled libraries included, not a Flathub source-build manifest. Run it on Linux, on the same architecture as the bundle, after following the bundle preparation steps in [the Linux release workflow](.github/workflows/build.yml): `flutter build linux` alone does not produce all the required bundled libraries.
+
+Install the packaging tools (Debian/Ubuntu shown) plus the native-architecture SDK and runtime:
 
 ```bash
 sudo apt-get update
@@ -242,19 +248,22 @@ BUNDLE_DIR=build/linux/x64/release/bundle
 python3 linux/packaging/build-flatpak.py --bundle "$BUNDLE_DIR" --arch x64 --output "$PWD"
 ```
 
-For arm64, use the prepared arm64 bundle directory and `--arch arm64` on an arm64 host. The output is `plezy-linux-x64.flatpak` or `plezy-linux-arm64.flatpak`, respectively. Package from the checkout matching the bundle: the package version comes from `pubspec.yaml`. Install the result with the Flatpak commands above.
+That writes `plezy-linux-x64.flatpak`, installable with the Flatpak commands above; on arm64, use the prepared arm64 bundle directory and `--arch arm64`. Package from the checkout matching the bundle, since the version comes from `pubspec.yaml`.
 
-Cross-architecture packaging requires native Flatpak tools, a registered binfmt interpreter, and the target SDK/runtime installed with `flatpak install --user --arch=x86_64` (or `aarch64`). Do not run Flatpak's namespace tools themselves under emulation. Pass `--arch x64` or `--arch arm64` to the checker below, and the corresponding Flatpak architecture to `flatpak run --arch=...`.
+Cross-architecture packaging needs native Flatpak tools, a registered binfmt interpreter, and the target SDK/runtime installed with `flatpak install --user --arch=x86_64` (or `aarch64`) — never run Flatpak's namespace tools under emulation. Pass `--arch x64` or `--arch arm64` to the checker and the matching Flatpak architecture to `flatpak run --arch=...`.
 
-Check the installed package against the runtime (not just the SDK):
+Check the installed package against the runtime (not just the SDK), then launch it on a Wayland desktop and exercise streaming, audio, downloads/offline playback, and file chooser portals:
 
 ```bash
 python3 linux/packaging/check-flatpak.py
 ```
 
-This checks executable permissions and every bundled ELF dependency. Also launch the installed app on a Wayland desktop and exercise streaming, audio, downloads/offline playback, and file chooser portals. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
+The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
 
-### Local Checks
+</details>
+
+<details>
+<summary>Local checks</summary>
 
 ```bash
 scripts/ci_checks.sh
@@ -271,6 +280,8 @@ End-to-end tests (Android emulator plus a Dockerized Jellyfin fixture):
 ```bash
 python3 scripts/maestro/run_maestro.py basic
 ```
+
+</details>
 
 ## Contributing
 
