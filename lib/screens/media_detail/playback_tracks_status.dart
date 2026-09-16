@@ -25,8 +25,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
   Future<void> _listenForPlaybackVersionChanges() async {
     final settings = await SettingsService.getInstance();
     if (!_canUseDetail) return;
-    _playbackVersionPreferences = settings.listenableOf(SettingsService.mediaVersionPreferences);
-    _playbackVersionPreferences!.addListener(_onPlaybackVersionChanged);
+    bindListenable(settings.listenableOf(SettingsService.mediaVersionPreferences), _onPlaybackVersionChanged);
   }
 
   void _onPlaybackVersionChanged() {

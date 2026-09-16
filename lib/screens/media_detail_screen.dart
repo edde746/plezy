@@ -86,6 +86,7 @@ import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/server_bound_media_mixin.dart';
+import '../mixins/listenable_bindings_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
 import '../utils/library_content_notifier.dart';
@@ -317,7 +318,13 @@ PageRoute<bool> mediaDetailRoute({
 }
 
 class _MediaDetailScreenState extends State<MediaDetailScreen>
-    with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin, RouteAware {
+    with
+        WatchStateAware,
+        DeletionAware,
+        MountedSetStateMixin,
+        ServerBoundMediaMixin,
+        RouteAware,
+        ListenableBindingsMixin {
   /// Public input alias — used as the live source of truth until the detail
   /// fetch returns. Holds backend-neutral [MediaItem] data.
   MediaItem get _metadata => _fullMetadata ?? widget.metadata;
@@ -370,7 +377,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   int _playbackProbeGeneration = 0;
   final ValueNotifier<int> _playbackStatusRevision = ValueNotifier(0);
   String? _playbackStatusTarget;
-  Listenable? _playbackVersionPreferences;
   Timer? _playbackProbeTimer;
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids
@@ -992,7 +998,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
     _playbackProbeTimer?.cancel();
-    _playbackVersionPreferences?.removeListener(_onPlaybackVersionChanged);
     _playbackStatusRevision.dispose();
     _extrasScrollController.dispose();
     _extrasFocusNode.removeListener(_handleExtrasFocusChange);

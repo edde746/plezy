@@ -35,7 +35,7 @@ import '../../services/playback_initialization_types.dart';
 import '../../services/playback_subtitle_resolver.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../mixins/settings_effect_mixin.dart';
+import '../../mixins/listenable_bindings_mixin.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mpv/mpv.dart';
 import '../overlay_sheet.dart';
@@ -754,7 +754,7 @@ class PlexVideoControls extends StatefulWidget {
 }
 
 class _PlexVideoControlsState extends State<PlexVideoControls>
-    with WindowListener, SettingsEffectMixin, MountedSetStateMixin {
+    with WindowListener, ListenableBindingsMixin, MountedSetStateMixin {
   bool get _showControls => widget.chromeController.controlsVisible;
   bool get _hasRenderedFirstFrame => widget.hasFirstFrame?.value ?? true;
 
@@ -878,6 +878,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);
+
+  /// Releases the [PlayerChromeController] binding; rebound in
+  /// [didUpdateWidget] when the screen swaps controllers.
+  late VoidCallback _releaseChromeListener;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
@@ -959,7 +963,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // prompt now, not on the next position tick (paused playback never ticks).
     bindEffect(SettingsService.skipIntroMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     bindEffect(SettingsService.skipCreditsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
-    widget.chromeController.addListener(_onChromeChanged);
+    _releaseChromeListener = bindListenable(widget.chromeController, _onChromeChanged);
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
@@ -987,9 +991,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
 
     // Register global key handler for focus-independent shortcuts (desktop only)
-    HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
-    // Listen for first frame to start auto-hide timer
-    widget.hasFirstFrame?.addListener(_onFirstFrameReady);
+    final globalKeyHandler = _handleGlobalKeyEvent;
+    HardwareKeyboard.instance.addHandler(globalKeyHandler);
+    ownDisposer(() => HardwareKeyboard.instance.removeHandler(globalKeyHandler));
+    // Listen for first frame to start auto-hide timer. The gate outlives this
+    // state — the screen's failure view unmounts the controls and Retry flips
+    // the gate again — so the binding must really come off in dispose; these
+    // listeners live in part-file extensions, whose tear-offs a bare
+    // removeListener never matches.
+    final hasFirstFrame = widget.hasFirstFrame;
+    if (hasFirstFrame != null) bindListenable(hasFirstFrame, _onFirstFrameReady);
     // Defer context-dependent initialization to after first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -1033,12 +1044,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _hiddenSeek.attachPlayheadJumps(widget.player.streams.playheadJump);
     }
     if (oldWidget.chromeController != widget.chromeController) {
-      oldWidget.chromeController.removeListener(_onChromeChanged);
+      _releaseChromeListener();
       _lastControlsVisible = widget.chromeController.controlsVisible;
       _controlsMounted = _lastControlsVisible;
       _controlsOpaque = _lastControlsVisible;
       if (_controlsOpaque) widget.chromeController.markControlsOpaque();
-      widget.chromeController.addListener(_onChromeChanged);
+      _releaseChromeListener = bindListenable(widget.chromeController, _onChromeChanged);
     }
     // The same controls instance survives in-place episode swaps — re-key
     // the per-item chapters/markers/skip state when the item changes.
@@ -1068,9 +1079,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void dispose() {
     ++_subtitleVisibilityWriteGeneration;
-    HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
-    widget.chromeController.removeListener(_onChromeChanged);
-    widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();
     _accumulatedSkipSeconds.dispose();

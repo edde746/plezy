@@ -39,6 +39,7 @@ import '../models/transcode_quality_preset.dart';
 import '../media/media_source_info.dart';
 import '../media/stepped_seek.dart';
 import '../mixins/mounted_set_state_mixin.dart';
+import '../mixins/listenable_bindings_mixin.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
@@ -500,7 +501,8 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
 }
 
-class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver, MountedSetStateMixin {
+class VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with WidgetsBindingObserver, MountedSetStateMixin, ListenableBindingsMixin {
   /// How close to the capture buffer's end counts as "live". A live-edge
   /// transcode starts behind the buffer's edge by tuner ingest and encoder
   /// start-up latency (10–20 s observed), so a tighter threshold would flag
@@ -939,7 +941,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _pipInitialized = false;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
-  bool _fullscreenListenerAttached = false;
+
+  /// Releases the Windows fullscreen-change binding (see [_onFullscreenChanged]).
+  VoidCallback? _releaseFullscreenListener;
+
+  /// Releases the PiP state binding; attached and detached with the PiP
+  /// feature (see [_attachPipStateListener]).
+  VoidCallback? _releasePipStateListener;
   Size? _lastVideoLayoutSize;
   Size? _pendingVideoLayoutSize;
   Player? _lastVideoLayoutPlayer;
@@ -1672,10 +1680,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
         if (!_isPlayerInitializationCurrent(generation)) return;
-        if (!_fullscreenListenerAttached) {
-          FullscreenStateManager().addListener(_onFullscreenChanged);
-          _fullscreenListenerAttached = true;
-        }
+        _releaseFullscreenListener ??= bindListenable(FullscreenStateManager(), _onFullscreenChanged);
       }
 
       // One-native-instance rule: a live music session owns the only audio
@@ -2373,10 +2378,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     DiscordRPCService.instance.stopPlayback();
     TrackerCoordinator.instance.stopPlayback();
 
-    if (_fullscreenListenerAttached) {
-      FullscreenStateManager().removeListener(_onFullscreenChanged);
-      _fullscreenListenerAttached = false;
-    }
+    // Released before the scope closes and the display mode is restored, so
+    // neither can re-enter the handler on a screen that is going away.
+    _releaseFullscreenListener?.call();
+    _releaseFullscreenListener = null;
     FullscreenStateManager().endScope();
     // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
     // the HDR hint before restoring, which dispose() cannot do. Fire the hint
