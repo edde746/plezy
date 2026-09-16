@@ -779,6 +779,7 @@ class _ReloadPlayer extends FakeSyncPlayer {
     setPosition(media.start ?? Duration.zero);
     setCompleted(false);
     emitPlaying(play);
+    emitFileStarted();
     emitPlaybackRestart();
   }
 

@@ -37,6 +37,22 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         !mounted || _shuttingDown || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError;
     if (stale()) return;
 
+    // Only this attempt's own file can prove a frame. Between a reload's
+    // latch reset and the replacement's start-file the outgoing file is still
+    // the backend's active source, so its restart — or a position tick — would
+    // latch the replacement as rendered before it exists: display matching
+    // on the wrong stream, the first-frame effects on the wrong picture, the
+    // open watchdogs blind to the open. The outcome delimits signals at the
+    // backend's load start, so a caller parks on its first frame and the
+    // staleness re-check retires whichever one is late. A settled outcome —
+    // the frame already proven, or the open dead — leaves the raw signal
+    // alone: after a rolled-back reload the surviving file must still be
+    // able to latch.
+    final outcome = _playbackAttempt?.outcome;
+    if (outcome != null && !outcome.isSettled) {
+      if (!await outcome.firstFrame || stale()) return;
+    }
+
     // The open is negotiating the display from this frame: keep it behind
     // the loading UI until the mode switch (and decoder refresh) settled,
     // as the spinner did while the metadata pre-load switch ran. Concurrent

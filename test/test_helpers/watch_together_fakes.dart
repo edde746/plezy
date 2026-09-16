@@ -53,6 +53,7 @@ class FakeSyncPlayer implements Player {
   final _bufferingController = StreamController<bool>.broadcast();
   final _rateController = StreamController<double>.broadcast();
   final _playbackRestartController = StreamController<void>.broadcast();
+  final _fileStartedController = StreamController<void>.broadcast();
   final _durationController = StreamController<Duration>.broadcast();
 
   @override
@@ -80,6 +81,7 @@ class FakeSyncPlayer implements Player {
     audioDevices: const Stream<List<AudioDevice>>.empty(),
     bufferRanges: const Stream<List<BufferRange>>.empty(),
     playbackRestart: _playbackRestartController.stream,
+    fileStarted: _fileStartedController.stream,
     backendSwitched: const Stream<void>.empty(),
   );
 
@@ -172,6 +174,11 @@ class FakeSyncPlayer implements Player {
     _rateController.add(value);
   }
 
+  /// The backend started a load (mpv `start-file`). Every real backend sends
+  /// this before the load's first frame, and the open outcome delimits an
+  /// attempt's signals by it; a fake `open` emits it before its restart.
+  void emitFileStarted() => _fileStartedController.add(null);
+
   /// First frame rendered (after load).
   void emitPlaybackRestart() => _playbackRestartController.add(null);
 
@@ -209,6 +216,7 @@ class FakeSyncPlayer implements Player {
     await _bufferingController.close();
     await _rateController.close();
     await _playbackRestartController.close();
+    await _fileStartedController.close();
     await _durationController.close();
   }
 

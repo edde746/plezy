@@ -228,6 +228,7 @@ class _SwitchPlayer extends FakeSyncPlayer {
       audioDevices: base.audioDevices,
       bufferRanges: base.bufferRanges,
       playbackRestart: base.playbackRestart,
+      fileStarted: base.fileStarted,
       backendSwitched: base.backendSwitched,
     );
   }
@@ -274,6 +275,7 @@ class _SwitchPlayer extends FakeSyncPlayer {
       return;
     }
     emitPlaying(play);
+    emitFileStarted();
     emitPlaybackRestart();
   }
 
