@@ -849,7 +849,7 @@ class MpvPlayerPluginTest {
     val core = MpvPlayerCore(activity)
     var created = 0
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ ->
+    plugin.createCore = { _, _, _, _ ->
       created++
       core
     }
@@ -890,7 +890,7 @@ class MpvPlayerPluginTest {
     setPluginField(plugin, "activity", activity)
     val core = MpvPlayerCore(activity)
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ -> core }
+    plugin.createCore = { _, _, _, _ -> core }
     plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
     val result = RecordingResult()
 
@@ -922,7 +922,7 @@ class MpvPlayerPluginTest {
     val core = MpvPlayerCore(activity)
     var created = 0
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ ->
+    plugin.createCore = { _, _, _, _ ->
       created++
       core
     }
@@ -961,7 +961,7 @@ class MpvPlayerPluginTest {
     setPluginField(plugin, "activity", activity)
     val successor = MpvPlayerCore(activity)
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ -> successor }
+    plugin.createCore = { _, _, _, _ -> successor }
     plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
     val result = RecordingResult()
 

@@ -92,9 +92,9 @@ open class MpvPlayerPlugin(
   // Test seams, mirroring ExoPlayerPlugin.createMpvCore/initializeMpvCore:
   // MpvPlayer's companion loads libmpv, so substituting both is the only way
   // a JVM test can drive this plugin's initialization path.
-  internal var createCore: (Context, Boolean, Float, String, Int) -> MpvPlayerCore =
-    { context, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay ->
-      MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay)
+  internal var createCore: (Context, Boolean, Float, String) -> MpvPlayerCore =
+    { context, hardwareDecoding, subtitleRenderScale, logLevel ->
+      MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel)
     }
   internal var initializeCore: (MpvPlayerCore, (Boolean) -> Unit) -> Unit = { core, onInitialized ->
     core.initialize(onInitialized)
@@ -268,9 +268,6 @@ open class MpvPlayerPlugin(
     // ⅓ / ¼ of the surface); the same fraction the ExoPlayer overlay applies.
     // Absent from older callers and the audio-only core; full is the default.
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
-    val osdVsyncDelay = call.argument<Int>("osdVsyncDelay") ?: 0
-    // Frames the OSD plane renders ahead of the picture; the Dart perf-tier
-    // proxy also seeds the ExoPlayer overlay's assVideoLatencyFrames with it.
     val logLevel = call.argument<String>("logLevel") ?: "warn"
     // Video cores need the Activity (surface/view hierarchy); the audio-only
     // core is built on the application context so it can outlive it.
@@ -330,7 +327,7 @@ open class MpvPlayerPlugin(
         }
 
         gen = ++sessionGeneration
-        core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay).apply {
+        core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel).apply {
           delegate = this@MpvPlayerPlugin
         }
         playerCore = core

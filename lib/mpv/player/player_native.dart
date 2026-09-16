@@ -5,7 +5,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
-import '../../services/device_performance.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
@@ -235,11 +234,12 @@ class PlayerNative extends PlayerBase {
       // choose its vo before mpv_initialize, and the subtitle "Render
       // Resolution" fraction for its vo=mediacodec OSD plane (the same knob the
       // ExoPlayer overlay honors; other platforms size the OSD themselves).
-      // `osdVsyncDelay` is the codec->display lag that plane compensates, in
-      // display periods, from the same perf-tier proxy player_android.dart
-      // hands the ExoPlayer overlay as assVideoLatencyFrames. `instanceId`
-      // names this Dart instance so a later `dispose` that lost the ownership
-      // race is provably stale; handlers that predate any of these arguments
+      // The OSD plane is presented on the video's own timestamp: shifting it
+      // by a display period put it on the vsync Amlogic's compositor latches
+      // the next picture on and pushed that picture a vsync late (a 4:1 hold
+      // pair every couple of seconds of 24p on 60 Hz). `instanceId` names
+      // this Dart instance so a later `dispose` that lost the ownership race
+      // is provably stale; handlers that predate any of these arguments
       // ignore them.
       final result = await invoke<Object>('initialize', {
         if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
@@ -247,7 +247,6 @@ class PlayerNative extends PlayerBase {
           'subtitleRenderScale': SettingsService.instance
               .read(SettingsService.subtitleRenderResolution)
               .androidRenderScale,
-        if (!audioOnly && Platform.isAndroid) 'osdVsyncDelay': DevicePerformance.isLowEndHardware ? 1 : 0,
         if (Platform.isAndroid) 'logLevel': _requestedLogLevel,
         'instanceId': nativeInstanceId,
       });
