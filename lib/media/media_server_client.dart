@@ -504,8 +504,8 @@ abstract class MediaServerClient {
   Future<bool> removeFromPlaylist({required String playlistId, required MediaItem item});
 
   /// Collections in [libraryId]. Plex hits `/library/sections/{id}/collections`;
-  /// Jellyfin resolves its top-level `boxsets` view and walks that root in
-  /// bounded pages.
+  /// Jellyfin/Emby keep BoxSets in one server-wide root, so this lists every
+  /// collection regardless of [libraryId].
   /// Each result carries `kind == MediaKind.collection`.
   Future<List<MediaItem>> fetchCollections(String libraryId);
 

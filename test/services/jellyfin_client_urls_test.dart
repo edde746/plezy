@@ -4799,18 +4799,10 @@ void main() {
   });
 
   group('JellyfinClient.fetchCollections', () {
-    test('uses boxsets view instead of selected media library parent', () async {
+    test('queries the server-wide BoxSet root without a views lookup', () async {
       final requests = <Uri>[];
       final mock = MockClient((req) async {
         requests.add(req.url);
-        if (req.url.path == '/Users/user-1/Views') {
-          return jsonResponse({
-            'Items': [
-              {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies'},
-              {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
-            ],
-          });
-        }
         if (req.url.path == '/Items') {
           return jsonResponse({
             'TotalRecordCount': 1,
@@ -4828,10 +4820,11 @@ void main() {
 
       expect(collections.map((c) => c.id).toList(), ['collection-1']);
       expect(collections.single.kind, MediaKind.collection);
-      expect(requests.map((u) => u.path).toList(), ['/Users/user-1/Views', '/Items']);
-      final itemsRequest = requests.singleWhere((u) => u.path == '/Items');
-      expect(itemsRequest.queryParameters['ParentId'], 'lib-boxsets');
-      expect(itemsRequest.queryParameters['ParentId'], isNot('lib-movies'));
+      // Both dialects discard ParentId on a BoxSet-only query, so the request
+      // goes straight to /Items — no /Views round trip, no ParentId (#2373).
+      expect(requests.map((u) => u.path).toList(), ['/Items']);
+      final itemsRequest = requests.single;
+      expect(itemsRequest.queryParameters.containsKey('ParentId'), isFalse);
       expect(itemsRequest.queryParameters['IncludeItemTypes'], 'BoxSet');
       expect(itemsRequest.queryParameters['Recursive'], 'true');
       expect(itemsRequest.queryParameters['StartIndex'], '0');
@@ -4850,13 +4843,6 @@ void main() {
     test('fetchCollectionsPage uses requested collection page bounds', () async {
       Uri? itemsRequest;
       final mock = MockClient((req) async {
-        if (req.url.path == '/Users/user-1/Views') {
-          return jsonResponse({
-            'Items': [
-              {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
-            ],
-          });
-        }
         if (req.url.path == '/Items') {
           itemsRequest = req.url;
           return jsonResponse({
@@ -4877,7 +4863,7 @@ void main() {
       expect(page.offset, 20);
       expect(page.items.single.id, 'collection-20');
       expect(itemsRequest, isNotNull);
-      expect(itemsRequest!.queryParameters['ParentId'], 'lib-boxsets');
+      expect(itemsRequest!.queryParameters.containsKey('ParentId'), isFalse);
       expect(itemsRequest!.queryParameters['StartIndex'], '20');
       expect(itemsRequest!.queryParameters['Limit'], '10');
       expect(itemsRequest!.queryParameters.containsKey('EnableTotalRecordCount'), isFalse);
@@ -4885,13 +4871,6 @@ void main() {
 
     test('fetchCollectionsPage uses sentinel total when total count is missing', () async {
       final mock = MockClient((req) async {
-        if (req.url.path == '/Users/user-1/Views') {
-          return jsonResponse({
-            'Items': [
-              {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
-            ],
-          });
-        }
         if (req.url.path == '/Items') {
           return jsonResponse({
             'Items': [
@@ -4911,16 +4890,9 @@ void main() {
       expect(page.totalCount, 3);
     });
 
-    test('walks boxsets view in pages', () async {
+    test('walks collections in pages', () async {
       final itemRequests = <Uri>[];
       final mock = MockClient((req) async {
-        if (req.url.path == '/Users/user-1/Views') {
-          return jsonResponse({
-            'Items': [
-              {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
-            ],
-          });
-        }
         if (req.url.path == '/Items') {
           itemRequests.add(req.url);
           final start = req.url.queryParameters['StartIndex'];
@@ -4943,19 +4915,23 @@ void main() {
       expect(itemRequests.every((u) => u.queryParameters['Limit'] == '36'), isTrue);
     });
 
-    test('returns empty when boxsets view is missing', () async {
-      var itemsRequested = false;
+    test('returns collections when the server exposes no boxsets view', () async {
+      // #2373: Emby can serve BoxSets while /Users/{id}/Views lacks a
+      // boxsets entry (deleted/never-created collections virtual folder).
+      // The fetch must not depend on that view.
+      var viewsRequested = false;
       final mock = MockClient((req) async {
         if (req.url.path == '/Users/user-1/Views') {
-          return jsonResponse({
-            'Items': [
-              {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies'},
-            ],
-          });
+          viewsRequested = true;
+          return jsonResponse({'Items': []});
         }
         if (req.url.path == '/Items') {
-          itemsRequested = true;
-          return jsonResponse({'Items': []});
+          return jsonResponse({
+            'TotalRecordCount': 1,
+            'Items': [
+              {'Id': 'collection-1', 'Name': 'Collection 1', 'Type': 'BoxSet'},
+            ],
+          });
         }
         return http.Response('not found', 404);
       });
@@ -4964,8 +4940,8 @@ void main() {
 
       final collections = await client.fetchCollections('lib-movies');
 
-      expect(collections, isEmpty);
-      expect(itemsRequested, isFalse);
+      expect(collections.map((c) => c.id).toList(), ['collection-1']);
+      expect(viewsRequested, isFalse);
     });
 
     test('fetchCollectionPage uses Jellyfin item paging', () async {
