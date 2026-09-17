@@ -2,6 +2,10 @@ mixin Refreshable {
   void refresh();
 }
 
+/// User-initiated refresh — the desktop Cmd+R / Ctrl+R chord, bound to the same
+/// action as the screen's toolbar refresh button. Distinct from [Refreshable],
+/// which is a conditional stale-resume refresh, and [FullRefreshable], which is
+/// a profile-switch reload.
 mixin ManualRefreshable {
   void manualRefresh();
 }

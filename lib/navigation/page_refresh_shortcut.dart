@@ -6,7 +6,7 @@ import '../mixins/refreshable.dart';
 import '../utils/platform_detector.dart';
 
 /// Whether [event] is the exact current-page refresh chord for this desktop.
-bool isPageRefreshShortcut(KeyEvent event) {
+bool _isPageRefreshShortcut(KeyEvent event) {
   if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.keyR) return false;
   if (!PlatformDetector.isDesktopOS() || PlatformDetector.isTV()) return false;
 
@@ -18,36 +18,14 @@ bool isPageRefreshShortcut(KeyEvent event) {
       : keyboard.isControlPressed && !keyboard.isMetaPressed;
 }
 
-/// Handles a refresh chord only when the current scope supplies [onRefresh].
-KeyEventResult handlePageRefreshShortcut(KeyEvent event, {required VoidCallback? onRefresh}) {
-  if (!isPageRefreshShortcut(event) || onRefresh == null) return KeyEventResult.ignored;
+/// Handles the refresh chord only when the current scope supplies [onRefresh].
+KeyEventResult handlePageRefreshShortcut(KeyEvent event, VoidCallback? onRefresh) {
+  if (!_isPageRefreshShortcut(event) || onRefresh == null) return KeyEventResult.ignored;
   onRefresh();
   return KeyEventResult.handled;
 }
 
-/// Dispatches a refresh chord to a current screen with manual refresh support.
+/// Dispatches the refresh chord to a current screen with manual refresh support.
 KeyEventResult dispatchPageRefreshShortcut(KeyEvent event, Object? currentScreen) {
-  return handlePageRefreshShortcut(
-    event,
-    onRefresh: currentScreen is ManualRefreshable ? currentScreen.manualRefresh : null,
-  );
-}
-
-/// A non-traversable refresh shortcut scope for pushed refreshable routes.
-class PageRefreshShortcut extends StatelessWidget {
-  const PageRefreshShortcut({super.key, required this.onRefresh, required this.child});
-
-  final VoidCallback onRefresh;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      includeSemantics: false,
-      onKeyEvent: (_, event) => handlePageRefreshShortcut(event, onRefresh: onRefresh),
-      child: child,
-    );
-  }
+  return handlePageRefreshShortcut(event, currentScreen is ManualRefreshable ? currentScreen.manualRefresh : null);
 }

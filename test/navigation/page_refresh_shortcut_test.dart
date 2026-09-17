@@ -58,15 +58,7 @@ void main() {
 
   testWidgets('the exact platform chord invokes once and key repeat does not refresh again', (tester) async {
     var refreshes = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PageRefreshShortcut(
-          onRefresh: () => refreshes++,
-          child: const Focus(autofocus: true, child: SizedBox.expand()),
-        ),
-      ),
-    );
-    await tester.pump();
+    await _pumpHandler(tester, (event) => handlePageRefreshShortcut(event, () => refreshes++));
 
     expect(await _sendChord(tester, _platformModifier(), repeat: true), isTrue);
     expect(refreshes, 1);
@@ -74,15 +66,7 @@ void main() {
 
   testWidgets('bare R, the wrong modifier, and extra Shift or Alt do not refresh', (tester) async {
     var refreshes = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PageRefreshShortcut(
-          onRefresh: () => refreshes++,
-          child: const Focus(autofocus: true, child: SizedBox.expand()),
-        ),
-      ),
-    );
-    await tester.pump();
+    await _pumpHandler(tester, (event) => handlePageRefreshShortcut(event, () => refreshes++));
 
     await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
     await _sendChord(tester, _wrongModifier());
@@ -94,15 +78,7 @@ void main() {
 
   testWidgets('non-desktop and TV modes ignore the platform chord', (tester) async {
     var refreshes = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PageRefreshShortcut(
-          onRefresh: () => refreshes++,
-          child: const Focus(autofocus: true, child: SizedBox.expand()),
-        ),
-      ),
-    );
-    await tester.pump();
+    await _pumpHandler(tester, (event) => handlePageRefreshShortcut(event, () => refreshes++));
 
     PlatformDetector.debugSetIsDesktopOSOverride(false);
     await _sendChord(tester, _platformModifier());
@@ -128,7 +104,7 @@ void main() {
   }, variant: TargetPlatformVariant.desktop());
 
   testWidgets('a missing page callback leaves the refresh chord unhandled', (tester) async {
-    await _pumpHandler(tester, (event) => handlePageRefreshShortcut(event, onRefresh: null));
+    await _pumpHandler(tester, (event) => handlePageRefreshShortcut(event, null));
 
     expect(await _sendChord(tester, _platformModifier()), isFalse);
   }, variant: TargetPlatformVariant.desktop());
