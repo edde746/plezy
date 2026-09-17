@@ -1688,6 +1688,7 @@
     "downloadResumed": "İndirme devam ettirildi",
     "serverErrorBitrate": "Sunucu hatası: dosya uzak bit hızı sınırını aşıyor olabilir",
     "storageFull": "Cihaz depolama alanı dolu olduğu için indirmeler durduruldu. Biraz alan boşaltıp tekrar deneyin.",
+    "storageUnavailable": "",
     "episodesQueued": "İndirmek için ${count} bölüm kuyruğa alındı",
     "downloadDeleted": "İndirme silindi",
     "deleteConfirm": "\"${title}\" bu cihazdan silinsin mi?",

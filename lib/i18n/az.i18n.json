@@ -1688,6 +1688,7 @@
     "downloadResumed": "Yükləmə davam etdirildi",
     "serverErrorBitrate": "Server xətası: fayl sürət limitini aşa bilər",
     "storageFull": "Cihaz yaddaşı dolu olduğu üçün yükləmə dayandırıldı.",
+    "storageUnavailable": "",
     "episodesQueued": "Yükləmə üçün ${count} seriya növbəyə alındı",
     "downloadDeleted": "Yükləmə silindi",
     "deleteConfirm": "\"${title}\" bu cihazdan silinsin?",

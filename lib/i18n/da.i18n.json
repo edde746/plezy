@@ -1688,6 +1688,7 @@
     "downloadResumed": "Download genoptaget",
     "serverErrorBitrate": "Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate",
     "storageFull": "Downloads blev stoppet, fordi enhedens lagerplads er fuld. Frigør plads, og prøv igen.",
+    "storageUnavailable": "",
     "episodesQueued": "${count} episoder i downloadkø",
     "downloadDeleted": "Download slettet",
     "deleteConfirm": "Slet \"${title}\" fra denne enhed?",

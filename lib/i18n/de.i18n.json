@@ -1688,6 +1688,7 @@
     "downloadResumed": "Download fortgesetzt",
     "serverErrorBitrate": "Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit",
     "storageFull": "Die Downloads wurden angehalten, weil der Gerätespeicher voll ist. Gib Speicherplatz frei und versuche es erneut.",
+    "storageUnavailable": "",
     "episodesQueued": "${count} Episoden zum Download hinzugefügt",
     "downloadDeleted": "Download gelöscht",
     "deleteConfirm": "\"${title}\" von diesem Gerät löschen?",

@@ -1688,6 +1688,7 @@
     "downloadResumed": "Жүктеу жалғастырылды",
     "serverErrorBitrate": "Сервер қатесі: файл жылдамдық шегінен асуы мүмкін",
     "storageFull": "Жады толы болғандықтан жүктеу тоқтатылды.",
+    "storageUnavailable": "",
     "episodesQueued": "${count} бөлім жүктеу кезегіне қосылды",
     "downloadDeleted": "Жүктеу өшірілді",
     "deleteConfirm": "\"${title}\" осы құрылғыдан өшірілсін бе?",

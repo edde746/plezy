@@ -1688,6 +1688,7 @@
     "downloadResumed": "Yuklash davom ettirildi",
     "serverErrorBitrate": "Server xatoligi: fayl tezlik cheklovidan oshgan boʻlishi mumkin",
     "storageFull": "Xotira toʻlganligi sababli yuklash toʻxtatildi.",
+    "storageUnavailable": "",
     "episodesQueued": "${count} qism yuklash navbatiga qoʻshildi",
     "downloadDeleted": "Yuklama oʻchirildi",
     "deleteConfirm": "\"${title}\" ushbu qurilmadan oʻchirilsinmi?",
