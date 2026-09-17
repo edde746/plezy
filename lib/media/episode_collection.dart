@@ -328,19 +328,22 @@ List<MediaItem> normalizeSeasonEpisodes(
   required MediaItem show,
   required MediaItem season,
 }) {
+  final fallback = season.libraryId != null ? season : show;
+  final fallbackIsSeason = fallback.kind == MediaKind.season;
+  final fallbackGrandparentTitle = _fallbackGrandparentTitle(fallback, isShow: fallback.kind == MediaKind.show);
   return episodes
       .where((episode) => episode.kind == MediaKind.episode)
       .map(
-        (episode) => _withFallbackLibrary(
-          episode.copyWith(
-            serverId: show.serverId ?? episode.serverId,
-            serverName: show.serverName ?? episode.serverName,
-            grandparentId: show.id,
-            grandparentTitle: show.title ?? episode.grandparentTitle,
-            parentId: episode.parentId ?? season.id,
-            parentIndex: episode.parentIndex ?? season.index,
-          ),
-          season.libraryId != null ? season : show,
+        (episode) => episode.copyWith(
+          serverId: show.serverId ?? episode.serverId ?? fallback.serverId,
+          serverName: show.serverName ?? episode.serverName ?? fallback.serverName,
+          libraryId: episode.libraryId ?? fallback.libraryId,
+          libraryTitle: episode.libraryTitle ?? fallback.libraryTitle,
+          grandparentId: show.id,
+          grandparentTitle: show.title ?? episode.grandparentTitle ?? fallbackGrandparentTitle,
+          parentId: episode.parentId ?? season.id,
+          parentTitle: episode.parentTitle ?? (fallbackIsSeason ? fallback.title : null),
+          parentIndex: episode.parentIndex ?? season.index,
         ),
       )
       .toList();

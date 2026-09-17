@@ -332,10 +332,7 @@ void main() {
       final ep2 = testMediaItem(id: 'ep2', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
       final outsider = testMediaItem(id: 'ep-other', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
 
-      p.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2], currentIndex: 0),
-        contextKey: 'playlist-X',
-      );
+      p.setPlaybackFromLocalQueue(LocalPlayQueue(items: [ep1, ep2], currentIndex: 0), contextKey: 'playlist-X');
 
       expect(p.playQueueItemIdFor(ep1), 0);
       expect(p.playQueueItemIdFor(ep2), 1);

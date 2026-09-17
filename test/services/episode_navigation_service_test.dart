@@ -150,7 +150,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:playlist-movies', items: [previous, current, next], currentIndex: 1),
+        LocalPlayQueue(items: [previous, current, next], currentIndex: 1),
         contextKey: 'playlist-movies',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
@@ -193,7 +193,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:collection-movies', items: [previous, storedCurrent, next], currentIndex: 1),
+        LocalPlayQueue(items: [previous, storedCurrent, next], currentIndex: 1),
         contextKey: 'collection-movies',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
@@ -298,7 +298,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:stale-playlist', items: [queuedPrevious, queuedCurrent], currentIndex: 1),
+        LocalPlayQueue(items: [queuedPrevious, queuedCurrent], currentIndex: 1),
         contextKey: 'stale-playlist',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
@@ -359,7 +359,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2, ep3], currentIndex: 1),
+        LocalPlayQueue(items: [ep1, ep2, ep3], currentIndex: 1),
         contextKey: 'playlist-X',
       );
 
@@ -512,7 +512,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       playback.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:series-A', items: shuffledOrder, currentIndex: 0, shuffled: true),
+        LocalPlayQueue(items: shuffledOrder, currentIndex: 0, shuffled: true),
         contextKey: 'series-A',
       );
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);

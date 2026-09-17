@@ -268,7 +268,7 @@ as LibrarySortDirection,
 /// @nodoc
 mixin _$LibraryFilter {
 
- String get field; String get op; List<String> get values;
+ String get field; List<String> get values;
 /// Create a copy of LibraryFilter
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -279,16 +279,16 @@ $LibraryFilterCopyWith<LibraryFilter> get copyWith => _$LibraryFilterCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LibraryFilter&&(identical(other.field, field) || other.field == field)&&(identical(other.op, op) || other.op == op)&&const DeepCollectionEquality().equals(other.values, values));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LibraryFilter&&(identical(other.field, field) || other.field == field)&&const DeepCollectionEquality().equals(other.values, values));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,field,op,const DeepCollectionEquality().hash(values));
+int get hashCode => Object.hash(runtimeType,field,const DeepCollectionEquality().hash(values));
 
 @override
 String toString() {
-  return 'LibraryFilter(field: $field, op: $op, values: $values)';
+  return 'LibraryFilter(field: $field, values: $values)';
 }
 
 
@@ -299,7 +299,7 @@ abstract mixin class $LibraryFilterCopyWith<$Res>  {
   factory $LibraryFilterCopyWith(LibraryFilter value, $Res Function(LibraryFilter) _then) = _$LibraryFilterCopyWithImpl;
 @useResult
 $Res call({
- String field, String op, List<String> values
+ String field, List<String> values
 });
 
 
@@ -316,10 +316,9 @@ class _$LibraryFilterCopyWithImpl<$Res>
 
 /// Create a copy of LibraryFilter
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? field = null,Object? op = null,Object? values = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? field = null,Object? values = null,}) {
   return _then(_self.copyWith(
 field: null == field ? _self.field : field // ignore: cast_nullable_to_non_nullable
-as String,op: null == op ? _self.op : op // ignore: cast_nullable_to_non_nullable
 as String,values: null == values ? _self.values : values // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -403,10 +402,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String field,  String op,  List<String> values)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String field,  List<String> values)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LibraryFilter() when $default != null:
-return $default(_that.field,_that.op,_that.values);case _:
+return $default(_that.field,_that.values);case _:
   return orElse();
 
 }
@@ -424,10 +423,10 @@ return $default(_that.field,_that.op,_that.values);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String field,  String op,  List<String> values)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String field,  List<String> values)  $default,) {final _that = this;
 switch (_that) {
 case _LibraryFilter():
-return $default(_that.field,_that.op,_that.values);}
+return $default(_that.field,_that.values);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -441,10 +440,10 @@ return $default(_that.field,_that.op,_that.values);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String field,  String op,  List<String> values)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String field,  List<String> values)?  $default,) {final _that = this;
 switch (_that) {
 case _LibraryFilter() when $default != null:
-return $default(_that.field,_that.op,_that.values);case _:
+return $default(_that.field,_that.values);case _:
   return null;
 
 }
@@ -456,11 +455,10 @@ return $default(_that.field,_that.op,_that.values);case _:
 
 
 class _LibraryFilter implements LibraryFilter {
-  const _LibraryFilter({required this.field, this.op = '=', required final  List<String> values}): _values = values;
+  const _LibraryFilter({required this.field, required final  List<String> values}): _values = values;
   
 
 @override final  String field;
-@override@JsonKey() final  String op;
  final  List<String> _values;
 @override List<String> get values {
   if (_values is EqualUnmodifiableListView) return _values;
@@ -479,16 +477,16 @@ _$LibraryFilterCopyWith<_LibraryFilter> get copyWith => __$LibraryFilterCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LibraryFilter&&(identical(other.field, field) || other.field == field)&&(identical(other.op, op) || other.op == op)&&const DeepCollectionEquality().equals(other._values, _values));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LibraryFilter&&(identical(other.field, field) || other.field == field)&&const DeepCollectionEquality().equals(other._values, _values));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,field,op,const DeepCollectionEquality().hash(_values));
+int get hashCode => Object.hash(runtimeType,field,const DeepCollectionEquality().hash(_values));
 
 @override
 String toString() {
-  return 'LibraryFilter(field: $field, op: $op, values: $values)';
+  return 'LibraryFilter(field: $field, values: $values)';
 }
 
 
@@ -499,7 +497,7 @@ abstract mixin class _$LibraryFilterCopyWith<$Res> implements $LibraryFilterCopy
   factory _$LibraryFilterCopyWith(_LibraryFilter value, $Res Function(_LibraryFilter) _then) = __$LibraryFilterCopyWithImpl;
 @override @useResult
 $Res call({
- String field, String op, List<String> values
+ String field, List<String> values
 });
 
 
@@ -516,10 +514,9 @@ class __$LibraryFilterCopyWithImpl<$Res>
 
 /// Create a copy of LibraryFilter
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? field = null,Object? op = null,Object? values = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? field = null,Object? values = null,}) {
   return _then(_LibraryFilter(
 field: null == field ? _self.field : field // ignore: cast_nullable_to_non_nullable
-as String,op: null == op ? _self.op : op // ignore: cast_nullable_to_non_nullable
 as String,values: null == values ? _self._values : values // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));

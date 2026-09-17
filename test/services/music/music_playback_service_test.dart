@@ -332,9 +332,6 @@ class FakePlayer implements Player {
   bool get supportsSecondarySubtitles => false;
 
   @override
-  bool get attachesExternalSubtitlesAtOpen => true;
-
-  @override
   bool get detectsFpsAfterRender => false;
 
   @override
