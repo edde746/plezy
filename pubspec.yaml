@@ -57,13 +57,13 @@ dependencies:
   web_socket_channel: ^3.0.1
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
-  # Fork 41c16be fixes upstream #649's missing desktop temp parent; c52103f
+  # Fork 54a34a0 fixes upstream #649's missing desktop temp parent; 7ee4588
   # survives a host with no documents directory (Linux without xdg-user-dirs).
   # Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 496ddf1d6e8847fe57466649c81386728ab2a2be
+      ref: 1bcc9978e9b5e503dd08176cc423cfabee703761
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
@@ -106,6 +106,13 @@ dev_dependencies:
   analyzer: 10.2.0
 
 dependency_overrides:
+  # background_downloader 9.6.2 requires hosted connectivity_plus; keep the
+  # pinned git source for every consumer.
+  connectivity_plus:
+    git:
+      url: https://github.com/fluttercommunity/plus_plugins
+      ref: bf04cdf66598dc3fca274b8b1db2b92b0bf6b73e
+      path: packages/connectivity_plus/connectivity_plus
   auto_updater_platform_interface:
     git:
       url: https://github.com/edde746/auto_updater
