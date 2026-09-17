@@ -4,23 +4,23 @@
       "assetBase": "https://github.com/edde746/mpv-build/releases/download/binaries-android",
       "assets": {
         "arm64-v8a": {
-          "asset": "libmpv-android-f00050472940-arm64-v8a.tar.gz",
-          "checksum": "7695aadd1ae1bf3dbd2fe0accadaf5193ec085758363a01ce91c0e06c60b1656"
+          "asset": "libmpv-android-3da414a1204f-arm64-v8a.tar.gz",
+          "checksum": "18e0686f0d146235196879cc1e765c9643b8c667bb44e7a1430eb0c8ebf6e99f"
         },
         "armeabi-v7a": {
-          "asset": "libmpv-android-f00050472940-armeabi-v7a.tar.gz",
-          "checksum": "f2eea7dc5a8345a550958c26c3ea2347fd07916ed630b63b538a73d97bdb5362"
+          "asset": "libmpv-android-3da414a1204f-armeabi-v7a.tar.gz",
+          "checksum": "e5c558433b1a9f20882771532d94956a6f3d1fd11ac611b5ff335ac87dba18d8"
         },
         "x86": {
-          "asset": "libmpv-android-f00050472940-x86.tar.gz",
-          "checksum": "ea16a13d9b8187a5c5807aeb86fa451473bc32385fec1a731a967ce14fa9843b"
+          "asset": "libmpv-android-3da414a1204f-x86.tar.gz",
+          "checksum": "507a34af59c260acd547f67560984fc4ca21e1f109d7ce58524b558230368199"
         },
         "x86_64": {
-          "asset": "libmpv-android-f00050472940-x86_64.tar.gz",
-          "checksum": "5a542332d1ae4238612f1a2060e2a41da7830bf097cea9dbd1b89a41e6bf7738"
+          "asset": "libmpv-android-3da414a1204f-x86_64.tar.gz",
+          "checksum": "9fb42f0986e38562b1803f7e24dc9707c8ef43358c443b131ba84552ec640507"
         }
       },
-      "key": "f00050472940"
+      "key": "3da414a1204f"
     },
     "linux": {
       "assetBase": "https://github.com/edde746/mpv-build/releases/download/binaries-linux",
@@ -51,7 +51,7 @@
       "key": "69fc8bfb73a1"
     }
   },
-  "commit": "3f9bbd9f4e7530c694d4932d970f66f5abe047dc",
+  "commit": "b44f9e142e4159fa9cb8978057ef4b1b908646a6",
   "formatVersion": 1,
   "repo": "edde746/mpv-build"
 }
