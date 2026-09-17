@@ -131,11 +131,7 @@ class WatchNextPlugin() :
       return result.error("INVALID_ARGS", "Too many items", null)
     }
     val items = itemsData.mapNotNull(::parseWatchNextItem)
-    executeOnIo(executor, result) {
-      if (!session.isOpen()) return@executeOnIo false
-      val provider = session.provider ?: return@executeOnIo false
-      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
-      if (!session.isOpen()) return@executeOnIo false
+    executeOwnedOnIo(session, executor, result, owner, generation) { provider, ownership ->
       provider.syncWatchNextPrograms(owner, generation, items, ownership, session::isOpen)
     }
   }
@@ -145,11 +141,7 @@ class WatchNextPlugin() :
     val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
     val (owner, generation) = ownerArguments(call)
       ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
-    executeOnIo(executor, result) {
-      if (!session.isOpen()) return@executeOnIo false
-      val provider = session.provider ?: return@executeOnIo false
-      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
-      if (!session.isOpen()) return@executeOnIo false
+    executeOwnedOnIo(session, executor, result, owner, generation) { provider, ownership ->
       provider.clearAll(owner, generation, ownership, session::isOpen)
     }
   }
@@ -161,12 +153,25 @@ class WatchNextPlugin() :
       ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
     val contentId = call.argument<String>("contentId")
       ?: return result.error("INVALID_ARGS", "Missing contentId", null)
+    executeOwnedOnIo(session, executor, result, owner, generation) { provider, ownership ->
+      provider.removeItem(owner, generation, contentId, ownership, session::isOpen)
+    }
+  }
+
+  private fun executeOwnedOnIo(
+    session: EngineSession,
+    executor: ExecutorService,
+    result: MethodChannel.Result,
+    owner: String,
+    generation: Long,
+    operation: (WatchNextProvider, SystemShelfLifecycle.Ownership) -> Any?
+  ) {
     executeOnIo(executor, result) {
       if (!session.isOpen()) return@executeOnIo false
       val provider = session.provider ?: return@executeOnIo false
       val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
       if (!session.isOpen()) return@executeOnIo false
-      provider.removeItem(owner, generation, contentId, ownership, session::isOpen)
+      operation(provider, ownership)
     }
   }
 

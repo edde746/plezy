@@ -1,53 +1,6 @@
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.security.MessageDigest
 import java.util.UUID
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
-fun verifySha256(file: File, expected: String, identity: String) {
-  val digest = MessageDigest.getInstance("SHA-256")
-  file.inputStream().buffered().use { input ->
-    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-    while (true) {
-      val count = input.read(buffer)
-      if (count < 0) break
-      digest.update(buffer, 0, count)
-    }
-  }
-  val actual = digest.digest().joinToString("") {
-    (it.toInt() and 0xff).toString(16).padStart(2, '0')
-  }
-  if (actual != expected) {
-    throw GradleException("SHA-256 mismatch for $identity: expected $expected, got $actual")
-  }
-}
-
-fun promoteDirectory(staging: File, destination: File) {
-  val backup = File(destination.parentFile, "${destination.name}.backup-${UUID.randomUUID()}")
-  val hadDestination = destination.exists()
-  try {
-    if (hadDestination) {
-      Files.move(destination.toPath(), backup.toPath(), StandardCopyOption.ATOMIC_MOVE)
-    }
-    try {
-      Files.move(staging.toPath(), destination.toPath(), StandardCopyOption.ATOMIC_MOVE)
-    } catch (promotionFailure: Exception) {
-      if (hadDestination && backup.exists()) {
-        try {
-          Files.move(backup.toPath(), destination.toPath(), StandardCopyOption.ATOMIC_MOVE)
-        } catch (restoreFailure: Exception) {
-          promotionFailure.addSuppressed(restoreFailure)
-        }
-      }
-      throw promotionFailure
-    }
-    if (hadDestination && backup.exists() && !backup.deleteRecursively()) {
-      throw GradleException("Failed to remove obsolete native artifact backup at ${backup.absolutePath}")
-    }
-  } finally {
-    staging.deleteRecursively()
-  }
-}
 
 // mpv Kotlin API + JNI glue built in-project (imported from the libmpv-android
 // fork, commit e60c3ba); the external dependency is reduced to prebuilt native
@@ -56,6 +9,14 @@ plugins {
   id("com.android.library")
   id("org.jetbrains.kotlin.android")
 }
+
+apply(from = rootProject.file("gradle/native-artifacts.gradle.kts"))
+
+@Suppress("UNCHECKED_CAST")
+val verifySha256 = extra["verifySha256"] as (File, String, String) -> Unit
+
+@Suppress("UNCHECKED_CAST")
+val promoteDirectory = extra["promoteDirectory"] as (File, File) -> Unit
 
 // Single source for the pinned native artifacts: the repo-root
 // mpv-build.lock.json (github.com/edde746/mpv-build release assets + sha256
