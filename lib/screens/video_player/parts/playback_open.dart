@@ -83,6 +83,24 @@ class _MediaOpenResult {
   final bool sidecarFallbackUsed;
 }
 
+/// Start position for a fresh open, in precedence order: an explicit
+/// caller request (version switch, stream recovery, Watch Together), the
+/// shuffle-starts-from-beginning override (#2303), locally tracked offline
+/// progress, then the server-side view offset.
+Duration? resolveOpenResumePosition({
+  Duration? requested,
+  bool shuffleFromBeginning = false,
+  int? offlineOffsetMs,
+  int? viewOffsetMs,
+}) {
+  if (requested != null) return requested;
+  if (shuffleFromBeginning) return Duration.zero;
+  if (offlineOffsetMs != null && offlineOffsetMs > 0) {
+    return Duration(milliseconds: offlineOffsetMs);
+  }
+  return viewOffsetMs != null ? Duration(milliseconds: viewOffsetMs) : null;
+}
+
 /// Shared building blocks for opening media on the live player.
 ///
 /// The initial start flow ([_startPlayback]) and in-place reload flow
@@ -182,25 +200,38 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return rateEligible || resolutionEligible;
   }
 
-  /// Resolve where a fresh open should start: explicit request → locally
-  /// tracked offline progress → server view offset.
+  /// Resolve where a fresh open should start: explicit request → shuffle
+  /// override → locally tracked offline progress → server view offset.
   Future<Duration?> _resolveOpenResumePosition({
     required MediaItem metadata,
     required bool isOffline,
     required OfflineWatchSyncService offlineWatchService,
     Duration? requested,
   }) async {
-    if (requested != null) return requested;
+    // A shuffled queue opts out of resume when the user asked for it (#2303):
+    // every item opens at 0:00, including episodes reached through
+    // auto-advance and Plex server-side window refetches. Explicit requests
+    // still win, so the flag is only read when no request is in play.
+    final shuffleFromBeginning =
+        requested == null &&
+        mounted &&
+        context.read<PlaybackStateProvider>().isShuffleActive &&
+        (await SettingsService.getInstance()).read(SettingsService.shuffleStartsFromBeginning);
+    int? offlineOffsetMs;
     // In offline mode, prefer locally tracked progress over the cached server
     // value since the user may have watched further since downloading.
-    if (isOffline) {
-      final localOffset = await offlineWatchService.getLocalViewOffset(metadata.globalKey);
-      if (localOffset != null && localOffset > 0) {
-        appLogger.d('Resuming offline playback from local progress: ${localOffset}ms');
-        return Duration(milliseconds: localOffset);
+    if (requested == null && !shuffleFromBeginning && isOffline) {
+      offlineOffsetMs = await offlineWatchService.getLocalViewOffset(metadata.globalKey);
+      if (offlineOffsetMs != null && offlineOffsetMs > 0) {
+        appLogger.d('Resuming offline playback from local progress: ${offlineOffsetMs}ms');
       }
     }
-    return metadata.viewOffsetMs != null ? Duration(milliseconds: metadata.viewOffsetMs!) : null;
+    return resolveOpenResumePosition(
+      requested: requested,
+      shuffleFromBeginning: shuffleFromBeginning,
+      offlineOffsetMs: offlineOffsetMs,
+      viewOffsetMs: metadata.viewOffsetMs,
+    );
   }
 
   /// Decide the display strategy for an open. mpv (Android) and Apple TV

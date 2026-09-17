@@ -10,8 +10,10 @@ import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 // Focused orchestration coverage lives here: the network response must be
 // published to PlaybackStateProvider before navigation, and a navigation
@@ -60,11 +62,11 @@ Future<BuildContext> _pumpContext(WidgetTester tester) async {
   return capturedContext;
 }
 
-PlayQueueResponse _queueWith(MediaItem item) {
+PlayQueueResponse _queueWith(MediaItem item, {bool shuffled = false}) {
   return PlayQueueResponse(
     playQueueID: 73,
     playQueueSelectedItemID: 41,
-    playQueueShuffled: false,
+    playQueueShuffled: shuffled,
     playQueueTotalCount: 1,
     items: [item],
   );
@@ -72,6 +74,11 @@ PlayQueueResponse _queueWith(MediaItem item) {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+  });
 
   group('launchShuffledShow pre-flight guard', () {
     testWidgets('returns PlayQueueError when metadata is not a show or season', (tester) async {
@@ -177,6 +184,94 @@ void main() {
       expect((result as PlayQueueError).error, same(failure));
       expect(playbackState.isQueueActive, isTrue);
       expect(playbackState.currentQueueItem, same(item));
+    });
+  });
+  group('shuffle starts from beginning (#2303)', () {
+    testWidgets('strips the launched item\'s resume offset when the pref is on', (tester) async {
+      final context = await _pumpContext(tester);
+      await SettingsService.instance.write(SettingsService.shuffleStartsFromBeginning, true);
+      final item = const MediaItem.plex(
+        id: 'ep-1',
+        kind: MediaKind.episode,
+        playQueueItemId: 41,
+        viewOffsetMs: 120_000,
+      );
+      final playbackState = PlaybackStateProvider();
+      final navigated = <MediaItem>[];
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: _StubPlexClient(response: _queueWith(item, shuffled: true)),
+        playbackStateForTesting: playbackState,
+        navigateForTesting: (m) async => navigated.add(m),
+      );
+      const playlist = MediaPlaylist(id: '12', backend: MediaBackend.plex, title: 'Playlist', playlistType: 'video');
+
+      final result = await launcher.launchFromCollectionOrPlaylist(
+        item: playlist,
+        shuffle: true,
+        showLoadingIndicator: false,
+      );
+
+      expect(result, isA<PlayQueueSuccess>());
+      expect(navigated.single.viewOffsetMs, 0);
+      // The queue itself keeps the server offset — only the launched copy is
+      // stripped; the in-player override covers later queue items.
+      expect(playbackState.loadedItems.single.viewOffsetMs, 120_000);
+    });
+
+    testWidgets('keeps the resume offset when the pref is off', (tester) async {
+      final context = await _pumpContext(tester);
+      final item = const MediaItem.plex(
+        id: 'ep-1',
+        kind: MediaKind.episode,
+        playQueueItemId: 41,
+        viewOffsetMs: 120_000,
+      );
+      final navigated = <MediaItem>[];
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: _StubPlexClient(response: _queueWith(item, shuffled: true)),
+        playbackStateForTesting: PlaybackStateProvider(),
+        navigateForTesting: (m) async => navigated.add(m),
+      );
+      const playlist = MediaPlaylist(id: '12', backend: MediaBackend.plex, title: 'Playlist', playlistType: 'video');
+
+      final result = await launcher.launchFromCollectionOrPlaylist(
+        item: playlist,
+        shuffle: true,
+        showLoadingIndicator: false,
+      );
+
+      expect(result, isA<PlayQueueSuccess>());
+      expect(navigated.single.viewOffsetMs, 120_000);
+    });
+
+    testWidgets('keeps the resume offset on sequential launches even with the pref on', (tester) async {
+      final context = await _pumpContext(tester);
+      await SettingsService.instance.write(SettingsService.shuffleStartsFromBeginning, true);
+      final item = const MediaItem.plex(
+        id: 'ep-1',
+        kind: MediaKind.episode,
+        playQueueItemId: 41,
+        viewOffsetMs: 120_000,
+      );
+      final navigated = <MediaItem>[];
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: _StubPlexClient(response: _queueWith(item)),
+        playbackStateForTesting: PlaybackStateProvider(),
+        navigateForTesting: (m) async => navigated.add(m),
+      );
+      const playlist = MediaPlaylist(id: '12', backend: MediaBackend.plex, title: 'Playlist', playlistType: 'video');
+
+      final result = await launcher.launchFromCollectionOrPlaylist(
+        item: playlist,
+        shuffle: false,
+        showLoadingIndicator: false,
+      );
+
+      expect(result, isA<PlayQueueSuccess>());
+      expect(navigated.single.viewOffsetMs, 120_000);
     });
   });
 }

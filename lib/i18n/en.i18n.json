@@ -274,6 +274,8 @@
     "autoPlayAndSkip": "Auto-Play & Skip",
     "autoPlayNextEpisode": "Auto-Play Next Episode",
     "autoPlayNextEpisodeDescription": "Start the next episode automatically when one ends",
+    "shuffleStartsFromBeginning": "Shuffle Starts at Beginning",
+    "shuffleStartsFromBeginningDescription": "Start each episode at the beginning when shuffling instead of resuming",
     "playNextCountdown": "Play Next Countdown",
     "playNextCountdownImmediate": "Play immediately",
     "skipIntroMode": "Skip Intro",
