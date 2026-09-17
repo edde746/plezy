@@ -159,6 +159,139 @@ void main() {
       );
     });
 
+    test('MPV restores the outgoing file when loadfile is rejected', () async {
+      // mpv keeps the outgoing file loaded when `loadfile` fails, so every
+      // per-file fact open() tore down before dispatching still describes the
+      // file on screen and has to come back — the rendered frame is what a
+      // Watch Together rebind reads for readiness, and a paused file emits no
+      // further playback-restart to re-establish it.
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          if (call.method == 'initialize') return Future.value(true);
+          if (call.method == 'command' && (call.arguments as Map)['args'][0] == 'loadfile') {
+            throw PlatformException(code: 'COMMAND_FAILED', message: 'rejected');
+          }
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = _TestPlayerNative();
+          final announced = <Duration?>[];
+          final subscription = player.streams.playheadJump.listen(announced.add);
+          try {
+            _seedTracks(player);
+            player.seedExternalSubtitleMetadata(const [
+              SubtitleTrack(
+                id: 'old-external',
+                title: 'Old sidecar',
+                language: 'eng',
+                codec: 'srt',
+                isDefault: false,
+                isForced: true,
+                isExternal: true,
+                uri: 'https://example.test/old.srt',
+              ),
+            ]);
+            player.handlePlayerEvent('start-file', {'sourceId': 1});
+            player.handlePlayerEvent('playback-restart', {'sourceId': 1, 'positionSeconds': 188.0});
+            player.handlePropertyChange('time-pos', 188.0);
+            player.handlePropertyChange('duration', 439.968);
+            player.handlePropertyChange('seekable', true);
+            expect(player.state.hasRenderedFrame, isTrue);
+
+            await expectLater(
+              player.open(
+                Media('https://example.test/rejected.mkv', start: const Duration(seconds: 12)),
+                timelineDuration: const Duration(seconds: 401),
+                externalSubtitles: const [
+                  SubtitleTrack(
+                    id: 'rejected-external',
+                    title: 'Rejected sidecar',
+                    language: 'spa',
+                    codec: 'ass',
+                    isDefault: false,
+                    isForced: false,
+                    isExternal: true,
+                    uri: 'https://example.test/rejected.ass',
+                  ),
+                ],
+              ),
+              throwsA(isA<PlatformException>()),
+            );
+            await Future<void>.delayed(Duration.zero);
+
+            expect(player.state.hasRenderedFrame, isTrue);
+            expect(player.state.position, const Duration(seconds: 188));
+            expect(player.currentPosition, const Duration(seconds: 188));
+            expect(player.state.duration, const Duration(milliseconds: 439968));
+            expect(player.state.seekable, isTrue);
+            expect(player.state.tracks.audio.single.title, 'English');
+            expect(player.state.tracks.subtitle.single.title, 'English');
+            // The abandoned resume target was announced; so is the way back.
+            expect(announced, [const Duration(seconds: 12), const Duration(seconds: 188)]);
+
+            // The track-list gate armed for the load that never started is
+            // lifted, and the outgoing file's external metadata still applies.
+            player.handlePropertyChange('track-list', const [
+              {
+                'type': 'sub',
+                'id': 'restored-external',
+                'external': true,
+                'external-filename': 'https://example.test/old.srt',
+                'selected': true,
+              },
+            ]);
+            expect(player.state.tracks.subtitle.single.title, 'Old sidecar');
+            expect(player.state.tracks.subtitle.single.isForced, isTrue);
+
+            // A later duration report is not overridden by the rejected
+            // open's timeline.
+            player.handlePropertyChange('duration', 500.0);
+            expect(player.state.duration, const Duration(seconds: 500));
+          } finally {
+            await subscription.cancel();
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV restores the outgoing file when a pre-loadfile command is rejected', () async {
+      // The header rebuild runs after the teardown too; a failure there must
+      // roll back the same way as a rejected loadfile.
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          if (call.method == 'initialize') return Future.value(true);
+          if (call.method == 'command' && (call.arguments as Map)['args'][0] == 'change-list') {
+            throw PlatformException(code: 'COMMAND_FAILED', message: 'rejected');
+          }
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            _seedTracks(player);
+            player.handlePlayerEvent('start-file', {'sourceId': 1});
+            player.handlePlayerEvent('playback-restart', {'sourceId': 1, 'positionSeconds': 0.0});
+            player.handlePropertyChange('seekable', true);
+
+            await expectLater(player.open(Media('https://example.test/next.mkv')), throwsA(isA<PlatformException>()));
+
+            expect(player.state.hasRenderedFrame, isTrue);
+            expect(player.state.seekable, isTrue);
+            expect(player.state.tracks.audio.single.title, 'English');
+            _seedTracks(player);
+            expect(player.state.tracks.subtitle.single.title, 'English');
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('ExoPlayer applies audio settings queued before initialization', () async {
       final calls = <MethodCall>[];
       await withMockPlayerChannels(
@@ -1355,6 +1488,12 @@ void main() {
 }
 
 class _TestPlayerAndroid extends PlayerAndroid {
+  void seedExternalSubtitleMetadata(List<SubtitleTrack> subtitles) {
+    setExternalSubtitleMetadata(subtitles);
+  }
+}
+
+class _TestPlayerNative extends PlayerNative {
   void seedExternalSubtitleMetadata(List<SubtitleTrack> subtitles) {
     setExternalSubtitleMetadata(subtitles);
   }

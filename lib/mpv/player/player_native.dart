@@ -372,6 +372,13 @@ class PlayerNative extends PlayerBase {
     // No transition is surfaced: the caller is replacing playback anyway.
     await _clearArmedNext(adoptIfRolledIn: false);
     final startPosition = media.start ?? Duration.zero;
+    // Everything below tears down the outgoing file's state before the load
+    // is dispatched. A rejected load leaves that file playing, so the
+    // teardown has to be undone — see the catch.
+    final previousState = state;
+    final previousPosition = currentPosition;
+    final previousTimelineDuration = configuredTimelineDuration;
+    final previousExternalSubtitleMetadata = snapshotExternalSubtitleMetadata();
     configureTimeline(duration: timelineDuration);
     clearTracks();
     deferTrackListUntilLoadStarts();
@@ -379,6 +386,42 @@ class PlayerNative extends PlayerBase {
     resetPlaybackProgress(startPosition);
     setSeekable(false);
 
+    try {
+      return await _dispatchOpen(
+        media,
+        startPosition: startPosition,
+        play: play,
+        isLive: isLive,
+        externalSubtitles: externalSubtitles,
+        startLivePlaylistFromBeginning: startLivePlaylistFromBeginning,
+      );
+    } catch (_) {
+      // Nothing loaded: no `start-file` will release the track-list gate, and
+      // the file still playing keeps its frame, tracks, timeline and playhead.
+      // Consumers that bound in this window — a Watch Together rebind reads
+      // `hasRenderedFrame` for readiness — must see that file, not the
+      // replacement that never arrived.
+      if (!_nativeCoreUnavailable) {
+        configureTimeline(duration: previousTimelineDuration);
+        restorePlaybackProgress(previousState, position: previousPosition);
+        restoreTracks(previousState);
+        restoreExternalSubtitleMetadata(previousExternalSubtitleMetadata);
+        setSeekable(previousState.seekable);
+        resumeTrackListAdoption();
+        _expectOpenFileLoad = false;
+      }
+      rethrow;
+    }
+  }
+
+  Future<int?> _dispatchOpen(
+    Media media, {
+    required Duration startPosition,
+    required bool play,
+    required bool isLive,
+    required List<SubtitleTrack>? externalSubtitles,
+    required bool startLivePlaylistFromBeginning,
+  }) async {
     if (!audioOnly) await setVisible(true);
 
     // Rebuild the header list via `change-list` items — a plain
@@ -453,15 +496,7 @@ class PlayerNative extends PlayerBase {
     // The core can be torn down while the awaits above were suspended; the
     // `command` path makes the same re-check before dispatching.
     if (_nativeCoreUnavailable) return null;
-    final Map? loadfileReply;
-    try {
-      loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
-    } catch (_) {
-      // Nothing loaded, so no `start-file` will release the track-list gate,
-      // and the file still playing needs to keep publishing its tracks.
-      resumeTrackListAdoption();
-      rethrow;
-    }
+    final loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
     final playlistEntryId = loadfileReply?['playlistEntryId'];
 
     // mpv's pause property survives loadfile; in-place reloads pause the old
