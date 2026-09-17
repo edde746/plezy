@@ -871,15 +871,17 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _replaceOnDeck(List.of(_onDeck)..[onDeckIndex] = updatedItem, hasMore: _hasMoreContinueWatching);
     }
 
+    List<MediaHub>? updatedHubs;
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
       final itemIndex = hub.items.indexWhere((item) => item.globalKey == sourceGlobalKey);
       if (itemIndex != -1) {
         final newItems = List<MediaItem>.from(hub.items);
         newItems[itemIndex] = updatedItem;
-        _replaceHubs(List.of(_hubs)..[i] = hub.copyWith(items: newItems));
+        (updatedHubs ??= List.of(_hubs))[i] = hub.copyWith(items: newItems);
       }
     }
+    if (updatedHubs != null) _replaceHubs(updatedHubs);
   }
 
   void _applyOnDeck(List<MediaItem> fetched) {
@@ -973,13 +975,17 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _replaceOnDeck(remainingOnDeck, hasMore: _hasMoreContinueWatching);
       changed = true;
     }
+    List<MediaHub>? updatedHubs;
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
       final newItems = hub.items.where((item) => !affected(item)).toList();
       if (newItems.length != hub.items.length) {
-        _replaceHubs(List.of(_hubs)..[i] = hub.copyWith(items: newItems));
-        changed = true;
+        (updatedHubs ??= List.of(_hubs))[i] = hub.copyWith(items: newItems);
       }
+    }
+    if (updatedHubs != null) {
+      _replaceHubs(updatedHubs);
+      changed = true;
     }
     if (changed) safeNotifyListeners();
     if (event.origin == DeletionOrigin.local) {

@@ -191,7 +191,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (_activeProfileId != targetProfileId || _profileGeneration != targetGeneration) return;
     await _loadProfileScopedState();
     await refreshMetadataFromCache();
-    await _applyOfflineWatchOverlay(expectedProfileGeneration: targetGeneration);
     if (_activeProfileId == targetProfileId && _profileGeneration == targetGeneration) {
       safeNotifyListeners();
     }
@@ -924,12 +923,22 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // the aggregate helpers are kind-agnostic over grandparent/parent keys.
       final leavesAsGrandparent = _getLeafDownloads(grandparentRatingKey: ratingKey);
       if (leavesAsGrandparent.isNotEmpty) {
-        return getAggregateProgressForShow(serverId, ratingKey);
+        return _calculateAggregateProgress(
+          serverId: serverId,
+          ratingKey: ratingKey,
+          episodes: leavesAsGrandparent,
+          entityType: 'show',
+        );
       }
 
       final leavesAsParent = _getLeafDownloads(parentRatingKey: ratingKey);
       if (leavesAsParent.isNotEmpty) {
-        return getAggregateProgressForSeason(serverId, ratingKey);
+        return _calculateAggregateProgress(
+          serverId: serverId,
+          ratingKey: ratingKey,
+          episodes: leavesAsParent,
+          entityType: 'season',
+        );
       }
 
       return null;
