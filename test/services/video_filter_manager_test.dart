@@ -152,6 +152,42 @@ void main() {
     expect(aspectWrites.single.value, 'no');
   });
 
+  test('packed stereo uses contain properties and decoder aspect', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'sbs2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+
+    expect(player.boxFitCalls, [0]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '0');
+    expect(player.writes.lastWhere((write) => write.key == 'sub-ass-force-margins').value, 'no');
+    expect(
+      double.parse(player.writes.lastWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+  });
+
+  test('ambient lighting owns aspect override for packed stereo', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'ab2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final ambient = _FakeAmbientLightingService(player)..fakeEnabled = true;
+    final manager = VideoFilterManager(player: player)..ambientLightingService = ambient;
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    expect(player.writes.where((write) => write.key == 'video-aspect-override'), isEmpty);
+
+    ambient.fakeEnabled = false;
+    await manager.updateVideoFilter();
+    final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
+    expect(aspectWrites, hasLength(1));
+    expect(double.parse(aspectWrites.single.value), closeTo(16 / 9, 0.0001));
+  });
+
   test('fill mode rewrites aspect on player size change', () async {
     final player = _RecordingPlayer();
     final manager = VideoFilterManager(player: player, initialBoxFitMode: 2, initialPlayerSize: const Size(1920, 1080));
@@ -204,9 +240,33 @@ void main() {
 }
 
 class _RecordingPlayer implements Player {
+  _RecordingPlayer({Map<String, String>? properties}) : properties = properties ?? {};
+
+  final Map<String, String> properties;
   final writes = <MapEntry<String, String>>[];
   final boxFitCalls = <int>[];
   final zoomCalls = <double>[];
+
+  static const _streams = PlayerStreams(
+    playing: Stream<bool>.empty(),
+    completed: Stream<bool>.empty(),
+    buffering: Stream<bool>.empty(),
+    position: Stream<Duration>.empty(),
+    duration: Stream<Duration>.empty(),
+    seekable: Stream<bool>.empty(),
+    buffer: Stream<Duration>.empty(),
+    volume: Stream<double>.empty(),
+    rate: Stream<double>.empty(),
+    tracks: Stream<Tracks>.empty(),
+    track: Stream<TrackSelection>.empty(),
+    log: Stream<PlayerLog>.empty(),
+    error: Stream<PlayerError>.empty(),
+    audioDevice: Stream<AudioDevice>.empty(),
+    audioDevices: Stream<List<AudioDevice>>.empty(),
+    bufferRanges: Stream<List<BufferRange>>.empty(),
+    playbackRestart: Stream<void>.empty(),
+    backendSwitched: Stream<void>.empty(),
+  );
 
   void clearRecords() {
     writes.clear();
@@ -220,6 +280,9 @@ class _RecordingPlayer implements Player {
   }
 
   @override
+  Future<String?> getProperty(String name) async => properties[name];
+
+  @override
   Future<void> setBoxFitMode(int mode) async {
     boxFitCalls.add(mode);
   }
@@ -231,6 +294,9 @@ class _RecordingPlayer implements Player {
 
   @override
   PlayerState get state => const PlayerState();
+
+  @override
+  PlayerStreams get streams => _streams;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
