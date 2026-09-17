@@ -8,8 +8,7 @@ import org.junit.Test
  * effective key set mpv's decoder ends up with, not the serialization.
  */
 class DecoderOptionsTest {
-  private fun effective(options: String): Map<String, String> =
-    options.split(',').filter { it.isNotEmpty() }.associate { it.substringBefore('=') to it.substringAfter('=') }
+  private fun effective(options: String): Map<String, String> = options.split(',').filter { it.isNotEmpty() }.associate { it.substringBefore('=') to it.substringAfter('=') }
 
   @Test
   fun aUserLineWinsPerKeyAndTheSessionsOtherKeysSurvive() {
