@@ -2050,7 +2050,8 @@
     "producer": "Producent",
     "country": "Land",
     "collection": "Collectie",
-    "label": "Label"
+    "label": "Label",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "Koppelen...",

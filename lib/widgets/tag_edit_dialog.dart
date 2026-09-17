@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/dpad_navigator.dart';
@@ -7,13 +9,19 @@ import '../i18n/strings.g.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/dialog_action_button.dart';
+import '../widgets/focusable_filter_chip.dart';
 import '../widgets/focusable_list_tile.dart';
 
 class TagEditDialog extends StatefulWidget {
   final String title;
   final List<String> initialTags;
 
-  const TagEditDialog({super.key, required this.title, required this.initialTags});
+  /// Optional in-flight fetch of suggestion values (server tag facets merged
+  /// with locally recorded recents). Chips render once it completes; a failure
+  /// or null future simply shows no suggestions.
+  final Future<List<String>>? suggestionsFuture;
+
+  const TagEditDialog({super.key, required this.title, required this.initialTags, this.suggestionsFuture});
 
   @override
   State<TagEditDialog> createState() => _TagEditDialogState();
@@ -24,6 +32,10 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
   late final FocusNode _textFieldFocusNode;
   late final List<String> _tags;
   final _saveFocusNode = FocusNode();
+  List<String> _suggestions = const [];
+
+  /// Suggestion chips cap so a large server tag list can't inflate the dialog.
+  static const int _maxVisibleSuggestions = 12;
 
   @override
   void initState() {
@@ -39,7 +51,20 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
       },
     );
     _tags = List.of(widget.initialTags);
+    _controller.addListener(_onTextChanged);
+    final suggestionsFuture = widget.suggestionsFuture;
+    if (suggestionsFuture != null) {
+      unawaited(
+        suggestionsFuture
+            .then((suggestions) {
+              if (mounted) setState(() => _suggestions = suggestions);
+            })
+            .catchError((_) {}),
+      );
+    }
   }
+
+  void _onTextChanged() => setState(() {});
 
   @override
   void dispose() {
@@ -48,14 +73,27 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
     super.dispose();
   }
 
-  void _addTag() {
-    final text = _controller.text.trim();
-    if (text.isEmpty || _tags.contains(text)) return;
+  void _addTag([String? value]) {
+    final text = (value ?? _controller.text).trim();
+    if (text.isEmpty || _tags.any((tag) => tag.toLowerCase() == text.toLowerCase())) return;
     setState(() {
       _tags.add(text);
       _controller.clear();
     });
     _textFieldFocusNode.requestFocus();
+  }
+
+  /// Suggestions not already applied, filtered by the in-progress input.
+  List<String> get _visibleSuggestions {
+    if (_suggestions.isEmpty) return const [];
+    final query = _controller.text.trim().toLowerCase();
+    final applied = {for (final tag in _tags) tag.toLowerCase()};
+    final visible = [
+      for (final suggestion in _suggestions)
+        if (!applied.contains(suggestion.toLowerCase()) && (query.isEmpty || suggestion.toLowerCase().contains(query)))
+          suggestion,
+    ];
+    return visible.length > _maxVisibleSuggestions ? visible.sublist(0, _maxVisibleSuggestions) : visible;
   }
 
   void _removeTag(int index) {
@@ -65,6 +103,7 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
 
   @override
   Widget build(BuildContext context) {
+    final visibleSuggestions = _visibleSuggestions;
     return AlertDialog(
       title: Text(widget.title),
       content: SizedBox(
@@ -86,6 +125,24 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _addTag(),
             ),
+            if (visibleSuggestions.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final suggestion in visibleSuggestions)
+                      FocusableFilterChip(
+                        icon: Symbols.add_rounded,
+                        label: suggestion,
+                        onPressed: () => _addTag(suggestion),
+                      ),
+                  ],
+                ),
+              ),
+            ],
             if (_tags.isNotEmpty) ...[
               const SizedBox(height: 12),
               ConstrainedBox(

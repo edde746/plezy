@@ -13,11 +13,13 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
+import '../metadata_edit/metadata_edit_models.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
+import '../services/recent_tags_service.dart';
 import '../services/watch_actions.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/content_utils.dart';
@@ -50,6 +52,7 @@ import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
+import '../widgets/tag_edit_dialog.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
 import 'watchlist_source_chooser.dart';
@@ -522,6 +525,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
+      // Quick Tag — same admin/capability gate as Edit Metadata, restricted to
+      // the kinds whose schema carries a 'label' field on both backends.
+      if (canEditMetadata && (mediaKind == MediaKind.movie || mediaKind == MediaKind.show)) {
+        menuActions.add(_MenuAction(value: 'quick_tag', icon: Symbols.label_rounded, label: t.metadataEdit.quickTag));
+      }
+
       // Match / Unmatch — Plex-only (MediaBrowser servers don't expose match agents).
       if (isPlex && isAdmin && (mediaKind == MediaKind.movie || mediaKind == MediaKind.show)) {
         final isUnmatched = _isUnmatched(mediaItem);
@@ -806,6 +815,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             final item = mediaItem!;
             await Navigator.push(context, MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: item)));
             _notifyRefresh(item);
+          }
+          break;
+
+        case 'quick_tag':
+          if (context.mounted) {
+            await _showQuickTagDialog(context, mediaItem!);
           }
           break;
 
@@ -1153,6 +1168,92 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: e.toString()));
+      }
+    } finally {
+      await loadingDialog.dismiss();
+    }
+  }
+
+  /// Quick-tag flow: load the editable draft, let the user toggle the 'label'
+  /// field in [TagEditDialog] with server/recents suggestions, then save
+  /// through the adapter so Plex tag diffs and Emby name-pair writes apply.
+  Future<void> _showQuickTagDialog(BuildContext context, MediaItem item) async {
+    final client = _getMediaClientForItem();
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    final serverId = item.serverId;
+    final loadingDialog = ScopedLoadingDialogController();
+
+    try {
+      final adapter = metadataEditAdapterFor(client);
+      if (adapter == null) return;
+      if (context.mounted) {
+        loadingDialog.show(
+          context,
+          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+        );
+      }
+
+      final draft = await adapter.load(item);
+      final labelField = adapter
+          .schemaFor(draft)
+          .expand((section) => section.fields)
+          .where((field) => field.id == 'label')
+          .firstOrNull;
+      if (labelField == null) return;
+
+      final recent = (profileId == null || profileId.isEmpty || serverId == null)
+          ? const <String>[]
+          : RecentTagsService.getRecentTags(profileId: profileId, serverId: serverId, fieldId: 'label');
+      final suggestionsFuture = adapter
+          .fetchTagSuggestions(draft, labelField)
+          .then(
+            (serverTags) => RecentTagsService.mergeSuggestions(
+              recent: recent,
+              serverTags: serverTags,
+              existing: metadataStringList(draft.values['label']),
+            ),
+          )
+          .catchError((_) => recent);
+
+      await loadingDialog.dismiss();
+      if (!context.mounted) return;
+
+      final result = await showScopedDialog<List<String>>(
+        context: context,
+        builder: (context) => TagEditDialog(
+          title: t.metadataEdit.label,
+          initialTags: metadataStringList(draft.values['label']),
+          suggestionsFuture: suggestionsFuture,
+        ),
+      );
+      if (result == null || !context.mounted) return;
+
+      final original = metadataStringList(draft.originalValues['label']);
+      if (metadataEditStringListEquals(result, original)) return;
+      draft.setValue('label', result);
+
+      if (await adapter.save(draft)) {
+        if (profileId != null && profileId.isNotEmpty && serverId != null) {
+          unawaited(
+            RecentTagsService.addRecentTags(
+              result.where((tag) => !original.contains(tag)),
+              profileId: profileId,
+              serverId: serverId,
+              fieldId: 'label',
+            ),
+          );
+        }
+        if (context.mounted) {
+          showSuccessSnackBar(context, t.metadataEdit.metadataUpdated);
+          _notifyRefresh(item);
+        }
+      } else if (context.mounted) {
+        showErrorSnackBar(context, t.metadataEdit.metadataUpdateFailed);
+      }
+    } catch (e, st) {
+      appLogger.e('Quick tag failed', error: e, stackTrace: st);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.metadataEdit.metadataUpdateFailed);
       }
     } finally {
       await loadingDialog.dismiss();

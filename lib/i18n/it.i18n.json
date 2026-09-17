@@ -2050,7 +2050,8 @@
     "producer": "Produttore",
     "country": "Paese",
     "collection": "Raccolta",
-    "label": "Etichetta"
+    "label": "Etichetta",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "Abbina...",

@@ -121,6 +121,17 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
   }
 
   @override
+  Future<List<String>> fetchTagSuggestions(MetadataEditDraft draft, MetadataEditField field) {
+    final facet = switch (field.id) {
+      'label' => 'Tags',
+      'genre' => 'Genres',
+      _ => null,
+    };
+    if (facet == null) return Future.value(const <String>[]);
+    return client.fetchTagFacetValues(facet);
+  }
+
+  @override
   Future<List<MetadataArtworkOption>> fetchArtwork(MetadataEditDraft draft, MetadataEditField field) async {
     final imageType = field.artwork?.key;
     if (imageType == null) return const [];

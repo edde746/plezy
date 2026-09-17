@@ -2039,7 +2039,8 @@
     "producer": "制片人",
     "country": "国家",
     "collection": "合集",
-    "label": "标记"
+    "label": "标记",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "匹配…",

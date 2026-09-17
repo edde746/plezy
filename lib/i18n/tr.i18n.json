@@ -2050,7 +2050,8 @@
     "producer": "Yapımcı",
     "country": "Ülke",
     "collection": "Koleksiyon",
-    "label": "Etiket"
+    "label": "Etiket",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "Eşleştir...",

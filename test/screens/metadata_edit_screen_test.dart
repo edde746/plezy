@@ -20,6 +20,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/screens/metadata_edit_screen.dart';
 import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -34,6 +35,7 @@ import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
+import '../test_helpers/profile_stack.dart';
 
 void main() {
   setUp(() {
@@ -138,6 +140,26 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(_tileText('Episode Sorting', 'Newest first'), findsOneWidget);
     expect(requests.preferenceUpdatePayloads.single['episodeSort'], '1');
+  });
+
+  testWidgets('the label field offers server tag suggestions as chips', (tester) async {
+    final requests = _PlexMetadataRequests();
+    final harness = await _pumpEditor(tester, requests);
+    addTearDown(harness.dispose);
+
+    await _scrollToImmediateChoice(tester, 'Label');
+    await tester.tap(_fieldTile('Label'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('kids'), findsOneWidget);
+    expect(find.text('horror'), findsOneWidget);
+
+    await tester.tap(find.text('kids'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(DialogActionButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(_tileText('Label', 'kids'), findsOneWidget);
   });
 
   testWidgets('immediate failure rolls back its value and re-enables controls', (tester) async {
@@ -371,13 +393,17 @@ Future<_EditorHarness> _pumpEditor(WidgetTester tester, _PlexMetadataRequests re
   final client = testPlexClient(serverId: ServerId('server-1'), handler: requests.handle);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final provider = testMultiServerProvider(manager);
+  final stack = await ProfileStack.create(db: database, withStorage: false);
   final metadata = ValueNotifier<MediaItem>(_show());
 
   await tester.pumpWidget(
     InputModeTracker(
       child: TranslationProvider(
-        child: ChangeNotifierProvider<MultiServerProvider>.value(
-          value: provider,
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          ],
           child: MaterialApp(
             theme: monoTheme(dark: true),
             home: Builder(
@@ -409,7 +435,14 @@ Future<_EditorHarness> _pumpEditor(WidgetTester tester, _PlexMetadataRequests re
   expect(find.byType(MetadataEditScreen), findsOneWidget);
   expect(_tileText('Title', 'First show'), findsOneWidget);
 
-  return _EditorHarness(tester: tester, database: database, manager: manager, provider: provider, metadata: metadata);
+  return _EditorHarness(
+    tester: tester,
+    database: database,
+    manager: manager,
+    provider: provider,
+    metadata: metadata,
+    stack: stack,
+  );
 }
 
 MediaItem _show({String id = 'show-1', String title = 'First show'}) => testMediaItem(
@@ -430,6 +463,7 @@ class _EditorHarness {
   final MultiServerManager manager;
   final MultiServerProvider provider;
   final ValueNotifier<MediaItem> metadata;
+  final ProfileStack stack;
 
   const _EditorHarness({
     required this.tester,
@@ -437,6 +471,7 @@ class _EditorHarness {
     required this.manager,
     required this.provider,
     required this.metadata,
+    required this.stack,
   });
 
   Future<void> dispose() async {
@@ -444,7 +479,7 @@ class _EditorHarness {
     provider.dispose();
     manager.dispose();
     metadata.dispose();
-    await database.close();
+    await stack.dispose();
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
   }
@@ -502,6 +537,27 @@ class _PlexMetadataRequests {
                 for (final entry in serverPreferences.entries) {'id': entry.key, 'value': entry.value},
               ],
             },
+          ],
+        },
+      });
+    }
+
+    if (request.method == 'GET' && path == '/library/sections/1/filters') {
+      return jsonResponse({
+        'MediaContainer': {
+          'Directory': [
+            {'filter': 'label', 'filterType': 'string', 'key': '/library/sections/1/label', 'title': 'Label'},
+          ],
+        },
+      });
+    }
+
+    if (request.method == 'GET' && path == '/library/sections/1/label') {
+      return jsonResponse({
+        'MediaContainer': {
+          'Directory': [
+            {'key': '42', 'title': 'kids'},
+            {'key': '43', 'title': 'horror'},
           ],
         },
       });

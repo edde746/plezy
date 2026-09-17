@@ -2072,7 +2072,8 @@
     "producer": "Продюсер",
     "country": "Страна",
     "collection": "Коллекция",
-    "label": "Метка"
+    "label": "Метка",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "Сопоставить...",

@@ -8,6 +8,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/metadata_edit/jellyfin_metadata_edit_adapter.dart';
+import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
@@ -83,6 +84,35 @@ void main() {
     expect(body['TagItems'], [
       {'Name': 'archive'},
     ]);
+  });
+
+  test('Emby label suggestions come from the per-facet /Tags route', () async {
+    Uri? tagsUri;
+    final client = JellyfinClient.forTesting(
+      connection: testEmbyConnection(),
+      httpClient: MockClient((request) async {
+        if (request.url.path == '/Tags') {
+          tagsUri = request.url;
+          return jsonResponse({
+            'Items': [
+              {'Name': 'kids'},
+              {'Name': 'horror'},
+            ],
+          });
+        }
+        return http.Response('Unexpected ${request.url}', 500);
+      }),
+    );
+    addTearDown(client.close);
+
+    final adapter = JellyfinMetadataEditAdapter(client);
+    final item = _sourceItem(MediaBackend.emby);
+    final draft = MetadataEditDraft(sourceItem: item, currentItem: item, values: {});
+    final labelField = adapter.buildSchema(draft).expand((s) => s.fields).singleWhere((f) => f.id == 'label');
+
+    expect(await adapter.fetchTagSuggestions(draft, labelField), ['kids', 'horror']);
+    expect(tagsUri!.queryParameters['Recursive'], 'true');
+    expect(tagsUri!.queryParameters.containsKey('ParentId'), isFalse);
   });
 }
 

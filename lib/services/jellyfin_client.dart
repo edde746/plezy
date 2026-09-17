@@ -121,6 +121,11 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
   MediaItem? _mapItem(Map<String, dynamic> json);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
   String? _absolutizeImagePath(String? path);
+
+  /// Per-facet value listing shared by the browse part (library filters) and
+  /// the metadata-edit part (server-wide tag suggestions when [libraryId] is
+  /// null). Emby-only route shape; Jellyfin callers use `/Items/Filters`.
+  Future<List<String>> _safeFetchFilterFacet(String endpoint, String? libraryId);
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
     String itemId, {
     int sourceIndex = 0,

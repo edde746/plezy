@@ -2072,7 +2072,8 @@
     "producer": "Producent",
     "country": "Kraj",
     "collection": "Kolekcja",
-    "label": "Etykieta"
+    "label": "Etykieta",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "Dopasuj...",

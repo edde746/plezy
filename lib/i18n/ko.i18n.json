@@ -2039,7 +2039,8 @@
     "producer": "프로듀서",
     "country": "국가",
     "collection": "컬렉션",
-    "label": "라벨"
+    "label": "라벨",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "일치...",

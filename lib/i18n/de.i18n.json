@@ -2050,7 +2050,8 @@
     "producer": "Produzent",
     "country": "Land",
     "collection": "Sammlung",
-    "label": "Label"
+    "label": "Label",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "Zuordnen...",

@@ -2050,7 +2050,8 @@
     "producer": "Продуцент",
     "country": "Държава",
     "collection": "Колекция",
-    "label": "Етикет"
+    "label": "Етикет",
+    "quickTag": ""
   },
   "matchScreen": {
     "match": "Съпостави...",
