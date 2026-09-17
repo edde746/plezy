@@ -7,6 +7,8 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'atomic_file.dart';
+
 const defaultHidKeyLabelsInput = 'scripts/codegen/data/hid_key_labels.json';
 const defaultHidKeyLabelsOutput = 'lib/data/hid_key_labels.dart';
 
@@ -31,8 +33,6 @@ final class HidKeyCatalog {
 
   final List<HidKeyGroup> groups;
 }
-
-typedef AtomicFileWriter = Future<void> Function(String path, String contents);
 
 HidKeyCatalog parseHidKeyLabelsCatalog(String source) {
   final Object? decoded;
@@ -115,20 +115,6 @@ String renderHidKeyLabels(HidKeyCatalog catalog) {
 
   output.writeln('};');
   return output.toString();
-}
-
-Future<void> writeFileAtomically(String path, String contents) async {
-  final output = File(path);
-  await output.parent.create(recursive: true);
-  final temporary = File('$path.tmp.$pid.${DateTime.now().microsecondsSinceEpoch}');
-  try {
-    await temporary.writeAsString(contents, flush: true);
-    await temporary.rename(path);
-  } finally {
-    if (await temporary.exists()) {
-      await temporary.delete();
-    }
-  }
 }
 
 Future<void> generateHidKeyLabels(

@@ -7,6 +7,8 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'atomic_file.dart';
+
 const defaultIso639Input = 'scripts/codegen/data/iso_639_codes.json';
 const defaultIso639Output = 'lib/data/iso_639_data.dart';
 
@@ -29,8 +31,6 @@ final class Iso639Catalog {
 
   final List<Iso639CatalogEntry> entries;
 }
-
-typedef AtomicFileWriter = Future<void> Function(String path, String contents);
 
 Iso639Catalog parseIso639Catalog(String source) {
   final Object? decoded;
@@ -152,20 +152,6 @@ String renderIso639Data(Iso639Catalog catalog) {
   }
   output.writeln('};');
   return output.toString();
-}
-
-Future<void> writeFileAtomically(String path, String contents) async {
-  final output = File(path);
-  await output.parent.create(recursive: true);
-  final temporary = File('$path.tmp.$pid.${DateTime.now().microsecondsSinceEpoch}');
-  try {
-    await temporary.writeAsString(contents, flush: true);
-    await temporary.rename(path);
-  } finally {
-    if (await temporary.exists()) {
-      await temporary.delete();
-    }
-  }
 }
 
 Future<void> generateIso639Data(

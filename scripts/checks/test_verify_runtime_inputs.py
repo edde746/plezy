@@ -34,14 +34,18 @@ FIXTURES = (
 class RuntimeInputVerifierTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
-        temporary_root = Path(self.temporary.name)
-        repository = temporary_root / "repository"
-        repository.mkdir()
+        self.root = Path(self.temporary.name) / "worktree"
+        self._copy_fixtures(self.root)
+
+    def _copy_fixtures(self, root: Path) -> None:
         for relative in (".gitattributes", *FIXTURES):
-            source = REPOSITORY / relative
-            destination = repository / relative
+            destination = root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, destination)
+            shutil.copy2(REPOSITORY / relative, destination)
+
+    def _crlf_checkout(self) -> Path:
+        repository = Path(self.temporary.name) / "repository"
+        self._copy_fixtures(repository)
         (repository / "crlf-control.txt").write_bytes(b"control\n")
         subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
         subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=repository, check=True)
@@ -50,7 +54,7 @@ class RuntimeInputVerifierTest(unittest.TestCase):
         subprocess.run(["git", "add", "."], cwd=repository, check=True)
         subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repository, check=True)
 
-        self.root = temporary_root / "worktree"
+        checkout = Path(self.temporary.name) / "crlf-worktree"
         subprocess.run(
             [
                 "git",
@@ -59,10 +63,11 @@ class RuntimeInputVerifierTest(unittest.TestCase):
                 "-c",
                 "core.autocrlf=true",
                 str(repository),
-                str(self.root),
+                str(checkout),
             ],
             check=True,
         )
+        return checkout
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -85,6 +90,7 @@ class RuntimeInputVerifierTest(unittest.TestCase):
         self.assertIn("verified offline", completed.stdout)
 
     def test_crlf_worktree_preserves_canonical_lf_provenance_inputs(self) -> None:
+        self.root = self._crlf_checkout()
         self.assertIn(b"\r\n", (self.root / "crlf-control.txt").read_bytes())
         provenance = self._json("packages/wakelock_plus/provenance.json")
 

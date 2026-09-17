@@ -10,6 +10,9 @@ Each file carries its own upstream license text — none is modified.
   version `app/build.gradle.kts` also pins for the Media3 adapter headers).
 
 The mpv public headers (`mpv/client.h`, `mpv/render.h`, `mpv/render_gl.h`,
-`mpv/stream_cb.h`) are no longer vendored: each mpv-build per-ABI tarball carries
-`include/mpv/*.h` matching its `libmpv.so`, and `extractLibmpvNative` places them
-under `native/include`, which CMake reads via `MPV_PREBUILT_ROOT`.
+`mpv/stream_cb.h`) stay vendored for the host `mpv_lifecycle_test`
+(`app/src/test/cpp/CMakeLists.txt`), which compiles the JNI sources without an
+Android toolchain or an extracted tarball. Android builds never read them: each
+mpv-build per-ABI tarball carries `include/mpv/*.h` matching its `libmpv.so`,
+`extractLibmpvNative` places them under `native/include`, and CMake searches
+that `MPV_PREBUILT_ROOT` tree before this one.
