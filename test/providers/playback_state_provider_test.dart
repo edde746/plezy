@@ -92,17 +92,26 @@ void main() {
     test('totalCount falls back to size then items length', () async {
       final p = PlaybackStateProvider();
       final items = [_item('a', 1), _item('b', 2)];
+      final requested = <({int queueId, String? center, int window})>[];
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 0}) async {
+        requested.add((queueId: playQueueId, center: center, window: window));
+        return _queue(playQueueID: playQueueId, selectedItemID: 2, totalCount: 7, items: [...items, _item('c', 3)]);
+      });
 
-      // totalCount missing, size present → uses size
-      await p.setPlaybackFromPlayQueue(_queue(size: 7, items: items), null);
-      expect(p.loadedItems, hasLength(2));
-      // The fallback is internal but observable via getNextEpisode at end-of-window:
-      // size=7 means the window isn't at the end, so the loop guard differs.
+      // totalCount missing, size present → size is the queue length, so the
+      // loaded window is not the queue end and stepping past it asks the
+      // server for a window centred on the anchor.
+      await p.setPlaybackFromPlayQueue(_queue(selectedItemID: 2, size: 7, items: items), null);
+      expect((await p.getNextEpisode('b')).item?.id, 'c');
+      expect(requested, [(queueId: 1, center: '2', window: 50)]);
 
-      // Reset: totalCount=null, size=null, items length used.
+      // totalCount and size missing → items length is the queue length, so 'b'
+      // is the last item and no window is requested.
       p.clearShuffle();
-      await p.setPlaybackFromPlayQueue(_queue(items: items), null);
-      expect(p.loadedItems, hasLength(2));
+      requested.clear();
+      await p.setPlaybackFromPlayQueue(_queue(selectedItemID: 2, items: items), null);
+      expect((await p.getNextEpisode('b')).status, QueueNavigationStatus.boundary);
+      expect(requested, isEmpty);
 
       p.dispose();
     });

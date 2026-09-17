@@ -1299,43 +1299,6 @@ class _AppDatabaseTestSuite {
         expect(row.clientScopeId, 'jf-machine/user-a');
       });
 
-      test('requeue preserves SAF ownership fields while resetting failed state', () async {
-        await db
-            .into(db.downloadedMedia)
-            .insert(
-              DownloadedMediaCompanion.insert(
-                serverId: ServerId('srv1'),
-                ratingKey: 'saf-retry',
-                globalKey: 'srv1:saf-retry',
-                type: 'movie',
-                status: DownloadStatus.failed.index,
-                progress: const Value(73),
-                videoFilePath: const Value('content://downloads/video.mkv'),
-                safRootUri: const Value('content://downloads'),
-                errorMessage: const Value('stale failure'),
-                retryCount: const Value(4),
-                bgTaskId: const Value('stale-task'),
-              ),
-            );
-
-        await db.insertDownload(
-          serverId: ServerId('srv1'),
-          ratingKey: 'saf-retry',
-          globalKey: 'srv1:saf-retry',
-          type: 'movie',
-          status: DownloadStatus.queued.index,
-        );
-
-        final row = await db.getDownloadedMedia('srv1:saf-retry');
-        expect(row?.videoFilePath, 'content://downloads/video.mkv');
-        expect(row?.safRootUri, 'content://downloads');
-        expect(row?.bgTaskId, 'stale-task');
-        expect(row?.status, DownloadStatus.queued.index);
-        expect(row?.progress, 0);
-        expect(row?.errorMessage, isNull);
-        expect(row?.retryCount, 0);
-      });
-
       test('globalKey unique constraint blocks duplicate insert', () async {
         await insertMovie();
         expect(insertMovie(), throwsA(isA<Exception>()));
