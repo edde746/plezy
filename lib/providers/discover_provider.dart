@@ -923,8 +923,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return;
     }
 
+    final serverId = event.serverId.value;
     if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
-      _evictFromOnDeck((item) => item.id == event.itemId);
+      _evictFromOnDeck((item) => item.serverId == serverId && item.id == event.itemId);
     } else if (event.changeType == WatchStateChangeType.watched ||
         (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched == true)) {
       // Finished items have no business in Continue Watching, so drop the row
@@ -933,7 +934,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // it, matching the parent-aware filter this subscription uses — the
       // series' successor comes back from the refetch (#1812).
       _evictFromOnDeck(
-        (item) => item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId,
+        (item) =>
+            item.serverId == serverId &&
+            (item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId),
       );
     }
     unawaited(refreshContinueWatching());

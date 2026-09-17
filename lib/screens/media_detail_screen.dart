@@ -1779,7 +1779,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
 
     final downloadProvider = context.read<DownloadProvider>();
-    final episodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.id);
+    final episodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.globalKey);
 
     // Group episodes by season
     final Map<int, List<MediaItem>> seasonMap = {};
@@ -1849,9 +1849,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Downloaded episodes of [showId] belonging to the season with [seasonIndex], sorted by episode number.
-  List<MediaItem> _downloadedEpisodesForSeason(DownloadProvider downloadProvider, String showId, int? seasonIndex) {
-    return downloadProvider.getDownloadedEpisodesForShow(showId).where((ep) => ep.parentIndex == seasonIndex).toList()
+  /// Downloaded episodes of the show at [showGlobalKey] belonging to the
+  /// season with [seasonIndex], sorted by episode number.
+  List<MediaItem> _downloadedEpisodesForSeason(
+    DownloadProvider downloadProvider,
+    String showGlobalKey,
+    int? seasonIndex,
+  ) {
+    return downloadProvider
+        .getDownloadedEpisodesForShow(showGlobalKey)
+        .where((ep) => ep.parentIndex == seasonIndex)
+        .toList()
       ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
   }
 
@@ -1859,7 +1867,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void _loadEpisodesFromDownloads() {
     if (!_canUseDetail) return;
     final downloadProvider = context.read<DownloadProvider>();
-    final seasonEpisodes = _downloadedEpisodesForSeason(downloadProvider, _metadata.parentId ?? '', _metadata.index);
+    final seasonEpisodes = _downloadedEpisodesForSeason(
+      downloadProvider,
+      _metadata.seriesGlobalKey ?? '',
+      _metadata.index,
+    );
 
     setState(() {
       _allEpisodes = _allEpisodes.completeInitialLoad(seasonEpisodes, seasonEpisodes.length);
@@ -1934,7 +1946,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (widget.isOffline) {
         // Offline: load from downloads (already the complete set).
         final downloadProvider = context.read<DownloadProvider>();
-        final seasonEpisodes = _downloadedEpisodesForSeason(downloadProvider, _metadata.id, season.index);
+        final seasonEpisodes = _downloadedEpisodesForSeason(downloadProvider, _metadata.globalKey, season.index);
         _completeSeasonEpisodesLoad(
           seasonIndex: seasonIndex,
           seasonId: seasonId,
@@ -3168,7 +3180,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Future<void> _loadOfflineOnDeckEpisode() async {
     if (!_canUseDetail) return;
     final offlineWatchProvider = context.read<OfflineWatchProvider>();
-    final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(_metadata.id);
+    final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(_metadata.globalKey);
     if (!_canUseDetail) return;
 
     setStateIfMounted(() {
@@ -3238,7 +3250,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (widget.isOffline) {
         // In offline mode, get episodes from downloads (filtered to this season).
         final downloadProvider = context.read<DownloadProvider>();
-        final episodes = _downloadedEpisodesForSeason(downloadProvider, _metadata.id, firstSeason.index);
+        final episodes = _downloadedEpisodesForSeason(downloadProvider, _metadata.globalKey, firstSeason.index);
         firstEpisode = episodes.isEmpty ? null : episodes.first;
       } else {
         final client = getServerBoundMediaClient(context);

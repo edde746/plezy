@@ -617,38 +617,38 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final meta = _metadataStore.applyWatchState(entry.value);
       final progress = _downloads[globalKey];
 
-      if (progress?.status == DownloadStatus.completed && meta.isEpisode) {
-        final showRatingKey = meta.grandparentId;
-        if (showRatingKey != null && !shows.containsKey(showRatingKey)) {
-          // Try to get stored show metadata first
-          final showGlobalKey = buildGlobalKey(ServerId(meta.serverId!), showRatingKey);
-          final storedShow = _resolvedMetadata(showGlobalKey);
+      if (progress?.status != DownloadStatus.completed || !meta.isEpisode) continue;
+      final showRatingKey = meta.grandparentId;
+      if (showRatingKey == null) continue;
+      final showGlobalKey = buildGlobalKey(ServerId(meta.serverId!), showRatingKey);
+      if (shows.containsKey(showGlobalKey)) continue;
 
-          if (storedShow != null && storedShow.isShow) {
-            // Use stored show metadata (has year, summary, clearLogo)
-            shows[showRatingKey] = storedShow;
-          } else {
-            // Fallback: synthesize from episode metadata (missing year, summary)
-            // Only Plex consumers read `raw['key']` (library-section + folder
-            // navigation), so we synthesize the Plex URI for Plex shows and
-            // emit a MediaBrowser-shaped item for Jellyfin or Emby
-            // (`Id` + `Type=Series`).
-            final synthesizedRaw = switch (meta.backend) {
-              MediaBackend.plex => <String, dynamic>{'key': '/library/metadata/$showRatingKey'},
-              MediaBackend.jellyfin || MediaBackend.emby => <String, dynamic>{'Id': showRatingKey, 'Type': 'Series'},
-            };
-            shows[showRatingKey] = MediaItem(
-              id: showRatingKey,
-              backend: meta.backend,
-              kind: MediaKind.show,
-              title: meta.grandparentTitle ?? t.common.unknown,
-              thumbPath: meta.grandparentThumbPath,
-              artPath: meta.grandparentArtPath,
-              serverId: meta.serverId,
-              raw: synthesizedRaw,
-            );
-          }
-        }
+      // Try to get stored show metadata first
+      final storedShow = _resolvedMetadata(showGlobalKey);
+
+      if (storedShow != null && storedShow.isShow) {
+        // Use stored show metadata (has year, summary, clearLogo)
+        shows[showGlobalKey] = storedShow;
+      } else {
+        // Fallback: synthesize from episode metadata (missing year, summary)
+        // Only Plex consumers read `raw['key']` (library-section + folder
+        // navigation), so we synthesize the Plex URI for Plex shows and
+        // emit a MediaBrowser-shaped item for Jellyfin or Emby
+        // (`Id` + `Type=Series`).
+        final synthesizedRaw = switch (meta.backend) {
+          MediaBackend.plex => <String, dynamic>{'key': '/library/metadata/$showRatingKey'},
+          MediaBackend.jellyfin || MediaBackend.emby => <String, dynamic>{'Id': showRatingKey, 'Type': 'Series'},
+        };
+        shows[showGlobalKey] = MediaItem(
+          id: showRatingKey,
+          backend: meta.backend,
+          kind: MediaKind.show,
+          title: meta.grandparentTitle ?? t.common.unknown,
+          thumbPath: meta.grandparentThumbPath,
+          artPath: meta.grandparentArtPath,
+          serverId: meta.serverId,
+          raw: synthesizedRaw,
+        );
       }
     }
 
@@ -681,14 +681,15 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (_downloads[globalKey]?.status != DownloadStatus.completed) continue;
 
       final albumRatingKey = meta.parentId;
-      if (albumRatingKey == null || albums.containsKey(albumRatingKey)) continue;
+      if (albumRatingKey == null) continue;
 
       final albumGlobalKey = buildGlobalKey(ServerId(meta.serverId!), albumRatingKey);
+      if (albums.containsKey(albumGlobalKey)) continue;
       final storedAlbum = _resolvedMetadata(albumGlobalKey);
       if (storedAlbum != null && storedAlbum.kind == MediaKind.album) {
-        albums[albumRatingKey] = storedAlbum;
+        albums[albumGlobalKey] = storedAlbum;
       } else {
-        albums[albumRatingKey] = MediaItem(
+        albums[albumGlobalKey] = MediaItem(
           id: albumRatingKey,
           backend: meta.backend,
           kind: MediaKind.album,
@@ -710,15 +711,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return list;
   }
 
-  /// Completed downloaded tracks of an album, sorted by disc then track
-  /// number — the offline playback queue for that album.
-  List<MediaItem> getDownloadedTracksForAlbum(String albumRatingKey) {
+  /// Completed downloaded tracks of the album at [albumGlobalKey], sorted by
+  /// disc then track number — the offline playback queue for that album.
+  List<MediaItem> getDownloadedTracksForAlbum(String albumGlobalKey) {
+    final album = parseGlobalKey(albumGlobalKey);
+    if (album == null) return const <MediaItem>[];
     final tracks = _metadata.entries
         .where((entry) {
           if (!_ownsDownloadKey(entry.key)) return false;
           final meta = entry.value;
           return meta.kind == MediaKind.track &&
-              meta.parentId == albumRatingKey &&
+              meta.serverId == album.serverId.value &&
+              meta.parentId == album.ratingKey &&
               _downloads[entry.key]?.status == DownloadStatus.completed;
         })
         .map((entry) => _metadataStore.applyWatchState(entry.value))
@@ -746,27 +750,38 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return DownloadArtworkService.localPathSync(DownloadStorageService.instance, serverId, artworkPath);
   }
 
-  /// Get downloaded episodes for a specific show (by grandparentRatingKey)
-  List<MediaItem> getDownloadedEpisodesForShow(String showRatingKey) {
+  /// Get downloaded episodes for the show at [showGlobalKey]
+  List<MediaItem> getDownloadedEpisodesForShow(String showGlobalKey) {
+    final show = parseGlobalKey(showGlobalKey);
+    if (show == null) return const <MediaItem>[];
     return _metadata.entries
         .where((entry) {
           if (!_ownsDownloadKey(entry.key)) return false;
           final progress = _downloads[entry.key];
           final meta = entry.value;
-          return progress?.status == DownloadStatus.completed && meta.isEpisode && meta.grandparentId == showRatingKey;
+          return progress?.status == DownloadStatus.completed &&
+              meta.isEpisode &&
+              meta.serverId == show.serverId.value &&
+              meta.grandparentId == show.ratingKey;
         })
         .map((entry) => _metadataStore.applyWatchState(entry.value))
         .toList();
   }
 
-  /// Get leaf downloads (episodes or tracks) filtered by grandparent
-  /// (show/artist) and/or parent (season/album) ratingKey.
-  List<DownloadProgress> _getLeafDownloads({String? grandparentRatingKey, String? parentRatingKey}) {
+  /// Get leaf downloads (episodes or tracks) of one server's container,
+  /// filtered by grandparent (show/artist) and/or parent (season/album)
+  /// ratingKey.
+  List<DownloadProgress> _getLeafDownloads({
+    required ServerId serverId,
+    String? grandparentRatingKey,
+    String? parentRatingKey,
+  }) {
     return _downloads.entries
         .where((entry) {
           if (!_ownsDownloadKey(entry.key)) return false;
           final meta = _metadata[entry.key];
           if (meta == null || !(meta.isEpisode || meta.kind == MediaKind.track)) return false;
+          if (meta.serverId != serverId.value) return false;
           if (grandparentRatingKey != null && meta.grandparentId != grandparentRatingKey) return false;
           if (parentRatingKey != null && meta.parentId != parentRatingKey) return false;
           return true;
@@ -781,7 +796,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: showRatingKey,
-      episodes: _getLeafDownloads(grandparentRatingKey: showRatingKey),
+      episodes: _getLeafDownloads(serverId: serverId, grandparentRatingKey: showRatingKey),
       entityType: 'show',
     );
   }
@@ -792,7 +807,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: seasonRatingKey,
-      episodes: _getLeafDownloads(parentRatingKey: seasonRatingKey),
+      episodes: _getLeafDownloads(serverId: serverId, parentRatingKey: seasonRatingKey),
       entityType: 'season',
     );
   }
@@ -802,7 +817,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: albumRatingKey,
-      episodes: _getLeafDownloads(parentRatingKey: albumRatingKey),
+      episodes: _getLeafDownloads(serverId: serverId, parentRatingKey: albumRatingKey),
       entityType: 'album',
     );
   }
@@ -812,7 +827,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: artistRatingKey,
-      episodes: _getLeafDownloads(grandparentRatingKey: artistRatingKey),
+      episodes: _getLeafDownloads(serverId: serverId, grandparentRatingKey: artistRatingKey),
       entityType: 'artist',
     );
   }
@@ -921,7 +936,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // No metadata stored yet, might be a container (show/season/artist/
       // album) being queued. Check if any leaves exist for this as a parent —
       // the aggregate helpers are kind-agnostic over grandparent/parent keys.
-      final leavesAsGrandparent = _getLeafDownloads(grandparentRatingKey: ratingKey);
+      final leavesAsGrandparent = _getLeafDownloads(serverId: serverId, grandparentRatingKey: ratingKey);
       if (leavesAsGrandparent.isNotEmpty) {
         return _calculateAggregateProgress(
           serverId: serverId,
@@ -931,7 +946,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         );
       }
 
-      final leavesAsParent = _getLeafDownloads(parentRatingKey: ratingKey);
+      final leavesAsParent = _getLeafDownloads(serverId: serverId, parentRatingKey: ratingKey);
       if (leavesAsParent.isNotEmpty) {
         return _calculateAggregateProgress(
           serverId: serverId,

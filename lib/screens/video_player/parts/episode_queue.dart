@@ -104,7 +104,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   AdjacentEpisodes _loadAdjacentEpisodesOffline(MediaItem metadata) {
     if (!metadata.isEpisode) return const AdjacentEpisodes.unavailable();
 
-    final showKey = metadata.grandparentId;
+    final showKey = metadata.seriesGlobalKey;
     if (showKey == null) return const AdjacentEpisodes.unavailable();
 
     try {

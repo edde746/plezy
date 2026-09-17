@@ -29,8 +29,8 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   /// Get episodes for a show in the shared [sortEpisodesByWatchOrder] order,
   /// so the offline watch order matches what "download next N" selects
   /// (#1414/#1416/#1952).
-  List<MediaItem> _getSortedEpisodes(String showId) {
-    final episodes = _downloadProvider.getDownloadedEpisodesForShow(showId);
+  List<MediaItem> _getSortedEpisodes(String showGlobalKey) {
+    final episodes = _downloadProvider.getDownloadedEpisodesForShow(showGlobalKey);
     if (episodes.isEmpty) return episodes;
     sortEpisodesByWatchOrder(episodes);
     return episodes;
@@ -60,8 +60,8 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   /// Episodes are sorted by season number, then episode number.
   ///
   /// Returns the next unwatched episode, or the first episode if all watched.
-  Future<MediaItem?> getNextUnwatchedEpisode(String showId) async {
-    final episodes = _getSortedEpisodes(showId);
+  Future<MediaItem?> getNextUnwatchedEpisode(String showGlobalKey) async {
+    final episodes = _getSortedEpisodes(showGlobalKey);
     if (episodes.isEmpty) return null;
 
     final watchStatuses = await _resolveEpisodeWatchStatuses(episodes);
