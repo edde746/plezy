@@ -334,6 +334,34 @@ void main() {
     expect(cardRights, isNotEmpty);
     expect(cardRights, everyElement(lessThanOrEqualTo(size.width - trailingInset)));
   });
+
+  testWidgets('folder grouping loads only the tree and reports its own readiness', (tester) async {
+    final harness = _PlexBrowseHarness();
+    addTearDown(harness.dispose);
+    final storage = await StorageService.getInstance();
+    await storage.saveLibraryGrouping(harness.library.globalKey, 'folders');
+    var readyNotifications = 0;
+
+    await pumpLibraryTab(
+      tester,
+      provider: harness.provider,
+      tab: LibraryBrowseTab(
+        library: harness.library,
+        canGroupByFolders: true,
+        isActive: true,
+        onDataLoaded: () => readyNotifications++,
+      ),
+    );
+    await _pumpUntil(tester, () => readyNotifications >= 1);
+    await pumpRequestFrames(tester);
+
+    expect(find.text('Folder One'), findsOneWidget);
+    expect(harness.folderRequestCount, greaterThanOrEqualTo(1));
+    // The tree is the rendered surface, so the flat page and the alpha
+    // character buckets are never fetched.
+    expect(harness.pageRequestCount, 0);
+    expect(harness.firstCharacterRequestCount, 0);
+  });
 }
 
 FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
@@ -481,6 +509,7 @@ class _PlexBrowseHarness {
   late final MultiServerProvider provider;
   var pageRequestCount = 0;
   var firstCharacterRequestCount = 0;
+  var folderRequestCount = 0;
 
   _PlexBrowseHarness() : database = AppDatabase.forTesting(NativeDatabase.memory()) {
     PlexApiCache.initialize(database);
@@ -528,6 +557,13 @@ class _PlexBrowseHarness {
           'Directory': [
             for (final letter in const ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
               {'key': letter, 'title': letter, 'size': '${_itemCount ~/ 8}'},
+          ],
+        };
+      case '/library/sections/movies/folder':
+        folderRequestCount++;
+        container = {
+          'Directory': [
+            {'key': '/library/sections/movies/folder?parent=1', 'type': 'folder', 'title': 'Folder One'},
           ],
         };
       case '/library/sections/movies/sorts':

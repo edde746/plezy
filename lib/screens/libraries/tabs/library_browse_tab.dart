@@ -660,16 +660,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         _loadMediaBrowserFiltersInBackground(generation, libraryGlobalKey, library);
       }
 
+      // Folder grouping renders the tree, not the flat page or the alpha
+      // bar: the tree is the sole owner of readiness, error and epoch credit
+      // there, so neither is fetched.
+      if (_selectedGrouping == 'folders') {
+        await _loadFolderTree(generation: generation, libraryGlobalKey: libraryGlobalKey, epoch: epoch);
+        return;
+      }
+
       // Load items and first characters in parallel.
       await Future.wait([
         _loadItems(loadGeneration: generation, libraryGlobalKey: libraryGlobalKey, epoch: epoch),
         _loadFirstCharacters(requestId: firstCharactersGeneration),
       ]);
-      // Folder grouping renders the tree, not the flat page: a full reload
-      // (activation staleness, library change) must refetch what is shown.
-      if (_selectedGrouping == 'folders' && isCurrentLibraryLoad(generation, libraryGlobalKey)) {
-        await _refreshFolderTree();
-      }
     } catch (e, stackTrace) {
       if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
       releaseLibraryContentEpoch();
@@ -678,6 +681,39 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       setState(() {
         errorMessage = message;
         isLoading = false;
+      });
+    }
+  }
+
+  /// Settle a full load whose surface is the folder tree: the tree owns its
+  /// own loading/error rendering and its root listing owns the epoch, while
+  /// this reports readiness and focus. The tree mounts on the frame that
+  /// commits the restored grouping, so let that frame land and then adopt the
+  /// load it started there — a first mount is credited like any reload.
+  Future<void> _loadFolderTree({required int generation, required String libraryGlobalKey, required int epoch}) async {
+    if (_folderTreeKey.currentState == null) await WidgetsBinding.instance.endOfFrame;
+    if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+    final tree = _folderTreeKey.currentState;
+    // Nothing rendered the tree: nothing is credited, so the next activation
+    // still owes this library a reload.
+    final loaded = tree != null && await tree.ensureRootLoaded();
+    if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
+    if (loaded) {
+      recordLibraryContentEpoch(epoch);
+    } else {
+      releaseLibraryContentEpoch();
+    }
+    setState(() {
+      isLoading = false;
+    });
+    hasLoadedData = true;
+    // A failed root listing renders the tree's own retry action on
+    // [firstItemFocusNode], so focus is requested either way.
+    tryFocus();
+    final onDataLoaded = widget.onDataLoaded;
+    if (onDataLoaded != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (isCurrentLibraryLoad(generation, libraryGlobalKey)) onDataLoaded();
       });
     }
   }
@@ -1442,25 +1478,22 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final row = _currentFirstVisibleIndex.value ~/ columnCount;
     var targetIndex = ((row + 1) * columnCount - 1).clamp(0, totalSize - 1);
 
-    // Find nearest loaded item — skeleton cards have no FocusNode
+    // Find nearest loaded item — skeleton cards have no FocusNode. The map is
+    // sparse, so scan the loaded keys instead of every absent index.
     if (!loadedItems.containsKey(targetIndex)) {
-      // Search backwards first (items above are more likely visible)
-      int? found;
-      for (var i = targetIndex - 1; i >= 0; i--) {
-        if (loadedItems.containsKey(i)) {
-          found = i;
-          break;
+      // Prefer the greatest loaded index below the target (items above are
+      // more likely visible), else the least above it.
+      int? below;
+      int? above;
+      for (final index in loadedItems.keys) {
+        if (index < 0 || index >= totalSize) continue;
+        if (index < targetIndex) {
+          if (below == null || index > below) below = index;
+        } else if (index > targetIndex && (above == null || index < above)) {
+          above = index;
         }
       }
-      // Then search forwards
-      if (found == null) {
-        for (var i = targetIndex + 1; i < totalSize; i++) {
-          if (loadedItems.containsKey(i)) {
-            found = i;
-            break;
-          }
-        }
-      }
+      final found = below ?? above;
       if (found == null) return;
       targetIndex = found;
     }
