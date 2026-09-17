@@ -240,9 +240,6 @@ class _SwitchPlayer extends FakeSyncPlayer {
   }
 
   @override
-  bool get attachesExternalSubtitlesAtOpen => true;
-
-  @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
   @override

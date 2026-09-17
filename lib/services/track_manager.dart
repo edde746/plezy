@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
@@ -38,8 +36,8 @@ typedef TrackPreferencePersister =
 /// account refused the change.
 typedef TrackSelectionMemoryEnabler = Future<bool> Function(String trackType);
 
-/// Manages track (audio + subtitle) lifecycle: external subtitle loading,
-/// automatic track selection, server preference sync, and cycling.
+/// Manages track (audio + subtitle) lifecycle: automatic track selection,
+/// server preference sync, and cycling.
 ///
 /// Follows the same manager pattern as [VideoFilterManager]:
 /// disposed when the player screen tears down.
@@ -95,14 +93,10 @@ class TrackManager {
 
   // ── Internal state ─────────────────────────────────────────────────
 
-  bool waitingForExternalSubsTrackSelection = false;
-  bool _externalSubtitleAddsInFlight = false;
   bool _isApplyingTrackSelection = false;
   Completer<void>? _selectionIdleCompleter;
   Future<void>? _activePlayerMutationDrain;
-  List<SubtitleTrack> _lastExternalSubtitles = const [];
   StreamSubscription<Tracks>? _trackLoadingSubscription;
-  Timer? _subtitleFallbackTimer;
   Timer? _trackSelectionFallbackTimer;
   bool _disposed = false;
   int _selectionGeneration = 0;
@@ -128,10 +122,6 @@ class TrackManager {
     );
   }
 
-  /// Cached external subtitles for re-use after backend fallback.
-  @visibleForTesting
-  List<SubtitleTrack> get lastExternalSubtitles => _lastExternalSubtitles;
-
   TrackManager({
     required this.player,
     required this.isActive,
@@ -149,87 +139,6 @@ class TrackManager {
     this.showMessage,
     this.playbackRateOwnedExternally,
   });
-
-  // ── External subtitles ─────────────────────────────────────────────
-
-  /// Cache external subtitles for backend fallback recovery.
-  void cacheExternalSubtitles(List<SubtitleTrack> externalSubtitles) {
-    _lastExternalSubtitles = externalSubtitles;
-  }
-
-  /// Add external subtitle tracks to the player in metadata order.
-  ///
-  /// MPV assigns subtitle track IDs in completion order, so parallel sub-adds
-  /// make the track list nondeterministic. Keep this ordered for the fallback
-  /// paths that cannot attach sidecars through loadfile.
-  ///
-  /// [waitUntilReady] is the open's file-loaded signal; it resolves false when
-  /// the open failed or was aborted first. Returns whether the adds ran —
-  /// false when the open never became ready or the manager went inactive, so
-  /// the caller knows there is nothing to resume or select on.
-  Future<bool> addExternalSubtitles(List<SubtitleTrack> externalSubtitles, {Future<bool>? waitUntilReady}) async {
-    if (externalSubtitles.isEmpty) return true;
-
-    _externalSubtitleAddsInFlight = true;
-    try {
-      if (waitUntilReady != null) {
-        if (!await waitUntilReady) {
-          appLogger.d('Skipping external subtitle load: the open never became ready');
-          return false;
-        }
-        if (!isActive()) return false;
-      }
-      appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
-
-      for (final subtitleTrack in externalSubtitles.where((s) => s.uri != null)) {
-        try {
-          await player.addSubtitleTrack(
-            uri: subtitleTrack.uri!,
-            title: subtitleTrack.title,
-            language: subtitleTrack.language,
-            select: subtitleTrack.isDefault,
-          );
-          appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
-        } catch (e) {
-          appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
-        }
-      }
-      return true;
-    } finally {
-      _externalSubtitleAddsInFlight = false;
-    }
-  }
-
-  /// Resume playback after external subtitles have been loaded (or failed).
-  /// Sets up a 3-second fallback in case playbackRestart doesn't fire.
-  Future<void> resumeAfterSubtitleLoad() async {
-    if (!isActive()) return;
-
-    try {
-      await player.play();
-      final pos = player.state.position;
-      try {
-        await player.seek(pos.inMilliseconds > 0 ? pos : Duration.zero);
-      } catch (e) {
-        appLogger.w('Non-critical seek after subtitle load failed', error: e);
-      }
-    } catch (e) {
-      // play() failed — clear the flag immediately since playbackRestart won't fire
-      appLogger.w('Resume after subtitle load failed, applying track selection directly', error: e);
-      waitingForExternalSubsTrackSelection = false;
-      unawaited(applyTrackSelection());
-      return;
-    }
-
-    // Fallback if playbackRestart doesn't fire
-    _subtitleFallbackTimer?.cancel();
-    _subtitleFallbackTimer = Timer(const Duration(seconds: 3), () {
-      if (waitingForExternalSubsTrackSelection && isActive()) {
-        waitingForExternalSubsTrackSelection = false;
-        applyTrackSelection();
-      }
-    });
-  }
 
   /// Invalidates every pending automatic selection before the player is
   /// reused for another media generation and returns a bounded drain for the
@@ -452,18 +361,9 @@ class TrackManager {
     }
   }
 
-  /// Called when playbackRestart fires — checks the flag and applies selection.
-  void onPlaybackRestart() {
-    if (waitingForExternalSubsTrackSelection) {
-      if (_externalSubtitleAddsInFlight) return;
-      waitingForExternalSubsTrackSelection = false;
-      applyTrackSelection();
-    }
-  }
-
   // ── Backend fallback ───────────────────────────────────────────────
 
-  /// Handle ExoPlayer → MPV backend switch: re-add external subs and reapply selection.
+  /// Handle ExoPlayer → MPV backend switch: reapply selection.
   Future<void> onBackendSwitched() async {
     final pendingSelection = _selectionIdleCompleter?.future;
     final playerMutationDrain = invalidatePendingSelection();
@@ -472,16 +372,6 @@ class TrackManager {
     if (!_managerIsActive) return;
 
     appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
-    if (_lastExternalSubtitles.isNotEmpty && !player.attachesExternalSubtitlesAtOpen) {
-      try {
-        await addExternalSubtitles(_lastExternalSubtitles);
-      } catch (e) {
-        appLogger.w('Failed to re-add external subtitles after backend switch', error: e);
-      }
-    }
-
-    if (!_managerIsActive) return;
-
     applyTrackSelectionWhenReady();
   }
 
@@ -741,8 +631,5 @@ class TrackManager {
     if (_disposed) return;
     _disposed = true;
     invalidatePendingSelection();
-    _externalSubtitleAddsInFlight = false;
-    _subtitleFallbackTimer?.cancel();
-    _subtitleFallbackTimer = null;
   }
 }

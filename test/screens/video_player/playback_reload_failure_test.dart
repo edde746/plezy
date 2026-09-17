@@ -746,9 +746,6 @@ class _ReloadPlayer extends FakeSyncPlayer {
   String get playerType => 'mpv';
 
   @override
-  bool get attachesExternalSubtitlesAtOpen => true;
-
-  @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
   @override
