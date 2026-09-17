@@ -278,6 +278,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get alwaysKeepSidebarOpenDescription => 'Страничната лента остава разгъната и зоната със съдържание се наглася да пасне';
 	@override String get showUnwatchedCount => 'Показвай броя негледани';
 	@override String get showUnwatchedCountDescription => 'Показвай броя негледани епизоди при сериали и сезони';
+	@override String get showWatchedIndicators => 'Показвай индикатори за гледано';
+	@override String get showWatchedIndicatorsDescription => 'Показвай отметка върху гледани филми, сериали и епизоди';
 	@override String get showEpisodeNumberOnCards => 'Показвай номера на епизода върху картите';
 	@override String get showEpisodeNumberOnCardsDescription => 'Показвай сезон и номер на епизод върху картите на епизодите';
 	@override String get showSeasonPostersOnTabs => 'Показвай постери на сезоните в табовете';
@@ -307,6 +309,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Качество по подразбиране';
 	@override String get cellularQualityTitle => 'Качество по подразбиране при мобилни данни';
 	@override String get cellularQualitySameAsDefault => 'Същото като качеството по подразбиране';
+	@override String get directPlayCoveredQuality => 'Пускай по-малките видеа в оригинално качество';
+	@override String get directPlayCoveredQualityDescription => 'Възпроизвеждай директно видеата, които вече са в рамките на лимита за качество, вместо да ги транскодираш';
 	@override String get musicQualityTitle => 'Качество на музиката';
 	@override String get subtitleStyling => 'Стил на субтитрите';
 	@override String get subtitleStylingDescription => 'Настройване на вида на субтитрите';
@@ -318,6 +322,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} минути';
 	@override String get rememberTrackSelections => 'Запомняй избора на аудио и субтитри за всеки сериал или филм';
 	@override String get rememberTrackSelectionsDescription => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие';
+	@override String get rememberTrackSelectionsBackendRule => 'Plex записва всеки избор на сървъра за всеки файл; Jellyfin също включва „Запомняне на изборите“ за акаунта; Emby не се поддържа';
 	@override String get followServerTrackSelections => 'Използвай избора на пътечки от сървъра за всеки епизод';
 	@override String get followServerTrackSelectionsDescription => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор';
 	@override String get resumeMusicOnLaunch => 'Запомняне на музикалната сесия';
@@ -378,8 +383,21 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get autoPlayAndSkip => 'Автоматично пускане и прескачане';
 	@override String get autoPlayNextEpisode => 'Автоматично пускане на следващия епизод';
 	@override String get autoPlayNextEpisodeDescription => 'Пускай следващия епизод автоматично, когато текущият свърши';
+	@override String get shuffleStartsFromBeginning => 'Разбъркано възпроизвеждане отначало';
+	@override String get shuffleStartsFromBeginningDescription => 'При разбъркано възпроизвеждане започвай всеки епизод отначало, вместо да продължаваш';
 	@override String get playNextCountdown => 'Отброяване до следващия епизод';
 	@override String get playNextCountdownImmediate => 'Пусни веднага';
+	@override String get skipIntroMode => 'Прескачане на интрото';
+	@override String get skipIntroModeOffDescription => 'Пускай интротата нормално, без бутон за прескачане';
+	@override String get skipIntroModeButtonDescription => 'Показвай бутон за прескачане, когато започне интро';
+	@override String get skipIntroModeAutoDescription => 'Прескачай интротата автоматично след забавянето по-долу';
+	@override String get skipCreditsMode => 'Прескачане на финалните надписи';
+	@override String get skipCreditsModeOffDescription => 'Пускай финалните надписи нормално, без бутон за прескачане';
+	@override String get skipCreditsModeButtonDescription => 'Показвай бутон за прескачане, когато започнат финалните надписи';
+	@override String get skipCreditsModeAutoDescription => 'Прескачай финалните надписи автоматично и пускай следващия епизод';
+	@override String get skipMarkerModeOff => 'Изключено';
+	@override String get skipMarkerModeButton => 'Показвай бутон';
+	@override String get skipMarkerModeAuto => 'Автоматично';
 	@override String get forceSkipMarkerFallback => 'Принуди резервни маркери';
 	@override String get forceSkipMarkerFallbackDescription => 'Използвай шаблони в заглавията на главите дори когато Plex има маркери';
 	@override String get autoSkipDelay => 'Забавяне за автоматично прескачане';
@@ -432,6 +450,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get audioPassthrough => 'Директно предаване на аудио';
 	@override String get audioPassthroughDescription => 'Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.';
+	@override String get audioPassthroughOverriddenByNormalization => 'Изключено, докато е включено нормализирането на силата на звука';
 	@override String get audioDownmix => 'Смесване до стерео';
 	@override String get audioDownmixDescription => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки';
 	@override String get downmixCenterBoost => 'Усилване на централния канал';
@@ -493,6 +512,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get gestureVolumeSwipeDescription => 'Плъзни нагоре или надолу по десния ръб, за да регулираш силата на звука';
 	@override String get gesturePinchToZoom => 'Стискане за мащабиране';
 	@override String get gesturePinchToZoomDescription => 'Стисни видеото, за да увеличиш или намалиш мащаба';
+	@override String get rememberBrightnessLevel => 'Запомняй нивото на яркостта';
+	@override String get rememberBrightnessLevelDescription => 'Започвай възпроизвеждането с яркостта, зададена от последното плъзгане';
 	@override String get controls => 'Контроли';
 	@override String get rememberPlayerChanges => 'Запомняне на промените в плейъра';
 	@override String get rememberPlayerChangesDescription => 'Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане';
@@ -905,6 +926,9 @@ class _Translations$messages$bg extends Translations$messages$en {
 	@override String get playbackDataInvalid => 'Сървърът върна невалидна информация за възпроизвеждането.';
 	@override String get playbackCancelled => 'Възпроизвеждането беше отменено.';
 	@override String get playbackFailed => 'Възпроизвеждането не можа да бъде стартирано.';
+	@override String playbackFailedDetail({required Object error}) => 'Възпроизвеждането не можа да бъде стартирано: ${error}';
+	@override String get audioOutputFailed => 'Аудио изходът спря да отговаря. Проверете аудио връзката на телевизора или приемника; ако и други приложения нямат звук, рестартирайте устройството.';
+	@override String get mediaUnavailable => 'Това съдържание вече не е налично.';
 	@override String errorLoadingFileInfo({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}';
 	@override String get errorLoadingSeries => 'Грешка при зареждане на сериала';
 	@override String get musicNotSupported => 'Възпроизвеждането на музика все още не се поддържа';
@@ -948,6 +972,7 @@ class _Translations$messages$bg extends Translations$messages$en {
 	@override String get playbackDataNotPrepared => 'Възпроизвеждането беше стартирано, преди данните за него да са готови';
 	@override String get streamSelectionUnavailable => 'Изборът на потоци не е наличен за този източник';
 	@override String get streamSelectionFailed => 'Избраните потоци не можаха да бъдат приложени';
+	@override String get trackSelectionNotRemembered => 'Този избор на пътечка важи само за текущото възпроизвеждане.';
 	@override String get serverUnavailableForProfile => 'Няма наличен сървър за активния профил';
 }
 
@@ -974,6 +999,8 @@ class _Translations$subtitlingStyling$bg extends Translations$subtitlingStyling$
 	@override String get overrideStrip => 'Премахване на стиловете';
 	@override String get positionTop => 'Горе';
 	@override String get positionBottom => 'Долу';
+	@override String get useMargins => 'Използвай полетата';
+	@override String get useMarginsDescription => 'Позволява текстовите субтитри да се показват в пространството извън видеото. Стилизираните субтитри могат да запазят оригиналното си разположение.';
 	@override String get anchorToScreen => 'Закрепване към екрана';
 	@override String get anchorToScreenDescription => 'Показва текстовите субтитри в черните ленти под широкоекранното видео';
 	@override String get bold => 'Получер';
@@ -1004,6 +1031,9 @@ class _Translations$mpvConfig$bg extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Пресетът е изтрит';
 	@override String get confirmDeletePreset => 'Сигурни ли сте, че искате да изтриете този пресет?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get lineHint => 'option=value';
+	@override String get addLine => 'Добави ред';
+	@override String get removeLine => 'Премахни ред';
 	@override String get embeddedVoHint => 'vo, gpu-context и gpu-api се игнорират на Linux: вграденото видео винаги се рендерира през vo=libmpv върху видео равнината, а gpu-next (който е нужен за compute шейдъри като ArtCNN) не може да работи вградено.';
 }
 
@@ -1405,6 +1435,10 @@ class _Translations$explore$bg extends Translations$explore$en {
 	@override String get notInLibrary => 'Не е в твоята библиотека';
 	@override String get inTheseLibraries => 'В тези библиотеки';
 	@override String get checkingLibrary => 'Проверка на твоята библиотека...';
+	@override String libraryCheckFailed({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n,
+		one: 'Неуспешна проверка на ${n} сървър',
+		other: 'Неуспешна проверка на ${n} сървъра',
+	);
 	@override String get emptyTitle => 'Тук все още няма нищо';
 	@override String emptyMessage({required Object source}) => 'Редовете от ${source} ще се появят тук, когато има съдържание.';
 	@override String searchHint({required Object source}) => 'Търсене в ${source}';
@@ -1650,6 +1684,13 @@ class _Translations$watchTogether$bg extends Translations$watchTogether$en {
 	@override String get host => 'Организатор';
 	@override String get hostBadge => 'ОРГАНИЗАТОР';
 	@override String get youAreHost => 'Вие сте организаторът';
+	@override String get makeHost => 'Направи организатор';
+	@override String get makeHostQuestion => 'Предаване на ролята на организатор?';
+	@override String makeHostConfirm({required Object name}) => '${name} ще управлява възпроизвеждането и ще води сесията за всички.';
+	@override String get transfer => 'Предай';
+	@override String hostChangedTo({required Object name}) => '${name} вече е организатор';
+	@override String get youAreNowHost => 'Вече сте организаторът';
+	@override String hostTransferFailed({required Object name}) => '${name} не можа да стане организатор';
 	@override String get watchingWithOthers => 'Гледате с други';
 	@override String get endSession => 'Край на сесията';
 	@override String get leaveSession => 'Напусни сесията';
@@ -1682,6 +1723,7 @@ class _Translations$watchTogether$bg extends Translations$watchTogether$en {
 	@override String participantPaused({required Object name}) => '${name} постави на пауза';
 	@override String participantResumed({required Object name}) => '${name} продължи';
 	@override String participantSeeked({required Object name}) => '${name} промени позицията на възпроизвеждане';
+	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name} промени скоростта на ${speed}';
 	@override String participantBuffering({required Object name}) => '${name} буферира';
 	@override String participantNeedsUpdate({required Object name}) => '${name} е с по-стара версия на приложението — синхронизирането не е налично';
 	@override String resumingWithout({required Object name}) => 'Продължаване без ${name}';
@@ -1718,6 +1760,7 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get downloadResumed => 'Изтеглянето е възобновено';
 	@override String get serverErrorBitrate => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт';
 	@override String get storageFull => 'Изтеглянията бяха спрени, защото паметта на устройството е пълна. Освободете място и опитайте отново.';
+	@override String get storageUnavailable => 'Изтеглянията бяха спрени, защото наличното място не можа да бъде проверено. Проверете местоположението за изтегляне и опитайте отново.';
 	@override String episodesQueued({required Object count}) => '${count} епизода са добавени в опашката за изтегляне';
 	@override String get downloadDeleted => 'Изтеглянето е изтрито';
 	@override String deleteConfirm({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?';
@@ -1861,6 +1904,8 @@ class _Translations$videoSettings$bg extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Пространствено аудио';
 	@override String get audioOutputStereo => 'Стерео';
 	@override String get audioNormalization => 'Нормализиране на силата на звука';
+	@override String get audioNormalizationDisablesPassthrough => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено';
+	@override String get audioNormalizationStereoMix => 'Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено';
 	@override String get audioDownmix => 'Смесване до стерео';
 }
 
@@ -2107,6 +2152,10 @@ class _Translations$seerr$bg extends Translations$seerr$en {
 	@override String get qualityProfile => 'Профил за качество';
 	@override String get rootFolder => 'Основна папка';
 	@override String get languageProfile => 'Езиков профил';
+	@override String get tags => 'Етикети';
+	@override String get noTags => 'Няма етикети';
+	@override String defaultOption({required Object name}) => '${name} (по подразбиране)';
+	@override String get animeNote => 'Този сериал е аниме.';
 	@override String get requestSubmitted => 'Заявката е изпратена';
 	@override String requestFailed({required Object error}) => 'Заявката се провали: ${error}';
 	@override String get requestsLoadFailed => 'Неуспешно зареждане на опциите за заявка';
@@ -2118,6 +2167,7 @@ class _Translations$seerr$bg extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'В списъка с блокирани';
 	@override String couldNotReach({required Object url, required Object error}) => 'Неуспешна връзка с ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'На ${url} няма инстанция на Seerr (HTTP ${status})';
+	@override String get behindAuthProxy => 'Вместо Seerr отговори удостоверяващ обратен прокси (SSO или HTTP удостоверяване). Plezy не може да влезе през него: настройте пътя /api/v1 на Seerr да заобикаля проксито за това приложение или използвайте адрес, който достига Seerr директно.';
 	@override String get invalidUrl => 'Въведете адрес на сървър като https://seerr.example.com';
 	@override String get quickConnectUnsupported => 'Тази Seerr инстанция не поддържа Quick Connect. Изисква се Seerr 3.4 или по-нова версия.';
 	@override String get notInitialized => 'Тази инстанция на Seerr не е завършила първоначалната настройка';
@@ -2128,6 +2178,8 @@ class _Translations$seerr$bg extends Translations$seerr$en {
 	@override String get freshCookieRejected => 'Seerr отхвърли новата бисквитка за сесията';
 	@override String get noUserInformation => 'Seerr не върна информация за потребителя';
 	@override String get sessionRejectedAfterReauth => 'Сесията беше отхвърлена след повторния вход';
+	@override String get permissionDenied => 'Seerr отказа това действие: акаунтът ви вече няма необходимото разрешение';
+	@override String get permissionRevoked => 'Вече нямате разрешение да заявявате това';
 }
 
 // Path: services
@@ -2717,6 +2769,7 @@ class _Translations$watchTogether$errors$bg extends Translations$watchTogether$e
 	@override String get connectionLost => 'Връзката се затвори, преди сесията да е готова';
 	@override String get invalidRelayResponse => 'Релейният сървър изпрати неочакван отговор';
 	@override String get sessionEnded => 'Организаторът прекрати сесията';
+	@override String get sessionUnavailable => 'Тази сесия не може да бъде възобновена. Присъединете се към стая или създайте нова, за да продължите.';
 }
 
 // Path: downloads.backgroundWarning
@@ -3088,6 +3141,8 @@ extension on TranslationsBg {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Страничната лента остава разгъната и зоната със съдържание се наглася да пасне',
 			'settings.showUnwatchedCount' => 'Показвай броя негледани',
 			'settings.showUnwatchedCountDescription' => 'Показвай броя негледани епизоди при сериали и сезони',
+			'settings.showWatchedIndicators' => 'Показвай индикатори за гледано',
+			'settings.showWatchedIndicatorsDescription' => 'Показвай отметка върху гледани филми, сериали и епизоди',
 			'settings.showEpisodeNumberOnCards' => 'Показвай номера на епизода върху картите',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Показвай сезон и номер на епизод върху картите на епизодите',
 			'settings.showSeasonPostersOnTabs' => 'Показвай постери на сезоните в табовете',
@@ -3117,6 +3172,8 @@ extension on TranslationsBg {
 			'settings.defaultQualityTitle' => 'Качество по подразбиране',
 			'settings.cellularQualityTitle' => 'Качество по подразбиране при мобилни данни',
 			'settings.cellularQualitySameAsDefault' => 'Същото като качеството по подразбиране',
+			'settings.directPlayCoveredQuality' => 'Пускай по-малките видеа в оригинално качество',
+			'settings.directPlayCoveredQualityDescription' => 'Възпроизвеждай директно видеата, които вече са в рамките на лимита за качество, вместо да ги транскодираш',
 			'settings.musicQualityTitle' => 'Качество на музиката',
 			'settings.subtitleStyling' => 'Стил на субтитрите',
 			'settings.subtitleStylingDescription' => 'Настройване на вида на субтитрите',
@@ -3128,6 +3185,7 @@ extension on TranslationsBg {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} минути',
 			'settings.rememberTrackSelections' => 'Запомняй избора на аудио и субтитри за всеки сериал или филм',
 			'settings.rememberTrackSelectionsDescription' => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие',
+			'settings.rememberTrackSelectionsBackendRule' => 'Plex записва всеки избор на сървъра за всеки файл; Jellyfin също включва „Запомняне на изборите“ за акаунта; Emby не се поддържа',
 			'settings.followServerTrackSelections' => 'Използвай избора на пътечки от сървъра за всеки епизод',
 			'settings.followServerTrackSelectionsDescription' => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор',
 			'settings.resumeMusicOnLaunch' => 'Запомняне на музикалната сесия',
@@ -3188,8 +3246,21 @@ extension on TranslationsBg {
 			'settings.autoPlayAndSkip' => 'Автоматично пускане и прескачане',
 			'settings.autoPlayNextEpisode' => 'Автоматично пускане на следващия епизод',
 			'settings.autoPlayNextEpisodeDescription' => 'Пускай следващия епизод автоматично, когато текущият свърши',
+			'settings.shuffleStartsFromBeginning' => 'Разбъркано възпроизвеждане отначало',
+			'settings.shuffleStartsFromBeginningDescription' => 'При разбъркано възпроизвеждане започвай всеки епизод отначало, вместо да продължаваш',
 			'settings.playNextCountdown' => 'Отброяване до следващия епизод',
 			'settings.playNextCountdownImmediate' => 'Пусни веднага',
+			'settings.skipIntroMode' => 'Прескачане на интрото',
+			'settings.skipIntroModeOffDescription' => 'Пускай интротата нормално, без бутон за прескачане',
+			'settings.skipIntroModeButtonDescription' => 'Показвай бутон за прескачане, когато започне интро',
+			'settings.skipIntroModeAutoDescription' => 'Прескачай интротата автоматично след забавянето по-долу',
+			'settings.skipCreditsMode' => 'Прескачане на финалните надписи',
+			'settings.skipCreditsModeOffDescription' => 'Пускай финалните надписи нормално, без бутон за прескачане',
+			'settings.skipCreditsModeButtonDescription' => 'Показвай бутон за прескачане, когато започнат финалните надписи',
+			'settings.skipCreditsModeAutoDescription' => 'Прескачай финалните надписи автоматично и пускай следващия епизод',
+			'settings.skipMarkerModeOff' => 'Изключено',
+			'settings.skipMarkerModeButton' => 'Показвай бутон',
+			'settings.skipMarkerModeAuto' => 'Автоматично',
 			'settings.forceSkipMarkerFallback' => 'Принуди резервни маркери',
 			'settings.forceSkipMarkerFallbackDescription' => 'Използвай шаблони в заглавията на главите дори когато Plex има маркери',
 			'settings.autoSkipDelay' => 'Забавяне за автоматично прескачане',
@@ -3242,6 +3313,7 @@ extension on TranslationsBg {
 			'settings.audioPassthrough' => 'Директно предаване на аудио',
 			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.',
+			'settings.audioPassthroughOverriddenByNormalization' => 'Изключено, докато е включено нормализирането на силата на звука',
 			'settings.audioDownmix' => 'Смесване до стерео',
 			'settings.audioDownmixDescription' => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки',
 			'settings.downmixCenterBoost' => 'Усилване на централния канал',
@@ -3303,6 +3375,8 @@ extension on TranslationsBg {
 			'settings.gestureVolumeSwipeDescription' => 'Плъзни нагоре или надолу по десния ръб, за да регулираш силата на звука',
 			'settings.gesturePinchToZoom' => 'Стискане за мащабиране',
 			'settings.gesturePinchToZoomDescription' => 'Стисни видеото, за да увеличиш или намалиш мащаба',
+			'settings.rememberBrightnessLevel' => 'Запомняй нивото на яркостта',
+			'settings.rememberBrightnessLevelDescription' => 'Започвай възпроизвеждането с яркостта, зададена от последното плъзгане',
 			'settings.controls' => 'Контроли',
 			'settings.rememberPlayerChanges' => 'Запомняне на промените в плейъра',
 			'settings.rememberPlayerChangesDescription' => 'Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане',
@@ -3424,6 +3498,8 @@ extension on TranslationsBg {
 			'fileInfo.sourceStream' => 'Копирано от',
 			'fileInfo.temporary' => 'Временен',
 			'fileInfo.timeBase' => 'Времева база',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.overallBitrate' => 'Общ битрейт',
 			'fileInfo.path' => 'Път',
 			'fileInfo.fileName' => 'Име на файла',
@@ -3445,8 +3521,6 @@ extension on TranslationsBg {
 			'fileInfo.optimizedVersion' => 'Оптимизирана версия',
 			'fileInfo.optimizationTarget' => 'Цел на оптимизацията',
 			'fileInfo.deletedAt' => 'Изтрит',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Отдалечен източник',
 			'fileInfo.infiniteStream' => 'Безкраен поток',
 			'fileInfo.directPlay' => 'Директно възпроизвеждане',
@@ -3646,6 +3720,9 @@ extension on TranslationsBg {
 			'messages.playbackDataInvalid' => 'Сървърът върна невалидна информация за възпроизвеждането.',
 			'messages.playbackCancelled' => 'Възпроизвеждането беше отменено.',
 			'messages.playbackFailed' => 'Възпроизвеждането не можа да бъде стартирано.',
+			'messages.playbackFailedDetail' => ({required Object error}) => 'Възпроизвеждането не можа да бъде стартирано: ${error}',
+			'messages.audioOutputFailed' => 'Аудио изходът спря да отговаря. Проверете аудио връзката на телевизора или приемника; ако и други приложения нямат звук, рестартирайте устройството.',
+			'messages.mediaUnavailable' => 'Това съдържание вече не е налично.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
 			'messages.musicNotSupported' => 'Възпроизвеждането на музика все още не се поддържа',
@@ -3689,6 +3766,7 @@ extension on TranslationsBg {
 			'messages.playbackDataNotPrepared' => 'Възпроизвеждането беше стартирано, преди данните за него да са готови',
 			'messages.streamSelectionUnavailable' => 'Изборът на потоци не е наличен за този източник',
 			'messages.streamSelectionFailed' => 'Избраните потоци не можаха да бъдат приложени',
+			'messages.trackSelectionNotRemembered' => 'Този избор на пътечка важи само за текущото възпроизвеждане.',
 			'messages.serverUnavailableForProfile' => 'Няма наличен сървър за активния профил',
 			'subtitlingStyling.text' => 'Текст',
 			'subtitlingStyling.border' => 'Контур',
@@ -3706,6 +3784,8 @@ extension on TranslationsBg {
 			'subtitlingStyling.overrideStrip' => 'Премахване на стиловете',
 			'subtitlingStyling.positionTop' => 'Горе',
 			'subtitlingStyling.positionBottom' => 'Долу',
+			'subtitlingStyling.useMargins' => 'Използвай полетата',
+			'subtitlingStyling.useMarginsDescription' => 'Позволява текстовите субтитри да се показват в пространството извън видеото. Стилизираните субтитри могат да запазят оригиналното си разположение.',
 			'subtitlingStyling.anchorToScreen' => 'Закрепване към екрана',
 			'subtitlingStyling.anchorToScreenDescription' => 'Показва текстовите субтитри в черните ленти под широкоекранното видео',
 			'subtitlingStyling.bold' => 'Получер',
@@ -3727,6 +3807,9 @@ extension on TranslationsBg {
 			'mpvConfig.presetDeleted' => 'Пресетът е изтрит',
 			'mpvConfig.confirmDeletePreset' => 'Сигурни ли сте, че искате да изтриете този пресет?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.lineHint' => 'option=value',
+			'mpvConfig.addLine' => 'Добави ред',
+			'mpvConfig.removeLine' => 'Премахни ред',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context и gpu-api се игнорират на Linux: вграденото видео винаги се рендерира през vo=libmpv върху видео равнината, а gpu-next (който е нужен за compute шейдъри като ArtCNN) не може да работи вградено.',
 			'dialog.confirmAction' => 'Потвърждение на действие',
 			'profiles.addPlezyProfile' => 'Добави Plezy профил',
@@ -3929,6 +4012,8 @@ extension on TranslationsBg {
 			'libraries.showLibrary' => 'Покажи библиотеката',
 			'libraries.hideLibrary' => 'Скрий библиотеката',
 			'libraries.libraryOptions' => 'Опции на библиотеката',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.content' => 'съдържание на библиотеката',
 			'libraries.selectLibrary' => 'Избери библиотека',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Филтри (${count})',
@@ -3959,8 +4044,6 @@ extension on TranslationsBg {
 			'libraries.filterCategories.favorites' => 'Любими',
 			'libraries.sortLabels.title' => 'Заглавие',
 			'libraries.sortLabels.dateAdded' => 'Дата на добавяне',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Дата на излизане',
 			'libraries.sortLabels.rating' => 'Рейтинг',
 			'libraries.sortLabels.communityRating' => 'Оценка от общността',
@@ -4065,6 +4148,7 @@ extension on TranslationsBg {
 			'explore.notInLibrary' => 'Не е в твоята библиотека',
 			'explore.inTheseLibraries' => 'В тези библиотеки',
 			'explore.checkingLibrary' => 'Проверка на твоята библиотека...',
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Неуспешна проверка на ${n} сървър', other: 'Неуспешна проверка на ${n} сървъра', ), 
 			'explore.emptyTitle' => 'Тук все още няма нищо',
 			'explore.emptyMessage' => ({required Object source}) => 'Редовете от ${source} ще се появят тук, когато има съдържание.',
 			'explore.searchHint' => ({required Object source}) => 'Търсене в ${source}',
@@ -4361,6 +4445,13 @@ extension on TranslationsBg {
 			'watchTogether.host' => 'Организатор',
 			'watchTogether.hostBadge' => 'ОРГАНИЗАТОР',
 			'watchTogether.youAreHost' => 'Вие сте организаторът',
+			'watchTogether.makeHost' => 'Направи организатор',
+			'watchTogether.makeHostQuestion' => 'Предаване на ролята на организатор?',
+			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} ще управлява възпроизвеждането и ще води сесията за всички.',
+			'watchTogether.transfer' => 'Предай',
+			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} вече е организатор',
+			'watchTogether.youAreNowHost' => 'Вече сте организаторът',
+			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name} не можа да стане организатор',
 			'watchTogether.watchingWithOthers' => 'Гледате с други',
 			'watchTogether.endSession' => 'Край на сесията',
 			'watchTogether.leaveSession' => 'Напусни сесията',
@@ -4393,6 +4484,7 @@ extension on TranslationsBg {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} постави на пауза',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} продължи',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} промени позицията на възпроизвеждане',
+			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} промени скоростта на ${speed}',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферира',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} е с по-стара версия на приложението — синхронизирането не е налично',
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Продължаване без ${name}',
@@ -4408,6 +4500,7 @@ extension on TranslationsBg {
 			'watchTogether.errors.connectionLost' => 'Връзката се затвори, преди сесията да е готова',
 			'watchTogether.errors.invalidRelayResponse' => 'Релейният сървър изпрати неочакван отговор',
 			'watchTogether.errors.sessionEnded' => 'Организаторът прекрати сесията',
+			'watchTogether.errors.sessionUnavailable' => 'Тази сесия не може да бъде възобновена. Присъединете се към стая или създайте нова, за да продължите.',
 			'downloads.title' => 'Изтегляния',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
@@ -4423,6 +4516,7 @@ extension on TranslationsBg {
 			'downloads.downloadResumed' => 'Изтеглянето е възобновено',
 			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
 			'downloads.storageFull' => 'Изтеглянията бяха спрени, защото паметта на устройството е пълна. Освободете място и опитайте отново.',
+			'downloads.storageUnavailable' => 'Изтеглянията бяха спрени, защото наличното място не можа да бъде проверено. Проверете местоположението за изтегляне и опитайте отново.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
@@ -4432,6 +4526,8 @@ extension on TranslationsBg {
 			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} е изтеглен — щракнете, за да завършите',
 			'downloads.partialDownloadClickToComplete' => 'Частично изтеглено — щракнете, за да завършите',
 			'downloads.deleting' => 'Изтриване...',
@@ -4473,8 +4569,6 @@ extension on TranslationsBg {
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
 			'downloads.editSyncFilter' => 'Филтър за синхронизация',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Синхронизират се всички елементи',
 			'downloads.syncUnwatchedItems' => 'Синхронизират се негледаните елементи',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Сървър: ${server} • ${status}',
@@ -4624,6 +4718,8 @@ extension on TranslationsBg {
 			'videoSettings.audioOutputSpatial' => 'Пространствено аудио',
 			'videoSettings.audioOutputStereo' => 'Стерео',
 			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
+			'videoSettings.audioNormalizationDisablesPassthrough' => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено',
+			'videoSettings.audioNormalizationStereoMix' => 'Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено',
 			'videoSettings.audioDownmix' => 'Смесване до стерео',
 			'performanceOverlay.color' => 'Цвят',
 			'performanceOverlay.performance' => 'Производителност',
@@ -4807,6 +4903,10 @@ extension on TranslationsBg {
 			'seerr.qualityProfile' => 'Профил за качество',
 			'seerr.rootFolder' => 'Основна папка',
 			'seerr.languageProfile' => 'Езиков профил',
+			'seerr.tags' => 'Етикети',
+			'seerr.noTags' => 'Няма етикети',
+			'seerr.defaultOption' => ({required Object name}) => '${name} (по подразбиране)',
+			'seerr.animeNote' => 'Този сериал е аниме.',
 			'seerr.requestSubmitted' => 'Заявката е изпратена',
 			'seerr.requestFailed' => ({required Object error}) => 'Заявката се провали: ${error}',
 			'seerr.requestsLoadFailed' => 'Неуспешно зареждане на опциите за заявка',
@@ -4818,6 +4918,7 @@ extension on TranslationsBg {
 			'seerr.statusBlocklisted' => 'В списъка с блокирани',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Неуспешна връзка с ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'На ${url} няма инстанция на Seerr (HTTP ${status})',
+			'seerr.behindAuthProxy' => 'Вместо Seerr отговори удостоверяващ обратен прокси (SSO или HTTP удостоверяване). Plezy не може да влезе през него: настройте пътя /api/v1 на Seerr да заобикаля проксито за това приложение или използвайте адрес, който достига Seerr директно.',
 			'seerr.invalidUrl' => 'Въведете адрес на сървър като https://seerr.example.com',
 			'seerr.quickConnectUnsupported' => 'Тази Seerr инстанция не поддържа Quick Connect. Изисква се Seerr 3.4 или по-нова версия.',
 			'seerr.notInitialized' => 'Тази инстанция на Seerr не е завършила първоначалната настройка',
@@ -4828,6 +4929,8 @@ extension on TranslationsBg {
 			'seerr.freshCookieRejected' => 'Seerr отхвърли новата бисквитка за сесията',
 			'seerr.noUserInformation' => 'Seerr не върна информация за потребителя',
 			'seerr.sessionRejectedAfterReauth' => 'Сесията беше отхвърлена след повторния вход',
+			'seerr.permissionDenied' => 'Seerr отказа това действие: акаунтът ви вече няма необходимото разрешение',
+			'seerr.permissionRevoked' => 'Вече нямате разрешение да заявявате това',
 			'services.title' => 'Услуги',
 			'services.hubSubtitle' => 'Синхронизирай прогреса на гледане и заявявай нови заглавия.',
 			'services.integrations' => 'Интеграции',
