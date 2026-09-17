@@ -13,6 +13,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/app_icon.dart';
 import '../../focus/key_event_utils.dart';
+import '../../navigation/page_refresh_shortcut.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
@@ -435,6 +436,8 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       onKeyEvent: (node, event) {
         final backResult = handleBackKeyNavigation(context, event);
         if (backResult != KeyEventResult.ignored) return backResult;
+        final refreshResult = handlePageRefreshShortcut(event, _loadLogs);
+        if (refreshResult != KeyEventResult.ignored) return refreshResult;
         if (event is KeyDownEvent || event is KeyRepeatEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
             _scroll(80);

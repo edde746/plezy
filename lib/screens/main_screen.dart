@@ -2,6 +2,7 @@ import 'dart:async';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../navigation/main_screen_scope.dart';
+import '../navigation/page_refresh_shortcut.dart';
 import 'dart:io' show Platform, exit;
 
 export '../navigation/main_screen_scope.dart'
@@ -1623,6 +1624,10 @@ class _MainScreenState extends State<MainScreen>
         : KeyEventResult.ignored;
   }
 
+  KeyEventResult _handlePageRefreshShortcut(KeyEvent event) {
+    return dispatchPageRefreshShortcut(event, _screenKeys[_currentTab]?.currentState);
+  }
+
   /// Handle Cmd+F (macOS) / Ctrl+F (Windows/Linux) to navigate to search.
   KeyEventResult _handleSearchShortcut(KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
@@ -2048,6 +2053,8 @@ class _MainScreenState extends State<MainScreen>
                 if (rootEscapeResult == KeyEventResult.handled) return rootEscapeResult;
                 final fullscreenResult = _handleFullscreenShortcut(event);
                 if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
+                final refreshResult = _handlePageRefreshShortcut(event);
+                if (refreshResult == KeyEventResult.handled) return refreshResult;
                 final searchResult = _handleSearchShortcut(event);
                 if (searchResult == KeyEventResult.handled) return searchResult;
                 final settingsResult = _handleSettingsShortcut(event);
