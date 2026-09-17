@@ -698,6 +698,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     String? playSessionId,
     String? liveStreamId,
     int? audioStreamIndex,
+    bool containerExtension = false,
   }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
@@ -710,6 +711,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       playSessionId: playSessionId,
       liveStreamId: liveStreamId,
       audioStreamIndex: audioStreamIndex,
+      containerExtension: containerExtension,
     );
   }
 
@@ -717,7 +719,12 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// same `Static=true` + token query + `DeviceId` self-authentication. Used
   /// for track direct-play fallback, downloads, and external players.
   @override
-  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
+  String buildAudioDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    bool containerExtension = false,
+  }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
       accessToken: connection.accessToken,
@@ -727,6 +734,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       mediaSegment: 'Audio',
       container: container,
       mediaSourceId: mediaSourceId,
+      containerExtension: containerExtension,
     );
   }
 

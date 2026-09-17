@@ -280,6 +280,83 @@ void main() {
       expect(uri.queryParameters['MediaSourceId'], 'src-9');
     });
 
+    test('buildDirectStreamUrl emits stream.{container} when containerExtension is set', () {
+      final url = client.buildDirectStreamUrl('item-99', container: 'iso', containerExtension: true);
+      final uri = Uri.parse(url);
+
+      expect(uri.path, '/Videos/item-99/stream.iso');
+      expect(uri.queryParameters['Container'], 'iso');
+      expect(uri.queryParameters['Static'], 'true');
+    });
+
+    test('buildDirectStreamUrl keeps the bare stream path when containerExtension is unset', () {
+      final url = client.buildDirectStreamUrl('item-99', container: 'mkv');
+      expect(Uri.parse(url).path, '/Videos/item-99/stream');
+    });
+
+    test('buildDirectStreamUrl drops a malformed container from the path but keeps the query param', () {
+      // `Container` is server-provided; a value with separators must never
+      // become path segments.
+      final url = client.buildDirectStreamUrl('item-99', container: '../x', containerExtension: true);
+      final uri = Uri.parse(url);
+
+      expect(uri.path, '/Videos/item-99/stream');
+      expect(uri.queryParameters['Container'], '../x');
+    });
+
+    test('buildAudioDirectStreamUrl emits stream.{container} when containerExtension is set', () {
+      final url = client.buildAudioDirectStreamUrl('track-7', container: 'flac', containerExtension: true);
+      expect(Uri.parse(url).path, '/Audio/track-7/stream.flac');
+    });
+
+    test('resolveExternalPlaybackUrl gives external players the extension-hinted stream URL', () async {
+      // External players can't sniff a bare `stream` path — the container
+      // extension is the only hint they get, and disc images (ISO) are
+      // unplayable without it (#2375).
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({'MediaSources': []}),
+        itemSources: [
+          {'Id': 'src-1', 'Container': 'iso', 'VideoType': 'Iso', 'MediaStreams': []},
+        ],
+      );
+      addTearDown(scoped.close);
+
+      final url = await scoped.resolveExternalPlaybackUrl(
+        testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+      );
+
+      final uri = Uri.parse(url!);
+      expect(uri.path, '/Videos/item-1/stream.iso');
+      expect(uri.queryParameters['Static'], 'true');
+      expect(uri.queryParameters['MediaSourceId'], 'src-1');
+    });
+
+    test('resolveExternalPlaybackUrl uses the audio endpoint with extension for tracks', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/track-1') {
+            return jsonResponse({
+              'Id': 'track-1',
+              'Type': 'Audio',
+              'Name': 'Track',
+              'MediaSources': [
+                {'Id': 'src-1', 'Container': 'flac', 'MediaStreams': []},
+              ],
+            });
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final url = await scoped.resolveExternalPlaybackUrl(
+        testMediaItem(id: 'track-1', backend: MediaBackend.jellyfin, kind: MediaKind.track, serverId: 'srv-1'),
+      );
+
+      expect(Uri.parse(url!).path, '/Audio/track-1/stream.flac');
+    });
+
     test('buildDirectStreamUrl canonicalizes a mixed-case scheme from stored config', () async {
       // This URL bypasses Dart's Uri normalization on its way to the player,
       // and FFmpeg's protocol lookup is case-sensitive — a stored

@@ -134,8 +134,14 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     String? playSessionId,
     String? liveStreamId,
     int? audioStreamIndex,
+    bool containerExtension = false,
   });
-  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId});
+  String buildAudioDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    bool containerExtension = false,
+  });
   Future<Map<String, dynamic>> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,

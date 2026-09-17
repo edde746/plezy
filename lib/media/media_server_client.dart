@@ -822,9 +822,11 @@ abstract class MediaServerClient {
 
   /// Resolve a fully-qualified URL the OS-level external player (VLC, Infuse,
   /// MX Player, etc.) can fetch directly. Plex builds this from the chosen
-  /// media version's part path; Jellyfin returns its `/Videos/{id}/stream`
-  /// endpoint with `Static=true` so transcoding is bypassed. Returns null only
-  /// when a successful response has no playable URL for the item. Request,
+  /// media version's part path; Jellyfin returns its
+  /// `/Videos/{id}/stream.{container}` endpoint with `Static=true` so
+  /// transcoding is bypassed and the player gets a container extension hint
+  /// (required for disc images such as ISO). Returns null only when a
+  /// successful response has no playable URL for the item. Request,
   /// cancellation, and malformed-payload failures throw.
   ///
   /// Deliberately separate from the in-app playback funnel
