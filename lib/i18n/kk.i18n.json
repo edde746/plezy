@@ -1782,6 +1782,23 @@
     "unknownSeason": "Белгісіз маусым",
     "unknownAlbum": "Белгісіз альбом",
     "completedOfTotal": "${completed}/${total} аяқталды",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Файл табылмады (404)",
     "errorDownloadFailed": "Жүктеу сәтсіз аяқталды",
     "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${error}",

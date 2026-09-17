@@ -3269,6 +3269,9 @@ class _FakeSafStorage implements SafStorageOperations {
   }
 
   @override
+  Future<SafDocumentFile?> stat(String uri, {required bool isDir}) => throw UnsupportedError('stat');
+
+  @override
   Future<String?> resolvePersistedPermissionUri(String uri) async {
     final override = resolveOverride;
     if (override != null) return override(uri);

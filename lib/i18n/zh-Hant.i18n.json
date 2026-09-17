@@ -1771,6 +1771,19 @@
     "unknownSeason": "未知季度",
     "unknownAlbum": "未知專輯",
     "completedOfTotal": "已完成 ${completed}/${total}",
+    "storageUsed": "",
+    "downloadCount": {
+      "other": ""
+    },
+    "showCount": {
+      "other": ""
+    },
+    "movieCount": {
+      "other": ""
+    },
+    "albumCount": {
+      "other": ""
+    },
     "errorFileNotFound": "找不到檔案（404）",
     "errorDownloadFailed": "下載失敗",
     "errorPostProcessing": "後續處理失敗：${error}",

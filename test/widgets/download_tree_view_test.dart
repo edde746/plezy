@@ -184,4 +184,23 @@ void main() {
       expect(determineDownloadAggregateStatus(const []), DownloadStatus.queued);
     });
   });
+
+  group('sumDownloadNodeSizes', () {
+    DownloadTreeNode sized(String key, int? sizeBytes) => DownloadTreeNode(
+      key: key,
+      title: key,
+      type: DownloadNodeType.episode,
+      status: DownloadStatus.completed,
+      sizeBytes: sizeBytes,
+    );
+
+    test('adds up measured children and skips unmeasured ones', () {
+      expect(sumDownloadNodeSizes([sized('a', 100), sized('b', null), sized('c', 25)]), 125);
+    });
+
+    test('is null when no child has been measured', () {
+      expect(sumDownloadNodeSizes([sized('a', null)]), isNull);
+      expect(sumDownloadNodeSizes(const []), isNull);
+    });
+  });
 }

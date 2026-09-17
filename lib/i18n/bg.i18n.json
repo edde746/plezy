@@ -1782,6 +1782,23 @@
     "unknownSeason": "Неизвестен сезон",
     "unknownAlbum": "Неизвестен албум",
     "completedOfTotal": "Завършени: ${completed}/${total}",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Файлът не е намерен (404)",
     "errorDownloadFailed": "Изтеглянето е неуспешно",
     "errorPostProcessing": "Последващата обработка е неуспешна: ${error}",

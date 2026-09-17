@@ -1771,6 +1771,19 @@
     "unknownSeason": "不明なシーズン",
     "unknownAlbum": "不明なアルバム",
     "completedOfTotal": "${completed}/${total}完了",
+    "storageUsed": "",
+    "downloadCount": {
+      "other": ""
+    },
+    "showCount": {
+      "other": ""
+    },
+    "movieCount": {
+      "other": ""
+    },
+    "albumCount": {
+      "other": ""
+    },
     "errorFileNotFound": "ファイルが見つかりません（404）",
     "errorDownloadFailed": "ダウンロードに失敗しました",
     "errorPostProcessing": "後処理に失敗しました: ${error}",

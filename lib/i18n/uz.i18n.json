@@ -1782,6 +1782,23 @@
     "unknownSeason": "Nomaʼlum mavsum",
     "unknownAlbum": "Nomaʼlum albom",
     "completedOfTotal": "${completed}/${total} ta yakunlandi",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Fayl topilmadi (404)",
     "errorDownloadFailed": "Yuklab boʻlmadi",
     "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${error}",

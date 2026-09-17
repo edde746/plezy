@@ -6,10 +6,13 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../media/media_item.dart';
+import '../../media/media_item_types.dart';
+import '../../media/media_kind.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/formatters.dart';
 import '../../utils/music_navigation.dart';
 import '../../models/download_models.dart';
 import '../../widgets/app_icon.dart';
@@ -192,6 +195,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                       ),
                     ),
                   ),
+                _DownloadStorageSummary(tabController: tabController),
                 Expanded(
                   child: TabBarView(
                     controller: tabController,
@@ -211,6 +215,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           return DownloadTreeView(
                             downloads: downloadProvider.downloads,
                             metadata: downloadProvider.metadata,
+                            downloadSizes: downloadProvider.downloadSizes,
                             onPause: downloadProvider.pauseDownload,
                             onResume: (globalKey) {
                               final client = getClient(globalKey);
@@ -256,6 +261,61 @@ class DownloadsScreenState extends State<DownloadsScreen>
 }
 
 enum DownloadType { tvShows, movies }
+
+/// One-line storage summary for the active tab, e.g.
+/// "Storage used: 12.4 GB · 3 shows · 40 episodes". Hidden until a completed
+/// download in that tab has been measured.
+class _DownloadStorageSummary extends StatelessWidget {
+  final TabController tabController;
+
+  const _DownloadStorageSummary({required this.tabController});
+
+  List<String>? _summaryParts(DownloadProvider provider) {
+    final ({int bytes, int count}) usage;
+    final List<String> counts;
+    switch (tabController.index) {
+      case 1:
+        usage = provider.completedDownloadUsage(where: (item) => item.isEpisode);
+        counts = [t.downloads.showCount(n: provider.downloadedShows.length), t.explore.episodeCount(n: usage.count)];
+      case 2:
+        usage = provider.completedDownloadUsage(where: (item) => item.isMovie);
+        counts = [t.downloads.movieCount(n: usage.count)];
+      case 3:
+        usage = provider.completedDownloadUsage(where: (item) => item.kind == MediaKind.track);
+        counts = [t.downloads.albumCount(n: provider.downloadedAlbums.length), t.music.trackCount(n: usage.count)];
+      default:
+        usage = provider.completedDownloadUsage(
+          where: (item) => item.isEpisode || item.isMovie || item.kind == MediaKind.track,
+        );
+        counts = [t.downloads.downloadCount(n: usage.count)];
+    }
+    if (usage.bytes == 0) return null;
+    return [t.downloads.storageUsed(size: ByteFormatter.formatBytes(usage.bytes, decimals: 1)), ...counts];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: tabController,
+      builder: (context, _) => Consumer<DownloadProvider>(
+        builder: (context, provider, _) {
+          final parts = _summaryParts(provider);
+          if (parts == null) return const SizedBox.shrink();
+          return Container(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            alignment: .centerLeft,
+            child: Text(
+              parts.join(' · '),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
+              maxLines: 1,
+              overflow: .ellipsis,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
 
 /// Grid content for TV Shows and Movies tabs
 class _DownloadsGridContent extends StatefulWidget {
