@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,8 +11,7 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
-
-http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+import '../test_helpers/http_fixtures.dart';
 
 /// `/Users/{id}/Views` shape: the id is the CollectionFolder id that
 /// `ParentId=` accepts and that hidden-library keys are built from.
@@ -54,7 +52,7 @@ void main() {
       httpClient: MockClient((request) async {
         captured.add(request.url);
         final path = request.url.path;
-        if (path.endsWith('/Views')) return _json({'Items': views});
+        if (path.endsWith('/Views')) return jsonResponse({'Items': views});
         if (path == '/Items') {
           final parent = request.url.queryParameters['ParentId'];
           // Search is always library-scoped: an unscoped query can neither
@@ -62,7 +60,7 @@ void main() {
           if (parent == null) fail('Unscoped /Items search: ${request.url}');
           final includedTypes = request.url.queryParameters['IncludeItemTypes']?.split(',').toSet();
           final items = itemsByParent[parent] ?? const <Map<String, dynamic>>[];
-          return _json({
+          return jsonResponse({
             'Items': [
               for (final item in items)
                 if (includedTypes == null || includedTypes.contains(item['Type'])) item,
@@ -72,7 +70,7 @@ void main() {
         if (path == '/Artists') {
           final parent = request.url.queryParameters['parentId'];
           if (parent == null) fail('Unscoped /Artists search: ${request.url}');
-          return _json({'Items': itemsByParent['artists:$parent'] ?? const <Map<String, dynamic>>[]});
+          return jsonResponse({'Items': itemsByParent['artists:$parent'] ?? const <Map<String, dynamic>>[]});
         }
         fail('Unexpected request: ${request.url}');
       }),
@@ -231,8 +229,8 @@ void main() {
     final client = testJellyfinClient(
       httpClient: MockClient((request) async {
         captured.add(request.url);
-        if (request.url.path.endsWith('/Views')) return _json({'Items': views});
-        return _json({'Items': <Map<String, dynamic>>[]});
+        if (request.url.path.endsWith('/Views')) return jsonResponse({'Items': views});
+        return jsonResponse({'Items': <Map<String, dynamic>>[]});
       }),
     );
     addTearDown(client.close);
@@ -274,9 +272,9 @@ void main() {
           final responseViews = views;
           // Hold the search's own (first) view fetch in flight.
           if (viewsServed == 1) await viewsGate.future;
-          return _json({'Items': responseViews});
+          return jsonResponse({'Items': responseViews});
         }
-        return _json({'Items': <Map<String, dynamic>>[]});
+        return jsonResponse({'Items': <Map<String, dynamic>>[]});
       }),
     );
     addTearDown(client.close);
@@ -459,7 +457,7 @@ void main() {
       httpClient: MockClient((request) async {
         paths.add(request.url.path);
         if (request.url.path.endsWith('/Views')) return http.Response('nope', 500);
-        return _json({'Items': <Map<String, dynamic>>[]});
+        return jsonResponse({'Items': <Map<String, dynamic>>[]});
       }),
     );
     addTearDown(client.close);

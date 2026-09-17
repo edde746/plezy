@@ -43,7 +43,7 @@ import '../test_helpers/media_items.dart';
 //   - `onBackendSwitched` — wraps applyTrackSelectionWhenReady and is
 //     therefore gated on the same SettingsService dependency.
 
-MediaItem _meta({String id = 'rk1'}) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie);
+MediaItem _meta() => testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie);
 
 /// Player that records calls and can be configured per-test.
 class _FakePlayer with PlayerStreamControllersMixin implements Player {
@@ -59,10 +59,8 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   @override
   PlayerStreams get streams => _streams;
 
-  bool isDisposed = false;
-
   @override
-  bool get disposed => isDisposed;
+  bool get disposed => false;
 
   set tracks(Tracks t) {
     _state = _state.copyWith(tracks: t);
@@ -81,9 +79,7 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   final List<Media> openedMedia = [];
 
   Object? selectAudioError;
-  Object? selectSubtitleError;
   Future<void> Function(AudioTrack track)? onSelectAudioTrack;
-  Future<void> Function(SubtitleTrack track)? onSelectSubtitleTrack;
 
   @override
   Future<void> open(
@@ -106,8 +102,6 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   @override
   Future<void> selectSubtitleTrack(SubtitleTrack t) async {
     selectedSubtitle.add(t);
-    await onSelectSubtitleTrack?.call(t);
-    if (selectSubtitleError case final error?) throw error;
   }
 
   @override
@@ -133,7 +127,6 @@ TrackManager _make({
   required _FakePlayer player,
   MediaItem? metadata,
   MediaSourceInfo? mediaInfo,
-  bool active = true,
   bool Function()? isActive,
   Future<void> Function()? waitForProfileSettings,
   AudioTrack? preferredAudioTrack,
@@ -148,7 +141,7 @@ TrackManager _make({
 }) {
   return TrackManager(
     player: player,
-    isActive: isActive ?? () => active,
+    isActive: isActive ?? () => true,
     persistTrackPreference: memoryEnabler != null ? null : persister ?? _noopPersister,
     enableTrackSelectionMemory: memoryEnabler,
     getProfileSettings: () => null,

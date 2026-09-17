@@ -11,6 +11,7 @@ import 'package:plezy/metadata_edit/jellyfin_metadata_edit_adapter.dart';
 import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/utils/media_image_helper.dart';
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
 void main() {
@@ -121,20 +122,13 @@ void main() {
   });
 }
 
-JellyfinConnection _connection() {
-  return JellyfinConnection(
-    id: 'srv-1/user-1',
-    baseUrl: 'https://jf.example.com',
-    serverName: 'Home',
-    serverMachineId: 'srv-1',
-    userId: 'user-1',
-    userName: 'edde',
-    accessToken: 'tok',
-    deviceId: 'dev',
-    isAdministrator: true,
-    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-  );
-}
+JellyfinConnection _connection() => testJellyfinConnection(
+  userName: 'edde',
+  accessToken: 'tok',
+  deviceId: 'dev',
+  isAdministrator: true,
+  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+);
 
 /// Loads the editable movie, edits only the release date to [newDate], saves,
 /// and returns the DTO posted to the server.

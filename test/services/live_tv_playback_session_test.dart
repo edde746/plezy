@@ -19,6 +19,7 @@ import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 
 /// Pins the [LiveTvPlaybackSession] lifecycle on both backends — the
 /// per-backend protocol that used to be hand-rolled (3×) inside the player's
@@ -36,9 +37,6 @@ void main() {
   tearDown(() async {
     await db.close();
   });
-
-  http.Response jsonResponse(Map<String, dynamic> body) =>
-      http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
 
   group('Plex live playback session', () {
     Map<String, dynamic> tuneResponse() => {
