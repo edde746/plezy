@@ -292,6 +292,51 @@ void main() {
       );
     });
 
+    test('MPV keeps the accepted replacement when the post-load unpause is rejected', () async {
+      // Once mpv accepts the loadfile the outgoing file is gone; a failure
+      // after that point must not resurrect its frame, tracks or playhead.
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          if (call.method == 'initialize') return Future.value(true);
+          if (call.method == 'command' && (call.arguments as Map)['args'][0] == 'loadfile') {
+            return Future.value({'playlistEntryId': 2});
+          }
+          if (call.method == 'setProperty' && (call.arguments as Map)['name'] == 'pause') {
+            throw PlatformException(code: 'SET_PROPERTY_FAILED');
+          }
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            _seedTracks(player);
+            player.handlePlayerEvent('start-file', {'sourceId': 1});
+            player.handlePlayerEvent('playback-restart', {'sourceId': 1, 'positionSeconds': 188.0});
+            player.handlePropertyChange('time-pos', 188.0);
+
+            await expectLater(
+              player.open(Media('https://example.test/next.mkv', start: const Duration(seconds: 12))),
+              throwsA(isA<PlatformException>()),
+            );
+
+            expect(player.state.hasRenderedFrame, isFalse);
+            expect(player.state.position, const Duration(seconds: 12));
+            expect(player.state.tracks.audio, isEmpty);
+            // The gate stays armed for the accepted load's start-file.
+            _seedTracks(player);
+            expect(player.state.tracks.audio, isEmpty);
+            player.handlePlayerEvent('start-file', {'sourceId': 2});
+            _seedTracks(player);
+            expect(player.state.tracks.audio.single.title, 'English');
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('ExoPlayer applies audio settings queued before initialization', () async {
       final calls = <MethodCall>[];
       await withMockPlayerChannels(

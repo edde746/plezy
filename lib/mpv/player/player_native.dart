@@ -386,8 +386,12 @@ class PlayerNative extends PlayerBase {
     resetPlaybackProgress(startPosition);
     setSeekable(false);
 
+    final int? playlistEntryId;
     try {
-      return await _dispatchOpen(
+      // Only the preparation and the load itself roll back. Once mpv has
+      // accepted the replacement, the outgoing file is gone whatever fails
+      // after — see the unpause below.
+      playlistEntryId = await _loadReplacement(
         media,
         startPosition: startPosition,
         play: play,
@@ -412,9 +416,21 @@ class PlayerNative extends PlayerBase {
       }
       rethrow;
     }
+
+    // mpv's pause property survives loadfile; in-place reloads pause the old
+    // file before resolving, so explicitly unpause for the replacement. Set
+    // after loadfile so the paused old file never audibly unpauses
+    // pre-replace.
+    if (play) {
+      await setProperty('pause', 'no');
+    }
+    return playlistEntryId;
   }
 
-  Future<int?> _dispatchOpen(
+  /// Prepares the core for [media] and dispatches its `loadfile`, resolving
+  /// with the playlist entry id mpv named. Throws when any step is rejected;
+  /// nothing has replaced the outgoing file in that case.
+  Future<int?> _loadReplacement(
     Media media, {
     required Duration startPosition,
     required bool play,
@@ -498,14 +514,6 @@ class PlayerNative extends PlayerBase {
     if (_nativeCoreUnavailable) return null;
     final loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
     final playlistEntryId = loadfileReply?['playlistEntryId'];
-
-    // mpv's pause property survives loadfile; in-place reloads pause the old
-    // file before resolving, so explicitly unpause for the replacement. Set
-    // after loadfile so the paused old file never audibly unpauses
-    // pre-replace.
-    if (play) {
-      await setProperty('pause', 'no');
-    }
     return playlistEntryId is int ? playlistEntryId : null;
   }
 
