@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +15,7 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/bif_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
@@ -1632,7 +1632,9 @@ void main() {
       chapters: <MediaChapter>[],
     );
     test('fetches /Videos/{id}/index.bif?Width=320 and parses Roku BIF bytes', () async {
-      final bif = _bifWith(imageBytes: const [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0xFF, 0xD9]);
+      final bif = buildBif([
+        (timestamp: 0, bytes: [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0xFF, 0xD9]),
+      ]);
       late http.Request sent;
       final client = testEmbyClient(
         handler: (request) async {
@@ -1660,7 +1662,7 @@ void main() {
     test('a header-only BIF (extraction never ran) keeps the service unavailable', () async {
       // Emby's measured 4.9.5 answer for an item without previews: 72 bytes,
       // valid magic, zero frames.
-      final client = testEmbyClient(handler: (_) async => http.Response.bytes(_bifWith(imageBytes: const []), 200));
+      final client = testEmbyClient(handler: (_) async => http.Response.bytes(buildBif(const []), 200));
       addTearDown(client.close);
 
       final service = await client.createScrubPreviewSource(item: _item(MediaBackend.emby), mediaSource: mediaInfo);
@@ -1682,28 +1684,4 @@ void main() {
       expect(service!.isAvailable, isFalse);
     });
   });
-}
-
-/// Minimal Roku BIF: 64-byte header, one index entry and sentinel, then
-/// [imageBytes] as the (optional) single frame. Timestamps are milliseconds.
-Uint8List _bifWith({required List<int> imageBytes}) {
-  final imageCount = imageBytes.isEmpty ? 0 : 1;
-  final indexBytes = (imageCount + 1) * 8;
-  final buf = Uint8List(64 + indexBytes + imageBytes.length);
-  final view = ByteData.sublistView(buf);
-  const magic = [0x89, 0x42, 0x49, 0x46, 0x0D, 0x0A, 0x1A, 0x0A];
-  for (var i = 0; i < magic.length; i++) {
-    buf[i] = magic[i];
-  }
-  view.setUint32(12, imageCount, Endian.little);
-  view.setUint32(16, 1000, Endian.little);
-  if (imageCount > 0) {
-    view.setUint32(64, 0, Endian.little);
-    view.setUint32(68, 64 + indexBytes, Endian.little);
-  }
-  // Sentinel entry: timestamp 0xFFFFFFFF, offset = end of data.
-  view.setUint32(64 + imageCount * 8, 0xFFFFFFFF, Endian.little);
-  view.setUint32(64 + imageCount * 8 + 4, 64 + indexBytes + imageBytes.length, Endian.little);
-  buf.setRange(64 + indexBytes, 64 + indexBytes + imageBytes.length, imageBytes);
-  return buf;
 }

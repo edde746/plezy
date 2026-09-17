@@ -9,9 +9,7 @@ import 'package:plezy/media/play_queue.dart';
 import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/episode_navigation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
@@ -49,21 +47,18 @@ MediaItem _plexEpisode(String id, {required String seriesId, int? viewCount}) =>
   viewCount: viewCount,
 );
 
-/// MultiServerManager subclass that returns a pre-supplied client without
-/// going through the production add-connection flow. The base class doesn't
-/// expose a way to inject clients into its private `_clients` map, so we
-/// override the lookup directly.
-class _StubManager extends MultiServerManager {
-  _StubManager(this._client);
-  final MediaServerClient? _client;
-  @override
-  MediaServerClient? getClient(String _) => _client;
-}
-
 /// Recording client whose `fetchClientSideEpisodeQueue` is observable —
 /// callers can assert it was (or wasn't) hit.
 class _RecordingClient implements MediaServerClient {
-  _RecordingClient({required this.seriesEpisodes, this.clientBackend = MediaBackend.jellyfin, this.fetchError});
+  _RecordingClient({
+    required this.seriesEpisodes,
+    this.clientBackend = MediaBackend.jellyfin,
+    this.fetchError,
+    String serverId = 'srv-jf',
+  }) : serverId = ServerId(serverId);
+
+  @override
+  final ServerId serverId;
   final List<MediaItem> seriesEpisodes;
   final MediaBackend clientBackend;
   final Object? fetchError;
@@ -79,6 +74,9 @@ class _RecordingClient implements MediaServerClient {
 
   @override
   MediaBackend get backend => clientBackend;
+
+  @override
+  void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -118,9 +116,7 @@ void main() {
     testWidgets('returns unavailable when no play queue is active for a standalone movie', (tester) async {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
-      final manager = _StubManager(null);
-      final serverProvider = testMultiServerProvider(manager);
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer().provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -154,9 +150,7 @@ void main() {
         contextKey: 'playlist-movies',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
-      final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -197,9 +191,7 @@ void main() {
         contextKey: 'collection-movies',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
-      final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer(clients: [client]).provider;
       final currentClone = storedCurrent.copyWith(viewOffsetMs: 42);
 
       AdjacentEpisodes? result;
@@ -258,9 +250,7 @@ void main() {
           items: [previous, current, next],
         );
       });
-      final manager = _StubManager(null);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer().provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -302,9 +292,7 @@ void main() {
         contextKey: 'stale-playlist',
       );
       final client = _RecordingClient(seriesEpisodes: const []);
-      final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -373,9 +361,7 @@ void main() {
           _jfEpisode('sibling-Y', seriesId: 'series-B'),
         ],
       );
-      final manager = _StubManager(client);
-      final serverProvider = testMultiServerProvider(manager);
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -406,10 +392,12 @@ void main() {
       final ep3 = _plexEpisode('ep3', seriesId: 'series-P', viewCount: 1);
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
-      final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3], clientBackend: MediaBackend.plex);
-      final manager = _StubManager(client);
-      final serverProvider = testMultiServerProvider(manager);
-      addTearDown(serverProvider.dispose);
+      final client = _RecordingClient(
+        seriesEpisodes: [ep1, ep2, ep3],
+        clientBackend: MediaBackend.plex,
+        serverId: 'srv-plex',
+      );
+      final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -439,10 +427,9 @@ void main() {
         seriesEpisodes: const [],
         clientBackend: MediaBackend.plex,
         fetchError: StateError('network unavailable'),
+        serverId: 'srv-plex',
       );
-      final manager = _StubManager(client);
-      final serverProvider = testMultiServerProvider(manager);
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -467,10 +454,12 @@ void main() {
       final ep2 = _plexEpisode('ep2', seriesId: 'series-P', viewCount: 1);
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
-      final client = _RecordingClient(seriesEpisodes: [ep1, ep2], clientBackend: MediaBackend.plex);
-      final manager = _StubManager(client);
-      final serverProvider = testMultiServerProvider(manager);
-      addTearDown(serverProvider.dispose);
+      final client = _RecordingClient(
+        seriesEpisodes: [ep1, ep2],
+        clientBackend: MediaBackend.plex,
+        serverId: 'srv-plex',
+      );
+      final serverProvider = testMultiServer(clients: [client]).provider;
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
@@ -516,9 +505,7 @@ void main() {
         contextKey: 'series-A',
       );
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
-      final manager = _StubManager(client);
-      final serverProvider = testMultiServerProvider(manager);
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer(clients: [client]).provider;
       return (playback, client, serverProvider);
     }
 
@@ -589,9 +576,7 @@ void main() {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
-      final manager = _StubManager(client);
-      final serverProvider = testMultiServerProvider(manager);
-      addTearDown(serverProvider.dispose);
+      final serverProvider = testMultiServer(clients: [client]).provider;
 
       final result = await probe(tester, playback, serverProvider, ep3);
 
