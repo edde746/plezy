@@ -303,7 +303,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required _FrameRateStartupPlan plan,
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterStartupGate,
-    Future<void>? watchTogetherStartupHold,
     bool playbackResumedForStartupFrame = false,
   }) async {
     Future<void> resumeAfterRefresh(String reason) async {
@@ -357,7 +356,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           plan: plan,
           isCurrent: isCurrent,
           resumeAfterRefresh: resumeAfterRefresh,
-          watchTogetherStartupHold: watchTogetherStartupHold,
           playbackResumedForStartupFrame: playbackResumedForStartupFrame,
         );
       } finally {
@@ -373,7 +371,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required _FrameRateStartupPlan plan,
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterRefresh,
-    required Future<void>? watchTogetherStartupHold,
     required bool playbackResumedForStartupFrame,
   }) async {
     appLogger.d('Display matching: waiting for the first frame before negotiating the display');
@@ -402,44 +399,47 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     // Everything below drives pause/play transitions the viewer did not ask
     // for (the measurement window, the hold around the switch); a bound
-    // Watch Together room would broadcast them as intents.
-    await _withWatchTogetherDetached(startupHold: watchTogetherStartupHold, () async {
-      try {
-        if (PlatformDetector.isAppleTV()) {
-          // The decoded stream's criteria already went to AVDisplayManager
-          // natively; only the mode switch it may have started is waited out.
-          if (playbackResumedForStartupFrame) await holdResumedClock();
-          await currentPlayer.awaitDisplayModeSwitch(
-            extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
+    // Watch Together room would read them as intents. The binding stays
+    // live — its readiness, startup hold, and room anchor must survive the
+    // window — and only intent classification is held.
+    final releaseWatchTogetherIntents = _watchTogetherProvider?.holdPlayerIntents();
+    try {
+      if (PlatformDetector.isAppleTV()) {
+        // The decoded stream's criteria already went to AVDisplayManager
+        // natively; only the mode switch it may have started is waited out.
+        if (playbackResumedForStartupFrame) await holdResumedClock();
+        await currentPlayer.awaitDisplayModeSwitch(
+          extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
+        );
+      } else {
+        await holdResumedClock();
+        final measurement = await _measurePresentedFormat(currentPlayer);
+        if (!isCurrent()) return;
+        final target = _displayTargetFor(settingsService, measurement.output);
+        var switched = false;
+        if (target != null) {
+          switched = await _switchDisplayToTarget(
+            currentPlayer: currentPlayer,
+            settingsService: settingsService,
+            target: target,
+            reason: 'first-frame display switch',
+            refreshPosition: measurement.windowStart,
           );
-        } else {
-          await holdResumedClock();
-          final measurement = await _measurePresentedFormat(currentPlayer);
-          if (!isCurrent()) return;
-          final target = _displayTargetFor(settingsService, measurement.output);
-          var switched = false;
-          if (target != null) {
-            switched = await _switchDisplayToTarget(
-              currentPlayer: currentPlayer,
-              settingsService: settingsService,
-              target: target,
-              reason: 'first-frame display switch',
-              refreshPosition: measurement.windowStart,
-            );
-          }
-          // The switch's decoder refresh seeks back to the window start; with
-          // no switch, playback would otherwise begin the stepped frames in.
-          if (!switched && measurement.windowStart != null && !widget.isLive && isCurrent()) {
-            await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
-              reason: 'measurement window rewind',
-              targetPosition: measurement.windowStart,
-            );
-          }
         }
-      } catch (e) {
-        appLogger.w('Failed to negotiate the display at the first frame', error: e);
+        // The switch's decoder refresh seeks back to the window start; with
+        // no switch, playback would otherwise begin the stepped frames in.
+        if (!switched && measurement.windowStart != null && !widget.isLive && isCurrent()) {
+          await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
+            reason: 'measurement window rewind',
+            targetPosition: measurement.windowStart,
+          );
+        }
       }
-    });
+    } catch (e) {
+      appLogger.w('Failed to negotiate the display at the first frame', error: e);
+    } finally {
+      releaseWatchTogetherIntents?.call();
+    }
     if (!isCurrent()) return;
     await resumeAfterRefresh('first-frame display negotiation');
   }
@@ -1262,7 +1262,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         watchTogetherOwnsStart: wtOwnsStart,
         wtStartupHold: wtStartupHold?.call(),
       ),
-      watchTogetherStartupHold: wtStartupHold?.call()?.future,
       playbackResumedForStartupFrame: resumeForStartupFrame,
     );
 

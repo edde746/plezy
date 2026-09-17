@@ -78,14 +78,8 @@ class _Room {
       rate: 1,
       lease: host.capturePlaybackLease(selection: true),
     );
-    host.bindPlayer(
-      hostPlayer,
-      ratingKey: ratingKey,
-      serverId: 'srv',
-      mediaTitle: 'Ep',
-      hasFirstFrame: hasFirstFrame,
-      startupHold: startupHold,
-    );
+    if (hasFirstFrame) hostPlayer.setHasRenderedFrame(true);
+    host.bindPlayer(hostPlayer, ratingKey: ratingKey, serverId: 'srv', mediaTitle: 'Ep', startupHold: startupHold);
     async.flushMicrotasks();
   }
 
@@ -223,9 +217,12 @@ void main() {
 
             room.host.unbindPlayer();
             async.flushMicrotasks();
+            // A same-key reload starts a new file (nothing rendered yet); a
+            // rollback keeps the old one, whose frame the player still shows.
             // Reload/rollback callers have no intent seed: the room, not the
             // rebound player's snapshot, owns whether playback should resume.
-            room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: hasFirstFrame);
+            if (!hasFirstFrame) room.hostPlayer.emitFileStarted();
+            room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
             async.flushMicrotasks();
             if (!hasFirstFrame) {
               async.elapse(const Duration(seconds: 2));
@@ -299,6 +296,7 @@ void main() {
         );
         async.flushMicrotasks();
         expect(room.host.phase, PlaybackPhase.loading);
+        room.hostPlayer.emitFileStarted();
         room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
         async.elapse(const Duration(seconds: 2));
         expect(room.hostPlayer.state.playing, isFalse);
@@ -321,6 +319,7 @@ void main() {
         async.flushMicrotasks();
         room.hostPlayer.emitPlaying(false);
         async.flushMicrotasks();
+        room.hostPlayer.emitFileStarted();
         room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
         async.elapse(const Duration(seconds: 2));
         expect(room.hostPlayer.state.playing, isFalse);
@@ -629,6 +628,112 @@ void main() {
     });
   });
 
+  group('display negotiation under a startup hold', () {
+    // #2370: on Apple TV the screen rebinds the player after the first frame
+    // while the startup hold is still pending. The frame belongs to the
+    // player, not to the binding that watched it render.
+    test('a host rebind after the first frame keeps that frame and starts once the hold releases', () {
+      fakeAsync((async) {
+        final room = _Room(async, controlMode: ControlMode.anyone);
+        final hold = Completer<void>();
+        room.hostStartsMedia(startupHold: hold.future);
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+
+        room.host.unbindPlayer();
+        async.flushMicrotasks();
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', startupHold: hold.future);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 2));
+        expect(room.hostPlayer.state.playing, isFalse, reason: 'the hold still gates the start');
+
+        hold.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.lastHostState().phase, PlaybackPhase.playing);
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+        room.dispose();
+      });
+    });
+
+    test('a guest rebind after the first frame keeps that frame and reports ready once the hold releases', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        final hold = Completer<void>();
+        room.hostStartsMedia();
+        room.guestJoinsMedia(startupHold: hold.future);
+        room.bothBecomeReady();
+
+        room.guest.unbindPlayer();
+        async.flushMicrotasks();
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv', startupHold: hold.future);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 2));
+        expect(room.guestService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.status).status!.ready, isFalse);
+        expect(room.hostPlayer.state.playing, isFalse);
+
+        hold.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.lastHostState().phase, PlaybackPhase.playing);
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+        room.dispose();
+      });
+    });
+
+    test('screen-driven transitions under an intent hold neither pause nor start the room', () {
+      fakeAsync((async) {
+        final room = _Room(async, controlMode: ControlMode.anyone);
+        final hold = Completer<void>();
+        room.hostStartsMedia(startupHold: hold.future);
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+        final statesBefore = room.hostService.outgoingLog.where((m) => m.type == SyncMessageType.state).length;
+
+        // The display-matching measurement window steps frames: the player
+        // unpauses and re-pauses without anyone asking.
+        final release = room.host.holdPlayerIntents()!;
+        room.hostPlayer.emitPlaying(true);
+        room.hostPlayer.emitPlaying(false);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 1));
+        release();
+
+        expect(room.host.phase, PlaybackPhase.loading);
+        expect(
+          room.hostService.outgoingLog
+              .skip(statesBefore)
+              .where((m) => m.type == SyncMessageType.state)
+              .map((m) => m.state!.phase),
+          isNot(contains(PlaybackPhase.paused)),
+        );
+
+        hold.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.lastHostState().phase, PlaybackPhase.playing);
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+
+        // Released: the viewer's own pause is an intent again.
+        room.hostPlayer.emitPlaying(false);
+        async.flushMicrotasks();
+        expect(room.lastHostState().phase, PlaybackPhase.paused);
+        room.dispose();
+      });
+    });
+
+    test('holding intents with no bound player is a no-op', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        expect(room.host.holdPlayerIntents(), isNull);
+        room.dispose();
+      });
+    });
+  });
+
   group('lobby control mode propagation', () {
     test('a host join delivers the control mode to an idle-room guest', () {
       fakeAsync((async) {
@@ -889,7 +994,8 @@ void main() {
           ),
           isFalse,
         );
-        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'A', serverId: 'srv', hasFirstFrame: true);
+        room.guestPlayer.setHasRenderedFrame(true);
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'A', serverId: 'srv');
         async.elapse(const Duration(seconds: 6));
         final authored = room.guestService.outgoingLog.where((m) => m.type == SyncMessageType.state);
         expect(authored.every((m) => m.state!.ratingKey == 'B'), isTrue);
@@ -1310,14 +1416,8 @@ void main() {
 
         room.guest.unbindPlayer();
         async.flushMicrotasks();
-        final replacement = FakeSyncPlayer(position: const Duration(minutes: 2));
-        room.guest.bindPlayer(
-          replacement,
-          ratingKey: 'rk1',
-          serverId: 'srv',
-          hasFirstFrame: true,
-          startupHold: replacementHold.future,
-        );
+        final replacement = FakeSyncPlayer(position: const Duration(minutes: 2), hasRenderedFrame: true);
+        room.guest.bindPlayer(replacement, ratingKey: 'rk1', serverId: 'srv', startupHold: replacementHold.future);
         async.flushMicrotasks();
         room.host.applyHostChange(sessionAs(SessionRole.host, hostPeerId: 'host'));
         room.guest.applyHostChange(sessionAs(SessionRole.guest, hostPeerId: 'host'));
@@ -1518,7 +1618,7 @@ void main() {
         // adopted epoch rather than opening a new one.
         room.guestPlayer.setPosition(const Duration(seconds: 5));
         room.guestPlayer.commandLog.clear();
-        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv');
         async.flushMicrotasks();
         async.elapse(const Duration(seconds: 6));
 

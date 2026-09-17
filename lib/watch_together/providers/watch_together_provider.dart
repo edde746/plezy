@@ -622,7 +622,6 @@ class WatchTogetherProvider with ChangeNotifier {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
-    bool hasFirstFrame = false,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
     required WatchPlaybackLease lease,
@@ -633,7 +632,6 @@ class WatchTogetherProvider with ChangeNotifier {
       ratingKey: ratingKey,
       serverId: serverId,
       mediaTitle: mediaTitle,
-      hasFirstFrame: hasFirstFrame,
       startupHold: startupHold,
       remoteSeek: remoteSeek,
     );
@@ -642,6 +640,10 @@ class WatchTogetherProvider with ChangeNotifier {
   void unbindPlayer({Object? expectedBinding}) {
     _controller?.unbindPlayer(expectedBinding: expectedBinding);
   }
+
+  /// Keep the bound player's play/pause transitions from being read as viewer
+  /// intents until the returned callback runs; null when nothing is bound.
+  VoidCallback? holdPlayerIntents() => _controller?.holdPlayerIntents();
 
   /// True exit ends the epoch even during a reload gap, exactly once.
   void endMedia({Object? expectedBinding}) {

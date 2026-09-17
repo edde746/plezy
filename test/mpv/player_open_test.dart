@@ -1101,6 +1101,45 @@ void main() {
       );
     });
 
+    test('state records whether the current file has rendered a frame', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            expect(player.state.hasRenderedFrame, isFalse);
+            player.handlePlayerEvent('start-file', {'sourceId': 1});
+            player.handlePlayerEvent('file-loaded', {'sourceId': 1});
+            expect(player.state.hasRenderedFrame, isFalse);
+            player.handlePlayerEvent('playback-restart', {'sourceId': 1, 'positionSeconds': 0.0});
+            expect(player.state.hasRenderedFrame, isTrue);
+
+            // A seek's restart and end of file leave the fact in place.
+            player.handlePlayerEvent('playback-restart', {'sourceId': 1, 'positionSeconds': 30.0});
+            player.handlePlayerEvent('end-file', {'sourceId': 1, 'reason': 0});
+            expect(player.state.hasRenderedFrame, isTrue);
+
+            // A new file starts with nothing rendered; a replaced source's late
+            // restart cannot claim the new one's frame.
+            player.handlePlayerEvent('start-file', {'sourceId': 2});
+            expect(player.state.hasRenderedFrame, isFalse);
+            player.handlePlayerEvent('playback-restart', {'sourceId': 1, 'positionSeconds': 31.0});
+            expect(player.state.hasRenderedFrame, isFalse);
+            player.handlePlayerEvent('playback-restart', {'sourceId': 2, 'positionSeconds': 0.0});
+            expect(player.state.hasRenderedFrame, isTrue);
+
+            // A backend without start-file (ExoPlayer) marks the new file at
+            // its media-item transition instead.
+            player.handlePlayerEvent('file-loaded', {'sourceId': 2});
+            expect(player.state.hasRenderedFrame, isFalse);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV exposes primary media readiness before external subtitles finish', () async {
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',

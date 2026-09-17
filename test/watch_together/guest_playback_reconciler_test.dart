@@ -42,7 +42,8 @@ class _Harness {
   int nowMs() => _epochMs + async.elapsed.inMilliseconds;
 
   void attachReady() {
-    reconciler.attach(attached, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+    player.setHasRenderedFrame(true);
+    reconciler.attach(attached, ratingKey: 'rk1', serverId: 'srv');
     async.flushMicrotasks();
   }
 
@@ -678,9 +679,13 @@ void main() {
     test('live (!seekable) limits corrections to play/pause/rate', () {
       fakeAsync((async) {
         final h = _Harness(async);
-        final livePlayer = FakeSyncPlayer(seekable: false, position: const Duration(minutes: 2));
+        final livePlayer = FakeSyncPlayer(
+          seekable: false,
+          position: const Duration(minutes: 2),
+          hasRenderedFrame: true,
+        );
         final attached = AttachedPlayer(player: livePlayer, onLost: () {}, nowMs: h.nowMs);
-        h.reconciler.attach(attached, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+        h.reconciler.attach(attached, ratingKey: 'rk1', serverId: 'srv');
         async.flushMicrotasks();
 
         h.deliverAndSettleDrift(h.state(anchorPositionMs: livePlayer.state.position.inMilliseconds + 60000));

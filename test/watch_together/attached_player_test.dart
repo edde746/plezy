@@ -114,6 +114,72 @@ void main() {
         attached.dispose();
       });
     });
+
+    test('an intent hold drops unacknowledged transitions but not command acks', () {
+      fakeAsync((async) {
+        final (attached, player, _) = build(async);
+        final intents = <bool>[];
+        final acks = <bool>[];
+        attached.playingIntents.listen(intents.add);
+        attached.playingAcks.listen(acks.add);
+
+        final release = attached.holdIntents();
+        // A frame-step: the screen unpauses and re-pauses the player itself.
+        player.emitPlaying(true);
+        player.emitPlaying(false);
+        async.flushMicrotasks();
+        expect(intents, isEmpty);
+
+        attached.play();
+        async.flushMicrotasks();
+        expect(acks, [true]);
+        expect(intents, isEmpty);
+
+        release();
+        release(); // Idempotent: a second call cannot unbalance a nested hold.
+        player.emitPlaying(false);
+        async.flushMicrotasks();
+        expect(intents, [false]);
+        attached.dispose();
+      });
+    });
+
+    test('nested intent holds release only once every holder has released', () {
+      fakeAsync((async) {
+        final (attached, player, _) = build(async);
+        final intents = <bool>[];
+        attached.playingIntents.listen(intents.add);
+
+        final outer = attached.holdIntents();
+        final inner = attached.holdIntents();
+        inner();
+        player.emitPlaying(true);
+        async.flushMicrotasks();
+        expect(intents, isEmpty);
+
+        outer();
+        player.emitPlaying(false);
+        async.flushMicrotasks();
+        expect(intents, [false]);
+        attached.dispose();
+      });
+    });
+
+    test('first-frame readiness is the player\'s current-file fact, not a binding snapshot', () {
+      fakeAsync((async) {
+        final (attached, player, _) = build(async);
+        expect(attached.firstFrameSeen, isFalse);
+
+        player.emitPlaybackRestart();
+        attached.unbind();
+        attached.observeBinding(ratingKey: 'A', serverId: 'srv');
+        expect(attached.firstFrameSeen, isTrue, reason: 'a rebind around the same file keeps its frame');
+
+        player.emitFileStarted();
+        expect(attached.firstFrameSeen, isFalse, reason: 'a new file has rendered nothing yet');
+        attached.dispose();
+      });
+    });
   });
 
   group('guarded commands', () {
@@ -234,7 +300,7 @@ void main() {
         attached.seek(const Duration(seconds: 30)).then((v) => result = v);
         async.flushMicrotasks();
         attached.unbind();
-        attached.observeBinding(ratingKey: 'B', serverId: 'srv', hasFirstFrame: true);
+        attached.observeBinding(ratingKey: 'B', serverId: 'srv');
         player.setPosition(const Duration(seconds: 5));
         pending.completeError(StateError('old screen gone'));
         async.flushMicrotasks();

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../mpv/mpv.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/serial_future_queue.dart';
@@ -201,7 +203,6 @@ class WatchTogetherController {
           attached,
           ratingKey: attached.ratingKey!,
           serverId: attached.serverId!,
-          hasFirstFrame: attached.firstFrameSeen,
           startupHold: attached.startupHold,
         );
       }
@@ -215,7 +216,6 @@ class WatchTogetherController {
           attached,
           ratingKey: attached.ratingKey!,
           serverId: attached.serverId!,
-          hasFirstFrame: attached.firstFrameSeen,
           startupHold: attached.startupHold,
         );
       }
@@ -234,7 +234,6 @@ class WatchTogetherController {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
-    bool hasFirstFrame = false,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
   }) {
@@ -257,7 +256,6 @@ class WatchTogetherController {
       ratingKey: ratingKey,
       serverId: serverId,
       mediaTitle: mediaTitle,
-      hasFirstFrame: hasFirstFrame,
       startupHold: startupHold,
       remoteSeek: remoteSeek,
     );
@@ -265,24 +263,17 @@ class WatchTogetherController {
     final owner = Object();
     _bindingOwner = owner;
     if (_session.isHost) {
-      _coordinator!.attach(
-        attached,
-        ratingKey: ratingKey,
-        serverId: serverId,
-        hasFirstFrame: hasFirstFrame,
-        startupHold: startupHold,
-      );
+      _coordinator!.attach(attached, ratingKey: ratingKey, serverId: serverId, startupHold: startupHold);
     } else {
-      _reconciler!.attach(
-        attached,
-        ratingKey: ratingKey,
-        serverId: serverId,
-        hasFirstFrame: hasFirstFrame,
-        startupHold: startupHold,
-      );
+      _reconciler!.attach(attached, ratingKey: ratingKey, serverId: serverId, startupHold: startupHold);
     }
     return owner;
   }
+
+  /// Keep the bound player's play/pause transitions from being read as
+  /// viewer intents until the returned callback runs; null when no player is
+  /// bound. See [AttachedPlayer.holdIntents].
+  VoidCallback? holdPlayerIntents() => _attachedPlayer?.holdIntents();
 
   /// Revoke output observations, retaining its ledger and the room's epoch.
   void unbindPlayer({Object? expectedBinding}) {

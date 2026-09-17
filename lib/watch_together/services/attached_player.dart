@@ -48,10 +48,7 @@ class AttachedPlayer {
     _subscriptions.add(player.streams.buffering.listen(_onBufferingEvent));
     _subscriptions.add(
       player.streams.playbackRestart.listen((_) {
-        if (!_disposed) {
-          firstFrameSeen = true;
-          _loadedSignalsController.add(null);
-        }
+        if (!_disposed) _loadedSignalsController.add(null);
       }),
     );
   }
@@ -78,11 +75,17 @@ class AttachedPlayer {
   bool _disposed = false;
   bool _lostFired = false;
   int _bindingGeneration = 0;
+  int _intentHolds = 0;
   String? ratingKey;
   String? serverId;
   String? mediaTitle;
-  bool firstFrameSeen = false;
   Future<void>? startupHold;
+
+  /// Whether the player's current file has rendered a frame. Read from the
+  /// player itself so a binding made after the frame — a rebind around a
+  /// reload, a promotion, a room that adopted media before the screen bound
+  /// its output — sees the same fact as one that watched it happen.
+  bool get firstFrameSeen => _player.state.hasRenderedFrame;
 
   bool wraps(Player player) => identical(_player, player);
 
@@ -91,7 +94,6 @@ class AttachedPlayer {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
-    required bool hasFirstFrame,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
   }) {
@@ -99,9 +101,25 @@ class AttachedPlayer {
     this.ratingKey = ratingKey;
     this.serverId = serverId;
     this.mediaTitle = mediaTitle;
-    firstFrameSeen = hasFirstFrame;
     this.startupHold = startupHold;
     _remoteSeek = remoteSeek;
+  }
+
+  /// Stop reading play/pause transitions as viewer intents until the
+  /// returned callback runs. For a flow that drives the player itself — the
+  /// display-matching measurement window, the hold around an HDMI switch —
+  /// while the binding must stay live so readiness, the startup hold, and
+  /// the room's anchor survive it. Command acknowledgements still flow;
+  /// only unacknowledged transitions are dropped. Holds nest; the callback
+  /// is idempotent.
+  VoidCallback holdIntents() {
+    _intentHolds++;
+    var released = false;
+    return () {
+      if (released) return;
+      released = true;
+      _intentHolds--;
+    };
   }
 
   /// Revokes source-local continuations without discarding the physical ledger.
@@ -305,6 +323,7 @@ class AttachedPlayer {
       _playingAcksController.add(value);
       return;
     }
+    if (_intentHolds > 0) return;
     _playingIntentsController.add(value);
   }
 
@@ -317,6 +336,7 @@ class AttachedPlayer {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    _intentHolds = 0;
     _expectations.clear();
     final subscriptions = List<StreamSubscription<dynamic>>.of(_subscriptions);
     _subscriptions.clear();

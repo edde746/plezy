@@ -568,6 +568,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         _primaryMediaReadyEmitted = false;
         _primaryFileLoaded = false;
         _lastErrorLogText = null;
+        _state = _state.copyWith(hasRenderedFrame: false);
         fileStartedController.add(null);
         if (sourceId != null) {
           sourceStartedController.add(PlayerSourceStarted(sourceId));
@@ -628,13 +629,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'file-loaded':
         if (sourceId != null && sourceId != _activeSourceId) break;
         _primaryFileLoaded = true;
-        _state = _state.copyWith(completed: false);
+        // ExoPlayer reports no start-file: its media-item transition is the
+        // only "new file" boundary before the frame it renders next.
+        _state = _state.copyWith(completed: false, hasRenderedFrame: false);
         completedController.add(false);
         fileLoadedController.add(null);
         break;
 
       case 'playback-restart':
         if (sourceId != null && sourceId != _activeSourceId) break;
+        _state = _state.copyWith(hasRenderedFrame: true);
         playbackRestartController.add(null);
         if (sourceId != null && !_activeSourceReadyEmitted) {
           final positionMs = _millisecondsFromSeconds(data?['positionSeconds'], round: true);
