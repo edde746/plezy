@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/live_tv_support.dart';
 import 'package:plezy/media/media_source_info.dart';
@@ -7,6 +8,91 @@ import 'package:plezy/models/livetv_capture_buffer.dart';
 import 'package:plezy/screens/video_player/live_timeline_report.dart';
 
 void main() {
+  group('capture metadata polling', () {
+    test('refreshes a paused buffer every two seconds after the startup grace period', () {
+      fakeAsync((async) {
+        final session = _FakeSession(_buffer(1000));
+        var buffer = session.captureBuffer;
+        final timer = startLiveTimelinePolling(
+          interval: const Duration(seconds: 2),
+          isCurrent: () => true,
+          onTick: () {},
+          report: () => _run(
+            session,
+            1,
+            state: 'paused',
+            currentSession: () => session,
+            currentGeneration: () => 1,
+            commit: (update) => buffer = update,
+          ),
+        );
+        async.elapse(const Duration(seconds: 2));
+        expect(session.states, isEmpty, reason: 'Do not reopen the startup transcode with an early heartbeat');
+        async.elapse(const Duration(seconds: 1));
+        session.complete(0, _buffer(1003));
+        async.flushMicrotasks();
+        expect(buffer.startedAt, 1003);
+        async.elapse(const Duration(seconds: 1));
+        session.complete(1, _buffer(1004));
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 2));
+        session.complete(2, _buffer(1006));
+        async.flushMicrotasks();
+        expect(buffer.startedAt, 1006);
+        expect(session.states, ['paused', 'paused', 'paused']);
+        timer.cancel();
+      });
+    });
+
+    test('slow requests do not overlap, but freshness ticks continue and polling resumes', () {
+      fakeAsync((async) {
+        final requests = <Completer<void>>[];
+        var ticks = 0;
+        final timer = startLiveTimelinePolling(
+          interval: const Duration(seconds: 2),
+          isCurrent: () => true,
+          onTick: () => ticks++,
+          report: () {
+            final request = Completer<void>();
+            requests.add(request);
+            return request.future;
+          },
+        );
+        async.elapse(const Duration(seconds: 10));
+        expect(requests, hasLength(1));
+        expect(ticks, greaterThan(1));
+        requests.single.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 2));
+        expect(requests, hasLength(2));
+        timer.cancel();
+        requests.last.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 10));
+        expect(requests, hasLength(2));
+      });
+    });
+
+    test('cancellation or obsolete ownership suppresses the delayed initial report', () {
+      fakeAsync((async) {
+        var reports = 0;
+        var current = true;
+        Timer start() => startLiveTimelinePolling(
+          interval: const Duration(seconds: 2),
+          isCurrent: () => current,
+          onTick: () {},
+          report: () async => reports++,
+        );
+        start().cancel();
+        final obsolete = start();
+        current = false;
+        async.elapse(const Duration(seconds: 6));
+        expect(reports, 0);
+        obsolete.cancel();
+      });
+    });
+  });
+
   test('live stop drains an in-flight heartbeat and rejects later progress', () async {
     final queue = LiveTimelineReportQueue();
     final session = _FakeSession(_buffer(1000));

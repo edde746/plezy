@@ -1,25 +1,18 @@
-import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 
 import '../../../i18n/strings.g.dart';
-import '../../../models/livetv_capture_buffer.dart';
+import '../../../media/live_tv_timeline.dart';
 import '../../../mpv/mpv.dart';
-import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/formatters.dart';
-import '../../clickable_cursor.dart';
-import '../helpers/eager_horizontal_drag_recognizer.dart';
+import 'timeline_slider.dart';
 
-/// Timeline bar for live TV time-shift.
-///
-/// Listens to player position while delegating the player-clock-to-epoch
-/// mapping to [epochForPosition], the same mapping used by seek commands and
-/// timeline heartbeats. The slider range covers the capture buffer.
+/// A backend-neutral epoch timeline. Program bounds describe the whole track;
+/// only the intersection with the backend's playable grid accepts scrubbing.
 class LiveTimelineBar extends StatefulWidget {
   final Player player;
-  final CaptureBuffer captureBuffer;
-  final int Function(Duration position) epochForPosition;
-  final bool isAtLiveEdge;
-  final ValueChanged<int>? onSeekEnd;
+  final LiveTvTimeline Function(Duration position) timelineForPosition;
+  final ValueChanged<double>? onSeekEnd;
+  final ValueChanged<int>? onSeekBy;
   final bool horizontalLayout;
   final FocusNode? focusNode;
   final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
@@ -29,10 +22,9 @@ class LiveTimelineBar extends StatefulWidget {
   const LiveTimelineBar({
     super.key,
     required this.player,
-    required this.captureBuffer,
-    required this.epochForPosition,
-    this.isAtLiveEdge = true,
+    required this.timelineForPosition,
     this.onSeekEnd,
+    this.onSeekBy,
     this.horizontalLayout = true,
     this.focusNode,
     this.onKeyEvent,
@@ -45,12 +37,9 @@ class LiveTimelineBar extends StatefulWidget {
 }
 
 class _LiveTimelineBarState extends State<LiveTimelineBar> {
-  bool _isDragging = false;
-  int _dragPositionEpoch = 0;
-
-  /// Position emits ~4x/sec but everything rendered is whole seconds, so
-  /// rebuild only when the second changes (see ContentStrip's chapter index
-  /// stream for the same pattern).
+  double? _dragRangeStart;
+  double? _dragRangeEnd;
+  Object? _dragProgramIdentity;
   late Stream<int> _positionSecondsStream;
 
   @override
@@ -62,264 +51,185 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   @override
   void didUpdateWidget(LiveTimelineBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.player, widget.player)) _bindPositionStream();
+    if (!identical(oldWidget.player, widget.player)) {
+      _clearDragRange();
+      _bindPositionStream();
+    }
+    if (!widget.enabled) _clearDragRange();
   }
 
   void _bindPositionStream() {
     _positionSecondsStream = widget.player.streams.position.map((position) => position.inSeconds).distinct();
   }
 
-  int get _rangeStart => widget.captureBuffer.seekableStartEpoch;
-  int get _rangeEnd => widget.captureBuffer.seekableEndEpoch;
+  LiveTvTimeline get _timeline => widget.timelineForPosition(widget.player.state.position);
 
-  int _currentEpoch(int positionSeconds) => widget.epochForPosition(Duration(seconds: positionSeconds));
+  String _clock(double epoch, {bool includeSeconds = false}) => formatClockTime(
+    DateTime.fromMillisecondsSinceEpoch((epoch * 1000).round()),
+    is24Hour: MediaQuery.alwaysUse24HourFormatOf(context),
+    includeSeconds: includeSeconds,
+  );
 
-  int _displayPosition(int positionSeconds) => _isDragging ? _dragPositionEpoch : _currentEpoch(positionSeconds);
-
-  String _formatEpochTime(BuildContext context, int epochSeconds) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(epochSeconds * 1000);
-    return formatClockTime(dt, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context));
+  String _positionValue(LiveTvTimeline timeline) {
+    final preview = timeline.programPreviewEpoch;
+    if (preview != null) return '${t.liveTv.timelinePending}: ${_clock(preview, includeSeconds: true)}';
+    if (timeline.isAtLive) return t.liveTv.live;
+    final confirmed = timeline.confirmedPlayheadEpoch;
+    if (confirmed != null) return _clock(confirmed);
+    final estimate = timeline.estimatedPlayheadEpoch;
+    if (estimate != null) return '${t.liveTv.timelineEstimated}: ${_clock(estimate)}';
+    return t.liveTv.timelineUnavailable;
   }
 
-  bool get _hasSeekableRange => _rangeEnd > _rangeStart;
+  bool _canScrub(LiveTvTimeline timeline) =>
+      widget.enabled &&
+      widget.onSeekEnd != null &&
+      timeline.hasRange &&
+      timeline.scrubTarget(timeline.startEpoch!) != null;
 
-  int _normalizedEpoch(int epoch) {
-    if (!_hasSeekableRange) return _rangeStart;
-    return epoch.clamp(_rangeStart, _rangeEnd);
-  }
-
-  int _semanticTarget(int displayPos, int deltaSeconds) {
-    final current = _normalizedEpoch(displayPos);
-    return (current + deltaSeconds).clamp(_rangeStart, _rangeEnd);
-  }
-
-  String _semanticEpochValue(int epoch, {bool isCurrent = false}) {
-    if ((isCurrent && widget.isAtLiveEdge) || (_hasSeekableRange && epoch >= _rangeEnd)) {
-      return t.liveTv.live;
-    }
-    return _formatEpochTime(context, epoch);
-  }
-
-  void _semanticSeekBy(int displayPos, int deltaSeconds) {
-    final seek = widget.onSeekEnd;
-    if (!widget.enabled || seek == null || !_hasSeekableRange) return;
-
-    final current = _normalizedEpoch(displayPos);
-    final target = _semanticTarget(current, deltaSeconds);
-    if (target != current) seek(target);
-  }
-
-  double _epochToFraction(int epoch) {
-    final range = _rangeEnd - _rangeStart;
-    if (range <= 0) return 1.0; // No range yet → show at live edge (right)
-    return ((epoch - _rangeStart) / range).clamp(0.0, 1.0);
-  }
-
-  int _fractionToEpoch(double fraction) {
-    final range = _rangeEnd - _rangeStart;
-    return (_rangeStart + (fraction * range).round()).clamp(_rangeStart, _rangeEnd);
-  }
-
-  double _widthOf(BuildContext context) {
-    final renderObject = context.findRenderObject();
-    return renderObject is RenderBox ? renderObject.size.width : 0.0;
+  double? _relativeTarget(LiveTvTimeline timeline, int delta) {
+    if (!widget.enabled || widget.onSeekBy == null) return null;
+    final current = timeline.pendingSeekEpoch ?? (timeline.playback.active ? timeline.playback.epoch : null);
+    if (current == null) return null;
+    final target = timeline.seekable?.target(current + delta);
+    return target == current ? null : target;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<int>(
-      stream: _positionSecondsStream,
-      initialData: widget.player.state.position.inSeconds,
-      builder: (context, snapshot) {
-        final displayPos = _displayPosition(snapshot.requireData);
-
-        if (widget.horizontalLayout) {
-          return _buildHorizontalLayout(displayPos);
-        }
-        return _buildVerticalLayout(displayPos);
-      },
-    );
-  }
-
-  Widget _buildHorizontalLayout(int displayPos) {
-    return Row(
-      children: [
-        ExcludeSemantics(
-          child: Text(
-            _formatEpochTime(context, displayPos),
-            style: const TextStyle(color: Colors.white70, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()]),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(child: _buildSlider(displayPos)),
-      ],
-    );
-  }
-
-  Widget _buildVerticalLayout(int displayPos) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildSlider(displayPos),
-          const SizedBox(height: 4),
-          Align(
-            alignment: .centerLeft,
-            child: ExcludeSemantics(
-              child: Text(
-                _formatEpochTime(context, displayPos),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
-              ),
+  Widget build(BuildContext context) => StreamBuilder<int>(
+    stream: _positionSecondsStream,
+    initialData: widget.player.state.position.inSeconds,
+    builder: (context, snapshot) {
+      final timeline = widget.timelineForPosition(Duration(seconds: snapshot.requireData));
+      return Padding(
+        padding: widget.horizontalLayout ? EdgeInsets.zero : const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSlider(timeline),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(timeline.startEpoch == null ? '—' : _clock(timeline.startEpoch!), style: _timeStyle),
+                Text(timeline.endEpoch == null ? '—' : _clock(timeline.endEpoch!), style: _timeStyle),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSlider(int displayPos) {
-    final positionFraction = _epochToFraction(displayPos);
-    final normalizedDisplayPos = _normalizedEpoch(displayPos);
-    final semanticsEnabled = widget.enabled && widget.onSeekEnd != null && _hasSeekableRange;
-    final canIncrease = semanticsEnabled && normalizedDisplayPos < _rangeEnd;
-    final canDecrease = semanticsEnabled && normalizedDisplayPos > _rangeStart;
-
-    return FocusableWrapper(
-      focusNode: widget.focusNode,
-      onKeyEvent: widget.enabled ? widget.onKeyEvent : null,
-      onFocusChange: widget.onFocusChange,
-      borderRadius: 8,
-      autoScroll: false,
-      useBackgroundFocus: true,
-      disableScale: true,
-      child: Builder(
-        builder: (context) {
-          return ClickableCursor(
-            enabled: widget.enabled,
-            // Eager claim: a touch that lands on the scrubber belongs to it
-            // from pointer-down, so ancestor recognizers can't steal the drag
-            // (#1302). A plain tap is onStart+onEnd, which seeks to the
-            // tapped position.
-            child: Semantics(
-              label: t.videoControls.timelineSlider,
-              slider: true,
-              value: _semanticEpochValue(normalizedDisplayPos, isCurrent: true),
-              increasedValue: canIncrease ? _semanticEpochValue(_semanticTarget(normalizedDisplayPos, 10)) : null,
-              decreasedValue: canDecrease ? _semanticEpochValue(_semanticTarget(normalizedDisplayPos, -10)) : null,
-              enabled: semanticsEnabled,
-              onIncrease: canIncrease ? () => _semanticSeekBy(normalizedDisplayPos, 10) : null,
-              onDecrease: canDecrease ? () => _semanticSeekBy(normalizedDisplayPos, -10) : null,
-              child: RawGestureDetector(
-                behavior: HitTestBehavior.opaque,
-                excludeFromSemantics: true,
-                gestures: widget.enabled
-                    ? <Type, GestureRecognizerFactory>{
-                        EagerHorizontalDragGestureRecognizer:
-                            GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
-                              () =>
-                                  EagerHorizontalDragGestureRecognizer(debugOwner: this)
-                                    ..dragStartBehavior = DragStartBehavior.down,
-                              (instance) {
-                                instance.onStart = (details) => _onDragStart(details, _widthOf(context));
-                                instance.onUpdate = (details) => _onDragUpdate(details, _widthOf(context));
-                                instance.onEnd = (_) => _onDragEnd();
-                                instance.onCancel = _onDragEnd;
-                              },
-                            ),
-                      }
-                    : const <Type, GestureRecognizerFactory>{},
-                child: ExcludeSemantics(
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 24,
-                    child: CustomPaint(painter: _LiveTimelinePainter(positionFraction: positionFraction)),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _onDragStart(DragStartDetails details, double width) {
-    setState(() {
-      _isDragging = true;
-      _dragPositionEpoch = _currentEpoch(widget.player.state.position.inSeconds);
-    });
-    _applyDrag(details.localPosition.dx, width);
-  }
-
-  void _onDragUpdate(DragUpdateDetails details, double width) {
-    if (!_isDragging) return;
-    _applyDrag(details.localPosition.dx, width);
-  }
-
-  void _applyDrag(double dx, double width) {
-    if (width <= 0) return;
-    final fraction = (dx / width).clamp(0.0, 1.0);
-    setState(() {
-      _dragPositionEpoch = _fractionToEpoch(fraction);
-    });
-  }
-
-  /// Shared by onEnd and onCancel so an interrupted drag still finalizes.
-  void _onDragEnd() {
-    if (!_isDragging) return;
-    final target = _dragPositionEpoch;
-    setState(() => _isDragging = false);
-    widget.onSeekEnd?.call(target);
-  }
-}
-
-class _LiveTimelinePainter extends CustomPainter {
-  final double positionFraction;
-
-  _LiveTimelinePainter({required this.positionFraction});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final trackY = size.height / 2;
-    const trackHeight = 8.0;
-    final trackRadius = Radius.circular(trackHeight / 2);
-    final posX = positionFraction * w;
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(w / 2, trackY), width: w, height: trackHeight),
-        trackRadius,
-      ),
-      Paint()..color = Colors.white.withValues(alpha: 0.15),
-    );
-
-    if (posX > 0) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTRB(0, trackY - trackHeight / 2, posX, trackY + trackHeight / 2),
-          trackRadius,
+          ],
         ),
-        Paint()..color = Colors.red,
       );
-    }
+    },
+  );
 
-    // Handle thumb (pill shape matching HandleThumbShape)
-    const thumbWidth = 4.0;
-    const thumbHeight = 20.0;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(posX, trackY), width: thumbWidth, height: thumbHeight),
-        Radius.circular(thumbWidth / 2),
+  static const _timeStyle = TextStyle(
+    color: Colors.white70,
+    fontSize: 12,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
+
+  Duration _offset(LiveTvTimeline timeline, double epoch) =>
+      Duration(milliseconds: ((epoch - timeline.startEpoch!) * 1000).round());
+
+  Widget _buildSlider(LiveTvTimeline timeline) {
+    final increase = _relativeTarget(timeline, 10);
+    final decrease = _relativeTarget(timeline, -10);
+    final pending = timeline.pendingSeekEpoch;
+    final destination = timeline.programPreviewEpoch ?? pending;
+    final position = destination != null && timeline.contains(destination)
+        ? destination
+        : timeline.confirmedPlayheadEpoch ?? timeline.estimatedPlayheadEpoch;
+    return Semantics(
+      label: t.videoControls.timelineSlider,
+      slider: true,
+      value: _positionValue(timeline),
+      // Keep uncertainty accessible without adding status text to the bar.
+      hint: [
+        if (timeline.mode == LiveTvTimelineMode.buffer) t.liveTv.timelineBuffer,
+        if (timeline.mode == LiveTvTimelineMode.liveProgramFallback) t.liveTv.timelineLiveProgram,
+        if (timeline.programDataStale) t.liveTv.timelineStale,
+        if (timeline.programPreviewEpoch == null && timeline.playbackOutOfWindow) t.liveTv.unknownProgram,
+        if (pending != null) t.liveTv.timelinePending,
+        if (timeline.seekStatus == LiveTvSeekStatus.failed) t.liveTv.liveStreamFailed,
+      ].join(' · '),
+      increasedValue: increase == null ? null : _clock(increase),
+      decreasedValue: decrease == null ? null : _clock(decrease),
+      enabled: _canScrub(timeline) || increase != null || decrease != null,
+      onIncrease: increase == null ? null : () => widget.onSeekBy?.call(10),
+      onDecrease: decrease == null ? null : () => widget.onSeekBy?.call(-10),
+      child: ExcludeSemantics(
+        child: TimelineSlider(
+          key: ObjectKey(widget.player),
+          position: position == null ? Duration.zero : _offset(timeline, position),
+          duration: timeline.hasRange ? _offset(timeline, timeline.endEpoch!) : Duration.zero,
+          bufferRanges: [
+            if (timeline.visibleSeekStart != null && timeline.visibleSeekEnd != null)
+              BufferRange(
+                start: _offset(timeline, timeline.visibleSeekStart!),
+                end: _offset(timeline, timeline.visibleSeekEnd!),
+              ),
+          ],
+          chapters: const [],
+          chaptersLoaded: false,
+          showPosition: position != null,
+          showProgress: false,
+          bufferedProgressColor: Colors.red,
+          positionLabelBuilder: (offset) => timeline.startEpoch == null
+              ? t.liveTv.timelineUnavailable
+              : _clock(timeline.startEpoch! + offset.inMilliseconds / 1000, includeSeconds: true),
+          resolveScrubPosition: (offset) {
+            final current = _timeline;
+            if (!_canScrub(current) || !_sameDragRange(current)) return null;
+            final target = current.scrubTarget(current.startEpoch! + offset.inMilliseconds / 1000);
+            return target == null ? null : _offset(current, target);
+          },
+          onScrubStart: () {
+            final current = _timeline;
+            _dragRangeStart = current.startEpoch;
+            _dragRangeEnd = current.endEpoch;
+            _dragProgramIdentity = _programIdentity(current);
+          },
+          onScrubEnd: _clearDragRange,
+          onSeek: (_) {},
+          onSeekEnd: (offset) {
+            final current = _timeline;
+            if (!_canScrub(current) || !_sameDragRange(current)) return;
+            final target = current.scrubTarget(current.startEpoch! + offset.inMilliseconds / 1000);
+            if (target != null) widget.onSeekEnd?.call(target);
+          },
+          // Keyboard navigation can use the full buffer even when the shown
+          // program cannot be scrubbed. The resolver gates pointer targets.
+          enabled: widget.enabled,
+          focusNode: widget.focusNode,
+          onKeyEvent: widget.onKeyEvent,
+          onFocusChange: widget.onFocusChange,
+        ),
       ),
-      Paint()..color = Colors.red,
     );
   }
 
-  @override
-  bool shouldRepaint(covariant _LiveTimelinePainter oldDelegate) => positionFraction != oldDelegate.positionFraction;
+  void _clearDragRange() {
+    _dragRangeStart = null;
+    _dragRangeEnd = null;
+    _dragProgramIdentity = null;
+  }
+
+  // Guide refreshes reconstruct program objects. Compare the airing's stable
+  // identity within its channel/source, while checking schedule bounds below.
+  Object? _programIdentity(LiveTvTimeline timeline) {
+    final program = timeline.program;
+    return program == null
+        ? null
+        : (
+            program.serverId,
+            program.liveDvrKey,
+            program.providerIdentifier,
+            program.channelIdentifier,
+            program.ratingKey ?? program.key ?? program.guid ?? program.title,
+          );
+  }
+
+  bool _sameDragRange(LiveTvTimeline timeline) =>
+      timeline.startEpoch == _dragRangeStart &&
+      timeline.endEpoch == _dragRangeEnd &&
+      _programIdentity(timeline) == _dragProgramIdentity;
 }
