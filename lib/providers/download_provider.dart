@@ -15,6 +15,7 @@ import '../database/app_database.dart';
 import '../database/download_operations.dart';
 import '../services/background_work_diagnostics_service.dart';
 import '../services/download_manager_service.dart';
+import '../services/download_size_calculator.dart';
 import '../services/api_cache.dart';
 import '../services/download_artwork_service.dart';
 import '../services/download_storage_service.dart';
@@ -76,6 +77,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   // Downloads are shared across profiles/users; scoped Jellyfin state lives in
   // watch actions, cache namespaces, and sync-rule ownership.
   final Map<String, DownloadProgress> _downloads = {};
+
+  // On-disk size in bytes of completed downloads, keyed by globalKey. Measured
+  // in the background after load and whenever a download completes.
+  final Map<String, int> _downloadSizes = {};
+  late final DownloadSizeCalculator _sizeCalculator = DownloadSizeCalculator();
 
   // Metadata and artwork cache lifecycle is isolated from queue ownership.
   late final _DownloadMetadataStore _metadataStore;
@@ -333,6 +339,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _metadata.remove(globalKey);
       _artworkPaths.remove(globalKey);
       _downloadLibraries.remove(globalKey);
+      _downloadSizes.remove(globalKey);
       if (meta != null) {
         DeletionNotifier().notifyDeletedItem(item: meta, isDownloadOnly: true);
       }
@@ -359,8 +366,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     Map<String, DeletionProgress>? deletionProgress,
     Set<String>? ownedDownloadKeys,
     Map<String, ({String? libraryId, String? libraryTitle})>? downloadLibraries,
+    Map<String, int>? downloadSizes,
   }) {
     if (downloads != null) _downloads.addAll(downloads);
+    if (downloadSizes != null) _downloadSizes.addAll(downloadSizes);
     if (metadata != null) _metadata.addAll(metadata);
     if (artwork != null) _artworkPaths.addAll(artwork);
     if (downloadLibraries != null) _downloadLibraries.addAll(downloadLibraries);
@@ -399,6 +408,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // Clear existing data to prevent stale entries after deletions
       _downloads.clear();
       _artworkPaths.clear();
+      _downloadSizes.clear();
       _metadata.clear();
       _queueing.clear();
       _deletionProgress.clear();
@@ -448,6 +458,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         'and ${_syncRules.length} sync rules',
       );
       safeNotifyListeners();
+
+      unawaited(
+        _measureDownloadSizes({
+          for (final item in downloads)
+            if (item.status == DownloadStatus.completed.index && item.videoFilePath != null)
+              item.globalKey: item.videoFilePath!,
+        }),
+      );
     } catch (e) {
       appLogger.e('Failed to load persisted downloads', error: e);
     }
@@ -572,6 +590,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _artworkPaths[merged.globalKey] = DownloadedArtwork(thumbPath: merged.thumbPath);
     }
 
+    if (merged.status == DownloadStatus.completed && previous?.status != DownloadStatus.completed) {
+      unawaited(_measureCompletedDownload(merged.globalKey));
+    }
+
     if (ownedByActiveProfile) safeNotifyListeners();
   }
 
@@ -655,6 +677,50 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
     }
     return extras;
+  }
+
+  /// On-disk size in bytes of each completed download that has been measured.
+  /// Unfinished downloads are left out even if a stale size is cached.
+  Map<String, int> get downloadSizes => Map.unmodifiable({
+    for (final entry in _downloadSizes.entries)
+      if (_ownsDownloadKey(entry.key) && _downloads[entry.key]?.status == DownloadStatus.completed)
+        entry.key: entry.value,
+  });
+
+  /// Total measured size and count of completed downloads whose metadata
+  /// matches [where] (every completed download when omitted).
+  ({int bytes, int count}) completedDownloadUsage({bool Function(MediaItem item)? where}) {
+    var bytes = 0;
+    var count = 0;
+    for (final entry in _downloads.entries) {
+      if (entry.value.status != DownloadStatus.completed || !_ownsDownloadKey(entry.key)) continue;
+      final meta = _metadata[entry.key];
+      if (meta == null || (where != null && !where(meta))) continue;
+      count++;
+      bytes += _downloadSizes[entry.key] ?? 0;
+    }
+    return (bytes: bytes, count: count);
+  }
+
+  Future<void> _measureCompletedDownload(String globalKey) async {
+    final record = await _downloadManager.getDownloadedMedia(globalKey);
+    final storedPath = record?.videoFilePath;
+    if (storedPath == null) return;
+    await _measureDownloadSizes({globalKey: storedPath});
+  }
+
+  /// Measure the files behind [storedPaths] (globalKey → stored media path)
+  /// and notify once if any size changed.
+  Future<void> _measureDownloadSizes(Map<String, String> storedPaths) async {
+    var changed = false;
+    for (final entry in storedPaths.entries) {
+      final size = await _sizeCalculator.measure(entry.value);
+      if (size == null || _downloads[entry.key]?.status != DownloadStatus.completed) continue;
+      if (_downloadSizes[entry.key] == size) continue;
+      _downloadSizes[entry.key] = size;
+      changed = true;
+    }
+    if (changed) safeNotifyListeners();
   }
 
   /// Aggregate transfer activity for [BackgroundWorkDiagnosticsService].
@@ -1880,6 +1946,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _metadata.remove(globalKey);
     _artworkPaths.remove(globalKey);
     _downloadLibraries.remove(globalKey);
+    _downloadSizes.remove(globalKey);
     return released;
   }
 
