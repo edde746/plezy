@@ -36,6 +36,9 @@ class SyncRuleResult {
   const SyncRuleResult({required this.globalKey, this.title, required this.queuedCount});
 }
 
+typedef RuleQualityDemandsCallback =
+    Future<void> Function(SyncRuleItem rule, MediaServerClient client, List<MediaItem> managedItems);
+
 /// Evaluates sync rules and queues downloads so the device matches the rule's target.
 ///
 /// Rule types:
@@ -77,6 +80,7 @@ class SyncRuleExecutor {
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
     required bool isOffline,
+    RuleQualityDemandsCallback? updateRuleQualityDemands,
     bool force = false,
   }) async {
     if (_isExecuting) {
@@ -127,6 +131,7 @@ class SyncRuleExecutor {
             metadata: metadata,
             queueSingleDownload: queueSingleDownload,
             associateDownload: associateDownload,
+            updateRuleQualityDemands: updateRuleQualityDemands,
           );
           if (result != null && result.queuedCount > 0) {
             results.add(result);
@@ -154,6 +159,7 @@ class SyncRuleExecutor {
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
     required bool isOffline,
+    RuleQualityDemandsCallback? updateRuleQualityDemands,
   }) async {
     if (_isExecuting) {
       appLogger.d('Sync rule execution already in progress, skipping single-rule run for $globalKey');
@@ -184,6 +190,7 @@ class SyncRuleExecutor {
         metadata: metadata,
         queueSingleDownload: queueSingleDownload,
         associateDownload: associateDownload,
+        updateRuleQualityDemands: updateRuleQualityDemands,
       );
     } catch (e) {
       appLogger.w('Failed to execute single sync rule $globalKey: $e');
@@ -243,6 +250,7 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
+    RuleQualityDemandsCallback? updateRuleQualityDemands,
   }) async {
     final client = serverManager.getClient(ServerId(rule.serverId));
     if (client == null || !serverManager.isServerOnline(ServerId(rule.serverId))) {
@@ -277,6 +285,7 @@ class SyncRuleExecutor {
           metadata: resolvedMetadata,
           associateDownload: associateDownload,
           queueSingleDownload: queueSingleDownload,
+          updateRuleQualityDemands: updateRuleQualityDemands,
         );
       case ContentTypes.collection:
       case ContentTypes.playlist:
@@ -289,6 +298,7 @@ class SyncRuleExecutor {
           metadata: resolvedMetadata,
           associateDownload: associateDownload,
           queueSingleDownload: queueSingleDownload,
+          updateRuleQualityDemands: updateRuleQualityDemands,
         );
       default:
         appLogger.w('Sync rule ${rule.globalKey}: unknown targetType ${rule.targetType}');
@@ -316,6 +326,7 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
+    RuleQualityDemandsCallback? updateRuleQualityDemands,
   }) async {
     final fromServer = <MediaItem>[];
     final sourceMetadata = metadata[rule.globalKey];
@@ -336,13 +347,18 @@ class SyncRuleExecutor {
     );
 
     if (unwatchedEpisodes.isEmpty) {
+      await updateRuleQualityDemands?.call(rule, client, const []);
       appLogger.d('Sync rule ${rule.globalKey}: no unwatched episodes available');
       await _completeRuleExecution(rule.globalKey);
       return null;
     }
 
+    final targetCount = rule.episodeCount > 0 ? rule.episodeCount : unwatchedEpisodes.length;
+    final managedEpisodes = unwatchedEpisodes.take(targetCount).toList(growable: false);
+    await updateRuleQualityDemands?.call(rule, client, managedEpisodes);
+
     int alreadyHave = 0;
-    for (final ep in unwatchedEpisodes) {
+    for (final ep in managedEpisodes) {
       final gk = buildGlobalKey(ServerId(rule.serverId), ep.id);
       if (_isActiveDownload(downloads[gk])) {
         alreadyHave++;
@@ -350,8 +366,6 @@ class SyncRuleExecutor {
       }
     }
 
-    // episodeCount == 0 means "all unwatched" — target is total unwatched count
-    final targetCount = rule.episodeCount > 0 ? rule.episodeCount : unwatchedEpisodes.length;
     final deficit = targetCount - alreadyHave;
     if (deficit <= 0) {
       appLogger.d('Sync rule ${rule.globalKey}: no deficit ($alreadyHave/$targetCount already have)');
@@ -360,7 +374,7 @@ class SyncRuleExecutor {
     }
 
     int queued = 0;
-    for (final ep in unwatchedEpisodes) {
+    for (final ep in managedEpisodes) {
       if (queued >= deficit) break;
 
       final gk = buildGlobalKey(ServerId(rule.serverId), ep.id);
@@ -395,6 +409,7 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
+    RuleQualityDemandsCallback? updateRuleQualityDemands,
   }) async {
     final _ResolvedListRuleItems resolved;
     try {
@@ -418,6 +433,8 @@ class SyncRuleExecutor {
     }
 
     final candidates = resolved.candidates;
+
+    await updateRuleQualityDemands?.call(rule, client, candidates);
 
     int queued = 0;
     for (final item in candidates) {

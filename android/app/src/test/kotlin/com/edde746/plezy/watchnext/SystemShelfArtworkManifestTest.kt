@@ -1,5 +1,6 @@
 package com.edde746.plezy.watchnext
 
+import com.edde746.plezy.BuildConfig
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
@@ -15,12 +16,17 @@ import org.w3c.dom.Element
 class SystemShelfArtworkManifestTest {
   private companion object {
     const val ANDROID_NAMESPACE = "http://schemas.android.com/apk/res/android"
-    const val AUTHORITY = "com.edde746.plezy.systemshelf.artwork"
+    const val AUTHORITY = "\${applicationId}.systemshelf.artwork"
     val MANIFEST_CANDIDATES = listOf(
       "src/main/AndroidManifest.xml",
       "app/src/main/AndroidManifest.xml",
       "android/app/src/main/AndroidManifest.xml"
     )
+  }
+
+  @Test
+  fun artworkAuthorityMatchesInstalledApplicationId() {
+    assertEquals("${BuildConfig.APPLICATION_ID}.systemshelf.artwork", SystemShelfArtworkProvider.AUTHORITY)
   }
 
   @Test

@@ -355,6 +355,57 @@ void main() {
     expect(client.fetchPlayableDescendantsCalls, ['show-1']);
   });
 
+  test('episode rule reports its exact rolling managed window', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _PlayableDescendantsClient([
+      _episode('s1e1', parentIndex: 1, index: 1),
+      _episode('s1e2', parentIndex: 1, index: 2),
+      _episode('s1e3', parentIndex: 1, index: 3),
+    ]);
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:show-1';
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'show-1',
+      globalKey: ruleKey,
+      targetType: 'show',
+      episodeCount: 2,
+    );
+
+    final managedIds = <String>[];
+    final queuedIds = <String>[];
+    final results = await SyncRuleExecutor(database: db).executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {
+        'plex-machine:s1e1': DownloadProgress(globalKey: 'plex-machine:s1e1', status: DownloadStatus.completed),
+      },
+      metadata: const {},
+      associateDownload: (_, _) async {},
+      updateRuleQualityDemands: (_, _, managedItems) async {
+        managedIds.addAll(managedItems.map((item) => item.id));
+      },
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queuedIds.add(item.id);
+        return true;
+      },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(managedIds, ['s1e1', 's1e2']);
+    expect(queuedIds, ['s1e2']);
+    expect(results.single.queuedCount, 1);
+  });
+
   test('Jellyfin playlist sync associates an already-downloaded member', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final manager = MultiServerManager();

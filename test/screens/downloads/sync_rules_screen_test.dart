@@ -252,6 +252,9 @@ void main() {
     expect(find.text('Server: Auth Jellyfin • Sign in required'), findsOneWidget);
     expect(find.text('Unknown Show'), findsOneWidget);
     expect(find.text('Server: unknown-srv • Unknown server'), findsOneWidget);
+    expect(find.text('Quality: System (Original)'), findsOneWidget);
+    expect(find.text('Download quality is available for Plex rules only'), findsOneWidget);
+    expect(find.byTooltip('Download quality'), findsOneWidget);
   });
 
   testWidgets('removes orphaned sync rules from the sync rules screen', (tester) async {

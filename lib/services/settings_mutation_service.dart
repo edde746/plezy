@@ -5,6 +5,7 @@ import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../profiles/active_profile_provider.dart';
 import '../providers/companion_remote_provider.dart';
+import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/platform_detector.dart';
 import 'device_performance.dart';
@@ -73,6 +74,8 @@ class SettingsMutationService {
           settings.read(SettingsService.musicVolume),
           persist: false,
         );
+      case 'default_download_quality_preset':
+        await context.read<DownloadProvider?>()?.reconcileAllDownloadQualities();
       case 'enable_trakt_scrobble':
         await TraktTracker.instance.setEnabled(settings.read(pref) as bool);
       case 'enable_companion_remote_server':
@@ -116,6 +119,7 @@ class SettingsMutationService {
       SettingsService.visualEffects,
       SettingsService.enableDiscordRPC,
       SettingsService.musicVolume,
+      SettingsService.defaultDownloadQualityPreset,
       SettingsService.enableTraktWatchedSync,
       for (final service in TrackerService.values) SettingsService.scrobblePref(service),
       SettingsService.enableCompanionRemoteServer,

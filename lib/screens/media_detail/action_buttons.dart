@@ -280,7 +280,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           )
         : null;
 
-    final downloadAction = !widget.isOffline && !PlatformDetector.isAppleTV()
+    final downloads = Provider.of<DownloadProvider?>(context, listen: false);
+    final canManageOfflineMovie =
+        widget.isOffline &&
+        metadata.isMovie &&
+        metadata.backend == MediaBackend.plex &&
+        (downloads?.isDownloaded(metadata.globalKey) ?? false);
+    final downloadAction = (!widget.isOffline || canManageOfflineMovie) && !PlatformDetector.isAppleTV()
         ? FocusableAction(
             debugLabel: 'detail_download',
             onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
@@ -383,8 +389,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     List<FocusableAction> compactActionsFor(double maxWidth) {
       if (widget.isOffline) {
-        final compact = <FocusableAction>[playAction, watchedAction];
-        if (maxWidth.isFinite && estimatedRowWidth(compact) > maxWidth) return [playAction];
+        final compact = <FocusableAction>[playAction, ?downloadAction, watchedAction];
+        if (maxWidth.isFinite && estimatedRowWidth(compact) > maxWidth) return [playAction, ?downloadAction];
         return compact;
       }
 
@@ -563,8 +569,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   }
 
   /// Shared retry pipeline for failed/cancelled downloads: confirm download
-  /// restrictions, re-resolve the version, then replace the existing download
-  /// with a fresh queue entry.
+  /// restrictions, then replaces the existing download with a fresh queue
+  /// entry. Retries retain their saved version and quality selection.
   Future<void> _retryDownload(DownloadProvider downloadProvider, MediaItem metadata, String globalKey) async {
     if (!_canUseDetail) return;
     if (!await confirmBackgroundDownloadRestrictions(context) || !mounted || !_canUseDetail) return;
@@ -572,8 +578,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final client = _getMediaClientForMetadata(context);
     if (client == null) return;
 
-    final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-    if (versionConfig == null || !_canUseDetail) return;
+    var versionConfig = await downloadProvider.getPersistedDownloadConfig(globalKey);
+    if (!mounted || !_canUseDetail) return;
+    versionConfig ??= await _resolveDownloadVersion(context, metadata, client);
+    if (versionConfig == null || !mounted || !_canUseDetail) return;
 
     await downloadProvider.deleteDownload(globalKey);
     if (!_canUseDetail) return;
@@ -645,7 +653,14 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       final versionConfig = await _resolveDownloadVersion(context, metadata, client);
       if (versionConfig == null || !_canUseDetail || !context.mounted) return;
 
-      final count = await downloadProvider.queueMissingEpisodes(metadata, client, versionConfig: versionConfig);
+      final qualitySelection = await pickDownloadQualityForClient(context, client);
+      if (qualitySelection == null || !_canUseDetail || !context.mounted) return;
+
+      final count = await downloadProvider.queueMissingEpisodes(
+        metadata,
+        client,
+        versionConfig: versionConfig.withQualityOverride(qualitySelection.override),
+      );
       if (_canUseDetail && context.mounted) {
         final message = count > 0 ? t.downloads.episodesQueued(count: count) : t.downloads.allEpisodesAlreadyDownloaded;
         showAppSnackBar(context, message);
@@ -673,6 +688,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       }
 
       if (!canDownloadMore) {
+        if (metadata.isMovie && metadata.backend == MediaBackend.plex) {
+          await _showDownloadedMovieActions(context, downloadProvider, metadata, onDelete: confirmAndDelete);
+          return;
+        }
         await confirmAndDelete();
         return;
       }
@@ -693,6 +712,42 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     if (client == null) return;
 
     await queueDownloadWithFeedback(context, metadata: metadata, client: client, downloadProvider: downloadProvider);
+  }
+
+  Future<void> _showDownloadedMovieActions(
+    BuildContext context,
+    DownloadProvider downloadProvider,
+    MediaItem metadata, {
+    required Future<void> Function() onDelete,
+  }) async {
+    final selected = await showOptionPickerDialog<_DownloadedMovieAction>(
+      context,
+      title: t.downloads.manage,
+      options: [
+        (icon: Symbols.high_quality_rounded, label: t.downloads.downloadQuality, value: _DownloadedMovieAction.quality),
+        (icon: Symbols.delete_rounded, label: t.downloads.deleteDownload, value: _DownloadedMovieAction.delete),
+      ],
+    );
+    if (selected == null || !_canUseDetail || !context.mounted) return;
+
+    switch (selected) {
+      case _DownloadedMovieAction.quality:
+        final config = await downloadProvider.getPersistedDownloadConfig(metadata.globalKey);
+        final settings = await SettingsService.getInstance();
+        if (!_canUseDetail || !context.mounted) return;
+        final quality = await showDownloadQualityPickerDialog(
+          context,
+          defaultPreset: settings.read(SettingsService.defaultDownloadQualityPreset),
+          currentOverride: config?.qualityOverride,
+        );
+        if (quality == null || !_canUseDetail || !context.mounted) return;
+        _downloadedMovieLabelsKey = null;
+        _downloadedMovieLabelsFuture = null;
+        await downloadProvider.updateManualDownloadQuality(metadata.globalKey, quality.override);
+
+      case _DownloadedMovieAction.delete:
+        await onDelete();
+    }
   }
 
   Widget _buildDownloadButton(
@@ -848,11 +903,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
           // Shows/seasons may have more episodes to fetch; movies/episodes don't.
           final canDownloadMore = metadata.isShow || metadata.isSeason;
+          final canManageQuality = metadata.isMovie && metadata.backend == MediaBackend.plex;
 
           return IconButton.filledTonal(
             onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
             icon: const AppIcon(Symbols.download_rounded, fill: 1),
-            tooltip: canDownloadMore ? t.downloads.manage : t.downloads.deleteDownload,
+            tooltip: canDownloadMore || canManageQuality ? t.downloads.manage : t.downloads.deleteDownload,
             iconSize: iconSize,
             style: actionButtonStyle(foregroundColor: Colors.orange, showFocus: showFocus),
           );

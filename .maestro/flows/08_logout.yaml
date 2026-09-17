@@ -1,4 +1,4 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 name: Logout returns to authentication
 tags:
   - e2e

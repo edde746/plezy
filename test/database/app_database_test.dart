@@ -1031,6 +1031,51 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
+      test('v23 migration seeds known Plex video demands as System with Original artifacts', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v23_quality_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.insertDownload(
+            serverId: ServerId('plex-server'),
+            clientScopeId: 'plex-server/~plex-profile/profile-a',
+            ratingKey: 'movie-1',
+            globalKey: 'plex-server:movie-1',
+            type: 'movie',
+            status: DownloadStatus.completed.index,
+          );
+          await seeded.addDownloadOwner(
+            profileId: 'profile-a',
+            globalKey: 'plex-server:movie-1',
+            backendId: 'plex',
+            clientScopeId: 'plex-server/~plex-profile/profile-a',
+          );
+          await seeded.customStatement('DROP TABLE download_quality_demands');
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN download_quality_preset');
+          await seeded.customStatement('ALTER TABLE sync_rules DROP COLUMN download_quality_preset');
+          await seeded.customStatement('PRAGMA user_version = 22');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final row = await reopened.getDownloadedMedia('plex-server:movie-1');
+          final demands = await reopened.getDownloadQualityDemands('plex-server:movie-1');
+          expect(row?.downloadQualityPreset, 'original');
+          expect(demands, hasLength(1));
+          expect(demands.single.profileId, 'profile-a');
+          expect(demands.single.sourceKey, 'legacy');
+          expect(demands.single.qualityPreset, isNull);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
     });
 
     _registerLegacyDesktopMigrationTests();

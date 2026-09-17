@@ -1,10 +1,10 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 ---
 - retry:
     maxRetries: 1
     commands:
       - launchApp:
-          appId: com.edde746.plezy
+          appId: com.edde746.plezy.dev
           clearState: true
           permissions:
             all: allow

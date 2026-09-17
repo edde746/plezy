@@ -16,6 +16,7 @@ DownloadedMediaItem _row({int mediaIndex = 0, String? mediaSourceId}) {
     retryCount: 0,
     mediaIndex: mediaIndex,
     mediaSourceId: mediaSourceId,
+    downloadQualityPreset: 'original',
   );
 }
 

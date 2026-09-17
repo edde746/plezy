@@ -1,4 +1,4 @@
-appId: com.edde746.plezy
+appId: com.edde746.plezy.dev
 name: Codec sample - H264 High10 DTS-HD and ASS
 tags:
   - e2e
@@ -13,8 +13,8 @@ tags:
 - runFlow:
     file: ../subflows/switch_codec_tracks.yaml
     env:
-      AUDIO_TRACK: "(?is)^Japanese\\s+[^,]*(?:DTS-HD MA|DTS|Surround|5\\.1)[^,]*$"
-      SUBTITLE_TRACK: "(?is)^English\\s+[^,]*(?:ASS|TEXT/X-SSA)[^,]*$"
+      AUDIO_TRACK: "(?is)^Japanese.+[^,]*(?:DTS-HD MA|DTS|Surround|5\\.1)[^,]*$"
+      SUBTITLE_TRACK: "(?is)^English.+[^,]*(?:ASS|TEXT/X-SSA)[^,]*$"
 - back
 - waitForAnimationToEnd:
     timeout: 3000
