@@ -1,5 +1,7 @@
 package com.edde746.plezy.exoplayer
 
+import android.media.AudioFormat
+import android.media.AudioManager
 import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import org.junit.Assert.assertEquals
@@ -122,9 +124,9 @@ class AudioOutputPolicyTest {
   }
 
   @Test
-  fun dtsHdFallsBackToThePlainCoreWithoutTheCarrierShape() {
+  fun dtsHdFallsBackToThePlainCoreWithoutTheCarrierShapeOrARawTrack() {
     // Advertising ENCODING_DTS_HD says the receiver decodes it, not that the route takes the
-    // 192kHz/8ch track its burst needs (#1988); naming `dts-hd` anyway strands playback.
+    // 192kHz/8ch carrier or the raw 48kHz/7.1 track (#1988); naming `dts-hd` anyway strands playback.
     assertEquals(
       "dts",
       spdifCodecs(setOf(C.ENCODING_DTS, C.ENCODING_DTS_HD), setOf(MpvIecShape.STEREO_48K))
@@ -186,26 +188,58 @@ class AudioOutputPolicyTest {
   }
 
   @Test
-  fun rawSupportNeverQualifiesTheLosslessCodecs() {
-    // TrueHD and DTS-HD MA have no raw transport in the AO; they ride the 192kHz/7.1 IEC
-    // carrier or decode. A route that takes every raw track but no carrier must not name them.
-    assertEquals("ac3,eac3,dts", spdifCodecs(allEncodings, emptySet(), raw = allEncodings))
+  fun rawDtsHdTrackQualifiesDtsHdWithoutTheCarrier() {
+    // #2333's TCL C8K: no IEC 61937 profile at all, but a native DTS-HD offload port at
+    // 48kHz/7.1 that ExoPlayer plays DTS-HD MA through. The AO unwraps the burst into that
+    // track when the route refuses the carrier, so raw support alone must name `dts-hd` — and
+    // it still supersedes the plain core name.
+    assertEquals("ac3,eac3,dts-hd", spdifCodecs(allEncodings, emptySet(), raw = allEncodings))
+  }
+
+  @Test
+  fun rawSupportNeverQualifiesTrueHd() {
+    // TrueHD has no raw transport in the AO: MAT is not unwrapped. It rides the 192kHz/7.1
+    // carrier or decodes, so a route that takes every raw track but no carrier must not name it.
+    assertFalse(spdifCodecs(allEncodings, emptySet(), raw = allEncodings).contains("truehd"))
   }
 
   @Test
   fun rawProbeIsOnlyConsultedForRawCandidates() {
-    // The raw probe costs real route calls; the carrier-only codecs must never trigger it.
+    // The raw probe costs real route calls; the carrier-only codec must never trigger it.
     val codecs = mpvSpdifCodecs(
       { true },
       { true },
       { encoding ->
-        if (encoding == C.ENCODING_DOLBY_TRUEHD || encoding == C.ENCODING_DTS_HD) {
+        if (encoding == C.ENCODING_DOLBY_TRUEHD) {
           throw AssertionError("raw probe consulted for a carrier-only codec")
         }
         true
       }
     )
     assertEquals("ac3,eac3,truehd,dts-hd", codecs)
+  }
+
+  @Test
+  fun rawProbeIsSkippedForDtsHdWhenTheCarrierAlreadyQualifiesIt() {
+    // The carrier is the AO's first choice for DTS-HD, and it is the cheaper probe here.
+    val codecs = mpvSpdifCodecs(
+      { true },
+      { true },
+      { encoding ->
+        if (encoding == C.ENCODING_DTS_HD) throw AssertionError("raw DTS-HD probed with the carrier present")
+        true
+      }
+    )
+    assertEquals("ac3,eac3,truehd,dts-hd", codecs)
+  }
+
+  @Test
+  fun rawDtsHdOpensAtTheBurstsSevenPointOneMask() {
+    // ExoPlayer opened DTS-HD MA at 48kHz/8ch on #2333's route; a stereo probe would ask about
+    // a track the AO never opens for an MA burst.
+    assertEquals(AudioFormat.CHANNEL_OUT_7POINT1_SURROUND, mpvRawChannelMask(C.ENCODING_DTS_HD))
+    assertEquals(AudioFormat.CHANNEL_OUT_STEREO, mpvRawChannelMask(C.ENCODING_DTS))
+    assertEquals(AudioFormat.CHANNEL_OUT_STEREO, mpvRawChannelMask(C.ENCODING_E_AC3))
   }
 
   @Test
@@ -304,6 +338,24 @@ class AudioOutputPolicyTest {
         )
       )
     }
+  }
+
+  @Test
+  fun rawTrackAcceptsAnOffloadFlaggedRouteWhereAnIecShapeDoesNot() {
+    // #2333's TCL C8K declares its only encoded-format port DIRECT|COMPRESS_OFFLOAD, so
+    // getDirectPlaybackSupport answers offload-only for the port ExoPlayer bitstreams E-AC3
+    // through. The raw AC3/E-AC3/DTS tracks open on that port; the IEC shapes keep demanding
+    // the bitstream bit (raw TrueHD behind #1804 reported offload-only and never drained).
+    val offloadOnly = AudioManager.DIRECT_PLAYBACK_OFFLOAD_GAPLESS_SUPPORTED
+    assertTrue(rawTrackDirectModeUsable(offloadOnly))
+    assertFalse(iecShapeDirectModeUsable(offloadOnly))
+
+    val bitstream = AudioManager.DIRECT_PLAYBACK_BITSTREAM_SUPPORTED or AudioManager.DIRECT_PLAYBACK_OFFLOAD_SUPPORTED
+    assertTrue(rawTrackDirectModeUsable(bitstream))
+    assertTrue(iecShapeDirectModeUsable(bitstream))
+
+    assertFalse(rawTrackDirectModeUsable(AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED))
+    assertFalse(iecShapeDirectModeUsable(AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED))
   }
 
   /** Every encoding the spdif table can ask for, i.e. a receiver that decodes all of them. */

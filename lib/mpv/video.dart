@@ -67,10 +67,10 @@ class _VideoState extends State<Video> {
     if (oldWidget.hasFirstFrame != widget.hasFirstFrame) {
       oldWidget.hasFirstFrame?.removeListener(_syncExternalFirstFrame);
       widget.hasFirstFrame?.addListener(_syncExternalFirstFrame);
+      _listenForPlaybackRestart();
       _syncExternalFirstFrame();
     }
     if (oldWidget.player != widget.player) {
-      _playbackRestartSubscription?.cancel();
       _listenForPlaybackRestart();
       _syncExternalFirstFrame();
       // The cache describes the old player's native surface. Keeping it would
@@ -88,7 +88,15 @@ class _VideoState extends State<Video> {
     super.dispose();
   }
 
+  /// Without an external notifier the first playback-restart reveals the
+  /// surface. With one, the owner decides: the player screen holds the first
+  /// frame behind its loading UI while it negotiates the display mode from
+  /// that frame, and revealing on the restart would show the frame frozen
+  /// through the HDMI blank.
   void _listenForPlaybackRestart() {
+    _playbackRestartSubscription?.cancel();
+    _playbackRestartSubscription = null;
+    if (widget.hasFirstFrame != null) return;
     _playbackRestartSubscription = widget.player.streams.playbackRestart.listen((_) {
       _setHasFirstFrame(true);
     });

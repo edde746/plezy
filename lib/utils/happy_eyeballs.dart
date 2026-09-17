@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'certificate_trust.dart';
+
 /// Resolves A and AAAA independently so a slow DNS family cannot hold up a
 /// reachable one. IPv4 waits at most [defaultResolutionDelay] for IPv6, then
 /// candidates race [defaultAttemptDelay] apart as they become available.
@@ -9,8 +11,9 @@ import 'dart:io';
 ///
 /// With a factory installed the SDK no longer secures the socket itself, and
 /// `badCertificateCallback`/`SecurityContext` never reach it, so TLS is done
-/// here. Proxied requests are handed back plain: the SDK tunnels and secures
-/// those on its own.
+/// here, verifying against [CertificateTrust.contextFor] the host. Proxied
+/// requests are handed back plain: the SDK tunnels and secures those on its
+/// own.
 Future<ConnectionTask<Socket>> happyEyeballsConnectionFactory(Uri url, String? proxyHost, int? proxyPort) {
   if (proxyHost != null) return Socket.startConnect(proxyHost, proxyPort!);
   final secure = url.isScheme('https');
@@ -27,7 +30,8 @@ typedef AddressLookup = Future<List<InternetAddress>> Function(String host, {req
 typedef AddressConnect = Future<ConnectionTask<Socket>> Function(InternetAddress address, int port);
 typedef TlsUpgrade = Future<Socket> Function(Socket socket, String host);
 
-Future<Socket> _secureUpgrade(Socket socket, String host) => SecureSocket.secure(socket, host: host);
+Future<Socket> _secureUpgrade(Socket socket, String host) =>
+    SecureSocket.secure(socket, host: host, context: CertificateTrust.contextFor(host));
 
 /// Returns synchronously so `HttpClient.connectionTimeout` and `cancel()`
 /// cover the lookup as well as the connect.

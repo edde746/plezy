@@ -223,7 +223,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
         pref: SettingsService.rememberTrackSelections,
         icon: Symbols.bookmark_rounded,
         title: t.settings.rememberTrackSelections,
-        subtitle: t.settings.rememberTrackSelectionsDescription,
+        subtitle: '${t.settings.rememberTrackSelectionsDescription} · ${t.settings.rememberTrackSelectionsBackendRule}',
       ),
       SettingSwitchTile(
         pref: SettingsService.followServerTrackSelections,
@@ -285,6 +285,12 @@ class PlaybackSettingsScreen extends StatelessWidget {
         icon: Symbols.skip_next_rounded,
         title: t.settings.autoPlayNextEpisode,
         subtitle: t.settings.autoPlayNextEpisodeDescription,
+      ),
+      SettingSwitchTile(
+        pref: SettingsService.shuffleStartsFromBeginning,
+        icon: Symbols.shuffle_rounded,
+        title: t.settings.shuffleStartsFromBeginning,
+        subtitle: t.settings.shuffleStartsFromBeginningDescription,
       ),
       SettingNumberTile(
         pref: SettingsService.playNextCountdown,
@@ -470,13 +476,25 @@ class PlaybackSettingsScreen extends StatelessWidget {
     subtitle: t.settings.deinterlaceDescription,
   );
 
-  Widget _audioPassthroughTile() => SettingSwitchTile(
-    pref: SettingsService.audioPassthrough,
-    icon: Symbols.surround_sound_rounded,
-    title: t.settings.audioPassthrough,
-    subtitle: PlatformDetector.isAppleTV()
-        ? t.settings.audioPassthroughDescriptionAppleTv
-        : t.settings.audioPassthroughDescription,
+  // Normalization wins over passthrough in the player (loudnorm cannot filter
+  // a bitstream), so the switch reports that override instead of promising
+  // bitstreaming that will not happen.
+  Widget _audioPassthroughTile() => SettingsBuilder(
+    prefs: const [SettingsService.audioNormalization],
+    builder: (context) {
+      final normalizationOn = SettingsService.instance.read(SettingsService.audioNormalization);
+      return SettingSwitchTile(
+        pref: SettingsService.audioPassthrough,
+        icon: Symbols.surround_sound_rounded,
+        title: t.settings.audioPassthrough,
+        subtitle: normalizationOn
+            ? t.settings.audioPassthroughOverriddenByNormalization
+            : PlatformDetector.isAppleTV()
+            ? t.settings.audioPassthroughDescriptionAppleTv
+            : t.settings.audioPassthroughDescription,
+        enabled: !normalizationOn,
+      );
+    },
   );
 
   Widget _audioDownmixTile() => SettingSwitchTile(

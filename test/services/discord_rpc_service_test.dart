@@ -3,7 +3,15 @@ import 'dart:async';
 import 'package:dart_discord_presence/dart_discord_presence.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/services/discord_rpc_service.dart';
+
+import '../test_helpers/discord_rpc_fakes.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   group('posterCacheExpiryFromResponse', () {
@@ -30,7 +38,7 @@ void main() {
   });
 
   group('DiscordRPCService reconnect lifecycle', () {
-    List<_FakeDiscordRPC> clients = [];
+    List<FakeDiscordRPC> clients = [];
     // When set, the next client the factory builds awaits this before its
     // initialize completes, letting tests hold an initialize in flight.
     Completer<void>? nextInitializeGate;
@@ -39,7 +47,7 @@ void main() {
       nextInitializeGate = null;
       return DiscordRPCService.forTesting(
         rpcFactory: () {
-          final client = _FakeDiscordRPC()..initializeGate = nextInitializeGate;
+          final client = FakeDiscordRPC()..initializeGate = nextInitializeGate;
           nextInitializeGate = null;
           clients.add(client);
           return client;
@@ -170,69 +178,138 @@ void main() {
       });
     });
   });
+
+  group('DiscordRPCService presence', () {
+    late List<FakeDiscordRPC> clients;
+
+    /// A connected service whose next presence write lands on `clients.last`.
+    DiscordRPCService connectedService(FakeAsync async) {
+      clients = [];
+      final rpcService = DiscordRPCService.forTesting(
+        rpcFactory: () {
+          final client = FakeDiscordRPC();
+          clients.add(client);
+          return client;
+        },
+      );
+      unawaited(rpcService.setEnabled(true));
+      async.flushMicrotasks();
+      clients.single.emitReady();
+      async.elapse(const Duration(milliseconds: 200));
+      return rpcService;
+    }
+
+    test('a track publishes a Listening activity with the artist as state', () {
+      fakeAsync((async) {
+        final rpcService = connectedService(async);
+        final track = testMediaItem(
+          kind: MediaKind.track,
+          title: 'Beautiful Again',
+          parentTitle: 'The Surface',
+          grandparentTitle: 'Beartooth',
+          durationMs: 211000,
+        );
+
+        unawaited(rpcService.startPlayback(track, _NoopClient()));
+        async.flushMicrotasks();
+
+        final presence = clients.single.presences.single;
+        expect(presence.type, DiscordActivityType.listening);
+        expect(presence.details, 'Beautiful Again');
+        expect(presence.state, 'Beartooth');
+        expect(presence.timestamps, isNotNull, reason: 'a playing track runs the progress bar');
+
+        unawaited(rpcService.dispose());
+        async.flushMicrotasks();
+      });
+    });
+
+    test('video keeps the Watching activity', () {
+      fakeAsync((async) {
+        final rpcService = connectedService(async);
+        final movie = testMediaItem(kind: MediaKind.movie, title: 'Heat', year: 1995, studio: 'Warner Bros.');
+
+        unawaited(rpcService.startPlayback(movie, _NoopClient()));
+        async.flushMicrotasks();
+
+        final presence = clients.single.presences.single;
+        expect(presence.type, DiscordActivityType.watching);
+        expect(presence.details, 'Heat (1995)');
+        expect(presence.state, 'Warner Bros.');
+
+        unawaited(rpcService.dispose());
+        async.flushMicrotasks();
+      });
+    });
+
+    test('a paused track withdraws the card and resume brings it back', () {
+      // Discord runs an "elapsed" counter on a card sent without timestamps,
+      // so a paused Listening card reads as still playing. The music engine
+      // also binds-then-pauses for a restored or car-restricted session; that
+      // pause must win over the start's own publish.
+      fakeAsync((async) {
+        final rpcService = connectedService(async);
+        final client = clients.single;
+        final track = testMediaItem(kind: MediaKind.track, title: 'Beautiful Again', durationMs: 211000);
+
+        unawaited(rpcService.startPlayback(track, _NoopClient()));
+        unawaited(rpcService.pausePlayback());
+        async.flushMicrotasks();
+        expect(client.presences, isEmpty);
+        expect(client.clearPresenceCalls, isPositive);
+
+        unawaited(rpcService.resumePlayback());
+        async.flushMicrotasks();
+        expect(client.presences.single.details, 'Beautiful Again');
+        expect(client.presences.single.timestamps, isNotNull);
+
+        unawaited(rpcService.dispose());
+        async.flushMicrotasks();
+      });
+    });
+
+    test('a paused video withdraws the card and resume brings it back', () {
+      fakeAsync((async) {
+        final rpcService = connectedService(async);
+        final client = clients.single;
+        final movie = testMediaItem(kind: MediaKind.movie, title: 'Heat', durationMs: 10200000);
+
+        unawaited(rpcService.startPlayback(movie, _NoopClient()));
+        async.flushMicrotasks();
+        expect(client.presences.single.details, 'Heat');
+
+        unawaited(rpcService.pausePlayback());
+        async.flushMicrotasks();
+
+        // The card posted while playing stays a single log entry; pause
+        // withdraws it instead of re-posting a timer-less card.
+        expect(client.presences, hasLength(1));
+        expect(client.clearPresenceCalls, isPositive);
+
+        unawaited(rpcService.resumePlayback());
+        async.flushMicrotasks();
+        expect(client.presences.last.details, 'Heat');
+        expect(client.presences.last.timestamps, isNotNull);
+
+        unawaited(rpcService.dispose());
+        async.flushMicrotasks();
+      });
+    });
+  });
 }
 
-/// Fake [DiscordRPC] mirroring the lifecycle contract the service depends on:
-/// a disposed client rejects re-initialization, so recovery requires a fresh
-/// instance. Only the surface the service touches is implemented.
-class _FakeDiscordRPC implements DiscordRPC {
-  final _ready = StreamController<DiscordReadyEvent>.broadcast(sync: true);
-  final _disconnected = StreamController<DiscordDisconnectedEvent>.broadcast(sync: true);
-  final _errors = StreamController<DiscordErrorEvent>.broadcast(sync: true);
-
-  int initializeCalls = 0;
-  int disposeCalls = 0;
-  int clearPresenceCalls = 0;
-  bool _disposed = false;
-
-  /// When set, [initialize] awaits this after recording the call, so tests
-  /// can fail (or complete) an in-flight initialize on demand.
-  Completer<void>? initializeGate;
+class _NoopClient implements MediaServerClient {
+  @override
+  MediaBackend get backend => MediaBackend.plex;
 
   @override
-  Stream<DiscordReadyEvent> get onReady => _ready.stream;
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Stream<DiscordDisconnectedEvent> get onDisconnected => _disconnected.stream;
+  ServerId get serverId => ServerId('server-1');
 
   @override
-  Stream<DiscordErrorEvent> get onError => _errors.stream;
-
-  @override
-  Future<void> initialize(String applicationId) async {
-    if (_disposed) throw StateError('Cannot initialize a disposed DiscordRPC');
-    if (initializeCalls > 0) throw StateError('Already initialized');
-    initializeCalls++;
-    final gate = initializeGate;
-    if (gate != null) await gate.future;
-  }
-
-  @override
-  Future<void> dispose() async {
-    if (_disposed) return;
-    _disposed = true;
-    disposeCalls++;
-    await _ready.close();
-    await _disconnected.close();
-    await _errors.close();
-  }
-
-  @override
-  Future<void> clearPresence() async {
-    clearPresenceCalls++;
-  }
-
-  void emitReady() {
-    _ready.add(
-      const DiscordReadyEvent(
-        user: DiscordUser(userId: '1', username: 'tester'),
-      ),
-    );
-  }
-
-  void emitDisconnected() {
-    _disconnected.add(const DiscordDisconnectedEvent(errorCode: 1006, message: 'connection lost'));
-  }
+  String? get serverName => 'Server';
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

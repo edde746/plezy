@@ -136,18 +136,12 @@ class GuestPlaybackReconciler {
   // Public inputs
   // ---------------------------------------------------------------------
 
-  void attach(
-    AttachedPlayer player, {
-    required String ratingKey,
-    required String serverId,
-    bool hasFirstFrame = false,
-    Future<void>? startupHold,
-  }) {
+  void attach(AttachedPlayer player, {required String ratingKey, required String serverId, Future<void>? startupHold}) {
     detachPlayer();
     final authority = _authority;
     _player = player;
     _attachedMediaKey = PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId);
-    _firstFrameSeen = hasFirstFrame;
+    _firstFrameSeen = player.firstFrameSeen;
     _startupHoldResolved = startupHold == null;
 
     if (startupHold != null) {
@@ -188,7 +182,14 @@ class GuestPlaybackReconciler {
   }
 
   void _maybeBecomeReady() {
-    if (_localReady || !_firstFrameSeen || !_startupHoldResolved) return;
+    if (_localReady) return;
+    if (!_firstFrameSeen || !_startupHoldResolved) {
+      appLogger.d(
+        'WatchTogether: Guest player not ready yet '
+        '(frame=${_firstFrameSeen ? 'seen' : 'pending'}, startupHold=${_startupHoldResolved ? 'released' : 'pending'})',
+      );
+      return;
+    }
     _localReady = true;
     appLogger.d('WatchTogether: Guest player ready for $_attachedMediaKey');
     _sendStatus();

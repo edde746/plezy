@@ -153,10 +153,10 @@ val downloadLibmpv = tasks.register("downloadLibmpv") {
   }
 }
 
-// Each tarball is a native tree: lib/*.so (libmpv, seven FFmpeg libraries,
-// libc++_shared) + include/mpv/*.h. The .so files land in the per-ABI jniLibs
-// layout under native/jni, the headers under native/include for the CMake
-// glue build, and libc++ in a separate tree that the app packages at PROJECT
+// Each tarball is a native tree: lib/*.so + include/mpv/*.h. CMake packages
+// directly linked libmpv/libavcodec, so those live outside jniLibs under
+// native/imported. Remaining FFmpeg libraries go under native/jni, headers under
+// native/include, and libc++ in a separate tree that the app packages at PROJECT
 // scope so the tarball's 16 KB-capable runtime deterministically wins the
 // merge (see app/build.gradle.kts packaging { jniLibs } + sourceSets).
 val extractLibmpvNative = tasks.register("extractLibmpvNative") {
@@ -182,10 +182,10 @@ val extractLibmpvNative = tasks.register("extractLibmpvNative") {
         }.result.get().assertNormalExitValue()
         val jniDir = File(nativeStaging, "jni/$abi")
         File(unpack, "lib").listFiles()?.filter { it.isFile && it.name.endsWith(".so") }?.forEach { so ->
-          val target = if (so.name == "libc++_shared.so") {
-            File(libcxxStaging, "jni/$abi/${so.name}")
-          } else {
-            File(jniDir, so.name)
+          val target = when (so.name) {
+            "libc++_shared.so" -> File(libcxxStaging, "jni/$abi/${so.name}")
+            "libmpv.so", "libavcodec.so" -> File(nativeStaging, "imported/$abi/${so.name}")
+            else -> File(jniDir, so.name)
           }
           target.parentFile.mkdirs()
           Files.move(so.toPath(), target.toPath())
@@ -199,8 +199,8 @@ val extractLibmpvNative = tasks.register("extractLibmpvNative") {
       }
       val missing = buildList {
         mpvAbis.forEach { abi ->
-          if (!File(nativeStaging, "jni/$abi/libmpv.so").isFile) add("native/jni/$abi/libmpv.so")
-          if (!File(nativeStaging, "jni/$abi/libavcodec.so").isFile) add("native/jni/$abi/libavcodec.so")
+          if (!File(nativeStaging, "imported/$abi/libmpv.so").isFile) add("native/imported/$abi/libmpv.so")
+          if (!File(nativeStaging, "imported/$abi/libavcodec.so").isFile) add("native/imported/$abi/libavcodec.so")
           if (!File(libcxxStaging, "jni/$abi/libc++_shared.so").isFile) add("libcxx/jni/$abi/libc++_shared.so")
         }
         if (!File(nativeStaging, "include/mpv/client.h").isFile) add("native/include/mpv/client.h")
@@ -260,8 +260,8 @@ android {
 
   sourceSets {
     getByName("main") {
-      // Prebuilt libmpv + FFmpeg .so files extracted from the mpv-build tarballs;
-      // the glue libplayer.so comes from the CMake build above.
+      // Only FFmpeg libraries not imported by CMake. CMake owns packaging of
+      // libmpv.so, libavcodec.so and the JNI glue libplayer.so.
       jniLibs.srcDir(File(mpvNativeDir, "jni"))
     }
   }

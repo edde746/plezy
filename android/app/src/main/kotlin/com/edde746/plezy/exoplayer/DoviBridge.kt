@@ -309,17 +309,14 @@ object DoviBridge {
   }.onFailure { Log.w(TAG, "Failed to query display HDR capabilities", it) }.getOrNull()
 
   private fun getDisplayHdrTypes(display: Display): IntArray {
-    val hdrCapabilities = getDisplayHdrCapabilities(display) ?: return IntArray(0)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-      return runCatching { display.mode.supportedHdrTypes }.getOrElse { error ->
-        Log.w(TAG, "Failed to query mode HDR types; falling back to display HDR capabilities", error)
-        @Suppress("DEPRECATION")
-        hdrCapabilities.supportedHdrTypes
-      }
+      runCatching { display.mode.supportedHdrTypes }
+        .onSuccess { return it }
+        .onFailure { Log.w(TAG, "Failed to query mode HDR types; falling back to display HDR capabilities", it) }
     }
 
     @Suppress("DEPRECATION")
-    return hdrCapabilities.supportedHdrTypes
+    return getDisplayHdrCapabilities(display)?.supportedHdrTypes ?: IntArray(0)
   }
 
   private fun describeDisplayMode(mode: Display.Mode): String {

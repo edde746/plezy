@@ -200,9 +200,14 @@ void main() {
     expect(await outcome.firstFrame, isTrue);
   });
 
-  test('the deadline counts from load start and aborts a backend that goes silent', () {
+  test('the deadline counts from load start, aborts a backend that goes silent, and tells the owner', () {
     fakeAsync((async) {
-      final outcome = PlaybackOpenOutcome.armForTesting(player, deadline: const Duration(seconds: 30));
+      var deadlines = 0;
+      final outcome = PlaybackOpenOutcome.armForTesting(
+        player,
+        deadline: const Duration(seconds: 30),
+        onDeadline: () => deadlines++,
+      );
       bool? firstFrame;
       unawaited(outcome.firstFrame.then((value) => firstFrame = value));
 
@@ -218,11 +223,31 @@ void main() {
       player.started.add(null);
       async.elapse(const Duration(seconds: 29));
       expect(outcome.isSettled, isFalse);
+      expect(deadlines, 0);
 
       async.elapse(const Duration(seconds: 1));
       expect(firstFrame, isFalse);
       expect(outcome.isAborted, isTrue);
+      // The owner hears about it after the waiters collapsed, so the failure
+      // it raises cannot race a waiter that would otherwise resume.
+      expect(deadlines, 1);
       expect(async.nonPeriodicTimerCount, 0);
+    });
+  });
+
+  test('a deadline the backend beats never fires its callback', () {
+    fakeAsync((async) {
+      var deadlines = 0;
+      final outcome = PlaybackOpenOutcome.armForTesting(
+        player,
+        deadline: const Duration(seconds: 30),
+        onDeadline: () => deadlines++,
+      );
+      player.started.add(null);
+      player.failed.add(null);
+      async.elapse(const Duration(minutes: 1));
+      expect(outcome.failed, isTrue);
+      expect(deadlines, 0);
     });
   });
 

@@ -21,7 +21,6 @@ import '../utils/plex_library_section_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_card_sliver_layout.dart';
-import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/overlay_sheet.dart';
@@ -512,123 +511,120 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   Widget build(BuildContext context) {
     return PrimaryScrollController(
       controller: scrollController,
-      child: IosStatusBarTapScrollToTop(
-        controller: scrollController,
-        child: OverlaySheetHost(
-          // Host owns sheet + system back: a back with a sheet open closes it;
-          // otherwise focus the app bar first, then pop (handleBackNavigation).
-          // canPop preserves the iOS interactive swipe-back.
-          canPop: PlatformDetector.isHandheldIOS(context),
-          onSystemBack: () {
-            if (BackKeyCoordinator.consumeIfHandled()) return;
-            if (handleBackNavigation() && mounted) Navigator.pop(context);
-          },
-          child: Scaffold(
-            key: _overlayChildKey,
-            body: CustomScrollView(
-              primary: true,
-              clipBehavior: Clip.none,
-              slivers: [
-                CustomAppBar(title: Text(widget.hub.title), pinned: true, actions: buildFocusableAppBarActions()),
-                if (_errorMessage != null)
-                  SliverErrorState(message: _errorMessage!, onRetry: _loadMoreItems)
-                else if (_filteredItems.isEmpty && _isLoading)
-                  LoadingIndicatorBox.sliver
-                else if (_filteredItems.isEmpty)
-                  SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
-                else
-                  SettingsBuilder(
-                    prefs: const [
-                      SettingsService.viewMode,
-                      SettingsService.episodePosterMode,
-                      SettingsService.libraryDensity,
-                      SettingsService.tvFullCardLayout,
-                    ],
-                    builder: (context) {
-                      final svc = SettingsService.instance;
-                      final viewMode = svc.read(SettingsService.viewMode);
-                      final episodePosterMode = svc.read(SettingsService.episodePosterMode);
-                      final libraryDensity = svc.read(SettingsService.libraryDensity);
-                      final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
+      child: OverlaySheetHost(
+        // Host owns sheet + system back: a back with a sheet open closes it;
+        // otherwise focus the app bar first, then pop (handleBackNavigation).
+        // canPop preserves the iOS interactive swipe-back.
+        canPop: PlatformDetector.isHandheldIOS(context),
+        onSystemBack: () {
+          if (BackKeyCoordinator.consumeIfHandled()) return;
+          if (handleBackNavigation() && mounted) Navigator.pop(context);
+        },
+        child: Scaffold(
+          key: _overlayChildKey,
+          body: CustomScrollView(
+            primary: true,
+            clipBehavior: Clip.none,
+            slivers: [
+              CustomAppBar(title: Text(widget.hub.title), pinned: true, actions: buildFocusableAppBarActions()),
+              if (_errorMessage != null)
+                SliverErrorState(message: _errorMessage!, onRetry: _loadMoreItems)
+              else if (_filteredItems.isEmpty && _isLoading)
+                LoadingIndicatorBox.sliver
+              else if (_filteredItems.isEmpty)
+                SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
+              else
+                SettingsBuilder(
+                  prefs: const [
+                    SettingsService.viewMode,
+                    SettingsService.episodePosterMode,
+                    SettingsService.libraryDensity,
+                    SettingsService.tvFullCardLayout,
+                  ],
+                  builder: (context) {
+                    final svc = SettingsService.instance;
+                    final viewMode = svc.read(SettingsService.viewMode);
+                    final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+                    final libraryDensity = svc.read(SettingsService.libraryDensity);
+                    final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
 
-                      final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
-                      final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
+                    final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
+                    final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
-                      final isMixedHub = hasEpisodes && hasNonEpisodes;
+                    final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                      final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
+                    final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
-                      final useWideLayout =
-                          episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+                    final useWideLayout =
+                        episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
-                      final isSquareHub =
-                          _filteredItems.isNotEmpty &&
-                          _filteredItems.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
+                    final isSquareHub =
+                        _filteredItems.isNotEmpty &&
+                        _filteredItems.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
 
-                      return MediaCardSliverLayout(
-                        viewMode: viewMode,
-                        itemCount: _filteredItems.length,
-                        findChildIndexCallback: (key) {
-                          final id = (key as ValueKey<String>).value;
-                          final index = _filteredItems.indexWhere((item) => item.globalKey == id);
-                          return index < 0 ? null : index;
-                        },
-                        density: libraryDensity,
-                        padding: const EdgeInsets.all(8),
-                        useWideAspectRatio: useWideLayout,
-                        fullBleedImage: fullCardLayout,
-                        shape: isSquareHub ? CardShape.square : null,
-                        itemBuilder: (context, position) {
-                          final index = position.index;
-                          final item = _filteredItems[index];
-                          final focusNode = _focusNodeForIndex(index);
+                    return MediaCardSliverLayout(
+                      viewMode: viewMode,
+                      itemCount: _filteredItems.length,
+                      findChildIndexCallback: (key) {
+                        final id = (key as ValueKey<String>).value;
+                        final index = _filteredItems.indexWhere((item) => item.globalKey == id);
+                        return index < 0 ? null : index;
+                      },
+                      density: libraryDensity,
+                      padding: const EdgeInsets.all(8),
+                      useWideAspectRatio: useWideLayout,
+                      fullBleedImage: fullCardLayout,
+                      shape: isSquareHub ? CardShape.square : null,
+                      itemBuilder: (context, position) {
+                        final index = position.index;
+                        final item = _filteredItems[index];
+                        final focusNode = _focusNodeForIndex(index);
 
-                          return FocusableMediaCard(
-                            // Keyed by item, not by slot: a re-sort must move
-                            // the element with its item instead of silently
-                            // updating it with a different one. Aggregated
-                            // hubs mix servers, so the id alone can collide.
-                            key: Key(item.globalKey),
-                            focusNode: focusNode,
-                            item: item,
-                            disableScale: position.disableScale,
-                            onRefresh: _handleItemRefresh,
-                            onRemoveFromContinueWatching: widget.isInContinueWatching
-                                ? _handleRemoveFromContinueWatching
-                                : null,
-                            isInContinueWatching: widget.isInContinueWatching,
-                            usesContinueWatchingAction: widget.usesContinueWatchingAction,
-                            onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
-                            onNavigateDown:
-                                _pageLoadError != null && position.index >= position.itemCount - position.columnCount
-                                ? _continuationRetryFocusNode.requestFocus
-                                : null,
-                            onNavigateLeft: position.isGrid && position.isFirstColumn ? () {} : null,
-                            onBack: handleBackFromContent,
-                            onFocusChange: (hasFocus) => _handleGridItemFocusChange(
-                              index,
-                              hasFocus,
-                              isLastRow: position.index >= position.itemCount - position.columnCount,
-                            ),
-                            mixedHubContext: isMixedHub,
-                            fullBleedImage: fullCardLayout && position.isGrid,
-                          );
-                        },
-                      );
-                    },
-                  ),
-                if (_filteredItems.isNotEmpty && (_isLoadingPage || _pageLoadError != null))
-                  ContinuationStatusSliver(
-                    error: _pageLoadError,
-                    onRetry: _retryHubContinuation,
-                    retryFocusNode: _continuationRetryFocusNode,
-                    errorContext: widget.hub.title,
-                    onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
-                    onBack: handleBackFromContent,
-                  ),
-                const SliverSystemBottomInset(),
-              ],
-            ),
+                        return FocusableMediaCard(
+                          // Keyed by item, not by slot: a re-sort must move
+                          // the element with its item instead of silently
+                          // updating it with a different one. Aggregated
+                          // hubs mix servers, so the id alone can collide.
+                          key: Key(item.globalKey),
+                          focusNode: focusNode,
+                          item: item,
+                          disableScale: position.disableScale,
+                          onRefresh: _handleItemRefresh,
+                          onRemoveFromContinueWatching: widget.isInContinueWatching
+                              ? _handleRemoveFromContinueWatching
+                              : null,
+                          isInContinueWatching: widget.isInContinueWatching,
+                          usesContinueWatchingAction: widget.usesContinueWatchingAction,
+                          onNavigateUp: position.isFirstRow ? navigateToAppBar : null,
+                          onNavigateDown:
+                              _pageLoadError != null && position.index >= position.itemCount - position.columnCount
+                              ? _continuationRetryFocusNode.requestFocus
+                              : null,
+                          onNavigateLeft: position.isGrid && position.isFirstColumn ? () {} : null,
+                          onBack: handleBackFromContent,
+                          onFocusChange: (hasFocus) => _handleGridItemFocusChange(
+                            index,
+                            hasFocus,
+                            isLastRow: position.index >= position.itemCount - position.columnCount,
+                          ),
+                          mixedHubContext: isMixedHub,
+                          fullBleedImage: fullCardLayout && position.isGrid,
+                        );
+                      },
+                    );
+                  },
+                ),
+              if (_filteredItems.isNotEmpty && (_isLoadingPage || _pageLoadError != null))
+                ContinuationStatusSliver(
+                  error: _pageLoadError,
+                  onRetry: _retryHubContinuation,
+                  retryFocusNode: _continuationRetryFocusNode,
+                  errorContext: widget.hub.title,
+                  onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
+                  onBack: handleBackFromContent,
+                ),
+              const SliverSystemBottomInset(),
+            ],
           ),
         ),
       ),

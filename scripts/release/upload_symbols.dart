@@ -85,6 +85,25 @@ List<SymbolArtifact> selectSymbolArtifacts(Iterable<SymbolArtifact> candidates) 
   return selected..sort((a, b) => a.keys.first.compareTo(b.keys.first));
 }
 
+// An artifact larger than a whole batch cannot be uploaded at all. Dropping it
+// costs symbolication for that one binary; failing the run costs every artifact
+// and the release that carries them. Flutter's macOS engine dSYM crossed this
+// bound in 3.47.1 (a fat dSYM is charged once per slice, see SymbolArtifact.bytes).
+List<SymbolArtifact> withinUploadCapacity(
+  List<SymbolArtifact> artifacts, {
+  int maxObjects = symbolBatchObjects,
+  int maxBytes = symbolBatchBytes,
+  StringSink? warnings,
+}) {
+  return artifacts.where((artifact) {
+    if (artifact.variants.length <= maxObjects && artifact.bytes <= maxBytes) return true;
+    warnings?.writeln(
+      'Skipping artifact beyond bounded upload capacity: ${artifact.file.path} (${artifact.bytes} bytes)',
+    );
+    return false;
+  }).toList();
+}
+
 List<List<SymbolArtifact>> batchSymbolArtifacts(
   List<SymbolArtifact> artifacts, {
   int maxObjects = symbolBatchObjects,
@@ -260,8 +279,9 @@ Future<SymbolPlan> createSymbolPlan(
   String platform,
   String sourceRoot,
   Map<String, String> environment,
-  SymbolCommand command,
-) async {
+  SymbolCommand command, {
+  StringSink? warnings,
+}) async {
   final build = path.join(sourceRoot, 'build');
   final symbolRoot = path.join(sourceRoot, 'debug-info', platform);
   final native = <SymbolArtifact>[];
@@ -327,6 +347,7 @@ Future<SymbolPlan> createSymbolPlan(
     nativeRoots.addAll([
       (path.join(build, 'app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib'), 30),
       (path.join(build, 'libmpv/libmpv/native/jni'), 20),
+      (path.join(build, 'libmpv/libmpv/native/imported'), 20),
       (path.join(build, 'libmpv/libmpv/libcxx/jni'), 20),
     ]);
   } else if (platform.startsWith('linux-') || platform.startsWith('windows-')) {
@@ -477,13 +498,21 @@ Future<SymbolPlan> createSymbolPlan(
       throw SymbolFailure('Dart map exceeds bounded upload capacity');
     }
   }
+  // Coverage is asserted above against everything shipped; capacity is applied
+  // after, so an oversized artifact is a reported gap rather than a hard stop.
+  final sink = warnings ?? stderr;
+  final boundedNative = withinUploadCapacity(selectedNative, warnings: sink);
+  final boundedDart = withinUploadCapacity(selectedDart, warnings: sink);
+  if (boundedNative.isEmpty) {
+    throw SymbolFailure('No release native symbols for $platform fit the bounded upload capacity');
+  }
   final plan = SymbolPlan(
     platform,
     sourceRoot,
     environment['SENTRY_RELEASE']!,
     environment['SENTRY_DIST'] ?? '',
-    selectedNative,
-    selectedDart,
+    boundedNative,
+    boundedDart,
     entries == null ? null : mapFile.path,
     entries,
   );
@@ -605,7 +634,7 @@ Future<int> runUploadSymbols(
           environment: env,
           includeParentEnvironment: false,
         );
-    final plan = await createSymbolPlan(arguments.first, sourceRoot, env, invoke);
+    final plan = await createSymbolPlan(arguments.first, sourceRoot, env, invoke, warnings: err);
     out.writeln(jsonEncode(plan.toJson()));
     if (!dryRun) await executeSymbolPlan(plan, invoke, output: out);
     return 0;

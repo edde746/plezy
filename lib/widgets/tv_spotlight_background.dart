@@ -239,10 +239,10 @@ class TvSpotlightBackground extends StatelessWidget {
     if (logoPath == null || logoPath.isEmpty) {
       return SizedBox(width: logoWidth, height: logoHeight, child: _buildTitle(context, title));
     }
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: ImageType.heroLogo);
     final (logoMemWidth, logoMemHeight) = MediaImageHelper.getMemCacheDimensions(
-      displayWidth: (logoWidth * dpr).round(),
-      displayHeight: (logoHeight * dpr).round(),
+      displayWidth: (logoWidth * pixelRatio).round(),
+      displayHeight: (logoHeight * pixelRatio).round(),
       imageType: ImageType.heroLogo,
     );
 
@@ -262,6 +262,7 @@ class TvSpotlightBackground extends StatelessWidget {
                 ? bounded
                 : ToneMappedLogoImage(bounded, target: logoToneTarget, remapMixed: false),
             fit: BoxFit.contain,
+            filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.heroLogo),
             alignment: .centerLeft,
             errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
           ),

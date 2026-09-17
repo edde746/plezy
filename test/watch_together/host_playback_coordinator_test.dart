@@ -56,7 +56,8 @@ class _Harness {
   PlaybackState get last => broadcasts.last;
 
   void attachForMedia(FakeAsync async, {bool hasFirstFrame = false}) {
-    coordinator.attach(attached, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: hasFirstFrame);
+    if (hasFirstFrame) player.setHasRenderedFrame(true);
+    coordinator.attach(attached, ratingKey: 'rk1', serverId: 'srv');
     async.flushMicrotasks();
   }
 
@@ -178,18 +179,19 @@ void main() {
         final oldSeek = Completer<void>();
         final oldBinding = AttachedPlayer(player: h.player, onLost: () {}, remoteSeek: (_) => oldSeek.future);
         h.player.setPosition(const Duration(seconds: 5));
+        h.player.setHasRenderedFrame(true);
         h.coordinator.adoptRoom(_adoptedState());
-        h.coordinator.attach(oldBinding, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+        h.coordinator.attach(oldBinding, ratingKey: 'rk1', serverId: 'srv');
         async.flushMicrotasks();
         h.coordinator.detachPlayer();
         h.coordinator.onStateRequested('guest');
         expect(h.sent.last.$1.anchorPositionMs, 121000);
         h.coordinator.onReconnected();
         expect(h.last.anchorPositionMs, 121000);
-        final replacement = FakeSyncPlayer(position: const Duration(seconds: 5));
+        final replacement = FakeSyncPlayer(position: const Duration(seconds: 5), hasRenderedFrame: true);
         final binding = AttachedPlayer(player: replacement, onLost: () {});
         final hold = Completer<void>();
-        h.coordinator.attach(binding, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true, startupHold: hold.future);
+        h.coordinator.attach(binding, ratingKey: 'rk1', serverId: 'srv', startupHold: hold.future);
         oldSeek.complete();
         async.elapse(const Duration(seconds: 6));
         expect(h.last.anchorPositionMs, 121000);
@@ -215,8 +217,9 @@ void main() {
         final pending = Completer<void>();
         final binding = AttachedPlayer(player: h.player, onLost: () {}, remoteSeek: (_) => pending.future);
         h.player.setPosition(const Duration(seconds: 5));
+        h.player.setHasRenderedFrame(true);
         h.coordinator.adoptRoom(_adoptedState(phase: PlaybackPhase.paused));
-        h.coordinator.attach(binding, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+        h.coordinator.attach(binding, ratingKey: 'rk1', serverId: 'srv');
         h.player.emitPlaybackRestart();
         async.flushMicrotasks();
         h.coordinator.onStateRequested('guest');
@@ -397,13 +400,8 @@ void main() {
         final h = _Harness(async);
         final oldHold = Completer<void>();
         final replacementHold = Completer<void>();
-        h.coordinator.attach(
-          h.attached,
-          ratingKey: 'rk1',
-          serverId: 'srv',
-          hasFirstFrame: true,
-          startupHold: oldHold.future,
-        );
+        h.player.setHasRenderedFrame(true);
+        h.coordinator.attach(h.attached, ratingKey: 'rk1', serverId: 'srv', startupHold: oldHold.future);
         async.flushMicrotasks();
 
         h.coordinator.detachPlayer();
@@ -414,13 +412,7 @@ void main() {
           onLost: () {},
           nowMs: () => _epochMs + async.elapsed.inMilliseconds,
         );
-        h.coordinator.attach(
-          replacement,
-          ratingKey: 'rk1',
-          serverId: 'srv',
-          hasFirstFrame: true,
-          startupHold: replacementHold.future,
-        );
+        h.coordinator.attach(replacement, ratingKey: 'rk1', serverId: 'srv', startupHold: replacementHold.future);
         async.flushMicrotasks();
 
         oldHold.complete();

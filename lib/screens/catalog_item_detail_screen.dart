@@ -1166,7 +1166,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// a provider that returns a single sequel used to spend an entire shelf on
   /// it. Rows flow into columns on wide viewports, like the facts above.
   Widget _buildRelationsSection(ThemeData theme) {
-    final posterTargetPx = (40 * MediaImageHelper.effectiveDevicePixelRatio(context)).ceil();
+    final posterTargetPx = MediaImageHelper.artworkTargetPx(context, 40);
     return LayoutBuilder(
       builder: (context, constraints) {
         final count = _relationEntries.length;
@@ -1309,12 +1309,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     // the permission mask (grant/revoke), both adopted in place upstream.
     context.select<CatalogSourcesProvider, SeerrCatalogSource?>((sources) => sources.seerrSource);
     context.select<SeerrAccountProvider?, int?>((account) => account?.permissions);
-    final artworkDpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     // The backdrop strip spans the full screen width (Positioned left/right: 0
     // below), and backdropFor is width-keyed: target the rendered width, not
     // the 320px slot height.
-    final backdropUrl = item.backdropFor((MediaQuery.sizeOf(context).width * artworkDpr).ceil());
-    final posterUrl = item.posterFor((140 * artworkDpr).ceil());
+    final backdropUrl = item.backdropFor(
+      MediaImageHelper.artworkTargetPx(context, MediaQuery.sizeOf(context).width, imageType: ImageType.art),
+    );
+    final posterUrl = item.posterFor(MediaImageHelper.artworkTargetPx(context, 140));
     final isMobile = PlatformDetector.isMobile(context);
 
     final viewInsets = MediaQuery.paddingOf(context);

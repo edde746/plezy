@@ -71,7 +71,7 @@ Future<void> navigateToLiveTv(
     appLogger.w('Live TV launch channel was not present in navigation list; prepending ${channel.key}');
   }
 
-  final route = buildVideoPlayerRoute(
+  final route = VideoPlayerRoute(
     builder: (_) => VideoPlayerScreen(
       metadata: placeholder,
       live: LiveTvSessionArgs(channel: channel, channels: normalizedChannels, currentChannelIndex: currentChannelIndex),
@@ -80,7 +80,7 @@ Future<void> navigateToLiveTv(
     ),
   );
 
-  unawaited(navigator.push<bool>(route));
+  unawaited(route.push(navigator));
   launchObserver?.mark('opening');
 }
 

@@ -128,12 +128,20 @@ class MpvPlayer private constructor(
     }
 
     @JvmStatic
-    fun onEndFile(session: Long, reason: Int, sourceId: Long, hasSourceId: Boolean, error: Int) {
+    fun onEndFile(
+      session: Long,
+      reason: Int,
+      sourceId: Long,
+      hasSourceId: Boolean,
+      error: Int,
+      errorMessage: String?
+    ) {
       target(session)?.rawEvents?.trySend(
         MpvEvent.EndFile(
           EndFileReason.fromId(reason),
           sourceId.takeIf { hasSourceId },
-          MpvError.fromCode(error)
+          MpvError.fromCode(error),
+          errorMessage?.takeIf { it.isNotBlank() }
         )
       )
     }

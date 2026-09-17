@@ -55,6 +55,38 @@ class MediaImageHelper {
   /// Minimum DPR for TV to ensure sharp artwork on large screens
   static const double _tvMinDpr = 2.0;
 
+  /// Peak artwork supersample: the fetch and decode carry this multiple of the
+  /// pixels the artwork paints into.
+  ///
+  /// Flutter resolves the leftover scale with a separable filter at whatever
+  /// sub-pixel phase the layout lands on — grid strides and scroll offsets are
+  /// fractional doubles — and a bitmap that nearly matches its destination is
+  /// the worst case: the kernel degenerates into a two-tap blend of
+  /// neighbouring texels. A 7% size mismatch therefore costs far more than 7%
+  /// of the detail, and an exact 1∶1 fetch is no better, because the phase
+  /// still shifts it. RMSE against an ideal area-average of a 1000×1500 Plex
+  /// poster in a 186×279 slot, averaged over sub-pixel phases (lower is
+  /// sharper, each ratio under its best filter):
+  ///
+  ///     1.00× 10.4   1.15× 8.3   1.25× 7.0   1.50× 4.7   1.75× 3.8   2.00× 4.0
+  ///
+  /// 1.5 takes ~80% of the gain for 2.25× the pixels and keeps the paint scale
+  /// at 0.67, above the 0.5 where [FilterQuality.high] starts losing to
+  /// mipmaps.
+  static const double _maxArtworkSupersample = 1.5;
+
+  /// Device pixels per logical pixel past which the supersample stops being
+  /// worth its bytes.
+  ///
+  /// A logical pixel subtends roughly the same angle on every form factor by
+  /// construction (~1.5–1.8 arcmin), so a device pixel subtends that over the
+  /// ratio. Against ~1 arcmin of acuity one device pixel is clearly resolvable
+  /// at DPR 1 (1.52'), borderline at 2 (0.83–0.87' — the TVs and tablets
+  /// #1697 and #2020 were reported from) and invisible at 3 (0.63'). So
+  /// high-density phones pay nothing: they are the platform on cellular data
+  /// and the tightest on RAM.
+  static const double _supersampleDensityTarget = 3.0;
+
   /// Reduced-tier art caps: backdrops at ~720p, masked by the gradient scrims
   /// drawn over them. Tiles (posters/thumbs/squares) deliberately keep full
   /// resolution — capping them reads as blur on large TV panels (#2020) —
@@ -65,7 +97,11 @@ class MediaImageHelper {
   /// Rounds a value up to the next multiple of [factor]. Shared between the
   /// URL dimension rounding (transcode bucket) and the mem-cache dimension
   /// rounding (decode bucket) so both snap to the same grid.
-  static int _bucketUp(num value, int factor) => (value / factor).ceil() * factor;
+  ///
+  /// The epsilon stops a value that is only floating-point noise above a
+  /// bucket edge (`800 * 1.1` is 880.0000000000001) from spending a whole
+  /// extra bucket.
+  static int _bucketUp(num value, int factor) => ((value / factor) - 1e-9).ceil() * factor;
 
   /// Rounds dimensions to cache-friendly values to increase cache hit rate
   static (int width, int height) roundDimensions(double width, double height) {
@@ -76,10 +112,11 @@ class MediaImageHelper {
     );
   }
 
-  /// Computes an effective device pixel ratio that accounts for displays where
-  /// the platform-reported DPR doesn't reflect the true physical density
-  /// (common on Linux X11 with compositor scaling).
-  static double effectiveDevicePixelRatio(BuildContext context) {
+  /// The display's true device pixel ratio, corrected where the reported value
+  /// doesn't reflect physical density (Linux X11 with compositor scaling) and
+  /// floored on TV. This is the paint density; anything that fetches or
+  /// decodes artwork wants [artworkPixelRatio].
+  static double _displayPixelRatio(BuildContext context) {
     final reportedDpr = MediaQuery.devicePixelRatioOf(context);
     double dpr;
     try {
@@ -94,15 +131,60 @@ class MediaImageHelper {
     return dpr;
   }
 
-  /// Calculates optimal image dimensions based on image type and constraints
+  /// Supersample factor for [imageType] at a display density of [dpr].
+  ///
+  /// Tapers from [_maxArtworkSupersample] to 1.0 as the display passes
+  /// [_supersampleDensityTarget]. Backdrops opt out at every density: they are
+  /// the largest RGBA decodes on screen and sit behind the gradient scrims
+  /// that hide the softness this compensates for. The reduced tier opts out
+  /// wholesale, like every other memory budget.
+  static double _supersampleFor(ImageType imageType, double dpr) {
+    if (DevicePerformance.isReduced || imageType == ImageType.art) return 1.0;
+    return (_supersampleDensityTarget / dpr).clamp(1.0, _maxArtworkSupersample);
+  }
+
+  /// Density to fetch and decode [imageType] artwork at: the display's ratio
+  /// plus whatever supersample headroom that density earns.
+  ///
+  /// Callers scale their logical slot by this before calling
+  /// [getOptimizedImageUrl] and [getMemCacheDimensions], so the fetch and the
+  /// decode cannot disagree.
+  static double artworkPixelRatio(BuildContext context, {ImageType imageType = ImageType.poster}) {
+    final dpr = _displayPixelRatio(context);
+    return dpr * _supersampleFor(imageType, dpr);
+  }
+
+  /// Paint-time filter for [imageType], derived from the same predicate as
+  /// [artworkPixelRatio] so the two cannot drift apart.
+  ///
+  /// Supersampled artwork paints as a real minification, which a bicubic
+  /// kernel resolves at the same quality whatever the sub-pixel phase.
+  /// [FilterQuality.medium] cannot: its mipmap blend snaps to a half-size
+  /// level and then re-introduces the two-tap lerp on top, measuring worse
+  /// than plain bilinear at every ratio this class produces. Without headroom
+  /// there is nothing for cubic to resolve, so bilinear is both cheaper and
+  /// no worse.
+  static FilterQuality artworkFilterQuality(BuildContext context, ImageType imageType) =>
+      _supersampleFor(imageType, _displayPixelRatio(context)) > 1 ? FilterQuality.high : FilterQuality.low;
+
+  /// Physical artwork pixels to target for a [logicalWidth]-wide slot, for
+  /// picking a pre-rendered CDN variant (catalog posters/backdrops) that has
+  /// no width/height pair to run through [calculateOptimalDimensions].
+  static int artworkTargetPx(BuildContext context, double logicalWidth, {ImageType imageType = ImageType.poster}) =>
+      (logicalWidth * artworkPixelRatio(context, imageType: imageType)).ceil();
+
+  /// Calculates optimal image dimensions based on image type and constraints.
+  ///
+  /// [pixelRatio] is the fetch density from [artworkPixelRatio], not the raw
+  /// display ratio: it already carries any supersample headroom.
   static (int width, int height) calculateOptimalDimensions({
     required double maxWidth,
     required double maxHeight,
-    required double devicePixelRatio,
+    required double pixelRatio,
     ImageType imageType = ImageType.poster,
   }) {
-    final targetWidth = maxWidth.isFinite ? maxWidth * devicePixelRatio : 300 * devicePixelRatio;
-    final targetHeight = maxHeight.isFinite ? maxHeight * devicePixelRatio : 450 * devicePixelRatio;
+    final targetWidth = maxWidth.isFinite ? maxWidth * pixelRatio : 300 * pixelRatio;
+    final targetHeight = maxHeight.isFinite ? maxHeight * pixelRatio : 450 * pixelRatio;
 
     switch (imageType) {
       case ImageType.art:
@@ -161,7 +243,7 @@ class MediaImageHelper {
     required String? thumbPath,
     required double maxWidth,
     required double maxHeight,
-    required double devicePixelRatio,
+    required double pixelRatio,
     ImageType imageType = ImageType.poster,
   }) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
@@ -176,7 +258,7 @@ class MediaImageHelper {
         final (width, height) = calculateOptimalDimensions(
           maxWidth: maxWidth,
           maxHeight: maxHeight,
-          devicePixelRatio: devicePixelRatio,
+          pixelRatio: pixelRatio,
           imageType: imageType,
         );
         final uri = Uri.parse(basePath);
@@ -198,7 +280,7 @@ class MediaImageHelper {
       final (width, height) = calculateOptimalDimensions(
         maxWidth: maxWidth,
         maxHeight: maxHeight,
-        devicePixelRatio: devicePixelRatio,
+        pixelRatio: pixelRatio,
         imageType: imageType,
       );
       return client.externalImageUrl(basePath, width: width, height: height, cover: _coversSlot(imageType));
@@ -220,7 +302,7 @@ class MediaImageHelper {
     final (width, height) = calculateOptimalDimensions(
       maxWidth: maxWidth,
       maxHeight: maxHeight,
-      devicePixelRatio: devicePixelRatio,
+      pixelRatio: pixelRatio,
       imageType: imageType,
     );
 
@@ -245,6 +327,10 @@ class MediaImageHelper {
     // maxHeight stay stable across sub-bucket resize deltas. Without this,
     // LayoutBuilder rebuilds during window resize churn the cache key on
     // every pixel and evict valid entries from Flutter's image cache.
+    //
+    // [displayWidth]/[displayHeight] come from the caller's slot scaled by
+    // [artworkPixelRatio], so any supersample headroom is already in them and
+    // the decode cannot disagree with the fetch.
     final bucketedWidth = _bucketUp(displayWidth, _widthRoundingFactor);
     final bucketedHeight = _bucketUp(displayHeight, _heightRoundingFactor);
 

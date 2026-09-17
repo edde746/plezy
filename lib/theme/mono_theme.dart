@@ -63,6 +63,10 @@ ThemeData _buildMonoTheme({required bool dark, required bool oled, required Targ
     platform: platform,
     useMaterial3: true,
     brightness: isDark ? Brightness.dark : Brightness.light,
+    // Linux resolves UI text through fontconfig, which on a minimal desktop
+    // may have no CJK font at all; the bundled subtitle fonts (pubspec
+    // `fonts:`) cover it. Other platforms keep their native CJK fonts.
+    fontFamilyFallback: platform == TargetPlatform.linux ? const ['Go Noto Current', 'Go Noto Current Hangul'] : null,
     colorScheme: ColorScheme(
       brightness: isDark ? Brightness.dark : Brightness.light,
       primary: c.text,

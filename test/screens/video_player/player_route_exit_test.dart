@@ -59,7 +59,7 @@ void main() {
               ),
             );
             if (pushed) {
-              unawaited(navigator.currentState!.push(buildVideoPlayerRoute(builder: (_) => screen)));
+              unawaited(VideoPlayerRoute(builder: (_) => screen).push(navigator.currentState!));
             }
             await pumpUntil(tester, () => find.widgetWithText(OutlinedButton, 'Back').evaluate().isNotEmpty);
             key.currentState!.player = player;
@@ -182,11 +182,9 @@ Future<({GlobalKey<VideoPlayerScreenState> key, GlobalKey<NavigatorState> naviga
     ),
   );
   unawaited(
-    navigator.currentState!.push(
-      buildVideoPlayerRoute(
-        builder: (_) => VideoPlayerScreen(key: key, metadata: testMediaItem(), isOffline: true),
-      ),
-    ),
+    VideoPlayerRoute(
+      builder: (_) => VideoPlayerScreen(key: key, metadata: testMediaItem(), isOffline: true),
+    ).push(navigator.currentState!),
   );
   await tester.pump();
   key.currentState!.player = player;

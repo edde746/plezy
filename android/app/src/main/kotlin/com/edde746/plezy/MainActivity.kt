@@ -5,6 +5,7 @@ import android.app.AppOpsManager
 import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.media.AudioManager
@@ -87,6 +88,20 @@ class MainActivity : FlutterActivity() {
     // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
     private const val LOW_MEM_THRESHOLD_BYTES = 2252L shl 20
 
+    // Configuration bits only a fold/unfold or display switch flips (a
+    // subset of the android:configChanges set that keeps this activity alive
+    // across them). CONFIG_SCREEN_SIZE is handled separately: rotation
+    // reports it too because width/height swap, so it only counts when no
+    // orientation change explains it. Density alone is not a fold.
+    private const val FOLD_CONFIG_MASK =
+      ActivityInfo.CONFIG_SMALLEST_SCREEN_SIZE or ActivityInfo.CONFIG_SCREEN_LAYOUT
+
+    // How long the nav-bar show in [reassertHiddenSystemBars] is left to
+    // settle before the hide: past InsetsController's show animation
+    // (275 ms), so the hide lands as a fresh transition the window manager
+    // acts on rather than a cancellation of the show it never finished.
+    private const val SYSTEM_BARS_SETTLE_MS = 400L
+
     private var selectedFlutterRenderer = FlutterRenderer.IMPELLER
   }
 
@@ -111,11 +126,16 @@ class MainActivity : FlutterActivity() {
   private var imeWasVisible = false
   private var lastImeLeakRestartUptime = 0L
   private var imeVisibilityListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+  private var systemBarsInsetsHost: View? = null
+  private var systemBarsReassertPending = false
+  private var pendingSystemBarsHide: Runnable? = null
+  private var lastConfig: Configuration? = null
   private var originalWindowBrightness: Float? = null
   private var flutterTextureView: FlutterTextureView? = null
   private var flutterSurfaceReconnectPending = false
   private var activityStarted = false
   private val externalPlayerChannel = ExternalPlayerChannel(this)
+  private val userCertificateChannel = UserCertificateChannel()
   private val exitDiagnosticsRequested = AtomicBoolean(false)
 
   private inline fun logTextInputDiag(message: () -> String) {
@@ -483,6 +503,7 @@ class MainActivity : FlutterActivity() {
     ThemeHelper.themeColor(savedTheme)?.let { window.decorView.setBackgroundColor(it) }
 
     super.onCreate(savedInstanceState)
+    lastConfig = Configuration(resources.configuration)
 
     // Disable the Android splash screen fade-out animation to avoid
     // a flicker before Flutter draws its first frame.
@@ -539,6 +560,22 @@ class MainActivity : FlutterActivity() {
       )
     )
 
+    // Anchor the post-fold system-bar re-assert on the first inset dispatch
+    // after the configuration change: that lands on a vsync traversal after
+    // the window manager has re-laid the window out, whereas a post from
+    // onConfigurationChanged raced the taskbar's force-show. The listener
+    // lives on the wrapper, not the DecorView, so DecorView.onApplyWindowInsets
+    // keeps its color-view handling; insets are never consumed so FlutterView
+    // still receives them.
+    wrapper.setOnApplyWindowInsetsListener { v, insets ->
+      if (systemBarsReassertPending) {
+        systemBarsReassertPending = false
+        v.post { reassertHiddenSystemBars() }
+      }
+      insets
+    }
+    systemBarsInsetsHost = wrapper
+
     // Watch IME visibility so a fresh session can be rebound the moment the
     // keyboard first shows: on Chromecast-class devices the initial bind can
     // land against a stale sequence, leaving the IME without a key session
@@ -594,6 +631,9 @@ class MainActivity : FlutterActivity() {
     endNativeTextInputSession()
     imeVisibilityListener?.let { window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(it) }
     imeVisibilityListener = null
+    systemBarsInsetsHost?.setOnApplyWindowInsetsListener(null)
+    systemBarsInsetsHost = null
+    cancelPendingSystemBarsHide()
     carRestrictions?.release()
     carRestrictions = null
     carRestrictionsChannel = null
@@ -708,6 +748,90 @@ class MainActivity : FlutterActivity() {
     activityStarted = true
     tryReconnectFlutterSurface()
   }
+
+  /**
+   * Arm a one-shot re-assert of the hidden navigation bar after a fold-class
+   * configuration change. The manifest keeps this activity alive across
+   * fold/unfold and display switches, and Samsung's taskbar (a window of its
+   * own, not an inset this activity controls) is force-shown on the inner
+   * display without any `systemUIChange` the Dart guard could answer.
+   *
+   * Replaying the requested overlays here was a no-op at three layers:
+   * `View.setSystemUiVisibility` drops unchanged flags, `ViewRootImpl` only
+   * issues an inset hide on a flag transition, and `InsetsController.hide`
+   * skips a type that is already requested-hidden. No timing can make an
+   * unchanged request reach the window manager, so instead
+   * [reassertHiddenSystemBars] flips the requested visibility (show, then
+   * hide once the show has settled) once the first inset dispatch after the
+   * change confirms the window has been re-laid out. Only screen-size and
+   * layout diffs arm it; orientation-only and density-only changes do not.
+   */
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    val diff = lastConfig?.diff(newConfig) ?: 0
+    lastConfig = Configuration(newConfig)
+    val foldClass = (diff and FOLD_CONFIG_MASK) != 0 ||
+      ((diff and ActivityInfo.CONFIG_SCREEN_SIZE) != 0 && (diff and ActivityInfo.CONFIG_ORIENTATION) == 0)
+    if (foldClass) systemBarsReassertPending = true
+  }
+
+  // Forces a real requested-visibility transition on the navigation bar so
+  // the window manager, StatusBar service and SystemUI re-derive "nav hidden"
+  // for this window. show() makes the consumer requested-visible; the hide
+  // follows once that show has settled. Issuing both in one runnable reached
+  // the window manager (requested true→false) but the hide only cancelled
+  // the show's pending animation (`cancelAnimation: types=navigationBars`)
+  // and the taskbar never retracted, whereas a transient that runs to
+  // completion does retract it. So the show is allowed to complete, as a
+  // swipe-reveal would, and the hide is a fresh transition after it.
+  // The show also rewrites Flutter's legacy flags: once the bar is visible
+  // with control, ViewRootImpl.updateCompatSysUiVisibility marks
+  // HIDE_NAVIGATION as a local change and View.updateLocalSystemUiVisibility
+  // clears it on the DecorView. A flag-gated controller.hide() therefore
+  // never ran, and every later fold failed the entry guard. So the hide is a
+  // restore of the flags snapshotted before the show: putting HIDE_NAVIGATION
+  // back is a flag transition, so ViewRootImpl.controlInsetsForCompatibility
+  // issues the hide itself — the path Flutter takes to enter immersive — and
+  // the engine's flags are coherent again for the next fold. Ownership is a
+  // flag comparison rather than a HIDE_NAVIGATION check: leaving the player
+  // meanwhile writes edge-to-edge flags, which also drop FULLSCREEN and
+  // IMMERSIVE_STICKY, so they mismatch the snapshot even with HIDE_NAVIGATION
+  // added back. Outside immersive mode (edge-to-edge screens) there is
+  // nothing to re-assert.
+  @Suppress("DEPRECATION")
+  private fun reassertHiddenSystemBars() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+    if (!navigationHiddenByFlags()) return
+    val controller = window.insetsController ?: return
+    Log.i(TAG, "Re-asserting hidden navigation bars after a fold-class configuration change")
+    cancelPendingSystemBarsHide()
+    val immersiveFlags = window.decorView.systemUiVisibility
+    controller.show(WindowInsets.Type.navigationBars())
+    val hide = Runnable {
+      pendingSystemBarsHide = null
+      val current = window.decorView.systemUiVisibility
+      if ((current or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != immersiveFlags) return@Runnable
+      if (current == immersiveFlags) {
+        // The show never reached the compat sync (no control at that instant), so
+        // the flags carry no transition to replay; hide the bar directly.
+        window.insetsController?.hide(WindowInsets.Type.navigationBars())
+      } else {
+        window.decorView.systemUiVisibility = immersiveFlags
+      }
+    }
+    pendingSystemBarsHide = hide
+    window.decorView.postDelayed(hide, SYSTEM_BARS_SETTLE_MS)
+  }
+
+  private fun cancelPendingSystemBarsHide() {
+    pendingSystemBarsHide?.let { window.decorView.removeCallbacks(it) }
+    pendingSystemBarsHide = null
+  }
+
+  // Whether Dart's last requested system-UI mode hides the navigation bar,
+  // i.e. the player's immersive mode is in force.
+  @Suppress("DEPRECATION")
+  private fun navigationHiddenByFlags(): Boolean = (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != 0
 
   private fun tryReconnectFlutterSurface() {
     if (!activityStarted || !flutterSurfaceReconnectPending) return
@@ -837,6 +961,7 @@ class MainActivity : FlutterActivity() {
     }
 
     externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+    userCertificateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
 
     // Splash screen theme: persist user's chosen theme for next launch (API 31+)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->

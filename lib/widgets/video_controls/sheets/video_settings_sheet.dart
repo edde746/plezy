@@ -158,9 +158,16 @@ class _SettingsToggleItem extends StatefulWidget {
   final Pref<bool> pref;
   final IconData icon;
   final String title;
+  final String? subtitle;
   final FutureOr<void> Function(bool value)? onAfterWrite;
 
-  const _SettingsToggleItem({required this.pref, required this.icon, required this.title, this.onAfterWrite});
+  const _SettingsToggleItem({
+    required this.pref,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.onAfterWrite,
+  });
 
   @override
   State<_SettingsToggleItem> createState() => _SettingsToggleItemState();
@@ -233,6 +240,9 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
         return FocusableListTile(
           leading: AppIcon(widget.icon, fill: 1, color: displayedValue ? Colors.amber : tokens(context).textMuted),
           title: Text(widget.title),
+          subtitle: widget.subtitle == null
+              ? null
+              : Text(widget.subtitle!, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
           trailing: Switch(value: displayedValue, onChanged: isPending ? null : _write, activeThumbColor: Colors.amber),
           onTap: isPending ? null : () => _write(!displayedValue),
         );
@@ -672,10 +682,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   String _versionQualityValueText() {
+    final showVersions = _state.availableVersions.length > 1;
     final values = <String>[];
-    if (_state.availableVersions.length > 1) values.add(_selectedVersionLabel());
-    if (_state.serverSupportsTranscoding) values.add(qualityPresetLabel(_state.selectedQualityPreset));
+    if (showVersions) values.add(_selectedVersionLabel());
+    if (_state.serverSupportsTranscoding) {
+      values.add(
+        qualityPresetLabel(
+          _state.selectedQualityPreset,
+          sourceBitrateKbps: showVersions ? null : _selectedSourceBitrateKbps(),
+        ),
+      );
+    }
     return values.join(' / ');
+  }
+
+  int? _selectedSourceBitrateKbps() {
+    final index = _state.selectedMediaIndex;
+    if (index < 0 || index >= _state.availableVersions.length) {
+      return null;
+    }
+    final bitrate = _state.availableVersions[index].bitrate;
+    return bitrate != null && bitrate > 0 ? bitrate : null;
   }
 
   String _selectedVersionLabel() {
@@ -816,6 +843,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           pref: SettingsService.audioNormalization,
           icon: Symbols.graphic_eq_rounded,
           title: t.videoSettings.audioNormalization,
+          // Normalization wins over passthrough; say so where passthrough
+          // exists. Android also folds the track to stereo ahead of loudnorm
+          // (PlayerBase._loudnormFilter), which a surround owner must hear
+          // about before flipping it.
+          subtitle: PlatformDetector.supportsAudioPassthrough()
+              ? Platform.isAndroid
+                    ? t.videoSettings.audioNormalizationStereoMix
+                    : t.videoSettings.audioNormalizationDisablesPassthrough
+              : null,
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 
@@ -1053,11 +1089,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget _buildSleepView() {
     final sleepTimer = SleepTimerService();
 
-    return SleepTimerContent(
-      player: widget.player,
-      sleepTimer: sleepTimer,
-      onCancel: () => OverlaySheetController.of(context).close(),
-    );
+    return SleepTimerContent(sleepTimer: sleepTimer, onCancel: () => OverlaySheetController.of(context).close());
   }
 
   Widget _buildVersionQualityView() {

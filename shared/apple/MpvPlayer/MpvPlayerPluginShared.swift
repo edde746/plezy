@@ -50,15 +50,19 @@ extension MpvPluginShared {
         }
         result(nil)
       case .failure(let error):
-        let lifecycleUnavailable = error is MpvLifecycleUnavailableError
+        if error is MpvLifecycleUnavailableError {
+          result(
+            FlutterError(
+              code: "NOT_INITIALIZED", message: "MPV player is not initialized", details: nil))
+          return
+        }
+        // The mpv error string is the only thing that tells a rejected option
+        // apart from a cancelled write; the property name says which write.
         result(
           FlutterError(
-            code: lifecycleUnavailable ? "NOT_INITIALIZED" : "SET_PROPERTY_FAILED",
-            message:
-              lifecycleUnavailable
-              ? "MPV player is not initialized"
-              : "MPV rejected or cancelled the property write",
-            details: nil))
+            code: "SET_PROPERTY_FAILED",
+            message: "MPV rejected or cancelled the property write '\(name)': \(error.localizedDescription)",
+            details: name))
       }
     }
   }
@@ -157,6 +161,9 @@ extension MpvPluginShared {
       result(FlutterError(code: "INVALID_ARGS", message: "Missing 'level'", details: nil))
       return
     }
+    // The same switch drives mpv's own verbosity and the Swift-side traces, so
+    // enabling "Debug Logging" in the app opens both.
+    MpvLog.isDebugEnabled = MpvLog.isVerbose(level)
     coreBase?.setLogLevel(level)
     result(nil)
   }

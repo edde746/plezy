@@ -240,10 +240,10 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
     final size = MediaQuery.sizeOf(context);
     final width = widget.width.isFinite && widget.width > 0 ? widget.width : size.width;
     final height = widget.height.isFinite && widget.height > 0 ? widget.height : size.height;
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: ImageType.art);
     final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
-      displayWidth: (width * dpr).round(),
-      displayHeight: (height * dpr).round(),
+      displayWidth: (width * pixelRatio).round(),
+      displayHeight: (height * pixelRatio).round(),
       imageType: ImageType.art,
     );
 
@@ -257,7 +257,7 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
       thumbPath: path,
       maxWidth: width,
       maxHeight: height,
-      devicePixelRatio: dpr,
+      pixelRatio: pixelRatio,
       imageType: ImageType.art,
     );
     if (imageUrl.isEmpty) return null;
@@ -451,6 +451,7 @@ class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> wi
       key: incoming ? ValueKey<ImageProvider>(provider) : null,
       image: provider,
       fit: widget.fit,
+      filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.art),
       alignment: widget.alignment,
       excludeFromSemantics: true,
       gaplessPlayback: true,

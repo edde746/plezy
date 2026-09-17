@@ -40,7 +40,14 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen>
-    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, MountedSetStateMixin, DebouncedMediaSearch {
+    with
+        Refreshable,
+        ManualRefreshable,
+        FullRefreshable,
+        SearchInputFocusable,
+        FocusableTab,
+        MountedSetStateMixin,
+        DebouncedMediaSearch {
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
@@ -212,6 +219,11 @@ class _SearchScreenState extends State<SearchScreen>
     if (!mounted) return;
     runSearch(searchController.text.trim());
   }
+
+  /// Cmd+R / Ctrl+R re-runs the query currently on screen; `runSearch` no-ops
+  /// on an empty field.
+  @override
+  void manualRefresh() => refresh();
 
   /// Focus the search input field
   @override

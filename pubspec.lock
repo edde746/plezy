@@ -105,11 +105,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "12ef3ff758709e3ceab8eccd6d43e0dea1c68ca1"
-      resolved-ref: "12ef3ff758709e3ceab8eccd6d43e0dea1c68ca1"
+      ref: "1bcc9978e9b5e503dd08176cc423cfabee703761"
+      resolved-ref: "1bcc9978e9b5e503dd08176cc423cfabee703761"
       url: "https://github.com/edde746/background_downloader"
     source: git
-    version: "9.5.6"
+    version: "9.6.2"
   boolean_selector:
     dependency: transitive
     description:
@@ -256,7 +256,7 @@ packages:
     source: git
     version: "7.2.0"
   connectivity_plus_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: connectivity_plus_platform_interface
       sha256: "3c09627c536d22fd24691a905cdd8b14520de69da52c7a97499c8be5284a32ed"
@@ -1015,18 +1015,18 @@ packages:
     dependency: transitive
     description:
       name: sentry
-      sha256: a84bf3a83b3ce1c89fce28b9f97659e3826df14a73a256952465aac2c5efdf5a
+      sha256: bf80a571e370aad3f68b5c26d43f31cc230a084c250fb3138a83da6032ba0c01
       url: "https://pub.dev"
     source: hosted
-    version: "9.25.0"
+    version: "9.30.0"
   sentry_flutter:
     dependency: "direct main"
     description:
       name: sentry_flutter
-      sha256: c85575266d91f57364e9b4cb522835156ec3c5581c78339dc7fae491cd0c6f76
+      sha256: da36fbb1581c0f66a0c8fc76f8aadb62d9ea567ba950c97eb326e959482c342a
       url: "https://pub.dev"
     source: hosted
-    version: "9.25.0"
+    version: "9.30.0"
   serial_csv:
     dependency: transitive
     description:
@@ -1478,5 +1478,5 @@ packages:
     source: hosted
     version: "2.2.4"
 sdks:
-  dart: ">=3.12.0 <4.0.0"
+  dart: ">=3.13.0 <4.0.0"
   flutter: ">=3.47.0"

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../i18n/strings.g.dart';
-import '../../../mpv/mpv.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -25,18 +24,11 @@ import 'sleep_timer_active_status.dart';
 ///   * Right column ("Timer") — fixed-duration options (5/10/15/30/45/60/90/120
 ///     minutes, plus an optional default duration injected from settings).
 class SleepTimerContent extends StatelessWidget {
-  final Player player;
   final SleepTimerService sleepTimer;
   final int? defaultDuration;
   final VoidCallback? onCancel;
 
-  const SleepTimerContent({
-    super.key,
-    required this.player,
-    required this.sleepTimer,
-    this.defaultDuration,
-    this.onCancel,
-  });
+  const SleepTimerContent({super.key, required this.sleepTimer, this.defaultDuration, this.onCancel});
 
   @override
   Widget build(BuildContext context) {
@@ -57,15 +49,9 @@ class SleepTimerContent extends StatelessWidget {
             ],
             Flexible(
               child: SheetSplitColumns(
-                start: FocusTraversalGroup(
-                  child: _SleepTimerEventColumn(player: player, sleepTimer: sleepTimer),
-                ),
+                start: FocusTraversalGroup(child: _SleepTimerEventColumn(sleepTimer: sleepTimer)),
                 end: FocusTraversalGroup(
-                  child: _SleepTimerDurationColumn(
-                    player: player,
-                    sleepTimer: sleepTimer,
-                    defaultDuration: defaultDuration,
-                  ),
+                  child: _SleepTimerDurationColumn(sleepTimer: sleepTimer, defaultDuration: defaultDuration),
                 ),
               ),
             ),
@@ -77,10 +63,9 @@ class SleepTimerContent extends StatelessWidget {
 }
 
 class _SleepTimerEventColumn extends StatelessWidget {
-  final Player player;
   final SleepTimerService sleepTimer;
 
-  const _SleepTimerEventColumn({required this.player, required this.sleepTimer});
+  const _SleepTimerEventColumn({required this.sleepTimer});
 
   @override
   Widget build(BuildContext context) {
@@ -103,10 +88,7 @@ class _SleepTimerEventColumn extends StatelessWidget {
                 title: Text(label),
                 selected: sleepTimer.isEndOfVideoMode,
                 onTap: () {
-                  sleepTimer.armEndOfVideo(() {
-                    // Pause playback when the current video ends
-                    player.pause();
-                  });
+                  sleepTimer.armEndOfVideo();
                   OverlaySheetController.closeAdaptive(context);
 
                   showSuccessSnackBar(context, t.messages.sleepTimerSet(label: label));
@@ -121,11 +103,10 @@ class _SleepTimerEventColumn extends StatelessWidget {
 }
 
 class _SleepTimerDurationColumn extends StatelessWidget {
-  final Player player;
   final SleepTimerService sleepTimer;
   final int? defaultDuration;
 
-  const _SleepTimerDurationColumn({required this.player, required this.sleepTimer, this.defaultDuration});
+  const _SleepTimerDurationColumn({required this.sleepTimer, this.defaultDuration});
 
   @override
   Widget build(BuildContext context) {
@@ -162,10 +143,7 @@ class _SleepTimerDurationColumn extends StatelessWidget {
                 title: Text(label),
                 selected: minutes == activeMinutes,
                 onTap: () {
-                  sleepTimer.startTimer(Duration(minutes: minutes), () {
-                    // Pause playback when timer completes
-                    player.pause();
-                  });
+                  sleepTimer.startTimer(Duration(minutes: minutes));
                   OverlaySheetController.closeAdaptive(context);
 
                   // Show confirmation snackbar

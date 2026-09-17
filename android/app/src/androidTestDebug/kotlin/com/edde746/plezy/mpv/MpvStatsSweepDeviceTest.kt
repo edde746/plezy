@@ -6,10 +6,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.edde746.plezy.shared.PlayerDelegate
 import java.io.File
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -29,7 +31,7 @@ class MpvStatsSweepDeviceTest {
 
   @Test
   fun aSweepReadsRealValuesWhileAConcurrentPropertyReadIsAnswered() {
-    withPlayingCore { core ->
+    withPlayingCore { core, _ ->
       // The sweep is one suspend pass now; the synchronous entry is a single
       // blocking read. Both have to see the same core state, or the sweep is
       // reporting something the rest of the app would disagree with.
@@ -73,7 +75,7 @@ class MpvStatsSweepDeviceTest {
 
   @Test
   fun memoryPressureNarrowsTheDemuxerBudgetOneWay() {
-    withPlayingCore { core ->
+    withPlayingCore { core, events ->
       // getProperty refuses to run on the main thread, so these synchronous
       // reads stay on the instrumentation thread.
       fun budget() = core.getProperty("demuxer-max-bytes")?.toLongOrNull()
@@ -84,6 +86,14 @@ class MpvStatsSweepDeviceTest {
       onMain { core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) }
       val critical = awaitBudgetChange(steady) { budget() }
       assertTrue("critical pressure did not narrow $steady", critical!! < steady!!)
+
+      // Read-ahead is bounded in seconds of the stream, so the decision reads
+      // properties only a real core answers. A libmpv that serves no
+      // `file-size`/`demuxer-cache-state` would quietly fall back to the flat
+      // byte floor - the behavior this replaced (#2314).
+      val trim = events.memoryLogs.lastOrNull { it.startsWith("trim level") }
+      assertNotNull("no demuxer budget decision reached the log: ${events.memoryLogs}", trim)
+      assertFalse(trim!!, trim.contains("stream byte rate unknown"))
 
       // A milder level afterwards asks for more read-ahead than critical left
       // applied; re-growing while the device is still thrashing is how the app
@@ -103,7 +113,7 @@ class MpvStatsSweepDeviceTest {
     return read()
   }
 
-  private fun withPlayingCore(body: (MpvPlayerCore) -> Unit) {
+  private fun withPlayingCore(body: (MpvPlayerCore, Loaded) -> Unit) {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val fixtureBytes = instrumentation.context.assets.open("ffmpeg/mediacodec_teardown.mp4").use { it.readBytes() }
     val fixture = File.createTempFile("mpv-stats-", ".mp4", instrumentation.targetContext.cacheDir)
@@ -152,7 +162,7 @@ class MpvStatsSweepDeviceTest {
       assertTrue("playback-restart never arrived", events.playbackRestart.await(10, TimeUnit.SECONDS))
       write(core.get(), "pause", "yes")
 
-      body(core.get())
+      body(core.get(), events)
     } finally {
       val disposed = CountDownLatch(1)
       instrumentation.runOnMainSync { core.get().dispose { disposed.countDown() } }
@@ -175,12 +185,16 @@ class MpvStatsSweepDeviceTest {
     val fileLoaded = CountDownLatch(1)
     val playbackRestart = CountDownLatch(1)
 
+    /** The core's own `memory` lines, i.e. every demuxer budget decision. */
+    val memoryLogs = ConcurrentLinkedQueue<String>()
+
     override fun onPropertyChange(name: String, value: Any?) = Unit
 
     override fun onEvent(name: String, data: Map<String, Any>?) {
       when (name) {
         "file-loaded" -> fileLoaded.countDown()
         "playback-restart" -> playbackRestart.countDown()
+        "log-message" -> if (data?.get("prefix") == "memory") memoryLogs.add(data["text"] as String)
       }
     }
   }

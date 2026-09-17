@@ -60,7 +60,7 @@ internal object MpvContentUriResolver {
       val resolved = if (fd == null) {
         ResolvedMpvUri(uriString)
       } else {
-        Log.d(TAG, "Opened content FD $fd for $uriString")
+        PlayerDebugLog.d(TAG) { "Opened content FD $fd for $uriString" }
         ResolvedMpvUri("fdclose://$fd", fd)
       }
       mainHandler.post { onResolved(resolved) }

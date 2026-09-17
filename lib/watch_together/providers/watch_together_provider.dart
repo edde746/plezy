@@ -622,7 +622,6 @@ class WatchTogetherProvider with ChangeNotifier {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
-    bool hasFirstFrame = false,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
     required WatchPlaybackLease lease,
@@ -633,7 +632,6 @@ class WatchTogetherProvider with ChangeNotifier {
       ratingKey: ratingKey,
       serverId: serverId,
       mediaTitle: mediaTitle,
-      hasFirstFrame: hasFirstFrame,
       startupHold: startupHold,
       remoteSeek: remoteSeek,
     );

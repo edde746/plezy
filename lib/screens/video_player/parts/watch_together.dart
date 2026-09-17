@@ -34,7 +34,6 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       ratingKey: metadata.id,
       serverId: serverId,
       mediaTitle: metadata.displayTitle,
-      hasFirstFrame: _firstFrame.uiReady.value,
       startupHold: startupHold,
       lease: bindingLease,
       remoteSeek: (target) async {
@@ -67,6 +66,42 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
     if (watchTogether.onPlayerMediaSwitched == _handlePlayerMediaSwitch) {
       watchTogether.onPlayerMediaSwitched = null;
+    }
+  }
+
+  /// Run [body] with the Watch Together binding detached, then re-attach.
+  /// [AttachedPlayer] classifies every play/pause transition it did not
+  /// command as a viewer intent, and a bound engine still services remote
+  /// play/pause/seek/rate requests against the player, so a flow that
+  /// drives the player itself — the display-matching measurement window and
+  /// the hold around an HDMI switch — must not be bound while it runs, the
+  /// same way a reload detaches around its internal pause. Re-attachment
+  /// carries [startupHold] so a room waiting on the startup gate keeps
+  /// waiting; readiness itself is the player's own rendered-frame fact, so
+  /// the rebind loses nothing. Skipped when the room lease or the binding
+  /// moved on.
+  Future<void> _withWatchTogetherDetached(Future<void> Function() body, {Future<void>? startupHold}) async {
+    final watchTogether = _watchTogetherProvider;
+    final binding = _watchTogetherBinding;
+    final lease = _watchTogetherLease;
+    final detached = watchTogether != null && binding != null && watchTogether.ownsBinding(binding);
+    if (detached) watchTogether.unbindPlayer(expectedBinding: binding);
+    try {
+      await body();
+    } finally {
+      if (detached &&
+          mounted &&
+          !_shuttingDown &&
+          lease != null &&
+          watchTogether.isPlaybackLeaseCurrent(lease) &&
+          watchTogether.ownsBinding(binding) &&
+          !watchTogether.hasAttachedPlayer) {
+        try {
+          _attachToWatchTogetherSession(lease: lease, startupHold: startupHold);
+        } catch (e, stackTrace) {
+          appLogger.w('Failed to reattach Watch Together after display negotiation', error: e, stackTrace: stackTrace);
+        }
+      }
     }
   }
 

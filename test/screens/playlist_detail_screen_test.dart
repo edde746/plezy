@@ -185,7 +185,7 @@ void main() {
     expect(find.text('Item ${playlistItemsPageSize * 2 + 4}'), findsOneWidget);
   });
 
-  testWidgets('iOS top safe-area tap scrolls long playlists to top', (tester) async {
+  testWidgets('iOS status-bar tap scrolls long playlists to top', (tester) async {
     final items = _mediaItems(playlistItemsPageSize + 5);
     final harness = await _createHarness(items);
 
@@ -209,7 +209,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(scrollable.position.pixels, greaterThan(0));
 
-    await tester.tapAt(const Offset(20, 10));
+    tester.simulateStatusBarTap();
     await tester.pumpAndSettle();
 
     expect(scrollable.position.pixels, 0);
@@ -551,6 +551,30 @@ void main() {
     expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_2']);
     expect(harness.client.activeMutationCount, 0);
     expect(harness.client.peakMutationCount, 1);
+  });
+
+  testWidgets('D-pad walking a long playlist keeps the whole focused card on screen', (tester) async {
+    final harness = await _createHarness(_mediaItems(60));
+    await _pushPlaylistRoute(tester, harness);
+
+    final listFocus = find.byWidgetPredicate(
+      (widget) => widget is Focus && widget.focusNode?.debugLabel == 'playlist_list',
+    );
+    tester.widget<Focus>(listFocus).focusNode!.requestFocus();
+    await tester.pump();
+
+    final viewport = tester.getRect(find.byType(CustomScrollView));
+
+    for (var index = 1; index < 40; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      final card = find.byWidgetPredicate((widget) => widget is PlaylistItemCard && widget.index == index);
+      expect(card, findsOneWidget, reason: 'focused card $index scrolled out of the built range');
+      final rect = tester.getRect(card);
+      expect(rect.top, greaterThanOrEqualTo(viewport.top), reason: 'focused card $index is clipped at the top');
+      expect(rect.bottom, lessThanOrEqualTo(viewport.bottom), reason: 'focused card $index is clipped at the bottom');
+    }
   });
 }
 

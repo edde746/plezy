@@ -5,8 +5,10 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.system.Os
+import android.system.OsConstants
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -89,6 +91,17 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
   }
 
   data class Materialized(val uri: Uri, val file: File)
+
+  data class FileIdentity(
+    val file: File,
+    val device: Long,
+    val inode: Long,
+    val size: Long,
+    val modifiedSeconds: Long,
+    val modifiedNanos: Long,
+    val changedSeconds: Long,
+    val changedNanos: Long
+  )
 
   sealed class Prepared {
     abstract val materialized: Materialized
@@ -264,6 +277,29 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
     return resolve(uri)
   }
 
+  /** A cheap identity check, never a substitute for initially validating an image. */
+  fun fileIdentity(uri: Uri): FileIdentity? {
+    // Older platforms expose only second-resolution change times. Keep their full validation.
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O_MR1) return null
+    val file = confinedCandidate(uri) ?: return null
+    return runCatching {
+      val stat = Os.stat(file.absolutePath)
+      if (!OsConstants.S_ISREG(stat.st_mode) || stat.st_size !in 1L..MAX_IMAGE_BYTES.toLong()) {
+        return null
+      }
+      FileIdentity(
+        file,
+        stat.st_dev,
+        stat.st_ino,
+        stat.st_size,
+        stat.st_mtim.tv_sec,
+        stat.st_mtim.tv_nsec,
+        stat.st_ctim.tv_sec,
+        stat.st_ctim.tv_nsec
+      )
+    }.getOrNull()
+  }
+
   fun deleteExcept(keep: Set<File>) {
     val canonicalKeep = keep.mapNotNullTo(HashSet()) {
       runCatching { it.canonicalFile }.getOrNull()
@@ -376,7 +412,11 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
 
     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     return runCatching {
-      BitmapFactory.decodeFile(file.absolutePath, options)
+      // decodeFile uses decodeStream's temporary byte buffer; a descriptor needs no scratch
+      // array and keeps concurrent provider reads independent.
+      file.inputStream().use { input ->
+        BitmapFactory.decodeFileDescriptor(input.fd, null, options)
+      }
       hasSupportedDimensions(options)
     }.getOrDefault(false)
   }
@@ -508,7 +548,15 @@ internal class SystemShelfArtworkStore(private val cacheDir: File) {
       width.toLong() * height <= 16_777_216L
   }
 
-  private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
-    .digest(value.toByteArray(Charsets.UTF_8))
-    .joinToString("") { byte -> "%02x".format(byte) }
+  private fun sha256(value: String): String {
+    val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
+    val hex = "0123456789abcdef"
+    val result = CharArray(digest.size * 2)
+    digest.forEachIndexed { index, byte ->
+      val unsigned = byte.toInt() and 0xff
+      result[index * 2] = hex[unsigned ushr 4]
+      result[index * 2 + 1] = hex[unsigned and 0x0f]
+    }
+    return String(result)
+  }
 }

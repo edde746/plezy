@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -303,6 +304,35 @@ void main() {
       }
     }
 
+    testWidgets('the desktop page refresh shortcut reloads the focused log selection', (tester) async {
+      PlatformDetector.debugSetIsDesktopOSOverride(true);
+      TvDetectionService.debugSetAppleTVOverride(false);
+      addTearDown(() {
+        PlatformDetector.debugSetIsDesktopOSOverride(null);
+        TvDetectionService.debugSetAppleTVOverride(null);
+      });
+
+      await pumpLogs(tester);
+      const marker = 'shortcut-refresh-marker';
+      seedLogs(const [marker]);
+      expect(find.textContaining(marker, findRichText: true), findsNothing);
+
+      final selectionArea = tester.widget<SelectionArea>(find.byType(SelectionArea));
+      selectionArea.focusNode!.requestFocus();
+      await tester.pump();
+
+      final modifier = defaultTargetPlatform == TargetPlatform.macOS
+          ? LogicalKeyboardKey.metaLeft
+          : LogicalKeyboardKey.controlLeft;
+      await tester.sendKeyDownEvent(modifier);
+      expect(await tester.sendKeyDownEvent(LogicalKeyboardKey.keyR), isTrue);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyR);
+      await tester.sendKeyUpEvent(modifier);
+      await tester.pump();
+
+      expect(find.textContaining(marker, findRichText: true), findsOneWidget);
+    }, variant: TargetPlatformVariant.desktop());
+
     testWidgets('lays out only the visible slice of a large buffer', (tester) async {
       // Rendering the whole buffer as one paragraph froze the frame for tens
       // of seconds and OOM-killed low-memory devices; offscreen entries must
@@ -322,6 +352,36 @@ void main() {
         await tester.pump();
       }
       expect(find.textContaining('oldest-entry-marker', findRichText: true), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('iOS status-bar tap scrolls the log back to the newest entry', (tester) async {
+      seedLogs([for (var i = 0; i < 400; i++) 'entry-$i payload']);
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(
+              theme: ThemeData(platform: TargetPlatform.iOS),
+              home: MediaQuery(
+                data: const MediaQueryData(padding: EdgeInsets.only(top: 25)),
+                child: LogsScreen(deviceInfoPlugin: deviceInfo),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+      expect(position.pixels, greaterThan(0));
+
+      tester.simulateStatusBarTap();
+      await tester.pumpAndSettle();
+
+      expect(position.pixels, 0);
       expect(tester.takeException(), isNull);
     });
 

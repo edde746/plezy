@@ -14,12 +14,14 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/jellyfin_sequential_launcher.dart';
 import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/i18n/strings.g.dart';
 
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 /// Recording fake that satisfies [JellyfinClient] via `implements` +
 /// `noSuchMethod`. The launcher only needs the
@@ -156,6 +158,11 @@ MediaItem _track(String id, {ServerId? serverId}) => testMediaItem(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+  });
 
   Future<BuildContext> pumpContext(WidgetTester tester) async {
     late BuildContext capturedContext;
@@ -400,6 +407,75 @@ void main() {
       expect(playback.isShuffleActive, isTrue);
       // The shuffle should not preserve the original order.
       expect(shuffledIds, isNot(equals(originalIds)));
+    });
+
+    testWidgets('shuffled launch strips the launched item\'s resume offset when the pref is on (#2303)', (
+      tester,
+    ) async {
+      final ctx = await pumpContext(tester);
+      await SettingsService.instance.write(SettingsService.shuffleStartsFromBeginning, true);
+      // Every item carries an offset so whichever one the shuffle lands on
+      // proves the strip.
+      final fetched = [_ep('a'), _ep('b'), _ep('c')].map((m) => m.copyWith(viewOffsetMs: 120_000)).toList();
+      final fakeClient = _RecordingJellyfinClient(playableDescendantsResponse: fetched);
+      final playback = PlaybackStateProvider();
+      final navigated = <MediaItem>[];
+
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (m) async => navigated.add(m),
+      );
+
+      final collection = testMediaItem(
+        id: 'col-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.collection,
+        serverId: 'srv-jf',
+      );
+
+      final result = await launcher.launchFromCollectionOrPlaylist(
+        item: collection,
+        shuffle: true,
+        showLoadingIndicator: false,
+      );
+
+      expect(result, isA<PlayQueueSuccess>());
+      expect(navigated.single.viewOffsetMs, 0);
+      // Queue items keep their server offsets — only the launched copy is
+      // stripped; the in-player override covers later queue items.
+      expect(playback.loadedItems.every((m) => m.viewOffsetMs == 120_000), isTrue);
+    });
+
+    testWidgets('shuffled launch keeps the resume offset when the pref is off', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fetched = [_ep('a'), _ep('b'), _ep('c')].map((m) => m.copyWith(viewOffsetMs: 120_000)).toList();
+      final fakeClient = _RecordingJellyfinClient(playableDescendantsResponse: fetched);
+      final navigated = <MediaItem>[];
+
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: PlaybackStateProvider(),
+        navigateForTesting: (m) async => navigated.add(m),
+      );
+
+      final collection = testMediaItem(
+        id: 'col-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.collection,
+        serverId: 'srv-jf',
+      );
+
+      final result = await launcher.launchFromCollectionOrPlaylist(
+        item: collection,
+        shuffle: true,
+        showLoadingIndicator: false,
+      );
+
+      expect(result, isA<PlayQueueSuccess>());
+      expect(navigated.single.viewOffsetMs, 120_000);
     });
 
     testWidgets('startItem positions playback at the matching index', (tester) async {

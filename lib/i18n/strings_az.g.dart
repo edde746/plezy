@@ -278,6 +278,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get alwaysKeepSidebarOpenDescription => 'Yan menyu genişlənmiş qalır və məzmun sahəsi buna uyğunlaşır';
 	@override String get showUnwatchedCount => 'Baxılmamış sayını göstər';
 	@override String get showUnwatchedCountDescription => 'Seriallarda və mövsümlərdə baxılmamış seriya sayını göstər';
+	@override String get showWatchedIndicators => 'Baxılmış göstəriciləri göstər';
+	@override String get showWatchedIndicatorsDescription => 'Baxılmış kinolarda, seriallarda və seriyalarda quşçuq göstər';
 	@override String get showEpisodeNumberOnCards => 'Kartlarda seriya nömrəsini göstər';
 	@override String get showEpisodeNumberOnCardsDescription => 'Seriya kartlarında mövsüm və seriya nömrəsini göstər';
 	@override String get showSeasonPostersOnTabs => 'Mərhələlərdə mövsüm posterlərini göstər';
@@ -307,6 +309,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'Defolt keyfiyyət';
 	@override String get cellularQualityTitle => 'Mobil şəbəkədə defolt keyfiyyət';
 	@override String get cellularQualitySameAsDefault => 'Defolt keyfiyyətlə eyni';
+	@override String get directPlayCoveredQuality => 'Kiçik videoları orijinal keyfiyyətdə oynat';
+	@override String get directPlayCoveredQualityDescription => 'Keyfiyyət limitinə uyğun gələn videoları yenidən kodlaşdırmaq əvəzinə birbaşa oynat';
 	@override String get musicQualityTitle => 'Musiqi keyfiyyəti';
 	@override String get subtitleStyling => 'Altyazı tənzimləmələri';
 	@override String get subtitleStylingDescription => 'Altyazı görünüşünü özünüləşdirin';
@@ -318,6 +322,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} dəqiqə';
 	@override String get rememberTrackSelections => 'Hər film/serial üçün səs/altyazı seçimlərini xatırla';
 	@override String get rememberTrackSelectionsDescription => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla';
+	@override String get rememberTrackSelectionsBackendRule => 'Plex hər seçimi serverdə fayl üzrə saxlayır; Jellyfin həmçinin hesabın "Seçimləri xatırla" funksiyasını aktivləşdirir; Emby dəstəklənmir';
 	@override String get followServerTrackSelections => 'Hər epizod üçün serverin trek seçimlərini istifadə et';
 	@override String get followServerTrackSelectionsDescription => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et';
 	@override String get resumeMusicOnLaunch => 'Musiqi sessiyasını yadda saxla';
@@ -378,8 +383,21 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get autoPlayAndSkip => 'Avtomatik oynat və ötür';
 	@override String get autoPlayNextEpisode => 'Növbəti seriyanı avtomatik oynat';
 	@override String get autoPlayNextEpisodeDescription => 'Bir seriya bitdikdə növbətisini avtomatik başlat';
+	@override String get shuffleStartsFromBeginning => 'Qarışdırma əvvəldən başlayır';
+	@override String get shuffleStartsFromBeginningDescription => 'Qarışdırarkən hər seriyanı davam etdirmək əvəzinə əvvəldən başlat';
 	@override String get playNextCountdown => 'Növbəti seriya geri sayımı';
 	@override String get playNextCountdownImmediate => 'Dərhal oynat';
+	@override String get skipIntroMode => 'Girişi ötür';
+	@override String get skipIntroModeOffDescription => 'Girişləri ötürmə düyməsi olmadan normal oynat';
+	@override String get skipIntroModeButtonDescription => 'Giriş başlayanda ötürmə düyməsini göstər';
+	@override String get skipIntroModeAutoDescription => 'Girişləri aşağıdakı ləngimədən sonra avtomatik ötür';
+	@override String get skipCreditsMode => 'Titrləri ötür';
+	@override String get skipCreditsModeOffDescription => 'Titrləri ötürmə düyməsi olmadan normal oynat';
+	@override String get skipCreditsModeButtonDescription => 'Titrlər başlayanda ötürmə düyməsini göstər';
+	@override String get skipCreditsModeAutoDescription => 'Titrləri avtomatik ötür və növbəti seriyanı oynat';
+	@override String get skipMarkerModeOff => 'Söndürülüb';
+	@override String get skipMarkerModeButton => 'Düyməni göstər';
+	@override String get skipMarkerModeAuto => 'Avtomatik';
 	@override String get forceSkipMarkerFallback => 'Ehtiyat işarələri məcburi et';
 	@override String get forceSkipMarkerFallbackDescription => 'Plex işarələri olsa belə hissə başlığı şablonlarını istifadə et';
 	@override String get autoSkipDelay => 'Avtomatik ötürmə ləngiməsi';
@@ -432,6 +450,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get audioPassthrough => 'Səsin birbaşa ötürülməsi (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.';
+	@override String get audioPassthroughOverriddenByNormalization => 'Səsin gurluğunu normallaşdırma aktivkən söndürülüb';
 	@override String get audioDownmix => 'Stereo-ya çevir (Downmix)';
 	@override String get audioDownmixDescription => 'Çoxkanallı səsi stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endirir';
 	@override String get downmixCenterBoost => 'Mərkəz kanal gücləndirilməsi';
@@ -493,6 +512,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get gestureVolumeSwipeDescription => 'Səsi tənzimləmək üçün sağ kənarda yuxarı və ya aşağı sürüşdürün';
 	@override String get gesturePinchToZoom => 'Çimdiklə yaxınlaşdır';
 	@override String get gesturePinchToZoomDescription => 'Yaxınlaşdırmaq və ya uzaqlaşdırmaq üçün videoda çimdik hərəkəti edin';
+	@override String get rememberBrightnessLevel => 'Parlaqlıq səviyyəsini xatırla';
+	@override String get rememberBrightnessLevelDescription => 'Oxutmanı son sürüşdürmə ilə təyin edilmiş parlaqlıqda başlat';
 	@override String get controls => 'İdarəetmələr';
 	@override String get rememberPlayerChanges => 'Pleyer dəyişikliklərini yadda saxla';
 	@override String get rememberPlayerChangesDescription => 'Oxutma zamanı edilən dəyişikliklərin harada saxlanacağı və yenidən tətbiq ediləcəyi';
@@ -905,6 +926,9 @@ class _Translations$messages$az extends Translations$messages$en {
 	@override String get playbackDataInvalid => 'Server yanlış oynatma məlumatı qaytardı.';
 	@override String get playbackCancelled => 'Oynatma ləğv edildi.';
 	@override String get playbackFailed => 'Oynatma başladılarkən xəta.';
+	@override String playbackFailedDetail({required Object error}) => 'Oynatma başladıla bilmədi: ${error}';
+	@override String get audioOutputFailed => 'Səs çıxışı cavab verməyi dayandırdı. TV və ya resiverin səs bağlantısını yoxlayın; başqa tətbiqlərdə də səs yoxdursa, cihazı yenidən başladın.';
+	@override String get mediaUnavailable => 'Bu məzmun artıq əlçatan deyil.';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fayl məlumatı yüklənərkən xəta: ${error}';
 	@override String get errorLoadingSeries => 'Serial yüklənərkən xəta';
 	@override String get musicNotSupported => 'Musiqi oynatması hələ dəstəklənmir';
@@ -948,6 +972,7 @@ class _Translations$messages$az extends Translations$messages$en {
 	@override String get playbackDataNotPrepared => 'Məlumatları hazır olmadan oynatma başladıldı';
 	@override String get streamSelectionUnavailable => 'Bu mənbə üçün yayım seçimi mövcud deyil';
 	@override String get streamSelectionFailed => 'Seçilmiş yayımları tətbiq etmək olmadı';
+	@override String get trackSelectionNotRemembered => 'Bu trek seçimi yalnız cari oynatmaya tətbiq olunur.';
 	@override String get serverUnavailableForProfile => 'Aktiv profil üçün heç bir server mövcud deyil';
 }
 
@@ -974,6 +999,8 @@ class _Translations$subtitlingStyling$az extends Translations$subtitlingStyling$
 	@override String get overrideStrip => 'Formatlaşdırmanı sil';
 	@override String get positionTop => 'Yuxarı';
 	@override String get positionBottom => 'Aşağı';
+	@override String get useMargins => 'Kənar boşluqlardan istifadə et';
+	@override String get useMarginsDescription => 'Mətn altyazılarına videodan kənar sahədə icazə ver. Üslublu altyazılar öz orijinal yerləşməsini saxlaya bilər.';
 	@override String get anchorToScreen => 'Ekrana bərkit';
 	@override String get anchorToScreenDescription => 'Mətn altyazılarını geniş ekranlı videonun altındakı qara zolaqlarda göstər';
 	@override String get bold => 'Qalın';
@@ -1004,6 +1031,9 @@ class _Translations$mpvConfig$az extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Ön ayar silindi';
 	@override String get confirmDeletePreset => 'Bu ön ayarı silmək istədiyinizə əminsiniz?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# şərh';
+	@override String get lineHint => 'option=value';
+	@override String get addLine => 'Sətir əlavə et';
+	@override String get removeLine => 'Sətiri sil';
 	@override String get embeddedVoHint => 'vo, gpu-context və gpu-api Linux-da nəzərə alınmır: daxili video həmişə video müstəvisində vo=libmpv vasitəsilə göstərilir və gpu-next (ArtCNN kimi hesablama şeyderlərinə lazımdır) daxili işləyə bilməz.';
 }
 
@@ -1405,6 +1435,10 @@ class _Translations$explore$az extends Translations$explore$en {
 	@override String get notInLibrary => 'Kitabxananızda yoxdur';
 	@override String get inTheseLibraries => 'Bu kitabxanalarda var';
 	@override String get checkingLibrary => 'Kitabxananız yoxlanılır...';
+	@override String libraryCheckFailed({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n,
+		one: '${n} serveri yoxlamaq olmadı',
+		other: '${n} serveri yoxlamaq olmadı',
+	);
 	@override String get emptyTitle => 'Hələlik burada heç nə yoxdur';
 	@override String emptyMessage({required Object source}) => '${source} mənbəsindən olan sətirlər burada görünəcək.';
 	@override String searchHint({required Object source}) => '${source} daxilində axtar';
@@ -1650,6 +1684,13 @@ class _Translations$watchTogether$az extends Translations$watchTogether$en {
 	@override String get host => 'Təşkilatçı';
 	@override String get hostBadge => 'TƏŞKİLATÇI';
 	@override String get youAreHost => 'Təşkilatçı sizsiniz';
+	@override String get makeHost => 'Təşkilatçı təyin et';
+	@override String get makeHostQuestion => 'Təşkilatçı köçürülsün?';
+	@override String makeHostConfirm({required Object name}) => '${name} oynatmanı idarə edəcək və seansı hər kəs üçün aparacaq.';
+	@override String get transfer => 'Köçür';
+	@override String hostChangedTo({required Object name}) => '${name} indi təşkilatçıdır';
+	@override String get youAreNowHost => 'İndi təşkilatçı sizsiniz';
+	@override String hostTransferFailed({required Object name}) => '${name} təşkilatçı edilə bilmədi';
 	@override String get watchingWithOthers => 'Başqaları ilə izlənilir';
 	@override String get endSession => 'Seansı bitir';
 	@override String get leaveSession => 'Seansdan çıx';
@@ -1682,6 +1723,7 @@ class _Translations$watchTogether$az extends Translations$watchTogether$en {
 	@override String participantPaused({required Object name}) => '${name} fasilə etdi';
 	@override String participantResumed({required Object name}) => '${name} davam etdirdi';
 	@override String participantSeeked({required Object name}) => '${name} oynatma mövqeyini dəyişdi';
+	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name} sürəti ${speed} olaraq təyin etdi';
 	@override String participantBuffering({required Object name}) => '${name} buferləyir';
 	@override String participantNeedsUpdate({required Object name}) => '${name} köhnə tətbiq versiyasındadır';
 	@override String resumingWithout({required Object name}) => '${name} olmadan davam edilir';
@@ -1718,6 +1760,7 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get downloadResumed => 'Yükləmə davam etdirildi';
 	@override String get serverErrorBitrate => 'Server xətası: fayl sürət limitini aşa bilər';
 	@override String get storageFull => 'Cihaz yaddaşı dolu olduğu üçün yükləmə dayandırıldı.';
+	@override String get storageUnavailable => 'Boş yaddaşı yoxlamaq mümkün olmadığı üçün yükləmələr dayandırıldı. Yükləmə yerini yoxlayın, sonra təzədən cəhd edin.';
 	@override String episodesQueued({required Object count}) => 'Yükləmə üçün ${count} seriya növbəyə alındı';
 	@override String get downloadDeleted => 'Yükləmə silindi';
 	@override String deleteConfirm({required Object title}) => '"${title}" bu cihazdan silinsin?';
@@ -1861,6 +1904,8 @@ class _Translations$videoSettings$az extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => 'Məkan səsi';
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Səsin gurluğunu normallaşdır';
+	@override String get audioNormalizationDisablesPassthrough => 'Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür';
+	@override String get audioNormalizationStereoMix => 'Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür';
 	@override String get audioDownmix => 'Stereo-ya çevir';
 }
 
@@ -2107,6 +2152,10 @@ class _Translations$seerr$az extends Translations$seerr$en {
 	@override String get qualityProfile => 'Keyfiyyət profili';
 	@override String get rootFolder => 'Kök qovluq';
 	@override String get languageProfile => 'Dil profili';
+	@override String get tags => 'Teqlər';
+	@override String get noTags => 'Teq yoxdur';
+	@override String defaultOption({required Object name}) => '${name} (Defolt)';
+	@override String get animeNote => 'Bu serial animedir.';
 	@override String get requestSubmitted => 'Sorğu göndərildi';
 	@override String requestFailed({required Object error}) => 'Sorğu uğursuz oldu: ${error}';
 	@override String get requestsLoadFailed => 'Seçimlər yüklənə bilmədi';
@@ -2118,6 +2167,7 @@ class _Translations$seerr$az extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'Bloklanmış';
 	@override String couldNotReach({required Object url, required Object error}) => '${url} ünvanına çatmaq olmadı: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})';
+	@override String get behindAuthProxy => 'Seerr əvəzinə autentifikasiya edən tərs proksi (SSO və ya HTTP auth) cavab verdi. Plezy onun vasitəsilə daxil ola bilmir: bu tətbiq üçün Seerr-in /api/v1 yolunun proksini yan keçməsinə icazə verin və ya Seerr-ə birbaşa çatan ünvan istifadə edin.';
 	@override String get invalidUrl => 'https://seerr.example.com kimi server ünvanı daxil edin';
 	@override String get quickConnectUnsupported => 'Bu Seerr nüsxəsi Sürətli Qoşulmanı dəstəkləmir. Seerr 3.4 və ya daha yeni versiya tələb olunur.';
 	@override String get notInitialized => 'Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb';
@@ -2128,6 +2178,8 @@ class _Translations$seerr$az extends Translations$seerr$en {
 	@override String get freshCookieRejected => 'Seerr yeni sessiya kukisini rədd etdi';
 	@override String get noUserInformation => 'Seerr istifadəçi məlumatlarını qaytarmadı';
 	@override String get sessionRejectedAfterReauth => 'Yenidən daxil olduqdan sonra sessiya rədd edildi';
+	@override String get permissionDenied => 'Seerr bu əməliyyatı rədd etdi: hesabınızda artıq tələb olunan icazə yoxdur';
+	@override String get permissionRevoked => 'Bunu sorğulamaq üçün artıq icazəniz yoxdur';
 }
 
 // Path: services
@@ -2717,6 +2769,7 @@ class _Translations$watchTogether$errors$az extends Translations$watchTogether$e
 	@override String get connectionLost => 'Bağlantı seans hazır olmamış kəsildi';
 	@override String get invalidRelayResponse => 'Rele serveri gözlənilməz cavab göndərdi';
 	@override String get sessionEnded => 'Təşkilatçı seansı bitirdi';
+	@override String get sessionUnavailable => 'Bu seansı davam etdirmək olmur. Davam etmək üçün otağa qoşulun və ya otaq yaradın.';
 }
 
 // Path: downloads.backgroundWarning
@@ -3088,6 +3141,8 @@ extension on TranslationsAz {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Yan menyu genişlənmiş qalır və məzmun sahəsi buna uyğunlaşır',
 			'settings.showUnwatchedCount' => 'Baxılmamış sayını göstər',
 			'settings.showUnwatchedCountDescription' => 'Seriallarda və mövsümlərdə baxılmamış seriya sayını göstər',
+			'settings.showWatchedIndicators' => 'Baxılmış göstəriciləri göstər',
+			'settings.showWatchedIndicatorsDescription' => 'Baxılmış kinolarda, seriallarda və seriyalarda quşçuq göstər',
 			'settings.showEpisodeNumberOnCards' => 'Kartlarda seriya nömrəsini göstər',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Seriya kartlarında mövsüm və seriya nömrəsini göstər',
 			'settings.showSeasonPostersOnTabs' => 'Mərhələlərdə mövsüm posterlərini göstər',
@@ -3117,6 +3172,8 @@ extension on TranslationsAz {
 			'settings.defaultQualityTitle' => 'Defolt keyfiyyət',
 			'settings.cellularQualityTitle' => 'Mobil şəbəkədə defolt keyfiyyət',
 			'settings.cellularQualitySameAsDefault' => 'Defolt keyfiyyətlə eyni',
+			'settings.directPlayCoveredQuality' => 'Kiçik videoları orijinal keyfiyyətdə oynat',
+			'settings.directPlayCoveredQualityDescription' => 'Keyfiyyət limitinə uyğun gələn videoları yenidən kodlaşdırmaq əvəzinə birbaşa oynat',
 			'settings.musicQualityTitle' => 'Musiqi keyfiyyəti',
 			'settings.subtitleStyling' => 'Altyazı tənzimləmələri',
 			'settings.subtitleStylingDescription' => 'Altyazı görünüşünü özünüləşdirin',
@@ -3128,6 +3185,7 @@ extension on TranslationsAz {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} dəqiqə',
 			'settings.rememberTrackSelections' => 'Hər film/serial üçün səs/altyazı seçimlərini xatırla',
 			'settings.rememberTrackSelectionsDescription' => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla',
+			'settings.rememberTrackSelectionsBackendRule' => 'Plex hər seçimi serverdə fayl üzrə saxlayır; Jellyfin həmçinin hesabın "Seçimləri xatırla" funksiyasını aktivləşdirir; Emby dəstəklənmir',
 			'settings.followServerTrackSelections' => 'Hər epizod üçün serverin trek seçimlərini istifadə et',
 			'settings.followServerTrackSelectionsDescription' => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et',
 			'settings.resumeMusicOnLaunch' => 'Musiqi sessiyasını yadda saxla',
@@ -3188,8 +3246,21 @@ extension on TranslationsAz {
 			'settings.autoPlayAndSkip' => 'Avtomatik oynat və ötür',
 			'settings.autoPlayNextEpisode' => 'Növbəti seriyanı avtomatik oynat',
 			'settings.autoPlayNextEpisodeDescription' => 'Bir seriya bitdikdə növbətisini avtomatik başlat',
+			'settings.shuffleStartsFromBeginning' => 'Qarışdırma əvvəldən başlayır',
+			'settings.shuffleStartsFromBeginningDescription' => 'Qarışdırarkən hər seriyanı davam etdirmək əvəzinə əvvəldən başlat',
 			'settings.playNextCountdown' => 'Növbəti seriya geri sayımı',
 			'settings.playNextCountdownImmediate' => 'Dərhal oynat',
+			'settings.skipIntroMode' => 'Girişi ötür',
+			'settings.skipIntroModeOffDescription' => 'Girişləri ötürmə düyməsi olmadan normal oynat',
+			'settings.skipIntroModeButtonDescription' => 'Giriş başlayanda ötürmə düyməsini göstər',
+			'settings.skipIntroModeAutoDescription' => 'Girişləri aşağıdakı ləngimədən sonra avtomatik ötür',
+			'settings.skipCreditsMode' => 'Titrləri ötür',
+			'settings.skipCreditsModeOffDescription' => 'Titrləri ötürmə düyməsi olmadan normal oynat',
+			'settings.skipCreditsModeButtonDescription' => 'Titrlər başlayanda ötürmə düyməsini göstər',
+			'settings.skipCreditsModeAutoDescription' => 'Titrləri avtomatik ötür və növbəti seriyanı oynat',
+			'settings.skipMarkerModeOff' => 'Söndürülüb',
+			'settings.skipMarkerModeButton' => 'Düyməni göstər',
+			'settings.skipMarkerModeAuto' => 'Avtomatik',
 			'settings.forceSkipMarkerFallback' => 'Ehtiyat işarələri məcburi et',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plex işarələri olsa belə hissə başlığı şablonlarını istifadə et',
 			'settings.autoSkipDelay' => 'Avtomatik ötürmə ləngiməsi',
@@ -3242,6 +3313,7 @@ extension on TranslationsAz {
 			'settings.audioPassthrough' => 'Səsin birbaşa ötürülməsi (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.',
+			'settings.audioPassthroughOverriddenByNormalization' => 'Səsin gurluğunu normallaşdırma aktivkən söndürülüb',
 			'settings.audioDownmix' => 'Stereo-ya çevir (Downmix)',
 			'settings.audioDownmixDescription' => 'Çoxkanallı səsi stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endirir',
 			'settings.downmixCenterBoost' => 'Mərkəz kanal gücləndirilməsi',
@@ -3303,6 +3375,8 @@ extension on TranslationsAz {
 			'settings.gestureVolumeSwipeDescription' => 'Səsi tənzimləmək üçün sağ kənarda yuxarı və ya aşağı sürüşdürün',
 			'settings.gesturePinchToZoom' => 'Çimdiklə yaxınlaşdır',
 			'settings.gesturePinchToZoomDescription' => 'Yaxınlaşdırmaq və ya uzaqlaşdırmaq üçün videoda çimdik hərəkəti edin',
+			'settings.rememberBrightnessLevel' => 'Parlaqlıq səviyyəsini xatırla',
+			'settings.rememberBrightnessLevelDescription' => 'Oxutmanı son sürüşdürmə ilə təyin edilmiş parlaqlıqda başlat',
 			'settings.controls' => 'İdarəetmələr',
 			'settings.rememberPlayerChanges' => 'Pleyer dəyişikliklərini yadda saxla',
 			'settings.rememberPlayerChangesDescription' => 'Oxutma zamanı edilən dəyişikliklərin harada saxlanacağı və yenidən tətbiq ediləcəyi',
@@ -3424,6 +3498,8 @@ extension on TranslationsAz {
 			'fileInfo.sourceStream' => 'Kopyalanan mənbə',
 			'fileInfo.temporary' => 'Müvəqqəti',
 			'fileInfo.timeBase' => 'Vaxt bazası',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.overallBitrate' => 'Ümumi bit sürəti',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.fileName' => 'Fayl adı',
@@ -3445,8 +3521,6 @@ extension on TranslationsAz {
 			'fileInfo.optimizedVersion' => 'Optimallaşdırılmış versiya',
 			'fileInfo.optimizationTarget' => 'Optimallaşdırma hədəfi',
 			'fileInfo.deletedAt' => 'Silinib',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'Uzaq mənbə',
 			'fileInfo.infiniteStream' => 'Sonsuz axın',
 			'fileInfo.directPlay' => 'Birbaşa oynatma',
@@ -3646,6 +3720,9 @@ extension on TranslationsAz {
 			'messages.playbackDataInvalid' => 'Server yanlış oynatma məlumatı qaytardı.',
 			'messages.playbackCancelled' => 'Oynatma ləğv edildi.',
 			'messages.playbackFailed' => 'Oynatma başladılarkən xəta.',
+			'messages.playbackFailedDetail' => ({required Object error}) => 'Oynatma başladıla bilmədi: ${error}',
+			'messages.audioOutputFailed' => 'Səs çıxışı cavab verməyi dayandırdı. TV və ya resiverin səs bağlantısını yoxlayın; başqa tətbiqlərdə də səs yoxdursa, cihazı yenidən başladın.',
+			'messages.mediaUnavailable' => 'Bu məzmun artıq əlçatan deyil.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fayl məlumatı yüklənərkən xəta: ${error}',
 			'messages.errorLoadingSeries' => 'Serial yüklənərkən xəta',
 			'messages.musicNotSupported' => 'Musiqi oynatması hələ dəstəklənmir',
@@ -3689,6 +3766,7 @@ extension on TranslationsAz {
 			'messages.playbackDataNotPrepared' => 'Məlumatları hazır olmadan oynatma başladıldı',
 			'messages.streamSelectionUnavailable' => 'Bu mənbə üçün yayım seçimi mövcud deyil',
 			'messages.streamSelectionFailed' => 'Seçilmiş yayımları tətbiq etmək olmadı',
+			'messages.trackSelectionNotRemembered' => 'Bu trek seçimi yalnız cari oynatmaya tətbiq olunur.',
 			'messages.serverUnavailableForProfile' => 'Aktiv profil üçün heç bir server mövcud deyil',
 			'subtitlingStyling.text' => 'Mətn',
 			'subtitlingStyling.border' => 'Haşiyə',
@@ -3706,6 +3784,8 @@ extension on TranslationsAz {
 			'subtitlingStyling.overrideStrip' => 'Formatlaşdırmanı sil',
 			'subtitlingStyling.positionTop' => 'Yuxarı',
 			'subtitlingStyling.positionBottom' => 'Aşağı',
+			'subtitlingStyling.useMargins' => 'Kənar boşluqlardan istifadə et',
+			'subtitlingStyling.useMarginsDescription' => 'Mətn altyazılarına videodan kənar sahədə icazə ver. Üslublu altyazılar öz orijinal yerləşməsini saxlaya bilər.',
 			'subtitlingStyling.anchorToScreen' => 'Ekrana bərkit',
 			'subtitlingStyling.anchorToScreenDescription' => 'Mətn altyazılarını geniş ekranlı videonun altındakı qara zolaqlarda göstər',
 			'subtitlingStyling.bold' => 'Qalın',
@@ -3727,6 +3807,9 @@ extension on TranslationsAz {
 			'mpvConfig.presetDeleted' => 'Ön ayar silindi',
 			'mpvConfig.confirmDeletePreset' => 'Bu ön ayarı silmək istədiyinizə əminsiniz?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# şərh',
+			'mpvConfig.lineHint' => 'option=value',
+			'mpvConfig.addLine' => 'Sətir əlavə et',
+			'mpvConfig.removeLine' => 'Sətiri sil',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context və gpu-api Linux-da nəzərə alınmır: daxili video həmişə video müstəvisində vo=libmpv vasitəsilə göstərilir və gpu-next (ArtCNN kimi hesablama şeyderlərinə lazımdır) daxili işləyə bilməz.',
 			'dialog.confirmAction' => 'Əməliyyatı təsdiqlə',
 			'profiles.addPlezyProfile' => 'Plezy profili əlavə et',
@@ -3929,6 +4012,8 @@ extension on TranslationsAz {
 			'libraries.showLibrary' => 'Kitabxananı göstər',
 			'libraries.hideLibrary' => 'Kitabxananı gizlət',
 			'libraries.libraryOptions' => 'Kitabxana seçimləri',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.content' => 'kitabxana məzmunu',
 			'libraries.selectLibrary' => 'Kitabxana seç',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtrlər (${count})',
@@ -3959,8 +4044,6 @@ extension on TranslationsAz {
 			'libraries.filterCategories.favorites' => 'Sevimlilər',
 			'libraries.sortLabels.title' => 'Ad',
 			'libraries.sortLabels.dateAdded' => 'Əlavə olunma tarixi',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'Buraxılış tarixi',
 			'libraries.sortLabels.rating' => 'Reytinq',
 			'libraries.sortLabels.communityRating' => 'İcma reytinqi',
@@ -4065,6 +4148,7 @@ extension on TranslationsAz {
 			'explore.notInLibrary' => 'Kitabxananızda yoxdur',
 			'explore.inTheseLibraries' => 'Bu kitabxanalarda var',
 			'explore.checkingLibrary' => 'Kitabxananız yoxlanılır...',
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n, one: '${n} serveri yoxlamaq olmadı', other: '${n} serveri yoxlamaq olmadı', ), 
 			'explore.emptyTitle' => 'Hələlik burada heç nə yoxdur',
 			'explore.emptyMessage' => ({required Object source}) => '${source} mənbəsindən olan sətirlər burada görünəcək.',
 			'explore.searchHint' => ({required Object source}) => '${source} daxilində axtar',
@@ -4361,6 +4445,13 @@ extension on TranslationsAz {
 			'watchTogether.host' => 'Təşkilatçı',
 			'watchTogether.hostBadge' => 'TƏŞKİLATÇI',
 			'watchTogether.youAreHost' => 'Təşkilatçı sizsiniz',
+			'watchTogether.makeHost' => 'Təşkilatçı təyin et',
+			'watchTogether.makeHostQuestion' => 'Təşkilatçı köçürülsün?',
+			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} oynatmanı idarə edəcək və seansı hər kəs üçün aparacaq.',
+			'watchTogether.transfer' => 'Köçür',
+			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} indi təşkilatçıdır',
+			'watchTogether.youAreNowHost' => 'İndi təşkilatçı sizsiniz',
+			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name} təşkilatçı edilə bilmədi',
 			'watchTogether.watchingWithOthers' => 'Başqaları ilə izlənilir',
 			'watchTogether.endSession' => 'Seansı bitir',
 			'watchTogether.leaveSession' => 'Seansdan çıx',
@@ -4393,6 +4484,7 @@ extension on TranslationsAz {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} fasilə etdi',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} davam etdirdi',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} oynatma mövqeyini dəyişdi',
+			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} sürəti ${speed} olaraq təyin etdi',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} buferləyir',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} köhnə tətbiq versiyasındadır',
 			'watchTogether.resumingWithout' => ({required Object name}) => '${name} olmadan davam edilir',
@@ -4408,6 +4500,7 @@ extension on TranslationsAz {
 			'watchTogether.errors.connectionLost' => 'Bağlantı seans hazır olmamış kəsildi',
 			'watchTogether.errors.invalidRelayResponse' => 'Rele serveri gözlənilməz cavab göndərdi',
 			'watchTogether.errors.sessionEnded' => 'Təşkilatçı seansı bitirdi',
+			'watchTogether.errors.sessionUnavailable' => 'Bu seansı davam etdirmək olmur. Davam etmək üçün otağa qoşulun və ya otaq yaradın.',
 			'downloads.title' => 'Yükləmələr',
 			'downloads.manage' => 'İdarə et',
 			'downloads.tvShows' => 'TV Şoular',
@@ -4423,6 +4516,7 @@ extension on TranslationsAz {
 			'downloads.downloadResumed' => 'Yükləmə davam etdirildi',
 			'downloads.serverErrorBitrate' => 'Server xətası: fayl sürət limitini aşa bilər',
 			'downloads.storageFull' => 'Cihaz yaddaşı dolu olduğu üçün yükləmə dayandırıldı.',
+			'downloads.storageUnavailable' => 'Boş yaddaşı yoxlamaq mümkün olmadığı üçün yükləmələr dayandırıldı. Yükləmə yerini yoxlayın, sonra təzədən cəhd edin.',
 			'downloads.episodesQueued' => ({required Object count}) => 'Yükləmə üçün ${count} seriya növbəyə alındı',
 			'downloads.downloadDeleted' => 'Yükləmə silindi',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" bu cihazdan silinsin?',
@@ -4432,6 +4526,8 @@ extension on TranslationsAz {
 			'downloads.resumeDownload' => 'Yükləməni davam etdir',
 			'downloads.cancelledDownload' => 'Ləğv edilmiş yükləmə',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eyniləşdirilir)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Yükləndi ${file} - Tamamlamaq üçün toxunun',
 			'downloads.partialDownloadClickToComplete' => 'Hissəvi yükləndi - Tamamlamaq üçün toxunun',
 			'downloads.deleting' => 'Silinir...',
@@ -4473,8 +4569,6 @@ extension on TranslationsAz {
 			'downloads.manageSyncRule' => 'Eyniləşdirməni idarə et',
 			'downloads.editEpisodeCount' => 'Seriya sayı',
 			'downloads.editSyncFilter' => 'Eyniləşdirmə filtri',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncAllItems' => 'Bütün elementlər eyniləşdirilir',
 			'downloads.syncUnwatchedItems' => 'Baxılmayan elementlər eyniləşdirilir',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
@@ -4624,6 +4718,8 @@ extension on TranslationsAz {
 			'videoSettings.audioOutputSpatial' => 'Məkan səsi',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Səsin gurluğunu normallaşdır',
+			'videoSettings.audioNormalizationDisablesPassthrough' => 'Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür',
+			'videoSettings.audioNormalizationStereoMix' => 'Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür',
 			'videoSettings.audioDownmix' => 'Stereo-ya çevir',
 			'performanceOverlay.color' => 'Rəng',
 			'performanceOverlay.performance' => 'Məhsuldarlıq',
@@ -4807,6 +4903,10 @@ extension on TranslationsAz {
 			'seerr.qualityProfile' => 'Keyfiyyət profili',
 			'seerr.rootFolder' => 'Kök qovluq',
 			'seerr.languageProfile' => 'Dil profili',
+			'seerr.tags' => 'Teqlər',
+			'seerr.noTags' => 'Teq yoxdur',
+			'seerr.defaultOption' => ({required Object name}) => '${name} (Defolt)',
+			'seerr.animeNote' => 'Bu serial animedir.',
 			'seerr.requestSubmitted' => 'Sorğu göndərildi',
 			'seerr.requestFailed' => ({required Object error}) => 'Sorğu uğursuz oldu: ${error}',
 			'seerr.requestsLoadFailed' => 'Seçimlər yüklənə bilmədi',
@@ -4818,6 +4918,7 @@ extension on TranslationsAz {
 			'seerr.statusBlocklisted' => 'Bloklanmış',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} ünvanına çatmaq olmadı: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})',
+			'seerr.behindAuthProxy' => 'Seerr əvəzinə autentifikasiya edən tərs proksi (SSO və ya HTTP auth) cavab verdi. Plezy onun vasitəsilə daxil ola bilmir: bu tətbiq üçün Seerr-in /api/v1 yolunun proksini yan keçməsinə icazə verin və ya Seerr-ə birbaşa çatan ünvan istifadə edin.',
 			'seerr.invalidUrl' => 'https://seerr.example.com kimi server ünvanı daxil edin',
 			'seerr.quickConnectUnsupported' => 'Bu Seerr nüsxəsi Sürətli Qoşulmanı dəstəkləmir. Seerr 3.4 və ya daha yeni versiya tələb olunur.',
 			'seerr.notInitialized' => 'Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb',
@@ -4828,6 +4929,8 @@ extension on TranslationsAz {
 			'seerr.freshCookieRejected' => 'Seerr yeni sessiya kukisini rədd etdi',
 			'seerr.noUserInformation' => 'Seerr istifadəçi məlumatlarını qaytarmadı',
 			'seerr.sessionRejectedAfterReauth' => 'Yenidən daxil olduqdan sonra sessiya rədd edildi',
+			'seerr.permissionDenied' => 'Seerr bu əməliyyatı rədd etdi: hesabınızda artıq tələb olunan icazə yoxdur',
+			'seerr.permissionRevoked' => 'Bunu sorğulamaq üçün artıq icazəniz yoxdur',
 			'services.title' => 'Xidmətlər',
 			'services.hubSubtitle' => 'İzləmə tərəqqisini eyniləşdirin və yeni başlıqlar sorğulayın.',
 			'services.integrations' => 'İnteqrasiyalar',

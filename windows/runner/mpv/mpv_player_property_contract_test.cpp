@@ -1,6 +1,7 @@
 #include <windowsx.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdlib>
 #include <functional>
 #include <future>
@@ -32,6 +33,8 @@ class MpvPlayerPropertyContractTestPeer {
   }
 
   static void HandleEvent(MpvPlayer& player, mpv_event* event) { player.HandleMpvEvent(event); }
+  static plezy::mpv_common::AudioRecoveryState& AudioRecovery(MpvPlayer& player) { return player.audio_recovery_; }
+  static void RunAudioRecovery(MpvPlayer& player) { player.MaybeRunAudioRecovery(); }
 
   static void SendPlaybackRestart(MpvPlayer& player, const double* position_seconds) {
     player.SendPlaybackRestartEvent(position_seconds);
@@ -217,6 +220,81 @@ void TestSourceQualifiedEventPayloads() {
       "replacement source ID changed");
   Check(
       std::get<int64_t>(source_property[2]) == kFirstSourceId, "later START_FILE relabeled an already-queued property");
+
+  player.SetEventCallback(nullptr);
+}
+
+// Audio recovery giving up is the one END_FILE this runner produces itself:
+// the stop it issues ends the file with reason stop, which the handler reports
+// as the AO_INIT_FAILED error under Dart's audio-output-failed cause. That
+// END_FILE consumes the latch, so the next one is reported as it came.
+void TestAudioRecoveryGiveUpEndsFileAsAudioOutputFailure() {
+  MpvPlayer player;
+  std::vector<flutter::EncodableValue> events;
+  player.SetEventCallback([&events](const flutter::EncodableValue& event) {
+    // The give-up's own log line is not part of the contract under test.
+    if (const auto* envelope = std::get_if<flutter::EncodableMap>(&event)) {
+      const auto& name = RequireMapField(*envelope, "name", "event name is missing");
+      if (const auto* text = std::get_if<std::string>(&name); text && *text == "log-message") return;
+    }
+    events.push_back(event);
+  });
+
+  // An outage whose whole reload budget was spent a minute ago, so the
+  // give-up is what the recovery tick owes now.
+  auto& recovery = MpvPlayerPropertyContractTestPeer::AudioRecovery(player);
+  const auto start = plezy::mpv_common::AudioRecoveryState::Clock::now() - std::chrono::minutes(1);
+  recovery.SetFileLoaded(true, start);
+  recovery.SetCurrentAudioOutputNull(true, start);
+  const int schedule_ms[] = {500, 1000, 2000, 4000, 8000};
+  for (int due_ms : schedule_ms) {
+    const auto action = recovery.NextReload(start + std::chrono::milliseconds(due_ms));
+    Check(action.reason == plezy::mpv_common::AudioReloadReason::kNullFallback, "null-fallback schedule changed");
+    Check(recovery.CompleteReload(action.request_generation), "reload completion was refused");
+  }
+  MpvPlayerPropertyContractTestPeer::RunAudioRecovery(player);
+
+  constexpr int64_t kSourceId = 6000000002LL;
+  mpv_event_end_file end{};
+  end.reason = MPV_END_FILE_REASON_STOP;
+  end.playlist_entry_id = kSourceId;
+  mpv_event end_event{};
+  end_event.event_id = MPV_EVENT_END_FILE;
+  end_event.data = &end;
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &end_event);
+  MpvPlayerPropertyContractTestPeer::HandleEvent(player, &end_event);
+  Check(events.size() == 2, "give-up must add nothing but the two end-file events");
+
+  const auto& failed = RequireEventData(events.at(0), "end-file");
+  Check(
+      RequireSourceId(failed, "end-file source ID is missing") == kSourceId,
+      "the give-up end-file must keep the ended source ID");
+  const auto& failed_reason = RequireMapField(failed, "reason", "end-file reason is missing");
+  Check(
+      std::holds_alternative<int32_t>(failed_reason) && std::get<int32_t>(failed_reason) == MPV_END_FILE_REASON_ERROR,
+      "the stop issued on give-up must be reported as an error");
+  const auto& failed_error = RequireMapField(failed, "error", "end-file error is missing");
+  Check(
+      std::holds_alternative<int32_t>(failed_error) && std::get<int32_t>(failed_error) == MPV_ERROR_AO_INIT_FAILED,
+      "the give-up must be reported as AO_INIT_FAILED");
+  Check(
+      std::holds_alternative<std::string>(RequireMapField(failed, "message", "end-file message is missing")),
+      "the give-up end-file must carry an error message");
+  const auto& cause = RequireMapField(failed, "cause", "the give-up end-file must carry a cause");
+  Check(
+      std::holds_alternative<std::string>(cause) &&
+          std::get<std::string>(cause) == plezy::mpv_common::kAudioOutputFailedCause,
+      "the give-up cause must be the one Dart handles as audio-output-failed");
+
+  const auto& plain = RequireEventData(events.at(1), "end-file");
+  const auto& plain_reason = RequireMapField(plain, "reason", "plain end-file reason is missing");
+  Check(
+      std::holds_alternative<int32_t>(plain_reason) && std::get<int32_t>(plain_reason) == MPV_END_FILE_REASON_STOP,
+      "a later end-file must not inherit the consumed give-up");
+  Check(
+      plain.find(flutter::EncodableValue("error")) == plain.end() &&
+          plain.find(flutter::EncodableValue("cause")) == plain.end(),
+      "a plain stop must carry neither error nor cause");
 
   player.SetEventCallback(nullptr);
 }
@@ -1054,6 +1132,7 @@ void TestDisabledVideoHostRoutesRealPressesToParentView() {
 
 int main() {
   mpv::TestSourceQualifiedEventPayloads();
+  mpv::TestAudioRecoveryGiveUpEndsFileAsAudioOutputFailure();
   mpv::TestUnavailablePropertyWriteFails();
   mpv::TestPendingPropertyWriteFailsOnDispose();
   mpv::TestCommandReplyCarriesPlaylistEntryId();

@@ -17,6 +17,7 @@ class SleepTimerService extends ChangeNotifier {
   DateTime? _endTime;
   Duration? _duration;
   Duration? _originalDuration;
+  Object? _playbackOwner;
   VoidCallback? _onTimerComplete;
   bool _needsRestart = false;
   bool _restartAsEndOfVideo = false;
@@ -52,13 +53,31 @@ class SleepTimerService extends ChangeNotifier {
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
-  void startTimer(Duration duration, VoidCallback onComplete) {
+  /// Replace the playback target without changing the selected timer or deadline.
+  void bindPlayback({required Object owner, required VoidCallback onComplete}) {
+    _playbackOwner = owner;
+    _onTimerComplete = onComplete;
+  }
+
+  /// Release the current playback target and restart its timer on the next session.
+  /// A superseded owner cannot detach its successor or restart the countdown.
+  void unbindPlayback(Object owner) {
+    if (!identical(_playbackOwner, owner)) return;
+
+    _playbackOwner = null;
+    _onTimerComplete = null;
+    if (isActive || _originalDuration != null) {
+      _needsRestart = true;
+      _restartAsEndOfVideo = _endOfVideoArmed;
+    }
+  }
+
+  void startTimer(Duration duration) {
     cancelTimer();
 
     _originalDuration = duration;
     _duration = duration;
     _endTime = _now().add(duration);
-    _onTimerComplete = onComplete;
 
     appLogger.d('Sleep timer started: ${duration.inMinutes} minutes');
 
@@ -80,11 +99,10 @@ class SleepTimerService extends ChangeNotifier {
   /// Arm the sleep timer to fire when the currently playing video reaches its end.
   /// Unlike [startTimer], no periodic timer runs — playback completion is reported
   /// externally via [notifyVideoCompleted].
-  void armEndOfVideo(VoidCallback onComplete) {
+  void armEndOfVideo() {
     cancelTimer();
 
     _endOfVideoArmed = true;
-    _onTimerComplete = onComplete;
 
     appLogger.d('Sleep timer armed: end of current video');
     notifyListeners();
@@ -102,16 +120,16 @@ class SleepTimerService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Cancel the active timer (user-initiated, clears everything)
+  /// Cancel the timer configuration and pending restart, keeping playback bound.
   void cancelTimer() {
-    if (_timer != null || _originalDuration != null || _endOfVideoArmed) {
+    if (_timer != null || _originalDuration != null || _endOfVideoArmed || _needsRestart || _restartAsEndOfVideo) {
       appLogger.d('Sleep timer cancelled');
       _timer?.cancel();
       _timer = null;
       _endTime = null;
       _duration = null;
       _originalDuration = null;
-      _onTimerComplete = null;
+      _needsRestart = false;
       _endOfVideoArmed = false;
       _restartAsEndOfVideo = false;
       notifyListeners();
@@ -119,39 +137,21 @@ class SleepTimerService extends ChangeNotifier {
   }
 
   void restartTimer() {
-    if (_originalDuration != null && _onTimerComplete != null) {
-      final duration = _originalDuration!;
-      final callback = _onTimerComplete!;
-      startTimer(duration, callback);
-    }
-  }
-
-  /// Execute the completion callback directly (fallback path)
-  @visibleForTesting
-  void executeCompletion() {
-    _executeCallback();
-  }
-
-  /// Mark that the timer should restart when a new playback session begins
-  /// (e.g. user exited the player and started something new)
-  void markNeedsRestart() {
-    if (isActive || _originalDuration != null) {
-      _needsRestart = true;
-      _restartAsEndOfVideo = _endOfVideoArmed;
+    if (_originalDuration != null) {
+      startTimer(_originalDuration!);
     }
   }
 
   /// Restart the timer if it was marked for restart (new playback session).
-  /// [onComplete] provides the new callback for the fresh session.
-  void restartIfNeeded(VoidCallback onComplete) {
+  void restartIfNeeded() {
     if (!_needsRestart) return;
     _needsRestart = false;
 
     if (_restartAsEndOfVideo) {
       _restartAsEndOfVideo = false;
-      armEndOfVideo(onComplete);
+      armEndOfVideo();
     } else if (_originalDuration != null) {
-      startTimer(_originalDuration!, onComplete);
+      startTimer(_originalDuration!);
     }
   }
 
@@ -165,8 +165,8 @@ class SleepTimerService extends ChangeNotifier {
     }
   }
 
-  /// Stop the periodic timer but preserve _originalDuration and _onTimerComplete
-  /// for the prompt flow (restart/completion)
+  /// Stop the countdown but preserve the selection and playback binding for
+  /// the still-watching prompt's restart flow.
   void _stopTimerOnly() {
     _timer?.cancel();
     _timer = null;
@@ -189,6 +189,8 @@ class SleepTimerService extends ChangeNotifier {
   @override
   void dispose() {
     _timer?.cancel();
+    _playbackOwner = null;
+    _onTimerComplete = null;
     _completedController.close();
     _promptController.close();
     super.dispose();

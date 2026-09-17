@@ -70,17 +70,23 @@ class VisualEffectsController {
     }
   }
 
+  /// The picture's display aspect, or null before mpv has decoded a frame:
+  /// `dwidth`/`dheight` are unavailable until then.
+  Future<double?> _readVideoAspect() async {
+    final dwidth = await _player()?.getProperty('dwidth');
+    final dheight = await _player()?.getProperty('dheight');
+    if (dwidth == null || dheight == null) return null;
+    final w = double.tryParse(dwidth);
+    final h = double.tryParse(dheight);
+    if (w == null || h == null || h == 0) return null;
+    return w / h;
+  }
+
   /// Enable ambient lighting for the current video/player geometry.
   /// Returns false when the aspect ratios cannot be determined yet.
   Future<bool> _enableAmbientLighting(AmbientLightingService ambientLighting, ShaderProvider shaderProvider) async {
-    // Get video display aspect ratio
-    final dwidth = await _player()?.getProperty('dwidth');
-    final dheight = await _player()?.getProperty('dheight');
-    if (dwidth == null || dheight == null) return false;
-    final w = double.tryParse(dwidth);
-    final h = double.tryParse(dheight);
-    if (w == null || h == null || h == 0) return false;
-    final videoAspect = w / h;
+    final videoAspect = await _readVideoAspect();
+    if (videoAspect == null) return false;
 
     // Get player widget aspect ratio
     final playerSize = _filterManager()?.playerSize;
@@ -114,6 +120,72 @@ class VisualEffectsController {
 
     if (!await _enableAmbientLighting(ambientLighting, shaderProvider)) return;
     if (_isMounted()) _requestRebuild();
+  }
+
+  /// Whether the start flow armed the restore [onFirstFrame] runs.
+  bool _ambientRestoreArmed = false;
+
+  /// The pass in flight for the current first frame; concurrent first-frame
+  /// callers await the same one.
+  Future<void>? _firstFramePass;
+
+  /// Arm the persisted-setting restore for this playback attempt's first
+  /// frame.
+  ///
+  /// `dwidth`/`dheight` only exist once mpv has pushed a decoded frame to
+  /// the VO, which is after the start flow's hooks run: restoring there read
+  /// null and silently never applied the setting. The first-frame latch
+  /// consumes the arm exactly once — a later in-place reload must not
+  /// re-enable an effect the viewer switched off through a zoom or box-fit
+  /// change, which never persist.
+  void armAmbientRestore() => _ambientRestoreArmed = true;
+
+  /// A failed attempt's arm must not fire on its successor's first frame.
+  void disarmAmbientRestore() => _ambientRestoreArmed = false;
+
+  /// Everything that needs the picture mpv presents, run at each item's first
+  /// frame — the initial start and every in-place swap — and awaited by the
+  /// first-frame latch before that frame is revealed:
+  ///
+  /// - the armed ambient-lighting restore (start only);
+  /// - otherwise, with ambient lighting on, the picture aspect that places
+  ///   subtitles, which a swapped item may have changed;
+  /// - the NVScaler HDR skip, decided against this item's colour params
+  ///   instead of the previous file's or none at all.
+  ///
+  /// Concurrent callers share one pass; a pass started after one completed
+  /// re-reads the same properties and changes nothing.
+  Future<void> onFirstFrame() {
+    return _firstFramePass ??= _runFirstFramePass().whenComplete(() => _firstFramePass = null);
+  }
+
+  Future<void> _runFirstFramePass() async {
+    try {
+      if (_ambientRestoreArmed) {
+        _ambientRestoreArmed = false;
+        await restoreAmbientLighting();
+      } else {
+        await _refreshAmbientVideoAspect();
+      }
+      await _reapplyShaderForContent();
+    } catch (e, st) {
+      // Never hold the reveal over an effect.
+      appLogger.w('Visual effects: first-frame pass failed', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _refreshAmbientVideoAspect() async {
+    final ambientLighting = _ambientLighting();
+    if (ambientLighting == null || !ambientLighting.isEnabled) return;
+    final videoAspect = await _readVideoAspect();
+    if (videoAspect == null) return;
+    await ambientLighting.updateVideoAspect(videoAspect);
+  }
+
+  Future<void> _reapplyShaderForContent() async {
+    final shaderService = _shaderService();
+    if (shaderService == null || !shaderService.isSupported) return;
+    if (await shaderService.reapplyForContent() && _isMounted()) _requestRebuild();
   }
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)

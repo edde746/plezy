@@ -22,6 +22,7 @@ import '../widgets/focused_scroll_scaffold.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/optimized_media_image.dart';
 import '../widgets/tag_edit_dialog.dart';
+import 'settings/settings_utils.dart';
 
 class MetadataEditScreen extends StatefulWidget {
   final MediaItem metadata;
@@ -178,44 +179,15 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     final draft = _draft;
     if (adapter == null || draft == null || _isCommitting) return;
     final current = draft.value<String>(field.id) ?? '';
-    final result = await showScopedDialog<String>(
+    final picked = await showSelectionDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        String selected = current;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(field.label),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: RadioGroup<String>(
-                  groupValue: field.options.any((option) => option.value == selected) ? selected : null,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setDialogState(() => selected = value);
-                    Navigator.pop(dialogContext, value);
-                  },
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: [
-                      for (final option in field.options)
-                        FocusableRadioListTile<String>(
-                          key: ValueKey(option.value),
-                          title: Text(option.label),
-                          value: option.value,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel)],
-            );
-          },
-        );
-      },
+      title: field.label,
+      options: [for (final option in field.options) DialogOption(value: option.value, title: option.label)],
+      currentValue: current,
     );
 
-    if (result == null || !mounted || _isCommitting || !identical(_draft, draft)) return;
+    if (picked == null || !mounted || _isCommitting || !identical(_draft, draft)) return;
+    final result = picked.value;
     if (field.saveMode == MetadataEditSaveMode.immediate) {
       final metadata = widget.metadata;
       final previous = draft.values[field.id];

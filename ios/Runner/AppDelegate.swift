@@ -19,7 +19,7 @@ import MediaPlayer
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(.playback, mode: .default)
     } catch {
-      print("Failed to configure audio session: \(error)")
+      MpvLog.error("Failed to configure audio session: \(error)")
     }
 
     application.beginReceivingRemoteControlEvents()

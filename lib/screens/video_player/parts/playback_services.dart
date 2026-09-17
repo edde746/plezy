@@ -33,9 +33,51 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   Future<void> _markFirstFrameReady(Player currentPlayer, SettingsService settingsService) async {
-    if (!mounted || _shuttingDown || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError) return;
+    bool stale() =>
+        !mounted || _shuttingDown || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError;
+    if (stale()) return;
+
+    // Only this attempt's own file can prove a frame. Between a reload's
+    // latch reset and the replacement's start-file the outgoing file is still
+    // the backend's active source, so its restart — or a position tick — would
+    // latch the replacement as rendered before it exists: display matching
+    // on the wrong stream, the first-frame effects on the wrong picture, the
+    // open watchdogs blind to the open. The outcome delimits signals at the
+    // backend's load start, so a caller parks on its first frame and the
+    // staleness re-check retires whichever one is late. A settled outcome —
+    // the frame already proven, or the open dead — leaves the raw signal
+    // alone: after a rolled-back reload the surviving file must still be
+    // able to latch.
+    final outcome = _playbackAttempt?.outcome;
+    if (outcome != null && !outcome.isSettled) {
+      if (!await outcome.firstFrame || stale()) return;
+    }
+
+    // The open is negotiating the display from this frame: keep it behind
+    // the loading UI until the mode switch (and decoder refresh) settled,
+    // as the spinner did while the metadata pre-load switch ran. Concurrent
+    // callers (restart event, position fallback) re-check after the wait so
+    // only one latches the frame. A negotiation abandoned by a newer open
+    // resolves false: that open holds and reveals its own first frame, and
+    // the same player instance makes the guards above blind to the swap.
+    final negotiation = _frameRate.displayNegotiation;
+    if (negotiation != null) {
+      if (!await negotiation || stale()) return;
+    }
+
+    // Effects that need the decoded picture — the persisted ambient-lighting
+    // restore, its subtitle placement after a swap, the NVScaler HDR skip —
+    // apply here, not in the open flow: mpv reports geometry and colour only
+    // once this frame reached the VO, and at start the surface is still
+    // behind the loading UI, so the viewer never sees the frame they
+    // replace. Concurrent callers await the same pass and re-check
+    // staleness after it.
+    await _visualEffects.onFirstFrame();
+    if (stale()) return;
 
     _firstFrame.markReady();
+    // This request is proven: a later in-place switch that fails restores it.
+    _workingOpenRequest = _currentOpenRequest;
     _http503Watchdog.disarm();
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
     final progressTracker = _progressTracker;
@@ -271,6 +313,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     }
     if (!mounted || _shuttingDown) return;
 
+    _visualEffects.disarmAmbientRestore();
     final ambientLightingService = _ambientLightingService;
     _ambientLightingService = null;
     if (ambientLightingService != null) {

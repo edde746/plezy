@@ -21,6 +21,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   bool _playing = false;
   bool _hasFirstFrame = true;
   Duration _hideDelay = const Duration(seconds: 3);
+  bool _directionalNavigation = false;
   Timer? _hideTimer;
   bool _pendingPlayPauseFocus = false;
   final Set<PlayerChromeHold> _holds = <PlayerChromeHold>{};
@@ -38,7 +39,11 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   bool isHeld(PlayerChromeHold hold) => _holds.contains(hold);
   bool get pendingPlayPauseFocus => _pendingPlayPauseFocus;
 
-  void configure({Duration? hideDelay, bool? hasFirstFrame}) {
+  /// [directionalNavigation] marks a D-pad / keyboard-driven viewer: the
+  /// paused chrome then stays up until dismissed, because the remote has no
+  /// "tap to bring it back" and a viewer who paused to read the OSD would
+  /// otherwise lose it mid-read.
+  void configure({Duration? hideDelay, bool? hasFirstFrame, bool directionalNavigation = false}) {
     var restartTimer = false;
     if (hideDelay != null && hideDelay != _hideDelay) {
       _hideDelay = hideDelay;
@@ -46,6 +51,10 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     }
     if (hasFirstFrame != null && hasFirstFrame != _hasFirstFrame) {
       _hasFirstFrame = hasFirstFrame;
+      restartTimer = true;
+    }
+    if (directionalNavigation != _directionalNavigation) {
+      _directionalNavigation = directionalNavigation;
       restartTimer = true;
     }
     if (restartTimer) _startAutoHideForCurrentPlaybackState();
@@ -167,7 +176,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
 
   void startPausedAutoHide() {
     _hideTimer?.cancel();
-    if (!_controlsVisible || !_hasFirstFrame || _holds.isNotEmpty) return;
+    if (!_controlsVisible || !_hasFirstFrame || _holds.isNotEmpty || _directionalNavigation) return;
     _hideTimer = Timer(_hideDelay, hide);
   }
 

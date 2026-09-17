@@ -278,6 +278,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get alwaysKeepSidebarOpenDescription => 'サイドバーを展開したままにし、コンテンツ領域を幅に合わせて調整します';
 	@override String get showUnwatchedCount => '未視聴数を表示';
 	@override String get showUnwatchedCountDescription => '番組とシーズンに未視聴エピソード数を表示';
+	@override String get showWatchedIndicators => '視聴済みマークを表示';
+	@override String get showWatchedIndicatorsDescription => '視聴済みの映画、番組、エピソードにチェックマークを表示します';
 	@override String get showEpisodeNumberOnCards => 'カードにエピソード番号を表示';
 	@override String get showEpisodeNumberOnCardsDescription => 'エピソードカードにシーズン番号とエピソード番号を表示します';
 	@override String get showSeasonPostersOnTabs => 'タブにシーズンポスターを表示';
@@ -307,6 +309,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get defaultQualityTitle => 'デフォルト画質';
 	@override String get cellularQualityTitle => 'モバイルデータ通信時のデフォルト画質';
 	@override String get cellularQualitySameAsDefault => 'デフォルト画質と同じ';
+	@override String get directPlayCoveredQuality => '小さい動画をオリジナル画質で再生';
+	@override String get directPlayCoveredQualityDescription => '画質制限内の動画はトランスコードせずにダイレクト再生します';
 	@override String get musicQualityTitle => '音楽の音質';
 	@override String get subtitleStyling => '字幕スタイル';
 	@override String get subtitleStylingDescription => '字幕の外観をカスタマイズ';
@@ -318,6 +322,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes}分';
 	@override String get rememberTrackSelections => '番組/映画ごとにトラック選択を記憶';
 	@override String get rememberTrackSelectionsDescription => 'タイトルごとに音声と字幕の選択を記憶します';
+	@override String get rememberTrackSelectionsBackendRule => 'Plexはファイルごとに選択をサーバーに保存します。Jellyfinはアカウントの「選択を記憶」も有効にします。Embyはサポートされていません';
 	@override String get followServerTrackSelections => 'サーバーのエピソードごとのトラック選択を使用';
 	@override String get followServerTrackSelectionsDescription => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します';
 	@override String get resumeMusicOnLaunch => '音楽セッションを記憶';
@@ -378,8 +383,21 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get autoPlayAndSkip => '自動再生とスキップ';
 	@override String get autoPlayNextEpisode => '次のエピソードを自動再生';
 	@override String get autoPlayNextEpisodeDescription => 'エピソードが終了すると、次のエピソードを自動的に再生します';
+	@override String get shuffleStartsFromBeginning => 'シャッフルは最初から再生';
+	@override String get shuffleStartsFromBeginningDescription => 'シャッフル時に各エピソードを再開位置ではなく最初から再生します';
 	@override String get playNextCountdown => '次回再生のカウントダウン';
 	@override String get playNextCountdownImmediate => 'すぐに再生';
+	@override String get skipIntroMode => 'イントロをスキップ';
+	@override String get skipIntroModeOffDescription => 'スキップボタンなしでイントロを通常どおり再生します';
+	@override String get skipIntroModeButtonDescription => 'イントロ開始時にスキップボタンを表示します';
+	@override String get skipIntroModeAutoDescription => '下記の遅延後にイントロを自動的にスキップします';
+	@override String get skipCreditsMode => 'クレジットをスキップ';
+	@override String get skipCreditsModeOffDescription => 'スキップボタンなしでクレジットを通常どおり再生します';
+	@override String get skipCreditsModeButtonDescription => 'クレジット開始時にスキップボタンを表示します';
+	@override String get skipCreditsModeAutoDescription => 'クレジットを自動的にスキップして次のエピソードを再生します';
+	@override String get skipMarkerModeOff => 'オフ';
+	@override String get skipMarkerModeButton => 'ボタンを表示';
+	@override String get skipMarkerModeAuto => '自動';
 	@override String get forceSkipMarkerFallback => 'フォールバックマーカーを強制';
 	@override String get forceSkipMarkerFallbackDescription => 'Plexにマーカーがある場合でもチャプタータイトルのパターンを使用します';
 	@override String get autoSkipDelay => '自動スキップの遅延';
@@ -432,6 +450,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioPassthroughDescription => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。';
 	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。';
+	@override String get audioPassthroughOverriddenByNormalization => 'ラウドネス正規化がオンの間はオフ';
 	@override String get audioDownmix => 'ステレオにダウンミックス';
 	@override String get audioDownmixDescription => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします';
 	@override String get downmixCenterBoost => 'センターチャンネルブースト';
@@ -493,6 +512,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get gestureVolumeSwipeDescription => '右端を上下にスワイプして音量を調整します';
 	@override String get gesturePinchToZoom => 'ピンチでズーム';
 	@override String get gesturePinchToZoomDescription => '動画をピンチしてズームイン・アウト';
+	@override String get rememberBrightnessLevel => '明るさを記憶';
+	@override String get rememberBrightnessLevelDescription => '前回スワイプで設定した明るさで再生を開始します';
 	@override String get controls => 'コントロール';
 	@override String get rememberPlayerChanges => 'プレーヤーの変更を記憶';
 	@override String get rememberPlayerChangesDescription => '再生中に行った変更を保存し、再適用する場所';
@@ -901,6 +922,9 @@ class _Translations$messages$ja extends Translations$messages$en {
 	@override String get playbackDataInvalid => 'サーバーから無効な再生情報が返されました。';
 	@override String get playbackCancelled => '再生がキャンセルされました。';
 	@override String get playbackFailed => '再生を開始できませんでした。';
+	@override String playbackFailedDetail({required Object error}) => '再生を開始できませんでした: ${error}';
+	@override String get audioOutputFailed => 'オーディオ出力が応答しなくなりました。テレビやレシーバーの音声接続を確認してください。他のアプリでも音が出ない場合は、デバイスを再起動してください。';
+	@override String get mediaUnavailable => 'このコンテンツは利用できなくなりました。';
 	@override String errorLoadingFileInfo({required Object error}) => 'ファイル情報の読み込みエラー: ${error}';
 	@override String get errorLoadingSeries => 'シリーズの読み込みエラー';
 	@override String get musicNotSupported => '音楽の再生はまだサポートされていません';
@@ -944,6 +968,7 @@ class _Translations$messages$ja extends Translations$messages$en {
 	@override String get playbackDataNotPrepared => '再生データの準備が完了する前に再生が開始されました';
 	@override String get streamSelectionUnavailable => 'このソースではストリームを選択できません';
 	@override String get streamSelectionFailed => '選択したストリームを適用できませんでした';
+	@override String get trackSelectionNotRemembered => 'このトラック選択は現在の再生にのみ適用されます。';
 	@override String get serverUnavailableForProfile => '現在のプロフィールで利用可能なサーバーがありません';
 }
 
@@ -970,6 +995,8 @@ class _Translations$subtitlingStyling$ja extends Translations$subtitlingStyling$
 	@override String get overrideStrip => 'スタイルを削除';
 	@override String get positionTop => '上';
 	@override String get positionBottom => '下';
+	@override String get useMargins => '余白を使用';
+	@override String get useMarginsDescription => 'テキスト字幕を動画の外側の領域に表示できるようにします。スタイル付き字幕は元の配置を維持する場合があります。';
 	@override String get anchorToScreen => '画面に固定';
 	@override String get anchorToScreenDescription => 'ワイドスクリーン映像の下にある黒帯にテキスト字幕を表示します';
 	@override String get bold => '太字';
@@ -1000,6 +1027,9 @@ class _Translations$mpvConfig$ja extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'プリセットを削除しました';
 	@override String get confirmDeletePreset => 'このプリセットを削除してもよろしいですか？';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get lineHint => 'option=value';
+	@override String get addLine => '行を追加';
+	@override String get removeLine => '行を削除';
 	@override String get embeddedVoHint => 'Linux では vo、gpu-context、gpu-api は無視されます。埋め込み動画は常にビデオプレーン上で vo=libmpv を通してレンダリングされ、gpu-next（ArtCNN のようなコンピュートシェーダーに必要）は埋め込みでは実行できません。';
 }
 
@@ -1399,6 +1429,9 @@ class _Translations$explore$ja extends Translations$explore$en {
 	@override String get notInLibrary => 'ライブラリにありません';
 	@override String get inTheseLibraries => 'これらのライブラリにあります';
 	@override String get checkingLibrary => 'ライブラリを確認中…';
+	@override String libraryCheckFailed({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
+		other: '${n}台のサーバーを確認できませんでした',
+	);
 	@override String get emptyTitle => 'まだ何もありません';
 	@override String emptyMessage({required Object source}) => '${source}にコンテンツが追加されると、ここに表示されます。';
 	@override String searchHint({required Object source}) => '${source}を検索';
@@ -1642,6 +1675,13 @@ class _Translations$watchTogether$ja extends Translations$watchTogether$en {
 	@override String get host => 'ホスト';
 	@override String get hostBadge => 'ホスト';
 	@override String get youAreHost => 'あなたはホストです';
+	@override String get makeHost => 'ホストにする';
+	@override String get makeHostQuestion => 'ホストを移譲しますか？';
+	@override String makeHostConfirm({required Object name}) => '${name}が再生を制御し、全員のセッションを主導します。';
+	@override String get transfer => '移譲';
+	@override String hostChangedTo({required Object name}) => '${name}がホストになりました';
+	@override String get youAreNowHost => 'あなたがホストになりました';
+	@override String hostTransferFailed({required Object name}) => '${name}をホストにできませんでした';
 	@override String get watchingWithOthers => '他の人と視聴中';
 	@override String get endSession => 'セッションを終了';
 	@override String get leaveSession => 'セッションを退出';
@@ -1674,6 +1714,7 @@ class _Translations$watchTogether$ja extends Translations$watchTogether$en {
 	@override String participantPaused({required Object name}) => '${name}が一時停止しました';
 	@override String participantResumed({required Object name}) => '${name}が再開しました';
 	@override String participantSeeked({required Object name}) => '${name}が再生位置を変更しました';
+	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name}が速度を${speed}に設定しました';
 	@override String participantBuffering({required Object name}) => '${name}がバッファリング中';
 	@override String participantNeedsUpdate({required Object name}) => '${name}は古いバージョンのアプリを使用しているため、同期できません';
 	@override String resumingWithout({required Object name}) => '${name}抜きで再開';
@@ -1710,6 +1751,7 @@ class _Translations$downloads$ja extends Translations$downloads$en {
 	@override String get downloadResumed => 'ダウンロードを再開しました';
 	@override String get serverErrorBitrate => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります';
 	@override String get storageFull => 'デバイスのストレージがいっぱいのため、ダウンロードを停止しました。空き容量を確保してから、もう一度お試しください。';
+	@override String get storageUnavailable => '空き容量を確認できなかったため、ダウンロードを停止しました。ダウンロード先を確認してから、もう一度お試しください。';
 	@override String episodesQueued({required Object count}) => '${count}エピソードをダウンロードキューに追加しました';
 	@override String get downloadDeleted => 'ダウンロードを削除しました';
 	@override String deleteConfirm({required Object title}) => 'このデバイスから「${title}」を削除しますか？';
@@ -1853,6 +1895,8 @@ class _Translations$videoSettings$ja extends Translations$videoSettings$en {
 	@override String get audioOutputSpatial => '空間オーディオ';
 	@override String get audioOutputStereo => 'ステレオ';
 	@override String get audioNormalization => 'ラウドネス正規化';
+	@override String get audioNormalizationDisablesPassthrough => '音声をPCMにデコードします。オンの間はパススルーがオフになります';
+	@override String get audioNormalizationStereoMix => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります';
 	@override String get audioDownmix => 'ステレオにダウンミックス';
 }
 
@@ -2099,6 +2143,10 @@ class _Translations$seerr$ja extends Translations$seerr$en {
 	@override String get qualityProfile => '画質プロファイル';
 	@override String get rootFolder => 'ルートフォルダ';
 	@override String get languageProfile => '言語プロファイル';
+	@override String get tags => 'タグ';
+	@override String get noTags => 'タグなし';
+	@override String defaultOption({required Object name}) => '${name}（デフォルト）';
+	@override String get animeNote => 'このシリーズはアニメです。';
 	@override String get requestSubmitted => 'リクエストを送信しました';
 	@override String requestFailed({required Object error}) => 'リクエストに失敗しました: ${error}';
 	@override String get requestsLoadFailed => 'リクエストオプションを読み込めませんでした';
@@ -2110,6 +2158,7 @@ class _Translations$seerr$ja extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'ブロックリスト登録済み';
 	@override String couldNotReach({required Object url, required Object error}) => '${url}に接続できませんでした: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url}にSeerrインスタンスがありません（HTTP ${status}）';
+	@override String get behindAuthProxy => 'Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。Plezyはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。';
 	@override String get invalidUrl => 'https://seerr.example.comのようなサーバーアドレスを入力してください';
 	@override String get quickConnectUnsupported => 'このSeerrインスタンスはQuick Connectに対応していません。Seerr 3.4以降が必要です。';
 	@override String get notInitialized => 'このSeerrインスタンスでは初回セットアップが完了していません';
@@ -2120,6 +2169,8 @@ class _Translations$seerr$ja extends Translations$seerr$en {
 	@override String get freshCookieRejected => 'Seerrが新しいセッションクッキーを拒否しました';
 	@override String get noUserInformation => 'Seerrからユーザー情報が返されませんでした';
 	@override String get sessionRejectedAfterReauth => '再サインイン後にセッションが拒否されました';
+	@override String get permissionDenied => 'Seerrがこの操作を拒否しました: アカウントに必要な権限がありません';
+	@override String get permissionRevoked => 'これをリクエストする権限がなくなりました';
 }
 
 // Path: services
@@ -2707,6 +2758,7 @@ class _Translations$watchTogether$errors$ja extends Translations$watchTogether$e
 	@override String get connectionLost => 'セッションの準備が整う前に接続が閉じられました';
 	@override String get invalidRelayResponse => 'リレーサーバーから予期しない応答が返されました';
 	@override String get sessionEnded => 'ホストがセッションを終了しました';
+	@override String get sessionUnavailable => 'このセッションを再開できません。ルームに参加するか作成して続行してください。';
 }
 
 // Path: downloads.backgroundWarning
@@ -3078,6 +3130,8 @@ extension on TranslationsJa {
 			'settings.alwaysKeepSidebarOpenDescription' => 'サイドバーを展開したままにし、コンテンツ領域を幅に合わせて調整します',
 			'settings.showUnwatchedCount' => '未視聴数を表示',
 			'settings.showUnwatchedCountDescription' => '番組とシーズンに未視聴エピソード数を表示',
+			'settings.showWatchedIndicators' => '視聴済みマークを表示',
+			'settings.showWatchedIndicatorsDescription' => '視聴済みの映画、番組、エピソードにチェックマークを表示します',
 			'settings.showEpisodeNumberOnCards' => 'カードにエピソード番号を表示',
 			'settings.showEpisodeNumberOnCardsDescription' => 'エピソードカードにシーズン番号とエピソード番号を表示します',
 			'settings.showSeasonPostersOnTabs' => 'タブにシーズンポスターを表示',
@@ -3107,6 +3161,8 @@ extension on TranslationsJa {
 			'settings.defaultQualityTitle' => 'デフォルト画質',
 			'settings.cellularQualityTitle' => 'モバイルデータ通信時のデフォルト画質',
 			'settings.cellularQualitySameAsDefault' => 'デフォルト画質と同じ',
+			'settings.directPlayCoveredQuality' => '小さい動画をオリジナル画質で再生',
+			'settings.directPlayCoveredQualityDescription' => '画質制限内の動画はトランスコードせずにダイレクト再生します',
 			'settings.musicQualityTitle' => '音楽の音質',
 			'settings.subtitleStyling' => '字幕スタイル',
 			'settings.subtitleStylingDescription' => '字幕の外観をカスタマイズ',
@@ -3118,6 +3174,7 @@ extension on TranslationsJa {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}分',
 			'settings.rememberTrackSelections' => '番組/映画ごとにトラック選択を記憶',
 			'settings.rememberTrackSelectionsDescription' => 'タイトルごとに音声と字幕の選択を記憶します',
+			'settings.rememberTrackSelectionsBackendRule' => 'Plexはファイルごとに選択をサーバーに保存します。Jellyfinはアカウントの「選択を記憶」も有効にします。Embyはサポートされていません',
 			'settings.followServerTrackSelections' => 'サーバーのエピソードごとのトラック選択を使用',
 			'settings.followServerTrackSelectionsDescription' => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します',
 			'settings.resumeMusicOnLaunch' => '音楽セッションを記憶',
@@ -3178,8 +3235,21 @@ extension on TranslationsJa {
 			'settings.autoPlayAndSkip' => '自動再生とスキップ',
 			'settings.autoPlayNextEpisode' => '次のエピソードを自動再生',
 			'settings.autoPlayNextEpisodeDescription' => 'エピソードが終了すると、次のエピソードを自動的に再生します',
+			'settings.shuffleStartsFromBeginning' => 'シャッフルは最初から再生',
+			'settings.shuffleStartsFromBeginningDescription' => 'シャッフル時に各エピソードを再開位置ではなく最初から再生します',
 			'settings.playNextCountdown' => '次回再生のカウントダウン',
 			'settings.playNextCountdownImmediate' => 'すぐに再生',
+			'settings.skipIntroMode' => 'イントロをスキップ',
+			'settings.skipIntroModeOffDescription' => 'スキップボタンなしでイントロを通常どおり再生します',
+			'settings.skipIntroModeButtonDescription' => 'イントロ開始時にスキップボタンを表示します',
+			'settings.skipIntroModeAutoDescription' => '下記の遅延後にイントロを自動的にスキップします',
+			'settings.skipCreditsMode' => 'クレジットをスキップ',
+			'settings.skipCreditsModeOffDescription' => 'スキップボタンなしでクレジットを通常どおり再生します',
+			'settings.skipCreditsModeButtonDescription' => 'クレジット開始時にスキップボタンを表示します',
+			'settings.skipCreditsModeAutoDescription' => 'クレジットを自動的にスキップして次のエピソードを再生します',
+			'settings.skipMarkerModeOff' => 'オフ',
+			'settings.skipMarkerModeButton' => 'ボタンを表示',
+			'settings.skipMarkerModeAuto' => '自動',
 			'settings.forceSkipMarkerFallback' => 'フォールバックマーカーを強制',
 			'settings.forceSkipMarkerFallbackDescription' => 'Plexにマーカーがある場合でもチャプタータイトルのパターンを使用します',
 			'settings.autoSkipDelay' => '自動スキップの遅延',
@@ -3232,6 +3302,7 @@ extension on TranslationsJa {
 			'settings.audioPassthrough' => 'オーディオパススルー',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。',
+			'settings.audioPassthroughOverriddenByNormalization' => 'ラウドネス正規化がオンの間はオフ',
 			'settings.audioDownmix' => 'ステレオにダウンミックス',
 			'settings.audioDownmixDescription' => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします',
 			'settings.downmixCenterBoost' => 'センターチャンネルブースト',
@@ -3293,6 +3364,8 @@ extension on TranslationsJa {
 			'settings.gestureVolumeSwipeDescription' => '右端を上下にスワイプして音量を調整します',
 			'settings.gesturePinchToZoom' => 'ピンチでズーム',
 			'settings.gesturePinchToZoomDescription' => '動画をピンチしてズームイン・アウト',
+			'settings.rememberBrightnessLevel' => '明るさを記憶',
+			'settings.rememberBrightnessLevelDescription' => '前回スワイプで設定した明るさで再生を開始します',
 			'settings.controls' => 'コントロール',
 			'settings.rememberPlayerChanges' => 'プレーヤーの変更を記憶',
 			'settings.rememberPlayerChangesDescription' => '再生中に行った変更を保存し、再適用する場所',
@@ -3414,6 +3487,8 @@ extension on TranslationsJa {
 			'fileInfo.sourceStream' => 'コピー元',
 			'fileInfo.temporary' => '一時的',
 			'fileInfo.timeBase' => 'タイムベース',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.overallBitrate' => '全体ビットレート',
 			'fileInfo.path' => 'パス',
 			'fileInfo.fileName' => 'ファイル名',
@@ -3435,8 +3510,6 @@ extension on TranslationsJa {
 			'fileInfo.optimizedVersion' => '最適化バージョン',
 			'fileInfo.optimizationTarget' => '最適化ターゲット',
 			'fileInfo.deletedAt' => '削除済み',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.remoteSource' => 'リモートソース',
 			'fileInfo.infiniteStream' => '無限ストリーム',
 			'fileInfo.directPlay' => 'ダイレクト再生',
@@ -3636,6 +3709,9 @@ extension on TranslationsJa {
 			'messages.playbackDataInvalid' => 'サーバーから無効な再生情報が返されました。',
 			'messages.playbackCancelled' => '再生がキャンセルされました。',
 			'messages.playbackFailed' => '再生を開始できませんでした。',
+			'messages.playbackFailedDetail' => ({required Object error}) => '再生を開始できませんでした: ${error}',
+			'messages.audioOutputFailed' => 'オーディオ出力が応答しなくなりました。テレビやレシーバーの音声接続を確認してください。他のアプリでも音が出ない場合は、デバイスを再起動してください。',
+			'messages.mediaUnavailable' => 'このコンテンツは利用できなくなりました。',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'ファイル情報の読み込みエラー: ${error}',
 			'messages.errorLoadingSeries' => 'シリーズの読み込みエラー',
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
@@ -3679,6 +3755,7 @@ extension on TranslationsJa {
 			'messages.playbackDataNotPrepared' => '再生データの準備が完了する前に再生が開始されました',
 			'messages.streamSelectionUnavailable' => 'このソースではストリームを選択できません',
 			'messages.streamSelectionFailed' => '選択したストリームを適用できませんでした',
+			'messages.trackSelectionNotRemembered' => 'このトラック選択は現在の再生にのみ適用されます。',
 			'messages.serverUnavailableForProfile' => '現在のプロフィールで利用可能なサーバーがありません',
 			'subtitlingStyling.text' => 'テキスト',
 			'subtitlingStyling.border' => '枠線',
@@ -3696,6 +3773,8 @@ extension on TranslationsJa {
 			'subtitlingStyling.overrideStrip' => 'スタイルを削除',
 			'subtitlingStyling.positionTop' => '上',
 			'subtitlingStyling.positionBottom' => '下',
+			'subtitlingStyling.useMargins' => '余白を使用',
+			'subtitlingStyling.useMarginsDescription' => 'テキスト字幕を動画の外側の領域に表示できるようにします。スタイル付き字幕は元の配置を維持する場合があります。',
 			'subtitlingStyling.anchorToScreen' => '画面に固定',
 			'subtitlingStyling.anchorToScreenDescription' => 'ワイドスクリーン映像の下にある黒帯にテキスト字幕を表示します',
 			'subtitlingStyling.bold' => '太字',
@@ -3717,6 +3796,9 @@ extension on TranslationsJa {
 			'mpvConfig.presetDeleted' => 'プリセットを削除しました',
 			'mpvConfig.confirmDeletePreset' => 'このプリセットを削除してもよろしいですか？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.lineHint' => 'option=value',
+			'mpvConfig.addLine' => '行を追加',
+			'mpvConfig.removeLine' => '行を削除',
 			'mpvConfig.embeddedVoHint' => 'Linux では vo、gpu-context、gpu-api は無視されます。埋め込み動画は常にビデオプレーン上で vo=libmpv を通してレンダリングされ、gpu-next（ArtCNN のようなコンピュートシェーダーに必要）は埋め込みでは実行できません。',
 			'dialog.confirmAction' => '操作の確認',
 			'profiles.addPlezyProfile' => 'Plezyプロフィールを追加',
@@ -3919,6 +4001,8 @@ extension on TranslationsJa {
 			'libraries.showLibrary' => 'ライブラリを表示',
 			'libraries.hideLibrary' => 'ライブラリを非表示',
 			'libraries.libraryOptions' => 'ライブラリオプション',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.content' => 'ライブラリコンテンツ',
 			'libraries.selectLibrary' => 'ライブラリを選択',
 			'libraries.filtersWithCount' => ({required Object count}) => 'フィルター (${count})',
@@ -3949,8 +4033,6 @@ extension on TranslationsJa {
 			'libraries.filterCategories.favorites' => 'お気に入り',
 			'libraries.sortLabels.title' => 'タイトル',
 			'libraries.sortLabels.dateAdded' => '追加日',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.sortLabels.releaseDate' => 'リリース日',
 			'libraries.sortLabels.rating' => '評価',
 			'libraries.sortLabels.communityRating' => 'コミュニティ評価',
@@ -4055,6 +4137,7 @@ extension on TranslationsJa {
 			'explore.notInLibrary' => 'ライブラリにありません',
 			'explore.inTheseLibraries' => 'これらのライブラリにあります',
 			'explore.checkingLibrary' => 'ライブラリを確認中…',
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '${n}台のサーバーを確認できませんでした', ), 
 			'explore.emptyTitle' => 'まだ何もありません',
 			'explore.emptyMessage' => ({required Object source}) => '${source}にコンテンツが追加されると、ここに表示されます。',
 			'explore.searchHint' => ({required Object source}) => '${source}を検索',
@@ -4351,6 +4434,13 @@ extension on TranslationsJa {
 			'watchTogether.host' => 'ホスト',
 			'watchTogether.hostBadge' => 'ホスト',
 			'watchTogether.youAreHost' => 'あなたはホストです',
+			'watchTogether.makeHost' => 'ホストにする',
+			'watchTogether.makeHostQuestion' => 'ホストを移譲しますか？',
+			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name}が再生を制御し、全員のセッションを主導します。',
+			'watchTogether.transfer' => '移譲',
+			'watchTogether.hostChangedTo' => ({required Object name}) => '${name}がホストになりました',
+			'watchTogether.youAreNowHost' => 'あなたがホストになりました',
+			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name}をホストにできませんでした',
 			'watchTogether.watchingWithOthers' => '他の人と視聴中',
 			'watchTogether.endSession' => 'セッションを終了',
 			'watchTogether.leaveSession' => 'セッションを退出',
@@ -4383,6 +4473,7 @@ extension on TranslationsJa {
 			'watchTogether.participantPaused' => ({required Object name}) => '${name}が一時停止しました',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name}が再開しました',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name}が再生位置を変更しました',
+			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name}が速度を${speed}に設定しました',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name}がバッファリング中',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name}は古いバージョンのアプリを使用しているため、同期できません',
 			'watchTogether.resumingWithout' => ({required Object name}) => '${name}抜きで再開',
@@ -4398,6 +4489,7 @@ extension on TranslationsJa {
 			'watchTogether.errors.connectionLost' => 'セッションの準備が整う前に接続が閉じられました',
 			'watchTogether.errors.invalidRelayResponse' => 'リレーサーバーから予期しない応答が返されました',
 			'watchTogether.errors.sessionEnded' => 'ホストがセッションを終了しました',
+			'watchTogether.errors.sessionUnavailable' => 'このセッションを再開できません。ルームに参加するか作成して続行してください。',
 			'downloads.title' => 'ダウンロード',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => 'テレビ番組',
@@ -4413,6 +4505,7 @@ extension on TranslationsJa {
 			'downloads.downloadResumed' => 'ダウンロードを再開しました',
 			'downloads.serverErrorBitrate' => 'サーバーエラー: ファイルがリモートビットレート制限を超えている可能性があります',
 			'downloads.storageFull' => 'デバイスのストレージがいっぱいのため、ダウンロードを停止しました。空き容量を確保してから、もう一度お試しください。',
+			'downloads.storageUnavailable' => '空き容量を確認できなかったため、ダウンロードを停止しました。ダウンロード先を確認してから、もう一度お試しください。',
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
 			'downloads.deleteConfirm' => ({required Object title}) => 'このデバイスから「${title}」を削除しますか？',
@@ -4422,6 +4515,8 @@ extension on TranslationsJa {
 			'downloads.resumeDownload' => 'ダウンロードを再開',
 			'downloads.cancelledDownload' => 'キャンセル済みのダウンロード',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（${status}を同期中）',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file}をダウンロード済み — クリックして完了',
 			'downloads.partialDownloadClickToComplete' => '一部ダウンロード済み — クリックして完了',
 			'downloads.deleting' => '削除中…',
@@ -4463,8 +4558,6 @@ extension on TranslationsJa {
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
 			'downloads.editSyncFilter' => '同期フィルター',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncAllItems' => 'すべてのアイテムを同期中',
 			'downloads.syncUnwatchedItems' => '未視聴のアイテムを同期中',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'サーバー: ${server} • ${status}',
@@ -4614,6 +4707,8 @@ extension on TranslationsJa {
 			'videoSettings.audioOutputSpatial' => '空間オーディオ',
 			'videoSettings.audioOutputStereo' => 'ステレオ',
 			'videoSettings.audioNormalization' => 'ラウドネス正規化',
+			'videoSettings.audioNormalizationDisablesPassthrough' => '音声をPCMにデコードします。オンの間はパススルーがオフになります',
+			'videoSettings.audioNormalizationStereoMix' => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります',
 			'videoSettings.audioDownmix' => 'ステレオにダウンミックス',
 			'performanceOverlay.color' => '色',
 			'performanceOverlay.performance' => 'パフォーマンス',
@@ -4797,6 +4892,10 @@ extension on TranslationsJa {
 			'seerr.qualityProfile' => '画質プロファイル',
 			'seerr.rootFolder' => 'ルートフォルダ',
 			'seerr.languageProfile' => '言語プロファイル',
+			'seerr.tags' => 'タグ',
+			'seerr.noTags' => 'タグなし',
+			'seerr.defaultOption' => ({required Object name}) => '${name}（デフォルト）',
+			'seerr.animeNote' => 'このシリーズはアニメです。',
 			'seerr.requestSubmitted' => 'リクエストを送信しました',
 			'seerr.requestFailed' => ({required Object error}) => 'リクエストに失敗しました: ${error}',
 			'seerr.requestsLoadFailed' => 'リクエストオプションを読み込めませんでした',
@@ -4808,6 +4907,7 @@ extension on TranslationsJa {
 			'seerr.statusBlocklisted' => 'ブロックリスト登録済み',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url}に接続できませんでした: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url}にSeerrインスタンスがありません（HTTP ${status}）',
+			'seerr.behindAuthProxy' => 'Seerrではなく、認証が必要なリバースプロキシ（SSOまたはHTTP認証）が応答しました。Plezyはこれを通じてサインインできません。このアプリではSeerrの/api/v1パスをプロキシから除外するか、Seerrに直接到達するアドレスを使用してください。',
 			'seerr.invalidUrl' => 'https://seerr.example.comのようなサーバーアドレスを入力してください',
 			'seerr.quickConnectUnsupported' => 'このSeerrインスタンスはQuick Connectに対応していません。Seerr 3.4以降が必要です。',
 			'seerr.notInitialized' => 'このSeerrインスタンスでは初回セットアップが完了していません',
@@ -4818,6 +4918,8 @@ extension on TranslationsJa {
 			'seerr.freshCookieRejected' => 'Seerrが新しいセッションクッキーを拒否しました',
 			'seerr.noUserInformation' => 'Seerrからユーザー情報が返されませんでした',
 			'seerr.sessionRejectedAfterReauth' => '再サインイン後にセッションが拒否されました',
+			'seerr.permissionDenied' => 'Seerrがこの操作を拒否しました: アカウントに必要な権限がありません',
+			'seerr.permissionRevoked' => 'これをリクエストする権限がなくなりました',
 			'services.title' => 'サービス',
 			'services.hubSubtitle' => '視聴の進捗を同期して、新しいタイトルをリクエストします。',
 			'services.integrations' => 'インテグレーション',

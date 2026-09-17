@@ -298,10 +298,10 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   @override
   int get lastReorderColumn => 2;
 
-  /// Only the TV dialog scrolls the focused row into view; the bottom sheet
-  /// list is not keyboard-driven.
+  /// Both layouts scroll the focused row into view: the TV dialog is the D-pad
+  /// surface, and the sheet still shows the same cursor to a keyboard user.
   @override
-  ScrollController? get reorderScrollController => widget.isDialog ? _dialogScrollController : null;
+  ScrollController? get reorderScrollController => widget.isDialog ? _dialogScrollController : _sheetScrollController;
 
   @override
   void onReorderMoveConfirmed() => widget.onReorder(_tempLibraries);
@@ -415,8 +415,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   }
 
   /// Build flat library list with a server subtitle when multiple servers are
-  /// connected. The TV dialog passes [_dialogScrollController] so focused rows
-  /// can be scrolled into view; the bottom sheet passes its own controller.
+  /// connected. Each layout passes its own controller, which is also what
+  /// [reorderScrollController] scrolls when the keyboard cursor moves.
   Widget _buildFlatLibraryList(
     ScrollController scrollController,
     Set<String> hiddenLibraryKeys, {

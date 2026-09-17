@@ -27,8 +27,8 @@ A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built w
 | Platform | Download |
 | --- | --- |
 | macOS | [DMG (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg) |
-| Linux x64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz) |
-| Linux arm64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz) |
+| Linux x64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.flatpak) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz) |
+| Linux arm64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.flatpak) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz) |
 
 <details>
 <summary>Install with a package manager</summary>
@@ -45,6 +45,29 @@ brew install --cask plezy
 ```bash
 winget install edde746.Plezy
 ```
+
+### Linux — Flatpak
+
+Install Flatpak with your distribution's package manager, download the bundle for your architecture above, then run:
+
+```bash
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install --user flathub org.freedesktop.Platform//25.08
+flatpak install --user ./plezy-linux-x64.flatpak
+flatpak run com.edde746.plezy
+```
+
+On arm64, install `plezy-linux-arm64.flatpak`.
+
+<details>
+<summary>Sandbox, playback, and folder access</summary>
+
+- Not on Flathub — the remote supplies the Freedesktop runtime only.
+- Video playback needs a Wayland session; a pure X11 session shows the interface but cannot create the video plane.
+- No host or home filesystem access; app data lives in `~/.var/app/com.edde746.plezy/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
+- Network, display, audio, and device access are enabled. `--device=all` (Flatpak 1.14 compatibility) exposes more than GPUs and controllers; session-bus access stays filtered.
+
+</details>
 
 ### Arch Linux — Pacman
 
@@ -191,7 +214,8 @@ scripts/codegen.sh
 flutter run
 ```
 
-### Code Generation
+<details>
+<summary>Code generation</summary>
 
 After modifying model classes or other generated sources:
 
@@ -205,7 +229,41 @@ After modifying translations:
 dart run slang
 ```
 
-### Local Checks
+</details>
+
+<details>
+<summary>Packaging a Flatpak bundle</summary>
+
+Packages an **already fully resolved Linux release bundle** — pinned libmpv and bundled libraries included, not a Flathub source-build manifest. Run it on Linux, on the same architecture as the bundle, after following the bundle preparation steps in [the Linux release workflow](.github/workflows/build.yml): `flutter build linux` alone does not produce all the required bundled libraries.
+
+Install the packaging tools (Debian/Ubuntu shown) plus the native-architecture SDK and runtime:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y flatpak flatpak-builder imagemagick
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install --user flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+
+BUNDLE_DIR=build/linux/x64/release/bundle
+python3 linux/packaging/build-flatpak.py --bundle "$BUNDLE_DIR" --arch x64 --output "$PWD"
+```
+
+That writes `plezy-linux-x64.flatpak`, installable with the Flatpak commands above; on arm64, use the prepared arm64 bundle directory and `--arch arm64`. Package from the checkout matching the bundle, since the version comes from `pubspec.yaml`.
+
+Cross-architecture packaging needs native Flatpak tools, a registered binfmt interpreter, and the target SDK/runtime installed with `flatpak install --user --arch=x86_64` (or `aarch64`) — never run Flatpak's namespace tools under emulation. Pass `--arch x64` or `--arch arm64` to the checker and the matching Flatpak architecture to `flatpak run --arch=...`.
+
+Check the installed package against the runtime (not just the SDK), then launch it on a Wayland desktop and exercise streaming, audio, downloads/offline playback, and file chooser portals:
+
+```bash
+python3 linux/packaging/check-flatpak.py
+```
+
+The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
+
+</details>
+
+<details>
+<summary>Local checks</summary>
 
 ```bash
 scripts/ci_checks.sh
@@ -222,6 +280,8 @@ End-to-end tests (Android emulator plus a Dockerized Jellyfin fixture):
 ```bash
 python3 scripts/maestro/run_maestro.py basic
 ```
+
+</details>
 
 ## Contributing
 

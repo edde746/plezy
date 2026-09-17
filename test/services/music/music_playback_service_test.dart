@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:dart_discord_presence/dart_discord_presence.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,7 +10,6 @@ import 'package:os_media_controls/os_media_controls.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -24,6 +24,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/agent_control_protocol.dart';
 import 'package:plezy/services/agent_playback_commands.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/discord_rpc_service.dart';
 import 'package:plezy/services/media_controls_manager.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
@@ -36,6 +37,7 @@ import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/playback_launch_observer.dart';
 import 'package:provider/provider.dart';
+import '../../test_helpers/discord_rpc_fakes.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/playback_report_fakes.dart';
@@ -366,7 +368,7 @@ class FakePlayer implements Player {
   Future<void> command(List<String> args) async {}
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {}
+  Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {}
 
   @override
   Future<void> configureSubtitleFonts() async {}
@@ -1830,6 +1832,71 @@ void main() {
       await pumpEventQueue();
       expect(await simulateKeyDownEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
       expect(await simulateKeyUpEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
+    });
+  });
+
+  group('Discord presence', () {
+    late FakeDiscordRPC rpc;
+    late DiscordRPCService rpcService;
+
+    setUp(() {
+      rpc = FakeDiscordRPC();
+      rpcService = DiscordRPCService.forTesting(rpcFactory: () => rpc);
+      DiscordRPCService.debugOverrideInstance(rpcService);
+      unawaited(rpcService.setEnabled(true));
+      rpc.emitReady();
+    });
+
+    tearDown(() {
+      DiscordRPCService.debugOverrideInstance(null);
+      unawaited(rpcService.dispose());
+    });
+
+    test('a session publishes Listening, withdraws on pause, returns on resume, and clears on stop', () async {
+      await h.playTracks([t1, t2]);
+
+      var presence = rpc.presences.last;
+      expect(presence.type, DiscordActivityType.listening);
+      expect(presence.details, 'Track t1');
+      expect(presence.state, 'Artist');
+      expect(presence.timestamps, isNotNull, reason: 'audible playback runs the progress bar');
+
+      final published = rpc.presences.length;
+      await h.service.pause();
+      await pumpEventQueue();
+      expect(rpc.clearPresenceCalls, 1, reason: 'a paused session can sit in the mini-player for hours');
+      expect(rpc.presences, hasLength(published));
+
+      await h.service.play();
+      await pumpEventQueue();
+      presence = rpc.presences.last;
+      expect(presence.details, 'Track t1');
+      expect(presence.timestamps, isNotNull);
+
+      h.player.emitTransition(_urlFor(t2));
+      await pumpEventQueue();
+      presence = rpc.presences.last;
+      expect(presence.details, 'Track t2');
+      expect(presence.timestamps, isNotNull);
+
+      // Regression: the player subscriptions are cancelled before the player
+      // stops, so no playing=false reaches the service — the teardown itself
+      // must clear presence or the last track sticks to the profile.
+      await h.service.stop();
+      expect(rpc.clearPresenceCalls, 2);
+    });
+
+    test('a queue that plays out withdraws the card', () async {
+      await h.playTracks([t1]);
+      expect(rpc.presences.last.timestamps, isNotNull);
+      final published = rpc.presences.length;
+
+      h.player.emitCompleted();
+      await pumpEventQueue();
+
+      expect(h.service.status, MusicPlaybackStatus.paused);
+      expect(rpc.clearPresenceCalls, isPositive);
+      expect(rpc.presences, hasLength(published));
     });
   });
 

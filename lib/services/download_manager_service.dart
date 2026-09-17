@@ -19,6 +19,7 @@ import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import 'api_cache.dart';
+import 'connectivity_probe.dart';
 import 'download_artwork_helpers.dart';
 import 'download_artwork_service.dart';
 import 'jellyfin_cache_resolver.dart';
@@ -236,25 +237,18 @@ class DownloadManagerService {
     }
   }
 
-  static Future<bool> shouldBlockDownloadOnCellular() async {
-    final List<ConnectivityResult> connectivity;
-    try {
-      connectivity = await Connectivity().checkConnectivity();
-    } catch (e) {
-      // connectivity_plus can throw PlatformException on Windows — don't block
-      return false;
-    }
-    return shouldBlockDownloadOnCellularWith(connectivity);
-  }
+  static Future<bool> shouldBlockDownloadOnCellular() async =>
+      shouldBlockDownloadOnCellularWith(await ConnectivityProbe.check());
 
   /// Same check as [shouldBlockDownloadOnCellular] but uses a pre-read
   /// connectivity result so callers that already queried connectivity don't
   /// pay for a second platform round-trip.
   static Future<bool> shouldBlockDownloadOnCellularWith(List<ConnectivityResult> connectivity) async {
+    // The link decides first: an empty or unknown snapshot is not
+    // cellular-only, so the preference is only consulted when it can matter.
+    if (!connectivity.isCellularOnly) return false;
     final settings = await SettingsService.getInstance();
-    if (!settings.read(SettingsService.downloadOnWifiOnly)) return false;
-    // An empty snapshot is not cellular-only, so it needs no separate guard.
-    return connectivity.isCellularOnly;
+    return settings.read(SettingsService.downloadOnWifiOnly);
   }
 
   /// Future that completes when interrupted download recovery finishes.
@@ -920,8 +914,11 @@ class DownloadManagerService {
           progressBar: true,
         );
 
-    // Plex servers can reject concurrent media downloads.
-    await FileDownloader().configure(globalConfig: (Config.holdingQueue, (1, 1, 1)));
+    // Protect native writes even while Flutter is suspended. Plex servers can
+    // also reject concurrent media downloads.
+    await FileDownloader().configure(
+      globalConfig: [(Config.checkAvailableSpace, true), (Config.holdingQueue, (1, 1, 1))],
+    );
 
     await FileDownloader().trackTasks();
     // Deliver status updates from iOS background-to-foreground transitions
@@ -2321,7 +2318,7 @@ class DownloadManagerService {
     _consecutiveQueueFailures = 0;
   }
 
-  Future<void> _handleStorageFullFailure(String globalKey, String taskId) async {
+  Future<void> _handleStorageFullFailure(String globalKey, String taskId, {String? message}) async {
     _queueBlockedByStorageFailure = true;
     for (final timer in _autoRetryTimers.values) {
       timer.cancel();
@@ -2345,14 +2342,14 @@ class DownloadManagerService {
       }
     }
 
-    final errorMessage = t.downloads.storageFull;
+    final errorMessage = message ?? t.downloads.storageFull;
     final failedKeys = await _database.failActiveDownloadsForStorageFull(errorMessage);
     for (final key in failedKeys) {
       _cancelDownloadTimers(key);
       _pendingDownloadContext.remove(key);
       _emitProgress(key, DownloadStatus.failed, 0, errorMessage: errorMessage);
     }
-    appLogger.e('Device storage exhausted; stopped ${failedKeys.length} active download(s)');
+    appLogger.e('Download storage safety check stopped ${failedKeys.length} active download(s)');
   }
 
   bool _isRetryablePrepareFailure(Object error) {
@@ -2385,7 +2382,9 @@ class DownloadManagerService {
   }
 
   bool _isStorageFullDownloadFailure(TaskException? exception) {
-    return exception != null && isStorageFullMessage(exception.description);
+    return exception != null &&
+        (isStorageFullMessage(exception.description) ||
+            exception.description.toLowerCase().contains('download storage capacity could not be determined'));
   }
 
   /// Handle a failed download — stop the queue on storage exhaustion,
@@ -2410,7 +2409,13 @@ class DownloadManagerService {
     _cancelDownloadTimers(globalKey);
     _pendingDownloadContext.remove(globalKey);
     if (_isStorageFullDownloadFailure(exception)) {
-      await _handleStorageFullFailure(globalKey, taskId);
+      await _handleStorageFullFailure(
+        globalKey,
+        taskId,
+        message: exception!.description.toLowerCase().contains('download storage capacity could not be determined')
+            ? t.downloads.storageUnavailable
+            : null,
+      );
       return;
     }
     final errorMessage = exception?.description ?? t.downloads.errorDownloadFailed;

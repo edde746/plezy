@@ -18,7 +18,7 @@ object DisplayModeSelector {
   const val RATE_TOLERANCE = 0.1f
 
   /**
-   * Longest repeating pulldown [cadencePeriod] will accept, in video frames.
+   * Longest repeating pulldown [cadence] will accept, in video frames.
    * Four covers every fractional cadence worth switching for (60/23.976 is 2,
    * 90/23.976 is 4); longer patterns spread their irregularity so far apart
    * that ranking them buys nothing.
@@ -38,13 +38,19 @@ object DisplayModeSelector {
     val area: Long get() = width.toLong() * height
   }
 
-  data class RefreshRateMatch(val reason: String, val priority: Int, val error: Float)
+  data class RefreshRateMatch(val reason: String, val priority: Int, val error: Float, val multiple: Int)
 
   data class Selection(val mode: ModeInfo, val reason: String)
 
   private data class Candidate(val mode: ModeInfo, val match: RefreshRateMatch)
 
-  private data class CadenceCandidate(val mode: ModeInfo, val period: Int)
+  /** [period] video frames before the vsync pattern repeats; [drift] is how
+   * far it misses a whole number of vsyncs, per frame, so `1 / (drift * fps)`
+   * is the mean seconds between cadence breaks. Period 1 means every frame is
+   * held the same number of vsyncs — no steady-state judder at all. */
+  data class Cadence(val period: Int, val drift: Float)
+
+  private data class CadenceCandidate(val mode: ModeInfo, val cadence: Cadence)
 
   /** How well [refreshRate] presents [fps] content: exact, an integer multiple, or not at all. */
   fun matchRefreshRate(refreshRate: Float, fps: Float): RefreshRateMatch? {
@@ -52,7 +58,7 @@ object DisplayModeSelector {
 
     val exactError = abs(refreshRate - fps)
     if (exactError < RATE_TOLERANCE) {
-      return RefreshRateMatch(reason = "exact", priority = 0, error = exactError)
+      return RefreshRateMatch(reason = "exact", priority = 0, error = exactError, multiple = 1)
     }
 
     // The error is measured after multiplication, so the tolerance has to
@@ -63,7 +69,7 @@ object DisplayModeSelector {
     if (multiple > 1) {
       val multipleError = abs(refreshRate - (fps * multiple))
       if (multipleError < RATE_TOLERANCE * multiple) {
-        return RefreshRateMatch(reason = "${multiple}x", priority = 1, error = multipleError)
+        return RefreshRateMatch(reason = "${multiple}x", priority = 1, error = multipleError, multiple = multiple)
       }
     }
 
@@ -71,40 +77,84 @@ object DisplayModeSelector {
   }
 
   /**
-   * Length, in video frames, of the shortest vsync pattern that repeats when
-   * [fps] content is presented on a [refreshRate] display, or null when
-   * nothing up to [MAX_CADENCE_PERIOD] frames repeats.
+   * Ranks rate matches: an exact rate first, the nearer one when two are
+   * within tolerance; among integer multiples the mode already active, then
+   * the largest multiple, then the smaller multiplication error.
+   *
+   * Within the exact tier the current mode earns nothing: [RATE_TOLERANCE]
+   * admits a neighbouring rate as "exact" (60.000004 for 59.94 content), and
+   * keeping it because it is active trades a true match for a permanent
+   * frame drop every ~17 s. The nearer rate wins; the active mode only
+   * settles an equal error.
+   *
+   * A clean multiple the display is already in is never traded for another
+   * one, whatever its error: the switch would renegotiate the panel for the
+   * same cadence. Between multiples, higher is better. A 120 Hz panel drives
+   * itself at 120; a 48 Hz mode on it is 2.5 panel refreshes per input frame,
+   * a permanent 2:3 (#2255), where 120 Hz is a whole 5:5, and the fractional
+   * drift's occasional repeated vsync costs 1/120 s instead of 1/48 s. Smaller
+   * error only separates the same multiple, 119.88 from 120.
+   *
+   * Deliberately not SurfaceFlinger's tie-break: its layer-vote scoring
+   * ranks 48 and 120 equal for 23.976 and settles on the lower rate unless a
+   * layer voted Max.
+   */
+  private fun rateRanking(currentMode: ModeInfo): Comparator<Candidate> = compareBy<Candidate> { it.match.priority }
+    .thenBy { it.match.priority != 0 && it.mode.modeId != currentMode.modeId }
+    .thenByDescending { it.match.multiple }
+    .thenBy { it.match.error }
+    .thenBy { it.mode.modeId != currentMode.modeId }
+
+  /**
+   * The cadence [fps] content presents with on a [refreshRate] display, or
+   * null when nothing up to [MAX_CADENCE_PERIOD] frames repeats.
    *
    * Deliberately separate from [matchRefreshRate], which answers the stricter
    * "does this rate present the content cleanly" question that
    * FrameRateManager uses to recognise a landed switch. 60 Hz does not match
    * 23.976, but it presents it as the textbook 3:2 pulldown (period 2), where
    * 90 Hz needs the 4,4,4,3 pattern (period 4) and 50 Hz never repeats at
-   * all. Shorter is better: the irregularity returns sooner, so no single
-   * frame is held far from its share of the cadence.
+   * all. A pattern whose vsync count divides evenly across its frames is a
+   * 1:1, not a pulldown: 23.976 Hz presents 23.8095 fps content one vsync per
+   * frame, repeating a frame only once the 0.7% rate error has accumulated a
+   * whole vsync (#2302).
    *
    * Only meaningful when the display refreshes at least as fast as the
    * content; below that, frames are dropped rather than repeated.
    */
-  fun cadencePeriod(refreshRate: Float, fps: Float): Int? {
+  fun cadence(refreshRate: Float, fps: Float): Cadence? {
     if (refreshRate <= 0f || fps <= 0f) return null
     val ratio = refreshRate / fps
     if (ratio < 1f) return null
     for (period in 2..MAX_CADENCE_PERIOD) {
       val vsyncs = ratio * period
-      if (abs(vsyncs - vsyncs.roundToInt()) < CADENCE_TOLERANCE) return period
+      val rounded = vsyncs.roundToInt()
+      val error = abs(vsyncs - rounded)
+      if (error >= CADENCE_TOLERANCE) continue
+      return Cadence(period = if (rounded % period == 0) 1 else period, drift = error / period)
     }
     return null
   }
 
   /**
-   * The mode among [modes] that presents [fps] with the shortest repeating
-   * cadence. Ties go to the higher refresh rate: at equal pattern length,
-   * finer vsync quantisation keeps each frame closer to its ideal moment.
+   * The mode among [modes] that presents [fps] best: shortest repeating
+   * pattern, then the mode already active, then the slowest drift, then the
+   * higher refresh rate.
+   *
+   * A pulldown's alternating hold times are permanent where drift only costs
+   * an occasional repeated frame, so period leads; [currentMode] outranks
+   * drift so a pattern of the same length never costs an HDMI renegotiation
+   * for a marginal gain; at equal period and drift the finer vsync grid holds
+   * each frame closer to its ideal moment.
    */
-  private fun shortestCadence(fps: Float, modes: Sequence<ModeInfo>): CadenceCandidate? = modes
-    .mapNotNull { mode -> cadencePeriod(mode.refreshRate, fps)?.let { CadenceCandidate(mode, it) } }
-    .minWithOrNull(compareBy<CadenceCandidate> { it.period }.thenByDescending { it.mode.refreshRate })
+  private fun shortestCadence(fps: Float, currentMode: ModeInfo, modes: Sequence<ModeInfo>): CadenceCandidate? = modes
+    .mapNotNull { mode -> cadence(mode.refreshRate, fps)?.let { CadenceCandidate(mode, it) } }
+    .minWithOrNull(
+      compareBy<CadenceCandidate> { it.cadence.period }
+        .thenBy { it.mode.modeId != currentMode.modeId }
+        .thenBy { it.cadence.drift }
+        .thenByDescending { it.mode.refreshRate }
+    )
 
   /**
    * Pick the display mode for the video, or null when no switch target exists.
@@ -153,18 +203,14 @@ object DisplayModeSelector {
     if (fps > 0f) {
       bucket
         .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
-        .minWithOrNull(
-          compareBy<Candidate> { it.match.priority }
-            .thenBy { it.match.error }
-            .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
-        )
+        .minWithOrNull(rateRanking(currentMode))
         ?.let { return Selection(it.mode, "resolution + ${it.match.reason} rate, error=${it.match.error}") }
 
       // No mode at this resolution divides the content rate: take the shortest
       // repeating pulldown before falling back to the nearest rate, so the
       // resolution path applies the same cadence policy as cadenceMatch.
-      shortestCadence(fps, bucket.asSequence())
-        ?.let { return Selection(it.mode, "resolution + ${it.period}-frame cadence") }
+      shortestCadence(fps, currentMode, bucket.asSequence())
+        ?.let { return Selection(it.mode, "resolution + ${it.cadence.period}-frame cadence") }
     }
 
     // Resolution-only request, or no cadence match at the target resolution:
@@ -188,11 +234,7 @@ object DisplayModeSelector {
     supportedModes.asSequence()
       .filter { it.width == currentMode.width && it.height == currentMode.height }
       .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
-      .minWithOrNull(
-        compareBy<Candidate> { it.match.priority }
-          .thenBy { it.match.error }
-          .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
-      )
+      .minWithOrNull(rateRanking(currentMode))
       ?.let { return Selection(it.mode, "${it.match.reason}, error=${it.match.error}") }
 
     // Tier 2 — no same-resolution match (e.g. a 4K panel with no 4K@24 mode, but a
@@ -205,10 +247,8 @@ object DisplayModeSelector {
         .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { Candidate(mode, it) } }
         .minWithOrNull(
           // Prefer the resolution closest to the panel's current one (least change,
-          // keeps panel-native res when a high-res match exists), then refresh match.
-          compareBy<Candidate> { abs(it.mode.area - currentMode.area) }
-            .thenBy { it.match.priority }
-            .thenBy { it.match.error }
+          // keeps panel-native res when a high-res match exists), then the rate ranking.
+          compareBy<Candidate> { abs(it.mode.area - currentMode.area) }.then(rateRanking(currentMode))
         )
         ?.let { return Selection(it.mode, "${it.match.reason}, error=${it.match.error}") }
     }
@@ -220,9 +260,9 @@ object DisplayModeSelector {
     // already have — otherwise a TV would renegotiate HDMI for nothing.
     val sameResolution = supportedModes.asSequence()
       .filter { it.width == currentMode.width && it.height == currentMode.height }
-    val currentPeriod = cadencePeriod(currentMode.refreshRate, fps) ?: Int.MAX_VALUE
-    return shortestCadence(fps, sameResolution)
-      ?.takeIf { it.period < currentPeriod }
-      ?.let { Selection(it.mode, "${it.period}-frame cadence") }
+    val currentPeriod = cadence(currentMode.refreshRate, fps)?.period ?: Int.MAX_VALUE
+    return shortestCadence(fps, currentMode, sameResolution)
+      ?.takeIf { it.cadence.period < currentPeriod }
+      ?.let { Selection(it.mode, "${it.cadence.period}-frame cadence") }
   }
 }

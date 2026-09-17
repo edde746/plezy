@@ -14,6 +14,7 @@ import '../utils/video_player_navigation.dart';
 import '../i18n/strings.g.dart';
 import 'media_list_playback_launcher.dart';
 import 'plex_client.dart';
+import 'settings_service.dart';
 
 /// Plex-specific play queue launcher.
 ///
@@ -160,6 +161,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           libraryId: sourceLibraryId,
           libraryTitle: sourceLibraryTitle,
           selectedItem: selectedKey != null ? _resolveSelectedMediaItem(playQueue) : null,
+          shuffle: shuffle,
         );
       },
     );
@@ -208,6 +210,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           serverName: metadata.serverName ?? serverName,
           libraryId: metadata.libraryId,
           libraryTitle: metadata.libraryTitle,
+          shuffle: true,
           copyServerInfo: true,
         );
       },
@@ -254,6 +257,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           ratingKey: folderKey,
           serverId: serverIdOrNull(serverId),
           serverName: serverName,
+          shuffle: shuffle,
           libraryId: libraryId,
           libraryTitle: libraryTitle,
         );
@@ -283,9 +287,17 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   }
 
   /// Core method to launch playback from a play queue.
+  ///
+  /// [shuffle] marks a shuffled launch: with
+  /// [SettingsService.shuffleStartsFromBeginning] the launched item's resume
+  /// offset is stripped so external players — which read
+  /// [MediaItem.viewOffsetMs] directly and cannot take an explicit start
+  /// position — also open at 0:00. The built-in player applies the same
+  /// override per item in `resolveOpenResumePosition`.
   Future<PlayQueueResult> _launchFromQueue({
     required PlayQueueResponse? playQueue,
     required String ratingKey,
+    required bool shuffle,
     ServerId? serverId,
     String? serverName,
     String? libraryId,
@@ -330,10 +342,27 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       );
     }
 
+    // Shuffle + "start at beginning" (#2303): strip the resume offset so
+    // external players — which read viewOffsetMs directly and cannot take an
+    // explicit start position — also open at 0:00, and skip the watch-state
+    // re-resolve that would restore it. The built-in player applies the same
+    // override per item in resolveOpenResumePosition.
+    var stripResumeOffset = false;
+    if (shuffle && (itemToPlay.viewOffsetMs ?? 0) > 0) {
+      stripResumeOffset = (await SettingsService.getInstance()).read(SettingsService.shuffleStartsFromBeginning);
+      if (stripResumeOffset) {
+        itemToPlay = itemToPlay.copyWith(viewOffsetMs: 0);
+      }
+    }
+
+    if (!context.mounted && navigateForTesting == null) {
+      return const PlayQueueError('Context not mounted');
+    }
+
     if (navigateForTesting != null) {
       await navigateForTesting!(itemToPlay);
     } else {
-      await navigateToVideoPlayer(context, metadata: itemToPlay);
+      await navigateToVideoPlayer(context, metadata: itemToPlay, resolveWatchState: !stripResumeOffset);
     }
 
     return const PlayQueueSuccess();

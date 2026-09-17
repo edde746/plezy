@@ -835,6 +835,27 @@ void main() {
     );
   });
 
+  test('mpv end-file error with a code but no diagnostic message names the mpv error', () async {
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final player = PlayerNative();
+        final error = player.streams.error.first;
+        try {
+          player.handlePlayerEvent('end-file', {'reason': 4, 'error': -13});
+
+          await expectLater(
+            error,
+            completion(isA<PlayerError>().having((value) => value.message, 'message', 'loading failed')),
+          );
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
   test('overlapping playback-rate changes are serialized in call order', () async {
     final releaseFirstSpeed = Completer<void>();
     final firstSpeedStarted = Completer<void>();
@@ -1033,7 +1054,79 @@ void main() {
     );
   });
 
-  test('failed passthrough restores requested normalization', () async {
+  test('normalization takes precedence over active passthrough and hands it back when turned off', () async {
+    final audioWrites = <(String, String)>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          final name = arguments['name'] as String;
+          if (name == 'af' || name == 'audio-spdif') audioWrites.add((name, arguments['value'] as String));
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioPassthrough(true);
+          expect(player.audioPassthroughActive, isTrue);
+
+          await player.setAudioNormalization(true);
+          expect(player.audioPassthroughActive, isFalse);
+
+          await player.setAudioNormalization(false);
+          expect(player.audioPassthroughActive, isTrue);
+
+          // Passthrough leaves before loudnorm lands, and loudnorm clears
+          // before passthrough re-engages: mpv never filters a bitstream.
+          expect(audioWrites, [
+            ('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd'),
+            ('audio-spdif', ''),
+            ('af', 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp'),
+            ('af', ''),
+            ('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd'),
+          ]);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('passthrough requested while normalization is on stays decoded', () async {
+    final audioWrites = <(String, String)>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          final name = arguments['name'] as String;
+          if (name == 'af' || name == 'audio-spdif') audioWrites.add((name, arguments['value'] as String));
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioNormalization(true);
+          await player.setAudioPassthrough(true);
+
+          expect(player.audioPassthroughActive, isFalse);
+          expect(audioWrites, [('af', 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp')]);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('failed passthrough re-entry restores normalization', () async {
+    var rejectPassthrough = false;
     final propertyWrites = <(String, String)>[];
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',
@@ -1044,15 +1137,18 @@ void main() {
           final arguments = call.arguments as Map;
           final write = (arguments['name'] as String, arguments['value'] as String);
           propertyWrites.add(write);
-          if (write.$1 == 'audio-spdif') throw PlatformException(code: 'SET_PROPERTY_FAILED');
+          if (write.$1 == 'audio-spdif' && rejectPassthrough) throw PlatformException(code: 'SET_PROPERTY_FAILED');
         }
         return null;
       },
       testBody: () async {
         final player = PlayerNative();
         try {
+          await player.setAudioPassthrough(true);
           await player.setAudioNormalization(true);
-          await expectLater(player.setAudioPassthrough(true), throwsA(isA<PlatformException>()));
+          rejectPassthrough = true;
+
+          await expectLater(player.setAudioNormalization(false), throwsA(isA<PlatformException>()));
 
           expect(propertyWrites.where((write) => write.$1 == 'af').map((write) => write.$2), [
             'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp',

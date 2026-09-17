@@ -41,6 +41,7 @@ enum StartupPhase {
   locale('locale'),
   windowManager('window-manager'),
   deviceCapabilities('device-capabilities'),
+  certificateTrust('certificate-trust'),
   storage('storage'),
   database('database'),
   imageCache('image-cache'),

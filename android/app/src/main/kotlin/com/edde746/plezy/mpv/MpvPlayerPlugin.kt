@@ -10,6 +10,7 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import com.edde746.plezy.exoplayer.supportedMpvSpdifCodecs
 import com.edde746.plezy.shared.PlayerChannelBinding
+import com.edde746.plezy.shared.PlayerDebugLog
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -91,9 +92,9 @@ open class MpvPlayerPlugin(
   // Test seams, mirroring ExoPlayerPlugin.createMpvCore/initializeMpvCore:
   // MpvPlayer's companion loads libmpv, so substituting both is the only way
   // a JVM test can drive this plugin's initialization path.
-  internal var createCore: (Context, Boolean, Float, String, Int) -> MpvPlayerCore =
-    { context, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay ->
-      MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay)
+  internal var createCore: (Context, Boolean, Float, String) -> MpvPlayerCore =
+    { context, hardwareDecoding, subtitleRenderScale, logLevel ->
+      MpvPlayerCore(context, audioOnly, hardwareDecoding, subtitleRenderScale, logLevel)
     }
   internal var initializeCore: (MpvPlayerCore, (Boolean) -> Unit) -> Unit = { core, onInitialized ->
     core.initialize(onInitialized)
@@ -132,7 +133,12 @@ open class MpvPlayerPlugin(
 
     @Deprecated("Never called since API 34; kept because ComponentCallbacks requires it.")
     override fun onLowMemory() {
-      playerCore?.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+      // Deliberately not TRIM_MEMORY_COMPLETE: this says the *device* is low,
+      // not that this process is the problem, and the 1-2 GB TV boxes that
+      // still deliver it do so routinely mid-4K-playback (#2314). They also
+      // deliver TRIM_MEMORY_RUNNING_CRITICAL when this process is what has to
+      // give, so only the back cache goes here.
+      playerCore?.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
     }
   }
 
@@ -164,13 +170,15 @@ open class MpvPlayerPlugin(
   }
 
   private fun disposeCoreForTeardown() {
-    takeCoreForTeardown()?.dispose()
+    // Activity/engine detach never reaches Dart's clearVideoFrameRate, so
+    // the display mode is restored here or not at all.
+    takeCoreForTeardown()?.dispose(preserveDisplayMode = false)
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activity = binding.activity
     activityBinding = binding
-    Log.d(tag, "Attached to activity")
+    PlayerDebugLog.d(tag) { "Attached to activity" }
   }
 
   override fun onDetachedFromActivity() {
@@ -181,13 +189,13 @@ open class MpvPlayerPlugin(
     }
     activity = null
     activityBinding = null
-    Log.d(tag, "Detached from activity")
+    PlayerDebugLog.d(tag) { "Detached from activity" }
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
     activity = binding.activity
     activityBinding = binding
-    Log.d(tag, "Reattached to activity for config changes")
+    PlayerDebugLog.d(tag) { "Reattached to activity for config changes" }
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
@@ -199,7 +207,7 @@ open class MpvPlayerPlugin(
     }
     activity = null
     activityBinding = null
-    Log.d(tag, "Detached from activity for config changes")
+    PlayerDebugLog.d(tag) { "Detached from activity for config changes" }
   }
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -260,9 +268,6 @@ open class MpvPlayerPlugin(
     // ⅓ / ¼ of the surface); the same fraction the ExoPlayer overlay applies.
     // Absent from older callers and the audio-only core; full is the default.
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1f
-    val osdVsyncDelay = call.argument<Int>("osdVsyncDelay") ?: 0
-    // Frames the OSD plane renders ahead of the picture; the Dart perf-tier
-    // proxy also seeds the ExoPlayer overlay's assVideoLatencyFrames with it.
     val logLevel = call.argument<String>("logLevel") ?: "warn"
     // Video cores need the Activity (surface/view hierarchy); the audio-only
     // core is built on the application context so it can outlive it.
@@ -277,7 +282,7 @@ open class MpvPlayerPlugin(
     }
 
     if (playerCore?.isInitialized == true) {
-      Log.d(tag, "Already initialized")
+      PlayerDebugLog.d(tag) { "Already initialized" }
       result.success(true)
       return
     }
@@ -296,7 +301,7 @@ open class MpvPlayerPlugin(
       }
     }
     if (attempt == null) {
-      Log.d(tag, "Init already in flight, queuing caller")
+      PlayerDebugLog.d(tag) { "Init already in flight, queuing caller" }
       return
     }
 
@@ -322,7 +327,7 @@ open class MpvPlayerPlugin(
         }
 
         gen = ++sessionGeneration
-        core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel, osdVsyncDelay).apply {
+        core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel).apply {
           delegate = this@MpvPlayerPlugin
         }
         playerCore = core
@@ -355,16 +360,16 @@ open class MpvPlayerPlugin(
           }
           core.dispose()
           if (stale) {
-            Log.d(tag, "Stale init callback (gen=$gen, current=$sessionGeneration)")
+            PlayerDebugLog.d(tag) { "Stale init callback (gen=$gen, current=$sessionGeneration)" }
           } else {
-            Log.d(tag, "Initialized: false")
+            PlayerDebugLog.d(tag) { "Initialized: false" }
           }
         } else {
           // Start hidden - now safe because setVisible operates on the container,
           // not the SurfaceView directly (matching ExoPlayer's approach).
           // No-op on the audio-only core, which has no render layer.
           core.setVisible(false)
-          Log.d(tag, "Initialized: true")
+          PlayerDebugLog.d(tag) { "Initialized: true" }
         }
         completePendingInits(attempt, success = !stale && success)
       }
@@ -411,12 +416,15 @@ open class MpvPlayerPlugin(
 
   private fun handleDispose(call: MethodCall, result: MethodChannel.Result) {
     val token = call.argument<Number>("instanceId")?.toLong()
+    // True across a player→player replacement: the successor inherits the
+    // window's display mode instead of renegotiating HDMI twice.
+    val preserveDisplayMode = call.argument<Boolean>("preserveDisplayMode") ?: false
     runOnMain {
       val owner = coreInstanceId
       if (playerCore != null && token != null && owner != null && token != owner) {
         // This dispose lost the ownership race: a successor already created
         // the current core. Acknowledge without touching it.
-        Log.d(tag, "Ignoring stale dispose (token=$token, core owner=$owner)")
+        PlayerDebugLog.d(tag) { "Ignoring stale dispose (token=$token, core owner=$owner)" }
         result.success(null)
         return@runOnMain
       }
@@ -432,14 +440,14 @@ open class MpvPlayerPlugin(
       val completed = AtomicBoolean(false)
       fun completeOnce(reason: String) {
         if (completed.compareAndSet(false, true)) {
-          Log.d(tag, reason)
+          PlayerDebugLog.d(tag) { reason }
           result.success(null)
         }
       }
       channels.mainHandler.postDelayed({
         completeOnce("Dispose watchdog fired after ${disposeWatchdogMs}ms; teardown continues in background")
       }, disposeWatchdogMs)
-      core.dispose { completeOnce("Disposed") }
+      core.dispose(preserveDisplayMode) { completeOnce("Disposed") }
     }
   }
 
@@ -561,6 +569,7 @@ open class MpvPlayerPlugin(
       result.error("INVALID_ARGS", "Missing or invalid 'level'", null)
       return
     }
+    PlayerDebugLog.applyLogLevel(level)
     val core = playerCore
     if (core?.isInitialized != true) {
       completeMpvPropertyNotInitialized(result)
@@ -603,11 +612,10 @@ open class MpvPlayerPlugin(
     val videoHeight = call.argument<Number>("videoHeight")?.toInt() ?: 0
     val matchResolution = call.argument<Boolean>("matchResolution") ?: false
 
-    Log.d(
-      tag,
+    PlayerDebugLog.d(tag) {
       "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs, " +
         "video=${videoWidth}x$videoHeight, matchResolution=$matchResolution"
-    )
+    }
     val core = playerCore
     if (core == null) {
       result.success(false)
@@ -619,19 +627,19 @@ open class MpvPlayerPlugin(
   }
 
   private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
-    Log.d(tag, "clearVideoFrameRate")
+    PlayerDebugLog.d(tag) { "clearVideoFrameRate" }
     playerCore?.clearVideoFrameRate()
     result.success(null)
   }
 
   private fun handleRequestAudioFocus(result: MethodChannel.Result) {
-    Log.d(tag, "requestAudioFocus")
+    PlayerDebugLog.d(tag) { "requestAudioFocus" }
     val granted = playerCore?.requestAudioFocus() ?: false
     result.success(granted)
   }
 
   private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
-    Log.d(tag, "abandonAudioFocus")
+    PlayerDebugLog.d(tag) { "abandonAudioFocus" }
     playerCore?.abandonAudioFocus()
     result.success(null)
   }
@@ -664,7 +672,7 @@ open class MpvPlayerPlugin(
         }
 
         val fd = pfd.detachFd()
-        Log.d(tag, "Opened content FD $fd for $uriString")
+        PlayerDebugLog.d(tag) { "Opened content FD $fd for $uriString" }
         runOnMain { result.success(fd) }
       } catch (e: Exception) {
         Log.e(tag, "Failed to open content FD: ${e.message}", e)
@@ -685,7 +693,7 @@ open class MpvPlayerPlugin(
     }
     try {
       ParcelFileDescriptor.adoptFd(fd).close()
-      Log.d(tag, "Closed content FD $fd")
+      PlayerDebugLog.d(tag) { "Closed content FD $fd" }
       result.success(null)
     } catch (e: Exception) {
       Log.e(tag, "Failed to close content FD $fd: ${e.message}", e)

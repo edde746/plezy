@@ -59,7 +59,6 @@ class OptimizedMediaImage extends StatelessWidget {
   final double? width;
   final double? height;
   final BoxFit fit;
-  final FilterQuality filterQuality;
   final Widget Function(BuildContext, String)? placeholder;
   final Widget Function(BuildContext, String, dynamic)? errorWidget;
   final Duration fadeInDuration;
@@ -89,7 +88,6 @@ class OptimizedMediaImage extends StatelessWidget {
     this.width,
     this.height,
     this.fit = BoxFit.cover,
-    this.filterQuality = FilterQuality.medium,
     this.placeholder,
     this.errorWidget,
     this.fadeInDuration = const Duration(milliseconds: 300),
@@ -111,7 +109,6 @@ class OptimizedMediaImage extends StatelessWidget {
     double? width,
     double? height,
     BoxFit fit,
-    FilterQuality filterQuality,
     Widget Function(BuildContext, String)? placeholder,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
     Duration fadeInDuration,
@@ -133,7 +130,6 @@ class OptimizedMediaImage extends StatelessWidget {
     double? width,
     double? height,
     BoxFit fit = BoxFit.cover,
-    FilterQuality filterQuality = FilterQuality.medium,
     Widget Function(BuildContext, String)? placeholder,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
     Duration fadeInDuration = const Duration(milliseconds: 300),
@@ -148,7 +144,6 @@ class OptimizedMediaImage extends StatelessWidget {
          width: width,
          height: height,
          fit: fit,
-         filterQuality: filterQuality,
          placeholder: placeholder,
          errorWidget: errorWidget,
          fadeInDuration: fadeInDuration,
@@ -167,7 +162,6 @@ class OptimizedMediaImage extends StatelessWidget {
     double? width,
     double? height,
     BoxFit fit = BoxFit.cover,
-    FilterQuality filterQuality = FilterQuality.medium,
     Widget Function(BuildContext, String)? placeholder,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
     Duration fadeInDuration = const Duration(milliseconds: 300),
@@ -184,7 +178,6 @@ class OptimizedMediaImage extends StatelessWidget {
          width: width,
          height: height,
          fit: fit,
-         filterQuality: filterQuality,
          placeholder: placeholder,
          errorWidget: errorWidget,
          fadeInDuration: fadeInDuration,
@@ -201,6 +194,10 @@ class OptimizedMediaImage extends StatelessWidget {
   /// meaning we can skip the LayoutBuilder.
   bool get _hasKnownDimensions =>
       width != null && width!.isFinite && width! > 0 && height != null && height!.isFinite && height! > 0;
+
+  /// Not a constructor parameter: the filter has to follow the fetch density,
+  /// not the call site.
+  FilterQuality _filterQuality(BuildContext context) => MediaImageHelper.artworkFilterQuality(context, imageType);
 
   @override
   Widget build(BuildContext context) {
@@ -248,9 +245,9 @@ class OptimizedMediaImage extends StatelessWidget {
   }
 
   Widget _buildLocalFileImage(BuildContext context, File file, double effectiveWidth, double effectiveHeight) {
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-    final scaledWidth = effectiveWidth * dpr;
-    final scaledHeight = effectiveHeight * dpr;
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: imageType);
+    final scaledWidth = effectiveWidth * pixelRatio;
+    final scaledHeight = effectiveHeight * pixelRatio;
     final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
@@ -272,7 +269,7 @@ class OptimizedMediaImage extends StatelessWidget {
         // the TV a11y services make Flutter rebuild every frame.
         excludeFromSemantics: true,
         fit: fit,
-        filterQuality: filterQuality,
+        filterQuality: _filterQuality(context),
         alignment: alignment,
         color: tint,
         colorBlendMode: tint == null ? null : BlendMode.srcATop,
@@ -300,14 +297,14 @@ class OptimizedMediaImage extends StatelessWidget {
   }
 
   Widget _buildCachedImage(BuildContext context, double effectiveWidth, double effectiveHeight) {
-    final devicePixelRatio = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: imageType);
 
     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: imagePath,
       maxWidth: effectiveWidth,
       maxHeight: effectiveHeight,
-      devicePixelRatio: devicePixelRatio,
+      pixelRatio: pixelRatio,
       imageType: imageType,
     );
 
@@ -321,8 +318,8 @@ class OptimizedMediaImage extends StatelessWidget {
       return _buildFallback(context);
     }
 
-    final scaledWidth = effectiveWidth * devicePixelRatio;
-    final scaledHeight = effectiveHeight * devicePixelRatio;
+    final scaledWidth = effectiveWidth * pixelRatio;
+    final scaledHeight = effectiveHeight * pixelRatio;
     final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
       displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
       displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
@@ -348,7 +345,7 @@ class OptimizedMediaImage extends StatelessWidget {
           // Decorative — see the Image.file branch.
           excludeFromSemantics: true,
           fit: fit,
-          filterQuality: filterQuality,
+          filterQuality: _filterQuality(context),
           alignment: alignment,
           color: tint,
           colorBlendMode: tint == null ? null : BlendMode.srcATop,
@@ -366,7 +363,7 @@ class OptimizedMediaImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      filterQuality: filterQuality,
+      filterQuality: _filterQuality(context),
       alignment: alignment,
       duration: fadeInDuration,
       placeholderBuilder: (context) => _buildPlaceholder(context, imageUrl),

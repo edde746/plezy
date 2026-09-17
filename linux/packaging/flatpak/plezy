@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+# dart_discord_presence searches the runtime root, while Flatpak Discord
+# publishes its socket under its app directory. Never replace a native socket.
+for index in 0 1 2 3 4 5 6 7 8 9; do
+    socket="discord-ipc-$index"
+    discord_socket="$XDG_RUNTIME_DIR/app/com.discordapp.Discord/$socket"
+    if [ ! -e "$XDG_RUNTIME_DIR/$socket" ] && [ -S "$discord_socket" ]; then
+        ln -sf "$discord_socket" "$XDG_RUNTIME_DIR/$socket"
+    fi
+done
+
+exec /app/plezy/plezy.sh "$@"

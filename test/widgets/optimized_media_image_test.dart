@@ -31,12 +31,12 @@ void main() {
     final widgetProvider = image.image as ResizeImage;
     final widgetCached = widgetProvider.imageProvider as CachedNetworkImageProvider;
     final sharedProvider =
-        MediaImageHelper.serverArtworkProvider(imageUrl: imageUrl, memWidth: 200, memHeight: 180) as ResizeImage;
+        MediaImageHelper.serverArtworkProvider(imageUrl: imageUrl, memWidth: 320, memHeight: 180) as ResizeImage;
     final sharedCached = sharedProvider.imageProvider as CachedNetworkImageProvider;
 
     expect(widgetCached, sharedCached);
     expect(widgetProvider.width, sharedProvider.width);
-    expect(widgetProvider.width, 200);
+    expect(widgetProvider.width, 320);
     expect(widgetProvider.height, sharedProvider.height);
     expect(widgetProvider.height, 180);
     expect(widgetProvider.policy, sharedProvider.policy);
@@ -53,6 +53,43 @@ void main() {
     expect(widgetCached.maxWidth, isNull);
     expect(widgetCached.maxHeight, sharedCached.maxHeight);
     expect(widgetCached.maxHeight, isNull);
+  });
+
+  testWidgets('supersampled artwork paints through the bicubic kernel (#1697)', (tester) async {
+    // The fetch/decode headroom only buys sharpness if the paint resolves it
+    // with a phase-stable kernel: FilterQuality.medium snaps to a half-size
+    // mipmap level and throws the headroom away again. Nothing else in the
+    // suite would notice that regression — it is visual only.
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.display.reset);
+    tester.view.display.size = const Size(1920, 1080);
+
+    Future<FilterQuality> qualityFor(ImageType type, {required double dpr}) async {
+      tester.view.devicePixelRatio = dpr;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            width: 160,
+            height: 90,
+            child: OptimizedMediaImage(
+              imagePath: 'https://example.invalid/artwork-${type.name}-$dpr.jpg',
+              width: 160,
+              height: 90,
+              imageType: type,
+            ),
+          ),
+        ),
+      );
+      return tester.widget<Image>(find.byType(Image)).filterQuality;
+    }
+
+    expect(await qualityFor(ImageType.poster, dpr: 1), FilterQuality.high);
+    expect(await qualityFor(ImageType.thumb, dpr: 1), FilterQuality.high);
+    // Backdrops are never supersampled, and neither is anything on a display
+    // dense enough that the headroom would be invisible — nothing for cubic
+    // to resolve in either case.
+    expect(await qualityFor(ImageType.art, dpr: 1), FilterQuality.low);
+    expect(await qualityFor(ImageType.poster, dpr: 3), FilterQuality.low);
   });
 
   testWidgets('artwork dim tints image and fallback paint', (tester) async {
@@ -291,8 +328,8 @@ void main() {
     final localImage = tester.widget<Image>(find.byType(Image));
     final localResize = localImage.image as ResizeImage;
     final localProvider = localResize.imageProvider as FileImage;
-    expect(localResize.width, 120);
-    expect(localResize.height, 180);
+    expect(localResize.width, 160);
+    expect(localResize.height, 240);
     expect(localResize.policy, ResizeImagePolicy.fit);
     expect(localProvider.file.path, file.path);
     await tester.pumpWidget(const SizedBox.shrink());

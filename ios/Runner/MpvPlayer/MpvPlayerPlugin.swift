@@ -85,8 +85,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleObserveProperty(call: call, result: result)
     case "command":
       handleCommand(call: call, result: result)
-    case "setDisplayCriteria":
-      handleSetDisplayCriteria(call: call, result: result)
+    case "awaitDisplayModeSwitch":
+      handleAwaitDisplayModeSwitch(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
     case "setVideoZoom":
@@ -179,7 +179,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       !playerCore.isPipStarting
     else { return }
 
-    print("[MpvPlayerPlugin] Restoring inline player after PiP")
+    MpvLog.debug("[MpvPlayerPlugin] Restoring inline player after PiP")
     playerCore.setVisible(true)
     playerCore.updateFrame()
     if playerCore.isPaused {
@@ -302,7 +302,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       if isSceneActive {
         restoreInlinePlayerAfterPip()
       } else {
-        print("[MpvPlayerPlugin] Deferring inline restore until scene activation")
+        MpvLog.debug("[MpvPlayerPlugin] Deferring inline restore until scene activation")
       }
     }
     if notify { pipChannel?.invokeMethod("onPipChanged", arguments: false) }
@@ -392,7 +392,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     let preserveDisplayMode = args?["preserveDisplayMode"] as? Bool ?? false
     DispatchQueue.main.async { [weak self] in
       guard let self = self else { result(nil); return }
-      NSLog("[MpvPlayerPlugin] dispose preserveDisplayMode=%@", preserveDisplayMode.description)
+      MpvLog.debug("[MpvPlayerPlugin] dispose preserveDisplayMode=\(preserveDisplayMode.description)")
       self.pipController?.teardown()
       self.pipController = nil
       self.autoPipEnabled = false
@@ -410,40 +410,16 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     if playerCore?.isPipActive == true { syncPipTimebase() }
   }
 
-  private func handleSetDisplayCriteria(call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard let args = call.arguments as? [String: Any] else {
-      result(FlutterError(code: "INVALID_ARGS", message: "Missing arguments", details: nil))
-      return
-    }
-
+  private func handleAwaitDisplayModeSwitch(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let core = playerCore else {
       result(nil)
       return
     }
 
-    let extraDelayMs = int64Value(args["extraDelayMs"]).map { Int(clamping: $0) } ?? 0
-    guard let raw = args["criteria"] as? [String: Any] else {
-      DispatchQueue.main.async {
-        core.setServerDisplayCriteriaForPlayback(nil, extraDelayMs: extraDelayMs) {
-          result(nil)
-        }
-      }
-      return
-    }
-
-    let criteria = ServerDisplayCriteria(
-      doviProfile: int64Value(raw["doviProfile"]) ?? 0,
-      doviLevel: int64Value(raw["doviLevel"]) ?? 0,
-      doviCompatibilityId: int64Value(raw["doviCompatibilityId"]),
-      fps: doubleValue(raw["fps"]) ?? 0,
-      width: Int32(truncatingIfNeeded: int64Value(raw["width"]) ?? 0),
-      height: Int32(truncatingIfNeeded: int64Value(raw["height"]) ?? 0),
-      gamma: stringValue(raw["transfer"]),
-      primaries: stringValue(raw["primaries"]),
-      colorMatrix: stringValue(raw["matrix"])
-    )
+    let args = call.arguments as? [String: Any]
+    let extraDelayMs = int64Value(args?["extraDelayMs"]).map { Int(clamping: $0) } ?? 0
     DispatchQueue.main.async {
-      core.setServerDisplayCriteriaForPlayback(criteria, extraDelayMs: extraDelayMs) {
+      core.awaitDisplayModeSwitch(extraDelayMs: extraDelayMs) {
         result(nil)
       }
     }
@@ -488,12 +464,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  private func stringValue(_ value: Any?) -> String? {
-    guard let value else { return nil }
-    let string = String(describing: value).trimmingCharacters(in: .whitespacesAndNewlines)
-    return string.isEmpty ? nil : string
-  }
-
   // MARK: - Helpers
 
   private func findKeyWindow() -> UIWindow? {
@@ -526,9 +496,9 @@ extension MpvPlayerPlugin: MpvPipDelegate {
   func pipWillStart() {
     // If PiP was system-initiated (not via our enterPip), prepare the shared layer now.
     guard let playerCore = playerCore, !playerCore.isPipStarting else { return }
-    print("[MpvPlayerPlugin] System-initiated PiP detected, preparing shared layer")
+    MpvLog.debug("[MpvPlayerPlugin] System-initiated PiP detected, preparing shared layer")
     if preparePip() == nil {
-      print("[MpvPlayerPlugin] PiP preparation failed for system-initiated PiP")
+      MpvLog.debug("[MpvPlayerPlugin] PiP preparation failed for system-initiated PiP")
       pipController?.stopPip()
     }
   }

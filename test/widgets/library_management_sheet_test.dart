@@ -38,10 +38,11 @@ const _qualifiedLibrary = MediaLibrary(
 Future<({int Function() selects, int Function() backs})> _pumpLibraryManagementLauncher(
   WidgetTester tester, {
   MediaLibrary library = _qualifiedLibrary,
+  List<MediaLibrary>? libraries,
   MultiServerProvider? multiServerProvider,
 }) async {
   final librariesProvider = LibrariesProvider();
-  await librariesProvider.updateLibraryOrder([library]);
+  await librariesProvider.updateLibraryOrder(libraries ?? [library]);
   addTearDown(librariesProvider.dispose);
 
   final hiddenLibrariesProvider = HiddenLibrariesProvider();
@@ -206,6 +207,53 @@ void main() {
       expect(OverlaySheetController.openSheetCount.value, 0);
     });
   }
+
+  testWidgets('the D-pad cursor stays on screen while walking a long library list', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    // Shield-class TV output: 1080p at a 2.0 ratio.
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _pumpLibraryManagementLauncher(
+      tester,
+      libraries: [
+        for (var i = 0; i < 60; i++)
+          MediaLibrary(
+            id: 'section-$i',
+            backend: MediaBackend.plex,
+            title: 'Library $i',
+            kind: MediaKind.movie,
+            serverId: 'server-a',
+          ),
+      ],
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    // One server means no server subtitle, so rows are shorter than the
+    // two-line height the reveal arithmetic used to assume.
+    final firstRow = tester.getRect(find.byType(ListTile).at(0));
+    final rowPitch = tester.getRect(find.byType(ListTile).at(1)).top - firstRow.top;
+    expect(rowPitch, lessThan(72.0));
+
+    final viewport = tester.getRect(find.descendant(of: find.byType(Dialog), matching: find.byType(Scrollable)).first);
+
+    for (var index = 1; index <= 20; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      final row = find.text('Library $index');
+      expect(row, findsOneWidget, reason: 'focused row $index scrolled out of the built range');
+      final rect = tester.getRect(row);
+      expect(rect.top, greaterThanOrEqualTo(viewport.top), reason: 'focused row $index sits above the viewport');
+      expect(rect.bottom, lessThanOrEqualTo(viewport.bottom), reason: 'focused row $index sits below the viewport');
+    }
+  });
 
   for (final action in ['scan', 'empty_trash']) {
     testWidgets('$action refuses an absent library owner while another Plex server is online', (tester) async {

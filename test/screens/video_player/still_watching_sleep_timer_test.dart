@@ -49,7 +49,7 @@ void main() {
         expect(key.currentState, isNotNull);
 
         final sleepTimer = SleepTimerService();
-        sleepTimer.startTimer(const Duration(minutes: 30), () {});
+        sleepTimer.startTimer(const Duration(minutes: 30));
         // Move the deadline into the past; the next 1s heartbeat fires the
         // still-watching prompt while _originalDuration stays 30 minutes.
         sleepTimer.extendTimer(const Duration(minutes: -31));
@@ -95,7 +95,7 @@ void main() {
         expect(key.currentState, isNotNull);
 
         final sleepTimer = SleepTimerService();
-        sleepTimer.startTimer(const Duration(minutes: 30), () {});
+        sleepTimer.startTimer(const Duration(minutes: 30));
         final endTimeBefore = sleepTimer.endTime;
         expect(endTimeBefore, isNotNull);
 

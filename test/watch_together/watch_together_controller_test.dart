@@ -78,14 +78,8 @@ class _Room {
       rate: 1,
       lease: host.capturePlaybackLease(selection: true),
     );
-    host.bindPlayer(
-      hostPlayer,
-      ratingKey: ratingKey,
-      serverId: 'srv',
-      mediaTitle: 'Ep',
-      hasFirstFrame: hasFirstFrame,
-      startupHold: startupHold,
-    );
+    if (hasFirstFrame) hostPlayer.setHasRenderedFrame(true);
+    host.bindPlayer(hostPlayer, ratingKey: ratingKey, serverId: 'srv', mediaTitle: 'Ep', startupHold: startupHold);
     async.flushMicrotasks();
   }
 
@@ -223,11 +217,16 @@ void main() {
 
             room.host.unbindPlayer();
             async.flushMicrotasks();
+            // A same-key reload starts a new file: open() resolves and the
+            // rebind lands before mpv even reports start-file. A rollback
+            // keeps the old one, whose frame the player still shows.
             // Reload/rollback callers have no intent seed: the room, not the
             // rebound player's snapshot, owns whether playback should resume.
-            room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: hasFirstFrame);
+            if (!hasFirstFrame) room.hostPlayer.beginOpen();
+            room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
             async.flushMicrotasks();
             if (!hasFirstFrame) {
+              room.hostPlayer.emitFileStarted();
               async.elapse(const Duration(seconds: 2));
               expect(room.hostPlayer.state.playing, isFalse);
               room.hostPlayer.emitPlaybackRestart();
@@ -299,7 +298,9 @@ void main() {
         );
         async.flushMicrotasks();
         expect(room.host.phase, PlaybackPhase.loading);
+        room.hostPlayer.beginOpen();
         room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
+        room.hostPlayer.emitFileStarted();
         async.elapse(const Duration(seconds: 2));
         expect(room.hostPlayer.state.playing, isFalse);
         expect(room.guestPlayer.state.playing, isFalse);
@@ -321,7 +322,9 @@ void main() {
         async.flushMicrotasks();
         room.hostPlayer.emitPlaying(false);
         async.flushMicrotasks();
+        room.hostPlayer.beginOpen();
         room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
+        room.hostPlayer.emitFileStarted();
         async.elapse(const Duration(seconds: 2));
         expect(room.hostPlayer.state.playing, isFalse);
         expect(room.guestPlayer.state.playing, isFalse);
@@ -353,6 +356,8 @@ void main() {
           rate: 1,
           lease: room.host.capturePlaybackLease(selection: true),
         );
+        room.hostPlayer.beginOpen();
+        room.guestPlayer.beginOpen();
         room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk2', serverId: 'srv');
         room.guestJoinsMedia(ratingKey: 'rk2');
         room.bothBecomeReady();
@@ -361,6 +366,84 @@ void main() {
         expect(room.lastHostState().mediaKey, 'srv:rk2');
         expect(room.lastHostState().phase, PlaybackPhase.playing);
         expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+        room.dispose();
+      });
+    });
+
+    // The reload rebinds in its finally, right after open() resolves. On
+    // every mpv core that is before start-file: the outgoing file is still
+    // loaded and its frame is still the player's last rendered one.
+    test('a host rebind that lands before start-file waits for the new file\'s frame', () {
+      fakeAsync((async) {
+        final room = playingRoom(async);
+        room.host.unbindPlayer();
+        async.flushMicrotasks();
+        room.hostPlayer.emitPlaying(false);
+        async.flushMicrotasks();
+        room.hostPlayer.commandLog.clear();
+        final messagesBefore = room.hostService.outgoingLog.length;
+
+        room.hostPlayer.beginOpen();
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv');
+        async.flushMicrotasks();
+        room.hostPlayer.emitFileStarted();
+        async.elapse(const Duration(seconds: 4));
+
+        expect(room.hostPlayer.commandLog.where((c) => c == 'play'), isEmpty);
+        expect(room.host.phase, PlaybackPhase.waitingForPeers);
+        expect(
+          room.hostService.outgoingLog
+              .skip(messagesBefore)
+              .where((m) => m.type == SyncMessageType.state && m.state!.phase == PlaybackPhase.playing),
+          isEmpty,
+        );
+
+        room.hostPlayer.emitPlaybackRestart();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.lastHostState().phase, PlaybackPhase.playing);
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+        room.dispose();
+      });
+    });
+
+    test('a guest rebind that lands before start-file reports ready only for the new file\'s frame', () {
+      fakeAsync((async) {
+        final room = playingRoom(async);
+        room.guest.unbindPlayer();
+        async.flushMicrotasks();
+        room.guestPlayer.emitPlaying(false);
+        async.flushMicrotasks();
+        room.guestPlayer.commandLog.clear();
+        final messagesBefore = room.guestService.outgoingLog.length;
+
+        room.guestPlayer.beginOpen();
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv');
+        async.flushMicrotasks();
+        room.guestPlayer.emitFileStarted();
+        async.elapse(const Duration(seconds: 4));
+
+        // The room kept playing without this guest; the guest itself must not
+        // report or act on readiness for a file it has not rendered.
+        expect(room.guestPlayer.commandLog.where((c) => c == 'play'), isEmpty);
+        expect(
+          room.guestService.outgoingLog
+              .skip(messagesBefore)
+              .where((m) => m.type == SyncMessageType.status && m.status!.ready),
+          isEmpty,
+        );
+
+        room.guestPlayer.emitPlaybackRestart();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(
+          room.guestService.outgoingLog
+              .skip(messagesBefore)
+              .where((m) => m.type == SyncMessageType.status && m.status!.ready),
+          isNotEmpty,
+        );
         expect(room.guestPlayer.state.playing, isTrue);
         room.dispose();
       });
@@ -629,6 +712,62 @@ void main() {
     });
   });
 
+  group('rebinding around display negotiation', () {
+    // #2370: on Apple TV the screen rebinds the player after the first frame
+    // while the startup hold is still pending. The frame belongs to the
+    // player, not to the binding that watched it render.
+    test('a host rebind after the first frame keeps that frame and starts once the hold releases', () {
+      fakeAsync((async) {
+        final room = _Room(async, controlMode: ControlMode.anyone);
+        final hold = Completer<void>();
+        room.hostStartsMedia(startupHold: hold.future);
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+
+        room.host.unbindPlayer();
+        async.flushMicrotasks();
+        room.host.bindPlayer(room.hostPlayer, ratingKey: 'rk1', serverId: 'srv', startupHold: hold.future);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 2));
+        expect(room.hostPlayer.state.playing, isFalse, reason: 'the hold still gates the start');
+
+        hold.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.lastHostState().phase, PlaybackPhase.playing);
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+        room.dispose();
+      });
+    });
+
+    test('a guest rebind after the first frame keeps that frame and reports ready once the hold releases', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        final hold = Completer<void>();
+        room.hostStartsMedia();
+        room.guestJoinsMedia(startupHold: hold.future);
+        room.bothBecomeReady();
+
+        room.guest.unbindPlayer();
+        async.flushMicrotasks();
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv', startupHold: hold.future);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 2));
+        expect(room.guestService.outgoingLog.lastWhere((m) => m.type == SyncMessageType.status).status!.ready, isFalse);
+        expect(room.hostPlayer.state.playing, isFalse);
+
+        hold.complete();
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 3));
+        expect(room.lastHostState().phase, PlaybackPhase.playing);
+        expect(room.hostPlayer.state.playing, isTrue);
+        expect(room.guestPlayer.state.playing, isTrue);
+        room.dispose();
+      });
+    });
+  });
+
   group('lobby control mode propagation', () {
     test('a host join delivers the control mode to an idle-room guest', () {
       fakeAsync((async) {
@@ -889,7 +1028,8 @@ void main() {
           ),
           isFalse,
         );
-        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'A', serverId: 'srv', hasFirstFrame: true);
+        room.guestPlayer.setHasRenderedFrame(true);
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'A', serverId: 'srv');
         async.elapse(const Duration(seconds: 6));
         final authored = room.guestService.outgoingLog.where((m) => m.type == SyncMessageType.state);
         expect(authored.every((m) => m.state!.ratingKey == 'B'), isTrue);
@@ -1310,14 +1450,8 @@ void main() {
 
         room.guest.unbindPlayer();
         async.flushMicrotasks();
-        final replacement = FakeSyncPlayer(position: const Duration(minutes: 2));
-        room.guest.bindPlayer(
-          replacement,
-          ratingKey: 'rk1',
-          serverId: 'srv',
-          hasFirstFrame: true,
-          startupHold: replacementHold.future,
-        );
+        final replacement = FakeSyncPlayer(position: const Duration(minutes: 2), hasRenderedFrame: true);
+        room.guest.bindPlayer(replacement, ratingKey: 'rk1', serverId: 'srv', startupHold: replacementHold.future);
         async.flushMicrotasks();
         room.host.applyHostChange(sessionAs(SessionRole.host, hostPeerId: 'host'));
         room.guest.applyHostChange(sessionAs(SessionRole.guest, hostPeerId: 'host'));
@@ -1518,7 +1652,7 @@ void main() {
         // adopted epoch rather than opening a new one.
         room.guestPlayer.setPosition(const Duration(seconds: 5));
         room.guestPlayer.commandLog.clear();
-        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv', hasFirstFrame: true);
+        room.guest.bindPlayer(room.guestPlayer, ratingKey: 'rk1', serverId: 'srv');
         async.flushMicrotasks();
         async.elapse(const Duration(seconds: 6));
 

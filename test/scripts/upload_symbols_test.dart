@@ -124,7 +124,7 @@ void main() {
 
   test('packaged identities exclude unshipped ABI, stale intermediates and mixed targets', () async {
     android();
-    final rich = put('build/libmpv/libmpv/native/jni/arm64-v8a/libmpv.so', elf(30));
+    final rich = put('build/libmpv/libmpv/native/imported/arm64-v8a/libmpv.so', elf(30));
     put(
       'build/app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib/x86_64/libmpv.so',
       elf(40, machine: 62),
@@ -217,6 +217,21 @@ void main() {
     expect(batchSymbolArtifacts([one, two], maxObjects: 2, maxBytes: 480).map((b) => b.length), [1, 1]);
     expect(batchSymbolArtifacts([one, two], maxObjects: 3, maxBytes: 479).map((b) => b.length), [1, 1]);
     expect(() => batchSymbolArtifacts([two], maxBytes: 319), throwsA(isA<SymbolFailure>()));
+  });
+
+  test('artifacts beyond bounded upload capacity are dropped and reported', () {
+    final file = put('fat', elf(1));
+    SymbolArtifact artifact(String id, int count) =>
+        SymbolArtifact(file, 'elf', List.generate(count, (i) => SymbolVariant('$id$i', 'arm64', null)), {'debug'}, 0);
+    final one = artifact('a', 1);
+    final two = artifact('b', 2);
+    final warnings = StringBuffer();
+    expect(withinUploadCapacity([one, two], maxBytes: 480, warnings: warnings), [one, two]);
+    expect(warnings.toString(), isEmpty);
+    // 'two' is charged once per slice, so it alone exceeds a 319-byte bound.
+    expect(withinUploadCapacity([one, two], maxBytes: 319, warnings: warnings), [one]);
+    expect(warnings.toString(), contains('Skipping artifact beyond bounded upload capacity'));
+    expect(withinUploadCapacity([one, two], maxObjects: 1, maxBytes: 480), [one]);
   });
 
   test('native, Dart, map and release errors stop before later phases', () async {

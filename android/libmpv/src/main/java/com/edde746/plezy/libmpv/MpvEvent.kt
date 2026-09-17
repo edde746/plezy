@@ -8,7 +8,9 @@ sealed interface MpvEvent {
     val reason: EndFileReason?,
     override val sourceId: Long?,
     /** mpv_error code when [reason] is [EndFileReason.Error]; null otherwise. */
-    val error: MpvError? = null
+    val error: MpvError? = null,
+    /** `mpv_error_string` for that code; null unless [reason] is [EndFileReason.Error]. */
+    val errorMessage: String? = null
   ) : MpvEvent
   data class FileLoaded(override val sourceId: Long?) : MpvEvent
   data class PlaybackRestart(

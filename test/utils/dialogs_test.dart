@@ -11,6 +11,255 @@ void main() {
     TvDetectionService.setForceTVSync(false);
   });
 
+  testWidgets('owned dialog cancels before its first build without removing its page', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    final owner = ModalRoute.of(hostContext)!;
+    final result = showScopedDialog<String>(
+      context: hostContext,
+      builder: (_) => const AlertDialog(title: Text('Pending owned dialog')),
+    );
+
+    dismissDialogsOwnedBy(owner);
+    await tester.pumpAndSettle();
+
+    await expectLater(result, completion(isNull));
+    expect(find.text('Pending owned dialog'), findsNothing);
+    expect(owner.isCurrent, isTrue);
+    dismissDialogsOwnedBy(owner);
+    expect(owner.isCurrent, isTrue);
+  });
+
+  testWidgets('owner cancellation releases a loading controller before its first build', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    final controller = ScopedLoadingDialogController();
+    var disposed = false;
+    controller.show(
+      hostContext,
+      builder: (_) => const AlertDialog(title: Text('Pending loading dialog')),
+      onDisposed: () => disposed = true,
+    );
+    final dismissal = controller.dismiss();
+
+    dismissDialogsOwnedBy(ModalRoute.of(hostContext)!);
+    await tester.pumpAndSettle();
+
+    await expectLater(controller.ready, completes);
+    await expectLater(dismissal, completes);
+    expect(controller.isVisible, isFalse);
+    expect(disposed, isTrue);
+    expect(find.text('Pending loading dialog'), findsNothing);
+    expect(ModalRoute.of(hostContext)!.isCurrent, isTrue);
+  });
+
+  testWidgets('owner cancellation includes nested dialogs', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    late BuildContext outerContext;
+    final outerResult = showScopedDialog<String>(
+      context: hostContext,
+      builder: (context) {
+        outerContext = context;
+        return const AlertDialog(title: Text('Outer owned dialog'));
+      },
+    );
+    await tester.pumpAndSettle();
+    final innerResult = showScopedDialog<String>(
+      context: outerContext,
+      builder: (_) => const AlertDialog(title: Text('Inner owned dialog')),
+    );
+    await tester.pumpAndSettle();
+
+    dismissDialogsOwnedBy(ModalRoute.of(hostContext)!);
+    await tester.pumpAndSettle();
+
+    await expectLater(outerResult, completion(isNull));
+    await expectLater(innerResult, completion(isNull));
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(ModalRoute.of(hostContext)!.isCurrent, isTrue);
+  });
+
+  testWidgets('nested dialog retains ownership after its parent completes', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    late BuildContext outerContext;
+    final outerResult = showScopedDialog<String>(
+      context: hostContext,
+      builder: (context) {
+        outerContext = context;
+        return const AlertDialog(title: Text('Outer owned dialog'));
+      },
+    );
+    await tester.pumpAndSettle();
+    final innerResult = showScopedDialog<String>(
+      context: outerContext,
+      builder: (_) => const AlertDialog(title: Text('Inner owned dialog')),
+    );
+    await tester.pumpAndSettle();
+    Navigator.of(outerContext).removeRoute(ModalRoute.of(outerContext)!, 'Parent result');
+    await tester.pumpAndSettle();
+    await expectLater(outerResult, completion('Parent result'));
+
+    dismissDialogsOwnedBy(ModalRoute.of(hostContext)!);
+    await tester.pumpAndSettle();
+
+    await expectLater(innerResult, completion(isNull));
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(ModalRoute.of(hostContext)!.isCurrent, isTrue);
+  });
+
+  testWidgets('owner cancellation preserves unrelated dialogs and intervening pages', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    final owner = ModalRoute.of(hostContext)!;
+    final ownedResult = showScopedDialog<String>(
+      context: hostContext,
+      builder: (_) => const AlertDialog(title: Text('Owned dialog')),
+    );
+    await tester.pumpAndSettle();
+    late BuildContext pageContext;
+    final pageResult = Navigator.of(hostContext).push<String>(
+      MaterialPageRoute(
+        builder: (context) {
+          pageContext = context;
+          return const Scaffold(body: Text('Unrelated page'));
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    final unrelatedResult = showScopedDialog<String>(
+      context: pageContext,
+      builder: (context) => AlertDialog(
+        title: const Text('Unrelated dialog'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop('Dialog result'), child: const Text('Keep result')),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    dismissDialogsOwnedBy(owner);
+    await tester.pumpAndSettle();
+
+    await expectLater(ownedResult, completion(isNull));
+    expect(find.text('Owned dialog', skipOffstage: false), findsNothing);
+    expect(find.text('Unrelated dialog'), findsOneWidget);
+    await tester.tap(find.text('Keep result'));
+    await tester.pumpAndSettle();
+    await expectLater(unrelatedResult, completion('Dialog result'));
+    expect(find.text('Unrelated page'), findsOneWidget);
+    Navigator.of(pageContext).pop('Page result');
+    await tester.pumpAndSettle();
+    await expectLater(pageResult, completion('Page result'));
+    expect(owner.isCurrent, isTrue);
+  });
+
+  testWidgets('owner cancellation leaves another navigator dialog open', (tester) async {
+    late BuildContext leftContext;
+    late BuildContext rightContext;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Row(
+          children: [
+            Expanded(
+              child: Navigator(
+                onGenerateRoute: (_) => MaterialPageRoute<void>(
+                  builder: (context) {
+                    leftContext = context;
+                    return const Scaffold(body: Text('Left page'));
+                  },
+                ),
+              ),
+            ),
+            Expanded(
+              child: Navigator(
+                onGenerateRoute: (_) => MaterialPageRoute<void>(
+                  builder: (context) {
+                    rightContext = context;
+                    return const Scaffold(body: Text('Right page'));
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    final leftResult = showScopedDialog<String>(
+      context: leftContext,
+      builder: (_) => const AlertDialog(title: Text('Left dialog')),
+    );
+    final rightResult = showScopedDialog<String>(
+      context: rightContext,
+      builder: (context) => AlertDialog(
+        title: const Text('Right dialog'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop('Right result'), child: const Text('Keep right')),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    dismissDialogsOwnedBy(ModalRoute.of(leftContext)!);
+    await tester.pumpAndSettle();
+
+    await expectLater(leftResult, completion(isNull));
+    expect(find.text('Left dialog'), findsNothing);
+    expect(find.text('Right dialog'), findsOneWidget);
+    expect(find.text('Left page'), findsOneWidget);
+    await tester.tap(find.text('Keep right'));
+    await tester.pumpAndSettle();
+    await expectLater(rightResult, completion('Right result'));
+    expect(find.text('Right page'), findsOneWidget);
+  });
+
+  testWidgets('scoped dialog captures its source theme and keeps keyboard traversal inside', (tester) async {
+    final firstFocus = FocusNode();
+    final lastFocus = FocusNode();
+    addTearDown(firstFocus.dispose);
+    addTearDown(lastFocus.dispose);
+    late BuildContext hostContext;
+    const sourceColor = Colors.deepPurple;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Theme(
+          data: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: sourceColor, primary: sourceColor),
+          ),
+          child: Builder(
+            builder: (context) {
+              hostContext = context;
+              return const Scaffold(body: TextField());
+            },
+          ),
+        ),
+      ),
+    );
+    final result = showScopedDialog<String>(
+      context: hostContext,
+      builder: (context) => AlertDialog(
+        title: Text('Themed dialog', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        actions: [
+          TextButton(autofocus: true, focusNode: firstFocus, onPressed: () {}, child: const Text('First')),
+          TextButton(
+            focusNode: lastFocus,
+            onPressed: () => Navigator.of(context).pop('Selected'),
+            child: const Text('Last'),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Text>(find.text('Themed dialog')).style!.color, sourceColor);
+    expect(firstFocus.hasPrimaryFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+    expect(lastFocus.hasPrimaryFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+    expect(firstFocus.hasPrimaryFocus, isTrue);
+    await tester.tap(find.text('Last'));
+    await tester.pumpAndSettle();
+    await expectLater(result, completion('Selected'));
+  });
+
   testWidgets('text input dialog returns submitted text', (tester) async {
     final hostContext = await _pumpHost(tester);
     final result = showTextInputDialog(hostContext, title: 'Name', labelText: 'Name');

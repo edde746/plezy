@@ -13,6 +13,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/app_icon.dart';
 import '../../focus/key_event_utils.dart';
+import '../../navigation/page_refresh_shortcut.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
@@ -27,7 +28,6 @@ import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/system_bottom_inset.dart';
 
 const previousStartupFailureKey = Key('logs-previous-startup-failure');
@@ -436,6 +436,8 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       onKeyEvent: (node, event) {
         final backResult = handleBackKeyNavigation(context, event);
         if (backResult != KeyEventResult.ignored) return backResult;
+        final refreshResult = handlePageRefreshShortcut(event, _loadLogs);
+        if (refreshResult != KeyEventResult.ignored) return refreshResult;
         if (event is KeyDownEvent || event is KeyRepeatEvent) {
           if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
             _scroll(80);
@@ -450,92 +452,89 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       },
       child: PrimaryScrollController(
         controller: _scrollController,
-        child: IosStatusBarTapScrollToTop(
-          controller: _scrollController,
-          child: Scaffold(
-            body: Actions(
-              actions: <Type, Action<Intent>>{
-                ExtendSelectionByCharacterIntent: _CollapsingSelectionMoveAction<ExtendSelectionByCharacterIntent>(),
-                ExtendSelectionVerticallyToAdjacentLineIntent:
-                    _CollapsingSelectionMoveAction<ExtendSelectionVerticallyToAdjacentLineIntent>(),
-              },
-              child: SelectionArea(
-                focusNode: _selectionFocusNode,
-                child: SelectionContainer(
-                  delegate: _recordSelection,
-                  child: CustomScrollView(
-                    primary: true,
-                    slivers: [
-                      CustomAppBar(
-                        // Chrome is not log content; keep it out of drag-selection.
-                        title: SelectionContainer.disabled(child: Text(t.screens.logs)),
-                        pinned: true,
-                        actions: [
-                          FocusableActionBar(
-                            actions: [
-                              FocusableAction(
-                                icon: Symbols.refresh_rounded,
-                                tooltip: t.common.refresh,
-                                onPressed: _loadLogs,
-                              ),
-                              FocusableAction(
-                                icon: Symbols.upload_rounded,
-                                tooltip: t.logs.uploadLogs,
-                                onPressed: _hasDiagnostics ? _uploadLogs : null,
-                              ),
-                              FocusableAction(
-                                icon: Symbols.content_copy_rounded,
-                                tooltip: t.logs.copyLogs,
-                                onPressed: _hasDiagnostics ? _copyAllLogs : null,
-                              ),
-                              FocusableAction(
-                                icon: Symbols.delete_outline_rounded,
-                                tooltip: t.logs.clearLogs,
-                                onPressed: _hasDiagnostics ? _clearLogs : null,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      // A launch that failed the startup gate leaves nothing in the
-                      // in-memory buffer — that process is gone. Show its record
-                      // here, where the user can actually act on it (#1732).
-                      ?_buildPreviousFailureBanner(theme),
-                      if (_logs.isEmpty)
-                        SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
-                      else ...[
-                        if (_deviceInfo.isNotEmpty)
-                          SliverPadding(
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                            sliver: SliverToBoxAdapter(
-                              child: _LogRecord(
-                                child: Text.rich(
-                                  TextSpan(style: _logTextStyle(theme), children: _buildDeviceInfoSpans()),
-                                ),
-                              ),
+        child: Scaffold(
+          body: Actions(
+            actions: <Type, Action<Intent>>{
+              ExtendSelectionByCharacterIntent: _CollapsingSelectionMoveAction<ExtendSelectionByCharacterIntent>(),
+              ExtendSelectionVerticallyToAdjacentLineIntent:
+                  _CollapsingSelectionMoveAction<ExtendSelectionVerticallyToAdjacentLineIntent>(),
+            },
+            child: SelectionArea(
+              focusNode: _selectionFocusNode,
+              child: SelectionContainer(
+                delegate: _recordSelection,
+                child: CustomScrollView(
+                  primary: true,
+                  slivers: [
+                    CustomAppBar(
+                      // Chrome is not log content; keep it out of drag-selection.
+                      title: SelectionContainer.disabled(child: Text(t.screens.logs)),
+                      pinned: true,
+                      actions: [
+                        FocusableActionBar(
+                          actions: [
+                            FocusableAction(
+                              icon: Symbols.refresh_rounded,
+                              tooltip: t.common.refresh,
+                              onPressed: _loadLogs,
                             ),
-                          ),
+                            FocusableAction(
+                              icon: Symbols.upload_rounded,
+                              tooltip: t.logs.uploadLogs,
+                              onPressed: _hasDiagnostics ? _uploadLogs : null,
+                            ),
+                            FocusableAction(
+                              icon: Symbols.content_copy_rounded,
+                              tooltip: t.logs.copyLogs,
+                              onPressed: _hasDiagnostics ? _copyAllLogs : null,
+                            ),
+                            FocusableAction(
+                              icon: Symbols.delete_outline_rounded,
+                              tooltip: t.logs.clearLogs,
+                              onPressed: _hasDiagnostics ? _clearLogs : null,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // A launch that failed the startup gate leaves nothing in the
+                    // in-memory buffer — that process is gone. Show its record
+                    // here, where the user can actually act on it (#1732).
+                    ?_buildPreviousFailureBanner(theme),
+                    if (_logs.isEmpty)
+                      SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
+                    else ...[
+                      if (_deviceInfo.isNotEmpty)
                         SliverPadding(
-                          padding: EdgeInsets.fromLTRB(12, _deviceInfo.isEmpty ? 12 : 0, 12, 12),
-                          // One widget per entry so only the visible slice is laid
-                          // out. The buffer holds up to 5 MiB of text; as a single
-                          // paragraph that was a multi-second frame and hundreds of
-                          // MB of glyph data — an OOM kill on phones and TVs.
-                          sliver: SliverList.builder(
-                            itemCount: _logs.length,
-                            itemBuilder: (context, index) => _LogRecord(
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: _LogRecord(
                               child: Text.rich(
-                                TextSpan(style: _logTextStyle(theme), children: _buildEntrySpans(_logs[index])),
+                                TextSpan(style: _logTextStyle(theme), children: _buildDeviceInfoSpans()),
                               ),
                             ),
                           ),
                         ),
-                        // Only the log body needs it: the empty state already fills
-                        // the viewport, so a trailing inset would just add slack.
-                        const SliverSystemBottomInset(),
-                      ],
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(12, _deviceInfo.isEmpty ? 12 : 0, 12, 12),
+                        // One widget per entry so only the visible slice is laid
+                        // out. The buffer holds up to 5 MiB of text; as a single
+                        // paragraph that was a multi-second frame and hundreds of
+                        // MB of glyph data — an OOM kill on phones and TVs.
+                        sliver: SliverList.builder(
+                          itemCount: _logs.length,
+                          itemBuilder: (context, index) => _LogRecord(
+                            child: Text.rich(
+                              TextSpan(style: _logTextStyle(theme), children: _buildEntrySpans(_logs[index])),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Only the log body needs it: the empty state already fills
+                      // the viewport, so a trailing inset would just add slack.
+                      const SliverSystemBottomInset(),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
