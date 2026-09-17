@@ -38,7 +38,8 @@ class ServerCapabilities {
   /// playback progress. Plex exposes this directly; Jellyfin does not.
   final bool continueWatchingRemoval;
 
-  /// External subtitle search/marketplace (Plex `/library/metadata/{id}/subtitles`).
+  /// External subtitle search/marketplace (Plex `/library/metadata/{id}/subtitles`,
+  /// Emby `/Items/{id}/RemoteSearch/Subtitles/{language}`).
   /// Hides the "Search subtitles" affordance when false.
   final bool externalSubtitleSearch;
 
@@ -148,7 +149,7 @@ class ServerCapabilities {
     numericUserRating: false,
     userFavorites: true,
     continueWatchingRemoval: true,
-    externalSubtitleSearch: false,
+    externalSubtitleSearch: true,
     richMetadataEdit: true,
     scrubThumbnails: true,
     folderGrouping: true,
@@ -157,10 +158,9 @@ class ServerCapabilities {
   );
 
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
-  /// which Plex probes per server (`PlexClient.capabilities`) — so that is the
-  /// only override this type needs. Widen the parameter list if another flag
-  /// ever becomes a runtime probe.
-  ServerCapabilities copyWith({bool? videoTranscoding}) {
+  /// which Plex probes per server (`PlexClient.capabilities`). Emby subtitle
+  /// search/download is also runtime-gated by Premiere status.
+  ServerCapabilities copyWith({bool? videoTranscoding, bool? externalSubtitleSearch}) {
     return ServerCapabilities(
       liveTv: liveTv,
       liveTvDvr: liveTvDvr,
@@ -169,7 +169,7 @@ class ServerCapabilities {
       numericUserRating: numericUserRating,
       userFavorites: userFavorites,
       continueWatchingRemoval: continueWatchingRemoval,
-      externalSubtitleSearch: externalSubtitleSearch,
+      externalSubtitleSearch: externalSubtitleSearch ?? this.externalSubtitleSearch,
       richMetadataEdit: richMetadataEdit,
       scrubThumbnails: scrubThumbnails,
       folderGrouping: folderGrouping,
