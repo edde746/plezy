@@ -27,6 +27,7 @@ void _logPartSelection(
   int selectedMediaIndex,
   int selectedPartIndex,
 ) {
+  if (!debugLoggingEnabled) return;
   final candidateCount = mediaList.fold<int>(0, (count, media) => count + _mapList(media['Part']).length);
   if (candidateCount <= 1) return;
 
