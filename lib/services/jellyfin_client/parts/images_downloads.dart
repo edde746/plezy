@@ -111,10 +111,11 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
       if (index is! int) continue;
       final codec = fields.codec?.toLowerCase();
       final delivery = fields.deliveryUrl;
+      final streamFile = _segment('Stream.${CodecUtils.getSubtitleExtension(codec)}');
       final url = _withApiKey(
         delivery != null && delivery.isNotEmpty
             ? delivery
-            : '/Videos/${_segment(item.id)}/${_segment(subtitleMediaSourceId)}/Subtitles/$index/${_segment('Stream.${codec ?? 'srt'}')}',
+            : '/Videos/${_segment(item.id)}/${_segment(subtitleMediaSourceId)}/Subtitles/$index/$streamFile',
       );
       subtitles.add(
         DownloadSubtitleSpec(

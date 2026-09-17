@@ -66,7 +66,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
-    final item = await fetchItemFreshCacheFirst(itemId);
+    final item = forceRefresh ? await fetchItem(itemId) : await fetchItemFreshCacheFirst(itemId);
     final markers = item == null ? const <MediaMarker>[] : await _fetchMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
       item?.raw,
