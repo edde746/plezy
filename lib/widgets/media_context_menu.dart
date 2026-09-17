@@ -1232,7 +1232,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (metadataEditStringListEquals(result, original)) return;
       draft.setValue('label', result);
 
-      if (await adapter.save(draft)) {
+      // Re-show the spinner for the write: Plex saves can be several
+      // sequential PUTs and MediaBrowser re-posts the whole DTO, so the card
+      // must not be interactive (and re-launchable) mid-save.
+      if (context.mounted) {
+        loadingDialog.show(
+          context,
+          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+        );
+      }
+      final saved = await adapter.save(draft);
+      await loadingDialog.dismiss();
+
+      if (saved) {
         if (profileId != null && profileId.isNotEmpty && serverId != null) {
           unawaited(
             RecentTagsService.addRecentTags(

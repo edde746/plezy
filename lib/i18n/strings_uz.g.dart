@@ -2070,6 +2070,7 @@ class _Translations$metadataEdit$uz extends Translations$metadataEdit$en {
 	@override String get country => 'Mamlakat';
 	@override String get collection => 'Toʻplam';
 	@override String get label => 'Yorliq';
+	@override String get quickTag => 'Tezkor teg...';
 }
 
 // Path: matchScreen
@@ -4857,6 +4858,7 @@ extension on TranslationsUz {
 			'metadataEdit.country' => 'Mamlakat',
 			'metadataEdit.collection' => 'Toʻplam',
 			'metadataEdit.label' => 'Yorliq',
+			'metadataEdit.quickTag' => 'Tezkor teg...',
 			'matchScreen.match' => 'Moslashtirish...',
 			'matchScreen.fixMatch' => 'Moslikni tuzatish...',
 			'matchScreen.unmatch' => 'Moslikni oʻchirish',

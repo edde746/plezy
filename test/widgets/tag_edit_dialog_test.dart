@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/dialogs.dart';
+import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
 import 'package:plezy/widgets/tag_edit_dialog.dart';
 
@@ -82,6 +84,29 @@ void main() {
     expect(find.byType(FocusableFilterChip), findsOneWidget);
     expect(find.text('horror'), findsOneWidget);
   });
+
+  testWidgets('D-pad can leave the suggestion chips and reach Save', (tester) async {
+    await _pumpDialog(tester, initialTags: const [], suggestionsFuture: Future.value(['a', 'b', 'c', 'd', 'e', 'f']));
+    await tester.pumpAndSettle();
+
+    // Enter keyboard mode, then walk: field → first chip → … → Save.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableFilterChip), findsWidgets);
+
+    // From the first chip, RIGHT and DOWN must escape the chip row — the chip
+    // mixin consumes both keys, so this regresses if the callbacks are dropped.
+    for (var i = 0; i < 12; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      if (_saveHasFocus(tester)) break;
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      if (_saveHasFocus(tester)) break;
+    }
+
+    expect(_saveHasFocus(tester), isTrue, reason: 'D-pad must reach Save past the chip row');
+  });
 }
 
 class _DialogResult {
@@ -134,4 +159,17 @@ Future<_DialogResult> _pumpDialog(
 Future<void> _save(WidgetTester tester) async {
   await tester.tap(find.text(t.common.save));
   await tester.pumpAndSettle();
+}
+
+bool _saveHasFocus(WidgetTester tester) {
+  final saveButton = find.ancestor(of: find.text(t.common.save), matching: find.byType(DialogActionButton));
+  final buttonElement = tester.element(saveButton);
+  final focused = FocusManager.instance.primaryFocus?.context;
+  if (focused == null) return false;
+  var inside = false;
+  focused.visitAncestorElements((element) {
+    if (element == buttonElement) inside = true;
+    return !inside;
+  });
+  return inside;
 }

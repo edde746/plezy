@@ -2051,7 +2051,7 @@
     "country": "País",
     "collection": "Colección",
     "label": "Etiqueta",
-    "quickTag": ""
+    "quickTag": "Etiqueta rápida..."
   },
   "matchScreen": {
     "match": "Asociar...",

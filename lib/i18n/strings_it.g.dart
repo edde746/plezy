@@ -2070,6 +2070,7 @@ class _Translations$metadataEdit$it extends Translations$metadataEdit$en {
 	@override String get country => 'Paese';
 	@override String get collection => 'Raccolta';
 	@override String get label => 'Etichetta';
+	@override String get quickTag => 'Tag rapido...';
 }
 
 // Path: matchScreen
@@ -4857,6 +4858,7 @@ extension on TranslationsIt {
 			'metadataEdit.country' => 'Paese',
 			'metadataEdit.collection' => 'Raccolta',
 			'metadataEdit.label' => 'Etichetta',
+			'metadataEdit.quickTag' => 'Tag rapido...',
 			'matchScreen.match' => 'Abbina...',
 			'matchScreen.fixMatch' => 'Correggi abbinamento...',
 			'matchScreen.unmatch' => 'Rimuovi abbinamento',

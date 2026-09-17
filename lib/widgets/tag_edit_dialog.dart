@@ -32,6 +32,7 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
   late final FocusNode _textFieldFocusNode;
   late final List<String> _tags;
   final _saveFocusNode = FocusNode();
+  final _firstChipFocusNode = FocusNode(debugLabel: 'tag_suggestion_first');
   List<String> _suggestions = const [];
 
   /// Suggestion chips cap so a large server tag list can't inflate the dialog.
@@ -44,7 +45,14 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
       onKeyEvent: (node, event) {
         if (!event.isActionable) return KeyEventResult.ignored;
         if (event.logicalKey.isDownKey) {
-          node.nextFocus();
+          // With suggestions visible, DOWN lands on the first (most-recent)
+          // chip rather than the suffix add button — chips are the primary
+          // action here and geometric traversal would skip or scatter them.
+          if (_visibleSuggestions.isNotEmpty) {
+            _firstChipFocusNode.requestFocus();
+          } else {
+            node.nextFocus();
+          }
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -70,6 +78,7 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
   void dispose() {
     _textFieldFocusNode.dispose();
     _saveFocusNode.dispose();
+    _firstChipFocusNode.dispose();
     super.dispose();
   }
 
@@ -129,17 +138,30 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final suggestion in visibleSuggestions)
-                      FocusableFilterChip(
-                        icon: Symbols.add_rounded,
-                        label: suggestion,
-                        onPressed: () => _addTag(suggestion),
-                      ),
-                  ],
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (var i = 0; i < visibleSuggestions.length; i++)
+                          FocusableFilterChip(
+                            icon: Symbols.add_rounded,
+                            label: visibleSuggestions[i],
+                            focusNode: i == 0 ? _firstChipFocusNode : null,
+                            // The chip mixin always consumes RIGHT and DOWN;
+                            // without explicit escapes D-pad focus would be
+                            // trapped on the chip row.
+                            onNavigateRight: () =>
+                                FocusManager.instance.primaryFocus?.focusInDirection(TraversalDirection.right),
+                            onNavigateDown: () =>
+                                FocusManager.instance.primaryFocus?.focusInDirection(TraversalDirection.down),
+                            onPressed: () => _addTag(visibleSuggestions[i]),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -2061,6 +2061,7 @@ class Translations$metadataEdit$zh extends Translations$metadataEdit$en {
 	@override String get country => '国家';
 	@override String get collection => '合集';
 	@override String get label => '标记';
+	@override String get quickTag => '快速标签…';
 }
 
 // Path: matchScreen
@@ -4846,6 +4847,7 @@ extension on TranslationsZh {
 			'metadataEdit.country' => '国家',
 			'metadataEdit.collection' => '合集',
 			'metadataEdit.label' => '标记',
+			'metadataEdit.quickTag' => '快速标签…',
 			'matchScreen.match' => '匹配…',
 			'matchScreen.fixMatch' => '修正匹配…',
 			'matchScreen.unmatch' => '取消匹配',

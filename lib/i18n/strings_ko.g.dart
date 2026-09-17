@@ -2061,6 +2061,7 @@ class _Translations$metadataEdit$ko extends Translations$metadataEdit$en {
 	@override String get country => '국가';
 	@override String get collection => '컬렉션';
 	@override String get label => '라벨';
+	@override String get quickTag => '빠른 태그…';
 }
 
 // Path: matchScreen
@@ -4846,6 +4847,7 @@ extension on TranslationsKo {
 			'metadataEdit.country' => '국가',
 			'metadataEdit.collection' => '컬렉션',
 			'metadataEdit.label' => '라벨',
+			'metadataEdit.quickTag' => '빠른 태그…',
 			'matchScreen.match' => '일치...',
 			'matchScreen.fixMatch' => '일치 수정...',
 			'matchScreen.unmatch' => '일치 해제',
