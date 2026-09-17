@@ -45,7 +45,7 @@ enum Anime4KQuality {
   /// Fast quality using Mode L shaders
   fast,
 
-  /// High quality using Mode VL/UL shaders
+  /// High quality using Mode VL shaders
   hq,
 }
 
