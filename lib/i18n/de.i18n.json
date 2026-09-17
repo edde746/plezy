@@ -274,6 +274,8 @@
     "autoPlayAndSkip": "Autoplay & Überspringen",
     "autoPlayNextEpisode": "Nächste Episode automatisch abspielen",
     "autoPlayNextEpisodeDescription": "Die nächste Episode automatisch starten, wenn die aktuelle endet",
+    "shuffleStartsFromBeginning": "",
+    "shuffleStartsFromBeginningDescription": "",
     "playNextCountdown": "Countdown bis zur nächsten Episode",
     "playNextCountdownImmediate": "Sofort abspielen",
     "skipIntroMode": "",

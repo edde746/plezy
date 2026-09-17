@@ -274,6 +274,8 @@
     "autoPlayAndSkip": "自动播放与跳过",
     "autoPlayNextEpisode": "自动播放下一集",
     "autoPlayNextEpisodeDescription": "当前剧集结束时自动播放下一集",
+    "shuffleStartsFromBeginning": "",
+    "shuffleStartsFromBeginningDescription": "",
     "playNextCountdown": "播放下一集倒计时",
     "playNextCountdownImmediate": "立即播放",
     "skipIntroMode": "",

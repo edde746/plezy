@@ -274,6 +274,8 @@
     "autoPlayAndSkip": "自動再生とスキップ",
     "autoPlayNextEpisode": "次のエピソードを自動再生",
     "autoPlayNextEpisodeDescription": "エピソードが終了すると、次のエピソードを自動的に再生します",
+    "shuffleStartsFromBeginning": "",
+    "shuffleStartsFromBeginningDescription": "",
     "playNextCountdown": "次回再生のカウントダウン",
     "playNextCountdownImmediate": "すぐに再生",
     "skipIntroMode": "",

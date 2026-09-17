@@ -274,6 +274,8 @@
     "autoPlayAndSkip": "Riproduzione automatica e salti",
     "autoPlayNextEpisode": "Riproduci automaticamente l'episodio successivo",
     "autoPlayNextEpisodeDescription": "Avvia automaticamente l'episodio successivo quando termina quello in riproduzione",
+    "shuffleStartsFromBeginning": "",
+    "shuffleStartsFromBeginningDescription": "",
     "playNextCountdown": "Conto alla rovescia del successivo",
     "playNextCountdownImmediate": "Riproduci subito",
     "skipIntroMode": "",

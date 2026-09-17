@@ -274,6 +274,8 @@
     "autoPlayAndSkip": "Avtomatik oynat və ötür",
     "autoPlayNextEpisode": "Növbəti seriyanı avtomatik oynat",
     "autoPlayNextEpisodeDescription": "Bir seriya bitdikdə növbətisini avtomatik başlat",
+    "shuffleStartsFromBeginning": "",
+    "shuffleStartsFromBeginningDescription": "",
     "playNextCountdown": "Növbəti seriya geri sayımı",
     "playNextCountdownImmediate": "Dərhal oynat",
     "skipIntroMode": "",

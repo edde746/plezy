@@ -274,6 +274,8 @@
     "autoPlayAndSkip": "Автоойнату және өткізу",
     "autoPlayNextEpisode": "Келесі бөлімді автоматты ойнату",
     "autoPlayNextEpisodeDescription": "Бір бөлім аяқталғанда келесі бөлімді автоматты түрде бастау",
+    "shuffleStartsFromBeginning": "",
+    "shuffleStartsFromBeginningDescription": "",
     "playNextCountdown": "Келесіні ойнату санағы",
     "playNextCountdownImmediate": "Дереу ойнату",
     "skipIntroMode": "",
