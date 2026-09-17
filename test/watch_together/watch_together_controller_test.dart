@@ -628,7 +628,7 @@ void main() {
     });
   });
 
-  group('display negotiation under a startup hold', () {
+  group('rebinding around display negotiation', () {
     // #2370: on Apple TV the screen rebinds the player after the first frame
     // while the startup hold is still pending. The frame belongs to the
     // player, not to the binding that watched it render.
@@ -679,56 +679,6 @@ void main() {
         expect(room.lastHostState().phase, PlaybackPhase.playing);
         expect(room.hostPlayer.state.playing, isTrue);
         expect(room.guestPlayer.state.playing, isTrue);
-        room.dispose();
-      });
-    });
-
-    test('screen-driven transitions under an intent hold neither pause nor start the room', () {
-      fakeAsync((async) {
-        final room = _Room(async, controlMode: ControlMode.anyone);
-        final hold = Completer<void>();
-        room.hostStartsMedia(startupHold: hold.future);
-        room.guestJoinsMedia();
-        room.bothBecomeReady();
-        final statesBefore = room.hostService.outgoingLog.where((m) => m.type == SyncMessageType.state).length;
-
-        // The display-matching measurement window steps frames: the player
-        // unpauses and re-pauses without anyone asking.
-        final release = room.host.holdPlayerIntents()!;
-        room.hostPlayer.emitPlaying(true);
-        room.hostPlayer.emitPlaying(false);
-        async.flushMicrotasks();
-        async.elapse(const Duration(seconds: 1));
-        release();
-
-        expect(room.host.phase, PlaybackPhase.loading);
-        expect(
-          room.hostService.outgoingLog
-              .skip(statesBefore)
-              .where((m) => m.type == SyncMessageType.state)
-              .map((m) => m.state!.phase),
-          isNot(contains(PlaybackPhase.paused)),
-        );
-
-        hold.complete();
-        async.flushMicrotasks();
-        async.elapse(const Duration(seconds: 3));
-        expect(room.lastHostState().phase, PlaybackPhase.playing);
-        expect(room.hostPlayer.state.playing, isTrue);
-        expect(room.guestPlayer.state.playing, isTrue);
-
-        // Released: the viewer's own pause is an intent again.
-        room.hostPlayer.emitPlaying(false);
-        async.flushMicrotasks();
-        expect(room.lastHostState().phase, PlaybackPhase.paused);
-        room.dispose();
-      });
-    });
-
-    test('holding intents with no bound player is a no-op', () {
-      fakeAsync((async) {
-        final room = _Room(async);
-        expect(room.host.holdPlayerIntents(), isNull);
         room.dispose();
       });
     });

@@ -75,7 +75,6 @@ class AttachedPlayer {
   bool _disposed = false;
   bool _lostFired = false;
   int _bindingGeneration = 0;
-  int _intentHolds = 0;
   String? ratingKey;
   String? serverId;
   String? mediaTitle;
@@ -103,23 +102,6 @@ class AttachedPlayer {
     this.mediaTitle = mediaTitle;
     this.startupHold = startupHold;
     _remoteSeek = remoteSeek;
-  }
-
-  /// Stop reading play/pause transitions as viewer intents until the
-  /// returned callback runs. For a flow that drives the player itself — the
-  /// display-matching measurement window, the hold around an HDMI switch —
-  /// while the binding must stay live so readiness, the startup hold, and
-  /// the room's anchor survive it. Command acknowledgements still flow;
-  /// only unacknowledged transitions are dropped. Holds nest; the callback
-  /// is idempotent.
-  VoidCallback holdIntents() {
-    _intentHolds++;
-    var released = false;
-    return () {
-      if (released) return;
-      released = true;
-      _intentHolds--;
-    };
   }
 
   /// Revokes source-local continuations without discarding the physical ledger.
@@ -323,7 +305,6 @@ class AttachedPlayer {
       _playingAcksController.add(value);
       return;
     }
-    if (_intentHolds > 0) return;
     _playingIntentsController.add(value);
   }
 
@@ -336,7 +317,6 @@ class AttachedPlayer {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    _intentHolds = 0;
     _expectations.clear();
     final subscriptions = List<StreamSubscription<dynamic>>.of(_subscriptions);
     _subscriptions.clear();

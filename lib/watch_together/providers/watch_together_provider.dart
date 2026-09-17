@@ -641,10 +641,6 @@ class WatchTogetherProvider with ChangeNotifier {
     _controller?.unbindPlayer(expectedBinding: expectedBinding);
   }
 
-  /// Keep the bound player's play/pause transitions from being read as viewer
-  /// intents until the returned callback runs; null when nothing is bound.
-  VoidCallback? holdPlayerIntents() => _controller?.holdPlayerIntents();
-
   /// True exit ends the epoch even during a reload gap, exactly once.
   void endMedia({Object? expectedBinding}) {
     final ended = _controller?.endMedia(expectedBinding: expectedBinding) ?? false;

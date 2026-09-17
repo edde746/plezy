@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-
 import '../../mpv/mpv.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/serial_future_queue.dart';
@@ -269,11 +267,6 @@ class WatchTogetherController {
     }
     return owner;
   }
-
-  /// Keep the bound player's play/pause transitions from being read as
-  /// viewer intents until the returned callback runs; null when no player is
-  /// bound. See [AttachedPlayer.holdIntents].
-  VoidCallback? holdPlayerIntents() => _attachedPlayer?.holdIntents();
 
   /// Revoke output observations, retaining its ledger and the room's epoch.
   void unbindPlayer({Object? expectedBinding}) {
