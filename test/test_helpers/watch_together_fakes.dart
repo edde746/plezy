@@ -176,6 +176,13 @@ class FakeSyncPlayer implements Player {
     _rateController.add(value);
   }
 
+  /// The screen asked the backend to open a replacement source and `open()`
+  /// resolved. Like the real player, the per-file facts reset here — before
+  /// the backend's `start-file` or anything else from the new file arrives.
+  void beginOpen() {
+    _state = _state.copyWith(completed: false, hasRenderedFrame: false);
+  }
+
   /// The backend started a load (mpv `start-file`). Every real backend sends
   /// this before the load's first frame, and the open outcome delimits an
   /// attempt's signals by it; a fake `open` emits it before its restart.

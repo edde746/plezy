@@ -1133,6 +1133,43 @@ void main() {
             // its media-item transition instead.
             player.handlePlayerEvent('file-loaded', {'sourceId': 2});
             expect(player.state.hasRenderedFrame, isFalse);
+
+            // open() resolves before the backend's start-file: the fact is
+            // already the new file's by then, not the outgoing file's.
+            player.handlePlayerEvent('playback-restart', {'sourceId': 2, 'positionSeconds': 1.0});
+            expect(player.state.hasRenderedFrame, isTrue);
+            await player.open(Media('https://example.test/next.mkv'));
+            expect(player.state.hasRenderedFrame, isFalse);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('a failed ExoPlayer open keeps the outgoing file\'s rendered frame', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            case 'open':
+              throw PlatformException(code: 'OPEN_FAILED');
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            player.handlePlayerEvent('file-loaded', null);
+            player.handlePlayerEvent('playback-restart', {'positionSeconds': 0.0});
+            expect(player.state.hasRenderedFrame, isTrue);
+
+            await expectLater(player.open(Media('https://example.test/next.mkv')), throwsA(isA<PlatformException>()));
+            expect(player.state.hasRenderedFrame, isTrue);
           } finally {
             await player.dispose();
           }

@@ -1132,6 +1132,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     _positionMs = position.inMilliseconds;
     // A source is being installed at this position; nothing has been reported
     // about it yet, and its predecessor's position says nothing about it.
+    // Neither does its predecessor's rendered frame: `open()` resolves before
+    // the backend's `start-file`, and a binding made in that window must not
+    // read the outgoing file's frame as the new file's readiness.
     _lastReportedPositionMs = position.inMilliseconds;
     _state = _state.copyWith(
       completed: false,
@@ -1139,6 +1142,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       duration: _timelineDuration ?? Duration.zero,
       buffer: Duration.zero,
       bufferRanges: const [],
+      hasRenderedFrame: false,
     );
     _takeOperationOwnership(++_playheadOperations);
     _lastPositionWriter = _playheadOperations;
@@ -1173,6 +1177,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       duration: snapshot.duration,
       buffer: snapshot.buffer,
       bufferRanges: snapshot.bufferRanges,
+      hasRenderedFrame: snapshot.hasRenderedFrame,
     );
     _takeOperationOwnership(++_playheadOperations);
     _lastPositionWriter = _playheadOperations;
