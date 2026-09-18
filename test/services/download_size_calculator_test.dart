@@ -61,24 +61,47 @@ void main() {
       await writeBytes(p.join(seasonDir, 'S01E01 - Pilot.jpg'), 50);
       await writeBytes(p.join(seasonDir, 'S01E01 - Pilot_subs', '3.srt'), 20);
       await writeBytes(p.join(seasonDir, 'S01E01 - Pilot_subs', 'nested', '4.ass'), 5);
-      // A sibling episode in the same season folder must not be counted.
+      // A sibling episode that was not asked about must not be counted.
       await writeBytes(p.join(seasonDir, 'S01E02 - Next.mkv'), 9000);
       await writeBytes(p.join(seasonDir, 'S01E02 - Next_subs', '3.srt'), 900);
 
-      expect(await calculator().measure(video.path), 1075);
+      expect(await calculator().measureAll({'ep1': video.path}), {'ep1': 1075});
     });
 
-    test('returns null when the media file is missing', () async {
-      final missing = p.join(tmpRoot.path, 'downloads', 'Movies', 'Gone (2001)', 'Gone (2001).mkv');
+    test('attributes files in a shared folder to each download', () async {
+      final seasonDir = p.join(tmpRoot.path, 'downloads', 'TV Shows', 'Show (2020)', 'Season 01');
+      final first = await writeBytes(p.join(seasonDir, 'S01E01 - Pilot.mkv'), 1000);
+      await writeBytes(p.join(seasonDir, 'S01E01 - Pilot.jpg'), 50);
+      final second = await writeBytes(p.join(seasonDir, 'S01E02 - Next.mp4'), 2000);
+      await writeBytes(p.join(seasonDir, 'S01E02 - Next_subs', '3.srt'), 30);
 
-      expect(await calculator().measure(missing), isNull);
+      expect(await calculator().measureAll({'ep1': first.path, 'ep2': second.path}), {'ep1': 1050, 'ep2': 2030});
+    });
+
+    test('leaves out downloads whose media file is missing', () async {
+      final movieDir = p.join(tmpRoot.path, 'downloads', 'Movies', 'Gone (2001)');
+      // Sidecars alone do not make a download present.
+      await writeBytes(p.join(movieDir, 'Gone (2001)_subs', '3.srt'), 20);
+      final present = await writeBytes(
+        p.join(tmpRoot.path, 'downloads', 'Movies', 'Here (2002)', 'Here (2002).mkv'),
+        10,
+      );
+
+      expect(
+        await calculator().measureAll({
+          'gone': p.join(movieDir, 'Gone (2001).mkv'),
+          'noFolder': p.join(tmpRoot.path, 'downloads', 'Movies', 'Never (2003)', 'Never (2003).mkv'),
+          'here': present.path,
+        }),
+        {'here': 10},
+      );
     });
 
     test('uses the SAF document length for content:// downloads', () async {
       const uri = 'content://downloads/movie.mkv';
 
-      expect(await calculator(safLengths: {uri: 4096}).measure(uri), 4096);
-      expect(await calculator().measure(uri), isNull);
+      expect(await calculator(safLengths: {uri: 4096}).measureAll({'movie': uri}), {'movie': 4096});
+      expect(await calculator().measureAll({'movie': uri}), isEmpty);
     });
   });
 }

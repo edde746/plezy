@@ -616,12 +616,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Measure the files behind [storedPaths] (globalKey → stored media path)
   /// and notify once if any size changed.
   Future<void> _measureDownloadSizes(Map<String, String> storedPaths) async {
+    final sizes = await _sizeCalculator.measureAll(storedPaths);
     var changed = false;
-    for (final entry in storedPaths.entries) {
-      final size = await _sizeCalculator.measure(entry.value);
-      if (size == null || _downloads[entry.key]?.status != DownloadStatus.completed) continue;
-      if (_downloadSizes[entry.key] == size) continue;
-      _downloadSizes[entry.key] = size;
+    for (final entry in sizes.entries) {
+      if (_downloads[entry.key]?.status != DownloadStatus.completed) continue;
+      if (_downloadSizes[entry.key] == entry.value) continue;
+      _downloadSizes[entry.key] = entry.value;
       changed = true;
     }
     if (changed) safeNotifyListeners();
