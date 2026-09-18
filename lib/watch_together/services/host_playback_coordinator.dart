@@ -819,6 +819,11 @@ class HostPlaybackCoordinator {
     _setPhase(PlaybackPhase.waitingForPeers);
     _broadcast();
     _checkAllReady();
+    // Readiness may have scheduled a start already. Only hold the player if
+    // the room still needs to wait; _scheduleStart owns any timed group hold.
+    if (_phase == PlaybackPhase.waitingForPeers && _matchingPlayer && _player!.playing) {
+      unawaited(_player!.pause());
+    }
   }
 
   void _scheduleAllReadyCheck(int delayMs) {
@@ -1058,7 +1063,6 @@ class HostPlaybackCoordinator {
     final changed = _phase != phase;
     _phase = phase;
     if (phase == PlaybackPhase.waitingForPeers) {
-      if (_matchingPlayer && _player!.playing) unawaited(_player!.pause());
       _armSafetyIfGated();
     } else {
       _cancelSafety();
