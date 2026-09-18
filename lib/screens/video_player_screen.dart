@@ -935,7 +935,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   MediaServerClient? _mediaControlsClient() {
     if (_isOfflinePlayback) return null;
     if (!widget.isLive) return _getMediaServerClient(context);
-    return _getOnlineMediaServerClient(context, serverId: _currentLiveChannel?.serverId);
+    final channel = _currentLiveChannel;
+    if (channel == null) return null;
+    final serverId = liveTvServerInfoForChannel(context.read<MultiServerProvider>(), channel)?.serverId;
+    return _getOnlineMediaServerClient(context, serverId: serverId);
   }
 
   late final MediaControlsScreenController _mediaControls = MediaControlsScreenController(
