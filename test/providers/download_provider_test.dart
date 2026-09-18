@@ -10,6 +10,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_item_types.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
@@ -71,6 +72,37 @@ class _MusicExpansionClient implements MediaServerClient {
 
   @override
   ServerId get serverId => ServerId('srv');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Stamps a fixed library identity via [stampLibrary] and records calls.
+/// Every other call reaches [noSuchMethod] and throws.
+class _LibraryStampingClient implements MediaServerClient {
+  _LibraryStampingClient({required this.libraryId, required this.libraryTitle});
+
+  final String libraryId;
+  final String libraryTitle;
+  var stampLibraryCalls = 0;
+
+  @override
+  ServerId get serverId => ServerId('srv');
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ApiCache get cache => ApiCache.forBackend(MediaBackend.plex);
+
+  @override
+  Future<MediaItem> stampLibrary(MediaItem item) async {
+    stampLibraryCalls++;
+    return item.copyWith(libraryId: libraryId, libraryTitle: libraryTitle);
+  }
+
+  @override
+  void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -2934,6 +2966,344 @@ void main() {
       await p.refreshMetadataFromCache();
       expect(p.getMetadata(episode.globalKey)?.isWatched, isFalse);
 
+      p.dispose();
+    });
+  });
+
+  group('DownloadProvider — downloads grouping and library identity', () {
+    MediaItem episode(
+      String id, {
+      String serverId = 'srv',
+      String showId = 'show-1',
+      String seasonId = 'season-1',
+      int seasonIndex = 1,
+      int index = 1,
+      int viewCount = 0,
+      String? libraryId,
+      String? libraryTitle,
+      String? serverName,
+    }) => testMediaItem(
+      id: id,
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Episode $id',
+      parentId: seasonId,
+      parentTitle: 'Season $seasonIndex',
+      parentIndex: seasonIndex,
+      index: index,
+      grandparentId: showId,
+      grandparentTitle: 'Show $showId',
+      viewCount: viewCount,
+      libraryId: libraryId,
+      libraryTitle: libraryTitle,
+      serverId: ServerId(serverId),
+      serverName: serverName,
+    );
+
+    test('downloadedEpisodes returns only owned completed episodes', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:e1': const DownloadProgress(globalKey: 'srv:e1', status: DownloadStatus.completed),
+          'srv:e2': const DownloadProgress(globalKey: 'srv:e2', status: DownloadStatus.downloading),
+          'srv:m1': const DownloadProgress(globalKey: 'srv:m1', status: DownloadStatus.completed),
+          'srv:e3': const DownloadProgress(globalKey: 'srv:e3', status: DownloadStatus.completed),
+        },
+        metadata: {
+          'srv:e1': episode('e1'),
+          'srv:e2': episode('e2'),
+          'srv:m1': testMediaItem(
+            id: 'm1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            serverId: ServerId('srv'),
+          ),
+          'srv:e3': episode('e3'),
+        },
+        ownedDownloadKeys: const {'srv:e1', 'srv:e2', 'srv:m1'},
+      );
+
+      expect(p.downloadedEpisodes.map((e) => e.id), ['e1']);
+      p.dispose();
+    });
+
+    test('downloadedSeasons groups episodes and derives counts plus library', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final key in ['srv:e1', 'srv:e2', 'srv:e3'])
+            key: DownloadProgress(globalKey: key, status: DownloadStatus.completed),
+        },
+        metadata: {
+          'srv:e1': episode('e1', seasonIndex: 1, index: 1, viewCount: 1, libraryId: 'lib-9', libraryTitle: 'Shows'),
+          'srv:e2': episode('e2', seasonIndex: 1, index: 2, libraryId: 'lib-9', libraryTitle: 'Shows'),
+          'srv:e3': episode('e3', seasonId: 'season-2', seasonIndex: 2, index: 1),
+        },
+      );
+
+      final seasons = p.downloadedSeasons;
+      expect(seasons, hasLength(2));
+      expect(seasons.map((s) => s.index), [1, 2]);
+
+      final first = seasons.first;
+      expect(first.isSeason, isTrue);
+      expect(first.leafCount, 2);
+      expect(first.viewedLeafCount, 1);
+      expect(first.libraryId, 'lib-9');
+      expect(first.libraryTitle, 'Shows');
+
+      final second = seasons[1];
+      expect(second.leafCount, 1);
+      expect(second.viewedLeafCount, 0);
+      p.dispose();
+    });
+
+    test('downloadedSeasonsForShow prefers stored season metadata and scopes to the show', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final key in ['srv:e1', 'srv:e2', 'srv:other'])
+            key: DownloadProgress(globalKey: key, status: DownloadStatus.completed),
+        },
+        metadata: {
+          'srv:e1': episode('e1', viewCount: 1),
+          'srv:e2': episode('e2', index: 2),
+          'srv:other': episode('other', showId: 'show-2'),
+          'srv:season-1': testMediaItem(
+            id: 'season-1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.season,
+            title: 'Stored Season Title',
+            index: 1,
+            parentId: 'show-1',
+            leafCount: 24,
+            viewedLeafCount: 24,
+            serverId: ServerId('srv'),
+          ),
+        },
+      );
+
+      final seasons = p.downloadedSeasonsForShow('srv:show-1');
+      expect(seasons, hasLength(1));
+      final season = seasons.single;
+      expect(season.title, 'Stored Season Title');
+      // Counts reflect downloaded episodes, not the stored server totals.
+      expect(season.leafCount, 2);
+      expect(season.viewedLeafCount, 1);
+      p.dispose();
+    });
+
+    test('downloadedShows overrides leaf counts and derives library from episodes', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:e1': const DownloadProgress(globalKey: 'srv:e1', status: DownloadStatus.completed),
+          'srv:e2': const DownloadProgress(globalKey: 'srv:e2', status: DownloadStatus.completed),
+        },
+        metadata: {
+          'srv:e1': episode('e1', viewCount: 1, libraryId: 'lib-9', libraryTitle: 'Shows'),
+          'srv:e2': episode('e2', index: 2, libraryId: 'lib-9', libraryTitle: 'Shows'),
+          'srv:show-1': testMediaItem(
+            id: 'show-1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.show,
+            title: 'Show 1',
+            leafCount: 24,
+            viewedLeafCount: 24,
+            serverId: ServerId('srv'),
+          ),
+        },
+      );
+
+      final show = p.downloadedShows.single;
+      expect(show.leafCount, 2);
+      expect(show.viewedLeafCount, 1);
+      expect(show.libraryId, 'lib-9');
+      expect(show.libraryTitle, 'Shows');
+      p.dispose();
+    });
+
+    test('downloadedLibraries lists distinct libraries with server-name fallback', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final key in ['srv:e1', 'srv:e2', 'srv:m1', 'srv:e3'])
+            key: DownloadProgress(globalKey: key, status: DownloadStatus.completed),
+        },
+        metadata: {
+          'srv:e1': episode('e1', libraryId: 'lib-9', libraryTitle: 'Shows'),
+          'srv:e2': episode('e2', index: 2, libraryId: 'lib-9', libraryTitle: 'Shows'),
+          'srv:m1': testMediaItem(
+            id: 'm1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            libraryId: 'lib-3',
+            libraryTitle: 'Movies',
+            serverId: ServerId('srv'),
+          ),
+          // Pre-v23 row: no library stamped — falls back to the server name.
+          'srv:e3': episode('e3', showId: 'show-2', serverName: 'My Plex'),
+        },
+      );
+
+      final libraries = p.downloadedLibraries;
+      expect(libraries, hasLength(3));
+      expect(
+        libraries.map((l) => (l.serverId, l.libraryId, l.title)),
+        unorderedEquals([('srv', 'lib-3', 'Movies'), ('srv', 'lib-9', 'Shows'), ('srv', null, 'My Plex')]),
+      );
+      p.dispose();
+    });
+
+    test('hydration merges stamped library identity into metadata that lacks it', () async {
+      const globalKey = 'srv:movie-1';
+      final serverId = ServerId('srv');
+      await _insertPlexConnection(db, serverId);
+      await db.insertDownload(
+        serverId: serverId,
+        ratingKey: 'movie-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        libraryId: 'lib-7',
+        libraryTitle: 'Movies',
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: globalKey);
+      final scope = buildPlexProfileScopeId(serverId: serverId, profileId: 'test-profile');
+      await _putPinnedPlexMetadata(scope, id: 'movie-1', title: 'Hydrated Movie', viewCount: 0, viewOffset: 0);
+      // A live client resolves the backend so hydration can find the pinned row.
+      testClientResolver = (id, {clientScopeId}) => id == serverId
+          ? _ScopedTestClient(serverId: serverId, scopedServerId: 'srv', clientBackend: MediaBackend.plex)
+          : null;
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      // forTesting skips the persisted-downloads load; seed the row state and
+      // drive the same hydration path refreshMetadataFromCache uses.
+      p.debugSeedState(
+        downloads: {globalKey: const DownloadProgress(globalKey: globalKey, status: DownloadStatus.completed)},
+        ownedDownloadKeys: {globalKey},
+        // The row's stamped columns, as _loadPersistedDownloads would map them.
+        downloadLibraries: {globalKey: (libraryId: 'lib-7', libraryTitle: 'Movies')},
+      );
+      await p.refreshMetadataFromCache();
+
+      final meta = p.getMetadata(globalKey);
+      expect(meta?.title, 'Hydrated Movie');
+      expect(meta?.libraryId, 'lib-7');
+      expect(meta?.libraryTitle, 'Movies');
+      expect(p.downloadedLibraries.single.libraryId, 'lib-7');
+      p.dispose();
+    });
+
+    test('queueDownload stamps library columns through the client and tolerates failures', () async {
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        queueProcessorOverride: (_) async {},
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+      final p = DownloadProvider.forTesting(downloadManager: manager, database: db);
+      await p.ensureInitialized();
+
+      final stamped = await p.queueDownload(
+        testMediaItem(
+          id: '1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Stamped',
+          serverId: ServerId('srv'),
+        ),
+        _LibraryStampingClient(libraryId: 'lib-7', libraryTitle: 'Movies'),
+      );
+      expect(stamped, 1);
+      var row = await db.getDownloadedMedia('srv:1');
+      expect(row?.libraryId, 'lib-7');
+      expect(row?.libraryTitle, 'Movies');
+      expect(p.getMetadata('srv:1')?.libraryId, 'lib-7');
+
+      // A client that cannot resolve the library must not block the enqueue.
+      final unstamped = await p.queueDownload(
+        testMediaItem(
+          id: '2',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Unstamped',
+          serverId: ServerId('srv'),
+        ),
+        _ThrowingClient(),
+      );
+      expect(unstamped, 1);
+      row = await db.getDownloadedMedia('srv:2');
+      expect(row, isNotNull);
+      expect(row?.libraryId, isNull);
+      expect(row?.libraryTitle, isNull);
+      p.dispose();
+    });
+
+    test('queueDownload skips library stamping while offline', () async {
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        queueProcessorOverride: (_) async {},
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+      final source = _FakeOfflineModeSource(true);
+      final p = DownloadProvider.forTesting(downloadManager: manager, database: db);
+      await p.ensureInitialized();
+      p.setOfflineSource(source);
+
+      final client = _LibraryStampingClient(libraryId: 'lib-7', libraryTitle: 'Movies');
+      final queued = await p.queueDownload(
+        testMediaItem(
+          id: '1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Offline',
+          serverId: ServerId('srv'),
+        ),
+        client,
+      );
+
+      expect(queued, 1);
+      expect(client.stampLibraryCalls, 0);
+      final row = await db.getDownloadedMedia('srv:1');
+      expect(row?.libraryId, isNull);
+      p.dispose();
+      source.dispose();
+    });
+
+    test('downloadedAt is stamped on completion and carried through later events', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: const {'srv:1'});
+
+      downloadManager.debugEmitProgress(
+        const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.downloading, progress: 40),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(p.downloads['srv:1']?.downloadedAt, isNull);
+
+      downloadManager.debugEmitProgress(
+        const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed, progress: 100),
+      );
+      await Future<void>.delayed(Duration.zero);
+      final stamped = p.downloads['srv:1']?.downloadedAt;
+      expect(stamped, isNotNull);
+
+      // A later status-only event must not lose the timestamp.
+      downloadManager.debugEmitProgress(
+        const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed, progress: 100),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(p.downloads['srv:1']?.downloadedAt, stamped);
       p.dispose();
     });
   });

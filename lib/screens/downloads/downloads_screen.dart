@@ -21,7 +21,6 @@ import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
-import '../../mixins/unsuppress_focus_mixin.dart';
 import '../../mixins/refreshable.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/platform_detector.dart';
@@ -29,8 +28,10 @@ import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_card_sliver_layout.dart';
 import '../../widgets/download_tree_view.dart';
+import '../libraries/library_browse_grouping.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
+import 'downloads_options.dart';
 import '../../i18n/strings.g.dart';
 import 'sync_rules_screen.dart';
 
@@ -48,6 +49,9 @@ class DownloadsScreenState extends State<DownloadsScreen>
   final _moviesTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_movies');
   final _musicTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_music');
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _tvShowsTabKey = GlobalKey<_DownloadsGridContentState>();
+  final _moviesTabKey = GlobalKey<_DownloadsGridContentState>();
+  final _musicTabKey = GlobalKey<_DownloadedMusicContentState>();
 
   @override
   List<FocusNode> get tabChipFocusNodes => [
@@ -89,7 +93,18 @@ class DownloadsScreenState extends State<DownloadsScreen>
     });
   }
 
-  /// Focus the first item in the currently active tab
+  /// The options-capable tab currently in view, or null on the Manage tab.
+  DownloadsOptionsTab? _activeOptionsTab() {
+    return switch (tabController.index) {
+      1 => _tvShowsTabKey.currentState,
+      2 => _moviesTabKey.currentState,
+      3 => _musicTabKey.currentState,
+      _ => null,
+    };
+  }
+
+  /// Focus the top of the currently active tab — its chips bar on
+  /// desktop/TV, its first content item on mobile.
   void _focusCurrentTab() {
     setState(() {
       suppressAutoFocus = false;
@@ -97,7 +112,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      // Focus will be handled by the tab content
+      _activeOptionsTab()?.focusTopContent();
     });
   }
 
@@ -153,9 +168,19 @@ class DownloadsScreenState extends State<DownloadsScreen>
                   FocusableAction(
                     icon: Symbols.rule_settings_rounded,
                     tooltip: t.downloads.activeSyncRules,
+                    debugLabel: 'downloads_sync_rules',
                     onPressed: () =>
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
                   ),
+                  // Mobile mirrors the library browse options action; desktop
+                  // and TV expose the same options as per-tab chips instead.
+                  if (PlatformDetector.isMobile(context) && tabController.index > 0)
+                    FocusableAction(
+                      icon: Symbols.tune_rounded,
+                      tooltip: t.downloads.options,
+                      debugLabel: 'downloads_options',
+                      onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
+                    ),
                 ],
               ),
             ],
@@ -232,17 +257,9 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           );
                         },
                       ),
-                      _DownloadsGridContent(
-                        type: DownloadType.tvShows,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onBack: focusTabBar,
-                      ),
-                      _DownloadsGridContent(
-                        type: DownloadType.movies,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onBack: focusTabBar,
-                      ),
-                      _DownloadedMusicContent(suppressAutoFocus: suppressAutoFocus, onBack: focusTabBar),
+                      _DownloadsGridContent(key: _tvShowsTabKey, type: DownloadType.tvShows, onBack: focusTabBar),
+                      _DownloadsGridContent(key: _moviesTabKey, type: DownloadType.movies, onBack: focusTabBar),
+                      _DownloadedMusicContent(key: _musicTabKey, onBack: focusTabBar),
                     ],
                   ),
                 ),
@@ -257,77 +274,123 @@ class DownloadsScreenState extends State<DownloadsScreen>
 
 enum DownloadType { tvShows, movies }
 
-/// Grid content for TV Shows and Movies tabs
+/// Grid content for the TV Shows and Movies tabs. [type] selects the
+/// persistence section and grouping list; the active grouping picks which
+/// provider collection renders — shows, seasons, or a flat episode grid for
+/// TV, movies for Movies, or library-bucketed sections of the tab's default
+/// item kind under the `library` grouping.
 class _DownloadsGridContent extends StatefulWidget {
   final DownloadType type;
-  final bool suppressAutoFocus;
   final VoidCallback? onBack;
 
-  const _DownloadsGridContent({required this.type, required this.suppressAutoFocus, this.onBack});
+  const _DownloadsGridContent({super.key, required this.type, this.onBack});
 
   @override
   State<_DownloadsGridContent> createState() => _DownloadsGridContentState();
 }
 
 class _DownloadsGridContentState extends State<_DownloadsGridContent>
-    with UnsuppressFocusFirstMixin<_DownloadsGridContent> {
+    with AutomaticKeepAliveClientMixin, DownloadsTabOptionsMixin<_DownloadsGridContent> {
   @override
-  String get firstItemFocusDebugLabel => 'DownloadsGrid_firstItem';
+  bool get wantKeepAlive => true;
 
   @override
-  bool suppressAutoFocusOf(_DownloadsGridContent widget) => widget.suppressAutoFocus;
+  String get optionsSectionId => widget.type == DownloadType.tvShows ? 'downloads:tv' : 'downloads:movies';
 
-  /// Navigate focus to the sidebar
-  void _navigateToSidebar() {
-    MainScreenFocusScope.focusSidebarOf(context);
+  @override
+  List<String> get groupingOptions => switch (widget.type) {
+    DownloadType.tvShows => const [
+      browseGroupingShows,
+      browseGroupingSeasons,
+      browseGroupingEpisodes,
+      browseGroupingLibrary,
+    ],
+    DownloadType.movies => const [browseGroupingMovies, browseGroupingLibrary],
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    initDownloadsOptions();
+  }
+
+  @override
+  void dispose() {
+    disposeDownloadsOptions();
+    super.dispose();
+  }
+
+  @override
+  void navigateToTabBar() => widget.onBack?.call();
+
+  @override
+  void navigateToSidebar() => MainScreenFocusScope.focusSidebarOf(context);
+
+  /// Items for the active grouping with filters and sort applied. The
+  /// `library` grouping buckets the tab's default item kind (shows/movies).
+  List<MediaItem> _items(DownloadProvider provider) {
+    final raw = switch (widget.type) {
+      DownloadType.tvShows => switch (selectedGrouping) {
+        browseGroupingSeasons => provider.downloadedSeasons,
+        browseGroupingEpisodes => provider.downloadedEpisodes,
+        _ => provider.downloadedShows,
+      },
+      DownloadType.movies => provider.downloadedMovies,
+    };
+    return applyDownloadsOptions(provider, raw);
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
-        final List<MediaItem> items = widget.type == DownloadType.tvShows
-            ? downloadProvider.downloadedShows
-            : downloadProvider.downloadedMovies;
-
-        if (items.isEmpty) {
-          return _buildEmptyState();
-        }
-
-        // Extra top padding for focus decoration (scale + border extends beyond item bounds)
-        const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
+        final items = _items(downloadProvider);
+        final sections = selectedGrouping == browseGroupingLibrary
+            ? bucketDownloadsByLibrary(
+                items,
+                serverNameOf: (serverId) =>
+                    context.read<MultiServerProvider>().serverManager.serverDisplayName(ServerId(serverId)),
+              )
+            : null;
 
         return SettingsBuilder(
-          prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
+          prefs: const [
+            SettingsService.viewMode,
+            SettingsService.libraryDensity,
+            SettingsService.tvFullCardLayout,
+            SettingsService.episodePosterMode,
+          ],
           builder: (context) {
             final settings = SettingsService.instance;
             final viewMode = settings.read(SettingsService.viewMode);
             final density = settings.read(SettingsService.libraryDensity);
             final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
+            // Episode grids use the wide 16:9 cell when episode thumbnails are
+            // the configured poster mode, matching the library browse grid.
+            final useWideRatio =
+                selectedGrouping == browseGroupingEpisodes &&
+                settings.read(SettingsService.episodePosterMode) == EpisodePosterMode.episodeThumbnail;
 
             return CustomScrollView(
               // Allow focus decoration to render outside scroll bounds.
               clipBehavior: Clip.none,
               slivers: [
-                MediaCardSliverLayout(
-                  viewMode: viewMode,
-                  itemCount: items.length,
-                  density: density,
-                  padding: effectivePadding,
-                  fullBleedImage: fullCardLayout,
-                  itemBuilder: (context, position) {
-                    final item = items[position.index];
-                    return FocusableMediaCard(
-                      item: item,
-                      focusNode: position.index == 0 ? firstItemFocusNode : null,
-                      disableScale: position.disableScale,
-                      onBack: widget.onBack,
-                      isOffline: true, // Downloaded content works without server
-                      fullBleedImage: fullCardLayout && position.isGrid,
-                      onNavigateLeft: position.isFirstColumn ? _navigateToSidebar : null,
-                    );
-                  },
-                ),
+                optionsChipsBarSliver(),
+                if (sections != null)
+                  ..._librarySlivers(sections, viewMode: viewMode, density: density, fullCardLayout: fullCardLayout)
+                else if (items.isEmpty)
+                  _emptySliver()
+                else
+                  _itemsSliver(
+                    items,
+                    viewMode: viewMode,
+                    density: density,
+                    fullCardLayout: fullCardLayout,
+                    useWideAspectRatio: useWideRatio,
+                    attachFirstItemFocus: true,
+                    firstRowUp: navigateToChips,
+                  ),
               ],
             );
           },
@@ -336,12 +399,74 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
     );
   }
 
-  Widget _buildEmptyState() {
-    return EmptyStateWidget(
-      message: t.downloads.noDownloads,
-      subtitle: t.downloads.noDownloadsDescription,
-      icon: Symbols.download_rounded,
-      iconSize: 80,
+  /// One [MediaCardSliverLayout] of [items]. [attachFirstItemFocus] hands the
+  /// tab's first-item node to card 0; [firstRowUp] is the UP target of the
+  /// first row (the chips bar for the flat grid and first library section,
+  /// null for later sections so default traversal reaches the section above).
+  Widget _itemsSliver(
+    List<MediaItem> items, {
+    required ViewMode viewMode,
+    required int density,
+    required bool fullCardLayout,
+    bool useWideAspectRatio = false,
+    bool attachFirstItemFocus = false,
+    VoidCallback? firstRowUp,
+  }) {
+    // Extra top padding for focus decoration (scale + border extends beyond item bounds)
+    const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
+    return MediaCardSliverLayout(
+      viewMode: viewMode,
+      itemCount: items.length,
+      density: density,
+      padding: effectivePadding,
+      fullBleedImage: fullCardLayout,
+      useWideAspectRatio: useWideAspectRatio,
+      itemBuilder: (context, position) {
+        final item = items[position.index];
+        return FocusableMediaCard(
+          item: item,
+          focusNode: attachFirstItemFocus && position.index == 0 ? firstItemFocusNode : null,
+          disableScale: position.disableScale,
+          onBack: widget.onBack,
+          isOffline: true, // Downloaded content works without server
+          fullBleedImage: fullCardLayout && position.isGrid,
+          onNavigateUp: position.isFirstRow ? firstRowUp : null,
+          onNavigateLeft: position.isFirstColumn ? navigateToSidebar : null,
+        );
+      },
+    );
+  }
+
+  List<Widget> _librarySlivers(
+    List<DownloadsLibrarySection> sections, {
+    required ViewMode viewMode,
+    required int density,
+    required bool fullCardLayout,
+  }) {
+    if (sections.isEmpty) return [_emptySliver()];
+    return [
+      for (var i = 0; i < sections.length; i++) ...[
+        SliverToBoxAdapter(child: DownloadsLibrarySectionHeader(section: sections[i])),
+        _itemsSliver(
+          sections[i].items,
+          viewMode: viewMode,
+          density: density,
+          fullCardLayout: fullCardLayout,
+          attachFirstItemFocus: i == 0,
+          firstRowUp: i == 0 ? navigateToChips : null,
+        ),
+      ],
+    ];
+  }
+
+  Widget _emptySliver() {
+    return SliverFillRemaining(
+      child: EmptyStateWidget(
+        message: t.downloads.noDownloads,
+        subtitle: t.downloads.noDownloadsDescription,
+        icon: Symbols.download_rounded,
+        iconSize: 80,
+      ),
     );
   }
 }
@@ -366,26 +491,46 @@ class _MusicListEntry {
 }
 
 /// Music tab: downloaded tracks grouped under their album (square cover +
-/// artist header, [TrackRow] entries). Tapping a track plays the album's
-/// downloaded tracks in disc/track order — fully offline through the shared
-/// music playback path.
+/// artist header, [TrackRow] entries), a flat track list, or album cards
+/// bucketed per library. Tapping a track plays its downloaded siblings —
+/// fully offline through the shared music playback path.
 class _DownloadedMusicContent extends StatefulWidget {
-  final bool suppressAutoFocus;
   final VoidCallback? onBack;
 
-  const _DownloadedMusicContent({required this.suppressAutoFocus, this.onBack});
+  const _DownloadedMusicContent({super.key, this.onBack});
 
   @override
   State<_DownloadedMusicContent> createState() => _DownloadedMusicContentState();
 }
 
 class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
-    with UnsuppressFocusFirstMixin<_DownloadedMusicContent> {
+    with AutomaticKeepAliveClientMixin, DownloadsTabOptionsMixin<_DownloadedMusicContent> {
   @override
-  String get firstItemFocusDebugLabel => 'DownloadsMusic_firstItem';
+  bool get wantKeepAlive => true;
 
   @override
-  bool suppressAutoFocusOf(_DownloadedMusicContent widget) => widget.suppressAutoFocus;
+  String get optionsSectionId => 'downloads:music';
+
+  @override
+  List<String> get groupingOptions => const [browseGroupingAlbums, browseGroupingTracks, browseGroupingLibrary];
+
+  @override
+  void initState() {
+    super.initState();
+    initDownloadsOptions();
+  }
+
+  @override
+  void dispose() {
+    disposeDownloadsOptions();
+    super.dispose();
+  }
+
+  @override
+  void navigateToTabBar() => widget.onBack?.call();
+
+  @override
+  void navigateToSidebar() => MainScreenFocusScope.focusSidebarOf(context);
 
   Future<void> _playAlbumFrom(List<MediaItem> albumTracks, MediaItem track) async {
     await playTracks(
@@ -393,6 +538,16 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
       tracks: albumTracks,
       startTrack: track,
       playContext: MusicPlayContext(title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
+    );
+  }
+
+  /// Play the flat track list (tracks grouping) starting at [track].
+  Future<void> _playTracks(List<MediaItem> tracks, MediaItem track) async {
+    await playTracks(
+      context,
+      tracks: tracks,
+      startTrack: track,
+      playContext: MusicPlayContext(title: t.downloads.title, kind: MusicPlayContextKind.tracks),
     );
   }
 
@@ -463,9 +618,13 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
     );
   }
 
+  /// Album-grouped rows: each album with downloaded tracks contributes a
+  /// header plus its tracks in disc/track order. The album list itself is
+  /// filtered and sorted by the active options.
   List<_MusicListEntry> _rowModels(DownloadProvider provider) {
+    final albums = applyDownloadsOptions(provider, provider.downloadedAlbums);
     final rows = <_MusicListEntry>[];
-    for (final album in provider.downloadedAlbums) {
+    for (final album in albums) {
       final tracks = provider.getDownloadedTracksForAlbum(album.globalKey);
       if (tracks.isEmpty) continue;
       rows.add(_MusicListEntry.header(album));
@@ -478,30 +637,75 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
-        final rows = _rowModels(downloadProvider);
-
-        if (rows.isEmpty) {
-          return EmptyStateWidget(
-            message: t.downloads.noDownloads,
-            subtitle: t.downloads.noDownloadsDescription,
-            icon: Symbols.music_note_rounded,
-            iconSize: 80,
-          );
-        }
-
         // Keep the last rows reachable above the floating mini-player.
         final bottomInset = context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0;
 
-        return ListView.builder(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
+        return SettingsBuilder(
+          prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
+          builder: (context) {
+            final settings = SettingsService.instance;
+            final viewMode = settings.read(SettingsService.viewMode);
+            final density = settings.read(SettingsService.libraryDensity);
+            final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
+
+            return CustomScrollView(
+              // Allow focus decoration to render outside scroll bounds.
+              clipBehavior: Clip.none,
+              slivers: [
+                optionsChipsBarSliver(),
+                ..._contentSlivers(
+                  downloadProvider,
+                  bottomInset: bottomInset,
+                  viewMode: viewMode,
+                  density: density,
+                  fullCardLayout: fullCardLayout,
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<Widget> _contentSlivers(
+    DownloadProvider provider, {
+    required double bottomInset,
+    required ViewMode viewMode,
+    required int density,
+    required bool fullCardLayout,
+  }) {
+    return switch (selectedGrouping) {
+      browseGroupingTracks => _tracksSlivers(provider, bottomInset),
+      browseGroupingLibrary => _librarySlivers(
+        provider,
+        bottomInset: bottomInset,
+        viewMode: viewMode,
+        density: density,
+        fullCardLayout: fullCardLayout,
+      ),
+      _ => _albumSlivers(provider, bottomInset),
+    };
+  }
+
+  /// The default albums view: album headers with their downloaded tracks.
+  List<Widget> _albumSlivers(DownloadProvider provider, double bottomInset) {
+    final rows = _rowModels(provider);
+    if (rows.isEmpty) return [_emptySliver()];
+
+    return [
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
+        sliver: SliverList.builder(
           itemCount: rows.length,
           itemBuilder: (context, index) {
             final row = rows[index];
             final album = row.album;
             if (album != null) {
-              return _buildAlbumHeader(context, downloadProvider, album);
+              return _buildAlbumHeader(context, provider, album);
             }
             final item = row.albumTracks[row.trackIndex];
             // Row 0 is always the first album's header, so the first track
@@ -516,13 +720,106 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
                 isLast: row.isLast,
                 showArtist: true,
                 focusNode: isFirstTrackRow ? firstItemFocusNode : null,
+                onNavigateUp: isFirstTrackRow ? navigateToChips : null,
                 onBack: widget.onBack,
                 onTap: () => _playAlbumFrom(row.albumTracks, item),
               ),
             );
           },
-        );
-      },
+        ),
+      ),
+    ];
+  }
+
+  /// The flat all-tracks list. Track numbers stay hidden — they are
+  /// album-relative and read as a sorting bug in a cross-album list.
+  List<Widget> _tracksSlivers(DownloadProvider provider, double bottomInset) {
+    final tracks = applyDownloadsOptions(provider, provider.downloadedTracks);
+    if (tracks.isEmpty) return [_emptySliver()];
+
+    return [
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
+        sliver: SliverList.builder(
+          itemCount: tracks.length,
+          itemBuilder: (context, index) {
+            final item = tracks[index];
+            return Padding(
+              padding: EdgeInsets.only(top: index == 0 ? 0 : tokens(context).groupGap),
+              child: TrackRow(
+                key: ValueKey(item.globalKey),
+                item: item,
+                isFirst: index == 0,
+                isLast: index == tracks.length - 1,
+                showArtist: true,
+                showTrackNumber: false,
+                focusNode: index == 0 ? firstItemFocusNode : null,
+                onNavigateUp: index == 0 ? navigateToChips : null,
+                onBack: widget.onBack,
+                onTap: () => _playTracks(tracks, item),
+              ),
+            );
+          },
+        ),
+      ),
+    ];
+  }
+
+  /// Album cards bucketed per library, mirroring the grid tabs' sections.
+  List<Widget> _librarySlivers(
+    DownloadProvider provider, {
+    required double bottomInset,
+    required ViewMode viewMode,
+    required int density,
+    required bool fullCardLayout,
+  }) {
+    final albums = applyDownloadsOptions(provider, provider.downloadedAlbums);
+    final sections = bucketDownloadsByLibrary(
+      albums,
+      serverNameOf: (serverId) =>
+          context.read<MultiServerProvider>().serverManager.serverDisplayName(ServerId(serverId)),
+    );
+    if (sections.isEmpty) return [_emptySliver()];
+
+    // Extra top padding for focus decoration (scale + border extends beyond item bounds)
+    const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
+    return [
+      for (var i = 0; i < sections.length; i++) ...[
+        SliverToBoxAdapter(child: DownloadsLibrarySectionHeader(section: sections[i])),
+        MediaCardSliverLayout(
+          viewMode: viewMode,
+          itemCount: sections[i].items.length,
+          density: density,
+          padding: effectivePadding,
+          fullBleedImage: fullCardLayout,
+          itemBuilder: (context, position) {
+            final item = sections[i].items[position.index];
+            return FocusableMediaCard(
+              item: item,
+              focusNode: i == 0 && position.index == 0 ? firstItemFocusNode : null,
+              disableScale: position.disableScale,
+              onBack: widget.onBack,
+              isOffline: true, // Downloaded content works without server
+              fullBleedImage: fullCardLayout && position.isGrid,
+              onNavigateUp: i == 0 && position.isFirstRow ? navigateToChips : null,
+              onNavigateLeft: position.isFirstColumn ? navigateToSidebar : null,
+            );
+          },
+        ),
+      ],
+      // Keep the last section's cards reachable above the mini-player.
+      SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
+    ];
+  }
+
+  Widget _emptySliver() {
+    return SliverFillRemaining(
+      child: EmptyStateWidget(
+        message: t.downloads.noDownloads,
+        subtitle: t.downloads.noDownloadsDescription,
+        icon: Symbols.music_note_rounded,
+        iconSize: 80,
+      ),
     );
   }
 }

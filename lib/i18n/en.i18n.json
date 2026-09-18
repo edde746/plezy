@@ -1162,7 +1162,10 @@
       "random": "Random",
       "dateShared": "Date Shared",
       "latestEpisodeAirDate": "Latest Episode Air Date",
-      "lastEpisodeDateAdded": "Last Episode Date Added"
+      "lastEpisodeDateAdded": "Last Episode Date Added",
+      "dateDownloaded": "Date downloaded",
+      "size": "Size",
+      "library": "Library"
     }
   },
   "about": {
@@ -1778,6 +1781,11 @@
       "settingsUnavailable": "Couldn't open system settings on this device",
       "linkUnavailable": "Couldn't open dontkillmyapp.com on this device"
     },
+    "options": "Downloads options",
+    "groupings": {
+      "library": "Library"
+    },
+    "unknownLibrary": "Unknown library",
     "unknownShow": "Unknown Show",
     "unknownSeason": "Unknown Season",
     "unknownAlbum": "Unknown Album",

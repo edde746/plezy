@@ -328,6 +328,8 @@ extension DownloadDatabaseOperations on AppDatabase {
     required String type,
     String? parentRatingKey,
     String? grandparentRatingKey,
+    String? libraryId,
+    String? libraryTitle,
     int mediaIndex = 0,
     String? mediaSourceId,
     int priority = 0,
@@ -345,10 +347,12 @@ extension DownloadDatabaseOperations on AppDatabase {
           type,
           parent_rating_key,
           grandparent_rating_key,
+          library_id,
+          library_title,
           status,
           media_index,
           media_source_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(global_key) DO UPDATE SET
           server_id = excluded.server_id,
           client_scope_id = excluded.client_scope_id,
@@ -356,6 +360,10 @@ extension DownloadDatabaseOperations on AppDatabase {
           type = excluded.type,
           parent_rating_key = excluded.parent_rating_key,
           grandparent_rating_key = excluded.grandparent_rating_key,
+          -- A re-queue that could not resolve library identity (offline,
+          -- lookup failure) must not erase what an earlier enqueue stamped.
+          library_id = COALESCE(excluded.library_id, downloaded_media.library_id),
+          library_title = COALESCE(excluded.library_title, downloaded_media.library_title),
           status = excluded.status,
           progress = 0,
           total_bytes = NULL,
@@ -375,6 +383,8 @@ extension DownloadDatabaseOperations on AppDatabase {
           Variable<String>(type),
           Variable<String>(parentRatingKey),
           Variable<String>(grandparentRatingKey),
+          Variable<String>(libraryId),
+          Variable<String>(libraryTitle),
           Variable<int>(DownloadStatus.queued.index),
           Variable<int>(mediaIndex),
           Variable<String>(mediaSourceId),

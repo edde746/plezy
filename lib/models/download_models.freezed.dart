@@ -14,7 +14,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DownloadProgress {
 
- String get globalKey; DownloadStatus get status; int get progress; int get downloadedBytes; int get totalBytes; double get speed; String? get errorMessage; String? get currentFile; String? get thumbPath;
+ String get globalKey; DownloadStatus get status; int get progress; int get downloadedBytes; int get totalBytes; double get speed; String? get errorMessage; String? get currentFile; String? get thumbPath;/// Epoch milliseconds when the download completed, persisted on the row
+/// and carried through progress events so sort-by-download-date works
+/// without a database read.
+ int? get downloadedAt;
 /// Create a copy of DownloadProgress
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +28,16 @@ $DownloadProgressCopyWith<DownloadProgress> get copyWith => _$DownloadProgressCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DownloadProgress&&(identical(other.globalKey, globalKey) || other.globalKey == globalKey)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.downloadedBytes, downloadedBytes) || other.downloadedBytes == downloadedBytes)&&(identical(other.totalBytes, totalBytes) || other.totalBytes == totalBytes)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.currentFile, currentFile) || other.currentFile == currentFile)&&(identical(other.thumbPath, thumbPath) || other.thumbPath == thumbPath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DownloadProgress&&(identical(other.globalKey, globalKey) || other.globalKey == globalKey)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.downloadedBytes, downloadedBytes) || other.downloadedBytes == downloadedBytes)&&(identical(other.totalBytes, totalBytes) || other.totalBytes == totalBytes)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.currentFile, currentFile) || other.currentFile == currentFile)&&(identical(other.thumbPath, thumbPath) || other.thumbPath == thumbPath)&&(identical(other.downloadedAt, downloadedAt) || other.downloadedAt == downloadedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,globalKey,status,progress,downloadedBytes,totalBytes,speed,errorMessage,currentFile,thumbPath);
+int get hashCode => Object.hash(runtimeType,globalKey,status,progress,downloadedBytes,totalBytes,speed,errorMessage,currentFile,thumbPath,downloadedAt);
 
 @override
 String toString() {
-  return 'DownloadProgress(globalKey: $globalKey, status: $status, progress: $progress, downloadedBytes: $downloadedBytes, totalBytes: $totalBytes, speed: $speed, errorMessage: $errorMessage, currentFile: $currentFile, thumbPath: $thumbPath)';
+  return 'DownloadProgress(globalKey: $globalKey, status: $status, progress: $progress, downloadedBytes: $downloadedBytes, totalBytes: $totalBytes, speed: $speed, errorMessage: $errorMessage, currentFile: $currentFile, thumbPath: $thumbPath, downloadedAt: $downloadedAt)';
 }
 
 
@@ -45,7 +48,7 @@ abstract mixin class $DownloadProgressCopyWith<$Res>  {
   factory $DownloadProgressCopyWith(DownloadProgress value, $Res Function(DownloadProgress) _then) = _$DownloadProgressCopyWithImpl;
 @useResult
 $Res call({
- String globalKey, DownloadStatus status, int progress, int downloadedBytes, int totalBytes, double speed, String? errorMessage, String? currentFile, String? thumbPath
+ String globalKey, DownloadStatus status, int progress, int downloadedBytes, int totalBytes, double speed, String? errorMessage, String? currentFile, String? thumbPath, int? downloadedAt
 });
 
 
@@ -62,7 +65,7 @@ class _$DownloadProgressCopyWithImpl<$Res>
 
 /// Create a copy of DownloadProgress
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? globalKey = null,Object? status = null,Object? progress = null,Object? downloadedBytes = null,Object? totalBytes = null,Object? speed = null,Object? errorMessage = freezed,Object? currentFile = freezed,Object? thumbPath = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? globalKey = null,Object? status = null,Object? progress = null,Object? downloadedBytes = null,Object? totalBytes = null,Object? speed = null,Object? errorMessage = freezed,Object? currentFile = freezed,Object? thumbPath = freezed,Object? downloadedAt = freezed,}) {
   return _then(_self.copyWith(
 globalKey: null == globalKey ? _self.globalKey : globalKey // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -73,7 +76,8 @@ as int,speed: null == speed ? _self.speed : speed // ignore: cast_nullable_to_no
 as double,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,currentFile: freezed == currentFile ? _self.currentFile : currentFile // ignore: cast_nullable_to_non_nullable
 as String?,thumbPath: freezed == thumbPath ? _self.thumbPath : thumbPath // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,downloadedAt: freezed == downloadedAt ? _self.downloadedAt : downloadedAt // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -155,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String globalKey,  DownloadStatus status,  int progress,  int downloadedBytes,  int totalBytes,  double speed,  String? errorMessage,  String? currentFile,  String? thumbPath)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String globalKey,  DownloadStatus status,  int progress,  int downloadedBytes,  int totalBytes,  double speed,  String? errorMessage,  String? currentFile,  String? thumbPath,  int? downloadedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DownloadProgress() when $default != null:
-return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedBytes,_that.totalBytes,_that.speed,_that.errorMessage,_that.currentFile,_that.thumbPath);case _:
+return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedBytes,_that.totalBytes,_that.speed,_that.errorMessage,_that.currentFile,_that.thumbPath,_that.downloadedAt);case _:
   return orElse();
 
 }
@@ -176,10 +180,10 @@ return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedByte
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String globalKey,  DownloadStatus status,  int progress,  int downloadedBytes,  int totalBytes,  double speed,  String? errorMessage,  String? currentFile,  String? thumbPath)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String globalKey,  DownloadStatus status,  int progress,  int downloadedBytes,  int totalBytes,  double speed,  String? errorMessage,  String? currentFile,  String? thumbPath,  int? downloadedAt)  $default,) {final _that = this;
 switch (_that) {
 case _DownloadProgress():
-return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedBytes,_that.totalBytes,_that.speed,_that.errorMessage,_that.currentFile,_that.thumbPath);}
+return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedBytes,_that.totalBytes,_that.speed,_that.errorMessage,_that.currentFile,_that.thumbPath,_that.downloadedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -193,10 +197,10 @@ return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedByte
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String globalKey,  DownloadStatus status,  int progress,  int downloadedBytes,  int totalBytes,  double speed,  String? errorMessage,  String? currentFile,  String? thumbPath)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String globalKey,  DownloadStatus status,  int progress,  int downloadedBytes,  int totalBytes,  double speed,  String? errorMessage,  String? currentFile,  String? thumbPath,  int? downloadedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _DownloadProgress() when $default != null:
-return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedBytes,_that.totalBytes,_that.speed,_that.errorMessage,_that.currentFile,_that.thumbPath);case _:
+return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedBytes,_that.totalBytes,_that.speed,_that.errorMessage,_that.currentFile,_that.thumbPath,_that.downloadedAt);case _:
   return null;
 
 }
@@ -208,7 +212,7 @@ return $default(_that.globalKey,_that.status,_that.progress,_that.downloadedByte
 
 
 class _DownloadProgress extends DownloadProgress {
-  const _DownloadProgress({required this.globalKey, required this.status, this.progress = 0, this.downloadedBytes = 0, this.totalBytes = 0, this.speed = 0.0, this.errorMessage, this.currentFile, this.thumbPath}): super._();
+  const _DownloadProgress({required this.globalKey, required this.status, this.progress = 0, this.downloadedBytes = 0, this.totalBytes = 0, this.speed = 0.0, this.errorMessage, this.currentFile, this.thumbPath, this.downloadedAt}): super._();
   
 
 @override final  String globalKey;
@@ -220,6 +224,10 @@ class _DownloadProgress extends DownloadProgress {
 @override final  String? errorMessage;
 @override final  String? currentFile;
 @override final  String? thumbPath;
+/// Epoch milliseconds when the download completed, persisted on the row
+/// and carried through progress events so sort-by-download-date works
+/// without a database read.
+@override final  int? downloadedAt;
 
 /// Create a copy of DownloadProgress
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +239,16 @@ _$DownloadProgressCopyWith<_DownloadProgress> get copyWith => __$DownloadProgres
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DownloadProgress&&(identical(other.globalKey, globalKey) || other.globalKey == globalKey)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.downloadedBytes, downloadedBytes) || other.downloadedBytes == downloadedBytes)&&(identical(other.totalBytes, totalBytes) || other.totalBytes == totalBytes)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.currentFile, currentFile) || other.currentFile == currentFile)&&(identical(other.thumbPath, thumbPath) || other.thumbPath == thumbPath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DownloadProgress&&(identical(other.globalKey, globalKey) || other.globalKey == globalKey)&&(identical(other.status, status) || other.status == status)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.downloadedBytes, downloadedBytes) || other.downloadedBytes == downloadedBytes)&&(identical(other.totalBytes, totalBytes) || other.totalBytes == totalBytes)&&(identical(other.speed, speed) || other.speed == speed)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.currentFile, currentFile) || other.currentFile == currentFile)&&(identical(other.thumbPath, thumbPath) || other.thumbPath == thumbPath)&&(identical(other.downloadedAt, downloadedAt) || other.downloadedAt == downloadedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,globalKey,status,progress,downloadedBytes,totalBytes,speed,errorMessage,currentFile,thumbPath);
+int get hashCode => Object.hash(runtimeType,globalKey,status,progress,downloadedBytes,totalBytes,speed,errorMessage,currentFile,thumbPath,downloadedAt);
 
 @override
 String toString() {
-  return 'DownloadProgress(globalKey: $globalKey, status: $status, progress: $progress, downloadedBytes: $downloadedBytes, totalBytes: $totalBytes, speed: $speed, errorMessage: $errorMessage, currentFile: $currentFile, thumbPath: $thumbPath)';
+  return 'DownloadProgress(globalKey: $globalKey, status: $status, progress: $progress, downloadedBytes: $downloadedBytes, totalBytes: $totalBytes, speed: $speed, errorMessage: $errorMessage, currentFile: $currentFile, thumbPath: $thumbPath, downloadedAt: $downloadedAt)';
 }
 
 
@@ -251,7 +259,7 @@ abstract mixin class _$DownloadProgressCopyWith<$Res> implements $DownloadProgre
   factory _$DownloadProgressCopyWith(_DownloadProgress value, $Res Function(_DownloadProgress) _then) = __$DownloadProgressCopyWithImpl;
 @override @useResult
 $Res call({
- String globalKey, DownloadStatus status, int progress, int downloadedBytes, int totalBytes, double speed, String? errorMessage, String? currentFile, String? thumbPath
+ String globalKey, DownloadStatus status, int progress, int downloadedBytes, int totalBytes, double speed, String? errorMessage, String? currentFile, String? thumbPath, int? downloadedAt
 });
 
 
@@ -268,7 +276,7 @@ class __$DownloadProgressCopyWithImpl<$Res>
 
 /// Create a copy of DownloadProgress
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? globalKey = null,Object? status = null,Object? progress = null,Object? downloadedBytes = null,Object? totalBytes = null,Object? speed = null,Object? errorMessage = freezed,Object? currentFile = freezed,Object? thumbPath = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? globalKey = null,Object? status = null,Object? progress = null,Object? downloadedBytes = null,Object? totalBytes = null,Object? speed = null,Object? errorMessage = freezed,Object? currentFile = freezed,Object? thumbPath = freezed,Object? downloadedAt = freezed,}) {
   return _then(_DownloadProgress(
 globalKey: null == globalKey ? _self.globalKey : globalKey // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -279,7 +287,8 @@ as int,speed: null == speed ? _self.speed : speed // ignore: cast_nullable_to_no
 as double,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
 as String?,currentFile: freezed == currentFile ? _self.currentFile : currentFile // ignore: cast_nullable_to_non_nullable
 as String?,thumbPath: freezed == thumbPath ? _self.thumbPath : thumbPath // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,downloadedAt: freezed == downloadedAt ? _self.downloadedAt : downloadedAt // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

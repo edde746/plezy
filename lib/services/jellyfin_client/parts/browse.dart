@@ -1540,6 +1540,12 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// unstamped.
   Future<MediaItem> _withLibraryFromAncestors(MediaItem item) => _stampAncestorLibrary(item, _libraryAncestor(item.id));
 
+  /// Stamps library identity onto an item that lacks it (the download
+  /// pipeline's enqueue path). Same ancestors lookup as
+  /// [_withLibraryFromAncestors]; failures return the item unstamped.
+  @override
+  Future<MediaItem> stampLibrary(MediaItem item) => _withLibraryFromAncestors(item);
+
   /// Applies a settled [_libraryAncestor] lookup, or returns [item] unchanged
   /// when the lookup found nothing.
   Future<MediaItem> _stampAncestorLibrary(MediaItem item, Future<({String? id, String? title})?>? ancestor) async {

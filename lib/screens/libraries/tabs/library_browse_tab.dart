@@ -30,8 +30,9 @@ import '../alpha_scroll_handle.dart';
 import '../library_browse_grouping.dart';
 import '../library_alpha_bar_strategy.dart';
 import '../library_alpha_scroll_metrics.dart';
+import '../../../widgets/anchored_option_menus.dart';
 import '../../../widgets/focusable_media_card.dart';
-import '../../../widgets/focusable_filter_chip.dart';
+import '../../../widgets/options_chips_bar.dart';
 import '../../../widgets/listenable_selector.dart';
 import '../../../widgets/loading_indicator_box.dart';
 import '../../../widgets/media_card_sliver_layout.dart';
@@ -44,7 +45,6 @@ import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
 import '../../../widgets/app_icon.dart';
-import '../../../widgets/app_menu.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../content_state_builder.dart';
 import '../../../services/storage_service.dart';
@@ -522,8 +522,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  /// Height of the chips bar (padding + chip + padding)
-  static const double _chipsBarHeight = 32.0;
+  /// Height of the chips bar — see [optionsChipsBarHeight].
+  static const double _chipsBarHeight = optionsChipsBarHeight;
 
   /// Focus the chips bar (for navigating from tab bar to content).
   /// Called by libraries screen when pressing DOWN on tab bar.
@@ -1037,36 +1037,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
-  /// Mirrors [showAdaptiveAppMenu]'s platform split: iOS and Android (which
-  /// also cover tvOS and Android TV) keep the bottom sheets; every other
-  /// platform anchors dropdown popups to the chips.
-  bool get _useAnchoredChipMenus {
-    final platform = Theme.of(context).platform;
-    return platform != TargetPlatform.iOS && platform != TargetPlatform.android;
-  }
-
-  /// Anchor rect for a chip popup, computed the way
-  /// [AppMenuButtonState.showButtonMenu] computes its anchor.
-  Rect? _chipAnchorRect(GlobalKey key) {
-    final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return null;
-    final topLeft = renderBox.localToGlobal(Offset.zero);
-    return Rect.fromLTWH(topLeft.dx, topLeft.dy, renderBox.size.width, renderBox.size.height);
-  }
-
-  bool get _focusChipMenuFirstItem => InputModeTracker.isKeyboardMode(context, listen: false);
-
   void _showGroupingBottomSheet() {
-    final anchorRect = _useAnchoredChipMenus ? _chipAnchorRect(_groupingChipKey) : null;
+    final anchorRect = useAnchoredChipMenus(context) ? chipAnchorRect(_groupingChipKey) : null;
     if (anchorRect != null) {
-      showAppMenu<String>(
+      showAnchoredSelectionMenu<String>(
         context,
         anchorRect: anchorRect,
-        focusFirstItem: _focusChipMenuFirstItem,
-        entries: [
-          for (final grouping in _getGroupingOptions())
-            AppMenuItem(value: grouping, label: _getGroupingLabel(grouping), selected: grouping == _selectedGrouping),
-        ],
+        options: _getGroupingOptions(),
+        labelOf: _getGroupingLabel,
+        selected: _selectedGrouping,
       ).then(_handleGroupingSelection);
       return;
     }
@@ -1170,7 +1149,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   void _showFiltersBottomSheet() {
-    final anchorRect = _useAnchoredChipMenus ? _chipAnchorRect(_filtersChipKey) : null;
+    final anchorRect = useAnchoredChipMenus(context) ? chipAnchorRect(_filtersChipKey) : null;
     if (anchorRect != null) {
       unawaited(_showFiltersMenu(anchorRect));
       return;
@@ -1228,10 +1207,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return const [];
   }
 
-  /// Sentinel for the "All" row in the per-category values popup; a dismissed
-  /// menu returns null, so clearing needs its own value.
-  static final Object _clearFilterValue = Object();
-
   /// Display names for applied filter values so the desktop category popup can
   /// echo them as subtitles (the raw value can be an opaque server id). The
   /// sheet keeps its own equivalent cache and falls back to the raw value too.
@@ -1242,92 +1217,22 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// category's values. Boolean categories toggle and apply directly,
   /// mirroring the sheet's switches.
   Future<void> _showFiltersMenu(Rect anchorRect) async {
-    // Boolean toggles first, mirroring FiltersBottomSheet._sortFilters.
-    final filters = [
-      ..._filters.where((f) => f.filterType == 'boolean'),
-      ..._filters.where((f) => f.filterType != 'boolean'),
-    ];
-    final filter = await showAppMenu<MediaFilter>(
+    final updated = await showAnchoredFiltersMenu(
       context,
       anchorRect: anchorRect,
-      focusFirstItem: _focusChipMenuFirstItem,
-      entries: [
-        for (final filter in filters)
-          AppMenuItem(
-            value: filter,
-            label: filter.title,
-            subtitle: _selectedFilterSubtitle(filter),
-            selected: _selectedFilters.containsKey(filter.filter),
-          ),
-      ],
+      filters: _filters,
+      selectedFilters: _selectedFilters,
+      loadFilterValues: _loadFilterValues,
+      allLabel: t.libraries.all,
+      cachedValues: _mediaBrowserFilterValues,
+      valueDisplayNames: _filterValueDisplayNames,
     );
-    if (!mounted || filter == null) return;
-
-    if (filter.filterType == 'boolean') {
-      final updated = Map<String, String>.of(_selectedFilters);
-      if (updated[filter.filter] == '1') {
-        updated.remove(filter.filter);
-      } else {
-        updated[filter.filter] = '1';
-      }
-      await _applyFilters(updated);
-      return;
-    }
-
-    await _showFilterValuesMenu(filter, anchorRect);
-  }
-
-  String? _selectedFilterSubtitle(MediaFilter filter) {
-    if (filter.filterType == 'boolean') return null;
-    final value = _selectedFilters[filter.filter];
-    if (value == null) return null;
-    return _filterValueDisplayNames['${filter.filter}:$value'] ?? value;
-  }
-
-  Future<void> _showFilterValuesMenu(MediaFilter filter, Rect anchorRect) async {
-    List<MediaFilterValue> values;
-    try {
-      // Same cached-values seam the sheet uses: MediaBrowser payloads answer
-      // inline, anything else goes through the lazy loader.
-      values = _mediaBrowserFilterValues[filter.filter] ?? await _loadFilterValues(filter);
-    } catch (e, st) {
-      appLogger.w('Failed to load values for filter ${filter.filter}', error: e, stackTrace: st);
-      return;
-    }
-    if (!mounted) return;
-
-    final selectedValue = _selectedFilters[filter.filter];
-    final choice = await showAppMenu<Object>(
-      context,
-      anchorRect: anchorRect,
-      focusFirstItem: _focusChipMenuFirstItem,
-      entries: [
-        AppMenuItem(value: _clearFilterValue, label: t.libraries.all, selected: selectedValue == null),
-        if (values.isNotEmpty) const AppMenuDivider(),
-        for (final value in values)
-          AppMenuItem<Object>(
-            value: value,
-            label: value.title,
-            selected: selectedValue != null && libraryFilterValueId(value.key, filter.filter) == selectedValue,
-          ),
-      ],
-    );
-    if (!mounted || choice == null) return;
-
-    final updated = Map<String, String>.of(_selectedFilters);
-    if (identical(choice, _clearFilterValue)) {
-      updated.remove(filter.filter);
-    } else {
-      final value = choice as MediaFilterValue;
-      final filterValue = libraryFilterValueId(value.key, filter.filter);
-      updated[filter.filter] = filterValue;
-      _filterValueDisplayNames['${filter.filter}:$filterValue'] = value.title;
-    }
+    if (!mounted || updated == null) return;
     await _applyFilters(updated);
   }
 
   void _showSortBottomSheet() {
-    final anchorRect = _useAnchoredChipMenus ? _chipAnchorRect(_sortChipKey) : null;
+    final anchorRect = useAnchoredChipMenus(context) ? chipAnchorRect(_sortChipKey) : null;
     if (anchorRect != null) {
       unawaited(_showSortMenu(anchorRect));
       return;
@@ -1373,40 +1278,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     });
   }
 
-  /// Sentinel for the Clear row in the sort popup (null means dismissed).
-  static final Object _clearSortValue = Object();
-
   /// Desktop counterpart of [SortBottomSheet]: selecting the active field
   /// toggles its direction (the popup has no segmented direction control);
   /// selecting another field applies it with its default direction.
   Future<void> _showSortMenu(Rect anchorRect) async {
-    final selectedKey = _selectedSort?.key;
-    final directionIcon = _isSortDescending ? Symbols.arrow_downward_rounded : Symbols.arrow_upward_rounded;
-    final choice = await showAppMenu<Object>(
+    final result = await showAnchoredSortMenu(
       context,
       anchorRect: anchorRect,
-      focusFirstItem: _focusChipMenuFirstItem,
-      entries: [
-        for (final sort in _sortOptions)
-          AppMenuItem<Object>(
-            value: sort,
-            label: sort.title,
-            selected: sort.key == selectedKey,
-            trailing: sort.key == selectedKey ? AppIcon(directionIcon, fill: 1, size: 18) : null,
-          ),
-        const AppMenuDivider(),
-        AppMenuItem(value: _clearSortValue, label: t.common.clear),
-      ],
+      sortOptions: _sortOptions,
+      selectedSort: _selectedSort,
+      isSortDescending: _isSortDescending,
+      clearLabel: t.common.clear,
     );
-    if (!mounted || choice == null) return;
-
-    if (identical(choice, _clearSortValue)) {
-      _applySortSelection(sort: null, descending: false, cleared: true);
-      return;
-    }
-    final sort = choice as MediaSort;
-    final descending = sort.key == _selectedSort?.key ? !_isSortDescending : sort.isDefaultDescending;
-    _applySortSelection(sort: sort, descending: descending, cleared: false);
+    if (!mounted || result == null) return;
+    _applySortSelection(sort: result.sort, descending: result.descending, cleared: result.cleared);
   }
 
   /// Commits the outcome of a sort surface (sheet or popup). No-ops when the
@@ -1859,7 +1744,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               SliverPersistentHeader(
                 floating: true,
                 pinned: false,
-                delegate: _ChipsBarDelegate(builder: (_) => _buildChipsBar(), height: _chipsBarHeight),
+                delegate: OptionsChipsBarDelegate(builder: (_) => _buildChipsBar()),
               ),
             ..._buildContentSlivers(),
           ],
@@ -1996,68 +1881,38 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Builds the chips bar widget
   Widget _buildChipsBar() {
-    VoidCallback? groupingNavigateRight;
-    if (_isFiltersChipVisible) {
-      groupingNavigateRight = () => _filtersChipFocusNode.requestFocus();
-    } else if (_isSortChipVisible) {
-      groupingNavigateRight = () => _sortChipFocusNode.requestFocus();
-    }
-
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: .centerLeft,
-      child: Row(
-        mainAxisSize: .min,
-        children: [
-          // Grouping chip
-          FocusableFilterChip(
-            key: _groupingChipKey,
-            focusNode: _groupingChipFocusNode,
-            icon: Symbols.category_rounded,
-            label: _getGroupingLabel(_selectedGrouping),
-            onPressed: _showGroupingBottomSheet,
-            onNavigateDown: _navigateToGrid,
-            onNavigateUp: widget.onBack,
-            onNavigateLeft: _navigateToSidebar,
-            onNavigateRight: groupingNavigateRight,
-            onBack: widget.onBack,
+    return OptionsChipsBar(
+      chips: [
+        OptionsChipDescriptor(
+          anchorKey: _groupingChipKey,
+          focusNode: _groupingChipFocusNode,
+          icon: Symbols.category_rounded,
+          label: _getGroupingLabel(_selectedGrouping),
+          onPressed: _showGroupingBottomSheet,
+        ),
+        if (_isFiltersChipVisible)
+          OptionsChipDescriptor(
+            anchorKey: _filtersChipKey,
+            focusNode: _filtersChipFocusNode,
+            icon: Symbols.filter_alt_rounded,
+            label: _selectedFilters.isEmpty
+                ? t.libraries.filters
+                : t.libraries.filtersWithCount(count: _selectedFilters.length),
+            onPressed: _showFiltersBottomSheet,
           ),
-          const SizedBox(width: 8),
-          // Filters chip
-          if (_isFiltersChipVisible)
-            FocusableFilterChip(
-              key: _filtersChipKey,
-              focusNode: _filtersChipFocusNode,
-              icon: Symbols.filter_alt_rounded,
-              label: _selectedFilters.isEmpty
-                  ? t.libraries.filters
-                  : t.libraries.filtersWithCount(count: _selectedFilters.length),
-              onPressed: _showFiltersBottomSheet,
-              onNavigateDown: _navigateToGrid,
-              onNavigateUp: widget.onBack,
-              onNavigateLeft: () => _groupingChipFocusNode.requestFocus(),
-              onNavigateRight: _isSortChipVisible ? () => _sortChipFocusNode.requestFocus() : null,
-              onBack: widget.onBack,
-            ),
-          if (_isFiltersChipVisible) const SizedBox(width: 8),
-          // Sort chip
-          if (_isSortChipVisible)
-            FocusableFilterChip(
-              key: _sortChipKey,
-              focusNode: _sortChipFocusNode,
-              icon: Symbols.sort_rounded,
-              label: _selectedSort?.title ?? t.libraries.sort,
-              onPressed: _showSortBottomSheet,
-              onNavigateDown: _navigateToGrid,
-              onNavigateUp: widget.onBack,
-              onNavigateLeft: _isFiltersChipVisible
-                  ? () => _filtersChipFocusNode.requestFocus()
-                  : () => _groupingChipFocusNode.requestFocus(),
-              onBack: widget.onBack,
-            ),
-        ],
-      ),
+        if (_isSortChipVisible)
+          OptionsChipDescriptor(
+            anchorKey: _sortChipKey,
+            focusNode: _sortChipFocusNode,
+            icon: Symbols.sort_rounded,
+            label: _selectedSort?.title ?? t.libraries.sort,
+            onPressed: _showSortBottomSheet,
+          ),
+      ],
+      onNavigateDown: _navigateToGrid,
+      onNavigateUp: widget.onBack,
+      onNavigateLeftEdge: _navigateToSidebar,
+      onBack: widget.onBack,
     );
   }
 
@@ -2384,30 +2239,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final node = _cardFocusNode(targetIndex);
     node.requestFocus();
   }
-}
-
-/// SliverPersistentHeader delegate for the chips bar. Fixed-height floating
-/// header that snaps in on scroll direction reversal.
-class _ChipsBarDelegate extends SliverPersistentHeaderDelegate {
-  final WidgetBuilder builder;
-  final double height;
-
-  const _ChipsBarDelegate({required this.builder, required this.height});
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return SizedBox(height: height, child: builder(context));
-  }
-
-  @override
-  bool shouldRebuild(covariant _ChipsBarDelegate oldDelegate) =>
-      builder != oldDelegate.builder || height != oldDelegate.height;
 }
 
 /// Combined filter + sort listing loaded for a [MediaLibrary].

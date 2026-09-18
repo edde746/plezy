@@ -4491,6 +4491,14 @@ class Translations$downloads$en {
 
 	late final Translations$downloads$backgroundWarning$en backgroundWarning = Translations$downloads$backgroundWarning$en.internal(_root);
 
+	/// en: 'Downloads options'
+	String get options => 'Downloads options';
+
+	late final Translations$downloads$groupings$en groupings = Translations$downloads$groupings$en.internal(_root);
+
+	/// en: 'Unknown library'
+	String get unknownLibrary => 'Unknown library';
+
 	/// en: 'Unknown Show'
 	String get unknownShow => 'Unknown Show';
 
@@ -6082,6 +6090,15 @@ class Translations$libraries$sortLabels$en {
 
 	/// en: 'Last Episode Date Added'
 	String get lastEpisodeDateAdded => 'Last Episode Date Added';
+
+	/// en: 'Date downloaded'
+	String get dateDownloaded => 'Date downloaded';
+
+	/// en: 'Size'
+	String get size => 'Size';
+
+	/// en: 'Library'
+	String get library => 'Library';
 }
 
 // Path: explore.rows
@@ -6697,6 +6714,18 @@ class Translations$downloads$backgroundWarning$en {
 
 	/// en: 'Couldn't open dontkillmyapp.com on this device'
 	String get linkUnavailable => 'Couldn\'t open dontkillmyapp.com on this device';
+}
+
+// Path: downloads.groupings
+class Translations$downloads$groupings$en {
+	Translations$downloads$groupings$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Library'
+	String get library => 'Library';
 }
 
 // Path: companionRemote.session
@@ -8134,6 +8163,9 @@ extension on Translations {
 			'libraries.sortLabels.dateShared' => 'Date Shared',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
+			'libraries.sortLabels.dateDownloaded' => 'Date downloaded',
+			'libraries.sortLabels.size' => 'Size',
+			'libraries.sortLabels.library' => 'Library',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -8595,11 +8627,11 @@ extension on Translations {
 			'downloads.cancelledDownloadTitle' => 'Canceled Download',
 			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
@@ -8676,6 +8708,9 @@ extension on Translations {
 			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
 			'downloads.backgroundWarning.linkUnavailable' => 'Couldn\'t open dontkillmyapp.com on this device',
+			'downloads.options' => 'Downloads options',
+			'downloads.groupings.library' => 'Library',
+			'downloads.unknownLibrary' => 'Unknown library',
 			'downloads.unknownShow' => 'Unknown Show',
 			'downloads.unknownSeason' => 'Unknown Season',
 			'downloads.unknownAlbum' => 'Unknown Album',

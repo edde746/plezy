@@ -1704,7 +1704,10 @@ class DownloadManagerService {
     ]);
   }
 
-  Future<void> queueDownload({
+  /// Queue [metadata] for download. Returns the item actually stored —
+  /// identical to [metadata] unless library stamping filled `libraryId`/
+  /// `libraryTitle`, so the caller can keep its in-memory copy in sync.
+  Future<MediaItem> queueDownload({
     required MediaItem metadata,
     required MediaServerClient client,
     int priority = 0,
@@ -1712,10 +1715,23 @@ class DownloadManagerService {
     bool downloadArtwork = true,
     int mediaIndex = 0,
   }) async {
-    if (_skipDownloadsUnsupported('queue download')) return;
+    if (_skipDownloadsUnsupported('queue download')) return metadata;
     _resumeQueueAfterStorageFailure('new download');
 
     final globalKey = metadata.globalKey;
+
+    // Stamp library identity onto the durable row so downloads can be
+    // grouped/filtered by library offline. Skipped when the item already
+    // carries it or when offline (the lookup would just fail); a failure
+    // leaves the columns null and never blocks the enqueue.
+    var storedMetadata = metadata;
+    if (metadata.libraryId == null && !_isOffline) {
+      try {
+        storedMetadata = await client.stampLibrary(metadata);
+      } catch (e) {
+        appLogger.d('Library stamping failed for $globalKey; enqueueing unstamped', error: e);
+      }
+    }
 
     final outcome = await _database.insertQueuedDownload(
       serverId: ServerId(metadata.serverId!),
@@ -1725,6 +1741,8 @@ class DownloadManagerService {
       type: metadata.kind.id,
       parentRatingKey: metadata.parentId,
       grandparentRatingKey: metadata.grandparentId,
+      libraryId: storedMetadata.libraryId,
+      libraryTitle: storedMetadata.libraryTitle,
       mediaIndex: mediaIndex,
       mediaSourceId: _mediaSourceIdForIndex(metadata, mediaIndex),
       priority: priority,
@@ -1733,14 +1751,14 @@ class DownloadManagerService {
     );
     if (outcome == QueueDownloadOutcome.unchanged) {
       appLogger.i('Download already active, paused, or completed for $globalKey');
-      return;
+      return storedMetadata;
     }
 
     if (outcome == QueueDownloadOutcome.admitted) {
       // Metadata pinning is useful for offline preparation, but the durable
       // download request must remain executable if cache persistence fails.
       try {
-        await _pinMetadataForOffline(client, metadata);
+        await _pinMetadataForOffline(client, storedMetadata);
       } catch (e, st) {
         appLogger.w('Failed to pin metadata for queued download $globalKey', error: e, stackTrace: st);
       }
@@ -1748,6 +1766,7 @@ class DownloadManagerService {
 
     _emitProgress(globalKey, DownloadStatus.queued, 0);
     unawaited(_processQueue(client));
+    return storedMetadata;
   }
 
   String? _mediaSourceIdForIndex(MediaItem metadata, int mediaIndex) {
