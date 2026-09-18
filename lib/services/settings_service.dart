@@ -761,6 +761,13 @@ class SettingsService extends BaseSharedPreferencesService {
     return NullableStringPref(profileScopedPrefsKey(profileId, 'watch_together_recent_rooms'));
   }
 
+  static NullableStringPref recentMetadataTagsForProfile(String profileId) {
+    if (profileId.trim().isEmpty) {
+      throw ArgumentError.value(profileId, 'profileId', 'Must not be empty');
+    }
+    return NullableStringPref(profileScopedPrefsKey(profileId, 'metadata_recent_tags'));
+  }
+
   static final companionRemoteLastHostAddress = NullableStringPref(
     'companion_remote_last_host_address',
     transform: _trimEmptyAsNull,

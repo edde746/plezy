@@ -2050,7 +2050,8 @@
     "producer": "Prodyuser",
     "country": "Mamlakat",
     "collection": "Toʻplam",
-    "label": "Yorliq"
+    "label": "Yorliq",
+    "quickTag": "Tezkor teg..."
   },
   "matchScreen": {
     "match": "Moslashtirish...",

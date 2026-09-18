@@ -2050,7 +2050,8 @@
     "producer": "Producer",
     "country": "Land",
     "collection": "Samling",
-    "label": "Etiket"
+    "label": "Etiket",
+    "quickTag": "Hurtigt tag..."
   },
   "matchScreen": {
     "match": "Match...",

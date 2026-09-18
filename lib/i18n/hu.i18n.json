@@ -2050,7 +2050,8 @@
     "producer": "Producer",
     "country": "Ország",
     "collection": "Gyűjtemény",
-    "label": "Kiadó"
+    "label": "Kiadó",
+    "quickTag": "Gyors címke..."
   },
   "matchScreen": {
     "match": "Párosítás...",

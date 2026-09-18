@@ -2050,7 +2050,8 @@
     "producer": "Продюсер",
     "country": "Ел",
     "collection": "Топтама",
-    "label": "Белгі"
+    "label": "Белгі",
+    "quickTag": "Жылдам тег..."
   },
   "matchScreen": {
     "match": "Сәйкестендіру...",

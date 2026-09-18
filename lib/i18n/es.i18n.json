@@ -2050,7 +2050,8 @@
     "producer": "Productor",
     "country": "País",
     "collection": "Colección",
-    "label": "Etiqueta"
+    "label": "Etiqueta",
+    "quickTag": "Etiqueta rápida..."
   },
   "matchScreen": {
     "match": "Asociar...",

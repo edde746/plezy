@@ -56,6 +56,7 @@ import 'package:plezy/utils/media_server_timeouts.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/file_info_bottom_sheet.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
+import 'package:plezy/widgets/tag_edit_dialog.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
@@ -748,6 +749,79 @@ void main() {
       expect(supportsMetadataEdit(client, MediaKind.movie), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.show), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.track), isFalse);
+    });
+  });
+
+  group('MediaContextMenu quick tag', () {
+    testWidgets('shows Quick Tag for an admin on a movie and applies a suggestion', (tester) async {
+      String? postedBody;
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        handler: (request) async {
+          final path = request.url.path;
+          if (request.url.queryParameters['Fields'] == 'CanDelete') {
+            return _canDeleteResponse('movie-1', true);
+          }
+          if (request.method == 'GET' && path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Name': 'Movie', 'Type': 'Movie', 'Tags': <String>[]});
+          }
+          if (request.method == 'GET' && path == '/Items/Filters') {
+            return jsonResponse({
+              'Tags': ['kids', 'horror'],
+            });
+          }
+          if (request.method == 'POST' && path == '/Items/movie-1') {
+            postedBody = request.body;
+            return http.Response('', 204);
+          }
+          return http.Response('unexpected ${request.method} $path', 500);
+        },
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.metadataEdit.quickTag));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TagEditDialog), findsOneWidget);
+      expect(find.text('kids'), findsOneWidget);
+
+      await tester.tap(find.text('kids'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.common.save));
+      await tester.pumpAndSettle();
+
+      expect(postedBody, isNotNull);
+      expect((jsonDecode(postedBody!) as Map<String, dynamic>)['Tags'], ['kids']);
+      expect(find.text(t.metadataEdit.metadataUpdated), findsOneWidget);
+    });
+
+    testWidgets('hides Quick Tag for a non-admin', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        handler: (_) async => _canDeleteResponse('movie-1', true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.metadataEdit.editMetadata), findsNothing);
+      expect(find.text(t.metadataEdit.quickTag), findsNothing);
+    });
+
+    testWidgets('hides Quick Tag on kinds without a label field', (tester) async {
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-1', index: 1, file: '/tv/bb/S01E01.mkv'),
+        handler: (_) async => _canDeleteResponse('ep-1', true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      // Episodes still get the full editor (director/writer), just not tags.
+      expect(find.text(t.metadataEdit.editMetadata), findsOneWidget);
+      expect(find.text(t.metadataEdit.quickTag), findsNothing);
     });
   });
 

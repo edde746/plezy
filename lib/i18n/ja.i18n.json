@@ -2039,7 +2039,8 @@
     "producer": "プロデューサー",
     "country": "国",
     "collection": "コレクション",
-    "label": "ラベル"
+    "label": "ラベル",
+    "quickTag": "クイックタグ…"
   },
   "matchScreen": {
     "match": "照合…",

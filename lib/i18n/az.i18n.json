@@ -2050,7 +2050,8 @@
     "producer": "Prodüser",
     "country": "Ölkə",
     "collection": "Kolleksiya",
-    "label": "Etiket"
+    "label": "Etiket",
+    "quickTag": "Sürətli etiket..."
   },
   "matchScreen": {
     "match": "Uyğunlaşdır...",
