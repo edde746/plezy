@@ -777,15 +777,6 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
-    if (_nativeCoreUnavailable) return;
-    final args = ['sub-add', uri, select ? 'select' : 'auto'];
-    if (title != null) args.add('title=$title');
-    if (language != null) args.add('lang=$language');
-    await command(args);
-  }
-
-  @override
   Future<void> setVolume(double volume) async {
     if (_nativeCoreUnavailable) return;
     await setProperty('volume', volume.toString());

@@ -341,9 +341,6 @@ class FakePlayer implements Player {
   bool get providesNativeStats => false;
 
   @override
-  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {}
-
-  @override
   Future<void> setVolume(double volume) async => volumes.add(volume);
 
   @override

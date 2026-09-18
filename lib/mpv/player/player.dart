@@ -143,14 +143,6 @@ abstract class Player {
   /// reads instead.
   bool get providesNativeStats;
 
-  /// Add an external subtitle track.
-  ///
-  /// [uri] - URL or path to the subtitle file.
-  /// [title] - Optional display title.
-  /// [language] - Optional language code.
-  /// [select] - Whether to select this track immediately.
-  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false});
-
   /// Set the playback volume.
   ///
   /// [volume] - Volume level from 0.0 (muted) to 100.0 (max).

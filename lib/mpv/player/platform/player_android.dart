@@ -279,19 +279,6 @@ class PlayerAndroid extends PlayerBase {
     await invoke('selectSubtitleTrack', {'trackId': track.id});
   }
 
-  /// A sidecar flagged default must not draw itself onto a hidden renderer
-  /// either; the selection pass that follows the add records it the same way
-  /// [selectSubtitleTrack] does.
-  @override
-  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
-    await invoke('addSubtitleTrack', {
-      'uri': uri,
-      'title': title,
-      'language': language,
-      'select': select && !_subtitlesHidden,
-    });
-  }
-
   @override
   Future<void> setVolume(double volume) async {
     await invoke('setVolume', {'volume': volume});
