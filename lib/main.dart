@@ -48,6 +48,7 @@ import 'utils/pointer_scroll_axis.dart';
 import 'services/apple_tv_remote_touch_service.dart';
 import 'services/discord_rpc_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
@@ -265,9 +266,11 @@ Future<_StartupDependencies> _initializeApplication() async {
     // then run the whole gate — migrations, native recovery, database open —
     // a second time.
     await _optionalGatePhase(StartupPhase.crashReporting, () async {
+      final nativeDatabasePath = await _sentryNativeDatabasePath();
       await SentryFlutter.init((options) {
         options.dsn = _sentryDsn;
         options.release = _sentryRelease();
+        if (nativeDatabasePath != null) options.nativeDatabasePath = nativeDatabasePath;
         if (_sentryEnvironment.isNotEmpty) options.environment = _sentryEnvironment;
         if (_sentryDist.isNotEmpty) options.dist = _sentryDist;
         options.tracesSampleRate = 0;
@@ -308,6 +311,17 @@ String _sentryRelease() {
   if (gitCommit.length >= 7) return 'plezy@${gitCommit.substring(0, 7)}';
   if (gitCommit.isNotEmpty) return 'plezy@$gitCommit';
   return 'plezy@unknown';
+}
+
+Future<String?> _sentryNativeDatabasePath() async {
+  if (kIsWeb || !(Platform.isWindows || Platform.isLinux)) return null;
+  try {
+    final directory = await getApplicationSupportDirectory();
+    return p.join(directory.path, 'sentry-native');
+  } catch (error, stackTrace) {
+    appLogger.d('Sentry native database location unavailable', error: error, stackTrace: stackTrace);
+    return null;
+  }
 }
 
 const startupBootstrapProgressKey = Key('startup-bootstrap-progress');
