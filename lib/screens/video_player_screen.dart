@@ -916,16 +916,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   MediaControlsManager? _mediaControlsManager;
 
+  LiveTvChannel? get _currentLiveChannel {
+    final live = widget.live;
+    if (live == null) return null;
+    final channels = live.channels;
+    if (channels != null && _live.channelIndex >= 0 && _live.channelIndex < channels.length) {
+      return channels[_live.channelIndex];
+    }
+    return live.channel;
+  }
+
   MediaItem get _mediaControlsItem {
-    if (!widget.isLive) return _currentMetadata;
-    final channels = widget.live?.channels;
-    final channel = channels != null && _live.channelIndex >= 0 && _live.channelIndex < channels.length
-        ? channels[_live.channelIndex]
-        : null;
-    return _currentMetadata.copyWith(
-      title: _live.channelName ?? _currentMetadata.title,
-      thumbPath: channel?.thumb ?? _currentMetadata.thumbPath,
-    );
+    final channel = _currentLiveChannel;
+    if (channel == null) return _currentMetadata;
+    return _currentMetadata.copyWith(title: channel.displayName, thumbPath: channel.thumb);
+  }
+
+  MediaServerClient? _mediaControlsClient() {
+    if (_isOfflinePlayback) return null;
+    if (!widget.isLive) return _getMediaServerClient(context);
+    return _getOnlineMediaServerClient(context, serverId: _currentLiveChannel?.serverId);
   }
 
   late final MediaControlsScreenController _mediaControls = MediaControlsScreenController(
@@ -936,7 +946,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     shouldSkipForPip: () => _shouldSkipForPip,
     isPlayerInitialized: () => _isPlayerInitialized,
     metadata: () => _mediaControlsItem,
-    client: () => _isOfflinePlayback ? null : _getMediaServerClient(context),
+    client: _mediaControlsClient,
     isPlaylistActive: () => context.read<PlaybackStateProvider>().isPlaylistActive,
     canControlPlayback: () => _canControlPlayback(),
     canNavigateMediaItems: () => _canNavigateMediaItems(),
@@ -1000,8 +1010,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     return context.read<MultiServerProvider>().serverManager.getClient(ServerId(id));
   }
 
-  MediaServerClient? _getOnlineMediaServerClient(BuildContext context) {
-    final id = _currentMetadata.serverId;
+  MediaServerClient? _getOnlineMediaServerClient(BuildContext context, {String? serverId}) {
+    final id = serverId ?? _currentMetadata.serverId;
     if (id == null) return null;
     final manager = context.read<MultiServerProvider>().serverManager;
     if (!manager.isClientOnline(ServerId(id))) return null;

@@ -524,7 +524,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     );
 
     if (widget.isLive) {
-      unawaited(mediaControlsManager.updateMetadata(metadata: _mediaControlsItem, client: mediaClient));
+      unawaited(mediaControlsManager.updateMetadata(metadata: _mediaControlsItem, client: _mediaControlsClient()));
     } else {
       // Wire progress tracker, media-controls metadata, and the
       // Discord/Trakt/Tracker scrobblers. Shared with [_reloadMediaInPlace]
@@ -543,6 +543,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     await _mediaControls.syncAvailability();
     if (!mounted || player != currentPlayer || _mediaControlsManager != mediaControlsManager) return;
+    _mediaControls.pushPlaybackState();
 
     // Listen to position updates for media controls and Discord
     _mediaControlSubscriptions.add(
