@@ -914,7 +914,6 @@ void main() {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
         PathProviderPlatform.instance = previousPathProvider;
-        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -1706,7 +1705,6 @@ void main() {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
         PathProviderPlatform.instance = previousPathProvider;
-        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -1759,7 +1757,6 @@ void main() {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
         PathProviderPlatform.instance = previousPathProvider;
-        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -2611,7 +2608,6 @@ class _SupplementaryFixture {
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
-    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tempDir.exists()) await tempDir.delete(recursive: true);
   }
 }
@@ -2798,7 +2794,6 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
-    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   }
 }
@@ -2887,7 +2882,6 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
-    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   }
 }

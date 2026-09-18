@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
@@ -9,8 +8,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
-
-http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+import '../test_helpers/http_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -32,7 +30,7 @@ void main() {
     final client = makeClient((request) async {
       captured.add(request.url);
       if (request.url.path == '/library/search') {
-        return _json({
+        return jsonResponse({
           'MediaContainer': {
             'SearchResult': [
               {
@@ -62,7 +60,7 @@ void main() {
     // guid names the Personal Media agent instead of a metadata provider.
     final client = makeClient((request) async {
       if (request.url.path != '/library/search') return http.Response('unexpected request', 500);
-      return _json({
+      return jsonResponse({
         'MediaContainer': {
           'SearchResult': [
             {
@@ -90,7 +88,7 @@ void main() {
   test('search rows carry their library so hidden libraries can be filtered', () async {
     final client = makeClient((request) async {
       if (request.url.path != '/library/search') return http.Response('unexpected request', 500);
-      return _json({
+      return jsonResponse({
         'MediaContainer': {
           'SearchResult': [
             {
@@ -178,7 +176,7 @@ void main() {
         ],
         _ => <Map<String, Object>>[],
       };
-      return _json({
+      return jsonResponse({
         'MediaContainer': {'SearchResult': searchResults},
       });
     });
@@ -224,7 +222,7 @@ void main() {
         ],
         _ => <Map<String, Object>>[],
       };
-      return _json({
+      return jsonResponse({
         'MediaContainer': {'SearchResult': searchResults},
       });
     });
@@ -254,7 +252,7 @@ void main() {
       final searchTypes = request.url.queryParameters['searchTypes'];
       capturedSearchTypes.add(searchTypes);
       if (searchTypes == 'movies,tv,music,otherVideos') {
-        return _json({
+        return jsonResponse({
           'MediaContainer': {'SearchResult': primaryResults},
         });
       }

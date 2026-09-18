@@ -213,9 +213,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         _lastLogError = null;
         _fatalHttpStatuses.clear();
         _resetLiveLadderOnPlaybackRestart();
-        final markFirstFrameReady = _markFirstFrameReady(currentPlayer, settingsService);
-        _trackManager?.onPlaybackRestart();
-        await markFirstFrameReady;
+        await _markFirstFrameReady(currentPlayer, settingsService);
       }),
     );
 
@@ -545,13 +543,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     await _mediaControls.syncAvailability();
     if (!mounted || player != currentPlayer || _mediaControlsManager != mediaControlsManager) return;
-
-    // Listen to playing state and update media controls
-    _mediaControlSubscriptions.add(
-      currentPlayer.streams.playing.listen((isPlaying) {
-        _mediaControls.pushPlaybackState();
-      }),
-    );
 
     // Listen to position updates for media controls and Discord
     _mediaControlSubscriptions.add(

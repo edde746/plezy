@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -12,6 +10,7 @@ import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 
 /// Plex strips detected credits markers from its responses when the admin
 /// disables credits detection for a show or movie
@@ -50,7 +49,7 @@ void main() {
         requested.add(request.url);
         final body = responsesByPath[request.url.path];
         if (body == null) return http.Response('', 404);
-        return _jsonResponse(body);
+        return jsonResponse(body);
       },
     );
     addTearDown(client.close);
@@ -223,20 +222,17 @@ void main() {
 /// The failover client probes server identity before the first real request.
 http.Response? _failoverProbe(http.Request request, ServerId serverId) {
   if (request.url.path == '/') {
-    return _jsonResponse({
+    return jsonResponse({
       'MediaContainer': {'machineIdentifier': serverId.value},
     });
   }
   if (request.url.path == '/media/providers') {
-    return _jsonResponse({
+    return jsonResponse({
       'MediaContainer': {'MediaProvider': <Object>[]},
     });
   }
   return null;
 }
-
-http.Response _jsonResponse(Map<String, dynamic> body) =>
-    http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
 
 Map<String, dynamic> _chapter({required int id, required String tag, required int start, required int end}) => {
   'id': id,

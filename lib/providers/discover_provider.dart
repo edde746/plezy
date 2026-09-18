@@ -871,15 +871,17 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _replaceOnDeck(List.of(_onDeck)..[onDeckIndex] = updatedItem, hasMore: _hasMoreContinueWatching);
     }
 
+    List<MediaHub>? updatedHubs;
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
       final itemIndex = hub.items.indexWhere((item) => item.globalKey == sourceGlobalKey);
       if (itemIndex != -1) {
         final newItems = List<MediaItem>.from(hub.items);
         newItems[itemIndex] = updatedItem;
-        _replaceHubs(List.of(_hubs)..[i] = hub.copyWith(items: newItems));
+        (updatedHubs ??= List.of(_hubs))[i] = hub.copyWith(items: newItems);
       }
     }
+    if (updatedHubs != null) _replaceHubs(updatedHubs);
   }
 
   void _applyOnDeck(List<MediaItem> fetched) {
@@ -921,8 +923,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return;
     }
 
+    final serverId = event.serverId.value;
     if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
-      _evictFromOnDeck((item) => item.id == event.itemId);
+      _evictFromOnDeck((item) => item.serverId == serverId && item.id == event.itemId);
     } else if (event.changeType == WatchStateChangeType.watched ||
         (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched == true)) {
       // Finished items have no business in Continue Watching, so drop the row
@@ -931,7 +934,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // it, matching the parent-aware filter this subscription uses — the
       // series' successor comes back from the refetch (#1812).
       _evictFromOnDeck(
-        (item) => item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId,
+        (item) =>
+            item.serverId == serverId &&
+            (item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId),
       );
     }
     unawaited(refreshContinueWatching());
@@ -973,13 +978,17 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _replaceOnDeck(remainingOnDeck, hasMore: _hasMoreContinueWatching);
       changed = true;
     }
+    List<MediaHub>? updatedHubs;
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
       final newItems = hub.items.where((item) => !affected(item)).toList();
       if (newItems.length != hub.items.length) {
-        _replaceHubs(List.of(_hubs)..[i] = hub.copyWith(items: newItems));
-        changed = true;
+        (updatedHubs ??= List.of(_hubs))[i] = hub.copyWith(items: newItems);
       }
+    }
+    if (updatedHubs != null) {
+      _replaceHubs(updatedHubs);
+      changed = true;
     }
     if (changed) safeNotifyListeners();
     if (event.origin == DeletionOrigin.local) {

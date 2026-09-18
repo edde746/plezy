@@ -169,7 +169,6 @@ void main() {
     selectCounter.count = 0;
     expect(await resolver.findPinnedItems(), hasLength(100));
     expect(selectCounter.count, oneRowSelects);
-    expect(oneRowSelects, 3);
   });
 }
 

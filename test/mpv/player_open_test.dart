@@ -866,7 +866,6 @@ void main() {
         testBody: () async {
           final player = PlayerNative();
           try {
-            expect(player.attachesExternalSubtitlesAtOpen, isTrue);
             const english = 'https://example.test/library/parts/1/subtitle.srt?token=a,b:c';
             const french = 'https://example.test/subtitles/fr forced.ass';
 

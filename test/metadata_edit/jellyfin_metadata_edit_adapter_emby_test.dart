@@ -41,7 +41,11 @@ void main() {
 
   test('Jellyfin save does not send the name-pair arrays', () async {
     final postedBodies = <String>[];
-    final client = _clientForDto(connection: _jellyfinConnection(), dto: _jellyfinItem(), postedBodies: postedBodies);
+    final client = _clientForDto(
+      connection: testJellyfinConnection(createdAt: DateTime.fromMillisecondsSinceEpoch(0)),
+      dto: _jellyfinItem(),
+      postedBodies: postedBodies,
+    );
     addTearDown(client.close);
     final adapter = JellyfinMetadataEditAdapter(client);
     final draft = await adapter.load(_sourceItem(MediaBackend.jellyfin));
@@ -133,21 +137,6 @@ JellyfinClient _clientForDto({
       }
       return http.Response('Unexpected ${request.method} ${request.url}', 500);
     }),
-  );
-}
-
-JellyfinConnection _jellyfinConnection() {
-  return JellyfinConnection(
-    id: 'srv-1/user-1',
-    baseUrl: 'https://jf.example.com',
-    serverName: 'Home',
-    serverMachineId: 'srv-1',
-    userId: 'user-1',
-    userName: 'User',
-    accessToken: 'token',
-    deviceId: 'device-1',
-    isAdministrator: false,
-    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
   );
 }
 

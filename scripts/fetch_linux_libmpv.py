@@ -20,6 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LOCK = ROOT / "mpv-build.lock.json"
+DOWNLOAD_CHUNK_SIZE = 1024 * 1024
 
 
 def main() -> int:
@@ -62,21 +63,22 @@ def main() -> int:
 
     url = f"{group['assetBase']}/{entry['asset']}"
     print(f"fetching {url}", flush=True)
-    with urllib.request.urlopen(url) as response:
-        data = response.read()
-    digest = hashlib.sha256(data).hexdigest()
-    if digest != entry["checksum"]:
-        print(
-            f"Error: {entry['asset']}: SHA-256 {digest} does not match "
-            f"locked {entry['checksum']}",
-            file=sys.stderr,
-        )
-        return 1
-
-    args.dest.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256()
     with tempfile.NamedTemporaryFile(suffix=".tar.zst") as archive:
-        archive.write(data)
+        with urllib.request.urlopen(url) as response:
+            while chunk := response.read(DOWNLOAD_CHUNK_SIZE):
+                digest.update(chunk)
+                archive.write(chunk)
         archive.flush()
+        if digest.hexdigest() != entry["checksum"]:
+            print(
+                f"Error: {entry['asset']}: SHA-256 {digest.hexdigest()} does not match "
+                f"locked {entry['checksum']}",
+                file=sys.stderr,
+            )
+            return 1
+
+        args.dest.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             ["tar", "--zstd", "-xf", archive.name, "-C", str(args.dest)],
             check=True,

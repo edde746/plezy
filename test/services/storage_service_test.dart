@@ -386,7 +386,7 @@ void main() {
     const fullId = 'plex-home-plex.e443d57860076fc3-379704d0c6601309';
     const uuid = '379704d0c6601309';
 
-    Future<StorageService> reinitialize(StorageService s) async {
+    Future<StorageService> reinitialize() async {
       BaseSharedPreferencesService.resetForTesting();
       return StorageService.getInstance();
     }
@@ -397,7 +397,7 @@ void main() {
       await s.prefs.setBool('user_${fullId}_some_flag', true);
       await s.prefs.setStringList('user_${fullId}_hidden_libraries', ['a', 'b']);
 
-      s = await reinitialize(s);
+      s = await reinitialize();
 
       expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'lib-1');
       expect(s.prefs.getBool('user_${uuid}_some_flag'), isTrue);
@@ -410,7 +410,7 @@ void main() {
       await s.prefs.setString('user_${uuid}_selected_library_key', 'stale');
       await s.prefs.setString('user_${fullId}_selected_library_key', 'fresh');
 
-      s = await reinitialize(s);
+      s = await reinitialize();
 
       expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'fresh');
     });
@@ -420,7 +420,7 @@ void main() {
       await s.prefs.setString('user_local-1_selected_library_key', 'keep');
       await s.prefs.setString('user_plex-home-acct-not-a-uuid_key', 'keep-too');
 
-      s = await reinitialize(s);
+      s = await reinitialize();
 
       expect(s.prefs.getString('user_local-1_selected_library_key'), 'keep');
       expect(s.prefs.getString('user_plex-home-acct-not-a-uuid_key'), 'keep-too');

@@ -373,7 +373,7 @@ final class _ControlledVolumePlayer implements Player {
 
   double volume;
   final requestedVolumes = <double>[];
-  final _requests = <_VolumeRequest>[];
+  final _requests = <Completer<void>>[];
   final _volumeStream = StreamController<double>.broadcast();
   int _activeWrites = 0;
   int maxConcurrentWrites = 0;
@@ -408,10 +408,10 @@ final class _ControlledVolumePlayer implements Player {
     requestedVolumes.add(requested);
     _activeWrites++;
     if (_activeWrites > maxConcurrentWrites) maxConcurrentWrites = _activeWrites;
-    final request = _VolumeRequest(requested);
+    final request = Completer<void>();
     _requests.add(request);
     try {
-      await request.completer.future;
+      await request.future;
       volume = requested;
       _volumeStream.add(requested);
     } finally {
@@ -420,13 +420,11 @@ final class _ControlledVolumePlayer implements Player {
   }
 
   void succeedNext() {
-    final request = _requests.firstWhere((request) => !request.completer.isCompleted);
-    request.completer.complete();
+    _requests.firstWhere((request) => !request.isCompleted).complete();
   }
 
   void failNext(Object error) {
-    final request = _requests.firstWhere((request) => !request.completer.isCompleted);
-    request.completer.completeError(error);
+    _requests.firstWhere((request) => !request.isCompleted).completeError(error);
   }
 
   void publish(double observed) {
@@ -441,11 +439,4 @@ final class _ControlledVolumePlayer implements Player {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-final class _VolumeRequest {
-  _VolumeRequest(this.volume);
-
-  final double volume;
-  final Completer<void> completer = Completer<void>();
 }

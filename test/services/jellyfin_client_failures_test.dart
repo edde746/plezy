@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +16,7 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
 JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => testJellyfinConnection(
@@ -167,11 +167,8 @@ void main() {
   });
 
   group('JellyfinClient endpoint failover', () {
-    http.Response publicInfo([String id = 'srv-1']) => http.Response(
-      jsonEncode({'Id': id, 'ServerName': 'Home', 'Version': '10.9.0'}),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+    http.Response publicInfo([String id = 'srv-1']) =>
+        jsonResponse({'Id': id, 'ServerName': 'Home', 'Version': '10.9.0'});
 
     test('validates publicly before authenticated fallback and persists one promotion', () async {
       const primary = 'https://primary-client-canary.invalid/primary-private-base';
@@ -189,7 +186,7 @@ void main() {
           if (request.url.host == 'primary-client-canary.invalid') {
             throw TimeoutException('primary down');
           }
-          return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
+          return jsonResponse({'Id': 'srv-1'});
         }),
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           probeRequests.add(request);
@@ -248,7 +245,7 @@ void main() {
             throw TimeoutException('primary down');
           }
           expect(request.url.host, 'valid.example.com');
-          return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
+          return jsonResponse({'Id': 'srv-1'});
         }),
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           events.add('probe:${request.url.host}');
@@ -343,7 +340,7 @@ void main() {
           expect(req.url.host, 'primary.example.com', reason: 'retry-wrapped hub fetches must not fail over');
           final attempt = attemptsByPath.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
           if (attempt == 1) throw http.ClientException('connection reset', req.url);
-          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+          return jsonResponse({'Items': []});
         }),
       );
       addTearDown(client.close);
@@ -385,7 +382,7 @@ void main() {
           if (requests.length <= 2) {
             throw TimeoutException('endpoint down');
           }
-          return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
+          return jsonResponse({'Id': 'srv-1'});
         }),
         endpointProbeHttpClientFactory: () => MockClient((_) async => publicInfo()),
       );
@@ -415,7 +412,7 @@ void main() {
       final client = _withMock(
         MockClient((req) async {
           if (req.url.path == '/Shows/NextUp') throw cancelled();
-          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+          return jsonResponse({'Items': []});
         }),
       );
       addTearDown(client.close);
@@ -430,15 +427,11 @@ void main() {
       final client = _withMock(
         MockClient((req) async {
           if (req.url.path == '/Shows/NextUp') return http.Response('Internal error', 500);
-          return http.Response(
-            jsonEncode({
-              'Items': [
-                {'Id': 'ep-1', 'Type': 'Episode', 'Name': 'Resume Me'},
-              ],
-            }),
-            200,
-            headers: {'content-type': 'application/json'},
-          );
+          return jsonResponse({
+            'Items': [
+              {'Id': 'ep-1', 'Type': 'Episode', 'Name': 'Resume Me'},
+            ],
+          });
         }),
       );
       addTearDown(client.close);
@@ -465,12 +458,7 @@ void main() {
   group('JellyfinClient.getPlaybackInfo failure contract', () {
     test('preserves 401, 403, and 500 status failures', () async {
       for (final status in [401, 403, 500]) {
-        final client = _withMock(
-          MockClient(
-            (_) async =>
-                http.Response(jsonEncode({'error': 'redacted'}), status, headers: {'content-type': 'application/json'}),
-          ),
-        );
+        final client = _withMock(MockClient((_) async => jsonResponse({'error': 'redacted'}, status: status)));
         addTearDown(client.close);
 
         await expectLater(
@@ -530,13 +518,9 @@ void main() {
     test('rejects invalid JSON and malformed successful shapes without retaining payload', () async {
       final responses = <http.Response>[
         http.Response('{', 200, headers: {'content-type': 'application/json'}),
-        http.Response(jsonEncode([]), 200, headers: {'content-type': 'application/json'}),
-        http.Response(jsonEncode({'unrelated': 'payload-canary'}), 200, headers: {'content-type': 'application/json'}),
-        http.Response(
-          jsonEncode({'MediaSources': 'payload-canary'}),
-          200,
-          headers: {'content-type': 'application/json'},
-        ),
+        jsonResponse([]),
+        jsonResponse({'unrelated': 'payload-canary'}),
+        jsonResponse({'MediaSources': 'payload-canary'}),
       ];
 
       for (final response in responses) {
@@ -549,9 +533,7 @@ void main() {
         <String, dynamic>{'unrelated': 'payload-canary'},
         <String, dynamic>{'MediaSources': 'payload-canary'},
       ]) {
-        final client = _withMock(
-          MockClient((_) async => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'})),
-        );
+        final client = _withMock(MockClient((_) async => jsonResponse(body)));
         addTearDown(client.close);
         try {
           await client.getPlaybackInfo('item-1');
@@ -566,12 +548,7 @@ void main() {
     });
 
     test('accepts a successful empty source list', () async {
-      final client = _withMock(
-        MockClient(
-          (_) async =>
-              http.Response(jsonEncode({'MediaSources': []}), 200, headers: {'content-type': 'application/json'}),
-        ),
-      );
+      final client = _withMock(MockClient((_) async => jsonResponse({'MediaSources': []})));
       addTearDown(client.close);
 
       expect(await client.getPlaybackInfo('item-1'), {'MediaSources': []});
@@ -613,14 +590,10 @@ void main() {
       final valid = _withMock(
         MockClient((request) async {
           if (request.url.path == '/Playlists') {
-            return http.Response(jsonEncode({'Id': 'playlist-1'}), 200, headers: {'content-type': 'application/json'});
+            return jsonResponse({'Id': 'playlist-1'});
           }
           if (request.url.path == '/Users/user-1/Items/playlist-1') {
-            return http.Response(
-              jsonEncode({'Id': 'playlist-1', 'Name': 'Playlist', 'Type': 'Playlist', 'MediaType': 'Video'}),
-              200,
-              headers: {'content-type': 'application/json'},
-            );
+            return jsonResponse({'Id': 'playlist-1', 'Name': 'Playlist', 'Type': 'Playlist', 'MediaType': 'Video'});
           }
           return http.Response('{}', 404);
         }),
@@ -628,9 +601,7 @@ void main() {
       addTearDown(valid.close);
       expect((await valid.createPlaylist(title: 'Playlist', items: const []))?.id, 'playlist-1');
 
-      final unusable = _withMock(
-        MockClient((_) async => http.Response(jsonEncode({}), 200, headers: {'content-type': 'application/json'})),
-      );
+      final unusable = _withMock(MockClient((_) async => jsonResponse({})));
       addTearDown(unusable.close);
       expect(await unusable.createPlaylist(title: 'Playlist', items: const []), isNull);
 
@@ -651,21 +622,14 @@ void main() {
     });
 
     test('nullable collection creation returns id/null and throws request failures', () async {
-      final valid = _withMock(
-        MockClient(
-          (_) async =>
-              http.Response(jsonEncode({'Id': 'collection-1'}), 200, headers: {'content-type': 'application/json'}),
-        ),
-      );
+      final valid = _withMock(MockClient((_) async => jsonResponse({'Id': 'collection-1'})));
       addTearDown(valid.close);
       expect(
         await valid.createCollection(libraryId: 'library-1', title: 'Collection', items: const []),
         'collection-1',
       );
 
-      final unusable = _withMock(
-        MockClient((_) async => http.Response(jsonEncode({}), 200, headers: {'content-type': 'application/json'})),
-      );
+      final unusable = _withMock(MockClient((_) async => jsonResponse({})));
       addTearDown(unusable.close);
       expect(await unusable.createCollection(libraryId: 'library-1', title: 'Collection', items: const []), isNull);
 

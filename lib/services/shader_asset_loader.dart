@@ -40,12 +40,9 @@ class ShaderAssetLoader {
     'clamp': 'anime4k/Anime4K_Clamp_Highlights.glsl',
     'restore_m': 'anime4k/Anime4K_Restore_CNN_M.glsl',
     'restore_vl': 'anime4k/Anime4K_Restore_CNN_VL.glsl',
-    'restore_ul': 'anime4k/Anime4K_Restore_CNN_UL.glsl',
     'upscale_m': 'anime4k/Anime4K_Upscale_CNN_x2_M.glsl',
     'upscale_vl': 'anime4k/Anime4K_Upscale_CNN_x2_VL.glsl',
-    'upscale_ul': 'anime4k/Anime4K_Upscale_CNN_x2_UL.glsl',
     'downscale': 'anime4k/Anime4K_AutoDownscalePre_x2.glsl',
-    'downscale_post': 'anime4k/Anime4K_AutoDownscalePre_x4.glsl',
   };
 
   /// Get the application-owned shader cache directory, creating it if needed.

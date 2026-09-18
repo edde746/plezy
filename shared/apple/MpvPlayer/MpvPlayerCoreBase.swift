@@ -234,6 +234,17 @@ class MpvPlayerCoreBase: NSObject {
     /// (the `sourceId` that entry's events carry); nil for every other command.
     case command((Result<Int64?, Error>) -> Void)
     case getProperty((Result<String?, Error>) -> Void)
+
+    func fail(with error: Error) {
+      switch self {
+      case .void(let completion):
+        completion(.failure(error))
+      case .command(let completion):
+        completion(.failure(error))
+      case .getProperty(let completion):
+        completion(.failure(error))
+      }
+    }
   }
 
   private var pendingRequests: [UInt64: PendingRequest] = [:]
@@ -985,14 +996,7 @@ class MpvPlayerCoreBase: NSObject {
     let error = MpvLifecycleUnavailableError("Player disposed")
     for (_, request) in pending {
       DispatchQueue.main.async {
-        switch request {
-        case .void(let completion):
-          completion(.failure(error))
-        case .command(let completion):
-          completion(.failure(error))
-        case .getProperty(let completion):
-          completion(.failure(error))
-        }
+        request.fail(with: error)
       }
     }
   }
@@ -1040,14 +1044,7 @@ class MpvPlayerCoreBase: NSObject {
     else {
       let error = lifecycleUnavailableError()
       completeOnMain {
-        switch request {
-        case .void(let completion):
-          completion(.failure(error))
-        case .command(let completion):
-          completion(.failure(error))
-        case .getProperty(let completion):
-          completion(.failure(error))
-        }
+        request.fail(with: error)
       }
       return
     }
@@ -1058,14 +1055,7 @@ class MpvPlayerCoreBase: NSObject {
     guard status < 0, let request = takeRequest(requestId) else { return }
     let error = mpvError(status)
     DispatchQueue.main.async {
-      switch request {
-      case .void(let completion):
-        completion(.failure(error))
-      case .command(let completion):
-        completion(.failure(error))
-      case .getProperty(let completion):
-        completion(.failure(error))
-      }
+      request.fail(with: error)
     }
   }
 

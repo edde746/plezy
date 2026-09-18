@@ -932,15 +932,6 @@ func (sn *snapshotter) run() {
 	}
 }
 
-// write is retained for synchronous storage tests; production uses the single
-// writer's writeNextGeneration.
-func (sn *snapshotter) write() error {
-	sn.writeMu.Lock()
-	defer sn.writeMu.Unlock()
-	_, err := sn.captureAndPersist()
-	return err
-}
-
 func (sn *snapshotter) captureAndPersist() (uint64, error) {
 	snapshot, targetSeq := sn.capture(sn.captureSequence)
 	data, err := json.Marshal(snapshot)

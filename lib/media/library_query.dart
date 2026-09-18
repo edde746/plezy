@@ -23,8 +23,7 @@ sealed class LibrarySort with _$LibrarySort {
 /// backend-translated — the neutral query just carries the intent.
 @freezed
 sealed class LibraryFilter with _$LibraryFilter {
-  const factory LibraryFilter({required String field, @Default('=') String op, required List<String> values}) =
-      _LibraryFilter;
+  const factory LibraryFilter({required String field, required List<String> values}) = _LibraryFilter;
 }
 
 /// Backend-neutral library content query. Each backend's adapter translates

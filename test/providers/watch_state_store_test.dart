@@ -563,6 +563,37 @@ void main() {
 
       expect(store.patchForGlobalKey('jf-machine:item-1')?.viewOffsetMs, 1800000);
     });
+
+    test('a promoted hydrated patch stops outliving authoritative reads', () async {
+      final store = WatchStateStore();
+      addTearDown(store.dispose);
+
+      // What a restart rebuilds: the queued row's own durable identity, the
+      // same one the sync service promotes once the write lands.
+      final patchId = WatchPatchId.offlineAction(profileId: 'profile-a', rowId: 7, revision: 100);
+      store.setHydratedPatches([
+        HydratedWatchStatePatch(
+          globalKey: 'jf-machine:episode-1',
+          patch: const WatchStateSnapshot(hasViewOffsetMs: true, viewOffsetMs: 1800000),
+          updatedAt: 100,
+          order: 7,
+          patchId: patchId,
+        ),
+      ]);
+
+      final fresh = _episode.copyWith(viewOffsetMs: 2700000, durationMs: 3600000);
+      expect(store.apply(fresh).viewOffsetMs, 1800000, reason: 'an owed write outlives any read');
+
+      WatchPatchPromotionNotifier().promote(patchId);
+      await Future<void>.delayed(Duration.zero);
+
+      store.recordObservations(
+        [(item: fresh, clientScope: null)],
+        watermark: store.observationWatermark,
+        epoch: store.observationEpoch,
+      );
+      expect(store.apply(fresh).viewOffsetMs, 2700000, reason: 'the write settled, so the server read now wins');
+    });
   });
 
   // The reporter's setup: Plex on macOS, where the client's cache scope is a

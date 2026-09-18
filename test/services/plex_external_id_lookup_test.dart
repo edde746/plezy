@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -10,18 +8,17 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
-
-http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+import '../test_helpers/http_fixtures.dart';
 
 /// A `/library/all` page.
-http.Response _metadata(List<Object> rows) => _json({
+http.Response _metadata(List<Object> rows) => jsonResponse({
   'MediaContainer': {'Metadata': rows},
 });
 
 /// A `/hubs/search` answer: the hub of [type] plus the episode hub Plex
 /// always adds to a `tv` search, so a lookup that read every hub would leak
 /// episodes into the match list.
-http.Response _hubs(List<Object> rows, {String type = 'movie'}) => _json({
+http.Response _hubs(List<Object> rows, {String type = 'movie'}) => jsonResponse({
   'MediaContainer': {
     'Hub': [
       {'type': type, 'hubIdentifier': type, 'Metadata': rows},

@@ -211,8 +211,7 @@ base class SharedPreferencesAsyncLinux extends SharedPreferencesAsyncPlatform {
     String key,
     SharedPreferencesOptions options,
   ) async {
-    final Map<String, Object> data = await _readAll(<String>{key}, options);
-    return data[key] as String?;
+    return await _getValue(key, options) as String?;
   }
 
   @override
@@ -220,8 +219,7 @@ base class SharedPreferencesAsyncLinux extends SharedPreferencesAsyncPlatform {
     String key,
     SharedPreferencesOptions options,
   ) async {
-    final Map<String, Object> data = await _readAll(<String>{key}, options);
-    return data[key] as bool?;
+    return await _getValue(key, options) as bool?;
   }
 
   @override
@@ -229,8 +227,7 @@ base class SharedPreferencesAsyncLinux extends SharedPreferencesAsyncPlatform {
     String key,
     SharedPreferencesOptions options,
   ) async {
-    final Map<String, Object> data = await _readAll(<String>{key}, options);
-    return data[key] as double?;
+    return await _getValue(key, options) as double?;
   }
 
   @override
@@ -238,8 +235,7 @@ base class SharedPreferencesAsyncLinux extends SharedPreferencesAsyncPlatform {
     String key,
     SharedPreferencesOptions options,
   ) async {
-    final Map<String, Object> data = await _readAll(<String>{key}, options);
-    return data[key] as int?;
+    return await _getValue(key, options) as int?;
   }
 
   @override
@@ -247,8 +243,7 @@ base class SharedPreferencesAsyncLinux extends SharedPreferencesAsyncPlatform {
     String key,
     SharedPreferencesOptions options,
   ) async {
-    final Map<String, Object> data = await _readAll(<String>{key}, options);
-    return (data[key] as List<Object?>?)?.cast<String>().toList();
+    return (await _getValue(key, options) as List<Object?>?)?.cast<String>().toList();
   }
 
   @override
@@ -291,6 +286,12 @@ base class SharedPreferencesAsyncLinux extends SharedPreferencesAsyncPlatform {
     final Map<String, Object> prefs = Map<String, Object>.from(await _readPreferences(linuxOptions.fileName));
     prefs.removeWhere((String key, _) => !(allowList?.contains(key) ?? true));
     return prefs;
+  }
+
+  Future<Object?> _getValue(String key, SharedPreferencesOptions options) async {
+    final SharedPreferencesLinuxOptions linuxOptions =
+        SharedPreferencesLinuxOptions.fromSharedPreferencesOptions(options);
+    return (await _readPreferences(linuxOptions.fileName))[key];
   }
 
   Future<void> _setValue(String key, Object value, SharedPreferencesOptions options) async {

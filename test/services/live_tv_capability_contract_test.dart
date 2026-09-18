@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -14,6 +12,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
@@ -43,9 +42,6 @@ void main() {
     ),
     httpClient: httpClient,
   );
-
-  http.Response jsonResponse(Map<String, dynamic> body) =>
-      http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
 
   test('Plex exposes one centralized Live TV DVR adapter', () async {
     final requests = <Uri>[];

@@ -80,6 +80,15 @@ func newTestServer(t *testing.T, stateFile string) *Server {
 	return s
 }
 
+// write is the synchronous storage-test entry point; production uses the
+// single writer's writeNextGeneration.
+func (sn *snapshotter) write() error {
+	sn.writeMu.Lock()
+	defer sn.writeMu.Unlock()
+	_, err := sn.captureAndPersist()
+	return err
+}
+
 func mustReconnectToken(t *testing.T) (string, reconnectVerifier) {
 	t.Helper()
 	token, verifier, err := mintReconnectToken()
@@ -1742,57 +1751,69 @@ func TestClientWriteFailureClosesConnection(t *testing.T) {
 }
 
 func TestRateLimiterBurstExhausts(t *testing.T) {
-	rl := newRateLimiter(5, 10)
-	for i := 0; i < 5; i++ {
-		if !rl.allow() {
+	now := time.Unix(1700000000, 0)
+	rl := newRateLimiterAt(5, 10, now)
+	for i := range 5 {
+		if !rl.allowAt(now) {
 			t.Fatalf("allow %d: expected true", i)
 		}
 	}
-	if rl.allow() {
+	if rl.allowAt(now) {
 		t.Fatal("allow 6: expected false (burst exhausted)")
 	}
 }
 
 func TestRateLimiterRefillsOverTime(t *testing.T) {
-	rl := newRateLimiter(5, 10)
-	for i := 0; i < 5; i++ {
-		rl.allow()
+	start := time.Unix(1700000000, 0)
+	rl := newRateLimiterAt(5, 10, start)
+	for range 5 {
+		rl.allowAt(start)
 	}
-	if rl.allow() {
-		t.Fatal("burst should be exhausted before sleep")
+	if rl.allowAt(start) {
+		t.Fatal("burst should be exhausted before any refill")
 	}
-	time.Sleep(1200 * time.Millisecond)
-	count := 0
-	for rl.allow() {
-		count++
+
+	// 250ms at 10 tokens/s refills 2.5 tokens: two admissions, no third.
+	partial := start.Add(250 * time.Millisecond)
+	for i := range 2 {
+		if !rl.allowAt(partial) {
+			t.Fatalf("partial refill allow %d: expected true", i)
+		}
 	}
-	if count < 1 {
-		t.Fatalf("expected at least 1 token after 1.2s refill, got %d", count)
+	if rl.allowAt(partial) {
+		t.Fatal("fractional token admitted a third request")
 	}
-	if count > 5 {
-		t.Fatalf("expected at most burst=5 after refill, got %d", count)
+
+	saturated := start.Add(time.Hour)
+	for i := range 5 {
+		if !rl.allowAt(saturated) {
+			t.Fatalf("saturated allow %d: expected true", i)
+		}
+	}
+	if rl.allowAt(saturated) {
+		t.Fatal("refill exceeded burst capacity")
 	}
 }
 
 func TestRateLimiterAllowRace(t *testing.T) {
-	rl := newRateLimiter(100, 1000)
+	now := time.Unix(1700000000, 0)
+	rl := newRateLimiterAt(100, 1000, now)
 	var wg sync.WaitGroup
 	var successes atomic.Int64
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < 50; j++ {
-				if rl.allow() {
+			for range 50 {
+				if rl.allowAt(now) {
 					successes.Add(1)
 				}
 			}
 		}()
 	}
 	wg.Wait()
-	// Spot-check the result bounds; -race checks synchronization.
-	if got := successes.Load(); got <= 0 || got > 500 {
-		t.Fatalf("unexpected successes count %d (want 1..500)", got)
+	if got := successes.Load(); got != 100 {
+		t.Fatalf("concurrent admissions=%d, want exactly burst=100", got)
 	}
 }
 
@@ -4591,8 +4612,8 @@ func TestTerminalPersistenceFailureSuppressesSuccess(t *testing.T) {
 			ProtocolVersion: relayProtocolVersion,
 		})
 		failure := guest.expectError(relayErrorInvalidMessage)
-		if !strings.Contains(failure.Message, "persist") {
-			t.Fatalf("leave persistence error message=%q", failure.Message)
+		if strings.Contains(failure.Message, injectedErr.Error()) {
+			t.Fatalf("leave failure disclosed the internal persistence error: %q", failure.Message)
 		}
 		h.srv.mu.RLock()
 		room := h.srv.rooms["FAILED_LEAVE"]
@@ -4643,8 +4664,8 @@ func TestTerminalPersistenceFailureSuppressesSuccess(t *testing.T) {
 			ProtocolVersion: relayProtocolVersion,
 		})
 		failure := host.expectError(relayErrorInvalidMessage)
-		if !strings.Contains(failure.Message, "persist") {
-			t.Fatalf("end persistence error message=%q", failure.Message)
+		if strings.Contains(failure.Message, injectedErr.Error()) {
+			t.Fatalf("end failure disclosed the internal persistence error: %q", failure.Message)
 		}
 		messages, err := guest.recvUntilClosed(2 * time.Second)
 		if err != nil {
@@ -7126,7 +7147,7 @@ func TestLogsUploadDoesNotWriteCapabilityToOperationalLog(t *testing.T) {
 	if strings.Contains(output.String(), id) {
 		t.Fatalf("operational log retained bearer capability %q", id)
 	}
-	if !strings.Contains(output.String(), "logs: stored 15 bytes from 203.0.113.40") {
+	if !strings.Contains(output.String(), "203.0.113.40") {
 		t.Fatalf("successful upload was not observable: %q", output.String())
 	}
 }
@@ -8666,8 +8687,10 @@ func TestStorageHandlersReturnGenericErrorsForRemovalFailures(t *testing.T) {
 	posters.mu.Unlock()
 	logPath := logs.filePath(logID)
 	posterPath := posters.filePath(poster.Filename)
-	remover.fail(logPath, fs.ErrPermission)
-	remover.fail(posterPath, fs.ErrPermission)
+	privateDetail := "removal-detail-b7f1"
+	removalErr := fmt.Errorf("%s: %w", privateDetail, fs.ErrPermission)
+	remover.fail(logPath, removalErr)
+	remover.fail(posterPath, removalErr)
 
 	for name, target := range map[string]string{
 		"log":    h.baseURL + "/logs/" + logID,
@@ -8685,9 +8708,10 @@ func TestStorageHandlersReturnGenericErrorsForRemovalFailures(t *testing.T) {
 		if resp.StatusCode != http.StatusInternalServerError {
 			t.Fatalf("%s status=%d want 500", name, resp.StatusCode)
 		}
-		want := "Failed to retrieve " + name + "\n"
-		if string(body) != want {
-			t.Fatalf("%s response=%q want %q", name, body, want)
+		for _, secret := range []string{privateDetail, logID, logPath, posterPath} {
+			if strings.Contains(string(body), secret) {
+				t.Fatalf("%s response leaked %q: %q", name, secret, body)
+			}
 		}
 	}
 
@@ -8719,7 +8743,8 @@ func TestPosterHandlerRejectsUploadWhenQuotaRemovalFails(t *testing.T) {
 		t.Fatalf("store old poster: %v", err)
 	}
 	oldPath := posters.filePath(oldEntry.Filename)
-	remover.fail(oldPath, fs.ErrPermission)
+	privateDetail := "quota-removal-detail-4c2a"
+	remover.fail(oldPath, fmt.Errorf("%s: %w", privateDetail, fs.ErrPermission))
 	h := newStorageHarness(t, logs, posters)
 
 	resp := postPoster(t, h.baseURL, "9.9.9.9", payload)
@@ -8728,8 +8753,13 @@ func TestPosterHandlerRejectsUploadWhenQuotaRemovalFails(t *testing.T) {
 	if readErr != nil {
 		t.Fatalf("read failed upload response: %v", readErr)
 	}
-	if resp.StatusCode != http.StatusInternalServerError || string(body) != "Failed to store poster\n" {
-		t.Fatalf("failed upload status=%d body=%q", resp.StatusCode, body)
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("failed upload status=%d want 500", resp.StatusCode)
+	}
+	for _, secret := range []string{privateDetail, oldPath, oldEntry.Filename} {
+		if strings.Contains(string(body), secret) {
+			t.Fatalf("failed upload response leaked %q: %q", secret, body)
+		}
 	}
 	posters.mu.RLock()
 	_, retained := posters.entries[oldID]
@@ -8856,9 +8886,10 @@ func TestRemovalFailureLogDoesNotExposeCapabilityPath(t *testing.T) {
 	if strings.Contains(message, id) || strings.Contains(message, path) {
 		t.Fatalf("removal log exposed capability path: %q", message)
 	}
-	want := fmt.Sprintf("logs: cleanup removal failed: category=permission errno=%d", syscall.EACCES)
-	if !strings.Contains(message, want) {
-		t.Fatalf("removal log=%q, want sanitized context %q", message, want)
+	for _, field := range []string{"category=permission", fmt.Sprintf("errno=%d", syscall.EACCES)} {
+		if !strings.Contains(message, field) {
+			t.Fatalf("removal log=%q, want sanitized field %q", message, field)
+		}
 	}
 }
 

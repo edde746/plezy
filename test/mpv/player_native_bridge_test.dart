@@ -53,6 +53,20 @@ final class _GuardedInvokingPlayerNative extends PlayerNative {
   Future<T?> debugInvoke<T>(String method) => invoke<T>(method);
 }
 
+/// Delivers [event] on the player event channel, waiting for the platform
+/// reply and one microtask turn so the stream handler has run before the
+/// caller's next statement.
+Future<void> _sendPlatformEvent(Object? event) async {
+  final done = Completer<void>();
+  await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+    'com.plezy/mpv_player/events',
+    const StandardMethodCodec().encodeSuccessEnvelope(event),
+    (_) => done.complete(),
+  );
+  await done.future;
+  await Future<void>.delayed(Duration.zero);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -535,33 +549,19 @@ void main() {
         final subscription = player.streams.hdrOutputChanged.listen((_) => changes++);
         try {
           await player.setLogLevel('warn');
-          final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-          const codec = StandardMethodCodec();
-
-          Future<void> sendEvent(Object? event) async {
-            final done = Completer<void>();
-            await messenger.handlePlatformMessage(
-              'com.plezy/mpv_player/events',
-              codec.encodeSuccessEnvelope(event),
-              (_) => done.complete(),
-            );
-            await done.future;
-            await Future<void>.delayed(Duration.zero);
-          }
-
-          await sendEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
+          await _sendPlatformEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
           expect(changes, 1);
 
           // The envelope needs both keys. Omitting `type` is not hypothetical -
           // it is exactly what the native side once sent, and the event was
           // dropped in silence, so the settings sheet kept whatever HDR verdict
           // it had from before the window moved.
-          await sendEvent(const {'name': 'hdr-output-changed'});
+          await _sendPlatformEvent(const {'name': 'hdr-output-changed'});
           expect(changes, 1);
 
           // And the channel is still live afterwards: a malformed sibling must
           // not take the subscription down with it.
-          await sendEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
+          await _sendPlatformEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
           expect(changes, 2);
         } finally {
           await subscription.cancel();
@@ -630,22 +630,9 @@ void main() {
         final player = PlayerNative();
         try {
           await player.setLogLevel('warn');
-          final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-          const codec = StandardMethodCodec();
-
-          Future<void> sendEvent(Object? event) async {
-            final done = Completer<void>();
-            await messenger.handlePlatformMessage(
-              'com.plezy/mpv_player/events',
-              codec.encodeSuccessEnvelope(event),
-              (_) => done.complete(),
-            );
-            await done.future;
-            await Future<void>.delayed(Duration.zero);
-          }
 
           Future<void> sendObservation(String name, Object? value) async {
-            await sendEvent([observations[name], value]);
+            await _sendPlatformEvent([observations[name], value]);
           }
 
           await sendObservation('track-list', const [
@@ -691,9 +678,9 @@ void main() {
 
           // Malformed envelopes and malformed siblings are ignored without
           // taking down the event subscription or discarding valid siblings.
-          await sendEvent(['not-a-property-id', const {}]);
-          await sendEvent({'type': 'event', 'name': 7, 'data': const {}});
-          await sendEvent({'type': 'event', 'name': 'unknown', 'data': 'not-a-map'});
+          await _sendPlatformEvent(['not-a-property-id', const {}]);
+          await _sendPlatformEvent({'type': 'event', 'name': 7, 'data': const {}});
+          await _sendPlatformEvent({'type': 'event', 'name': 'unknown', 'data': 'not-a-map'});
           await sendObservation('track-list', const [
             {'type': 7, 'id': 'bad'},
             {

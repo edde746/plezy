@@ -1215,7 +1215,61 @@ void main() {
       expect(p.getProgress('srv:album-1')?.status, DownloadStatus.completed);
       expect(p.isDownloaded('srv:album-1'), isTrue);
       expect(p.downloadedAlbums.map((a) => a.id), ['album-1']);
-      expect(p.getDownloadedTracksForAlbum('album-1').map((item) => item.id), ['t2', 't1']);
+      expect(p.getDownloadedTracksForAlbum('srv:album-1').map((item) => item.id), ['t2', 't1']);
+
+      p.dispose();
+    });
+
+    test('containers with the same native id on two servers stay separate', () async {
+      // Plex hands out server-local rating keys, so two visible servers
+      // routinely disagree about what item 42 is.
+      MediaItem episode(String server, String id) => testMediaItem(
+        id: id,
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: id,
+        parentId: 'season-1',
+        grandparentId: '42',
+        grandparentTitle: 'Show on $server',
+        index: 1,
+        serverId: ServerId(server),
+      );
+      MediaItem albumTrack(String server, String id) => testMediaItem(
+        id: id,
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: id,
+        parentId: 'album-1',
+        parentTitle: 'Album on $server',
+        grandparentId: 'artist-1',
+        grandparentTitle: 'Artist',
+        parentIndex: 1,
+        index: 1,
+        serverId: ServerId(server),
+      );
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final key in ['srv-a:e1', 'srv-b:e2', 'srv-a:t1', 'srv-b:t2'])
+            key: DownloadProgress(globalKey: key, status: DownloadStatus.completed),
+        },
+        metadata: {
+          'srv-a:e1': episode('srv-a', 'e1'),
+          'srv-b:e2': episode('srv-b', 'e2'),
+          'srv-a:t1': albumTrack('srv-a', 't1'),
+          'srv-b:t2': albumTrack('srv-b', 't2'),
+        },
+      );
+
+      expect(p.downloadedShows.map((show) => show.globalKey), unorderedEquals(['srv-a:42', 'srv-b:42']));
+      expect(p.downloadedAlbums.map((album) => album.globalKey), unorderedEquals(['srv-a:album-1', 'srv-b:album-1']));
+      expect(p.getDownloadedEpisodesForShow('srv-a:42').map((item) => item.id), ['e1']);
+      expect(p.getDownloadedTracksForAlbum('srv-b:album-1').map((item) => item.id), ['t2']);
+      // The other server's copy must not inflate this show's queued count.
+      expect(p.getProgress('srv-a:42')?.currentFile, '1/1 episodes');
+      expect(p.getAggregateProgressForArtist(ServerId('srv-a'), 'artist-1')?.currentFile, '1/1 tracks');
 
       p.dispose();
     });

@@ -132,9 +132,6 @@ class PlayerNative extends PlayerBase {
   @override
   bool get nativeDisposeIsStaleGuarded => Platform.isAndroid;
 
-  @override
-  bool get attachesExternalSubtitlesAtOpen => true;
-
   /// Node properties are returned as structured maps on desktop and Apple
   /// platforms, but as JSON strings on Android.
   static final String _nodeFormat = Platform.isAndroid ? 'string' : 'node';

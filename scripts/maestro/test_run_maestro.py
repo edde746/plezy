@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import ast
 from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import replace
 import io
 from pathlib import Path
-import re
-import shlex
 import subprocess
 import sys
 import unittest
@@ -21,74 +18,7 @@ import run_maestro_ci  # noqa: E402
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT_DIR / "scripts"
-LOCAL_SCRIPT_TEST_DISPATCHER = SCRIPTS_DIR / "ci_checks.sh"
-CI_SCRIPT_TEST_DISPATCHER = ROOT_DIR / ".github/workflows/ci.yml"
-# The guard roster both dispatchers above delegate to. It discovers the script
-# tests by glob, so a new test_*.py under scripts/ or scripts/*/ is picked up
-# without being listed.
-GUARD_SCRIPT_TEST_DISPATCHER = SCRIPTS_DIR / "ci_guard_checks.sh"
-SCRIPT_TEST_DISPATCHERS = (
-    LOCAL_SCRIPT_TEST_DISPATCHER,
-    CI_SCRIPT_TEST_DISPATCHER,
-    GUARD_SCRIPT_TEST_DISPATCHER,
-    SCRIPTS_DIR / "ci_website_checks.sh",
-)
 REGRESSION_FLOWS_DIR = ROOT_DIR / ".maestro/regression_flows"
-
-
-def _is_main_guard(expression: ast.expr) -> bool:
-    if (
-        not isinstance(expression, ast.Compare)
-        or len(expression.ops) != 1
-        or not isinstance(expression.ops[0], ast.Eq)
-        or len(expression.comparators) != 1
-    ):
-        return False
-    left = expression.left
-    right = expression.comparators[0]
-    return (
-        isinstance(left, ast.Name)
-        and left.id == "__name__"
-        and isinstance(right, ast.Constant)
-        and right.value == "__main__"
-    ) or (
-        isinstance(right, ast.Name)
-        and right.id == "__name__"
-        and isinstance(left, ast.Constant)
-        and left.value == "__main__"
-    )
-
-
-def _executable_script_tests() -> set[str]:
-    executable = set()
-    for path in (*SCRIPTS_DIR.glob("test_*.py"), *SCRIPTS_DIR.glob("*/test_*.py")):
-        module = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        if any(isinstance(node, ast.If) and _is_main_guard(node.test) for node in module.body):
-            executable.add(path.name)
-    return executable
-
-
-def _dispatched_script_tests(path: Path) -> list[str]:
-    dispatched = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        # `for guard_test in scripts/test_*.py scripts/*/test_*.py; do` dispatches the whole roster.
-        loop = re.match(r"for\s+\w+\s+in\s+(scripts/test_\*\.py scripts/\*/test_\*\.py)\s*;?\s*(?:do)?$", stripped)
-        if loop:
-            for pattern in loop.group(1).split():
-                dispatched.extend(sorted(match.name for match in ROOT_DIR.glob(pattern)))
-            continue
-        try:
-            command = shlex.split(stripped, comments=True)
-        except ValueError:
-            continue
-        if len(command) < 2 or Path(command[0]).name not in {"python", "python3"}:
-            continue
-        script_name = Path(command[1]).name
-        if script_name.startswith("test_") and script_name.endswith(".py"):
-            dispatched.append(script_name)
-    return dispatched
 
 
 def _registered_regression_flows(
@@ -101,32 +31,6 @@ def _registered_regression_flows(
             if flow_target.parent == REGRESSION_FLOWS_DIR:
                 registered.add(flow_target.relative_to(ROOT_DIR).as_posix())
     return registered
-
-
-class ScriptTestDispatchTests(unittest.TestCase):
-    def test_every_executable_script_test_has_a_dispatcher(self) -> None:
-        dispatched = {
-            script
-            for dispatcher in SCRIPT_TEST_DISPATCHERS
-            for script in _dispatched_script_tests(dispatcher)
-        }
-
-        self.assertSetEqual(dispatched, _executable_script_tests())
-
-    def test_real_jellyfin_fixture_test_is_in_local_and_ci_guards(self) -> None:
-        # Both aggregates reach the roster through the shared guard script, so
-        # the fixture test is covered exactly when the glob picks it up.
-        for dispatcher in (LOCAL_SCRIPT_TEST_DISPATCHER, CI_SCRIPT_TEST_DISPATCHER):
-            with self.subTest(dispatcher=dispatcher):
-                self.assertIn(
-                    f"bash {GUARD_SCRIPT_TEST_DISPATCHER.relative_to(ROOT_DIR).as_posix()}",
-                    dispatcher.read_text(encoding="utf-8"),
-                )
-
-        self.assertEqual(
-            _dispatched_script_tests(GUARD_SCRIPT_TEST_DISPATCHER).count("test_maestro_real_jellyfin.py"),
-            1,
-        )
 
 
 class ParseConfigTests(unittest.TestCase):

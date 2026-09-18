@@ -557,11 +557,10 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   Future<void> updateDownloadError(String globalKey, String errorMessage) async {
-    final existing = await getDownloadedMedia(globalKey);
-    final currentCount = existing?.retryCount ?? 0;
-
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
-      DownloadedMediaCompanion(errorMessage: Value(errorMessage), retryCount: Value(currentCount + 1)),
+    await customUpdate(
+      'UPDATE downloaded_media SET error_message = ?, retry_count = retry_count + 1 WHERE global_key = ?',
+      variables: [Variable<String>(errorMessage), Variable<String>(globalKey)],
+      updates: {downloadedMedia},
     );
   }
 

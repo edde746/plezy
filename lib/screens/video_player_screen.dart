@@ -1106,8 +1106,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   /// Collapse every waiter armed for the current open: the attempt's outcome
-  /// (frame-rate startup gate, post-open subtitle readiness, sidecar guard),
-  /// the track manager's pending automatic selection, and the 503 watchdog.
+  /// (frame-rate startup gate, sidecar guard), the track manager's pending
+  /// automatic selection, and the 503 watchdog.
   /// Idempotent. Called from the terminal player-error branches, shutdown,
   /// and dispose — before the player closes its streams, so nothing waits on
   /// a `Stream.first` that can only die with them.

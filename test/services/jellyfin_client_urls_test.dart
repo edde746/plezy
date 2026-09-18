@@ -733,6 +733,53 @@ void main() {
       expect((jsonDecode(playbackInfoBody!) as Map<String, dynamic>)['MediaSourceId'], 'src-2');
     });
 
+    /// Jellyfin names the SRT codec `subrip`, but its extraction endpoint keys off the format, so
+    /// the raw name asks for a `Stream.subrip` the server never serves. The playback path already
+    /// canonicalizes it; the download sidecar has to agree or the pinned copy has no subtitles.
+    test('resolveDownload builds sidecar URLs from the endpoint format, not the reported codec', () async {
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({
+          'MediaSources': [
+            {
+              'Id': 'src-1',
+              'MediaStreams': [
+                {
+                  'Index': 3,
+                  'Type': 'Subtitle',
+                  'Codec': 'subrip',
+                  'Language': 'swe',
+                  'DisplayTitle': 'Swedish - SRT',
+                  'IsExternal': true,
+                },
+                {
+                  'Index': 4,
+                  'Type': 'Subtitle',
+                  'Codec': 'subrip',
+                  'Language': 'eng',
+                  'DisplayTitle': 'English - SRT',
+                  'IsExternal': true,
+                  'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/Stream.subrip',
+                },
+              ],
+            },
+          ],
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final resolution = await scoped.resolveDownload(
+        testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+      );
+
+      final byIndex = {for (final s in resolution.externalSubtitles) s.id: Uri.parse(s.url).path};
+      expect(byIndex[3], '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
+      expect(
+        byIndex[4],
+        '/Videos/item-1/src-1/Subtitles/4/Stream.subrip',
+        reason: 'a server-computed DeliveryUrl is what the server itself answered and must be requested verbatim',
+      );
+    });
+
     test('resolveDownload keeps the static stream after non-authentication enrichment failures', () async {
       final cases = <(String, Future<http.Response> Function(http.Request))>[
         ('server error', (_) async => http.Response('{}', 500, headers: {'content-type': 'application/json'})),
@@ -880,45 +927,34 @@ void main() {
     test('getPlaybackInitialization sends resume ticks without rewriting TranscodingUrl', () async {
       final playbackInfoUris = <Uri>[];
       final playbackInfoBodies = <String>[];
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {'Id': 'src-1', 'Container': 'mp4', 'MediaStreams': []},
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            playbackInfoUris.add(request.url);
-            playbackInfoBodies.add(request.body);
-            return jsonResponse({
-              'MediaSources': [
-                {
-                  'Id': 'src-1',
-                  'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=play-session-1',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'DisplayTitle': 'English - AAC'},
-                    {
-                      'Index': 2,
-                      'Type': 'Subtitle',
-                      'Codec': 'srt',
-                      'Language': 'eng',
-                      'DisplayTitle': 'English - SRT',
-                      'DeliveryMethod': 'External',
-                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/2/Stream.srt',
-                    },
-                  ],
-                },
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (request) async {
+          playbackInfoUris.add(request.url);
+          playbackInfoBodies.add(request.body);
+          return jsonResponse({
+            'MediaSources': [
+              {
+                'Id': 'src-1',
+                'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=play-session-1',
+                'MediaStreams': [
+                  {'Index': 0, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'DisplayTitle': 'English - AAC'},
+                  {
+                    'Index': 2,
+                    'Type': 'Subtitle',
+                    'Codec': 'srt',
+                    'Language': 'eng',
+                    'DisplayTitle': 'English - SRT',
+                    'DeliveryMethod': 'External',
+                    'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/2/Stream.srt',
+                  },
+                ],
+              },
+            ],
+          });
+        },
+        itemSources: [
+          {'Id': 'src-1', 'Container': 'mp4', 'MediaStreams': []},
+        ],
       );
       addTearDown(scoped.close);
 
@@ -1402,68 +1438,57 @@ void main() {
       // stay inside a direct-played container. Direct play never fetches those
       // URLs, so the rows must not keep an identity that makes track matching
       // wait for a sidecar (issue #1696).
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {'Id': 'src-1', 'Container': 'mkv', 'MediaStreams': []},
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            return jsonResponse({
-              'MediaSources': [
-                {
-                  'Id': 'src-1',
-                  'Container': 'mkv',
-                  'SupportsDirectPlay': true,
-                  'DefaultSubtitleStreamIndex': 3,
-                  'MediaStreams': [
-                    {'Index': 1, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'IsDefault': true},
-                    {
-                      'Index': 3,
-                      'Type': 'Subtitle',
-                      'Codec': 'ass',
-                      'Language': 'eng',
-                      'DisplayTitle': 'English Forced - ASS',
-                      'IsDefault': true,
-                      'IsForced': true,
-                      'IsExternal': false,
-                      'DeliveryMethod': 'External',
-                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/0/Stream.ass',
-                    },
-                    {
-                      'Index': 4,
-                      'Type': 'Subtitle',
-                      'Codec': 'ass',
-                      'Language': 'eng',
-                      'DisplayTitle': 'English - ASS',
-                      'IsExternal': false,
-                      'DeliveryMethod': 'External',
-                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/0/Stream.ass',
-                    },
-                    {
-                      'Index': 5,
-                      'Type': 'Subtitle',
-                      'Codec': 'srt',
-                      'Language': 'swe',
-                      'DisplayTitle': 'Swedish - SRT',
-                      'IsExternal': true,
-                      'DeliveryMethod': 'External',
-                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/5/0/Stream.srt',
-                    },
-                  ],
-                },
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (_) async {
+          return jsonResponse({
+            'MediaSources': [
+              {
+                'Id': 'src-1',
+                'Container': 'mkv',
+                'SupportsDirectPlay': true,
+                'DefaultSubtitleStreamIndex': 3,
+                'MediaStreams': [
+                  {'Index': 1, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'IsDefault': true},
+                  {
+                    'Index': 3,
+                    'Type': 'Subtitle',
+                    'Codec': 'ass',
+                    'Language': 'eng',
+                    'DisplayTitle': 'English Forced - ASS',
+                    'IsDefault': true,
+                    'IsForced': true,
+                    'IsExternal': false,
+                    'DeliveryMethod': 'External',
+                    'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/0/Stream.ass',
+                  },
+                  {
+                    'Index': 4,
+                    'Type': 'Subtitle',
+                    'Codec': 'ass',
+                    'Language': 'eng',
+                    'DisplayTitle': 'English - ASS',
+                    'IsExternal': false,
+                    'DeliveryMethod': 'External',
+                    'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/0/Stream.ass',
+                  },
+                  {
+                    'Index': 5,
+                    'Type': 'Subtitle',
+                    'Codec': 'srt',
+                    'Language': 'swe',
+                    'DisplayTitle': 'Swedish - SRT',
+                    'IsExternal': true,
+                    'DeliveryMethod': 'External',
+                    'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/5/0/Stream.srt',
+                  },
+                ],
+              },
+            ],
+          });
+        },
+        itemSources: [
+          {'Id': 'src-1', 'Container': 'mkv', 'MediaStreams': []},
+        ],
       );
       addTearDown(scoped.close);
 
@@ -1611,76 +1636,65 @@ void main() {
     test('getPlaybackInitialization maps semantic subtitle preferences to current source rows', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {
-                  'Id': 'src-1',
-                  'Container': 'mkv',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Video'},
-                    {'Index': 3, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng'},
-                    {'Index': 4, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'fra'},
-                    {'Index': 5, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng', 'IsForced': true},
-                  ],
-                },
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            playbackInfoUri = request.url;
-            playbackInfoBody = request.body;
-            return jsonResponse({
-              'PlaySessionId': 'play-session-direct',
-              'MediaSources': [
-                {
-                  'Id': 'src-1',
-                  'Container': 'mkv',
-                  'DefaultSubtitleStreamIndex': 4,
-                  'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=play-session-direct',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Video'},
-                    {
-                      'Index': 3,
-                      'Type': 'Subtitle',
-                      'Codec': 'srt',
-                      'Language': 'eng',
-                      'DisplayTitle': 'English - SRT',
-                      'DeliveryMethod': 'External',
-                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
-                    },
-                    {
-                      'Index': 4,
-                      'Type': 'Subtitle',
-                      'Codec': 'srt',
-                      'Language': 'fra',
-                      'DisplayTitle': 'French - SRT',
-                      'DeliveryMethod': 'External',
-                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
-                    },
-                    {
-                      'Index': 5,
-                      'Type': 'Subtitle',
-                      'Codec': 'srt',
-                      'Language': 'eng',
-                      'DisplayTitle': 'English Forced - SRT',
-                      'IsForced': true,
-                      'DeliveryMethod': 'External',
-                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/5/Stream.srt',
-                    },
-                  ],
-                },
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (request) async {
+          playbackInfoUri = request.url;
+          playbackInfoBody = request.body;
+          return jsonResponse({
+            'PlaySessionId': 'play-session-direct',
+            'MediaSources': [
+              {
+                'Id': 'src-1',
+                'Container': 'mkv',
+                'DefaultSubtitleStreamIndex': 4,
+                'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=play-session-direct',
+                'MediaStreams': [
+                  {'Index': 0, 'Type': 'Video'},
+                  {
+                    'Index': 3,
+                    'Type': 'Subtitle',
+                    'Codec': 'srt',
+                    'Language': 'eng',
+                    'DisplayTitle': 'English - SRT',
+                    'DeliveryMethod': 'External',
+                    'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+                  },
+                  {
+                    'Index': 4,
+                    'Type': 'Subtitle',
+                    'Codec': 'srt',
+                    'Language': 'fra',
+                    'DisplayTitle': 'French - SRT',
+                    'DeliveryMethod': 'External',
+                    'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
+                  },
+                  {
+                    'Index': 5,
+                    'Type': 'Subtitle',
+                    'Codec': 'srt',
+                    'Language': 'eng',
+                    'DisplayTitle': 'English Forced - SRT',
+                    'IsForced': true,
+                    'DeliveryMethod': 'External',
+                    'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/5/Stream.srt',
+                  },
+                ],
+              },
+            ],
+          });
+        },
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video'},
+              {'Index': 3, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng'},
+              {'Index': 4, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'fra'},
+              {'Index': 5, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng', 'IsForced': true},
+            ],
+          },
+        ],
       );
       addTearDown(scoped.close);
 
@@ -1896,38 +1910,27 @@ void main() {
     test('selected external audio is sent to PlaybackInfo but omitted from static fallback URL', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {
-                  'Id': 'src-1',
-                  'Container': 'mkv',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Video'},
-                    {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'IsDefault': true},
-                    {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'DeliveryMethod': 'External'},
-                  ],
-                },
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            playbackInfoUri = request.url;
-            playbackInfoBody = request.body;
-            return jsonResponse({
-              'MediaSources': [
-                {'Id': 'src-1'},
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (request) async {
+          playbackInfoUri = request.url;
+          playbackInfoBody = request.body;
+          return jsonResponse({
+            'MediaSources': [
+              {'Id': 'src-1'},
+            ],
+          });
+        },
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video'},
+              {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'IsDefault': true},
+              {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'DeliveryMethod': 'External'},
+            ],
+          },
+        ],
       );
       addTearDown(scoped.close);
 
@@ -1994,45 +1997,34 @@ void main() {
     test('stale selected audio stream is not sent for a source without that stream', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {
-                  'Id': 'src-1',
-                  'Container': 'mkv',
-                  'MediaStreams': [
-                    {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
-                    {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn'},
-                  ],
-                },
-                {
-                  'Id': 'src-2',
-                  'Container': 'mp4',
-                  'DefaultAudioStreamIndex': 8,
-                  'MediaStreams': [
-                    {'Index': 8, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
-                  ],
-                },
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            playbackInfoUri = request.url;
-            playbackInfoBody = request.body;
-            return jsonResponse({
-              'MediaSources': [
-                {'Id': 'src-2'},
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (request) async {
+          playbackInfoUri = request.url;
+          playbackInfoBody = request.body;
+          return jsonResponse({
+            'MediaSources': [
+              {'Id': 'src-2'},
+            ],
+          });
+        },
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+              {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn'},
+            ],
+          },
+          {
+            'Id': 'src-2',
+            'Container': 'mp4',
+            'DefaultAudioStreamIndex': 8,
+            'MediaStreams': [
+              {'Index': 8, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+            ],
+          },
+        ],
       );
       addTearDown(scoped.close);
 
@@ -2063,43 +2055,32 @@ void main() {
     test('playback initialization pins selected media source id over index', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {
-                  'Id': 'src-4k',
-                  'Container': 'mkv',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Height': 1608, 'Width': 3840},
-                  ],
-                },
-                {
-                  'Id': 'src-1080',
-                  'Container': 'mp4',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Height': 804, 'Width': 1920},
-                  ],
-                },
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            playbackInfoUri = request.url;
-            playbackInfoBody = request.body;
-            return jsonResponse({
-              'MediaSources': [
-                {'Id': 'src-1080'},
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (request) async {
+          playbackInfoUri = request.url;
+          playbackInfoBody = request.body;
+          return jsonResponse({
+            'MediaSources': [
+              {'Id': 'src-1080'},
+            ],
+          });
+        },
+        itemSources: [
+          {
+            'Id': 'src-4k',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Height': 1608, 'Width': 3840},
+            ],
+          },
+          {
+            'Id': 'src-1080',
+            'Container': 'mp4',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Height': 804, 'Width': 1920},
+            ],
+          },
+        ],
       );
       addTearDown(scoped.close);
 
@@ -2128,43 +2109,32 @@ void main() {
     test('playback initialization pins primary source id for multi-source direct fallback', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {
-                  'Id': 'item-1',
-                  'Container': 'mp4',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
-                  ],
-                },
-                {
-                  'Id': 'src-4k',
-                  'Container': 'mkv',
-                  'MediaStreams': [
-                    {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
-                  ],
-                },
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            playbackInfoUri = request.url;
-            playbackInfoBody = request.body;
-            return jsonResponse({
-              'MediaSources': [
-                {'Id': 'item-1'},
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (request) async {
+          playbackInfoUri = request.url;
+          playbackInfoBody = request.body;
+          return jsonResponse({
+            'MediaSources': [
+              {'Id': 'item-1'},
+            ],
+          });
+        },
+        itemSources: [
+          {
+            'Id': 'item-1',
+            'Container': 'mp4',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+            ],
+          },
+          {
+            'Id': 'src-4k',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
+            ],
+          },
+        ],
       );
       addTearDown(scoped.close);
 
@@ -2192,46 +2162,35 @@ void main() {
     test(
       'playback initialization ignores a mismatched negotiated source and keeps the selected static stream',
       () async {
-        final scoped = JellyfinClient.forTesting(
-          connection: _conn(),
-          httpClient: MockClient((request) async {
-            if (request.url.path == '/Users/user-1/Items/item-1') {
-              return jsonResponse({
-                'Id': 'item-1',
-                'Type': 'Movie',
-                'Name': 'Movie',
-                'MediaSources': [
-                  {
-                    'Id': 'src-1080',
-                    'Container': 'mp4',
-                    'MediaStreams': [
-                      {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
-                    ],
-                  },
-                  {
-                    'Id': 'src-4k',
-                    'Container': 'mkv',
-                    'MediaStreams': [
-                      {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
-                    ],
-                  },
-                ],
-              });
-            }
-            if (request.url.path == '/Items/item-1/PlaybackInfo') {
-              return jsonResponse({
-                'PlaySessionId': 'wrong-session',
-                'MediaSources': [
-                  {
-                    'Id': 'src-4k',
-                    'Container': 'mkv',
-                    'DirectStreamUrl': '/Videos/item-1/stream?MediaSourceId=src-4k&PlaySessionId=wrong-session',
-                  },
-                ],
-              });
-            }
-            return http.Response('{}', 404);
-          }),
+        final scoped = _clientWithPlaybackInfo(
+          (_) async {
+            return jsonResponse({
+              'PlaySessionId': 'wrong-session',
+              'MediaSources': [
+                {
+                  'Id': 'src-4k',
+                  'Container': 'mkv',
+                  'DirectStreamUrl': '/Videos/item-1/stream?MediaSourceId=src-4k&PlaySessionId=wrong-session',
+                },
+              ],
+            });
+          },
+          itemSources: [
+            {
+              'Id': 'src-1080',
+              'Container': 'mp4',
+              'MediaStreams': [
+                {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+              ],
+            },
+            {
+              'Id': 'src-4k',
+              'Container': 'mkv',
+              'MediaStreams': [
+                {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Height': 2160, 'Width': 3840},
+              ],
+            },
+          ],
         );
         addTearDown(scoped.close);
 
@@ -2795,34 +2754,23 @@ void main() {
     });
 
     test('getPlaybackInitialization builds fallback URL for external subtitle without DeliveryUrl', () async {
-      final scoped = JellyfinClient.forTesting(
-        connection: _conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path == '/Users/user-1/Items/item-1') {
-            return jsonResponse({
-              'Id': 'item-1',
-              'Type': 'Movie',
-              'Name': 'Movie',
-              'MediaSources': [
-                {
-                  'Id': 'src-1',
-                  'Container': 'mp4',
-                  'MediaStreams': [
-                    {'Index': 3, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng', 'IsExternal': true},
-                  ],
-                },
-              ],
-            });
-          }
-          if (request.url.path == '/Items/item-1/PlaybackInfo') {
-            return jsonResponse({
-              'MediaSources': [
-                {'Id': 'src-1'},
-              ],
-            });
-          }
-          return http.Response('{}', 404);
-        }),
+      final scoped = _clientWithPlaybackInfo(
+        (_) async {
+          return jsonResponse({
+            'MediaSources': [
+              {'Id': 'src-1'},
+            ],
+          });
+        },
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Container': 'mp4',
+            'MediaStreams': [
+              {'Index': 3, 'Type': 'Subtitle', 'Codec': 'srt', 'Language': 'eng', 'IsExternal': true},
+            ],
+          },
+        ],
       );
       addTearDown(scoped.close);
 

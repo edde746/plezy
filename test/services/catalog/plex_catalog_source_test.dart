@@ -481,6 +481,41 @@ void main() {
       expect(requests.first.url.queryParameters['X-Plex-Container-Size'], '100');
     });
 
+    test('watchlist snapshot keeps the first entry per identity and never unions discarded ids', () async {
+      final source = PlexCatalogSource(
+        PlexDiscoverClient(
+          _session,
+          httpClient: MockClient(
+            (request) async => jsonResponse({
+              'MediaContainer': {
+                'totalSize': 4,
+                'Metadata': [
+                  _metadata(),
+                  // Same imdb identity, different Plex/tmdb ids: discarded,
+                  // and its keys must not join the surviving entry's group.
+                  _metadata(ratingKey: 'plex-movie-1-dupe', tmdb: 99999),
+                  // Seasons are not Explore kinds.
+                  _metadata(ratingKey: 'plex-season-1', type: 'season', imdb: 'tt5555555', tmdb: 5555),
+                  // A missing title is rejected.
+                  _metadata(ratingKey: 'plex-movie-2', title: '', imdb: 'tt6666666', tmdb: 6666),
+                ],
+              },
+            }),
+          ),
+        ),
+      );
+      addTearDown(source.dispose);
+
+      await source.ensureWatchlistLoaded();
+
+      expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(plex: 'plex-movie-1')), isTrue);
+      expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(imdb: 'tt1375666')), isTrue);
+      expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(plex: 'plex-movie-1-dupe')), isFalse);
+      expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(tmdb: 99999)), isFalse);
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(imdb: 'tt5555555')), isFalse);
+      expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(imdb: 'tt6666666')), isFalse);
+    });
+
     test('an oversized watchlist page refetches as chunks when Discover rejects it', () async {
       final requests = <http.Request>[];
       final client = PlexDiscoverClient(

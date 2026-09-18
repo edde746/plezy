@@ -18,7 +18,7 @@ One command releases to every channel:
 Phases (in order):
     preflight   validate tools, credentials, git state
     changelog   generate per-channel release notes via the claude CLI
-    bump        bump pubspec version, commit, push (replaces release.yml)
+    bump        bump pubspec version, commit, push
     farm_start  trigger .github/workflows/build.yml for a tagged draft release
     play        build AAB, upload symbols, publish to Google Play production
     amazon      build APK, upload via the App Submission API, commit the edit

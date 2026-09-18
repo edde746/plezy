@@ -25,6 +25,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/device_identity.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
@@ -372,9 +373,6 @@ void main() {
         }
         return null;
       }
-
-      http.Response jsonResponse(Map<String, dynamic> body) =>
-          http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
 
       final client = PlexClient.forTesting(
         config: PlexConfig(

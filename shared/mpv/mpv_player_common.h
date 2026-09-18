@@ -407,11 +407,10 @@ class PropertyObservationRegistry {
   ObservationRequest Register(const std::string& name, const std::string& format, int id) {
     const mpv_format parsed_format = ParsePropertyFormat(format);
     std::lock_guard<std::mutex> lock(mutex_);
-    if (userdata_by_name_.find(name) != userdata_by_name_.end()) {
+    if (id_by_name_.find(name) != id_by_name_.end()) {
       return {false, 0, MPV_FORMAT_NONE};
     }
     const uint64_t userdata = next_userdata_++;
-    userdata_by_name_[name] = userdata;
     id_by_name_[name] = id;
     return {true, userdata, parsed_format};
   }
@@ -426,13 +425,11 @@ class PropertyObservationRegistry {
 
   void Clear() {
     std::lock_guard<std::mutex> lock(mutex_);
-    userdata_by_name_.clear();
     id_by_name_.clear();
   }
 
  private:
   uint64_t next_userdata_ = 1;
-  std::map<std::string, uint64_t> userdata_by_name_;
   std::map<std::string, int> id_by_name_;
   mutable std::mutex mutex_;
 };

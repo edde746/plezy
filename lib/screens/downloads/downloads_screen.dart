@@ -466,7 +466,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
   List<_MusicListEntry> _rowModels(DownloadProvider provider) {
     final rows = <_MusicListEntry>[];
     for (final album in provider.downloadedAlbums) {
-      final tracks = provider.getDownloadedTracksForAlbum(album.id);
+      final tracks = provider.getDownloadedTracksForAlbum(album.globalKey);
       if (tracks.isEmpty) continue;
       rows.add(_MusicListEntry.header(album));
       for (var i = 0; i < tracks.length; i++) {

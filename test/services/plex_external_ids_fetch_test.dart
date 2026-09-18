@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -7,12 +5,11 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
-
-http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+import '../test_helpers/http_fixtures.dart';
 
 /// A `/library/metadata/{id}` response carrying whichever guid shapes the
 /// server's agent produces.
-http.Response _metadata({List<Object>? guidArray, Object? scalarGuid}) => _json({
+http.Response _metadata({List<Object>? guidArray, Object? scalarGuid}) => jsonResponse({
   'MediaContainer': {
     'Metadata': [
       {'ratingKey': 'show-1', 'type': 'show', 'title': 'Show', 'guid': ?scalarGuid, 'Guid': ?guidArray},

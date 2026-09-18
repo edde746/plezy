@@ -99,8 +99,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         );
         if (!attempt.isCurrent) return;
 
-        _trackManager?.cacheExternalSubtitles(const []);
-
         await _initVideoFilterAndPip();
         if (!mounted || !attempt.isCurrent) return;
 

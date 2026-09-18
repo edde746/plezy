@@ -349,7 +349,7 @@ sealed class MediaItem with _$MediaItem {
       final playedFile = _filePathForPart(playedPartId);
       if (playedFile != null) return otherFiles.contains(playedFile);
     }
-    return allPartFiles.intersection(otherFiles).isNotEmpty;
+    return allPartFiles.any(otherFiles.contains);
   }
 
   /// The file path of this item's part with [partId], or null when unknown.
@@ -435,14 +435,9 @@ sealed class MediaItem with _$MediaItem {
   /// Copy with the watched flag applied so [isWatched] reflects it for every
   /// kind. This is the single mutation seam used by watch-state overlays.
   MediaItem withWatchedFlag(bool isWatched) {
-    var updated = copyWith(viewCount: isWatched ? 1 : 0);
     final total = leafWatchTotal;
-    if (total != null) {
-      updated = updated.copyWith(viewedLeafCount: isWatched ? total : 0);
-    } else if (!kind.usesLeafWatchCounts && viewedLeafCount != null) {
-      updated = updated.copyWith(viewedLeafCount: null);
-    }
-    return updated;
+    final viewedLeaf = total != null ? (isWatched ? total : 0) : (kind.usesLeafWatchCounts ? viewedLeafCount : null);
+    return copyWith(viewCount: isWatched ? 1 : 0, viewedLeafCount: viewedLeaf);
   }
 
   /// Display-friendly title that prefers the show name for episodes/seasons.

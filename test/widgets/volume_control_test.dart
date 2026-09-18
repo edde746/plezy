@@ -10,6 +10,7 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/widgets/video_controls/widgets/volume_control.dart';
 
+import '../test_helpers/player_streams.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -160,27 +161,7 @@ void main() {
 }
 
 class _VolumePlayer implements Player {
-  _VolumePlayer(this.volume)
-    : _streams = PlayerStreams(
-        playing: const Stream<bool>.empty(),
-        completed: const Stream<bool>.empty(),
-        buffering: const Stream<bool>.empty(),
-        position: const Stream<Duration>.empty(),
-        duration: const Stream<Duration>.empty(),
-        seekable: const Stream<bool>.empty(),
-        buffer: const Stream<Duration>.empty(),
-        volume: const Stream<double>.empty(),
-        rate: const Stream<double>.empty(),
-        tracks: const Stream<Tracks>.empty(),
-        track: const Stream<TrackSelection>.empty(),
-        log: const Stream<PlayerLog>.empty(),
-        error: const Stream<PlayerError>.empty(),
-        audioDevice: const Stream<AudioDevice>.empty(),
-        audioDevices: const Stream<List<AudioDevice>>.empty(),
-        bufferRanges: const Stream<List<BufferRange>>.empty(),
-        playbackRestart: const Stream<void>.empty(),
-        backendSwitched: const Stream<void>.empty(),
-      );
+  _VolumePlayer(this.volume) : _streams = emptyPlayerStreams();
 
   double volume;
   final List<double> volumeChanges = [];
@@ -209,26 +190,7 @@ final class _DelayedVolumePlayer extends _VolumePlayer {
   final StreamController<double> _volumeController = StreamController<double>.broadcast();
 
   @override
-  PlayerStreams get streams => PlayerStreams(
-    playing: const Stream<bool>.empty(),
-    completed: const Stream<bool>.empty(),
-    buffering: const Stream<bool>.empty(),
-    position: const Stream<Duration>.empty(),
-    duration: const Stream<Duration>.empty(),
-    seekable: const Stream<bool>.empty(),
-    buffer: const Stream<Duration>.empty(),
-    volume: _volumeController.stream,
-    rate: const Stream<double>.empty(),
-    tracks: const Stream<Tracks>.empty(),
-    track: const Stream<TrackSelection>.empty(),
-    log: const Stream<PlayerLog>.empty(),
-    error: const Stream<PlayerError>.empty(),
-    audioDevice: const Stream<AudioDevice>.empty(),
-    audioDevices: const Stream<List<AudioDevice>>.empty(),
-    bufferRanges: const Stream<List<BufferRange>>.empty(),
-    playbackRestart: const Stream<void>.empty(),
-    backendSwitched: const Stream<void>.empty(),
-  );
+  PlayerStreams get streams => emptyPlayerStreams(volume: _volumeController.stream);
 
   @override
   Future<void> setVolume(double requested) async {

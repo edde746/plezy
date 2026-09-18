@@ -16,6 +16,8 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
+import '../test_helpers/http_fixtures.dart';
+
 void main() {
   late AppDatabase db;
 
@@ -48,10 +50,6 @@ void main() {
       httpClient: MockClient(handler),
       epgProviders: epgProviders,
     );
-  }
-
-  http.Response jsonResponse(Map<String, dynamic> body) {
-    return http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
   }
 
   test('favorite source follows requested lineup provider', () async {

@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_state.dart';
@@ -21,6 +20,7 @@ import 'package:shared_preferences_platform_interface/in_memory_shared_preferenc
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:shared_preferences_platform_interface/types.dart';
 
+import '../test_helpers/player_streams.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
@@ -500,27 +500,7 @@ class _FakeSettingsPlayer implements Player {
     await hdrOutputChanged.close();
   }
 
-  late final PlayerStreams _streams = PlayerStreams(
-    playing: const Stream<bool>.empty(),
-    completed: const Stream<bool>.empty(),
-    buffering: const Stream<bool>.empty(),
-    position: const Stream<Duration>.empty(),
-    duration: const Stream<Duration>.empty(),
-    seekable: const Stream<bool>.empty(),
-    buffer: const Stream<Duration>.empty(),
-    volume: const Stream<double>.empty(),
-    rate: const Stream<double>.empty(),
-    tracks: const Stream<Tracks>.empty(),
-    track: const Stream<TrackSelection>.empty(),
-    log: const Stream<PlayerLog>.empty(),
-    error: const Stream<PlayerError>.empty(),
-    audioDevice: const Stream<AudioDevice>.empty(),
-    audioDevices: const Stream<List<AudioDevice>>.empty(),
-    bufferRanges: const Stream<List<BufferRange>>.empty(),
-    playbackRestart: const Stream<void>.empty(),
-    backendSwitched: const Stream<void>.empty(),
-    hdrOutputChanged: hdrOutputChanged.stream,
-  );
+  late final PlayerStreams _streams = emptyPlayerStreams(hdrOutputChanged: hdrOutputChanged.stream);
 
   final Future<void> Function(String name, String value)? onSetProperty;
   final Future<void> Function(double rate)? onSetRate;
