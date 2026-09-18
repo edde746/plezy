@@ -990,7 +990,7 @@ class DownloadManagerService {
             }
             appLogger.d('Path migration: videoFilePath="$vfp", normalized="$normalized"');
             if (normalized != vfp) {
-              await _database.updateVideoFilePath(item.globalKey, normalized);
+              await _database.updateVideoFilePath(item.globalKey, normalized, stampDownloadedAt: false);
               fixed++;
             }
           }

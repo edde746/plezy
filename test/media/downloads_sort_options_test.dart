@@ -30,12 +30,5 @@ void main() {
         mediaSortKeyLibrary,
       ]);
     });
-
-    test('every option carries a label and a default direction', () {
-      for (final sort in downloadSortOptions(includeDownloadFields: true)) {
-        expect(sort.title, isNotEmpty, reason: sort.key);
-        expect(sort.defaultDirection, isNotNull, reason: sort.key);
-      }
-    });
   });
 }

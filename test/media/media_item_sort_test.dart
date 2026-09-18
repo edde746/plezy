@@ -110,6 +110,9 @@ void main() {
     test('without an extras lookup every item is missing and falls back to title order', () {
       final items = [_item(id: 'b', title: 'Beta'), _item(id: 'a', title: 'Alpha')];
       expect(_sortedIds(items, mediaSortKeyDownloadedAt), ['a', 'b']);
+      // The missing-tail order is direction-independent: descending must not
+      // flip two absent values against each other.
+      expect(_sortedIds(items, mediaSortKeyDownloadedAt, descending: true), ['a', 'b']);
     });
   });
 
@@ -128,10 +131,10 @@ void main() {
         _ => (downloadedAt: null, totalBytes: null),
       };
 
-      // Missing entries stay at the tail; their internal title tiebreak
-      // flips with the direction like every other comparison.
+      // Missing entries stay at the tail; their internal title tiebreak is
+      // direction-independent so the tail reads the same in both directions.
       expect(_sortedIds(items, mediaSortKeySize, extras: extras), ['small', 'big', 'zero', 'none']);
-      expect(_sortedIds(items, mediaSortKeySize, extras: extras, descending: true), ['big', 'small', 'none', 'zero']);
+      expect(_sortedIds(items, mediaSortKeySize, extras: extras, descending: true), ['big', 'small', 'zero', 'none']);
     });
   });
 

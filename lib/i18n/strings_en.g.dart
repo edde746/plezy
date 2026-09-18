@@ -6091,8 +6091,8 @@ class Translations$libraries$sortLabels$en {
 	/// en: 'Last Episode Date Added'
 	String get lastEpisodeDateAdded => 'Last Episode Date Added';
 
-	/// en: 'Date downloaded'
-	String get dateDownloaded => 'Date downloaded';
+	/// en: 'Date Downloaded'
+	String get dateDownloaded => 'Date Downloaded';
 
 	/// en: 'Size'
 	String get size => 'Size';
@@ -8163,7 +8163,7 @@ extension on Translations {
 			'libraries.sortLabels.dateShared' => 'Date Shared',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
-			'libraries.sortLabels.dateDownloaded' => 'Date downloaded',
+			'libraries.sortLabels.dateDownloaded' => 'Date Downloaded',
 			'libraries.sortLabels.size' => 'Size',
 			'libraries.sortLabels.library' => 'Library',
 			'about.title' => 'About',

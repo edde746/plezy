@@ -31,6 +31,7 @@ import '../../widgets/download_tree_view.dart';
 import '../libraries/library_browse_grouping.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
+import '../libraries/content_state_builder.dart';
 import 'downloads_options.dart';
 import '../../i18n/strings.g.dart';
 import 'sync_rules_screen.dart';
@@ -257,9 +258,23 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           );
                         },
                       ),
-                      _DownloadsGridContent(key: _tvShowsTabKey, type: DownloadType.tvShows, onBack: focusTabBar),
-                      _DownloadsGridContent(key: _moviesTabKey, type: DownloadType.movies, onBack: focusTabBar),
-                      _DownloadedMusicContent(key: _musicTabKey, onBack: focusTabBar),
+                      _DownloadsGridContent(
+                        key: _tvShowsTabKey,
+                        type: DownloadType.tvShows,
+                        isActive: tabController.index == 1,
+                        onBack: focusTabBar,
+                      ),
+                      _DownloadsGridContent(
+                        key: _moviesTabKey,
+                        type: DownloadType.movies,
+                        isActive: tabController.index == 2,
+                        onBack: focusTabBar,
+                      ),
+                      _DownloadedMusicContent(
+                        key: _musicTabKey,
+                        isActive: tabController.index == 3,
+                        onBack: focusTabBar,
+                      ),
                     ],
                   ),
                 ),
@@ -283,7 +298,12 @@ class _DownloadsGridContent extends StatefulWidget {
   final DownloadType type;
   final VoidCallback? onBack;
 
-  const _DownloadsGridContent({super.key, required this.type, this.onBack});
+  /// Whether this tab is the visible one. Kept-alive tabs skip their content
+  /// while off-screen so a download-progress notification doesn't rebuild
+  /// (and re-derive the whole list for) every tab.
+  final bool isActive;
+
+  const _DownloadsGridContent({super.key, required this.type, required this.isActive, this.onBack});
 
   @override
   State<_DownloadsGridContent> createState() => _DownloadsGridContentState();
@@ -293,7 +313,6 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
     with AutomaticKeepAliveClientMixin, DownloadsTabOptionsMixin<_DownloadsGridContent> {
   @override
   bool get wantKeepAlive => true;
-
   @override
   String get optionsSectionId => widget.type == DownloadType.tvShows ? 'downloads:tv' : 'downloads:movies';
 
@@ -343,6 +362,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (!widget.isActive) return const SizedBox.shrink();
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
         final items = _items(downloadProvider);
@@ -373,6 +393,9 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
                 settings.read(SettingsService.episodePosterMode) == EpisodePosterMode.episodeThumbnail;
 
             return CustomScrollView(
+              // Restores the scroll offset when the tab is re-entered after
+              // being swapped out while inactive.
+              key: PageStorageKey('downloads_grid_${widget.type.name}'),
               // Allow focus decoration to render outside scroll bounds.
               clipBehavior: Clip.none,
               slivers: [
@@ -460,6 +483,19 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
   }
 
   Widget _emptySliver() {
+    if (hasActiveFilters) {
+      return SliverEmptyState(
+        message: t.libraries.noItemsMatchFilters,
+        icon: Symbols.filter_alt_off_rounded,
+        onAction: resetDownloadsFilters,
+        actionLabel: t.libraries.resetFilters,
+        actionIcon: Symbols.clear_all_rounded,
+        actionFocusNode: firstItemFocusNode,
+        onActionNavigateUp: navigateToChips,
+        onActionNavigateLeft: navigateToSidebar,
+        onActionBack: widget.onBack,
+      );
+    }
     return SliverFillRemaining(
       child: EmptyStateWidget(
         message: t.downloads.noDownloads,
@@ -497,7 +533,12 @@ class _MusicListEntry {
 class _DownloadedMusicContent extends StatefulWidget {
   final VoidCallback? onBack;
 
-  const _DownloadedMusicContent({super.key, this.onBack});
+  /// Whether this tab is the visible one. Kept-alive tabs skip their content
+  /// while off-screen so a download-progress notification doesn't rebuild
+  /// (and re-derive the whole list for) every tab.
+  final bool isActive;
+
+  const _DownloadedMusicContent({super.key, required this.isActive, this.onBack});
 
   @override
   State<_DownloadedMusicContent> createState() => _DownloadedMusicContentState();
@@ -507,7 +548,6 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
     with AutomaticKeepAliveClientMixin, DownloadsTabOptionsMixin<_DownloadedMusicContent> {
   @override
   bool get wantKeepAlive => true;
-
   @override
   String get optionsSectionId => 'downloads:music';
 
@@ -638,6 +678,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (!widget.isActive) return const SizedBox.shrink();
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
         // Keep the last rows reachable above the floating mini-player.
@@ -652,6 +693,9 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
             final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
 
             return CustomScrollView(
+              // Restores the scroll offset when the tab is re-entered after
+              // being swapped out while inactive.
+              key: const PageStorageKey('downloads_music'),
               // Allow focus decoration to render outside scroll bounds.
               clipBehavior: Clip.none,
               slivers: [
@@ -813,6 +857,19 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
   }
 
   Widget _emptySliver() {
+    if (hasActiveFilters) {
+      return SliverEmptyState(
+        message: t.libraries.noItemsMatchFilters,
+        icon: Symbols.filter_alt_off_rounded,
+        onAction: resetDownloadsFilters,
+        actionLabel: t.libraries.resetFilters,
+        actionIcon: Symbols.clear_all_rounded,
+        actionFocusNode: firstItemFocusNode,
+        onActionNavigateUp: navigateToChips,
+        onActionNavigateLeft: navigateToSidebar,
+        onActionBack: widget.onBack,
+      );
+    }
     return SliverFillRemaining(
       child: EmptyStateWidget(
         message: t.downloads.noDownloads,

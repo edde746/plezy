@@ -526,11 +526,14 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  Future<void> updateVideoFilePath(String globalKey, String filePath) async {
+  /// Record the on-disk video path. [stampDownloadedAt] marks the row's
+  /// completion time — true for a fresh download, false for path-only repairs
+  /// (normalization, migration) that must not move the sort timestamp.
+  Future<void> updateVideoFilePath(String globalKey, String filePath, {bool stampDownloadedAt = true}) async {
     await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
       DownloadedMediaCompanion(
         videoFilePath: Value(filePath),
-        downloadedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        downloadedAt: stampDownloadedAt ? Value(DateTime.now().millisecondsSinceEpoch) : const Value.absent(),
       ),
     );
   }

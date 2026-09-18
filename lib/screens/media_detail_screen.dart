@@ -1782,7 +1782,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // Season rows come from the provider: stored season metadata when present,
     // with leaf counts and library identity derived from the downloaded
     // episodes so the unwatched badge and library grouping work offline.
-    final seasons = downloadProvider.downloadedSeasonsForShow(_metadata.globalKey);
+    final seasons = downloadProvider.downloadedSeasonsForShow(_metadata.globalKey, showFallback: _metadata);
 
     // Group episodes by season for the per-season pager cache.
     final Map<int, List<MediaItem>> seasonMap = {};

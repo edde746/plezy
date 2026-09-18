@@ -222,7 +222,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       return MediaNavigationResult.navigated;
 
     case MediaKind.album:
-      await navigateToAlbum(context, mi);
+      await navigateToAlbum(context, mi, isOffline: isOffline);
       return MediaNavigationResult.navigated;
 
     case MediaKind.track:

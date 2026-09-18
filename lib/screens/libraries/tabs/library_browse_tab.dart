@@ -1304,6 +1304,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       });
       _loadItems();
       _loadFirstCharacters();
+      // Persist the clear — otherwise the stored sort resurrects on the
+      // next restore (tab switch, cold start).
+      StorageService.getInstance().then((storage) {
+        storage.clearLibrarySort(widget.library.globalKey);
+      });
     } else if (sort != null && (sort.key != _selectedSort?.key || descending != _isSortDescending)) {
       setState(() {
         _selectedSort = sort;

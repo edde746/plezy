@@ -41,7 +41,7 @@ Comparator<MediaItem> mediaItemSortComparator(
 
     // Missing values pin to the tail in both directions, so the placement
     // check happens before the descending flip.
-    if (aValue == null && bValue == null) return _tiebreak(a, b, descending);
+    if (aValue == null && bValue == null) return _tiebreak(a, b, false);
     if (aValue == null) return 1;
     if (bValue == null) return -1;
 

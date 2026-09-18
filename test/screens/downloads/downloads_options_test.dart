@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/connection/connection.dart';
@@ -16,7 +15,6 @@ import 'package:plezy/navigation/main_screen_scope.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/downloads/downloads_options.dart';
-import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/downloads/downloads_screen.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
@@ -133,15 +131,17 @@ void main() {
     await tester.pump();
   }
 
-  MediaItem movie(String id, {required String title, String? libraryId, String? libraryTitle}) => testMediaItem(
-    id: id,
-    kind: MediaKind.movie,
-    title: title,
-    serverId: 'srv',
-    serverName: 'Server One',
-    libraryId: libraryId,
-    libraryTitle: libraryTitle,
-  );
+  MediaItem movie(String id, {required String title, String? libraryId, String? libraryTitle, int? viewCount}) =>
+      testMediaItem(
+        id: id,
+        kind: MediaKind.movie,
+        title: title,
+        serverId: 'srv',
+        serverName: 'Server One',
+        libraryId: libraryId,
+        libraryTitle: libraryTitle,
+        viewCount: viewCount,
+      );
 
   MediaItem episode(String id, {required String title, String? libraryId, String? libraryTitle}) => testMediaItem(
     id: id,
@@ -277,5 +277,72 @@ void main() {
     expect(find.text('Library A'), findsOneWidget);
     expect(find.text('Library B'), findsOneWidget);
     expect(cards(tester), hasLength(2));
+  });
+
+  testWidgets('persisted library filter survives a cold start before downloads load', (tester) async {
+    final storage = await StorageService.getInstance();
+    await storage.saveLibraryFilters({'library': 'srv:lib-a'}, sectionId: 'downloads:movies');
+
+    // Pump with an empty provider: the tab restores its options before any
+    // downloads exist, so validating against the (empty) library list would
+    // drop the filter. Seeding afterwards must still apply it.
+    final screenKey = GlobalKey<DownloadsScreenState>();
+    await pumpScreen(tester, screenKey: screenKey);
+    screenKey.currentState!.tabController.index = 2;
+    await tester.pumpAndSettle();
+
+    seed([
+      movie('m-1', title: 'Alpha One', libraryId: 'lib-a', libraryTitle: 'Library A'),
+      movie('m-2', title: 'Alpha Two', libraryId: 'lib-a', libraryTitle: 'Library A'),
+      movie('m-3', title: 'Beta One', libraryId: 'lib-b', libraryTitle: 'Library B'),
+    ]);
+    downloadProvider.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(cards(tester).map((card) => (card.item as MediaItem).title), ['Alpha One', 'Alpha Two']);
+  });
+
+  testWidgets('a legacy global filter does not leak into the downloads tab', (tester) async {
+    final storage = await StorageService.getInstance();
+    // The unscoped (legacy) key is what old library browse builds wrote.
+    await storage.saveLibraryFilters({'unwatched': '1'});
+
+    seed([
+      movie('m-1', title: 'Watched', libraryId: 'lib-a', libraryTitle: 'Library A', viewCount: 1),
+      movie('m-2', title: 'Unwatched', libraryId: 'lib-a', libraryTitle: 'Library A'),
+    ]);
+    final screenKey = GlobalKey<DownloadsScreenState>();
+    await pumpScreen(tester, screenKey: screenKey);
+    screenKey.currentState!.tabController.index = 2;
+    await tester.pumpAndSettle();
+
+    // Both movies render: the global `unwatched` filter must not apply.
+    expect(cards(tester), hasLength(2));
+  });
+
+  testWidgets('a filter that matches nothing shows the reset state and clears on tap', (tester) async {
+    seed([
+      movie('m-1', title: 'Watched', libraryId: 'lib-a', libraryTitle: 'Library A', viewCount: 1),
+      movie('m-2', title: 'Also Watched', libraryId: 'lib-a', libraryTitle: 'Library A', viewCount: 2),
+    ]);
+    final screenKey = GlobalKey<DownloadsScreenState>();
+    await pumpScreen(tester, screenKey: screenKey);
+    screenKey.currentState!.tabController.index = 2;
+    await tester.pumpAndSettle();
+
+    await openOptionsRow(tester, 'Filters');
+    await tester.tap(find.text('Unwatched'));
+    await tester.pumpAndSettle();
+
+    // Every movie is watched: the grid swaps to the filtered-empty state
+    // with a reset affordance instead of the bare "no downloads" message.
+    expect(cards(tester), isEmpty);
+    expect(find.text('Reset filters'), findsOneWidget);
+
+    await tester.tap(find.text('Reset filters'));
+    await tester.pumpAndSettle();
+
+    expect(cards(tester), hasLength(2));
+    final storage = await StorageService.getInstance();
+    expect(storage.getLibraryFilters(sectionId: 'downloads:movies'), isEmpty);
   });
 }

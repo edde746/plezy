@@ -74,7 +74,18 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   bool _sortDescending = false;
   Map<String, String> _filters = const {};
 
+  /// Display names for selected filter values, fed to the desktop anchored
+  /// popup's subtitle (the sheet keeps its own equivalent cache).
+  final Map<String, String> _filterValueDisplayNames = {};
+
   String get selectedGrouping => _grouping;
+
+  /// Whether any filter is currently active — drives the filtered-empty
+  /// state (reset affordance instead of the bare "no downloads" message).
+  bool get hasActiveFilters => _filters.isNotEmpty;
+
+  /// Clear every active filter (the filtered-empty state's reset action).
+  void resetDownloadsFilters() => unawaited(_applyFilters(const {}));
 
   /// Call from [State.initState]: seeds the default grouping and kicks off the
   /// persisted-selection restore.
@@ -92,31 +103,27 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   }
 
   /// Restore grouping/sort/filters persisted under [optionsSectionId].
-  /// Filter keys are whitelisted to the ones the downloads UI offers and a
-  /// stored library value is dropped when it no longer names a downloaded
-  /// library (legacy-global fallback or a since-removed server).
+  /// Filter keys are whitelisted to the ones the downloads UI offers. Stored
+  /// values are kept unconditionally: validating a `library` value against
+  /// [DownloadProvider.downloadedLibraries] at init time races the provider's
+  /// own load and would silently drop a valid filter on cold start — a stale
+  /// value instead just matches nothing until the user clears it.
   Future<void> _restoreOptions() async {
     final storage = await StorageService.getInstance();
     if (!mounted) return;
 
     final savedGrouping = storage.getLibraryGrouping(optionsSectionId);
     final savedSort = storage.getLibrarySort(optionsSectionId);
-    final savedFilters = storage.getLibraryFilters(sectionId: optionsSectionId);
+    // Strict sectioned read: the legacy-global fallback would leak a stale
+    // library browse filter (e.g. `unwatched`) into every downloads tab.
+    final savedFilters = storage.getLibraryFilters(sectionId: optionsSectionId, legacyGlobalFallback: false);
 
-    final provider = context.read<DownloadProvider>();
-    final validLibraryValues = {
-      for (final library in provider.downloadedLibraries)
-        downloadLibraryFilterValue(library.serverId, library.libraryId),
-    };
     final restoredFilters = <String, String>{};
     for (final entry in savedFilters.entries) {
       switch (entry.key) {
         case downloadFilterUnwatched:
-          restoredFilters[entry.key] = entry.value;
         case downloadFilterLibrary:
-          if (validLibraryValues.contains(entry.value)) {
-            restoredFilters[entry.key] = entry.value;
-          }
+          restoredFilters[entry.key] = entry.value;
       }
     }
 
@@ -145,22 +152,20 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   }
 
   /// Filter then sort [items] with the tab's current selection. Sort extras
-  /// resolve download bookkeeping (timestamp, byte size) from the provider's
-  /// progress map.
+  /// resolve download bookkeeping (timestamp, byte size) once per call —
+  /// containers aggregate over their downloaded leaves.
   List<MediaItem> applyDownloadsOptions(DownloadProvider provider, List<MediaItem> items) {
     final filtered = _filters.isEmpty
-        ? items
+        ? List.of(items)
         : items.where((item) => downloadItemMatchesFilters(item, _filters)).toList();
     final sort = _sort;
     if (sort == null) return filtered;
+    final extras = provider.downloadSortExtras(filtered);
     filtered.sort(
       mediaItemSortComparator(
         sort.key,
         descending: _sortDescending,
-        extras: (item) => (
-          downloadedAt: provider.downloads[item.globalKey]?.downloadedAt,
-          totalBytes: provider.downloads[item.globalKey]?.totalBytes,
-        ),
+        extras: (item) => extras[item.globalKey] ?? (downloadedAt: null, totalBytes: null),
       ),
     );
     return filtered;
@@ -207,12 +212,18 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
     final multiServer = libraries.map((library) => library.serverId).toSet().length > 1;
     return [
       for (final library in libraries)
-        MediaFilterValue(
-          key: downloadLibraryFilterValue(library.serverId, library.libraryId),
-          title: multiServer
-              ? '${library.title} (${serverManager.serverDisplayName(ServerId(library.serverId))})'
-              : library.title,
-        ),
+        () {
+          // Unstamped buckets carry the server name as their title; resolve a
+          // live display name when the metadata lacks one (serverDisplayName
+          // falls back to the raw id — detect that), and skip the suffix so
+          // they don't render as "Server (Server)".
+          final serverName = serverManager.serverDisplayName(ServerId(library.serverId));
+          final title = library.libraryId == null && serverName != library.serverId ? serverName : library.title;
+          return MediaFilterValue(
+            key: downloadLibraryFilterValue(library.serverId, library.libraryId),
+            title: multiServer && title != serverName ? '$title ($serverName)' : title,
+          );
+        }(),
     ];
   }
 
@@ -408,6 +419,11 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
         _sort = null;
         _sortDescending = false;
       });
+      // Persist the clear — otherwise the stored sort resurrects on the
+      // next restore (tab switch, cold start).
+      StorageService.getInstance().then((storage) {
+        storage.clearLibrarySort(optionsSectionId);
+      });
     } else if (sort != null && (sort.key != _sort?.key || descending != _sortDescending)) {
       setState(() {
         _sort = sort;
@@ -454,6 +470,7 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
 
   /// Desktop counterpart of [FiltersBottomSheet]: a categories popup, then a
   /// values popup for the picked category. Boolean categories toggle inline.
+
   Future<void> _showFiltersMenu(Rect anchorRect) async {
     final updated = await showAnchoredFiltersMenu(
       context,
@@ -461,6 +478,7 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
       filters: _filterDefinitions,
       selectedFilters: _filters,
       loadFilterValues: _loadFilterValues,
+      valueDisplayNames: _filterValueDisplayNames,
       allLabel: t.libraries.all,
     );
     if (!mounted || updated == null) return;
