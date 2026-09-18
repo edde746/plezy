@@ -814,6 +814,14 @@ abstract class MediaServerClient {
   /// a partial resolution.
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 
+  /// Return [item] with `libraryId`/`libraryTitle` populated when the backend
+  /// can resolve them. Plex items already carry librarySectionID/Title and are
+  /// returned unchanged; Jellyfin/Emby look the owning CollectionFolder up via
+  /// `/Items/{id}/Ancestors`. Used by the download pipeline to stamp library
+  /// identity onto the durable row. May throw — callers treat failure as
+  /// "unstamped" and must not let it block their work.
+  Future<MediaItem> stampLibrary(MediaItem item);
+
   /// The artwork files the download pipeline should persist for [item] so
   /// the offline UI can render its poster, clear logo, and background art.
   /// Each entry pairs the absolute URL with a stable `localKey` the

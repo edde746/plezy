@@ -63,6 +63,13 @@ class DownloadedMedia extends Table {
   TextColumn get bgTaskId => text().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get mediaSourceId => text().nullable()();
+
+  /// Owning library identity, stamped at enqueue time so downloads can be
+  /// grouped/filtered by library while offline. Plex items carry
+  /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
+  /// Null for rows enqueued before v23 or when resolution was skipped/failed.
+  TextColumn get libraryId => text().nullable()();
+  TextColumn get libraryTitle => text().nullable()();
 }
 
 /// Profile ownership for shared physical downloads.

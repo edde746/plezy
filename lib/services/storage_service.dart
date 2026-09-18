@@ -262,13 +262,16 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.setString('$prefix$baseKey', jsonString);
   }
 
-  Map<String, String> getLibraryFilters({String? sectionId}) {
+  Map<String, String> getLibraryFilters({String? sectionId, bool legacyGlobalFallback = true}) {
     final baseKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
 
     // Prefer per-library filters when available
     var jsonString = _getScopedString(baseKey);
-    if (jsonString == null && sectionId != null) {
-      // Legacy support: fall back to global filters if present
+    if (jsonString == null && sectionId != null && legacyGlobalFallback) {
+      // Legacy support: fall back to global filters if present. Surfaces
+      // that are not a library (e.g. the downloads tabs) pass
+      // legacyGlobalFallback: false so a stale global filter cannot leak
+      // into their restored selection.
       jsonString = _getScopedString(_keyLibraryFilters);
     }
     if (jsonString == null) return {};
@@ -290,6 +293,13 @@ class StorageService extends BaseSharedPreferencesService {
     read: (key) => _readJsonMap(key, legacyStringOk: true),
     write: _setJsonMap,
   );
+
+  /// Remove a stored sort for [sectionId], including the legacy unscoped
+  /// slot so a cleared sort cannot resurrect through read-time adoption.
+  Future<void> clearLibrarySort(String sectionId) async {
+    await prefs.remove('$_userPrefix$_prefixLibrarySort$sectionId');
+    await prefs.remove('$_prefixLibrarySort$sectionId');
+  }
 
   // Library Grouping (per-library, e.g., 'movies', 'shows', 'seasons', 'episodes')
   Future<void> saveLibraryGrouping(String sectionId, String grouping, {String? profileId}) async {

@@ -90,7 +90,6 @@ import '../mixins/listenable_bindings_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
 import '../utils/library_content_notifier.dart';
-import '../utils/global_key_utils.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/fitting_title_text.dart';
@@ -1780,47 +1779,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     final downloadProvider = context.read<DownloadProvider>();
     final episodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.globalKey);
+    // Season rows come from the provider: stored season metadata when present,
+    // with leaf counts and library identity derived from the downloaded
+    // episodes so the unwatched badge and library grouping work offline.
+    final seasons = downloadProvider.downloadedSeasonsForShow(_metadata.globalKey, showFallback: _metadata);
 
-    // Group episodes by season
+    // Group episodes by season for the per-season pager cache.
     final Map<int, List<MediaItem>> seasonMap = {};
     for (final episode in episodes) {
       final seasonNum = episode.parentIndex ?? 0;
       seasonMap.putIfAbsent(seasonNum, () => []).add(episode);
     }
-
-    // Create synthetic season MediaItems from the grouped episodes.
-    final seasons = seasonMap.entries.map((entry) {
-      final firstEp = entry.value.first;
-      final seasonId = firstEp.parentId ?? '';
-      final seasonGlobalKey = _metadata.serverId == null || seasonId.isEmpty
-          ? null
-          : buildGlobalKey(ServerId(_metadata.serverId!), seasonId);
-      final storedSeason = seasonGlobalKey == null ? null : downloadProvider.getMetadata(seasonGlobalKey);
-      if (storedSeason != null && storedSeason.isSeason) {
-        return _withFallbackLibrary(
-          storedSeason.copyWith(
-            serverId: _metadata.serverId,
-            serverName: _metadata.serverName ?? storedSeason.serverName,
-            leafCount: storedSeason.leafCount ?? entry.value.length,
-          ),
-          _metadata,
-        );
-      }
-      return MediaItem(
-        id: seasonId,
-        backend: _metadata.backend,
-        kind: MediaKind.season,
-        title: firstEp.parentTitle?.isNotEmpty == true ? firstEp.parentTitle : t.common.seasonNumber(number: entry.key),
-        index: entry.key,
-        leafCount: entry.value.length,
-        thumbPath: firstEp.parentThumbPath,
-        parentId: firstEp.grandparentId,
-        libraryId: firstEp.libraryId ?? _metadata.libraryId,
-        libraryTitle: firstEp.libraryTitle ?? _metadata.libraryTitle,
-        serverId: _metadata.serverId,
-        serverName: _metadata.serverName,
-      );
-    }).toList()..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
     // Create focus nodes for season tabs and cache episodes per season
     _updateSeasonTabFocusNodes(seasons.length);

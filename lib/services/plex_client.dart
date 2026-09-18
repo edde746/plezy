@@ -4731,6 +4731,11 @@ class PlexClient
     );
   }
 
+  /// Plex metadata rows already carry `librarySectionID`/`librarySectionTitle`,
+  /// so there is nothing to resolve.
+  @override
+  Future<MediaItem> stampLibrary(MediaItem item) => Future.value(item);
+
   @override
   List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) {
     return buildArtworkSpecs(item, getThumbnailUrl);

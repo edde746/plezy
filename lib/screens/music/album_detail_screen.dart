@@ -43,7 +43,11 @@ import '../focusable_detail_screen_mixin.dart';
 class AlbumDetailScreen extends StatefulWidget {
   final MediaItem album;
 
-  const AlbumDetailScreen({super.key, required this.album});
+  /// Offline mode: the track list comes from [DownloadProvider] instead of
+  /// the server — the entry point for downloaded albums.
+  final bool isOffline;
+
+  const AlbumDetailScreen({super.key, required this.album, this.isOffline = false});
 
   @override
   State<AlbumDetailScreen> createState() => _AlbumDetailScreenState();
@@ -83,7 +87,9 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   bool get hasItems => items.isNotEmpty;
 
   @override
-  Future<List<MediaItem>> fetchItems() => mediaClient.fetchAlbumTracks(widget.album.id);
+  Future<List<MediaItem>> fetchItems() => widget.isOffline
+      ? Future.value(context.read<DownloadProvider>().getDownloadedTracksForAlbum(widget.album.globalKey))
+      : mediaClient.fetchAlbumTracks(widget.album.id);
 
   @override
   Future<void> loadItems() async {
@@ -112,7 +118,10 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   Future<void> _openArtist() async {
     final parentId = widget.album.parentId;
     if (parentId == null) return;
-    await openArtistById(context, mediaClient, parentId);
+    // Offline (or a vanished server) there is no client to resolve the artist.
+    final client = context.tryGetMediaClientWithFallback(serverIdOrNull(widget.album.serverId));
+    if (client == null) return;
+    await openArtistById(context, client, parentId);
   }
 
   void _showOverflowMenuAt(BuildContext buttonContext) {
