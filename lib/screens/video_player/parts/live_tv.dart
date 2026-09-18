@@ -549,6 +549,12 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         _live.channelIndex = newIndex;
         _live.channelName = channel.displayName;
       });
+      unawaited(
+        _mediaControlsManager?.updateMetadata(
+          metadata: _mediaControlsItem,
+          client: _getOnlineMediaServerClient(context),
+        ),
+      );
 
       // Restart timeline heartbeats for the new session
       _startLiveTimelineUpdates();

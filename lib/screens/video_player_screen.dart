@@ -915,6 +915,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
   MediaControlsManager? _mediaControlsManager;
+
+  MediaItem get _mediaControlsItem {
+    if (!widget.isLive) return _currentMetadata;
+    final channels = widget.live?.channels;
+    final channel = channels != null && _live.channelIndex >= 0 && _live.channelIndex < channels.length
+        ? channels[_live.channelIndex]
+        : null;
+    return _currentMetadata.copyWith(
+      title: _live.channelName ?? _currentMetadata.title,
+      thumbPath: channel?.thumb ?? _currentMetadata.thumbPath,
+    );
+  }
+
   late final MediaControlsScreenController _mediaControls = MediaControlsScreenController(
     manager: () => _mediaControlsManager,
     player: () => player,
@@ -922,7 +935,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     isLive: widget.isLive,
     shouldSkipForPip: () => _shouldSkipForPip,
     isPlayerInitialized: () => _isPlayerInitialized,
-    metadata: () => _currentMetadata,
+    metadata: () => _mediaControlsItem,
     client: () => _isOfflinePlayback ? null : _getMediaServerClient(context),
     isPlaylistActive: () => context.read<PlaybackStateProvider>().isPlaylistActive,
     canControlPlayback: () => _canControlPlayback(),
@@ -1218,6 +1231,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// standing up the full service layer.
   @visibleForTesting
   MediaControlRouter debugMediaControlRouterForTesting() => _buildMediaControlRouter();
+
+  @visibleForTesting
+  Future<void> debugInitializeServicesForTesting() => _initializeServices();
 
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
 

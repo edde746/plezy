@@ -488,15 +488,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (!mounted || _shuttingDown || currentPlayer == null || _hasFatalPlaybackError) return;
 
     // Live TV: send timeline heartbeats to keep transcode session alive
-    if (widget.isLive) {
-      _startLiveTimelineUpdates();
-      return;
-    }
+    if (widget.isLive) _startLiveTimelineUpdates();
 
     // Get a live reporting client when possible. Downloaded/local playback
     // still uses this path when the server is reachable.
     final mediaClient = _playbackContext?.reportingClient ?? _getOnlineMediaServerClient(context);
-    final offlineWatchService = context.read<OfflineWatchSyncService>();
 
     // Initialize media controls manager (must exist before the per-item
     // helper wires its metadata update).
@@ -527,17 +523,21 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }),
     );
 
-    // Wire progress tracker, media-controls metadata, and the
-    // Discord/Trakt/Tracker scrobblers. Shared with [_reloadMediaInPlace]
-    // so the two flows can't drift.
-    _wirePerItemPlaybackServices(
-      metadata: _currentMetadata,
-      mediaClient: mediaClient,
-      offlineWatchService: offlineWatchService,
-      playSessionId: _playbackPlaySessionId,
-      playMethod: _playbackPlayMethod,
-      mediaInfo: _currentMediaInfo,
-    );
+    if (widget.isLive) {
+      unawaited(mediaControlsManager.updateMetadata(metadata: _mediaControlsItem, client: mediaClient));
+    } else {
+      // Wire progress tracker, media-controls metadata, and the
+      // Discord/Trakt/Tracker scrobblers. Shared with [_reloadMediaInPlace]
+      // so the two flows can't drift.
+      _wirePerItemPlaybackServices(
+        metadata: _currentMetadata,
+        mediaClient: mediaClient,
+        offlineWatchService: context.read<OfflineWatchSyncService>(),
+        playSessionId: _playbackPlaySessionId,
+        playMethod: _playbackPlayMethod,
+        mediaInfo: _currentMediaInfo,
+      );
+    }
 
     if (!mounted) return;
 
@@ -552,6 +552,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           position: position,
           speed: currentPlayer.state.rate,
         );
+        if (widget.isLive) return;
         DiscordRPCService.instance.updatePosition(position);
         TrackerCoordinator.instance.updatePosition(position);
         // Keep the trackers' known duration current — mpv only emits on the
@@ -561,12 +562,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }),
     );
 
-    // Listen to playback rate changes for Discord Rich Presence
-    _mediaControlSubscriptions.add(
-      currentPlayer.streams.rate.listen((rate) {
-        DiscordRPCService.instance.updatePlaybackSpeed(rate);
-      }),
-    );
+    if (!widget.isLive) {
+      // Listen to playback rate changes for Discord Rich Presence
+      _mediaControlSubscriptions.add(
+        currentPlayer.streams.rate.listen((rate) {
+          DiscordRPCService.instance.updatePlaybackSpeed(rate);
+        }),
+      );
+    }
 
     _mediaControlSubscriptions.add(
       currentPlayer.streams.seekable.listen((_) {
