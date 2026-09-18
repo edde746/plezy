@@ -717,6 +717,33 @@ void main() {
       });
     });
 
+    test('solo resume does not queue a pause behind the user play', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachForMedia(async);
+        h.hostBecomesReady(async);
+        async.elapse(Duration.zero);
+        h.player.emitPlaying(false);
+        async.flushMicrotasks();
+        expect(h.last.phase, PlaybackPhase.paused);
+        h.player.commandLog.clear();
+
+        // Keep a corrective pause pending until the resume decision is made,
+        // reproducing the stale native playing snapshot without a timer.
+        final pending = Completer<void>();
+        h.player.nextCommandFuture = pending.future;
+        h.player.emitPlaying(true);
+        async.flushMicrotasks();
+        pending.complete();
+        async.elapse(Duration.zero);
+
+        expect(h.player.state.playing, isTrue);
+        expect(h.last.phase, PlaybackPhase.playing);
+        expect(h.player.commandLog, isEmpty);
+        h.dispose();
+      });
+    });
+
     test('user play with everyone ready schedules a synchronized resume', () {
       fakeAsync((async) {
         final h = _Harness(async);
