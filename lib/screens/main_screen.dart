@@ -450,8 +450,9 @@ class _MainScreenState extends State<MainScreen>
   bool _isSidebarFocused = false;
   // Hover/touch rail expansion is an M3E modal overlay: the rail draws over
   // the content, so this only drives the scrim behind it — never the
-  // content offset.
-  bool _isSidebarInteractionExpanded = false;
+  // content offset. Docked expansion (always-open, D-pad focus) displaces
+  // content instead and reports no floating panel.
+  bool _isSidebarFloatingPanel = false;
   bool _isOverlaySheetOpen = false;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
@@ -2120,7 +2121,7 @@ class _MainScreenState extends State<MainScreen>
                           Positioned.fill(
                             child: IgnorePointer(
                               child: AnimatedOpacity(
-                                opacity: _isSidebarInteractionExpanded ? 1.0 : 0.0,
+                                opacity: _isSidebarFloatingPanel ? 1.0 : 0.0,
                                 duration: SideNavigationRailState.expandDuration,
                                 curve: SideNavigationRailState.expandCurve,
                                 child: const ColoredBox(color: Color(0x66000000)),
@@ -2151,9 +2152,9 @@ class _MainScreenState extends State<MainScreen>
                                   _focusContent(restorePreviousFocus: false);
                                 },
                                 onNavigateToContent: _focusContent,
-                                onInteractionExpandedChanged: (expanded) {
-                                  if (_isSidebarInteractionExpanded == expanded) return;
-                                  setState(() => _isSidebarInteractionExpanded = expanded);
+                                onFloatingPanelChanged: (floating) {
+                                  if (_isSidebarFloatingPanel == floating) return;
+                                  setState(() => _isSidebarFloatingPanel = floating);
                                 },
                                 onReconnect: _triggerReconnect,
                               ),

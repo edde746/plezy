@@ -403,9 +403,10 @@ class SideNavigationRail extends StatefulWidget {
   /// Called when the user taps the reconnect button in offline mode.
   final VoidCallback? onReconnect;
 
-  /// Called when hover/touch expansion changes, so the shell can scrim the
-  /// content the modal rail overlays.
-  final ValueChanged<bool>? onInteractionExpandedChanged;
+  /// Called when the rail starts or stops floating over the content as an
+  /// M3E modal panel, so the shell can scrim the content it covers. Docked
+  /// expansion (always-open, D-pad focus) displaces content and never scrims.
+  final ValueChanged<bool>? onFloatingPanelChanged;
 
   const SideNavigationRail({
     super.key,
@@ -418,7 +419,7 @@ class SideNavigationRail extends StatefulWidget {
     required this.onDestinationSelected,
     required this.onLibrarySelected,
     this.onNavigateToContent,
-    this.onInteractionExpandedChanged,
+    this.onFloatingPanelChanged,
     this.onReconnect,
   });
 
@@ -434,7 +435,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   bool _isHovered = false;
   bool _isTouchExpanded = false;
-  bool _lastReportedInteractionExpanded = false;
+  bool _lastReportedFloatingPanel = false;
   Timer? _collapseTimer;
   static const double collapsedWidth = 80.0;
   static const double tvCollapsedWidth = 48.0;
@@ -523,25 +524,30 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       final wasInteractionExpanded = _interactionExpanded;
       _isTouchExpanded = false;
       if (wasInteractionExpanded != _interactionExpanded) {
-        _scheduleInteractionExpandedNotification();
+        _scheduleFloatingPanelNotification();
       }
+    }
+    // Toggling always-open while hovered/touched converts a floating panel
+    // into a docked rail (or back) without any interaction-state change.
+    if (oldWidget.alwaysExpanded != widget.alwaysExpanded) {
+      _scheduleFloatingPanelNotification();
     }
   }
 
   /// didUpdateWidget runs during build, where notifying the parent would
   /// setState mid-build; defer that report to the next frame.
-  void _scheduleInteractionExpandedNotification() {
+  void _scheduleFloatingPanelNotification() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _notifyInteractionExpandedIfNeeded();
+      _notifyFloatingPanelIfNeeded();
     });
   }
 
-  void _notifyInteractionExpandedIfNeeded() {
-    final expanded = _interactionExpanded;
-    if (_lastReportedInteractionExpanded == expanded) return;
-    _lastReportedInteractionExpanded = expanded;
-    widget.onInteractionExpandedChanged?.call(expanded);
+  void _notifyFloatingPanelIfNeeded() {
+    final floating = _isFloatingPanel;
+    if (_lastReportedFloatingPanel == floating) return;
+    _lastReportedFloatingPanel = floating;
+    widget.onFloatingPanelChanged?.call(floating);
   }
 
   void _onHoverEnter() {
@@ -551,7 +557,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _isTouchExpanded = false; // Mouse takes over
       _isHovered = true;
     });
-    _notifyInteractionExpandedIfNeeded();
+    _notifyFloatingPanelIfNeeded();
   }
 
   void _onHoverExit() {
@@ -559,7 +565,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     _collapseTimer = Timer(_collapseDelay, () {
       if (mounted && _isHovered) {
         setState(() => _isHovered = false);
-        _notifyInteractionExpandedIfNeeded();
+        _notifyFloatingPanelIfNeeded();
       }
     });
   }
@@ -567,7 +573,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   void _expandForTouch() {
     if (_isTouchExpanded) return;
     setState(() => _isTouchExpanded = true);
-    _notifyInteractionExpandedIfNeeded();
+    _notifyFloatingPanelIfNeeded();
   }
 
   /// The key of the last focused sidebar item (for pre-capture before focus shifts).
@@ -819,7 +825,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   void collapse() {
     if (_isTouchExpanded) {
       setState(() => _isTouchExpanded = false);
-      _notifyInteractionExpandedIfNeeded();
+      _notifyFloatingPanelIfNeeded();
     }
   }
 
@@ -931,7 +937,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           onTapOutside: (_) {
             if (_isTouchExpanded) {
               setState(() => _isTouchExpanded = false);
-              _notifyInteractionExpandedIfNeeded();
+              _notifyFloatingPanelIfNeeded();
             }
           },
           child: MouseRegion(
