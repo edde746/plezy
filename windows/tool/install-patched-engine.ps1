@@ -1,11 +1,14 @@
-# Download the published flutter-plezy patched Windows engine (DirectComposition)
-# and install it into the active Flutter SDK's artifact cache.
+# Download the published flutter-plezy patched Windows engine (DirectComposition
+# + resize-wedge fix) and install it into the active Flutter SDK's artifact cache.
 #
 # Plezy requires this engine on Windows: it honors the FLUTTER_WINDOWS_DCOMP
 # environment variable (set in windows/runner/main.cpp) and presents the Flutter
 # UI on a topmost DirectComposition visual, so the mpv video window composites
 # *beneath* the UI in a single HWND (window capture works, no transparency
-# hacks). On a stock engine the flag is a no-op and compositing breaks.
+# hacks). It also heals the embedder resize-synchronization wedge that leaves
+# the window blank when a window manager (e.g. PowerToys FancyZones) resizes it
+# around the first frame (flutter/flutter#159630). On a stock engine both are
+# absent: the flag is a no-op and compositing breaks.
 #
 # Used by CI (.github/workflows/build.yml) and by contributors building locally.
 # Engine developers who build their own artifacts use swap-engine.ps1 instead.
@@ -20,11 +23,11 @@
 #   flutter precache --windows
 #   windows/tool/install-patched-engine.ps1
 param(
-    # Engine zip published at flutter-plezy release windows-v3.47.1 - x64 + arm64
+    # Engine zip published at flutter-plezy release windows-v3.47.1+1 - x64 + arm64
     # (cache dirs windows-{x64,arm64}{,-release}). The asset name is the same across
     # tags, so a version bump only changes the tag segment of the URL.
-    [string]$Url = 'https://github.com/edde746/flutter-plezy/releases/download/windows-v3.47.1/flutter-plezy-windows-3.47.1.zip',
-    [string]$Sha256 = '8ce715978b50cee636bacfca018ad2d5bfc53d6509e2b49c1a167266f2b16877',
+    [string]$Url = 'https://github.com/edde746/flutter-plezy/releases/download/windows-v3.47.1%2B1/flutter-plezy-windows-3.47.1.zip',
+    [string]$Sha256 = '5f3148f48c4974f32d51c9a883ebfaf332b076451cad8849d21a7251d6ff3321',
     # Engine revision the artifacts were built from. Must match the SDK's
     # engine.stamp (gen_snapshot/dart in the SDK must come from the same
     # checkout), or the swapped binaries are ABI-incompatible with the build.
