@@ -1782,6 +1782,23 @@
     "unknownSeason": "Temporada desconhecida",
     "unknownAlbum": "Álbum desconhecido",
     "completedOfTotal": "${completed}/${total} concluídos",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Arquivo não encontrado (404)",
     "errorDownloadFailed": "Falha no download",
     "errorPostProcessing": "Falha no pós-processamento: ${error}",

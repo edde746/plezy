@@ -1782,6 +1782,23 @@
     "unknownSeason": "Ukjent sesong",
     "unknownAlbum": "Ukjent album",
     "completedOfTotal": "${completed}/${total} fullført",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Filen ble ikke funnet (404)",
     "errorDownloadFailed": "Nedlastingen mislyktes",
     "errorPostProcessing": "Etterbehandlingen mislyktes: ${error}",
