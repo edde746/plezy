@@ -70,7 +70,6 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
   final Set<String> _failedPaths = <String>{};
   final Set<String> _pendingProviderFailures = <String>{};
   int _rotationIndex = 0;
-  int _fallbackIndex = 0;
   bool _lifecycleResumed = true;
   bool _tickerEnabled = true;
   bool _disableAnimations = false;
@@ -137,7 +136,6 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
     _failedPaths.clear();
     _pendingProviderFailures.clear();
     _rotationIndex = 0;
-    _fallbackIndex = 0;
   }
 
   static List<String> _uniquePaths(List<String> paths) {
@@ -194,12 +192,8 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
       final index = (_rotationIndex + offset) % _rotationPaths.length;
       if (!_failedPaths.contains(_rotationPaths[index])) return _rotationPaths[index];
     }
-    if (_fallbackPaths.isNotEmpty && !_failedPaths.contains(_fallbackPaths[_fallbackIndex])) {
-      return _fallbackPaths[_fallbackIndex];
-    }
-    for (var offset = 0; offset < _fallbackPaths.length; offset++) {
-      final index = (_fallbackIndex + offset) % _fallbackPaths.length;
-      if (!_failedPaths.contains(_fallbackPaths[index])) return _fallbackPaths[index];
+    for (final path in _fallbackPaths) {
+      if (!_failedPaths.contains(path)) return path;
     }
     return null;
   }
@@ -217,16 +211,6 @@ class _CyclingMediaBackdropState extends State<CyclingMediaBackdrop> with Widget
           if (_failedPaths.contains(_rotationPaths[next])) continue;
           _rotationIndex = next;
           break;
-        }
-      } else {
-        final fallbackPosition = _fallbackPaths.indexOf(path);
-        if (fallbackPosition >= 0) {
-          for (var offset = 1; offset <= _fallbackPaths.length; offset++) {
-            final next = (fallbackPosition + offset) % _fallbackPaths.length;
-            if (_failedPaths.contains(_fallbackPaths[next])) continue;
-            _fallbackIndex = next;
-            break;
-          }
         }
       }
     });
@@ -346,7 +330,6 @@ class _BackdropArtworkCrossfade extends StatefulWidget {
 
 class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> with SingleTickerProviderStateMixin {
   late final AnimationController _fade;
-  late Object? _currentKey = widget.artworkKey;
   late ImageProvider? _base = widget.pending ? null : widget.image;
   late Object? _baseErrorKey = widget.imageErrorKey;
   ImageProvider? _incoming;
@@ -364,7 +347,7 @@ class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> wi
   void didUpdateWidget(covariant _BackdropArtworkCrossfade oldWidget) {
     super.didUpdateWidget(oldWidget);
     _fade.duration = widget.duration;
-    if (widget.artworkKey == _currentKey) {
+    if (widget.artworkKey == oldWidget.artworkKey) {
       if (widget.pending) return;
       if (oldWidget.pending) {
         _transitionToIncoming();
@@ -377,7 +360,6 @@ class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> wi
       return;
     }
 
-    _currentKey = widget.artworkKey;
     if (widget.pending) {
       if (_base == null && _incoming != null && _fade.value == 1) {
         _base = _incoming;
