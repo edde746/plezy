@@ -13,7 +13,6 @@ import '../utils/global_key_utils.dart';
 import '../mixins/unsuppress_focus_mixin.dart';
 import 'download_status_icon.dart';
 
-/// Represents a node in the download tree
 class DownloadTreeNode {
   final String key;
   final String title;
@@ -38,13 +37,11 @@ class DownloadTreeNode {
   /// Check if this node has children
   bool get hasChildren => children.isNotEmpty;
 
-  /// Get the number of completed children
   int get completedChildrenCount {
     return children.where((child) => child.status == DownloadStatus.completed).length;
   }
 }
 
-/// Type of node in the download tree
 enum DownloadNodeType { show, season, episode, movie, album, track }
 
 /// Hierarchical tree view for downloads
@@ -349,7 +346,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
     return result;
   }
 
-  /// Toggle node expansion
   void _toggleExpansion(String key) {
     setState(() {
       if (_expandedNodes.contains(key)) {
@@ -392,7 +388,6 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
     }
   }
 
-  /// Resume all paused children of a container node
   void _resumeAllChildren(DownloadTreeNode node) {
     final keys = _leafKeys(node, where: (leaf) => leaf.status == DownloadStatus.paused);
     for (final key in keys) {
@@ -502,7 +497,6 @@ String? _firstLeafKey(DownloadTreeNode node) {
   return null;
 }
 
-/// Helper class to store a node with its depth in the flattened tree
 class _FlatNode {
   final DownloadTreeNode node;
   final int depth;

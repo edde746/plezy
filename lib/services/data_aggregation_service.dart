@@ -271,7 +271,6 @@ class DataAggregationService {
 
     filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
 
-    // Apply limit if specified
     final items = limit != null && limit < filteredOnDeck.length ? filteredOnDeck.sublist(0, limit) : filteredOnDeck;
 
     appLogger.i('Fetched ${items.length} on deck items from all servers');

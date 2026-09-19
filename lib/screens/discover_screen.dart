@@ -324,7 +324,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
   }

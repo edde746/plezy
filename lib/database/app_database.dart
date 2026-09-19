@@ -772,7 +772,6 @@ class AppDatabase extends _$AppDatabase {
     return value == null ? column.isNull() : column.equals(value);
   }
 
-  /// Get all pending offline watch actions for sync
   Future<List<OfflineWatchProgressItem>> getPendingWatchActions({String? profileId}) {
     final query = select(offlineWatchProgress)..orderBy([(t) => OrderingTerm.asc(t.createdAt)]);
     if (profileId != null) {
@@ -1077,7 +1076,6 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Get count of pending sync items
   Future<int> getPendingSyncCount({String? profileId, int? maxSyncAttempts}) async {
     final query = selectOnly(offlineWatchProgress)..addColumns([offlineWatchProgress.id.count()]);
     if (profileId != null) {

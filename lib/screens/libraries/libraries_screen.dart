@@ -79,7 +79,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Whether the browse tab has active filters (badges the Library options icon)
   bool _browseFiltersActive = false;
 
-  /// Key for the library dropdown menu button.
   final _libraryDropdownKey = GlobalKey<AppMenuButtonState<String>>();
 
   List<LibraryTabType> _visibleTabs = LibraryTabType.values;
@@ -128,7 +127,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     super.initState();
     initTabNavigation();
 
-    // Initialize with libraries from the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _initializeWithLibraries();
@@ -277,7 +275,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
   }
 
-  /// Get the state for a tab by index
   State? _getTabState(int index) {
     if (index < 0 || index >= _visibleTabs.length) return null;
     return switch (_visibleTabs[index]) {
@@ -447,7 +444,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
       _errorMessage = null;
-      // Clear loaded tabs tracking for new library
       _loadedTabs.clear();
     });
     widget.onLibrarySelected?.call(libraryGlobalKey);
@@ -525,7 +521,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void manualRefresh() => _refreshSelectedLibraryTabs();
 
-  // Refresh every loaded tab for the selected library.
   void _refreshSelectedLibraryTabs() {
     for (var i = 0; i < _visibleTabs.length; i++) {
       final Object? tabState = _getTabState(i);
@@ -557,7 +552,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (isHidden) {
       await hiddenLibrariesProvider.unhideLibrary(library.globalKey);
     } else {
-      // Check if we're hiding the currently selected library
       final isCurrentlySelected = _selectedLibraryGlobalKey == library.globalKey;
 
       await hiddenLibrariesProvider.hideLibrary(library.globalKey);
@@ -720,7 +714,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Widget _buildContent(BuildContext context, bool groupByServerSetting) {
-    // Watch libraries provider for updates
     final librariesProvider = context.watch<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
     final isLoadingLibraries = librariesProvider.isLoading;

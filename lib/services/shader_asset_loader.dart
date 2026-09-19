@@ -245,7 +245,6 @@ class ShaderAssetLoader {
     return storedName;
   }
 
-  /// Delete a custom shader file from the custom shaders directory.
   static Future<void> deleteCustomShader(String fileName, {void Function()? checkCurrent}) async {
     final file = await _resolveManagedCustomShaderFile(fileName);
     if (file != null && await file.exists()) {

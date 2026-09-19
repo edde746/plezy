@@ -35,7 +35,6 @@ class BottomSheetHeader extends StatelessWidget {
   /// Takes precedence over [icon]
   final VoidCallback? onBack;
 
-  /// Optional text style for the title
   final TextStyle? titleStyle;
 
   /// Optional text color for the title

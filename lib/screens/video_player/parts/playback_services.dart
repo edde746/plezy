@@ -562,7 +562,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // already paused when it attaches would never publish its state.
     _mediaControls.pushPlaybackState();
 
-    // Listen to position updates for media controls and Discord
     _mediaControlSubscriptions.add(
       currentPlayer.streams.position.listen((position) {
         mediaControlsManager.updatePlaybackState(

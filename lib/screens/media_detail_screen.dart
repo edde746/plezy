@@ -1725,7 +1725,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         shouldShowEpisodesDirectly = seasonsWithServerId.length <= 1;
       }
 
-      // Create focus nodes for season tabs
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
 
       // Auto-select the on-deck season
@@ -1790,7 +1789,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       seasonMap.putIfAbsent(seasonNum, () => []).add(episode);
     }
 
-    // Create focus nodes for season tabs and cache episodes per season
     _updateSeasonTabFocusNodes(seasons.length);
     for (final entry in seasonMap.entries) {
       final seasonRatingKey = entry.value.first.parentId ?? '';
@@ -1831,7 +1829,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
   }
 
-  /// Load episodes from downloaded content for a season
   void _loadEpisodesFromDownloads() {
     if (!_canUseDetail) return;
     final downloadProvider = context.read<DownloadProvider>();
@@ -1848,7 +1845,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
   }
 
-  /// Create or update focus nodes for season tab chips
   void _updateSeasonTabFocusNodes(int count) {
     if (_seasonTabFocusNodes.length != count) {
       for (final node in _seasonTabFocusNodes) {
@@ -2051,7 +2047,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Whether the selected season has more episodes to page in.
   bool get _selectedSeasonHasMore {
     if (_selectedSeasonIndex < 0 || _selectedSeasonIndex >= _seasons.length) return false;
     return _selectedSeasonEpisodeState.hasMore;
@@ -2353,7 +2348,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // DOWN order: season tabs → episodes → cast → extras → related hubs → info rows.
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
-      // Focus the selected season tab chip
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
       _scrollSectionIntoView(_seasonsSectionKey);
       return;
@@ -2392,20 +2386,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// the rendered cards can never disagree.
   double _getResponsiveCardWidth() => CastMemberStrip.responsiveCardWidth(context);
 
-  /// Show context menu for a season tab
   void _showSeasonTabContextMenu(int index, {Offset? position}) {
     final key = _seasonContextMenuKeys.putIfAbsent(index, () => GlobalKey<MediaContextMenuState>());
     key.currentState?.showContextMenu(context, position: position);
   }
 
-  /// Focus the currently selected season tab
   void _focusSelectedSeasonTab() {
     if (_seasonTabFocusNodes.length > _selectedSeasonIndex) {
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
     }
   }
 
-  /// Scroll a season tab into view within the horizontal scroll
   void _scrollSeasonTabIntoView(int index) {
     if (index < 0 || index >= _seasonTabFocusNodes.length) return;
     scrollContextToCenter(_seasonTabFocusNodes[index].context);
@@ -2673,7 +2664,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Handle vertical navigation between related hub sections
   bool _handleRelatedHubNavigation(int hubIndex, bool isUp) {
     return navigateVerticalHubRows(
       hubCount: _relatedHubKeys.length,
@@ -3180,7 +3170,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
       final firstSeason = defaultPlaybackSeason(_seasons)!;
 
-      // Get the first episode of the first season.
       MediaItem? firstEpisode;
       if (widget.isOffline) {
         // In offline mode, get episodes from downloads (filtered to this season).

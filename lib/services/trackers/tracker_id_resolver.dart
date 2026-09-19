@@ -107,7 +107,6 @@ class TrackerIdResolver {
   Future<ExternalIds> _fetchExternalIds(String itemId) =>
       _externalIdLoads.run(itemId, () => _client.fetchExternalIds(itemId));
 
-  /// Resolve IDs for a movie.
   Future<TrackerIds?> resolveForMovie(String itemId) async {
     if (_cache.containsKey(itemId)) return _cache[itemId];
 

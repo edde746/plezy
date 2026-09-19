@@ -287,7 +287,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _showContextMenu(menuContext);
   }
 
-  /// Get the serverId from the typed item.
   String? get _itemServerId => switch (widget.item) {
     MediaItem(:final serverId) => serverId,
     MediaPlaylist(:final serverId) => serverId,
@@ -1596,12 +1595,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Handle play action for collections and playlists
   Future<void> _handlePlay(BuildContext context, bool _, bool _) async {
     await _launchCollectionOrPlaylist(context, shuffle: false);
   }
 
-  /// Handle shuffle action for collections and playlists
   Future<void> _handleShuffle(BuildContext context, bool _, bool _) async {
     await _launchCollectionOrPlaylist(context, shuffle: true);
   }
@@ -1660,7 +1657,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         if (success) {
           showSuccessSnackBar(context, t.collections.deleted);
-          // Trigger list refresh
           _notifyListRefresh();
         } else {
           showErrorSnackBar(context, t.collections.deleteFailed);
@@ -1752,7 +1748,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final item = _mediaItem!;
     final globalKey = item.globalKey;
 
-    // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.downloads.deleteDownload,

@@ -95,7 +95,6 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     return _syntheticIds[idx];
   }
 
-  /// Whether shuffle mode is currently active
   bool get isShuffleActive => _playQueueShuffled;
 
   /// Whether playlist/collection mode is currently active
@@ -118,13 +117,11 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// The context key (show/season/playlist ratingKey) for the current session
   String? get shuffleContextKey => _contextKey;
 
-  /// Current play queue ID
   int? get playQueueId => _playQueueId;
 
   /// The currently loaded queue items (windowed subset of full queue)
   List<MediaItem> get loadedItems => List.unmodifiable(_loadedItems);
 
-  /// The current play queue item ID
   int? get currentPlayQueueItemID => _currentPlayQueueItemID;
 
   /// The queue item the cursor currently points at, or null when no queue

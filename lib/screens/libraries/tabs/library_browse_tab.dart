@@ -668,7 +668,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         return;
       }
 
-      // Load items and first characters in parallel.
       await Future.wait([
         _loadItems(loadGeneration: generation, libraryGlobalKey: libraryGlobalKey, epoch: epoch),
         _loadFirstCharacters(requestId: firstCharactersGeneration),
@@ -799,7 +798,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _notifyFiltersActive();
   }
 
-  /// Build the filter params map for API calls
   Map<String, String> _buildFilterParams() {
     final filterParams = Map<String, String>.from(_selectedFilters);
 
@@ -1185,7 +1183,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     });
     _notifyFiltersActive();
 
-    // Save filters to storage
     final storage = await StorageService.getInstance();
     await storage.saveLibraryFilters(filters, sectionId: widget.library.globalKey);
 
@@ -1404,12 +1401,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _groupingChipFocusNode.requestFocus();
   }
 
-  /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
   }
 
-  /// Navigate focus to the alpha jump bar
   void _navigateToAlphaJumpBar() {
     _alphaJumpBarFocusNode.requestFocus();
   }
@@ -1877,11 +1872,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  /// Whether the filters chip is visible
   bool get _isFiltersChipVisible =>
       (_filters.isNotEmpty || _selectedFilters.isNotEmpty) && _selectedGrouping != 'folders';
 
-  /// Whether the sort chip is visible
   bool get _isSortChipVisible => _sortOptions.isNotEmpty && _selectedGrouping != 'folders';
 
   /// Builds the chips bar widget

@@ -661,7 +661,6 @@ class PlexVideoControls extends StatefulWidget {
   /// buttons/dpad/remote keys must use this rather than `onLiveSeek` (#1253).
   final ValueChanged<int>? onLiveSeekBy;
 
-  /// Jump to live edge callback
   final VoidCallback? onJumpToLive;
 
   /// Whether ambient lighting is enabled (passed to settings sheet)

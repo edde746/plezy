@@ -50,7 +50,6 @@ class DownloadedArtwork {
 
   const DownloadedArtwork({this.thumbPath});
 
-  /// Get the local file path for this artwork
   String? getLocalPath(DownloadStorageService storage, ServerId serverId) {
     if (thumbPath == null) return null;
     return DownloadArtworkService.localPathSync(storage, serverId, thumbPath);
@@ -64,7 +63,6 @@ class _RelatedMetadataDownloadContext {
 
 typedef _MetadataHydrationResult = ({MediaItem? metadata, bool networkFilled, bool stale});
 
-/// Provider for managing download state and operations.
 class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   int _batchDeletionDepth = 0;
   final DownloadManagerService _downloadManager;
@@ -590,7 +588,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   MediaItem _ensureServerId(MediaItem metadata, String? fallbackServerId) =>
       metadata.serverId != null ? metadata : metadata.copyWith(serverId: fallbackServerId);
 
-  /// All current download progress entries
   Map<String, DownloadProgress> get downloads =>
       Map.unmodifiable(Map.fromEntries(_downloads.entries.where(_ownsProgressEntry)));
 
@@ -697,7 +694,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     );
   }
 
-  /// All metadata for downloads
   Map<String, MediaItem> get metadata => _metadataStore.resolvedItems;
 
   /// Get unique TV shows that have downloaded episodes
@@ -954,7 +950,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return libraries;
   }
 
-  /// Get completed movie downloads
   List<MediaItem> get downloadedMovies {
     return _metadata.entries
         .where((entry) {
@@ -1802,7 +1797,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadStatus.queued,
   }, () => _downloadManager.pauseDownload(globalKey));
 
-  /// Resume a paused download
   Future<void> resumeDownload(String globalKey, MediaServerClient client) =>
       _whenOwnedIn(globalKey, const {DownloadStatus.paused}, () => _downloadManager.resumeDownload(globalKey, client));
 
@@ -1834,7 +1828,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
-  /// Delete a downloaded item.
   Future<void> deleteDownload(String globalKey) => _deleteDownload(globalKey, notify: true);
 
   Future<void> _deleteDownload(String globalKey, {required bool notify}) async {
@@ -1914,7 +1907,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     });
   }
 
-  /// Handle deletion progress updates.
   void _onDeletionProgressUpdate(DeletionProgress progress) {
     if (progress.isComplete) {
       _deletionProgress.remove(progress.globalKey);
@@ -1926,7 +1918,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
-  /// Get deletion progress for an item
   DeletionProgress? getDeletionProgress(String globalKey) => _deletionProgress[globalKey];
 
   /// Refresh the downloads list from database
@@ -2095,10 +2086,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return keys;
   }
 
-  /// Check if a sync rule exists for the given item
   bool hasSyncRule(String globalKey) => _syncRules.containsKey(globalKey);
 
-  /// Get a sync rule for the given item
   SyncRuleItem? getSyncRule(String globalKey) => _syncRules[globalKey];
 
   bool _hasActiveOwnedDownload(String globalKey) {

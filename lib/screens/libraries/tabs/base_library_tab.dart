@@ -158,7 +158,6 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     super.initState();
     loadItems();
 
-    // Subscribe to refresh stream if provided
     final refreshStream = getRefreshStream();
     if (refreshStream != null) {
       _refreshSubscription = refreshStream.listen((_) {

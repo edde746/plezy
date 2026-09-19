@@ -33,7 +33,6 @@ class TrackChapterControls extends StatelessWidget {
   /// Called when focus changes on any button
   final ValueChanged<bool>? onFocusChange;
 
-  /// Called to navigate left from the first button
   final VoidCallback? onNavigateLeft;
 
   /// Called to navigate up from any button (e.g., to focus timeline on TV)
@@ -61,7 +60,6 @@ class TrackChapterControls extends StatelessWidget {
     this.hideChaptersAndQueue = false,
   });
 
-  /// Handle key event for button navigation
   KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index, int totalButtons) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;

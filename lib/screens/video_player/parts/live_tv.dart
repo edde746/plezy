@@ -475,7 +475,6 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     await _runLiveSeek(targetEpochSeconds);
   }
 
-  /// Jump to the live edge of the capture buffer.
   Future<void> _jumpToLiveEdge() async {
     if (_live.captureBuffer == null) return;
     await _seekLiveToEpoch(_live.captureBuffer!.seekableEndEpoch);

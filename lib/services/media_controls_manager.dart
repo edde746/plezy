@@ -17,7 +17,6 @@ import '../utils/app_logger.dart';
 /// - Control event streaming (play, pause, next, previous, seek)
 /// - Position update throttling to prevent excessive API calls
 class MediaControlsManager {
-  /// Stream of control events from OS media controls
   Stream<MediaControlEvent> get controlEvents => OsMediaControls.controlEvents;
 
   /// Throttled playback state update (1 second interval, leading + trailing)

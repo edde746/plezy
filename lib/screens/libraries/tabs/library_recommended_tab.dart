@@ -227,7 +227,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     return keys;
   }
 
-  /// Handle vertical navigation between hubs
   bool _handleVerticalNavigation(List<GlobalKey<HubSectionState>> keys, int hubIndex, bool isUp) {
     return navigateVerticalHubRows(
       hubCount: keys.length,
@@ -265,7 +264,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     }
   }
 
-  /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
   }

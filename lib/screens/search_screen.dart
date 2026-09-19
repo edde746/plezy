@@ -305,7 +305,6 @@ class _SearchScreenState extends State<SearchScreen>
     }
   }
 
-  /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
   }

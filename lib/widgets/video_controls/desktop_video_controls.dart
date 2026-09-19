@@ -72,7 +72,6 @@ class DesktopVideoControls extends StatefulWidget {
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
-  /// Channel name for live TV display
   final String? liveChannelName;
 
   // Live TV time-shift
@@ -88,10 +87,8 @@ class DesktopVideoControls extends StatefulWidget {
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)
   final bool useDpadNavigation;
 
-  /// Server ID for content strip images
   final String? serverId;
 
-  /// Whether to show the queue tab in the content strip
   final bool showQueueTab;
 
   /// Called when a queue item is selected in the content strip
@@ -100,7 +97,6 @@ class DesktopVideoControls extends StatefulWidget {
   /// Called to cancel auto-hide timer (e.g., when content strip is shown)
   final VoidCallback? onCancelAutoHide;
 
-  /// Called to start auto-hide timer
   final VoidCallback? onStartAutoHide;
 
   /// Called when content strip visibility changes
@@ -201,7 +197,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   FocusNode? _lastFocusedButtonNode;
 
-  /// Whether the content strip has any content to show
   bool get _hasStripContent {
     return widget.chapters.isNotEmpty || (widget.showQueueTab && widget.onQueueItemSelected != null);
   }
@@ -496,7 +491,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     );
   }
 
-  /// Reset progressive seek state
   void _resetSeekState() {
     _seekDirection = null;
     _seekRepeatCount = 0;

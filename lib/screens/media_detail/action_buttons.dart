@@ -76,7 +76,6 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             isLaunchCurrent: () => _canUseDetail,
           );
         } else {
-          // No on deck episode, fetch first episode of first season
           await _playFirstEpisode();
         }
       } else if (metadata.isSeason) {

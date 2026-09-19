@@ -20,19 +20,14 @@ class StateMessageWidget extends StatelessWidget {
   /// Optional size for the icon (default: 64)
   final double iconSize;
 
-  /// Optional color for the icon
   final Color? iconColor;
 
-  /// Optional color for the message text
   final Color? textColor;
 
-  /// Optional color for the subtitle text
   final Color? subtitleColor;
 
-  /// Optional callback for action button
   final VoidCallback? onAction;
 
-  /// Optional label for the action button
   final String? actionLabel;
 
   /// Optional icon for the action button
@@ -136,10 +131,8 @@ class EmptyStateWidget extends StatelessWidget {
   /// Optional icon to display above the message
   final IconData? icon;
 
-  /// Optional size for the icon
   final double iconSize;
 
-  /// Optional callback for action button
   final VoidCallback? onAction;
 
   /// Optional label for the action button
@@ -187,7 +180,6 @@ class EmptyStateWidget extends StatelessWidget {
 
 /// A reusable widget for displaying error states throughout the app
 class ErrorStateWidget extends StatelessWidget {
-  /// The error message to display
   final String message;
 
   /// Optional icon to display above the message

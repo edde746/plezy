@@ -470,7 +470,6 @@ Future<bool> editSyncRuleFilter(
   return true;
 }
 
-/// Shows a confirmation dialog to remove a sync rule.
 Future<SyncRuleRemovalResult?> confirmAndRemoveSyncRule(
   BuildContext context, {
   required DownloadProvider downloadProvider,

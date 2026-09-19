@@ -175,13 +175,11 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _serverManager.setVisibleServerIds({...visible, ...onlineExpected});
   }
 
-  /// Get the multi-server manager
   MultiServerManager get serverManager => _serverManager;
 
   /// Get the data aggregation service
   DataAggregationService get aggregationService => _aggregationService;
 
-  /// Get client for specific server.
   MediaServerClient? getClientForServer(ServerId serverId) {
     return _serverManager.getClient(serverId);
   }
@@ -211,10 +209,8 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   bool isServerOnline(ServerId serverId) =>
       _serverManager.isServerVisible(serverId) && _serverManager.isServerOnline(serverId);
 
-  /// Get number of online servers
   int get onlineServerCount => onlineServerIds.length;
 
-  /// Get number of total servers
   int get totalServerCount => serverIds.length;
 
   /// Check if any servers are connected
@@ -235,7 +231,6 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     return all.where(filter.contains).toList();
   }
 
-  /// Whether any visible server currently has an auth error.
   bool get hasAuthErrorServers => authErrorServerIds.isNotEmpty;
 
   /// Display names for the visible auth-errored servers, in stable order.
@@ -246,7 +241,6 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
         .toList();
   }
 
-  /// Clear all server connections
   void clearAllConnections() {
     _serverManager.disconnectAll();
     _serverManager.setVisibleServerIds(null);

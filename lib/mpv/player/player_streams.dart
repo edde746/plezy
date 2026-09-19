@@ -30,10 +30,8 @@ class PlayerSourceFailed {
 /// Subscribe to these streams to receive updates when the player state changes.
 /// For synchronous state access, use [PlayerState].
 class PlayerStreams {
-  /// Stream of playing state changes.
   final Stream<bool> playing;
 
-  /// Stream of completion state changes.
   final Stream<bool> completed;
 
   /// Stream of buffering state changes.
@@ -76,7 +74,6 @@ class PlayerStreams {
   /// Stream of buffer position updates.
   final Stream<Duration> buffer;
 
-  /// Stream of volume changes.
   final Stream<double> volume;
 
   /// Stream of playback rate changes.
@@ -85,16 +82,12 @@ class PlayerStreams {
   /// Stream of available tracks updates.
   final Stream<Tracks> tracks;
 
-  /// Stream of track selection changes.
   final Stream<TrackSelection> track;
 
-  /// Stream of log messages from the player.
   final Stream<PlayerLog> log;
 
-  /// Stream of player errors.
   final Stream<PlayerError> error;
 
-  /// Stream of audio device changes.
   final Stream<AudioDevice> audioDevice;
 
   /// Stream of available audio devices.

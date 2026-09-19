@@ -126,7 +126,6 @@ class RemoteAuthService {
     );
     final sessionSecret = await sessionSecretKey.extractBytes();
 
-    // Then derive encryption key from session secret
     final encKeyResult = await hkdf.deriveKey(
       secretKey: SecretKey(sessionSecret),
       nonce: const <int>[],
@@ -136,7 +135,6 @@ class RemoteAuthService {
     return encKeyResult.extractBytes();
   }
 
-  /// Derive discovery key from homeSecret.
   Future<List<int>> deriveDiscoveryKey(List<int> homeSecret) async {
     final hkdf = _hkdf;
     final key = await hkdf.deriveKey(
@@ -285,7 +283,6 @@ class RemoteAuthService {
     return hmac.convert(buf.toBytes()).toString();
   }
 
-  /// Verify a beacon's HMAC.
   bool verifyBeaconHmac({
     required String receivedHmac,
     required List<int> discoveryKey,

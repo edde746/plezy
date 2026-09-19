@@ -62,7 +62,6 @@ class MobileVideoControls extends StatefulWidget {
   /// Whether this is a live TV stream
   final bool isLive;
 
-  /// Channel name for live TV display
   final String? liveChannelName;
 
   // Live TV time-shift
@@ -74,7 +73,6 @@ class MobileVideoControls extends StatefulWidget {
   /// Server ID for chapter thumbnails in the content strip
   final String? serverId;
 
-  /// Whether to show the queue tab in the content strip
   final bool showQueueTab;
 
   /// Callback when a queue item is selected from the content strip

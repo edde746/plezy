@@ -8,7 +8,7 @@ class LogRedactionManager {
   static const int _maxUrls = 40;
   static const int _maxCustomValues = 50;
 
-  // Use LinkedHashSet for FIFO ordering
+  // Set literals are insertion-ordered, so the oldest entry is evicted first.
   static final Set<String> _tokens = <String>{};
   static final Set<String> _urls = <String>{};
   static final Set<String> _customValues = <String>{};
@@ -389,7 +389,6 @@ class LogRedactionManager {
         character == 0x7D;
   }
 
-  /// Rebuild the combined regex pattern from all tracked values.
   static void _rebuildCombinedPattern() {
     final allLiterals = [
       ..._tokens.map(RegExp.escape),

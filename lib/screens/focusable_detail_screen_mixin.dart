@@ -37,7 +37,6 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// Called when items are available and we want to check if focus should be set
   bool get hasItems;
 
-  /// Called to get the list of app bar action configurations
   List<FocusableAction> getAppBarActions();
 
   /// Dispose focus-related resources. Call this from your dispose() method.

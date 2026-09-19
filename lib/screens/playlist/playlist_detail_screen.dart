@@ -578,7 +578,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       }
       if (key.isSelectKey) {
         if (_focusedColumn == 0) {
-          // Play from this item
           _playFromItem(_focusedIndex);
         } else if (_focusedColumn == 1 && _canMutatePlaylist) {
           // Enter move mode
@@ -588,7 +587,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             _originalOrder = List.from(items);
           });
         } else if (_focusedColumn == 2 && _canMutatePlaylist) {
-          // Remove item
           _removeItem(_focusedIndex);
         }
         return KeyEventResult.handled;

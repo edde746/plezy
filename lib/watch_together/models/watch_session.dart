@@ -38,7 +38,6 @@ sealed class WatchSession with _$WatchSession {
 
   bool get isConnected => state == SessionState.connected;
 
-  /// Create a new session as host
   factory WatchSession.createAsHost({
     required String sessionId,
     required String hostPeerId,

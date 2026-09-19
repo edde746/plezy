@@ -365,7 +365,7 @@ class JellyfinConnectionAuthService {
   }
 
   /// Strip any trailing slash so subsequent path joins (`/Users/...`) don't
-  /// produce double slashes. Delegates to the shared [stripTrailingSlash].
+  /// produce double slashes. Delegates to [JellyfinEndpointDiscovery.normalizeBaseUrl].
   static String _normaliseBaseUrl(String input) => JellyfinEndpointDiscovery.normalizeBaseUrl(input);
 
   static Future<_JellyfinAuthenticationResponse> _readAuthenticationResponse(

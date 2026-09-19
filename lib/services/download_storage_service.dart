@@ -125,7 +125,6 @@ class DownloadStorageService {
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
-      // Test write access with a temp file
       final testFile = File(path.join(dir.path, '.write_test_${DateTime.now().millisecondsSinceEpoch}'));
       await testFile.writeAsString('test');
       await testFile.delete();

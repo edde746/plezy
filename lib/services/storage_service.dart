@@ -479,7 +479,6 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.remove(_keyServersList);
   }
 
-  /// Clear all multi-server data
   Future<void> clearMultiServerData() async {
     await Future.wait([clearServersList(), clearServerOrder(), _clearKeysWithPrefix(_prefixServerEndpoint)]);
   }
@@ -583,7 +582,6 @@ class StorageService extends BaseSharedPreferencesService {
     return decodeJsonStringToMap(jsonString, legacyStringOk: legacyStringOk);
   }
 
-  /// Remove all keys matching a prefix
   Future<void> _clearKeysWithPrefix(String prefix) async {
     final keys = prefs.keys.where((k) => k.startsWith(prefix)).toList(growable: false);
     await Future.wait(keys.map((k) => prefs.remove(k)));
@@ -653,7 +651,6 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Public JSON helpers for reducing boilerplate
 
-  /// Save a JSON-encodable map to storage
   Future<void> _setJsonMap(String key, Map<String, dynamic> data) async {
     final jsonString = json.encode(data);
     await prefs.setString(key, jsonString);

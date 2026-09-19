@@ -399,7 +399,6 @@ class MediaServerHttpClient {
   Uri _resolveUri(String url, Map<String, dynamic>? queryParameters) =>
       _isAbsoluteUrl(url) ? _appendQuery(Uri.parse(url), queryParameters) : _buildUri(url, queryParameters);
 
-  /// Append query parameters to an already-parsed URI.
   Uri _appendQuery(Uri uri, Map<String, dynamic>? queryParameters) {
     if (queryParameters == null || queryParameters.isEmpty) return uri;
     final query = encodeQueryParameters(queryParameters);

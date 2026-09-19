@@ -814,7 +814,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _accumulatedSkipSeconds.value = 0;
   }
 
-  /// Handle tap on controls overlay - route to skip zones or toggle controls
   void _handleControlsOverlayTap(TapUpDetails details, Size size) {
     if (!PlatformDetector.isMobile(context)) {
       _handleDesktopClickToggle();

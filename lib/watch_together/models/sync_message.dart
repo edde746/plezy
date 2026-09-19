@@ -47,7 +47,6 @@ class SyncMessage {
   /// this is the responder's "clock now" used for offset estimation.
   final int timestamp;
 
-  /// Peer ID of the sender
   final String? peerId;
 
   /// Display name of the sender (for join message)
@@ -147,12 +146,10 @@ class SyncMessage {
     );
   }
 
-  /// Create a LEAVE message
   factory SyncMessage.leave({required String peerId}) {
     return SyncMessage(type: SyncMessageType.leave, timestamp: DateTime.now().millisecondsSinceEpoch, peerId: peerId);
   }
 
-  /// Create a PING message
   factory SyncMessage.ping(int pingId, {String? peerId}) {
     return SyncMessage(
       type: SyncMessageType.ping,
@@ -162,7 +159,6 @@ class SyncMessage {
     );
   }
 
-  /// Create a PONG message
   factory SyncMessage.pong(int pingId, {String? peerId}) {
     return SyncMessage(
       type: SyncMessageType.pong,

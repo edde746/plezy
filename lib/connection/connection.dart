@@ -185,7 +185,6 @@ class JellyfinConnection extends Connection {
   /// Authenticated user id. A UUID on Jellyfin, an opaque hex string on Emby.
   final String userId;
 
-  /// Authenticated user's display name.
   final String userName;
 
   /// Long-lived access token from `/Users/AuthenticateByName`.

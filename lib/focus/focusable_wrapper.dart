@@ -80,7 +80,6 @@ class _RenderPaintScale extends RenderProxyBox {
 /// A wrapper widget that makes its child focusable with D-pad navigation support.
 ///
 class FocusableWrapper extends StatefulWidget {
-  /// The child widget to wrap.
   final Widget child;
 
   /// Called when the item is selected (Enter/Select/GamepadA).
@@ -173,7 +172,6 @@ class FocusableWrapper extends StatefulWidget {
   /// Useful for elements like sliders where scaling looks odd.
   final bool disableScale;
 
-  /// Scale used for the focus animation.
   final double focusScale;
 
   /// Whether to draw a glow around the focused widget.

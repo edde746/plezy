@@ -151,7 +151,6 @@ class PlexAuthService {
     return false;
   }
 
-  /// Create a PIN for authentication
   Future<Map<String, dynamic>> createPin() async {
     final response = await _http.post(
       '$_plexApiBase/pins?strong=true',
@@ -262,7 +261,6 @@ class PlexAuthService {
     return servers;
   }
 
-  /// Get user information
   Future<Map<String, dynamic>> getUserInfo(String authToken) async {
     final response = await _getUser(authToken);
     _checkStatus(response);
@@ -299,7 +297,6 @@ class PlexAuthService {
     return getAccountPreferences(authToken);
   }
 
-  /// Get home users for the authenticated user
   Future<PlexHome> getHomeUsers(String authToken) async {
     final response = await _getClientsApi('/home/users', headers: _getCommonHeaders(authToken: authToken));
     _checkStatus(response);
@@ -581,7 +578,6 @@ class PlexServer {
     }
   }
 
-  /// Update a connection's URI to use the specified URL
   PlexConnection _updateConnectionUrl(PlexConnection connection, String url) {
     // If the URL matches the original URI, return as-is
     if (url == connection.uri) {

@@ -76,7 +76,6 @@ class MultiServerManager {
   /// show a "Sign in again" banner instead of a generic offline state.
   final Set<String> _authErrorServers = {};
 
-  /// Stream controller for server status changes
   final _statusController = StreamController<Map<String, bool>>.broadcast();
 
   Stream<Map<String, bool>> get statusStream => _statusController.stream;
@@ -191,7 +190,6 @@ class MultiServerManager {
 
   List<String> get offlineServerIds => _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();
 
-  /// Get client for specific server.
   MediaServerClient? getClient(ServerId serverId) => _clients[serverId];
 
   /// Resolve an exact private client namespace without falling back to a
@@ -314,7 +312,6 @@ class MultiServerManager {
     return false;
   }
 
-  /// Get all online clients
   Map<String, MediaServerClient> get onlineClients {
     final result = <String, MediaServerClient>{};
     for (final serverId in onlineServerIds) {
@@ -326,7 +323,6 @@ class MultiServerManager {
     return result;
   }
 
-  /// Check if a server is online
   bool isServerOnline(ServerId serverId) => _serverStatus[serverId] ?? false;
 
   /// Check whether the active or exact scoped client for [serverId] is online.
@@ -511,7 +507,6 @@ class MultiServerManager {
     }();
   }
 
-  /// Remove a server connection
   void removeServer(ServerId serverId) {
     final jellyfinCompoundIds = _jellyfinByCompoundId.entries
         .where((entry) => entry.value.connection.serverMachineId == serverId)
@@ -1507,7 +1502,6 @@ class MultiServerManager {
     await disconnectAllGracefully(drainTimeout: drainTimeout);
   }
 
-  /// Dispose resources
   void dispose() {
     disconnectAll();
     if (!_statusController.isClosed) {

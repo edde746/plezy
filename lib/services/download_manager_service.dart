@@ -2004,7 +2004,6 @@ class DownloadManagerService {
 
       final ext = downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
 
-      // Look up show year for episodes
       final showYear = metadata.isEpisode
           ? await _fetchShowYear(serverId, metadata.grandparentId, clientScopeId: existing.clientScopeId)
           : null;
@@ -2802,7 +2801,6 @@ class DownloadManagerService {
     await _artworkService.ensureArtworkSpecs(ServerId(serverId), client.resolveDownloadArtwork(metadata));
   }
 
-  /// Download chapter thumbnail images for a media item.
   Future<bool> _downloadChapterThumbnails(ServerId serverId, String ratingKey, MediaServerClient client) async {
     try {
       final extras = await client.fetchPlaybackExtras(ratingKey);

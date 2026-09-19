@@ -34,7 +34,6 @@ class VideoTimelineBar extends StatelessWidget {
   /// Called when focus changes.
   final ValueChanged<bool>? onFocusChange;
 
-  /// Whether the timeline is enabled for interaction.
   final bool enabled;
 
   /// Whether to show the estimated finish time next to the remaining timestamp (mobile).

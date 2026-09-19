@@ -121,7 +121,6 @@ class PerformanceStats {
   /// Creates an empty stats object (used as initial state).
   const PerformanceStats.empty() : this();
 
-  /// Format video resolution as "WxH".
   String get resolution {
     if (videoWidth == null || videoHeight == null) return t.common.notAvailable;
     return '${videoWidth}x$videoHeight';
@@ -145,14 +144,12 @@ class PerformanceStats {
     return '$duration / ${targetBufferMb}MB';
   }
 
-  /// Format audio bitrate in kbps.
   String get audioBitrateFormatted {
     if (audioBitrate == null || audioBitrate == 0) return t.common.notAvailable;
     final kbps = audioBitrate! / 1000;
     return '${kbps.toStringAsFixed(0)} kbps';
   }
 
-  /// Format audio sample rate in kHz.
   String get sampleRateFormatted {
     if (audioSamplerate == null) return t.common.notAvailable;
     final khz = audioSamplerate! / 1000;
@@ -189,7 +186,6 @@ class PerformanceStats {
     return '${ms > 0 ? '+' : ''}${ms}ms';
   }
 
-  /// Format cache used in MB.
   String get cacheUsedFormatted {
     if (cacheUsed == null) return t.common.notAvailable;
     final mb = cacheUsed! / (1024 * 1024);
@@ -221,7 +217,6 @@ class PerformanceStats {
     return '${cacheDuration!.toStringAsFixed(1)}s';
   }
 
-  /// Format display FPS.
   String get displayFpsFormatted {
     if (displayFps == null) return t.common.notAvailable;
     return displayFps!.toStringAsFixed(0);
@@ -274,23 +269,18 @@ class PerformanceStats {
   /// Raw video decoder name (e.g. c2.qti.video.decoder.hevc).
   String get videoDecoderRaw => videoDecoderName ?? t.common.notAvailable;
 
-  /// Format audio decoder name for display.
   String get audioDecoderFormatted => audioDecoderName ?? t.common.notAvailable;
 
-  /// Format tunneled playback status with reason.
   String get tunneledPlaybackFormatted =>
       tunnelingStatus ?? (tunneledPlayback ? t.performanceOverlay.tunnelingActive : t.common.off);
 
-  /// Format DV conversion mode for display.
   String get dvConversionFormatted => dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC';
 
-  /// Format Dolby Vision source profile.
   String get dvSourceProfileFormatted => dvSourceProfile == null ? t.common.notAvailable : 'P$dvSourceProfile';
 
   /// Format Dolby Vision playback path.
   String get dvPlaybackPathFormatted => dvPlaybackPath ?? t.common.notAvailable;
 
-  /// Format DV RPU conversion totals.
   String get dvRpuCountFormatted {
     final converted = dvConvertedRpus ?? 0;
     final failures = dvRpuConversionFailures ?? 0;
@@ -378,7 +368,6 @@ class PerformanceStats {
     return audioBitrate != null && audioBitrate! > 0;
   }
 
-  /// Format player type for display.
   String get playerTypeFormatted {
     return switch (playerType.toLowerCase()) {
       'mpv' => 'MPV',

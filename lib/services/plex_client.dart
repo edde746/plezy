@@ -1086,7 +1086,6 @@ class PlexClient
     return _extractLibraryList(response);
   }
 
-  /// Get library content by section ID
   Future<_LibraryContentResult> _getLibraryContent(
     String sectionId, {
     int? start,
@@ -1155,7 +1154,6 @@ class PlexClient
     );
   }
 
-  /// Parse list of PlexMetadataDto from a cached response
   List<PlexMetadataDto> _parseMetadataListFromCachedResponse(Map<String, dynamic> cached) {
     final container = cached['MediaContainer'] is Map<String, dynamic>
         ? cached['MediaContainer'] as Map<String, dynamic>
@@ -1195,7 +1193,6 @@ class PlexClient
   /// Returns URI in format: server://{machineId}/com.plexapp.plugins.library/library/metadata/{ratingKey}
   @override
   Future<String> buildMetadataUri(String ratingKey) async {
-    // Use cached machine identifier from config if available
     final machineId = config.machineIdentifier ?? await getMachineIdentifier();
     if (machineId == null) {
       throw Exception('Could not get server machine identifier');
@@ -1271,7 +1268,6 @@ class PlexClient
         (metadata: null, onDeckEpisode: null);
   }
 
-  /// Parse PlexMetadataDto with images from a cached response
   PlexMetadataDto? _parseMetadataWithImagesFromCachedResponse(Map<String, dynamic> cached) {
     final container = cached['MediaContainer'] is Map<String, dynamic>
         ? cached['MediaContainer'] as Map<String, dynamic>
@@ -1287,7 +1283,6 @@ class PlexClient
     return null;
   }
 
-  /// Get first metadata JSON from response data
   Map<String, dynamic>? _getFirstMetadataJsonFromData(Map<String, dynamic>? data) =>
       PlexCacheParser.extractFirstMetadata(data);
 
@@ -1764,7 +1759,6 @@ class PlexClient
         [];
   }
 
-  /// Get thumbnail URL
   String getThumbnailUrl(String? thumbPath) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
     return _http.buildUri(thumbPath).toString().withPlexToken(config.token);
@@ -1878,7 +1872,6 @@ class PlexClient
     return _getFirstMetadataJsonFromData(data);
   }
 
-  /// Parse PlaybackExtras from metadata JSON
   PlaybackExtras _parsePlaybackExtrasFromMetadataJson(
     Map<String, dynamic>? metadataJson, {
     String? introPattern,
@@ -2242,7 +2235,6 @@ class PlexClient
     return _parseSettingsMap(response);
   }
 
-  /// Get available filters for a library section
   Future<List<MediaFilter>> getLibraryFilters(String sectionId) async {
     if (sectionId == 'shared') return [];
     final response = await _getWithFailover('/library/sections/$sectionId/filters');
@@ -2684,9 +2676,6 @@ class PlexClient
     );
   }
 
-  /// Get library-specific playlists
-  /// Filters playlists by checking if they contain items from the specified library
-  /// This is a client-side filter since the API doesn't support sectionId for playlists
   /// Scan/refresh a library section to detect new files
   Future<void> scanLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/refresh');
@@ -2698,13 +2687,11 @@ class PlexClient
     await _getWithFailover('/library/sections/$sectionId/refresh?force=1');
   }
 
-  /// Empty trash for a library section
   Future<void> emptyLibraryTrash(String sectionId) async {
     final response = await _http.put('/library/sections/$sectionId/emptyTrash');
     throwIfHttpError(response);
   }
 
-  /// Analyze library section
   Future<void> analyzeLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/analyze');
   }
@@ -3955,7 +3942,6 @@ class PlexClient
     return _buildTranscodeSidecarSubtitles(mediaInfo);
   }
 
-  /// Build list of external subtitle tracks from media info
   List<PlaybackSubtitleSidecar> _buildExternalSubtitles(MediaSourceInfo? mediaInfo) {
     final externalSubtitles = <PlaybackSubtitleSidecar>[];
 

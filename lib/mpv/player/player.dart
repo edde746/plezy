@@ -88,7 +88,6 @@ abstract class Player {
   /// Start or resume playback.
   Future<void> play();
 
-  /// Pause playback.
   Future<void> pause();
 
   /// Toggle between play and pause.
@@ -97,7 +96,6 @@ abstract class Player {
   /// Stop playback and reset position.
   Future<void> stop();
 
-  /// Seek to a specific position.
   Future<void> seek(Duration position);
 
   /// Arm (or replace/clear) the item the backend should auto-advance into
@@ -110,7 +108,6 @@ abstract class Player {
   /// `completed`. Pass `null` to clear. No-op on video backends.
   Future<void> setNext(Media? media);
 
-  /// Select an audio track.
   Future<void> selectAudioTrack(AudioTrack track);
 
   /// Select a subtitle track.

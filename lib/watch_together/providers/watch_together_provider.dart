@@ -80,7 +80,6 @@ class WatchTogetherProvider with ChangeNotifier {
   // Debounce map for action events (peerId+type → last emission timestamp)
   final Map<String, int> _lastActionEventMs = {};
 
-  /// Generate a random display name for this session
   static String _generateDisplayName() {
     const adjectives = ['Happy', 'Sleepy', 'Sunny', 'Cozy', 'Chill', 'Swift', 'Brave', 'Calm', 'Jolly', 'Lucky'];
     const nouns = ['Panda', 'Koala', 'Fox', 'Owl', 'Cat', 'Dog', 'Bear', 'Bunny', 'Duck', 'Penguin'];
@@ -448,7 +447,6 @@ class WatchTogetherProvider with ChangeNotifier {
       _wireController();
       _wireReconnectHandler();
 
-      // Add self to participants
       _participants.add(
         Participant(peerId: peerService.myPeerId!, displayName: _displayName, isHost: peerService.isHost),
       );
@@ -783,14 +781,12 @@ class WatchTogetherProvider with ChangeNotifier {
           // Check if participant already exists
           final existingIndex = _participants.indexWhere((p) => p.peerId == message.peerId);
           if (existingIndex >= 0) {
-            // Update existing participant
             _participants[existingIndex] = Participant(
               peerId: message.peerId!,
               displayName: message.displayName!,
               isHost: message.isHost ?? false,
             );
           } else {
-            // Add new participant
             _participants.add(
               Participant(peerId: message.peerId!, displayName: message.displayName!, isHost: message.isHost ?? false),
             );
@@ -1100,7 +1096,6 @@ class WatchTogetherProvider with ChangeNotifier {
   }
 }
 
-/// Type of participant event
 enum ParticipantEventType {
   joined,
   left,
