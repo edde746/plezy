@@ -1481,7 +1481,9 @@
     "editRuleAction": "編集",
     "recordingRuleUpdated": "録画ルールを更新しました",
     "guideReloadRequested": "番組表の更新をリクエストしました",
+    "guideReloadFailed": "番組表を再読み込みできませんでした",
     "rulesProcessRequested": "録画ルールの再評価をリクエストしました",
+    "rulesProcessFailed": "録画ルールを再適用できませんでした",
     "recordShow": "番組を録画",
     "recordSettings": {
       "startEarly": "早めに開始（秒）",

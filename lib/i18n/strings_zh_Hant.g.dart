@@ -1535,7 +1535,9 @@ class _Translations$liveTv$zh_Hant extends Translations$liveTv$zh {
 	@override String get editRuleAction => '編輯';
 	@override String get recordingRuleUpdated => '錄製規則已更新';
 	@override String get guideReloadRequested => '已要求更新節目表指南';
+	@override String get guideReloadFailed => '無法重新載入節目表指南';
 	@override String get rulesProcessRequested => '已要求重新評估規則';
+	@override String get rulesProcessFailed => '無法重新評估錄影規則';
 	@override String get recordShow => '錄製節目';
 	@override late final _Translations$liveTv$recordSettings$zh_Hant recordSettings = _Translations$liveTv$recordSettings$zh_Hant._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} 分鐘後開始';
@@ -4344,7 +4346,9 @@ extension on TranslationsZhHant {
 			'liveTv.editRuleAction' => '編輯',
 			'liveTv.recordingRuleUpdated' => '錄製規則已更新',
 			'liveTv.guideReloadRequested' => '已要求更新節目表指南',
+			'liveTv.guideReloadFailed' => '無法重新載入節目表指南',
 			'liveTv.rulesProcessRequested' => '已要求重新評估規則',
+			'liveTv.rulesProcessFailed' => '無法重新評估錄影規則',
 			'liveTv.recordShow' => '錄製節目',
 			'liveTv.recordSettings.startEarly' => '提早開始（秒）',
 			'liveTv.recordSettings.endLate' => '延後結束（秒）',
@@ -4532,10 +4536,10 @@ extension on TranslationsZhHant {
 			'downloads.episodesQueued' => ({required Object count}) => '已將 ${count} 集影片加入下載佇列',
 			'downloads.downloadDeleted' => '下載內容已刪除',
 			'downloads.deleteConfirm' => ({required Object title}) => '確定要從此裝置刪除「${title}」嗎？',
-			'downloads.cancelledDownloadTitle' => '已取消的下載',
-			'downloads.cancelledDownloadMessage' => '此下載已取消。您想要如何處理？',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => '已取消的下載',
+			'downloads.cancelledDownloadMessage' => '此下載已取消。您想要如何處理？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有單集都已下載完成',
 			'downloads.resumeDownload' => '繼續下載',
 			'downloads.cancelledDownload' => '已取消的下載',

@@ -1542,7 +1542,9 @@ class _Translations$liveTv$pt extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Editar';
 	@override String get recordingRuleUpdated => 'Regra de gravação atualizada';
 	@override String get guideReloadRequested => 'Atualização do guia solicitada';
+	@override String get guideReloadFailed => 'Não foi possível atualizar o guia';
 	@override String get rulesProcessRequested => 'Reavaliação de regras solicitada';
+	@override String get rulesProcessFailed => 'Não foi possível reavaliar as regras de gravação';
 	@override String get recordShow => 'Gravar programa';
 	@override late final _Translations$liveTv$recordSettings$pt recordSettings = _Translations$liveTv$recordSettings$pt._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Começa em ${minutes} min';
@@ -4354,7 +4356,9 @@ extension on TranslationsPt {
 			'liveTv.editRuleAction' => 'Editar',
 			'liveTv.recordingRuleUpdated' => 'Regra de gravação atualizada',
 			'liveTv.guideReloadRequested' => 'Atualização do guia solicitada',
+			'liveTv.guideReloadFailed' => 'Não foi possível atualizar o guia',
 			'liveTv.rulesProcessRequested' => 'Reavaliação de regras solicitada',
+			'liveTv.rulesProcessFailed' => 'Não foi possível reavaliar as regras de gravação',
 			'liveTv.recordShow' => 'Gravar programa',
 			'liveTv.recordSettings.startEarly' => 'Começar antes (segundos)',
 			'liveTv.recordSettings.endLate' => 'Terminar depois (segundos)',
@@ -4542,10 +4546,10 @@ extension on TranslationsPt {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episódios na fila de download',
 			'downloads.downloadDeleted' => 'Download excluído',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Excluir "${title}" deste dispositivo?',
-			'downloads.cancelledDownloadTitle' => 'Download cancelado',
-			'downloads.cancelledDownloadMessage' => 'Este download foi cancelado. O que você deseja fazer?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Download cancelado',
+			'downloads.cancelledDownloadMessage' => 'Este download foi cancelado. O que você deseja fazer?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Todos os episódios já foram baixados',
 			'downloads.resumeDownload' => 'Retomar download',
 			'downloads.cancelledDownload' => 'Download cancelado',

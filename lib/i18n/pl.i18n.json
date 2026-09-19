@@ -1511,7 +1511,9 @@
     "editRuleAction": "Edytuj",
     "recordingRuleUpdated": "Reguła nagrywania zaktualizowana",
     "guideReloadRequested": "Zażądano odświeżenia przewodnika",
+    "guideReloadFailed": "Nie udało się odświeżyć przewodnika",
     "rulesProcessRequested": "Zażądano ponownej oceny reguł",
+    "rulesProcessFailed": "Nie udało się ponownie przetworzyć reguł nagrywania",
     "recordShow": "Nagraj program",
     "recordSettings": {
       "startEarly": "Zacznij wcześniej (sekundy)",

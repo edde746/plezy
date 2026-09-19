@@ -1534,7 +1534,9 @@ class _Translations$liveTv$ja extends Translations$liveTv$en {
 	@override String get editRuleAction => '編集';
 	@override String get recordingRuleUpdated => '録画ルールを更新しました';
 	@override String get guideReloadRequested => '番組表の更新をリクエストしました';
+	@override String get guideReloadFailed => '番組表を再読み込みできませんでした';
 	@override String get rulesProcessRequested => '録画ルールの再評価をリクエストしました';
+	@override String get rulesProcessFailed => '録画ルールを再適用できませんでした';
 	@override String get recordShow => '番組を録画';
 	@override late final _Translations$liveTv$recordSettings$ja recordSettings = _Translations$liveTv$recordSettings$ja._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes}分後に開始';
@@ -4343,7 +4345,9 @@ extension on TranslationsJa {
 			'liveTv.editRuleAction' => '編集',
 			'liveTv.recordingRuleUpdated' => '録画ルールを更新しました',
 			'liveTv.guideReloadRequested' => '番組表の更新をリクエストしました',
+			'liveTv.guideReloadFailed' => '番組表を再読み込みできませんでした',
 			'liveTv.rulesProcessRequested' => '録画ルールの再評価をリクエストしました',
+			'liveTv.rulesProcessFailed' => '録画ルールを再適用できませんでした',
 			'liveTv.recordShow' => '番組を録画',
 			'liveTv.recordSettings.startEarly' => '早めに開始（秒）',
 			'liveTv.recordSettings.endLate' => '遅めに終了（秒）',
@@ -4531,10 +4535,10 @@ extension on TranslationsJa {
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
 			'downloads.deleteConfirm' => ({required Object title}) => 'このデバイスから「${title}」を削除しますか？',
-			'downloads.cancelledDownloadTitle' => 'キャンセル済みのダウンロード',
-			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'キャンセル済みのダウンロード',
+			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
 			'downloads.allEpisodesAlreadyDownloaded' => 'すべてのエピソードはすでにダウンロード済みです',
 			'downloads.resumeDownload' => 'ダウンロードを再開',
 			'downloads.cancelledDownload' => 'キャンセル済みのダウンロード',

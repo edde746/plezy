@@ -1481,7 +1481,9 @@
     "editRuleAction": "编辑",
     "recordingRuleUpdated": "录制规则已更新",
     "guideReloadRequested": "已请求更新节目指南",
+    "guideReloadFailed": "无法刷新节目指南",
     "rulesProcessRequested": "已请求重新评估规则",
+    "rulesProcessFailed": "无法重新评估录制规则",
     "recordShow": "录制节目",
     "recordSettings": {
       "startEarly": "提前开始（秒）",

@@ -1534,7 +1534,9 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	@override String get editRuleAction => '편집';
 	@override String get recordingRuleUpdated => '녹화 규칙 업데이트됨';
 	@override String get guideReloadRequested => '가이드 새로고침 요청됨';
+	@override String get guideReloadFailed => '편성표를 새로고침할 수 없습니다';
 	@override String get rulesProcessRequested => '규칙 재평가 요청됨';
+	@override String get rulesProcessFailed => '녹화 규칙을 다시 적용할 수 없습니다';
 	@override String get recordShow => '프로그램 녹화';
 	@override late final _Translations$liveTv$recordSettings$ko recordSettings = _Translations$liveTv$recordSettings$ko._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes}분 후 시작';
@@ -4343,7 +4345,9 @@ extension on TranslationsKo {
 			'liveTv.editRuleAction' => '편집',
 			'liveTv.recordingRuleUpdated' => '녹화 규칙 업데이트됨',
 			'liveTv.guideReloadRequested' => '가이드 새로고침 요청됨',
+			'liveTv.guideReloadFailed' => '편성표를 새로고침할 수 없습니다',
 			'liveTv.rulesProcessRequested' => '규칙 재평가 요청됨',
+			'liveTv.rulesProcessFailed' => '녹화 규칙을 다시 적용할 수 없습니다',
 			'liveTv.recordShow' => '프로그램 녹화',
 			'liveTv.recordSettings.startEarly' => '일찍 시작 (초)',
 			'liveTv.recordSettings.endLate' => '늦게 종료 (초)',
@@ -4531,10 +4535,10 @@ extension on TranslationsKo {
 			'downloads.episodesQueued' => ({required Object count}) => '에피소드 ${count}개가 다운로드 대기열에 추가되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
 			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',
-			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
-			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
+			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
 			'downloads.allEpisodesAlreadyDownloaded' => '모든 에피소드가 이미 다운로드되었습니다',
 			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',

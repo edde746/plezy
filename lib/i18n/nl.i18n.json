@@ -1491,7 +1491,9 @@
     "editRuleAction": "Bewerken",
     "recordingRuleUpdated": "Opnameregel bijgewerkt",
     "guideReloadRequested": "Vernieuwing van de gids aangevraagd",
+    "guideReloadFailed": "Gids herladen mislukt",
     "rulesProcessRequested": "Nieuwe evaluatie van regels aangevraagd",
+    "rulesProcessFailed": "Opnameregels opnieuw uitvoeren mislukt",
     "recordShow": "Programma opnemen",
     "recordSettings": {
       "startEarly": "Eerder beginnen (seconden)",

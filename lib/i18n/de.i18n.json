@@ -1491,7 +1491,9 @@
     "editRuleAction": "Bearbeiten",
     "recordingRuleUpdated": "Aufnahmeregel aktualisiert",
     "guideReloadRequested": "Aktualisierung des TV-Programms angefordert",
+    "guideReloadFailed": "TV-Programm konnte nicht aktualisiert werden",
     "rulesProcessRequested": "Regelauswertung angefordert",
+    "rulesProcessFailed": "Aufnahmeregeln konnten nicht neu ausgewertet werden",
     "recordShow": "Sendung aufnehmen",
     "recordSettings": {
       "startEarly": "Früher starten (Sekunden)",

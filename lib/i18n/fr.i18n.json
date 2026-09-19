@@ -1491,7 +1491,9 @@
     "editRuleAction": "Modifier",
     "recordingRuleUpdated": "Règle d'enregistrement mise à jour",
     "guideReloadRequested": "Mise à jour du guide demandée",
+    "guideReloadFailed": "Impossible d’actualiser le guide",
     "rulesProcessRequested": "Réévaluation des règles demandée",
+    "rulesProcessFailed": "Impossible de réévaluer les règles d’enregistrement",
     "recordShow": "Enregistrer l'émission",
     "recordSettings": {
       "startEarly": "Démarrer en avance (secondes)",

@@ -1542,7 +1542,9 @@ class _Translations$liveTv$az extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Düzəliş et';
 	@override String get recordingRuleUpdated => 'Yazma qaydası yeniləndi';
 	@override String get guideReloadRequested => 'Bələdçi yenilənməsi tələb olundu';
+	@override String get guideReloadFailed => 'Bələdçi yenilənmədi';
 	@override String get rulesProcessRequested => 'Qaydaların yenidən qiymətləndirilməsi tələb olundu';
+	@override String get rulesProcessFailed => 'Yazı qaydaları yenidən qiymətləndirilmədi';
 	@override String get recordShow => 'Şounu yaz';
 	@override late final _Translations$liveTv$recordSettings$az recordSettings = _Translations$liveTv$recordSettings$az._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} dəq sonra başlayır';
@@ -4354,7 +4356,9 @@ extension on TranslationsAz {
 			'liveTv.editRuleAction' => 'Düzəliş et',
 			'liveTv.recordingRuleUpdated' => 'Yazma qaydası yeniləndi',
 			'liveTv.guideReloadRequested' => 'Bələdçi yenilənməsi tələb olundu',
+			'liveTv.guideReloadFailed' => 'Bələdçi yenilənmədi',
 			'liveTv.rulesProcessRequested' => 'Qaydaların yenidən qiymətləndirilməsi tələb olundu',
+			'liveTv.rulesProcessFailed' => 'Yazı qaydaları yenidən qiymətləndirilmədi',
 			'liveTv.recordShow' => 'Şounu yaz',
 			'liveTv.recordSettings.startEarly' => 'Erkən başla (saniyə)',
 			'liveTv.recordSettings.endLate' => 'Gec bitir (saniyə)',
@@ -4542,10 +4546,10 @@ extension on TranslationsAz {
 			'downloads.episodesQueued' => ({required Object count}) => 'Yükləmə üçün ${count} seriya növbəyə alındı',
 			'downloads.downloadDeleted' => 'Yükləmə silindi',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" bu cihazdan silinsin?',
-			'downloads.cancelledDownloadTitle' => 'Ləğv edilmiş yükləmə',
-			'downloads.cancelledDownloadMessage' => 'Bu yükləmə ləğv edildi. Nə etmək istərdiniz?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Ləğv edilmiş yükləmə',
+			'downloads.cancelledDownloadMessage' => 'Bu yükləmə ləğv edildi. Nə etmək istərdiniz?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Bütün seriyalar artıq yüklənib',
 			'downloads.resumeDownload' => 'Yükləməni davam etdir',
 			'downloads.cancelledDownload' => 'Ləğv edilmiş yükləmə',

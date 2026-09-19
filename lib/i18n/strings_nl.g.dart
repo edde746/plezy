@@ -1542,7 +1542,9 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Bewerken';
 	@override String get recordingRuleUpdated => 'Opnameregel bijgewerkt';
 	@override String get guideReloadRequested => 'Vernieuwing van de gids aangevraagd';
+	@override String get guideReloadFailed => 'Gids herladen mislukt';
 	@override String get rulesProcessRequested => 'Nieuwe evaluatie van regels aangevraagd';
+	@override String get rulesProcessFailed => 'Opnameregels opnieuw uitvoeren mislukt';
 	@override String get recordShow => 'Programma opnemen';
 	@override late final _Translations$liveTv$recordSettings$nl recordSettings = _Translations$liveTv$recordSettings$nl._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Begint over ${minutes} min';
@@ -4354,7 +4356,9 @@ extension on TranslationsNl {
 			'liveTv.editRuleAction' => 'Bewerken',
 			'liveTv.recordingRuleUpdated' => 'Opnameregel bijgewerkt',
 			'liveTv.guideReloadRequested' => 'Vernieuwing van de gids aangevraagd',
+			'liveTv.guideReloadFailed' => 'Gids herladen mislukt',
 			'liveTv.rulesProcessRequested' => 'Nieuwe evaluatie van regels aangevraagd',
+			'liveTv.rulesProcessFailed' => 'Opnameregels opnieuw uitvoeren mislukt',
 			'liveTv.recordShow' => 'Programma opnemen',
 			'liveTv.recordSettings.startEarly' => 'Eerder beginnen (seconden)',
 			'liveTv.recordSettings.endLate' => 'Later stoppen (seconden)',
@@ -4542,10 +4546,10 @@ extension on TranslationsNl {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',
-			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
-			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
+			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',
 			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',

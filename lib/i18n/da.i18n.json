@@ -1491,7 +1491,9 @@
     "editRuleAction": "Rediger",
     "recordingRuleUpdated": "Optagelsesregel opdateret",
     "guideReloadRequested": "Der er anmodet om en opdatering af guiden",
+    "guideReloadFailed": "Kunne ikke opdatere guiden",
     "rulesProcessRequested": "Der er anmodet om en ny evaluering af reglerne",
+    "rulesProcessFailed": "Kunne ikke behandle optagelsesreglerne igen",
     "recordShow": "Optag program",
     "recordSettings": {
       "startEarly": "Start tidligere (sekunder)",

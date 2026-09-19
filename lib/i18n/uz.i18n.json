@@ -1491,7 +1491,9 @@
     "editRuleAction": "Tahrirlash",
     "recordingRuleUpdated": "Yozib olish qoidasi yangilandi",
     "guideReloadRequested": "Jadvalni yangilash soʻraldi",
+    "guideReloadFailed": "Dasturlar jadvalini yangilab boʻlmadi",
     "rulesProcessRequested": "Qoidalarni qayta baholash soʻraldi",
+    "rulesProcessFailed": "Yozib olish qoidalarini qayta baholab boʻlmadi",
     "recordShow": "Shouni yozib olish",
     "recordSettings": {
       "startEarly": "Erta boshlash (soniya)",

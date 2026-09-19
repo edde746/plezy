@@ -1542,7 +1542,9 @@ class _Translations$liveTv$sv extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Redigera';
 	@override String get recordingRuleUpdated => 'Inspelningsregel uppdaterad';
 	@override String get guideReloadRequested => 'Uppdatering av programguiden har begärts';
+	@override String get guideReloadFailed => 'Programguiden kunde inte uppdateras';
 	@override String get rulesProcessRequested => 'Ny regelutvärdering har begärts';
+	@override String get rulesProcessFailed => 'Inspelningsreglerna kunde inte köras om';
 	@override String get recordShow => 'Spela in program';
 	@override late final _Translations$liveTv$recordSettings$sv recordSettings = _Translations$liveTv$recordSettings$sv._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Börjar om ${minutes} min';
@@ -4354,7 +4356,9 @@ extension on TranslationsSv {
 			'liveTv.editRuleAction' => 'Redigera',
 			'liveTv.recordingRuleUpdated' => 'Inspelningsregel uppdaterad',
 			'liveTv.guideReloadRequested' => 'Uppdatering av programguiden har begärts',
+			'liveTv.guideReloadFailed' => 'Programguiden kunde inte uppdateras',
 			'liveTv.rulesProcessRequested' => 'Ny regelutvärdering har begärts',
+			'liveTv.rulesProcessFailed' => 'Inspelningsreglerna kunde inte köras om',
 			'liveTv.recordShow' => 'Spela in program',
 			'liveTv.recordSettings.startEarly' => 'Börja tidigare (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Sluta senare (sekunder)',
@@ -4542,10 +4546,10 @@ extension on TranslationsSv {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Ta bort "${title}" från den här enheten?',
-			'downloads.cancelledDownloadTitle' => 'Avbruten nedladdning',
-			'downloads.cancelledDownloadMessage' => 'Den här nedladdningen avbröts. Vad vill du göra?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Avbruten nedladdning',
+			'downloads.cancelledDownloadMessage' => 'Den här nedladdningen avbröts. Vad vill du göra?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alla avsnitt är redan nedladdade',
 			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			'downloads.cancelledDownload' => 'Avbruten nedladdning',

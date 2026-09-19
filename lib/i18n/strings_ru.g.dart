@@ -1558,7 +1558,9 @@ class _Translations$liveTv$ru extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Изменить';
 	@override String get recordingRuleUpdated => 'Правило записи обновлено';
 	@override String get guideReloadRequested => 'Запрошено обновление гайда';
+	@override String get guideReloadFailed => 'Не удалось обновить программу';
 	@override String get rulesProcessRequested => 'Запрошен пересчёт правил';
+	@override String get rulesProcessFailed => 'Не удалось повторно применить правила записи';
 	@override String get recordShow => 'Записать передачу';
 	@override late final _Translations$liveTv$recordSettings$ru recordSettings = _Translations$liveTv$recordSettings$ru._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Начало через ${minutes} мин';
@@ -4376,7 +4378,9 @@ extension on TranslationsRu {
 			'liveTv.editRuleAction' => 'Изменить',
 			'liveTv.recordingRuleUpdated' => 'Правило записи обновлено',
 			'liveTv.guideReloadRequested' => 'Запрошено обновление гайда',
+			'liveTv.guideReloadFailed' => 'Не удалось обновить программу',
 			'liveTv.rulesProcessRequested' => 'Запрошен пересчёт правил',
+			'liveTv.rulesProcessFailed' => 'Не удалось повторно применить правила записи',
 			'liveTv.recordShow' => 'Записать передачу',
 			'liveTv.recordSettings.startEarly' => 'Начинать раньше (секунды)',
 			'liveTv.recordSettings.endLate' => 'Заканчивать позже (секунды)',
@@ -4564,10 +4568,10 @@ extension on TranslationsRu {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',
-			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
-			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
+			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Все эпизоды уже загружены',
 			'downloads.resumeDownload' => 'Возобновить загрузку',
 			'downloads.cancelledDownload' => 'Загрузка отменена',

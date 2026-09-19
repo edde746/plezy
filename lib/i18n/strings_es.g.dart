@@ -1542,7 +1542,9 @@ class _Translations$liveTv$es extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Editar';
 	@override String get recordingRuleUpdated => 'Regla de grabación actualizada';
 	@override String get guideReloadRequested => 'Solicitada actualización de la guía';
+	@override String get guideReloadFailed => 'No se pudo actualizar la guía';
 	@override String get rulesProcessRequested => 'Solicitada reevaluación de reglas';
+	@override String get rulesProcessFailed => 'No se pudieron reevaluar las reglas de grabación';
 	@override String get recordShow => 'Grabar programa';
 	@override late final _Translations$liveTv$recordSettings$es recordSettings = _Translations$liveTv$recordSettings$es._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Empieza en ${minutes} min';
@@ -4354,7 +4356,9 @@ extension on TranslationsEs {
 			'liveTv.editRuleAction' => 'Editar',
 			'liveTv.recordingRuleUpdated' => 'Regla de grabación actualizada',
 			'liveTv.guideReloadRequested' => 'Solicitada actualización de la guía',
+			'liveTv.guideReloadFailed' => 'No se pudo actualizar la guía',
 			'liveTv.rulesProcessRequested' => 'Solicitada reevaluación de reglas',
+			'liveTv.rulesProcessFailed' => 'No se pudieron reevaluar las reglas de grabación',
 			'liveTv.recordShow' => 'Grabar programa',
 			'liveTv.recordSettings.startEarly' => 'Empezar antes (segundos)',
 			'liveTv.recordSettings.endLate' => 'Terminar después (segundos)',
@@ -4542,10 +4546,10 @@ extension on TranslationsEs {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodios en cola para descargar',
 			'downloads.downloadDeleted' => 'Descarga eliminada',
 			'downloads.deleteConfirm' => ({required Object title}) => '¿Eliminar "${title}" de este dispositivo?',
-			'downloads.cancelledDownloadTitle' => 'Descarga cancelada',
-			'downloads.cancelledDownloadMessage' => 'Esta descarga se canceló. ¿Qué quieres hacer?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Descarga cancelada',
+			'downloads.cancelledDownloadMessage' => 'Esta descarga se canceló. ¿Qué quieres hacer?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Todos los episodios ya están descargados',
 			'downloads.resumeDownload' => 'Reanudar descarga',
 			'downloads.cancelledDownload' => 'Descarga cancelada',

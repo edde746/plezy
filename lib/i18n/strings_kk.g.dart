@@ -1542,7 +1542,9 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Өңдеу';
 	@override String get recordingRuleUpdated => 'Жазу ережесі жаңартылды';
 	@override String get guideReloadRequested => 'Бағдарламаны жаңарту сұралды';
+	@override String get guideReloadFailed => 'Телебағдарламаны жаңарту мүмкін болмады';
 	@override String get rulesProcessRequested => 'Ережелерді қайта бағалау сұралды';
+	@override String get rulesProcessFailed => 'Жазу ережелерін қайта тексеру мүмкін болмады';
 	@override String get recordShow => 'Шоуды жазу';
 	@override late final _Translations$liveTv$recordSettings$kk recordSettings = _Translations$liveTv$recordSettings$kk._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} мин кейін басталады';
@@ -4354,7 +4356,9 @@ extension on TranslationsKk {
 			'liveTv.editRuleAction' => 'Өңдеу',
 			'liveTv.recordingRuleUpdated' => 'Жазу ережесі жаңартылды',
 			'liveTv.guideReloadRequested' => 'Бағдарламаны жаңарту сұралды',
+			'liveTv.guideReloadFailed' => 'Телебағдарламаны жаңарту мүмкін болмады',
 			'liveTv.rulesProcessRequested' => 'Ережелерді қайта бағалау сұралды',
+			'liveTv.rulesProcessFailed' => 'Жазу ережелерін қайта тексеру мүмкін болмады',
 			'liveTv.recordShow' => 'Шоуды жазу',
 			'liveTv.recordSettings.startEarly' => 'Ертерек бастау (секунд)',
 			'liveTv.recordSettings.endLate' => 'Кешірек аяқтау (секунд)',
@@ -4542,10 +4546,10 @@ extension on TranslationsKk {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} бөлім жүктеу кезегіне қосылды',
 			'downloads.downloadDeleted' => 'Жүктеу өшірілді',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" осы құрылғыдан өшірілсін бе?',
-			'downloads.cancelledDownloadTitle' => 'Тоқтатылған жүктеу',
-			'downloads.cancelledDownloadMessage' => 'Бұл жүктеу тоқтатылды.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Тоқтатылған жүктеу',
+			'downloads.cancelledDownloadMessage' => 'Бұл жүктеу тоқтатылды.',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Барлық бөлімдер бұрыннан жүктелген',
 			'downloads.resumeDownload' => 'Жүктеуді жалғастыру',
 			'downloads.cancelledDownload' => 'Тоқтатылған жүктеу',

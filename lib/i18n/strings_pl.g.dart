@@ -1558,7 +1558,9 @@ class _Translations$liveTv$pl extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Edytuj';
 	@override String get recordingRuleUpdated => 'Reguła nagrywania zaktualizowana';
 	@override String get guideReloadRequested => 'Zażądano odświeżenia przewodnika';
+	@override String get guideReloadFailed => 'Nie udało się odświeżyć przewodnika';
 	@override String get rulesProcessRequested => 'Zażądano ponownej oceny reguł';
+	@override String get rulesProcessFailed => 'Nie udało się ponownie przetworzyć reguł nagrywania';
 	@override String get recordShow => 'Nagraj program';
 	@override late final _Translations$liveTv$recordSettings$pl recordSettings = _Translations$liveTv$recordSettings$pl._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Rozpocznie się za ${minutes} min';
@@ -4376,7 +4378,9 @@ extension on TranslationsPl {
 			'liveTv.editRuleAction' => 'Edytuj',
 			'liveTv.recordingRuleUpdated' => 'Reguła nagrywania zaktualizowana',
 			'liveTv.guideReloadRequested' => 'Zażądano odświeżenia przewodnika',
+			'liveTv.guideReloadFailed' => 'Nie udało się odświeżyć przewodnika',
 			'liveTv.rulesProcessRequested' => 'Zażądano ponownej oceny reguł',
+			'liveTv.rulesProcessFailed' => 'Nie udało się ponownie przetworzyć reguł nagrywania',
 			'liveTv.recordShow' => 'Nagraj program',
 			'liveTv.recordSettings.startEarly' => 'Zacznij wcześniej (sekundy)',
 			'liveTv.recordSettings.endLate' => 'Zakończ później (sekundy)',
@@ -4564,10 +4568,10 @@ extension on TranslationsPl {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} odcinków w kolejce pobierania',
 			'downloads.downloadDeleted' => 'Pobranie usunięte',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Usunąć "${title}" z tego urządzenia?',
-			'downloads.cancelledDownloadTitle' => 'Anulowane pobieranie',
-			'downloads.cancelledDownloadMessage' => 'To pobieranie zostało anulowane. Co chcesz zrobić?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Anulowane pobieranie',
+			'downloads.cancelledDownloadMessage' => 'To pobieranie zostało anulowane. Co chcesz zrobić?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Wszystkie odcinki są już pobrane',
 			'downloads.resumeDownload' => 'Wznów pobieranie',
 			'downloads.cancelledDownload' => 'Anulowane pobieranie',

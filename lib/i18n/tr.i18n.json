@@ -1491,7 +1491,9 @@
     "editRuleAction": "Düzenle",
     "recordingRuleUpdated": "Kayıt kuralı güncellendi",
     "guideReloadRequested": "Rehber yenilemesi istendi",
+    "guideReloadFailed": "Rehber yenilenemedi",
     "rulesProcessRequested": "Kuralın yeniden değerlendirilmesi istendi",
+    "rulesProcessFailed": "Kayıt kuralları yeniden değerlendirilemedi",
     "recordShow": "Programı kaydet",
     "recordSettings": {
       "startEarly": "Erken başlat (saniye)",

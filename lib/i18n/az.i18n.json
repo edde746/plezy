@@ -1491,7 +1491,9 @@
     "editRuleAction": "Düzəliş et",
     "recordingRuleUpdated": "Yazma qaydası yeniləndi",
     "guideReloadRequested": "Bələdçi yenilənməsi tələb olundu",
+    "guideReloadFailed": "Bələdçi yenilənmədi",
     "rulesProcessRequested": "Qaydaların yenidən qiymətləndirilməsi tələb olundu",
+    "rulesProcessFailed": "Yazı qaydaları yenidən qiymətləndirilmədi",
     "recordShow": "Şounu yaz",
     "recordSettings": {
       "startEarly": "Erkən başla (saniyə)",

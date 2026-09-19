@@ -1542,7 +1542,9 @@ class _Translations$liveTv$da extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Rediger';
 	@override String get recordingRuleUpdated => 'Optagelsesregel opdateret';
 	@override String get guideReloadRequested => 'Der er anmodet om en opdatering af guiden';
+	@override String get guideReloadFailed => 'Kunne ikke opdatere guiden';
 	@override String get rulesProcessRequested => 'Der er anmodet om en ny evaluering af reglerne';
+	@override String get rulesProcessFailed => 'Kunne ikke behandle optagelsesreglerne igen';
 	@override String get recordShow => 'Optag program';
 	@override late final _Translations$liveTv$recordSettings$da recordSettings = _Translations$liveTv$recordSettings$da._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Starter om ${minutes} min';
@@ -4354,7 +4356,9 @@ extension on TranslationsDa {
 			'liveTv.editRuleAction' => 'Rediger',
 			'liveTv.recordingRuleUpdated' => 'Optagelsesregel opdateret',
 			'liveTv.guideReloadRequested' => 'Der er anmodet om en opdatering af guiden',
+			'liveTv.guideReloadFailed' => 'Kunne ikke opdatere guiden',
 			'liveTv.rulesProcessRequested' => 'Der er anmodet om en ny evaluering af reglerne',
+			'liveTv.rulesProcessFailed' => 'Kunne ikke behandle optagelsesreglerne igen',
 			'liveTv.recordShow' => 'Optag program',
 			'liveTv.recordSettings.startEarly' => 'Start tidligere (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Slut senere (sekunder)',
@@ -4542,10 +4546,10 @@ extension on TranslationsDa {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Slet "${title}" fra denne enhed?',
-			'downloads.cancelledDownloadTitle' => 'Annulleret download',
-			'downloads.cancelledDownloadMessage' => 'Denne download blev annulleret. Hvad vil du gøre?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Annulleret download',
+			'downloads.cancelledDownloadMessage' => 'Denne download blev annulleret. Hvad vil du gøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede downloadet',
 			'downloads.resumeDownload' => 'Genoptag download',
 			'downloads.cancelledDownload' => 'Annulleret download',

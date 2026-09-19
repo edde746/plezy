@@ -1542,7 +1542,9 @@ class _Translations$liveTv$de extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Bearbeiten';
 	@override String get recordingRuleUpdated => 'Aufnahmeregel aktualisiert';
 	@override String get guideReloadRequested => 'Aktualisierung des TV-Programms angefordert';
+	@override String get guideReloadFailed => 'TV-Programm konnte nicht aktualisiert werden';
 	@override String get rulesProcessRequested => 'Regelauswertung angefordert';
+	@override String get rulesProcessFailed => 'Aufnahmeregeln konnten nicht neu ausgewertet werden';
 	@override String get recordShow => 'Sendung aufnehmen';
 	@override late final _Translations$liveTv$recordSettings$de recordSettings = _Translations$liveTv$recordSettings$de._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Beginnt in ${minutes} Min.';
@@ -4354,7 +4356,9 @@ extension on TranslationsDe {
 			'liveTv.editRuleAction' => 'Bearbeiten',
 			'liveTv.recordingRuleUpdated' => 'Aufnahmeregel aktualisiert',
 			'liveTv.guideReloadRequested' => 'Aktualisierung des TV-Programms angefordert',
+			'liveTv.guideReloadFailed' => 'TV-Programm konnte nicht aktualisiert werden',
 			'liveTv.rulesProcessRequested' => 'Regelauswertung angefordert',
+			'liveTv.rulesProcessFailed' => 'Aufnahmeregeln konnten nicht neu ausgewertet werden',
 			'liveTv.recordShow' => 'Sendung aufnehmen',
 			'liveTv.recordSettings.startEarly' => 'Früher starten (Sekunden)',
 			'liveTv.recordSettings.endLate' => 'Später beenden (Sekunden)',
@@ -4542,10 +4546,10 @@ extension on TranslationsDe {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" von diesem Gerät löschen?',
-			'downloads.cancelledDownloadTitle' => 'Abgebrochener Download',
-			'downloads.cancelledDownloadMessage' => 'Dieser Download wurde abgebrochen. Was möchtest du tun?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Abgebrochener Download',
+			'downloads.cancelledDownloadMessage' => 'Dieser Download wurde abgebrochen. Was möchtest du tun?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle Episoden sind bereits heruntergeladen',
 			'downloads.resumeDownload' => 'Download fortsetzen',
 			'downloads.cancelledDownload' => 'Abgebrochener Download',

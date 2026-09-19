@@ -1491,7 +1491,9 @@
     "editRuleAction": "Rediger",
     "recordingRuleUpdated": "Opptaksregel oppdatert",
     "guideReloadRequested": "Oppdatering av programguiden er forespurt",
+    "guideReloadFailed": "Kunne ikke oppdatere programguiden",
     "rulesProcessRequested": "Ny vurdering av reglene er forespurt",
+    "rulesProcessFailed": "Kunne ikke kjøre opptaksreglene på nytt",
     "recordShow": "Ta opp program",
     "recordSettings": {
       "startEarly": "Start tidligere (sekunder)",

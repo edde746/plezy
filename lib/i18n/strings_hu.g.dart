@@ -1542,7 +1542,9 @@ class _Translations$liveTv$hu extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Szerkesztés';
 	@override String get recordingRuleUpdated => 'Felvételi szabály frissítve';
 	@override String get guideReloadRequested => 'Műsorújság frissítése kérve';
+	@override String get guideReloadFailed => 'Nem sikerült frissíteni a műsorújságot';
 	@override String get rulesProcessRequested => 'Szabályok újraértékelése kérve';
+	@override String get rulesProcessFailed => 'Nem sikerült újra kiértékelni a felvételi szabályokat';
 	@override String get recordShow => 'Műsor rögzítése';
 	@override late final _Translations$liveTv$recordSettings$hu recordSettings = _Translations$liveTv$recordSettings$hu._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} perc múlva kezdődik';
@@ -4354,7 +4356,9 @@ extension on TranslationsHu {
 			'liveTv.editRuleAction' => 'Szerkesztés',
 			'liveTv.recordingRuleUpdated' => 'Felvételi szabály frissítve',
 			'liveTv.guideReloadRequested' => 'Műsorújság frissítése kérve',
+			'liveTv.guideReloadFailed' => 'Nem sikerült frissíteni a műsorújságot',
 			'liveTv.rulesProcessRequested' => 'Szabályok újraértékelése kérve',
+			'liveTv.rulesProcessFailed' => 'Nem sikerült újra kiértékelni a felvételi szabályokat',
 			'liveTv.recordShow' => 'Műsor rögzítése',
 			'liveTv.recordSettings.startEarly' => 'Korábbi kezdés (másodperc)',
 			'liveTv.recordSettings.endLate' => 'Későbbi befejezés (másodperc)',
@@ -4542,10 +4546,10 @@ extension on TranslationsHu {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} epizód letöltésre sorba állítva',
 			'downloads.downloadDeleted' => 'Letöltés törölve',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Törlöd a következőt: "${title}" erről az eszközről?',
-			'downloads.cancelledDownloadTitle' => 'Megszakított letöltés',
-			'downloads.cancelledDownloadMessage' => 'Ez a letöltés meg lett szakítva. Mit szeretnél tenni?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Megszakított letöltés',
+			'downloads.cancelledDownloadMessage' => 'Ez a letöltés meg lett szakítva. Mit szeretnél tenni?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Minden epizód le van töltve',
 			'downloads.resumeDownload' => 'Letöltés folytatása',
 			'downloads.cancelledDownload' => 'Megszakított letöltés',

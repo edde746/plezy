@@ -1491,7 +1491,9 @@
     "editRuleAction": "Редактирай",
     "recordingRuleUpdated": "Правилото за запис е обновено",
     "guideReloadRequested": "Заявено е опресняване на ТВ програмата",
+    "guideReloadFailed": "ТВ програмата не можа да бъде презаредена",
     "rulesProcessRequested": "Заявена е преоценка на правилата",
+    "rulesProcessFailed": "Правилата за записване не можаха да бъдат обработени отново",
     "recordShow": "Запиши предаването",
     "recordSettings": {
       "startEarly": "Започване по-рано (секунди)",

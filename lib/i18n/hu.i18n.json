@@ -1491,7 +1491,9 @@
     "editRuleAction": "Szerkesztés",
     "recordingRuleUpdated": "Felvételi szabály frissítve",
     "guideReloadRequested": "Műsorújság frissítése kérve",
+    "guideReloadFailed": "Nem sikerült frissíteni a műsorújságot",
     "rulesProcessRequested": "Szabályok újraértékelése kérve",
+    "rulesProcessFailed": "Nem sikerült újra kiértékelni a felvételi szabályokat",
     "recordShow": "Műsor rögzítése",
     "recordSettings": {
       "startEarly": "Korábbi kezdés (másodperc)",

@@ -1542,7 +1542,9 @@ class _Translations$liveTv$it extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Modifica';
 	@override String get recordingRuleUpdated => 'Regola di registrazione aggiornata';
 	@override String get guideReloadRequested => 'Aggiornamento della guida richiesto';
+	@override String get guideReloadFailed => 'Impossibile aggiornare la guida';
 	@override String get rulesProcessRequested => 'Rielaborazione delle regole richiesta';
+	@override String get rulesProcessFailed => 'Impossibile rielaborare le regole di registrazione';
 	@override String get recordShow => 'Registra programma';
 	@override late final _Translations$liveTv$recordSettings$it recordSettings = _Translations$liveTv$recordSettings$it._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Inizia tra ${minutes} min';
@@ -4354,7 +4356,9 @@ extension on TranslationsIt {
 			'liveTv.editRuleAction' => 'Modifica',
 			'liveTv.recordingRuleUpdated' => 'Regola di registrazione aggiornata',
 			'liveTv.guideReloadRequested' => 'Aggiornamento della guida richiesto',
+			'liveTv.guideReloadFailed' => 'Impossibile aggiornare la guida',
 			'liveTv.rulesProcessRequested' => 'Rielaborazione delle regole richiesta',
+			'liveTv.rulesProcessFailed' => 'Impossibile rielaborare le regole di registrazione',
 			'liveTv.recordShow' => 'Registra programma',
 			'liveTv.recordSettings.startEarly' => 'Inizia in anticipo (secondi)',
 			'liveTv.recordSettings.endLate' => 'Termina in ritardo (secondi)',
@@ -4542,10 +4546,10 @@ extension on TranslationsIt {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Eliminare "${title}" da questo dispositivo?',
-			'downloads.cancelledDownloadTitle' => 'Download annullato',
-			'downloads.cancelledDownloadMessage' => 'Questo download è stato annullato. Cosa vuoi fare?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Download annullato',
+			'downloads.cancelledDownloadMessage' => 'Questo download è stato annullato. Cosa vuoi fare?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Tutti gli episodi sono già stati scaricati',
 			'downloads.resumeDownload' => 'Riprendi il download',
 			'downloads.cancelledDownload' => 'Download annullato',

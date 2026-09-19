@@ -1511,7 +1511,9 @@
     "editRuleAction": "Изменить",
     "recordingRuleUpdated": "Правило записи обновлено",
     "guideReloadRequested": "Запрошено обновление гайда",
+    "guideReloadFailed": "Не удалось обновить программу",
     "rulesProcessRequested": "Запрошен пересчёт правил",
+    "rulesProcessFailed": "Не удалось повторно применить правила записи",
     "recordShow": "Записать передачу",
     "recordSettings": {
       "startEarly": "Начинать раньше (секунды)",

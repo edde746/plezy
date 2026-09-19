@@ -1491,7 +1491,9 @@
     "editRuleAction": "Redigera",
     "recordingRuleUpdated": "Inspelningsregel uppdaterad",
     "guideReloadRequested": "Uppdatering av programguiden har begärts",
+    "guideReloadFailed": "Programguiden kunde inte uppdateras",
     "rulesProcessRequested": "Ny regelutvärdering har begärts",
+    "rulesProcessFailed": "Inspelningsreglerna kunde inte köras om",
     "recordShow": "Spela in program",
     "recordSettings": {
       "startEarly": "Börja tidigare (sekunder)",

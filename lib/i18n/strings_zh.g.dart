@@ -1534,7 +1534,9 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String get editRuleAction => '编辑';
 	@override String get recordingRuleUpdated => '录制规则已更新';
 	@override String get guideReloadRequested => '已请求更新节目指南';
+	@override String get guideReloadFailed => '无法刷新节目指南';
 	@override String get rulesProcessRequested => '已请求重新评估规则';
+	@override String get rulesProcessFailed => '无法重新评估录制规则';
 	@override String get recordShow => '录制节目';
 	@override late final Translations$liveTv$recordSettings$zh recordSettings = Translations$liveTv$recordSettings$zh.internal(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} 分钟后开始';
@@ -4343,7 +4345,9 @@ extension on TranslationsZh {
 			'liveTv.editRuleAction' => '编辑',
 			'liveTv.recordingRuleUpdated' => '录制规则已更新',
 			'liveTv.guideReloadRequested' => '已请求更新节目指南',
+			'liveTv.guideReloadFailed' => '无法刷新节目指南',
 			'liveTv.rulesProcessRequested' => '已请求重新评估规则',
+			'liveTv.rulesProcessFailed' => '无法重新评估录制规则',
 			'liveTv.recordShow' => '录制节目',
 			'liveTv.recordSettings.startEarly' => '提前开始（秒）',
 			'liveTv.recordSettings.endLate' => '延后结束（秒）',
@@ -4531,10 +4535,10 @@ extension on TranslationsZh {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',
 			'downloads.deleteConfirm' => ({required Object title}) => '要从此设备删除“${title}”吗？',
-			'downloads.cancelledDownloadTitle' => '已取消的下载',
-			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => '已取消的下载',
+			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有剧集均已下载',
 			'downloads.resumeDownload' => '继续下载',
 			'downloads.cancelledDownload' => '已取消的下载',

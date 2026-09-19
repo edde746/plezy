@@ -1542,7 +1542,9 @@ class _Translations$liveTv$nb extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Rediger';
 	@override String get recordingRuleUpdated => 'Opptaksregel oppdatert';
 	@override String get guideReloadRequested => 'Oppdatering av programguiden er forespurt';
+	@override String get guideReloadFailed => 'Kunne ikke oppdatere programguiden';
 	@override String get rulesProcessRequested => 'Ny vurdering av reglene er forespurt';
+	@override String get rulesProcessFailed => 'Kunne ikke kjøre opptaksreglene på nytt';
 	@override String get recordShow => 'Ta opp program';
 	@override late final _Translations$liveTv$recordSettings$nb recordSettings = _Translations$liveTv$recordSettings$nb._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Starter om ${minutes} min';
@@ -4354,7 +4356,9 @@ extension on TranslationsNb {
 			'liveTv.editRuleAction' => 'Rediger',
 			'liveTv.recordingRuleUpdated' => 'Opptaksregel oppdatert',
 			'liveTv.guideReloadRequested' => 'Oppdatering av programguiden er forespurt',
+			'liveTv.guideReloadFailed' => 'Kunne ikke oppdatere programguiden',
 			'liveTv.rulesProcessRequested' => 'Ny vurdering av reglene er forespurt',
+			'liveTv.rulesProcessFailed' => 'Kunne ikke kjøre opptaksreglene på nytt',
 			'liveTv.recordShow' => 'Ta opp program',
 			'liveTv.recordSettings.startEarly' => 'Start tidligere (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Slutt senere (sekunder)',
@@ -4542,10 +4546,10 @@ extension on TranslationsNb {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i nedlastingskø',
 			'downloads.downloadDeleted' => 'Nedlasting slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Slette "${title}" fra denne enheten?',
-			'downloads.cancelledDownloadTitle' => 'Avbrutt nedlasting',
-			'downloads.cancelledDownloadMessage' => 'Denne nedlastingen ble avbrutt. Hva vil du gjøre?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Avbrutt nedlasting',
+			'downloads.cancelledDownloadMessage' => 'Denne nedlastingen ble avbrutt. Hva vil du gjøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede lastet ned',
 			'downloads.resumeDownload' => 'Gjenoppta nedlasting',
 			'downloads.cancelledDownload' => 'Avbrutt nedlasting',

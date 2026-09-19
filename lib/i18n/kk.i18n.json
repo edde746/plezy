@@ -1491,7 +1491,9 @@
     "editRuleAction": "Өңдеу",
     "recordingRuleUpdated": "Жазу ережесі жаңартылды",
     "guideReloadRequested": "Бағдарламаны жаңарту сұралды",
+    "guideReloadFailed": "Телебағдарламаны жаңарту мүмкін болмады",
     "rulesProcessRequested": "Ережелерді қайта бағалау сұралды",
+    "rulesProcessFailed": "Жазу ережелерін қайта тексеру мүмкін болмады",
     "recordShow": "Шоуды жазу",
     "recordSettings": {
       "startEarly": "Ертерек бастау (секунд)",

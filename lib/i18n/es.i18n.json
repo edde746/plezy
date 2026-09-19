@@ -1491,7 +1491,9 @@
     "editRuleAction": "Editar",
     "recordingRuleUpdated": "Regla de grabación actualizada",
     "guideReloadRequested": "Solicitada actualización de la guía",
+    "guideReloadFailed": "No se pudo actualizar la guía",
     "rulesProcessRequested": "Solicitada reevaluación de reglas",
+    "rulesProcessFailed": "No se pudieron reevaluar las reglas de grabación",
     "recordShow": "Grabar programa",
     "recordSettings": {
       "startEarly": "Empezar antes (segundos)",

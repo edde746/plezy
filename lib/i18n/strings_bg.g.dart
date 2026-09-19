@@ -1542,7 +1542,9 @@ class _Translations$liveTv$bg extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Редактирай';
 	@override String get recordingRuleUpdated => 'Правилото за запис е обновено';
 	@override String get guideReloadRequested => 'Заявено е опресняване на ТВ програмата';
+	@override String get guideReloadFailed => 'ТВ програмата не можа да бъде презаредена';
 	@override String get rulesProcessRequested => 'Заявена е преоценка на правилата';
+	@override String get rulesProcessFailed => 'Правилата за записване не можаха да бъдат обработени отново';
 	@override String get recordShow => 'Запиши предаването';
 	@override late final _Translations$liveTv$recordSettings$bg recordSettings = _Translations$liveTv$recordSettings$bg._(_root);
 	@override String startingInMinutes({required Object minutes}) => 'Започва след ${minutes} мин';
@@ -4354,7 +4356,9 @@ extension on TranslationsBg {
 			'liveTv.editRuleAction' => 'Редактирай',
 			'liveTv.recordingRuleUpdated' => 'Правилото за запис е обновено',
 			'liveTv.guideReloadRequested' => 'Заявено е опресняване на ТВ програмата',
+			'liveTv.guideReloadFailed' => 'ТВ програмата не можа да бъде презаредена',
 			'liveTv.rulesProcessRequested' => 'Заявена е преоценка на правилата',
+			'liveTv.rulesProcessFailed' => 'Правилата за записване не можаха да бъдат обработени отново',
 			'liveTv.recordShow' => 'Запиши предаването',
 			'liveTv.recordSettings.startEarly' => 'Започване по-рано (секунди)',
 			'liveTv.recordSettings.endLate' => 'Приключване по-късно (секунди)',
@@ -4542,10 +4546,10 @@ extension on TranslationsBg {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
-			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
-			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
+			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Всички епизоди вече са изтеглени',
 			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',

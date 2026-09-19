@@ -1542,7 +1542,9 @@ class _Translations$liveTv$tr extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Düzenle';
 	@override String get recordingRuleUpdated => 'Kayıt kuralı güncellendi';
 	@override String get guideReloadRequested => 'Rehber yenilemesi istendi';
+	@override String get guideReloadFailed => 'Rehber yenilenemedi';
 	@override String get rulesProcessRequested => 'Kuralın yeniden değerlendirilmesi istendi';
+	@override String get rulesProcessFailed => 'Kayıt kuralları yeniden değerlendirilemedi';
 	@override String get recordShow => 'Programı kaydet';
 	@override late final _Translations$liveTv$recordSettings$tr recordSettings = _Translations$liveTv$recordSettings$tr._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} dk içinde başlıyor';
@@ -4354,7 +4356,9 @@ extension on TranslationsTr {
 			'liveTv.editRuleAction' => 'Düzenle',
 			'liveTv.recordingRuleUpdated' => 'Kayıt kuralı güncellendi',
 			'liveTv.guideReloadRequested' => 'Rehber yenilemesi istendi',
+			'liveTv.guideReloadFailed' => 'Rehber yenilenemedi',
 			'liveTv.rulesProcessRequested' => 'Kuralın yeniden değerlendirilmesi istendi',
+			'liveTv.rulesProcessFailed' => 'Kayıt kuralları yeniden değerlendirilemedi',
 			'liveTv.recordShow' => 'Programı kaydet',
 			'liveTv.recordSettings.startEarly' => 'Erken başlat (saniye)',
 			'liveTv.recordSettings.endLate' => 'Geç bitir (saniye)',
@@ -4542,10 +4546,10 @@ extension on TranslationsTr {
 			'downloads.episodesQueued' => ({required Object count}) => 'İndirmek için ${count} bölüm kuyruğa alındı',
 			'downloads.downloadDeleted' => 'İndirme silindi',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" bu cihazdan silinsin mi?',
-			'downloads.cancelledDownloadTitle' => 'İptal Edilen İndirme',
-			'downloads.cancelledDownloadMessage' => 'Bu indirme iptal edildi. Ne yapmak istersiniz?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'İptal Edilen İndirme',
+			'downloads.cancelledDownloadMessage' => 'Bu indirme iptal edildi. Ne yapmak istersiniz?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Tüm bölümler zaten indirildi',
 			'downloads.resumeDownload' => 'İndirmeyi devam ettir',
 			'downloads.cancelledDownload' => 'İptal edilen indirme',

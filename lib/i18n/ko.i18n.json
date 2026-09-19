@@ -1481,7 +1481,9 @@
     "editRuleAction": "편집",
     "recordingRuleUpdated": "녹화 규칙 업데이트됨",
     "guideReloadRequested": "가이드 새로고침 요청됨",
+    "guideReloadFailed": "편성표를 새로고침할 수 없습니다",
     "rulesProcessRequested": "규칙 재평가 요청됨",
+    "rulesProcessFailed": "녹화 규칙을 다시 적용할 수 없습니다",
     "recordShow": "프로그램 녹화",
     "recordSettings": {
       "startEarly": "일찍 시작 (초)",

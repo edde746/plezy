@@ -1491,7 +1491,9 @@
     "editRuleAction": "Modifica",
     "recordingRuleUpdated": "Regola di registrazione aggiornata",
     "guideReloadRequested": "Aggiornamento della guida richiesto",
+    "guideReloadFailed": "Impossibile aggiornare la guida",
     "rulesProcessRequested": "Rielaborazione delle regole richiesta",
+    "rulesProcessFailed": "Impossibile rielaborare le regole di registrazione",
     "recordShow": "Registra programma",
     "recordSettings": {
       "startEarly": "Inizia in anticipo (secondi)",

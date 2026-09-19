@@ -1542,7 +1542,9 @@ class _Translations$liveTv$uz extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Tahrirlash';
 	@override String get recordingRuleUpdated => 'Yozib olish qoidasi yangilandi';
 	@override String get guideReloadRequested => 'Jadvalni yangilash soʻraldi';
+	@override String get guideReloadFailed => 'Dasturlar jadvalini yangilab boʻlmadi';
 	@override String get rulesProcessRequested => 'Qoidalarni qayta baholash soʻraldi';
+	@override String get rulesProcessFailed => 'Yozib olish qoidalarini qayta baholab boʻlmadi';
 	@override String get recordShow => 'Shouni yozib olish';
 	@override late final _Translations$liveTv$recordSettings$uz recordSettings = _Translations$liveTv$recordSettings$uz._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} daqiqadan keyin boshlanadi';
@@ -4354,7 +4356,9 @@ extension on TranslationsUz {
 			'liveTv.editRuleAction' => 'Tahrirlash',
 			'liveTv.recordingRuleUpdated' => 'Yozib olish qoidasi yangilandi',
 			'liveTv.guideReloadRequested' => 'Jadvalni yangilash soʻraldi',
+			'liveTv.guideReloadFailed' => 'Dasturlar jadvalini yangilab boʻlmadi',
 			'liveTv.rulesProcessRequested' => 'Qoidalarni qayta baholash soʻraldi',
+			'liveTv.rulesProcessFailed' => 'Yozib olish qoidalarini qayta baholab boʻlmadi',
 			'liveTv.recordShow' => 'Shouni yozib olish',
 			'liveTv.recordSettings.startEarly' => 'Erta boshlash (soniya)',
 			'liveTv.recordSettings.endLate' => 'Kech tugatish (soniya)',
@@ -4542,10 +4546,10 @@ extension on TranslationsUz {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} qism yuklash navbatiga qoʻshildi',
 			'downloads.downloadDeleted' => 'Yuklama oʻchirildi',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" ushbu qurilmadan oʻchirilsinmi?',
-			'downloads.cancelledDownloadTitle' => 'Toʻxtatilgan yuklama',
-			'downloads.cancelledDownloadMessage' => 'Ushbu yuklash toʻxtatildi.',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Toʻxtatilgan yuklama',
+			'downloads.cancelledDownloadMessage' => 'Ushbu yuklash toʻxtatildi.',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Barcha qismlar avvaldan yuklab olingan',
 			'downloads.resumeDownload' => 'Yuklashni davom ettirish',
 			'downloads.cancelledDownload' => 'Toʻxtatilgan yuklama',
