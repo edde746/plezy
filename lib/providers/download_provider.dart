@@ -314,6 +314,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final meta = _metadata[globalKey];
       final releasedAsShared = await _releaseDownloadForProfile(globalKey, profileId, onlyIfShared: true);
       if (releasedAsShared) {
+        // The row survives for its other owner, but it is gone from this
+        // profile: surfaces built from our ownership (offline detail) must
+        // drop it or they offer a download that can no longer be played.
+        if (meta != null && _activeProfileId == profileId) {
+          DeletionNotifier().notifyDeletedItem(item: meta, isDownloadOnly: true);
+        }
         changed = true;
         continue;
       }
