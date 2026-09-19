@@ -138,53 +138,40 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   }
 
   Future<void> _loadSorts() async {
+    List<MediaSort> sorts = const [];
     try {
       final serverId = widget.hub.serverId;
       if (serverId == null) {
         appLogger.w('Hub has no serverId; using default sort options');
-        if (!mounted) return;
-        setState(() {
-          _sortOptions = _getDefaultSortOptions();
-        });
-        return;
-      }
-
-      // Hub ids can have various formats:
-      // - /hubs/sections/1/... (Plex)
-      // - /library/sections/1/all?... (Plex)
-      // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
-      // - home.recent / library.<id>.continue (Jellyfin synthesized)
-      final hubKey = widget.hub.id;
-      appLogger.d('Hub key: $hubKey');
-
-      final sectionId = plexLibrarySectionIdFromString(hubKey);
-
-      if (sectionId != null) {
-        appLogger.d('Loading sorts for section: $sectionId');
-
-        final client = context.tryGetMediaClientForServer(ServerId(serverId));
-        final sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions('$sectionId');
-
-        appLogger.d('Loaded ${sorts.length} sorts');
-
-        if (!mounted) return;
-        setState(() {
-          _sortOptions = sorts.isNotEmpty ? sorts : _getDefaultSortOptions();
-        });
       } else {
-        appLogger.w('Could not extract section ID from hub key: $hubKey');
-        if (!mounted) return;
-        setState(() {
-          _sortOptions = _getDefaultSortOptions();
-        });
+        // Hub ids can have various formats:
+        // - /hubs/sections/1/... (Plex)
+        // - /library/sections/1/all?... (Plex)
+        // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
+        // - home.recent / library.<id>.continue (Jellyfin synthesized)
+        final hubKey = widget.hub.id;
+        appLogger.d('Hub key: $hubKey');
+
+        final sectionId = plexLibrarySectionIdFromString(hubKey);
+
+        if (sectionId != null) {
+          appLogger.d('Loading sorts for section: $sectionId');
+
+          final client = context.tryGetMediaClientForServer(ServerId(serverId));
+          sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions('$sectionId');
+
+          appLogger.d('Loaded ${sorts.length} sorts');
+        } else {
+          appLogger.w('Could not extract section ID from hub key: $hubKey');
+        }
       }
     } catch (e) {
       appLogger.e('Failed to load sorts', error: e);
-      if (!mounted) return;
-      setState(() {
-        _sortOptions = _getDefaultSortOptions();
-      });
     }
+    if (!mounted) return;
+    setState(() {
+      _sortOptions = sorts.isNotEmpty ? sorts : _getDefaultSortOptions();
+    });
   }
 
   /// Catalog hubs (Explore View All) hold synthesized items with no library
@@ -292,11 +279,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   void onPageLoaded(int start, List<MediaItem> items) {
     if (!_usesPaginatedLoader || start == 0 || !mounted) return;
-    setState(() {
-      _items = List.of(_items)..addAll(items);
-      _filteredItems = List.of(_items);
-    });
-    _applySort();
+    _replaceItems(List.of(_items)..addAll(items));
     _scheduleNextHubPageCheck();
   }
 
@@ -406,12 +389,13 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   void _applyContinuationPage(ContinuationPage<MediaItem> page) {
     if (!mounted) return;
+    _replaceItems(_replaceContinuationItems ? List.of(page.items) : (List.of(_items)..addAll(page.items)));
+  }
+
+  /// Swap in the merged item list and re-derive the sorted view from it.
+  void _replaceItems(List<MediaItem> items) {
     setState(() {
-      if (_replaceContinuationItems) {
-        _items = List.of(page.items);
-      } else {
-        _items = List.of(_items)..addAll(page.items);
-      }
+      _items = items;
       _filteredItems = List.of(_items);
     });
     _applySort();
@@ -423,14 +407,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     });
   }
 
+  /// Whether the offset-paged loader has another page to request.
+  bool get _canRequestNextHubPage =>
+      _usesPaginatedLoader && loadedItems.length < totalSize && !isPaginationLoading && paginationError == null;
+
   void _maybeLoadNextHubPage() {
-    if (!_usesPaginatedLoader ||
-        loadedItems.length >= totalSize ||
-        isPaginationLoading ||
-        paginationError != null ||
-        !scrollController.hasClients) {
-      return;
-    }
+    if (!_canRequestNextHubPage || !scrollController.hasClients) return;
     final position = scrollController.position;
     if (position.extentAfter <= position.viewportDimension) {
       _requestNextHubPage();
@@ -438,9 +420,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   }
 
   void _requestNextHubPage() {
-    if (!_usesPaginatedLoader || loadedItems.length >= totalSize || isPaginationLoading || paginationError != null) {
-      return;
-    }
+    if (!_canRequestNextHubPage) return;
     ensureIndexLoaded(loadedItems.length, pageSize: _pageSize);
   }
 
