@@ -9,6 +9,7 @@ import '../../../services/scrub_preview_source.dart';
 import '../../../utils/formatters.dart';
 import '../helpers/eager_horizontal_drag_recognizer.dart';
 import '../painters/buffer_range_painter.dart';
+import 'player_focus_disc.dart';
 
 /// Timeline slider with chapter markers for video playback
 ///
@@ -304,6 +305,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
         (_dragValue != null ||
             _mousePosition != null ||
             (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null));
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+    final showFocus = _isFocused && isKeyboardMode;
 
     // The element tree below is structurally identical on every build: an
     // in-flight drag must never be disposed mid-gesture by a tree flip, and
@@ -373,8 +376,12 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       padding: .zero,
                       overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
                       tickMarkShape: SliderTickMarkShape.noTickMark,
+                      // D-pad focus swaps the 4x20 handle for a shadowed knob
+                      // (#2383); in pointer mode the handle always shows, and
+                      // an unfocused timeline in D-pad mode shows none.
+                      thumbShape: showFocus ? const _FocusKnobThumbShape() : null,
                       thumbSize: WidgetStatePropertyAll(
-                        (!InputModeTracker.isKeyboardMode(context) || _isFocused) ? const Size(4, 20) : Size.zero,
+                        (!isKeyboardMode || _isFocused) ? const Size(4, 20) : Size.zero,
                       ),
                     ),
                     child: Slider(
@@ -505,4 +512,27 @@ class _ScrubFrameView extends StatelessWidget {
         );
     }
   }
+}
+
+class _FocusKnobThumbShape extends SliderComponentShape {
+  const _FocusKnobThumbShape();
+
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size.fromRadius(playerFocusKnobRadius);
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    required bool isDiscrete,
+    required TextPainter labelPainter,
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required TextDirection textDirection,
+    required double value,
+    required double textScaleFactor,
+    required Size sizeWithOverflow,
+  }) => paintPlayerFocusKnob(context.canvas, center);
 }

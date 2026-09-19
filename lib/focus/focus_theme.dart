@@ -8,6 +8,10 @@ class FocusTheme {
 
   static const double focusScale = 1.02;
   static const double fullCardFocusScale = 1.03;
+
+  /// Round 40px player controls: the card scale is imperceptible on a
+  /// control that small, so the focused disc grows enough to be seen move.
+  static const double playerControlFocusScale = 1.12;
   static const double focusBorderWidth = 2.5;
   static const double defaultBorderRadius = 8.0;
   static const double focusGlowInnerBlurRadius = 18;

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
@@ -18,7 +17,6 @@ import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
-import '../../focus/focusable_wrapper.dart';
 import '../../models/livetv_capture_buffer.dart';
 import 'models/track_controls_state.dart';
 import 'player_chrome_controller.dart';
@@ -31,6 +29,7 @@ import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 import 'widgets/volume_control.dart';
 import 'widgets/track_chapter_controls.dart';
+import 'video_control_button.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatefulWidget {
@@ -991,26 +990,16 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     double iconSize = 24,
     String? tooltip,
   }) {
-    return FocusableWrapper(
+    return VideoControlButton(
+      icon: icon,
+      iconSize: iconSize,
+      color: color,
+      tooltip: tooltip,
+      semanticLabel: semanticLabel,
       focusNode: focusNode,
-      onSelect: onPressed,
       onKeyEvent: (node, event) => _handleButtonKeyEvent(node, event, index),
       onFocusChange: _onFocusChange,
-      borderRadius: 20,
-      autoScroll: false,
-      useBackgroundFocus: true,
-      semanticLabel: semanticLabel,
-      child: Semantics(
-        label: semanticLabel,
-        button: true,
-        excludeSemantics: true,
-        child: IconButton(
-          icon: AppIcon(icon, fill: 1, color: color, size: iconSize),
-          iconSize: iconSize,
-          tooltip: tooltip,
-          onPressed: onPressed,
-        ),
-      ),
+      onPressed: onPressed,
     );
   }
 }
