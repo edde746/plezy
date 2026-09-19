@@ -47,7 +47,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       return false
     }
     attachMetalLayer(to: contentLayer, frame: contentView.bounds)
-    updateEDRMode(sigPeak: lastSigPeak)
+    publishDisplayHeadroom()
 
     MpvLog.debug("[MpvPlayerCore] Metal layer added, frame: \(layer.frame)")
 
@@ -76,6 +76,18 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       selector: #selector(windowOcclusionDidChange),
       name: NSWindow.didChangeOcclusionStateNotification,
       object: window
+    )
+    center.addObserver(
+      self,
+      selector: #selector(windowDidChangeScreen),
+      name: NSWindow.didChangeScreenNotification,
+      object: window
+    )
+    center.addObserver(
+      self,
+      selector: #selector(screenParametersDidChange),
+      name: NSApplication.didChangeScreenParametersNotification,
+      object: nil
     )
 
     // Display/system sleep does not reliably change occlusionState, so observe
@@ -194,26 +206,32 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       metalLayer.frame = targetFrame
       updateDrawableSize(for: metalLayer)
     }
-    updateEDRMode(sigPeak: lastSigPeak)
+    publishDisplayHeadroom()
   }
 
-  override func updateEDRMode(sigPeak: Double) {
+  /// KVC key the moltenvk gpu-context reads per frame for its display report
+  /// (`preferred_csp`, mpv-build patch 0029). A CALayer has no screen of its
+  /// own, so the screen showing the window is resolved here and its EDR
+  /// headroom published on the layer: above 1 the context reports a BT.2020
+  /// PQ display and mpv's `target-colorspace-hint=auto` engages; at 1 the
+  /// report stays unknown and mpv tone-maps to SDR on the untagged
+  /// pass-through swapchain, as before. MoltenVK then owns the layer's
+  /// colorspace and `wantsExtendedDynamicRangeContent` from the swapchain it
+  /// negotiates; nothing here writes them.
+  private static let edrHeadroomKey = "mpvEDRHeadroom"
+
+  private func publishDisplayHeadroom() {
     guard let metalLayer else { return }
-
-    let hdrEnabled = self.hdrEnabled
-    var potentialHeadroom: CGFloat = 1.0
-    if let screen = window?.screen ?? NSScreen.main {
-      potentialHeadroom = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
+    let screen = window?.screen ?? NSScreen.main
+    let headroom = Double(screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1.0)
+    let previous = (metalLayer.value(forKey: Self.edrHeadroomKey) as? NSNumber)?.doubleValue
+    guard previous != headroom else { return }
+    metalLayer.setValue(NSNumber(value: headroom), forKey: Self.edrHeadroomKey)
+    MpvLog.debug("[MpvPlayerCore] Display EDR headroom: \(headroom)")
+    // mpv re-reads the key on its next draw; a paused video has none coming.
+    if previous != nil {
+      redrawIfPausedAndVisible()
     }
-
-    let shouldEnableEDR = hdrEnabled && sigPeak > 1.0 && potentialHeadroom > 1.0
-    withoutLayerAnimations {
-      metalLayer.wantsExtendedDynamicRangeContent = shouldEnableEDR
-    }
-
-    MpvLog.debug(
-      "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), potentialHeadroom: \(potentialHeadroom))"
-    )
   }
 
   func dispose() {
@@ -241,6 +259,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   @objc private func windowDidExitFullScreen(_ notification: Notification) {
     guard !isPipActive else { return }
     updateFrame()
+  }
+
+  @objc private func windowDidChangeScreen(_ notification: Notification) {
+    publishDisplayHeadroom()
+  }
+
+  @objc private func screenParametersDidChange(_ notification: Notification) {
+    publishDisplayHeadroom()
   }
 
   @objc private func windowOcclusionDidChange(_ notification: Notification) {
