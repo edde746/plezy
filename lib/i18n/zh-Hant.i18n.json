@@ -726,7 +726,7 @@
     "pipFailed": "啟動子母畫面失敗",
     "screenshotSaved": "螢幕截圖已儲存",
     "zoomPercent": "縮放 ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "音量 ${percent}%",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
       "iosVersion": "需要 iOS 15.0 或更高版本",
@@ -926,7 +926,7 @@
     "borrowAddTo": "新增至 ${displayName}",
     "borrowExplain": "共用另一個使用者設定檔的連線資訊。受 PIN 碼保護的設定檔需輸入 PIN 碼。",
     "borrowEmpty": "目前沒有可共用的連線。",
-    "borrowEmptySubtitle": "請先將 Plex 或 Jellyfin 連線至另一個使用者設定檔。",
+    "borrowEmptySubtitle": "請先將 Plex、Jellyfin 或 Emby 連線至另一個使用者設定檔。",
     "borrowLoadFailed": "無法載入可用的連線。請重試。",
     "borrowFromProfile": "來自 ${displayName}",
     "borrowConnectionBorrowed": "已共用連線。",
@@ -947,8 +947,8 @@
   "connections": {
     "sectionTitle": "連線",
     "addConnection": "新增連線",
-    "addConnectionSubtitleNoProfile": "使用 Plex 登入或連線至 Jellyfin 伺服器",
-    "addConnectionSubtitleScoped": "新增至 ${displayName}：Plex、Jellyfin 或其他設定檔連線",
+    "addConnectionSubtitleNoProfile": "使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器",
+    "addConnectionSubtitleScoped": "新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線",
     "sessionExpiredOne": "${name} 的工作階段已過期",
     "sessionExpiredMany": "${count} 個伺服器的工作階段已過期",
     "signInAgain": "重新登入",
@@ -1159,16 +1159,16 @@
       "dateShared": "分享日期",
       "latestEpisodeAirDate": "最新一集播出日期",
       "lastEpisodeDateAdded": "最新一集新增日期",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "下載日期",
+      "size": "大小",
+      "library": "媒體庫"
     }
   },
   "about": {
     "title": "關於",
     "openSourceLicenses": "開源授權條款",
     "versionLabel": "版本 ${version}",
-    "appDescription": "一款精美的 Plex 與 Jellyfin Flutter 用戶端",
+    "appDescription": "一款精美的 Plex、Jellyfin 與 Emby Flutter 用戶端",
     "viewLicensesDescription": "查看第三方套件的授權條款"
   },
   "serverSelection": {
@@ -1771,11 +1771,11 @@
       "settingsUnavailable": "無法在這部裝置上開啟系統設定",
       "linkUnavailable": "無法在這部裝置上開啟 dontkillmyapp.com"
     },
-    "options": "",
+    "options": "下載選項",
     "groupings": {
-      "library": ""
+      "library": "媒體庫"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "未知媒體庫",
     "unknownShow": "未知節目",
     "unknownSeason": "未知季度",
     "unknownAlbum": "未知專輯",

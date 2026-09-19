@@ -726,7 +726,7 @@
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "screenshotSaved": "스크린샷 저장됨",
     "zoomPercent": "확대/축소 ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "볼륨 ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",
       "iosVersion": "iOS 15.0 이상이 필요합니다",
@@ -926,7 +926,7 @@
     "borrowAddTo": "${displayName}에 추가",
     "borrowExplain": "다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.",
     "borrowEmpty": "아직 빌릴 것이 없습니다.",
-    "borrowEmptySubtitle": "먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.",
+    "borrowEmptySubtitle": "먼저 다른 프로필에 Plex, Jellyfin 또는 Emby를 연결하세요.",
     "borrowLoadFailed": "사용 가능한 연결을 불러오지 못했습니다. 다시 시도하세요.",
     "borrowFromProfile": "${displayName}에서",
     "borrowConnectionBorrowed": "연결을 빌렸습니다.",
@@ -947,8 +947,8 @@
   "connections": {
     "sectionTitle": "연결",
     "addConnection": "연결 추가",
-    "addConnectionSubtitleNoProfile": "Plex로 로그인하거나 Jellyfin 서버에 연결",
-    "addConnectionSubtitleScoped": "${displayName}에 추가: Plex, Jellyfin 또는 다른 프로필 연결",
+    "addConnectionSubtitleNoProfile": "Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결",
+    "addConnectionSubtitleScoped": "${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결",
     "sessionExpiredOne": "${name}의 세션이 만료되었습니다",
     "sessionExpiredMany": "${count}개 서버의 세션이 만료되었습니다",
     "signInAgain": "다시 로그인",
@@ -1159,16 +1159,16 @@
       "dateShared": "공유된 날짜",
       "latestEpisodeAirDate": "최신 에피소드 방영일",
       "lastEpisodeDateAdded": "최신 에피소드 추가일",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "다운로드된 날짜",
+      "size": "크기",
+      "library": "라이브러리"
     }
   },
   "about": {
     "title": "소개",
     "openSourceLicenses": "오픈소스 라이선스",
     "versionLabel": "버전 ${version}",
-    "appDescription": "Flutter로 만든 아름다운 Plex 및 Jellyfin 클라이언트",
+    "appDescription": "Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트",
     "viewLicensesDescription": "타사 라이브러리 라이선스 보기"
   },
   "serverSelection": {
@@ -1771,11 +1771,11 @@
       "settingsUnavailable": "이 기기에서 시스템 설정을 열 수 없습니다",
       "linkUnavailable": "이 기기에서 dontkillmyapp.com을 열 수 없습니다"
     },
-    "options": "",
+    "options": "다운로드 옵션",
     "groupings": {
-      "library": ""
+      "library": "라이브러리"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "알 수 없는 라이브러리",
     "unknownShow": "알 수 없는 프로그램",
     "unknownSeason": "알 수 없는 시즌",
     "unknownAlbum": "알 수 없는 앨범",

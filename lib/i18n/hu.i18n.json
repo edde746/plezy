@@ -729,7 +729,7 @@
     "pipFailed": "Nem sikerült elindítani a kép a képben módot",
     "screenshotSaved": "Képernyőkép elmentve",
     "zoomPercent": "Nagyítás ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "Hangerő ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 vagy újabb szükséges",
       "iosVersion": "iOS 15.0 vagy újabb szükséges",
@@ -930,7 +930,7 @@
     "borrowAddTo": "Hozzáadás a következőhöz: ${displayName}",
     "borrowExplain": "Használd egy másik profil kapcsolatát. A PIN-kóddal védett profilokhoz PIN-kód szükséges.",
     "borrowEmpty": "Még nincs használható kapcsolat.",
-    "borrowEmptySubtitle": "Először csatlakoztasd a Plexet vagy a Jellyfint egy másik profilhoz.",
+    "borrowEmptySubtitle": "Először csatlakoztasd a Plexet, a Jellyfint vagy az Embyt egy másik profilhoz.",
     "borrowLoadFailed": "Nem sikerült betölteni az elérhető kapcsolatokat. Próbáld újra.",
     "borrowFromProfile": "Innen: ${displayName}",
     "borrowConnectionBorrowed": "Kapcsolat átvéve.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Kapcsolatok",
     "addConnection": "Kapcsolat hozzáadása",
-    "addConnectionSubtitleNoProfile": "Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin-szervert",
-    "addConnectionSubtitleScoped": "Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin vagy más profilkapcsolat",
+    "addConnectionSubtitleNoProfile": "Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert",
+    "addConnectionSubtitleScoped": "Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat",
     "sessionExpiredOne": "A(z) ${name} munkamenete lejárt",
     "sessionExpiredMany": "${count} szerver munkamenete lejárt",
     "signInAgain": "Bejelentkezés újra",
@@ -1164,16 +1164,16 @@
       "dateShared": "Megosztás dátuma",
       "latestEpisodeAirDate": "A legutóbbi epizód sugárzási dátuma",
       "lastEpisodeDateAdded": "Utolsó epizód hozzáadásának dátuma",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "Letöltés dátuma",
+      "size": "Méret",
+      "library": "Könyvtár"
     }
   },
   "about": {
     "title": "Névjegy",
     "openSourceLicenses": "Nyílt forráskódú licencek",
     "versionLabel": "Verzió: ${version}",
-    "appDescription": "Gyönyörű Flutter-kliens a Plexhez és a Jellyfinhez",
+    "appDescription": "Gyönyörű Flutter-kliens a Plexhez, a Jellyfinhez és az Embyhez",
     "viewLicensesDescription": "Külső fejlesztésű programkönyvtárak licenceinek megtekintése"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Ezen az eszközön nem sikerült megnyitni a rendszerbeállításokat",
       "linkUnavailable": "Ezen az eszközön nem sikerült megnyitni a dontkillmyapp.com webhelyet"
     },
-    "options": "",
+    "options": "Letöltések lehetőségei",
     "groupings": {
-      "library": ""
+      "library": "Könyvtár"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Ismeretlen könyvtár",
     "unknownShow": "Ismeretlen sorozat",
     "unknownSeason": "Ismeretlen évad",
     "unknownAlbum": "Ismeretlen album",

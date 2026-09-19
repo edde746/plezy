@@ -729,7 +729,7 @@
     "pipFailed": "PiP режимін іске қосу қатесі",
     "screenshotSaved": "Экран суреті сақталды",
     "zoomPercent": "Масштаб %${percent}",
-    "volumePercent": "",
+    "volumePercent": "Дыбыс ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 немесе жаңалауы қажет",
       "iosVersion": "iOS 15.0 немесе жаңалауы қажет",
@@ -930,7 +930,7 @@
     "borrowAddTo": "${displayName} профиліне қосу",
     "borrowExplain": "Басқа профильдің қосылымын пайдаланыңыз.",
     "borrowEmpty": "Әлі де пайдаланатын ештеңе жоқ.",
-    "borrowEmptySubtitle": "Алдымен басқа профильге Plex немесе Jellyfin қосыңыз.",
+    "borrowEmptySubtitle": "Алдымен басқа профильге Plex, Jellyfin немесе Emby қосыңыз.",
     "borrowLoadFailed": "Қолжетімді қосылымдарды жүктеу мүмкін болмады.",
     "borrowFromProfile": "${displayName} профилінен",
     "borrowConnectionBorrowed": "Қосылым пайдаланылды.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Қосылымдар",
     "addConnection": "Қосылым қосу",
-    "addConnectionSubtitleNoProfile": "Plex арқылы кіріңіз немесе Jellyfin серверіне қосылыңыз",
-    "addConnectionSubtitleScoped": "${displayName} профиліне қосу",
+    "addConnectionSubtitleNoProfile": "Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз",
+    "addConnectionSubtitleScoped": "${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым",
     "sessionExpiredOne": "${name} үшін сеанс мерзімі өтті",
     "sessionExpiredMany": "${count} сервер үшін сеанс мерзімі өтті",
     "signInAgain": "Қайтадан кіру",
@@ -1164,16 +1164,16 @@
       "dateShared": "Бөлісілген күні",
       "latestEpisodeAirDate": "Соңғы бөлімнің шыққан күні",
       "lastEpisodeDateAdded": "Соңғы қосылған бөлім күні",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "Жүктелген күні",
+      "size": "Көлемі",
+      "library": "Кітапхана"
     }
   },
   "about": {
     "title": "Қолданба туралы",
     "openSourceLicenses": "Ашық бастапқы код лицензиялары",
     "versionLabel": "Нұсқа ${version}",
-    "appDescription": "Flutter негізіндегі ыңғайлы Plex және Jellyfin клиенті",
+    "appDescription": "Flutter негізіндегі ыңғайлы Plex, Jellyfin және Emby клиенті",
     "viewLicensesDescription": "Үшінші тарап кітапханаларының лицензияларын көру"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Бұл құрылғыда жүйе баптаулары ашылмады",
       "linkUnavailable": "Бұл құрылғыда dontkillmyapp.com ашылмады"
     },
-    "options": "",
+    "options": "Жүктеулер параметрлері",
     "groupings": {
-      "library": ""
+      "library": "Кітапхана"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Белгісіз кітапхана",
     "unknownShow": "Белгісіз телешоу",
     "unknownSeason": "Белгісіз маусым",
     "unknownAlbum": "Белгісіз альбом",

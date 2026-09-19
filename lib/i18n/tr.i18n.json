@@ -729,7 +729,7 @@
     "pipFailed": "Pencere içinde pencere modu başlatılamadı",
     "screenshotSaved": "Ekran görüntüsü kaydedildi",
     "zoomPercent": "Yakınlaştırma %${percent}",
-    "volumePercent": "",
+    "volumePercent": "Ses %${percent}",
     "pipErrors": {
       "androidVersion": "Android 8.0 veya daha yenisini gerektirir",
       "iosVersion": "iOS 15.0 veya daha yenisini gerektirir",
@@ -930,7 +930,7 @@
     "borrowAddTo": "${displayName} profiline ekle",
     "borrowExplain": "Başka bir profilin bağlantısını ödünç alın. PIN korumalı profiller bir PIN gerektirir.",
     "borrowEmpty": "Henüz ödünç alınacak bir şey yok.",
-    "borrowEmptySubtitle": "Önce başka bir profile Plex veya Jellyfin bağlayın.",
+    "borrowEmptySubtitle": "Önce başka bir profile Plex, Jellyfin veya Emby bağlayın.",
     "borrowLoadFailed": "Mevcut bağlantılar yüklenemedi. Tekrar deneyin.",
     "borrowFromProfile": "${displayName} profilinden",
     "borrowConnectionBorrowed": "Bağlantı ödünç alındı.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Bağlantılar",
     "addConnection": "Bağlantı ekle",
-    "addConnectionSubtitleNoProfile": "Plex ile giriş yapın veya bir Jellyfin sunucusu bağlayın",
-    "addConnectionSubtitleScoped": "${displayName} profiline ekle: Plex, Jellyfin veya başka bir profil bağlantısı",
+    "addConnectionSubtitleNoProfile": "Plex ile giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın",
+    "addConnectionSubtitleScoped": "${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı",
     "sessionExpiredOne": "${name} için oturum süresi doldu",
     "sessionExpiredMany": "${count} sunucu için oturum süresi doldu",
     "signInAgain": "Tekrar giriş yap",
@@ -1164,16 +1164,16 @@
       "dateShared": "Paylaşılma Tarihi",
       "latestEpisodeAirDate": "Son Bölüm Yayın Tarihi",
       "lastEpisodeDateAdded": "Eklenen Son Bölüm Tarihi",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "İndirme Tarihi",
+      "size": "Boyut",
+      "library": "Kitaplık"
     }
   },
   "about": {
     "title": "Hakkında",
     "openSourceLicenses": "Açık Kaynak Lisansları",
     "versionLabel": "Sürüm ${version}",
-    "appDescription": "Flutter için şık bir Plex ve Jellyfin istemcisi",
+    "appDescription": "Flutter için şık bir Plex, Jellyfin ve Emby istemcisi",
     "viewLicensesDescription": "Üçüncü taraf kütüphanelerin lisanslarını görüntüleyin"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Bu cihazda sistem ayarları açılamadı",
       "linkUnavailable": "Bu cihazda dontkillmyapp.com açılamadı"
     },
-    "options": "",
+    "options": "İndirme seçenekleri",
     "groupings": {
-      "library": ""
+      "library": "Kitaplık"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Bilinmeyen kitaplık",
     "unknownShow": "Bilinmeyen Dizi",
     "unknownSeason": "Bilinmeyen Sezon",
     "unknownAlbum": "Bilinmeyen Albüm",

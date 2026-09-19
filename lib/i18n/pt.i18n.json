@@ -729,7 +729,7 @@
     "pipFailed": "Falha ao iniciar picture-in-picture",
     "screenshotSaved": "Captura de tela salva",
     "zoomPercent": "Zoom ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "Volume ${percent}%",
     "pipErrors": {
       "androidVersion": "Requer Android 8.0 ou superior",
       "iosVersion": "Requer iOS 15.0 ou superior",
@@ -930,7 +930,7 @@
     "borrowAddTo": "Adicionar a ${displayName}",
     "borrowExplain": "Use a conexão de outro perfil. Perfis protegidos por PIN exigem PIN.",
     "borrowEmpty": "Nenhuma conexão disponível ainda.",
-    "borrowEmptySubtitle": "Conecte Plex ou Jellyfin a outro perfil primeiro.",
+    "borrowEmptySubtitle": "Conecte Plex, Jellyfin ou Emby a outro perfil primeiro.",
     "borrowLoadFailed": "Não foi possível carregar as conexões disponíveis. Tente novamente.",
     "borrowFromProfile": "De ${displayName}",
     "borrowConnectionBorrowed": "Conexão adicionada ao perfil.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Conexões",
     "addConnection": "Adicionar conexão",
-    "addConnectionSubtitleNoProfile": "Entre com Plex ou conecte um servidor Jellyfin",
-    "addConnectionSubtitleScoped": "Adicionar a ${displayName}: Plex, Jellyfin ou outra conexão de perfil",
+    "addConnectionSubtitleNoProfile": "Entre com Plex ou conecte um servidor Jellyfin ou Emby",
+    "addConnectionSubtitleScoped": "Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra conexão de perfil",
     "sessionExpiredOne": "Sessão de ${name} expirada",
     "sessionExpiredMany": "Sessões expiradas em ${count} servidores",
     "signInAgain": "Entrar novamente",
@@ -1164,16 +1164,16 @@
       "dateShared": "Data de compartilhamento",
       "latestEpisodeAirDate": "Última data de exibição do episódio",
       "lastEpisodeDateAdded": "Data de adição do último episódio",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "Data de download",
+      "size": "Tamanho",
+      "library": "Biblioteca"
     }
   },
   "about": {
     "title": "Sobre",
     "openSourceLicenses": "Licenças de código aberto",
     "versionLabel": "Versão ${version}",
-    "appDescription": "Um belo cliente de Plex e Jellyfin feito com Flutter",
+    "appDescription": "Um belo cliente de Plex, Jellyfin e Emby feito com Flutter",
     "viewLicensesDescription": "Ver as licenças de bibliotecas de terceiros"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Não foi possível abrir as configurações do sistema neste dispositivo",
       "linkUnavailable": "Não foi possível abrir dontkillmyapp.com neste dispositivo"
     },
-    "options": "",
+    "options": "Opções de downloads",
     "groupings": {
-      "library": ""
+      "library": "Biblioteca"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Biblioteca desconhecida",
     "unknownShow": "Série desconhecida",
     "unknownSeason": "Temporada desconhecida",
     "unknownAlbum": "Álbum desconhecido",

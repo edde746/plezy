@@ -729,7 +729,7 @@
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "screenshotSaved": "Schermafbeelding opgeslagen",
     "zoomPercent": "Zoom ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "Volume ${percent}%",
     "pipErrors": {
       "androidVersion": "Vereist Android 8.0 of nieuwer",
       "iosVersion": "Vereist iOS 15.0 of nieuwer",
@@ -930,7 +930,7 @@
     "borrowAddTo": "Toevoegen aan ${displayName}",
     "borrowExplain": "Leen de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.",
     "borrowEmpty": "Nog niets te lenen.",
-    "borrowEmptySubtitle": "Verbind Plex of Jellyfin eerst met een ander profiel.",
+    "borrowEmptySubtitle": "Verbind Plex, Jellyfin of Emby eerst met een ander profiel.",
     "borrowLoadFailed": "Beschikbare verbindingen konden niet worden geladen. Probeer het opnieuw.",
     "borrowFromProfile": "Van ${displayName}",
     "borrowConnectionBorrowed": "Verbinding geleend.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Verbindingen",
     "addConnection": "Verbinding toevoegen",
-    "addConnectionSubtitleNoProfile": "Meld je aan met Plex of verbind een Jellyfin-server",
-    "addConnectionSubtitleScoped": "Toevoegen aan ${displayName}: Plex, Jellyfin of een andere profielverbinding",
+    "addConnectionSubtitleNoProfile": "Meld je aan met Plex of verbind een Jellyfin- of Emby-server",
+    "addConnectionSubtitleScoped": "Toevoegen aan ${displayName}: Plex, Jellyfin, Emby of een andere profielverbinding",
     "sessionExpiredOne": "Sessie verlopen voor ${name}",
     "sessionExpiredMany": "Sessie verlopen voor ${count} servers",
     "signInAgain": "Opnieuw aanmelden",
@@ -1164,16 +1164,16 @@
       "dateShared": "Gedeeld op",
       "latestEpisodeAirDate": "Laatste afleveringsuitzending",
       "lastEpisodeDateAdded": "Datum laatst toegevoegde aflevering",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "Gedownload op",
+      "size": "Grootte",
+      "library": "Bibliotheek"
     }
   },
   "about": {
     "title": "Over",
     "openSourceLicenses": "Opensourcelicenties",
     "versionLabel": "Versie ${version}",
-    "appDescription": "Een mooie Plex- en Jellyfin-client voor Flutter",
+    "appDescription": "Een mooie Plex-, Jellyfin- en Emby-client voor Flutter",
     "viewLicensesDescription": "Licenties van bibliotheken van derden bekijken"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Kan de systeeminstellingen niet openen op dit apparaat",
       "linkUnavailable": "Kan dontkillmyapp.com niet openen op dit apparaat"
     },
-    "options": "",
+    "options": "Downloadopties",
     "groupings": {
-      "library": ""
+      "library": "Bibliotheek"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Onbekende bibliotheek",
     "unknownShow": "Onbekende serie",
     "unknownSeason": "Onbekend seizoen",
     "unknownAlbum": "Onbekend album",

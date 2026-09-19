@@ -729,7 +729,7 @@
     "pipFailed": "Режимът картина в картината не успя да стартира",
     "screenshotSaved": "Екранната снимка е запазена",
     "zoomPercent": "Мащаб ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "Звук ${percent}%",
     "pipErrors": {
       "androidVersion": "Изисква Android 8.0 или по-нова версия",
       "iosVersion": "Изисква iOS 15.0 или по-нова версия",
@@ -930,7 +930,7 @@
     "borrowAddTo": "Добави към ${displayName}",
     "borrowExplain": "Използвай връзка от друг профил. PIN-защитените профили изискват PIN.",
     "borrowEmpty": "Все още няма какво да се използва.",
-    "borrowEmptySubtitle": "Първо свържете Plex или Jellyfin към друг профил.",
+    "borrowEmptySubtitle": "Първо свържете Plex, Jellyfin или Emby към друг профил.",
     "borrowLoadFailed": "Наличните връзки не можаха да бъдат заредени. Опитайте отново.",
     "borrowFromProfile": "От ${displayName}",
     "borrowConnectionBorrowed": "Връзката е използвана.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Връзки",
     "addConnection": "Добави връзка",
-    "addConnectionSubtitleNoProfile": "Влезте с Plex или свържете Jellyfin сървър",
-    "addConnectionSubtitleScoped": "Добави към ${displayName}: Plex, Jellyfin или връзка от друг профил",
+    "addConnectionSubtitleNoProfile": "Влезте с Plex или свържете Jellyfin или Emby сървър",
+    "addConnectionSubtitleScoped": "Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил",
     "sessionExpiredOne": "Сесията за ${name} е изтекла",
     "sessionExpiredMany": "Сесиите за ${count} сървъра са изтекли",
     "signInAgain": "Влез отново",
@@ -1164,16 +1164,16 @@
       "dateShared": "Дата на споделяне",
       "latestEpisodeAirDate": "Дата на излъчване на последния епизод",
       "lastEpisodeDateAdded": "Дата на добавяне на последния епизод",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "Дата на изтегляне",
+      "size": "Размер",
+      "library": "Библиотека"
     }
   },
   "about": {
     "title": "Относно",
     "openSourceLicenses": "Лицензи с отворен код",
     "versionLabel": "Версия ${version}",
-    "appDescription": "Красив клиент за Plex и Jellyfin, създаден с Flutter",
+    "appDescription": "Красив клиент за Plex, Jellyfin и Emby, създаден с Flutter",
     "viewLicensesDescription": "Виж лицензите на библиотеки на трети страни"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Системните настройки не можаха да се отворят на това устройство",
       "linkUnavailable": "dontkillmyapp.com не можа да се отвори на това устройство"
     },
-    "options": "",
+    "options": "Опции за изтеглянията",
     "groupings": {
-      "library": ""
+      "library": "Библиотека"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Неизвестна библиотека",
     "unknownShow": "Неизвестен сериал",
     "unknownSeason": "Неизвестен сезон",
     "unknownAlbum": "Неизвестен албум",

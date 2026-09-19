@@ -729,7 +729,7 @@
     "pipFailed": "Bild-i-bild kunde inte starta",
     "screenshotSaved": "Skärmbild sparad",
     "zoomPercent": "Zoom ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "Volym ${percent}%",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
       "iosVersion": "Kräver iOS 15.0 eller nyare",
@@ -930,7 +930,7 @@
     "borrowAddTo": "Lägg till i ${displayName}",
     "borrowExplain": "Låna en annan profils anslutning. PIN-skyddade profiler kräver en PIN.",
     "borrowEmpty": "Inget att låna ännu.",
-    "borrowEmptySubtitle": "Anslut Plex eller Jellyfin till en annan profil först.",
+    "borrowEmptySubtitle": "Anslut Plex, Jellyfin eller Emby till en annan profil först.",
     "borrowLoadFailed": "Det gick inte att läsa in tillgängliga anslutningar. Försök igen.",
     "borrowFromProfile": "Från ${displayName}",
     "borrowConnectionBorrowed": "Anslutning lånad.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Anslutningar",
     "addConnection": "Lägg till anslutning",
-    "addConnectionSubtitleNoProfile": "Logga in med Plex eller anslut en Jellyfin-server",
-    "addConnectionSubtitleScoped": "Lägg till för ${displayName}: Plex, Jellyfin eller en annan profilanslutning",
+    "addConnectionSubtitleNoProfile": "Logga in med Plex eller anslut en Jellyfin- eller Emby-server",
+    "addConnectionSubtitleScoped": "Lägg till för ${displayName}: Plex, Jellyfin, Emby eller en annan profilanslutning",
     "sessionExpiredOne": "Sessionen har gått ut för ${name}",
     "sessionExpiredMany": "Sessionen har gått ut för ${count} servrar",
     "signInAgain": "Logga in igen",
@@ -1164,16 +1164,16 @@
       "dateShared": "Delningsdatum",
       "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum",
       "lastEpisodeDateAdded": "Datum då senaste avsnittet lades till",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "Nedladdad",
+      "size": "Storlek",
+      "library": "Bibliotek"
     }
   },
   "about": {
     "title": "Om",
     "openSourceLicenses": "Licenser för öppen källkod",
     "versionLabel": "Version ${version}",
-    "appDescription": "En vacker Plex- och Jellyfin-klient för Flutter",
+    "appDescription": "En vacker Plex-, Jellyfin- och Emby-klient för Flutter",
     "viewLicensesDescription": "Visa licenser för tredjepartsbibliotek"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Det gick inte att öppna systeminställningarna på den här enheten",
       "linkUnavailable": "Det gick inte att öppna dontkillmyapp.com på den här enheten"
     },
-    "options": "",
+    "options": "Alternativ för nedladdningar",
     "groupings": {
-      "library": ""
+      "library": "Bibliotek"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Okänt bibliotek",
     "unknownShow": "Okänd serie",
     "unknownSeason": "Okänd säsong",
     "unknownAlbum": "Okänt album",

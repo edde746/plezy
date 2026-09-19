@@ -729,7 +729,7 @@
     "pipFailed": "PiP rejimini ishga tushirishda xatolik",
     "screenshotSaved": "Ekran tasviri saqlandi",
     "zoomPercent": "Masshtab %${percent}",
-    "volumePercent": "",
+    "volumePercent": "Ovoz ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 yoki undan yangisi talab qilinadi",
       "iosVersion": "iOS 15.0 yoki undan yangisi talab qilinadi",
@@ -930,7 +930,7 @@
     "borrowAddTo": "${displayName} profiliga qoʻshish",
     "borrowExplain": "Boshqa profilning ulanishidan foydalaning.",
     "borrowEmpty": "Hali foydalanadigan hech narsa yoʻq.",
-    "borrowEmptySubtitle": "Avval boshqa profilga Plex yoki Jellyfin ulang.",
+    "borrowEmptySubtitle": "Avval boshqa profilga Plex, Jellyfin yoki Emby ulang.",
     "borrowLoadFailed": "Mavjud ulanishlarni yuklab boʻlmadi.",
     "borrowFromProfile": "${displayName} profilidan",
     "borrowConnectionBorrowed": "Ulanishdan foydalanildi.",
@@ -951,8 +951,8 @@
   "connections": {
     "sectionTitle": "Ulanishlar",
     "addConnection": "Ulanish qoʻshish",
-    "addConnectionSubtitleNoProfile": "Plex orqali kiring yoki Jellyfin serveriga ulaning",
-    "addConnectionSubtitleScoped": "${displayName} profiliga qoʻshish",
+    "addConnectionSubtitleNoProfile": "Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning",
+    "addConnectionSubtitleScoped": "${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish",
     "sessionExpiredOne": "${name} uchun seans vaqti tugadi",
     "sessionExpiredMany": "${count} server uchun seans vaqti tugadi",
     "signInAgain": "Qaytadan kirish",
@@ -1164,16 +1164,16 @@
       "dateShared": "Ulashilgan sanasi",
       "latestEpisodeAirDate": "Soʻnggi qism chiqqan sana",
       "lastEpisodeDateAdded": "Soʻnggi qoʻshilgan qism sanasi",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "Yuklab olingan sanasi",
+      "size": "Hajmi",
+      "library": "Kutubxona"
     }
   },
   "about": {
     "title": "Dastur haqida",
     "openSourceLicenses": "Ochiq kodli litsenziyalar",
     "versionLabel": "Versiya ${version}",
-    "appDescription": "Flutter asosidagi qulay Plex va Jellyfin mijozi",
+    "appDescription": "Flutter asosidagi qulay Plex, Jellyfin va Emby mijozi",
     "viewLicensesDescription": "Uchinchi tomon kutubxonalarining litsenziyalarini koʻrish"
   },
   "serverSelection": {
@@ -1782,11 +1782,11 @@
       "settingsUnavailable": "Bu qurilmada tizim sozlamalarini ochib boʻlmadi",
       "linkUnavailable": "Bu qurilmada dontkillmyapp.com-ni ochib boʻlmadi"
     },
-    "options": "",
+    "options": "Yuklamalar parametrlari",
     "groupings": {
-      "library": ""
+      "library": "Kutubxona"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "Nomaʼlum kutubxona",
     "unknownShow": "Nomaʼlum serial",
     "unknownSeason": "Nomaʼlum mavsum",
     "unknownAlbum": "Nomaʼlum albom",

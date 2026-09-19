@@ -726,7 +726,7 @@
     "pipFailed": "ピクチャーインピクチャーの開始に失敗しました",
     "screenshotSaved": "スクリーンショットを保存しました",
     "zoomPercent": "ズーム ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "音量 ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0以降が必要です",
       "iosVersion": "iOS 15.0以降が必要です",
@@ -926,7 +926,7 @@
     "borrowAddTo": "${displayName}に追加",
     "borrowExplain": "別のプロフィールの接続を利用します。PINで保護されたプロフィールにはPINが必要です。",
     "borrowEmpty": "利用できる接続はまだありません。",
-    "borrowEmptySubtitle": "まず、別のプロフィールをPlexまたはJellyfinに接続してください。",
+    "borrowEmptySubtitle": "まず、別のプロフィールをPlex、JellyfinまたはEmbyに接続してください。",
     "borrowLoadFailed": "利用可能な接続を読み込めませんでした。もう一度お試しください。",
     "borrowFromProfile": "${displayName}から利用",
     "borrowConnectionBorrowed": "接続を追加しました。",
@@ -947,8 +947,8 @@
   "connections": {
     "sectionTitle": "接続",
     "addConnection": "接続を追加",
-    "addConnectionSubtitleNoProfile": "Plexでサインインするか、Jellyfinサーバーに接続",
-    "addConnectionSubtitleScoped": "${displayName}に追加：Plex、Jellyfin、または別のプロフィールの接続",
+    "addConnectionSubtitleNoProfile": "Plexでサインインするか、JellyfinまたはEmbyサーバーに接続",
+    "addConnectionSubtitleScoped": "${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続",
     "sessionExpiredOne": "${name} のセッションの有効期限が切れました",
     "sessionExpiredMany": "${count} 台のサーバーのセッションの有効期限が切れました",
     "signInAgain": "再度サインイン",
@@ -1159,16 +1159,16 @@
       "dateShared": "共有日",
       "latestEpisodeAirDate": "最新エピソード放送日",
       "lastEpisodeDateAdded": "最新エピソード追加日",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "ダウンロード日",
+      "size": "サイズ",
+      "library": "ライブラリ"
     }
   },
   "about": {
     "title": "アプリについて",
     "openSourceLicenses": "オープンソースライセンス",
     "versionLabel": "バージョン ${version}",
-    "appDescription": "Flutter製の美しいPlex・Jellyfinクライアント",
+    "appDescription": "Flutter製の美しいPlex・Jellyfin・Embyクライアント",
     "viewLicensesDescription": "サードパーティライブラリのライセンスを表示"
   },
   "serverSelection": {
@@ -1771,11 +1771,11 @@
       "settingsUnavailable": "この端末ではシステム設定を開けませんでした",
       "linkUnavailable": "この端末ではdontkillmyapp.comを開けませんでした"
     },
-    "options": "",
+    "options": "ダウンロードのオプション",
     "groupings": {
-      "library": ""
+      "library": "ライブラリ"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "不明なライブラリ",
     "unknownShow": "不明な番組",
     "unknownSeason": "不明なシーズン",
     "unknownAlbum": "不明なアルバム",

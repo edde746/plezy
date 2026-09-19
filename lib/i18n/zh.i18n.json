@@ -726,7 +726,7 @@
     "pipFailed": "画中画启动失败",
     "screenshotSaved": "截图已保存",
     "zoomPercent": "缩放 ${percent}%",
-    "volumePercent": "",
+    "volumePercent": "音量 ${percent}%",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
       "iosVersion": "需要 iOS 15.0 或更高版本",
@@ -926,7 +926,7 @@
     "borrowAddTo": "添加到 ${displayName}",
     "borrowExplain": "使用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。",
     "borrowEmpty": "暂无可用连接。",
-    "borrowEmptySubtitle": "请先将 Plex 或 Jellyfin 连接到另一个用户资料。",
+    "borrowEmptySubtitle": "请先将 Plex、Jellyfin 或 Emby 连接到另一个用户资料。",
     "borrowLoadFailed": "无法加载可用连接。请重试。",
     "borrowFromProfile": "来自 ${displayName}",
     "borrowConnectionBorrowed": "连接已添加。",
@@ -947,8 +947,8 @@
   "connections": {
     "sectionTitle": "连接",
     "addConnection": "添加连接",
-    "addConnectionSubtitleNoProfile": "使用 Plex 登录或连接 Jellyfin 服务器",
-    "addConnectionSubtitleScoped": "添加到 ${displayName}：Plex、Jellyfin，或其他用户资料的连接",
+    "addConnectionSubtitleNoProfile": "使用 Plex 登录，或连接 Jellyfin 或 Emby 服务器",
+    "addConnectionSubtitleScoped": "添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接",
     "sessionExpiredOne": "${name} 的会话已过期",
     "sessionExpiredMany": "${count} 个服务器的会话已过期",
     "signInAgain": "重新登录",
@@ -1159,16 +1159,16 @@
       "dateShared": "共享日期",
       "latestEpisodeAirDate": "最新一集播出日期",
       "lastEpisodeDateAdded": "最新一集添加日期",
-      "dateDownloaded": "",
-      "size": "",
-      "library": ""
+      "dateDownloaded": "下载日期",
+      "size": "大小",
+      "library": "媒体库"
     }
   },
   "about": {
     "title": "关于",
     "openSourceLicenses": "开源许可证",
     "versionLabel": "版本 ${version}",
-    "appDescription": "一款精美的 Flutter Plex 和 Jellyfin 客户端",
+    "appDescription": "一款精美的 Flutter Plex、Jellyfin 和 Emby 客户端",
     "viewLicensesDescription": "查看第三方库的许可证"
   },
   "serverSelection": {
@@ -1771,11 +1771,11 @@
       "settingsUnavailable": "无法在此设备上打开系统设置",
       "linkUnavailable": "无法在此设备上打开 dontkillmyapp.com"
     },
-    "options": "",
+    "options": "下载选项",
     "groupings": {
-      "library": ""
+      "library": "媒体库"
     },
-    "unknownLibrary": "",
+    "unknownLibrary": "未知媒体库",
     "unknownShow": "未知节目",
     "unknownSeason": "未知季",
     "unknownAlbum": "未知专辑",
