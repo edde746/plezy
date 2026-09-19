@@ -57,12 +57,12 @@ class SettingsMutationService {
       SettingsService.enableDiscordRPC,
       (_, settings, _) => DiscordRPCService.instance.setEnabled(settings.read(SettingsService.enableDiscordRPC)),
     ),
-    _SettingsEffect(
-      SettingsService.musicVolume,
-      (context, settings, _) async {
-        await context.read<MusicPlaybackService?>()?.setVolume(settings.read(SettingsService.musicVolume), persist: false);
-      },
-    ),
+    _SettingsEffect(SettingsService.musicVolume, (context, settings, _) async {
+      await context.read<MusicPlaybackService?>()?.setVolume(
+        settings.read(SettingsService.musicVolume),
+        persist: false,
+      );
+    }),
     _SettingsEffect(
       SettingsService.enableTraktWatchedSync,
       (_, settings, _) =>
@@ -154,7 +154,10 @@ class SettingsMutationService {
   /// owners. The snapshot is command-local and only avoids unnecessary rebuilds.
   static List<Object?> captureRootConfiguration() {
     final settings = SettingsService.instance;
-    return [for (final effect in _effects) if (effect.rebuildsRoot) settings.read(effect.pref)];
+    return [
+      for (final effect in _effects)
+        if (effect.rebuildsRoot) settings.read(effect.pref),
+    ];
   }
 
   Future<void> applyStoredEffects(BuildContext context, {required List<Object?> previousRootConfiguration}) async {

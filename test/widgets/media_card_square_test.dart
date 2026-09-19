@@ -271,7 +271,9 @@ void main() {
     );
 
     await tester.pumpWidget(
-      _TestApp(child: MediaCard(item: item, width: 200, height: 194, viewModeOverride: ViewMode.grid, isOffline: true)),
+      _TestApp(
+        child: MediaCard(item: item, width: 200, height: 194, viewModeOverride: ViewMode.grid, isOffline: true),
+      ),
     );
 
     final primaryFinder = find.descendant(of: find.byType(MediaCard), matching: find.byType(OptimizedMediaImage)).first;
@@ -298,7 +300,9 @@ void main() {
     );
 
     Future<void> pumpCard() => tester.pumpWidget(
-      _TestApp(child: MediaCard(item: item, width: 200, height: 194, viewModeOverride: ViewMode.grid, isOffline: true)),
+      _TestApp(
+        child: MediaCard(item: item, width: 200, height: 194, viewModeOverride: ViewMode.grid, isOffline: true),
+      ),
     );
 
     await pumpCard();

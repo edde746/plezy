@@ -635,11 +635,8 @@ class AgentScopedSettingsCommands {
         LibraryPreference.grouping,
         defaultValue: defaultGrouping,
         choices: groupingOptions,
-        current: () => normalizeLibraryBrowseGrouping(
-          library,
-          storage.getLibraryGrouping(globalKey),
-          canGroupByFolders: folders,
-        ),
+        current: () =>
+            normalizeLibraryBrowseGrouping(library, storage.getLibraryGrouping(globalKey), canGroupByFolders: folders),
         save: (v) => storage.saveLibraryGrouping(globalKey, v, profileId: guard.profileId),
       ),
     );

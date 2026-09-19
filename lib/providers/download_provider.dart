@@ -1797,11 +1797,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Pause a download (works for both downloading and queued items)
-  Future<void> pauseDownload(String globalKey) => _whenOwnedIn(
-    globalKey,
-    const {DownloadStatus.downloading, DownloadStatus.queued},
-    () => _downloadManager.pauseDownload(globalKey),
-  );
+  Future<void> pauseDownload(String globalKey) => _whenOwnedIn(globalKey, const {
+    DownloadStatus.downloading,
+    DownloadStatus.queued,
+  }, () => _downloadManager.pauseDownload(globalKey));
 
   /// Resume a paused download
   Future<void> resumeDownload(String globalKey, MediaServerClient client) =>

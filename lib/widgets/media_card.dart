@@ -1163,8 +1163,9 @@ class _MediaCardHelpers {
   static TextStyle? _captionStyle(BuildContext context) =>
       Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1);
 
-  static Widget _caption(BuildContext context, String text) =>
-      ExcludeSemantics(child: Text(text, maxLines: 1, overflow: .ellipsis, style: _captionStyle(context)));
+  static Widget _caption(BuildContext context, String text) => ExcludeSemantics(
+    child: Text(text, maxLines: 1, overflow: .ellipsis, style: _captionStyle(context)),
+  );
 
   static Widget buildPlaylistMeta(BuildContext context, MediaPlaylist playlist) {
     if (playlist.leafCount != null && playlist.leafCount! > 0) {
@@ -1207,7 +1208,11 @@ class _MediaCardHelpers {
     return text == null ? const SizedBox.shrink() : _caption(context, text);
   }
 
-  static String? _metadataSubtitleText(MediaItem mi, {required String catalogMetadata, required bool showTitleImplied}) {
+  static String? _metadataSubtitleText(
+    MediaItem mi, {
+    required String catalogMetadata,
+    required bool showTitleImplied,
+  }) {
     if (catalogMetadata.isNotEmpty) return catalogMetadata;
 
     if (mi.kind == MediaKind.collection) {

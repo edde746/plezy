@@ -694,12 +694,7 @@ void main() {
           child: SizedBox(
             width: isGrid ? 200 : 420,
             height: isGrid ? 330 : 180,
-            child: MediaCard(
-              item: item,
-              viewModeOverride: viewMode,
-              isOffline: true,
-              onTap: () => tapCount++,
-            ),
+            child: MediaCard(item: item, viewModeOverride: viewMode, isOffline: true, onTap: () => tapCount++),
           ),
         ),
       );

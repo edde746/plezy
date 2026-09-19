@@ -3064,10 +3064,14 @@ class DownloadManagerService {
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) {
-    return _withCancellation(globalKey, reason: 'user cancellation', body: () async {
-      await _transitionStatus(globalKey, DownloadStatus.cancelled);
-      await _database.removeFromQueue(globalKey);
-    });
+    return _withCancellation(
+      globalKey,
+      reason: 'user cancellation',
+      body: () async {
+        await _transitionStatus(globalKey, DownloadStatus.cancelled);
+        await _database.removeFromQueue(globalKey);
+      },
+    );
   }
 
   /// Cancels native work before removing the durable row and reconciling its
@@ -3078,60 +3082,64 @@ class DownloadManagerService {
   }
 
   Future<void> deleteDownload(String globalKey) {
-    return _withCancellation(globalKey, reason: 'delete download', body: () async {
-      final parsed = parseGlobalKey(globalKey);
-      if (parsed == null) {
-        await _deleteDownloadRowAndRelease(globalKey);
-        return;
-      }
+    return _withCancellation(
+      globalKey,
+      reason: 'delete download',
+      body: () async {
+        final parsed = parseGlobalKey(globalKey);
+        if (parsed == null) {
+          await _deleteDownloadRowAndRelease(globalKey);
+          return;
+        }
 
-      final serverId = parsed.serverId;
-      final ratingKey = parsed.ratingKey;
-      final downloadRecord = await _database.getDownloadedMedia(globalKey);
-      final clientScopeId = downloadRecord?.clientScopeId;
-      final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+        final serverId = parsed.serverId;
+        final ratingKey = parsed.ratingKey;
+        final downloadRecord = await _database.getDownloadedMedia(globalKey);
+        final clientScopeId = downloadRecord?.clientScopeId;
+        final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
 
-      if (metadata == null) {
-        // Fallback deletion without progress
-        await _deleteMediaFilesWithMetadata(serverId, ratingKey, downloadRecord: downloadRecord, metadata: null);
+        if (metadata == null) {
+          // Fallback deletion without progress
+          await _deleteMediaFilesWithMetadata(serverId, ratingKey, downloadRecord: downloadRecord, metadata: null);
+          await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
+          await _deleteDownloadRowAndRelease(globalKey);
+          return;
+        }
+
+        final children = await _containerChildren(metadata, serverId);
+        final totalItems = children?.length ?? 1;
+
+        _emitDeletionProgress(
+          DeletionProgress(
+            globalKey: globalKey,
+            itemTitle: metadata.displayTitle,
+            currentItem: 0,
+            totalItems: totalItems,
+          ),
+        );
+
+        await _deleteMediaFilesWithMetadata(
+          serverId,
+          ratingKey,
+          downloadRecord: downloadRecord,
+          metadata: metadata,
+          children: children,
+        );
+
         await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
+
         await _deleteDownloadRowAndRelease(globalKey);
-        return;
-      }
 
-      final children = await _containerChildren(metadata, serverId);
-      final totalItems = children?.length ?? 1;
-
-      _emitDeletionProgress(
-        DeletionProgress(
-          globalKey: globalKey,
-          itemTitle: metadata.displayTitle,
-          currentItem: 0,
-          totalItems: totalItems,
-        ),
-      );
-
-      await _deleteMediaFilesWithMetadata(
-        serverId,
-        ratingKey,
-        downloadRecord: downloadRecord,
-        metadata: metadata,
-        children: children,
-      );
-
-      await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
-
-      await _deleteDownloadRowAndRelease(globalKey);
-
-      _emitDeletionProgress(
-        DeletionProgress(
-          globalKey: globalKey,
-          itemTitle: metadata.displayTitle,
-          currentItem: totalItems,
-          totalItems: totalItems,
-        ),
-      );
-    });
+        _emitDeletionProgress(
+          DeletionProgress(
+            globalKey: globalKey,
+            itemTitle: metadata.displayTitle,
+            currentItem: totalItems,
+            totalItems: totalItems,
+          ),
+        );
+      },
+    );
   }
 
   void _emitDeletionProgress(DeletionProgress progress) {

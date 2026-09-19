@@ -229,11 +229,8 @@ class StorageService extends BaseSharedPreferencesService {
     LibraryPreference preference, {
     required String profileId,
     void Function()? checkCurrent,
-  }) => _resetScopedPreference(
-    '${_prefPrefix(preference)}$sectionId',
-    profileId: profileId,
-    checkCurrent: checkCurrent,
-  );
+  }) =>
+      _resetScopedPreference('${_prefPrefix(preference)}$sectionId', profileId: profileId, checkCurrent: checkCurrent);
 
   Future<void> _resetScopedPreference(
     String baseKey, {
