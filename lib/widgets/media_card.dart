@@ -217,8 +217,10 @@ class MediaCard extends StatefulWidget {
 
   /// Overrides the standard media context menu for every long-press path.
   final VoidCallback? onLongPress;
-  final bool forceGridMode;
-  final bool forceListMode;
+
+  /// Pins the card to grid or list layout regardless of the user's
+  /// [SettingsService.viewMode]; null follows the setting.
+  final ViewMode? viewModeOverride;
   final bool isInContinueWatching;
   final bool usesContinueWatchingAction;
   final String? collectionId; // The collection ID if displaying within a collection
@@ -257,8 +259,7 @@ class MediaCard extends StatefulWidget {
     this.onListRefresh,
     this.onTap,
     this.onLongPress,
-    this.forceGridMode = false,
-    this.forceListMode = false,
+    this.viewModeOverride,
     this.isInContinueWatching = false,
     bool? usesContinueWatchingAction,
     this.collectionId,
@@ -342,30 +343,26 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   // MediaContextMenu, which is not in their tree.
   @override
   void showContextMenuFromTap() {
-    if (widget.onLongPress case final onLongPress?) {
-      onLongPress();
-      return;
-    }
-    final catalogItem = _catalogItem;
-    if (catalogItem != null) {
-      unawaited(showCatalogItemMenu(context, catalogItem, position: lastTapPosition));
-      return;
-    }
-    super.showContextMenuFromTap();
+    if (!_showOverridingContextMenu(position: lastTapPosition)) super.showContextMenuFromTap();
   }
 
   @override
   void showContextMenu() {
+    if (!_showOverridingContextMenu()) super.showContextMenu();
+  }
+
+  /// True when [MediaCard.onLongPress] or the catalog menu took the gesture.
+  bool _showOverridingContextMenu({Offset? position}) {
     if (widget.onLongPress case final onLongPress?) {
       onLongPress();
-      return;
+      return true;
     }
     final catalogItem = _catalogItem;
     if (catalogItem != null) {
-      unawaited(showCatalogItemMenu(context, catalogItem));
-      return;
+      unawaited(showCatalogItemMenu(context, catalogItem, position: position));
+      return true;
     }
-    super.showContextMenu();
+    return false;
   }
 
   Object _effectiveItem(BuildContext context) {
@@ -443,14 +440,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   Widget _buildContent(BuildContext context) {
     final item = _effectiveItem(context);
-    final ViewMode viewMode;
-    if (widget.forceListMode) {
-      viewMode = ViewMode.list;
-    } else if (widget.forceGridMode) {
-      viewMode = ViewMode.grid;
-    } else {
-      viewMode = SettingsService.instance.read(SettingsService.viewMode);
-    }
+    final viewMode = widget.viewModeOverride ?? SettingsService.instance.read(SettingsService.viewMode);
 
     final semanticLabel = _semanticLabel(item);
     final accessibleNavigation = MediaQuery.accessibleNavigationOf(context);
@@ -564,43 +554,70 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     return SizedBox(
       width: width,
       height: height,
-      child: _CardTapRegion(
-        onTap: () => _handleTap(context, item),
-        onTapDown: storeTapPosition,
-        onLongPress: showContextMenuFromTap,
-        onSecondaryTapDown: storeTapPosition,
-        onSecondaryTap: showContextMenuFromTap,
-        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-        child: ExcludeSemantics(
-          child: _CatalogFocusBorder(
-            accentColor: _catalogAccent,
-            borderRadius: _posterFocusRadius(context, item),
-            child: _clipPosterImage(
-              context,
-              item,
-              Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildPosterImage(
-                    context,
-                    item,
-                    isOffline: widget.isOffline,
-                    localPosterPath: localPosterPath,
-                    mixedHubContext: widget.mixedHubContext,
-                    episodePosterModeOverride: widget.episodePosterModeOverride,
-                    cardShapeOverride: widget.cardShapeOverride,
-                    catalogItem: _catalogItem,
-                    knownWidth: width,
-                    knownHeight: height,
-                    artworkDim: widget.artworkDim,
-                  ),
-                  if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
-                  if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
-                ],
-              ),
-            ),
-          ),
+      child: _buildTapRegion(
+        context,
+        item,
+        child: _buildPosterStack(
+          context,
+          item,
+          localPosterPath,
+          badgeLabels: badgeLabels,
+          knownWidth: width,
+          knownHeight: height,
+          fullBleed: true,
         ),
+      ),
+    );
+  }
+
+  /// Activation plus the long-press / right-click context-menu seams.
+  Widget _buildTapRegion(BuildContext context, Object item, {required Widget child}) => _CardTapRegion(
+    onTap: () => _handleTap(context, item),
+    onTapDown: storeTapPosition,
+    onLongPress: showContextMenuFromTap,
+    onSecondaryTapDown: storeTapPosition,
+    onSecondaryTap: showContextMenuFromTap,
+    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+    child: child,
+  );
+
+  /// Focus-bordered artwork with the watched indicator and catalog badges on
+  /// top. Full-bleed cards clip the overlays together with the artwork;
+  /// standard cards clip only the image so the overlays sit on the poster's
+  /// corners.
+  Widget _buildPosterStack(
+    BuildContext context,
+    Object item,
+    String? localPosterPath, {
+    required List<String> badgeLabels,
+    required double? knownWidth,
+    required double? knownHeight,
+    required bool fullBleed,
+  }) {
+    final image = _buildPosterImage(
+      context,
+      item,
+      isOffline: widget.isOffline,
+      localPosterPath: localPosterPath,
+      mixedHubContext: widget.mixedHubContext,
+      episodePosterModeOverride: widget.episodePosterModeOverride,
+      cardShapeOverride: widget.cardShapeOverride,
+      catalogItem: _catalogItem,
+      knownWidth: knownWidth,
+      knownHeight: knownHeight,
+      artworkDim: widget.artworkDim,
+    );
+    final overlays = <Widget>[
+      if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
+      if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
+    ];
+    return ExcludeSemantics(
+      child: _CatalogFocusBorder(
+        accentColor: _catalogAccent,
+        borderRadius: _posterFocusRadius(context, item),
+        child: fullBleed
+            ? _clipPosterImage(context, item, Stack(fit: StackFit.expand, children: [image, ...overlays]))
+            : Stack(children: [_clipPosterImage(context, item, image), ...overlays]),
       ),
     );
   }
@@ -617,45 +634,21 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
     // The focus border hugs the poster (captions stay outside it), matching
     // the full-bleed card treatment.
-    final poster = ExcludeSemantics(
-      child: _CatalogFocusBorder(
-        accentColor: _catalogAccent,
-        borderRadius: _posterFocusRadius(context, item),
-        child: Stack(
-          children: [
-            _clipPosterImage(
-              context,
-              item,
-              _buildPosterImage(
-                context,
-                item,
-                isOffline: widget.isOffline,
-                localPosterPath: localPosterPath,
-                mixedHubContext: widget.mixedHubContext,
-                episodePosterModeOverride: widget.episodePosterModeOverride,
-                cardShapeOverride: widget.cardShapeOverride,
-                catalogItem: _catalogItem,
-                knownWidth: _catalogItem != null ? posterWidth : (posterHeight != null ? posterWidth : null),
-                knownHeight: posterHeight,
-                artworkDim: widget.artworkDim,
-              ),
-            ),
-            if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
-            if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
-          ],
-        ),
-      ),
+    final poster = _buildPosterStack(
+      context,
+      item,
+      localPosterPath,
+      badgeLabels: badgeLabels,
+      knownWidth: _catalogItem != null ? posterWidth : (posterHeight != null ? posterWidth : null),
+      knownHeight: posterHeight,
+      fullBleed: false,
     );
 
     return SizedBox(
       width: widget.width,
-      child: _CardTapRegion(
-        onTap: () => _handleTap(context, item),
-        onTapDown: storeTapPosition,
-        onLongPress: showContextMenuFromTap,
-        onSecondaryTapDown: storeTapPosition,
-        onSecondaryTap: showContextMenuFromTap,
-        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+      child: _buildTapRegion(
+        context,
+        item,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(3, 3, 3, 1),
           child: Column(
@@ -1115,8 +1108,7 @@ Widget _buildPosterImage(
     final posterUrl = useRememberedFallback ? posterFallbackUrl : primaryPosterUrl;
 
     OptimizedMediaImage buildImage(
-      String? path,
-      ImageType type, {
+      String? path, {
       String? localFilePath,
       Widget Function(BuildContext, String, dynamic)? errorWidget,
     }) => OptimizedMediaImage(
@@ -1128,13 +1120,13 @@ Widget _buildPosterImage(
       placeholder: _buildPosterLoadingPlaceholder,
       fallbackIcon: fallbackIcon,
       errorWidget: errorWidget,
-      imageType: type,
+      imageType: imageType,
       localFilePath: localFilePath,
       artworkDim: artworkDim,
     );
 
     // Remember the dead primary URL so later builds go straight to the fallback.
-    Widget Function(BuildContext, String, dynamic)? retryWithFallback(ImageType type) {
+    Widget Function(BuildContext, String, dynamic)? retryWithFallback() {
       if (posterFallbackUrl == null || useRememberedFallback) return null;
       return (_, _, error) {
         // Only an attempted-and-failed load proves the primary artwork is dead.
@@ -1142,31 +1134,17 @@ Widget _buildPosterImage(
         // profile switch, reconnect); memoizing it would pin this item to
         // fallback artwork for the process lifetime.
         if (error is! UnresolvedImageUrl) _rememberFailedPosterUrl(primaryPosterUrl);
-        return buildImage(posterFallbackUrl, type);
+        return buildImage(posterFallbackUrl);
       };
     }
 
-    Widget image;
-
-    // Square 1:1 artwork for music (artists/albums/tracks)
-    if (imageType == ImageType.square) {
-      image = buildImage(
-        posterUrl,
-        ImageType.square,
-        localFilePath: localPosterPath,
-        errorWidget: retryWithFallback(ImageType.square),
-      );
-    } else if (imageType == ImageType.thumb) {
-      // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
-      image = buildImage(posterUrl, ImageType.thumb, localFilePath: localPosterPath);
-    } else {
-      image = buildImage(
-        posterUrl,
-        ImageType.poster,
-        localFilePath: localPosterPath,
-        errorWidget: retryWithFallback(ImageType.poster),
-      );
-    }
+    // 16:9 thumbs have never retried with the fallback URL; only poster and
+    // square artwork do.
+    final image = buildImage(
+      posterUrl,
+      localFilePath: localPosterPath,
+      errorWidget: imageType == ImageType.thumb ? null : retryWithFallback(),
+    );
 
     if (shouldBlur) {
       return ClipRect(
@@ -1182,18 +1160,15 @@ Widget _buildPosterImage(
 }
 
 class _MediaCardHelpers {
+  static TextStyle? _captionStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1);
+
+  static Widget _caption(BuildContext context, String text) =>
+      ExcludeSemantics(child: Text(text, maxLines: 1, overflow: .ellipsis, style: _captionStyle(context)));
+
   static Widget buildPlaylistMeta(BuildContext context, MediaPlaylist playlist) {
     if (playlist.leafCount != null && playlist.leafCount! > 0) {
-      return ExcludeSemantics(
-        child: Text(
-          t.playlists.itemCount(count: playlist.leafCount!),
-          maxLines: 1,
-          overflow: .ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
-        ),
-      );
+      return _caption(context, t.playlists.itemCount(count: playlist.leafCount!));
     }
     return const SizedBox.shrink();
   }
@@ -1207,101 +1182,63 @@ class _MediaCardHelpers {
     bool showTitleImplied = false,
     CatalogItem? catalogItem,
   }) {
-    final subtitleStyle = Theme.of(
-      context,
-    ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1);
+    final catalogMetadata = catalogItem == null
+        ? ''
+        : _buildMediaMetadataLine(mi, catalogItem: catalogItem, compact: true);
 
-    if (catalogItem != null) {
-      final metadata = _buildMediaMetadataLine(mi, catalogItem: catalogItem, compact: true);
-      if (metadata.isNotEmpty) {
-        return ExcludeSemantics(
-          child: Text(metadata, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
-        );
-      }
+    // The only subtitle that is not a single caption: the season number links
+    // to the season, so it needs its own row.
+    if (catalogMetadata.isEmpty &&
+        !showTitleImplied &&
+        enableDetailLinks &&
+        mi.isEpisode &&
+        mi.parentIndex != null &&
+        mi.parentId != null) {
+      return _buildEpisodeSubtitleRow(
+        context,
+        mi,
+        style: _captionStyle(context),
+        enableDetailLinks: true,
+        isOffline: isOffline,
+      );
     }
+
+    final text = _metadataSubtitleText(mi, catalogMetadata: catalogMetadata, showTitleImplied: showTitleImplied);
+    return text == null ? const SizedBox.shrink() : _caption(context, text);
+  }
+
+  static String? _metadataSubtitleText(MediaItem mi, {required String catalogMetadata, required bool showTitleImplied}) {
+    if (catalogMetadata.isNotEmpty) return catalogMetadata;
 
     if (mi.kind == MediaKind.collection) {
       final count = mi.childCount ?? mi.leafCount;
-      if (count != null && count > 0) {
-        return ExcludeSemantics(
-          child: Text(
-            t.playlists.itemCount(count: count),
-            maxLines: 1,
-            overflow: .ellipsis,
-            style: subtitleStyle,
-          ),
-        );
-      }
+      if (count != null && count > 0) return t.playlists.itemCount(count: count);
     }
 
-    if (mi.kind == MediaKind.album && mi.albumArtistTitle != null) {
-      return ExcludeSemantics(
-        child: Text(mi.albumArtistTitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
-      );
-    }
+    if (mi.kind == MediaKind.album && mi.albumArtistTitle != null) return mi.albumArtistTitle;
 
     if (mi.kind == MediaKind.track) {
       final parts = [?mi.trackArtistTitle, if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs)];
-      if (parts.isNotEmpty) {
-        return ExcludeSemantics(
-          child: Text(parts.join(' • '), maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
-        );
-      }
+      if (parts.isNotEmpty) return parts.join(' • ');
     }
 
     if (mi.isEpisode && mi.parentIndex != null) {
+      final number = 'S${mi.parentIndex}${_episodeNumberSuffix(mi)}';
       if (showTitleImplied) {
         // The headline already names the episode; identify it by number and
         // runtime instead of repeating the title.
-        final parts = [
-          'S${mi.parentIndex}${_episodeNumberSuffix(mi)}',
-          if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs),
-        ];
-        return ExcludeSemantics(
-          child: Text(parts.join(' · '), maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
-        );
+        return [number, if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs)].join(' · ');
       }
-      if (enableDetailLinks && mi.parentId != null) {
-        return _buildEpisodeSubtitleRow(
-          context,
-          mi,
-          style: subtitleStyle,
-          enableDetailLinks: true,
-          isOffline: isOffline,
-        );
-      }
-      final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
-      return ExcludeSemantics(
-        child: Text(
-          'S${mi.parentIndex}${_episodeNumberSuffix(mi)} · $episodeTitle',
-          maxLines: 1,
-          overflow: .ellipsis,
-          style: subtitleStyle,
-        ),
-      );
+      return '$number · ${mi.displaySubtitle ?? mi.displayTitle}';
     }
 
-    if (mi.displaySubtitle != null) {
-      return ExcludeSemantics(
-        child: Text(mi.displaySubtitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
-      );
-    } else if (mi.parentTitle != null) {
-      return ExcludeSemantics(
-        child: Text(mi.parentTitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
-      );
-    } else if (mi.year != null) {
+    if (mi.displaySubtitle != null) return mi.displaySubtitle;
+    if (mi.parentTitle != null) return mi.parentTitle;
+    if (mi.year case final year?) {
       final edition = mi.editionTitle;
-      return ExcludeSemantics(
-        child: Text(
-          edition != null ? '${mi.year} · $edition' : '${mi.year}',
-          maxLines: 1,
-          overflow: .ellipsis,
-          style: subtitleStyle,
-        ),
-      );
+      return edition != null ? '$year · $edition' : '$year';
     }
-
-    return const SizedBox.shrink();
+    return null;
   }
 }
 

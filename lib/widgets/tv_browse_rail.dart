@@ -1717,7 +1717,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             height: metrics.posterHeight,
             onRefresh: widget.onRefresh,
             onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
-            forceGridMode: true,
+            viewModeOverride: ViewMode.grid,
             fullBleedImage: fullCardLayout,
             artworkDim: artworkDim,
             isInContinueWatching: _isContinueWatchingHub(hub),

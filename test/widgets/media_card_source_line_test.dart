@@ -52,7 +52,12 @@ Future<void> _pumpListCard(WidgetTester tester, MediaItem item, {String? library
         body: Center(
           child: SizedBox(
             width: 420,
-            child: MediaCard(item: item, forceListMode: true, showServerName: showServerName, libraryName: libraryName),
+            child: MediaCard(
+              item: item,
+              viewModeOverride: ViewMode.list,
+              showServerName: showServerName,
+              libraryName: libraryName,
+            ),
           ),
         ),
       ),

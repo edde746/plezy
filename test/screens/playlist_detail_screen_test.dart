@@ -372,7 +372,7 @@ void main() {
         Scaffold(
           body: SizedBox(
             width: 640,
-            child: MediaCard(item: _playlist, forceListMode: true, onListRefresh: () => reloads++),
+            child: MediaCard(item: _playlist, viewModeOverride: ViewMode.list, onListRefresh: () => reloads++),
           ),
         ),
       ),
@@ -397,7 +397,7 @@ void main() {
         Scaffold(
           body: SizedBox(
             width: 640,
-            child: MediaCard(item: _playlist, forceListMode: true, onListRefresh: () => reloads++),
+            child: MediaCard(item: _playlist, viewModeOverride: ViewMode.list, onListRefresh: () => reloads++),
           ),
         ),
       ),

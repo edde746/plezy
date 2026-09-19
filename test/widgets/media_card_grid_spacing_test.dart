@@ -34,7 +34,11 @@ void main() {
   testWidgets('grid cells grow the poster→title gap with the spacing setting', (tester) async {
     // Grid-style card: the cell (not the caller) bounds the height, so the
     // Expanded poster absorbs the gap delta.
-    final card = SizedBox(width: 160, height: 264, child: MediaCard(item: movie, forceGridMode: true, isOffline: true));
+    final card = SizedBox(
+      width: 160,
+      height: 264,
+      child: MediaCard(item: movie, viewModeOverride: ViewMode.grid, isOffline: true),
+    );
 
     final gaps = <GridSpacing, double>{};
     for (final spacing in GridSpacing.values) {
@@ -52,7 +56,7 @@ void main() {
     // Hub-style explicit dimensions: cardWidth 200 -> posterWidth 194,
     // 2:3 poster height 291. The row's text band is fixed, so the gap must
     // not move with the setting.
-    final card = MediaCard(item: movie, width: 200, height: 291, forceGridMode: true, isOffline: true);
+    final card = MediaCard(item: movie, width: 200, height: 291, viewModeOverride: ViewMode.grid, isOffline: true);
 
     final gaps = <double>{};
     for (final spacing in GridSpacing.values) {

@@ -18,6 +18,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -450,7 +451,7 @@ class _SearchScreenState extends State<SearchScreen>
         return FocusableMediaCard(
           key: Key(item.globalKey),
           item: item,
-          forceListMode: true,
+          viewModeOverride: ViewMode.list,
           disableScale: true,
           focusNode: index == 0 ? firstResultFocusNode : null,
           onRefresh: updateItem,

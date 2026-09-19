@@ -771,7 +771,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                                             _onItemTapped(index);
                                             widget.onItemLongPress!(item);
                                           },
-                                    forceGridMode: true,
+                                    viewModeOverride: ViewMode.grid,
                                     isInContinueWatching: widget.isInContinueWatching,
                                     usesContinueWatchingAction: widget.usesContinueWatchingAction,
                                     mixedHubContext: isMixedHub,
