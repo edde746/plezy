@@ -25,12 +25,15 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/media_card.dart';
+import 'package:plezy/widgets/cycling_media_backdrop.dart';
+import 'package:plezy/widgets/rasterized_gradient.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
 import 'package:provider/provider.dart';
 
@@ -213,6 +216,84 @@ void main() {
     final focused = FocusManager.instance.primaryFocus!.context!.widget;
     expect(find.ancestor(of: find.byWidget(focused), matching: find.byType(FocusableActionBar)), findsOneWidget);
   });
+
+  group('backdrop poster stand-in blur', () {
+    // Poster-only: `art` missing, so the header wash has to come from the
+    // poster and the screen decides whether to blur it.
+    final posterOnly = MediaItem(
+      id: 'collection_3',
+      backend: MediaBackend.plex,
+      kind: MediaKind.collection,
+      title: 'Poster only',
+      thumbPath: '/library/metadata/collection_3/thumb',
+      libraryId: 'movies',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final withArt = MediaItem(
+      id: 'collection_4',
+      backend: MediaBackend.plex,
+      kind: MediaKind.collection,
+      title: 'With art',
+      thumbPath: '/library/metadata/collection_4/thumb',
+      artPath: '/library/metadata/collection_4/art',
+      libraryId: 'movies',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+
+    tearDown(DevicePerformance.debugReset);
+
+    Future<void> pumpCollection(WidgetTester tester, MediaItem collection) async {
+      final harness = await _createHarness([_movie('movie_1', 'First movie', year: 2007)]);
+      await tester.pumpWidget(
+        harness.wrap(SizedBox(width: 1280, height: 720, child: CollectionDetailScreen(collection: collection))),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// The header wash: whatever sits beside the scrim gradient in the layer
+    /// painted behind the scroll view. Grid cards carry the same surface
+    /// colour, so the finder has to be scoped to that layer.
+    Finder backdropLayer() => find.ancestor(of: find.byType(RasterizedGradient), matching: find.byType(Stack)).first;
+
+    Finder flatSurface(WidgetTester tester) {
+      final surface = Theme.of(tester.element(find.byType(CollectionDetailScreen))).colorScheme.surfaceContainerHighest;
+      return find.descendant(
+        of: backdropLayer(),
+        matching: find.byWidgetPredicate((widget) => widget is ColoredBox && widget.color == surface),
+      );
+    }
+
+    testWidgets('reduced tier flattens the poster stand-in instead of blurring it', (tester) async {
+      DevicePerformance.debugReset(autoReduced: true);
+      await pumpCollection(tester, posterOnly);
+
+      expect(find.byType(ImageFiltered), findsNothing);
+      expect(find.byType(CyclingMediaBackdrop), findsNothing);
+      expect(flatSurface(tester), findsOneWidget);
+    });
+
+    testWidgets('full tier keeps the blurred poster stand-in', (tester) async {
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto);
+      await pumpCollection(tester, posterOnly);
+
+      expect(
+        find.descendant(of: find.byType(ImageFiltered), matching: find.byType(CyclingMediaBackdrop)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('reduced tier still shows real backdrop art, unblurred', (tester) async {
+      DevicePerformance.debugReset(autoReduced: true);
+      await pumpCollection(tester, withArt);
+
+      final backdrop = find.byType(CyclingMediaBackdrop);
+      expect(backdrop, findsOneWidget);
+      expect(tester.widget<CyclingMediaBackdrop>(backdrop).imagePaths, ['/library/metadata/collection_4/art']);
+      expect(find.byType(ImageFiltered), findsNothing);
+    });
+  });
 }
 
 final _collection = MediaItem(
@@ -330,6 +411,11 @@ class _CollectionClient implements MediaServerClient {
     if (cap != null && (start ?? 0) > 0) return Completer<LibraryPage<MediaItem>>().future;
     return Future.value(fakeLibraryPage(items, start: start, size: cap == null ? size : math.min(size ?? cap, cap)));
   }
+
+  /// Empty URL: the backdrop declines to build a provider and falls back to
+  /// its flat colour instead of touching the network.
+  @override
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) => '';
 
   @override
   void close() {}
