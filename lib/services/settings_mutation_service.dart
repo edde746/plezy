@@ -168,7 +168,9 @@ class SettingsMutationService {
     if (context.mounted && !listEquals(previousRootConfiguration, captureRootConfiguration())) rebuild(context);
   }
 
-  static bool needsRootRebuild(Pref<Object?> pref) => _effectsByKey[pref.key]?.rebuildsRoot ?? false;
+  /// Whether writing the pref stored under [key] requires a root rebuild. Keyed
+  /// so agent control can ask for resource keys that have no [Pref].
+  static bool needsRootRebuild(String key) => _effectsByKey[key]?.rebuildsRoot ?? false;
 
   static void rebuild(BuildContext context) {
     Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);

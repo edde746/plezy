@@ -277,7 +277,7 @@ class AgentSettingsCommands {
   }
 
   static String _application(String key) {
-    if (key == 'app_locale' || key == 'force_tv_mode' || key == 'visual_effects') return 'rootRebuild';
+    if (SettingsMutationService.needsRootRebuild(key)) return 'rootRebuild';
     if (key == 'start_in_fullscreen' ||
         key == 'startup_section' ||
         key == 'require_profile_selection_on_open' ||
