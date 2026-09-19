@@ -259,26 +259,16 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                       });
                     }
 
-                    VoidCallback? onNext;
-                    if (widget.isLive) {
-                      onNext = _hasNextChannel ? () => _switchLiveChannel(1) : null;
-                    } else {
-                      // _playNext no-ops while a navigation is in flight; matching that here
-                      // keeps the control from looking live while it does nothing.
-                      onNext = (_episode.next != null && !_episode.isLoadingNext && authority.canNavigateMediaItems)
-                          ? _playNext
-                          : null;
-                    }
-
-                    VoidCallback? onPrevious;
-                    if (widget.isLive) {
-                      onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
-                    } else {
-                      final canRestartOrPrevious = _currentMetadata.isEpisode || _episode.previous != null;
-                      onPrevious = (canRestartOrPrevious && authority.canNavigateMediaItems)
-                          ? _restartOrPlayPrevious
-                          : null;
-                    }
+                    // The screen answers next/previous once for every entry
+                    // point; the buttons add only the in-flight and room
+                    // authority gates so a control cannot look live while it
+                    // does nothing. Live TV is never room-bound, and its zap
+                    // debounces itself through the transition gate.
+                    final canNavigateItems = widget.isLive || authority.canNavigateMediaItems;
+                    final onNext = _hasNextItem && !_episode.isLoadingNext && canNavigateItems
+                        ? _navigateToNextItem
+                        : null;
+                    final onPrevious = _hasPreviousItem && canNavigateItems ? _navigateToPreviousItem : null;
 
                     final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
                     final sourceSubtitleSidecars = _sourceSubtitleSidecarsForControls();

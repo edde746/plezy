@@ -27,10 +27,10 @@ class CompanionRemoteBinding {
     required this._isMounted,
     required this._canControlPlayback,
     required this._volumeController,
-    required this._hasNextEpisode,
+    required this._hasNextItem,
     required this._onStop,
-    required this._onPlayNext,
-    required this._onPlayPrevious,
+    required this._onNavigateToNextItem,
+    required this._onNavigateToPreviousItem,
     required this._skipByConfiguredStep,
     required this._onCycleSubtitles,
     required this._onCycleAudio,
@@ -42,10 +42,10 @@ class CompanionRemoteBinding {
   final bool Function() _isMounted;
   final bool Function() _canControlPlayback;
   final VideoVolumeController? Function() _volumeController;
-  final bool Function() _hasNextEpisode;
+  final bool Function() _hasNextItem;
   final void Function() _onStop;
-  final void Function() _onPlayNext;
-  final Future<void> Function() _onPlayPrevious;
+  final Future<void> Function() _onNavigateToNextItem;
+  final Future<void> Function() _onNavigateToPreviousItem;
   final void Function({required bool forward}) _skipByConfiguredStep;
   final void Function() _onCycleSubtitles;
   final void Function() _onCycleAudio;
@@ -68,10 +68,10 @@ class CompanionRemoteBinding {
       if (_isMounted()) _onStop();
     };
     receiver.onNextTrack = () {
-      if (_isMounted() && _hasNextEpisode()) _onPlayNext();
+      if (_isMounted() && _hasNextItem()) unawaited(_onNavigateToNextItem());
     };
     receiver.onPreviousTrack = () {
-      if (_isMounted()) unawaited(_onPlayPrevious());
+      if (_isMounted()) unawaited(_onNavigateToPreviousItem());
     };
     receiver.onSeekForward = () => _dispatchSeek(forward: true);
     receiver.onSeekBackward = () => _dispatchSeek(forward: false);

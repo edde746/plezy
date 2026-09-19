@@ -650,10 +650,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           unawaited(_seekPlayback(clampSeekPosition(currentPlayer, position)));
         }
       },
-      onNext: () {
-        if (_episode.next != null) unawaited(_playNext());
-      },
-      onPrevious: () => unawaited(_restartOrPlayPrevious()),
+      // Next/previous mean what the on-screen buttons mean: a channel zap on
+      // live TV, the adjacent item otherwise. Both targets refuse a step
+      // that has nowhere to go, so no adjacency gate is repeated here.
+      onNext: () => unawaited(_navigateToNextItem()),
+      onPrevious: () => unawaited(_navigateToPreviousItem()),
       onStop: () => unawaited(_handleBackButton()),
       // The platform-reported interval is ignored on purpose; see
       // [_configuredSkipStep].
