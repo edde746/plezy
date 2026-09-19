@@ -98,7 +98,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
     final isAutomotive = PlatformDetector.isAutomotive();
     final shouldPauseForBackground = shouldPauseVideoForBackground(
-      isHandheld: PlatformDetector.isHandheld(context),
+      isHandheld: PlatformDetector.isMobile(context),
       isTv: isTv,
       isAutomotive: isAutomotive,
     );

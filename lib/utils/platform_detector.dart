@@ -255,10 +255,6 @@ class PlatformDetector {
     return platform == TargetPlatform.iOS || platform == TargetPlatform.android;
   }
 
-  static bool isHandheld(BuildContext context) {
-    return isMobile(context);
-  }
-
   /// True for iPhone/iPad-style iOS navigation. Excludes tvOS and forced-TV
   /// modes, where route back gestures conflict with D-pad navigation.
   static bool isHandheldIOS(BuildContext context) {
@@ -348,6 +344,6 @@ class PlatformDetector {
   }
 
   static bool isPhone(BuildContext context) {
-    return isHandheld(context) && !isTablet(context);
+    return isMobile(context) && !isTablet(context);
   }
 }
