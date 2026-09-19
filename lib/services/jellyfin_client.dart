@@ -11,7 +11,6 @@ import '../media/account_preferences.dart';
 import '../media/artist_discography.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
-import '../media/library_first_character.dart';
 import '../media/library_query.dart';
 import 'favorite_channels_repository.dart';
 import 'live_session_tracker.dart';
@@ -125,7 +124,9 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
   /// Per-facet value listing shared by the browse part (library filters) and
   /// the metadata-edit part (server-wide tag suggestions when [libraryId] is
   /// null). Emby-only route shape; Jellyfin callers use `/Items/Filters`.
-  Future<List<String>> _safeFetchFilterFacet(String endpoint, String? libraryId);
+  /// Throws [MediaServerHttpException] on any request failure — each caller
+  /// picks its own degradation.
+  Future<List<String>> _fetchFilterFacet(String endpoint, String? libraryId);
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
     String itemId, {
     int sourceIndex = 0,

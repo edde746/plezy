@@ -4100,11 +4100,6 @@ class PlexClient
     return LibraryPage<MediaItem>(items: result.items, totalCount: result.totalSize, offset: query.offset);
   }
 
-  @override
-  Future<List<LibraryFirstCharacter>> fetchFirstCharacters(String libraryId, {Map<String, String>? filters}) async {
-    return getFirstCharacters(libraryId, filters: filters);
-  }
-
   /// [excludedLibraryIds] is unused: `/library/search` has no section-scoping
   /// parameter, and every row carries its `librarySectionID`, so the caller
   /// filters hidden libraries out of the mapped results.
@@ -4381,23 +4376,29 @@ class PlexClient
   /// tracker, watchlist and dedupe path blind to those libraries (#1788).
   ///
   /// The array wins per field; the scalar only fills what it left null.
+  ///
+  /// Only "no mapping" is empty — including a 404, the item having gone the
+  /// way the MediaBrowser side's `fetchItem` reports it. Every other request
+  /// failure propagates from [_getWithFailover] so callers can tell a server
+  /// outage from an unmatched item.
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async {
+    final MediaServerResponse response;
     try {
-      final response = await _getWithFailover('/library/metadata/$itemId', queryParameters: {'includeGuids': 1});
-      final data = response.data;
-      if (data is! Map) return const ExternalIds();
-      final metadata = (data['MediaContainer'] as Map?)?['Metadata'];
-      if (metadata is! List || metadata.isEmpty) return const ExternalIds();
-      final first = metadata.first;
-      if (first is! Map) return const ExternalIds();
-      final guids = first['Guid'];
-      final modern = guids is List ? ExternalIds.fromGuids(guids) : const ExternalIds();
-      return modern.fillFrom(ExternalIds.fromLegacyPlexGuid(first['guid']));
-    } catch (e) {
-      appLogger.d('fetchExternalIds failed for $itemId', error: e);
-      return const ExternalIds();
+      response = await _getWithFailover('/library/metadata/$itemId', queryParameters: {'includeGuids': 1});
+    } on MediaServerHttpException catch (e) {
+      if (e.statusCode == 404) return const ExternalIds();
+      rethrow;
     }
+    final data = response.data;
+    final container = data is Map ? data['MediaContainer'] : null;
+    final metadata = container is Map ? container['Metadata'] : null;
+    if (metadata is! List || metadata.isEmpty) return const ExternalIds();
+    final first = metadata.first;
+    if (first is! Map) return const ExternalIds();
+    final guids = first['Guid'];
+    final modern = guids is List ? ExternalIds.fromGuids(guids) : const ExternalIds();
+    return modern.fillFrom(ExternalIds.fromLegacyPlexGuid(first['guid']));
   }
 
   /// Map id-verified candidates to items, dropping any sequel the server does

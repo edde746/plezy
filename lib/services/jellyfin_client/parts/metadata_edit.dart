@@ -26,10 +26,8 @@ mixin _JellyfinMetadataEditMethods on _JellyfinClientInternals {
   /// suggestion list never blocks editing.
   Future<List<String>> fetchTagFacetValues(String facet) async {
     if (isOfflineMode) return const [];
-    if (!dialect.supportsAggregateItemFilters) {
-      return _safeFetchFilterFacet('/$facet', null);
-    }
     try {
+      if (!dialect.supportsAggregateItemFilters) return await _fetchFilterFacet('/$facet', null);
       final response = await _http.get(
         '/Items/Filters',
         queryParameters: {'userId': connection.userId},

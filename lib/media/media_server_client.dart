@@ -12,7 +12,6 @@ import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
 import 'library_change_event.dart';
-import 'library_first_character.dart';
 import 'library_query.dart';
 import 'live_tv_support.dart';
 import 'lyrics.dart';
@@ -172,10 +171,15 @@ abstract class MediaServerClient {
   /// Filter categories for [libraryId] plus any values the backend serves
   /// up-front. Plex returns categories without values (the FiltersBottomSheet
   /// fetches values lazily per category); Jellyfin returns both in a single
-  /// `/Items/Filters` call and pre-populates [LibraryFilterResult.cachedValues].
+  /// `/Items/Filters` call and Emby reassembles the same payload from its
+  /// per-facet routes, pre-populating [LibraryFilterResult.cachedValues].
   /// [libraryKind] lets backends use media-appropriate labels for synthetic
   /// filters. Backends that have no filter listing return
   /// [LibraryFilterResult.empty].
+  ///
+  /// A transient failure (timeout, connection) degrades to the synthetic
+  /// filters with a partial or empty value set; every other failure (auth,
+  /// 5xx, cancellation) throws, on Jellyfin and Emby alike.
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind});
 
   /// Backend-aware sort options for [libraryId]. Plex hits
@@ -184,13 +188,6 @@ abstract class MediaServerClient {
   /// has no opinion. [libraryType] disambiguates Plex's per-type sort
   /// lists (movie vs show).
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType});
-
-  /// First-character bucket counts for the alpha-jump bar in the library
-  /// browse view. Plex returns real counts from
-  /// `/library/sections/{id}/firstCharacter` (filterable); Jellyfin has no
-  /// equivalent endpoint and synthesises a 27-letter alphabet so the bar
-  /// can act as a name-prefix filter (`size: 1` per entry).
-  Future<List<LibraryFirstCharacter>> fetchFirstCharacters(String libraryId, {Map<String, String>? filters});
 
   /// Queue a metadata refresh for [libraryId]. The id is the backend-native
   /// library identifier (Plex section id / Jellyfin view item id, both
@@ -383,7 +380,12 @@ abstract class MediaServerClient {
     HubFetchDiagnostics? diagnostics,
   });
 
-  /// "More like this" recommendations for [id].
+  /// Recommendations for [id]. Plex returns every row of
+  /// `/hubs/metadata/{id}/related` — collections, similar titles, and
+  /// "more from" director/actor — and its hub transport degrades any failure
+  /// to `[]` (logged) so a dead row never takes the screen down. Jellyfin/Emby
+  /// return exactly one "More like this" row from `/Items/{id}/Similar`, or
+  /// `[]` when it is empty, and request failures throw.
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});
 
   /// Playable extras attached to [id] (trailers, featurettes, deleted scenes,
@@ -586,8 +588,11 @@ abstract class MediaServerClient {
 
   /// External IDs (IMDb / TMDB / TVDB) for [itemId]. Plex hits
   /// `/library/metadata/{id}?includeGuids=1`; Jellyfin reads the inline
-  /// `ProviderIds` map. Returns an empty [ExternalIds] when the server
-  /// has no external mapping for the item.
+  /// `ProviderIds` map. Returns an empty [ExternalIds] only when the server
+  /// has no external mapping for the item, including a 404 for an item that
+  /// is gone. Auth, server, transport and cancellation failures throw from
+  /// both backends, so a caller that wants "unknown" and "unmatched" to look
+  /// the same has to catch.
   Future<ExternalIds> fetchExternalIds(String itemId);
 
   /// Reverse lookup: find every library movie/show matching any of [ids].
@@ -793,9 +798,14 @@ abstract class MediaServerClient {
   ///
   /// [mediaIndex] selects among multiple media versions when an item has them.
   ///
-  /// A successful applicable response may contain no URL. Request,
-  /// cancellation, and malformed-payload failures throw rather than returning
-  /// a partial resolution.
+  /// A successful applicable response may contain no URL. The primary lookup
+  /// (item metadata, media source, direct-stream URL) throws on request,
+  /// cancellation, and malformed-payload failures. The external-subtitle
+  /// enrichment leg is best-effort: when Jellyfin/Emby's PlaybackInfo fails
+  /// (other than by auth rejection or cancellation, which still throw) or is
+  /// malformed, the result carries the static-stream URL alone with
+  /// [DownloadResolution.externalSubtitlesResolved] false, which the download
+  /// pipeline treats as "retry subtitles later", never as a failed download.
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 
   /// Return [item] with `libraryId`/`libraryTitle` populated when the backend

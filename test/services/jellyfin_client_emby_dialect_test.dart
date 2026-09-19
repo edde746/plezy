@@ -1075,11 +1075,9 @@ void main() {
       expect(result.filters.map((filter) => filter.filter), contains('contentRating'));
     });
 
-    test('Emby preserves successful filter facets when one facet fails', () async {
+    test('Emby keeps the facets that answered when one facet is unreachable', () async {
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Tags') {
-          return jsonResponse({'Error': 'tags failed'}, status: 500);
-        }
+        if (request.url.path == '/Tags') throw http.ClientException('connection reset', request.url);
         final names = switch (request.url.path) {
           '/Genres' => ['Action'],
           '/OfficialRatings' => ['PG'],
@@ -1095,11 +1093,32 @@ void main() {
 
       final result = await client.fetchLibraryFiltersWithValues('lib-1', libraryKind: MediaKind.movie);
 
-      expect(requests.requests, hasLength(4), reason: requests.log.join('\n'));
       expect(result.cachedValues['genre']!.map((value) => value.key).toList(), ['Action']);
       expect(result.cachedValues['contentRating']!.map((value) => value.key).toList(), ['PG']);
       expect(result.cachedValues['year']!.map((value) => value.key).toList(), ['2024']);
       expect(result.cachedValues['tag'] ?? const [], isEmpty);
+    });
+
+    // Swallowing a 5xx here left an Emby user with a sheet showing only the
+    // synthetic filters and no error — the same picture as a library with no
+    // genres. Jellyfin's aggregate route already rethrew; the dialects agree.
+    test('Emby surfaces a facet server error instead of hiding it as an empty facet', () async {
+      final requests = _RequestCapture((request) {
+        if (request.url.path == '/Tags') return jsonResponse({'Error': 'tags failed'}, status: 500);
+        return jsonResponse({
+          'Items': [
+            {'Name': 'Action'},
+          ],
+          'TotalRecordCount': 1,
+        });
+      });
+      final client = testEmbyClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      await expectLater(
+        client.fetchLibraryFiltersWithValues('lib-1', libraryKind: MediaKind.movie),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.statusCode, 'statusCode', 500)),
+      );
     });
 
     test('Jellyfin keeps the single aggregate filter request', () async {

@@ -486,44 +486,48 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// `/OfficialRatings`, not the `/Items/OfficialRatings` form its siblings
   /// might suggest (that one 404s). Jellyfin has none of these four and answers
   /// the aggregate route instead.
+  ///
+  /// Same failure policy as the Jellyfin aggregate above: a transient failure
+  /// leaves that facet empty, anything else (auth, 5xx, cancellation) throws
+  /// so a real outage does not look like a library with no genres.
   Future<Map<String, dynamic>> _safeFetchFilterFacets(String libraryId) async {
-    final facets = await Future.wait([
-      _safeFetchFilterFacet('/Genres', libraryId),
-      _safeFetchFilterFacet('/OfficialRatings', libraryId),
-      _safeFetchFilterFacet('/Tags', libraryId),
-      _safeFetchFilterFacet('/Years', libraryId),
-    ]);
+    Future<List<String>> facet(String endpoint) async {
+      try {
+        return await _fetchFilterFacet(endpoint, libraryId);
+      } on MediaServerHttpException catch (e, st) {
+        if (!e.isTransient) rethrow;
+        appLogger.w('MediaBrowserClient: $endpoint filter facet unreachable (facet empty)', error: e, stackTrace: st);
+        return const [];
+      }
+    }
+
+    final facets = await Future.wait([facet('/Genres'), facet('/OfficialRatings'), facet('/Tags'), facet('/Years')]);
     return {'Genres': facets[0], 'OfficialRatings': facets[1], 'Tags': facets[2], 'Years': facets[3]};
   }
 
   @override
-  Future<List<String>> _safeFetchFilterFacet(String endpoint, String? libraryId) async {
-    try {
-      final response = await _http.get(
-        endpoint,
-        // `Recursive=true` is required: without it Emby only considers the
-        // library view's direct children and every facet comes back empty
-        // (measured against Emby 4.9.5 — `/Years` returns 0 vs 15 rows).
-        // A null [libraryId] scopes the facet server-wide, which is what tag
-        // suggestions want: MediaBrowser item DTOs carry no library id.
-        queryParameters: {'UserId': connection.userId, 'ParentId': ?libraryId, 'Recursive': 'true'},
-      );
-      throwIfHttpError(response);
-      final data = response.data;
-      if (data is! Map<String, dynamic>) return const [];
-      final items = data['Items'];
-      if (items is! List) return const [];
-      final names = <String>[];
-      for (final item in items) {
-        if (item is! Map<String, dynamic>) continue;
-        final name = item['Name'];
-        if (name is String && name.isNotEmpty) names.add(name);
-      }
-      return names;
-    } catch (e, st) {
-      appLogger.w('MediaBrowserClient: $endpoint filter facet unavailable', error: e, stackTrace: st);
-      return const [];
+  Future<List<String>> _fetchFilterFacet(String endpoint, String? libraryId) async {
+    final response = await _http.get(
+      endpoint,
+      // `Recursive=true` is required: without it Emby only considers the
+      // library view's direct children and every facet comes back empty
+      // (measured against Emby 4.9.5 — `/Years` returns 0 vs 15 rows).
+      // A null [libraryId] scopes the facet server-wide, which is what tag
+      // suggestions want: MediaBrowser item DTOs carry no library id.
+      queryParameters: {'UserId': connection.userId, 'ParentId': ?libraryId, 'Recursive': 'true'},
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    if (data is! Map<String, dynamic>) return const [];
+    final items = data['Items'];
+    if (items is! List) return const [];
+    final names = <String>[];
+    for (final item in items) {
+      if (item is! Map<String, dynamic>) continue;
+      final name = item['Name'];
+      if (name is String && name.isNotEmpty) names.add(name);
     }
+    return names;
   }
 
   /// Jellyfin has no `/sorts` listing endpoint, so this returns a hardcoded
@@ -641,44 +645,6 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         ? query.copyWith(kind: libraryKind)
         : query;
     return _fetchLibraryContent(libraryId, effective, abort: abort);
-  }
-
-  /// Synthesised 27-letter alphabet — Jellyfin has no equivalent of Plex's
-  /// `/firstCharacter` endpoint, so the UI treats the bar as a name-prefix
-  /// filter instead of a scroll affordance. Each entry has `size: 1` so
-  /// the alpha-jump helper renders it without trying to do offset math.
-  @override
-  Future<List<LibraryFirstCharacter>> fetchFirstCharacters(String libraryId, {Map<String, String>? filters}) async {
-    const letters = [
-      '#',
-      'A',
-      'B',
-      'C',
-      'D',
-      'E',
-      'F',
-      'G',
-      'H',
-      'I',
-      'J',
-      'K',
-      'L',
-      'M',
-      'N',
-      'O',
-      'P',
-      'Q',
-      'R',
-      'S',
-      'T',
-      'U',
-      'V',
-      'W',
-      'X',
-      'Y',
-      'Z',
-    ];
-    return [for (final l in letters) LibraryFirstCharacter(key: l, title: l, size: 1)];
   }
 
   /// Queue a metadata refresh for the library. Jellyfin treats a library
