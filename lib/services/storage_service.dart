@@ -115,6 +115,17 @@ class StorageService extends BaseSharedPreferencesService {
 
   String _userPrefixForProfileId(String profileId) => 'user_${userScopeForProfileId(profileId)}_';
 
+  /// Scope prefix for a write: the explicit [profileId] when given, otherwise
+  /// the active profile's (or `''` when none is active).
+  String _prefixFor(String? profileId) => profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+
+  static String _prefPrefix(LibraryPreference preference) => switch (preference) {
+    LibraryPreference.filters => _prefixLibraryFilters,
+    LibraryPreference.sort => _prefixLibrarySort,
+    LibraryPreference.grouping => _prefixLibraryGrouping,
+    LibraryPreference.tab => _prefixLibraryTab,
+  };
+
   /// Read [baseKey] from the [prefix]-scoped slot, adopting the legacy
   /// unscoped value once: the scoped key wins; otherwise the unscoped value is
   /// copied into it and the unscoped key removed. [read]/[write] carry the
@@ -201,7 +212,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Selected Library Key (replaces index-based selection)
   Future<void> saveSelectedLibraryKey(String key, {String? profileId}) async {
-    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    final prefix = _prefixFor(profileId);
     await prefs.setString('$prefix$_keySelectedLibraryKey', key);
   }
 
@@ -219,12 +230,7 @@ class StorageService extends BaseSharedPreferencesService {
     required String profileId,
     void Function()? checkCurrent,
   }) => _resetScopedPreference(
-    '${switch (preference) {
-      LibraryPreference.filters => _prefixLibraryFilters,
-      LibraryPreference.sort => _prefixLibrarySort,
-      LibraryPreference.grouping => _prefixLibraryGrouping,
-      LibraryPreference.tab => _prefixLibraryTab,
-    }}$sectionId',
+    '${_prefPrefix(preference)}$sectionId',
     profileId: profileId,
     checkCurrent: checkCurrent,
   );
@@ -244,12 +250,11 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   Object? getLibraryPreferenceOverride(String sectionId, LibraryPreference preference, {required String profileId}) {
-    final prefix = _userPrefixForProfileId(profileId);
+    final key = '${_userPrefixForProfileId(profileId)}${_prefPrefix(preference)}$sectionId';
     return switch (preference) {
-      LibraryPreference.filters => _readJsonMap('$prefix$_prefixLibraryFilters$sectionId'),
-      LibraryPreference.sort => _readJsonMap('$prefix$_prefixLibrarySort$sectionId', legacyStringOk: true),
-      LibraryPreference.grouping => readNullableString('$prefix$_prefixLibraryGrouping$sectionId'),
-      LibraryPreference.tab => readNullableString('$prefix$_prefixLibraryTab$sectionId'),
+      LibraryPreference.filters => _readJsonMap(key),
+      LibraryPreference.sort => _readJsonMap(key, legacyStringOk: true),
+      LibraryPreference.grouping || LibraryPreference.tab => readNullableString(key),
     };
   }
 
@@ -258,7 +263,7 @@ class StorageService extends BaseSharedPreferencesService {
     final baseKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
     // Note: using Map<String, String> which json.encode handles correctly
     final jsonString = json.encode(filters);
-    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    final prefix = _prefixFor(profileId);
     await prefs.setString('$prefix$baseKey', jsonString);
   }
 
@@ -283,7 +288,7 @@ class StorageService extends BaseSharedPreferencesService {
   // Library Sort (per-library, stored individually with descending flag)
   Future<void> saveLibrarySort(String sectionId, String sortKey, {bool descending = false, String? profileId}) async {
     final sortData = {'key': sortKey, 'descending': descending};
-    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    final prefix = _prefixFor(profileId);
     await _setJsonMap('$prefix$_prefixLibrarySort$sectionId', sortData);
   }
 
@@ -303,7 +308,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Library Grouping (per-library, e.g., 'movies', 'shows', 'seasons', 'episodes')
   Future<void> saveLibraryGrouping(String sectionId, String grouping, {String? profileId}) async {
-    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    final prefix = _prefixFor(profileId);
     await prefs.setString('$prefix$_prefixLibraryGrouping$sectionId', grouping);
   }
 
@@ -313,7 +318,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Library Tab (per-library, saves last selected tab name)
   Future<void> saveLibraryTab(String sectionId, String tabName, {String? profileId}) async {
-    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    final prefix = _prefixFor(profileId);
     await prefs.setString('$prefix$_prefixLibraryTab$sectionId', tabName);
   }
 
@@ -361,23 +366,18 @@ class StorageService extends BaseSharedPreferencesService {
     }
   }
 
-  // Clear library preferences (scoped to current user)
+  // Clear library preferences (scoped to current user, plus the legacy
+  // unscoped slots when a user scope is active).
   Future<void> clearLibraryPreferences() async {
-    final prefix = _userPrefix;
+    final prefixes = <String>{_userPrefix, ''};
     await Future.wait([
-      ..._libraryPreferenceKeys.map((k) => prefs.remove('$prefix$k')),
-      prefs.remove('$prefix$_keySelectedLibraryKey'),
-      _clearKeysWithPrefix('$prefix$_prefixLibrarySort'),
-      _clearKeysWithPrefix('$prefix$_prefixLibraryFilters'),
-      _clearKeysWithPrefix('$prefix$_prefixLibraryGrouping'),
-      _clearKeysWithPrefix('$prefix$_prefixLibraryTab'),
-      if (prefix.isNotEmpty) ...[
-        ..._libraryPreferenceKeys.map(prefs.remove),
-        prefs.remove(_keySelectedLibraryKey),
-        _clearKeysWithPrefix(_prefixLibrarySort),
-        _clearKeysWithPrefix(_prefixLibraryFilters),
-        _clearKeysWithPrefix(_prefixLibraryGrouping),
-        _clearKeysWithPrefix(_prefixLibraryTab),
+      for (final prefix in prefixes) ...[
+        ..._libraryPreferenceKeys.map((k) => prefs.remove('$prefix$k')),
+        prefs.remove('$prefix$_keySelectedLibraryKey'),
+        _clearKeysWithPrefix('$prefix$_prefixLibrarySort'),
+        _clearKeysWithPrefix('$prefix$_prefixLibraryFilters'),
+        _clearKeysWithPrefix('$prefix$_prefixLibraryGrouping'),
+        _clearKeysWithPrefix('$prefix$_prefixLibraryTab'),
       ],
     ]);
   }
@@ -426,7 +426,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Library Order (stored as JSON list of library keys)
   Future<void> saveLibraryOrder(List<String> libraryKeys, {String? profileId}) async {
-    final prefix = profileId == null ? _userPrefix : _userPrefixForProfileId(profileId);
+    final prefix = _prefixFor(profileId);
     await _setStringList('$prefix$_keyLibraryOrder', libraryKeys);
   }
 
