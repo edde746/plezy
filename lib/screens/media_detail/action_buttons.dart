@@ -1,5 +1,18 @@
 part of '../media_detail_screen.dart';
 
+/// What the download action button shows for one download state.
+class _DownloadButtonSpec {
+  final Widget icon;
+  final String? tooltip;
+  final Color? foregroundColor;
+
+  /// False while the download pipeline owns the item (queueing, queued,
+  /// downloading): the button renders disabled.
+  final bool interactive;
+
+  const _DownloadButtonSpec({required this.icon, this.tooltip, this.foregroundColor, this.interactive = true});
+}
+
 extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Widget _buildActionButtons(MediaItem metadata) {
     // Tie asynchronous playback prompts to the actionable subtree, not the
@@ -705,168 +718,141 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
         final iconSize = PlatformDetector.isTV() ? 21.0 * tvScale : 20.0;
-        final globalKey = metadata.globalKey;
-        final ruleKey = _syncRuleKeyForMetadata(context, downloadProvider, metadata);
-        final progress = downloadProvider.getProgress(globalKey);
-        final isQueueing = downloadProvider.isQueueing(globalKey);
-
-        // Debug logging
-        if (progress != null) {
-          appLogger.d('UI rebuilding for $globalKey: status=${progress.status}, progress=${progress.progress}%');
-        }
-
-        // State 1: Queueing (building download queue)
-        if (isQueueing) {
-          return IconButton.filledTonal(
-            onPressed: null,
-            icon: LoadingIndicatorBox(size: iconSize),
-            iconSize: iconSize,
-            style: actionButtonStyle(showFocus: showFocus),
-          );
-        }
-
-        // State 2: Queued (waiting to download)
-        if (progress?.status == DownloadStatus.queued) {
-          final currentFile = progress?.currentFile;
-          final tooltip = currentFile != null && currentFile.contains('episodes')
-              ? t.downloads.queuedFilesTooltip(files: currentFile)
-              : t.downloads.queuedTooltip;
-
-          return IconButton.filledTonal(
-            onPressed: null,
-            tooltip: tooltip,
-            icon: const AppIcon(Symbols.schedule_rounded, fill: 1),
-            iconSize: iconSize,
-            style: actionButtonStyle(showFocus: showFocus),
-          );
-        }
-
-        // State 3: Downloading (active download)
-        if (progress?.status == DownloadStatus.downloading) {
-          // Show episode count in tooltip for shows/seasons
-          final currentFile = progress?.currentFile;
-          final tooltip = currentFile != null && currentFile.contains('episodes')
-              ? t.downloads.downloadingFilesTooltip(files: currentFile)
-              : t.downloads.downloadingTooltip;
-
-          return IconButton.filledTonal(
-            onPressed: null,
-            tooltip: tooltip,
-            icon: _buildRadialProgress(progress?.progressPercent),
-            iconSize: iconSize,
-            style: actionButtonStyle(showFocus: showFocus),
-          );
-        }
-
-        // State 4: Paused (can resume)
-        if (progress?.status == DownloadStatus.paused) {
-          return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-            icon: const AppIcon(Symbols.pause_circle_outline_rounded, fill: 1),
-            tooltip: t.downloads.resumeDownload,
-            iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.amber, showFocus: showFocus),
-          );
-        }
-
-        // State 5: Failed (can retry)
-        if (progress?.status == DownloadStatus.failed) {
-          return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-            icon: const AppIcon(Symbols.error_outline_rounded, fill: 1),
-            tooltip: t.downloads.retryDownload,
-            iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.red, showFocus: showFocus),
-          );
-        }
-
-        // State 6: Cancelled (can delete or retry)
-        if (progress?.status == DownloadStatus.cancelled) {
-          return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-            icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
-            tooltip: t.downloads.cancelledDownload,
-            iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.grey, showFocus: showFocus),
-          );
-        }
-
-        // State 7: Partial Download (some episodes downloaded, not all)
-        if (progress?.status == DownloadStatus.partial) {
-          final hasSyncRule = downloadProvider.hasSyncRule(ruleKey);
-          final currentFile = progress?.currentFile;
-
-          if (hasSyncRule) {
-            // Synced partial — this is the normal state for sync rules
-            final syncRule = downloadProvider.getSyncRule(ruleKey);
-            final isEnabled = syncRule?.enabled ?? true;
-            final tooltip = currentFile != null
-                ? t.downloads.syncingFile(
-                    file: currentFile,
-                    status: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
-                  )
-                : t.downloads.keepSynced;
-
-            return IconButton.filledTonal(
-              onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-              tooltip: tooltip,
-              icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
-              iconSize: iconSize,
-              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey, showFocus: showFocus),
-            );
-          }
-
-          final tooltip = currentFile != null
-              ? t.downloads.downloadedFileClickToComplete(file: currentFile)
-              : t.downloads.partialDownloadClickToComplete;
-
-          return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-            tooltip: tooltip,
-            icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
-            iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.orange, showFocus: showFocus),
-          );
-        }
-
-        // State 8: Downloaded/Completed (can delete)
-        if (downloadProvider.isDownloaded(globalKey)) {
-          final hasSyncRule = downloadProvider.hasSyncRule(ruleKey);
-
-          if (hasSyncRule) {
-            // Synced + complete — show sync icon
-            final syncRule = downloadProvider.getSyncRule(ruleKey);
-            final isEnabled = syncRule?.enabled ?? true;
-            return IconButton.filledTonal(
-              onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-              icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
-              tooltip: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
-              iconSize: iconSize,
-              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey, showFocus: showFocus),
-            );
-          }
-
-          // Shows/seasons may have more episodes to fetch; movies/episodes don't.
-          final canDownloadMore = metadata.isShow || metadata.isSeason;
-
-          return IconButton.filledTonal(
-            onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-            icon: const AppIcon(Symbols.download_rounded, fill: 1),
-            tooltip: canDownloadMore ? t.downloads.manage : t.downloads.deleteDownload,
-            iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.orange, showFocus: showFocus),
-          );
-        }
-
-        // State 9: Not downloaded (default - can download)
+        final spec = _downloadButtonSpec(context, downloadProvider, metadata, iconSize: iconSize);
         return IconButton.filledTonal(
-          onPressed: () => unawaited(_handleDownloadButtonPressed(context, metadata)),
-          icon: const AppIcon(Symbols.download_rounded, fill: 1),
-          tooltip: t.downloads.downloadNow,
+          onPressed: spec.interactive ? () => unawaited(_handleDownloadButtonPressed(context, metadata)) : null,
+          icon: spec.icon,
+          tooltip: spec.tooltip,
           iconSize: iconSize,
-          style: actionButtonStyle(showFocus: showFocus),
+          style: actionButtonStyle(foregroundColor: spec.foregroundColor, showFocus: showFocus),
         );
       },
+    );
+  }
+
+  /// Presentation of the download button for the item's current download
+  /// state, in precedence order: queueing → queued → downloading → paused →
+  /// failed → cancelled → partial → downloaded → not downloaded. The first
+  /// three are non-interactive; [_handleDownloadButtonPressed] handles the rest.
+  _DownloadButtonSpec _downloadButtonSpec(
+    BuildContext context,
+    DownloadProvider downloadProvider,
+    MediaItem metadata, {
+    required double iconSize,
+  }) {
+    final globalKey = metadata.globalKey;
+    final ruleKey = _syncRuleKeyForMetadata(context, downloadProvider, metadata);
+    final progress = downloadProvider.getProgress(globalKey);
+    final currentFile = progress?.currentFile;
+
+    if (debugLoggingEnabled && progress != null) {
+      appLogger.d('UI rebuilding for $globalKey: status=${progress.status}, progress=${progress.progress}%');
+    }
+
+    // Queueing (building download queue)
+    if (downloadProvider.isQueueing(globalKey)) {
+      return _DownloadButtonSpec(icon: LoadingIndicatorBox(size: iconSize), interactive: false);
+    }
+
+    // Queued (waiting to download)
+    if (progress?.status == DownloadStatus.queued) {
+      return _DownloadButtonSpec(
+        icon: const AppIcon(Symbols.schedule_rounded, fill: 1),
+        tooltip: currentFile != null && currentFile.contains('episodes')
+            ? t.downloads.queuedFilesTooltip(files: currentFile)
+            : t.downloads.queuedTooltip,
+        interactive: false,
+      );
+    }
+
+    // Downloading (active download); the tooltip carries the episode count
+    // for shows/seasons.
+    if (progress?.status == DownloadStatus.downloading) {
+      return _DownloadButtonSpec(
+        icon: _buildRadialProgress(progress?.progressPercent),
+        tooltip: currentFile != null && currentFile.contains('episodes')
+            ? t.downloads.downloadingFilesTooltip(files: currentFile)
+            : t.downloads.downloadingTooltip,
+        interactive: false,
+      );
+    }
+
+    // Paused (can resume)
+    if (progress?.status == DownloadStatus.paused) {
+      return _DownloadButtonSpec(
+        icon: const AppIcon(Symbols.pause_circle_outline_rounded, fill: 1),
+        tooltip: t.downloads.resumeDownload,
+        foregroundColor: Colors.amber,
+      );
+    }
+
+    // Failed (can retry)
+    if (progress?.status == DownloadStatus.failed) {
+      return _DownloadButtonSpec(
+        icon: const AppIcon(Symbols.error_outline_rounded, fill: 1),
+        tooltip: t.downloads.retryDownload,
+        foregroundColor: Colors.red,
+      );
+    }
+
+    // Cancelled (can delete or retry)
+    if (progress?.status == DownloadStatus.cancelled) {
+      return _DownloadButtonSpec(
+        icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
+        tooltip: t.downloads.cancelledDownload,
+        foregroundColor: Colors.grey,
+      );
+    }
+
+    // A sync rule shows the same icon whether the download is partial (its
+    // normal state) or complete; only the tooltip differs.
+    _DownloadButtonSpec syncRuleSpec({required bool complete}) {
+      final syncRule = downloadProvider.getSyncRule(ruleKey);
+      final isEnabled = syncRule?.enabled ?? true;
+      final keepStatus = t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?');
+      final String tooltip;
+      if (complete) {
+        tooltip = keepStatus;
+      } else if (currentFile != null) {
+        tooltip = t.downloads.syncingFile(file: currentFile, status: keepStatus);
+      } else {
+        tooltip = t.downloads.keepSynced;
+      }
+      return _DownloadButtonSpec(
+        icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
+        tooltip: tooltip,
+        foregroundColor: isEnabled ? Colors.teal : Colors.grey,
+      );
+    }
+
+    // Partial download (some episodes downloaded, not all)
+    if (progress?.status == DownloadStatus.partial) {
+      if (downloadProvider.hasSyncRule(ruleKey)) return syncRuleSpec(complete: false);
+      return _DownloadButtonSpec(
+        icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
+        tooltip: currentFile != null
+            ? t.downloads.downloadedFileClickToComplete(file: currentFile)
+            : t.downloads.partialDownloadClickToComplete,
+        foregroundColor: Colors.orange,
+      );
+    }
+
+    // Downloaded/complete (can delete)
+    if (downloadProvider.isDownloaded(globalKey)) {
+      if (downloadProvider.hasSyncRule(ruleKey)) return syncRuleSpec(complete: true);
+      // Shows/seasons may have more episodes to fetch; movies/episodes don't.
+      final canDownloadMore = metadata.isShow || metadata.isSeason;
+      return _DownloadButtonSpec(
+        icon: const AppIcon(Symbols.download_rounded, fill: 1),
+        tooltip: canDownloadMore ? t.downloads.manage : t.downloads.deleteDownload,
+        foregroundColor: Colors.orange,
+      );
+    }
+
+    // Not downloaded (default - can download)
+    return _DownloadButtonSpec(
+      icon: const AppIcon(Symbols.download_rounded, fill: 1),
+      tooltip: t.downloads.downloadNow,
     );
   }
 }
