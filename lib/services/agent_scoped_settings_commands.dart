@@ -628,62 +628,32 @@ class AgentScopedSettingsCommands {
       ),
     );
     entries.add(
-      _valueEntry(
+      _libraryPrefEntry(
         guard,
-        'grouping',
-        'string',
-        'nextLibraryOpen',
+        storage,
+        globalKey,
+        LibraryPreference.grouping,
         defaultValue: defaultGrouping,
         choices: groupingOptions,
-        read: () => {
-          'value': normalizeLibraryBrowseGrouping(
-            library,
-            storage.getLibraryGrouping(globalKey),
-            canGroupByFolders: folders,
-          ),
-          'storedOverride': storage.getLibraryPreferenceOverride(
-            globalKey,
-            LibraryPreference.grouping,
-            profileId: guard.profileId,
-          ),
-        },
-        normalize: (v) => _choice(v, groupingOptions),
-        write: (v, reset) => reset
-            ? storage.resetLibraryPreference(
-                globalKey,
-                LibraryPreference.grouping,
-                profileId: guard.profileId,
-                checkCurrent: guard.check,
-              )
-            : storage.saveLibraryGrouping(globalKey, v as String, profileId: guard.profileId),
+        current: () => normalizeLibraryBrowseGrouping(
+          library,
+          storage.getLibraryGrouping(globalKey),
+          canGroupByFolders: folders,
+        ),
+        save: (v) => storage.saveLibraryGrouping(globalKey, v, profileId: guard.profileId),
       ),
     );
     final tabs = visibleLibraryTabs(library).map((t) => t.name).toList();
     entries.add(
-      _valueEntry(
+      _libraryPrefEntry(
         guard,
-        'tab',
-        'string',
-        'nextLibraryOpen',
+        storage,
+        globalKey,
+        LibraryPreference.tab,
         defaultValue: tabs.first,
         choices: tabs,
-        read: () => {
-          'value': storage.getLibraryTab(globalKey) ?? tabs.first,
-          'storedOverride': storage.getLibraryPreferenceOverride(
-            globalKey,
-            LibraryPreference.tab,
-            profileId: guard.profileId,
-          ),
-        },
-        normalize: (v) => _choice(v, tabs),
-        write: (v, reset) => reset
-            ? storage.resetLibraryPreference(
-                globalKey,
-                LibraryPreference.tab,
-                profileId: guard.profileId,
-                checkCurrent: guard.check,
-              )
-            : storage.saveLibraryTab(globalKey, v as String, profileId: guard.profileId),
+        current: () => storage.getLibraryTab(globalKey) ?? tabs.first,
+        save: (v) => storage.saveLibraryTab(globalKey, v, profileId: guard.profileId),
       ),
     );
     if (requested == null || requested == 'sort') {
@@ -1096,6 +1066,35 @@ class AgentScopedSettingsCommands {
         return {'persisted': true, if (reset && resetApplication != null) 'application': resetApplication, ...result};
       };
     },
+  );
+
+  /// A per-library string choice keyed by [preference]'s name. `value` is the
+  /// effective choice, `storedOverride` the raw per-profile override (null
+  /// when the library follows the default); reset removes only that override.
+  _ScopedSetting _libraryPrefEntry(
+    _ScopedGuard guard,
+    StorageService storage,
+    String globalKey,
+    LibraryPreference preference, {
+    required String defaultValue,
+    required List<String> choices,
+    required String Function() current,
+    required Future<void> Function(String value) save,
+  }) => _valueEntry(
+    guard,
+    preference.name,
+    'string',
+    'nextLibraryOpen',
+    defaultValue: defaultValue,
+    choices: choices,
+    read: () => {
+      'value': current(),
+      'storedOverride': storage.getLibraryPreferenceOverride(globalKey, preference, profileId: guard.profileId),
+    },
+    normalize: (v) => _choice(v, choices),
+    write: (v, reset) => reset
+        ? storage.resetLibraryPreference(globalKey, preference, profileId: guard.profileId, checkCurrent: guard.check)
+        : save(v as String),
   );
 
   _ScopedSetting _readOnly(
