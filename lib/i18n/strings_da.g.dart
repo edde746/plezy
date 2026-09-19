@@ -875,6 +875,7 @@ class _Translations$videoControls$da extends Translations$videoControls$en {
 	@override String get pipFailed => 'Billede-i-billede kunne ikke starte';
 	@override String get screenshotSaved => 'Skærmbillede gemt';
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
+	@override String volumePercent({required Object percent}) => 'Lydstyrke ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$da pipErrors = _Translations$videoControls$pipErrors$da._(_root);
 	@override String get chapters => 'Kapitler';
 	@override String get noChaptersAvailable => 'Ingen kapitler tilgængelige';
@@ -1100,7 +1101,7 @@ class _Translations$profiles$da extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => 'Tilføj til ${displayName}';
 	@override String get borrowExplain => 'Lån en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.';
 	@override String get borrowEmpty => 'Intet at låne endnu.';
-	@override String get borrowEmptySubtitle => 'Forbind Plex eller Jellyfin til en anden profil først.';
+	@override String get borrowEmptySubtitle => 'Forbind Plex, Jellyfin eller Emby til en anden profil først.';
 	@override String get borrowLoadFailed => 'De tilgængelige forbindelser kunne ikke indlæses. Prøv igen.';
 	@override String borrowFromProfile({required Object displayName}) => 'Fra ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Forbindelse lånt.';
@@ -1128,8 +1129,8 @@ class _Translations$connections$da extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Forbindelser';
 	@override String get addConnection => 'Tilføj forbindelse';
-	@override String get addConnectionSubtitleNoProfile => 'Log ind med Plex eller forbind til en Jellyfin-server';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin eller en anden profilforbindelse';
+	@override String get addConnectionSubtitleNoProfile => 'Log ind med Plex eller forbind til en Jellyfin- eller Emby-server';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin, Emby eller en anden profilforbindelse';
 	@override String sessionExpiredOne({required Object name}) => 'Sessionen er udløbet for ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sessionerne er udløbet for ${count} servere';
 	@override String get signInAgain => 'Log ind igen';
@@ -1302,7 +1303,7 @@ class _Translations$about$da extends Translations$about$en {
 	@override String get title => 'Om';
 	@override String get openSourceLicenses => 'Open source-licenser';
 	@override String versionLabel({required Object version}) => 'Version ${version}';
-	@override String get appDescription => 'En smuk Plex- og Jellyfin-klient bygget med Flutter';
+	@override String get appDescription => 'En smuk Plex-, Jellyfin- og Emby-klient bygget med Flutter';
 	@override String get viewLicensesDescription => 'Se licenser for tredjepartsbiblioteker';
 }
 
@@ -1821,6 +1822,9 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Ukendt server';
 	@override String get syncRuleListCreated => 'Synkroniseringsregel oprettet';
 	@override late final _Translations$downloads$backgroundWarning$da backgroundWarning = _Translations$downloads$backgroundWarning$da._(_root);
+	@override String get options => 'Valgmuligheder for downloads';
+	@override late final _Translations$downloads$groupings$da groupings = _Translations$downloads$groupings$da._(_root);
+	@override String get unknownLibrary => 'Ukendt bibliotek';
 	@override String get unknownShow => 'Ukendt serie';
 	@override String get unknownSeason => 'Ukendt sæson';
 	@override String get unknownAlbum => 'Ukendt album';
@@ -2513,6 +2517,9 @@ class _Translations$libraries$sortLabels$da extends Translations$libraries$sortL
 	@override String get dateShared => 'Delt dato';
 	@override String get latestEpisodeAirDate => 'Seneste episodes premieredato';
 	@override String get lastEpisodeDateAdded => 'Dato for senest tilføjede episode';
+	@override String get dateDownloaded => 'Downloadet dato';
+	@override String get size => 'Størrelse';
+	@override String get library => 'Bibliotek';
 }
 
 // Path: explore.rows
@@ -2806,6 +2813,16 @@ class _Translations$downloads$backgroundWarning$da extends Translations$download
 	@override String get statusUnknown => 'Endnu ikke kontrolleret';
 	@override String get settingsUnavailable => 'Kunne ikke åbne systemindstillingerne på denne enhed';
 	@override String get linkUnavailable => 'Kunne ikke åbne dontkillmyapp.com på denne enhed';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$da extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$da._(TranslationsDa root) : this._root = root, super.internal(root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Bibliotek';
 }
 
 // Path: companionRemote.session
@@ -3675,6 +3692,7 @@ extension on TranslationsDa {
 			'videoControls.pipFailed' => 'Billede-i-billede kunne ikke starte',
 			'videoControls.screenshotSaved' => 'Skærmbillede gemt',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Lydstyrke ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Kræver Android 8.0 eller nyere',
 			'videoControls.pipErrors.iosVersion' => 'Kræver iOS 15.0 eller nyere',
 			'videoControls.pipErrors.permissionDisabled' => 'Billede-i-billede er deaktiveret. Slå det til i systemindstillinger.',
@@ -3859,7 +3877,7 @@ extension on TranslationsDa {
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Tilføj til ${displayName}',
 			'profiles.borrowExplain' => 'Lån en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.',
 			'profiles.borrowEmpty' => 'Intet at låne endnu.',
-			'profiles.borrowEmptySubtitle' => 'Forbind Plex eller Jellyfin til en anden profil først.',
+			'profiles.borrowEmptySubtitle' => 'Forbind Plex, Jellyfin eller Emby til en anden profil først.',
 			'profiles.borrowLoadFailed' => 'De tilgængelige forbindelser kunne ikke indlæses. Prøv igen.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Fra ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Forbindelse lånt.',
@@ -3878,8 +3896,8 @@ extension on TranslationsDa {
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet blev knyttet til en uventet server',
 			'connections.sectionTitle' => 'Forbindelser',
 			'connections.addConnection' => 'Tilføj forbindelse',
-			'connections.addConnectionSubtitleNoProfile' => 'Log ind med Plex eller forbind til en Jellyfin-server',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin eller en anden profilforbindelse',
+			'connections.addConnectionSubtitleNoProfile' => 'Log ind med Plex eller forbind til en Jellyfin- eller Emby-server',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin, Emby eller en anden profilforbindelse',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen er udløbet for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessionerne er udløbet for ${count} servere',
 			'connections.signInAgain' => 'Log ind igen',
@@ -4012,9 +4030,9 @@ extension on TranslationsDa {
 			'libraries.confirmActionMessage' => 'Er du sikker på, at du vil udføre denne handling?',
 			'libraries.showLibrary' => 'Vis bibliotek',
 			'libraries.hideLibrary' => 'Skjul bibliotek',
-			'libraries.libraryOptions' => 'Biblioteksindstillinger',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Biblioteksindstillinger',
 			'libraries.content' => 'biblioteksindhold',
 			'libraries.selectLibrary' => 'Vælg bibliotek',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtre (${count})',
@@ -4063,10 +4081,13 @@ extension on TranslationsDa {
 			'libraries.sortLabels.dateShared' => 'Delt dato',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Seneste episodes premieredato',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Dato for senest tilføjede episode',
+			'libraries.sortLabels.dateDownloaded' => 'Downloadet dato',
+			'libraries.sortLabels.size' => 'Størrelse',
+			'libraries.sortLabels.library' => 'Bibliotek',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Open source-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
-			'about.appDescription' => 'En smuk Plex- og Jellyfin-klient bygget med Flutter',
+			'about.appDescription' => 'En smuk Plex-, Jellyfin- og Emby-klient bygget med Flutter',
 			'about.viewLicensesDescription' => 'Se licenser for tredjepartsbiblioteker',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere fundet for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kunne ikke indlæse servere: ${error}',
@@ -4523,12 +4544,12 @@ extension on TranslationsDa {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Slet "${title}" fra denne enhed?',
 			'downloads.cancelledDownloadTitle' => 'Annulleret download',
 			'downloads.cancelledDownloadMessage' => 'Denne download blev annulleret. Hvad vil du gøre?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede downloadet',
 			'downloads.resumeDownload' => 'Genoptag download',
 			'downloads.cancelledDownload' => 'Annulleret download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} downloadet — klik for at fuldføre',
 			'downloads.partialDownloadClickToComplete' => 'Delvist downloadet — klik for at fuldføre',
 			'downloads.deleting' => 'Sletter...',
@@ -4605,6 +4626,9 @@ extension on TranslationsDa {
 			'downloads.backgroundWarning.statusUnknown' => 'Endnu ikke kontrolleret',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Kunne ikke åbne systemindstillingerne på denne enhed',
 			'downloads.backgroundWarning.linkUnavailable' => 'Kunne ikke åbne dontkillmyapp.com på denne enhed',
+			'downloads.options' => 'Valgmuligheder for downloads',
+			'downloads.groupings.library' => 'Bibliotek',
+			'downloads.unknownLibrary' => 'Ukendt bibliotek',
 			'downloads.unknownShow' => 'Ukendt serie',
 			'downloads.unknownSeason' => 'Ukendt sæson',
 			'downloads.unknownAlbum' => 'Ukendt album',

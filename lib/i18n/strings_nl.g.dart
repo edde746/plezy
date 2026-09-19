@@ -875,6 +875,7 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override String get screenshotSaved => 'Schermafbeelding opgeslagen';
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
+	@override String volumePercent({required Object percent}) => 'Volume ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$nl pipErrors = _Translations$videoControls$pipErrors$nl._(_root);
 	@override String get chapters => 'Hoofdstukken';
 	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
@@ -1100,7 +1101,7 @@ class _Translations$profiles$nl extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => 'Toevoegen aan ${displayName}';
 	@override String get borrowExplain => 'Leen de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.';
 	@override String get borrowEmpty => 'Nog niets te lenen.';
-	@override String get borrowEmptySubtitle => 'Verbind Plex of Jellyfin eerst met een ander profiel.';
+	@override String get borrowEmptySubtitle => 'Verbind Plex, Jellyfin of Emby eerst met een ander profiel.';
 	@override String get borrowLoadFailed => 'Beschikbare verbindingen konden niet worden geladen. Probeer het opnieuw.';
 	@override String borrowFromProfile({required Object displayName}) => 'Van ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Verbinding geleend.';
@@ -1128,8 +1129,8 @@ class _Translations$connections$nl extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Verbindingen';
 	@override String get addConnection => 'Verbinding toevoegen';
-	@override String get addConnectionSubtitleNoProfile => 'Meld je aan met Plex of verbind een Jellyfin-server';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Toevoegen aan ${displayName}: Plex, Jellyfin of een andere profielverbinding';
+	@override String get addConnectionSubtitleNoProfile => 'Meld je aan met Plex of verbind een Jellyfin- of Emby-server';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Toevoegen aan ${displayName}: Plex, Jellyfin, Emby of een andere profielverbinding';
 	@override String sessionExpiredOne({required Object name}) => 'Sessie verlopen voor ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sessie verlopen voor ${count} servers';
 	@override String get signInAgain => 'Opnieuw aanmelden';
@@ -1302,7 +1303,7 @@ class _Translations$about$nl extends Translations$about$en {
 	@override String get title => 'Over';
 	@override String get openSourceLicenses => 'Opensourcelicenties';
 	@override String versionLabel({required Object version}) => 'Versie ${version}';
-	@override String get appDescription => 'Een mooie Plex- en Jellyfin-client voor Flutter';
+	@override String get appDescription => 'Een mooie Plex-, Jellyfin- en Emby-client voor Flutter';
 	@override String get viewLicensesDescription => 'Licenties van bibliotheken van derden bekijken';
 }
 
@@ -1821,6 +1822,9 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Onbekende server';
 	@override String get syncRuleListCreated => 'Synchronisatieregel aangemaakt';
 	@override late final _Translations$downloads$backgroundWarning$nl backgroundWarning = _Translations$downloads$backgroundWarning$nl._(_root);
+	@override String get options => 'Downloadopties';
+	@override late final _Translations$downloads$groupings$nl groupings = _Translations$downloads$groupings$nl._(_root);
+	@override String get unknownLibrary => 'Onbekende bibliotheek';
 	@override String get unknownShow => 'Onbekende serie';
 	@override String get unknownSeason => 'Onbekend seizoen';
 	@override String get unknownAlbum => 'Onbekend album';
@@ -2513,6 +2517,9 @@ class _Translations$libraries$sortLabels$nl extends Translations$libraries$sortL
 	@override String get dateShared => 'Gedeeld op';
 	@override String get latestEpisodeAirDate => 'Laatste afleveringsuitzending';
 	@override String get lastEpisodeDateAdded => 'Datum laatst toegevoegde aflevering';
+	@override String get dateDownloaded => 'Gedownload op';
+	@override String get size => 'Grootte';
+	@override String get library => 'Bibliotheek';
 }
 
 // Path: explore.rows
@@ -2806,6 +2813,16 @@ class _Translations$downloads$backgroundWarning$nl extends Translations$download
 	@override String get statusUnknown => 'Nog niet gecontroleerd';
 	@override String get settingsUnavailable => 'Kan de systeeminstellingen niet openen op dit apparaat';
 	@override String get linkUnavailable => 'Kan dontkillmyapp.com niet openen op dit apparaat';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$nl extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Bibliotheek';
 }
 
 // Path: companionRemote.session
@@ -3675,6 +3692,7 @@ extension on TranslationsNl {
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.screenshotSaved' => 'Schermafbeelding opgeslagen',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
 			'videoControls.pipErrors.iosVersion' => 'Vereist iOS 15.0 of nieuwer',
 			'videoControls.pipErrors.permissionDisabled' => 'Beeld-in-beeld is uitgeschakeld. Schakel het in via de systeeminstellingen.',
@@ -3859,7 +3877,7 @@ extension on TranslationsNl {
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Toevoegen aan ${displayName}',
 			'profiles.borrowExplain' => 'Leen de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
 			'profiles.borrowEmpty' => 'Nog niets te lenen.',
-			'profiles.borrowEmptySubtitle' => 'Verbind Plex of Jellyfin eerst met een ander profiel.',
+			'profiles.borrowEmptySubtitle' => 'Verbind Plex, Jellyfin of Emby eerst met een ander profiel.',
 			'profiles.borrowLoadFailed' => 'Beschikbare verbindingen konden niet worden geladen. Probeer het opnieuw.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Van ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Verbinding geleend.',
@@ -3878,8 +3896,8 @@ extension on TranslationsNl {
 			'profiles.tokenIdentityMismatch' => 'Het token van het Plex-profiel bleek bij een onverwachte server te horen',
 			'connections.sectionTitle' => 'Verbindingen',
 			'connections.addConnection' => 'Verbinding toevoegen',
-			'connections.addConnectionSubtitleNoProfile' => 'Meld je aan met Plex of verbind een Jellyfin-server',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Toevoegen aan ${displayName}: Plex, Jellyfin of een andere profielverbinding',
+			'connections.addConnectionSubtitleNoProfile' => 'Meld je aan met Plex of verbind een Jellyfin- of Emby-server',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Toevoegen aan ${displayName}: Plex, Jellyfin, Emby of een andere profielverbinding',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessie verlopen voor ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessie verlopen voor ${count} servers',
 			'connections.signInAgain' => 'Opnieuw aanmelden',
@@ -4012,9 +4030,9 @@ extension on TranslationsNl {
 			'libraries.confirmActionMessage' => 'Weet je zeker dat je deze actie wilt uitvoeren?',
 			'libraries.showLibrary' => 'Bibliotheek tonen',
 			'libraries.hideLibrary' => 'Bibliotheek verbergen',
-			'libraries.libraryOptions' => 'Bibliotheekopties',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Bibliotheekopties',
 			'libraries.content' => 'bibliotheekinhoud',
 			'libraries.selectLibrary' => 'Bibliotheek kiezen',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
@@ -4063,10 +4081,13 @@ extension on TranslationsNl {
 			'libraries.sortLabels.dateShared' => 'Gedeeld op',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Laatste afleveringsuitzending',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Datum laatst toegevoegde aflevering',
+			'libraries.sortLabels.dateDownloaded' => 'Gedownload op',
+			'libraries.sortLabels.size' => 'Grootte',
+			'libraries.sortLabels.library' => 'Bibliotheek',
 			'about.title' => 'Over',
 			'about.openSourceLicenses' => 'Opensourcelicenties',
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',
-			'about.appDescription' => 'Een mooie Plex- en Jellyfin-client voor Flutter',
+			'about.appDescription' => 'Een mooie Plex-, Jellyfin- en Emby-client voor Flutter',
 			'about.viewLicensesDescription' => 'Licenties van bibliotheken van derden bekijken',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
@@ -4523,12 +4544,12 @@ extension on TranslationsNl {
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',
 			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
 			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',
 			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',
 			'downloads.partialDownloadClickToComplete' => 'Gedeeltelijk gedownload — klik om te voltooien',
 			'downloads.deleting' => 'Verwijderen...',
@@ -4605,6 +4626,9 @@ extension on TranslationsNl {
 			'downloads.backgroundWarning.statusUnknown' => 'Nog niet gecontroleerd',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Kan de systeeminstellingen niet openen op dit apparaat',
 			'downloads.backgroundWarning.linkUnavailable' => 'Kan dontkillmyapp.com niet openen op dit apparaat',
+			'downloads.options' => 'Downloadopties',
+			'downloads.groupings.library' => 'Bibliotheek',
+			'downloads.unknownLibrary' => 'Onbekende bibliotheek',
 			'downloads.unknownShow' => 'Onbekende serie',
 			'downloads.unknownSeason' => 'Onbekend seizoen',
 			'downloads.unknownAlbum' => 'Onbekend album',

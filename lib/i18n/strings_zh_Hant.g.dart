@@ -873,6 +873,7 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get pipFailed => '啟動子母畫面失敗';
 	@override String get screenshotSaved => '螢幕截圖已儲存';
 	@override String zoomPercent({required Object percent}) => '縮放 ${percent}%';
+	@override String volumePercent({required Object percent}) => '音量 ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$zh_Hant pipErrors = _Translations$videoControls$pipErrors$zh_Hant._(_root);
 	@override String get chapters => '章節';
 	@override String get noChaptersAvailable => '沒有可用的章節';
@@ -1097,7 +1098,7 @@ class _Translations$profiles$zh_Hant extends Translations$profiles$zh {
 	@override String borrowAddTo({required Object displayName}) => '新增至 ${displayName}';
 	@override String get borrowExplain => '共用另一個使用者設定檔的連線資訊。受 PIN 碼保護的設定檔需輸入 PIN 碼。';
 	@override String get borrowEmpty => '目前沒有可共用的連線。';
-	@override String get borrowEmptySubtitle => '請先將 Plex 或 Jellyfin 連線至另一個使用者設定檔。';
+	@override String get borrowEmptySubtitle => '請先將 Plex、Jellyfin 或 Emby 連線至另一個使用者設定檔。';
 	@override String get borrowLoadFailed => '無法載入可用的連線。請重試。';
 	@override String borrowFromProfile({required Object displayName}) => '來自 ${displayName}';
 	@override String get borrowConnectionBorrowed => '已共用連線。';
@@ -1125,8 +1126,8 @@ class _Translations$connections$zh_Hant extends Translations$connections$zh {
 	// Translations
 	@override String get sectionTitle => '連線';
 	@override String get addConnection => '新增連線';
-	@override String get addConnectionSubtitleNoProfile => '使用 Plex 登入或連線至 Jellyfin 伺服器';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin 或其他設定檔連線';
+	@override String get addConnectionSubtitleNoProfile => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線';
 	@override String sessionExpiredOne({required Object name}) => '${name} 的工作階段已過期';
 	@override String sessionExpiredMany({required Object count}) => '${count} 個伺服器的工作階段已過期';
 	@override String get signInAgain => '重新登入';
@@ -1298,7 +1299,7 @@ class _Translations$about$zh_Hant extends Translations$about$zh {
 	@override String get title => '關於';
 	@override String get openSourceLicenses => '開源授權條款';
 	@override String versionLabel({required Object version}) => '版本 ${version}';
-	@override String get appDescription => '一款精美的 Plex 與 Jellyfin Flutter 用戶端';
+	@override String get appDescription => '一款精美的 Plex、Jellyfin 與 Emby Flutter 用戶端';
 	@override String get viewLicensesDescription => '查看第三方套件的授權條款';
 }
 
@@ -1813,6 +1814,9 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get syncRuleUnknownServer => '未知伺服器';
 	@override String get syncRuleListCreated => '同步規則已建立';
 	@override late final _Translations$downloads$backgroundWarning$zh_Hant backgroundWarning = _Translations$downloads$backgroundWarning$zh_Hant._(_root);
+	@override String get options => '下載選項';
+	@override late final _Translations$downloads$groupings$zh_Hant groupings = _Translations$downloads$groupings$zh_Hant._(_root);
+	@override String get unknownLibrary => '未知媒體庫';
 	@override String get unknownShow => '未知節目';
 	@override String get unknownSeason => '未知季度';
 	@override String get unknownAlbum => '未知專輯';
@@ -2505,6 +2509,9 @@ class _Translations$libraries$sortLabels$zh_Hant extends Translations$libraries$
 	@override String get dateShared => '分享日期';
 	@override String get latestEpisodeAirDate => '最新一集播出日期';
 	@override String get lastEpisodeDateAdded => '最新一集新增日期';
+	@override String get dateDownloaded => '下載日期';
+	@override String get size => '大小';
+	@override String get library => '媒體庫';
 }
 
 // Path: explore.rows
@@ -2796,6 +2803,16 @@ class _Translations$downloads$backgroundWarning$zh_Hant extends Translations$dow
 	@override String get statusUnknown => '尚未檢查';
 	@override String get settingsUnavailable => '無法在這部裝置上開啟系統設定';
 	@override String get linkUnavailable => '無法在這部裝置上開啟 dontkillmyapp.com';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$zh_Hant extends Translations$downloads$groupings$zh {
+	_Translations$downloads$groupings$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => '媒體庫';
 }
 
 // Path: companionRemote.session
@@ -3665,6 +3682,7 @@ extension on TranslationsZhHant {
 			'videoControls.pipFailed' => '啟動子母畫面失敗',
 			'videoControls.screenshotSaved' => '螢幕截圖已儲存',
 			'videoControls.zoomPercent' => ({required Object percent}) => '縮放 ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => '音量 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
 			'videoControls.pipErrors.permissionDisabled' => '子母畫面權限已停用。請在系統設定中啟用。',
@@ -3849,7 +3867,7 @@ extension on TranslationsZhHant {
 			'profiles.borrowAddTo' => ({required Object displayName}) => '新增至 ${displayName}',
 			'profiles.borrowExplain' => '共用另一個使用者設定檔的連線資訊。受 PIN 碼保護的設定檔需輸入 PIN 碼。',
 			'profiles.borrowEmpty' => '目前沒有可共用的連線。',
-			'profiles.borrowEmptySubtitle' => '請先將 Plex 或 Jellyfin 連線至另一個使用者設定檔。',
+			'profiles.borrowEmptySubtitle' => '請先將 Plex、Jellyfin 或 Emby 連線至另一個使用者設定檔。',
 			'profiles.borrowLoadFailed' => '無法載入可用的連線。請重試。',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => '來自 ${displayName}',
 			'profiles.borrowConnectionBorrowed' => '已共用連線。',
@@ -3868,8 +3886,8 @@ extension on TranslationsZhHant {
 			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
 			'connections.sectionTitle' => '連線',
 			'connections.addConnection' => '新增連線',
-			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 伺服器',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin 或其他設定檔連線',
+			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 個伺服器的工作階段已過期',
 			'connections.signInAgain' => '重新登入',
@@ -4002,9 +4020,9 @@ extension on TranslationsZhHant {
 			'libraries.confirmActionMessage' => '確定要執行此操作嗎？',
 			'libraries.showLibrary' => '顯示媒體庫',
 			'libraries.hideLibrary' => '隱藏媒體庫',
-			'libraries.libraryOptions' => '媒體庫選項',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => '媒體庫選項',
 			'libraries.content' => '媒體庫內容',
 			'libraries.selectLibrary' => '選擇媒體庫',
 			'libraries.filtersWithCount' => ({required Object count}) => '篩選器（${count}）',
@@ -4053,10 +4071,13 @@ extension on TranslationsZhHant {
 			'libraries.sortLabels.dateShared' => '分享日期',
 			'libraries.sortLabels.latestEpisodeAirDate' => '最新一集播出日期',
 			'libraries.sortLabels.lastEpisodeDateAdded' => '最新一集新增日期',
+			'libraries.sortLabels.dateDownloaded' => '下載日期',
+			'libraries.sortLabels.size' => '大小',
+			'libraries.sortLabels.library' => '媒體庫',
 			'about.title' => '關於',
 			'about.openSourceLicenses' => '開源授權條款',
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
-			'about.appDescription' => '一款精美的 Plex 與 Jellyfin Flutter 用戶端',
+			'about.appDescription' => '一款精美的 Plex、Jellyfin 與 Emby Flutter 用戶端',
 			'about.viewLicensesDescription' => '查看第三方套件的授權條款',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '找不到 ${username}（${email}） 的伺服器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '無法載入伺服器：${error}',
@@ -4513,12 +4534,12 @@ extension on TranslationsZhHant {
 			'downloads.deleteConfirm' => ({required Object title}) => '確定要從此裝置刪除「${title}」嗎？',
 			'downloads.cancelledDownloadTitle' => '已取消的下載',
 			'downloads.cancelledDownloadMessage' => '此下載已取消。您想要如何處理？',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => '所有單集都已下載完成',
 			'downloads.resumeDownload' => '繼續下載',
 			'downloads.cancelledDownload' => '已取消的下載',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '已下載 ${file} — 點選以完成',
 			'downloads.partialDownloadClickToComplete' => '已部分下載 — 點選以完成',
 			'downloads.deleting' => '正在刪除…',
@@ -4595,6 +4616,9 @@ extension on TranslationsZhHant {
 			'downloads.backgroundWarning.statusUnknown' => '尚未檢查',
 			'downloads.backgroundWarning.settingsUnavailable' => '無法在這部裝置上開啟系統設定',
 			'downloads.backgroundWarning.linkUnavailable' => '無法在這部裝置上開啟 dontkillmyapp.com',
+			'downloads.options' => '下載選項',
+			'downloads.groupings.library' => '媒體庫',
+			'downloads.unknownLibrary' => '未知媒體庫',
 			'downloads.unknownShow' => '未知節目',
 			'downloads.unknownSeason' => '未知季度',
 			'downloads.unknownAlbum' => '未知專輯',

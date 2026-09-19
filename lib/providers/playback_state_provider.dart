@@ -190,16 +190,18 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// Load a server queue window centered on [centerPlayQueueItemID].
   ///
-  /// Returns false for transport errors, malformed/empty responses, or when
-  /// the requested center is absent from the returned window.
+  /// Returns false for transport errors, malformed/empty responses, when
+  /// the requested center is absent from the returned window, or when the
+  /// queue was cleared or replaced while the fetch was in flight — a window
+  /// belongs to the queue id it was requested for and must never overwrite
+  /// a successor's items.
   Future<bool> _loadServerWindow(int centerPlayQueueItemID) async {
-    if (_windowFetcher == null || _playQueueId == null) return false;
+    final fetcher = _windowFetcher;
+    final queueId = _playQueueId;
+    if (fetcher == null || queueId == null) return false;
     try {
-      final response = await _windowFetcher!(
-        _playQueueId!,
-        center: centerPlayQueueItemID.toString(),
-        window: _windowSize,
-      );
+      final response = await fetcher(queueId, center: centerPlayQueueItemID.toString(), window: _windowSize);
+      if (isDisposed || _playQueueId != queueId) return false;
       final items = response?.items;
       if (response == null || items == null || items.isEmpty) return false;
 

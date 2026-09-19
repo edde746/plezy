@@ -875,6 +875,7 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get pipFailed => 'Nem sikerült elindítani a kép a képben módot';
 	@override String get screenshotSaved => 'Képernyőkép elmentve';
 	@override String zoomPercent({required Object percent}) => 'Nagyítás ${percent}%';
+	@override String volumePercent({required Object percent}) => 'Hangerő ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$hu pipErrors = _Translations$videoControls$pipErrors$hu._(_root);
 	@override String get chapters => 'Fejezetek';
 	@override String get noChaptersAvailable => 'Nincsenek elérhető fejezetek';
@@ -1100,7 +1101,7 @@ class _Translations$profiles$hu extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => 'Hozzáadás a következőhöz: ${displayName}';
 	@override String get borrowExplain => 'Használd egy másik profil kapcsolatát. A PIN-kóddal védett profilokhoz PIN-kód szükséges.';
 	@override String get borrowEmpty => 'Még nincs használható kapcsolat.';
-	@override String get borrowEmptySubtitle => 'Először csatlakoztasd a Plexet vagy a Jellyfint egy másik profilhoz.';
+	@override String get borrowEmptySubtitle => 'Először csatlakoztasd a Plexet, a Jellyfint vagy az Embyt egy másik profilhoz.';
 	@override String get borrowLoadFailed => 'Nem sikerült betölteni az elérhető kapcsolatokat. Próbáld újra.';
 	@override String borrowFromProfile({required Object displayName}) => 'Innen: ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Kapcsolat átvéve.';
@@ -1128,8 +1129,8 @@ class _Translations$connections$hu extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Kapcsolatok';
 	@override String get addConnection => 'Kapcsolat hozzáadása';
-	@override String get addConnectionSubtitleNoProfile => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin-szervert';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin vagy más profilkapcsolat';
+	@override String get addConnectionSubtitleNoProfile => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat';
 	@override String sessionExpiredOne({required Object name}) => 'A(z) ${name} munkamenete lejárt';
 	@override String sessionExpiredMany({required Object count}) => '${count} szerver munkamenete lejárt';
 	@override String get signInAgain => 'Bejelentkezés újra';
@@ -1302,7 +1303,7 @@ class _Translations$about$hu extends Translations$about$en {
 	@override String get title => 'Névjegy';
 	@override String get openSourceLicenses => 'Nyílt forráskódú licencek';
 	@override String versionLabel({required Object version}) => 'Verzió: ${version}';
-	@override String get appDescription => 'Gyönyörű Flutter-kliens a Plexhez és a Jellyfinhez';
+	@override String get appDescription => 'Gyönyörű Flutter-kliens a Plexhez, a Jellyfinhez és az Embyhez';
 	@override String get viewLicensesDescription => 'Külső fejlesztésű programkönyvtárak licenceinek megtekintése';
 }
 
@@ -1821,6 +1822,9 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Ismeretlen szerver';
 	@override String get syncRuleListCreated => 'Szinkronizálási szabály létrehozva';
 	@override late final _Translations$downloads$backgroundWarning$hu backgroundWarning = _Translations$downloads$backgroundWarning$hu._(_root);
+	@override String get options => 'Letöltések lehetőségei';
+	@override late final _Translations$downloads$groupings$hu groupings = _Translations$downloads$groupings$hu._(_root);
+	@override String get unknownLibrary => 'Ismeretlen könyvtár';
 	@override String get unknownShow => 'Ismeretlen sorozat';
 	@override String get unknownSeason => 'Ismeretlen évad';
 	@override String get unknownAlbum => 'Ismeretlen album';
@@ -2513,6 +2517,9 @@ class _Translations$libraries$sortLabels$hu extends Translations$libraries$sortL
 	@override String get dateShared => 'Megosztás dátuma';
 	@override String get latestEpisodeAirDate => 'A legutóbbi epizód sugárzási dátuma';
 	@override String get lastEpisodeDateAdded => 'Utolsó epizód hozzáadásának dátuma';
+	@override String get dateDownloaded => 'Letöltés dátuma';
+	@override String get size => 'Méret';
+	@override String get library => 'Könyvtár';
 }
 
 // Path: explore.rows
@@ -2806,6 +2813,16 @@ class _Translations$downloads$backgroundWarning$hu extends Translations$download
 	@override String get statusUnknown => 'Még nincs ellenőrizve';
 	@override String get settingsUnavailable => 'Ezen az eszközön nem sikerült megnyitni a rendszerbeállításokat';
 	@override String get linkUnavailable => 'Ezen az eszközön nem sikerült megnyitni a dontkillmyapp.com webhelyet';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$hu extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Könyvtár';
 }
 
 // Path: companionRemote.session
@@ -3675,6 +3692,7 @@ extension on TranslationsHu {
 			'videoControls.pipFailed' => 'Nem sikerült elindítani a kép a képben módot',
 			'videoControls.screenshotSaved' => 'Képernyőkép elmentve',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Nagyítás ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Hangerő ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 vagy újabb szükséges',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 vagy újabb szükséges',
 			'videoControls.pipErrors.permissionDisabled' => 'A kép a képben mód le van tiltva. Engedélyezd a rendszerbeállításokban.',
@@ -3859,7 +3877,7 @@ extension on TranslationsHu {
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Hozzáadás a következőhöz: ${displayName}',
 			'profiles.borrowExplain' => 'Használd egy másik profil kapcsolatát. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
 			'profiles.borrowEmpty' => 'Még nincs használható kapcsolat.',
-			'profiles.borrowEmptySubtitle' => 'Először csatlakoztasd a Plexet vagy a Jellyfint egy másik profilhoz.',
+			'profiles.borrowEmptySubtitle' => 'Először csatlakoztasd a Plexet, a Jellyfint vagy az Embyt egy másik profilhoz.',
 			'profiles.borrowLoadFailed' => 'Nem sikerült betölteni az elérhető kapcsolatokat. Próbáld újra.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Innen: ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Kapcsolat átvéve.',
@@ -3878,8 +3896,8 @@ extension on TranslationsHu {
 			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			'connections.sectionTitle' => 'Kapcsolatok',
 			'connections.addConnection' => 'Kapcsolat hozzáadása',
-			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin-szervert',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin vagy más profilkapcsolat',
+			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} szerver munkamenete lejárt',
 			'connections.signInAgain' => 'Bejelentkezés újra',
@@ -4012,9 +4030,9 @@ extension on TranslationsHu {
 			'libraries.confirmActionMessage' => 'Biztosan végre szeretnéd hajtani ezt a műveletet?',
 			'libraries.showLibrary' => 'Könyvtár megjelenítése',
 			'libraries.hideLibrary' => 'Könyvtár elrejtése',
-			'libraries.libraryOptions' => 'Könyvtár beállításai',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Könyvtár beállításai',
 			'libraries.content' => 'könyvtár tartalma',
 			'libraries.selectLibrary' => 'Könyvtár kiválasztása',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Szűrők (${count})',
@@ -4063,10 +4081,13 @@ extension on TranslationsHu {
 			'libraries.sortLabels.dateShared' => 'Megosztás dátuma',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'A legutóbbi epizód sugárzási dátuma',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Utolsó epizód hozzáadásának dátuma',
+			'libraries.sortLabels.dateDownloaded' => 'Letöltés dátuma',
+			'libraries.sortLabels.size' => 'Méret',
+			'libraries.sortLabels.library' => 'Könyvtár',
 			'about.title' => 'Névjegy',
 			'about.openSourceLicenses' => 'Nyílt forráskódú licencek',
 			'about.versionLabel' => ({required Object version}) => 'Verzió: ${version}',
-			'about.appDescription' => 'Gyönyörű Flutter-kliens a Plexhez és a Jellyfinhez',
+			'about.appDescription' => 'Gyönyörű Flutter-kliens a Plexhez, a Jellyfinhez és az Embyhez',
 			'about.viewLicensesDescription' => 'Külső fejlesztésű programkönyvtárak licenceinek megtekintése',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nem találhatók szerverek ehhez a fiókhoz: ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Nem sikerült a szerverek betöltése: ${error}',
@@ -4523,12 +4544,12 @@ extension on TranslationsHu {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Törlöd a következőt: "${title}" erről az eszközről?',
 			'downloads.cancelledDownloadTitle' => 'Megszakított letöltés',
 			'downloads.cancelledDownloadMessage' => 'Ez a letöltés meg lett szakítva. Mit szeretnél tenni?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => 'Minden epizód le van töltve',
 			'downloads.resumeDownload' => 'Letöltés folytatása',
 			'downloads.cancelledDownload' => 'Megszakított letöltés',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} szinkronizálása)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Letöltve: ${file} - Kattints a befejezéshez',
 			'downloads.partialDownloadClickToComplete' => 'Részben letöltve - Kattints a befejezéshez',
 			'downloads.deleting' => 'Törlés...',
@@ -4605,6 +4626,9 @@ extension on TranslationsHu {
 			'downloads.backgroundWarning.statusUnknown' => 'Még nincs ellenőrizve',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Ezen az eszközön nem sikerült megnyitni a rendszerbeállításokat',
 			'downloads.backgroundWarning.linkUnavailable' => 'Ezen az eszközön nem sikerült megnyitni a dontkillmyapp.com webhelyet',
+			'downloads.options' => 'Letöltések lehetőségei',
+			'downloads.groupings.library' => 'Könyvtár',
+			'downloads.unknownLibrary' => 'Ismeretlen könyvtár',
 			'downloads.unknownShow' => 'Ismeretlen sorozat',
 			'downloads.unknownSeason' => 'Ismeretlen évad',
 			'downloads.unknownAlbum' => 'Ismeretlen album',

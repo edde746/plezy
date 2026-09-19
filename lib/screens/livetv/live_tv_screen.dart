@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../exceptions/media_server_exceptions.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/live_tv_support.dart';
@@ -201,27 +202,36 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     await _broadcastToDvrs(
       actionLabel: 'Reload guide',
       successMessage: t.liveTv.guideReloadRequested,
+      failureMessage: t.liveTv.guideReloadFailed,
       action: (dvr, serverInfo) => dvr.reloadGuide(serverInfo.dvrKey),
     );
     await _loadChannels();
   }
 
-  /// Runs [action] on every DVR-capable Live TV server in parallel, then reports
-  /// [successMessage]. Per-DVR failures are non-fatal — 403 (admin only) and
-  /// transient errors are logged under [actionLabel] and swallowed, since
-  /// callers re-fetch their own client-side state regardless. Returns `true`
-  /// once at least one DVR was reached and this widget is still mounted.
+  /// Runs [action] on every DVR-capable Live TV server in parallel, then
+  /// reports the outcome: [successMessage] once every DVR accepted the
+  /// request, otherwise an error naming the failure — `dvrAdminRequired`
+  /// when every failure was a 403 (admin only), else [failureMessage].
+  /// Per-DVR failures never abort the broadcast; they are logged under
+  /// [actionLabel] and the remaining DVRs still run, since callers re-fetch
+  /// their own client-side state regardless. Returns `true` once at least
+  /// one DVR was reached and this widget is still mounted.
   Future<bool> _broadcastToDvrs({
     required String actionLabel,
     required String successMessage,
+    required String failureMessage,
     required Future<void> Function(LiveTvDvrSupport dvr, LiveTvServerInfo serverInfo) action,
   }) async {
     final multiServer = context.read<MultiServerProvider>();
+    var failed = 0;
+    var adminBlocked = 0;
     Future<void> runSafely(LiveTvDvrSupport dvr, LiveTvServerInfo serverInfo) async {
       try {
         await action(dvr, serverInfo);
-      } catch (e) {
-        appLogger.d('$actionLabel failed for DVR ${serverInfo.dvrKey}: $e');
+      } catch (e, stackTrace) {
+        failed++;
+        if (e is MediaServerHttpException && e.statusCode == 403) adminBlocked++;
+        appLogger.w('$actionLabel failed for DVR ${serverInfo.dvrKey}', error: e, stackTrace: stackTrace);
       }
     }
 
@@ -234,7 +244,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (futures.isEmpty) return false;
     await Future.wait(futures);
     if (!mounted) return false;
-    showSnackBar(context, successMessage);
+    if (failed == 0) {
+      showSnackBar(context, successMessage);
+    } else {
+      final message = adminBlocked == failed ? t.liveTv.dvrAdminRequired : failureMessage;
+      showSnackBar(context, message, type: SnackBarType.error);
+    }
     return true;
   }
 
@@ -242,6 +257,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final reached = await _broadcastToDvrs(
       actionLabel: 'processRecordingRules',
       successMessage: t.liveTv.rulesProcessRequested,
+      failureMessage: t.liveTv.rulesProcessFailed,
       action: (dvr, _) => dvr.processRecordingRules(),
     );
     if (!reached) return;

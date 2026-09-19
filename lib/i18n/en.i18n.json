@@ -1491,7 +1491,9 @@
     "editRuleAction": "Edit",
     "recordingRuleUpdated": "Recording rule updated",
     "guideReloadRequested": "Guide refresh requested",
+    "guideReloadFailed": "Couldn't refresh the guide",
     "rulesProcessRequested": "Rule re-evaluation requested",
+    "rulesProcessFailed": "Couldn't re-evaluate recording rules",
     "recordShow": "Record show",
     "recordSettings": {
       "startEarly": "Start early (seconds)",

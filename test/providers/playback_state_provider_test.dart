@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -267,6 +269,66 @@ void main() {
 
       expect((await p.getNextEpisode('b')).status, QueueNavigationStatus.boundary);
       expect(fetchCount, 1);
+    });
+
+    test('window fetched for a replaced queue is dropped instead of published', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final oldItem = _item('old-a', 1001);
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [oldItem]),
+        null,
+      );
+      final fetchStarted = Completer<void>();
+      final gate = Completer<PlayQueueResponse?>();
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) {
+        fetchStarted.complete();
+        return gate.future;
+      });
+      final pending = p.getNextEpisode('old-a');
+      await fetchStarted.future;
+
+      // The user starts a different queue while the old queue's window is in flight.
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 2, selectedItemID: 2001, totalCount: 1, items: [_item('new-a', 2001)]),
+        null,
+      );
+      var notified = 0;
+      p.addListener(() => notified++);
+      final staleWindow = [oldItem, _item('old-b', 1002)];
+      gate.complete(_queue(playQueueID: 1, selectedItemID: 1001, shuffled: true, totalCount: 2, items: staleWindow));
+      final next = await pending;
+
+      expect(next.status, QueueNavigationStatus.failed);
+      expect(p.loadedItems.map((item) => item.id), ['new-a']);
+      expect(p.isShuffleActive, isFalse);
+      expect(notified, 0);
+    });
+
+    test('window fetched for a cleared queue is dropped instead of reviving it', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final item = _item('a', 1001);
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [item]),
+        null,
+      );
+      final fetchStarted = Completer<void>();
+      final gate = Completer<PlayQueueResponse?>();
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) {
+        fetchStarted.complete();
+        return gate.future;
+      });
+      final pending = p.getNextEpisode('a');
+      await fetchStarted.future;
+
+      p.clearShuffle();
+      gate.complete(_queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [item, _item('b', 1002)]));
+      final next = await pending;
+
+      expect(next.status, QueueNavigationStatus.failed);
+      expect(p.isQueueActive, isFalse);
+      expect(p.loadedItems, isEmpty);
     });
 
     test('getNextEpisode reports unavailable with no active queue', () async {

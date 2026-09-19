@@ -881,6 +881,7 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get pipFailed => 'Не удалось запустить режим «картинка в картинке»';
 	@override String get screenshotSaved => 'Снимок экрана сохранён';
 	@override String zoomPercent({required Object percent}) => 'Масштаб ${percent}%';
+	@override String volumePercent({required Object percent}) => 'Громкость ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$ru pipErrors = _Translations$videoControls$pipErrors$ru._(_root);
 	@override String get chapters => 'Главы';
 	@override String get noChaptersAvailable => 'Главы недоступны';
@@ -1108,7 +1109,7 @@ class _Translations$profiles$ru extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => 'Добавить в ${displayName}';
 	@override String get borrowExplain => 'Используйте подключение другого профиля. Для защищённых профилей потребуется PIN.';
 	@override String get borrowEmpty => 'Пока нет доступных подключений.';
-	@override String get borrowEmptySubtitle => 'Сначала подключите Plex или Jellyfin к другому профилю.';
+	@override String get borrowEmptySubtitle => 'Сначала подключите Plex, Jellyfin или Emby к другому профилю.';
 	@override String get borrowLoadFailed => 'Не удалось загрузить доступные подключения. Попробуйте снова.';
 	@override String borrowFromProfile({required Object displayName}) => 'От ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Подключение добавлено.';
@@ -1136,8 +1137,8 @@ class _Translations$connections$ru extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Подключения';
 	@override String get addConnection => 'Добавить подключение';
-	@override String get addConnectionSubtitleNoProfile => 'Войдите через Plex или подключите сервер Jellyfin';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin или подключение другого профиля';
+	@override String get addConnectionSubtitleNoProfile => 'Войдите через Plex или подключите сервер Jellyfin или Emby';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля';
 	@override String sessionExpiredOne({required Object name}) => 'Сессия истекла для ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Сессия истекла для ${count} серверов';
 	@override String get signInAgain => 'Войти снова';
@@ -1312,7 +1313,7 @@ class _Translations$about$ru extends Translations$about$en {
 	@override String get title => 'О приложении';
 	@override String get openSourceLicenses => 'Лицензии открытого ПО';
 	@override String versionLabel({required Object version}) => 'Версия ${version}';
-	@override String get appDescription => 'Красивый клиент Plex и Jellyfin на Flutter';
+	@override String get appDescription => 'Красивый клиент Plex, Jellyfin и Emby на Flutter';
 	@override String get viewLicensesDescription => 'Просмотр лицензий сторонних библиотек';
 }
 
@@ -1839,6 +1840,9 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Неизвестный сервер';
 	@override String get syncRuleListCreated => 'Правило синхронизации создано';
 	@override late final _Translations$downloads$backgroundWarning$ru backgroundWarning = _Translations$downloads$backgroundWarning$ru._(_root);
+	@override String get options => 'Параметры загрузок';
+	@override late final _Translations$downloads$groupings$ru groupings = _Translations$downloads$groupings$ru._(_root);
+	@override String get unknownLibrary => 'Неизвестная библиотека';
 	@override String get unknownShow => 'Неизвестный сериал';
 	@override String get unknownSeason => 'Неизвестный сезон';
 	@override String get unknownAlbum => 'Неизвестный альбом';
@@ -2531,6 +2535,9 @@ class _Translations$libraries$sortLabels$ru extends Translations$libraries$sortL
 	@override String get dateShared => 'Дата открытия доступа';
 	@override String get latestEpisodeAirDate => 'Дата выхода последнего эпизода';
 	@override String get lastEpisodeDateAdded => 'Дата добавления последнего эпизода';
+	@override String get dateDownloaded => 'Дата загрузки';
+	@override String get size => 'Размер';
+	@override String get library => 'Библиотека';
 }
 
 // Path: explore.rows
@@ -2828,6 +2835,16 @@ class _Translations$downloads$backgroundWarning$ru extends Translations$download
 	@override String get statusUnknown => 'Ещё не проверено';
 	@override String get settingsUnavailable => 'Не удалось открыть системные настройки на этом устройстве';
 	@override String get linkUnavailable => 'Не удалось открыть dontkillmyapp.com на этом устройстве';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$ru extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Библиотека';
 }
 
 // Path: companionRemote.session
@@ -3697,6 +3714,7 @@ extension on TranslationsRu {
 			'videoControls.pipFailed' => 'Не удалось запустить режим «картинка в картинке»',
 			'videoControls.screenshotSaved' => 'Снимок экрана сохранён',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Масштаб ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Громкость ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Требуется Android 8.0 или новее',
 			'videoControls.pipErrors.iosVersion' => 'Требуется iOS 15.0 или новее',
 			'videoControls.pipErrors.permissionDisabled' => 'Режим «картинка в картинке» отключён. Включите его в системных настройках.',
@@ -3881,7 +3899,7 @@ extension on TranslationsRu {
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Добавить в ${displayName}',
 			'profiles.borrowExplain' => 'Используйте подключение другого профиля. Для защищённых профилей потребуется PIN.',
 			'profiles.borrowEmpty' => 'Пока нет доступных подключений.',
-			'profiles.borrowEmptySubtitle' => 'Сначала подключите Plex или Jellyfin к другому профилю.',
+			'profiles.borrowEmptySubtitle' => 'Сначала подключите Plex, Jellyfin или Emby к другому профилю.',
 			'profiles.borrowLoadFailed' => 'Не удалось загрузить доступные подключения. Попробуйте снова.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'От ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Подключение добавлено.',
@@ -3900,8 +3918,8 @@ extension on TranslationsRu {
 			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			'connections.sectionTitle' => 'Подключения',
 			'connections.addConnection' => 'Добавить подключение',
-			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin или подключение другого профиля',
+			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin или Emby',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сессия истекла для ${count} серверов',
 			'connections.signInAgain' => 'Войти снова',
@@ -4034,9 +4052,9 @@ extension on TranslationsRu {
 			'libraries.confirmActionMessage' => 'Вы уверены, что хотите выполнить это действие?',
 			'libraries.showLibrary' => 'Показать библиотеку',
 			'libraries.hideLibrary' => 'Скрыть библиотеку',
-			'libraries.libraryOptions' => 'Параметры библиотеки',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Параметры библиотеки',
 			'libraries.content' => 'содержимое библиотеки',
 			'libraries.selectLibrary' => 'Выбрать библиотеку',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Фильтры (${count})',
@@ -4085,10 +4103,13 @@ extension on TranslationsRu {
 			'libraries.sortLabels.dateShared' => 'Дата открытия доступа',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Дата выхода последнего эпизода',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Дата добавления последнего эпизода',
+			'libraries.sortLabels.dateDownloaded' => 'Дата загрузки',
+			'libraries.sortLabels.size' => 'Размер',
+			'libraries.sortLabels.library' => 'Библиотека',
 			'about.title' => 'О приложении',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
-			'about.appDescription' => 'Красивый клиент Plex и Jellyfin на Flutter',
+			'about.appDescription' => 'Красивый клиент Plex, Jellyfin и Emby на Flutter',
 			'about.viewLicensesDescription' => 'Просмотр лицензий сторонних библиотек',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Серверы не найдены для ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Не удалось загрузить серверы: ${error}',
@@ -4545,12 +4566,12 @@ extension on TranslationsRu {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',
 			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
 			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => 'Все эпизоды уже загружены',
 			'downloads.resumeDownload' => 'Возобновить загрузку',
 			'downloads.cancelledDownload' => 'Загрузка отменена',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизация ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} загружен — нажмите, чтобы завершить',
 			'downloads.partialDownloadClickToComplete' => 'Частично загружено — нажмите, чтобы завершить',
 			'downloads.deleting' => 'Удаление...',
@@ -4627,6 +4648,9 @@ extension on TranslationsRu {
 			'downloads.backgroundWarning.statusUnknown' => 'Ещё не проверено',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Не удалось открыть системные настройки на этом устройстве',
 			'downloads.backgroundWarning.linkUnavailable' => 'Не удалось открыть dontkillmyapp.com на этом устройстве',
+			'downloads.options' => 'Параметры загрузок',
+			'downloads.groupings.library' => 'Библиотека',
+			'downloads.unknownLibrary' => 'Неизвестная библиотека',
 			'downloads.unknownShow' => 'Неизвестный сериал',
 			'downloads.unknownSeason' => 'Неизвестный сезон',
 			'downloads.unknownAlbum' => 'Неизвестный альбом',

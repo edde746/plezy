@@ -875,6 +875,7 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get pipFailed => 'PiP rejimi başladılarkən xəta';
 	@override String get screenshotSaved => 'Ekran şəkli yadda saxlanıldı';
 	@override String zoomPercent({required Object percent}) => 'Miqyas %${percent}';
+	@override String volumePercent({required Object percent}) => 'Səs ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$az pipErrors = _Translations$videoControls$pipErrors$az._(_root);
 	@override String get chapters => 'Hissələr';
 	@override String get noChaptersAvailable => 'Hissələr əlçatan deyil';
@@ -1100,7 +1101,7 @@ class _Translations$profiles$az extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => '${displayName} profilinə əlavə et';
 	@override String get borrowExplain => 'Başqa profilin qoşulmasını istifadə edin. PIN ilə qorunan profillər PIN tələb edir.';
 	@override String get borrowEmpty => 'Hələ istifadə ediləcək bir şey yoxdur.';
-	@override String get borrowEmptySubtitle => 'Əvvəlcə başqa bir profile Plex və ya Jellyfin qoşun.';
+	@override String get borrowEmptySubtitle => 'Əvvəlcə başqa bir profile Plex, Jellyfin və ya Emby qoşun.';
 	@override String get borrowLoadFailed => 'Əlçatan qoşulmalar yüklənə bilmədi. Təzədən cəhd edin.';
 	@override String borrowFromProfile({required Object displayName}) => '${displayName} profilindən';
 	@override String get borrowConnectionBorrowed => 'Qoşulma istifadə edildi.';
@@ -1128,8 +1129,8 @@ class _Translations$connections$az extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Qoşulmalar';
 	@override String get addConnection => 'Qoşulma əlavə et';
-	@override String get addConnectionSubtitleNoProfile => 'Plex ilə daxil olun və ya Jellyfin serverinə qoşulun';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin və ya başqa profil qoşulması';
+	@override String get addConnectionSubtitleNoProfile => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması';
 	@override String sessionExpiredOne({required Object name}) => '${name} üçün seansın vaxtı bitdi';
 	@override String sessionExpiredMany({required Object count}) => '${count} server üçün seansın vaxtı bitdi';
 	@override String get signInAgain => 'Yenidən daxil ol';
@@ -1302,7 +1303,7 @@ class _Translations$about$az extends Translations$about$en {
 	@override String get title => 'Haqqında';
 	@override String get openSourceLicenses => 'Açıq mənbə lisenziyaları';
 	@override String versionLabel({required Object version}) => 'Versiya ${version}';
-	@override String get appDescription => 'Flutter üçün gözəl bir Plex və Jellyfin klienti';
+	@override String get appDescription => 'Flutter üçün gözəl bir Plex, Jellyfin və Emby klienti';
 	@override String get viewLicensesDescription => 'Üçüncü tərəf kitabxanalarının lisenziyalarına baxın';
 }
 
@@ -1821,6 +1822,9 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Bilinməyən server';
 	@override String get syncRuleListCreated => 'Eyniləşdirmə qaydası yaradıldı';
 	@override late final _Translations$downloads$backgroundWarning$az backgroundWarning = _Translations$downloads$backgroundWarning$az._(_root);
+	@override String get options => 'Yükləmə seçimləri';
+	@override late final _Translations$downloads$groupings$az groupings = _Translations$downloads$groupings$az._(_root);
+	@override String get unknownLibrary => 'Məlum olmayan kitabxana';
 	@override String get unknownShow => 'Məlum olmayan serial';
 	@override String get unknownSeason => 'Məlum olmayan mövsüm';
 	@override String get unknownAlbum => 'Məlum olmayan albom';
@@ -2513,6 +2517,9 @@ class _Translations$libraries$sortLabels$az extends Translations$libraries$sortL
 	@override String get dateShared => 'Paylaşılma tarixi';
 	@override String get latestEpisodeAirDate => 'Son seriya yayın tarixi';
 	@override String get lastEpisodeDateAdded => 'Əlavə olunan son seriya tarixi';
+	@override String get dateDownloaded => 'Yüklənmə tarixi';
+	@override String get size => 'Həcm';
+	@override String get library => 'Kitabxana';
 }
 
 // Path: explore.rows
@@ -2806,6 +2813,16 @@ class _Translations$downloads$backgroundWarning$az extends Translations$download
 	@override String get statusUnknown => 'Hələ yoxlanılmayıb';
 	@override String get settingsUnavailable => 'Bu cihazda sistem tənzimləmələri açıla bilmədi';
 	@override String get linkUnavailable => 'Bu cihazda dontkillmyapp.com açıla bilmədi';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$az extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Kitabxana';
 }
 
 // Path: companionRemote.session
@@ -3675,6 +3692,7 @@ extension on TranslationsAz {
 			'videoControls.pipFailed' => 'PiP rejimi başladılarkən xəta',
 			'videoControls.screenshotSaved' => 'Ekran şəkli yadda saxlanıldı',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Miqyas %${percent}',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Səs ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 və ya daha yenisini tələb edir',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 və ya daha yenisini tələb edir',
 			'videoControls.pipErrors.permissionDisabled' => 'PiP rejimi söndürülüb. Sistem tənzimləmələrindən aktivləşdirin.',
@@ -3859,7 +3877,7 @@ extension on TranslationsAz {
 			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName} profilinə əlavə et',
 			'profiles.borrowExplain' => 'Başqa profilin qoşulmasını istifadə edin. PIN ilə qorunan profillər PIN tələb edir.',
 			'profiles.borrowEmpty' => 'Hələ istifadə ediləcək bir şey yoxdur.',
-			'profiles.borrowEmptySubtitle' => 'Əvvəlcə başqa bir profile Plex və ya Jellyfin qoşun.',
+			'profiles.borrowEmptySubtitle' => 'Əvvəlcə başqa bir profile Plex, Jellyfin və ya Emby qoşun.',
 			'profiles.borrowLoadFailed' => 'Əlçatan qoşulmalar yüklənə bilmədi. Təzədən cəhd edin.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => '${displayName} profilindən',
 			'profiles.borrowConnectionBorrowed' => 'Qoşulma istifadə edildi.',
@@ -3878,8 +3896,8 @@ extension on TranslationsAz {
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			'connections.sectionTitle' => 'Qoşulmalar',
 			'connections.addConnection' => 'Qoşulma əlavə et',
-			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin serverinə qoşulun',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin və ya başqa profil qoşulması',
+			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} üçün seansın vaxtı bitdi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server üçün seansın vaxtı bitdi',
 			'connections.signInAgain' => 'Yenidən daxil ol',
@@ -4012,9 +4030,9 @@ extension on TranslationsAz {
 			'libraries.confirmActionMessage' => 'Bu əməliyyatı yerinə yetirmək istədiyinizdən əminsiniz?',
 			'libraries.showLibrary' => 'Kitabxananı göstər',
 			'libraries.hideLibrary' => 'Kitabxananı gizlət',
-			'libraries.libraryOptions' => 'Kitabxana seçimləri',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Kitabxana seçimləri',
 			'libraries.content' => 'kitabxana məzmunu',
 			'libraries.selectLibrary' => 'Kitabxana seç',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtrlər (${count})',
@@ -4063,10 +4081,13 @@ extension on TranslationsAz {
 			'libraries.sortLabels.dateShared' => 'Paylaşılma tarixi',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Son seriya yayın tarixi',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Əlavə olunan son seriya tarixi',
+			'libraries.sortLabels.dateDownloaded' => 'Yüklənmə tarixi',
+			'libraries.sortLabels.size' => 'Həcm',
+			'libraries.sortLabels.library' => 'Kitabxana',
 			'about.title' => 'Haqqında',
 			'about.openSourceLicenses' => 'Açıq mənbə lisenziyaları',
 			'about.versionLabel' => ({required Object version}) => 'Versiya ${version}',
-			'about.appDescription' => 'Flutter üçün gözəl bir Plex və Jellyfin klienti',
+			'about.appDescription' => 'Flutter üçün gözəl bir Plex, Jellyfin və Emby klienti',
 			'about.viewLicensesDescription' => 'Üçüncü tərəf kitabxanalarının lisenziyalarına baxın',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email}) üçün server tapılmadı',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Serverlər yüklənə bilmədi: ${error}',
@@ -4523,12 +4544,12 @@ extension on TranslationsAz {
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" bu cihazdan silinsin?',
 			'downloads.cancelledDownloadTitle' => 'Ləğv edilmiş yükləmə',
 			'downloads.cancelledDownloadMessage' => 'Bu yükləmə ləğv edildi. Nə etmək istərdiniz?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => 'Bütün seriyalar artıq yüklənib',
 			'downloads.resumeDownload' => 'Yükləməni davam etdir',
 			'downloads.cancelledDownload' => 'Ləğv edilmiş yükləmə',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eyniləşdirilir)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Yükləndi ${file} - Tamamlamaq üçün toxunun',
 			'downloads.partialDownloadClickToComplete' => 'Hissəvi yükləndi - Tamamlamaq üçün toxunun',
 			'downloads.deleting' => 'Silinir...',
@@ -4605,6 +4626,9 @@ extension on TranslationsAz {
 			'downloads.backgroundWarning.statusUnknown' => 'Hələ yoxlanılmayıb',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Bu cihazda sistem tənzimləmələri açıla bilmədi',
 			'downloads.backgroundWarning.linkUnavailable' => 'Bu cihazda dontkillmyapp.com açıla bilmədi',
+			'downloads.options' => 'Yükləmə seçimləri',
+			'downloads.groupings.library' => 'Kitabxana',
+			'downloads.unknownLibrary' => 'Məlum olmayan kitabxana',
 			'downloads.unknownShow' => 'Məlum olmayan serial',
 			'downloads.unknownSeason' => 'Məlum olmayan mövsüm',
 			'downloads.unknownAlbum' => 'Məlum olmayan albom',

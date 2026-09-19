@@ -140,33 +140,28 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   Future<void> _loadSorts() async {
     List<MediaSort> sorts = const [];
     try {
+      // Hub ids can have various formats:
+      // - /hubs/sections/1/... (Plex)
+      // - /library/sections/1/all?... (Plex)
+      // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
+      // - home.recent / library.<id>.continue (Jellyfin synthesized)
+      // - continue_watching / explore:… (aggregated and catalog rows; no server)
+      // Only a Plex library-scoped key names a section whose sort options can
+      // be fetched; every other shape falls back to the default sorts by design.
+      final hubKey = widget.hub.id;
+      final sectionId = plexLibrarySectionIdFromString(hubKey);
       final serverId = widget.hub.serverId;
-      if (serverId == null) {
-        appLogger.w('Hub has no serverId; using default sort options');
+      if (sectionId == null) {
+        appLogger.d('Hub $hubKey has no library section; using default sort options');
+      } else if (serverId == null) {
+        appLogger.w('Hub $hubKey names section $sectionId but has no serverId; using default sort options');
       } else {
-        // Hub ids can have various formats:
-        // - /hubs/sections/1/... (Plex)
-        // - /library/sections/1/all?... (Plex)
-        // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
-        // - home.recent / library.<id>.continue (Jellyfin synthesized)
-        final hubKey = widget.hub.id;
-        appLogger.d('Hub key: $hubKey');
-
-        final sectionId = plexLibrarySectionIdFromString(hubKey);
-
-        if (sectionId != null) {
-          appLogger.d('Loading sorts for section: $sectionId');
-
-          final client = context.tryGetMediaClientForServer(ServerId(serverId));
-          sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions('$sectionId');
-
-          appLogger.d('Loaded ${sorts.length} sorts');
-        } else {
-          appLogger.w('Could not extract section ID from hub key: $hubKey');
-        }
+        final client = context.tryGetMediaClientForServer(ServerId(serverId));
+        sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions('$sectionId');
+        appLogger.d('Loaded ${sorts.length} sorts for section $sectionId');
       }
-    } catch (e) {
-      appLogger.e('Failed to load sorts', error: e);
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to load sorts', error: e, stackTrace: stackTrace);
     }
     if (!mounted) return;
     setState(() {

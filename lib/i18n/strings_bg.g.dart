@@ -875,6 +875,7 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get pipFailed => 'Режимът картина в картината не успя да стартира';
 	@override String get screenshotSaved => 'Екранната снимка е запазена';
 	@override String zoomPercent({required Object percent}) => 'Мащаб ${percent}%';
+	@override String volumePercent({required Object percent}) => 'Звук ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$bg pipErrors = _Translations$videoControls$pipErrors$bg._(_root);
 	@override String get chapters => 'Глави';
 	@override String get noChaptersAvailable => 'Няма налични глави';
@@ -1100,7 +1101,7 @@ class _Translations$profiles$bg extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => 'Добави към ${displayName}';
 	@override String get borrowExplain => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.';
 	@override String get borrowEmpty => 'Все още няма какво да се използва.';
-	@override String get borrowEmptySubtitle => 'Първо свържете Plex или Jellyfin към друг профил.';
+	@override String get borrowEmptySubtitle => 'Първо свържете Plex, Jellyfin или Emby към друг профил.';
 	@override String get borrowLoadFailed => 'Наличните връзки не можаха да бъдат заредени. Опитайте отново.';
 	@override String borrowFromProfile({required Object displayName}) => 'От ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Връзката е използвана.';
@@ -1128,8 +1129,8 @@ class _Translations$connections$bg extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Връзки';
 	@override String get addConnection => 'Добави връзка';
-	@override String get addConnectionSubtitleNoProfile => 'Влезте с Plex или свържете Jellyfin сървър';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin или връзка от друг профил';
+	@override String get addConnectionSubtitleNoProfile => 'Влезте с Plex или свържете Jellyfin или Emby сървър';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил';
 	@override String sessionExpiredOne({required Object name}) => 'Сесията за ${name} е изтекла';
 	@override String sessionExpiredMany({required Object count}) => 'Сесиите за ${count} сървъра са изтекли';
 	@override String get signInAgain => 'Влез отново';
@@ -1302,7 +1303,7 @@ class _Translations$about$bg extends Translations$about$en {
 	@override String get title => 'Относно';
 	@override String get openSourceLicenses => 'Лицензи с отворен код';
 	@override String versionLabel({required Object version}) => 'Версия ${version}';
-	@override String get appDescription => 'Красив клиент за Plex и Jellyfin, създаден с Flutter';
+	@override String get appDescription => 'Красив клиент за Plex, Jellyfin и Emby, създаден с Flutter';
 	@override String get viewLicensesDescription => 'Виж лицензите на библиотеки на трети страни';
 }
 
@@ -1821,6 +1822,9 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Неизвестен сървър';
 	@override String get syncRuleListCreated => 'Правилото за синхронизация е създадено';
 	@override late final _Translations$downloads$backgroundWarning$bg backgroundWarning = _Translations$downloads$backgroundWarning$bg._(_root);
+	@override String get options => 'Опции за изтеглянията';
+	@override late final _Translations$downloads$groupings$bg groupings = _Translations$downloads$groupings$bg._(_root);
+	@override String get unknownLibrary => 'Неизвестна библиотека';
 	@override String get unknownShow => 'Неизвестен сериал';
 	@override String get unknownSeason => 'Неизвестен сезон';
 	@override String get unknownAlbum => 'Неизвестен албум';
@@ -2513,6 +2517,9 @@ class _Translations$libraries$sortLabels$bg extends Translations$libraries$sortL
 	@override String get dateShared => 'Дата на споделяне';
 	@override String get latestEpisodeAirDate => 'Дата на излъчване на последния епизод';
 	@override String get lastEpisodeDateAdded => 'Дата на добавяне на последния епизод';
+	@override String get dateDownloaded => 'Дата на изтегляне';
+	@override String get size => 'Размер';
+	@override String get library => 'Библиотека';
 }
 
 // Path: explore.rows
@@ -2806,6 +2813,16 @@ class _Translations$downloads$backgroundWarning$bg extends Translations$download
 	@override String get statusUnknown => 'Все още не е проверено';
 	@override String get settingsUnavailable => 'Системните настройки не можаха да се отворят на това устройство';
 	@override String get linkUnavailable => 'dontkillmyapp.com не можа да се отвори на това устройство';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$bg extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Библиотека';
 }
 
 // Path: companionRemote.session
@@ -3675,6 +3692,7 @@ extension on TranslationsBg {
 			'videoControls.pipFailed' => 'Режимът картина в картината не успя да стартира',
 			'videoControls.screenshotSaved' => 'Екранната снимка е запазена',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Мащаб ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Звук ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Изисква Android 8.0 или по-нова версия',
 			'videoControls.pipErrors.iosVersion' => 'Изисква iOS 15.0 или по-нова версия',
 			'videoControls.pipErrors.permissionDisabled' => 'Режимът картина в картината е изключен. Включете го от системните настройки.',
@@ -3859,7 +3877,7 @@ extension on TranslationsBg {
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Добави към ${displayName}',
 			'profiles.borrowExplain' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			'profiles.borrowEmpty' => 'Все още няма какво да се използва.',
-			'profiles.borrowEmptySubtitle' => 'Първо свържете Plex или Jellyfin към друг профил.',
+			'profiles.borrowEmptySubtitle' => 'Първо свържете Plex, Jellyfin или Emby към друг профил.',
 			'profiles.borrowLoadFailed' => 'Наличните връзки не можаха да бъдат заредени. Опитайте отново.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'От ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Връзката е използвана.',
@@ -3878,8 +3896,8 @@ extension on TranslationsBg {
 			'profiles.tokenIdentityMismatch' => 'Токенът на профила в Plex съответства на неочакван сървър',
 			'connections.sectionTitle' => 'Връзки',
 			'connections.addConnection' => 'Добави връзка',
-			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin сървър',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin или връзка от друг профил',
+			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin или Emby сървър',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сесията за ${name} е изтекла',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сесиите за ${count} сървъра са изтекли',
 			'connections.signInAgain' => 'Влез отново',
@@ -4012,9 +4030,9 @@ extension on TranslationsBg {
 			'libraries.confirmActionMessage' => 'Сигурни ли сте, че искате да извършите това действие?',
 			'libraries.showLibrary' => 'Покажи библиотеката',
 			'libraries.hideLibrary' => 'Скрий библиотеката',
-			'libraries.libraryOptions' => 'Опции на библиотеката',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Опции на библиотеката',
 			'libraries.content' => 'съдържание на библиотеката',
 			'libraries.selectLibrary' => 'Избери библиотека',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Филтри (${count})',
@@ -4063,10 +4081,13 @@ extension on TranslationsBg {
 			'libraries.sortLabels.dateShared' => 'Дата на споделяне',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Дата на излъчване на последния епизод',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Дата на добавяне на последния епизод',
+			'libraries.sortLabels.dateDownloaded' => 'Дата на изтегляне',
+			'libraries.sortLabels.size' => 'Размер',
+			'libraries.sortLabels.library' => 'Библиотека',
 			'about.title' => 'Относно',
 			'about.openSourceLicenses' => 'Лицензи с отворен код',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
-			'about.appDescription' => 'Красив клиент за Plex и Jellyfin, създаден с Flutter',
+			'about.appDescription' => 'Красив клиент за Plex, Jellyfin и Emby, създаден с Flutter',
 			'about.viewLicensesDescription' => 'Виж лицензите на библиотеки на трети страни',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Не са намерени сървъри за ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Неуспешно зареждане на сървъри: ${error}',
@@ -4523,12 +4544,12 @@ extension on TranslationsBg {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
 			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
 			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => 'Всички епизоди вече са изтеглени',
 			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} е изтеглен — щракнете, за да завършите',
 			'downloads.partialDownloadClickToComplete' => 'Частично изтеглено — щракнете, за да завършите',
 			'downloads.deleting' => 'Изтриване...',
@@ -4605,6 +4626,9 @@ extension on TranslationsBg {
 			'downloads.backgroundWarning.statusUnknown' => 'Все още не е проверено',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Системните настройки не можаха да се отворят на това устройство',
 			'downloads.backgroundWarning.linkUnavailable' => 'dontkillmyapp.com не можа да се отвори на това устройство',
+			'downloads.options' => 'Опции за изтеглянията',
+			'downloads.groupings.library' => 'Библиотека',
+			'downloads.unknownLibrary' => 'Неизвестна библиотека',
 			'downloads.unknownShow' => 'Неизвестен сериал',
 			'downloads.unknownSeason' => 'Неизвестен сезон',
 			'downloads.unknownAlbum' => 'Неизвестен албум',

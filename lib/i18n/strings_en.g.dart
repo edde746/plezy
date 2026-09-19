@@ -3754,8 +3754,14 @@ class Translations$liveTv$en {
 	/// en: 'Guide refresh requested'
 	String get guideReloadRequested => 'Guide refresh requested';
 
+	/// en: 'Couldn't refresh the guide'
+	String get guideReloadFailed => 'Couldn\'t refresh the guide';
+
 	/// en: 'Rule re-evaluation requested'
 	String get rulesProcessRequested => 'Rule re-evaluation requested';
+
+	/// en: 'Couldn't re-evaluate recording rules'
+	String get rulesProcessFailed => 'Couldn\'t re-evaluate recording rules';
 
 	/// en: 'Record show'
 	String get recordShow => 'Record show';
@@ -8440,7 +8446,9 @@ extension on Translations {
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
+			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
+			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -8628,10 +8636,10 @@ extension on Translations {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
-			'downloads.cancelledDownloadTitle' => 'Canceled Download',
-			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.cancelledDownloadTitle' => 'Canceled Download',
+			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',

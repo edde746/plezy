@@ -872,6 +872,7 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String get screenshotSaved => '스크린샷 저장됨';
 	@override String zoomPercent({required Object percent}) => '확대/축소 ${percent}%';
+	@override String volumePercent({required Object percent}) => '볼륨 ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$ko pipErrors = _Translations$videoControls$pipErrors$ko._(_root);
 	@override String get chapters => '챕터';
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
@@ -1096,7 +1097,7 @@ class _Translations$profiles$ko extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => '${displayName}에 추가';
 	@override String get borrowExplain => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.';
 	@override String get borrowEmpty => '아직 빌릴 것이 없습니다.';
-	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.';
+	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex, Jellyfin 또는 Emby를 연결하세요.';
 	@override String get borrowLoadFailed => '사용 가능한 연결을 불러오지 못했습니다. 다시 시도하세요.';
 	@override String borrowFromProfile({required Object displayName}) => '${displayName}에서';
 	@override String get borrowConnectionBorrowed => '연결을 빌렸습니다.';
@@ -1124,8 +1125,8 @@ class _Translations$connections$ko extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => '연결';
 	@override String get addConnection => '연결 추가';
-	@override String get addConnectionSubtitleNoProfile => 'Plex로 로그인하거나 Jellyfin 서버에 연결';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin 또는 다른 프로필 연결';
+	@override String get addConnectionSubtitleNoProfile => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결';
 	@override String sessionExpiredOne({required Object name}) => '${name}의 세션이 만료되었습니다';
 	@override String sessionExpiredMany({required Object count}) => '${count}개 서버의 세션이 만료되었습니다';
 	@override String get signInAgain => '다시 로그인';
@@ -1297,7 +1298,7 @@ class _Translations$about$ko extends Translations$about$en {
 	@override String get title => '소개';
 	@override String get openSourceLicenses => '오픈소스 라이선스';
 	@override String versionLabel({required Object version}) => '버전 ${version}';
-	@override String get appDescription => 'Flutter로 만든 아름다운 Plex 및 Jellyfin 클라이언트';
+	@override String get appDescription => 'Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트';
 	@override String get viewLicensesDescription => '타사 라이브러리 라이선스 보기';
 }
 
@@ -1812,6 +1813,9 @@ class _Translations$downloads$ko extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => '알 수 없는 서버';
 	@override String get syncRuleListCreated => '동기화 규칙이 생성되었습니다';
 	@override late final _Translations$downloads$backgroundWarning$ko backgroundWarning = _Translations$downloads$backgroundWarning$ko._(_root);
+	@override String get options => '다운로드 옵션';
+	@override late final _Translations$downloads$groupings$ko groupings = _Translations$downloads$groupings$ko._(_root);
+	@override String get unknownLibrary => '알 수 없는 라이브러리';
 	@override String get unknownShow => '알 수 없는 프로그램';
 	@override String get unknownSeason => '알 수 없는 시즌';
 	@override String get unknownAlbum => '알 수 없는 앨범';
@@ -2504,6 +2508,9 @@ class _Translations$libraries$sortLabels$ko extends Translations$libraries$sortL
 	@override String get dateShared => '공유된 날짜';
 	@override String get latestEpisodeAirDate => '최신 에피소드 방영일';
 	@override String get lastEpisodeDateAdded => '최신 에피소드 추가일';
+	@override String get dateDownloaded => '다운로드된 날짜';
+	@override String get size => '크기';
+	@override String get library => '라이브러리';
 }
 
 // Path: explore.rows
@@ -2795,6 +2802,16 @@ class _Translations$downloads$backgroundWarning$ko extends Translations$download
 	@override String get statusUnknown => '아직 확인하지 않음';
 	@override String get settingsUnavailable => '이 기기에서 시스템 설정을 열 수 없습니다';
 	@override String get linkUnavailable => '이 기기에서 dontkillmyapp.com을 열 수 없습니다';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$ko extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => '라이브러리';
 }
 
 // Path: companionRemote.session
@@ -3664,6 +3681,7 @@ extension on TranslationsKo {
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.screenshotSaved' => '스크린샷 저장됨',
 			'videoControls.zoomPercent' => ({required Object percent}) => '확대/축소 ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => '볼륨 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면이 비활성화되어 있습니다. 시스템 설정에서 활성화하세요.',
@@ -3848,7 +3866,7 @@ extension on TranslationsKo {
 			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName}에 추가',
 			'profiles.borrowExplain' => '다른 프로필의 연결을 빌립니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'profiles.borrowEmpty' => '아직 빌릴 것이 없습니다.',
-			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex 또는 Jellyfin을 연결하세요.',
+			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex, Jellyfin 또는 Emby를 연결하세요.',
 			'profiles.borrowLoadFailed' => '사용 가능한 연결을 불러오지 못했습니다. 다시 시도하세요.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => '${displayName}에서',
 			'profiles.borrowConnectionBorrowed' => '연결을 빌렸습니다.',
@@ -3867,8 +3885,8 @@ extension on TranslationsKo {
 			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
 			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
-			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 서버에 연결',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin 또는 다른 프로필 연결',
+			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name}의 세션이 만료되었습니다',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count}개 서버의 세션이 만료되었습니다',
 			'connections.signInAgain' => '다시 로그인',
@@ -4001,9 +4019,9 @@ extension on TranslationsKo {
 			'libraries.confirmActionMessage' => '이 작업을 실행하시겠습니까?',
 			'libraries.showLibrary' => '미디어 라이브러리 표시',
 			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
-			'libraries.libraryOptions' => '미디어 라이브러리 옵션',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => '미디어 라이브러리 옵션',
 			'libraries.content' => '미디어 라이브러리 콘텐츠',
 			'libraries.selectLibrary' => '미디어 라이브러리 선택',
 			'libraries.filtersWithCount' => ({required Object count}) => '필터 (${count})',
@@ -4052,10 +4070,13 @@ extension on TranslationsKo {
 			'libraries.sortLabels.dateShared' => '공유된 날짜',
 			'libraries.sortLabels.latestEpisodeAirDate' => '최신 에피소드 방영일',
 			'libraries.sortLabels.lastEpisodeDateAdded' => '최신 에피소드 추가일',
+			'libraries.sortLabels.dateDownloaded' => '다운로드된 날짜',
+			'libraries.sortLabels.size' => '크기',
+			'libraries.sortLabels.library' => '라이브러리',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
-			'about.appDescription' => 'Flutter로 만든 아름다운 Plex 및 Jellyfin 클라이언트',
+			'about.appDescription' => 'Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
@@ -4512,12 +4533,12 @@ extension on TranslationsKo {
 			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',
 			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
 			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => '모든 에피소드가 이미 다운로드되었습니다',
 			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} 다운로드됨 — 클릭하여 완료',
 			'downloads.partialDownloadClickToComplete' => '부분 다운로드됨 — 클릭하여 완료',
 			'downloads.deleting' => '삭제 중...',
@@ -4594,6 +4615,9 @@ extension on TranslationsKo {
 			'downloads.backgroundWarning.statusUnknown' => '아직 확인하지 않음',
 			'downloads.backgroundWarning.settingsUnavailable' => '이 기기에서 시스템 설정을 열 수 없습니다',
 			'downloads.backgroundWarning.linkUnavailable' => '이 기기에서 dontkillmyapp.com을 열 수 없습니다',
+			'downloads.options' => '다운로드 옵션',
+			'downloads.groupings.library' => '라이브러리',
+			'downloads.unknownLibrary' => '알 수 없는 라이브러리',
 			'downloads.unknownShow' => '알 수 없는 프로그램',
 			'downloads.unknownSeason' => '알 수 없는 시즌',
 			'downloads.unknownAlbum' => '알 수 없는 앨범',

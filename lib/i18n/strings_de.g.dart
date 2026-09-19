@@ -875,6 +875,7 @@ class _Translations$videoControls$de extends Translations$videoControls$en {
 	@override String get pipFailed => 'Bild-in-Bild konnte nicht gestartet werden';
 	@override String get screenshotSaved => 'Screenshot gespeichert';
 	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
+	@override String volumePercent({required Object percent}) => 'Lautstärke ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$de pipErrors = _Translations$videoControls$pipErrors$de._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Keine Kapitel verfügbar';
@@ -1100,7 +1101,7 @@ class _Translations$profiles$de extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => 'Zu ${displayName} hinzufügen';
 	@override String get borrowExplain => 'Verbindung eines anderen Profils übernehmen. PIN-geschützte Profile erfordern eine PIN.';
 	@override String get borrowEmpty => 'Keine Verbindungen zum Übernehmen verfügbar.';
-	@override String get borrowEmptySubtitle => 'Verbinde zuerst Plex oder Jellyfin mit einem anderen Profil.';
+	@override String get borrowEmptySubtitle => 'Verbinde zuerst Plex, Jellyfin oder Emby mit einem anderen Profil.';
 	@override String get borrowLoadFailed => 'Verfügbare Verbindungen konnten nicht geladen werden. Versuche es erneut.';
 	@override String borrowFromProfile({required Object displayName}) => 'Von ${displayName}';
 	@override String get borrowConnectionBorrowed => 'Verbindung übernommen.';
@@ -1128,8 +1129,8 @@ class _Translations$connections$de extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Verbindungen';
 	@override String get addConnection => 'Verbindung hinzufügen';
-	@override String get addConnectionSubtitleNoProfile => 'Mit Plex anmelden oder mit einem Jellyfin-Server verbinden';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Zu ${displayName} hinzufügen: Plex, Jellyfin oder eine andere Profilverbindung';
+	@override String get addConnectionSubtitleNoProfile => 'Mit Plex anmelden oder mit einem Jellyfin- oder Emby-Server verbinden';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Zu ${displayName} hinzufügen: Plex, Jellyfin, Emby oder eine andere Profilverbindung';
 	@override String sessionExpiredOne({required Object name}) => 'Sitzung für ${name} abgelaufen';
 	@override String sessionExpiredMany({required Object count}) => 'Sitzungen für ${count} Server abgelaufen';
 	@override String get signInAgain => 'Erneut anmelden';
@@ -1302,7 +1303,7 @@ class _Translations$about$de extends Translations$about$en {
 	@override String get title => 'Über';
 	@override String get openSourceLicenses => 'Open-Source-Lizenzen';
 	@override String versionLabel({required Object version}) => 'Version ${version}';
-	@override String get appDescription => 'Ein schöner, mit Flutter entwickelter Plex- und Jellyfin-Client';
+	@override String get appDescription => 'Ein schöner, mit Flutter entwickelter Plex-, Jellyfin- und Emby-Client';
 	@override String get viewLicensesDescription => 'Lizenzen von Drittanbieter-Bibliotheken anzeigen';
 }
 
@@ -1821,6 +1822,9 @@ class _Translations$downloads$de extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Unbekannter Server';
 	@override String get syncRuleListCreated => 'Synchronisierungsregel erstellt';
 	@override late final _Translations$downloads$backgroundWarning$de backgroundWarning = _Translations$downloads$backgroundWarning$de._(_root);
+	@override String get options => 'Download-Optionen';
+	@override late final _Translations$downloads$groupings$de groupings = _Translations$downloads$groupings$de._(_root);
+	@override String get unknownLibrary => 'Unbekannte Mediathek';
 	@override String get unknownShow => 'Unbekannte Serie';
 	@override String get unknownSeason => 'Unbekannte Staffel';
 	@override String get unknownAlbum => 'Unbekanntes Album';
@@ -2513,6 +2517,9 @@ class _Translations$libraries$sortLabels$de extends Translations$libraries$sortL
 	@override String get dateShared => 'Datum geteilt';
 	@override String get latestEpisodeAirDate => 'Ausstrahlungsdatum der neuesten Folge';
 	@override String get lastEpisodeDateAdded => 'Hinzugefügt am (neueste Folge)';
+	@override String get dateDownloaded => 'Heruntergeladen am';
+	@override String get size => 'Größe';
+	@override String get library => 'Mediathek';
 }
 
 // Path: explore.rows
@@ -2806,6 +2813,16 @@ class _Translations$downloads$backgroundWarning$de extends Translations$download
 	@override String get statusUnknown => 'Noch nicht geprüft';
 	@override String get settingsUnavailable => 'Die Systemeinstellungen konnten auf diesem Gerät nicht geöffnet werden';
 	@override String get linkUnavailable => 'dontkillmyapp.com konnte auf diesem Gerät nicht geöffnet werden';
+}
+
+// Path: downloads.groupings
+class _Translations$downloads$groupings$de extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$de._(TranslationsDe root) : this._root = root, super.internal(root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Mediathek';
 }
 
 // Path: companionRemote.session
@@ -3675,6 +3692,7 @@ extension on TranslationsDe {
 			'videoControls.pipFailed' => 'Bild-in-Bild konnte nicht gestartet werden',
 			'videoControls.screenshotSaved' => 'Screenshot gespeichert',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Lautstärke ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Erfordert Android 8.0 oder neuer',
 			'videoControls.pipErrors.iosVersion' => 'Erfordert iOS 15.0 oder neuer',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-in-Bild ist deaktiviert. Aktiviere es in den Systemeinstellungen.',
@@ -3859,7 +3877,7 @@ extension on TranslationsDe {
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Zu ${displayName} hinzufügen',
 			'profiles.borrowExplain' => 'Verbindung eines anderen Profils übernehmen. PIN-geschützte Profile erfordern eine PIN.',
 			'profiles.borrowEmpty' => 'Keine Verbindungen zum Übernehmen verfügbar.',
-			'profiles.borrowEmptySubtitle' => 'Verbinde zuerst Plex oder Jellyfin mit einem anderen Profil.',
+			'profiles.borrowEmptySubtitle' => 'Verbinde zuerst Plex, Jellyfin oder Emby mit einem anderen Profil.',
 			'profiles.borrowLoadFailed' => 'Verfügbare Verbindungen konnten nicht geladen werden. Versuche es erneut.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'Von ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Verbindung übernommen.',
@@ -3878,8 +3896,8 @@ extension on TranslationsDe {
 			'profiles.tokenIdentityMismatch' => 'Das Plex-Profil-Token wurde einem unerwarteten Server zugeordnet',
 			'connections.sectionTitle' => 'Verbindungen',
 			'connections.addConnection' => 'Verbindung hinzufügen',
-			'connections.addConnectionSubtitleNoProfile' => 'Mit Plex anmelden oder mit einem Jellyfin-Server verbinden',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Zu ${displayName} hinzufügen: Plex, Jellyfin oder eine andere Profilverbindung',
+			'connections.addConnectionSubtitleNoProfile' => 'Mit Plex anmelden oder mit einem Jellyfin- oder Emby-Server verbinden',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Zu ${displayName} hinzufügen: Plex, Jellyfin, Emby oder eine andere Profilverbindung',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sitzung für ${name} abgelaufen',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sitzungen für ${count} Server abgelaufen',
 			'connections.signInAgain' => 'Erneut anmelden',
@@ -4012,9 +4030,9 @@ extension on TranslationsDe {
 			'libraries.confirmActionMessage' => 'Aktion wirklich durchführen?',
 			'libraries.showLibrary' => 'Mediathek anzeigen',
 			'libraries.hideLibrary' => 'Mediathek ausblenden',
-			'libraries.libraryOptions' => 'Mediatheksoptionen',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Mediatheksoptionen',
 			'libraries.content' => 'Mediatheksinhalt',
 			'libraries.selectLibrary' => 'Mediathek auswählen',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filter (${count})',
@@ -4063,10 +4081,13 @@ extension on TranslationsDe {
 			'libraries.sortLabels.dateShared' => 'Datum geteilt',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Ausstrahlungsdatum der neuesten Folge',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Hinzugefügt am (neueste Folge)',
+			'libraries.sortLabels.dateDownloaded' => 'Heruntergeladen am',
+			'libraries.sortLabels.size' => 'Größe',
+			'libraries.sortLabels.library' => 'Mediathek',
 			'about.title' => 'Über',
 			'about.openSourceLicenses' => 'Open-Source-Lizenzen',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
-			'about.appDescription' => 'Ein schöner, mit Flutter entwickelter Plex- und Jellyfin-Client',
+			'about.appDescription' => 'Ein schöner, mit Flutter entwickelter Plex-, Jellyfin- und Emby-Client',
 			'about.viewLicensesDescription' => 'Lizenzen von Drittanbieter-Bibliotheken anzeigen',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Server konnten nicht geladen werden: ${error}',
@@ -4523,12 +4544,12 @@ extension on TranslationsDe {
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" von diesem Gerät löschen?',
 			'downloads.cancelledDownloadTitle' => 'Abgebrochener Download',
 			'downloads.cancelledDownloadMessage' => 'Dieser Download wurde abgebrochen. Was möchtest du tun?',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle Episoden sind bereits heruntergeladen',
 			'downloads.resumeDownload' => 'Download fortsetzen',
 			'downloads.cancelledDownload' => 'Abgebrochener Download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} wird synchronisiert)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} heruntergeladen — zum Abschließen klicken',
 			'downloads.partialDownloadClickToComplete' => 'Teilweise heruntergeladen — zum Abschließen klicken',
 			'downloads.deleting' => 'Wird gelöscht …',
@@ -4605,6 +4626,9 @@ extension on TranslationsDe {
 			'downloads.backgroundWarning.statusUnknown' => 'Noch nicht geprüft',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Die Systemeinstellungen konnten auf diesem Gerät nicht geöffnet werden',
 			'downloads.backgroundWarning.linkUnavailable' => 'dontkillmyapp.com konnte auf diesem Gerät nicht geöffnet werden',
+			'downloads.options' => 'Download-Optionen',
+			'downloads.groupings.library' => 'Mediathek',
+			'downloads.unknownLibrary' => 'Unbekannte Mediathek',
 			'downloads.unknownShow' => 'Unbekannte Serie',
 			'downloads.unknownSeason' => 'Unbekannte Staffel',
 			'downloads.unknownAlbum' => 'Unbekanntes Album',
