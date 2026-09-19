@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/dpad_select_long_press_controller.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
@@ -15,6 +17,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -31,6 +34,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
@@ -43,6 +47,7 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -576,6 +581,77 @@ void main() {
       expect(rect.bottom, lessThanOrEqualTo(viewport.bottom), reason: 'focused card $index is clipped at the bottom');
     }
   });
+
+  testWidgets('D-pad context-menu key and a SELECT hold open the focused playlist item menu', (tester) async {
+    final harness = await _createHarness(_mediaItems(2));
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: harness.wrap(const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _playlist))),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final listFocus = find.byWidgetPredicate(
+      (widget) => widget is Focus && widget.focusNode?.debugLabel == 'playlist_list',
+    );
+    final listFocusNode = tester.widget<Focus>(listFocus).focusNode!;
+    listFocusNode.requestFocus();
+    await tester.pump();
+
+    // An arrow enters keyboard mode and moves the focused row to item_1.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    final secondCard = find.byWidgetPredicate((widget) => widget is PlaylistItemCard && widget.index == 1);
+    expect(tester.widget<PlaylistItemCard>(secondCard).isFocused, isTrue);
+
+    final menu = find.byWidgetPredicate((widget) => widget is AppMenuSheet<Object?>);
+    expect(menu, findsNothing);
+
+    // Gamepad X / context-menu key.
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonX);
+    await tester.pumpAndSettle();
+    expect(menu, findsOneWidget);
+    expect(tester.widget<AppMenuSheet<Object?>>(menu).title, contains('Item 1'));
+    expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+    expect(find.text(t.mediaMenu.rate), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+    expect(menu, findsNothing);
+    expect(listFocusNode.hasPrimaryFocus, isTrue, reason: 'closing the menu hands focus back to the list');
+
+    // Holding SELECT past the long-press threshold opens it too (a short
+    // press keeps its column action — see the move-mode tests above).
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+    await tester.pump(DpadSelectLongPressController.defaultDuration + const Duration(milliseconds: 1));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(menu, findsOneWidget);
+    expect(tester.widget<AppMenuSheet<Object?>>(menu).title, contains('Item 1'));
+  });
+
+  testWidgets('pointer drag reorder moves the card through the drag proxy without duplicating its key', (tester) async {
+    final harness = await _createHarness(_mediaItems(3));
+    await _pushPlaylistRoute(tester, harness);
+
+    final firstRow = tester.getRect(find.byType(PlaylistItemCard).first);
+    final secondRow = tester.getRect(find.byType(PlaylistItemCard).at(1));
+    await tester.timedDrag(
+      find.byType(ReorderableDragStartListener).first,
+      Offset(0, secondRow.top - firstRow.top),
+      const Duration(milliseconds: 300),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(harness.client.moveRequests, hasLength(1));
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_0', 'item_2']);
+
+    harness.client.completeMove(0, true, applyToServer: true);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_0', 'item_2']);
+  });
 }
 
 Future<void> _startFirstItemMoveDown(WidgetTester tester) async {
@@ -697,8 +773,11 @@ Future<_PlaylistHarness> _createHarness(
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = testMultiServerProvider(manager);
   final playbackState = PlaybackStateProvider();
+  // The item context menu resolves admin gating through the active profile.
+  final profiles = await ProfileStack.create(db: db, withStorage: false);
 
   addTearDown(() async {
+    await profiles.dispose();
     downloadProvider.dispose();
     downloadManager.dispose();
     multiServerProvider.dispose();
@@ -711,6 +790,7 @@ Future<_PlaylistHarness> _createHarness(
     multiServerProvider: multiServerProvider,
     downloadProvider: downloadProvider,
     playbackState: playbackState,
+    activeProfile: profiles.active,
   );
 }
 
@@ -719,12 +799,14 @@ class _PlaylistHarness {
   final MultiServerProvider multiServerProvider;
   final DownloadProvider downloadProvider;
   final PlaybackStateProvider playbackState;
+  final ActiveProfileProvider activeProfile;
 
   const _PlaylistHarness({
     required this.client,
     required this.multiServerProvider,
     required this.downloadProvider,
     required this.playbackState,
+    required this.activeProfile,
   });
 
   Widget wrap(Widget child, {TargetPlatform platform = TargetPlatform.android}) {
@@ -734,6 +816,7 @@ class _PlaylistHarness {
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
           ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: platform),
