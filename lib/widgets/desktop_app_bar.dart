@@ -3,53 +3,6 @@ import '../utils/desktop_window_padding.dart';
 import '../services/fullscreen_state_manager.dart';
 import 'app_bar_back_button.dart';
 
-/// Helper class for building app bar sections with consistent desktop behavior.
-class DesktopAppBarSections {
-  /// Builds the leading section with proper padding and back button handling.
-  static Widget? buildLeadingSection({
-    Widget? leading,
-    bool automaticallyImplyLeading = true,
-    required BuildContext context,
-  }) {
-    Widget? effectiveLeading = leading;
-
-    // If no leading is provided but automaticallyImplyLeading is true,
-    // create a back button manually so it goes through our padding logic
-    if (leading == null && automaticallyImplyLeading) {
-      final parentRoute = ModalRoute.of(context);
-      final canPop = parentRoute?.canPop ?? false;
-
-      if (canPop) {
-        effectiveLeading = AppBarBackButton(style: BackButtonStyle.plain, onPressed: () => Navigator.of(context).pop());
-      }
-    }
-
-    return DesktopAppBarHelper.buildAdjustedLeading(effectiveLeading, includeGestureDetector: true, context: context);
-  }
-
-  /// Builds the title section with proper padding.
-  static Widget? buildTitleSection({required Widget? title, required Widget? leading}) {
-    if (title == null) return null;
-
-    return DesktopTitleBarPadding(leftPadding: leading != null ? 0 : null, child: title);
-  }
-
-  /// Builds the actions section with proper padding.
-  static List<Widget>? buildActionsSection(List<Widget>? actions) {
-    return DesktopAppBarHelper.buildAdjustedActions(actions);
-  }
-
-  /// Calculates the leading width for the app bar.
-  static double? calculateLeadingWidthForSection({required Widget? leading, required BuildContext context}) {
-    return DesktopAppBarHelper.calculateLeadingWidth(leading, context: context);
-  }
-
-  /// Builds the flexible space section with gesture handling.
-  static Widget? buildFlexibleSpaceSection(Widget? flexibleSpace) {
-    return DesktopAppBarHelper.buildAdjustedFlexibleSpace(flexibleSpace);
-  }
-}
-
 /// A custom sliver app bar that automatically handles desktop window controls spacing.
 /// Use this instead of SliverAppBar for consistent desktop platform behavior.
 class DesktopSliverAppBar extends StatelessWidget {
@@ -90,17 +43,19 @@ class DesktopSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveLeading = DesktopAppBarSections.buildLeadingSection(
-      leading: leading,
-      automaticallyImplyLeading: automaticallyImplyLeading,
+    final effectiveLeading = DesktopAppBarHelper.buildAdjustedLeading(
+      _impliedLeading(context),
+      includeGestureDetector: true,
       context: context,
     );
 
     return SliverAppBar(
-      title: DesktopAppBarSections.buildTitleSection(title: title, leading: effectiveLeading),
-      actions: DesktopAppBarSections.buildActionsSection(actions),
+      title: title == null
+          ? null
+          : DesktopTitleBarPadding(leftPadding: effectiveLeading != null ? 0 : null, child: title!),
+      actions: DesktopAppBarHelper.buildAdjustedActions(actions),
       leading: effectiveLeading,
-      leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(leading: effectiveLeading, context: context),
+      leadingWidth: DesktopAppBarHelper.calculateLeadingWidth(effectiveLeading, context: context),
       automaticallyImplyLeading: false, // Always false since we handle it manually
       elevation: elevation,
       backgroundColor: backgroundColor,
@@ -111,9 +66,17 @@ class DesktopSliverAppBar extends StatelessWidget {
       pinned: pinned,
       snap: snap,
       expandedHeight: expandedHeight,
-      flexibleSpace: DesktopAppBarSections.buildFlexibleSpaceSection(flexibleSpace),
+      flexibleSpace: DesktopAppBarHelper.buildAdjustedFlexibleSpace(flexibleSpace),
       bottom: bottom,
     );
+  }
+
+  /// [SliverAppBar]'s own implied back button bypasses the traffic-light padding,
+  /// so imply it here and route it through [DesktopAppBarHelper] like any other leading.
+  Widget? _impliedLeading(BuildContext context) {
+    if (leading != null || !automaticallyImplyLeading) return leading;
+    if (!(ModalRoute.of(context)?.canPop ?? false)) return null;
+    return AppBarBackButton(style: BackButtonStyle.plain, onPressed: () => Navigator.of(context).pop());
   }
 }
 

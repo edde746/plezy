@@ -666,15 +666,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
       builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-        // In fullscreen on macOS, use less left padding since traffic lights auto-hide
-        // In normal mode on macOS, need more padding to avoid traffic lights
-        double leftPadding;
-        if (Platform.isMacOS) {
-          leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
-        } else {
-          leftPadding = DesktopWindowPadding.macOSLeftFullscreen;
-        }
+        // On macOS the traffic lights need clearing in normal mode; they auto-hide in fullscreen.
+        final leftPadding = Platform.isMacOS ? DesktopWindowPadding.macOSLeftCurrent : 0.0;
 
         return _buildTopBarContent(context, leftPadding);
       },
