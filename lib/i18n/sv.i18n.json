@@ -729,6 +729,7 @@
     "pipFailed": "Bild-i-bild kunde inte starta",
     "screenshotSaved": "Skärmbild sparad",
     "zoomPercent": "Zoom ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
       "iosVersion": "Kräver iOS 15.0 eller nyare",
@@ -1162,7 +1163,10 @@
       "random": "Slumpmässigt",
       "dateShared": "Delningsdatum",
       "latestEpisodeAirDate": "Senaste avsnittets sändningsdatum",
-      "lastEpisodeDateAdded": "Datum då senaste avsnittet lades till"
+      "lastEpisodeDateAdded": "Datum då senaste avsnittet lades till",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Det gick inte att öppna systeminställningarna på den här enheten",
       "linkUnavailable": "Det gick inte att öppna dontkillmyapp.com på den här enheten"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Okänd serie",
     "unknownSeason": "Okänd säsong",
     "unknownAlbum": "Okänt album",

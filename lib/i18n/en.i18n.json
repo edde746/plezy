@@ -729,6 +729,7 @@
     "pipFailed": "Picture-in-picture failed to start",
     "screenshotSaved": "Screenshot saved",
     "zoomPercent": "Zoom ${percent}%",
+    "volumePercent": "Volume ${percent}%",
     "pipErrors": {
       "androidVersion": "Requires Android 8.0 or newer",
       "iosVersion": "Requires iOS 15.0 or newer",

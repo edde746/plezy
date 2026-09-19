@@ -729,6 +729,7 @@
     "pipFailed": "Nem sikerült elindítani a kép a képben módot",
     "screenshotSaved": "Képernyőkép elmentve",
     "zoomPercent": "Nagyítás ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Android 8.0 vagy újabb szükséges",
       "iosVersion": "iOS 15.0 vagy újabb szükséges",
@@ -1162,7 +1163,10 @@
       "random": "Véletlenszerű",
       "dateShared": "Megosztás dátuma",
       "latestEpisodeAirDate": "A legutóbbi epizód sugárzási dátuma",
-      "lastEpisodeDateAdded": "Utolsó epizód hozzáadásának dátuma"
+      "lastEpisodeDateAdded": "Utolsó epizód hozzáadásának dátuma",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Ezen az eszközön nem sikerült megnyitni a rendszerbeállításokat",
       "linkUnavailable": "Ezen az eszközön nem sikerült megnyitni a dontkillmyapp.com webhelyet"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Ismeretlen sorozat",
     "unknownSeason": "Ismeretlen évad",
     "unknownAlbum": "Ismeretlen album",

@@ -729,6 +729,7 @@
     "pipFailed": "PiP rejimi başladılarkən xəta",
     "screenshotSaved": "Ekran şəkli yadda saxlanıldı",
     "zoomPercent": "Miqyas %${percent}",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Android 8.0 və ya daha yenisini tələb edir",
       "iosVersion": "iOS 15.0 və ya daha yenisini tələb edir",
@@ -1162,7 +1163,10 @@
       "random": "Təsadüfi",
       "dateShared": "Paylaşılma tarixi",
       "latestEpisodeAirDate": "Son seriya yayın tarixi",
-      "lastEpisodeDateAdded": "Əlavə olunan son seriya tarixi"
+      "lastEpisodeDateAdded": "Əlavə olunan son seriya tarixi",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Bu cihazda sistem tənzimləmələri açıla bilmədi",
       "linkUnavailable": "Bu cihazda dontkillmyapp.com açıla bilmədi"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Məlum olmayan serial",
     "unknownSeason": "Məlum olmayan mövsüm",
     "unknownAlbum": "Məlum olmayan albom",

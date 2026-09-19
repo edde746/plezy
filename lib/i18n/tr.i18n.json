@@ -729,6 +729,7 @@
     "pipFailed": "Pencere içinde pencere modu başlatılamadı",
     "screenshotSaved": "Ekran görüntüsü kaydedildi",
     "zoomPercent": "Yakınlaştırma %${percent}",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Android 8.0 veya daha yenisini gerektirir",
       "iosVersion": "iOS 15.0 veya daha yenisini gerektirir",
@@ -1162,7 +1163,10 @@
       "random": "Rastgele",
       "dateShared": "Paylaşılma Tarihi",
       "latestEpisodeAirDate": "Son Bölüm Yayın Tarihi",
-      "lastEpisodeDateAdded": "Eklenen Son Bölüm Tarihi"
+      "lastEpisodeDateAdded": "Eklenen Son Bölüm Tarihi",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Bu cihazda sistem ayarları açılamadı",
       "linkUnavailable": "Bu cihazda dontkillmyapp.com açılamadı"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Bilinmeyen Dizi",
     "unknownSeason": "Bilinmeyen Sezon",
     "unknownAlbum": "Bilinmeyen Albüm",

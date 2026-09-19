@@ -726,6 +726,7 @@
     "pipFailed": "画中画启动失败",
     "screenshotSaved": "截图已保存",
     "zoomPercent": "缩放 ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
       "iosVersion": "需要 iOS 15.0 或更高版本",
@@ -1157,7 +1158,10 @@
       "random": "随机",
       "dateShared": "共享日期",
       "latestEpisodeAirDate": "最新一集播出日期",
-      "lastEpisodeDateAdded": "最新一集添加日期"
+      "lastEpisodeDateAdded": "最新一集添加日期",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1767,6 +1771,11 @@
       "settingsUnavailable": "无法在此设备上打开系统设置",
       "linkUnavailable": "无法在此设备上打开 dontkillmyapp.com"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "未知节目",
     "unknownSeason": "未知季",
     "unknownAlbum": "未知专辑",

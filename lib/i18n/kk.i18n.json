@@ -729,6 +729,7 @@
     "pipFailed": "PiP режимін іске қосу қатесі",
     "screenshotSaved": "Экран суреті сақталды",
     "zoomPercent": "Масштаб %${percent}",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Android 8.0 немесе жаңалауы қажет",
       "iosVersion": "iOS 15.0 немесе жаңалауы қажет",
@@ -1162,7 +1163,10 @@
       "random": "Кездейсоқ",
       "dateShared": "Бөлісілген күні",
       "latestEpisodeAirDate": "Соңғы бөлімнің шыққан күні",
-      "lastEpisodeDateAdded": "Соңғы қосылған бөлім күні"
+      "lastEpisodeDateAdded": "Соңғы қосылған бөлім күні",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Бұл құрылғыда жүйе баптаулары ашылмады",
       "linkUnavailable": "Бұл құрылғыда dontkillmyapp.com ашылмады"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Белгісіз телешоу",
     "unknownSeason": "Белгісіз маусым",
     "unknownAlbum": "Белгісіз альбом",

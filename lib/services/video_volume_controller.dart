@@ -7,6 +7,7 @@ import '../utils/app_logger.dart';
 import 'settings_service.dart';
 
 typedef VideoVolumePersistenceWriter = Future<void> Function(double volume);
+typedef VideoVolumeUserChangeListener = void Function(double volume);
 
 /// Owns every logical volume transition for one video [Player].
 ///
@@ -20,6 +21,7 @@ final class VideoVolumeController implements ValueListenable<double> {
     required SettingsService settings,
     required double initialVolume,
     VideoVolumePersistenceWriter? persistVolume,
+    this.onUserChange,
   }) : _settings = settings,
        _persistVolume = persistVolume ?? ((volume) => settings.write(SettingsService.volume, volume)),
        _desiredVolume = ValueNotifier<double>(_clampForSettings(settings, initialVolume)),
@@ -39,6 +41,14 @@ final class VideoVolumeController implements ValueListenable<double> {
   final SettingsService _settings;
   final VideoVolumePersistenceWriter _persistVolume;
   final ValueNotifier<double> _desiredVolume;
+
+  /// Receives the clamped target of every user-originated volume command —
+  /// [adjust], [commit], [toggleMute] — the moment it is accepted, including a
+  /// command that lands on the value already in effect (a wheel notch past
+  /// zero still deserves its "0%"). Slider previews and volume the player
+  /// reports on its own never reach it, so it is safe to drive user-facing
+  /// feedback from.
+  final VideoVolumeUserChangeListener? onUserChange;
 
   late final StreamSubscription<double> _volumeSubscription;
   _VolumeTransition? _pending;
@@ -78,7 +88,7 @@ final class VideoVolumeController implements ValueListenable<double> {
   void adjust(double delta) {
     if (_disposed || !delta.isFinite) return;
     final target = _clamp(value + delta);
-    _schedule(target, persistedVolume: target);
+    _applyUserVolume(target, persistedVolume: target);
   }
 
   /// Applies an absolute slider preview without persisting intermediate values.
@@ -91,7 +101,7 @@ final class VideoVolumeController implements ValueListenable<double> {
   void commit(double volume) {
     if (_disposed || !volume.isFinite) return;
     final target = _clamp(volume);
-    _schedule(target, persistedVolume: target);
+    _applyUserVolume(target, persistedVolume: target);
   }
 
   /// Mutes without replacing the preferred volume with zero, or restores the
@@ -99,7 +109,7 @@ final class VideoVolumeController implements ValueListenable<double> {
   void toggleMute() {
     if (_disposed) return;
     if (value > 0) {
-      _schedule(0, persistedVolume: value);
+      _applyUserVolume(0, persistedVolume: value);
       return;
     }
 
@@ -107,10 +117,15 @@ final class VideoVolumeController implements ValueListenable<double> {
         ? _preferredVolume
         : SettingsService.volume.defaultValue;
     final restored = _clamp(preferred);
-    _schedule(restored, persistedVolume: restored);
+    _applyUserVolume(restored, persistedVolume: restored);
   }
 
   double _clamp(double volume) => _clampForSettings(_settings, volume);
+
+  void _applyUserVolume(double playerVolume, {required double persistedVolume}) {
+    _schedule(playerVolume, persistedVolume: persistedVolume);
+    onUserChange?.call(playerVolume);
+  }
 
   void _schedule(double playerVolume, {required double? persistedVolume}) {
     if (_disposed) return;

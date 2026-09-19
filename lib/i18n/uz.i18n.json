@@ -729,6 +729,7 @@
     "pipFailed": "PiP rejimini ishga tushirishda xatolik",
     "screenshotSaved": "Ekran tasviri saqlandi",
     "zoomPercent": "Masshtab %${percent}",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Android 8.0 yoki undan yangisi talab qilinadi",
       "iosVersion": "iOS 15.0 yoki undan yangisi talab qilinadi",
@@ -1162,7 +1163,10 @@
       "random": "Tasodifiy",
       "dateShared": "Ulashilgan sanasi",
       "latestEpisodeAirDate": "Soʻnggi qism chiqqan sana",
-      "lastEpisodeDateAdded": "Soʻnggi qoʻshilgan qism sanasi"
+      "lastEpisodeDateAdded": "Soʻnggi qoʻshilgan qism sanasi",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Bu qurilmada tizim sozlamalarini ochib boʻlmadi",
       "linkUnavailable": "Bu qurilmada dontkillmyapp.com-ni ochib boʻlmadi"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Nomaʼlum serial",
     "unknownSeason": "Nomaʼlum mavsum",
     "unknownAlbum": "Nomaʼlum albom",

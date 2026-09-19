@@ -726,6 +726,7 @@
     "pipFailed": "啟動子母畫面失敗",
     "screenshotSaved": "螢幕截圖已儲存",
     "zoomPercent": "縮放 ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
       "iosVersion": "需要 iOS 15.0 或更高版本",
@@ -1157,7 +1158,10 @@
       "random": "隨機",
       "dateShared": "分享日期",
       "latestEpisodeAirDate": "最新一集播出日期",
-      "lastEpisodeDateAdded": "最新一集新增日期"
+      "lastEpisodeDateAdded": "最新一集新增日期",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1767,6 +1771,11 @@
       "settingsUnavailable": "無法在這部裝置上開啟系統設定",
       "linkUnavailable": "無法在這部裝置上開啟 dontkillmyapp.com"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "未知節目",
     "unknownSeason": "未知季度",
     "unknownAlbum": "未知專輯",

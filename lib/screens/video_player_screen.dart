@@ -2023,6 +2023,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         player: currentPlayer,
         settings: settingsService,
         initialVolume: savedVolume,
+        onUserChange: _announceVolumeCommand,
       );
 
       player = currentPlayer;
@@ -2525,6 +2526,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       willPlay ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
       willPlay ? t.videoControls.playbackResumed : t.videoControls.playbackPaused,
     );
+  }
+
+  /// Announce an accepted user volume command with the top pill, whatever the
+  /// chrome state. The visible chrome does render volume, but as a 100 px
+  /// slider that moves 3 % per wheel notch: a viewer on a handheld scrolled
+  /// themselves to silence without noticing (#2357). Every input reaches
+  /// here — wheel, shortcut keys, the OSD slider, companion remote — while
+  /// volume the player reports on its own never does.
+  void _announceVolumeCommand(double volume) {
+    if (!mounted) return;
+    final percent = volume.round();
+    final icon = percent == 0
+        ? Symbols.volume_off_rounded
+        : percent < 50
+        ? Symbols.volume_down_rounded
+        : Symbols.volume_up_rounded;
+    _toastController.show(icon, t.videoControls.volumePercent(percent: percent));
   }
 
   /// Apply a transport command on behalf of a hardware remote (Apple TV bridge

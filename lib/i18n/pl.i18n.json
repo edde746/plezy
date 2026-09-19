@@ -735,6 +735,7 @@
     "pipFailed": "Nie udało się uruchomić trybu obraz w obrazie",
     "screenshotSaved": "Zrzut ekranu zapisany",
     "zoomPercent": "Powiększenie ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Wymaga Androida 8.0 lub nowszego",
       "iosVersion": "Wymaga iOS 15.0 lub nowszego",
@@ -1172,7 +1173,10 @@
       "random": "Losowo",
       "dateShared": "Data udostępnienia",
       "latestEpisodeAirDate": "Data emisji ostatniego odcinka",
-      "lastEpisodeDateAdded": "Data dodania ostatniego odcinka"
+      "lastEpisodeDateAdded": "Data dodania ostatniego odcinka",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1800,6 +1804,11 @@
       "settingsUnavailable": "Nie udało się otworzyć ustawień systemowych na tym urządzeniu",
       "linkUnavailable": "Nie udało się otworzyć dontkillmyapp.com na tym urządzeniu"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Nieznany serial",
     "unknownSeason": "Nieznany sezon",
     "unknownAlbum": "Nieznany album",

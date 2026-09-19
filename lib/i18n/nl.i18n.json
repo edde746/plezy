@@ -729,6 +729,7 @@
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "screenshotSaved": "Schermafbeelding opgeslagen",
     "zoomPercent": "Zoom ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Vereist Android 8.0 of nieuwer",
       "iosVersion": "Vereist iOS 15.0 of nieuwer",
@@ -1162,7 +1163,10 @@
       "random": "Willekeurig",
       "dateShared": "Gedeeld op",
       "latestEpisodeAirDate": "Laatste afleveringsuitzending",
-      "lastEpisodeDateAdded": "Datum laatst toegevoegde aflevering"
+      "lastEpisodeDateAdded": "Datum laatst toegevoegde aflevering",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Kan de systeeminstellingen niet openen op dit apparaat",
       "linkUnavailable": "Kan dontkillmyapp.com niet openen op dit apparaat"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Onbekende serie",
     "unknownSeason": "Onbekend seizoen",
     "unknownAlbum": "Onbekend album",

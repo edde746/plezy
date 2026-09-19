@@ -729,6 +729,7 @@
     "pipFailed": "Режимът картина в картината не успя да стартира",
     "screenshotSaved": "Екранната снимка е запазена",
     "zoomPercent": "Мащаб ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Изисква Android 8.0 или по-нова версия",
       "iosVersion": "Изисква iOS 15.0 или по-нова версия",
@@ -1162,7 +1163,10 @@
       "random": "Случайно",
       "dateShared": "Дата на споделяне",
       "latestEpisodeAirDate": "Дата на излъчване на последния епизод",
-      "lastEpisodeDateAdded": "Дата на добавяне на последния епизод"
+      "lastEpisodeDateAdded": "Дата на добавяне на последния епизод",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Системните настройки не можаха да се отворят на това устройство",
       "linkUnavailable": "dontkillmyapp.com не можа да се отвори на това устройство"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Неизвестен сериал",
     "unknownSeason": "Неизвестен сезон",
     "unknownAlbum": "Неизвестен албум",

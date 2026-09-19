@@ -729,6 +729,7 @@
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
     "screenshotSaved": "Screenshot gespeichert",
     "zoomPercent": "Zoom ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Erfordert Android 8.0 oder neuer",
       "iosVersion": "Erfordert iOS 15.0 oder neuer",
@@ -1162,7 +1163,10 @@
       "random": "Zufällig",
       "dateShared": "Datum geteilt",
       "latestEpisodeAirDate": "Ausstrahlungsdatum der neuesten Folge",
-      "lastEpisodeDateAdded": "Hinzugefügt am (neueste Folge)"
+      "lastEpisodeDateAdded": "Hinzugefügt am (neueste Folge)",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Die Systemeinstellungen konnten auf diesem Gerät nicht geöffnet werden",
       "linkUnavailable": "dontkillmyapp.com konnte auf diesem Gerät nicht geöffnet werden"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Unbekannte Serie",
     "unknownSeason": "Unbekannte Staffel",
     "unknownAlbum": "Unbekanntes Album",

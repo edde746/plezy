@@ -2156,6 +2156,9 @@ class Translations$videoControls$en {
 	/// en: 'Zoom ${percent}%'
 	String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 
+	/// en: 'Volume ${percent}%'
+	String volumePercent({required Object percent}) => 'Volume ${percent}%';
+
 	late final Translations$videoControls$pipErrors$en pipErrors = Translations$videoControls$pipErrors$en.internal(_root);
 
 	/// en: 'Chapters'
@@ -7775,6 +7778,7 @@ extension on Translations {
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.screenshotSaved' => 'Screenshot saved',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
 			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture is disabled. Enable it in system settings.',
@@ -8112,9 +8116,9 @@ extension on Translations {
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
-			'libraries.libraryOptions' => 'Library options',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
@@ -8626,9 +8630,9 @@ extension on Translations {
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
 			'downloads.cancelledDownloadTitle' => 'Canceled Download',
 			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
-			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',

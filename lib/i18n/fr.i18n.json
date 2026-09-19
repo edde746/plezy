@@ -729,6 +729,7 @@
     "pipFailed": "Échec du démarrage du mode image dans l'image",
     "screenshotSaved": "Capture d'écran enregistrée",
     "zoomPercent": "Zoom ${percent} %",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Nécessite Android 8.0 ou plus récent",
       "iosVersion": "Nécessite iOS 15.0 ou plus récent",
@@ -1162,7 +1163,10 @@
       "random": "Aléatoire",
       "dateShared": "Date de partage",
       "latestEpisodeAirDate": "Dernière date de diffusion",
-      "lastEpisodeDateAdded": "Date d'ajout du dernier épisode"
+      "lastEpisodeDateAdded": "Date d'ajout du dernier épisode",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1778,6 +1782,11 @@
       "settingsUnavailable": "Impossible d’ouvrir les paramètres système sur cet appareil",
       "linkUnavailable": "Impossible d’ouvrir dontkillmyapp.com sur cet appareil"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "Série inconnue",
     "unknownSeason": "Saison inconnue",
     "unknownAlbum": "Album inconnu",

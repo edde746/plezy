@@ -726,6 +726,7 @@
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "screenshotSaved": "스크린샷 저장됨",
     "zoomPercent": "확대/축소 ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",
       "iosVersion": "iOS 15.0 이상이 필요합니다",
@@ -1157,7 +1158,10 @@
       "random": "무작위",
       "dateShared": "공유된 날짜",
       "latestEpisodeAirDate": "최신 에피소드 방영일",
-      "lastEpisodeDateAdded": "최신 에피소드 추가일"
+      "lastEpisodeDateAdded": "최신 에피소드 추가일",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1767,6 +1771,11 @@
       "settingsUnavailable": "이 기기에서 시스템 설정을 열 수 없습니다",
       "linkUnavailable": "이 기기에서 dontkillmyapp.com을 열 수 없습니다"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "알 수 없는 프로그램",
     "unknownSeason": "알 수 없는 시즌",
     "unknownAlbum": "알 수 없는 앨범",

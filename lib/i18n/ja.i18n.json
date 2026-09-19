@@ -726,6 +726,7 @@
     "pipFailed": "ピクチャーインピクチャーの開始に失敗しました",
     "screenshotSaved": "スクリーンショットを保存しました",
     "zoomPercent": "ズーム ${percent}%",
+    "volumePercent": "",
     "pipErrors": {
       "androidVersion": "Android 8.0以降が必要です",
       "iosVersion": "iOS 15.0以降が必要です",
@@ -1157,7 +1158,10 @@
       "random": "ランダム",
       "dateShared": "共有日",
       "latestEpisodeAirDate": "最新エピソード放送日",
-      "lastEpisodeDateAdded": "最新エピソード追加日"
+      "lastEpisodeDateAdded": "最新エピソード追加日",
+      "dateDownloaded": "",
+      "size": "",
+      "library": ""
     }
   },
   "about": {
@@ -1767,6 +1771,11 @@
       "settingsUnavailable": "この端末ではシステム設定を開けませんでした",
       "linkUnavailable": "この端末ではdontkillmyapp.comを開けませんでした"
     },
+    "options": "",
+    "groupings": {
+      "library": ""
+    },
+    "unknownLibrary": "",
     "unknownShow": "不明な番組",
     "unknownSeason": "不明なシーズン",
     "unknownAlbum": "不明なアルバム",
