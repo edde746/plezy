@@ -3591,7 +3591,7 @@ void main() {
       expect(specialsApart!.map((e) => e.id), ['ep-1', 'ep-2', 'special']);
     });
 
-    test('fetchPersonMedia queries items by person id', () async {
+    test('fetchPersonMediaPage queries items by person id', () async {
       Uri? captured;
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -3607,9 +3607,9 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final result = await scoped.fetchPersonMedia('person-1');
+      final page = await scoped.fetchPersonMediaPage('person-1');
 
-      expect(result.single.id, 'movie-1');
+      expect(page.items.single.id, 'movie-1');
       expect(captured, isNotNull);
       expect(captured!.path, '/Items');
       expect(captured!.queryParameters['userId'], 'user-1');
@@ -4746,7 +4746,7 @@ void main() {
     });
   });
 
-  group('JellyfinClient.fetchCollections', () {
+  group('JellyfinClient.fetchCollectionsPage', () {
     test('queries the server-wide BoxSet root without a views lookup', () async {
       final requests = <Uri>[];
       final mock = MockClient((req) async {
@@ -4764,10 +4764,10 @@ void main() {
       final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
       addTearDown(client.close);
 
-      final collections = await client.fetchCollections('lib-movies');
+      final page = await client.fetchCollectionsPage('lib-movies');
 
-      expect(collections.map((c) => c.id).toList(), ['collection-1']);
-      expect(collections.single.kind, MediaKind.collection);
+      expect(page.items.map((c) => c.id).toList(), ['collection-1']);
+      expect(page.items.single.kind, MediaKind.collection);
       // Both dialects discard ParentId on a BoxSet-only query, so the request
       // goes straight to /Items — no /Views round trip, no ParentId (#2373).
       expect(requests.map((u) => u.path).toList(), ['/Items']);
@@ -4838,31 +4838,6 @@ void main() {
       expect(page.totalCount, 3);
     });
 
-    test('walks collections in pages', () async {
-      final itemRequests = <Uri>[];
-      final mock = MockClient((req) async {
-        if (req.url.path == '/Items') {
-          itemRequests.add(req.url);
-          final start = req.url.queryParameters['StartIndex'];
-          return jsonResponse({
-            'TotalRecordCount': 2,
-            'Items': [
-              {'Id': start == '0' ? 'collection-1' : 'collection-2', 'Name': 'Collection', 'Type': 'BoxSet'},
-            ],
-          });
-        }
-        return http.Response('not found', 404);
-      });
-      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
-      addTearDown(client.close);
-
-      final collections = await client.fetchCollections('lib-movies');
-
-      expect(collections.map((c) => c.id).toList(), ['collection-1', 'collection-2']);
-      expect(itemRequests.map((u) => u.queryParameters['StartIndex']).toList(), ['0', '1']);
-      expect(itemRequests.every((u) => u.queryParameters['Limit'] == '36'), isTrue);
-    });
-
     test('returns collections when the server exposes no boxsets view', () async {
       // #2373: Emby can serve BoxSets while /Users/{id}/Views lacks a
       // boxsets entry (deleted/never-created collections virtual folder).
@@ -4886,9 +4861,9 @@ void main() {
       final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
       addTearDown(client.close);
 
-      final collections = await client.fetchCollections('lib-movies');
+      final page = await client.fetchCollectionsPage('lib-movies');
 
-      expect(collections.map((c) => c.id).toList(), ['collection-1']);
+      expect(page.items.map((c) => c.id).toList(), ['collection-1']);
       expect(viewsRequested, isFalse);
     });
 
@@ -5174,7 +5149,7 @@ void main() {
     });
   });
 
-  group('JellyfinClient.fetchPlaylists filtering', () {
+  group('JellyfinClient.fetchPlaylistsPage filtering', () {
     JellyfinClient buildClient() {
       final mock = MockClient((req) async {
         if (req.url.path == '/Items') {
@@ -5198,9 +5173,9 @@ void main() {
     test('returns only requested playlist media type', () async {
       final client = buildClient();
 
-      final playlists = await client.fetchPlaylists(playlistType: 'video');
+      final page = await client.fetchPlaylistsPage(playlistType: 'video');
 
-      expect(playlists.map((p) => p.id), ['video-1']);
+      expect(page.items.map((p) => p.id), ['video-1']);
       client.close();
     });
 
@@ -5278,34 +5253,6 @@ void main() {
       expect(requests, hasLength(3));
       expect(requests.map((uri) => uri.queryParameters['StartIndex']), ['0', '100', '200']);
       expect(requests.every((uri) => uri.queryParameters['Limit'] == '100'), isTrue);
-      expect(requests.every((uri) => uri.queryParameters['MediaTypes'] == 'Video'), isTrue);
-    });
-
-    test('fetchPlaylists complete helper walks direct filtered pages linearly', () async {
-      final requests = <Uri>[];
-      final videos = List.generate(
-        300,
-        (i) => {'Id': 'video-$i', 'Name': 'Playlist $i', 'Type': 'Playlist', 'MediaType': 'Video'},
-      );
-      final mock = MockClient((req) async {
-        if (req.url.path != '/Items') return http.Response('not found', 404);
-        requests.add(req.url);
-        final start = int.parse(req.url.queryParameters['StartIndex']!);
-        final limit = int.parse(req.url.queryParameters['Limit']!);
-        return jsonResponse({
-          'Items': sliceFakePage(videos, start: start, size: limit),
-          'TotalRecordCount': videos.length,
-        });
-      });
-      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
-      addTearDown(client.close);
-
-      final playlists = await client.fetchPlaylists(playlistType: 'video');
-
-      expect(playlists.map((item) => item.id), List.generate(300, (i) => 'video-$i'));
-      expect(requests, hasLength(2));
-      expect(requests.map((uri) => uri.queryParameters['StartIndex']), ['0', '200']);
-      expect(requests.every((uri) => uri.queryParameters['Limit'] == '200'), isTrue);
       expect(requests.every((uri) => uri.queryParameters['MediaTypes'] == 'Video'), isTrue);
     });
 
@@ -5397,8 +5344,8 @@ void main() {
       );
       addTearDown(client.close);
 
-      final playlists = await client.fetchPlaylists(playlistType: 'video');
-      final uri = Uri.parse(playlists.single.thumbPath!);
+      final page = await client.fetchPlaylistsPage(playlistType: 'video');
+      final uri = Uri.parse(page.items.single.thumbPath!);
 
       expect(uri.path, '/jellyfin/Items/video-1/Images/Primary');
       expect(uri.queryParameters['tag'], 'tag 1');
@@ -5547,9 +5494,9 @@ void main() {
       );
       addTearDown(client.close);
 
-      final playlists = await client.fetchPlaylists(playlistType: 'video', smart: true);
+      final page = await client.fetchPlaylistsPage(playlistType: 'video', smart: true);
 
-      expect(playlists, isEmpty);
+      expect(page.items, isEmpty);
       expect(requestCount, 0);
     });
   });

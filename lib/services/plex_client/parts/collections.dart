@@ -10,12 +10,6 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     int? requestedSize,
   });
 
-  Future<List<PlexMetadataDto>> _fetchAllPages(
-    Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
-    // ignore: unused_element_parameter
-    AbortController? abort,
-  });
-
   Future<_LibraryContentResult> _getLibraryCollectionsPage(
     String sectionId, {
     int? start,
@@ -36,17 +30,6 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     );
   }
 
-  Future<List<PlexMetadataDto>> _getLibraryCollections(String sectionId) async {
-    try {
-      return await _fetchAllPages(
-        (start, size, abort) => _getLibraryCollectionsPage(sectionId, start: start, size: size, abort: abort),
-      );
-    } catch (e, st) {
-      appLogger.e('Failed to get library collections', error: e, stackTrace: st);
-      return [];
-    }
-  }
-
   Future<_LibraryContentResult> _getCollectionItems(
     String collectionId, {
     int? start,
@@ -65,16 +48,6 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
 
   Future<_LibraryContentResult> _getPersonMedia(String personId, {int? start, int? size, AbortController? abort}) =>
       _fetchPaginatedList('/library/people/$personId/media', start: start, size: size, abort: abort);
-
-  Future<List<PlexMetadataDto>> _fetchAllPersonMediaDto(String personId) {
-    return _fetchAllPages((start, size, abort) => _getPersonMedia(personId, start: start, size: size, abort: abort));
-  }
-
-  @override
-  Future<List<MediaItem>> fetchCollections(String libraryId) async {
-    final raw = await _getLibraryCollections(libraryId);
-    return raw.map(PlexMappers.mediaItem).toList();
-  }
 
   @override
   Future<LibraryPage<MediaItem>> fetchCollectionsPage(
@@ -128,16 +101,6 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
       totalCount: result.totalSize,
       offset: start ?? 0,
     );
-  }
-
-  @override
-  Future<List<MediaItem>> fetchPersonMedia(String personId) {
-    return fetchAllPersonMediaAsMediaItems(personId);
-  }
-
-  Future<List<MediaItem>> fetchAllPersonMediaAsMediaItems(String personId) async {
-    final raw = await _fetchAllPersonMediaDto(personId);
-    return raw.map(PlexMappers.mediaItem).toList();
   }
 
   @override

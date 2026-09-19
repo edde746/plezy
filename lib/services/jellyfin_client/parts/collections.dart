@@ -3,12 +3,6 @@ part of '../../jellyfin_client.dart';
 mixin _JellyfinCollectionMethods on _JellyfinClientInternals {
   static const int _collectionsPageSize = 36;
 
-  @override
-  Future<List<MediaItem>> fetchCollections(String libraryId) => drainPages<MediaItem>(
-    (start, size) => fetchCollectionsPage(libraryId, start: start, size: size),
-    pageSize: _collectionsPageSize,
-  );
-
   /// BoxSets live in a single server-wide collections folder, not under each
   /// library. Both dialects discard `ParentId` for a BoxSet-only query —
   /// Emby nulls it outright, Jellyfin does the same (10.11+ additionally

@@ -239,38 +239,6 @@ void main() {
     expect(page.items.single.libraryTitle, 'Movies');
   });
 
-  test('library collections are fetched in pages', () async {
-    final requests = <Uri>[];
-    final client = makeClient((request) async {
-      if (request.url.path == '/library/sections/7/collections') {
-        requests.add(request.url);
-        final start = request.url.queryParameters['X-Plex-Container-Start'];
-        return http.Response(
-          jsonEncode({
-            'MediaContainer': {
-              'size': 1,
-              'totalSize': 2,
-              'Metadata': [
-                {'ratingKey': start == '0' ? '99' : '100', 'type': 'collection', 'title': 'Collection'},
-              ],
-            },
-          }),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      return http.Response('not found', 404);
-    });
-    addTearDown(client.close);
-
-    final collections = await client.fetchCollections('7');
-
-    expect(collections.map((item) => item.id).toList(), ['99', '100']);
-    expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']).toList(), ['0', '1']);
-    expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
-    expect(requests.every((u) => u.queryParameters['includeGuids'] == '1'), isTrue);
-  });
-
   test('library collection page passes requested pagination params', () async {
     Uri? requestUri;
     final client = makeClient((request) async {
@@ -413,53 +381,6 @@ void main() {
     expect(page.items.single.id, '120');
     expect(page.totalCount, 50);
     expect(page.offset, 20);
-  });
-
-  test('fetchPlaylists walks playlist pages', () async {
-    final requests = <Uri>[];
-    final client = makeClient((request) async {
-      if (request.url.path == '/playlists') {
-        requests.add(request.url);
-        final start = int.parse(request.url.queryParameters['X-Plex-Container-Start'] ?? '0');
-        final metadata = start == 0
-            ? [
-                {'ratingKey': '1', 'type': 'playlist', 'playlistType': 'video', 'title': 'One'},
-                {'ratingKey': '2', 'type': 'playlist', 'playlistType': 'video', 'title': 'Two'},
-              ]
-            : [
-                {'ratingKey': '3', 'type': 'playlist', 'playlistType': 'video', 'title': 'Three'},
-              ];
-        return http.Response(
-          jsonEncode({
-            'MediaContainer': {'size': metadata.length, 'totalSize': 3, 'Metadata': metadata},
-          }),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      return http.Response('not found', 404);
-    });
-    addTearDown(client.close);
-
-    final playlists = await client.fetchPlaylists();
-
-    expect(playlists.map((p) => p.id), ['1', '2', '3']);
-    expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']), ['0', '2']);
-    expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
-  });
-
-  test('fetchPlaylists returns empty on list failure', () async {
-    final client = makeClient((request) async {
-      if (request.url.path == '/playlists') {
-        return http.Response('server error', 500);
-      }
-      return http.Response('not found', 404);
-    });
-    addTearDown(client.close);
-
-    final playlists = await client.fetchPlaylists();
-
-    expect(playlists, isEmpty);
   });
 
   test('playlist item page passes requested pagination params', () async {

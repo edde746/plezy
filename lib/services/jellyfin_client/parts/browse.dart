@@ -1169,7 +1169,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// collection containing a Series plays its episodes instead of the
   /// unplayable Series entry, a playlist mixing both comes through the same
   /// path, and an album/artist/audio-playlist expands to its tracks.
-  /// Direct browsing keeps using [fetchChildren] / [fetchPlaylistItems]
+  /// Direct browsing keeps using [fetchChildren] / [fetchPlaylistPage]
   /// since those preserve the container shape (Series rows, PlaylistItemId).
   ///
   @override
@@ -1579,12 +1579,6 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<List<MediaItem>> fetchPersonMedia(String personId) => drainPages<MediaItem>(
-    (start, size) => fetchPersonMediaPage(personId, start: start, size: size),
-    pageSize: _pagedListPageSize,
-  );
-
-  @override
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
     String personId, {
     int? start,
@@ -1630,25 +1624,8 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     }
 
     final results = await Future.wait([
-      _fetchItemsArray(paths.resumeItems, {
-        'userId': connection.userId,
-        'Limit': ?count?.toString(),
-        'Fields': _hubRowFields,
-        'MediaTypes': 'Video',
-        'Recursive': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _continueWatchingRetry),
-      _safeFetchItemsArray('/Shows/NextUp', {
-        'userId': connection.userId,
-        'Limit': ?count?.toString(),
-        'Fields': _hubRowFields,
-        'EnableResumable': 'false',
-        'NextUpDateCutoff': _nextUpDateCutoff(),
-        if (sendNextUpRewatching) 'EnableRewatching': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _continueWatchingRetry),
+      _fetchItemsArray(paths.resumeItems, _resumeItemsQuery(limit: count), retry: _continueWatchingRetry),
+      _safeFetchItemsArray('/Shows/NextUp', _nextUpQuery(limit: count), retry: _continueWatchingRetry),
     ]);
 
     return _mergeContinueWatchingAndNextUp(
@@ -1749,7 +1726,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     HubFetchDiagnostics? diagnostics,
   }) async {
     final latestFuture = _safeFetchItemsArray(
-      '/Users/${_segment(connection.userId)}/Items/Latest',
+      _latestItemsPath,
       {
         'Limit': limit.toString(),
         'ParentId': ?parentId,
@@ -1783,33 +1760,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     if (dialect.resumeReturnsOnlyStartedItems) {
       resumeRowsFuture = _safeFetchItemsArray(
         paths.resumeItems,
-        {
-          'userId': connection.userId,
-          'ParentId': ?parentId,
-          'Limit': limit.toString(),
-          'Fields': _hubRowFields,
-          'MediaTypes': 'Video',
-          'Recursive': 'true',
-          'EnableTotalRecordCount': 'false',
-          ...jellyfinImageQueryParameters,
-        },
+        _resumeItemsQuery(limit: limit, parentId: parentId),
         retry: retry,
         diagnostics: diagnostics,
       );
       nextUpRowsFuture = includeNextUp
           ? _safeFetchItemsArray(
               '/Shows/NextUp',
-              {
-                'userId': connection.userId,
-                'ParentId': ?parentId,
-                'Limit': limit.toString(),
-                'Fields': _hubRowFields,
-                'EnableResumable': 'false',
-                'NextUpDateCutoff': _nextUpDateCutoff(),
-                if (sendNextUpRewatching) 'EnableRewatching': 'true',
-                'EnableTotalRecordCount': 'false',
-                ...jellyfinImageQueryParameters,
-              },
+              _nextUpQuery(limit: limit, parentId: parentId),
               retry: retry,
               diagnostics: diagnostics,
             )
@@ -1855,14 +1813,8 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     HubFetchDiagnostics? diagnostics,
   }) async {
     final latestFuture = _safeFetchItemsArray(
-      '/Users/${_segment(connection.userId)}/Items/Latest',
-      {
-        'Limit': limit.toString(),
-        'ParentId': libraryId,
-        'Fields': _musicAlbumRowFields,
-        'EnableUserData': 'false',
-        ...jellyfinImageQueryParameters,
-      },
+      _latestItemsPath,
+      _latestAlbumsQuery(limit: limit, parentId: libraryId),
       retry: _libraryHubRetry,
       diagnostics: diagnostics,
     );
@@ -1881,29 +1833,17 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     if (!includePlaybackHubs) {
       return [latestAlbumsHub(await latestFuture)].where((hub) => hub.items.isNotEmpty).toList();
     }
-    final playedParams = <String, String>{
-      'userId': connection.userId,
-      'ParentId': libraryId,
-      'IncludeItemTypes': 'Audio',
-      'Recursive': 'true',
-      'Filters': 'IsPlayed',
-      'SortOrder': 'Descending',
-      'Limit': limit.toString(),
-      'Fields': _musicTrackRowFields,
-      'EnableTotalRecordCount': 'false',
-      ...jellyfinImageQueryParameters,
-    };
     final results = await Future.wait([
       latestFuture,
       _safeFetchItemsArray(
         '/Items',
-        {...playedParams, 'SortBy': 'DatePlayed'},
+        _playedTracksQuery(sortBy: 'DatePlayed', limit: limit, parentId: libraryId),
         retry: _libraryHubRetry,
         diagnostics: diagnostics,
       ),
       _safeFetchItemsArray(
         '/Items',
-        {...playedParams, 'SortBy': 'PlayCount'},
+        _playedTracksQuery(sortBy: 'PlayCount', limit: limit, parentId: libraryId),
         retry: _libraryHubRetry,
         diagnostics: diagnostics,
       ),
@@ -1996,14 +1936,8 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         // Latest groups music into albums but does not expose StartIndex.
         if (offset > 0) return LibraryPage<MediaItem>(items: const [], totalCount: offset, offset: offset);
         return _safeFetchMediaPage(
-          '/Users/${_segment(connection.userId)}/Items/Latest',
-          {
-            'Limit': effectiveLimit,
-            'Fields': _musicAlbumRowFields,
-            'EnableUserData': 'false',
-            'ParentId': ?parentId,
-            ...jellyfinImageQueryParameters,
-          },
+          _latestItemsPath,
+          _latestAlbumsQuery(limit: pageSize, parentId: parentId),
           offset: offset,
           requestedSize: pageSize,
           singlePage: true,
@@ -2020,16 +1954,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         }
         return _safeFetchMediaPage(
           paths.resumeItems,
-          {
-            'userId': connection.userId,
-            'StartIndex': offset.toString(),
-            'Limit': effectiveLimit,
-            'Fields': _hubRowFields,
-            'Recursive': 'true',
-            'EnableTotalRecordCount': 'true',
-            if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
-            ...jellyfinImageQueryParameters,
-          },
+          _resumeItemsQuery(
+            limit: pageSize,
+            parentId: parentId,
+            start: offset,
+            totalCount: true,
+            videoOnly: parentId == null,
+          ),
           offset: offset,
           requestedSize: pageSize,
           abort: abort,
@@ -2038,18 +1969,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         if (dialect.supportsGlobalNextUp) {
           return _safeFetchMediaPage(
             '/Shows/NextUp',
-            {
-              'userId': connection.userId,
-              'StartIndex': offset.toString(),
-              'Limit': effectiveLimit,
-              'Fields': _hubRowFields,
-              'ParentId': ?parentId,
-              'EnableResumable': 'false',
-              'NextUpDateCutoff': _nextUpDateCutoff(),
-              if (sendNextUpRewatching) 'EnableRewatching': 'true',
-              'EnableTotalRecordCount': 'true',
-              ...jellyfinImageQueryParameters,
-            },
+            _nextUpQuery(limit: pageSize, parentId: parentId, start: offset, totalCount: true),
             offset: offset,
             requestedSize: pageSize,
             abort: abort,
@@ -2067,20 +1987,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       case 'mostplayed':
         return _safeFetchMediaPage(
           '/Items',
-          {
-            'userId': connection.userId,
-            'ParentId': ?parentId,
-            'IncludeItemTypes': 'Audio',
-            'Recursive': 'true',
-            'Filters': 'IsPlayed',
-            'SortBy': tail == 'mostplayed' ? 'PlayCount' : 'DatePlayed',
-            'SortOrder': 'Descending',
-            'StartIndex': offset.toString(),
-            'Limit': effectiveLimit,
-            'Fields': _musicTrackRowFields,
-            'EnableTotalRecordCount': 'true',
-            ...jellyfinImageQueryParameters,
-          },
+          _playedTracksQuery(
+            sortBy: tail == 'mostplayed' ? 'PlayCount' : 'DatePlayed',
+            limit: pageSize,
+            parentId: parentId,
+            start: offset,
+            totalCount: true,
+          ),
           offset: offset,
           requestedSize: pageSize,
           abort: abort,
@@ -2264,14 +2177,79 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// removed row to the shelf forever (#2003). The response is split by
   /// [_splitEmbyResumeRows] instead: previews slice the halves and the see-all
   /// surfaces page them in memory.
-  Map<String, dynamic> _embyResumeWindowQuery({String? parentId}) => {
+  Map<String, String> _embyResumeWindowQuery({String? parentId}) =>
+      _resumeItemsQuery(limit: _embyResumeWindowLimit, parentId: parentId);
+
+  String get _latestItemsPath => '/Users/${_segment(connection.userId)}/Items/Latest';
+
+  /// Resume-route query behind the Continue Watching shelf, hub preview and
+  /// see-all page (and, via [_embyResumeWindowQuery], the Emby window).
+  /// [start]/[totalCount] are the see-all paging extras; [videoOnly] adds the
+  /// `MediaTypes` filter.
+  Map<String, String> _resumeItemsQuery({
+    int? limit,
+    String? parentId,
+    int? start,
+    bool totalCount = false,
+    bool videoOnly = true,
+  }) => {
     'userId': connection.userId,
     'ParentId': ?parentId,
-    'Limit': _embyResumeWindowLimit.toString(),
+    'StartIndex': ?start?.toString(),
+    'Limit': ?limit?.toString(),
     'Fields': _hubRowFields,
-    'MediaTypes': 'Video',
+    if (videoOnly) 'MediaTypes': 'Video',
     'Recursive': 'true',
-    'EnableTotalRecordCount': 'false',
+    'EnableTotalRecordCount': totalCount ? 'true' : 'false',
+    ...jellyfinImageQueryParameters,
+  };
+
+  /// `/Shows/NextUp` query behind the Next Up shelf, hub preview and see-all
+  /// page: resumable episodes are excluded (they belong to the resume shelf)
+  /// and the server-side scan is bounded by [_nextUpDateCutoff].
+  Map<String, String> _nextUpQuery({int? limit, String? parentId, int? start, bool totalCount = false}) => {
+    'userId': connection.userId,
+    'ParentId': ?parentId,
+    'StartIndex': ?start?.toString(),
+    'Limit': ?limit?.toString(),
+    'Fields': _hubRowFields,
+    'EnableResumable': 'false',
+    'NextUpDateCutoff': _nextUpDateCutoff(),
+    if (sendNextUpRewatching) 'EnableRewatching': 'true',
+    'EnableTotalRecordCount': totalCount ? 'true' : 'false',
+    ...jellyfinImageQueryParameters,
+  };
+
+  /// `/Users/{id}/Items/Latest` query behind the Latest Albums row and its
+  /// see-all page — see [_musicAlbumRowFields] for the slim field set.
+  Map<String, String> _latestAlbumsQuery({required int limit, String? parentId}) => {
+    'Limit': limit.toString(),
+    'ParentId': ?parentId,
+    'Fields': _musicAlbumRowFields,
+    'EnableUserData': 'false',
+    ...jellyfinImageQueryParameters,
+  };
+
+  /// `/Items` query behind the Recently Played / Most Played rows and their
+  /// see-all pages: played tracks only, descending by [sortBy].
+  Map<String, String> _playedTracksQuery({
+    required String sortBy,
+    required int limit,
+    String? parentId,
+    int? start,
+    bool totalCount = false,
+  }) => {
+    'userId': connection.userId,
+    'ParentId': ?parentId,
+    'IncludeItemTypes': 'Audio',
+    'Recursive': 'true',
+    'Filters': 'IsPlayed',
+    'SortBy': sortBy,
+    'SortOrder': 'Descending',
+    'StartIndex': ?start?.toString(),
+    'Limit': limit.toString(),
+    'Fields': _musicTrackRowFields,
+    'EnableTotalRecordCount': totalCount ? 'true' : 'false',
     ...jellyfinImageQueryParameters,
   };
 

@@ -800,41 +800,34 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     /// the selected subtitle into a transcode instead of serving it alongside.
     bool burnSubtitles = false,
   }) async {
-    final query = <String, String>{
-      'userId': connection.userId,
-      'MaxStreamingBitrate': ?maxStreamingBitrate?.toString(),
+    // The same negotiation fields go out stringified in the query string and
+    // typed in the body.
+    final negotiation = <String, Object>{
+      'MaxStreamingBitrate': ?maxStreamingBitrate,
       'MediaSourceId': ?mediaSourceId,
       'LiveStreamId': ?liveStreamId,
-      'StartTimeTicks': ?startTimeTicks?.toString(),
-      'AudioStreamIndex': ?audioStreamIndex?.toString(),
-      'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
-      'AutoOpenLiveStream': ?autoOpenLiveStream?.toString(),
-      'EnableDirectPlay': ?enableDirectPlay?.toString(),
-      'EnableDirectStream': ?enableDirectStream?.toString(),
-      'EnableTranscoding': ?enableTranscoding?.toString(),
-      'AllowVideoStreamCopy': ?allowVideoStreamCopy?.toString(),
-      'AllowAudioStreamCopy': ?allowAudioStreamCopy?.toString(),
+      'StartTimeTicks': ?startTimeTicks,
+      'AudioStreamIndex': ?audioStreamIndex,
+      'SubtitleStreamIndex': ?subtitleStreamIndex,
+      'AutoOpenLiveStream': ?autoOpenLiveStream,
+      'EnableDirectPlay': ?enableDirectPlay,
+      'EnableDirectStream': ?enableDirectStream,
+      'EnableTranscoding': ?enableTranscoding,
+      'AllowVideoStreamCopy': ?allowVideoStreamCopy,
+      'AllowAudioStreamCopy': ?allowAudioStreamCopy,
     };
     final response = await _http.post(
       '/Items/${_segment(itemId)}/PlaybackInfo',
-      queryParameters: query,
+      queryParameters: {
+        'userId': connection.userId,
+        for (final MapEntry(:key, :value) in negotiation.entries) key: value.toString(),
+      },
       // Opening a cold tuner can delay response headers beyond the normal
       // connect budget (#2274). Keep VOD and metadata-only requests unchanged.
       timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tune : null,
       body: {
         'UserId': connection.userId,
-        'MaxStreamingBitrate': ?maxStreamingBitrate,
-        'MediaSourceId': ?mediaSourceId,
-        'LiveStreamId': ?liveStreamId,
-        'StartTimeTicks': ?startTimeTicks,
-        'AudioStreamIndex': ?audioStreamIndex,
-        'SubtitleStreamIndex': ?subtitleStreamIndex,
-        'AutoOpenLiveStream': ?autoOpenLiveStream,
-        'EnableDirectPlay': ?enableDirectPlay,
-        'EnableDirectStream': ?enableDirectStream,
-        'EnableTranscoding': ?enableTranscoding,
-        'AllowVideoStreamCopy': ?allowVideoStreamCopy,
-        'AllowAudioStreamCopy': ?allowAudioStreamCopy,
+        ...negotiation,
         'DeviceProfile': <String, Object?>{
           'Name': 'Plezy',
           'MaxStreamingBitrate': ?maxStreamingBitrate,

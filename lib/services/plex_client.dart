@@ -376,7 +376,7 @@ class PlexClient
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
         _PlexMetadataEditMethods
-    implements MediaServerClient, SeasonEpisodePagingClient, ScopedMediaServerClient, GracefullyCloseable {
+    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
   @override
   PlexConfig config;
 
@@ -1040,9 +1040,6 @@ class PlexClient
     }
   }
 
-  @override
-  Future<bool> isHealthy() async => (await checkHealth()) == HealthStatus.online;
-
   /// Get running background tasks (thumbnail generation, credit detection, etc.)
   Future<List<PlexActivity>> getActivities({AbortController? abort}) async {
     try {
@@ -1348,9 +1345,9 @@ class PlexClient
   /// Adapts Plex's [_LibraryContentResult] onto the shared [drainPages] drain,
   /// so it stops as soon as [_LibraryContentResult.totalSize] is reached or a
   /// page returns no items. Errors propagate.
-  @override
   Future<List<PlexMetadataDto>> _fetchAllPages(
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
+    // ignore: unused_element_parameter
     AbortController? abort,
   }) {
     return drainPages<PlexMetadataDto>((start, size) async {
@@ -3079,14 +3076,8 @@ class PlexClient
       'X-Plex-Features': 'external-media,indirect-media',
       'X-Plex-Model': 'standalone',
       'X-Plex-Language': 'en',
-      'X-Plex-Product': config.product,
-      'X-Plex-Version': config.version,
-      'X-Plex-Client-Identifier': config.clientIdentifier,
-      'X-Plex-Platform': _transcodePlatformName(),
       'X-Plex-Client-Profile-Name': 'Generic',
-      if (config.device != null) 'X-Plex-Device': config.device!,
-      if (config.deviceName != null) 'X-Plex-Device-Name': config.deviceName!,
-      if (config.token != null) 'X-Plex-Token': config.token!,
+      ..._transcodeClientParams(),
     };
   }
 
@@ -3143,15 +3134,21 @@ class PlexClient
       'session': transcodeSessionId,
       'X-Plex-Session-Identifier': sessionIdentifier,
       'X-Plex-Client-Profile-Extra': clientProfileExtra,
-      'X-Plex-Product': config.product,
-      'X-Plex-Version': config.version,
-      'X-Plex-Client-Identifier': config.clientIdentifier,
-      'X-Plex-Platform': _transcodePlatformName(),
-      if (config.device != null) 'X-Plex-Device': config.device!,
-      if (config.deviceName != null) 'X-Plex-Device-Name': config.deviceName!,
-      if (config.token != null) 'X-Plex-Token': config.token!,
+      ..._transcodeClientParams(),
     };
   }
+
+  /// Client identity every transcode decision/start request carries, shared by
+  /// the video and music parameter builders.
+  Map<String, String> _transcodeClientParams() => <String, String>{
+    'X-Plex-Product': config.product,
+    'X-Plex-Version': config.version,
+    'X-Plex-Client-Identifier': config.clientIdentifier,
+    'X-Plex-Platform': _transcodePlatformName(),
+    if (config.device != null) 'X-Plex-Device': config.device!,
+    if (config.deviceName != null) 'X-Plex-Device-Name': config.deviceName!,
+    if (config.token != null) 'X-Plex-Token': config.token!,
+  };
 
   @visibleForTesting
   Map<String, String> buildMusicTranscodeParamsForTesting({
@@ -3404,17 +3401,6 @@ class PlexClient
       totalCount: result.totalSize,
       offset: start ?? 0,
     );
-  }
-
-  @override
-  Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
-    String seriesId,
-    String seasonId, {
-    int? start,
-    int? size,
-    AbortController? abort,
-  }) {
-    return fetchChildrenPage(seasonId, start: start, size: size, abort: abort);
   }
 
   @override

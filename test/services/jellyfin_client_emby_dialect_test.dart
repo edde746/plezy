@@ -80,12 +80,10 @@ void main() {
       addTearDown(jellyfin.close);
 
       expect(await emby.checkHealth(), HealthStatus.online);
-      expect(await emby.isHealthy(), isTrue);
       expect(await jellyfin.checkHealth(), HealthStatus.online);
-      expect(await jellyfin.isHealthy(), isTrue);
 
-      expect(embyRequests.log, ['GET /Users/user-1?', 'GET /Users/user-1?']);
-      expect(jellyfinRequests.log, ['GET /Users/Me?', 'GET /Users/Me?']);
+      expect(embyRequests.log, ['GET /Users/user-1?']);
+      expect(jellyfinRequests.log, ['GET /Users/Me?']);
       expect(embyRequests.log, isNot(contains('GET /Users/Me?')));
       expect(embyRequests.requests.every((request) => request.body.isEmpty), isTrue);
       expect(jellyfinRequests.requests.every((request) => request.body.isEmpty), isTrue);

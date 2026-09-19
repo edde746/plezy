@@ -135,10 +135,6 @@ abstract class MediaServerClient {
   /// distinctly from a generic network failure.
   Future<HealthStatus> checkHealth();
 
-  /// Convenience predicate over [checkHealth] for callers that only need a
-  /// boolean. Treats both `offline` and `authError` as unhealthy.
-  Future<bool> isHealthy() async => (await checkHealth()) == HealthStatus.online;
-
   /// Server-reported unique identifier (Plex `machineIdentifier`,
   /// Jellyfin `Id`). Returns `null` if the probe fails.
   Future<String?> getMachineIdentifier();
@@ -396,9 +392,6 @@ abstract class MediaServerClient {
   /// scope for this neutral surface.
   Future<List<MediaItem>> fetchExtras(String id);
 
-  /// Media featuring a specific person/actor.
-  Future<List<MediaItem>> fetchPersonMedia(String personId);
-
   /// Page through media featuring a specific person/actor.
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(String personId, {int? start, int? size, AbortController? abort});
 
@@ -447,11 +440,8 @@ abstract class MediaServerClient {
   /// throw [UnsupportedError]. Throws [MediaServerHttpException] on failure.
   Future<void> setFavorite(MediaItem item, bool isFavorite);
 
-  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart});
-
   /// Page through server playlists. Used by the library Playlists tab so large
-  /// servers can render incrementally; [fetchPlaylists] remains the complete
-  /// list helper for dialogs and bulk operations.
+  /// servers can render incrementally.
   Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
     String playlistType = 'video',
     bool? smart,
@@ -460,10 +450,8 @@ abstract class MediaServerClient {
     AbortController? abort,
   });
 
-  /// Metadata only — items are fetched via [fetchPlaylistItems].
+  /// Metadata only — items are fetched via [fetchPlaylistPage].
   Future<MediaPlaylist?> fetchPlaylistMetadata(String id);
-
-  Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100});
 
   /// Page through items in [id]. Backends preserve playlist order and include
   /// per-playlist item ids where the server exposes them.
@@ -483,7 +471,7 @@ abstract class MediaServerClient {
   Future<bool> deletePlaylist(MediaPlaylist playlist);
 
   /// Move an item to a new position within a playlist. The item must have come
-  /// from this client's [fetchPlaylistItems] (i.e. carry a per-playlist id).
+  /// from this client's [fetchPlaylistPage] (i.e. carry a per-playlist id).
   ///
   /// [newIndex]  - 0-based target position after the move
   /// [afterItem] - the item that should sit immediately before [item] after
@@ -503,16 +491,12 @@ abstract class MediaServerClient {
   /// the same caveats about backend tagging and the per-playlist id.
   Future<bool> removeFromPlaylist({required String playlistId, required MediaItem item});
 
-  /// Collections in [libraryId]. Plex hits `/library/sections/{id}/collections`;
-  /// Jellyfin/Emby keep BoxSets in one server-wide root, so this lists every
-  /// collection regardless of [libraryId].
-  /// Each result carries `kind == MediaKind.collection`.
-  Future<List<MediaItem>> fetchCollections(String libraryId);
-
-  /// Page through collections in [libraryId]. Used by the library Collections
-  /// tab so large Jellyfin/Plex servers can render incrementally while the
-  /// user scrolls. [fetchCollections] remains the complete-list helper for
-  /// dialogs and bulk operations.
+  /// Page through collections in [libraryId]. Plex hits
+  /// `/library/sections/{id}/collections`; Jellyfin/Emby keep BoxSets in one
+  /// server-wide root, so this lists every collection regardless of
+  /// [libraryId]. Each result carries `kind == MediaKind.collection`. Used by
+  /// the library Collections tab so large servers can render incrementally
+  /// while the user scrolls.
   Future<LibraryPage<MediaItem>> fetchCollectionsPage(
     String libraryId, {
     int? start,

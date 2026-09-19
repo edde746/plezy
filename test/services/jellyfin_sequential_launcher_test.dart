@@ -82,12 +82,6 @@ class _RecordingJellyfinClient implements JellyfinClient {
   }
 
   @override
-  Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100}) async {
-    final page = await fetchPlaylistPage(id, start: offset, size: limit);
-    return page.items;
-  }
-
-  @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
     final offset = start ?? 0;
     final limit = size ?? fakeMediaPageSize;
