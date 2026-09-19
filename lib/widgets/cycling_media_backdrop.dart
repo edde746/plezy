@@ -330,6 +330,13 @@ class _BackdropArtworkCrossfade extends StatefulWidget {
 
 class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> with SingleTickerProviderStateMixin {
   late final AnimationController _fade;
+
+  /// The key this state last acted on. Not interchangeable with
+  /// `oldWidget.artworkKey`: the element can be updated more than once between
+  /// the frames this state reacts to, so `oldWidget` can still carry a key this
+  /// state has already transitioned away from, which would restart a finished
+  /// fade and leave both layers painted.
+  late Object? _currentKey = widget.artworkKey;
   late ImageProvider? _base = widget.pending ? null : widget.image;
   late Object? _baseErrorKey = widget.imageErrorKey;
   ImageProvider? _incoming;
@@ -347,7 +354,7 @@ class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> wi
   void didUpdateWidget(covariant _BackdropArtworkCrossfade oldWidget) {
     super.didUpdateWidget(oldWidget);
     _fade.duration = widget.duration;
-    if (widget.artworkKey == oldWidget.artworkKey) {
+    if (widget.artworkKey == _currentKey) {
       if (widget.pending) return;
       if (oldWidget.pending) {
         _transitionToIncoming();
@@ -360,6 +367,7 @@ class _BackdropArtworkCrossfadeState extends State<_BackdropArtworkCrossfade> wi
       return;
     }
 
+    _currentKey = widget.artworkKey;
     if (widget.pending) {
       if (_base == null && _incoming != null && _fade.value == 1) {
         _base = _incoming;
