@@ -107,6 +107,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
           currentGeneration: () => _live.timelineGeneration,
           isMounted: () => mounted,
           commit: (update) {
+            final hadSeekWindow = _live.captureBuffer != null;
             _setPlayerState(() {
               final playbackStream = update.playbackStream;
               if (playbackStream != null &&
@@ -122,6 +123,12 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
                     window.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
               }
             });
+            // Time-shift arrived with this heartbeat (Plex publishes the
+            // capture buffer a beat after the tune): the session can now
+            // advertise ±skip through it.
+            if (!hadSeekWindow && _live.captureBuffer != null) {
+              unawaited(_mediaControls.syncAvailability());
+            }
           },
         ),
       );
@@ -159,6 +166,21 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       return null;
     }
     return client.liveTv.startPlayback(channel.key, dvrKey: serverInfo.dvrKey, quality: _selectedQualityPreset);
+  }
+
+  /// The item that stands in for [channel] once a zap adopts its session.
+  ///
+  /// Resolves the channel's server the same way [_startLiveSession] does, so a
+  /// cross-server channel list cannot leave every `_currentMetadata` consumer
+  /// describing the channel that was tuned first.
+  MediaItem _liveChannelItem(LiveTvChannel channel) {
+    final multiServer = context.read<MultiServerProvider>();
+    final serverInfo = liveTvServerInfoForChannel(multiServer, channel);
+    // An unscoped channel names no server of its own; the live TV server the
+    // tune would pick is the one that can serve its logo.
+    final serverId = serverInfo?.serverId ?? channel.serverId;
+    final client = serverId == null ? null : multiServer.getClientForServer(ServerId(serverId));
+    return liveTvChannelItem(channel, backend: client?.backend ?? _currentMetadata.backend, serverId: serverId);
   }
 
   /// Retry the live stream with degraded direct-stream settings.
@@ -548,7 +570,23 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _setPlayerState(() {
         _live.channelIndex = newIndex;
         _live.channelName = channel.displayName;
+        _currentMetadata = _liveChannelItem(channel);
       });
+
+      // The screen now describes a different channel: republish before the
+      // heartbeats restart, or the OS controls, the client lookups and the
+      // scoped player preferences stay pinned to the channel tuned first.
+      final mediaControlsManager = _mediaControlsManager;
+      if (mediaControlsManager != null) {
+        unawaited(
+          mediaControlsManager.updateMetadata(
+            metadata: _currentMetadata,
+            client: _getOnlineMediaServerClient(context),
+            duration: null,
+          ),
+        );
+      }
+      unawaited(_mediaControls.syncAvailability());
 
       // Restart timeline heartbeats for the new session
       _startLiveTimelineUpdates();

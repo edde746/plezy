@@ -920,6 +920,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     player: () => player,
     isMounted: () => mounted && !_shuttingDown,
     isLive: widget.isLive,
+    hasLiveSeekWindow: () => _live.captureBuffer != null,
     shouldSkipForPip: () => _shouldSkipForPip,
     isPlayerInitialized: () => _isPlayerInitialized,
     metadata: () => _currentMetadata,
@@ -1206,6 +1207,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
       _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
+
+  /// The service layer without standing up the whole player initialization —
+  /// the entry point for asserting what a screen publishes to the OS media
+  /// session.
+  @visibleForTesting
+  Future<void> debugInitializeServicesForTesting() => _initializeServices();
 
   /// Adjacency otherwise arrives from the backend's queue containers, which
   /// no widget test stands up; this seeds what [_loadAdjacentEpisodes] would
