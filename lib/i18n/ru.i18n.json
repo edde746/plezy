@@ -1082,7 +1082,14 @@
     "failedToVerifyToken": "Не удалось проверить токен: ${error}",
     "failedToSwitchProfile": "Не удалось переключиться на ${displayName}",
     "failedToDeleteProfile": "Не удалось удалить ${displayName}",
-    "failedToRate": "Не удалось обновить оценку"
+    "failedToRate": "Не удалось обновить оценку",
+    "reasonTimedOut": "истекло время ожидания подключения",
+    "reasonUnreachable": "не удалось связаться с сервером",
+    "reasonRefused": "сервер отклонил запрос",
+    "reasonNotFound": "элемента больше нет на сервере",
+    "reasonServerError": "сервер сообщил об ошибке",
+    "reasonCancelled": "запрос был отменён",
+    "reasonUnexpected": "произошла непредвиденная ошибка"
   },
   "libraries": {
     "title": "Библиотеки",
@@ -1529,7 +1536,9 @@
     "dayAtTime": "${day} в ${time}",
     "invalidPlaybackData": "${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире",
     "failedToStartChannel": "Не удалось запустить канал в прямом эфире",
-    "failedToBuildStreamUrl": "Не удалось сформировать URL потока"
+    "failedToBuildStreamUrl": "Не удалось сформировать URL потока",
+    "playbackStartFailed": "Не удалось запустить канал: ${reason}",
+    "channelSwitchFailed": "Не удалось переключить канал: ${reason}"
   },
   "collections": {
     "title": "Коллекции",

@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Échec de la vérification du jeton : ${error}",
     "failedToSwitchProfile": "Impossible de changer de profil vers ${displayName}",
     "failedToDeleteProfile": "Impossible de supprimer ${displayName}",
-    "failedToRate": "Impossible de mettre à jour la note"
+    "failedToRate": "Impossible de mettre à jour la note",
+    "reasonTimedOut": "le délai d'attente de la connexion a été dépassé",
+    "reasonUnreachable": "le serveur n'a pas pu être atteint",
+    "reasonRefused": "le serveur a refusé la requête",
+    "reasonNotFound": "l'élément ne se trouve plus sur le serveur",
+    "reasonServerError": "le serveur a signalé une erreur",
+    "reasonCancelled": "la requête a été annulée",
+    "reasonUnexpected": "une erreur inattendue s'est produite"
   },
   "libraries": {
     "title": "Bibliothèques",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} à ${time}",
     "invalidPlaybackData": "${product} a renvoyé des données de lecture de TV en direct non valides",
     "failedToStartChannel": "Impossible de lancer la chaîne en direct",
-    "failedToBuildStreamUrl": "Impossible de générer l’URL du flux"
+    "failedToBuildStreamUrl": "Impossible de générer l’URL du flux",
+    "playbackStartFailed": "Impossible de démarrer la chaîne : ${reason}",
+    "channelSwitchFailed": "Impossible de changer de chaîne : ${reason}"
   },
   "collections": {
     "title": "Collections",

@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Token-Verifizierung fehlgeschlagen: ${error}",
     "failedToSwitchProfile": "Profilwechsel zu ${displayName} fehlgeschlagen",
     "failedToDeleteProfile": "Löschen von ${displayName} fehlgeschlagen",
-    "failedToRate": "Bewertung konnte nicht aktualisiert werden"
+    "failedToRate": "Bewertung konnte nicht aktualisiert werden",
+    "reasonTimedOut": "Zeitüberschreitung bei der Verbindung",
+    "reasonUnreachable": "der Medienserver konnte nicht erreicht werden",
+    "reasonRefused": "der Medienserver hat die Anfrage abgelehnt",
+    "reasonNotFound": "das Element befindet sich nicht mehr auf dem Medienserver",
+    "reasonServerError": "der Medienserver hat einen Fehler gemeldet",
+    "reasonCancelled": "die Anfrage wurde abgebrochen",
+    "reasonUnexpected": "ein unerwarteter Fehler ist aufgetreten"
   },
   "libraries": {
     "title": "Mediatheken",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} um ${time}",
     "invalidPlaybackData": "${product} hat ungültige Live-TV-Wiedergabedaten zurückgegeben",
     "failedToStartChannel": "Der Live-Sender konnte nicht gestartet werden",
-    "failedToBuildStreamUrl": "Die Stream-URL konnte nicht erstellt werden"
+    "failedToBuildStreamUrl": "Die Stream-URL konnte nicht erstellt werden",
+    "playbackStartFailed": "Sender konnte nicht gestartet werden: ${reason}",
+    "channelSwitchFailed": "Sender konnte nicht gewechselt werden: ${reason}"
   },
   "collections": {
     "title": "Sammlungen",

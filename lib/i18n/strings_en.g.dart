@@ -3060,6 +3060,27 @@ class Translations$errors$en {
 
 	/// en: 'Couldn't update rating'
 	String get failedToRate => 'Couldn\'t update rating';
+
+	/// en: 'the connection timed out'
+	String get reasonTimedOut => 'the connection timed out';
+
+	/// en: 'the server could not be reached'
+	String get reasonUnreachable => 'the server could not be reached';
+
+	/// en: 'the server refused the request'
+	String get reasonRefused => 'the server refused the request';
+
+	/// en: 'the item is no longer on the server'
+	String get reasonNotFound => 'the item is no longer on the server';
+
+	/// en: 'the server reported an error'
+	String get reasonServerError => 'the server reported an error';
+
+	/// en: 'the request was cancelled'
+	String get reasonCancelled => 'the request was cancelled';
+
+	/// en: 'an unexpected error occurred'
+	String get reasonUnexpected => 'an unexpected error occurred';
 }
 
 // Path: libraries
@@ -3782,6 +3803,12 @@ class Translations$liveTv$en {
 
 	/// en: 'Could not build the stream URL'
 	String get failedToBuildStreamUrl => 'Could not build the stream URL';
+
+	/// en: 'Couldn't start the channel: ${reason}'
+	String playbackStartFailed({required Object reason}) => 'Couldn\'t start the channel: ${reason}';
+
+	/// en: 'Couldn't switch channel: ${reason}'
+	String channelSwitchFailed({required Object reason}) => 'Couldn\'t switch channel: ${reason}';
 }
 
 // Path: collections
@@ -8089,6 +8116,13 @@ extension on Translations {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
+			'errors.reasonTimedOut' => 'the connection timed out',
+			'errors.reasonUnreachable' => 'the server could not be reached',
+			'errors.reasonRefused' => 'the server refused the request',
+			'errors.reasonNotFound' => 'the item is no longer on the server',
+			'errors.reasonServerError' => 'the server reported an error',
+			'errors.reasonCancelled' => 'the request was cancelled',
+			'errors.reasonUnexpected' => 'an unexpected error occurred',
 			'libraries.title' => 'Libraries',
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
@@ -8115,6 +8149,8 @@ extension on Translations {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Manage Libraries',
 			'libraries.sort' => 'Sort',
 			'libraries.sortBy' => 'Sort By',
@@ -8122,8 +8158,6 @@ extension on Translations {
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
@@ -8463,6 +8497,8 @@ extension on Translations {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Couldn\'t start the channel: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Couldn\'t switch channel: ${reason}',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -8627,6 +8663,8 @@ extension on Translations {
 			'downloads.noDownloadsDescription' => 'Downloaded content will appear here for offline viewing',
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Delete download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Retry download',
 			'downloads.downloadQueued' => 'Download queued',
 			'downloads.downloadResumed' => 'Download resumed',
@@ -8636,8 +8674,6 @@ extension on Translations {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Canceled Download',
 			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',

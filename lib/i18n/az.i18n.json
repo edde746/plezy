@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Token təsdiqlənə bilmədi: ${error}",
     "failedToSwitchProfile": "${displayName} profilinə keçilə bilmədi",
     "failedToDeleteProfile": "${displayName} profili silinə bilmədi",
-    "failedToRate": "Reytinq yenilənə bilmədi"
+    "failedToRate": "Reytinq yenilənə bilmədi",
+    "reasonTimedOut": "bağlantının vaxtı bitdi",
+    "reasonUnreachable": "serverə çatmaq mümkün olmadı",
+    "reasonRefused": "server sorğunu rədd etdi",
+    "reasonNotFound": "element artıq serverdə yoxdur",
+    "reasonServerError": "server xəta bildirdi",
+    "reasonCancelled": "sorğu ləğv edildi",
+    "reasonUnexpected": "gözlənilməz xəta baş verdi"
   },
   "libraries": {
     "title": "Kitabxanalar",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day}, saat ${time}",
     "invalidPlaybackData": "${product} etibarsız Canlı TV oynatma məlumatı qaytardı",
     "failedToStartChannel": "Canlı kanalı başlatmaq olmadı",
-    "failedToBuildStreamUrl": "Yayım URL-i yaratmaq olmadı"
+    "failedToBuildStreamUrl": "Yayım URL-i yaratmaq olmadı",
+    "playbackStartFailed": "Kanal başladıla bilmədi: ${reason}",
+    "channelSwitchFailed": "Kanal dəyişdirilə bilmədi: ${reason}"
   },
   "collections": {
     "title": "Kolleksiyalar",

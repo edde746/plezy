@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Токенді тексеру мүмкін болмады: ${error}",
     "failedToSwitchProfile": "${displayName} профиліне ауысу мүмкін болмады",
     "failedToDeleteProfile": "${displayName} профилін өшіру мүмкін болмады",
-    "failedToRate": "Рейтингті жаңарту мүмкін болмады"
+    "failedToRate": "Рейтингті жаңарту мүмкін болмады",
+    "reasonTimedOut": "қосылу уақыты өтті",
+    "reasonUnreachable": "серверге қосылу мүмкін болмады",
+    "reasonRefused": "сервер сұрауды қабылдамады",
+    "reasonNotFound": "бұл нысан серверде қазір жоқ",
+    "reasonServerError": "сервер қате хабарлады",
+    "reasonCancelled": "сұрау бас тартылды",
+    "reasonUnexpected": "күтпеген қате орын алды"
   },
   "libraries": {
     "title": "Кітапханалар",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day}, ${time}",
     "invalidPlaybackData": "${product} жарамсыз тікелей TV ойнату деректерін қайтарды",
     "failedToStartChannel": "Тікелей эфир арнасын іске қосу мүмкін болмады",
-    "failedToBuildStreamUrl": "Ағын URL-ін құру мүмкін болмады"
+    "failedToBuildStreamUrl": "Ағын URL-ін құру мүмкін болмады",
+    "playbackStartFailed": "Арнаны іске қосу мүмкін болмады: ${reason}",
+    "channelSwitchFailed": "Арнаны ауыстыру мүмкін болмады: ${reason}"
   },
   "collections": {
     "title": "Топтамалар",

@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Det gick inte att verifiera token: ${error}",
     "failedToSwitchProfile": "Det gick inte att byta till ${displayName}",
     "failedToDeleteProfile": "Det gick inte att ta bort ${displayName}",
-    "failedToRate": "Det gick inte att uppdatera betyget"
+    "failedToRate": "Det gick inte att uppdatera betyget",
+    "reasonTimedOut": "anslutningen tog för lång tid",
+    "reasonUnreachable": "det gick inte att nå servern",
+    "reasonRefused": "servern nekade begäran",
+    "reasonNotFound": "objektet finns inte längre på servern",
+    "reasonServerError": "servern rapporterade ett fel",
+    "reasonCancelled": "begäran avbröts",
+    "reasonUnexpected": "ett oväntat fel uppstod"
   },
   "libraries": {
     "title": "Bibliotek",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} kl. ${time}",
     "invalidPlaybackData": "${product} returnerade ogiltiga uppspelningsdata för Live-TV",
     "failedToStartChannel": "Kunde inte starta livekanalen",
-    "failedToBuildStreamUrl": "Kunde inte skapa strömmens URL"
+    "failedToBuildStreamUrl": "Kunde inte skapa strömmens URL",
+    "playbackStartFailed": "Det gick inte att starta kanalen: ${reason}",
+    "channelSwitchFailed": "Det gick inte att byta kanal: ${reason}"
   },
   "collections": {
     "title": "Samlingar",

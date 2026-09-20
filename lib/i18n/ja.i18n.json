@@ -1067,7 +1067,14 @@
     "failedToVerifyToken": "トークンの検証に失敗しました: ${error}",
     "failedToSwitchProfile": "${displayName}への切替に失敗しました",
     "failedToDeleteProfile": "${displayName}の削除に失敗しました",
-    "failedToRate": "評価を更新できませんでした"
+    "failedToRate": "評価を更新できませんでした",
+    "reasonTimedOut": "接続がタイムアウトしました",
+    "reasonUnreachable": "メディアサーバーに接続できませんでした",
+    "reasonRefused": "メディアサーバーがリクエストを拒否しました",
+    "reasonNotFound": "この項目はメディアサーバー上に存在しません",
+    "reasonServerError": "メディアサーバーでエラーが発生しました",
+    "reasonCancelled": "リクエストがキャンセルされました",
+    "reasonUnexpected": "予期しないエラーが発生しました"
   },
   "libraries": {
     "title": "ライブラリ",
@@ -1499,7 +1506,9 @@
     "dayAtTime": "${day} ${time}",
     "invalidPlaybackData": "${product}から無効なライブTV再生データが返されました",
     "failedToStartChannel": "ライブチャンネルを開始できませんでした",
-    "failedToBuildStreamUrl": "ストリームURLを生成できませんでした"
+    "failedToBuildStreamUrl": "ストリームURLを生成できませんでした",
+    "playbackStartFailed": "チャンネルを再生できませんでした: ${reason}",
+    "channelSwitchFailed": "チャンネルを切り替えられませんでした: ${reason}"
   },
   "collections": {
     "title": "コレクション",

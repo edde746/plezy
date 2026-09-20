@@ -128,7 +128,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       } catch (e) {
         if (sourceSwitchWasSuperseded()) return PlaybackSourceChangeOutcome.superseded;
         if (mounted) {
-          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
         }
         return PlaybackSourceChangeOutcome.failed;
       }
@@ -228,7 +228,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // lease; real errors after an owned phase change must remain failures.
       if (sourceSwitchWasSuperseded()) return PlaybackSourceChangeOutcome.superseded;
       if (mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
       return PlaybackSourceChangeOutcome.failed;
     }
@@ -461,7 +461,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       } catch (e, stackTrace) {
         appLogger.e('Failed to prepare media reload during $reason', error: e, stackTrace: stackTrace);
         if (mounted && showErrorUi) {
-          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
         }
         _clearEpisodeLoadingFlags();
         return MediaReloadOutcome.failed;
@@ -810,7 +810,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (isItemChange) _showChromeForSwappedItem();
         appLogger.e('Failed to reload media in-place during $reason', error: e);
         if (mounted && showErrorUi) {
-          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
         }
         return didOpenReplacement ? MediaReloadOutcome.opened : MediaReloadOutcome.failed;
       } finally {

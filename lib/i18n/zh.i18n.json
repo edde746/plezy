@@ -1067,7 +1067,14 @@
     "failedToVerifyToken": "无法验证令牌：${error}",
     "failedToSwitchProfile": "无法切换到 ${displayName}",
     "failedToDeleteProfile": "无法删除 ${displayName}",
-    "failedToRate": "无法更新评分"
+    "failedToRate": "无法更新评分",
+    "reasonTimedOut": "连接超时",
+    "reasonUnreachable": "无法连接到服务器",
+    "reasonRefused": "服务器拒绝了此请求",
+    "reasonNotFound": "该项目已不在服务器上",
+    "reasonServerError": "服务器报告了一个错误",
+    "reasonCancelled": "请求已取消",
+    "reasonUnexpected": "发生了意外错误"
   },
   "libraries": {
     "title": "媒体库",
@@ -1499,7 +1506,9 @@
     "dayAtTime": "${day} ${time}",
     "invalidPlaybackData": "${product} 返回了无效的直播电视播放数据",
     "failedToStartChannel": "无法播放直播频道",
-    "failedToBuildStreamUrl": "无法生成视频流 URL"
+    "failedToBuildStreamUrl": "无法生成视频流 URL",
+    "playbackStartFailed": "无法启动该频道：${reason}",
+    "channelSwitchFailed": "无法切换频道：${reason}"
   },
   "collections": {
     "title": "合集",

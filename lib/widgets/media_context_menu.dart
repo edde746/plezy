@@ -58,6 +58,7 @@ import '../widgets/overlay_sheet.dart';
 import 'watchlist_source_chooser.dart';
 import '../widgets/rating_bottom_sheet.dart';
 import '../i18n/strings.g.dart';
+import '../utils/error_message_utils.dart';
 
 class _MenuAction {
   final String value;
@@ -398,7 +399,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e, st) {
       appLogger.e('Media context menu action failed', error: e, stackTrace: st);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     } finally {
       _isContextMenuOpen = false;
@@ -941,7 +942,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     }
   }
@@ -952,7 +953,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       await _showRatingSheet(context, item, client);
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     }
   }
@@ -1064,7 +1065,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     }
   }
@@ -1098,7 +1099,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     }
   }
@@ -1124,7 +1125,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, '$errorPrefix: $e');
+        showErrorSnackBar(context, '$errorPrefix: ${localizedErrorReason(e)}');
       }
     }
   }
@@ -1169,7 +1170,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: localizedErrorReason(e)));
       }
     } finally {
       await loadingDialog.dismiss();
@@ -1388,7 +1389,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e, stackTrace) {
       appLogger.e('Error in add to playlist flow', error: e, stackTrace: stackTrace);
       if (context.mounted) {
-        showErrorSnackBar(context, '${t.playlists.errorLoading}: ${e.toString()}');
+        showErrorSnackBar(context, '${t.playlists.errorLoading}: ${localizedErrorReason(e)}');
       }
     }
   }
@@ -1469,7 +1470,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e, stackTrace) {
       appLogger.e('Error in add to collection flow', error: e, stackTrace: stackTrace);
       if (context.mounted) {
-        showErrorSnackBar(context, '${t.collections.errorAddingToCollection}: ${e.toString()}');
+        showErrorSnackBar(context, '${t.collections.errorAddingToCollection}: ${localizedErrorReason(e)}');
       }
     }
   }
@@ -1590,7 +1591,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to remove from collection', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.collections.removeFromCollectionError(error: e.toString()));
+        showErrorSnackBar(context, t.collections.removeFromCollectionError(error: localizedErrorReason(e)));
       }
     }
   }
@@ -1618,7 +1619,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         shuffle: shuffle,
         onError: (e, st) {
           appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
-          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
         },
         onEmpty: () => showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems),
       );
@@ -1665,7 +1666,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to delete collection', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: e.toString()));
+        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: localizedErrorReason(e)));
       }
     }
   }
@@ -1770,7 +1771,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     }
   }

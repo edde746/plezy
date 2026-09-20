@@ -1067,7 +1067,14 @@
     "failedToVerifyToken": "토큰을 확인할 수 없습니다: ${error}",
     "failedToSwitchProfile": "${displayName}으로 전환할 수 없습니다",
     "failedToDeleteProfile": "${displayName}을(를) 삭제할 수 없습니다",
-    "failedToRate": "평점을 업데이트하지 못했습니다"
+    "failedToRate": "평점을 업데이트하지 못했습니다",
+    "reasonTimedOut": "연결 시간이 초과되었습니다",
+    "reasonUnreachable": "서버에 연결할 수 없습니다",
+    "reasonRefused": "서버가 요청을 거부했습니다",
+    "reasonNotFound": "항목이 더 이상 서버에 없습니다",
+    "reasonServerError": "서버에서 오류가 보고되었습니다",
+    "reasonCancelled": "요청이 취소되었습니다",
+    "reasonUnexpected": "예기치 않은 오류가 발생했습니다"
   },
   "libraries": {
     "title": "미디어 라이브러리",
@@ -1499,7 +1506,9 @@
     "dayAtTime": "${day} ${time}",
     "invalidPlaybackData": "${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다",
     "failedToStartChannel": "실시간 채널을 시작할 수 없습니다",
-    "failedToBuildStreamUrl": "스트림 URL을 생성할 수 없습니다"
+    "failedToBuildStreamUrl": "스트림 URL을 생성할 수 없습니다",
+    "playbackStartFailed": "채널을 시작하지 못했습니다: ${reason}",
+    "channelSwitchFailed": "채널을 전환하지 못했습니다: ${reason}"
   },
   "collections": {
     "title": "컬렉션",

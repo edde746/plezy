@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Nem sikerült a token ellenőrzése: ${error}",
     "failedToSwitchProfile": "Nem sikerült átváltani a következő profilra: ${displayName}",
     "failedToDeleteProfile": "Nem sikerült törölni a következőt: ${displayName}",
-    "failedToRate": "Nem sikerült frissíteni az értékelést"
+    "failedToRate": "Nem sikerült frissíteni az értékelést",
+    "reasonTimedOut": "időtúllépés történt a kapcsolatban",
+    "reasonUnreachable": "a médiaszerver nem érhető el",
+    "reasonRefused": "a médiaszerver elutasította a kérést",
+    "reasonNotFound": "az elem már nem található a médiaszerveren",
+    "reasonServerError": "a médiaszerver hibát jelzett",
+    "reasonCancelled": "a kérés meg lett szakítva",
+    "reasonUnexpected": "váratlan hiba történt"
   },
   "libraries": {
     "title": "Könyvtárak",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day}, ${time}",
     "invalidPlaybackData": "A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza",
     "failedToStartChannel": "Nem sikerült elindítani az élő csatornát",
-    "failedToBuildStreamUrl": "Nem sikerült összeállítani a stream URL-címét"
+    "failedToBuildStreamUrl": "Nem sikerült összeállítani a stream URL-címét",
+    "playbackStartFailed": "Nem sikerült elindítani a csatornát: ${reason}",
+    "channelSwitchFailed": "Nem sikerült csatornát váltani: ${reason}"
   },
   "collections": {
     "title": "Gyűjtemények",

@@ -97,6 +97,7 @@ import '../../providers/playback_state_provider.dart';
 import '../../providers/shader_provider.dart';
 import '../../services/shader_service.dart';
 import '../../watch_together/providers/watch_together_provider.dart';
+import '../../utils/error_message_utils.dart';
 
 part 'parts/key_events.dart';
 part 'parts/markers.dart';

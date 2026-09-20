@@ -19,6 +19,7 @@ import 'jellyfin_sequential_launcher.dart';
 import 'play_queue_launcher.dart';
 import 'settings_service.dart';
 import '../widgets/dialog_action_button.dart';
+import '../utils/error_message_utils.dart';
 
 /// Result type for play queue launches. Same shape as the previous
 /// [PlexPlayQueueLauncher] result so existing call sites can keep their
@@ -207,14 +208,14 @@ abstract class MediaListPlaybackLauncher {
       }
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
+        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: localizedErrorReason(e)));
       }
       return PlayQueueError(e);
     } catch (e) {
       if (abort?.isAborted ?? false) return const PlayQueueCancelled();
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
+        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: localizedErrorReason(e)));
       }
       return PlayQueueError(e);
     } finally {

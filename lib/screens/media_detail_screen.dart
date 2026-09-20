@@ -101,6 +101,7 @@ import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 import '../providers/account_preferences_controller.dart';
 import '../services/playback_track_preview.dart';
+import '../utils/error_message_utils.dart';
 
 part 'media_detail/action_buttons.dart';
 part 'media_detail/playback_tracks_status.dart';
@@ -3219,7 +3220,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       }
     } catch (e) {
       if (mounted && _canUseDetail) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     } finally {
       await loadingDialog.dismiss();

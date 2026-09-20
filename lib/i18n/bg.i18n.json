@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Неуспешна проверка на токена: ${error}",
     "failedToSwitchProfile": "Неуспешна смяна към ${displayName}",
     "failedToDeleteProfile": "Неуспешно изтриване на ${displayName}",
-    "failedToRate": "Оценката не можа да бъде обновена"
+    "failedToRate": "Оценката не можа да бъде обновена",
+    "reasonTimedOut": "времето за връзка изтече",
+    "reasonUnreachable": "сървърът не може да бъде достигнат",
+    "reasonRefused": "сървърът отхвърли заявката",
+    "reasonNotFound": "елементът вече не е на сървъра",
+    "reasonServerError": "сървърът докладва грешка",
+    "reasonCancelled": "заявката беше отменена",
+    "reasonUnexpected": "възникна неочаквана грешка"
   },
   "libraries": {
     "title": "Библиотеки",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} в ${time}",
     "invalidPlaybackData": "${product} върна невалидни данни за възпроизвеждане на телевизия на живо",
     "failedToStartChannel": "Каналът на живо не можа да бъде пуснат",
-    "failedToBuildStreamUrl": "URL за потока не можа да бъде създаден"
+    "failedToBuildStreamUrl": "URL за потока не можа да бъде създаден",
+    "playbackStartFailed": "Каналът не можа да бъде стартиран: ${reason}",
+    "channelSwitchFailed": "Каналът не можа да бъде сменен: ${reason}"
   },
   "collections": {
     "title": "Колекции",

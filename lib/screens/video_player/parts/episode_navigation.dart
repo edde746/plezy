@@ -201,7 +201,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     } catch (e, stackTrace) {
       appLogger.e('Failed to navigate to the next item', error: e, stackTrace: stackTrace);
       _clearEpisodeLoadingFlags();
-      if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       return MediaReloadOutcome.failed;
     }
   }

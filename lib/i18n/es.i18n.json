@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Error al verificar el token: ${error}",
     "failedToSwitchProfile": "Error al cambiar al perfil ${displayName}",
     "failedToDeleteProfile": "Error al eliminar ${displayName}",
-    "failedToRate": "No se pudo actualizar la valoración"
+    "failedToRate": "No se pudo actualizar la valoración",
+    "reasonTimedOut": "se agotó el tiempo de conexión",
+    "reasonUnreachable": "no se pudo contactar con el servidor",
+    "reasonRefused": "el servidor rechazó la solicitud",
+    "reasonNotFound": "el elemento ya no está en el servidor",
+    "reasonServerError": "el servidor informó de un error",
+    "reasonCancelled": "se canceló la solicitud",
+    "reasonUnexpected": "se produjo un error inesperado"
   },
   "libraries": {
     "title": "Bibliotecas",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} a las ${time}",
     "invalidPlaybackData": "${product} devolvió datos de reproducción de TV en vivo no válidos",
     "failedToStartChannel": "No se pudo iniciar el canal en vivo",
-    "failedToBuildStreamUrl": "No se pudo generar la URL de transmisión"
+    "failedToBuildStreamUrl": "No se pudo generar la URL de transmisión",
+    "playbackStartFailed": "No se pudo iniciar el canal: ${reason}",
+    "channelSwitchFailed": "No se pudo cambiar de canal: ${reason}"
   },
   "collections": {
     "title": "Colecciones",

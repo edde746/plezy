@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Kunne ikke verifisere token: ${error}",
     "failedToSwitchProfile": "Kunne ikke bytte til ${displayName}",
     "failedToDeleteProfile": "Kunne ikke slette ${displayName}",
-    "failedToRate": "Kunne ikke oppdatere vurderingen"
+    "failedToRate": "Kunne ikke oppdatere vurderingen",
+    "reasonTimedOut": "tidsavbrudd på tilkoblingen",
+    "reasonUnreachable": "medieserveren kunne ikke nås",
+    "reasonRefused": "medieserveren avviste forespørselen",
+    "reasonNotFound": "elementet finnes ikke lenger på medieserveren",
+    "reasonServerError": "medieserveren rapporterte en feil",
+    "reasonCancelled": "forespørselen ble avbrutt",
+    "reasonUnexpected": "det oppsto en uventet feil"
   },
   "libraries": {
     "title": "Biblioteker",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} kl. ${time}",
     "invalidPlaybackData": "${product} returnerte ugyldige avspillingsdata for direkte-TV",
     "failedToStartChannel": "Kunne ikke starte direktekanalen",
-    "failedToBuildStreamUrl": "Kunne ikke opprette strømme-URL-en"
+    "failedToBuildStreamUrl": "Kunne ikke opprette strømme-URL-en",
+    "playbackStartFailed": "Kunne ikke starte kanalen: ${reason}",
+    "channelSwitchFailed": "Kunne ikke bytte kanal: ${reason}"
   },
   "collections": {
     "title": "Samlinger",

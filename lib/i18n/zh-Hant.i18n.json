@@ -1067,7 +1067,14 @@
     "failedToVerifyToken": "無法驗證 Token：${error}",
     "failedToSwitchProfile": "無法切換至 ${displayName}",
     "failedToDeleteProfile": "無法刪除 ${displayName}",
-    "failedToRate": "無法更新評分"
+    "failedToRate": "無法更新評分",
+    "reasonTimedOut": "連線逾時",
+    "reasonUnreachable": "無法連線至媒體伺服器",
+    "reasonRefused": "媒體伺服器拒絕了此要求",
+    "reasonNotFound": "該項目已不在媒體伺服器上",
+    "reasonServerError": "媒體伺服器回報錯誤",
+    "reasonCancelled": "要求已取消",
+    "reasonUnexpected": "發生未預期的錯誤"
   },
   "libraries": {
     "title": "媒體庫",
@@ -1499,7 +1506,9 @@
     "dayAtTime": "${day} ${time}",
     "invalidPlaybackData": "${product} 傳回了無效的直播電視播放資料",
     "failedToStartChannel": "無法啟動直播頻道",
-    "failedToBuildStreamUrl": "無法建立串流 URL"
+    "failedToBuildStreamUrl": "無法建立串流 URL",
+    "playbackStartFailed": "無法開始播放此頻道：${reason}",
+    "channelSwitchFailed": "無法切換頻道：${reason}"
   },
   "collections": {
     "title": "收藏集",

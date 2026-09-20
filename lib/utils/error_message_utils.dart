@@ -30,3 +30,41 @@ String localizedLoadErrorText(Object error, {required String context}) {
 
   return t.errors.unableToLoad(context: context);
 }
+
+/// A localized, user-safe reason for [error], for interpolation into a message
+/// that already names the operation that failed ("Couldn't delete X: ...").
+///
+/// Prefers the exception's own [MediaServerException.display], which is the
+/// field that exists for exactly this purpose. Otherwise maps the failure to a
+/// fixed phrase.
+///
+/// Like [localizedLoadErrorText], the result never carries exception text,
+/// server responses, hostnames or paths. `toString()` on these types carries
+/// the runtime type, the English log message, and for
+/// [MediaServerHttpException] the request host and path, so it must never
+/// reach a snackbar.
+String localizedErrorReason(Object error) {
+  if (error is MediaServerException) {
+    final display = error.display;
+    if (display != null && display.isNotEmpty) return display;
+  }
+  if (error is MediaServerHttpException) {
+    switch (error.type) {
+      case MediaServerHttpErrorType.connectionTimeout:
+      case MediaServerHttpErrorType.receiveTimeout:
+        return t.errors.reasonTimedOut;
+      case MediaServerHttpErrorType.connectionError:
+        return t.errors.reasonUnreachable;
+      case MediaServerHttpErrorType.cancelled:
+        return t.errors.reasonCancelled;
+      case MediaServerHttpErrorType.unknown:
+        break;
+    }
+    final status = error.statusCode;
+    if (status == 401 || status == 403) return t.errors.reasonRefused;
+    if (status == 404) return t.errors.reasonNotFound;
+    if (status != null && status >= 500) return t.errors.reasonServerError;
+  }
+  if (error is MediaServerAuthException) return t.errors.reasonRefused;
+  return t.errors.reasonUnexpected;
+}

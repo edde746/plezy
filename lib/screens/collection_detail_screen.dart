@@ -193,7 +193,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     } catch (e) {
       appLogger.e('Failed to delete collection', error: e);
       if (mounted) {
-        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: e.toString()));
+        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: localizedErrorReason(e)));
       }
     }
   }

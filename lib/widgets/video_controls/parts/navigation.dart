@@ -161,7 +161,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
       );
     } catch (e) {
       if (mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
     }
   }

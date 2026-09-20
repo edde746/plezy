@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Belirteç doğrulanamadı: ${error}",
     "failedToSwitchProfile": "${displayName} profiline geçilemedi",
     "failedToDeleteProfile": "${displayName} profili silinemedi",
-    "failedToRate": "Puan güncellenemedi"
+    "failedToRate": "Puan güncellenemedi",
+    "reasonTimedOut": "bağlantı zaman aşımına uğradı",
+    "reasonUnreachable": "sunucuya ulaşılamadı",
+    "reasonRefused": "sunucu isteği reddetti",
+    "reasonNotFound": "öğe artık sunucuda değil",
+    "reasonServerError": "sunucu bir hata bildirdi",
+    "reasonCancelled": "istek iptal edildi",
+    "reasonUnexpected": "beklenmeyen bir hata oluştu"
   },
   "libraries": {
     "title": "Kitaplıklar",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} saat ${time}",
     "invalidPlaybackData": "${product} geçersiz Canlı TV oynatma verileri döndürdü",
     "failedToStartChannel": "Canlı kanal başlatılamadı",
-    "failedToBuildStreamUrl": "Akış URL'si oluşturulamadı"
+    "failedToBuildStreamUrl": "Akış URL'si oluşturulamadı",
+    "playbackStartFailed": "Kanal başlatılamadı: ${reason}",
+    "channelSwitchFailed": "Kanal değiştirilemedi: ${reason}"
   },
   "collections": {
     "title": "Koleksiyonlar",

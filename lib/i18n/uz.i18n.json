@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Tokenni tekshirib boʻlmadi: ${error}",
     "failedToSwitchProfile": "${displayName} profiliga oʻtib boʻlmadi",
     "failedToDeleteProfile": "${displayName} profilini oʻchirib boʻlmadi",
-    "failedToRate": "Reytingni yangilab boʻlmadi"
+    "failedToRate": "Reytingni yangilab boʻlmadi",
+    "reasonTimedOut": "ulanish vaqti tugadi",
+    "reasonUnreachable": "serverga ulanib boʻlmadi",
+    "reasonRefused": "server soʻrovni rad etdi",
+    "reasonNotFound": "element endi serverda yoʻq",
+    "reasonServerError": "server xatolik haqida xabar berdi",
+    "reasonCancelled": "soʻrov bekor qilindi",
+    "reasonUnexpected": "kutilmagan xatolik yuz berdi"
   },
   "libraries": {
     "title": "Kutubxonalar",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day}, soat ${time} da",
     "invalidPlaybackData": "${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi",
     "failedToStartChannel": "Jonli kanalni boshlab boʻlmadi",
-    "failedToBuildStreamUrl": "Oqim URL-ini tuzib boʻlmadi"
+    "failedToBuildStreamUrl": "Oqim URL-ini tuzib boʻlmadi",
+    "playbackStartFailed": "Kanalni ishga tushirib boʻlmadi: ${reason}",
+    "channelSwitchFailed": "Kanalni almashtirib boʻlmadi: ${reason}"
   },
   "collections": {
     "title": "Toʻplamlar",

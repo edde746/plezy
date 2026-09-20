@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Kon token niet verifiëren: ${error}",
     "failedToSwitchProfile": "Kon niet wisselen naar ${displayName}",
     "failedToDeleteProfile": "Kon ${displayName} niet verwijderen",
-    "failedToRate": "Beoordeling kon niet worden bijgewerkt"
+    "failedToRate": "Beoordeling kon niet worden bijgewerkt",
+    "reasonTimedOut": "de verbinding is verlopen",
+    "reasonUnreachable": "de server kon niet worden bereikt",
+    "reasonRefused": "de server heeft het verzoek geweigerd",
+    "reasonNotFound": "het item staat niet meer op de server",
+    "reasonServerError": "de server heeft een fout gemeld",
+    "reasonCancelled": "het verzoek is geannuleerd",
+    "reasonUnexpected": "er is een onverwachte fout opgetreden"
   },
   "libraries": {
     "title": "Bibliotheken",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} om ${time}",
     "invalidPlaybackData": "${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd",
     "failedToStartChannel": "Kon de livezender niet starten",
-    "failedToBuildStreamUrl": "Kon de stream-URL niet samenstellen"
+    "failedToBuildStreamUrl": "Kon de stream-URL niet samenstellen",
+    "playbackStartFailed": "Kon het kanaal niet starten: ${reason}",
+    "channelSwitchFailed": "Kon niet van kanaal wisselen: ${reason}"
   },
   "collections": {
     "title": "Collecties",

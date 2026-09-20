@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Failed to verify token: ${error}",
     "failedToSwitchProfile": "Failed to switch to ${displayName}",
     "failedToDeleteProfile": "Failed to delete ${displayName}",
-    "failedToRate": "Couldn't update rating"
+    "failedToRate": "Couldn't update rating",
+    "reasonTimedOut": "the connection timed out",
+    "reasonUnreachable": "the server could not be reached",
+    "reasonRefused": "the server refused the request",
+    "reasonNotFound": "the item is no longer on the server",
+    "reasonServerError": "the server reported an error",
+    "reasonCancelled": "the request was cancelled",
+    "reasonUnexpected": "an unexpected error occurred"
   },
   "libraries": {
     "title": "Libraries",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} at ${time}",
     "invalidPlaybackData": "${product} returned invalid Live TV playback data",
     "failedToStartChannel": "Could not start the live channel",
-    "failedToBuildStreamUrl": "Could not build the stream URL"
+    "failedToBuildStreamUrl": "Could not build the stream URL",
+    "playbackStartFailed": "Couldn't start the channel: ${reason}",
+    "channelSwitchFailed": "Couldn't switch channel: ${reason}"
   },
   "collections": {
     "title": "Collections",

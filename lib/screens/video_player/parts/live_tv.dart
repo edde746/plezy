@@ -601,7 +601,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         });
       }
       appLogger.e('Failed to switch channel', error: e);
-      if (mounted) showErrorSnackBar(context, e.toString());
+      if (mounted) showErrorSnackBar(context, t.liveTv.channelSwitchFailed(reason: localizedErrorReason(e)));
     } finally {
       _transitionGate.release(transitionLease);
     }

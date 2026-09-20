@@ -1072,7 +1072,14 @@
     "failedToVerifyToken": "Kunne ikke verificere token: ${error}",
     "failedToSwitchProfile": "Kunne ikke skifte til ${displayName}",
     "failedToDeleteProfile": "Kunne ikke slette ${displayName}",
-    "failedToRate": "Kunne ikke opdatere bedømmelsen"
+    "failedToRate": "Kunne ikke opdatere bedømmelsen",
+    "reasonTimedOut": "forbindelsen fik timeout",
+    "reasonUnreachable": "medieserveren kunne ikke nås",
+    "reasonRefused": "medieserveren afviste anmodningen",
+    "reasonNotFound": "elementet findes ikke længere på medieserveren",
+    "reasonServerError": "medieserveren rapporterede en fejl",
+    "reasonCancelled": "anmodningen blev annulleret",
+    "reasonUnexpected": "der opstod en uventet fejl"
   },
   "libraries": {
     "title": "Biblioteker",
@@ -1509,7 +1516,9 @@
     "dayAtTime": "${day} kl. ${time}",
     "invalidPlaybackData": "${product} returnerede ugyldige afspilningsdata for Live TV",
     "failedToStartChannel": "Kunne ikke starte livekanalen",
-    "failedToBuildStreamUrl": "Kunne ikke oprette stream-URL'en"
+    "failedToBuildStreamUrl": "Kunne ikke oprette stream-URL'en",
+    "playbackStartFailed": "Kunne ikke starte kanalen: ${reason}",
+    "channelSwitchFailed": "Kunne ikke skifte kanal: ${reason}"
   },
   "collections": {
     "title": "Samlinger",

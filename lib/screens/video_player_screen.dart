@@ -129,6 +129,7 @@ import '../focus/transport_keys.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/services/watch_together_controller.dart';
+import '../utils/error_message_utils.dart';
 
 part 'video_player/parts/companion_remote.dart';
 part 'video_player/parts/display_matching.dart';

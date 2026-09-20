@@ -24,6 +24,7 @@ import 'dialogs.dart';
 import 'download_version_utils.dart';
 import 'platform_detector.dart';
 import 'snackbar_helper.dart';
+import '../utils/error_message_utils.dart';
 
 @visibleForTesting
 String? validateEpisodeCountInput(String text, {required bool allowZero}) {
@@ -243,7 +244,7 @@ Future<void> queueDownloadWithFeedback(
   } catch (e) {
     appLogger.e('Failed to queue download', error: e);
     if (context.mounted) {
-      showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
     }
   }
 }
@@ -350,7 +351,7 @@ Future<void> fetchAndQueueListDownload(
   } catch (e) {
     appLogger.e('Failed to queue $targetType download', error: e);
     if (context.mounted) {
-      showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
     }
   }
 }
@@ -512,7 +513,7 @@ Future<SyncRuleRemovalResult?> confirmAndRemoveSyncRule(
   } catch (error, stackTrace) {
     appLogger.e('Failed to remove sync rule', error: error, stackTrace: stackTrace);
     if (context.mounted) {
-      showErrorSnackBar(context, t.messages.errorLoading(error: error.toString()));
+      showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(error)));
     }
     return null;
   }

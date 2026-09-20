@@ -80,7 +80,8 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     return const Duration(seconds: 3);
   }
 
-  /// Shared hide logic: hides controls, notifies parent, updates traffic lights, restores focus.
+  /// Hide the controls. Notifying the parent, updating the traffic lights and
+  /// restoring focus all moved into [ChromeController.hide].
   void _hideControls() {
     if (!mounted) return;
     widget.chromeController.hide();
