@@ -8,6 +8,7 @@ import '../../../focus/input_mode_tracker.dart';
 import '../../../services/scrub_preview_source.dart';
 import '../../../utils/formatters.dart';
 import '../helpers/eager_horizontal_drag_recognizer.dart';
+import '../helpers/render_geometry.dart';
 import '../painters/buffer_range_painter.dart';
 import 'player_focus_disc.dart';
 
@@ -122,7 +123,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
   void _applyScrub(double dx, BuildContext sliderContext) {
     final durationMs = widget.duration.inMilliseconds;
-    final trackWidth = _sliderWidthOf(sliderContext) - 2 * _sliderPadding;
+    final trackWidth = renderBoxSizeOf(sliderContext).width - 2 * _sliderPadding;
     if (durationMs <= 0 || trackWidth <= 0) return;
     final fraction = ((dx - _sliderPadding) / trackWidth).clamp(0.0, 1.0);
     final value = fraction * durationMs;
@@ -206,11 +207,6 @@ class _TimelineSliderState extends State<TimelineSlider> {
       _hoverFrame = frame;
       _hoverFrameKey = frameKey;
     });
-  }
-
-  double _sliderWidthOf(BuildContext context) {
-    final renderObject = context.findRenderObject();
-    return renderObject is RenderBox ? renderObject.size.width : 0.0;
   }
 
   Widget? _buildActiveTooltip(double sliderWidth, int durationMs, double displayValue, Duration displayPosition) {
@@ -437,7 +433,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
       builder: (context) => MouseRegion(
         cursor: widget.enabled ? SystemMouseCursors.click : MouseCursor.defer,
         onHover: (event) {
-          final trackWidth = _sliderWidthOf(context) - 2 * _sliderPadding;
+          final trackWidth = renderBoxSizeOf(context).width - 2 * _sliderPadding;
           _updateHoverPosition(event.localPosition.dx, trackWidth, durationMs);
         },
         onExit: (_) => _clearHoverPosition(),

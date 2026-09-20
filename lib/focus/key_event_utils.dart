@@ -235,6 +235,15 @@ FocusOnKeyEventCallback dpadKeyHandler({
   };
 }
 
+/// One-line rendering of a [KeyEvent] for the focus subsystem's debug logs.
+///
+/// The focus layer logs raw key events from several places, and a shared
+/// spelling keeps those lines diffable against each other.
+String describeKeyEvent(KeyEvent event) {
+  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
+      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
+}
+
 /// Navigator observer that automatically suppresses stray back KeyUp events
 /// after any route pop caused by a back key press.
 ///

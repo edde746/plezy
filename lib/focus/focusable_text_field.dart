@@ -95,11 +95,6 @@ class TvTextInputController {
   void focusAndOpenTextInput() => _host?._focusAndOpenTextInput();
 }
 
-String _describeTextInputKey(KeyEvent event) {
-  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
-      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
-}
-
 void _logTvTextInput(String message) {
   TextInputDiagnostics.log('FlutterTextField', message);
 }
@@ -183,7 +178,7 @@ KeyEventResult _handleInputKey({
   KeyEventResult finish(KeyEventResult result, String reason) {
     if (diagnosticsEnabled) {
       _logTvTextInput(
-        'result=$result reason=$reason key=(${_describeTextInputKey(event)}) '
+        'result=$result reason=$reason key=(${describeKeyEvent(event)}) '
         'usesTvKeyboard=$usesTvKeyboard enabled=$enabled textLength=${controller.text.length} '
         'selection=${controller.selection} onNav(up=${onNavigateUp != null},down=${onNavigateDown != null},'
         'left=${onNavigateLeft != null},right=${onNavigateRight != null}) onSelect=${onSelect != null} onBack=${onBack != null}',
@@ -194,7 +189,7 @@ KeyEventResult _handleInputKey({
 
   if (diagnosticsEnabled) {
     _logTvTextInput(
-      'received key=(${_describeTextInputKey(event)}) usesTvKeyboard=$usesTvKeyboard enabled=$enabled '
+      'received key=(${describeKeyEvent(event)}) usesTvKeyboard=$usesTvKeyboard enabled=$enabled '
       'textLength=${controller.text.length} selection=${controller.selection}',
     );
   }
@@ -343,7 +338,7 @@ bool _shouldPassNativeTvKeyToPlatform({
       _logTvTextInput(
         'native-pass=false reason=inactive-disabled-or-custom enabled=$enabled '
         'usesTvKeyboard=$usesTvKeyboard nativeTextInputActive=$nativeTextInputActive '
-        'isAppleTV=${PlatformDetector.isAppleTV()} key=(${_describeTextInputKey(event)})',
+        'isAppleTV=${PlatformDetector.isAppleTV()} key=(${describeKeyEvent(event)})',
       );
     }
     return false;
@@ -362,7 +357,7 @@ bool _shouldPassNativeTvKeyToPlatform({
   if (TextInputDiagnostics.enabled) {
     _logTvTextInput(
       'native-pass=$shouldPass reason=${shouldPass ? "remote-navigation-key" : "not-navigation-key"} '
-      'key=(${_describeTextInputKey(event)})',
+      'key=(${describeKeyEvent(event)})',
     );
   }
   return shouldPass;
@@ -1371,7 +1366,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
     if (previous != null && !identical(previous, _keyHandler)) {
       final result = previous(node, event);
       _logTvTextInput(
-        'Host.previousOnKeyEvent node=${node.debugLabel} result=$result key=(${_describeTextInputKey(event)})',
+        'Host.previousOnKeyEvent node=${node.debugLabel} result=$result key=(${describeKeyEvent(event)})',
       );
       if (result != KeyEventResult.ignored) return result;
     }

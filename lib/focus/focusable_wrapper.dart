@@ -12,11 +12,6 @@ import 'input_mode_tracker.dart';
 import 'owned_focus_node_binding.dart';
 import 'key_event_utils.dart';
 
-String _describeFocusableKey(KeyEvent event) {
-  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
-      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
-}
-
 void _logFocusableWrapper(String message) {
   TextInputDiagnostics.log('FocusableWrapper', message);
 }
@@ -417,7 +412,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     KeyEventResult finish(KeyEventResult result, String reason) {
       if (diagnosticsEnabled) {
         _logFocusableWrapper(
-          'node=${node.debugLabel} result=$result reason=$reason key=(${_describeFocusableKey(event)}) '
+          'node=${node.debugLabel} result=$result reason=$reason key=(${describeKeyEvent(event)}) '
           'onNav(up=${widget.onNavigateUp != null},down=${widget.onNavigateDown != null},'
           'left=${widget.onNavigateLeft != null},right=${widget.onNavigateRight != null}) '
           'onSelect=${widget.onSelect != null} onBack=${widget.onBack != null}',
@@ -427,7 +422,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     }
 
     if (diagnosticsEnabled) {
-      _logFocusableWrapper('node=${node.debugLabel} received key=(${_describeFocusableKey(event)})');
+      _logFocusableWrapper('node=${node.debugLabel} received key=(${describeKeyEvent(event)})');
     }
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {

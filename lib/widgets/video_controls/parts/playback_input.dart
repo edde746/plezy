@@ -684,11 +684,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     });
   }
 
-  Size _sizeOf(BuildContext context) {
-    final renderObject = context.findRenderObject();
-    return renderObject is RenderBox ? renderObject.size : Size.zero;
-  }
-
   /// Accumulate skip feedback. Consecutive skips in the same direction stack
   /// into one running total; a direction flip restarts the count.
   void _registerSkipFeedback({required bool isForward, required int seconds}) {

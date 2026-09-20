@@ -79,6 +79,7 @@ import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/double_tap_feedback.dart';
 import 'helpers/mobile_edge_adjustment_tracker.dart';
+import 'helpers/render_geometry.dart';
 import 'helpers/two_finger_tap_tracker.dart';
 import 'widgets/linux_keep_alive.dart';
 import 'widgets/mobile_edge_adjustment_indicator.dart';
@@ -1309,7 +1310,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 child: Builder(
                                   builder: (context) {
                                     return GestureDetector(
-                                      onTapUp: (details) => _handleControlsOverlayTap(details, _sizeOf(context)),
+                                      onTapUp: (details) =>
+                                          _handleControlsOverlayTap(details, renderBoxSizeOf(context)),
                                       onLongPressStart: (_) => _handleLongPressStart(),
                                       onLongPressEnd: (_) => _handleLongPressEnd(),
                                       onLongPressCancel: _handleLongPressCancel,

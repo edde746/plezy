@@ -9,6 +9,7 @@ import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/formatters.dart';
 import '../../clickable_cursor.dart';
 import '../helpers/eager_horizontal_drag_recognizer.dart';
+import '../helpers/render_geometry.dart';
 import 'player_focus_disc.dart';
 
 /// Timeline bar for live TV time-shift.
@@ -122,11 +123,6 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
     return (_rangeStart + (fraction * range).round()).clamp(_rangeStart, _rangeEnd);
   }
 
-  double _widthOf(BuildContext context) {
-    final renderObject = context.findRenderObject();
-    return renderObject is RenderBox ? renderObject.size.width : 0.0;
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<int>(
@@ -226,8 +222,8 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
                                   EagerHorizontalDragGestureRecognizer(debugOwner: this)
                                     ..dragStartBehavior = DragStartBehavior.down,
                               (instance) {
-                                instance.onStart = (details) => _onDragStart(details, _widthOf(context));
-                                instance.onUpdate = (details) => _onDragUpdate(details, _widthOf(context));
+                                instance.onStart = (details) => _onDragStart(details, renderBoxSizeOf(context).width);
+                                instance.onUpdate = (details) => _onDragUpdate(details, renderBoxSizeOf(context).width);
                                 instance.onEnd = (_) => _onDragEnd();
                                 instance.onCancel = _onDragEnd;
                               },
