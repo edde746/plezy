@@ -1,4 +1,5 @@
 import '../media/library_query.dart';
+import '../media/media_filter.dart';
 import '../media/media_kind.dart';
 import 'plex_constants.dart';
 
@@ -47,139 +48,110 @@ abstract class LibraryQueryTranslator {
   }
 }
 
-/// Plex's `/library/sections/{id}/all` accepts a flat `key=value` map.
+/// Plex's `/library/sections/{id}/all` accepts a flat `key=value` query.
 /// Numeric `type=` selects the result class (1=movie, 2=show, …);
-/// `sort=titleSort:asc` chains field+direction; filters are passed
-/// verbatim under their original Plex names.
+/// `sort=titleSort:asc` chains field+direction; filter clauses are lowered by
+/// [plexFilterQueryParameters].
 class PlexLibraryQueryTranslator implements LibraryQueryTranslator {
   const PlexLibraryQueryTranslator();
 
   @override
-  Map<String, String> toQueryParameters(LibraryQuery query) {
-    final filters = <String, String>{};
+  Map<String, dynamic> toQueryParameters(LibraryQuery query) {
+    final params = <String, dynamic>{};
     if (query.includeKinds.isNotEmpty) {
       final kindNumbers = query.includeKinds.map(PlexMetadataType.forKind).whereType<int>().join(',');
       if (kindNumbers.isNotEmpty) {
-        filters['type'] = kindNumbers;
+        params['type'] = kindNumbers;
       }
     } else {
       final kindNumber = PlexMetadataType.forKind(query.kind);
       if (kindNumber != null) {
-        filters['type'] = kindNumber.toString();
+        params['type'] = kindNumber.toString();
       }
     }
     final sort = query.sort;
     if (sort != null) {
       final dir = sort.direction == LibrarySortDirection.descending ? ':desc' : ':asc';
-      filters['sort'] = '${sort.field}$dir';
+      params['sort'] = '${sort.field}$dir';
     }
     if (query.search != null && query.search!.isNotEmpty) {
-      filters['title'] = query.search!;
-    }
-    if (!query.includeWatched) {
-      filters['unwatched'] = '1';
-    }
-    // Typed slots: emit under the Plex API names so a `LibraryQuery` built
-    // from the FiltersBottomSheet (which still hands the browse tab a
-    // `Map<String,String>`) round-trips back to the same wire query that the
-    // legacy `plexStyleFilters` parameter used to carry.
-    if (query.genres != null && query.genres!.isNotEmpty) {
-      filters['genre'] = query.genres!.join(',');
-    }
-    if (query.officialRatings != null && query.officialRatings!.isNotEmpty) {
-      filters['contentRating'] = query.officialRatings!.join(',');
-    }
-    if (query.years != null && query.years!.isNotEmpty) {
-      filters['year'] = query.years!.join(',');
-    }
-    if (query.tags != null && query.tags!.isNotEmpty) {
-      filters['tag'] = query.tags!.join(',');
+      params['title'] = query.search!;
     }
     if (query.nameStartsWith != null && query.nameStartsWith!.isNotEmpty) {
-      filters['alphaPrefix'] = query.nameStartsWith!;
+      params['alphaPrefix'] = query.nameStartsWith!;
     }
-    for (final f in query.filters) {
-      filters[f.field] = f.values.join(',');
-    }
-    return filters;
+    params.addAll(plexFilterQueryParameters(query.filters));
+    return params;
   }
 }
 
-/// Inverse of [PlexLibraryQueryTranslator.toQueryParameters]: build a neutral
-/// [LibraryQuery] from the legacy Plex-style `Map<String,String>` filter map.
+/// Lower filter clauses onto Plex's query vocabulary.
 ///
-/// Lives here so the round-trip stays in one file and the test that pins
-/// equivalence (`map → LibraryQuery → Plex map` byte-for-byte) can import a
-/// single symbol.
+/// The operator lives in the query *key* (`year>>=2015` is key `year>>`,
+/// value `2015`), values inside one clause are comma-joined and OR, and two
+/// clauses that produce the same key repeat it, which Plex ANDs. Repeated
+/// keys survive to the wire because `encodeQueryParameters` expands iterable
+/// values into repeated pairs.
+Map<String, dynamic> plexFilterQueryParameters(Iterable<LibraryFilter> clauses) {
+  final params = <String, dynamic>{};
+  for (final clause in clauses) {
+    final values = clause.values.where((value) => value.isNotEmpty).toList();
+    if (clause.field.isEmpty || values.isEmpty) continue;
+    final key = '${clause.field}${clause.op.wireSuffix}';
+    final value = values.join(',');
+    final existing = params[key];
+    if (existing == null) {
+      params[key] = value;
+    } else if (existing is List<String>) {
+      existing.add(value);
+    } else {
+      params[key] = <String>[existing as String, value];
+    }
+  }
+  return params;
+}
+
+/// Assemble the neutral [LibraryQuery] the library browse surfaces run.
 ///
-/// Recognised keys map to their typed [LibraryQuery] slots (genre/year/
-/// contentRating/tag/unwatched/sort/type/alphaPrefix). Anything else carries
-/// over as a generic [LibraryFilter] entry so Plex's verbatim-pass-through
-/// behaviour for ad-hoc keys (director, writer, label, …) is preserved.
+/// [clauses] is the user's filter selection; [typeParam] is the grouping's
+/// Plex metadata type (a single number folds into [LibraryQuery.kind], a CSV
+/// stays a `type` clause so Plex still receives it verbatim); [sortParam] is
+/// the Plex-style `field:desc` string the sort sheet produces.
 ///
-/// `libraryKind` overrides any `type=` entry — both can be sources of truth
-/// in the existing browse tab and the explicit argument wins.
-LibraryQuery libraryQueryFromPlexMap({
-  required Map<String, String> map,
+/// `libraryKind` overrides any [typeParam] — both can be sources of truth in
+/// the browse tab and the explicit argument wins.
+LibraryQuery libraryQueryFromSelection({
+  required List<LibraryFilter> clauses,
   MediaKind? libraryKind,
+  String? typeParam,
+  String? sortParam,
+  String? alphaPrefix,
+  String? search,
   int offset = 0,
   int limit = 50,
 }) {
-  const knownKeys = {
-    'genre',
-    'year',
-    'contentRating',
-    'tag',
-    'unwatched',
-    'favorite',
-    'sort',
-    'type',
-    'alphaPrefix',
-    'includeCollections',
-    'title',
-  };
-
   String? nonEmpty(String? raw) => (raw == null || raw.isEmpty) ? null : raw;
 
-  // libraryKind has priority; otherwise derive from `type` (single numeric
-  // value only — multi-value `type` like "1,4" stays in the generic filter
-  // bucket so Plex still receives it verbatim).
-  final typeRaw = nonEmpty(map['type']);
-  final kindFromMap = (typeRaw != null && !typeRaw.contains(','))
+  final typeRaw = nonEmpty(typeParam);
+  final kindFromType = (typeRaw != null && !typeRaw.contains(','))
       ? PlexMetadataType.kindFor(int.tryParse(typeRaw))
       : null;
-  final kind = libraryKind ?? kindFromMap;
+  final kind = libraryKind ?? kindFromType;
 
-  final unknownFilters = <LibraryFilter>[];
-  for (final entry in map.entries) {
-    if (knownKeys.contains(entry.key) || entry.value.isEmpty) continue;
-    unknownFilters.add(LibraryFilter(field: entry.key, values: entry.value.split(',')));
-  }
-  // Multi-value `type` couldn't fold into `kind`; preserve it as a generic
-  // filter entry so Plex still gets it on the wire.
-  if (typeRaw != null && typeRaw.contains(',')) {
-    unknownFilters.add(LibraryFilter(field: 'type', values: typeRaw.split(',')));
-  }
-
-  List<String>? singleton(String? raw) => raw == null ? null : [raw];
-
-  final yearRaw = nonEmpty(map['year']);
-  final years = yearRaw?.split(',').map(int.tryParse).whereType<int>().toList();
+  final filters = <LibraryFilter>[
+    ...clauses,
+    // Multi-value `type` can't fold into `kind`; keep it as a clause.
+    if (typeRaw != null && typeRaw.contains(',')) LibraryFilter(field: 'type', values: typeRaw.split(',')),
+  ];
 
   return LibraryQuery(
     kind: (kind == null || kind == MediaKind.unknown) ? null : kind,
     offset: offset,
     limit: limit,
-    includeWatched: nonEmpty(map['unwatched']) != '1',
-    favoritesOnly: nonEmpty(map['favorite']) == '1',
-    nameStartsWith: nonEmpty(map['alphaPrefix']),
-    search: nonEmpty(map['title']),
-    genres: singleton(nonEmpty(map['genre'])),
-    officialRatings: singleton(nonEmpty(map['contentRating'])),
-    tags: singleton(nonEmpty(map['tag'])),
-    years: (years == null || years.isEmpty) ? null : years,
-    sort: LibraryQueryTranslator.parseSortParam(nonEmpty(map['sort'])),
-    filters: unknownFilters,
+    nameStartsWith: nonEmpty(alphaPrefix),
+    search: nonEmpty(search),
+    sort: LibraryQueryTranslator.parseSortParam(nonEmpty(sortParam)),
+    filters: filters,
   );
 }
 
@@ -212,23 +184,7 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       'Fields': fields,
       ...jellyfinImageQueryParameters,
     };
-    final wireFilters = <String>[if (!query.includeWatched) 'IsUnplayed', if (query.favoritesOnly) 'IsFavorite'];
-    if (wireFilters.isNotEmpty) {
-      params['Filters'] = wireFilters.join(',');
-    }
-    if (query.genres != null && query.genres!.isNotEmpty) {
-      // Jellyfin uses `|` as the multi-value separator for Genres.
-      params['Genres'] = query.genres!.join('|');
-    }
-    if (query.officialRatings != null && query.officialRatings!.isNotEmpty) {
-      params['OfficialRatings'] = query.officialRatings!.join('|');
-    }
-    if (query.years != null && query.years!.isNotEmpty) {
-      params['Years'] = query.years!.join(',');
-    }
-    if (query.tags != null && query.tags!.isNotEmpty) {
-      params['Tags'] = query.tags!.join('|');
-    }
+    _applyFilterClauses(query.filters, params);
     final sort = query.sort;
     if (sort != null) {
       params['SortBy'] = _sortFieldFor(sort.field, query.kind);
@@ -248,6 +204,48 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       }
     }
     return params;
+  }
+
+  /// Lower neutral clauses onto `/Items` parameters.
+  ///
+  /// MediaBrowser has no generic per-field negation, so only the two booleans
+  /// support exclusion (`IsPlayed`, `isFavorite=false`) — that limit is
+  /// declared per field in `fetchLibraryFiltersWithValues`, so the UI cannot
+  /// build a clause this drops. Multi-value clauses OR, matching Plex.
+  /// A second clause on the same field would have to AND, which `/Items`
+  /// cannot express, so the first clause for a field wins.
+  static void _applyFilterClauses(List<LibraryFilter> clauses, Map<String, dynamic> params) {
+    final wireFilters = <String>[];
+    final claimed = <String>{};
+    for (final clause in clauses) {
+      final values = clause.values.where((value) => value.isNotEmpty).toList();
+      if (values.isEmpty || !claimed.add(clause.field)) continue;
+      final negated = clause.op.isNegated;
+      switch (clause.field) {
+        case MediaFilterField.unwatched:
+          if (values.first != '1') break;
+          wireFilters.add(negated ? 'IsPlayed' : 'IsUnplayed');
+        case MediaFilterField.favorite:
+          if (values.first != '1') break;
+          if (negated) {
+            params['isFavorite'] = 'false';
+          } else {
+            wireFilters.add('IsFavorite');
+          }
+        case MediaFilterField.genre:
+          params['Genres'] = values.join('|');
+        case MediaFilterField.contentRating:
+          params['OfficialRatings'] = values.join('|');
+        case MediaFilterField.tag:
+          params['Tags'] = values.join('|');
+        case MediaFilterField.year:
+          final years = values.map(int.tryParse).whereType<int>().toList();
+          if (years.isNotEmpty) params['Years'] = years.join(',');
+      }
+    }
+    if (wireFilters.isNotEmpty) {
+      params['Filters'] = wireFilters.join(',');
+    }
   }
 
   static String _includeTypesFor(LibraryQuery query) {

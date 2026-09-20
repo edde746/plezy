@@ -1136,7 +1136,8 @@
       "tag": "标签",
       "unwatched": "未观看",
       "unplayed": "未播放",
-      "favorites": "收藏夹"
+      "favorites": "收藏夹",
+      "filePath": ""
     },
     "sortLabels": {
       "title": "标题",
@@ -1162,6 +1163,36 @@
       "dateDownloaded": "下载日期",
       "size": "大小",
       "library": "媒体库"
+    },
+    "advancedFilters": {
+      "include": "",
+      "exclude": "",
+      "any": "",
+      "yes": "",
+      "no": "",
+      "not": "",
+      "valueCount": "",
+      "valueCountExcluded": "",
+      "showResults": "",
+      "showResultsUnknown": "",
+      "searchValues": "",
+      "noValues": "",
+      "matchContains": "",
+      "matchNotContains": "",
+      "matchIs": "",
+      "matchIsNot": "",
+      "matchBeginsWith": "",
+      "matchEndsWith": "",
+      "textHint": "",
+      "from": "",
+      "to": "",
+      "range": "",
+      "atLeast": "",
+      "atMost": "",
+      "dateLastDays": "",
+      "dateLastYear": "",
+      "dateOlderThanDays": "",
+      "dateOlderThanYear": ""
     }
   },
   "about": {

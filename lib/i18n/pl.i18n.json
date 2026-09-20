@@ -1151,7 +1151,8 @@
       "tag": "Tag",
       "unwatched": "Nieobejrzane",
       "unplayed": "Nieodtworzone",
-      "favorites": "Ulubione"
+      "favorites": "Ulubione",
+      "filePath": ""
     },
     "sortLabels": {
       "title": "Tytuł",
@@ -1177,6 +1178,36 @@
       "dateDownloaded": "Data pobrania",
       "size": "Rozmiar",
       "library": "Biblioteka"
+    },
+    "advancedFilters": {
+      "include": "",
+      "exclude": "",
+      "any": "",
+      "yes": "",
+      "no": "",
+      "not": "",
+      "valueCount": "",
+      "valueCountExcluded": "",
+      "showResults": "",
+      "showResultsUnknown": "",
+      "searchValues": "",
+      "noValues": "",
+      "matchContains": "",
+      "matchNotContains": "",
+      "matchIs": "",
+      "matchIsNot": "",
+      "matchBeginsWith": "",
+      "matchEndsWith": "",
+      "textHint": "",
+      "from": "",
+      "to": "",
+      "range": "",
+      "atLeast": "",
+      "atMost": "",
+      "dateLastDays": "",
+      "dateLastYear": "",
+      "dateOlderThanDays": "",
+      "dateOlderThanYear": ""
     }
   },
   "about": {

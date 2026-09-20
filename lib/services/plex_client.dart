@@ -1090,7 +1090,7 @@ class PlexClient
     String sectionId, {
     int? start,
     int? size,
-    Map<String, String>? filters,
+    Map<String, dynamic>? filters,
     AbortController? abort,
   }) async {
     final queryParams = _buildPaginationParams(start, size);
@@ -2245,7 +2245,7 @@ class PlexClient
   Future<List<LibraryFirstCharacter>> getFirstCharacters(
     String sectionId, {
     int? type,
-    Map<String, String>? filters,
+    Map<String, dynamic>? filters,
   }) async {
     final queryParams = <String, dynamic>{};
     if (type != null) queryParams['type'] = type;
@@ -3992,14 +3992,151 @@ class PlexClient
     return externalSubtitles;
   }
 
-  /// Plex's filter listing is lazy: categories come from
-  /// `/library/sections/{id}/filters` and values are fetched per category
-  /// when the user opens a filter. The result has empty [LibraryFilterResult.cachedValues];
-  /// the FiltersBottomSheet hits the per-category endpoint on demand.
+  /// Plex publishes its filterable fields and, per field type, the operators
+  /// it can evaluate in `/library/sections/{id}/all?includeMeta=1`. That is
+  /// the only source for exclusion, ranges and text matching; the legacy
+  /// `/filters` listing knows nothing but `string`/`integer`/`boolean` and is
+  /// kept as the fallback for servers that answer no metadata.
+  ///
+  /// Values stay lazy either way — [LibraryFilterResult.cachedValues] is
+  /// empty and the editor fetches a category's values when it is opened.
   @override
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
-    final filters = await getLibraryFilters(libraryId);
-    return LibraryFilterResult(filters: filters, cachedValues: const {});
+    if (libraryId == 'shared') return LibraryFilterResult.empty;
+    final typeId = PlexMetadataType.forKind(libraryKind);
+    try {
+      final response = await _getWithFailover(
+        '/library/sections/$libraryId/all',
+        queryParameters: {'includeMeta': 1, 'X-Plex-Container-Size': 0, 'type': ?typeId},
+      );
+      final filters = _parseFilterMetadata(response, libraryId: libraryId, typeId: typeId);
+      if (filters.isNotEmpty) return LibraryFilterResult(filters: filters, cachedValues: const {});
+      appLogger.d('Plex section $libraryId returned no filter metadata; falling back to /filters');
+    } on MediaServerHttpException catch (e, stackTrace) {
+      if (e.isCancellation) rethrow;
+      appLogger.w('Plex filter metadata unavailable for section $libraryId', error: e, stackTrace: stackTrace);
+    }
+    final legacy = await getLibraryFilters(libraryId);
+    return LibraryFilterResult(filters: legacy, cachedValues: const {});
+  }
+
+  /// Parse `Meta.Type[].Field[]` (the filterable fields for the browsed type)
+  /// against `Meta.FieldType[].Operator[]` (what each field type can compare).
+  List<MediaFilter> _parseFilterMetadata(MediaServerResponse response, {required String libraryId, int? typeId}) {
+    final meta = _getMediaContainer(response)?['Meta'];
+    if (meta is! Map<String, dynamic>) return const [];
+
+    final operatorsByFieldType = <String, List<LibraryFilterOperator>>{};
+    final fieldTypes = meta['FieldType'];
+    if (fieldTypes is List) {
+      for (final entry in fieldTypes.whereType<Map<String, dynamic>>()) {
+        final fieldType = entry['type'];
+        final operators = entry['Operator'];
+        if (fieldType is! String || operators is! List) continue;
+        final parsed = operators
+            .whereType<Map<String, dynamic>>()
+            .map((op) => _plexOperatorFor(op['key']))
+            .whereType<LibraryFilterOperator>()
+            .toList();
+        if (parsed.isNotEmpty) operatorsByFieldType[fieldType] = parsed;
+      }
+    }
+
+    final types = meta['Type'];
+    if (types is! List) return const [];
+    Map<String, dynamic>? browsedType;
+    for (final entry in types.whereType<Map<String, dynamic>>()) {
+      final fields = entry['Field'];
+      if (fields is! List || fields.isEmpty) continue;
+      // `active` marks the type the request actually queried; without a
+      // `type=` parameter Plex marks the section's own type.
+      if (entry['active'] == true) {
+        browsedType = entry;
+        break;
+      }
+      browsedType ??= entry;
+    }
+    if (browsedType == null) return const [];
+
+    // Plex qualifies a field with its owning type (`show.genre`) whenever the
+    // section holds more than one type. The bare name is equivalent for the
+    // browsed type and is what the value endpoints and saved selections use,
+    // so strip only that prefix and leave cross-type fields qualified.
+    final ownPrefix = '${browsedType['type']}.';
+    final filters = <MediaFilter>[];
+    for (final field in (browsedType['Field'] as List).whereType<Map<String, dynamic>>()) {
+      final rawKey = field['key'];
+      final fieldType = field['type'];
+      final title = field['title'];
+      if (rawKey is! String || rawKey.isEmpty || fieldType is! String || title is! String) continue;
+      final wireField = rawKey.startsWith(ownPrefix) ? rawKey.substring(ownPrefix.length) : rawKey;
+      final bareField = wireField.contains('.') ? wireField.split('.').last : wireField;
+      filters.add(
+        MediaFilter(
+          filter: wireField,
+          filterType: _plexFilterTypeFor(fieldType),
+          key: _plexFilterValuesKey(fieldType, bareField, libraryId: libraryId, typeId: typeId),
+          title: title,
+          type: 'filter',
+          operators: operatorsByFieldType[fieldType] ?? MediaFilter.defaultOperatorsFor(_plexFilterTypeFor(fieldType)),
+        ),
+      );
+    }
+    if (filters.isEmpty) return const [];
+
+    // Undocumented but supported on movie and episode queries: a substring
+    // match over the item's full file path, which is the only way to filter
+    // by filename or folder. A show-type query answers 500 for it, so it is
+    // offered only where it works.
+    if (typeId == PlexMetadataType.movie || typeId == PlexMetadataType.episode) {
+      filters.add(
+        MediaFilter(
+          filter: MediaFilterField.file,
+          filterType: MediaFilterType.string,
+          key: '',
+          title: t.libraries.filterCategories.filePath,
+          type: 'filter',
+          operators: const [LibraryFilterOperator.is_, LibraryFilterOperator.isNot],
+        ),
+      );
+    }
+    return filters;
+  }
+
+  static LibraryFilterOperator? _plexOperatorFor(Object? key) => switch (key) {
+    '=' => LibraryFilterOperator.is_,
+    '!=' => LibraryFilterOperator.isNot,
+    '>>=' => LibraryFilterOperator.atLeast,
+    '<<=' => LibraryFilterOperator.atMost,
+    '==' => LibraryFilterOperator.matches,
+    '!==' => LibraryFilterOperator.notMatches,
+    '<=' => LibraryFilterOperator.beginsWith,
+    '>=' => LibraryFilterOperator.endsWith,
+    _ => null,
+  };
+
+  /// Plex's field-type vocabulary is wider than the editor's; anything that
+  /// enumerates values behaves like a tag, and the rest map straight across.
+  static String _plexFilterTypeFor(String plexFieldType) => switch (plexFieldType) {
+    'boolean' => MediaFilterType.boolean,
+    'integer' => MediaFilterType.integer,
+    'date' => MediaFilterType.date,
+    'string' => MediaFilterType.string,
+    _ => MediaFilterType.tag,
+  };
+
+  /// Value-listing endpoint for a field, or empty when Plex has no list for
+  /// it (free text, sizes, durations, dates).
+  static String _plexFilterValuesKey(String plexFieldType, String bareField, {required String libraryId, int? typeId}) {
+    const listedIntegers = {'year', 'decade'};
+    final listed = switch (plexFieldType) {
+      'boolean' || 'string' || 'date' => false,
+      'integer' => listedIntegers.contains(bareField),
+      _ => true,
+    };
+    if (!listed) return '';
+    final suffix = typeId == null ? '' : '?type=$typeId';
+    return '/library/sections/$libraryId/$bareField$suffix';
   }
 
   @override
@@ -4259,7 +4396,7 @@ class PlexClient
     String sectionId, {
     int? start,
     int? size,
-    Map<String, String>? filters,
+    Map<String, dynamic>? filters,
     AbortController? abort,
   }) async {
     final result = await _getLibraryContent(sectionId, start: start, size: size, filters: filters, abort: abort);

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../media/ids.dart';
+import '../media/library_query.dart';
 import '../media/media_filter.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -729,7 +730,7 @@ class AgentScopedSettingsCommands {
       guard.check();
       final choices = <String, List<String>>{};
       for (final filter in result.filters) {
-        if (filter.filterType == 'boolean') {
+        if (filter.isBoolean) {
           choices[filter.filter] = const ['1'];
         } else {
           final values =
@@ -739,8 +740,9 @@ class AgentScopedSettingsCommands {
           choices[filter.filter] = values.map((v) => libraryFilterValueId(v.key, filter.filter)).toList();
         }
       }
-      List<Map<String, dynamic>> domain(Map<String, String> values) => [
-        for (final entry in values.entries) {'filterId': entry.key, 'valueId': entry.value},
+      List<Map<String, dynamic>> domain(List<LibraryFilter> clauses) => [
+        for (final clause in clauses)
+          {'filterId': clause.field, 'valueIds': clause.values, if (clause.op.isNegated) 'exclude': true},
       ];
       entries.add(
         _valueEntry(
@@ -759,25 +761,46 @@ class AgentScopedSettingsCommands {
               LibraryPreference.filters,
               profileId: guard.profileId,
             );
-            final override = stored is Map
-                ? domain({for (final entry in stored.entries) entry.key.toString(): entry.value.toString()})
-                : null;
+            final override = stored is List<LibraryFilter> ? domain(stored) : null;
             return {'value': resolved, 'storedOverride': override, 'resolvedValue': resolved};
           },
           normalize: (v) {
             if (v is! List || v.length > result.filters.length) {
-              _invalid('Filters must be a bounded array of filter/value pairs.');
+              _invalid('Filters must be a bounded array of filter clauses.');
             }
-            final selected = <String, String>{};
+            final selected = <LibraryFilter>[];
+            final seen = <String>{};
             for (final raw in v) {
               final value = agentObject(raw, 'filter');
-              _only(value, const {'filterId', 'valueId'});
+              _only(value, const {'filterId', 'valueIds', 'exclude'});
               final id = agentString(value, 'filterId');
-              final valueId = agentString(value, 'valueId');
-              if (selected.containsKey(id) || !(choices[id]?.contains(valueId) ?? false)) {
+              final rawValues = value['valueIds'];
+              if (rawValues is! List || rawValues.isEmpty || rawValues.length > 32) {
+                _invalid('Each filter needs between one and thirty-two value ids.');
+              }
+              final exclude = value['exclude'] ?? false;
+              if (exclude is! bool) _invalid('The exclude flag must be a boolean.');
+              final filter = result.filters.where((f) => f.filter == id).firstOrNull;
+              if (filter == null || !seen.add(id)) {
                 _invalid('An unavailable or duplicate filter was selected.');
               }
-              selected[id] = valueId;
+              if (exclude && !filter.supportsExclusion) {
+                _invalid('This server cannot exclude values for that filter.');
+              }
+              final valueIds = <String>[];
+              for (final rawValue in rawValues) {
+                if (rawValue is! String || !(choices[id]?.contains(rawValue) ?? false)) {
+                  _invalid('An unavailable filter value was selected.');
+                }
+                valueIds.add(rawValue);
+              }
+              selected.add(
+                LibraryFilter(
+                  field: id,
+                  op: exclude ? LibraryFilterOperator.isNot : LibraryFilterOperator.is_,
+                  values: valueIds,
+                ),
+              );
             }
             return selected;
           },
@@ -788,7 +811,7 @@ class AgentScopedSettingsCommands {
                   profileId: guard.profileId,
                   checkCurrent: guard.check,
                 )
-              : storage.saveLibraryFilters(v as Map<String, String>, sectionId: globalKey, profileId: guard.profileId),
+              : storage.saveLibraryFilters(v as List<LibraryFilter>, sectionId: globalKey, profileId: guard.profileId),
         ),
       );
     }

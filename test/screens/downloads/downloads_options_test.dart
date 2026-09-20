@@ -8,6 +8,7 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/download_models.dart';
@@ -253,11 +254,19 @@ void main() {
     await tester.tap(find.text('Library A'));
     await tester.pumpAndSettle();
 
+    // Selecting stages the edit; the editor stays open so more criteria can be
+    // added. The grid updates when it closes.
+    expect(cards(tester), hasLength(3));
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+
     final titles = cards(tester).map((card) => (card.item as MediaItem).title).toList();
     expect(titles, ['Alpha One', 'Alpha Two']);
 
     final storage = await StorageService.getInstance();
-    expect(storage.getLibraryFilters(sectionId: 'downloads:movies'), {'library': 'srv:lib-a'});
+    expect(storage.getLibraryFilters(sectionId: 'downloads:movies'), const [
+      LibraryFilter(field: 'library', values: ['srv:lib-a']),
+    ]);
   });
 
   testWidgets('persisted library grouping restores sectioned albums on rebuild', (tester) async {
@@ -281,7 +290,9 @@ void main() {
 
   testWidgets('persisted library filter survives a cold start before downloads load', (tester) async {
     final storage = await StorageService.getInstance();
-    await storage.saveLibraryFilters({'library': 'srv:lib-a'}, sectionId: 'downloads:movies');
+    await storage.saveLibraryFilters(const [
+      LibraryFilter(field: 'library', values: ['srv:lib-a']),
+    ], sectionId: 'downloads:movies');
 
     // Pump with an empty provider: the tab restores its options before any
     // downloads exist, so validating against the (empty) library list would
@@ -304,7 +315,9 @@ void main() {
   testWidgets('a legacy global filter does not leak into the downloads tab', (tester) async {
     final storage = await StorageService.getInstance();
     // The unscoped (legacy) key is what old library browse builds wrote.
-    await storage.saveLibraryFilters({'unwatched': '1'});
+    await storage.saveLibraryFilters(const [
+      LibraryFilter(field: 'unwatched', values: ['1']),
+    ]);
 
     seed([
       movie('m-1', title: 'Watched', libraryId: 'lib-a', libraryTitle: 'Library A', viewCount: 1),
@@ -331,6 +344,8 @@ void main() {
 
     await openOptionsRow(tester, 'Filters');
     await tester.tap(find.text('Unwatched'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
 
     // Every movie is watched: the grid swaps to the filtered-empty state

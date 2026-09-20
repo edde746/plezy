@@ -1141,7 +1141,8 @@
       "tag": "Тег",
       "unwatched": "Көрілмеген",
       "unplayed": "Ойнатылмаған",
-      "favorites": "Таңдаулылар"
+      "favorites": "Таңдаулылар",
+      "filePath": ""
     },
     "sortLabels": {
       "title": "Атауы",
@@ -1167,6 +1168,36 @@
       "dateDownloaded": "Жүктелген күні",
       "size": "Көлемі",
       "library": "Кітапхана"
+    },
+    "advancedFilters": {
+      "include": "",
+      "exclude": "",
+      "any": "",
+      "yes": "",
+      "no": "",
+      "not": "",
+      "valueCount": "",
+      "valueCountExcluded": "",
+      "showResults": "",
+      "showResultsUnknown": "",
+      "searchValues": "",
+      "noValues": "",
+      "matchContains": "",
+      "matchNotContains": "",
+      "matchIs": "",
+      "matchIsNot": "",
+      "matchBeginsWith": "",
+      "matchEndsWith": "",
+      "textHint": "",
+      "from": "",
+      "to": "",
+      "range": "",
+      "atLeast": "",
+      "atMost": "",
+      "dateLastDays": "",
+      "dateLastYear": "",
+      "dateOlderThanDays": "",
+      "dateOlderThanYear": ""
     }
   },
   "about": {

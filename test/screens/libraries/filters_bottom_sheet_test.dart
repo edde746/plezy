@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/screens/libraries/filters_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
@@ -10,8 +11,18 @@ import 'package:plezy/widgets/bottom_sheet_page_scaffold.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 
 final _filters = [
-  MediaFilter(filter: 'genre', filterType: 'string', key: 'genre', title: 'Genre', type: 'filter'),
-  MediaFilter(filter: 'studio', filterType: 'string', key: 'studio', title: 'Studio', type: 'filter'),
+  MediaFilter(filter: 'unwatched', filterType: MediaFilterType.boolean, key: '', title: 'Unwatched', type: 'filter'),
+  MediaFilter(filter: 'genre', filterType: MediaFilterType.tag, key: 'genre', title: 'Genre', type: 'filter'),
+  MediaFilter(filter: 'studio', filterType: MediaFilterType.tag, key: 'studio', title: 'Studio', type: 'filter'),
+  MediaFilter(
+    // Equality only, as MediaBrowser declares its value facets.
+    filter: 'tag',
+    filterType: MediaFilterType.tag,
+    key: 'tag',
+    title: 'Tag',
+    type: 'filter',
+    operators: const [LibraryFilterOperator.is_],
+  ),
 ];
 
 MediaFilterValue _value(String key, String title) => MediaFilterValue(key: key, title: title);
@@ -87,13 +98,15 @@ void main() {
     expect(find.text('Filters'), findsOneWidget);
   });
 
-  testWidgets('back then clear retires a loading request before closing', (tester) async {
+  testWidgets('back then clear retires a loading request and keeps the editor open', (tester) async {
     final requests = _FilterRequests();
-    final applied = <Map<String, String>>[];
+    final applied = <List<LibraryFilter>>[];
     await _pumpSheet(
       tester,
       loader: requests.load,
-      selectedFilters: const {'studio': 'selected'},
+      selectedFilters: const [
+        LibraryFilter(field: 'studio', values: ['selected']),
+      ],
       onChanged: applied.add,
     );
 
@@ -104,7 +117,9 @@ void main() {
 
     expect(applied, hasLength(1));
     expect(applied.single, isEmpty);
-    expect(find.byType(FiltersBottomSheet), findsNothing);
+    // Editing stages; the host commits on dismissal, so clearing must not
+    // close the editor out from under a user who is still adding criteria.
+    expect(find.byType(FiltersBottomSheet), findsOneWidget);
 
     requests.request('genre').complete([_value('late', 'Late Genre')]);
     await tester.pump();
@@ -113,11 +128,13 @@ void main() {
 
   testWidgets('missing selected value is preserved until explicit user action', (tester) async {
     final requests = _FilterRequests();
-    final applied = <Map<String, String>>[];
+    final applied = <List<LibraryFilter>>[];
     await _pumpSheet(
       tester,
       loader: requests.load,
-      selectedFilters: const {'genre': 'missing'},
+      selectedFilters: const [
+        LibraryFilter(field: 'genre', values: ['missing']),
+      ],
       onChanged: applied.add,
     );
 
@@ -189,6 +206,127 @@ void main() {
     expect(sheetHeight(), lessThan(cap), reason: 'short value list must not fill the cap');
   });
 
+  testWidgets('values accumulate instead of applying and closing on the first tap', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(
+      tester,
+      loader: (_) async => const [],
+      onChanged: applied.add,
+      cachedValues: {
+        'genre': [_value('1', 'Action'), _value('2', 'Comedy')],
+      },
+    );
+
+    await tester.tap(find.text('Genre'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Action'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comedy'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FiltersBottomSheet), findsOneWidget, reason: 'a multi-select page cannot close on each tap');
+    expect(applied.last, const [
+      LibraryFilter(field: 'genre', values: ['1', '2']),
+    ]);
+
+    // Re-tapping removes just that value.
+    await tester.tap(find.text('Action'));
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'genre', values: ['2']),
+    ]);
+  });
+
+  testWidgets('the exclude row negates the clause and survives a value change', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(
+      tester,
+      loader: (_) async => const [],
+      onChanged: applied.add,
+      cachedValues: {
+        'genre': [_value('1', 'Action')],
+      },
+    );
+
+    await tester.tap(find.text('Genre'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Action'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Exclude').last);
+    await tester.pumpAndSettle();
+
+    expect(applied.last, const [
+      LibraryFilter(field: 'genre', op: LibraryFilterOperator.isNot, values: ['1']),
+    ]);
+  });
+
+  testWidgets('a field the backend cannot negate offers no exclude control', (tester) async {
+    await _pumpSheet(
+      tester,
+      loader: (_) async => const [],
+      cachedValues: {
+        'tag': [_value('t1', 'Christmas')],
+      },
+    );
+
+    await tester.tap(find.text('Tag'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Christmas'), findsOneWidget);
+    expect(find.text('Exclude'), findsNothing);
+  });
+
+  testWidgets('a boolean field cycles Any -> Yes -> No in place', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(tester, loader: (_) async => const [], onChanged: applied.add);
+
+    await tester.tap(find.text('Unwatched'));
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'unwatched', values: ['1']),
+    ]);
+    // Still the category list: a boolean has no page to drill into.
+    expect(find.text('Genre'), findsOneWidget);
+
+    await tester.tap(find.text('Unwatched'));
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'unwatched', op: LibraryFilterOperator.isNot, values: ['1']),
+    ]);
+
+    await tester.tap(find.text('Unwatched'));
+    await tester.pumpAndSettle();
+    expect(applied.last, isEmpty);
+  });
+
+  testWidgets('the footer counts the pending selection and commits on press', (tester) async {
+    final counted = <List<LibraryFilter>>[];
+    await _pumpSheet(
+      tester,
+      loader: (_) async => const [],
+      countLoader: (clauses) async {
+        counted.add(clauses);
+        return clauses.isEmpty ? 57 : 14;
+      },
+    );
+
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Show 57'), findsOneWidget);
+
+    await tester.tap(find.text('Unwatched'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Show 14'), findsOneWidget);
+    expect(counted.last, const [
+      LibraryFilter(field: 'unwatched', values: ['1']),
+    ]);
+
+    await tester.tap(find.text('Show 14'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FiltersBottomSheet), findsNothing);
+  });
+
   testWidgets('cached values bypass the lazy loader', (tester) async {
     var loadCount = 0;
     await _pumpSheet(
@@ -212,9 +350,10 @@ void main() {
 Future<_SheetHarness> _pumpSheet(
   WidgetTester tester, {
   required Future<List<MediaFilterValue>> Function(MediaFilter filter) loader,
-  Map<String, String> selectedFilters = const {},
+  List<LibraryFilter> selectedFilters = const [],
   Map<String, List<MediaFilterValue>>? cachedValues,
-  ValueChanged<Map<String, String>>? onChanged,
+  ValueChanged<List<LibraryFilter>>? onChanged,
+  FilterCountLoader? countLoader,
 }) async {
   final config = ValueNotifier(
     _SheetConfig(
@@ -244,6 +383,7 @@ Future<_SheetHarness> _pumpSheet(
                     libraryKey: value.libraryKey,
                     loadFilterValues: value.loader,
                     cachedValues: value.cachedValues,
+                    countLoader: countLoader,
                   ),
                 ),
               );
@@ -307,7 +447,7 @@ class _SheetConfig {
 
   final String serverId;
   final String libraryKey;
-  final Map<String, String> selectedFilters;
+  final List<LibraryFilter> selectedFilters;
   final Future<List<MediaFilterValue>> Function(MediaFilter filter) loader;
   final Map<String, List<MediaFilterValue>>? cachedValues;
 

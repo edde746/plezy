@@ -1,8 +1,9 @@
+import 'library_query.dart';
 import 'media_item.dart';
 
-/// Filter keys understood by [downloadItemMatchesFilters]. The map shape
-/// mirrors the library browse filters (`filter name → selected value`) so the
-/// downloads UI can reuse the same selection plumbing.
+/// Filter fields understood by [downloadItemMatchesFilters]. The clause shape
+/// mirrors the library browse filters so the downloads UI can reuse the same
+/// selection plumbing and editor.
 const downloadFilterUnwatched = 'unwatched';
 const downloadFilterLibrary = 'library';
 
@@ -11,25 +12,32 @@ const downloadFilterLibrary = 'library';
 /// form, which matches items with no library attribution.
 String downloadLibraryFilterValue(String? serverId, String? libraryId) => '${serverId ?? ''}:${libraryId ?? ''}';
 
-/// Whether [item] passes every active entry in [selected] — the downloads
-/// screen's local equivalent of the server-side browse filters (#927).
+/// Whether [item] passes every clause in [selected] — the downloads screen's
+/// local equivalent of the server-side browse filters (#927).
 ///
-/// Recognized keys:
-/// - [downloadFilterUnwatched]: presence means "unwatched only"; the item
-///   must still have unwatched content (see [_hasUnwatchedContent]).
-/// - [downloadFilterLibrary]: the value is a `serverId:libraryId` pair from
-///   [downloadLibraryFilterValue]; the item must belong to that library.
+/// Recognized fields:
+/// - [downloadFilterUnwatched]: the item must still have unwatched content
+///   (see [_hasUnwatchedContent]), or must not when the clause is negated.
+/// - [downloadFilterLibrary]: values are `serverId:libraryId` pairs from
+///   [downloadLibraryFilterValue]; the item must belong to one of them, or to
+///   none of them when the clause is negated.
 ///
-/// Unknown keys are ignored — callers whitelist the keys they offer, and
+/// Values inside one clause OR and clauses AND, exactly as on the wire.
+/// Unknown fields are ignored — callers whitelist the fields they offer, and
 /// ignoring keeps older builds forward-compatible with filters added later.
-bool downloadItemMatchesFilters(MediaItem item, Map<String, String> selected) {
-  for (final entry in selected.entries) {
-    switch (entry.key) {
+bool downloadItemMatchesFilters(MediaItem item, List<LibraryFilter> selected) {
+  for (final clause in selected) {
+    if (clause.values.isEmpty) continue;
+    final bool matches;
+    switch (clause.field) {
       case downloadFilterUnwatched:
-        if (!_hasUnwatchedContent(item)) return false;
+        matches = _hasUnwatchedContent(item);
       case downloadFilterLibrary:
-        if (!_matchesLibraryValue(item, entry.value)) return false;
+        matches = clause.values.any((value) => _matchesLibraryValue(item, value));
+      default:
+        continue;
     }
+    if (matches == clause.op.isNegated) return false;
   }
   return true;
 }

@@ -1141,7 +1141,8 @@
       "tag": "Tag",
       "unwatched": "Unwatched",
       "unplayed": "Unplayed",
-      "favorites": "Favorites"
+      "favorites": "Favorites",
+      "filePath": "File Path"
     },
     "sortLabels": {
       "title": "Title",
@@ -1167,6 +1168,36 @@
       "dateDownloaded": "Date Downloaded",
       "size": "Size",
       "library": "Library"
+    },
+    "advancedFilters": {
+      "include": "Include",
+      "exclude": "Exclude",
+      "any": "Any",
+      "yes": "Yes",
+      "no": "No",
+      "not": "Not ${value}",
+      "valueCount": "${count} selected",
+      "valueCountExcluded": "${count} excluded",
+      "showResults": "Show ${count}",
+      "showResultsUnknown": "Show results",
+      "searchValues": "Search values",
+      "noValues": "No values",
+      "matchContains": "Contains",
+      "matchNotContains": "Does not contain",
+      "matchIs": "Is",
+      "matchIsNot": "Is not",
+      "matchBeginsWith": "Begins with",
+      "matchEndsWith": "Ends with",
+      "textHint": "Type to match",
+      "from": "From",
+      "to": "To",
+      "range": "${from} to ${to}",
+      "atLeast": "${value} and up",
+      "atMost": "Up to ${value}",
+      "dateLastDays": "Last ${count} days",
+      "dateLastYear": "Last year",
+      "dateOlderThanDays": "Older than ${count} days",
+      "dateOlderThanYear": "Older than a year"
     }
   },
   "about": {

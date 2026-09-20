@@ -1141,7 +1141,8 @@
       "tag": "Tag",
       "unwatched": "Ungesehene",
       "unplayed": "Nicht abgespielt",
-      "favorites": "Favoriten"
+      "favorites": "Favoriten",
+      "filePath": ""
     },
     "sortLabels": {
       "title": "Titel",
@@ -1167,6 +1168,36 @@
       "dateDownloaded": "Heruntergeladen am",
       "size": "Größe",
       "library": "Mediathek"
+    },
+    "advancedFilters": {
+      "include": "",
+      "exclude": "",
+      "any": "",
+      "yes": "",
+      "no": "",
+      "not": "",
+      "valueCount": "",
+      "valueCountExcluded": "",
+      "showResults": "",
+      "showResultsUnknown": "",
+      "searchValues": "",
+      "noValues": "",
+      "matchContains": "",
+      "matchNotContains": "",
+      "matchIs": "",
+      "matchIsNot": "",
+      "matchBeginsWith": "",
+      "matchEndsWith": "",
+      "textHint": "",
+      "from": "",
+      "to": "",
+      "range": "",
+      "atLeast": "",
+      "atMost": "",
+      "dateLastDays": "",
+      "dateLastYear": "",
+      "dateOlderThanDays": "",
+      "dateOlderThanYear": ""
     }
   },
   "about": {

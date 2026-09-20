@@ -1141,7 +1141,8 @@
       "tag": "Таг",
       "unwatched": "Негледани",
       "unplayed": "Непускани",
-      "favorites": "Любими"
+      "favorites": "Любими",
+      "filePath": ""
     },
     "sortLabels": {
       "title": "Заглавие",
@@ -1167,6 +1168,36 @@
       "dateDownloaded": "Дата на изтегляне",
       "size": "Размер",
       "library": "Библиотека"
+    },
+    "advancedFilters": {
+      "include": "",
+      "exclude": "",
+      "any": "",
+      "yes": "",
+      "no": "",
+      "not": "",
+      "valueCount": "",
+      "valueCountExcluded": "",
+      "showResults": "",
+      "showResultsUnknown": "",
+      "searchValues": "",
+      "noValues": "",
+      "matchContains": "",
+      "matchNotContains": "",
+      "matchIs": "",
+      "matchIsNot": "",
+      "matchBeginsWith": "",
+      "matchEndsWith": "",
+      "textHint": "",
+      "from": "",
+      "to": "",
+      "range": "",
+      "atLeast": "",
+      "atMost": "",
+      "dateLastDays": "",
+      "dateLastYear": "",
+      "dateOlderThanDays": "",
+      "dateOlderThanYear": ""
     }
   },
   "about": {

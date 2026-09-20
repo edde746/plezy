@@ -1,33 +1,63 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
 import '../../focus/focusable_button.dart';
 import '../../focus/input_mode_tracker.dart';
+import '../../i18n/strings.g.dart';
+import '../../media/library_filter_selection.dart';
+import '../../media/library_query.dart';
 import '../../media/media_filter.dart';
-import 'state_messages.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/scroll_utils.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
-import '../../i18n/strings.g.dart';
+import 'filters/filter_operator_row.dart';
+import 'filters/filter_range_page.dart';
+import 'filters/filter_summary.dart';
+import 'filters/filter_text_page.dart';
+import 'filters/filter_value_page.dart';
+import 'state_messages.dart';
 
 typedef FilterValuesLoader = Future<List<MediaFilterValue>> Function(MediaFilter filter);
 
+/// Count of items the pending selection would show, or null when the backend
+/// cannot answer cheaply.
+typedef FilterCountLoader = Future<int?> Function(List<LibraryFilter> filters);
+
+/// The library filter editor.
+///
+/// Two pages: the category list, and one editor per category chosen by the
+/// field's [MediaFilter.editorKind]. Every edit is staged locally and pushed
+/// to [onFiltersChanged] so the host can commit once on dismissal — a
+/// multi-select page cannot apply-and-close on each tap, and reloading the
+/// grid per checkbox would issue a request per keystroke.
+///
+/// Hosted by `OverlaySheetHost` on touch/TV and by `showAnchoredFilterPanel`
+/// on pointer platforms; both paths render this same widget, so the surfaces
+/// cannot drift apart.
 class FiltersBottomSheet extends StatefulWidget {
   final List<MediaFilter> filters;
-  final Map<String, String> selectedFilters;
-  final Function(Map<String, String>) onFiltersChanged;
+  final List<LibraryFilter> selectedFilters;
+  final ValueChanged<List<LibraryFilter>> onFiltersChanged;
   final String serverId;
   final String libraryKey;
   final FilterValuesLoader loadFilterValues;
   final VoidCallback? onBack;
 
-  /// Optional pre-fetched values per filter name. When non-null the sheet
-  /// reads from this instead of calling `client.getFilterValues` — used
-  /// for Jellyfin libraries where values come back in the same call that
-  /// lists the categories.
+  /// Optional pre-fetched values per filter name. When non-null the editor
+  /// reads from this instead of calling [loadFilterValues] — used for
+  /// MediaBrowser libraries where values arrive with the category listing.
   final Map<String, List<MediaFilterValue>>? cachedValues;
+
+  /// Resolves the "Show N" footer count. Omitted when the host cannot count
+  /// (the offline downloads tab filters in memory).
+  final FilterCountLoader? countLoader;
+
+  /// Dismisses the editor. Defaults to closing the enclosing overlay sheet.
+  final VoidCallback? onRequestClose;
 
   const FiltersBottomSheet({
     super.key,
@@ -39,6 +69,8 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.loadFilterValues,
     this.onBack,
     this.cachedValues,
+    this.countLoader,
+    this.onRequestClose,
   });
 
   @override
@@ -53,22 +85,22 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   int _filterValuesLoadGeneration = 0;
   final _contentKey = GlobalKey();
   double? _transitionMinHeight;
-  final Map<String, String> _tempSelectedFilters = {};
-  static final Map<String, String> _filterDisplayNames = {}; // Cache for display names
-  static const int _maxCachedDisplayNames = 1000;
+  late List<LibraryFilter> _selection;
   late List<MediaFilter> _sortedFilters;
   late final FocusNode _initialFocusNode;
-  final _valuesFirstItemKey = GlobalKey();
-  final _valuesScrollController = ScrollController();
 
-  String _cacheKey(String filter, String value) => '${widget.serverId}:${widget.libraryKey}:$filter:$value';
+  Timer? _countDebounce;
+  int _countGeneration = 0;
+  int? _count;
+  bool _countPending = false;
 
   @override
   void initState() {
     super.initState();
-    _tempSelectedFilters.addAll(widget.selectedFilters);
+    _selection = List<LibraryFilter>.of(widget.selectedFilters);
     _sortFilters();
     _initialFocusNode = FocusNode(debugLabel: 'FiltersBottomSheetInitialFocus');
+    _scheduleCount();
   }
 
   @override
@@ -81,9 +113,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       _filterValues = [];
       _isLoadingValues = false;
       _filterValuesError = null;
-      _tempSelectedFilters
-        ..clear()
-        ..addAll(widget.selectedFilters);
+      _selection = List<LibraryFilter>.of(widget.selectedFilters);
+      _scheduleCount();
     }
     if (ownerChanged || !identical(oldWidget.filters, widget.filters)) {
       _sortFilters();
@@ -93,22 +124,97 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   @override
   void dispose() {
     _filterValuesLoadGeneration++;
-    _valuesScrollController.dispose();
+    _countGeneration++;
+    _countDebounce?.cancel();
     _initialFocusNode.dispose();
     super.dispose();
   }
 
   void _sortFilters() {
-    // Separate boolean filters (toggles) from regular filters
-    final booleanFilters = widget.filters.where((f) => f.filterType == 'boolean').toList();
-    final regularFilters = widget.filters.where((f) => f.filterType != 'boolean').toList();
-
-    // Combine with boolean filters first
+    // Booleans first: they are one-touch on the category list, so keeping
+    // them above the drill-in rows puts the cheapest controls in reach.
+    final booleanFilters = widget.filters.where((f) => f.isBoolean).toList();
+    final regularFilters = widget.filters.where((f) => !f.isBoolean).toList();
     _sortedFilters = [...booleanFilters, ...regularFilters];
   }
 
-  bool _isBooleanFilter(MediaFilter filter) {
-    return filter.filterType == 'boolean';
+  // ---------------------------------------------------------------------
+  // Selection
+  // ---------------------------------------------------------------------
+
+  void _commitSelection(List<LibraryFilter> next) {
+    setState(() => _selection = next);
+    widget.onFiltersChanged(List<LibraryFilter>.of(next));
+    _scheduleCount();
+  }
+
+  void _setField(String field, List<LibraryFilter> clauses) => _commitSelection(_selection.withField(field, clauses));
+
+  void _clearFilters() {
+    _filterValuesLoadGeneration++;
+    _commitSelection(const []);
+  }
+
+  void _close() {
+    final onRequestClose = widget.onRequestClose;
+    if (onRequestClose != null) {
+      onRequestClose();
+      return;
+    }
+    OverlaySheetController.of(context).close();
+  }
+
+  // ---------------------------------------------------------------------
+  // Result count
+  // ---------------------------------------------------------------------
+
+  void _scheduleCount() {
+    final loader = widget.countLoader;
+    if (loader == null) return;
+    _countDebounce?.cancel();
+    final generation = ++_countGeneration;
+    setState(() => _countPending = true);
+    _countDebounce = Timer(const Duration(milliseconds: 350), () => unawaited(_loadCount(loader, generation)));
+  }
+
+  Future<void> _loadCount(FilterCountLoader loader, int generation) async {
+    final pending = List<LibraryFilter>.of(_selection);
+    try {
+      final count = await loader(pending);
+      if (!mounted || generation != _countGeneration) return;
+      setState(() {
+        _count = count;
+        _countPending = false;
+      });
+    } catch (e, stackTrace) {
+      if (!mounted || generation != _countGeneration) return;
+      appLogger.d('Filter result count unavailable: $e', stackTrace: stackTrace);
+      setState(() {
+        _count = null;
+        _countPending = false;
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Values
+  // ---------------------------------------------------------------------
+
+  Future<void> _openFilter(MediaFilter filter) async {
+    if (filter.editorKind != FilterEditorKind.valueList) {
+      // Nothing to fetch; swap straight to the editor.
+      _transitionMinHeight = _contentHeight();
+      final generation = ++_filterValuesLoadGeneration;
+      setState(() {
+        _currentFilter = filter;
+        _filterValues = [];
+        _isLoadingValues = false;
+        _filterValuesError = null;
+      });
+      _requestInitialFocus(generation, widget.serverId, widget.libraryKey, filter.filter);
+      return;
+    }
+    await _loadFilterValues(filter);
   }
 
   Future<void> _loadFilterValues(MediaFilter filter) async {
@@ -131,29 +237,15 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     });
 
     try {
-      // Cached path (Jellyfin) - `/Items/Filters` returned values inline.
+      // Cached path (MediaBrowser) — the category listing carried the values.
       final cached = cachedValues?[filterKey];
       final values = cached ?? await loader(filter);
       if (!_isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey)) return;
-
-      final selectedValue = _tempSelectedFilters[filterKey];
-      final selectedIndex = selectedValue == null
-          ? -1
-          : values.indexWhere((value) => libraryFilterValueId(value.key, filterKey) == selectedValue);
       setState(() {
         _filterValues = values;
         _isLoadingValues = false;
       });
       _requestInitialFocus(generation, serverId, libraryKey, filterKey);
-      if (selectedIndex >= 0) {
-        // +1 because index 0 is the "All" row.
-        scrollToCurrentItem(
-          _valuesScrollController,
-          _valuesFirstItemKey,
-          selectedIndex + 1,
-          isCurrent: () => _isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey),
-        );
-      }
     } catch (e, stackTrace) {
       if (!_isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey)) return;
       appLogger.w('Failed to load values for filter $filterKey', error: e, stackTrace: stackTrace);
@@ -178,6 +270,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     final generation = ++_filterValuesLoadGeneration;
     final serverId = widget.serverId;
     final libraryKey = widget.libraryKey;
+    _transitionMinHeight = _contentHeight();
     setState(() {
       _currentFilter = null;
       _filterValues = [];
@@ -199,19 +292,16 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     });
   }
 
-  void _clearFilters() {
-    _filterValuesLoadGeneration++;
-    setState(() {
-      _tempSelectedFilters.clear();
-    });
-    _applyFilters();
+  /// Height the content area currently occupies, used to hold the sheet steady
+  /// across a page swap. Null before first layout.
+  double? _contentHeight() {
+    final box = _contentKey.currentContext?.findRenderObject() as RenderBox?;
+    return box?.hasSize == true ? box!.size.height : null;
   }
 
-  void _applyFilters() {
-    _filterValuesLoadGeneration++;
-    widget.onFiltersChanged(Map<String, String>.of(_tempSelectedFilters));
-    OverlaySheetController.of(context).close();
-  }
+  // ---------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +310,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       title: currentFilter?.title ?? t.libraries.filters,
       icon: Symbols.filter_alt_rounded,
       onBack: currentFilter != null ? _goBack : widget.onBack,
-      action: currentFilter == null && _tempSelectedFilters.isNotEmpty
+      action: currentFilter == null && _selection.isNotEmpty
           ? FocusableButton(
               onPressed: _clearFilters,
               child: TextButton.icon(
@@ -230,27 +320,45 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
               ),
             )
           : null,
-      child: KeyedSubtree(
-        key: _contentKey,
-        child: currentFilter != null ? _buildFilterValuesView(currentFilter) : _buildFiltersView(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: KeyedSubtree(
+              key: _contentKey,
+              child: currentFilter != null ? _buildFilterPage(currentFilter) : _buildFiltersView(),
+            ),
+          ),
+          if (widget.countLoader != null) _buildApplyFooter(),
+        ],
       ),
     );
   }
 
-  /// Height the content area currently occupies, used to hold the sheet steady
-  /// across a page swap. Null before first layout.
-  double? _contentHeight() {
-    final box = _contentKey.currentContext?.findRenderObject() as RenderBox?;
-    return box?.hasSize == true ? box!.size.height : null;
+  Widget _buildApplyFooter() {
+    final count = _count;
+    final label = count == null || _countPending
+        ? t.libraries.advancedFilters.showResultsUnknown
+        : t.libraries.advancedFilters.showResults(count: count.toString());
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: FocusableButton(
+          useBackgroundFocus: true,
+          onPressed: _close,
+          child: FilledButton(onPressed: _close, child: Text(label)),
+        ),
+      ),
+    );
   }
 
-  Widget _buildFilterValuesView(MediaFilter filter) {
+  Widget _buildFilterPage(MediaFilter filter) {
     final error = _filterValuesError;
     if (error != null) {
-      // The StateMessageWidget family is filling by design — 33 other sites
-      // render it in page bodies and SliverFillRemaining. The unbounded scroll
-      // axis here is what lets its inner Center shrink to content, so the sheet
-      // does not stretch to the full height cap for one line of text.
+      // The StateMessageWidget family is filling by design, so the unbounded
+      // scroll axis is what lets its inner Center shrink to content instead of
+      // stretching the sheet to the height cap for one line of text.
       return SingleChildScrollView(
         primary: false,
         child: ErrorStateWidget(
@@ -269,9 +377,6 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       // transient spinner cannot move the header. Settled states below hug.
       return Focus(
         autofocus: InputModeTracker.isKeyboardMode(context),
-        // Exactly the outgoing height, so the swap moves nothing.
-        // [_loadFilterValues] assigns it immediately before setting
-        // `_isLoadingValues`, so it is never null here.
         child: SizedBox(
           height: _transitionMinHeight,
           child: const Center(child: CircularProgressIndicator()),
@@ -279,52 +384,42 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       );
     }
 
-    final autofocusFirst = InputModeTracker.isKeyboardMode(context);
-    return ListView.builder(
-      controller: _valuesScrollController,
-      primary: false,
-      shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _filterValues.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          final isSelected = !_tempSelectedFilters.containsKey(filter.filter);
-          return FocusableListTile(
-            key: _valuesFirstItemKey,
-            focusNode: _initialFocusNode,
-            autofocus: autofocusFirst,
-            title: Text(t.libraries.all),
-            selected: isSelected,
-            onTap: () {
-              setState(() {
-                _tempSelectedFilters.remove(filter.filter);
-              });
-              _applyFilters();
-            },
-          );
-        }
-
-        final value = _filterValues[index - 1];
-        final filterValue = libraryFilterValueId(value.key, filter.filter);
-        final isSelected = _tempSelectedFilters[filter.filter] == filterValue;
-
-        return FocusableListTile(
-          title: Text(value.title),
-          selected: isSelected,
-          onTap: () {
-            setState(() {
-              _tempSelectedFilters[filter.filter] = filterValue;
-              // Cache the display name for this filter value.
-              if (_filterDisplayNames.length > _maxCachedDisplayNames) {
-                _filterDisplayNames.clear();
-              }
-              _filterDisplayNames[_cacheKey(filter.filter, filterValue)] = value.title;
-            });
-            _applyFilters();
-          },
-        );
-      },
-    );
+    final clauses = _selection.clausesFor(filter.filter);
+    return switch (filter.editorKind) {
+      FilterEditorKind.valueList => FilterValuePage(
+        filter: filter,
+        values: _filterValues,
+        clause: clauses.firstOrNull,
+        serverId: widget.serverId,
+        libraryKey: widget.libraryKey,
+        initialFocusNode: _initialFocusNode,
+        onBack: _goBack,
+        onChanged: (next) => _setField(filter.filter, next),
+      ),
+      FilterEditorKind.number => FilterNumberPage(
+        filter: filter,
+        clauses: clauses,
+        initialFocusNode: _initialFocusNode,
+        onBack: _goBack,
+        onChanged: (next) => _setField(filter.filter, next),
+      ),
+      FilterEditorKind.date => FilterDatePage(
+        filter: filter,
+        clauses: clauses,
+        initialFocusNode: _initialFocusNode,
+        onBack: _goBack,
+        onChanged: (next) => _setField(filter.filter, next),
+      ),
+      FilterEditorKind.text => FilterTextPage(
+        filter: filter,
+        clause: clauses.firstOrNull,
+        initialFocusNode: _initialFocusNode,
+        onBack: _goBack,
+        onChanged: (next) => _setField(filter.filter, next),
+      ),
+      // Booleans are edited in place on the category list.
+      FilterEditorKind.toggle => const SizedBox.shrink(),
+    };
   }
 
   Widget _buildFiltersView() {
@@ -336,57 +431,57 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       itemCount: _sortedFilters.length,
       itemBuilder: (context, index) {
         final filter = _sortedFilters[index];
+        final focusNode = index == 0 ? _initialFocusNode : null;
+        final autofocus = index == 0 && autofocusFirst;
 
-        // Handle boolean filters as switches (unwatched, inProgress, unmatched, hdr, etc.)
-        if (_isBooleanFilter(filter)) {
-          final isActive =
-              _tempSelectedFilters.containsKey(filter.filter) && _tempSelectedFilters[filter.filter] == '1';
-          return FocusableSwitchListTile(
-            focusNode: index == 0 ? _initialFocusNode : null,
-            autofocus: index == 0 && autofocusFirst,
-            value: isActive,
-            onChanged: (value) {
-              setState(() {
-                if (value) {
-                  _tempSelectedFilters[filter.filter] = '1';
-                } else {
-                  _tempSelectedFilters.remove(filter.filter);
-                }
-              });
-              _applyFilters();
-            },
-            title: Text(filter.title),
+        if (filter.isBoolean) {
+          final clause = _selection.clauseFor(filter.filter);
+          return FilterBooleanRow(
+            filter: filter,
+            value: clause == null ? null : !clause.op.isNegated,
+            focusNode: focusNode,
+            autofocus: autofocus,
+            onChanged: (value) => _setField(
+              filter.filter,
+              value == null
+                  ? const []
+                  : [
+                      LibraryFilter(
+                        field: filter.filter,
+                        op: value ? LibraryFilterOperator.is_ : LibraryFilterOperator.isNot,
+                        values: const ['1'],
+                      ),
+                    ],
+            ),
           );
         }
 
-        // Regular navigable filters - show selected value instead of checkmark
-        final selectedValue = _tempSelectedFilters[filter.filter];
-        String? displayValue;
-        if (selectedValue != null) {
-          // Try to get the cached display name, fall back to the value itself
-          displayValue = _filterDisplayNames[_cacheKey(filter.filter, selectedValue)] ?? selectedValue;
-        }
-
+        final summary = filterFieldSummary(
+          filter: filter,
+          clauses: _selection,
+          serverId: widget.serverId,
+          libraryKey: widget.libraryKey,
+        );
         return FocusableListTile(
-          focusNode: index == 0 ? _initialFocusNode : null,
-          autofocus: index == 0 && autofocusFirst,
+          focusNode: focusNode,
+          autofocus: autofocus,
           title: Text(filter.title),
           trailing: Row(
-            mainAxisSize: .min,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              if (displayValue != null)
+              if (summary != null)
                 Flexible(
                   child: Text(
-                    displayValue,
-                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: .w500),
-                    overflow: .ellipsis,
+                    summary,
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              if (displayValue != null) const SizedBox(width: 8),
+              if (summary != null) const SizedBox(width: 8),
               const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             ],
           ),
-          onTap: () => _loadFilterValues(filter),
+          onTap: () => unawaited(_openFilter(filter)),
         );
       },
     );
