@@ -56,7 +56,8 @@ class FiltersBottomSheet extends StatefulWidget {
   /// (the offline downloads tab filters in memory).
   final FilterCountLoader? countLoader;
 
-  /// Dismisses the editor. Defaults to closing the enclosing overlay sheet.
+  /// Dismisses the editor. Defaults to [OverlaySheetController.closeAdaptive],
+  /// which closes the sheet when hosted and pops the route otherwise.
   final VoidCallback? onRequestClose;
 
   const FiltersBottomSheet({
@@ -161,7 +162,9 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       onRequestClose();
       return;
     }
-    OverlaySheetController.of(context).close();
+    // Adaptive: the editor is hosted in an overlay sheet on touch/TV and in a
+    // routed panel on pointer platforms, and this resolves both.
+    OverlaySheetController.closeAdaptive(context);
   }
 
   // ---------------------------------------------------------------------
@@ -211,7 +214,12 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         _isLoadingValues = false;
         _filterValuesError = null;
       });
-      _requestInitialFocus(generation, widget.serverId, widget.libraryKey, filter.filter);
+      // The free-text page owns its own entry focus: this node would have to
+      // sit on its text field, and a focused text input opens the TV keyboard
+      // on arrival, burying the sheet before the viewer asked to type.
+      if (filter.editorKind != FilterEditorKind.text) {
+        _requestInitialFocus(generation, widget.serverId, widget.libraryKey, filter.filter);
+      }
       return;
     }
     await _loadFilterValues(filter);
@@ -291,6 +299,10 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       }
     });
   }
+
+  /// Height held by the transient spinner when the outgoing page never
+  /// reported one.
+  static const double _fallbackTransitionHeight = 160;
 
   /// Height the content area currently occupies, used to hold the sheet steady
   /// across a page swap. Null before first layout.
@@ -372,13 +384,14 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       );
     }
     if (_isLoadingValues) {
-      assert(_transitionMinHeight != null, '_transitionMinHeight must be set before entering the loading state');
       // Held at the outgoing page's height (see [_loadFilterValues]) so the
       // transient spinner cannot move the header. Settled states below hug.
+      // The fallback covers a drill-in before the outgoing page has been laid
+      // out: an unsized box here would inflate the sheet to its cap and back.
       return Focus(
         autofocus: InputModeTracker.isKeyboardMode(context),
         child: SizedBox(
-          height: _transitionMinHeight,
+          height: _transitionMinHeight ?? _fallbackTransitionHeight,
           child: const Center(child: CircularProgressIndicator()),
         ),
       );

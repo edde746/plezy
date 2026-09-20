@@ -4087,8 +4087,10 @@ class PlexClient
     // Undocumented but supported on movie and episode queries: a substring
     // match over the item's full file path, which is the only way to filter
     // by filename or folder. A show-type query answers 500 for it, so it is
-    // offered only where it works.
-    if (typeId == PlexMetadataType.movie || typeId == PlexMetadataType.episode) {
+    // offered only where it works. [libraryKind] is a library kind, so only
+    // the movie case is reachable today; episode queries would need the
+    // schema refetched for the browsed grouping (see #2397 follow-up).
+    if (typeId == PlexMetadataType.movie) {
       filters.add(
         MediaFilter(
           filter: MediaFilterField.file,

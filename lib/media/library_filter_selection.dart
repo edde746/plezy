@@ -23,8 +23,6 @@ extension LibraryFilterSelection on List<LibraryFilter> {
     return null;
   }
 
-  bool hasField(String field) => any((clause) => clause.field == field);
-
   /// Replace every clause on [clauses]' field with [clauses], keeping the
   /// field's original position so the editor's summary rows do not reorder
   /// as the user edits them. An empty [clauses] clears the field.

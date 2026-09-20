@@ -364,6 +364,10 @@ void main() {
     // Discovery still runs (the chips come back when the grouping changes),
     // but it only asks for the filter schema.
     expect(harness.filterMetadataRequestCount, 1);
+    // An assertion inside the mock handler could not fail this test: the HTTP
+    // client rewraps anything thrown there as a transport error, which
+    // discovery catches and answers from `/filters`.
+    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Size'], '0');
   });
 }
 
@@ -514,6 +518,7 @@ class _PlexBrowseHarness {
   var firstCharacterRequestCount = 0;
   var folderRequestCount = 0;
   var filterMetadataRequestCount = 0;
+  final filterMetadataRequests = <Uri>[];
 
   _PlexBrowseHarness() : database = AppDatabase.forTesting(NativeDatabase.memory()) {
     PlexApiCache.initialize(database);
@@ -548,7 +553,7 @@ class _PlexBrowseHarness {
         // never for items, so it is not a page request.
         if (request.url.queryParameters['includeMeta'] == '1') {
           filterMetadataRequestCount++;
-          expect(request.url.queryParameters['X-Plex-Container-Size'], '0');
+          filterMetadataRequests.add(request.url);
           return http.Response(
             jsonEncode({
               'MediaContainer': {

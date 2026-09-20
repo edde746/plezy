@@ -382,9 +382,9 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// branch concurrently reads `/Genres`, `/Tags`, and `/Years`. The
   /// unwatched/unplayed boolean remains synthetic because both dialects expose
   /// it as an `/Items` query filter. Keys are translated to Plex's filter
-  /// naming so the existing filter-param map round-trips through
-  /// `_buildFilterParams` unchanged; the synthesised `MediaFilter.key` keeps
-  /// the historic `jellyfin:` prefix so existing cached preferences remain valid.
+  /// naming so a selection round-trips through the neutral clause model
+  /// unchanged; the synthesised `MediaFilter.key` keeps the historic
+  /// `jellyfin:` prefix so existing cached preferences remain valid.
   @override
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
     // MediaBrowser can negate both booleans (`Filters=IsPlayed`,

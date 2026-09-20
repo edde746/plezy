@@ -67,9 +67,9 @@ IconData filterRadioIcon(bool selected) =>
 /// Include/exclude switch for one field.
 ///
 /// The segmented control is the pointer affordance; the row itself is the
-/// single focus stop, and LEFT/RIGHT move between the two modes — the same
-/// arrangement [SortBottomSheet] uses for sort direction, so a D-pad user
-/// never has to step into a nested control.
+/// single focus stop — its segments are wrapped in [ExcludeFocus] so they
+/// never join the traversal order — and LEFT/RIGHT move between the two
+/// modes, the same arrangement [SortBottomSheet] uses for sort direction.
 class FilterIncludeExcludeRow extends StatelessWidget {
   final MediaFilter filter;
   final LibraryFilterOperator operator;
@@ -121,15 +121,17 @@ class FilterIncludeExcludeRow extends StatelessWidget {
         autofocus: autofocus,
         leading: AppIcon(excluded ? Symbols.block_rounded : Symbols.check_circle_rounded, fill: 1),
         title: Text(excluded ? t.libraries.advancedFilters.exclude : t.libraries.advancedFilters.include),
-        trailing: SegmentedButton<bool>(
-          style: _segmentStyle(context),
-          showSelectedIcon: false,
-          segments: [
-            ButtonSegment(value: false, label: Text(t.libraries.advancedFilters.include)),
-            ButtonSegment(value: true, label: Text(t.libraries.advancedFilters.exclude)),
-          ],
-          selected: {excluded},
-          onSelectionChanged: (selection) => _set(selection.first),
+        trailing: ExcludeFocus(
+          child: SegmentedButton<bool>(
+            style: _segmentStyle(context),
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(value: false, label: Text(t.libraries.advancedFilters.include)),
+              ButtonSegment(value: true, label: Text(t.libraries.advancedFilters.exclude)),
+            ],
+            selected: {excluded},
+            onSelectionChanged: (selection) => _set(selection.first),
+          ),
         ),
         onTap: () => _set(!excluded),
       ),

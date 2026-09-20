@@ -98,11 +98,14 @@ sealed class LibraryFilter with _$LibraryFilter {
     if (field is! String || field.isEmpty) return null;
     final values = (raw['values'] as List?)?.whereType<String>().where((v) => v.isNotEmpty).toList() ?? const [];
     if (values.isEmpty) return null;
-    return LibraryFilter(
-      field: field,
-      op: LibraryFilterOperator.fromId(raw['op'] as String?) ?? LibraryFilterOperator.is_,
-      values: values,
-    );
+    // A missing `op` is equality (toStorageJson omits it); a present but
+    // unknown one came from a newer build, and silently downgrading an
+    // exclusion to an include would show exactly what the user hid.
+    final rawOp = raw['op'];
+    if (rawOp != null && rawOp is! String) return null;
+    final op = rawOp == null ? LibraryFilterOperator.is_ : LibraryFilterOperator.fromId(rawOp as String);
+    if (op == null) return null;
+    return LibraryFilter(field: field, op: op, values: values);
   }
 }
 

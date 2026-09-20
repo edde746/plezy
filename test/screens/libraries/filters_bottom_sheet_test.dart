@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_filter.dart';
@@ -14,6 +15,7 @@ final _filters = [
   MediaFilter(filter: 'unwatched', filterType: MediaFilterType.boolean, key: '', title: 'Unwatched', type: 'filter'),
   MediaFilter(filter: 'genre', filterType: MediaFilterType.tag, key: 'genre', title: 'Genre', type: 'filter'),
   MediaFilter(filter: 'studio', filterType: MediaFilterType.tag, key: 'studio', title: 'Studio', type: 'filter'),
+  MediaFilter(filter: 'file', filterType: MediaFilterType.string, key: '', title: 'File Path', type: 'filter'),
   MediaFilter(
     // Equality only, as MediaBrowser declares its value facets.
     filter: 'tag',
@@ -325,6 +327,26 @@ void main() {
     await tester.tap(find.text('Show 14'));
     await tester.pumpAndSettle();
     expect(find.byType(FiltersBottomSheet), findsNothing);
+  });
+
+  testWidgets('a free-text field does not take the entry focus', (tester) async {
+    // A focused text input opens the TV keyboard on arrival, which would bury
+    // the sheet before the viewer asked to type, so the page's first stop is
+    // the clear row instead.
+    await _pumpSheet(tester, loader: (_) async => const []);
+
+    await tester.tap(find.text('File Path'));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<EditableText>(find.byType(EditableText));
+    expect(field.focusNode.hasFocus, isFalse);
+
+    // Entering a D-pad session on this page moves onto a row, not into the
+    // field: the row above the input is the page's first stop.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'FilterTextPageClearRow');
+    expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus, isFalse);
   });
 
   testWidgets('cached values bypass the lazy loader', (tester) async {

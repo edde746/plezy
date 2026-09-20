@@ -75,9 +75,6 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   bool _sortDescending = false;
   List<LibraryFilter> _filters = const [];
 
-  /// Display names for selected filter values, fed to the desktop anchored
-  /// popup's subtitle (the sheet keeps its own equivalent cache).
-
   String get selectedGrouping => _grouping;
 
   /// Whether any filter is currently active — drives the filtered-empty

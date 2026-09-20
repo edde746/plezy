@@ -72,13 +72,11 @@ class _FilterNumberPageState extends State<FilterNumberPage> {
     ]);
   }
 
-  Widget _bound(String label, TextEditingController controller, {FocusNode? focusNode, bool autofocus = false}) {
+  Widget _bound(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: FocusableTextField(
         controller: controller,
-        focusNode: focusNode,
-        autofocus: autofocus,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         decoration: InputDecoration(labelText: label, isDense: true, border: const OutlineInputBorder()),
@@ -91,22 +89,27 @@ class _FilterNumberPageState extends State<FilterNumberPage> {
   @override
   Widget build(BuildContext context) {
     final autofocusFirst = InputModeTracker.isKeyboardMode(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FilterClearRow(
-          selected: widget.clauses.isEmpty,
-          focusNode: widget.initialFocusNode,
-          autofocus: autofocusFirst,
-          onPressed: () {
-            _from.clear();
-            _to.clear();
-            widget.onChanged(const []);
-          },
-        ),
-        _bound(t.libraries.advancedFilters.from, _from),
-        _bound(t.libraries.advancedFilters.to, _to),
-      ],
+    // Shrink-wrapped like its sibling pages, but scrollable: on a short
+    // viewport with the soft keyboard up, three rows can exceed the sheet.
+    return SingleChildScrollView(
+      primary: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FilterClearRow(
+            selected: widget.clauses.isEmpty,
+            focusNode: widget.initialFocusNode,
+            autofocus: autofocusFirst,
+            onPressed: () {
+              _from.clear();
+              _to.clear();
+              widget.onChanged(const []);
+            },
+          ),
+          _bound(t.libraries.advancedFilters.from, _from),
+          _bound(t.libraries.advancedFilters.to, _to),
+        ],
+      ),
     );
   }
 }

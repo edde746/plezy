@@ -115,6 +115,9 @@ Future<T?> showAppMenu<T>(
   );
 }
 
+const double _anchoredPanelWidth = 380;
+const double _anchoredPanelMaxHeight = 560;
+
 /// Shows arbitrary content in a menu-styled surface anchored to [anchorRect].
 ///
 /// The menu entry API covers rows that close on selection; a panel hosts a
@@ -127,8 +130,8 @@ Future<T?> showAnchoredPanel<T>(
   required Rect anchorRect,
   required WidgetBuilder builder,
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
-  double width = 380,
-  double maxHeight = 560,
+  double width = _anchoredPanelWidth,
+  double maxHeight = _anchoredPanelMaxHeight,
 }) {
   return showGeneralDialog<T>(
     context: context,

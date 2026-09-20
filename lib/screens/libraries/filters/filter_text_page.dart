@@ -4,6 +4,7 @@ import '../../../focus/focusable_text_field.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_filter.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import 'filter_operator_row.dart';
@@ -36,17 +37,29 @@ class FilterTextPage extends StatefulWidget {
 
 class _FilterTextPageState extends State<FilterTextPage> {
   late final TextEditingController _controller;
+  late final FocusNode _clearRowNode;
   late LibraryFilterOperator _operator;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.clause?.values.firstOrNull ?? '');
+    _clearRowNode = FocusNode(debugLabel: 'FilterTextPageClearRow');
     _operator = widget.clause?.op ?? _modes.first;
+    // The page owns its entry focus instead of taking the sheet's node: that
+    // node would otherwise have to sit on the text field, and a focused text
+    // input opens the TV keyboard on arrival
+    // (`TvTextInputAutoOpenBehavior.automatic`), burying the sheet before the
+    // viewer asked to type.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !InputModeTracker.isKeyboardMode(context)) return;
+      _clearRowNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
+    _clearRowNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -72,6 +85,7 @@ class _FilterTextPageState extends State<FilterTextPage> {
     LibraryFilterOperator.notMatches => t.libraries.advancedFilters.matchIsNot,
     LibraryFilterOperator.beginsWith => t.libraries.advancedFilters.matchBeginsWith,
     LibraryFilterOperator.endsWith => t.libraries.advancedFilters.matchEndsWith,
+    // `_modes` only ever yields the six operators named above.
     _ => op.id,
   };
 
@@ -92,13 +106,18 @@ class _FilterTextPageState extends State<FilterTextPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        FilterClearRow(
+          selected: _controller.text.trim().isEmpty,
+          focusNode: _clearRowNode,
+          onPressed: () {
+            _controller.clear();
+            widget.onChanged(const []);
+          },
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: FocusableTextField(
             controller: _controller,
-            focusNode: widget.initialFocusNode,
-            // Never autofocus: on TV that would open the on-screen keyboard
-            // before the viewer asked for it.
             autofocus: false,
             decoration: InputDecoration(
               labelText: widget.filter.title,

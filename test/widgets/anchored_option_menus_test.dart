@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/media/media_sort.dart';
+import 'package:plezy/screens/libraries/filters_bottom_sheet.dart';
 import 'package:plezy/widgets/anchored_option_menus.dart';
+import 'package:plezy/widgets/overlay_sheet.dart';
 
 import '../test_helpers/theme.dart';
 
@@ -214,5 +216,57 @@ void main() {
     await tester.tapAt(const Offset(700, 560));
     await tester.pumpAndSettle();
     expect(closed, isTrue);
+  });
+
+  testWidgets('the panel footer closes the panel, not a sheet behind it', (tester) async {
+    // The editor resolves its close through `closeAdaptive`, so the same
+    // widget has to dismiss the right host: the routed panel here, an overlay
+    // sheet on touch/TV.
+    final filters = [
+      MediaFilter(filter: 'genre', filterType: MediaFilterType.tag, key: 'k', title: 'Genre', type: 'filter'),
+    ];
+    var closed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(extensions: const [testMonoTokens]),
+        home: OverlaySheetHost(
+          canPop: true,
+          child: Scaffold(
+            body: Builder(
+              builder: (context) => FilledButton(
+                onPressed: () async {
+                  await showAnchoredFilterPanel(
+                    context,
+                    anchorRect: const Rect.fromLTWH(10, 10, 80, 24),
+                    filters: filters,
+                    selectedFilters: const [],
+                    onFiltersChanged: (_) {},
+                    serverId: 'server',
+                    libraryKey: 'library',
+                    loadFilterValues: (_) async => const [],
+                    countLoader: (_) async => 5,
+                  );
+                  closed = true;
+                },
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Show 5'));
+    await tester.pumpAndSettle();
+
+    expect(closed, isTrue);
+    expect(find.byType(FiltersBottomSheet), findsNothing);
+    // The host that was behind the panel is still mounted and usable.
+    expect(find.text('open'), findsOneWidget);
   });
 }

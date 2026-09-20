@@ -363,6 +363,30 @@ void main() {
       ]);
     });
 
+    test('a clause with an unrecognised operator is dropped, not downgraded to include', () async {
+      // A newer build may persist an operator this one does not know. Reading
+      // it as plain equality would show exactly the items the user excluded.
+      final s = await StorageService.getInstance();
+      await s.prefs.setString(
+        'library_filters_sec-future',
+        json.encode([
+          {
+            'field': 'genre',
+            'op': 'isNot',
+            'values': ['42'],
+          },
+          {
+            'field': 'genre',
+            'op': 'matchesFuzzily',
+            'values': ['43'],
+          },
+        ]),
+      );
+      expect(s.getLibraryFilters(sectionId: 'sec-future'), const [
+        LibraryFilter(field: 'genre', op: LibraryFilterOperator.isNot, values: ['42']),
+      ]);
+    });
+
     test('library sort round-trips with descending flag', () async {
       final s = await StorageService.getInstance();
       await s.saveLibrarySort('sec-1', 'titleSort', descending: true);

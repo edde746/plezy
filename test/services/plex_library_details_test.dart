@@ -5,7 +5,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/library_filter_result.dart';
 import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/media_filter.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
@@ -64,6 +67,137 @@ void main() {
       'viewCount',
       'userRating',
     ]);
+  });
+
+  // Filter discovery reads the schema Plex publishes with `includeMeta=1`:
+  // the browsed type's fields plus the operators that type can evaluate. It
+  // is the only source for exclusion, ranges and text matching, so the shape
+  // it produces is pinned here rather than inferred from the browse tab.
+  group('filter schema discovery', () {
+    PlexClient metaClient(Future<http.Response> Function(http.Request request) handler, {List<Uri>? requests}) =>
+        makeClient((request) async {
+          requests?.add(request.url);
+          return handler(request);
+        });
+
+    test('parses fields and per-type operators, and never asks for items', () async {
+      final requests = <Uri>[];
+      final client = metaClient(requests: requests, (request) async {
+        if (request.url.path == '/library/sections/1/all') {
+          return http.Response(jsonEncode(_metaPayload()), 200, headers: {'content-type': 'application/json'});
+        }
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      final result = await client.fetchLibraryFiltersWithValues('1', libraryKind: MediaKind.movie);
+      final byField = {for (final filter in result.filters) filter.filter: filter};
+
+      expect(requests.single.queryParameters['includeMeta'], '1');
+      expect(requests.single.queryParameters['X-Plex-Container-Size'], '0');
+      expect(requests.single.queryParameters['type'], '1');
+
+      // A tag field can be included or excluded and lists its values.
+      expect(byField['genre']!.operators, [LibraryFilterOperator.is_, LibraryFilterOperator.isNot]);
+      expect(byField['genre']!.key, '/library/sections/1/genre?type=1');
+      expect(byField['genre']!.editorKind, FilterEditorKind.valueList);
+
+      // An integer field carries its bounds; `year` is one Plex also lists.
+      expect(byField['year']!.operators, contains(LibraryFilterOperator.atLeast));
+      expect(byField['year']!.operators, contains(LibraryFilterOperator.atMost));
+      expect(byField['year']!.key, '/library/sections/1/year?type=1');
+
+      // A sized integer has bounds but no value listing, so it gets the
+      // numeric editor rather than a list nobody can populate.
+      expect(byField['mediaSize']!.key, isEmpty);
+      expect(byField['mediaSize']!.editorKind, FilterEditorKind.number);
+
+      // Free text exposes Plex's match modes and no listing.
+      expect(byField['title']!.operators, contains(LibraryFilterOperator.matches));
+      expect(byField['title']!.operators, contains(LibraryFilterOperator.beginsWith));
+      expect(byField['title']!.key, isEmpty);
+      expect(byField['title']!.editorKind, FilterEditorKind.text);
+
+      expect(byField['addedAt']!.editorKind, FilterEditorKind.date);
+      expect(byField['unwatched']!.isBoolean, isTrue);
+      expect(byField['unwatched']!.supportsExclusion, isTrue);
+
+      // Undocumented, movie/episode only: the filename and folder filter.
+      expect(byField[MediaFilterField.file], isNotNull);
+      expect(byField[MediaFilterField.file]!.editorKind, FilterEditorKind.text);
+      expect(result.cachedValues, isEmpty);
+    });
+
+    test('strips the browsed type prefix but keeps cross-type fields qualified', () async {
+      final client = metaClient((request) async {
+        if (request.url.path == '/library/sections/2/all') {
+          return http.Response(jsonEncode(_showMetaPayload()), 200, headers: {'content-type': 'application/json'});
+        }
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      final result = await client.fetchLibraryFiltersWithValues('2', libraryKind: MediaKind.show);
+      final fields = result.filters.map((f) => f.filter).toList();
+
+      // `show.genre` and a bare `genre` select the same rows on a show query,
+      // and the bare name is what value endpoints and saved selections use.
+      expect(fields, contains('genre'));
+      expect(fields, isNot(contains('show.genre')));
+      // An episode field on a show query is not the browsed type's own, so it
+      // stays qualified — that is the only spelling Plex accepts for it.
+      expect(fields, contains('episode.title'));
+      // Value listings always use the bare name.
+      final genre = result.filters.firstWhere((f) => f.filter == 'genre');
+      expect(genre.key, '/library/sections/2/genre?type=2');
+      // No file filter: a show-type query answers 500 for it.
+      expect(fields, isNot(contains(MediaFilterField.file)));
+    });
+
+    test('falls back to the legacy filter listing when the server publishes no schema', () async {
+      final paths = <String>[];
+      final client = metaClient((request) async {
+        paths.add(request.url.path);
+        return switch (request.url.path) {
+          // Old servers answer the browse endpoint without a Meta block.
+          '/library/sections/1/all' => http.Response(
+            jsonEncode({
+              'MediaContainer': {'size': 0},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          ),
+          '/library/sections/1/filters' => http.Response(
+            jsonEncode(_filtersPayload()),
+            200,
+            headers: {'content-type': 'application/json'},
+          ),
+          _ => http.Response('not found', 404),
+        };
+      });
+      addTearDown(client.close);
+
+      final result = await client.fetchLibraryFiltersWithValues('1', libraryKind: MediaKind.movie);
+
+      expect(paths, ['/library/sections/1/all', '/library/sections/1/filters']);
+      expect(result.filters.map((f) => f.filter), ['genre', 'year', 'unwatched']);
+      // Without a published vocabulary the editor still offers exclusion:
+      // every supported Plex version evaluates `!=` for these types.
+      final genre = result.filters.first;
+      expect(genre.supportsExclusion, isTrue);
+    });
+
+    test('a shared library has no filter schema to read', () async {
+      var calls = 0;
+      final client = metaClient((request) async {
+        calls++;
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      expect(await client.fetchLibraryFiltersWithValues('shared'), LibraryFilterResult.empty);
+      expect(calls, 0);
+    });
   });
 
   test('appends Date Added, Plays, and User Rating sorts only for video libraries', () async {
@@ -648,5 +782,103 @@ Map<String, dynamic> _sortsPayload() => {
       {'defaultDirection': 'desc', 'descKey': 'lastViewedAt:desc', 'key': 'lastViewedAt', 'title': 'Date Viewed'},
       {'defaultDirection': 'desc', 'descKey': 'random:desc', 'key': 'random', 'title': 'Randomly'},
     ],
+  },
+};
+
+/// `Meta` block as PMS 1.43 publishes it for a movie section, trimmed to the
+/// field shapes the editor has to tell apart.
+Map<String, dynamic> _metaPayload() => {
+  'MediaContainer': {
+    'size': 0,
+    'totalSize': 57,
+    'Meta': {
+      'Type': [
+        {
+          'type': 'movie',
+          'active': true,
+          'Field': [
+            {'key': 'title', 'title': 'Title', 'type': 'string'},
+            {'key': 'year', 'title': 'Year', 'type': 'integer'},
+            {'key': 'mediaSize', 'title': 'File Size', 'type': 'integer'},
+            {'key': 'genre', 'title': 'Genre', 'type': 'tag'},
+            {'key': 'addedAt', 'title': 'Date Added', 'type': 'date'},
+            {'key': 'unwatched', 'title': 'Unwatched', 'type': 'boolean'},
+          ],
+        },
+      ],
+      'FieldType': [
+        {
+          'type': 'tag',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+          ],
+        },
+        {
+          'type': 'integer',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+            {'key': '>>=', 'title': 'is greater than'},
+            {'key': '<<=', 'title': 'is less than'},
+          ],
+        },
+        {
+          'type': 'string',
+          'Operator': [
+            {'key': '=', 'title': 'contains'},
+            {'key': '!=', 'title': 'does not contain'},
+            {'key': '==', 'title': 'is'},
+            {'key': '!==', 'title': 'is not'},
+            {'key': '<=', 'title': 'begins with'},
+            {'key': '>=', 'title': 'ends with'},
+          ],
+        },
+        {
+          'type': 'boolean',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+          ],
+        },
+        {
+          'type': 'date',
+          'Operator': [
+            {'key': '<<=', 'title': 'is before'},
+            {'key': '>>=', 'title': 'is after'},
+          ],
+        },
+      ],
+    },
+  },
+};
+
+/// A show section qualifies every field with its owning type, and carries the
+/// episode fields alongside the show ones.
+Map<String, dynamic> _showMetaPayload() => {
+  'MediaContainer': {
+    'size': 0,
+    'Meta': {
+      'Type': [
+        {
+          'type': 'show',
+          'active': true,
+          'Field': [
+            {'key': 'show.title', 'title': 'Title', 'type': 'string'},
+            {'key': 'show.genre', 'title': 'Genre', 'type': 'tag'},
+            {'key': 'episode.title', 'title': 'Episode Title', 'type': 'string'},
+          ],
+        },
+      ],
+      'FieldType': [
+        {
+          'type': 'tag',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+          ],
+        },
+      ],
+    },
   },
 };

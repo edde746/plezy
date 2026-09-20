@@ -137,7 +137,6 @@ Future<void> showAnchoredFilterPanel(
       loadFilterValues: loadFilterValues,
       cachedValues: cachedValues.isEmpty ? null : cachedValues,
       countLoader: countLoader,
-      onRequestClose: () => Navigator.of(panelContext).pop(),
     ),
   );
 }
