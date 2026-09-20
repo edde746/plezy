@@ -1,5 +1,7 @@
 import 'dart:convert';
 import '../media/ids.dart';
+import '../media/library_filter_selection.dart';
+import '../media/library_query.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -249,22 +251,28 @@ class StorageService extends BaseSharedPreferencesService {
   Object? getLibraryPreferenceOverride(String sectionId, LibraryPreference preference, {required String profileId}) {
     final key = '${_userPrefixForProfileId(profileId)}${_prefPrefix(preference)}$sectionId';
     return switch (preference) {
-      LibraryPreference.filters => _readJsonMap(key),
+      // Filters persist as a clause array (older builds wrote a map; the
+      // decoder migrates both), so this one cannot go through _readJsonMap.
+      LibraryPreference.filters => () {
+        final raw = readNullableString(key);
+        if (raw == null) return null;
+        final clauses = decodeLibraryFilterSelection(raw);
+        return clauses.isEmpty ? null : clauses;
+      }(),
       LibraryPreference.sort => _readJsonMap(key, legacyStringOk: true),
       LibraryPreference.grouping || LibraryPreference.tab => readNullableString(key),
     };
   }
 
-  // Library Filters (stored as JSON string)
-  Future<void> saveLibraryFilters(Map<String, String> filters, {String? sectionId, String? profileId}) async {
+  // Library filters (stored as a JSON array of clauses)
+  Future<void> saveLibraryFilters(List<LibraryFilter> filters, {String? sectionId, String? profileId}) async {
     final baseKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
-    // Note: using Map<String, String> which json.encode handles correctly
-    final jsonString = json.encode(filters);
+    final jsonString = encodeLibraryFilterSelection(filters);
     final prefix = _prefixFor(profileId);
     await prefs.setString('$prefix$baseKey', jsonString);
   }
 
-  Map<String, String> getLibraryFilters({String? sectionId, bool legacyGlobalFallback = true}) {
+  List<LibraryFilter> getLibraryFilters({String? sectionId, bool legacyGlobalFallback = true}) {
     final baseKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
 
     // Prefer per-library filters when available
@@ -276,10 +284,8 @@ class StorageService extends BaseSharedPreferencesService {
       // into their restored selection.
       jsonString = _getScopedString(_keyLibraryFilters);
     }
-    if (jsonString == null) return {};
-
-    final decoded = decodeJsonStringToMap(jsonString);
-    return decoded.map((key, value) => MapEntry(key, value.toString()));
+    if (jsonString == null) return const [];
+    return decodeLibraryFilterSelection(jsonString);
   }
 
   // Library Sort (per-library, stored individually with descending flag)

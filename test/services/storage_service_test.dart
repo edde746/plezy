@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/library_query.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
@@ -300,34 +301,90 @@ void main() {
   });
 
   group('Library filters / sort / grouping / tab', () {
-    test('global filters round-trip', () async {
+    test('global filters round-trip, operators included', () async {
       final s = await StorageService.getInstance();
       expect(s.getLibraryFilters(), isEmpty);
-      await s.saveLibraryFilters({'genre': 'sci-fi', 'year': '2024'});
-      expect(s.getLibraryFilters(), {'genre': 'sci-fi', 'year': '2024'});
+      const selection = [
+        LibraryFilter(field: 'genre', values: ['sci-fi', 'horror']),
+        LibraryFilter(field: 'year', op: LibraryFilterOperator.atLeast, values: ['2024']),
+        LibraryFilter(field: 'contentRating', op: LibraryFilterOperator.isNot, values: ['R']),
+      ];
+      await s.saveLibraryFilters(selection);
+      expect(s.getLibraryFilters(), selection);
     });
 
     test('per-section filters fall back to global when missing', () async {
       final s = await StorageService.getInstance();
-      await s.saveLibraryFilters({'global': 'true'});
-      expect(s.getLibraryFilters(sectionId: 'sec-1'), {'global': 'true'});
+      const global = [
+        LibraryFilter(field: 'unwatched', values: ['1']),
+      ];
+      const section = [
+        LibraryFilter(field: 'genre', values: ['horror']),
+      ];
+      await s.saveLibraryFilters(global);
+      expect(s.getLibraryFilters(sectionId: 'sec-1'), global);
 
-      await s.saveLibraryFilters({'genre': 'horror'}, sectionId: 'sec-1');
-      expect(s.getLibraryFilters(sectionId: 'sec-1'), {'genre': 'horror'});
-      expect(s.getLibraryFilters(), {'global': 'true'});
+      await s.saveLibraryFilters(section, sectionId: 'sec-1');
+      expect(s.getLibraryFilters(sectionId: 'sec-1'), section);
+      expect(s.getLibraryFilters(), global);
     });
 
     test('legacy per-section filters migrate once into scoped key', () async {
       final s = await StorageService.getInstance();
-      await s.prefs.setString('library_filters_sec-1', json.encode({'genre': 'drama'}));
+      await s.prefs.setString(
+        'library_filters_sec-1',
+        json.encode([
+          {
+            'field': 'genre',
+            'values': ['drama'],
+          },
+        ]),
+      );
 
       await s.setActiveProfileId('local-user-1');
-      expect(s.getLibraryFilters(sectionId: 'sec-1'), {'genre': 'drama'});
-      expect(s.prefs.getString('user_local-user-1_library_filters_sec-1'), json.encode({'genre': 'drama'}));
+      expect(s.getLibraryFilters(sectionId: 'sec-1'), const [
+        LibraryFilter(field: 'genre', values: ['drama']),
+      ]);
+      expect(s.prefs.getString('user_local-user-1_library_filters_sec-1'), isNotNull);
       expect(s.prefs.getString('library_filters_sec-1'), isNull);
 
       await s.setActiveProfileId('local-user-2');
       expect(s.getLibraryFilters(sectionId: 'sec-1'), isEmpty);
+    });
+
+    test('a selection saved by a pre-clause build restores as equality clauses', () async {
+      // Older builds wrote `{"genre": "42", "unwatched": "1"}`; those saved
+      // filters must survive the upgrade rather than silently vanish.
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('library_filters_sec-legacy', json.encode({'genre': '42,43', 'unwatched': '1'}));
+      expect(s.getLibraryFilters(sectionId: 'sec-legacy'), const [
+        LibraryFilter(field: 'genre', values: ['42', '43']),
+        LibraryFilter(field: 'unwatched', values: ['1']),
+      ]);
+    });
+
+    test('a clause with an unrecognised operator is dropped, not downgraded to include', () async {
+      // A newer build may persist an operator this one does not know. Reading
+      // it as plain equality would show exactly the items the user excluded.
+      final s = await StorageService.getInstance();
+      await s.prefs.setString(
+        'library_filters_sec-future',
+        json.encode([
+          {
+            'field': 'genre',
+            'op': 'isNot',
+            'values': ['42'],
+          },
+          {
+            'field': 'genre',
+            'op': 'matchesFuzzily',
+            'values': ['43'],
+          },
+        ]),
+      );
+      expect(s.getLibraryFilters(sectionId: 'sec-future'), const [
+        LibraryFilter(field: 'genre', op: LibraryFilterOperator.isNot, values: ['42']),
+      ]);
     });
 
     test('library sort round-trips with descending flag', () async {
@@ -475,7 +532,9 @@ void main() {
       await s.setActiveProfileId('local-user-1');
       await s.saveLibraryOrder(['u1-a', 'u1-b']);
       await s.saveSelectedLibraryKey('u1-key');
-      await s.saveLibraryFilters({'genre': 'horror'}, sectionId: 'sec-1');
+      await s.saveLibraryFilters(const [
+        LibraryFilter(field: 'genre', values: ['horror']),
+      ], sectionId: 'sec-1');
       await s.saveLibrarySort('sec-1', 'titleSort', descending: true);
       await s.saveLibraryGrouping('sec-1', 'shows');
       await s.saveLibraryTab('sec-1', 'tabA');
@@ -494,7 +553,9 @@ void main() {
       await s.setActiveProfileId('local-user-1');
       expect(s.getLibraryOrder(), ['u1-a', 'u1-b']);
       expect(s.getSelectedLibraryKey(), 'u1-key');
-      expect(s.getLibraryFilters(sectionId: 'sec-1'), {'genre': 'horror'});
+      expect(s.getLibraryFilters(sectionId: 'sec-1'), const [
+        LibraryFilter(field: 'genre', values: ['horror']),
+      ]);
       expect(s.getLibrarySort('sec-1'), {'key': 'titleSort', 'descending': true});
       expect(s.getLibraryGrouping('sec-1'), 'shows');
       expect(s.getLibraryTab('sec-1'), 'tabA');
@@ -514,7 +575,15 @@ void main() {
     test('clearing scoped prefs also consumes pending legacy values', () async {
       final s = await StorageService.getInstance();
       await s.prefs.setString('library_order', json.encode(['legacy']));
-      await s.prefs.setString('library_filters_sec-1', json.encode({'genre': 'drama'}));
+      await s.prefs.setString(
+        'library_filters_sec-1',
+        json.encode(const [
+          {
+            'field': 'genre',
+            'values': ['drama'],
+          },
+        ]),
+      );
 
       await s.setActiveProfileId('local-user-1');
       await s.clearLibraryPreferences();
@@ -534,8 +603,12 @@ void main() {
       await s.saveLibraryOrder(['srv-a:movies', 'srv-b:shows']);
       await s.saveSelectedLibraryKey('srv-a:movies');
       await s.saveHiddenLibraries({'srv-a:movies', 'srv-b:shows'});
-      await s.saveLibraryFilters({'genre': 'sci-fi'}, sectionId: 'srv-a:movies');
-      await s.saveLibraryFilters({'genre': 'drama'}, sectionId: 'srv-b:shows');
+      await s.saveLibraryFilters(const [
+        LibraryFilter(field: 'genre', values: ['sci-fi']),
+      ], sectionId: 'srv-a:movies');
+      await s.saveLibraryFilters(const [
+        LibraryFilter(field: 'genre', values: ['drama']),
+      ], sectionId: 'srv-b:shows');
       await s.saveLibrarySort('srv-a:movies', 'titleSort');
       await s.saveLibraryGrouping('srv-a:movies', 'movies');
       await s.saveLibraryTab('srv-a:movies', 'recommended');
@@ -551,7 +624,9 @@ void main() {
       expect(s.getSelectedLibraryKey(), isNull);
       expect(s.getHiddenLibraries(), {'srv-b:shows'});
       expect(s.getLibraryFilters(sectionId: 'srv-a:movies'), isEmpty);
-      expect(s.getLibraryFilters(sectionId: 'srv-b:shows'), {'genre': 'drama'});
+      expect(s.getLibraryFilters(sectionId: 'srv-b:shows'), const [
+        LibraryFilter(field: 'genre', values: ['drama']),
+      ]);
       expect(s.getLibrarySort('srv-a:movies'), isNull);
       expect(s.getLibraryGrouping('srv-a:movies'), isNull);
       expect(s.getLibraryTab('srv-a:movies'), isNull);

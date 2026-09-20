@@ -1143,7 +1143,8 @@
       "tag": "태그",
       "unwatched": "미시청",
       "unplayed": "재생하지 않음",
-      "favorites": "즐겨찾기"
+      "favorites": "즐겨찾기",
+      "filePath": ""
     },
     "sortLabels": {
       "title": "제목",
@@ -1169,6 +1170,34 @@
       "dateDownloaded": "다운로드된 날짜",
       "size": "크기",
       "library": "라이브러리"
+    },
+    "advancedFilters": {
+      "include": "",
+      "exclude": "",
+      "any": "",
+      "yes": "",
+      "no": "",
+      "not": "",
+      "valueCount": "",
+      "valueCountExcluded": "",
+      "searchValues": "",
+      "noValues": "",
+      "matchContains": "",
+      "matchNotContains": "",
+      "matchIs": "",
+      "matchIsNot": "",
+      "matchBeginsWith": "",
+      "matchEndsWith": "",
+      "textHint": "",
+      "from": "",
+      "to": "",
+      "range": "",
+      "atLeast": "",
+      "atMost": "",
+      "dateLastDays": "",
+      "dateLastYear": "",
+      "dateOlderThanDays": "",
+      "dateOlderThanYear": ""
     }
   },
   "about": {

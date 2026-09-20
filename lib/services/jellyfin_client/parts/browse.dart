@@ -382,27 +382,37 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// branch concurrently reads `/Genres`, `/Tags`, and `/Years`. The
   /// unwatched/unplayed boolean remains synthetic because both dialects expose
   /// it as an `/Items` query filter. Keys are translated to Plex's filter
-  /// naming so the existing filter-param map round-trips through
-  /// `_buildFilterParams` unchanged; the synthesised `MediaFilter.key` keeps
-  /// the historic `jellyfin:` prefix so existing cached preferences remain valid.
+  /// naming so a selection round-trips through the neutral clause model
+  /// unchanged; the synthesised `MediaFilter.key` keeps the historic
+  /// `jellyfin:` prefix so existing cached preferences remain valid.
   @override
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
+    // MediaBrowser can negate the played state (`Filters=IsPlayed`) but
+    // nothing else: `/Items` has no `IsNotFavorite`, and `isFavorite=false`
+    // is a UserData join that also drops every item the user never touched
+    // (0 of 250 series on a library with no favorites). The value facets have
+    // no per-field exclusion either, so both declare equality only and the
+    // editor hides the include/exclude control for them.
+    const booleanOperators = [LibraryFilterOperator.is_, LibraryFilterOperator.isNot];
+    const valueOperators = [LibraryFilterOperator.is_];
     final filters = <MediaFilter>[
       MediaFilter(
-        filter: 'unwatched',
-        filterType: 'boolean',
+        filter: MediaFilterField.unwatched,
+        filterType: MediaFilterType.boolean,
         key: 'jellyfin:unwatched',
         title: libraryKind?.isMusic == true
             ? t.libraries.filterCategories.unplayed
             : t.libraries.filterCategories.unwatched,
         type: 'filter',
+        operators: booleanOperators,
       ),
       MediaFilter(
-        filter: 'favorite',
-        filterType: 'boolean',
+        filter: MediaFilterField.favorite,
+        filterType: MediaFilterType.boolean,
         key: 'jellyfin:favorite',
         title: t.libraries.filterCategories.favorites,
         type: 'filter',
+        operators: valueOperators,
       ),
     ];
     final data = await _safeFetchFilterPayload(libraryId);
@@ -445,7 +455,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       final entries = raw[key];
       if (entries == null || entries.isEmpty) continue;
       filters.add(
-        MediaFilter(filter: key, filterType: 'string', key: 'jellyfin:$key', title: titles[key] ?? key, type: 'filter'),
+        MediaFilter(
+          filter: key,
+          filterType: key == MediaFilterField.year ? MediaFilterType.integer : MediaFilterType.tag,
+          key: 'jellyfin:$key',
+          title: titles[key] ?? key,
+          type: 'filter',
+          operators: valueOperators,
+        ),
       );
       final sorted = List<String>.from(entries);
       if (key == 'year') {

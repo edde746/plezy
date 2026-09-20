@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/input_mode_tracker.dart';
+import '../media/library_query.dart';
 import '../media/media_filter.dart';
 import '../media/media_sort.dart';
-import '../utils/app_logger.dart';
+import '../screens/libraries/filters_bottom_sheet.dart';
 import 'app_icon.dart';
 import 'app_menu.dart';
 
@@ -100,138 +101,40 @@ Future<AnchoredSortResult?> showAnchoredSortMenu(
   return (sort: sort, descending: descending, cleared: false);
 }
 
-/// Sentinel for the "All" row in the per-category values popup; a dismissed
-/// menu returns null, so clearing needs its own value.
-final Object _clearFilterValue = Object();
-
-/// Shows the filters anchored popup: one popup listing the categories, then
-/// a second popup at the same rect for the chosen category's values. Boolean
-/// categories toggle and apply directly, mirroring the sheet's switches.
+/// Shows the filter editor in a popup anchored to the Filters chip.
 ///
-/// [cachedValues] answers value listings inline (MediaBrowser filter
+/// Pointer platforms get the same [FiltersBottomSheet] the touch and TV
+/// surfaces get, hosted in an anchored panel instead of an overlay sheet, so
+/// multi-select, exclusion and range editing behave identically everywhere.
+/// A popup menu could not host it: selecting a row pops the route.
+///
+/// Edits are reported through [onFiltersChanged] as they happen; the returned
+/// future completes when the panel is dismissed, which is when the caller
+/// commits. [cachedValues] answers value listings inline (MediaBrowser filter
 /// discovery payloads); categories missing from it go through
-/// [loadFilterValues]. [valueDisplayNames], when provided, caches picked
-/// value titles so the category popup can echo them as subtitles (the raw
-/// value can be an opaque server id); it is read for subtitles and written
-/// on selection.
-///
-/// Returns the updated selection map to apply, or null when the menu was
-/// dismissed or the value listing failed to load.
-Future<Map<String, String>?> showAnchoredFiltersMenu(
+/// [loadFilterValues].
+Future<void> showAnchoredFilterPanel(
   BuildContext context, {
   required Rect anchorRect,
   required List<MediaFilter> filters,
-  required Map<String, String> selectedFilters,
-  required Future<List<MediaFilterValue>> Function(MediaFilter filter) loadFilterValues,
-  required String allLabel,
+  required List<LibraryFilter> selectedFilters,
+  required ValueChanged<List<LibraryFilter>> onFiltersChanged,
+  required String serverId,
+  required String libraryKey,
+  required FilterValuesLoader loadFilterValues,
   Map<String, List<MediaFilterValue>> cachedValues = const {},
-  Map<String, String>? valueDisplayNames,
-}) async {
-  // Boolean toggles first, mirroring FiltersBottomSheet._sortFilters.
-  final ordered = [
-    ...filters.where((f) => f.filterType == 'boolean'),
-    ...filters.where((f) => f.filterType != 'boolean'),
-  ];
-  final filter = await showAppMenu<MediaFilter>(
+}) {
+  return showAnchoredPanel<void>(
     context,
     anchorRect: anchorRect,
-    focusFirstItem: _focusMenuFirstItem(context),
-    entries: [
-      for (final filter in ordered)
-        AppMenuItem(
-          value: filter,
-          label: filter.title,
-          subtitle: _selectedFilterSubtitle(filter, selectedFilters, valueDisplayNames),
-          selected: selectedFilters.containsKey(filter.filter),
-        ),
-    ],
+    builder: (panelContext) => FiltersBottomSheet(
+      filters: filters,
+      selectedFilters: selectedFilters,
+      onFiltersChanged: onFiltersChanged,
+      serverId: serverId,
+      libraryKey: libraryKey,
+      loadFilterValues: loadFilterValues,
+      cachedValues: cachedValues.isEmpty ? null : cachedValues,
+    ),
   );
-  if (!context.mounted || filter == null) return null;
-
-  if (filter.filterType == 'boolean') {
-    final updated = Map<String, String>.of(selectedFilters);
-    if (updated[filter.filter] == '1') {
-      updated.remove(filter.filter);
-    } else {
-      updated[filter.filter] = '1';
-    }
-    return updated;
-  }
-
-  return _showAnchoredFilterValuesMenu(
-    context,
-    anchorRect: anchorRect,
-    filter: filter,
-    selectedFilters: selectedFilters,
-    cachedValues: cachedValues,
-    loadFilterValues: loadFilterValues,
-    allLabel: allLabel,
-    valueDisplayNames: valueDisplayNames,
-  );
-}
-
-/// Display name of the value applied to [filter], for the category popup's
-/// subtitle. Falls back to the raw value when no display name is cached.
-String? _selectedFilterSubtitle(
-  MediaFilter filter,
-  Map<String, String> selectedFilters,
-  Map<String, String>? valueDisplayNames,
-) {
-  if (filter.filterType == 'boolean') return null;
-  final value = selectedFilters[filter.filter];
-  if (value == null) return null;
-  return valueDisplayNames?['${filter.filter}:$value'] ?? value;
-}
-
-/// Second popup of [showAnchoredFiltersMenu]: the chosen category's values,
-/// headed by an "All" row that clears the category.
-Future<Map<String, String>?> _showAnchoredFilterValuesMenu(
-  BuildContext context, {
-  required Rect anchorRect,
-  required MediaFilter filter,
-  required Map<String, String> selectedFilters,
-  required Map<String, List<MediaFilterValue>> cachedValues,
-  required Future<List<MediaFilterValue>> Function(MediaFilter filter) loadFilterValues,
-  required String allLabel,
-  required Map<String, String>? valueDisplayNames,
-}) async {
-  List<MediaFilterValue> values;
-  try {
-    // Same cached-values seam the sheet uses: MediaBrowser payloads answer
-    // inline, anything else goes through the lazy loader.
-    values = cachedValues[filter.filter] ?? await loadFilterValues(filter);
-  } catch (e, st) {
-    appLogger.w('Failed to load values for filter ${filter.filter}', error: e, stackTrace: st);
-    return null;
-  }
-  if (!context.mounted) return null;
-
-  final selectedValue = selectedFilters[filter.filter];
-  final choice = await showAppMenu<Object>(
-    context,
-    anchorRect: anchorRect,
-    focusFirstItem: _focusMenuFirstItem(context),
-    entries: [
-      AppMenuItem(value: _clearFilterValue, label: allLabel, selected: selectedValue == null),
-      if (values.isNotEmpty) const AppMenuDivider(),
-      for (final value in values)
-        AppMenuItem<Object>(
-          value: value,
-          label: value.title,
-          selected: selectedValue != null && libraryFilterValueId(value.key, filter.filter) == selectedValue,
-        ),
-    ],
-  );
-  if (!context.mounted || choice == null) return null;
-
-  final updated = Map<String, String>.of(selectedFilters);
-  if (identical(choice, _clearFilterValue)) {
-    updated.remove(filter.filter);
-  } else {
-    final value = choice as MediaFilterValue;
-    final filterValue = libraryFilterValueId(value.key, filter.filter);
-    updated[filter.filter] = filterValue;
-    valueDisplayNames?['${filter.filter}:$filterValue'] = value.title;
-  }
-  return updated;
 }

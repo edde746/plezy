@@ -157,10 +157,9 @@ abstract class MediaServerClient {
   /// Series rows rather than the recursive episode expansion the server
   /// defaults to. Plex ignores it (the section id already pins the type).
   ///
-  /// The previous `plexStyleFilters: Map<String,String>` parameter was
-  /// retired — the library UI now builds a neutral [LibraryQuery] at the
-  /// call boundary via `libraryQueryFromPlexMap`, and the Plex client
-  /// translates back to wire params via [PlexLibraryQueryTranslator].
+  /// The library UI builds a neutral [LibraryQuery] at the call boundary via
+  /// `libraryQueryFromSelection`, and the Plex client translates it back to
+  /// wire params via [PlexLibraryQueryTranslator].
   Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
     String libraryId, {
     required LibraryQuery query,

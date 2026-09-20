@@ -19,11 +19,94 @@ sealed class LibrarySort with _$LibrarySort {
   }) = _LibrarySort;
 }
 
-/// A single filter clause. The semantics of `field` and `value` are
-/// backend-translated — the neutral query just carries the intent.
+/// Comparison carried by a [LibraryFilter].
+///
+/// [wireSuffix] is Plex's own operator spelling minus its trailing `=`, which
+/// doubles as the query-string separator: `year>>=2015` is the key `year>>`
+/// with the value `2015`. Percent-encoding the suffix is fine (Plex decodes
+/// query keys); the separator itself must stay literal.
+///
+/// [id] is the persisted form; never rename it.
+enum LibraryFilterOperator {
+  /// Tag/boolean equality, or "contains" on a free-text field.
+  is_('is', ''),
+
+  /// Tag/boolean inequality, or "does not contain" on a free-text field.
+  isNot('isNot', '!'),
+
+  /// Numeric/date lower bound, inclusive.
+  atLeast('atLeast', '>>'),
+
+  /// Numeric/date upper bound, inclusive.
+  atMost('atMost', '<<'),
+
+  /// Free-text exact match.
+  matches('matches', '='),
+
+  /// Free-text exact mismatch.
+  notMatches('notMatches', '!='),
+
+  /// Free-text prefix match.
+  beginsWith('beginsWith', '<'),
+
+  /// Free-text suffix match.
+  endsWith('endsWith', '>');
+
+  const LibraryFilterOperator(this.id, this.wireSuffix);
+
+  final String id;
+  final String wireSuffix;
+
+  /// Whether the operator excludes rather than includes its values.
+  bool get isNegated => this == isNot || this == notMatches;
+
+  static LibraryFilterOperator? fromId(String? id) {
+    if (id == null) return null;
+    for (final op in values) {
+      if (op.id == id) return op;
+    }
+    return null;
+  }
+}
+
+/// A single filter clause: one field, one comparison, one or more values.
+///
+/// Values inside a clause are OR-ed (Plex `genre=1,2`, Jellyfin `Genres=a|b`).
+/// Separate clauses AND, including two clauses on the same field — that is how
+/// a range (`year>>=2000` plus `year<<=2010`) and an intersection
+/// (`genre=1&genre=2`) are expressed.
 @freezed
 sealed class LibraryFilter with _$LibraryFilter {
-  const factory LibraryFilter({required String field, required List<String> values}) = _LibraryFilter;
+  const factory LibraryFilter({
+    required String field,
+    @Default(LibraryFilterOperator.is_) LibraryFilterOperator op,
+    required List<String> values,
+  }) = _LibraryFilter;
+
+  const LibraryFilter._();
+
+  /// Stable JSON form used by the persisted per-library selection.
+  Map<String, Object?> toStorageJson() => {
+    'field': field,
+    if (op != LibraryFilterOperator.is_) 'op': op.id,
+    'values': values,
+  };
+
+  static LibraryFilter? fromStorageJson(Object? raw) {
+    if (raw is! Map) return null;
+    final field = raw['field'];
+    if (field is! String || field.isEmpty) return null;
+    final values = (raw['values'] as List?)?.whereType<String>().where((v) => v.isNotEmpty).toList() ?? const [];
+    if (values.isEmpty) return null;
+    // A missing `op` is equality (toStorageJson omits it); a present but
+    // unknown one came from a newer build, and silently downgrading an
+    // exclusion to an include would show exactly what the user hid.
+    final rawOp = raw['op'];
+    if (rawOp != null && rawOp is! String) return null;
+    final op = rawOp == null ? LibraryFilterOperator.is_ : LibraryFilterOperator.fromId(rawOp as String);
+    if (op == null) return null;
+    return LibraryFilter(field: field, op: op, values: values);
+  }
 }
 
 /// Backend-neutral library content query. Each backend's adapter translates
@@ -44,32 +127,19 @@ sealed class LibraryQuery with _$LibraryQuery {
     @Default(50) int limit,
 
     LibrarySort? sort,
+
+    /// Every filter clause the UI selected, in display order. Clauses AND.
     @Default(<LibraryFilter>[]) List<LibraryFilter> filters,
 
     /// Free-text search restricted to this library. Distinct from the global
     /// search endpoint.
     String? search,
 
-    /// Whether to include items the active user has already watched.
-    @Default(true) bool includeWatched,
-
-    /// Restrict to items the user marked favorite (Jellyfin `Filters=IsFavorite`).
-    /// Plex has no equivalent; its translator ignores the flag.
-    @Default(false) bool favoritesOnly,
-
     /// Restrict the result to items whose sort name starts with this string —
     /// the alpha-jump bar's filter UX. The literal `#` is a sentinel for
     /// "non-alphabetic" and translates to a `NameLessThan=A` query for backends
     /// that support it.
     String? nameStartsWith,
-
-    /// Genre filter — used by the per-library filter sheet. Backends that
-    /// take multiple values (Jellyfin) AND/intersect; those that take one
-    /// (Plex's existing flow) consult `filters` instead.
-    List<String>? genres,
-    List<String>? officialRatings,
-    List<int>? years,
-    List<String>? tags,
   }) = _LibraryQuery;
 }
 

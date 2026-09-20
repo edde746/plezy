@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../../../media/ids.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -278,7 +279,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   // Browse-specific state (not in base class)
   List<MediaFilter> _filters = [];
   List<MediaSort> _sortOptions = [];
-  Map<String, String> _selectedFilters = {};
+  List<LibraryFilter> _selectedFilters = const [];
   MediaSort? _selectedSort;
   bool _isSortDescending = false;
   String _selectedGrouping = 'all'; // all, seasons, episodes, folders
@@ -537,11 +538,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   /// Show the mobile browse options sheet from the parent app bar.
+  ///
+  /// No drag handle: every page in this session — the options list and the
+  /// grouping, filter and sort pages pushed onto it — already carries the
+  /// header's close button, and two dismissal affordances on one sheet read
+  /// as two different controls.
   void showBrowseOptionsSheet() {
     if (!mounted) return;
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
-    controller.show(showDragHandle: true, builder: (sheetContext) => _buildBrowseOptionsSheet(sheetContext));
+    controller.show(builder: (sheetContext) => _buildBrowseOptionsSheet(sheetContext));
   }
 
   /// Reset transient browse state before loading a different library.
@@ -591,8 +597,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _resetTopOfPageState();
     _currentFirstVisibleIndex.value = 0;
 
-    // Plex returns categories from `/library/sections/{id}/filters` +
-    // `/sorts`; MediaBrowser clients map their filter endpoints into the same
+    // Plex returns categories from its published filter schema + `/sorts`;
+    // MediaBrowser clients map their filter endpoints into the same
     // shape with values pre-cached and a hardcoded client-side sort list. Both
     // flow through [MediaServerClient.fetchLibraryFiltersWithValues].
     try {
@@ -639,7 +645,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         // Plex returns no cached values (filters fetched lazily per-category);
         // assigning the empty map is a no-op for Plex and a real payload for MediaBrowser libraries.
         _mediaBrowserFilterValues = loaded.cachedValues;
-        _selectedFilters = Map.from(savedFilters);
+        _selectedFilters = savedFilters;
         _selectedGrouping = restoredGrouping;
 
         // Restore sort
@@ -786,7 +792,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       _sortOptions = [];
       _mediaBrowserFilterValues = const {};
       _mediaBrowserAlphaPrefix = null;
-      _selectedFilters = {};
+      _selectedFilters = const [];
       _selectedSort = null;
       _isSortDescending = false;
       _selectedGrouping = _getDefaultGrouping();
@@ -798,34 +804,39 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _notifyFiltersActive();
   }
 
-  Map<String, String> _buildFilterParams() {
-    final filterParams = Map<String, String>.from(_selectedFilters);
-
-    // Add grouping type filter (but not for 'all' or 'folders')
+  /// Plex metadata type the active grouping browses, or null when the
+  /// grouping does not pin one.
+  String? _browseTypeParam() {
     if (_selectedGrouping != 'all' && _selectedGrouping != 'folders') {
       final typeId = _getGroupingTypeId();
-      if (typeId.isNotEmpty) {
-        filterParams['type'] = typeId;
-      }
-    } else if (_selectedGrouping == 'all' && widget.library.isShared) {
-      // Shared libraries: filter to video content only (exclude library section entries)
-      filterParams['type'] = PlexMetadataType.videoCsv;
+      return typeId.isEmpty ? null : typeId;
     }
-
-    // Add sort
-    if (_selectedSort != null) {
-      filterParams['sort'] = _selectedSort!.getSortKey(descending: _isSortDescending);
+    if (_selectedGrouping == 'all' && widget.library.isShared) {
+      // Shared libraries: video content only (exclude library section entries).
+      return PlexMetadataType.videoCsv;
     }
+    return null;
+  }
 
-    filterParams['includeCollections'] = '1';
-
-    // MediaBrowser alpha-bar filter — converted to NameStartsWith /
-    // NameLessThan on the wire.
-    if (_mediaBrowserAlphaPrefix != null) {
-      filterParams['alphaPrefix'] = _mediaBrowserAlphaPrefix!;
-    }
-
-    return filterParams;
+  /// The query the grid runs, for [clauses] rather than the committed
+  /// selection so the filter editor can count a pending edit.
+  LibraryQuery _buildQuery({required List<LibraryFilter> clauses, required int offset, required int limit}) {
+    final typeParam = _browseTypeParam();
+    final baseQuery = libraryQueryFromSelection(
+      clauses: clauses,
+      libraryKind: typeParam != null ? null : widget.library.kind,
+      typeParam: typeParam,
+      sortParam: _selectedSort?.getSortKey(descending: _isSortDescending),
+      alphaPrefix: _mediaBrowserAlphaPrefix,
+      offset: offset,
+      limit: limit,
+    );
+    return (baseQuery.kind == null || baseQuery.kind == MediaKind.folder) &&
+            baseQuery.includeKinds.isEmpty &&
+            _selectedGrouping == browseGroupingAll &&
+            widget.library.defaultBrowseKinds.isNotEmpty
+        ? baseQuery.copyWith(includeKinds: widget.library.defaultBrowseKinds)
+        : baseQuery;
   }
 
   /// Fetch the first flat page. [epoch] is the snapshot of the full load that
@@ -899,23 +910,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
     final client = context.getMediaClientForLibrary(widget.library);
-    final filterParams = _buildFilterParams();
-    final baseQuery = libraryQueryFromPlexMap(
-      map: filterParams,
-      libraryKind: filterParams.containsKey('type') ? null : widget.library.kind,
-      offset: start,
-      limit: size,
-    );
-    final query =
-        (baseQuery.kind == null || baseQuery.kind == MediaKind.folder) &&
-            baseQuery.includeKinds.isEmpty &&
-            _selectedGrouping == browseGroupingAll &&
-            widget.library.defaultBrowseKinds.isNotEmpty
-        ? baseQuery.copyWith(includeKinds: widget.library.defaultBrowseKinds)
-        : baseQuery;
     return client.fetchLibraryPagedContent(
       widget.library.id,
-      query: query,
+      query: _buildQuery(clauses: _selectedFilters, offset: start, limit: size),
       libraryKind: widget.library.kind,
       abort: abort,
     );
@@ -1017,7 +1014,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               title: Text(
                 _selectedFilters.isEmpty
                     ? t.libraries.filters
-                    : t.libraries.filtersWithCount(count: _selectedFilters.length),
+                    : t.libraries.filtersWithCount(count: _activeFilterFieldCount),
               ),
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () => _showFiltersOptionsPage(controller),
@@ -1050,10 +1047,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
     controller
-        .show<String>(
-          showDragHandle: true,
-          builder: (_) => _buildGroupingBottomSheet(onSelected: (value) => controller.close(value)),
-        )
+        .show<String>(builder: (_) => _buildGroupingBottomSheet(onSelected: (value) => controller.close(value)))
         .then(_handleGroupingSelection);
   }
 
@@ -1153,15 +1147,39 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       return;
     }
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    OverlaySheetController.of(context).show(builder: (_) => _buildFiltersBottomSheet());
+    final controller = OverlaySheetController.of(context);
+    _openFiltersSheet((builder) => controller.show(builder: builder));
   }
 
   void _showFiltersOptionsPage(OverlaySheetController controller) {
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    controller.push(builder: (_) => _buildFiltersBottomSheet(onBack: () => controller.pop()));
+    _openFiltersSheet((builder) => controller.push(builder: builder), onBack: () => controller.pop());
   }
 
-  Widget _buildFiltersBottomSheet({VoidCallback? onBack}) {
+  /// Open the filter editor and commit once, when it closes.
+  ///
+  /// A multi-select editor cannot apply per tap, and the sheet can be
+  /// dismissed through the barrier, a drag, D-pad back or system back, so the
+  /// commit hangs off the sheet's future rather than any one of those paths.
+  /// Committing post-frame keeps the reload from stealing focus while the
+  /// sheet is still tearing down, exactly as the sort sheet does.
+  void _openFiltersSheet(Future<dynamic> Function(WidgetBuilder builder) open, {VoidCallback? onBack}) {
+    var pending = _selectedFilters;
+    // The staged edits belong to the library that was open when the editor
+    // was: committing them after a library switch would write one library's
+    // clauses into another's storage key.
+    final owner = widget.library.globalKey;
+    open((_) => _buildFiltersBottomSheet(onChanged: (filters) => pending = filters, onBack: onBack)).then((_) {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || owner != widget.library.globalKey) return;
+        if (listEquals(pending, _selectedFilters)) return;
+        unawaited(_applyFilters(pending));
+      });
+    });
+  }
+
+  Widget _buildFiltersBottomSheet({required ValueChanged<List<LibraryFilter>> onChanged, VoidCallback? onBack}) {
     return FiltersBottomSheet(
       filters: _filters,
       selectedFilters: _selectedFilters,
@@ -1172,14 +1190,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       // Pre-populated values arrive from MediaBrowser filter discovery. The
       // empty map for Plex libraries falls through to lazy `getFilterValues`.
       cachedValues: _mediaBrowserFilterValues.isEmpty ? null : _mediaBrowserFilterValues,
-      onFiltersChanged: _applyFilters,
+      onFiltersChanged: onChanged,
     );
   }
 
-  Future<void> _applyFilters(Map<String, String> filters) async {
+  Future<void> _applyFilters(List<LibraryFilter> filters) async {
     setState(() {
-      _selectedFilters.clear();
-      _selectedFilters.addAll(filters);
+      _selectedFilters = List<LibraryFilter>.unmodifiable(filters);
     });
     _notifyFiltersActive();
 
@@ -1190,7 +1207,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     unawaited(_loadFirstCharacters());
   }
 
-  void _resetFilters() => unawaited(_applyFilters(const {}));
+  void _resetFilters() => unawaited(_applyFilters(const []));
+
+  /// Filter categories in use. A range is two clauses on one field, and the
+  /// chip counts what the viewer set, not how many clauses that took.
+  int get _activeFilterFieldCount => _selectedFilters.map((clause) => clause.field).toSet().length;
 
   Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
     if (!mounted) return const [];
@@ -1204,28 +1225,24 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return const [];
   }
 
-  /// Display names for applied filter values so the desktop category popup can
-  /// echo them as subtitles (the raw value can be an opaque server id). The
-  /// sheet keeps its own equivalent cache and falls back to the raw value too.
-  final Map<String, String> _filterValueDisplayNames = {};
-
-  /// Desktop counterpart of [FiltersBottomSheet]: one anchored popup listing
-  /// the categories, then a second popup at the same rect for the chosen
-  /// category's values. Boolean categories toggle and apply directly,
-  /// mirroring the sheet's switches.
+  /// Desktop counterpart of the filter sheet: the same editor hosted in a
+  /// popup anchored to the chip. Edits stage into [pending] and commit once
+  /// the panel is dismissed, whichever way it was dismissed.
   Future<void> _showFiltersMenu(Rect anchorRect) async {
-    final updated = await showAnchoredFiltersMenu(
+    var pending = _selectedFilters;
+    await showAnchoredFilterPanel(
       context,
       anchorRect: anchorRect,
       filters: _filters,
       selectedFilters: _selectedFilters,
+      onFiltersChanged: (filters) => pending = filters,
+      serverId: widget.library.serverId!,
+      libraryKey: widget.library.globalKey,
       loadFilterValues: _loadFilterValues,
-      allLabel: t.libraries.all,
       cachedValues: _mediaBrowserFilterValues,
-      valueDisplayNames: _filterValueDisplayNames,
     );
-    if (!mounted || updated == null) return;
-    await _applyFilters(updated);
+    if (!mounted || listEquals(pending, _selectedFilters)) return;
+    await _applyFilters(pending);
   }
 
   void _showSortBottomSheet() {
@@ -1442,12 +1459,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// Fetch first characters for the current library/filter state
   Future<void> _loadFirstCharacters({int? requestId}) async {
     final currentRequestId = requestId ?? ++_firstCharactersRequestId;
-    final filterParams = Map<String, String>.from(_selectedFilters);
     final typeId = _getGroupingTypeId();
 
     try {
       final result = await _alphaStrategy.loadCharacters(
-        filters: filterParams,
+        filters: plexFilterQueryParameters(_selectedFilters),
         typeId: typeId.isNotEmpty ? int.tryParse(typeId) : null,
         descending: _isTitleSortDescending,
       );
@@ -1895,7 +1911,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             icon: Symbols.filter_alt_rounded,
             label: _selectedFilters.isEmpty
                 ? t.libraries.filters
-                : t.libraries.filtersWithCount(count: _selectedFilters.length),
+                : t.libraries.filtersWithCount(count: _activeFilterFieldCount),
             onPressed: _showFiltersBottomSheet,
           ),
         if (_isSortChipVisible)

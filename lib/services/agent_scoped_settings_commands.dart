@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../media/ids.dart';
+import '../media/library_query.dart';
 import '../media/media_filter.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -729,8 +730,13 @@ class AgentScopedSettingsCommands {
       guard.check();
       final choices = <String, List<String>>{};
       for (final filter in result.filters) {
-        if (filter.filterType == 'boolean') {
+        if (filter.isBoolean) {
           choices[filter.filter] = const ['1'];
+        } else if (!filter.hasValueList) {
+          // Free text, sizes, durations and dates have no value endpoint;
+          // listing them would GET the server root and fill the advertised
+          // domain with whatever that returns.
+          choices[filter.filter] = const [];
         } else {
           final values =
               result.cachedValues[filter.filter] ??
@@ -739,8 +745,17 @@ class AgentScopedSettingsCommands {
           choices[filter.filter] = values.map((v) => libraryFilterValueId(v.key, filter.filter)).toList();
         }
       }
-      List<Map<String, dynamic>> domain(Map<String, String> values) => [
-        for (final entry in values.entries) {'filterId': entry.key, 'valueId': entry.value},
+      // The operator is part of the clause, not decoration: a range is two
+      // clauses on one field, so projecting it away would make `read` output
+      // that `normalize` rejects as a duplicate, and would silently rewrite
+      // "2000 or later" as "exactly 2000".
+      List<Map<String, dynamic>> domain(List<LibraryFilter> clauses) => [
+        for (final clause in clauses)
+          {
+            'filterId': clause.field,
+            'valueIds': clause.values,
+            if (clause.op != LibraryFilterOperator.is_) 'op': clause.op.id,
+          },
       ];
       entries.add(
         _valueEntry(
@@ -750,7 +765,12 @@ class AgentScopedSettingsCommands {
           'nextLibraryOpen',
           defaultValue: const [],
           choices: [
-            for (final filter in result.filters) {'filterId': filter.filter, 'valueIds': choices[filter.filter]},
+            for (final filter in result.filters)
+              {
+                'filterId': filter.filter,
+                'valueIds': choices[filter.filter],
+                'operators': [for (final op in filter.operators) op.id],
+              },
           ],
           read: () {
             final resolved = domain(storage.getLibraryFilters(sectionId: globalKey));
@@ -759,25 +779,50 @@ class AgentScopedSettingsCommands {
               LibraryPreference.filters,
               profileId: guard.profileId,
             );
-            final override = stored is Map
-                ? domain({for (final entry in stored.entries) entry.key.toString(): entry.value.toString()})
-                : null;
+            final override = stored is List<LibraryFilter> ? domain(stored) : null;
             return {'value': resolved, 'storedOverride': override, 'resolvedValue': resolved};
           },
           normalize: (v) {
-            if (v is! List || v.length > result.filters.length) {
-              _invalid('Filters must be a bounded array of filter/value pairs.');
+            if (v is! List || v.length > result.filters.length * 2) {
+              _invalid('Filters must be a bounded array of filter clauses.');
             }
-            final selected = <String, String>{};
+            final selected = <LibraryFilter>[];
+            // A field may carry two clauses — a lower and an upper bound —
+            // so identity is the field plus its comparison, not the field.
+            final seen = <String>{};
             for (final raw in v) {
               final value = agentObject(raw, 'filter');
-              _only(value, const {'filterId', 'valueId'});
+              _only(value, const {'filterId', 'valueIds', 'op'});
               final id = agentString(value, 'filterId');
-              final valueId = agentString(value, 'valueId');
-              if (selected.containsKey(id) || !(choices[id]?.contains(valueId) ?? false)) {
+              final rawValues = value['valueIds'];
+              if (rawValues is! List || rawValues.isEmpty || rawValues.length > 32) {
+                _invalid('Each filter needs between one and thirty-two value ids.');
+              }
+              final rawOp = value['op'];
+              if (rawOp != null && rawOp is! String) _invalid('The op must be an operator id.');
+              final op = rawOp == null ? LibraryFilterOperator.is_ : LibraryFilterOperator.fromId(rawOp as String);
+              if (op == null) _invalid('An unknown filter operator was selected.');
+              final filter = result.filters.where((f) => f.filter == id).firstOrNull;
+              if (filter == null || !seen.add('$id\u0000${op.id}')) {
                 _invalid('An unavailable or duplicate filter was selected.');
               }
-              selected[id] = valueId;
+              if (!filter.operators.contains(op)) {
+                _invalid('This server cannot evaluate that comparison for the filter.');
+              }
+              final allowed = choices[id] ?? const [];
+              final valueIds = <String>[];
+              for (final rawValue in rawValues) {
+                if (rawValue is! String || rawValue.isEmpty) {
+                  _invalid('Each filter value must be a nonempty string.');
+                }
+                // Fields with no enumerable values (free text, sizes, dates)
+                // take arbitrary input; the rest are held to the listing.
+                if ((filter.isBoolean || filter.hasValueList) && !allowed.contains(rawValue)) {
+                  _invalid('An unavailable filter value was selected.');
+                }
+                valueIds.add(rawValue);
+              }
+              selected.add(LibraryFilter(field: id, op: op, values: valueIds));
             }
             return selected;
           },
@@ -788,7 +833,7 @@ class AgentScopedSettingsCommands {
                   profileId: guard.profileId,
                   checkCurrent: guard.check,
                 )
-              : storage.saveLibraryFilters(v as Map<String, String>, sectionId: globalKey, profileId: guard.profileId),
+              : storage.saveLibraryFilters(v as List<LibraryFilter>, sectionId: globalKey, profileId: guard.profileId),
         ),
       );
     }

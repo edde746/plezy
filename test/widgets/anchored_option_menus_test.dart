@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/media/media_sort.dart';
+import 'package:plezy/screens/libraries/filters_bottom_sheet.dart';
 import 'package:plezy/widgets/anchored_option_menus.dart';
+import 'package:plezy/widgets/overlay_sheet.dart';
 
 import '../test_helpers/theme.dart';
 
@@ -154,70 +157,115 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('filters menu toggles booleans and drills into value lists', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+  testWidgets('filter panel hosts the editor and reports edits as they happen', (tester) async {
     final filters = [
-      MediaFilter(filter: 'unwatched', filterType: 'boolean', key: 'k1', title: 'Unwatched', type: 'filter'),
-      MediaFilter(filter: 'genre', filterType: 'string', key: 'k2', title: 'Genre', type: 'filter'),
+      MediaFilter(
+        filter: 'unwatched',
+        filterType: MediaFilterType.boolean,
+        key: '',
+        title: 'Unwatched',
+        type: 'filter',
+      ),
+      MediaFilter(filter: 'genre', filterType: MediaFilterType.tag, key: 'k2', title: 'Genre', type: 'filter'),
     ];
     final values = [MediaFilterValue(key: '28', title: 'Action'), MediaFilterValue(key: '35', title: 'Comedy')];
-    final displayNames = <String, String>{};
-    Map<String, String>? updated;
+    final edits = <List<LibraryFilter>>[];
+    var closed = false;
 
-    Future<void> pump(Map<String, String> selected) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(extensions: const [testMonoTokens]),
-          home: Scaffold(
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(extensions: const [testMonoTokens]),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => FilledButton(
+              onPressed: () async {
+                await showAnchoredFilterPanel(
+                  context,
+                  anchorRect: const Rect.fromLTWH(10, 10, 80, 24),
+                  filters: filters,
+                  selectedFilters: const [],
+                  onFiltersChanged: edits.add,
+                  serverId: 'server',
+                  libraryKey: 'library',
+                  loadFilterValues: (_) async => values,
+                );
+                closed = true;
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    // Multi-select in the panel, exactly as in the sheet.
+    await tester.tap(find.text('Genre'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Action'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comedy'));
+    await tester.pumpAndSettle();
+    expect(edits.last, const [
+      LibraryFilter(field: 'genre', values: ['28', '35']),
+    ]);
+    expect(closed, isFalse, reason: 'selecting a value must not dismiss the panel');
+
+    // Dismissal is what tells the caller to commit.
+    await tester.tapAt(const Offset(700, 560));
+    await tester.pumpAndSettle();
+    expect(closed, isTrue);
+  });
+
+  testWidgets('the panel close button closes the panel, not a sheet behind it', (tester) async {
+    // The editor resolves its close through `closeAdaptive`, so the same
+    // widget has to dismiss the right host: the routed panel here, an overlay
+    // sheet on touch/TV.
+    final filters = [
+      MediaFilter(filter: 'genre', filterType: MediaFilterType.tag, key: 'k', title: 'Genre', type: 'filter'),
+    ];
+    var closed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(extensions: const [testMonoTokens]),
+        home: OverlaySheetHost(
+          canPop: true,
+          child: Scaffold(
             body: Builder(
               builder: (context) => FilledButton(
                 onPressed: () async {
-                  updated = await showAnchoredFiltersMenu(
+                  await showAnchoredFilterPanel(
                     context,
                     anchorRect: const Rect.fromLTWH(10, 10, 80, 24),
                     filters: filters,
-                    selectedFilters: selected,
-                    loadFilterValues: (_) async => values,
-                    allLabel: 'All',
-                    valueDisplayNames: displayNames,
+                    selectedFilters: const [],
+                    onFiltersChanged: (_) {},
+                    serverId: 'server',
+                    libraryKey: 'library',
+                    loadFilterValues: (_) async => const [],
                   );
+                  closed = true;
                 },
                 child: const Text('open'),
               ),
             ),
           ),
         ),
-      );
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-    }
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
 
-    // Boolean toggle applies directly from the category popup.
-    await pump(const {});
-    await tester.tap(find.text('Unwatched'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
-    expect(updated, {'unwatched': '1'});
 
-    // Category drill-in opens the values popup; picking a value applies it
-    // and caches its display name.
-    updated = null;
-    await pump(const {});
-    await tester.tap(find.text('Genre'));
-    await tester.pumpAndSettle();
-    expect(find.text('Action'), findsOneWidget);
-    await tester.tap(find.text('Action'));
-    await tester.pumpAndSettle();
-    expect(updated, {'genre': '28'});
-    expect(displayNames['genre:28'], 'Action');
-
-    // "All" clears the category.
-    updated = null;
-    await pump(const {'genre': '28'});
-    await tester.tap(find.text('Genre'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('All'));
-    await tester.pumpAndSettle();
-    expect(updated, isEmpty);
-    debugDefaultTargetPlatformOverride = null;
+    expect(closed, isTrue);
+    expect(find.byType(FiltersBottomSheet), findsNothing);
+    // The host that was behind the panel is still mounted and usable.
+    expect(find.text('open'), findsOneWidget);
   });
 }

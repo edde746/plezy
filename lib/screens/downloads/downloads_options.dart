@@ -9,6 +9,7 @@ import '../../i18n/strings.g.dart';
 import '../../media/downloads_filter.dart';
 import '../../media/downloads_sort_options.dart';
 import '../../media/ids.dart';
+import '../../media/library_query.dart';
 import '../../media/media_filter.dart';
 import '../../media/media_item.dart';
 import '../../media/media_item_sort.dart';
@@ -72,11 +73,7 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   String _grouping = browseGroupingShows;
   MediaSort? _sort;
   bool _sortDescending = false;
-  Map<String, String> _filters = const {};
-
-  /// Display names for selected filter values, fed to the desktop anchored
-  /// popup's subtitle (the sheet keeps its own equivalent cache).
-  final Map<String, String> _filterValueDisplayNames = {};
+  List<LibraryFilter> _filters = const [];
 
   String get selectedGrouping => _grouping;
 
@@ -85,7 +82,7 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   bool get hasActiveFilters => _filters.isNotEmpty;
 
   /// Clear every active filter (the filtered-empty state's reset action).
-  void resetDownloadsFilters() => unawaited(_applyFilters(const {}));
+  void resetDownloadsFilters() => unawaited(_applyFilters(const []));
 
   /// Call from [State.initState]: seeds the default grouping and kicks off the
   /// persisted-selection restore.
@@ -118,14 +115,9 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
     // library browse filter (e.g. `unwatched`) into every downloads tab.
     final savedFilters = storage.getLibraryFilters(sectionId: optionsSectionId, legacyGlobalFallback: false);
 
-    final restoredFilters = <String, String>{};
-    for (final entry in savedFilters.entries) {
-      switch (entry.key) {
-        case downloadFilterUnwatched:
-        case downloadFilterLibrary:
-          restoredFilters[entry.key] = entry.value;
-      }
-    }
+    final restoredFilters = savedFilters
+        .where((clause) => clause.field == downloadFilterUnwatched || clause.field == downloadFilterLibrary)
+        .toList();
 
     final sortOptions = downloadSortOptions(includeDownloadFields: true);
     MediaSort? restoredSort;
@@ -187,14 +179,14 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   List<MediaFilter> get _filterDefinitions => [
     MediaFilter(
       filter: downloadFilterUnwatched,
-      filterType: 'boolean',
+      filterType: MediaFilterType.boolean,
       key: downloadFilterUnwatched,
       title: t.libraries.filterCategories.unwatched,
       type: 'filter',
     ),
     MediaFilter(
       filter: downloadFilterLibrary,
-      filterType: 'string',
+      filterType: MediaFilterType.tag,
       key: downloadFilterLibrary,
       title: t.downloads.groupings.library,
       type: 'filter',
@@ -231,13 +223,14 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   // Options sheet (mobile rows, TV chip targets)
   // ---------------------------------------------------------------------
 
+  /// No drag handle here either: the header's close button is this session's
+  /// single dismissal affordance, on the options list and on the grouping,
+  /// filter and sort pages pushed onto it.
   @override
   void showOptionsSheet() {
     if (!mounted) return;
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    OverlaySheetController.of(
-      context,
-    ).show(showDragHandle: true, builder: (sheetContext) => _buildOptionsSheet(sheetContext));
+    OverlaySheetController.of(context).show(builder: (sheetContext) => _buildOptionsSheet(sheetContext));
   }
 
   Widget _buildOptionsSheet(BuildContext sheetContext) {
@@ -294,10 +287,7 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
     controller
-        .show<String>(
-          showDragHandle: true,
-          builder: (_) => _buildGroupingSheet(onSelected: (value) => controller.close(value)),
-        )
+        .show<String>(builder: (_) => _buildGroupingSheet(onSelected: (value) => controller.close(value)))
         .then(_handleGroupingSelection);
   }
 
@@ -446,15 +436,29 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
       return;
     }
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    OverlaySheetController.of(context).show(builder: (_) => _buildFiltersSheet());
+    final controller = OverlaySheetController.of(context);
+    _openFiltersSheet((builder) => controller.show(builder: builder));
   }
 
   void _showFiltersOptionsPage(OverlaySheetController controller) {
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    controller.push(builder: (_) => _buildFiltersSheet(onBack: () => controller.pop()));
+    _openFiltersSheet((builder) => controller.push(builder: builder), onBack: () => controller.pop());
   }
 
-  Widget _buildFiltersSheet({VoidCallback? onBack}) {
+  /// Stage edits and commit once on dismissal — same contract as the library
+  /// browse tab, so both consumers of the editor behave alike.
+  void _openFiltersSheet(Future<dynamic> Function(WidgetBuilder builder) open, {VoidCallback? onBack}) {
+    var pending = _filters;
+    open((_) => _buildFiltersSheet(onChanged: (filters) => pending = filters, onBack: onBack)).then((_) {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(_applyFilters(pending));
+      });
+    });
+  }
+
+  Widget _buildFiltersSheet({required ValueChanged<List<LibraryFilter>> onChanged, VoidCallback? onBack}) {
     return FiltersBottomSheet(
       filters: _filterDefinitions,
       selectedFilters: _filters,
@@ -464,30 +468,36 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
       libraryKey: optionsSectionId,
       loadFilterValues: _loadFilterValues,
       onBack: onBack,
-      onFiltersChanged: _applyFilters,
+      onFiltersChanged: onChanged,
     );
   }
 
-  /// Desktop counterpart of [FiltersBottomSheet]: a categories popup, then a
-  /// values popup for the picked category. Boolean categories toggle inline.
-
+  /// Desktop counterpart of the filter sheet: the same editor in a popup
+  /// anchored to the chip, committing on dismissal.
   Future<void> _showFiltersMenu(Rect anchorRect) async {
-    final updated = await showAnchoredFiltersMenu(
+    var pending = _filters;
+    await showAnchoredFilterPanel(
       context,
       anchorRect: anchorRect,
       filters: _filterDefinitions,
       selectedFilters: _filters,
+      onFiltersChanged: (filters) => pending = filters,
+      // Cache keys only — the downloads filters resolve locally, so the
+      // server/library identity just namespaces the value-name cache.
+      serverId: 'downloads',
+      libraryKey: optionsSectionId,
       loadFilterValues: _loadFilterValues,
-      valueDisplayNames: _filterValueDisplayNames,
-      allLabel: t.libraries.all,
     );
-    if (!mounted || updated == null) return;
-    await _applyFilters(updated);
+    if (!mounted) return;
+    await _applyFilters(pending);
   }
 
-  Future<void> _applyFilters(Map<String, String> filters) async {
+  Future<void> _applyFilters(List<LibraryFilter> filters) async {
+    if (_filters.length == filters.length && _filters.asMap().entries.every((e) => filters[e.key] == e.value)) {
+      return;
+    }
     setState(() {
-      _filters = Map.of(filters);
+      _filters = List<LibraryFilter>.unmodifiable(filters);
     });
     final storage = await StorageService.getInstance();
     await storage.saveLibraryFilters(filters, sectionId: optionsSectionId);

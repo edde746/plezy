@@ -1148,7 +1148,8 @@
       "tag": "Címke",
       "unwatched": "Nem látott",
       "unplayed": "Nem lejátszott",
-      "favorites": "Kedvencek"
+      "favorites": "Kedvencek",
+      "filePath": ""
     },
     "sortLabels": {
       "title": "Cím",
@@ -1174,6 +1175,34 @@
       "dateDownloaded": "Letöltés dátuma",
       "size": "Méret",
       "library": "Könyvtár"
+    },
+    "advancedFilters": {
+      "include": "",
+      "exclude": "",
+      "any": "",
+      "yes": "",
+      "no": "",
+      "not": "",
+      "valueCount": "",
+      "valueCountExcluded": "",
+      "searchValues": "",
+      "noValues": "",
+      "matchContains": "",
+      "matchNotContains": "",
+      "matchIs": "",
+      "matchIsNot": "",
+      "matchBeginsWith": "",
+      "matchEndsWith": "",
+      "textHint": "",
+      "from": "",
+      "to": "",
+      "range": "",
+      "atLeast": "",
+      "atMost": "",
+      "dateLastDays": "",
+      "dateLastYear": "",
+      "dateOlderThanDays": "",
+      "dateOlderThanYear": ""
     }
   },
   "about": {
