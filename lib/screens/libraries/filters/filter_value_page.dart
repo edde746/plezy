@@ -7,6 +7,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_filter.dart';
 import '../../../utils/scroll_utils.dart';
+import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import 'filter_operator_row.dart';
 import 'filter_summary.dart';
@@ -166,7 +167,7 @@ class _FilterValuePageState extends State<FilterValuePage> {
             controller: _searchController,
             decoration: InputDecoration(
               isDense: true,
-              prefixIcon: const Icon(Symbols.search_rounded, fill: 1, size: 20),
+              prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1, size: 20),
               hintText: t.libraries.advancedFilters.searchValues,
               border: const OutlineInputBorder(),
             ),
