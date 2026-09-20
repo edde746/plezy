@@ -1422,24 +1422,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                           mainAxisSize: .min,
                           children: [
-                            // Show logo, falling back to the name/title
-                            ClearLogoImage(
-                              client: heroClient,
-                              logoPath: heroItem.clearLogoPath,
-                              width: heroLogoWidth,
-                              height: heroLogoHeight,
-                              alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                              // The hero scrim washes artwork toward the scaffold
-                              // background; light themes recolor light-toned logos.
-                              logoToneTarget: logoToneTargetFor(
-                                surface: theme.scaffoldBackgroundColor,
-                                foreground: colorScheme.onSurface,
-                              ),
-                              fallbackBuilder: (context) => FittingTitleText(
-                                showName,
-                                style: heroTitleStyle,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                            // Show logo, falling back to the name/title. The
+                            // logo keeps its slot; the title gets a wider one.
+                            LayoutBuilder(
+                              builder: (context, constraints) => ClearLogoImage(
+                                client: heroClient,
+                                logoPath: heroItem.clearLogoPath,
+                                width: math.min(heroLogoWidth, constraints.maxWidth),
+                                height: heroLogoHeight,
+                                fallbackWidth: ClearLogoImage.fallbackWidthFor(
+                                  logoWidth: heroLogoWidth,
+                                  available: constraints.maxWidth,
+                                ),
+                                alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                                // The hero scrim washes artwork toward the scaffold
+                                // background; light themes recolor light-toned logos.
+                                logoToneTarget: logoToneTargetFor(
+                                  surface: theme.scaffoldBackgroundColor,
+                                  foreground: colorScheme.onSurface,
+                                ),
+                                fallbackBuilder: (context) => FittingTitleText(
+                                  showName,
+                                  style: heroTitleStyle,
+                                  textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                  alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                                ),
                               ),
                             ),
 

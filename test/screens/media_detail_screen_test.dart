@@ -3,7 +3,7 @@ import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -2181,6 +2181,44 @@ void main() {
       }
       expect(tester.widget<FittingTitleText>(title()).textAlign, TextAlign.center);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('logo-less title gets a wider slot than the logo and shrinks to fit it', (tester) async {
+      // #1796: the fallback title used to be laid out in the 400px logo slot
+      // and ellipsized on its second line with most of a desktop hero still
+      // empty beside it. It gets twice the logo slot — not the whole hero,
+      // where a one-line title stops reading as a title block — and a title
+      // still too long for two lines of that shrinks instead of ellipsizing.
+      const title = 'A Title Long Enough To Need The Whole Wide Hero';
+      final movie = testMediaItem(
+        id: 'wide_title_movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: title,
+        year: 2017,
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      final titleFinder = find.descendant(of: find.byType(FittingTitleText), matching: find.text(title));
+      final paragraph = tester.renderObject<RenderParagraph>(titleFinder);
+      // Twice the 400px logo slot inside the 1068px hero column.
+      expect(paragraph.constraints.maxWidth, moreOrLessEquals(800, epsilon: 1));
+
+      // 47 glyphs at the 40px base need 1880px, more than two 800px lines:
+      // the size drops until the title fits without an ellipsis.
+      final style = tester.widget<Text>(titleFinder).style!;
+      expect(style.fontSize, lessThan(40));
+      final painter = TextPainter(
+        text: TextSpan(text: title, style: style),
+        maxLines: 2,
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: paragraph.constraints.maxWidth);
+      expect(painter.didExceedMaxLines, isFalse);
+      painter.dispose();
     });
 
     testWidgets('portrait phone hero shows square art instead of the cropped backdrop', (tester) async {

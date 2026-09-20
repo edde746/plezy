@@ -1388,6 +1388,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     required Iterable<String?> artworkPaths,
     required BoxFit fit,
     required ImageType imageType,
+    double? width,
+    double? height,
     Alignment alignment = Alignment.center,
     Color? logoToneTarget,
     bool logoToneRemapMixed = true,
@@ -1407,6 +1409,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         imagePath: null,
         localFilePath: localPath,
         cacheMissingLocalFile: true,
+        width: width,
+        height: height,
         fit: fit,
         alignment: alignment,
         imageType: imageType,
@@ -3804,6 +3808,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 metadata,
                                 width: logoWidth,
                                 height: logoHeight,
+                                availableWidth: constraints.maxWidth,
                                 titleBuilder: (context, title) => _buildDetailTitle(
                                   context,
                                   title,
@@ -3985,15 +3990,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.55);
   }
 
+  /// The logo is contained within [width] × [height]; the title fallback gets
+  /// [ClearLogoImage.fallbackWidthFor] of the [availableWidth] hero column at
+  /// the same [height] (#1796).
   Widget _buildDetailLogoOrTitle(
     BuildContext context,
     MediaItem metadata, {
     required double width,
     required double height,
+    required double availableWidth,
     required Widget Function(BuildContext context, String title) titleBuilder,
     Alignment alignment = Alignment.centerLeft,
   }) {
     Widget titleFallback(BuildContext context) => titleBuilder(context, metadata.displayTitle);
+    final fallbackWidth = ClearLogoImage.fallbackWidthFor(logoWidth: width, available: availableWidth);
     // The hero scrim washes the backdrop toward the scaffold background, so a
     // light theme needs light-toned clear logos recolored to stay visible.
     final theme = Theme.of(context);
@@ -4003,38 +4013,41 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
 
     if (metadata.clearLogoPath == null) {
-      return SizedBox(width: width, height: height, child: titleFallback(context));
+      return SizedBox(width: fallbackWidth, height: height, child: titleFallback(context));
     }
 
-    return SizedBox(
+    final localArtwork = _buildOfflineArtworkIfAvailable(
+      context,
+      artworkPaths: [metadata.clearLogoPath],
       width: width,
       height: height,
-      child: Builder(
-        builder: (context) {
-          final localArtwork = _buildOfflineArtworkIfAvailable(
-            context,
-            artworkPaths: [metadata.clearLogoPath],
-            fit: BoxFit.contain,
-            alignment: alignment,
-            imageType: ImageType.heroLogo,
-            logoToneTarget: logoToneTarget,
-            logoToneRemapMixed: false,
-            placeholder: (context, url) => titleFallback(context),
-            errorWidget: (context, url, error) => titleFallback(context),
-          );
-          if (localArtwork != null) return localArtwork;
+      fit: BoxFit.contain,
+      alignment: alignment,
+      imageType: ImageType.heroLogo,
+      logoToneTarget: logoToneTarget,
+      logoToneRemapMixed: false,
+      // Both replace the image under Align's loose constraints below, so they
+      // take the whole title slot rather than the logo's.
+      placeholder: (context, url) => SizedBox.expand(child: titleFallback(context)),
+      errorWidget: (context, url, error) => SizedBox.expand(child: titleFallback(context)),
+    );
+    if (localArtwork != null) {
+      return SizedBox(
+        width: fallbackWidth,
+        height: height,
+        child: Align(alignment: alignment, child: localArtwork),
+      );
+    }
 
-          return ClearLogoImage(
-            client: _getArtworkMediaClient(context),
-            logoPath: metadata.clearLogoPath,
-            width: width,
-            height: height,
-            logoToneTarget: logoToneTarget,
-            alignment: alignment,
-            fallbackBuilder: titleFallback,
-          );
-        },
-      ),
+    return ClearLogoImage(
+      client: _getArtworkMediaClient(context),
+      logoPath: metadata.clearLogoPath,
+      width: width,
+      height: height,
+      fallbackWidth: fallbackWidth,
+      logoToneTarget: logoToneTarget,
+      alignment: alignment,
+      fallbackBuilder: titleFallback,
     );
   }
 
@@ -4641,6 +4654,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           metadata,
                           width: logoWidth,
                           height: logoHeight,
+                          availableWidth: constraints.maxWidth,
                           alignment: centered ? Alignment.center : Alignment.centerLeft,
                           titleBuilder: (context, title) => _buildDetailTitle(
                             context,
