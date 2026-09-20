@@ -1233,6 +1233,13 @@ class _Translations$errors$zh_Hant extends Translations$errors$zh {
 	@override String failedToSwitchProfile({required Object displayName}) => '無法切換至 ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => '無法刪除 ${displayName}';
 	@override String get failedToRate => '無法更新評分';
+	@override String get reasonTimedOut => '連線逾時';
+	@override String get reasonUnreachable => '無法連線至媒體伺服器';
+	@override String get reasonRefused => '媒體伺服器拒絕了此要求';
+	@override String get reasonNotFound => '該項目已不在媒體伺服器上';
+	@override String get reasonServerError => '媒體伺服器回報錯誤';
+	@override String get reasonCancelled => '要求已取消';
+	@override String get reasonUnexpected => '發生未預期的錯誤';
 }
 
 // Path: libraries
@@ -1545,6 +1552,8 @@ class _Translations$liveTv$zh_Hant extends Translations$liveTv$zh {
 	@override String invalidPlaybackData({required Object product}) => '${product} 傳回了無效的直播電視播放資料';
 	@override String get failedToStartChannel => '無法啟動直播頻道';
 	@override String get failedToBuildStreamUrl => '無法建立串流 URL';
+	@override String playbackStartFailed({required Object reason}) => '無法開始播放此頻道：${reason}';
+	@override String channelSwitchFailed({required Object reason}) => '無法切換頻道：${reason}';
 }
 
 // Path: collections
@@ -3989,6 +3998,13 @@ extension on TranslationsZhHant {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '無法切換至 ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '無法刪除 ${displayName}',
 			'errors.failedToRate' => '無法更新評分',
+			'errors.reasonTimedOut' => '連線逾時',
+			'errors.reasonUnreachable' => '無法連線至媒體伺服器',
+			'errors.reasonRefused' => '媒體伺服器拒絕了此要求',
+			'errors.reasonNotFound' => '該項目已不在媒體伺服器上',
+			'errors.reasonServerError' => '媒體伺服器回報錯誤',
+			'errors.reasonCancelled' => '要求已取消',
+			'errors.reasonUnexpected' => '發生未預期的錯誤',
 			'libraries.title' => '媒體庫',
 			'libraries.fallbackTitle' => '媒體庫',
 			'libraries.scanLibraryFiles' => '掃描媒體庫檔案',
@@ -4015,6 +4031,8 @@ extension on TranslationsZhHant {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '確定要分析「${title}」嗎？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '確定要重新整理「${title}」的中繼資料嗎？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '確定要清空「${title}」的垃圾桶嗎？',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => '管理媒體庫',
 			'libraries.sort' => '排序',
 			'libraries.sortBy' => '排序依據',
@@ -4022,8 +4040,6 @@ extension on TranslationsZhHant {
 			'libraries.confirmActionMessage' => '確定要執行此操作嗎？',
 			'libraries.showLibrary' => '顯示媒體庫',
 			'libraries.hideLibrary' => '隱藏媒體庫',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => '媒體庫選項',
 			'libraries.content' => '媒體庫內容',
 			'libraries.selectLibrary' => '選擇媒體庫',
@@ -4363,6 +4379,8 @@ extension on TranslationsZhHant {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 傳回了無效的直播電視播放資料',
 			'liveTv.failedToStartChannel' => '無法啟動直播頻道',
 			'liveTv.failedToBuildStreamUrl' => '無法建立串流 URL',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => '無法開始播放此頻道：${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => '無法切換頻道：${reason}',
 			'collections.title' => '收藏集',
 			'collections.collection' => '收藏集',
 			'collections.empty' => '收藏集為空',
@@ -4527,6 +4545,8 @@ extension on TranslationsZhHant {
 			'downloads.noDownloadsDescription' => '下載的內容將顯示在此處，供您離線觀看',
 			'downloads.downloadNow' => '下載',
 			'downloads.deleteDownload' => '刪除下載內容',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => '重試下載',
 			'downloads.downloadQueued' => '下載已排隊',
 			'downloads.downloadResumed' => '下載已繼續',
@@ -4536,8 +4556,6 @@ extension on TranslationsZhHant {
 			'downloads.episodesQueued' => ({required Object count}) => '已將 ${count} 集影片加入下載佇列',
 			'downloads.downloadDeleted' => '下載內容已刪除',
 			'downloads.deleteConfirm' => ({required Object title}) => '確定要從此裝置刪除「${title}」嗎？',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => '已取消的下載',
 			'downloads.cancelledDownloadMessage' => '此下載已取消。您想要如何處理？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有單集都已下載完成',

@@ -1237,6 +1237,13 @@ class _Translations$errors$sv extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Det gick inte att byta till ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Det gick inte att ta bort ${displayName}';
 	@override String get failedToRate => 'Det gick inte att uppdatera betyget';
+	@override String get reasonTimedOut => 'anslutningen tog för lång tid';
+	@override String get reasonUnreachable => 'det gick inte att nå servern';
+	@override String get reasonRefused => 'servern nekade begäran';
+	@override String get reasonNotFound => 'objektet finns inte längre på servern';
+	@override String get reasonServerError => 'servern rapporterade ett fel';
+	@override String get reasonCancelled => 'begäran avbröts';
+	@override String get reasonUnexpected => 'ett oväntat fel uppstod';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$sv extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV';
 	@override String get failedToStartChannel => 'Kunde inte starta livekanalen';
 	@override String get failedToBuildStreamUrl => 'Kunde inte skapa strömmens URL';
+	@override String playbackStartFailed({required Object reason}) => 'Det gick inte att starta kanalen: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Det gick inte att byta kanal: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsSv {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Det gick inte att byta till ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Det gick inte att ta bort ${displayName}',
 			'errors.failedToRate' => 'Det gick inte att uppdatera betyget',
+			'errors.reasonTimedOut' => 'anslutningen tog för lång tid',
+			'errors.reasonUnreachable' => 'det gick inte att nå servern',
+			'errors.reasonRefused' => 'servern nekade begäran',
+			'errors.reasonNotFound' => 'objektet finns inte längre på servern',
+			'errors.reasonServerError' => 'servern rapporterade ett fel',
+			'errors.reasonCancelled' => 'begäran avbröts',
+			'errors.reasonUnexpected' => 'ett oväntat fel uppstod',
 			'libraries.title' => 'Bibliotek',
 			'libraries.fallbackTitle' => 'Bibliotek',
 			'libraries.scanLibraryFiles' => 'Skanna biblioteksfiler',
@@ -4025,6 +4041,8 @@ extension on TranslationsSv {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill analysera "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Är du säker på att du vill uppdatera metadata för "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Är du säker på att du vill tömma papperskorgen för "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Hantera bibliotek',
 			'libraries.sort' => 'Sortera',
 			'libraries.sortBy' => 'Sortera efter',
@@ -4032,8 +4050,6 @@ extension on TranslationsSv {
 			'libraries.confirmActionMessage' => 'Är du säker på att du vill utföra denna åtgärd?',
 			'libraries.showLibrary' => 'Visa bibliotek',
 			'libraries.hideLibrary' => 'Dölj bibliotek',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Biblioteksalternativ',
 			'libraries.content' => 'bibliotekets innehåll',
 			'libraries.selectLibrary' => 'Välj bibliotek',
@@ -4373,6 +4389,8 @@ extension on TranslationsSv {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV',
 			'liveTv.failedToStartChannel' => 'Kunde inte starta livekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunde inte skapa strömmens URL',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Det gick inte att starta kanalen: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Det gick inte att byta kanal: ${reason}',
 			'collections.title' => 'Samlingar',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen är tom',
@@ -4537,6 +4555,8 @@ extension on TranslationsSv {
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här så att du kan titta offline',
 			'downloads.downloadNow' => 'Ladda ner',
 			'downloads.deleteDownload' => 'Ta bort nedladdning',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Försök igen',
 			'downloads.downloadQueued' => 'Nedladdning köad',
 			'downloads.downloadResumed' => 'Nedladdning återupptagen',
@@ -4546,8 +4566,6 @@ extension on TranslationsSv {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Ta bort "${title}" från den här enheten?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Avbruten nedladdning',
 			'downloads.cancelledDownloadMessage' => 'Den här nedladdningen avbröts. Vad vill du göra?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alla avsnitt är redan nedladdade',

@@ -1237,6 +1237,13 @@ class _Translations$errors$es extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Error al cambiar al perfil ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Error al eliminar ${displayName}';
 	@override String get failedToRate => 'No se pudo actualizar la valoración';
+	@override String get reasonTimedOut => 'se agotó el tiempo de conexión';
+	@override String get reasonUnreachable => 'no se pudo contactar con el servidor';
+	@override String get reasonRefused => 'el servidor rechazó la solicitud';
+	@override String get reasonNotFound => 'el elemento ya no está en el servidor';
+	@override String get reasonServerError => 'el servidor informó de un error';
+	@override String get reasonCancelled => 'se canceló la solicitud';
+	@override String get reasonUnexpected => 'se produjo un error inesperado';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$es extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} devolvió datos de reproducción de TV en vivo no válidos';
 	@override String get failedToStartChannel => 'No se pudo iniciar el canal en vivo';
 	@override String get failedToBuildStreamUrl => 'No se pudo generar la URL de transmisión';
+	@override String playbackStartFailed({required Object reason}) => 'No se pudo iniciar el canal: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'No se pudo cambiar de canal: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsEs {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Error al cambiar al perfil ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Error al eliminar ${displayName}',
 			'errors.failedToRate' => 'No se pudo actualizar la valoración',
+			'errors.reasonTimedOut' => 'se agotó el tiempo de conexión',
+			'errors.reasonUnreachable' => 'no se pudo contactar con el servidor',
+			'errors.reasonRefused' => 'el servidor rechazó la solicitud',
+			'errors.reasonNotFound' => 'el elemento ya no está en el servidor',
+			'errors.reasonServerError' => 'el servidor informó de un error',
+			'errors.reasonCancelled' => 'se canceló la solicitud',
+			'errors.reasonUnexpected' => 'se produjo un error inesperado',
 			'libraries.title' => 'Bibliotecas',
 			'libraries.fallbackTitle' => 'Biblioteca',
 			'libraries.scanLibraryFiles' => 'Escanear archivos de la biblioteca',
@@ -4025,6 +4041,8 @@ extension on TranslationsEs {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '¿Estás seguro de que quieres analizar "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '¿Estás seguro de que quieres actualizar los metadatos de "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '¿Estás seguro de que quieres vaciar la papelera de "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Gestionar bibliotecas',
 			'libraries.sort' => 'Ordenar',
 			'libraries.sortBy' => 'Ordenar por',
@@ -4032,8 +4050,6 @@ extension on TranslationsEs {
 			'libraries.confirmActionMessage' => '¿Estás seguro de que quieres realizar esta acción?',
 			'libraries.showLibrary' => 'Mostrar biblioteca',
 			'libraries.hideLibrary' => 'Ocultar biblioteca',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Opciones de biblioteca',
 			'libraries.content' => 'contenido de la biblioteca',
 			'libraries.selectLibrary' => 'Seleccionar biblioteca',
@@ -4373,6 +4389,8 @@ extension on TranslationsEs {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} devolvió datos de reproducción de TV en vivo no válidos',
 			'liveTv.failedToStartChannel' => 'No se pudo iniciar el canal en vivo',
 			'liveTv.failedToBuildStreamUrl' => 'No se pudo generar la URL de transmisión',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'No se pudo iniciar el canal: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'No se pudo cambiar de canal: ${reason}',
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',
 			'collections.empty' => 'La colección está vacía',
@@ -4537,6 +4555,8 @@ extension on TranslationsEs {
 			'downloads.noDownloadsDescription' => 'El contenido descargado aparecerá aquí para verlo sin conexión',
 			'downloads.downloadNow' => 'Descargar',
 			'downloads.deleteDownload' => 'Eliminar descarga',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Reintentar descarga',
 			'downloads.downloadQueued' => 'Descarga en cola',
 			'downloads.downloadResumed' => 'Descarga reanudada',
@@ -4546,8 +4566,6 @@ extension on TranslationsEs {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodios en cola para descargar',
 			'downloads.downloadDeleted' => 'Descarga eliminada',
 			'downloads.deleteConfirm' => ({required Object title}) => '¿Eliminar "${title}" de este dispositivo?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Descarga cancelada',
 			'downloads.cancelledDownloadMessage' => 'Esta descarga se canceló. ¿Qué quieres hacer?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Todos los episodios ya están descargados',

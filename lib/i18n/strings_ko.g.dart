@@ -1232,6 +1232,13 @@ class _Translations$errors$ko extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName}으로 전환할 수 없습니다';
 	@override String failedToDeleteProfile({required Object displayName}) => '${displayName}을(를) 삭제할 수 없습니다';
 	@override String get failedToRate => '평점을 업데이트하지 못했습니다';
+	@override String get reasonTimedOut => '연결 시간이 초과되었습니다';
+	@override String get reasonUnreachable => '서버에 연결할 수 없습니다';
+	@override String get reasonRefused => '서버가 요청을 거부했습니다';
+	@override String get reasonNotFound => '항목이 더 이상 서버에 없습니다';
+	@override String get reasonServerError => '서버에서 오류가 보고되었습니다';
+	@override String get reasonCancelled => '요청이 취소되었습니다';
+	@override String get reasonUnexpected => '예기치 않은 오류가 발생했습니다';
 }
 
 // Path: libraries
@@ -1544,6 +1551,8 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다';
 	@override String get failedToStartChannel => '실시간 채널을 시작할 수 없습니다';
 	@override String get failedToBuildStreamUrl => '스트림 URL을 생성할 수 없습니다';
+	@override String playbackStartFailed({required Object reason}) => '채널을 시작하지 못했습니다: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => '채널을 전환하지 못했습니다: ${reason}';
 }
 
 // Path: collections
@@ -3988,6 +3997,13 @@ extension on TranslationsKo {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName}으로 전환할 수 없습니다',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName}을(를) 삭제할 수 없습니다',
 			'errors.failedToRate' => '평점을 업데이트하지 못했습니다',
+			'errors.reasonTimedOut' => '연결 시간이 초과되었습니다',
+			'errors.reasonUnreachable' => '서버에 연결할 수 없습니다',
+			'errors.reasonRefused' => '서버가 요청을 거부했습니다',
+			'errors.reasonNotFound' => '항목이 더 이상 서버에 없습니다',
+			'errors.reasonServerError' => '서버에서 오류가 보고되었습니다',
+			'errors.reasonCancelled' => '요청이 취소되었습니다',
+			'errors.reasonUnexpected' => '예기치 않은 오류가 발생했습니다',
 			'libraries.title' => '미디어 라이브러리',
 			'libraries.fallbackTitle' => '라이브러리',
 			'libraries.scanLibraryFiles' => '미디어 라이브러리 파일 스캔',
@@ -4014,6 +4030,8 @@ extension on TranslationsKo {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '「${title}」을(를) 분석하시겠습니까?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침하시겠습니까?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => '미디어 라이브러리 관리',
 			'libraries.sort' => '정렬',
 			'libraries.sortBy' => '정렬 기준',
@@ -4021,8 +4039,6 @@ extension on TranslationsKo {
 			'libraries.confirmActionMessage' => '이 작업을 실행하시겠습니까?',
 			'libraries.showLibrary' => '미디어 라이브러리 표시',
 			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => '미디어 라이브러리 옵션',
 			'libraries.content' => '미디어 라이브러리 콘텐츠',
 			'libraries.selectLibrary' => '미디어 라이브러리 선택',
@@ -4362,6 +4378,8 @@ extension on TranslationsKo {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
 			'liveTv.failedToStartChannel' => '실시간 채널을 시작할 수 없습니다',
 			'liveTv.failedToBuildStreamUrl' => '스트림 URL을 생성할 수 없습니다',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => '채널을 시작하지 못했습니다: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => '채널을 전환하지 못했습니다: ${reason}',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
@@ -4526,6 +4544,8 @@ extension on TranslationsKo {
 			'downloads.noDownloadsDescription' => '다운로드한 콘텐츠는 오프라인 시청을 위해 여기에 표시됩니다',
 			'downloads.downloadNow' => '다운로드',
 			'downloads.deleteDownload' => '다운로드 삭제',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => '다운로드 재시도',
 			'downloads.downloadQueued' => '다운로드 대기 중',
 			'downloads.downloadResumed' => '다운로드를 재개했습니다',
@@ -4535,8 +4555,6 @@ extension on TranslationsKo {
 			'downloads.episodesQueued' => ({required Object count}) => '에피소드 ${count}개가 다운로드 대기열에 추가되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
 			'downloads.deleteConfirm' => ({required Object title}) => '이 기기에서 "${title}"을(를) 삭제할까요?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => '취소된 다운로드',
 			'downloads.cancelledDownloadMessage' => '이 다운로드가 취소되었습니다. 어떻게 하시겠습니까?',
 			'downloads.allEpisodesAlreadyDownloaded' => '모든 에피소드가 이미 다운로드되었습니다',

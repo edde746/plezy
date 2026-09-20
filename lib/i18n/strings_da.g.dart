@@ -1237,6 +1237,13 @@ class _Translations$errors$da extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Kunne ikke skifte til ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Kunne ikke slette ${displayName}';
 	@override String get failedToRate => 'Kunne ikke opdatere bedømmelsen';
+	@override String get reasonTimedOut => 'forbindelsen fik timeout';
+	@override String get reasonUnreachable => 'medieserveren kunne ikke nås';
+	@override String get reasonRefused => 'medieserveren afviste anmodningen';
+	@override String get reasonNotFound => 'elementet findes ikke længere på medieserveren';
+	@override String get reasonServerError => 'medieserveren rapporterede en fejl';
+	@override String get reasonCancelled => 'anmodningen blev annulleret';
+	@override String get reasonUnexpected => 'der opstod en uventet fejl';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$da extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} returnerede ugyldige afspilningsdata for Live TV';
 	@override String get failedToStartChannel => 'Kunne ikke starte livekanalen';
 	@override String get failedToBuildStreamUrl => 'Kunne ikke oprette stream-URL\'en';
+	@override String playbackStartFailed({required Object reason}) => 'Kunne ikke starte kanalen: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Kunne ikke skifte kanal: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsDa {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Kunne ikke skifte til ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Kunne ikke slette ${displayName}',
 			'errors.failedToRate' => 'Kunne ikke opdatere bedømmelsen',
+			'errors.reasonTimedOut' => 'forbindelsen fik timeout',
+			'errors.reasonUnreachable' => 'medieserveren kunne ikke nås',
+			'errors.reasonRefused' => 'medieserveren afviste anmodningen',
+			'errors.reasonNotFound' => 'elementet findes ikke længere på medieserveren',
+			'errors.reasonServerError' => 'medieserveren rapporterede en fejl',
+			'errors.reasonCancelled' => 'anmodningen blev annulleret',
+			'errors.reasonUnexpected' => 'der opstod en uventet fejl',
 			'libraries.title' => 'Biblioteker',
 			'libraries.fallbackTitle' => 'Bibliotek',
 			'libraries.scanLibraryFiles' => 'Scan biblioteksfiler',
@@ -4025,6 +4041,8 @@ extension on TranslationsDa {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Er du sikker på, at du vil analysere "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på, at du vil opdatere metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på, at du vil tømme papirkurven for "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Administrer biblioteker',
 			'libraries.sort' => 'Sortér',
 			'libraries.sortBy' => 'Sortér efter',
@@ -4032,8 +4050,6 @@ extension on TranslationsDa {
 			'libraries.confirmActionMessage' => 'Er du sikker på, at du vil udføre denne handling?',
 			'libraries.showLibrary' => 'Vis bibliotek',
 			'libraries.hideLibrary' => 'Skjul bibliotek',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Biblioteksindstillinger',
 			'libraries.content' => 'biblioteksindhold',
 			'libraries.selectLibrary' => 'Vælg bibliotek',
@@ -4373,6 +4389,8 @@ extension on TranslationsDa {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerede ugyldige afspilningsdata for Live TV',
 			'liveTv.failedToStartChannel' => 'Kunne ikke starte livekanalen',
 			'liveTv.failedToBuildStreamUrl' => 'Kunne ikke oprette stream-URL\'en',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kunne ikke starte kanalen: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Kunne ikke skifte kanal: ${reason}',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',
@@ -4537,6 +4555,8 @@ extension on TranslationsDa {
 			'downloads.noDownloadsDescription' => 'Downloadet indhold vises her til offlinevisning',
 			'downloads.downloadNow' => 'Download',
 			'downloads.deleteDownload' => 'Slet download',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Prøv download igen',
 			'downloads.downloadQueued' => 'Download i kø',
 			'downloads.downloadResumed' => 'Download genoptaget',
@@ -4546,8 +4566,6 @@ extension on TranslationsDa {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Slet "${title}" fra denne enhed?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Annulleret download',
 			'downloads.cancelledDownloadMessage' => 'Denne download blev annulleret. Hvad vil du gøre?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle episoder er allerede downloadet',

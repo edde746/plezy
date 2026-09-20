@@ -1232,6 +1232,13 @@ class _Translations$errors$ja extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName}への切替に失敗しました';
 	@override String failedToDeleteProfile({required Object displayName}) => '${displayName}の削除に失敗しました';
 	@override String get failedToRate => '評価を更新できませんでした';
+	@override String get reasonTimedOut => '接続がタイムアウトしました';
+	@override String get reasonUnreachable => 'メディアサーバーに接続できませんでした';
+	@override String get reasonRefused => 'メディアサーバーがリクエストを拒否しました';
+	@override String get reasonNotFound => 'この項目はメディアサーバー上に存在しません';
+	@override String get reasonServerError => 'メディアサーバーでエラーが発生しました';
+	@override String get reasonCancelled => 'リクエストがキャンセルされました';
+	@override String get reasonUnexpected => '予期しないエラーが発生しました';
 }
 
 // Path: libraries
@@ -1544,6 +1551,8 @@ class _Translations$liveTv$ja extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product}から無効なライブTV再生データが返されました';
 	@override String get failedToStartChannel => 'ライブチャンネルを開始できませんでした';
 	@override String get failedToBuildStreamUrl => 'ストリームURLを生成できませんでした';
+	@override String playbackStartFailed({required Object reason}) => 'チャンネルを再生できませんでした: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'チャンネルを切り替えられませんでした: ${reason}';
 }
 
 // Path: collections
@@ -3988,6 +3997,13 @@ extension on TranslationsJa {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName}への切替に失敗しました',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName}の削除に失敗しました',
 			'errors.failedToRate' => '評価を更新できませんでした',
+			'errors.reasonTimedOut' => '接続がタイムアウトしました',
+			'errors.reasonUnreachable' => 'メディアサーバーに接続できませんでした',
+			'errors.reasonRefused' => 'メディアサーバーがリクエストを拒否しました',
+			'errors.reasonNotFound' => 'この項目はメディアサーバー上に存在しません',
+			'errors.reasonServerError' => 'メディアサーバーでエラーが発生しました',
+			'errors.reasonCancelled' => 'リクエストがキャンセルされました',
+			'errors.reasonUnexpected' => '予期しないエラーが発生しました',
 			'libraries.title' => 'ライブラリ',
 			'libraries.fallbackTitle' => 'ライブラリ',
 			'libraries.scanLibraryFiles' => 'ライブラリファイルをスキャン',
@@ -4014,6 +4030,8 @@ extension on TranslationsJa {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}"を解析してもよろしいですか？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}"のメタデータを更新してもよろしいですか？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}"のゴミ箱を空にしてもよろしいですか？',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'ライブラリを管理',
 			'libraries.sort' => '並べ替え',
 			'libraries.sortBy' => '並べ替え順',
@@ -4021,8 +4039,6 @@ extension on TranslationsJa {
 			'libraries.confirmActionMessage' => 'この操作を実行してもよろしいですか？',
 			'libraries.showLibrary' => 'ライブラリを表示',
 			'libraries.hideLibrary' => 'ライブラリを非表示',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'ライブラリオプション',
 			'libraries.content' => 'ライブラリコンテンツ',
 			'libraries.selectLibrary' => 'ライブラリを選択',
@@ -4362,6 +4378,8 @@ extension on TranslationsJa {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}から無効なライブTV再生データが返されました',
 			'liveTv.failedToStartChannel' => 'ライブチャンネルを開始できませんでした',
 			'liveTv.failedToBuildStreamUrl' => 'ストリームURLを生成できませんでした',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'チャンネルを再生できませんでした: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'チャンネルを切り替えられませんでした: ${reason}',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',
@@ -4526,6 +4544,8 @@ extension on TranslationsJa {
 			'downloads.noDownloadsDescription' => 'ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます',
 			'downloads.downloadNow' => 'ダウンロード',
 			'downloads.deleteDownload' => 'ダウンロードを削除',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'ダウンロードを再試行',
 			'downloads.downloadQueued' => 'ダウンロードをキューに追加しました',
 			'downloads.downloadResumed' => 'ダウンロードを再開しました',
@@ -4535,8 +4555,6 @@ extension on TranslationsJa {
 			'downloads.episodesQueued' => ({required Object count}) => '${count}エピソードをダウンロードキューに追加しました',
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
 			'downloads.deleteConfirm' => ({required Object title}) => 'このデバイスから「${title}」を削除しますか？',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'キャンセル済みのダウンロード',
 			'downloads.cancelledDownloadMessage' => 'このダウンロードはキャンセルされました。どうしますか？',
 			'downloads.allEpisodesAlreadyDownloaded' => 'すべてのエピソードはすでにダウンロード済みです',

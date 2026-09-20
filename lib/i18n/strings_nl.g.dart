@@ -1237,6 +1237,13 @@ class _Translations$errors$nl extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Kon niet wisselen naar ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Kon ${displayName} niet verwijderen';
 	@override String get failedToRate => 'Beoordeling kon niet worden bijgewerkt';
+	@override String get reasonTimedOut => 'de verbinding is verlopen';
+	@override String get reasonUnreachable => 'de server kon niet worden bereikt';
+	@override String get reasonRefused => 'de server heeft het verzoek geweigerd';
+	@override String get reasonNotFound => 'het item staat niet meer op de server';
+	@override String get reasonServerError => 'de server heeft een fout gemeld';
+	@override String get reasonCancelled => 'het verzoek is geannuleerd';
+	@override String get reasonUnexpected => 'er is een onverwachte fout opgetreden';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$nl extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd';
 	@override String get failedToStartChannel => 'Kon de livezender niet starten';
 	@override String get failedToBuildStreamUrl => 'Kon de stream-URL niet samenstellen';
+	@override String playbackStartFailed({required Object reason}) => 'Kon het kanaal niet starten: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Kon niet van kanaal wisselen: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsNl {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Kon niet wisselen naar ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Kon ${displayName} niet verwijderen',
 			'errors.failedToRate' => 'Beoordeling kon niet worden bijgewerkt',
+			'errors.reasonTimedOut' => 'de verbinding is verlopen',
+			'errors.reasonUnreachable' => 'de server kon niet worden bereikt',
+			'errors.reasonRefused' => 'de server heeft het verzoek geweigerd',
+			'errors.reasonNotFound' => 'het item staat niet meer op de server',
+			'errors.reasonServerError' => 'de server heeft een fout gemeld',
+			'errors.reasonCancelled' => 'het verzoek is geannuleerd',
+			'errors.reasonUnexpected' => 'er is een onverwachte fout opgetreden',
 			'libraries.title' => 'Bibliotheken',
 			'libraries.fallbackTitle' => 'Bibliotheek',
 			'libraries.scanLibraryFiles' => 'Bibliotheekbestanden scannen',
@@ -4025,6 +4041,8 @@ extension on TranslationsNl {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Bibliotheken beheren',
 			'libraries.sort' => 'Sorteren',
 			'libraries.sortBy' => 'Sorteer op',
@@ -4032,8 +4050,6 @@ extension on TranslationsNl {
 			'libraries.confirmActionMessage' => 'Weet je zeker dat je deze actie wilt uitvoeren?',
 			'libraries.showLibrary' => 'Bibliotheek tonen',
 			'libraries.hideLibrary' => 'Bibliotheek verbergen',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Bibliotheekopties',
 			'libraries.content' => 'bibliotheekinhoud',
 			'libraries.selectLibrary' => 'Bibliotheek kiezen',
@@ -4373,6 +4389,8 @@ extension on TranslationsNl {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd',
 			'liveTv.failedToStartChannel' => 'Kon de livezender niet starten',
 			'liveTv.failedToBuildStreamUrl' => 'Kon de stream-URL niet samenstellen',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kon het kanaal niet starten: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Kon niet van kanaal wisselen: ${reason}',
 			'collections.title' => 'Collecties',
 			'collections.collection' => 'Collectie',
 			'collections.empty' => 'Collectie is leeg',
@@ -4537,6 +4555,8 @@ extension on TranslationsNl {
 			'downloads.noDownloadsDescription' => 'Gedownloade inhoud verschijnt hier om offline te bekijken',
 			'downloads.downloadNow' => 'Downloaden',
 			'downloads.deleteDownload' => 'Download verwijderen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Download opnieuw proberen',
 			'downloads.downloadQueued' => 'Download in wachtrij',
 			'downloads.downloadResumed' => 'Download hervat',
@@ -4546,8 +4566,6 @@ extension on TranslationsNl {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
 			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',

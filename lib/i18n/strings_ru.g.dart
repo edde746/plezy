@@ -1247,6 +1247,13 @@ class _Translations$errors$ru extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Не удалось переключиться на ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Не удалось удалить ${displayName}';
 	@override String get failedToRate => 'Не удалось обновить оценку';
+	@override String get reasonTimedOut => 'истекло время ожидания подключения';
+	@override String get reasonUnreachable => 'не удалось связаться с сервером';
+	@override String get reasonRefused => 'сервер отклонил запрос';
+	@override String get reasonNotFound => 'элемента больше нет на сервере';
+	@override String get reasonServerError => 'сервер сообщил об ошибке';
+	@override String get reasonCancelled => 'запрос был отменён';
+	@override String get reasonUnexpected => 'произошла непредвиденная ошибка';
 }
 
 // Path: libraries
@@ -1568,6 +1575,8 @@ class _Translations$liveTv$ru extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире';
 	@override String get failedToStartChannel => 'Не удалось запустить канал в прямом эфире';
 	@override String get failedToBuildStreamUrl => 'Не удалось сформировать URL потока';
+	@override String playbackStartFailed({required Object reason}) => 'Не удалось запустить канал: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Не удалось переключить канал: ${reason}';
 }
 
 // Path: collections
@@ -4021,6 +4030,13 @@ extension on TranslationsRu {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Не удалось переключиться на ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Не удалось удалить ${displayName}',
 			'errors.failedToRate' => 'Не удалось обновить оценку',
+			'errors.reasonTimedOut' => 'истекло время ожидания подключения',
+			'errors.reasonUnreachable' => 'не удалось связаться с сервером',
+			'errors.reasonRefused' => 'сервер отклонил запрос',
+			'errors.reasonNotFound' => 'элемента больше нет на сервере',
+			'errors.reasonServerError' => 'сервер сообщил об ошибке',
+			'errors.reasonCancelled' => 'запрос был отменён',
+			'errors.reasonUnexpected' => 'произошла непредвиденная ошибка',
 			'libraries.title' => 'Библиотеки',
 			'libraries.fallbackTitle' => 'Библиотека',
 			'libraries.scanLibraryFiles' => 'Сканировать файлы библиотеки',
@@ -4047,6 +4063,8 @@ extension on TranslationsRu {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Вы уверены, что хотите проанализировать "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Вы уверены, что хотите обновить метаданные для "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Вы уверены, что хотите очистить корзину для "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Управление библиотеками',
 			'libraries.sort' => 'Сортировка',
 			'libraries.sortBy' => 'Сортировать по',
@@ -4054,8 +4072,6 @@ extension on TranslationsRu {
 			'libraries.confirmActionMessage' => 'Вы уверены, что хотите выполнить это действие?',
 			'libraries.showLibrary' => 'Показать библиотеку',
 			'libraries.hideLibrary' => 'Скрыть библиотеку',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Параметры библиотеки',
 			'libraries.content' => 'содержимое библиотеки',
 			'libraries.selectLibrary' => 'Выбрать библиотеку',
@@ -4395,6 +4411,8 @@ extension on TranslationsRu {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
 			'liveTv.failedToStartChannel' => 'Не удалось запустить канал в прямом эфире',
 			'liveTv.failedToBuildStreamUrl' => 'Не удалось сформировать URL потока',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Не удалось запустить канал: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Не удалось переключить канал: ${reason}',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',
@@ -4559,6 +4577,8 @@ extension on TranslationsRu {
 			'downloads.noDownloadsDescription' => 'Загруженный контент появится здесь для просмотра офлайн',
 			'downloads.downloadNow' => 'Загрузить',
 			'downloads.deleteDownload' => 'Удалить загрузку',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Повторить загрузку',
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
 			'downloads.downloadResumed' => 'Загрузка возобновлена',
@@ -4568,8 +4588,6 @@ extension on TranslationsRu {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
 			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Все эпизоды уже загружены',

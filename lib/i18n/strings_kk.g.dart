@@ -1237,6 +1237,13 @@ class _Translations$errors$kk extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName} профиліне ауысу мүмкін болмады';
 	@override String failedToDeleteProfile({required Object displayName}) => '${displayName} профилін өшіру мүмкін болмады';
 	@override String get failedToRate => 'Рейтингті жаңарту мүмкін болмады';
+	@override String get reasonTimedOut => 'қосылу уақыты өтті';
+	@override String get reasonUnreachable => 'серверге қосылу мүмкін болмады';
+	@override String get reasonRefused => 'сервер сұрауды қабылдамады';
+	@override String get reasonNotFound => 'бұл нысан серверде қазір жоқ';
+	@override String get reasonServerError => 'сервер қате хабарлады';
+	@override String get reasonCancelled => 'сұрау бас тартылды';
+	@override String get reasonUnexpected => 'күтпеген қате орын алды';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$kk extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды';
 	@override String get failedToStartChannel => 'Тікелей эфир арнасын іске қосу мүмкін болмады';
 	@override String get failedToBuildStreamUrl => 'Ағын URL-ін құру мүмкін болмады';
+	@override String playbackStartFailed({required Object reason}) => 'Арнаны іске қосу мүмкін болмады: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Арнаны ауыстыру мүмкін болмады: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsKk {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName} профиліне ауысу мүмкін болмады',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName} профилін өшіру мүмкін болмады',
 			'errors.failedToRate' => 'Рейтингті жаңарту мүмкін болмады',
+			'errors.reasonTimedOut' => 'қосылу уақыты өтті',
+			'errors.reasonUnreachable' => 'серверге қосылу мүмкін болмады',
+			'errors.reasonRefused' => 'сервер сұрауды қабылдамады',
+			'errors.reasonNotFound' => 'бұл нысан серверде қазір жоқ',
+			'errors.reasonServerError' => 'сервер қате хабарлады',
+			'errors.reasonCancelled' => 'сұрау бас тартылды',
+			'errors.reasonUnexpected' => 'күтпеген қате орын алды',
 			'libraries.title' => 'Кітапханалар',
 			'libraries.fallbackTitle' => 'Кітапхана',
 			'libraries.scanLibraryFiles' => 'Файлдарды сканерлеу',
@@ -4025,6 +4041,8 @@ extension on TranslationsKk {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" кітапханасына талдау жасағыңыз келе ме?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" метадеректерін жаңартасыз ба?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" себетін тазалайсыз ба?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Кітапханаларды басқару',
 			'libraries.sort' => 'Сұрыптау',
 			'libraries.sortBy' => 'Сұрыптау реті',
@@ -4032,8 +4050,6 @@ extension on TranslationsKk {
 			'libraries.confirmActionMessage' => 'Осы әрекетті орындағыңыз келе ме?',
 			'libraries.showLibrary' => 'Кітапхананы көрсету',
 			'libraries.hideLibrary' => 'Кітапхананы жасыру',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Кітапхана параметрлері',
 			'libraries.content' => 'кітапхана мазмұны',
 			'libraries.selectLibrary' => 'Кітапхананы таңдау',
@@ -4373,6 +4389,8 @@ extension on TranslationsKk {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
 			'liveTv.failedToStartChannel' => 'Тікелей эфир арнасын іске қосу мүмкін болмады',
 			'liveTv.failedToBuildStreamUrl' => 'Ағын URL-ін құру мүмкін болмады',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Арнаны іске қосу мүмкін болмады: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Арнаны ауыстыру мүмкін болмады: ${reason}',
 			'collections.title' => 'Топтамалар',
 			'collections.collection' => 'Топтама',
 			'collections.empty' => 'Топтама бос',
@@ -4537,6 +4555,8 @@ extension on TranslationsKk {
 			'downloads.noDownloadsDescription' => 'Жүктелген файлдар офлайн көру үшін мұнда көрінеді',
 			'downloads.downloadNow' => 'Жүктеу',
 			'downloads.deleteDownload' => 'Жүктеуді өшіру',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Жүктеуді қайталау',
 			'downloads.downloadQueued' => 'Жүктеу кезекке қойылды',
 			'downloads.downloadResumed' => 'Жүктеу жалғастырылды',
@@ -4546,8 +4566,6 @@ extension on TranslationsKk {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} бөлім жүктеу кезегіне қосылды',
 			'downloads.downloadDeleted' => 'Жүктеу өшірілді',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" осы құрылғыдан өшірілсін бе?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Тоқтатылған жүктеу',
 			'downloads.cancelledDownloadMessage' => 'Бұл жүктеу тоқтатылды.',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Барлық бөлімдер бұрыннан жүктелген',

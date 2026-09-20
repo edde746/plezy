@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/utils/app_logger.dart' as logging;
 import 'package:plezy/utils/error_message_utils.dart';
 
@@ -96,6 +97,12 @@ void main() {
       expect(reason(MediaServerHttpErrorType.receiveTimeout), timedOut);
       expect({timedOut, unreachable, refused, gone, serverSide}, hasLength(5));
       expect(localizedErrorReason(Exception('boom')), isNot(anyOf(timedOut, unreachable, refused, gone, serverSide)));
+    });
+
+    test('keeps the specific reason from a display-safe playback failure', () {
+      const error = PlaybackException('Stream selection is not available for this source');
+
+      expect(localizedErrorReason(error), 'Stream selection is not available for this source');
     });
 
     test('never leaks the request host, path, status or exception text', () {

@@ -1237,6 +1237,13 @@ class _Translations$errors$bg extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Неуспешна смяна към ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Неуспешно изтриване на ${displayName}';
 	@override String get failedToRate => 'Оценката не можа да бъде обновена';
+	@override String get reasonTimedOut => 'времето за връзка изтече';
+	@override String get reasonUnreachable => 'сървърът не може да бъде достигнат';
+	@override String get reasonRefused => 'сървърът отхвърли заявката';
+	@override String get reasonNotFound => 'елементът вече не е на сървъра';
+	@override String get reasonServerError => 'сървърът докладва грешка';
+	@override String get reasonCancelled => 'заявката беше отменена';
+	@override String get reasonUnexpected => 'възникна неочаквана грешка';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$bg extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо';
 	@override String get failedToStartChannel => 'Каналът на живо не можа да бъде пуснат';
 	@override String get failedToBuildStreamUrl => 'URL за потока не можа да бъде създаден';
+	@override String playbackStartFailed({required Object reason}) => 'Каналът не можа да бъде стартиран: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Каналът не можа да бъде сменен: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsBg {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Неуспешна смяна към ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Неуспешно изтриване на ${displayName}',
 			'errors.failedToRate' => 'Оценката не можа да бъде обновена',
+			'errors.reasonTimedOut' => 'времето за връзка изтече',
+			'errors.reasonUnreachable' => 'сървърът не може да бъде достигнат',
+			'errors.reasonRefused' => 'сървърът отхвърли заявката',
+			'errors.reasonNotFound' => 'елементът вече не е на сървъра',
+			'errors.reasonServerError' => 'сървърът докладва грешка',
+			'errors.reasonCancelled' => 'заявката беше отменена',
+			'errors.reasonUnexpected' => 'възникна неочаквана грешка',
 			'libraries.title' => 'Библиотеки',
 			'libraries.fallbackTitle' => 'Библиотека',
 			'libraries.scanLibraryFiles' => 'Сканирай файловете на библиотеката',
@@ -4025,6 +4041,8 @@ extension on TranslationsBg {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да анализирате "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да опресните метаданните за "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да изпразните кошчето за "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Управление на библиотеки',
 			'libraries.sort' => 'Сортиране',
 			'libraries.sortBy' => 'Сортирай по',
@@ -4032,8 +4050,6 @@ extension on TranslationsBg {
 			'libraries.confirmActionMessage' => 'Сигурни ли сте, че искате да извършите това действие?',
 			'libraries.showLibrary' => 'Покажи библиотеката',
 			'libraries.hideLibrary' => 'Скрий библиотеката',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Опции на библиотеката',
 			'libraries.content' => 'съдържание на библиотеката',
 			'libraries.selectLibrary' => 'Избери библиотека',
@@ -4373,6 +4389,8 @@ extension on TranslationsBg {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} върна невалидни данни за възпроизвеждане на телевизия на живо',
 			'liveTv.failedToStartChannel' => 'Каналът на живо не можа да бъде пуснат',
 			'liveTv.failedToBuildStreamUrl' => 'URL за потока не можа да бъде създаден',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Каналът не можа да бъде стартиран: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Каналът не можа да бъде сменен: ${reason}',
 			'collections.title' => 'Колекции',
 			'collections.collection' => 'Колекция',
 			'collections.empty' => 'Колекцията е празна',
@@ -4537,6 +4555,8 @@ extension on TranslationsBg {
 			'downloads.noDownloadsDescription' => 'Изтегленото съдържание ще се показва тук за офлайн гледане',
 			'downloads.downloadNow' => 'Изтегли',
 			'downloads.deleteDownload' => 'Изтрий изтегляне',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Опитай изтеглянето отново',
 			'downloads.downloadQueued' => 'Изтеглянето е добавено в опашката',
 			'downloads.downloadResumed' => 'Изтеглянето е възобновено',
@@ -4546,8 +4566,6 @@ extension on TranslationsBg {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
 			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Всички епизоди вече са изтеглени',

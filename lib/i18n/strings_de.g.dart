@@ -1237,6 +1237,13 @@ class _Translations$errors$de extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Löschen von ${displayName} fehlgeschlagen';
 	@override String get failedToRate => 'Bewertung konnte nicht aktualisiert werden';
+	@override String get reasonTimedOut => 'Zeitüberschreitung bei der Verbindung';
+	@override String get reasonUnreachable => 'der Medienserver konnte nicht erreicht werden';
+	@override String get reasonRefused => 'der Medienserver hat die Anfrage abgelehnt';
+	@override String get reasonNotFound => 'das Element befindet sich nicht mehr auf dem Medienserver';
+	@override String get reasonServerError => 'der Medienserver hat einen Fehler gemeldet';
+	@override String get reasonCancelled => 'die Anfrage wurde abgebrochen';
+	@override String get reasonUnexpected => 'ein unerwarteter Fehler ist aufgetreten';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$de extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} hat ungültige Live-TV-Wiedergabedaten zurückgegeben';
 	@override String get failedToStartChannel => 'Der Live-Sender konnte nicht gestartet werden';
 	@override String get failedToBuildStreamUrl => 'Die Stream-URL konnte nicht erstellt werden';
+	@override String playbackStartFailed({required Object reason}) => 'Sender konnte nicht gestartet werden: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Sender konnte nicht gewechselt werden: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsDe {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Löschen von ${displayName} fehlgeschlagen',
 			'errors.failedToRate' => 'Bewertung konnte nicht aktualisiert werden',
+			'errors.reasonTimedOut' => 'Zeitüberschreitung bei der Verbindung',
+			'errors.reasonUnreachable' => 'der Medienserver konnte nicht erreicht werden',
+			'errors.reasonRefused' => 'der Medienserver hat die Anfrage abgelehnt',
+			'errors.reasonNotFound' => 'das Element befindet sich nicht mehr auf dem Medienserver',
+			'errors.reasonServerError' => 'der Medienserver hat einen Fehler gemeldet',
+			'errors.reasonCancelled' => 'die Anfrage wurde abgebrochen',
+			'errors.reasonUnexpected' => 'ein unerwarteter Fehler ist aufgetreten',
 			'libraries.title' => 'Mediatheken',
 			'libraries.fallbackTitle' => 'Mediathek',
 			'libraries.scanLibraryFiles' => 'Mediatheksdateien scannen',
@@ -4025,6 +4041,8 @@ extension on TranslationsDe {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '„${title}“ wirklich analysieren?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Mediatheken verwalten',
 			'libraries.sort' => 'Sortieren',
 			'libraries.sortBy' => 'Sortieren nach',
@@ -4032,8 +4050,6 @@ extension on TranslationsDe {
 			'libraries.confirmActionMessage' => 'Aktion wirklich durchführen?',
 			'libraries.showLibrary' => 'Mediathek anzeigen',
 			'libraries.hideLibrary' => 'Mediathek ausblenden',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Mediatheksoptionen',
 			'libraries.content' => 'Mediatheksinhalt',
 			'libraries.selectLibrary' => 'Mediathek auswählen',
@@ -4373,6 +4389,8 @@ extension on TranslationsDe {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} hat ungültige Live-TV-Wiedergabedaten zurückgegeben',
 			'liveTv.failedToStartChannel' => 'Der Live-Sender konnte nicht gestartet werden',
 			'liveTv.failedToBuildStreamUrl' => 'Die Stream-URL konnte nicht erstellt werden',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Sender konnte nicht gestartet werden: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Sender konnte nicht gewechselt werden: ${reason}',
 			'collections.title' => 'Sammlungen',
 			'collections.collection' => 'Sammlung',
 			'collections.empty' => 'Sammlung ist leer',
@@ -4537,6 +4555,8 @@ extension on TranslationsDe {
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
 			'downloads.downloadNow' => 'Herunterladen',
 			'downloads.deleteDownload' => 'Download löschen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Download wiederholen',
 			'downloads.downloadQueued' => 'Download in Warteschlange',
 			'downloads.downloadResumed' => 'Download fortgesetzt',
@@ -4546,8 +4566,6 @@ extension on TranslationsDe {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" von diesem Gerät löschen?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Abgebrochener Download',
 			'downloads.cancelledDownloadMessage' => 'Dieser Download wurde abgebrochen. Was möchtest du tun?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Alle Episoden sind bereits heruntergeladen',

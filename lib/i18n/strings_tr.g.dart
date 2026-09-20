@@ -1237,6 +1237,13 @@ class _Translations$errors$tr extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName} profiline geçilemedi';
 	@override String failedToDeleteProfile({required Object displayName}) => '${displayName} profili silinemedi';
 	@override String get failedToRate => 'Puan güncellenemedi';
+	@override String get reasonTimedOut => 'bağlantı zaman aşımına uğradı';
+	@override String get reasonUnreachable => 'sunucuya ulaşılamadı';
+	@override String get reasonRefused => 'sunucu isteği reddetti';
+	@override String get reasonNotFound => 'öğe artık sunucuda değil';
+	@override String get reasonServerError => 'sunucu bir hata bildirdi';
+	@override String get reasonCancelled => 'istek iptal edildi';
+	@override String get reasonUnexpected => 'beklenmeyen bir hata oluştu';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$tr extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü';
 	@override String get failedToStartChannel => 'Canlı kanal başlatılamadı';
 	@override String get failedToBuildStreamUrl => 'Akış URL\'si oluşturulamadı';
+	@override String playbackStartFailed({required Object reason}) => 'Kanal başlatılamadı: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Kanal değiştirilemedi: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsTr {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName} profiline geçilemedi',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName} profili silinemedi',
 			'errors.failedToRate' => 'Puan güncellenemedi',
+			'errors.reasonTimedOut' => 'bağlantı zaman aşımına uğradı',
+			'errors.reasonUnreachable' => 'sunucuya ulaşılamadı',
+			'errors.reasonRefused' => 'sunucu isteği reddetti',
+			'errors.reasonNotFound' => 'öğe artık sunucuda değil',
+			'errors.reasonServerError' => 'sunucu bir hata bildirdi',
+			'errors.reasonCancelled' => 'istek iptal edildi',
+			'errors.reasonUnexpected' => 'beklenmeyen bir hata oluştu',
 			'libraries.title' => 'Kitaplıklar',
 			'libraries.fallbackTitle' => 'Kitaplık',
 			'libraries.scanLibraryFiles' => 'Kitaplık Dosyalarını Tarayınız',
@@ -4025,6 +4041,8 @@ extension on TranslationsTr {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kitaplığını analiz etmek istediğinizden emin misiniz?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" kitaplığı için meta verileri yenilemek istediğinizden emin misiniz?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" için çöpü boşaltmak istediğinizden emin misiniz?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Kitaplıkları Yönet',
 			'libraries.sort' => 'Sırala',
 			'libraries.sortBy' => 'Sıralama Ölçütü',
@@ -4032,8 +4050,6 @@ extension on TranslationsTr {
 			'libraries.confirmActionMessage' => 'Bu eylemi gerçekleştirmek istediğinizden emin misiniz?',
 			'libraries.showLibrary' => 'Kitaplığı göster',
 			'libraries.hideLibrary' => 'Kitaplığı gizle',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Kitaplık seçenekleri',
 			'libraries.content' => 'kitaplık içeriği',
 			'libraries.selectLibrary' => 'Kitaplık seç',
@@ -4373,6 +4389,8 @@ extension on TranslationsTr {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü',
 			'liveTv.failedToStartChannel' => 'Canlı kanal başlatılamadı',
 			'liveTv.failedToBuildStreamUrl' => 'Akış URL\'si oluşturulamadı',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanal başlatılamadı: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Kanal değiştirilemedi: ${reason}',
 			'collections.title' => 'Koleksiyonlar',
 			'collections.collection' => 'Koleksiyon',
 			'collections.empty' => 'Koleksiyon boş',
@@ -4537,6 +4555,8 @@ extension on TranslationsTr {
 			'downloads.noDownloadsDescription' => 'İndirilen içerik çevrimdışı izlemek için burada görünecektir',
 			'downloads.downloadNow' => 'İndir',
 			'downloads.deleteDownload' => 'İndirmeyi sil',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'İndirmeyi tekrar dene',
 			'downloads.downloadQueued' => 'İndirme kuyruğa alındı',
 			'downloads.downloadResumed' => 'İndirme devam ettirildi',
@@ -4546,8 +4566,6 @@ extension on TranslationsTr {
 			'downloads.episodesQueued' => ({required Object count}) => 'İndirmek için ${count} bölüm kuyruğa alındı',
 			'downloads.downloadDeleted' => 'İndirme silindi',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" bu cihazdan silinsin mi?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'İptal Edilen İndirme',
 			'downloads.cancelledDownloadMessage' => 'Bu indirme iptal edildi. Ne yapmak istersiniz?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Tüm bölümler zaten indirildi',

@@ -1237,6 +1237,13 @@ class _Translations$errors$fr extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Impossible de changer de profil vers ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Impossible de supprimer ${displayName}';
 	@override String get failedToRate => 'Impossible de mettre à jour la note';
+	@override String get reasonTimedOut => 'le délai d\'attente de la connexion a été dépassé';
+	@override String get reasonUnreachable => 'le serveur n\'a pas pu être atteint';
+	@override String get reasonRefused => 'le serveur a refusé la requête';
+	@override String get reasonNotFound => 'l\'élément ne se trouve plus sur le serveur';
+	@override String get reasonServerError => 'le serveur a signalé une erreur';
+	@override String get reasonCancelled => 'la requête a été annulée';
+	@override String get reasonUnexpected => 'une erreur inattendue s\'est produite';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$fr extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} a renvoyé des données de lecture de TV en direct non valides';
 	@override String get failedToStartChannel => 'Impossible de lancer la chaîne en direct';
 	@override String get failedToBuildStreamUrl => 'Impossible de générer l’URL du flux';
+	@override String playbackStartFailed({required Object reason}) => 'Impossible de démarrer la chaîne : ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Impossible de changer de chaîne : ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsFr {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Impossible de changer de profil vers ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Impossible de supprimer ${displayName}',
 			'errors.failedToRate' => 'Impossible de mettre à jour la note',
+			'errors.reasonTimedOut' => 'le délai d\'attente de la connexion a été dépassé',
+			'errors.reasonUnreachable' => 'le serveur n\'a pas pu être atteint',
+			'errors.reasonRefused' => 'le serveur a refusé la requête',
+			'errors.reasonNotFound' => 'l\'élément ne se trouve plus sur le serveur',
+			'errors.reasonServerError' => 'le serveur a signalé une erreur',
+			'errors.reasonCancelled' => 'la requête a été annulée',
+			'errors.reasonUnexpected' => 'une erreur inattendue s\'est produite',
 			'libraries.title' => 'Bibliothèques',
 			'libraries.fallbackTitle' => 'Bibliothèque',
 			'libraries.scanLibraryFiles' => 'Scanner les fichiers de la bibliothèque',
@@ -4025,6 +4041,8 @@ extension on TranslationsFr {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Voulez-vous vraiment analyser « ${title} » ?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Voulez-vous vraiment actualiser les métadonnées de « ${title} » ?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Voulez-vous vraiment vider la corbeille de « ${title} » ?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Gérer les bibliothèques',
 			'libraries.sort' => 'Trier',
 			'libraries.sortBy' => 'Trier par',
@@ -4032,8 +4050,6 @@ extension on TranslationsFr {
 			'libraries.confirmActionMessage' => 'Êtes-vous sûr de vouloir effectuer cette action ?',
 			'libraries.showLibrary' => 'Afficher la bibliothèque',
 			'libraries.hideLibrary' => 'Masquer la bibliothèque',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Options de bibliothèque',
 			'libraries.content' => 'contenu de la bibliothèque',
 			'libraries.selectLibrary' => 'Sélectionner la bibliothèque',
@@ -4373,6 +4389,8 @@ extension on TranslationsFr {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} a renvoyé des données de lecture de TV en direct non valides',
 			'liveTv.failedToStartChannel' => 'Impossible de lancer la chaîne en direct',
 			'liveTv.failedToBuildStreamUrl' => 'Impossible de générer l’URL du flux',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Impossible de démarrer la chaîne : ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Impossible de changer de chaîne : ${reason}',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'La collection est vide',
@@ -4537,6 +4555,8 @@ extension on TranslationsFr {
 			'downloads.noDownloadsDescription' => 'Le contenu téléchargé apparaîtra ici pour être consulté hors ligne.',
 			'downloads.downloadNow' => 'Télécharger',
 			'downloads.deleteDownload' => 'Supprimer le téléchargement',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Réessayer le téléchargement',
 			'downloads.downloadQueued' => 'Téléchargement en attente',
 			'downloads.downloadResumed' => 'Téléchargement repris',
@@ -4546,8 +4566,6 @@ extension on TranslationsFr {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} épisodes en attente de téléchargement',
 			'downloads.downloadDeleted' => 'Téléchargement supprimé',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Supprimer « ${title} » de cet appareil ?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Téléchargement annulé',
 			'downloads.cancelledDownloadMessage' => 'Ce téléchargement a été annulé. Que voulez-vous faire ?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Tous les épisodes sont déjà téléchargés',

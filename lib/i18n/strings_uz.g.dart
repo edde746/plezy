@@ -1237,6 +1237,13 @@ class _Translations$errors$uz extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName} profiliga oʻtib boʻlmadi';
 	@override String failedToDeleteProfile({required Object displayName}) => '${displayName} profilini oʻchirib boʻlmadi';
 	@override String get failedToRate => 'Reytingni yangilab boʻlmadi';
+	@override String get reasonTimedOut => 'ulanish vaqti tugadi';
+	@override String get reasonUnreachable => 'serverga ulanib boʻlmadi';
+	@override String get reasonRefused => 'server soʻrovni rad etdi';
+	@override String get reasonNotFound => 'element endi serverda yoʻq';
+	@override String get reasonServerError => 'server xatolik haqida xabar berdi';
+	@override String get reasonCancelled => 'soʻrov bekor qilindi';
+	@override String get reasonUnexpected => 'kutilmagan xatolik yuz berdi';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$uz extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi';
 	@override String get failedToStartChannel => 'Jonli kanalni boshlab boʻlmadi';
 	@override String get failedToBuildStreamUrl => 'Oqim URL-ini tuzib boʻlmadi';
+	@override String playbackStartFailed({required Object reason}) => 'Kanalni ishga tushirib boʻlmadi: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Kanalni almashtirib boʻlmadi: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsUz {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName} profiliga oʻtib boʻlmadi',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName} profilini oʻchirib boʻlmadi',
 			'errors.failedToRate' => 'Reytingni yangilab boʻlmadi',
+			'errors.reasonTimedOut' => 'ulanish vaqti tugadi',
+			'errors.reasonUnreachable' => 'serverga ulanib boʻlmadi',
+			'errors.reasonRefused' => 'server soʻrovni rad etdi',
+			'errors.reasonNotFound' => 'element endi serverda yoʻq',
+			'errors.reasonServerError' => 'server xatolik haqida xabar berdi',
+			'errors.reasonCancelled' => 'soʻrov bekor qilindi',
+			'errors.reasonUnexpected' => 'kutilmagan xatolik yuz berdi',
 			'libraries.title' => 'Kutubxonalar',
 			'libraries.fallbackTitle' => 'Kutubxona',
 			'libraries.scanLibraryFiles' => 'Fayllarni skanerlash',
@@ -4025,6 +4041,8 @@ extension on TranslationsUz {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kutubxonasini tahlil qilmoqchimisiz?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" metamaʼlumotlarini yangilaysizmi?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" savatini tozalaysizmi?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Kutubxonalarni boshqarish',
 			'libraries.sort' => 'Saralash',
 			'libraries.sortBy' => 'Saralash mezonlari',
@@ -4032,8 +4050,6 @@ extension on TranslationsUz {
 			'libraries.confirmActionMessage' => 'Ushbu harakatni bajarmoqchimisiz?',
 			'libraries.showLibrary' => 'Kutubxonani koʻrsatish',
 			'libraries.hideLibrary' => 'Kutubxonani yashirish',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Kutubxona parametrlari',
 			'libraries.content' => 'kutubxona tarkibi',
 			'libraries.selectLibrary' => 'Kutubxonani tanlash',
@@ -4373,6 +4389,8 @@ extension on TranslationsUz {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi',
 			'liveTv.failedToStartChannel' => 'Jonli kanalni boshlab boʻlmadi',
 			'liveTv.failedToBuildStreamUrl' => 'Oqim URL-ini tuzib boʻlmadi',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanalni ishga tushirib boʻlmadi: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Kanalni almashtirib boʻlmadi: ${reason}',
 			'collections.title' => 'Toʻplamlar',
 			'collections.collection' => 'Toʻplam',
 			'collections.empty' => 'Toʻplam boʻsh',
@@ -4537,6 +4555,8 @@ extension on TranslationsUz {
 			'downloads.noDownloadsDescription' => 'Yuklangan fayllar oflayn koʻrish uchun bu yerda koʻrinadi',
 			'downloads.downloadNow' => 'Yuklab olish',
 			'downloads.deleteDownload' => 'Yuklamani oʻchirish',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Yuklashni qaytadan urinish',
 			'downloads.downloadQueued' => 'Yuklash navbatga qoʻyildi',
 			'downloads.downloadResumed' => 'Yuklash davom ettirildi',
@@ -4546,8 +4566,6 @@ extension on TranslationsUz {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} qism yuklash navbatiga qoʻshildi',
 			'downloads.downloadDeleted' => 'Yuklama oʻchirildi',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" ushbu qurilmadan oʻchirilsinmi?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Toʻxtatilgan yuklama',
 			'downloads.cancelledDownloadMessage' => 'Ushbu yuklash toʻxtatildi.',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Barcha qismlar avvaldan yuklab olingan',

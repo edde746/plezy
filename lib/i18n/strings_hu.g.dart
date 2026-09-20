@@ -1237,6 +1237,13 @@ class _Translations$errors$hu extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => 'Nem sikerült átváltani a következő profilra: ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => 'Nem sikerült törölni a következőt: ${displayName}';
 	@override String get failedToRate => 'Nem sikerült frissíteni az értékelést';
+	@override String get reasonTimedOut => 'időtúllépés történt a kapcsolatban';
+	@override String get reasonUnreachable => 'a médiaszerver nem érhető el';
+	@override String get reasonRefused => 'a médiaszerver elutasította a kérést';
+	@override String get reasonNotFound => 'az elem már nem található a médiaszerveren';
+	@override String get reasonServerError => 'a médiaszerver hibát jelzett';
+	@override String get reasonCancelled => 'a kérés meg lett szakítva';
+	@override String get reasonUnexpected => 'váratlan hiba történt';
 }
 
 // Path: libraries
@@ -1552,6 +1559,8 @@ class _Translations$liveTv$hu extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza';
 	@override String get failedToStartChannel => 'Nem sikerült elindítani az élő csatornát';
 	@override String get failedToBuildStreamUrl => 'Nem sikerült összeállítani a stream URL-címét';
+	@override String playbackStartFailed({required Object reason}) => 'Nem sikerült elindítani a csatornát: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Nem sikerült csatornát váltani: ${reason}';
 }
 
 // Path: collections
@@ -3999,6 +4008,13 @@ extension on TranslationsHu {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Nem sikerült átváltani a következő profilra: ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Nem sikerült törölni a következőt: ${displayName}',
 			'errors.failedToRate' => 'Nem sikerült frissíteni az értékelést',
+			'errors.reasonTimedOut' => 'időtúllépés történt a kapcsolatban',
+			'errors.reasonUnreachable' => 'a médiaszerver nem érhető el',
+			'errors.reasonRefused' => 'a médiaszerver elutasította a kérést',
+			'errors.reasonNotFound' => 'az elem már nem található a médiaszerveren',
+			'errors.reasonServerError' => 'a médiaszerver hibát jelzett',
+			'errors.reasonCancelled' => 'a kérés meg lett szakítva',
+			'errors.reasonUnexpected' => 'váratlan hiba történt',
 			'libraries.title' => 'Könyvtárak',
 			'libraries.fallbackTitle' => 'Könyvtár',
 			'libraries.scanLibraryFiles' => 'Könyvtárfájlok beolvasása',
@@ -4025,6 +4041,8 @@ extension on TranslationsHu {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Biztosan elemezni szeretnéd a következőt: "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Biztosan frissíteni szeretnéd a metaadatokat a következőhöz: "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Biztosan ki szeretnéd üríteni a lomtárat a következőnél: "${title}"?',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => 'Könyvtárak kezelése',
 			'libraries.sort' => 'Rendezés',
 			'libraries.sortBy' => 'Rendezés ez alapján',
@@ -4032,8 +4050,6 @@ extension on TranslationsHu {
 			'libraries.confirmActionMessage' => 'Biztosan végre szeretnéd hajtani ezt a műveletet?',
 			'libraries.showLibrary' => 'Könyvtár megjelenítése',
 			'libraries.hideLibrary' => 'Könyvtár elrejtése',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => 'Könyvtár beállításai',
 			'libraries.content' => 'könyvtár tartalma',
 			'libraries.selectLibrary' => 'Könyvtár kiválasztása',
@@ -4373,6 +4389,8 @@ extension on TranslationsHu {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => 'A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza',
 			'liveTv.failedToStartChannel' => 'Nem sikerült elindítani az élő csatornát',
 			'liveTv.failedToBuildStreamUrl' => 'Nem sikerült összeállítani a stream URL-címét',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Nem sikerült elindítani a csatornát: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Nem sikerült csatornát váltani: ${reason}',
 			'collections.title' => 'Gyűjtemények',
 			'collections.collection' => 'Gyűjtemény',
 			'collections.empty' => 'A gyűjtemény üres',
@@ -4537,6 +4555,8 @@ extension on TranslationsHu {
 			'downloads.noDownloadsDescription' => 'A letöltött tartalmak itt jelennek meg az offline megtekintéshez',
 			'downloads.downloadNow' => 'Letöltés',
 			'downloads.deleteDownload' => 'Letöltés törlése',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => 'Letöltés újrapróbálása',
 			'downloads.downloadQueued' => 'Letöltés sorba állítva',
 			'downloads.downloadResumed' => 'Letöltés folytatva',
@@ -4546,8 +4566,6 @@ extension on TranslationsHu {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} epizód letöltésre sorba állítva',
 			'downloads.downloadDeleted' => 'Letöltés törölve',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Törlöd a következőt: "${title}" erről az eszközről?',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => 'Megszakított letöltés',
 			'downloads.cancelledDownloadMessage' => 'Ez a letöltés meg lett szakítva. Mit szeretnél tenni?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Minden epizód le van töltve',

@@ -1232,6 +1232,13 @@ class Translations$errors$zh extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => '无法切换到 ${displayName}';
 	@override String failedToDeleteProfile({required Object displayName}) => '无法删除 ${displayName}';
 	@override String get failedToRate => '无法更新评分';
+	@override String get reasonTimedOut => '连接超时';
+	@override String get reasonUnreachable => '无法连接到服务器';
+	@override String get reasonRefused => '服务器拒绝了此请求';
+	@override String get reasonNotFound => '该项目已不在服务器上';
+	@override String get reasonServerError => '服务器报告了一个错误';
+	@override String get reasonCancelled => '请求已取消';
+	@override String get reasonUnexpected => '发生了意外错误';
 }
 
 // Path: libraries
@@ -1544,6 +1551,8 @@ class Translations$liveTv$zh extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} 返回了无效的直播电视播放数据';
 	@override String get failedToStartChannel => '无法播放直播频道';
 	@override String get failedToBuildStreamUrl => '无法生成视频流 URL';
+	@override String playbackStartFailed({required Object reason}) => '无法启动该频道：${reason}';
+	@override String channelSwitchFailed({required Object reason}) => '无法切换频道：${reason}';
 }
 
 // Path: collections
@@ -3988,6 +3997,13 @@ extension on TranslationsZh {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '无法切换到 ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '无法删除 ${displayName}',
 			'errors.failedToRate' => '无法更新评分',
+			'errors.reasonTimedOut' => '连接超时',
+			'errors.reasonUnreachable' => '无法连接到服务器',
+			'errors.reasonRefused' => '服务器拒绝了此请求',
+			'errors.reasonNotFound' => '该项目已不在服务器上',
+			'errors.reasonServerError' => '服务器报告了一个错误',
+			'errors.reasonCancelled' => '请求已取消',
+			'errors.reasonUnexpected' => '发生了意外错误',
 			'libraries.title' => '媒体库',
 			'libraries.fallbackTitle' => '媒体库',
 			'libraries.scanLibraryFiles' => '扫描媒体库文件',
@@ -4014,6 +4030,8 @@ extension on TranslationsZh {
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '确定要分析“${title}”吗？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新“${title}”的元数据吗？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空“${title}”的回收站吗？',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.manageLibraries' => '管理媒体库',
 			'libraries.sort' => '排序',
 			'libraries.sortBy' => '排序依据',
@@ -4021,8 +4039,6 @@ extension on TranslationsZh {
 			'libraries.confirmActionMessage' => '确定要执行此操作吗？',
 			'libraries.showLibrary' => '显示媒体库',
 			'libraries.hideLibrary' => '隐藏媒体库',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.libraryOptions' => '媒体库选项',
 			'libraries.content' => '媒体库内容',
 			'libraries.selectLibrary' => '选择媒体库',
@@ -4362,6 +4378,8 @@ extension on TranslationsZh {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} 返回了无效的直播电视播放数据',
 			'liveTv.failedToStartChannel' => '无法播放直播频道',
 			'liveTv.failedToBuildStreamUrl' => '无法生成视频流 URL',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => '无法启动该频道：${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => '无法切换频道：${reason}',
 			'collections.title' => '合集',
 			'collections.collection' => '合集',
 			'collections.empty' => '合集为空',
@@ -4526,6 +4544,8 @@ extension on TranslationsZh {
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
 			'downloads.downloadNow' => '下载',
 			'downloads.deleteDownload' => '删除下载',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryDownload' => '重试下载',
 			'downloads.downloadQueued' => '下载已排队',
 			'downloads.downloadResumed' => '下载已继续',
@@ -4535,8 +4555,6 @@ extension on TranslationsZh {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',
 			'downloads.deleteConfirm' => ({required Object title}) => '要从此设备删除“${title}”吗？',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.cancelledDownloadTitle' => '已取消的下载',
 			'downloads.cancelledDownloadMessage' => '此下载已取消。你想怎么做？',
 			'downloads.allEpisodesAlreadyDownloaded' => '所有剧集均已下载',
