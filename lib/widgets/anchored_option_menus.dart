@@ -124,6 +124,7 @@ Future<void> showAnchoredFilterPanel(
   required FilterValuesLoader loadFilterValues,
   Map<String, List<MediaFilterValue>> cachedValues = const {},
   FilterCountLoader? countLoader,
+  int? initialCount,
 }) {
   return showAnchoredPanel<void>(
     context,
@@ -137,6 +138,7 @@ Future<void> showAnchoredFilterPanel(
       loadFilterValues: loadFilterValues,
       cachedValues: cachedValues.isEmpty ? null : cachedValues,
       countLoader: countLoader,
+      initialCount: initialCount,
     ),
   );
 }

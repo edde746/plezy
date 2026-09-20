@@ -56,9 +56,9 @@ class FiltersBottomSheet extends StatefulWidget {
   /// (the offline downloads tab filters in memory).
   final FilterCountLoader? countLoader;
 
-  /// Dismisses the editor. Defaults to [OverlaySheetController.closeAdaptive],
-  /// which closes the sheet when hosted and pops the route otherwise.
-  final VoidCallback? onRequestClose;
+  /// Count of the already-committed selection, so opening the editor does not
+  /// spend a request re-deriving a total the host is already showing.
+  final int? initialCount;
 
   const FiltersBottomSheet({
     super.key,
@@ -71,7 +71,7 @@ class FiltersBottomSheet extends StatefulWidget {
     this.onBack,
     this.cachedValues,
     this.countLoader,
-    this.onRequestClose,
+    this.initialCount,
   });
 
   @override
@@ -101,7 +101,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     _selection = List<LibraryFilter>.of(widget.selectedFilters);
     _sortFilters();
     _initialFocusNode = FocusNode(debugLabel: 'FiltersBottomSheetInitialFocus');
-    _scheduleCount();
+    _count = widget.initialCount;
+    if (_count == null) _scheduleCount();
   }
 
   @override
@@ -156,16 +157,9 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     _commitSelection(const []);
   }
 
-  void _close() {
-    final onRequestClose = widget.onRequestClose;
-    if (onRequestClose != null) {
-      onRequestClose();
-      return;
-    }
-    // Adaptive: the editor is hosted in an overlay sheet on touch/TV and in a
-    // routed panel on pointer platforms, and this resolves both.
-    OverlaySheetController.closeAdaptive(context);
-  }
+  /// Adaptive: the editor is hosted in an overlay sheet on touch/TV and in a
+  /// routed panel on pointer platforms, and this resolves both.
+  void _close() => OverlaySheetController.closeAdaptive(context);
 
   // ---------------------------------------------------------------------
   // Result count
@@ -205,8 +199,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
 
   Future<void> _openFilter(MediaFilter filter) async {
     if (filter.editorKind != FilterEditorKind.valueList) {
-      // Nothing to fetch; swap straight to the editor.
-      _transitionMinHeight = _contentHeight();
+      // Nothing to fetch, so no transient state to hold a height for.
       final generation = ++_filterValuesLoadGeneration;
       setState(() {
         _currentFilter = filter;
@@ -214,12 +207,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         _isLoadingValues = false;
         _filterValuesError = null;
       });
-      // The free-text page owns its own entry focus: this node would have to
-      // sit on its text field, and a focused text input opens the TV keyboard
-      // on arrival, burying the sheet before the viewer asked to type.
-      if (filter.editorKind != FilterEditorKind.text) {
-        _requestInitialFocus(generation, widget.serverId, widget.libraryKey, filter.filter);
-      }
+      _requestInitialFocus(generation, widget.serverId, widget.libraryKey, filter.filter);
       return;
     }
     await _loadFilterValues(filter);

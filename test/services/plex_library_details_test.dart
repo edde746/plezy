@@ -94,6 +94,9 @@ void main() {
       final byField = {for (final filter in result.filters) filter.filter: filter};
 
       expect(requests.single.queryParameters['includeMeta'], '1');
+      // Both parameters: PMS ignores a lone `Size=0` and returns the whole
+      // section, so discovery would download the library it is asking about.
+      expect(requests.single.queryParameters['X-Plex-Container-Start'], '0');
       expect(requests.single.queryParameters['X-Plex-Container-Size'], '0');
       expect(requests.single.queryParameters['type'], '1');
 
@@ -111,6 +114,11 @@ void main() {
       // numeric editor rather than a list nobody can populate.
       expect(byField['mediaSize']!.key, isEmpty);
       expect(byField['mediaSize']!.editorKind, FilterEditorKind.number);
+      // Plex declares the storage unit in `subType`; the editor needs it to
+      // turn a typed 90 minutes into 5400000 ms rather than 90.
+      expect(byField['mediaSize']!.unit, MediaFilterUnit.fileSize);
+      expect(byField['duration']!.unit, MediaFilterUnit.duration);
+      expect(byField['year']!.unit, MediaFilterUnit.none);
 
       // Free text exposes Plex's match modes and no listing.
       expect(byField['title']!.operators, contains(LibraryFilterOperator.matches));
@@ -128,7 +136,7 @@ void main() {
       expect(result.cachedValues, isEmpty);
     });
 
-    test('strips the browsed type prefix but keeps cross-type fields qualified', () async {
+    test('reads the active type and strips its own prefix', () async {
       final client = metaClient((request) async {
         if (request.url.path == '/library/sections/2/all') {
           return http.Response(jsonEncode(_showMetaPayload()), 200, headers: {'content-type': 'application/json'});
@@ -144,9 +152,10 @@ void main() {
       // and the bare name is what value endpoints and saved selections use.
       expect(fields, contains('genre'));
       expect(fields, isNot(contains('show.genre')));
-      // An episode field on a show query is not the browsed type's own, so it
-      // stays qualified — that is the only spelling Plex accepts for it.
-      expect(fields, contains('episode.title'));
+      // The inactive `episode` type is a different browse surface; its fields
+      // are not offered here (a bare `genre` would match nothing under
+      // `type=4`, and the qualified spelling belongs to that query).
+      expect(fields, isNot(contains('episode.title')));
       // Value listings always use the bare name.
       final genre = result.filters.firstWhere((f) => f.filter == 'genre');
       expect(genre.key, '/library/sections/2/genre?type=2');
@@ -185,6 +194,16 @@ void main() {
       // every supported Plex version evaluates `!=` for these types.
       final genre = result.filters.first;
       expect(genre.supportsExclusion, isTrue);
+    });
+
+    test('percent-encoded value ids are decoded once, not re-encoded on the wire', () async {
+      // Plex lists `audioLayout` values as `5%2E1`. Encoding that again
+      // selects nothing (`audioLayout=5%252E1` → 0 rows on a real server).
+      expect(libraryFilterValueId('5%2E1', 'audioLayout'), '5.1');
+      expect(libraryFilterValueId('16%2B', 'contentRating'), '16+');
+      expect(libraryFilterValueId('/library/sections/1/all?genre=239', 'genre'), '239');
+      // A literal percent is not an encoding and must survive.
+      expect(libraryFilterValueId('100%', 'label'), '100%');
     });
 
     test('a shared library has no filter schema to read', () async {
@@ -799,7 +818,8 @@ Map<String, dynamic> _metaPayload() => {
           'Field': [
             {'key': 'title', 'title': 'Title', 'type': 'string'},
             {'key': 'year', 'title': 'Year', 'type': 'integer'},
-            {'key': 'mediaSize', 'title': 'File Size', 'type': 'integer'},
+            {'key': 'mediaSize', 'title': 'File Size', 'type': 'integer', 'subType': 'fileSize'},
+            {'key': 'duration', 'title': 'Duration', 'type': 'integer', 'subType': 'duration'},
             {'key': 'genre', 'title': 'Genre', 'type': 'tag'},
             {'key': 'addedAt', 'title': 'Date Added', 'type': 'date'},
             {'key': 'unwatched', 'title': 'Unwatched', 'type': 'boolean'},
@@ -853,20 +873,29 @@ Map<String, dynamic> _metaPayload() => {
   },
 };
 
-/// A show section qualifies every field with its owning type, and carries the
-/// episode fields alongside the show ones.
+/// A show section qualifies every field with its owning type and returns one
+/// `Type` entry per browse surface, with `active` marking the queried one.
+/// The episode entry comes first here deliberately: the parser must pick the
+/// active type, not the first one carrying fields.
 Map<String, dynamic> _showMetaPayload() => {
   'MediaContainer': {
     'size': 0,
     'Meta': {
       'Type': [
         {
+          'type': 'episode',
+          'active': false,
+          'Field': [
+            {'key': 'episode.title', 'title': 'Episode Title', 'type': 'string'},
+            {'key': 'episode.genre', 'title': 'Genre', 'type': 'tag'},
+          ],
+        },
+        {
           'type': 'show',
           'active': true,
           'Field': [
             {'key': 'show.title', 'title': 'Title', 'type': 'string'},
             {'key': 'show.genre', 'title': 'Genre', 'type': 'tag'},
-            {'key': 'episode.title', 'title': 'Episode Title', 'type': 'string'},
           ],
         },
       ],

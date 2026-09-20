@@ -6197,8 +6197,8 @@ class Translations$libraries$advancedFilters$en {
 	/// en: 'Last ${count} days'
 	String dateLastDays({required Object count}) => 'Last ${count} days';
 
-	/// en: 'Last year'
-	String get dateLastYear => 'Last year';
+	/// en: 'Past year'
+	String get dateLastYear => 'Past year';
 
 	/// en: 'Older than ${count} days'
 	String dateOlderThanDays({required Object count}) => 'Older than ${count} days';
@@ -8299,7 +8299,7 @@ extension on Translations {
 			'libraries.advancedFilters.atLeast' => ({required Object value}) => '${value} and up',
 			'libraries.advancedFilters.atMost' => ({required Object value}) => 'Up to ${value}',
 			'libraries.advancedFilters.dateLastDays' => ({required Object count}) => 'Last ${count} days',
-			'libraries.advancedFilters.dateLastYear' => 'Last year',
+			'libraries.advancedFilters.dateLastYear' => 'Past year',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => 'Older than ${count} days',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Older than a year',
 			'about.title' => 'About',

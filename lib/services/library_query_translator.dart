@@ -80,7 +80,19 @@ class PlexLibraryQueryTranslator implements LibraryQueryTranslator {
     if (query.nameStartsWith != null && query.nameStartsWith!.isNotEmpty) {
       params['alphaPrefix'] = query.nameStartsWith!;
     }
-    params.addAll(plexFilterQueryParameters(query.filters));
+    for (final entry in plexFilterQueryParameters(query.filters).entries) {
+      final existing = params[entry.key];
+      if (existing == null) {
+        params[entry.key] = entry.value;
+        continue;
+      }
+      // `title` can arrive from both the search box and a clause; Plex ANDs
+      // repeated keys, so keep both instead of letting one win.
+      params[entry.key] = <String>[
+        ...existing is List<String> ? existing : <String>[existing as String],
+        ...entry.value is List<String> ? entry.value as List<String> : <String>[entry.value as String],
+      ];
+    }
     return params;
   }
 }
@@ -226,12 +238,11 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
           if (values.first != '1') break;
           wireFilters.add(negated ? 'IsPlayed' : 'IsUnplayed');
         case MediaFilterField.favorite:
-          if (values.first != '1') break;
-          if (negated) {
-            params['isFavorite'] = 'false';
-          } else {
-            wireFilters.add('IsFavorite');
-          }
+          // Equality only — see `fetchLibraryFiltersWithValues`. A negated
+          // clause cannot be built through the editor and has no correct wire
+          // form, so it is dropped rather than approximated.
+          if (values.first != '1' || negated) break;
+          wireFilters.add('IsFavorite');
         case MediaFilterField.genre:
           params['Genres'] = values.join('|');
         case MediaFilterField.contentRating:

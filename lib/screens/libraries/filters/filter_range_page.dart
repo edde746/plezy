@@ -55,20 +55,33 @@ class _FilterNumberPageState extends State<FilterNumberPage> {
     super.dispose();
   }
 
+  /// Stored value for [op], converted back to the unit it is typed in.
   String? _boundValue(LibraryFilterOperator op) {
     for (final clause in widget.clauses) {
-      if (clause.op == op && clause.values.isNotEmpty) return clause.values.first;
+      if (clause.op != op || clause.values.isEmpty) continue;
+      final stored = int.tryParse(clause.values.first);
+      if (stored == null) return clause.values.first;
+      return (stored ~/ widget.filter.unit.scale).toString();
     }
     return null;
   }
 
+  /// Entered value in the field's stored unit. Plex keeps durations in
+  /// milliseconds and sizes in bytes, so a typed 90 minutes has to leave as
+  /// 5400000 — sent as typed, `duration>>=90` matches every item.
+  String? _stored(String entered) {
+    if (entered.isEmpty) return null;
+    final typed = int.tryParse(entered);
+    if (typed == null) return null;
+    return (typed * widget.filter.unit.scale).toString();
+  }
+
   void _emit() {
-    final from = _from.text.trim();
-    final to = _to.text.trim();
+    final from = _stored(_from.text.trim());
+    final to = _stored(_to.text.trim());
     widget.onChanged([
-      if (from.isNotEmpty)
-        LibraryFilter(field: widget.filter.filter, op: LibraryFilterOperator.atLeast, values: [from]),
-      if (to.isNotEmpty) LibraryFilter(field: widget.filter.filter, op: LibraryFilterOperator.atMost, values: [to]),
+      if (from != null) LibraryFilter(field: widget.filter.filter, op: LibraryFilterOperator.atLeast, values: [from]),
+      if (to != null) LibraryFilter(field: widget.filter.filter, op: LibraryFilterOperator.atMost, values: [to]),
     ]);
   }
 
@@ -79,7 +92,13 @@ class _FilterNumberPageState extends State<FilterNumberPage> {
         controller: controller,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: InputDecoration(labelText: label, isDense: true, border: const OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          // The unit the viewer is typing in, when it differs from storage.
+          suffixText: widget.filter.unit.suffix,
+          isDense: true,
+          border: const OutlineInputBorder(),
+        ),
         onChanged: (_) => _emit(),
         onBack: widget.onBack,
       ),

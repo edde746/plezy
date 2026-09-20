@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../../../media/ids.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -596,8 +597,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _resetTopOfPageState();
     _currentFirstVisibleIndex.value = 0;
 
-    // Plex returns categories from `/library/sections/{id}/filters` +
-    // `/sorts`; MediaBrowser clients map their filter endpoints into the same
+    // Plex returns categories from its published filter schema + `/sorts`;
+    // MediaBrowser clients map their filter endpoints into the same
     // shape with values pre-cached and a hardcoded client-side sort list. Both
     // flow through [MediaServerClient.fetchLibraryFiltersWithValues].
     try {
@@ -1027,7 +1028,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               title: Text(
                 _selectedFilters.isEmpty
                     ? t.libraries.filters
-                    : t.libraries.filtersWithCount(count: _selectedFilters.length),
+                    : t.libraries.filtersWithCount(count: _activeFilterFieldCount),
               ),
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () => _showFiltersOptionsPage(controller),
@@ -1178,10 +1179,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// sheet is still tearing down, exactly as the sort sheet does.
   void _openFiltersSheet(Future<dynamic> Function(WidgetBuilder builder) open, {VoidCallback? onBack}) {
     var pending = _selectedFilters;
+    // The staged edits belong to the library that was open when the editor
+    // was: committing them after a library switch would write one library's
+    // clauses into another's storage key.
+    final owner = widget.library.globalKey;
     open((_) => _buildFiltersBottomSheet(onChanged: (filters) => pending = filters, onBack: onBack)).then((_) {
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _filterSelectionsEqual(pending, _selectedFilters)) return;
+        if (!mounted || owner != widget.library.globalKey) return;
+        if (listEquals(pending, _selectedFilters)) return;
         unawaited(_applyFilters(pending));
       });
     });
@@ -1195,6 +1201,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       libraryKey: widget.library.globalKey,
       loadFilterValues: _loadFilterValues,
       countLoader: _countFilteredItems,
+      initialCount: hasLoadedData ? totalSize : null,
       onBack: onBack,
       // Pre-populated values arrive from MediaBrowser filter discovery. The
       // empty map for Plex libraries falls through to lazy `getFilterValues`.
@@ -1217,6 +1224,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   void _resetFilters() => unawaited(_applyFilters(const []));
+
+  /// Filter categories in use. A range is two clauses on one field, and the
+  /// chip counts what the viewer set, not how many clauses that took.
+  int get _activeFilterFieldCount => _selectedFilters.map((clause) => clause.field).toSet().length;
 
   Future<List<MediaFilterValue>> _loadFilterValues(MediaFilter filter) async {
     if (!mounted) return const [];
@@ -1246,17 +1257,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       loadFilterValues: _loadFilterValues,
       cachedValues: _mediaBrowserFilterValues,
       countLoader: _countFilteredItems,
+      initialCount: hasLoadedData ? totalSize : null,
     );
-    if (!mounted || _filterSelectionsEqual(pending, _selectedFilters)) return;
+    if (!mounted || listEquals(pending, _selectedFilters)) return;
     await _applyFilters(pending);
-  }
-
-  static bool _filterSelectionsEqual(List<LibraryFilter> a, List<LibraryFilter> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 
   void _showSortBottomSheet() {
@@ -1925,7 +1929,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             icon: Symbols.filter_alt_rounded,
             label: _selectedFilters.isEmpty
                 ? t.libraries.filters
-                : t.libraries.filtersWithCount(count: _selectedFilters.length),
+                : t.libraries.filtersWithCount(count: _activeFilterFieldCount),
             onPressed: _showFiltersBottomSheet,
           ),
         if (_isSortChipVisible)

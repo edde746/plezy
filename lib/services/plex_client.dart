@@ -4007,7 +4007,10 @@ class PlexClient
     try {
       final response = await _getWithFailover(
         '/library/sections/$libraryId/all',
-        queryParameters: {'includeMeta': 1, 'X-Plex-Container-Size': 0, 'type': ?typeId},
+        // Both pagination parameters: PMS ignores a lone `Size=0` and answers
+        // with the entire section (measured: 271 items / 462 KB on a show
+        // library, versus 0 items / 11 KB with `Start=0` present).
+        queryParameters: {'includeMeta': 1, ..._buildPaginationParams(0, 0), 'type': ?typeId},
       );
       final filters = _parseFilterMetadata(response, libraryId: libraryId, typeId: typeId);
       if (filters.isNotEmpty) return LibraryFilterResult(filters: filters, cachedValues: const {});
@@ -4079,6 +4082,10 @@ class PlexClient
           title: title,
           type: 'filter',
           operators: operatorsByFieldType[fieldType] ?? MediaFilter.defaultOperatorsFor(_plexFilterTypeFor(fieldType)),
+          // `duration` is milliseconds and `mediaSize` is bytes; without the
+          // unit the editor would send the number as typed and `duration>>=90`
+          // would match every item.
+          unit: MediaFilterUnit.fromPlexSubType(field['subType']),
         ),
       );
     }
@@ -4220,11 +4227,9 @@ class PlexClient
     MediaKind? libraryKind,
     AbortController? abort,
   }) async {
-    // Translate the neutral query back to Plex's flat key=value map. Plex's
-    // section endpoint takes filters verbatim — `PlexLibraryQueryTranslator`
-    // emits both typed slots (genre/year/contentRating/tag/alphaPrefix) and
-    // generic `query.filters` entries, matching what the legacy
-    // `plexStyleFilters` map carried.
+    // Translate the neutral query back to Plex's flat key=value query. The
+    // section endpoint takes filters verbatim, operators and all —
+    // `PlexLibraryQueryTranslator` lowers every clause.
     final filters = const PlexLibraryQueryTranslator().toQueryParameters(query);
     // Browse tab always asked for collections; preserve as Plex's default
     // server behaviour can vary across versions.

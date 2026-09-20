@@ -817,7 +817,7 @@ class AgentScopedSettingsCommands {
                 }
                 // Fields with no enumerable values (free text, sizes, dates)
                 // take arbitrary input; the rest are held to the listing.
-                if (filter.hasValueList && !allowed.contains(rawValue)) {
+                if ((filter.isBoolean || filter.hasValueList) && !allowed.contains(rawValue)) {
                   _invalid('An unavailable filter value was selected.');
                 }
                 valueIds.add(rawValue);

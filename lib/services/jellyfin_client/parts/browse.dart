@@ -387,10 +387,12 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// `jellyfin:` prefix so existing cached preferences remain valid.
   @override
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
-    // MediaBrowser can negate both booleans (`Filters=IsPlayed`,
-    // `isFavorite=false`) but has no per-field exclusion for the value
-    // facets, so those declare equality only and the editor hides the
-    // include/exclude control for them.
+    // MediaBrowser can negate the played state (`Filters=IsPlayed`) but
+    // nothing else: `/Items` has no `IsNotFavorite`, and `isFavorite=false`
+    // is a UserData join that also drops every item the user never touched
+    // (0 of 250 series on a library with no favorites). The value facets have
+    // no per-field exclusion either, so both declare equality only and the
+    // editor hides the include/exclude control for them.
     const booleanOperators = [LibraryFilterOperator.is_, LibraryFilterOperator.isNot];
     const valueOperators = [LibraryFilterOperator.is_];
     final filters = <MediaFilter>[
@@ -410,7 +412,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         key: 'jellyfin:favorite',
         title: t.libraries.filterCategories.favorites,
         type: 'filter',
-        operators: booleanOperators,
+        operators: valueOperators,
       ),
     ];
     final data = await _safeFetchFilterPayload(libraryId);

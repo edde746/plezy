@@ -141,7 +141,8 @@ class FilterIncludeExcludeRow extends StatelessWidget {
 
 /// Tri-state Any/Yes/No control for a boolean field, edited in place on the
 /// category list. Select cycles forward, LEFT/RIGHT step the states, and the
-/// segmented control handles pointer input.
+/// segmented control handles pointer input — wrapped in [ExcludeFocus] so its
+/// segments do not add three focus stops to every boolean row.
 class FilterBooleanRow extends StatelessWidget {
   final MediaFilter filter;
 
@@ -199,12 +200,14 @@ class FilterBooleanRow extends StatelessWidget {
         focusNode: focusNode,
         autofocus: autofocus,
         title: Text(filter.title),
-        trailing: SegmentedButton<bool?>(
-          style: _segmentStyle(context),
-          showSelectedIcon: false,
-          segments: [for (final state in _available) ButtonSegment<bool?>(value: state, label: Text(_label(state)))],
-          selected: {value},
-          onSelectionChanged: (selection) => onChanged(selection.first),
+        trailing: ExcludeFocus(
+          child: SegmentedButton<bool?>(
+            style: _segmentStyle(context),
+            showSelectedIcon: false,
+            segments: [for (final state in _available) ButtonSegment<bool?>(value: state, label: Text(_label(state)))],
+            selected: {value},
+            onSelectionChanged: (selection) => onChanged(selection.first),
+          ),
         ),
         onTap: () => _step(1),
       ),

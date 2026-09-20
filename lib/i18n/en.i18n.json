@@ -1195,7 +1195,7 @@
       "atLeast": "${value} and up",
       "atMost": "Up to ${value}",
       "dateLastDays": "Last ${count} days",
-      "dateLastYear": "Last year",
+      "dateLastYear": "Past year",
       "dateOlderThanDays": "Older than ${count} days",
       "dateOlderThanYear": "Older than a year"
     }

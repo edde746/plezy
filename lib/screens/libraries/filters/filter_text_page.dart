@@ -4,7 +4,6 @@ import '../../../focus/focusable_text_field.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_filter.dart';
-import '../../../focus/input_mode_tracker.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import 'filter_operator_row.dart';
@@ -37,29 +36,17 @@ class FilterTextPage extends StatefulWidget {
 
 class _FilterTextPageState extends State<FilterTextPage> {
   late final TextEditingController _controller;
-  late final FocusNode _clearRowNode;
   late LibraryFilterOperator _operator;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.clause?.values.firstOrNull ?? '');
-    _clearRowNode = FocusNode(debugLabel: 'FilterTextPageClearRow');
     _operator = widget.clause?.op ?? _modes.first;
-    // The page owns its entry focus instead of taking the sheet's node: that
-    // node would otherwise have to sit on the text field, and a focused text
-    // input opens the TV keyboard on arrival
-    // (`TvTextInputAutoOpenBehavior.automatic`), burying the sheet before the
-    // viewer asked to type.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !InputModeTracker.isKeyboardMode(context)) return;
-      _clearRowNode.requestFocus();
-    });
   }
 
   @override
   void dispose() {
-    _clearRowNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -106,9 +93,13 @@ class _FilterTextPageState extends State<FilterTextPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // The sheet's entry focus lands here and never on the field below: a
+        // focused text input opens the TV keyboard on arrival
+        // (`TvTextInputAutoOpenBehavior.automatic`), burying the sheet before
+        // the viewer asked to type.
         FilterClearRow(
           selected: _controller.text.trim().isEmpty,
-          focusNode: _clearRowNode,
+          focusNode: widget.initialFocusNode,
           onPressed: () {
             _controller.clear();
             widget.onChanged(const []);

@@ -23,6 +23,33 @@ enum FilterEditorKind {
   text,
 }
 
+/// Unit a numeric field is stored in, as Plex declares it in the field's
+/// `subType`. The editor asks for the unit a person would type and scales.
+enum MediaFilterUnit {
+  /// Stored as typed.
+  none(1, null),
+
+  /// Milliseconds; entered in minutes.
+  duration(60000, 'min'),
+
+  /// Bytes; entered in gigabytes.
+  fileSize(1000000000, 'GB');
+
+  const MediaFilterUnit(this.scale, this.suffix);
+
+  /// Multiplier from the entered unit to the stored one.
+  final int scale;
+
+  /// Short label appended to the bound's title, or null when there is none.
+  final String? suffix;
+
+  static MediaFilterUnit fromPlexSubType(Object? subType) => switch (subType) {
+    'duration' => duration,
+    'fileSize' => fileSize,
+    _ => none,
+  };
+}
+
 /// Field types a backend can declare. Plex publishes these in
 /// `/library/sections/{id}/all?includeMeta=1` (`Meta.FieldType`); the legacy
 /// `/filters` listing only distinguishes `string`, `integer` and `boolean`.
@@ -73,6 +100,10 @@ class MediaFilter {
   @JsonKey(defaultValue: 'filter')
   final String type;
 
+  /// Unit the backend stores this field in — see [MediaFilterUnit].
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final MediaFilterUnit unit;
+
   /// Comparisons this backend supports for this field. Excluded from JSON:
   /// the legacy Plex `/filters` rows carry no operator vocabulary, so those
   /// fall back to [defaultOperatorsFor].
@@ -86,6 +117,7 @@ class MediaFilter {
     required this.title,
     required this.type,
     List<LibraryFilterOperator>? operators,
+    this.unit = MediaFilterUnit.none,
   }) : operators = operators ?? defaultOperatorsFor(filterType);
 
   factory MediaFilter.fromJson(Map<String, dynamic> json) => _$MediaFilterFromJson(json);
@@ -116,12 +148,14 @@ class MediaFilter {
   static List<LibraryFilterOperator> defaultOperatorsFor(String filterType) {
     return switch (filterType) {
       MediaFilterType.boolean => const [LibraryFilterOperator.is_, LibraryFilterOperator.isNot],
-      MediaFilterType.integer || MediaFilterType.date => const [
+      MediaFilterType.integer => const [
         LibraryFilterOperator.is_,
         LibraryFilterOperator.isNot,
         LibraryFilterOperator.atLeast,
         LibraryFilterOperator.atMost,
       ],
+      // PMS publishes only the two bounds for a date.
+      MediaFilterType.date => const [LibraryFilterOperator.atLeast, LibraryFilterOperator.atMost],
       _ => const [LibraryFilterOperator.is_, LibraryFilterOperator.isNot],
     };
   }
@@ -143,11 +177,26 @@ class MediaFilterValue {
 }
 
 /// Canonical filter identity carried by Plex query/path keys or plain backend ids.
+///
+/// Plex hands some value ids out already percent-encoded (`audioLayout` lists
+/// `5%2E1`, `contentRating` lists `16%2B`). They are decoded here so the id
+/// kept in a clause is the literal value: encoding it a second time on the
+/// wire selects nothing (`audioLayout=5%252E1` → 0 rows, `5.1` → 17).
 String libraryFilterValueId(String key, String filterName) {
   if (key.contains('?')) {
     final queryString = key.substring(key.indexOf('?') + 1);
     return Uri.splitQueryString(queryString)[filterName] ?? key;
   }
-  if (key.startsWith('/')) return key.split('/').last;
-  return key;
+  final raw = key.startsWith('/') ? key.split('/').last : key;
+  return _decodeValueId(raw);
+}
+
+String _decodeValueId(String raw) {
+  if (!raw.contains('%')) return raw;
+  try {
+    return Uri.decodeComponent(raw);
+  } on ArgumentError {
+    // Not an encoding after all — a literal `%` in a tag.
+    return raw;
+  }
 }

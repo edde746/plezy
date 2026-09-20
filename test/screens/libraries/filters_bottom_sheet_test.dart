@@ -17,6 +17,15 @@ final _filters = [
   MediaFilter(filter: 'studio', filterType: MediaFilterType.tag, key: 'studio', title: 'Studio', type: 'filter'),
   MediaFilter(filter: 'file', filterType: MediaFilterType.string, key: '', title: 'File Path', type: 'filter'),
   MediaFilter(
+    filter: 'duration',
+    filterType: MediaFilterType.integer,
+    key: '',
+    title: 'Duration',
+    type: 'filter',
+    unit: MediaFilterUnit.duration,
+  ),
+  MediaFilter(filter: 'addedAt', filterType: MediaFilterType.date, key: '', title: 'Date Added', type: 'filter'),
+  MediaFilter(
     // Equality only, as MediaBrowser declares its value facets.
     filter: 'tag',
     filterType: MediaFilterType.tag,
@@ -301,6 +310,26 @@ void main() {
     expect(applied.last, isEmpty);
   });
 
+  testWidgets('a boolean row is one focus stop, not one per segment', (tester) async {
+    // The segmented control is a pointer affordance. Left in the traversal
+    // order it would put three extra stops on every boolean row, and the
+    // rows sort to the top of the category list.
+    await _pumpSheet(tester, loader: (_) async => const []);
+
+    final rows = find.byType(ListTile);
+    final firstRow = tester.widget<ListTile>(rows.at(0));
+    firstRow.focusNode!.requestFocus();
+    await tester.pumpAndSettle();
+    expect(firstRow.focusNode!.hasFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pumpAndSettle();
+
+    // One Tab moves to the next row, not into the first row's segments.
+    expect(tester.widget<ListTile>(rows.at(1)).focusNode?.hasFocus, isTrue);
+    expect(firstRow.focusNode!.hasFocus, isFalse);
+  });
+
   testWidgets('the footer counts the pending selection and commits on press', (tester) async {
     final counted = <List<LibraryFilter>>[];
     await _pumpSheet(
@@ -329,6 +358,81 @@ void main() {
     expect(find.byType(FiltersBottomSheet), findsNothing);
   });
 
+  testWidgets('a numeric range emits two clauses in the field\'s stored unit', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(tester, loader: (_) async => const [], onChanged: applied.add);
+
+    await tester.tap(find.text('Duration'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '90');
+    await tester.pumpAndSettle();
+
+    // Plex keeps durations in milliseconds: sent as typed, `duration>>=90`
+    // would match every item in the library.
+    expect(applied.last, const [
+      LibraryFilter(field: 'duration', op: LibraryFilterOperator.atLeast, values: ['5400000']),
+    ]);
+
+    await tester.enterText(find.byType(TextField).last, '150');
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'duration', op: LibraryFilterOperator.atLeast, values: ['5400000']),
+      LibraryFilter(field: 'duration', op: LibraryFilterOperator.atMost, values: ['9000000']),
+    ]);
+  });
+
+  testWidgets('a stored bound is shown back in the unit it was typed in', (tester) async {
+    await _pumpSheet(
+      tester,
+      loader: (_) async => const [],
+      selectedFilters: const [
+        LibraryFilter(field: 'duration', op: LibraryFilterOperator.atLeast, values: ['5400000']),
+      ],
+    );
+
+    await tester.tap(find.text('Duration'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField).first).controller?.text, '90');
+  });
+
+  testWidgets('a relative date window emits one bounded clause', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(tester, loader: (_) async => const [], onChanged: applied.add);
+
+    await tester.tap(find.text('Date Added'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Last 30 days'));
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'addedAt', op: LibraryFilterOperator.atLeast, values: ['-30d']),
+    ]);
+
+    await tester.tap(find.text('Older than 30 days'));
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'addedAt', op: LibraryFilterOperator.atMost, values: ['-30d']),
+    ]);
+  });
+
+  testWidgets('a text match mode changes the clause operator, not the value', (tester) async {
+    final applied = <List<LibraryFilter>>[];
+    await _pumpSheet(tester, loader: (_) async => const [], onChanged: applied.add);
+
+    await tester.tap(find.text('File Path'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '2160p');
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'file', values: ['2160p']),
+    ]);
+
+    await tester.tap(find.text('Does not contain'));
+    await tester.pumpAndSettle();
+    expect(applied.last, const [
+      LibraryFilter(field: 'file', op: LibraryFilterOperator.isNot, values: ['2160p']),
+    ]);
+  });
+
   testWidgets('a free-text field does not take the entry focus', (tester) async {
     // A focused text input opens the TV keyboard on arrival, which would bury
     // the sheet before the viewer asked to type, so the page's first stop is
@@ -345,7 +449,9 @@ void main() {
     // field: the row above the input is the page's first stop.
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'FilterTextPageClearRow');
+    // The sheet's own entry node, which the page puts on the row above the
+    // input rather than on the field.
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'FiltersBottomSheetInitialFocus');
     expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus, isFalse);
   });
 

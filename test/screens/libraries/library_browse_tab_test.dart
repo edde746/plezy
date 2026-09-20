@@ -368,6 +368,9 @@ void main() {
     // client rewraps anything thrown there as a transport error, which
     // discovery catches and answers from `/filters`.
     expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Size'], '0');
+    // A lone `Size=0` makes PMS return the whole section, so the schema probe
+    // has to carry the start offset too.
+    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Start'], '0');
   });
 }
 

@@ -69,6 +69,19 @@ void main() {
       expect(params['genre'], 'Action,Drama');
     });
 
+    test('a title clause and a search term both reach the wire instead of one winning', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          search: 'wick',
+          filters: [
+            LibraryFilter(field: 'title', op: LibraryFilterOperator.beginsWith, values: ['The']),
+          ],
+        ),
+      );
+      expect(params['title'], 'wick');
+      expect(params['title<'], 'The');
+    });
+
     test('the operator rides in the query key, keeping its trailing = as the separator', () {
       final params = translator.toQueryParameters(
         const LibraryQuery(
@@ -333,7 +346,7 @@ void main() {
       expect(params['Filters'], 'IsPlayed');
     });
 
-    test('favorite clause sets Filters=IsFavorite, its negation sets isFavorite=false', () {
+    test('favorite clause sets Filters=IsFavorite; a negated one is dropped', () {
       final favorite = translator.toQueryParameters(
         const LibraryQuery(
           filters: [
@@ -342,6 +355,11 @@ void main() {
         ),
       );
       expect(favorite['Filters'], 'IsFavorite');
+
+      // `/Items` has no `IsNotFavorite`, and `isFavorite=false` is a UserData
+      // join that also drops every item the user never touched (0 of 250
+      // series on a library with no favorites), so there is no correct wire
+      // form to approximate with.
       final notFavorite = translator.toQueryParameters(
         const LibraryQuery(
           filters: [
@@ -349,7 +367,7 @@ void main() {
           ],
         ),
       );
-      expect(notFavorite['isFavorite'], 'false');
+      expect(notFavorite, isNot(contains('isFavorite')));
       expect(notFavorite, isNot(contains('Filters')));
     });
 
