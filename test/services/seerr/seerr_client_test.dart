@@ -154,6 +154,44 @@ void main() {
       expect(session.displayName, 'Alice');
     });
 
+    test('jellyfin sign-in recovers from Seerr CSRF protection', () async {
+      final paths = <String>[];
+      var loginAttempts = 0;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          switch (request.url.path) {
+            case '/api/v1/auth/jellyfin':
+              loginAttempts += 1;
+              if (loginAttempts == 1) {
+                return _json({'message': 'invalid csrf token'}, status: 403);
+              }
+              expect(request.headers['Cookie']?.split('; ').toSet(), {'_csrf=csrf-secret', 'XSRF-TOKEN=token%3Avalue'});
+              expect(request.headers['X-XSRF-TOKEN'], 'token:value');
+              return _json(_user(), headers: {'set-cookie': '${SeerrConstants.sessionCookieName}=fresh; Path=/'});
+            case '/api/v1/settings/public':
+              return _json(
+                {'initialized': true},
+                headers: {'set-cookie': '_csrf=csrf-secret; Path=/; HttpOnly, XSRF-TOKEN=token%3Avalue; Path=/'},
+              );
+            default:
+              expect(request.url.path, '/api/v1/auth/me');
+              expect(request.headers['Cookie'], contains('${SeerrConstants.sessionCookieName}=fresh'));
+              return _json(_user());
+          }
+        }),
+      );
+
+      final session = await auth.signInWithJellyfin(
+        baseUrl: 'https://seerr.example.com',
+        username: 'alice',
+        password: 'hunter2',
+      );
+
+      expect(session.cookie, 'fresh');
+      expect(paths, ['/api/v1/auth/jellyfin', '/api/v1/settings/public', '/api/v1/auth/jellyfin', '/api/v1/auth/me']);
+    });
+
     test('plex sign-in posts the token and stores no secret', () async {
       late Map<String, dynamic> body;
       final auth = SeerrAuthService(
@@ -1486,20 +1524,38 @@ void main() {
   });
 
   group('SeerrAuthService quick connect', () {
-    test('initiate posts unauthenticated and surfaces the code and secret', () async {
-      String? cookie;
+    test('initiate recovers from CSRF protection and surfaces the code and secret', () async {
+      final paths = <String>[];
+      var attempts = 0;
       final auth = SeerrAuthService(
         httpClientFactory: () => MockClient((request) async {
+          paths.add(request.url.path);
+          if (request.url.path == '/api/v1/settings/public') {
+            return _json(
+              {'initialized': true},
+              headers: {'set-cookie': '_csrf=csrf-secret; Path=/; HttpOnly, XSRF-TOKEN=csrf-token; Path=/'},
+            );
+          }
           expect(request.method, 'POST');
           expect(request.url.path, '/api/v1/auth/jellyfin/quickconnect/initiate');
-          cookie = request.headers['Cookie'];
+          attempts += 1;
+          if (attempts == 1) {
+            expect(request.headers['Cookie'], isNull);
+            return _json({'message': 'invalid csrf token'}, status: 403);
+          }
+          expect(request.headers['Cookie']?.split('; ').toSet(), {'_csrf=csrf-secret', 'XSRF-TOKEN=csrf-token'});
+          expect(request.headers['X-XSRF-TOKEN'], 'csrf-token');
           return _json({'code': 'ABC123', 'secret': 'deadbeef'});
         }),
       );
       final initiation = await auth.initiateQuickConnect('https://seerr.example.com');
       expect(initiation.code, 'ABC123');
       expect(initiation.secret, 'deadbeef');
-      expect(cookie, isNull);
+      expect(paths, [
+        '/api/v1/auth/jellyfin/quickconnect/initiate',
+        '/api/v1/settings/public',
+        '/api/v1/auth/jellyfin/quickconnect/initiate',
+      ]);
     });
 
     test('initiate names the missing feature when the instance predates the routes', () async {

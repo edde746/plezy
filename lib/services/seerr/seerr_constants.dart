@@ -6,6 +6,10 @@ abstract final class SeerrConstants {
   /// Express session cookie issued by the auth endpoints.
   static const String sessionCookieName = 'connect.sid';
 
+  /// Double-submit cookies issued when Seerr's CSRF protection is enabled.
+  static const String csrfSecretCookieName = '_csrf';
+  static const String csrfTokenCookieName = 'XSRF-TOKEN';
+
   /// Default port of a Seerr install, tried for schemeless input that names no
   /// port of its own.
   static const int defaultPort = 5055;

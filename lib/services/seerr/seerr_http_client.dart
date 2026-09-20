@@ -70,15 +70,20 @@ enum SeerrRejection {
 
 /// Thin wrapper around `package:http` for Seerr API calls.
 ///
-/// Adds the two things the tracker HTTP layer doesn't cover:
+/// Adds the three things the tracker HTTP layer doesn't cover:
 ///   1. `connect.sid` cookie capture from `Set-Cookie` on login, replayed as
 ///      `Cookie:` on every subsequent request — Express session auth.
-///   2. Query encoding via [encodeQueryParameters] (`%20` for spaces): Seerr
+///   2. Recovery from Seerr's optional double-submit CSRF protection. A POST
+///      rejected before its handler is retried once after a public GET obtains
+///      `_csrf` and `XSRF-TOKEN`.
+///   3. Query encoding via [encodeQueryParameters] (`%20` for spaces): Seerr
 ///      proxies `/search` to TMDB, which rejects `+` in the query value.
 class SeerrHttpClient {
   final String baseUrl;
   final http.Client _http;
   String? _cookie;
+  String? _csrfSecret;
+  String? _csrfToken;
 
   SeerrHttpClient({required String baseUrl, http.Client? httpClient, String? cookie})
     : baseUrl = normalizeBaseUrl(baseUrl),
@@ -101,20 +106,10 @@ class SeerrHttpClient {
   /// a literal comma, so splitting on `,` and scanning each chunk for the
   /// `connect.sid=` prefix is safe.
   bool captureSessionCookie(http.Response response) {
-    final raw = response.headers['set-cookie'];
-    if (raw == null || raw.isEmpty) return false;
-    const prefix = '${SeerrConstants.sessionCookieName}=';
-    for (final chunk in raw.split(',')) {
-      final trimmed = chunk.trimLeft();
-      if (!trimmed.startsWith(prefix)) continue;
-      final afterName = trimmed.substring(prefix.length);
-      final end = afterName.indexOf(';');
-      final value = (end == -1 ? afterName : afterName.substring(0, end)).trim();
-      if (value.isEmpty) continue;
-      _cookie = value;
-      return true;
-    }
-    return false;
+    final value = _cookieValue(response, SeerrConstants.sessionCookieName);
+    if (value == null) return false;
+    _cookie = value;
+    return true;
   }
 
   /// Send a request under [SeerrConstants.apiPath], returning the decoded
@@ -128,13 +123,39 @@ class SeerrHttpClient {
     Duration timeout = SeerrConstants.requestTimeout,
     bool authenticated = true,
   }) async {
+    return _send(
+      method,
+      path,
+      query: query,
+      body: body,
+      timeout: timeout,
+      authenticated: authenticated,
+      allowCsrfRecovery: true,
+    );
+  }
+
+  Future<SeerrResponse> _send(
+    String method,
+    String path, {
+    Map<String, Object?>? query,
+    Map<String, Object?>? body,
+    required Duration timeout,
+    required bool authenticated,
+    required bool allowCsrfRecovery,
+  }) async {
     if (!const {'GET', 'POST', 'PUT', 'DELETE'}.contains(method)) {
       throw ArgumentError('Unsupported HTTP method: $method');
     }
     final uri = _uri(path, query);
+    final cookies = <String>[
+      if (authenticated && _cookie != null) '${SeerrConstants.sessionCookieName}=$_cookie',
+      if (_csrfSecret != null) '${SeerrConstants.csrfSecretCookieName}=$_csrfSecret',
+      if (_csrfToken != null) '${SeerrConstants.csrfTokenCookieName}=$_csrfToken',
+    ];
     final headers = <String, String>{
       'Accept': 'application/json',
-      if (authenticated && _cookie != null) 'Cookie': '${SeerrConstants.sessionCookieName}=$_cookie',
+      if (cookies.isNotEmpty) 'Cookie': cookies.join('; '),
+      if (method != 'GET' && _csrfToken != null) 'X-XSRF-TOKEN': _decodeCookieValue(_csrfToken!),
       if (body != null) 'Content-Type': 'application/json',
     };
     final sw = Stopwatch()..start();
@@ -154,7 +175,59 @@ class SeerrHttpClient {
       followRedirects: false,
     );
     appLogger.d('Seerr $method $path -> ${response.statusCode} (${sw.elapsedMilliseconds}ms)');
-    return SeerrResponse(response, TrackerHttpClient.decodeJson(response.body));
+    _captureCsrfCookies(response);
+    final result = SeerrResponse(response, TrackerHttpClient.decodeJson(response.body));
+    if (allowCsrfRecovery && method != 'GET' && _isInvalidCsrfToken(result)) {
+      await _send('GET', '/settings/public', timeout: timeout, authenticated: false, allowCsrfRecovery: false);
+      if (_csrfSecret != null && _csrfToken != null) {
+        return _send(
+          method,
+          path,
+          query: query,
+          body: body,
+          timeout: timeout,
+          authenticated: authenticated,
+          allowCsrfRecovery: false,
+        );
+      }
+    }
+    return result;
+  }
+
+  void _captureCsrfCookies(http.Response response) {
+    _csrfSecret = _cookieValue(response, SeerrConstants.csrfSecretCookieName) ?? _csrfSecret;
+    _csrfToken = _cookieValue(response, SeerrConstants.csrfTokenCookieName) ?? _csrfToken;
+  }
+
+  static String? _cookieValue(http.Response response, String name) {
+    final raw = response.headers['set-cookie'];
+    if (raw == null || raw.isEmpty) return null;
+    final prefix = '$name=';
+    for (final chunk in raw.split(',')) {
+      final trimmed = chunk.trimLeft();
+      if (!trimmed.startsWith(prefix)) continue;
+      final afterName = trimmed.substring(prefix.length);
+      final end = afterName.indexOf(';');
+      final value = (end == -1 ? afterName : afterName.substring(0, end)).trim();
+      if (value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  static String _decodeCookieValue(String value) {
+    try {
+      return Uri.decodeComponent(value);
+    } on FormatException {
+      return value;
+    }
+  }
+
+  static bool _isInvalidCsrfToken(SeerrResponse response) {
+    if (response.statusCode != 403) return false;
+    final data = response.data;
+    return data is Map<String, dynamic> &&
+        data['message'] is String &&
+        (data['message'] as String).trim().toLowerCase() == 'invalid csrf token';
   }
 
   Uri _uri(String path, Map<String, Object?>? query) {
