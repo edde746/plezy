@@ -238,13 +238,14 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   // Options sheet (mobile rows, TV chip targets)
   // ---------------------------------------------------------------------
 
+  /// No drag handle here either: the header's close button is this session's
+  /// single dismissal affordance, on the options list and on the grouping,
+  /// filter and sort pages pushed onto it.
   @override
   void showOptionsSheet() {
     if (!mounted) return;
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-    OverlaySheetController.of(
-      context,
-    ).show(showDragHandle: true, builder: (sheetContext) => _buildOptionsSheet(sheetContext));
+    OverlaySheetController.of(context).show(builder: (sheetContext) => _buildOptionsSheet(sheetContext));
   }
 
   Widget _buildOptionsSheet(BuildContext sheetContext) {
@@ -301,10 +302,7 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
     controller
-        .show<String>(
-          showDragHandle: true,
-          builder: (_) => _buildGroupingSheet(onSelected: (value) => controller.close(value)),
-        )
+        .show<String>(builder: (_) => _buildGroupingSheet(onSelected: (value) => controller.close(value)))
         .then(_handleGroupingSelection);
   }
 

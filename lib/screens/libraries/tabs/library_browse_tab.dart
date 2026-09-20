@@ -537,11 +537,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   /// Show the mobile browse options sheet from the parent app bar.
+  ///
+  /// No drag handle: every page in this session — the options list and the
+  /// grouping, filter and sort pages pushed onto it — already carries the
+  /// header's close button, and two dismissal affordances on one sheet read
+  /// as two different controls.
   void showBrowseOptionsSheet() {
     if (!mounted) return;
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
-    controller.show(showDragHandle: true, builder: (sheetContext) => _buildBrowseOptionsSheet(sheetContext));
+    controller.show(builder: (sheetContext) => _buildBrowseOptionsSheet(sheetContext));
   }
 
   /// Reset transient browse state before loading a different library.
@@ -1055,10 +1060,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     final controller = OverlaySheetController.of(context);
     controller
-        .show<String>(
-          showDragHandle: true,
-          builder: (_) => _buildGroupingBottomSheet(onSelected: (value) => controller.close(value)),
-        )
+        .show<String>(builder: (_) => _buildGroupingBottomSheet(onSelected: (value) => controller.close(value)))
         .then(_handleGroupingSelection);
   }
 
