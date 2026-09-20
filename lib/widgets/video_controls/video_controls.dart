@@ -18,16 +18,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 import 'package:flutter/services.dart'
-    show
-        SystemChrome,
-        DeviceOrientation,
-        LogicalKeyboardKey,
-        PhysicalKeyboardKey,
-        KeyEvent,
-        KeyDownEvent,
-        KeyUpEvent,
-        KeyRepeatEvent,
-        HardwareKeyboard;
+    show LogicalKeyboardKey, PhysicalKeyboardKey, KeyEvent, KeyDownEvent, KeyUpEvent, KeyRepeatEvent, HardwareKeyboard;
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
 import '../../services/pip_service.dart';
@@ -62,6 +53,7 @@ import '../../services/settings_service.dart';
 import '../../services/video_volume_controller.dart';
 import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
+import '../../utils/orientation_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
 import '../../theme/mono_tokens.dart';

@@ -2065,7 +2065,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             OrientationHelper.setLandscapeOrientation();
           } else {
             // Unlocked: Allow all orientations immediately
-            unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
+            unawaited(OrientationHelper.restoreDefaultOrientations());
             unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
           }
           // Immersive mode is requested once; a fold/unfold or display switch
