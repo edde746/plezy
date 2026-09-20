@@ -761,7 +761,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   String? _extrasLoadKey;
   late List<MediaChapter> _chapters = widget.initialChapters ?? [];
   late bool _chaptersLoaded = widget.initialChapters != null;
-  bool _isFullscreen = false;
   bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
@@ -973,12 +972,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       onHide: _cancelEdgeAdjustmentGesture,
       onPause: _cancelEdgeAdjustmentGesture,
     );
-    // Add window listener for tracking fullscreen state (for button icon)
     if (PlatformDetector.isDesktopOS()) {
-      if (Platform.isMacOS) {
-        _isFullscreen = FullscreenStateManager().isFullscreen;
-        FullscreenStateManager().addListener(_onFullscreenStateChanged);
-      }
+      // Fullscreen chrome (the button icon, the macOS traffic lights) follows
+      // the manager on every desktop OS: window_manager never sees the Windows
+      // transition, which goes through the native Win32 channel (#2267).
+      bindListenable(FullscreenStateManager(), _onFullscreenStateChanged);
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
@@ -1114,20 +1112,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       }
     }
     if (Platform.isMacOS) {
-      FullscreenStateManager().removeListener(_onFullscreenStateChanged);
       _trafficLightVisibilityGeneration++;
       unawaited(MacOSWindowService.setTrafficLightsVisible(true));
     }
     super.dispose();
   }
 
+  /// [FullscreenStateManager] is the single source of desktop fullscreen truth
+  /// — macOS reports through its NSWindowDelegate, Windows through the native
+  /// Win32 channel, Linux through window_manager — and it only notifies on a
+  /// real change, so this just rebuilds the chrome that reads it.
   void _onFullscreenStateChanged() {
-    final isFullscreen = FullscreenStateManager().isFullscreen;
-    if (!mounted || _isFullscreen == isFullscreen) return;
-    setState(() {
-      _isFullscreen = isFullscreen;
-    });
-    _updateTrafficLightVisibility();
+    if (!mounted) return;
+    _setControlsState(() {});
+    if (Platform.isMacOS) _updateTrafficLightVisibility();
   }
 
   void _onEdgeAdjustmentPipChanged() {
@@ -1138,44 +1136,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _cancelEdgeAdjustmentGesture();
     } else {
       widget.chromeController.release(PlayerChromeHold.pip);
-    }
-  }
-
-  @override
-  void onWindowEnterFullScreen() {
-    if (mounted) {
-      setState(() {
-        _isFullscreen = true;
-      });
-    }
-  }
-
-  @override
-  void onWindowLeaveFullScreen() {
-    if (mounted) {
-      setState(() {
-        _isFullscreen = false;
-      });
-    }
-  }
-
-  @override
-  void onWindowMaximize() {
-    // On macOS, maximize is the same as fullscreen (green button)
-    if (mounted && Platform.isMacOS) {
-      setState(() {
-        _isFullscreen = true;
-      });
-    }
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    // On macOS, unmaximize means exiting fullscreen
-    if (mounted && Platform.isMacOS) {
-      setState(() {
-        _isFullscreen = false;
-      });
     }
   }
 
