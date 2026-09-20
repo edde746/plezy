@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "重新排序和隐藏媒体库",
     "companionRemoteServer": "远程控制服务器",
     "companionRemoteServerDescription": "允许同一网络中的移动设备控制此应用",
+    "companionRemoteServerStartFailed": "无法启动远程控制服务器",
+    "companionRemoteServerStopFailed": "无法停止远程控制服务器",
     "autoPip": "自动画中画",
     "autoPipDescription": "播放期间离开应用时自动进入画中画模式",
     "matchContentFrameRate": "匹配内容帧率",

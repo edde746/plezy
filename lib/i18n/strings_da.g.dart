@@ -434,6 +434,8 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Omarranger og skjul biblioteker';
 	@override String get companionRemoteServer => 'Fjernbetjeningsserver';
 	@override String get companionRemoteServerDescription => 'Tillad mobilenheder på dit netværk at styre denne app';
+	@override String get companionRemoteServerStartFailed => 'Fjernbetjeningsserveren kunne ikke startes';
+	@override String get companionRemoteServerStopFailed => 'Fjernbetjeningsserveren kunne ikke stoppes';
 	@override String get autoPip => 'Automatisk billede-i-billede';
 	@override String get autoPipDescription => 'Skift automatisk til billede-i-billede, når du forlader appen under afspilning';
 	@override String get matchContentFrameRate => 'Tilpas billedhastigheden til indholdet';
@@ -3326,6 +3328,8 @@ extension on TranslationsDa {
 			'settings.manageLibrariesDescription' => 'Omarranger og skjul biblioteker',
 			'settings.companionRemoteServer' => 'Fjernbetjeningsserver',
 			'settings.companionRemoteServerDescription' => 'Tillad mobilenheder på dit netværk at styre denne app',
+			'settings.companionRemoteServerStartFailed' => 'Fjernbetjeningsserveren kunne ikke startes',
+			'settings.companionRemoteServerStopFailed' => 'Fjernbetjeningsserveren kunne ikke stoppes',
 			'settings.autoPip' => 'Automatisk billede-i-billede',
 			'settings.autoPipDescription' => 'Skift automatisk til billede-i-billede, når du forlader appen under afspilning',
 			'settings.matchContentFrameRate' => 'Tilpas billedhastigheden til indholdet',
@@ -3525,10 +3529,10 @@ extension on TranslationsDa {
 			'fileInfo.externalDelivery' => 'Kan leveres separat',
 			'fileInfo.sidecarPath' => 'Sidecar-sti',
 			'fileInfo.sourceStream' => 'Kopieret fra',
-			'fileInfo.temporary' => 'Midlertidig',
-			'fileInfo.timeBase' => 'Tidsbase',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Midlertidig',
+			'fileInfo.timeBase' => 'Tidsbase',
 			'fileInfo.overallBitrate' => 'Samlet bitrate',
 			'fileInfo.path' => 'Sti',
 			'fileInfo.fileName' => 'Filnavn',
@@ -4039,10 +4043,10 @@ extension on TranslationsDa {
 			'libraries.clearAll' => 'Ryd alle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Er du sikker på, at du vil scanne "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Er du sikker på, at du vil analysere "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på, at du vil opdatere metadata for "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på, at du vil tømme papirkurven for "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på, at du vil opdatere metadata for "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på, at du vil tømme papirkurven for "${title}"?',
 			'libraries.manageLibraries' => 'Administrer biblioteker',
 			'libraries.sort' => 'Sortér',
 			'libraries.sortBy' => 'Sortér efter',
@@ -4553,10 +4557,10 @@ extension on TranslationsDa {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} numre i kø til download',
 			'downloads.noDownloads' => 'Ingen downloads endnu',
 			'downloads.noDownloadsDescription' => 'Downloadet indhold vises her til offlinevisning',
-			'downloads.downloadNow' => 'Download',
-			'downloads.deleteDownload' => 'Slet download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Download',
+			'downloads.deleteDownload' => 'Slet download',
 			'downloads.retryDownload' => 'Prøv download igen',
 			'downloads.downloadQueued' => 'Download i kø',
 			'downloads.downloadResumed' => 'Download genoptaget',

@@ -434,6 +434,8 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Riordina e nascondi le librerie';
 	@override String get companionRemoteServer => 'Server del telecomando';
 	@override String get companionRemoteServerDescription => 'Consenti ai dispositivi mobili della tua rete di controllare questa app';
+	@override String get companionRemoteServerStartFailed => 'Impossibile avviare il server del telecomando';
+	@override String get companionRemoteServerStopFailed => 'Impossibile arrestare il server del telecomando';
 	@override String get autoPip => 'Picture-in-Picture automatica';
 	@override String get autoPipDescription => 'Attiva automaticamente la modalità Picture-in-Picture quando esci dall\'app durante la riproduzione';
 	@override String get matchContentFrameRate => 'Adatta la frequenza dei fotogrammi';
@@ -3326,6 +3328,8 @@ extension on TranslationsIt {
 			'settings.manageLibrariesDescription' => 'Riordina e nascondi le librerie',
 			'settings.companionRemoteServer' => 'Server del telecomando',
 			'settings.companionRemoteServerDescription' => 'Consenti ai dispositivi mobili della tua rete di controllare questa app',
+			'settings.companionRemoteServerStartFailed' => 'Impossibile avviare il server del telecomando',
+			'settings.companionRemoteServerStopFailed' => 'Impossibile arrestare il server del telecomando',
 			'settings.autoPip' => 'Picture-in-Picture automatica',
 			'settings.autoPipDescription' => 'Attiva automaticamente la modalità Picture-in-Picture quando esci dall\'app durante la riproduzione',
 			'settings.matchContentFrameRate' => 'Adatta la frequenza dei fotogrammi',
@@ -3525,10 +3529,10 @@ extension on TranslationsIt {
 			'fileInfo.externalDelivery' => 'Può essere servito separatamente',
 			'fileInfo.sidecarPath' => 'Percorso sidecar',
 			'fileInfo.sourceStream' => 'Copiato da',
-			'fileInfo.temporary' => 'Temporaneo',
-			'fileInfo.timeBase' => 'Base temporale',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Temporaneo',
+			'fileInfo.timeBase' => 'Base temporale',
 			'fileInfo.overallBitrate' => 'Bitrate complessivo',
 			'fileInfo.path' => 'Percorso',
 			'fileInfo.fileName' => 'Nome file',
@@ -4039,10 +4043,10 @@ extension on TranslationsIt {
 			'libraries.clearAll' => 'Azzera tutto',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Vuoi scansionare "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Vuoi analizzare "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Vuoi aggiornare i metadati di "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Vuoi svuotare il cestino di "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Vuoi aggiornare i metadati di "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Vuoi svuotare il cestino di "${title}"?',
 			'libraries.manageLibraries' => 'Gestisci librerie',
 			'libraries.sort' => 'Ordina',
 			'libraries.sortBy' => 'Ordina per',
@@ -4553,10 +4557,10 @@ extension on TranslationsIt {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} brani in coda per il download',
 			'downloads.noDownloads' => 'Ancora nessun download',
 			'downloads.noDownloadsDescription' => 'I contenuti scaricati appariranno qui per la visualizzazione offline',
-			'downloads.downloadNow' => 'Scarica',
-			'downloads.deleteDownload' => 'Elimina il download',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Scarica',
+			'downloads.deleteDownload' => 'Elimina il download',
 			'downloads.retryDownload' => 'Riprova il download',
 			'downloads.downloadQueued' => 'Download in coda',
 			'downloads.downloadResumed' => 'Download ripreso',

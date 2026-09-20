@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Kutubxonalarni tartiblash va yashirish",
     "companionRemoteServer": "Yordamchi pult serveri",
     "companionRemoteServerDescription": "Tarmoqdagi mobil qurilmalarga ushbu ilovani boshqarishga ruxsat berish",
+    "companionRemoteServerStartFailed": "Yordamchi pult serverini ishga tushirib bo‘lmadi",
+    "companionRemoteServerStopFailed": "Yordamchi pult serverini to‘xtatib bo‘lmadi",
     "autoPip": "Avtomatik Rasm ichida rasm (PiP)",
     "autoPipDescription": "Video ijro etilayotganda ilovadan chiqilganda avto-PiP rejimiga oʻtish",
     "matchContentFrameRate": "Kadrlar chastotasini moslashtirish",

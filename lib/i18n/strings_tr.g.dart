@@ -434,6 +434,8 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Kitaplıkları yeniden sıralayın ve gizleyin';
 	@override String get companionRemoteServer => 'Yardımcı Uzaktan Kumanda Sunucusu';
 	@override String get companionRemoteServerDescription => 'Ağınızdaki mobil cihazların bu uygulamayı kontrol etmesine izin verin';
+	@override String get companionRemoteServerStartFailed => 'Yardımcı sunucu başlatılamadı';
+	@override String get companionRemoteServerStopFailed => 'Yardımcı sunucu durdurulamadı';
 	@override String get autoPip => 'Otomatik Pencere İçinde Pencere (PiP)';
 	@override String get autoPipDescription => 'Oynatma sırasında uygulamadan çıktığınızda otomatik olarak pencere içinde pencere moduna geç';
 	@override String get matchContentFrameRate => 'İçerik Kare Hızını Eşitle';
@@ -3326,6 +3328,8 @@ extension on TranslationsTr {
 			'settings.manageLibrariesDescription' => 'Kitaplıkları yeniden sıralayın ve gizleyin',
 			'settings.companionRemoteServer' => 'Yardımcı Uzaktan Kumanda Sunucusu',
 			'settings.companionRemoteServerDescription' => 'Ağınızdaki mobil cihazların bu uygulamayı kontrol etmesine izin verin',
+			'settings.companionRemoteServerStartFailed' => 'Yardımcı sunucu başlatılamadı',
+			'settings.companionRemoteServerStopFailed' => 'Yardımcı sunucu durdurulamadı',
 			'settings.autoPip' => 'Otomatik Pencere İçinde Pencere (PiP)',
 			'settings.autoPipDescription' => 'Oynatma sırasında uygulamadan çıktığınızda otomatik olarak pencere içinde pencere moduna geç',
 			'settings.matchContentFrameRate' => 'İçerik Kare Hızını Eşitle',
@@ -3525,10 +3529,10 @@ extension on TranslationsTr {
 			'fileInfo.externalDelivery' => 'Ayrı Olarak Sunulabilir',
 			'fileInfo.sidecarPath' => 'Yan Dosya Yolu',
 			'fileInfo.sourceStream' => 'Kopyalandığı Yer',
-			'fileInfo.temporary' => 'Geçici',
-			'fileInfo.timeBase' => 'Zaman Tabanı',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Geçici',
+			'fileInfo.timeBase' => 'Zaman Tabanı',
 			'fileInfo.overallBitrate' => 'Genel Bit Hızı',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.fileName' => 'Dosya Adı',
@@ -4039,10 +4043,10 @@ extension on TranslationsTr {
 			'libraries.clearAll' => 'Tümünü Temizle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" kitaplığını taramak istediğinizden emin misiniz?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kitaplığını analiz etmek istediğinizden emin misiniz?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" kitaplığı için meta verileri yenilemek istediğinizden emin misiniz?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" için çöpü boşaltmak istediğinizden emin misiniz?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" kitaplığı için meta verileri yenilemek istediğinizden emin misiniz?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" için çöpü boşaltmak istediğinizden emin misiniz?',
 			'libraries.manageLibraries' => 'Kitaplıkları Yönet',
 			'libraries.sort' => 'Sırala',
 			'libraries.sortBy' => 'Sıralama Ölçütü',
@@ -4553,10 +4557,10 @@ extension on TranslationsTr {
 			'downloads.tracksQueued' => ({required Object count}) => 'İndirmek için ${count} parça kuyruğa alındı',
 			'downloads.noDownloads' => 'Henüz indirme yok',
 			'downloads.noDownloadsDescription' => 'İndirilen içerik çevrimdışı izlemek için burada görünecektir',
-			'downloads.downloadNow' => 'İndir',
-			'downloads.deleteDownload' => 'İndirmeyi sil',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'İndir',
+			'downloads.deleteDownload' => 'İndirmeyi sil',
 			'downloads.retryDownload' => 'İndirmeyi tekrar dene',
 			'downloads.downloadQueued' => 'İndirme kuyruğa alındı',
 			'downloads.downloadResumed' => 'İndirme devam ettirildi',

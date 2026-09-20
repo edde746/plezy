@@ -434,6 +434,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Kitabxanaları yenidən sıralayın və gizlədin';
 	@override String get companionRemoteServer => 'Köməkçi pult serveri';
 	@override String get companionRemoteServerDescription => 'Şəbəkənizdəki mobil cihazların bu tətbiqi idarə etməsinə icazə verin';
+	@override String get companionRemoteServerStartFailed => 'Köməkçi pult serveri başladıla bilmədi';
+	@override String get companionRemoteServerStopFailed => 'Köməkçi pult serveri dayandırıla bilmədi';
 	@override String get autoPip => 'Avtomatik Pəncərə daxilində Pəncərə (PiP)';
 	@override String get autoPipDescription => 'Oynatma zamanı tətbiqdən çıxdıqda avtomatik PiP rejiminə keç';
 	@override String get matchContentFrameRate => 'Kadr tezliyini uyğunlaşdır';
@@ -3326,6 +3328,8 @@ extension on TranslationsAz {
 			'settings.manageLibrariesDescription' => 'Kitabxanaları yenidən sıralayın və gizlədin',
 			'settings.companionRemoteServer' => 'Köməkçi pult serveri',
 			'settings.companionRemoteServerDescription' => 'Şəbəkənizdəki mobil cihazların bu tətbiqi idarə etməsinə icazə verin',
+			'settings.companionRemoteServerStartFailed' => 'Köməkçi pult serveri başladıla bilmədi',
+			'settings.companionRemoteServerStopFailed' => 'Köməkçi pult serveri dayandırıla bilmədi',
 			'settings.autoPip' => 'Avtomatik Pəncərə daxilində Pəncərə (PiP)',
 			'settings.autoPipDescription' => 'Oynatma zamanı tətbiqdən çıxdıqda avtomatik PiP rejiminə keç',
 			'settings.matchContentFrameRate' => 'Kadr tezliyini uyğunlaşdır',
@@ -3525,10 +3529,10 @@ extension on TranslationsAz {
 			'fileInfo.externalDelivery' => 'Ayrıca ötürülə bilər',
 			'fileInfo.sidecarPath' => 'Sidecar yolu',
 			'fileInfo.sourceStream' => 'Kopyalanan mənbə',
-			'fileInfo.temporary' => 'Müvəqqəti',
-			'fileInfo.timeBase' => 'Vaxt bazası',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Müvəqqəti',
+			'fileInfo.timeBase' => 'Vaxt bazası',
 			'fileInfo.overallBitrate' => 'Ümumi bit sürəti',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.fileName' => 'Fayl adı',
@@ -4039,10 +4043,10 @@ extension on TranslationsAz {
 			'libraries.clearAll' => 'Hamısını təmizlə',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" kitabxanasını skan etmək istədiyinizdən əminsiniz?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kitabxanasını analiz etmək istədiyinizdən əminsiniz?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" üçün meta-məlumatları yeniləmək istədiyinizdən əminsiniz?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" üçün zibil qutusunu təmizləmək istədiyinizdən əminsiniz?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" üçün meta-məlumatları yeniləmək istədiyinizdən əminsiniz?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" üçün zibil qutusunu təmizləmək istədiyinizdən əminsiniz?',
 			'libraries.manageLibraries' => 'Kitabxanaları idarə et',
 			'libraries.sort' => 'Sırala',
 			'libraries.sortBy' => 'Sıralama meyarı',
@@ -4553,10 +4557,10 @@ extension on TranslationsAz {
 			'downloads.tracksQueued' => ({required Object count}) => 'Yükləmə üçün ${count} mahnı növbəyə alındı',
 			'downloads.noDownloads' => 'Hələlik yükləmə yoxdur',
 			'downloads.noDownloadsDescription' => 'Yüklənmiş məzmun oflayn baxış üçün burada görünəcək',
-			'downloads.downloadNow' => 'Yüklə',
-			'downloads.deleteDownload' => 'Yükləməni sil',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Yüklə',
+			'downloads.deleteDownload' => 'Yükləməni sil',
 			'downloads.retryDownload' => 'Yükləməni təzədən cəhd et',
 			'downloads.downloadQueued' => 'Yükləmə növbəyə alındı',
 			'downloads.downloadResumed' => 'Yükləmə davam etdirildi',

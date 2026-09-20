@@ -33,6 +33,27 @@ class _SettingsEffect {
   const _SettingsEffect(this.pref, this.apply, {this.rebuildsRoot = false});
 }
 
+/// A stored setting was saved but its runtime effect declined to apply.
+///
+/// This is an expected outcome, not a programming error: the companion host
+/// refuses when crypto is not ready and logs the reason itself. Effects report
+/// it instead of throwing past their caller, because a bulk reset or import
+/// replays the whole table and must not abandon the remaining effects — and
+/// because the settings tiles await their write from an `onChanged` nobody
+/// watches, where a throw becomes an unhandled async error.
+class SettingsEffectFailure implements Exception {
+  /// The pref whose effect declined.
+  final Pref<Object?> pref;
+
+  /// Localized, user-facing reason. Safe to render in a snackbar.
+  final String display;
+
+  const SettingsEffectFailure(this.pref, this.display);
+
+  @override
+  String toString() => 'SettingsEffectFailure(${pref.key}: $display)';
+}
+
 /// One commit/effect path for settings widgets and typed callers. Existing
 /// SettingsBindingOwner consumers (keyboard, theme, shaders) remain
 /// the sole owners of their listener-driven effects.
@@ -113,10 +134,17 @@ class SettingsMutationService {
     if (enabled && context.read<ActiveProfileProvider?>()?.active == null) return;
     final applied = await applyCompanionRemoteServerSetting(context, enabled, checkCurrent: checkCurrent);
     checkCurrent?.call();
-    if (!applied) throw StateError('The companion host could not apply the setting');
+    if (!applied) {
+      throw SettingsEffectFailure(
+        SettingsService.enableCompanionRemoteServer,
+        enabled ? t.settings.companionRemoteServerStartFailed : t.settings.companionRemoteServerStopFailed,
+      );
+    }
   }
 
-  Future<void> write<T>(
+  /// Persist [value] and run its effect. Returns the effect's failure when it
+  /// declined, so the caller can tell the user; the value is stored either way.
+  Future<SettingsEffectFailure?> write<T>(
     BuildContext context,
     Pref<T> pref,
     T value, {
@@ -133,11 +161,14 @@ class SettingsMutationService {
       await settings.write(pref, value, checkCurrent: checkCurrent);
     }
     checkCurrent?.call();
-    if (!context.mounted) return;
-    await applyEffects(context, pref, checkCurrent: checkCurrent, rebuildRoot: rebuildRoot);
+    if (!context.mounted) return null;
+    return applyEffects(context, pref, checkCurrent: checkCurrent, rebuildRoot: rebuildRoot);
   }
 
-  Future<void> applyEffects(
+  /// Run [pref]'s runtime effect. A declining effect is returned, not thrown:
+  /// see [SettingsEffectFailure]. The root rebuild still runs, because the
+  /// stored value changed regardless of whether the side effect took.
+  Future<SettingsEffectFailure?> applyEffects(
     BuildContext context,
     Pref<Object?> pref, {
     void Function()? checkCurrent,
@@ -145,9 +176,17 @@ class SettingsMutationService {
   }) async {
     checkCurrent?.call();
     final effect = _effectsByKey[pref.key];
-    if (effect != null) await effect.apply(context, SettingsService.instance, checkCurrent);
+    SettingsEffectFailure? failure;
+    if (effect != null) {
+      try {
+        await effect.apply(context, SettingsService.instance, checkCurrent);
+      } on SettingsEffectFailure catch (error) {
+        failure = error;
+      }
+    }
     checkCurrent?.call();
     if (rebuildRoot && effect != null && effect.rebuildsRoot && context.mounted) rebuild(context);
+    return failure;
   }
 
   /// Bulk import/reset bypasses typed writes but must use the same effect
@@ -160,12 +199,21 @@ class SettingsMutationService {
     ];
   }
 
-  Future<void> applyStoredEffects(BuildContext context, {required List<Object?> previousRootConfiguration}) async {
+  /// Replay every effect. One declining effect must not abandon the rest — a
+  /// reset that stops halfway leaves the remaining prefs stored but unapplied —
+  /// so failures are collected and returned together.
+  Future<List<SettingsEffectFailure>> applyStoredEffects(
+    BuildContext context, {
+    required List<Object?> previousRootConfiguration,
+  }) async {
+    final failures = <SettingsEffectFailure>[];
     for (final effect in _effects) {
-      if (!context.mounted) return;
-      await applyEffects(context, effect.pref, rebuildRoot: false);
+      if (!context.mounted) return failures;
+      final failure = await applyEffects(context, effect.pref, rebuildRoot: false);
+      if (failure != null) failures.add(failure);
     }
     if (context.mounted && !listEquals(previousRootConfiguration, captureRootConfiguration())) rebuild(context);
+    return failures;
   }
 
   /// Whether writing the pref stored under [key] requires a root rebuild. Keyed

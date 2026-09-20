@@ -434,6 +434,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Пренареждай и скривай библиотеки';
 	@override String get companionRemoteServer => 'Сървър за дистанционно управление';
 	@override String get companionRemoteServerDescription => 'Позволи на мобилни устройства във вашата мрежа да управляват това приложение';
+	@override String get companionRemoteServerStartFailed => 'Сървърът за дистанционно управление не можа да бъде стартиран';
+	@override String get companionRemoteServerStopFailed => 'Сървърът за дистанционно управление не можа да бъде спрян';
 	@override String get autoPip => 'Автоматичен режим картина в картината';
 	@override String get autoPipDescription => 'Автоматично включвай режима картина в картината при излизане от приложението по време на възпроизвеждане';
 	@override String get matchContentFrameRate => 'Напасване към кадровата честота на съдържанието';
@@ -3326,6 +3328,8 @@ extension on TranslationsBg {
 			'settings.manageLibrariesDescription' => 'Пренареждай и скривай библиотеки',
 			'settings.companionRemoteServer' => 'Сървър за дистанционно управление',
 			'settings.companionRemoteServerDescription' => 'Позволи на мобилни устройства във вашата мрежа да управляват това приложение',
+			'settings.companionRemoteServerStartFailed' => 'Сървърът за дистанционно управление не можа да бъде стартиран',
+			'settings.companionRemoteServerStopFailed' => 'Сървърът за дистанционно управление не можа да бъде спрян',
 			'settings.autoPip' => 'Автоматичен режим картина в картината',
 			'settings.autoPipDescription' => 'Автоматично включвай режима картина в картината при излизане от приложението по време на възпроизвеждане',
 			'settings.matchContentFrameRate' => 'Напасване към кадровата честота на съдържанието',
@@ -3525,10 +3529,10 @@ extension on TranslationsBg {
 			'fileInfo.externalDelivery' => 'Може да се предоставя отделно',
 			'fileInfo.sidecarPath' => 'Път на сайдкар файла',
 			'fileInfo.sourceStream' => 'Копирано от',
-			'fileInfo.temporary' => 'Временен',
-			'fileInfo.timeBase' => 'Времева база',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Временен',
+			'fileInfo.timeBase' => 'Времева база',
 			'fileInfo.overallBitrate' => 'Общ битрейт',
 			'fileInfo.path' => 'Път',
 			'fileInfo.fileName' => 'Име на файла',
@@ -4039,10 +4043,10 @@ extension on TranslationsBg {
 			'libraries.clearAll' => 'Изчисти всички',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да сканирате "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да анализирате "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да опресните метаданните за "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да изпразните кошчето за "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да опресните метаданните за "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Сигурни ли сте, че искате да изпразните кошчето за "${title}"?',
 			'libraries.manageLibraries' => 'Управление на библиотеки',
 			'libraries.sort' => 'Сортиране',
 			'libraries.sortBy' => 'Сортирай по',
@@ -4553,10 +4557,10 @@ extension on TranslationsBg {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} песни в опашката за изтегляне',
 			'downloads.noDownloads' => 'Все още няма изтегляния',
 			'downloads.noDownloadsDescription' => 'Изтегленото съдържание ще се показва тук за офлайн гледане',
-			'downloads.downloadNow' => 'Изтегли',
-			'downloads.deleteDownload' => 'Изтрий изтегляне',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Изтегли',
+			'downloads.deleteDownload' => 'Изтрий изтегляне',
 			'downloads.retryDownload' => 'Опитай изтеглянето отново',
 			'downloads.downloadQueued' => 'Изтеглянето е добавено в опашката',
 			'downloads.downloadResumed' => 'Изтеглянето е възобновено',

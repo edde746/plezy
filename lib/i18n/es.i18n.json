@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Reordena y oculta bibliotecas",
     "companionRemoteServer": "Servidor de control remoto",
     "companionRemoteServerDescription": "Permitir que dispositivos móviles en tu red controlen esta aplicación",
+    "companionRemoteServerStartFailed": "No se pudo iniciar el servidor de control remoto",
+    "companionRemoteServerStopFailed": "No se pudo detener el servidor de control remoto",
     "autoPip": "Imagen en imagen automática",
     "autoPipDescription": "Activar automáticamente el modo de imagen en imagen al salir de la aplicación durante la reproducción",
     "matchContentFrameRate": "Ajustar frecuencia de actualización",

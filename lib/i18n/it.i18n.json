@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Riordina e nascondi le librerie",
     "companionRemoteServer": "Server del telecomando",
     "companionRemoteServerDescription": "Consenti ai dispositivi mobili della tua rete di controllare questa app",
+    "companionRemoteServerStartFailed": "Impossibile avviare il server del telecomando",
+    "companionRemoteServerStopFailed": "Impossibile arrestare il server del telecomando",
     "autoPip": "Picture-in-Picture automatica",
     "autoPipDescription": "Attiva automaticamente la modalità Picture-in-Picture quando esci dall'app durante la riproduzione",
     "matchContentFrameRate": "Adatta la frequenza dei fotogrammi",

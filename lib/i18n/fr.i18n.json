@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Réorganiser et masquer les bibliothèques",
     "companionRemoteServer": "Serveur de télécommande",
     "companionRemoteServerDescription": "Autoriser les appareils mobiles de votre réseau à contrôler cette application",
+    "companionRemoteServerStartFailed": "Impossible de démarrer le serveur de télécommande",
+    "companionRemoteServerStopFailed": "Impossible d'arrêter le serveur de télécommande",
     "autoPip": "Mode image dans l’image automatique",
     "autoPipDescription": "Passer en mode image dans l’image si vous quittez l’application pendant la lecture",
     "matchContentFrameRate": "Adapter la fréquence d’images au contenu",

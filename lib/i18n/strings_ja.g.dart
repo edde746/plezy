@@ -434,6 +434,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'ライブラリを並べ替えたり非表示にしたりできます';
 	@override String get companionRemoteServer => 'コンパニオンリモートサーバー';
 	@override String get companionRemoteServerDescription => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする';
+	@override String get companionRemoteServerStartFailed => 'コンパニオンリモートサーバーを開始できませんでした';
+	@override String get companionRemoteServerStopFailed => 'コンパニオンリモートサーバーを停止できませんでした';
 	@override String get autoPip => '自動ピクチャーインピクチャー';
 	@override String get autoPipDescription => '再生中にアプリを離れると、自動的にピクチャーインピクチャーに切り替えます';
 	@override String get matchContentFrameRate => 'コンテンツのフレームレートに合わせる';
@@ -3315,6 +3317,8 @@ extension on TranslationsJa {
 			'settings.manageLibrariesDescription' => 'ライブラリを並べ替えたり非表示にしたりできます',
 			'settings.companionRemoteServer' => 'コンパニオンリモートサーバー',
 			'settings.companionRemoteServerDescription' => 'ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする',
+			'settings.companionRemoteServerStartFailed' => 'コンパニオンリモートサーバーを開始できませんでした',
+			'settings.companionRemoteServerStopFailed' => 'コンパニオンリモートサーバーを停止できませんでした',
 			'settings.autoPip' => '自動ピクチャーインピクチャー',
 			'settings.autoPipDescription' => '再生中にアプリを離れると、自動的にピクチャーインピクチャーに切り替えます',
 			'settings.matchContentFrameRate' => 'コンテンツのフレームレートに合わせる',
@@ -3514,10 +3518,10 @@ extension on TranslationsJa {
 			'fileInfo.externalDelivery' => '個別に配信可能',
 			'fileInfo.sidecarPath' => 'サイドカーパス',
 			'fileInfo.sourceStream' => 'コピー元',
-			'fileInfo.temporary' => '一時的',
-			'fileInfo.timeBase' => 'タイムベース',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => '一時的',
+			'fileInfo.timeBase' => 'タイムベース',
 			'fileInfo.overallBitrate' => '全体ビットレート',
 			'fileInfo.path' => 'パス',
 			'fileInfo.fileName' => 'ファイル名',
@@ -4028,10 +4032,10 @@ extension on TranslationsJa {
 			'libraries.clearAll' => 'すべてクリア',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}"をスキャンしてもよろしいですか？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}"を解析してもよろしいですか？',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}"のメタデータを更新してもよろしいですか？',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}"のゴミ箱を空にしてもよろしいですか？',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}"のメタデータを更新してもよろしいですか？',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}"のゴミ箱を空にしてもよろしいですか？',
 			'libraries.manageLibraries' => 'ライブラリを管理',
 			'libraries.sort' => '並べ替え',
 			'libraries.sortBy' => '並べ替え順',
@@ -4542,10 +4546,10 @@ extension on TranslationsJa {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 曲をダウンロード待機中',
 			'downloads.noDownloads' => 'ダウンロードはまだありません',
 			'downloads.noDownloadsDescription' => 'ダウンロードしたコンテンツはここに表示され、オフラインで視聴できます',
-			'downloads.downloadNow' => 'ダウンロード',
-			'downloads.deleteDownload' => 'ダウンロードを削除',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'ダウンロード',
+			'downloads.deleteDownload' => 'ダウンロードを削除',
 			'downloads.retryDownload' => 'ダウンロードを再試行',
 			'downloads.downloadQueued' => 'ダウンロードをキューに追加しました',
 			'downloads.downloadResumed' => 'ダウンロードを再開しました',

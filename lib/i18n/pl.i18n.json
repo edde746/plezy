@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Zmieniaj kolejność i ukrywaj biblioteki",
     "companionRemoteServer": "Serwer zdalnego sterowania",
     "companionRemoteServerDescription": "Pozwól urządzeniom mobilnym w sieci sterować tą aplikacją",
+    "companionRemoteServerStartFailed": "Nie udało się uruchomić serwera zdalnego sterowania",
+    "companionRemoteServerStopFailed": "Nie udało się zatrzymać serwera zdalnego sterowania",
     "autoPip": "Automatyczny obraz w obrazie",
     "autoPipDescription": "Automatycznie włączaj tryb obrazu w obrazie po opuszczeniu aplikacji podczas odtwarzania",
     "matchContentFrameRate": "Dopasuj częstotliwość klatek do treści",

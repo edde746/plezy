@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Reorder and hide libraries",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Allow mobile devices on your network to control this app",
+    "companionRemoteServerStartFailed": "Couldn't start the companion server",
+    "companionRemoteServerStopFailed": "Couldn't stop the companion server",
     "autoPip": "Auto Picture-in-Picture",
     "autoPipDescription": "Automatically enter picture-in-picture when you leave the app during playback",
     "matchContentFrameRate": "Match Content Frame Rate",

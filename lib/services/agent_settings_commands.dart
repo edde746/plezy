@@ -121,12 +121,17 @@ class AgentSettingsCommands {
           if (key == 'enable_companion_remote_server' && value == true && !context.hasProfile) return;
           if (!context.context.mounted) return;
           try {
-            await const SettingsMutationService().applyEffects(
+            final failure = await const SettingsMutationService().applyEffects(
               context.context,
               pref,
               checkCurrent: context.checkCurrent,
               rebuildRoot: false,
             );
+            // A declining effect is returned rather than thrown now; agent
+            // clients still contract on `effectFailed` for it.
+            if (failure != null) {
+              throw AgentControlException('effectFailed', failure.display, details: const {'persisted': true});
+            }
           } on AgentControlException {
             rethrow;
           } catch (_) {

@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Bibliotheken herordenen en verbergen",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Sta mobiele apparaten op je netwerk toe om deze app te bedienen",
+    "companionRemoteServerStartFailed": "Kan de Companion Remote-server niet starten",
+    "companionRemoteServerStopFailed": "Kan de Companion Remote-server niet stoppen",
     "autoPip": "Automatische beeld-in-beeld",
     "autoPipDescription": "Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",

@@ -1014,6 +1014,12 @@ class Translations$settings$en {
 	/// en: 'Allow mobile devices on your network to control this app'
 	String get companionRemoteServerDescription => 'Allow mobile devices on your network to control this app';
 
+	/// en: 'Couldn't start the companion server'
+	String get companionRemoteServerStartFailed => 'Couldn\'t start the companion server';
+
+	/// en: 'Couldn't stop the companion server'
+	String get companionRemoteServerStopFailed => 'Couldn\'t stop the companion server';
+
 	/// en: 'Auto Picture-in-Picture'
 	String get autoPip => 'Auto Picture-in-Picture';
 
@@ -7525,6 +7531,8 @@ extension on Translations {
 			'settings.manageLibrariesDescription' => 'Reorder and hide libraries',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
+			'settings.companionRemoteServerStartFailed' => 'Couldn\'t start the companion server',
+			'settings.companionRemoteServerStopFailed' => 'Couldn\'t stop the companion server',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
 			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when you leave the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
@@ -7724,10 +7732,10 @@ extension on Translations {
 			'fileInfo.externalDelivery' => 'Can Be Served Separately',
 			'fileInfo.sidecarPath' => 'Sidecar Path',
 			'fileInfo.sourceStream' => 'Copied From',
-			'fileInfo.temporary' => 'Temporary',
-			'fileInfo.timeBase' => 'Time Base',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Temporary',
+			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
@@ -8238,10 +8246,10 @@ extension on Translations {
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			'libraries.manageLibraries' => 'Manage Libraries',
 			'libraries.sort' => 'Sort',
 			'libraries.sortBy' => 'Sort By',
@@ -8752,10 +8760,10 @@ extension on Translations {
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
-			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
 			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} set the speed to ${speed}',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
@@ -9266,10 +9274,10 @@ extension on Translations {
 			'addServer.signInWithPlexCard' => 'Sign in with Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
-			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
-			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
+			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.',

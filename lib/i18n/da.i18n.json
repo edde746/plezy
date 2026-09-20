@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Omarranger og skjul biblioteker",
     "companionRemoteServer": "Fjernbetjeningsserver",
     "companionRemoteServerDescription": "Tillad mobilenheder på dit netværk at styre denne app",
+    "companionRemoteServerStartFailed": "Fjernbetjeningsserveren kunne ikke startes",
+    "companionRemoteServerStopFailed": "Fjernbetjeningsserveren kunne ikke stoppes",
     "autoPip": "Automatisk billede-i-billede",
     "autoPipDescription": "Skift automatisk til billede-i-billede, når du forlader appen under afspilning",
     "matchContentFrameRate": "Tilpas billedhastigheden til indholdet",

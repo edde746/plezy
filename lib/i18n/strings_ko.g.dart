@@ -434,6 +434,8 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get manageLibrariesDescription => '라이브러리 순서를 변경하거나 숨깁니다';
 	@override String get companionRemoteServer => '컴패니언 리모트 서버';
 	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
+	@override String get companionRemoteServerStartFailed => '컴패니언 리모트 서버를 시작할 수 없습니다';
+	@override String get companionRemoteServerStopFailed => '컴패니언 리모트 서버를 중지할 수 없습니다';
 	@override String get autoPip => '자동 PIP 모드';
 	@override String get autoPipDescription => '재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
@@ -3315,6 +3317,8 @@ extension on TranslationsKo {
 			'settings.manageLibrariesDescription' => '라이브러리 순서를 변경하거나 숨깁니다',
 			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
 			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
+			'settings.companionRemoteServerStartFailed' => '컴패니언 리모트 서버를 시작할 수 없습니다',
+			'settings.companionRemoteServerStopFailed' => '컴패니언 리모트 서버를 중지할 수 없습니다',
 			'settings.autoPip' => '자동 PIP 모드',
 			'settings.autoPipDescription' => '재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
@@ -3514,10 +3518,10 @@ extension on TranslationsKo {
 			'fileInfo.externalDelivery' => '별도 제공 가능',
 			'fileInfo.sidecarPath' => '사이드카 경로',
 			'fileInfo.sourceStream' => '복사 출처',
-			'fileInfo.temporary' => '임시',
-			'fileInfo.timeBase' => '시간 기준',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => '임시',
+			'fileInfo.timeBase' => '시간 기준',
 			'fileInfo.overallBitrate' => '전체 비트레이트',
 			'fileInfo.path' => '경로',
 			'fileInfo.fileName' => '파일 이름',
@@ -4028,10 +4032,10 @@ extension on TranslationsKo {
 			'libraries.clearAll' => '모두 삭제',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '「${title}」을(를) 스캔하시겠습니까?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '「${title}」을(를) 분석하시겠습니까?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침하시겠습니까?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침하시겠습니까?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
 			'libraries.manageLibraries' => '미디어 라이브러리 관리',
 			'libraries.sort' => '정렬',
 			'libraries.sortBy' => '정렬 기준',
@@ -4542,10 +4546,10 @@ extension on TranslationsKo {
 			'downloads.tracksQueued' => ({required Object count}) => '${count}곡 다운로드 대기 중',
 			'downloads.noDownloads' => '다운로드 없음',
 			'downloads.noDownloadsDescription' => '다운로드한 콘텐츠는 오프라인 시청을 위해 여기에 표시됩니다',
-			'downloads.downloadNow' => '다운로드',
-			'downloads.deleteDownload' => '다운로드 삭제',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => '다운로드',
+			'downloads.deleteDownload' => '다운로드 삭제',
 			'downloads.retryDownload' => '다운로드 재시도',
 			'downloads.downloadQueued' => '다운로드 대기 중',
 			'downloads.downloadResumed' => '다운로드를 재개했습니다',

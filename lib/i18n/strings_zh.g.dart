@@ -434,6 +434,8 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get manageLibrariesDescription => '重新排序和隐藏媒体库';
 	@override String get companionRemoteServer => '远程控制服务器';
 	@override String get companionRemoteServerDescription => '允许同一网络中的移动设备控制此应用';
+	@override String get companionRemoteServerStartFailed => '无法启动远程控制服务器';
+	@override String get companionRemoteServerStopFailed => '无法停止远程控制服务器';
 	@override String get autoPip => '自动画中画';
 	@override String get autoPipDescription => '播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
@@ -3315,6 +3317,8 @@ extension on TranslationsZh {
 			'settings.manageLibrariesDescription' => '重新排序和隐藏媒体库',
 			'settings.companionRemoteServer' => '远程控制服务器',
 			'settings.companionRemoteServerDescription' => '允许同一网络中的移动设备控制此应用',
+			'settings.companionRemoteServerStartFailed' => '无法启动远程控制服务器',
+			'settings.companionRemoteServerStopFailed' => '无法停止远程控制服务器',
 			'settings.autoPip' => '自动画中画',
 			'settings.autoPipDescription' => '播放期间离开应用时自动进入画中画模式',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
@@ -3514,10 +3518,10 @@ extension on TranslationsZh {
 			'fileInfo.externalDelivery' => '可单独提供',
 			'fileInfo.sidecarPath' => '外挂文件路径',
 			'fileInfo.sourceStream' => '复制来源',
-			'fileInfo.temporary' => '临时',
-			'fileInfo.timeBase' => '时间基准',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => '临时',
+			'fileInfo.timeBase' => '时间基准',
 			'fileInfo.overallBitrate' => '总比特率',
 			'fileInfo.path' => '路径',
 			'fileInfo.fileName' => '文件名',
@@ -4028,10 +4032,10 @@ extension on TranslationsZh {
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '确定要扫描“${title}”吗？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '确定要分析“${title}”吗？',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新“${title}”的元数据吗？',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空“${title}”的回收站吗？',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新“${title}”的元数据吗？',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空“${title}”的回收站吗？',
 			'libraries.manageLibraries' => '管理媒体库',
 			'libraries.sort' => '排序',
 			'libraries.sortBy' => '排序依据',
@@ -4542,10 +4546,10 @@ extension on TranslationsZh {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} 首曲目已加入下载队列',
 			'downloads.noDownloads' => '暂无下载',
 			'downloads.noDownloadsDescription' => '下载的内容将在此处显示以供离线观看',
-			'downloads.downloadNow' => '下载',
-			'downloads.deleteDownload' => '删除下载',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => '下载',
+			'downloads.deleteDownload' => '删除下载',
 			'downloads.retryDownload' => '重试下载',
 			'downloads.downloadQueued' => '下载已排队',
 			'downloads.downloadResumed' => '下载已继续',

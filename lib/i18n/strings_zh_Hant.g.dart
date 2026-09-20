@@ -435,6 +435,8 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get manageLibrariesDescription => '重新排序與隱藏媒體庫';
 	@override String get companionRemoteServer => '隨身遙控器伺服器';
 	@override String get companionRemoteServerDescription => '允許區域網路中的行動裝置控制此應用程式';
+	@override String get companionRemoteServerStartFailed => '無法啟動隨身遙控器伺服器';
+	@override String get companionRemoteServerStopFailed => '無法停止隨身遙控器伺服器';
 	@override String get autoPip => '自動進入子母畫面';
 	@override String get autoPipDescription => '播放影片時離開應用程式將自動進入子母畫面模式';
 	@override String get matchContentFrameRate => '符合影片影格率';
@@ -3316,6 +3318,8 @@ extension on TranslationsZhHant {
 			'settings.manageLibrariesDescription' => '重新排序與隱藏媒體庫',
 			'settings.companionRemoteServer' => '隨身遙控器伺服器',
 			'settings.companionRemoteServerDescription' => '允許區域網路中的行動裝置控制此應用程式',
+			'settings.companionRemoteServerStartFailed' => '無法啟動隨身遙控器伺服器',
+			'settings.companionRemoteServerStopFailed' => '無法停止隨身遙控器伺服器',
 			'settings.autoPip' => '自動進入子母畫面',
 			'settings.autoPipDescription' => '播放影片時離開應用程式將自動進入子母畫面模式',
 			'settings.matchContentFrameRate' => '符合影片影格率',
@@ -3515,10 +3519,10 @@ extension on TranslationsZhHant {
 			'fileInfo.externalDelivery' => '可分開傳送',
 			'fileInfo.sidecarPath' => '附屬路徑',
 			'fileInfo.sourceStream' => '複製來源',
-			'fileInfo.temporary' => '暫時',
-			'fileInfo.timeBase' => '時間基準',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => '暫時',
+			'fileInfo.timeBase' => '時間基準',
 			'fileInfo.overallBitrate' => '總位元率',
 			'fileInfo.path' => '路徑',
 			'fileInfo.fileName' => '檔案名稱',
@@ -4029,10 +4033,10 @@ extension on TranslationsZhHant {
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '確定要掃描「${title}」嗎？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '確定要分析「${title}」嗎？',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '確定要重新整理「${title}」的中繼資料嗎？',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '確定要清空「${title}」的垃圾桶嗎？',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '確定要重新整理「${title}」的中繼資料嗎？',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '確定要清空「${title}」的垃圾桶嗎？',
 			'libraries.manageLibraries' => '管理媒體庫',
 			'libraries.sort' => '排序',
 			'libraries.sortBy' => '排序依據',
@@ -4543,10 +4547,10 @@ extension on TranslationsZhHant {
 			'downloads.tracksQueued' => ({required Object count}) => '已將 ${count} 首曲目加入下載佇列',
 			'downloads.noDownloads' => '目前沒有下載內容',
 			'downloads.noDownloadsDescription' => '下載的內容將顯示在此處，供您離線觀看',
-			'downloads.downloadNow' => '下載',
-			'downloads.deleteDownload' => '刪除下載內容',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => '下載',
+			'downloads.deleteDownload' => '刪除下載內容',
 			'downloads.retryDownload' => '重試下載',
 			'downloads.downloadQueued' => '下載已排隊',
 			'downloads.downloadResumed' => '下載已繼續',

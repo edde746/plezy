@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Изменять порядок и скрывать библиотеки",
     "companionRemoteServer": "Сервер удалённого управления",
     "companionRemoteServerDescription": "Разрешить мобильным устройствам в сети управлять этим приложением",
+    "companionRemoteServerStartFailed": "Не удалось запустить сервер удалённого управления",
+    "companionRemoteServerStopFailed": "Не удалось остановить сервер удалённого управления",
     "autoPip": "Автоматический режим «картинка в картинке»",
     "autoPipDescription": "Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения",
     "matchContentFrameRate": "Соответствие частоты кадров контента",

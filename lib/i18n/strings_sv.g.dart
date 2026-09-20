@@ -434,6 +434,8 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Ordna om och dölj bibliotek';
 	@override String get companionRemoteServer => 'Server för fjärrkontroll';
 	@override String get companionRemoteServerDescription => 'Tillåt att mobila enheter i nätverket styr appen';
+	@override String get companionRemoteServerStartFailed => 'Kunde inte starta servern för fjärrkontroll';
+	@override String get companionRemoteServerStopFailed => 'Kunde inte stoppa servern för fjärrkontroll';
 	@override String get autoPip => 'Automatisk bild-i-bild';
 	@override String get autoPipDescription => 'Aktivera bild-i-bild om du lämnar appen under uppspelning';
 	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
@@ -3326,6 +3328,8 @@ extension on TranslationsSv {
 			'settings.manageLibrariesDescription' => 'Ordna om och dölj bibliotek',
 			'settings.companionRemoteServer' => 'Server för fjärrkontroll',
 			'settings.companionRemoteServerDescription' => 'Tillåt att mobila enheter i nätverket styr appen',
+			'settings.companionRemoteServerStartFailed' => 'Kunde inte starta servern för fjärrkontroll',
+			'settings.companionRemoteServerStopFailed' => 'Kunde inte stoppa servern för fjärrkontroll',
 			'settings.autoPip' => 'Automatisk bild-i-bild',
 			'settings.autoPipDescription' => 'Aktivera bild-i-bild om du lämnar appen under uppspelning',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
@@ -3525,10 +3529,10 @@ extension on TranslationsSv {
 			'fileInfo.externalDelivery' => 'Kan levereras separat',
 			'fileInfo.sidecarPath' => 'Sidecar-sökväg',
 			'fileInfo.sourceStream' => 'Kopierad från',
-			'fileInfo.temporary' => 'Tillfällig',
-			'fileInfo.timeBase' => 'Tidsbas',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Tillfällig',
+			'fileInfo.timeBase' => 'Tidsbas',
 			'fileInfo.overallBitrate' => 'Total bithastighet',
 			'fileInfo.path' => 'Sökväg',
 			'fileInfo.fileName' => 'Filnamn',
@@ -4039,10 +4043,10 @@ extension on TranslationsSv {
 			'libraries.clearAll' => 'Rensa alla',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill skanna "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill analysera "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Är du säker på att du vill uppdatera metadata för "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Är du säker på att du vill tömma papperskorgen för "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Är du säker på att du vill uppdatera metadata för "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Är du säker på att du vill tömma papperskorgen för "${title}"?',
 			'libraries.manageLibraries' => 'Hantera bibliotek',
 			'libraries.sort' => 'Sortera',
 			'libraries.sortBy' => 'Sortera efter',
@@ -4553,10 +4557,10 @@ extension on TranslationsSv {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} låtar i nedladdningskö',
 			'downloads.noDownloads' => 'Inga nedladdningar ännu',
 			'downloads.noDownloadsDescription' => 'Nedladdat innehåll visas här så att du kan titta offline',
-			'downloads.downloadNow' => 'Ladda ner',
-			'downloads.deleteDownload' => 'Ta bort nedladdning',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Ladda ner',
+			'downloads.deleteDownload' => 'Ta bort nedladdning',
 			'downloads.retryDownload' => 'Försök igen',
 			'downloads.downloadQueued' => 'Nedladdning köad',
 			'downloads.downloadResumed' => 'Nedladdning återupptagen',

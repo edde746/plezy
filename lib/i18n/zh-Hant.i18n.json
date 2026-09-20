@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "重新排序與隱藏媒體庫",
     "companionRemoteServer": "隨身遙控器伺服器",
     "companionRemoteServerDescription": "允許區域網路中的行動裝置控制此應用程式",
+    "companionRemoteServerStartFailed": "無法啟動隨身遙控器伺服器",
+    "companionRemoteServerStopFailed": "無法停止隨身遙控器伺服器",
     "autoPip": "自動進入子母畫面",
     "autoPipDescription": "播放影片時離開應用程式將自動進入子母畫面模式",
     "matchContentFrameRate": "符合影片影格率",

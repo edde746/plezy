@@ -434,6 +434,8 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Mediatheken neu anordnen und ausblenden';
 	@override String get companionRemoteServer => 'Companion-Fernbedienungsserver';
 	@override String get companionRemoteServerDescription => 'Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern';
+	@override String get companionRemoteServerStartFailed => 'Companion-Fernbedienungsserver konnte nicht gestartet werden';
+	@override String get companionRemoteServerStopFailed => 'Companion-Fernbedienungsserver konnte nicht gestoppt werden';
 	@override String get autoPip => 'Automatisches Bild-in-Bild';
 	@override String get autoPipDescription => 'Beim Verlassen der App während der Wiedergabe automatisch Bild-in-Bild starten';
 	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
@@ -3326,6 +3328,8 @@ extension on TranslationsDe {
 			'settings.manageLibrariesDescription' => 'Mediatheken neu anordnen und ausblenden',
 			'settings.companionRemoteServer' => 'Companion-Fernbedienungsserver',
 			'settings.companionRemoteServerDescription' => 'Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern',
+			'settings.companionRemoteServerStartFailed' => 'Companion-Fernbedienungsserver konnte nicht gestartet werden',
+			'settings.companionRemoteServerStopFailed' => 'Companion-Fernbedienungsserver konnte nicht gestoppt werden',
 			'settings.autoPip' => 'Automatisches Bild-in-Bild',
 			'settings.autoPipDescription' => 'Beim Verlassen der App während der Wiedergabe automatisch Bild-in-Bild starten',
 			'settings.matchContentFrameRate' => 'Inhalts-Bildrate anpassen',
@@ -3525,10 +3529,10 @@ extension on TranslationsDe {
 			'fileInfo.externalDelivery' => 'Kann separat bereitgestellt werden',
 			'fileInfo.sidecarPath' => 'Sidecar-Pfad',
 			'fileInfo.sourceStream' => 'Kopiert von',
-			'fileInfo.temporary' => 'Temporär',
-			'fileInfo.timeBase' => 'Zeitbasis',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Temporär',
+			'fileInfo.timeBase' => 'Zeitbasis',
 			'fileInfo.overallBitrate' => 'Gesamtbitrate',
 			'fileInfo.path' => 'Pfad',
 			'fileInfo.fileName' => 'Dateiname',
@@ -4039,10 +4043,10 @@ extension on TranslationsDe {
 			'libraries.clearAll' => 'Alle Filter entfernen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '„${title}“ wirklich scannen?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '„${title}“ wirklich analysieren?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?',
 			'libraries.manageLibraries' => 'Mediatheken verwalten',
 			'libraries.sort' => 'Sortieren',
 			'libraries.sortBy' => 'Sortieren nach',
@@ -4553,10 +4557,10 @@ extension on TranslationsDe {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} Titel zum Download in Warteschlange',
 			'downloads.noDownloads' => 'Noch keine Downloads',
 			'downloads.noDownloadsDescription' => 'Heruntergeladene Inhalte werden hier für die Offline-Wiedergabe angezeigt',
-			'downloads.downloadNow' => 'Herunterladen',
-			'downloads.deleteDownload' => 'Download löschen',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Herunterladen',
+			'downloads.deleteDownload' => 'Download löschen',
 			'downloads.retryDownload' => 'Download wiederholen',
 			'downloads.downloadQueued' => 'Download in Warteschlange',
 			'downloads.downloadResumed' => 'Download fortgesetzt',

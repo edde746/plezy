@@ -434,6 +434,8 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Изменять порядок и скрывать библиотеки';
 	@override String get companionRemoteServer => 'Сервер удалённого управления';
 	@override String get companionRemoteServerDescription => 'Разрешить мобильным устройствам в сети управлять этим приложением';
+	@override String get companionRemoteServerStartFailed => 'Не удалось запустить сервер удалённого управления';
+	@override String get companionRemoteServerStopFailed => 'Не удалось остановить сервер удалённого управления';
 	@override String get autoPip => 'Автоматический режим «картинка в картинке»';
 	@override String get autoPipDescription => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения';
 	@override String get matchContentFrameRate => 'Соответствие частоты кадров контента';
@@ -3348,6 +3350,8 @@ extension on TranslationsRu {
 			'settings.manageLibrariesDescription' => 'Изменять порядок и скрывать библиотеки',
 			'settings.companionRemoteServer' => 'Сервер удалённого управления',
 			'settings.companionRemoteServerDescription' => 'Разрешить мобильным устройствам в сети управлять этим приложением',
+			'settings.companionRemoteServerStartFailed' => 'Не удалось запустить сервер удалённого управления',
+			'settings.companionRemoteServerStopFailed' => 'Не удалось остановить сервер удалённого управления',
 			'settings.autoPip' => 'Автоматический режим «картинка в картинке»',
 			'settings.autoPipDescription' => 'Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения',
 			'settings.matchContentFrameRate' => 'Соответствие частоты кадров контента',
@@ -3547,10 +3551,10 @@ extension on TranslationsRu {
 			'fileInfo.externalDelivery' => 'Может передаваться отдельно',
 			'fileInfo.sidecarPath' => 'Путь к файлу-спутнику',
 			'fileInfo.sourceStream' => 'Скопировано из',
-			'fileInfo.temporary' => 'Временный',
-			'fileInfo.timeBase' => 'Временная база',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Временный',
+			'fileInfo.timeBase' => 'Временная база',
 			'fileInfo.overallBitrate' => 'Общий битрейт',
 			'fileInfo.path' => 'Путь',
 			'fileInfo.fileName' => 'Имя файла',
@@ -4061,10 +4065,10 @@ extension on TranslationsRu {
 			'libraries.clearAll' => 'Очистить все',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Вы уверены, что хотите сканировать "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Вы уверены, что хотите проанализировать "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Вы уверены, что хотите обновить метаданные для "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Вы уверены, что хотите очистить корзину для "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Вы уверены, что хотите обновить метаданные для "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Вы уверены, что хотите очистить корзину для "${title}"?',
 			'libraries.manageLibraries' => 'Управление библиотеками',
 			'libraries.sort' => 'Сортировка',
 			'libraries.sortBy' => 'Сортировать по',
@@ -4575,10 +4579,10 @@ extension on TranslationsRu {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} треков в очереди на загрузку',
 			'downloads.noDownloads' => 'Загрузок пока нет',
 			'downloads.noDownloadsDescription' => 'Загруженный контент появится здесь для просмотра офлайн',
-			'downloads.downloadNow' => 'Загрузить',
-			'downloads.deleteDownload' => 'Удалить загрузку',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Загрузить',
+			'downloads.deleteDownload' => 'Удалить загрузку',
 			'downloads.retryDownload' => 'Повторить загрузку',
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
 			'downloads.downloadResumed' => 'Загрузка возобновлена',

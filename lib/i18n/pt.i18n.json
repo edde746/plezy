@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Reordene e oculte bibliotecas",
     "companionRemoteServer": "Servidor de controle remoto",
     "companionRemoteServerDescription": "Permitir que dispositivos móveis na sua rede controlem este app",
+    "companionRemoteServerStartFailed": "Não foi possível iniciar o servidor de controle remoto",
+    "companionRemoteServerStopFailed": "Não foi possível parar o servidor de controle remoto",
     "autoPip": "Picture-in-picture automático",
     "autoPipDescription": "Entrar automaticamente no modo picture-in-picture ao sair do app durante a reprodução",
     "matchContentFrameRate": "Ajustar à taxa de quadros do conteúdo",

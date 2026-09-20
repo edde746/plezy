@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Кітапханаларды қайта реттеу және жасыру",
     "companionRemoteServer": "Көмекші пульт сервері",
     "companionRemoteServerDescription": "Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру",
+    "companionRemoteServerStartFailed": "Көмекші серверді іске қосу мүмкін болмады",
+    "companionRemoteServerStopFailed": "Көмекші серверді тоқтату мүмкін болмады",
     "autoPip": "Автоматты Суреттегі сурет (PiP)",
     "autoPipDescription": "Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту",
     "matchContentFrameRate": "Кадр жиілігін сәйкестендіру",

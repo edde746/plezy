@@ -434,6 +434,8 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Kutubxonalarni tartiblash va yashirish';
 	@override String get companionRemoteServer => 'Yordamchi pult serveri';
 	@override String get companionRemoteServerDescription => 'Tarmoqdagi mobil qurilmalarga ushbu ilovani boshqarishga ruxsat berish';
+	@override String get companionRemoteServerStartFailed => 'Yordamchi pult serverini ishga tushirib bo‘lmadi';
+	@override String get companionRemoteServerStopFailed => 'Yordamchi pult serverini to‘xtatib bo‘lmadi';
 	@override String get autoPip => 'Avtomatik Rasm ichida rasm (PiP)';
 	@override String get autoPipDescription => 'Video ijro etilayotganda ilovadan chiqilganda avto-PiP rejimiga oʻtish';
 	@override String get matchContentFrameRate => 'Kadrlar chastotasini moslashtirish';
@@ -3326,6 +3328,8 @@ extension on TranslationsUz {
 			'settings.manageLibrariesDescription' => 'Kutubxonalarni tartiblash va yashirish',
 			'settings.companionRemoteServer' => 'Yordamchi pult serveri',
 			'settings.companionRemoteServerDescription' => 'Tarmoqdagi mobil qurilmalarga ushbu ilovani boshqarishga ruxsat berish',
+			'settings.companionRemoteServerStartFailed' => 'Yordamchi pult serverini ishga tushirib bo‘lmadi',
+			'settings.companionRemoteServerStopFailed' => 'Yordamchi pult serverini to‘xtatib bo‘lmadi',
 			'settings.autoPip' => 'Avtomatik Rasm ichida rasm (PiP)',
 			'settings.autoPipDescription' => 'Video ijro etilayotganda ilovadan chiqilganda avto-PiP rejimiga oʻtish',
 			'settings.matchContentFrameRate' => 'Kadrlar chastotasini moslashtirish',
@@ -3525,10 +3529,10 @@ extension on TranslationsUz {
 			'fileInfo.externalDelivery' => 'Alohida uzatilishi mumkin',
 			'fileInfo.sidecarPath' => 'Yordamchi fayl yoʻli',
 			'fileInfo.sourceStream' => 'Nusxa olingan manba',
-			'fileInfo.temporary' => 'Vaqtinchalik',
-			'fileInfo.timeBase' => 'Vaqt bazasi',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Vaqtinchalik',
+			'fileInfo.timeBase' => 'Vaqt bazasi',
 			'fileInfo.overallBitrate' => 'Umumiy bitreyt',
 			'fileInfo.path' => 'Yoʻl',
 			'fileInfo.fileName' => 'Fayl nomi',
@@ -4039,10 +4043,10 @@ extension on TranslationsUz {
 			'libraries.clearAll' => 'Barchasini tozalash',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" kutubxonasini skanerlamoqchimisiz?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" kutubxonasini tahlil qilmoqchimisiz?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" metamaʼlumotlarini yangilaysizmi?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" savatini tozalaysizmi?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" metamaʼlumotlarini yangilaysizmi?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" savatini tozalaysizmi?',
 			'libraries.manageLibraries' => 'Kutubxonalarni boshqarish',
 			'libraries.sort' => 'Saralash',
 			'libraries.sortBy' => 'Saralash mezonlari',
@@ -4553,10 +4557,10 @@ extension on TranslationsUz {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} tarona yuklash navbatiga qoʻshildi',
 			'downloads.noDownloads' => 'Hali yuklamalar yoʻq',
 			'downloads.noDownloadsDescription' => 'Yuklangan fayllar oflayn koʻrish uchun bu yerda koʻrinadi',
-			'downloads.downloadNow' => 'Yuklab olish',
-			'downloads.deleteDownload' => 'Yuklamani oʻchirish',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Yuklab olish',
+			'downloads.deleteDownload' => 'Yuklamani oʻchirish',
 			'downloads.retryDownload' => 'Yuklashni qaytadan urinish',
 			'downloads.downloadQueued' => 'Yuklash navbatga qoʻyildi',
 			'downloads.downloadResumed' => 'Yuklash davom ettirildi',

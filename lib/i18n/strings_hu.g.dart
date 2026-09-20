@@ -434,6 +434,8 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Könyvtárak sorrendjének módosítása és elrejtése';
 	@override String get companionRemoteServer => 'Kísérőtávirányító szervere';
 	@override String get companionRemoteServerDescription => 'Lehetővé teszi, hogy a hálózaton lévő mobileszközökről vezéreld az alkalmazást';
+	@override String get companionRemoteServerStartFailed => 'Nem sikerült elindítani a kísérőtávirányító szerverét';
+	@override String get companionRemoteServerStopFailed => 'Nem sikerült leállítani a kísérőtávirányító szerverét';
 	@override String get autoPip => 'Automatikus kép a képben (PiP)';
 	@override String get autoPipDescription => 'Lejátszás közben az alkalmazás elhagyásakor automatikusan kép a képben módra vált';
 	@override String get matchContentFrameRate => 'Képkockasebesség illesztése a tartalomhoz';
@@ -3326,6 +3328,8 @@ extension on TranslationsHu {
 			'settings.manageLibrariesDescription' => 'Könyvtárak sorrendjének módosítása és elrejtése',
 			'settings.companionRemoteServer' => 'Kísérőtávirányító szervere',
 			'settings.companionRemoteServerDescription' => 'Lehetővé teszi, hogy a hálózaton lévő mobileszközökről vezéreld az alkalmazást',
+			'settings.companionRemoteServerStartFailed' => 'Nem sikerült elindítani a kísérőtávirányító szerverét',
+			'settings.companionRemoteServerStopFailed' => 'Nem sikerült leállítani a kísérőtávirányító szerverét',
 			'settings.autoPip' => 'Automatikus kép a képben (PiP)',
 			'settings.autoPipDescription' => 'Lejátszás közben az alkalmazás elhagyásakor automatikusan kép a képben módra vált',
 			'settings.matchContentFrameRate' => 'Képkockasebesség illesztése a tartalomhoz',
@@ -3525,10 +3529,10 @@ extension on TranslationsHu {
 			'fileInfo.externalDelivery' => 'Külön is kiszolgálható',
 			'fileInfo.sidecarPath' => 'Kísérő fájl útvonala',
 			'fileInfo.sourceStream' => 'Másolva innen',
-			'fileInfo.temporary' => 'Ideiglenes',
-			'fileInfo.timeBase' => 'Időalap',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Ideiglenes',
+			'fileInfo.timeBase' => 'Időalap',
 			'fileInfo.overallBitrate' => 'Összesített bitráta',
 			'fileInfo.path' => 'Elérési út',
 			'fileInfo.fileName' => 'Fájlnév',
@@ -4039,10 +4043,10 @@ extension on TranslationsHu {
 			'libraries.clearAll' => 'Összes törlése',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Biztosan be szeretnéd olvasni a következőt: "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Biztosan elemezni szeretnéd a következőt: "${title}"?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Biztosan frissíteni szeretnéd a metaadatokat a következőhöz: "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Biztosan ki szeretnéd üríteni a lomtárat a következőnél: "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Biztosan frissíteni szeretnéd a metaadatokat a következőhöz: "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Biztosan ki szeretnéd üríteni a lomtárat a következőnél: "${title}"?',
 			'libraries.manageLibraries' => 'Könyvtárak kezelése',
 			'libraries.sort' => 'Rendezés',
 			'libraries.sortBy' => 'Rendezés ez alapján',
@@ -4553,10 +4557,10 @@ extension on TranslationsHu {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} zeneszám letöltésre sorba állítva',
 			'downloads.noDownloads' => 'Még nincsenek letöltések',
 			'downloads.noDownloadsDescription' => 'A letöltött tartalmak itt jelennek meg az offline megtekintéshez',
-			'downloads.downloadNow' => 'Letöltés',
-			'downloads.deleteDownload' => 'Letöltés törlése',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Letöltés',
+			'downloads.deleteDownload' => 'Letöltés törlése',
 			'downloads.retryDownload' => 'Letöltés újrapróbálása',
 			'downloads.downloadQueued' => 'Letöltés sorba állítva',
 			'downloads.downloadResumed' => 'Letöltés folytatva',

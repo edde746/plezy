@@ -821,11 +821,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     await context.read<DownloadProvider>().resetDownloadLocation();
     await _settingsService.resetAllSettings();
     if (!mounted) return;
-    await const SettingsMutationService().applyStoredEffects(
+    final failures = await const SettingsMutationService().applyStoredEffects(
       context,
       previousRootConfiguration: previousRootConfiguration,
     );
-    if (mounted) showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
+    if (!mounted) return;
+    // Every pref is reset either way; only some runtime effect declined, so the
+    // reset itself is not a failure — name what did not take.
+    if (failures.isEmpty) {
+      showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
+    } else {
+      showErrorSnackBar(context, failures.first.display);
+    }
   }
 
   Future<void> _handleExportSettings() async {
@@ -873,13 +880,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           await hiddenLibrariesProvider.refresh();
           unawaited(librariesProvider.refresh());
           if (!mounted) return;
-          await const SettingsMutationService().applyStoredEffects(
+          final failures = await const SettingsMutationService().applyStoredEffects(
             context,
             previousRootConfiguration: previousRootConfiguration,
           );
 
           if (!mounted) return;
-          showSuccessSnackBar(context, t.settings.importSettingsSuccess);
+          if (failures.isEmpty) {
+            showSuccessSnackBar(context, t.settings.importSettingsSuccess);
+          } else {
+            showErrorSnackBar(context, failures.first.display);
+          }
         } on NoUserSignedInException {
           if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
         } on InvalidExportFileException {

@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "라이브러리 순서를 변경하거나 숨깁니다",
     "companionRemoteServer": "컴패니언 리모트 서버",
     "companionRemoteServerDescription": "네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용",
+    "companionRemoteServerStartFailed": "컴패니언 리모트 서버를 시작할 수 없습니다",
+    "companionRemoteServerStopFailed": "컴패니언 리모트 서버를 중지할 수 없습니다",
     "autoPip": "자동 PIP 모드",
     "autoPipDescription": "재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다",
     "matchContentFrameRate": "콘텐츠 프레임 레이트 맞춤",

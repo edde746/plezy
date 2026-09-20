@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Mediatheken neu anordnen und ausblenden",
     "companionRemoteServer": "Companion-Fernbedienungsserver",
     "companionRemoteServerDescription": "Mobilgeräten in deinem Netzwerk erlauben, diese App zu steuern",
+    "companionRemoteServerStartFailed": "Companion-Fernbedienungsserver konnte nicht gestartet werden",
+    "companionRemoteServerStopFailed": "Companion-Fernbedienungsserver konnte nicht gestoppt werden",
     "autoPip": "Automatisches Bild-in-Bild",
     "autoPipDescription": "Beim Verlassen der App während der Wiedergabe automatisch Bild-in-Bild starten",
     "matchContentFrameRate": "Inhalts-Bildrate anpassen",

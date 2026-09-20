@@ -325,6 +325,8 @@
     "manageLibrariesDescription": "Kitabxanaları yenidən sıralayın və gizlədin",
     "companionRemoteServer": "Köməkçi pult serveri",
     "companionRemoteServerDescription": "Şəbəkənizdəki mobil cihazların bu tətbiqi idarə etməsinə icazə verin",
+    "companionRemoteServerStartFailed": "Köməkçi pult serveri başladıla bilmədi",
+    "companionRemoteServerStopFailed": "Köməkçi pult serveri dayandırıla bilmədi",
     "autoPip": "Avtomatik Pəncərə daxilində Pəncərə (PiP)",
     "autoPipDescription": "Oynatma zamanı tətbiqdən çıxdıqda avtomatik PiP rejiminə keç",
     "matchContentFrameRate": "Kadr tezliyini uyğunlaşdır",

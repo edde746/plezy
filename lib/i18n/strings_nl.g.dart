@@ -434,6 +434,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Bibliotheken herordenen en verbergen';
 	@override String get companionRemoteServer => 'Companion Remote-server';
 	@override String get companionRemoteServerDescription => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen';
+	@override String get companionRemoteServerStartFailed => 'Kan de Companion Remote-server niet starten';
+	@override String get companionRemoteServerStopFailed => 'Kan de Companion Remote-server niet stoppen';
 	@override String get autoPip => 'Automatische beeld-in-beeld';
 	@override String get autoPipDescription => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
@@ -3326,6 +3328,8 @@ extension on TranslationsNl {
 			'settings.manageLibrariesDescription' => 'Bibliotheken herordenen en verbergen',
 			'settings.companionRemoteServer' => 'Companion Remote-server',
 			'settings.companionRemoteServerDescription' => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen',
+			'settings.companionRemoteServerStartFailed' => 'Kan de Companion Remote-server niet starten',
+			'settings.companionRemoteServerStopFailed' => 'Kan de Companion Remote-server niet stoppen',
 			'settings.autoPip' => 'Automatische beeld-in-beeld',
 			'settings.autoPipDescription' => 'Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
@@ -3525,10 +3529,10 @@ extension on TranslationsNl {
 			'fileInfo.externalDelivery' => 'Kan afzonderlijk worden geleverd',
 			'fileInfo.sidecarPath' => 'Sidecar-pad',
 			'fileInfo.sourceStream' => 'Gekopieerd van',
-			'fileInfo.temporary' => 'Tijdelijk',
-			'fileInfo.timeBase' => 'Tijdbasis',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Tijdelijk',
+			'fileInfo.timeBase' => 'Tijdbasis',
 			'fileInfo.overallBitrate' => 'Totale bitrate',
 			'fileInfo.path' => 'Pad',
 			'fileInfo.fileName' => 'Bestandsnaam',
@@ -4039,10 +4043,10 @@ extension on TranslationsNl {
 			'libraries.clearAll' => 'Alles wissen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
 			'libraries.manageLibraries' => 'Bibliotheken beheren',
 			'libraries.sort' => 'Sorteren',
 			'libraries.sortBy' => 'Sorteer op',
@@ -4553,10 +4557,10 @@ extension on TranslationsNl {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} nummers in wachtrij voor download',
 			'downloads.noDownloads' => 'Nog geen downloads',
 			'downloads.noDownloadsDescription' => 'Gedownloade inhoud verschijnt hier om offline te bekijken',
-			'downloads.downloadNow' => 'Downloaden',
-			'downloads.deleteDownload' => 'Download verwijderen',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Downloaden',
+			'downloads.deleteDownload' => 'Download verwijderen',
 			'downloads.retryDownload' => 'Download opnieuw proberen',
 			'downloads.downloadQueued' => 'Download in wachtrij',
 			'downloads.downloadResumed' => 'Download hervat',

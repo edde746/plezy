@@ -434,6 +434,8 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Réorganiser et masquer les bibliothèques';
 	@override String get companionRemoteServer => 'Serveur de télécommande';
 	@override String get companionRemoteServerDescription => 'Autoriser les appareils mobiles de votre réseau à contrôler cette application';
+	@override String get companionRemoteServerStartFailed => 'Impossible de démarrer le serveur de télécommande';
+	@override String get companionRemoteServerStopFailed => 'Impossible d\'arrêter le serveur de télécommande';
 	@override String get autoPip => 'Mode image dans l’image automatique';
 	@override String get autoPipDescription => 'Passer en mode image dans l’image si vous quittez l’application pendant la lecture';
 	@override String get matchContentFrameRate => 'Adapter la fréquence d’images au contenu';
@@ -3326,6 +3328,8 @@ extension on TranslationsFr {
 			'settings.manageLibrariesDescription' => 'Réorganiser et masquer les bibliothèques',
 			'settings.companionRemoteServer' => 'Serveur de télécommande',
 			'settings.companionRemoteServerDescription' => 'Autoriser les appareils mobiles de votre réseau à contrôler cette application',
+			'settings.companionRemoteServerStartFailed' => 'Impossible de démarrer le serveur de télécommande',
+			'settings.companionRemoteServerStopFailed' => 'Impossible d\'arrêter le serveur de télécommande',
 			'settings.autoPip' => 'Mode image dans l’image automatique',
 			'settings.autoPipDescription' => 'Passer en mode image dans l’image si vous quittez l’application pendant la lecture',
 			'settings.matchContentFrameRate' => 'Adapter la fréquence d’images au contenu',
@@ -3525,10 +3529,10 @@ extension on TranslationsFr {
 			'fileInfo.externalDelivery' => 'Peut être diffusé séparément',
 			'fileInfo.sidecarPath' => 'Chemin du fichier annexe',
 			'fileInfo.sourceStream' => 'Copié depuis',
-			'fileInfo.temporary' => 'Temporaire',
-			'fileInfo.timeBase' => 'Base de temps',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Temporaire',
+			'fileInfo.timeBase' => 'Base de temps',
 			'fileInfo.overallBitrate' => 'Débit global',
 			'fileInfo.path' => 'Chemin',
 			'fileInfo.fileName' => 'Nom du fichier',
@@ -4039,10 +4043,10 @@ extension on TranslationsFr {
 			'libraries.clearAll' => 'Tout effacer',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Voulez-vous vraiment scanner « ${title} » ?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Voulez-vous vraiment analyser « ${title} » ?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Voulez-vous vraiment actualiser les métadonnées de « ${title} » ?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Voulez-vous vraiment vider la corbeille de « ${title} » ?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Voulez-vous vraiment actualiser les métadonnées de « ${title} » ?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Voulez-vous vraiment vider la corbeille de « ${title} » ?',
 			'libraries.manageLibraries' => 'Gérer les bibliothèques',
 			'libraries.sort' => 'Trier',
 			'libraries.sortBy' => 'Trier par',
@@ -4553,10 +4557,10 @@ extension on TranslationsFr {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} titres en file d\'attente de téléchargement',
 			'downloads.noDownloads' => 'Aucun téléchargement pour le moment',
 			'downloads.noDownloadsDescription' => 'Le contenu téléchargé apparaîtra ici pour être consulté hors ligne.',
-			'downloads.downloadNow' => 'Télécharger',
-			'downloads.deleteDownload' => 'Supprimer le téléchargement',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Télécharger',
+			'downloads.deleteDownload' => 'Supprimer le téléchargement',
 			'downloads.retryDownload' => 'Réessayer le téléchargement',
 			'downloads.downloadQueued' => 'Téléchargement en attente',
 			'downloads.downloadResumed' => 'Téléchargement repris',

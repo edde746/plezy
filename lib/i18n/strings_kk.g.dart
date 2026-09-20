@@ -434,6 +434,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Кітапханаларды қайта реттеу және жасыру';
 	@override String get companionRemoteServer => 'Көмекші пульт сервері';
 	@override String get companionRemoteServerDescription => 'Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру';
+	@override String get companionRemoteServerStartFailed => 'Көмекші серверді іске қосу мүмкін болмады';
+	@override String get companionRemoteServerStopFailed => 'Көмекші серверді тоқтату мүмкін болмады';
 	@override String get autoPip => 'Автоматты Суреттегі сурет (PiP)';
 	@override String get autoPipDescription => 'Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту';
 	@override String get matchContentFrameRate => 'Кадр жиілігін сәйкестендіру';
@@ -3326,6 +3328,8 @@ extension on TranslationsKk {
 			'settings.manageLibrariesDescription' => 'Кітапханаларды қайта реттеу және жасыру',
 			'settings.companionRemoteServer' => 'Көмекші пульт сервері',
 			'settings.companionRemoteServerDescription' => 'Желідегі мобильді құрылғыларға осы қолданбаны басқаруға рұқсат беру',
+			'settings.companionRemoteServerStartFailed' => 'Көмекші серверді іске қосу мүмкін болмады',
+			'settings.companionRemoteServerStopFailed' => 'Көмекші серверді тоқтату мүмкін болмады',
 			'settings.autoPip' => 'Автоматты Суреттегі сурет (PiP)',
 			'settings.autoPipDescription' => 'Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту',
 			'settings.matchContentFrameRate' => 'Кадр жиілігін сәйкестендіру',
@@ -3525,10 +3529,10 @@ extension on TranslationsKk {
 			'fileInfo.externalDelivery' => 'Бөлек жеткізілуі мүмкін',
 			'fileInfo.sidecarPath' => 'Қосалқы файл жолы',
 			'fileInfo.sourceStream' => 'Көшірілген көзі',
-			'fileInfo.temporary' => 'Уақытша',
-			'fileInfo.timeBase' => 'Уақыт негізі',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.temporary' => 'Уақытша',
+			'fileInfo.timeBase' => 'Уақыт негізі',
 			'fileInfo.overallBitrate' => 'Жалпы биттік жылдамдық',
 			'fileInfo.path' => 'Жол',
 			'fileInfo.fileName' => 'Файл атауы',
@@ -4039,10 +4043,10 @@ extension on TranslationsKk {
 			'libraries.clearAll' => 'Барлығын тазалау',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}" кітапханасын сканерлегіңіз келе ме?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}" кітапханасына талдау жасағыңыз келе ме?',
-			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" метадеректерін жаңартасыз ба?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" себетін тазалайсыз ба?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}" метадеректерін жаңартасыз ба?',
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}" себетін тазалайсыз ба?',
 			'libraries.manageLibraries' => 'Кітапханаларды басқару',
 			'libraries.sort' => 'Сұрыптау',
 			'libraries.sortBy' => 'Сұрыптау реті',
@@ -4553,10 +4557,10 @@ extension on TranslationsKk {
 			'downloads.tracksQueued' => ({required Object count}) => '${count} ән жүктеу кезегіне қосылды',
 			'downloads.noDownloads' => 'Әлі де жүктеулер жоқ',
 			'downloads.noDownloadsDescription' => 'Жүктелген файлдар офлайн көру үшін мұнда көрінеді',
-			'downloads.downloadNow' => 'Жүктеу',
-			'downloads.deleteDownload' => 'Жүктеуді өшіру',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.downloadNow' => 'Жүктеу',
+			'downloads.deleteDownload' => 'Жүктеуді өшіру',
 			'downloads.retryDownload' => 'Жүктеуді қайталау',
 			'downloads.downloadQueued' => 'Жүктеу кезекке қойылды',
 			'downloads.downloadResumed' => 'Жүктеу жалғастырылды',
