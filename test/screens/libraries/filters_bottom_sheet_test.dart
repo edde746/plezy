@@ -330,34 +330,6 @@ void main() {
     expect(firstRow.focusNode!.hasFocus, isFalse);
   });
 
-  testWidgets('the footer counts the pending selection and commits on press', (tester) async {
-    final counted = <List<LibraryFilter>>[];
-    await _pumpSheet(
-      tester,
-      loader: (_) async => const [],
-      countLoader: (clauses) async {
-        counted.add(clauses);
-        return clauses.isEmpty ? 57 : 14;
-      },
-    );
-
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pumpAndSettle();
-    expect(find.text('Show 57'), findsOneWidget);
-
-    await tester.tap(find.text('Unwatched'));
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pumpAndSettle();
-    expect(find.text('Show 14'), findsOneWidget);
-    expect(counted.last, const [
-      LibraryFilter(field: 'unwatched', values: ['1']),
-    ]);
-
-    await tester.tap(find.text('Show 14'));
-    await tester.pumpAndSettle();
-    expect(find.byType(FiltersBottomSheet), findsNothing);
-  });
-
   testWidgets('a numeric range emits two clauses in the field\'s stored unit', (tester) async {
     final applied = <List<LibraryFilter>>[];
     await _pumpSheet(tester, loader: (_) async => const [], onChanged: applied.add);
@@ -481,7 +453,6 @@ Future<_SheetHarness> _pumpSheet(
   List<LibraryFilter> selectedFilters = const [],
   Map<String, List<MediaFilterValue>>? cachedValues,
   ValueChanged<List<LibraryFilter>>? onChanged,
-  FilterCountLoader? countLoader,
 }) async {
   final config = ValueNotifier(
     _SheetConfig(
@@ -511,7 +482,6 @@ Future<_SheetHarness> _pumpSheet(
                     libraryKey: value.libraryKey,
                     loadFilterValues: value.loader,
                     cachedValues: value.cachedValues,
-                    countLoader: countLoader,
                   ),
                 ),
               );

@@ -6146,12 +6146,6 @@ class Translations$libraries$advancedFilters$en {
 	/// en: '${count} excluded'
 	String valueCountExcluded({required Object count}) => '${count} excluded';
 
-	/// en: 'Show ${count}'
-	String showResults({required Object count}) => 'Show ${count}';
-
-	/// en: 'Show results'
-	String get showResultsUnknown => 'Show results';
-
 	/// en: 'Search values'
 	String get searchValues => 'Search values';
 
@@ -8282,8 +8276,6 @@ extension on Translations {
 			'libraries.advancedFilters.not' => ({required Object value}) => 'Not ${value}',
 			'libraries.advancedFilters.valueCount' => ({required Object count}) => '${count} selected',
 			'libraries.advancedFilters.valueCountExcluded' => ({required Object count}) => '${count} excluded',
-			'libraries.advancedFilters.showResults' => ({required Object count}) => 'Show ${count}',
-			'libraries.advancedFilters.showResultsUnknown' => 'Show results',
 			'libraries.advancedFilters.searchValues' => 'Search values',
 			'libraries.advancedFilters.noValues' => 'No values',
 			'libraries.advancedFilters.matchContains' => 'Contains',
@@ -8733,10 +8725,10 @@ extension on Translations {
 			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',
 			'watchTogether.recentRooms' => 'Recent Rooms',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchUnavailable' => 'Couldn\'t switch — server unavailable for sync',
 			'watchTogether.guestSwitchFailed' => 'Couldn\'t switch — content not found on this server',
 			'watchTogether.defaultDisplayName' => 'User',
@@ -9247,10 +9239,10 @@ extension on Translations {
 			'addServer.authResponseNotJson' => 'The authentication response was not valid JSON',
 			'addServer.authResponseIncomplete' => 'The sign-in response from the server was incomplete',
 			'addServer.quickConnectRejected' => 'Quick Connect was rejected by the server',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectNotJson' => 'The Quick Connect response was not valid JSON',
 			'addServer.quickConnectMissingFields' => 'The Quick Connect response is missing a code or secret',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect polling was rejected by the server',
 			'addServer.serverTimedOut' => 'The server did not respond in time',
 			'addServer.responseNotJson' => 'The server response was not valid JSON',

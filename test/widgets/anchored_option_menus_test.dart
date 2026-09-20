@@ -218,7 +218,7 @@ void main() {
     expect(closed, isTrue);
   });
 
-  testWidgets('the panel footer closes the panel, not a sheet behind it', (tester) async {
+  testWidgets('the panel close button closes the panel, not a sheet behind it', (tester) async {
     // The editor resolves its close through `closeAdaptive`, so the same
     // widget has to dismiss the right host: the routed panel here, an overlay
     // sheet on touch/TV.
@@ -245,7 +245,6 @@ void main() {
                     serverId: 'server',
                     libraryKey: 'library',
                     loadFilterValues: (_) async => const [],
-                    countLoader: (_) async => 5,
                   );
                   closed = true;
                 },
@@ -261,7 +260,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Show 5'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
 
     expect(closed, isTrue);

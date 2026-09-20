@@ -23,10 +23,6 @@ import 'state_messages.dart';
 
 typedef FilterValuesLoader = Future<List<MediaFilterValue>> Function(MediaFilter filter);
 
-/// Count of items the pending selection would show, or null when the backend
-/// cannot answer cheaply.
-typedef FilterCountLoader = Future<int?> Function(List<LibraryFilter> filters);
-
 /// The library filter editor.
 ///
 /// Two pages: the category list, and one editor per category chosen by the
@@ -52,14 +48,6 @@ class FiltersBottomSheet extends StatefulWidget {
   /// MediaBrowser libraries where values arrive with the category listing.
   final Map<String, List<MediaFilterValue>>? cachedValues;
 
-  /// Resolves the "Show N" footer count. Omitted when the host cannot count
-  /// (the offline downloads tab filters in memory).
-  final FilterCountLoader? countLoader;
-
-  /// Count of the already-committed selection, so opening the editor does not
-  /// spend a request re-deriving a total the host is already showing.
-  final int? initialCount;
-
   const FiltersBottomSheet({
     super.key,
     required this.filters,
@@ -70,8 +58,6 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.loadFilterValues,
     this.onBack,
     this.cachedValues,
-    this.countLoader,
-    this.initialCount,
   });
 
   @override
@@ -90,19 +76,12 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   late List<MediaFilter> _sortedFilters;
   late final FocusNode _initialFocusNode;
 
-  Timer? _countDebounce;
-  int _countGeneration = 0;
-  int? _count;
-  bool _countPending = false;
-
   @override
   void initState() {
     super.initState();
     _selection = List<LibraryFilter>.of(widget.selectedFilters);
     _sortFilters();
     _initialFocusNode = FocusNode(debugLabel: 'FiltersBottomSheetInitialFocus');
-    _count = widget.initialCount;
-    if (_count == null) _scheduleCount();
   }
 
   @override
@@ -116,7 +95,6 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       _isLoadingValues = false;
       _filterValuesError = null;
       _selection = List<LibraryFilter>.of(widget.selectedFilters);
-      _scheduleCount();
     }
     if (ownerChanged || !identical(oldWidget.filters, widget.filters)) {
       _sortFilters();
@@ -126,8 +104,6 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   @override
   void dispose() {
     _filterValuesLoadGeneration++;
-    _countGeneration++;
-    _countDebounce?.cancel();
     _initialFocusNode.dispose();
     super.dispose();
   }
@@ -147,7 +123,6 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   void _commitSelection(List<LibraryFilter> next) {
     setState(() => _selection = next);
     widget.onFiltersChanged(List<LibraryFilter>.of(next));
-    _scheduleCount();
   }
 
   void _setField(String field, List<LibraryFilter> clauses) => _commitSelection(_selection.withField(field, clauses));
@@ -155,42 +130,6 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   void _clearFilters() {
     _filterValuesLoadGeneration++;
     _commitSelection(const []);
-  }
-
-  /// Adaptive: the editor is hosted in an overlay sheet on touch/TV and in a
-  /// routed panel on pointer platforms, and this resolves both.
-  void _close() => OverlaySheetController.closeAdaptive(context);
-
-  // ---------------------------------------------------------------------
-  // Result count
-  // ---------------------------------------------------------------------
-
-  void _scheduleCount() {
-    final loader = widget.countLoader;
-    if (loader == null) return;
-    _countDebounce?.cancel();
-    final generation = ++_countGeneration;
-    setState(() => _countPending = true);
-    _countDebounce = Timer(const Duration(milliseconds: 350), () => unawaited(_loadCount(loader, generation)));
-  }
-
-  Future<void> _loadCount(FilterCountLoader loader, int generation) async {
-    final pending = List<LibraryFilter>.of(_selection);
-    try {
-      final count = await loader(pending);
-      if (!mounted || generation != _countGeneration) return;
-      setState(() {
-        _count = count;
-        _countPending = false;
-      });
-    } catch (e, stackTrace) {
-      if (!mounted || generation != _countGeneration) return;
-      appLogger.d('Filter result count unavailable: $e', stackTrace: stackTrace);
-      setState(() {
-        _count = null;
-        _countPending = false;
-      });
-    }
   }
 
   // ---------------------------------------------------------------------
@@ -320,35 +259,9 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
               ),
             )
           : null,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: KeyedSubtree(
-              key: _contentKey,
-              child: currentFilter != null ? _buildFilterPage(currentFilter) : _buildFiltersView(),
-            ),
-          ),
-          if (widget.countLoader != null) _buildApplyFooter(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildApplyFooter() {
-    final count = _count;
-    final label = count == null || _countPending
-        ? t.libraries.advancedFilters.showResultsUnknown
-        : t.libraries.advancedFilters.showResults(count: count.toString());
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: SizedBox(
-        width: double.infinity,
-        child: FocusableButton(
-          useBackgroundFocus: true,
-          onPressed: _close,
-          child: FilledButton(onPressed: _close, child: Text(label)),
-        ),
+      child: KeyedSubtree(
+        key: _contentKey,
+        child: currentFilter != null ? _buildFilterPage(currentFilter) : _buildFiltersView(),
       ),
     );
   }

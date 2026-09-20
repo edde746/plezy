@@ -1178,8 +1178,6 @@
       "not": "Not ${value}",
       "valueCount": "${count} selected",
       "valueCountExcluded": "${count} excluded",
-      "showResults": "Show ${count}",
-      "showResultsUnknown": "Show results",
       "searchValues": "Search values",
       "noValues": "No values",
       "matchContains": "Contains",

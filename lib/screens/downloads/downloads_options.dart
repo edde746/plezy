@@ -147,9 +147,6 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
   /// resolve download bookkeeping (timestamp, byte size) once per call —
   /// containers aggregate over their downloaded leaves.
   List<MediaItem> applyDownloadsOptions(DownloadProvider provider, List<MediaItem> items) {
-    // Remembered so the editor's "Show N" footer can count a pending edit
-    // without the tab having to hand its item list to the sheet.
-    _countableItems = items;
     final filtered = _filters.isEmpty
         ? List.of(items)
         : items.where((item) => downloadItemMatchesFilters(item, _filters)).toList();
@@ -179,9 +176,6 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
     };
   }
 
-  /// Items the tab last rendered, used only for the pending-selection count.
-  List<MediaItem> _countableItems = const [];
-
   List<MediaFilter> get _filterDefinitions => [
     MediaFilter(
       filter: downloadFilterUnwatched,
@@ -198,12 +192,6 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
       type: 'filter',
     ),
   ];
-
-  /// Downloads filtering runs in memory, so the count is exact and free.
-  Future<int?> _countFilteredDownloads(List<LibraryFilter> clauses) async {
-    if (clauses.isEmpty) return _countableItems.length;
-    return _countableItems.where((item) => downloadItemMatchesFilters(item, clauses)).length;
-  }
 
   /// Local filter-value loader: the `library` category lists the libraries
   /// that actually hold downloads, suffixed with the server name when more
@@ -479,7 +467,6 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
       serverId: 'downloads',
       libraryKey: optionsSectionId,
       loadFilterValues: _loadFilterValues,
-      countLoader: _countFilteredDownloads,
       onBack: onBack,
       onFiltersChanged: onChanged,
     );
@@ -500,7 +487,6 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
       serverId: 'downloads',
       libraryKey: optionsSectionId,
       loadFilterValues: _loadFilterValues,
-      countLoader: _countFilteredDownloads,
     );
     if (!mounted) return;
     await _applyFilters(pending);

@@ -918,20 +918,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
-  /// How many items [clauses] would show. Powers the editor's Show button:
-  /// one page-zero request per settled edit, which both backends answer with
-  /// a total and no items.
-  Future<int?> _countFilteredItems(List<LibraryFilter> clauses) async {
-    if (!mounted) return null;
-    final client = context.getMediaClientForLibrary(widget.library);
-    final page = await client.fetchLibraryPagedContent(
-      widget.library.id,
-      query: _buildQuery(clauses: clauses, offset: 0, limit: 0),
-      libraryKind: widget.library.kind,
-    );
-    return page.totalCount;
-  }
-
   @override
   void onPageLoaded(int start, List<MediaItem> pageItems) {
     _prefetchImages(start, pageItems);
@@ -1200,8 +1186,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       serverId: widget.library.serverId!,
       libraryKey: widget.library.globalKey,
       loadFilterValues: _loadFilterValues,
-      countLoader: _countFilteredItems,
-      initialCount: hasLoadedData ? totalSize : null,
       onBack: onBack,
       // Pre-populated values arrive from MediaBrowser filter discovery. The
       // empty map for Plex libraries falls through to lazy `getFilterValues`.
@@ -1256,8 +1240,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       libraryKey: widget.library.globalKey,
       loadFilterValues: _loadFilterValues,
       cachedValues: _mediaBrowserFilterValues,
-      countLoader: _countFilteredItems,
-      initialCount: hasLoadedData ? totalSize : null,
     );
     if (!mounted || listEquals(pending, _selectedFilters)) return;
     await _applyFilters(pending);
