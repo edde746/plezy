@@ -50,17 +50,25 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
     // Live TV: relative epoch-based skips go through the parent accumulator —
     // an absolute target is meaningless against a moving live edge (#1253).
+    // It clamps to the capture-buffer window and reports back how far the
+    // target really moved, so the badge counts that rather than the step.
     if (widget.isLive && widget.onLiveSeekBy != null) {
       final stepSeconds = (delta.inMilliseconds.abs() / 1000).round().clamp(1, 300);
-      widget.onLiveSeekBy!(forward ? stepSeconds : -stepSeconds);
-      _registerSkipFeedback(isForward: forward, seconds: stepSeconds);
+      final applied = widget.onLiveSeekBy!(forward ? stepSeconds : -stepSeconds);
+      _registerSkipFeedback(isForward: forward, seconds: applied.abs());
       return;
     }
 
     if (widget.player.state.duration.inMilliseconds <= 0) return;
 
+    // Report the distance actually travelled, not the distance asked for. The
+    // accumulator clamps its target to the media bounds, so at either end a
+    // press is absorbed — counting the raw step there would leave the badge
+    // climbing for as long as the key is held while the playhead sits still.
+    final before = _hiddenSeek.pendingPosition ?? widget.player.state.position;
     _hiddenSeek.seekBy(delta);
-    _registerSkipFeedback(isForward: forward, seconds: (delta.inMilliseconds.abs() / 1000).round());
+    final applied = (_hiddenSeek.pendingPosition ?? before) - before;
+    _registerSkipFeedback(isForward: forward, seconds: (applied.inMilliseconds.abs() / 1000).round());
   }
 
   /// Seek requested by a configured keyboard shortcut (the default Left/Right
@@ -688,6 +696,9 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   /// into one running total; a direction flip restarts the count.
   void _registerSkipFeedback({required bool isForward, required int seconds}) {
     final stacking = _showDoubleTapFeedback && _lastDoubleTapWasForward == isForward;
+    // A press the start/end clamp swallowed whole moves nothing. Leave a total
+    // already on screen alone rather than raising a badge promising 0s.
+    if (seconds == 0 && !stacking) return;
     _accumulatedSkipSeconds.value = stacking ? _accumulatedSkipSeconds.value + seconds : seconds;
     _showSkipFeedback(isForward: isForward);
   }
@@ -737,9 +748,24 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     // triggered by this tap's own seek — would take down the readout this tap
     // is about to put up.
     _hiddenSeek.cancel();
-    _registerSkipFeedback(isForward: isForward, seconds: _seekTimeSmall);
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
+
+    // Count what the seek will actually travel, so taps at either end stop
+    // growing the total. Live reports its own applied amount back from the
+    // parent accumulator's capture-buffer clamp, and performing the skip is
+    // what yields it — so that branch skips are dispatched here rather than
+    // through _seekByOffset, which would repeat them.
+    final liveSeekBy = widget.isLive ? widget.onLiveSeekBy : null;
+    if (liveSeekBy != null) {
+      _registerSkipFeedback(isForward: isForward, seconds: liveSeekBy(delta.inSeconds).abs());
+      return;
+    }
+
+    final position = widget.player.state.position;
+    final applied = clampSeekPosition(widget.player, position + delta) - position;
+    _registerSkipFeedback(isForward: isForward, seconds: (applied.inMilliseconds.abs() / 1000).round());
+
     unawaited(_seekByOffset(delta));
   }
 

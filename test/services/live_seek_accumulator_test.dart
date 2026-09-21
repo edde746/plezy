@@ -53,6 +53,22 @@ void main() {
       });
     });
 
+    test('reports how far the window let the target move', () {
+      fakeAsync((async) {
+        window = (start: 975, end: 1000000); // only 25s behind the live epoch
+        final acc = build();
+
+        expect(acc.seekBy(-10), -10, reason: 'the whole step fits');
+        expect(acc.seekBy(-10), -10);
+        expect(acc.seekBy(-10), -5, reason: 'clamped to what was left of the window');
+        expect(acc.seekBy(-10), 0, reason: 'parked on the window edge, nothing moves');
+
+        async.elapse(const Duration(milliseconds: 300));
+        expect(seeks, [975]);
+        acc.dispose();
+      });
+    });
+
     test('accumulates off the pending target, not the laggy live epoch', () {
       fakeAsync((async) {
         final acc = build();

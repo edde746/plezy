@@ -81,7 +81,8 @@ class DesktopVideoControls extends StatefulWidget {
   final ValueChanged<int>? onLiveSeek;
 
   /// Relative live-TV skip callback (delta seconds); parent accumulates+debounces.
-  final ValueChanged<int>? onLiveSeekBy;
+  /// Returns the seconds the target actually moved after the window clamp.
+  final int Function(int deltaSeconds)? onLiveSeekBy;
   final VoidCallback? onJumpToLive;
 
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)

@@ -653,7 +653,10 @@ class PlexVideoControls extends StatefulWidget {
   /// Relative live-TV skip callback (delta seconds). The owning screen
   /// accumulates rapid presses and debounces the transcode re-open, so skip
   /// buttons/dpad/remote keys must use this rather than `onLiveSeek` (#1253).
-  final ValueChanged<int>? onLiveSeekBy;
+  ///
+  /// Returns the seconds the target actually moved, which the capture-buffer
+  /// window may clamp to less than the step asked for, or to nothing at all.
+  final int Function(int deltaSeconds)? onLiveSeekBy;
 
   final VoidCallback? onJumpToLive;
 

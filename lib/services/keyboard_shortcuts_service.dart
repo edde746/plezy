@@ -263,7 +263,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onVolumeUp,
     VoidCallback? onVolumeDown,
     VoidCallback? onToggleMute,
-    ValueChanged<int>? onLiveSeekBy,
+    int Function(int deltaSeconds)? onLiveSeekBy,
 
     /// Persists a speed changed by the speed shortcuts. Supplied by the
     /// player surface so the write can honor the configured persistence

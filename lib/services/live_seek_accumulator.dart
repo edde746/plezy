@@ -58,10 +58,16 @@ class LiveSeekAccumulator {
 
   /// Accumulate a relative skip of [deltaSeconds] and (re)arm the debounce.
   /// No-op when there is no seekable window.
-  void seekBy(int deltaSeconds) {
-    if (_disposed) return;
+  ///
+  /// Returns the seconds the target actually moved: less than [deltaSeconds]
+  /// when the window clamps the step, and zero when it absorbs the step whole.
+  /// Callers that describe the skip to the viewer report this rather than what
+  /// they asked for, so a readout cannot promise travel past either end of the
+  /// capture buffer.
+  int seekBy(int deltaSeconds) {
+    if (_disposed) return 0;
     final window = bounds();
-    if (window == null) return;
+    if (window == null) return 0;
 
     final base = _pendingEpoch ?? currentEpoch();
     final clampedBase = base.clamp(window.start, window.end);
@@ -69,7 +75,7 @@ class LiveSeekAccumulator {
     // Do not rebuild the stream when a relative skip is clamped back to the
     // position it already occupies (most commonly fast-forward at live edge).
     // Once a burst has a pending target, keep its normal debounce semantics.
-    if (_pendingEpoch == null && target == clampedBase) return;
+    if (_pendingEpoch == null && target == clampedBase) return 0;
     if (target != _pendingEpoch) {
       _pendingEpoch = target;
       onChanged?.call();
@@ -77,6 +83,9 @@ class LiveSeekAccumulator {
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, () => unawaited(_flush()));
+    // Measured from the clamped base: an unpinned burst can start from an epoch
+    // the window has already moved past, and the step never travelled that gap.
+    return target - clampedBase;
   }
 
   Future<void> _flush() async {
