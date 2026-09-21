@@ -1263,5 +1263,26 @@ void main() {
       // Never called startConnectivityMonitoring → both fields are null.
       expect(svc.dispose, returnsNormally);
     });
+
+    test('a queued write that lands after dispose completes without notifying', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(db);
+      final mgr = MultiServerManager();
+      final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
+      addTearDown(() async {
+        mgr.dispose();
+        await db.close();
+      });
+      var notifications = 0;
+      svc.addListener(() => notifications++);
+
+      // A profile switch disposes the service while the database write is
+      // still in flight; the completion must not trip the disposed assert.
+      final pending = svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+      svc.dispose();
+      await pending;
+
+      expect(notifications, 0);
+    });
   });
 }
