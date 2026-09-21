@@ -247,8 +247,7 @@ void main() {
 
     await _pumpScreen(tester, db, downloadProvider, multiServerProvider, screenKey: screenKey);
     screenKey.currentState!.tabController.index = 3;
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     expect(find.text('Downloaded Album'), findsOneWidget);
     final headerImages = tester
