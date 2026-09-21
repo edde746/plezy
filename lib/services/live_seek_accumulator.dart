@@ -4,6 +4,11 @@ import 'dart:async';
 /// seekable range). `start` ≈ earliest seekable point, `end` ≈ the live edge.
 typedef LiveSeekBounds = ({int start, int end});
 
+/// Relative live skip entry point: accumulates [deltaSeconds] and returns the
+/// signed seconds actually applied, which is what a readout may announce.
+/// See [LiveSeekAccumulator.seekBy].
+typedef LiveSeekBy = int Function(int deltaSeconds);
+
 /// Coalesces rapid relative live-TV skips into a single transcode re-open.
 ///
 /// Live time-shift seeks don't use `player.seek()` — each one re-opens a fresh
@@ -57,11 +62,17 @@ class LiveSeekAccumulator {
   int? get pendingEpoch => _pendingEpoch;
 
   /// Accumulate a relative skip of [deltaSeconds] and (re)arm the debounce.
-  /// No-op when there is no seekable window.
-  void seekBy(int deltaSeconds) {
-    if (_disposed) return;
+  ///
+  /// Returns the signed seconds actually applied to the pending target: the
+  /// request less whatever the seekable window swallowed, measured from the
+  /// clamped origin because the raw epoch overshoots after a reopen. Zero when
+  /// there is no seekable window or the target is already pinned at an edge —
+  /// the common fast-forward-at-live-edge press — so a readout announcing this
+  /// never promises travel that is not going to happen (#2425).
+  int seekBy(int deltaSeconds) {
+    if (_disposed) return 0;
     final window = bounds();
-    if (window == null) return;
+    if (window == null) return 0;
 
     final base = _pendingEpoch ?? currentEpoch();
     final clampedBase = base.clamp(window.start, window.end);
@@ -69,7 +80,7 @@ class LiveSeekAccumulator {
     // Do not rebuild the stream when a relative skip is clamped back to the
     // position it already occupies (most commonly fast-forward at live edge).
     // Once a burst has a pending target, keep its normal debounce semantics.
-    if (_pendingEpoch == null && target == clampedBase) return;
+    if (_pendingEpoch == null && target == clampedBase) return 0;
     if (target != _pendingEpoch) {
       _pendingEpoch = target;
       onChanged?.call();
@@ -77,6 +88,7 @@ class LiveSeekAccumulator {
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, () => unawaited(_flush()));
+    return target - clampedBase;
   }
 
   Future<void> _flush() async {

@@ -67,6 +67,36 @@ void main() {
     });
   });
 
+  test('reports the distance the clamp let through, not the step asked for', () {
+    // #2425: a badge fed the requested step climbs past the start of the media
+    // while the target sits pinned at zero. Three 10s steps back from 0:25 are
+    // 10, 10 and 5; anything after that is nothing.
+    fakeAsync((async) {
+      var position = const Duration(seconds: 25);
+      final accumulator = DebouncedSeekAccumulator(
+        currentPosition: () => position,
+        duration: () => const Duration(minutes: 1),
+        seek: (_) {},
+      );
+
+      const step = Duration(seconds: -10);
+      expect(accumulator.seekBy(step), const Duration(seconds: -10));
+      expect(accumulator.seekBy(step), const Duration(seconds: -10));
+      expect(accumulator.seekBy(step), const Duration(seconds: -5));
+      expect(accumulator.seekBy(step), Duration.zero);
+      expect(accumulator.pendingPosition, Duration.zero);
+
+      // Symmetric at the end, and a position reported past the end is already
+      // "there": forward applies nothing, backward travels from the end itself.
+      accumulator.cancel();
+      position = const Duration(minutes: 1, milliseconds: 500);
+      expect(accumulator.seekBy(const Duration(seconds: 10)), Duration.zero);
+      expect(accumulator.seekBy(const Duration(seconds: -10)), const Duration(seconds: -10));
+      expect(accumulator.pendingPosition, const Duration(seconds: 50));
+      accumulator.dispose();
+    });
+  });
+
   group('foreign seeks', () {
     test('a seek from elsewhere retires the pin so the next step rebases', () {
       fakeAsync((async) {

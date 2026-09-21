@@ -248,6 +248,23 @@ void main() {
     await settleFeedback(tester);
   });
 
+  testWidgets('a double tap at the end of the item reports only the distance left', (tester) async {
+    // #2425: five seconds from the end, a 10s skip travels five. The readout
+    // says so, and a second pair at the end adds nothing to it.
+    player.setPosition(const Duration(minutes: 44, seconds: 55));
+    await pumpControls(tester);
+
+    await doubleTap(tester, forwardZoneOf(tester));
+    expect(player.seeks, [const Duration(minutes: 45)]);
+    expect(find.text('5s'), findsOneWidget);
+
+    await doubleTap(tester, forwardZoneOf(tester));
+    expect(find.text('5s'), findsOneWidget, reason: 'nothing left to skip through');
+    expect(find.text('15s'), findsNothing);
+
+    await settleFeedback(tester);
+  });
+
   testWidgets('an odd tap left over by a tap stream toggles the chrome', (tester) async {
     await pumpControls(tester);
 
@@ -365,6 +382,8 @@ class _RecordingPlayer implements Player {
 
   bool _playing = true;
   Duration _position = const Duration(minutes: 10);
+
+  void setPosition(Duration value) => _position = value;
 
   @override
   String get playerType => 'mpv';

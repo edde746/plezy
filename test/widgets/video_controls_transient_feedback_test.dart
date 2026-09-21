@@ -12,6 +12,7 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/services/live_seek_accumulator.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -86,7 +87,7 @@ void main() {
       List<MediaChapter>? chapters,
       bool wireTransportCallback = false,
       bool isLive = false,
-      ValueChanged<int>? onLiveSeekBy,
+      LiveSeekBy? onLiveSeekBy,
       String itemId = 'transient-feedback',
     }) async {
       transportCommands = [];
@@ -194,6 +195,55 @@ void main() {
 
       expect(find.text('10s'), findsOneWidget, reason: 'the reverse burst is counted on its own');
       expect(chrome.controlsVisible, isFalse);
+
+      await settleFeedback(tester);
+    });
+
+    testWidgets('a burst that reaches the start of the media stops counting there', (tester) async {
+      // #2425: from 0:25 with a 10s step, three presses travel 10, 10 and 5;
+      // the fourth and fifth dispatch nothing and must add nothing. The badge
+      // keeps reading the 25s that was actually rewound for as long as the
+      // user keeps pressing.
+      player.setPosition(const Duration(seconds: 25));
+      await pumpControls(tester);
+
+      for (var i = 0; i < 5; i++) {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+        await tester.pump();
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+        await tester.pump();
+      }
+
+      expect(find.text('25s'), findsOneWidget, reason: 'the readout reports the distance travelled, not five steps');
+      expect(player.seeks, [const Duration(seconds: 15), const Duration(seconds: 5), Duration.zero]);
+      expect(chrome.controlsVisible, isFalse);
+
+      await settleFeedback(tester);
+    });
+
+    testWidgets('a press with nothing to rewind through raises no badge', (tester) async {
+      // With no readout up, a swallowed press has nothing to announce: a `0s`
+      // badge would describe travel that is not happening. (Whether the
+      // accumulator still dispatches a seek to the position it is already at
+      // is its own business and not asserted here.)
+      player.setPosition(Duration.zero);
+      await pumpControls(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+
+      expect(find.byType(DoubleTapFeedback), findsNothing);
+
+      // The other direction still travels, and starts its own count.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+
+      expect(find.text('10s'), findsOneWidget);
+      expect(player.seeks.last, const Duration(seconds: 10));
 
       await settleFeedback(tester);
     });
@@ -486,7 +536,7 @@ void main() {
       // the release must still reset the tier or the next hold in the same
       // direction resumes mid-acceleration.
       final liveOffsets = <int>[];
-      await pumpControls(tester, isLive: true, onLiveSeekBy: liveOffsets.add);
+      await pumpControls(tester, isLive: true, onLiveSeekBy: _acceptingLiveSeek(liveOffsets));
 
       await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
@@ -508,6 +558,46 @@ void main() {
       await tester.pump();
 
       expect(liveOffsets, [10, 15], reason: 'a fresh hold restarts at the slowest tier');
+      expect(chrome.controlsVisible, isFalse);
+
+      await settleFeedback(tester);
+    });
+
+    testWidgets('a live skip badge reports what the seekable window let through', (tester) async {
+      // #2425 on live TV: the parent accumulator clamps to the capture buffer,
+      // and a fast-forward at the live edge is the everyday case. The badge
+      // may only claim the seconds the accumulator says it applied.
+      final liveOffsets = <int>[];
+      var headroom = 0; // seconds between the playhead and the live edge
+      await pumpControls(
+        tester,
+        isLive: true,
+        onLiveSeekBy: (offset) {
+          liveOffsets.add(offset);
+          final applied = math.min(offset, headroom);
+          headroom -= applied;
+          return applied;
+        },
+      );
+
+      Future<void> pressRight() async {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+        await tester.pump();
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+        await tester.pump();
+      }
+
+      await pressRight();
+      expect(liveOffsets, [10], reason: 'the request still reaches the accumulator');
+      expect(find.byType(DoubleTapFeedback), findsNothing, reason: 'nothing was applied at the edge');
+
+      headroom = 4;
+      await pressRight();
+      expect(find.text('4s'), findsOneWidget);
+
+      await pressRight();
+      expect(find.text('4s'), findsOneWidget, reason: 'pinned at the edge, the total holds');
+      expect(find.text('14s'), findsNothing);
       expect(chrome.controlsVisible, isFalse);
 
       await settleFeedback(tester);
@@ -882,7 +972,7 @@ void main() {
       WidgetTester tester, {
       _RecordingPlayer? withPlayer,
       bool isLive = false,
-      ValueChanged<int>? onLiveSeekBy,
+      LiveSeekBy? onLiveSeekBy,
       ValueChanged<int>? onLiveSeek,
       VoidCallback? onNext,
       bool canNavigateMediaItems = false,
@@ -1079,7 +1169,12 @@ void main() {
       // cancels the queued skip, so its promised total is going nowhere.
       final liveOffsets = <int>[];
       final absoluteSeeks = <int>[];
-      await pumpDesktopControls(tester, isLive: true, onLiveSeekBy: liveOffsets.add, onLiveSeek: absoluteSeeks.add);
+      await pumpDesktopControls(
+        tester,
+        isLive: true,
+        onLiveSeekBy: _acceptingLiveSeek(liveOffsets),
+        onLiveSeek: absoluteSeeks.add,
+      );
 
       await pressKey(tester, LogicalKeyboardKey.arrowRight);
       expect(liveOffsets, [10]);
@@ -1103,7 +1198,12 @@ void main() {
       // nothing else would retire a readout that now describes nothing.
       final liveOffsets = <int>[];
       var nextPresses = 0;
-      await pumpDesktopControls(tester, isLive: true, onLiveSeekBy: liveOffsets.add, onNext: () => nextPresses++);
+      await pumpDesktopControls(
+        tester,
+        isLive: true,
+        onLiveSeekBy: _acceptingLiveSeek(liveOffsets),
+        onNext: () => nextPresses++,
+      );
 
       await pressKey(tester, LogicalKeyboardKey.arrowRight);
       expect(liveOffsets, [10]);
@@ -1151,6 +1251,13 @@ Future<void> _holdMediaKey(WidgetTester tester, LogicalKeyboardKey key) async {
   expect(await tester.sendKeyUpEvent(key), isTrue, reason: '$key up');
   await tester.pump();
 }
+
+/// A live accumulator with unbounded headroom: records every requested offset
+/// and reports it applied in full.
+LiveSeekBy _acceptingLiveSeek(List<int> offsets) => (offset) {
+  offsets.add(offset);
+  return offset;
+};
 
 /// Minimal [Player] that records transport calls and keeps a settable
 /// playing/position state so intent-dependent behaviour can be asserted.

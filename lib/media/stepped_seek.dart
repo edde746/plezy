@@ -109,12 +109,21 @@ class DebouncedSeekAccumulator {
     cancel();
   }
 
-  void seekBy(Duration delta) {
-    if (_disposed) return;
+  /// Accumulate a relative step and (re)arm the debounce.
+  ///
+  /// Returns the displacement actually applied to the pending target — the
+  /// requested [delta] less whatever the `[0, duration]` clamp swallowed, so
+  /// zero once the target is pinned at either end. Measured from the clamped
+  /// origin: a reported position past the end of the media is already "at the
+  /// end" as far as travel is concerned. A readout that announces this rather
+  /// than [delta] can never promise more than the playhead will travel (#2425).
+  Duration seekBy(Duration delta) {
+    if (_disposed) return Duration.zero;
     final maximum = duration();
-    if (maximum <= Duration.zero) return;
+    if (maximum <= Duration.zero) return Duration.zero;
 
     final base = _pendingPosition ?? currentPosition();
+    final originMs = base.inMilliseconds.clamp(0, maximum.inMilliseconds);
     final targetMs = (base + delta).inMilliseconds.clamp(0, maximum.inMilliseconds);
     final target = Duration(milliseconds: targetMs);
     if (target != _pendingPosition) {
@@ -127,6 +136,7 @@ class DebouncedSeekAccumulator {
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, flush);
+    return Duration(milliseconds: targetMs - originMs);
   }
 
   void flush() {

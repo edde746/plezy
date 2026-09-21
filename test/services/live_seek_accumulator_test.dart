@@ -75,9 +75,10 @@ void main() {
       fakeAsync((async) {
         window = (start: 950, end: 1050);
         final acc = build();
-        acc.seekBy(100); // 1000 -> 1100, clamped to 1050
+        // The readout may only claim the 50s the window let through (#2425).
+        expect(acc.seekBy(100), 50); // 1000 -> 1100, clamped to 1050
         expect(acc.pendingEpoch, 1050);
-        acc.seekBy(100); // stays at the edge
+        expect(acc.seekBy(100), 0); // stays at the edge
         expect(acc.pendingEpoch, 1050);
 
         async.elapse(const Duration(milliseconds: 300));
@@ -90,7 +91,7 @@ void main() {
       fakeAsync((async) {
         window = (start: 950, end: 1050);
         final acc = build();
-        acc.seekBy(-100); // 1000 -> 900, clamped to 950
+        expect(acc.seekBy(-100), -50); // 1000 -> 900, clamped to 950
         expect(acc.pendingEpoch, 950);
         acc.dispose();
       });
@@ -102,16 +103,34 @@ void main() {
         final acc = build();
 
         currentEpoch = 1050;
-        acc.seekBy(15);
+        expect(acc.seekBy(15), 0);
         expect(acc.pendingEpoch, isNull);
 
         currentEpoch = 950;
-        acc.seekBy(-15);
+        expect(acc.seekBy(-15), 0);
         expect(acc.pendingEpoch, isNull);
 
         async.elapse(const Duration(milliseconds: 300));
         expect(seeks, isEmpty);
         expect(changes, 0);
+        acc.dispose();
+      });
+    });
+
+    test('measures the applied skip from the window, not an overshooting epoch', () {
+      // After a reopen the raw epoch can sit past the live edge. Forward from
+      // there applies nothing. Backward still targets raw epoch minus the step,
+      // so the readout may only claim the distance from the edge to that
+      // target — a raw-base measurement would announce the full step.
+      fakeAsync((async) {
+        window = (start: 950, end: 1050);
+        final acc = build();
+
+        currentEpoch = 1060;
+        expect(acc.seekBy(15), 0);
+        expect(acc.pendingEpoch, isNull);
+        expect(acc.seekBy(-15), -5);
+        expect(acc.pendingEpoch, 1045);
         acc.dispose();
       });
     });

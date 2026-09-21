@@ -46,6 +46,7 @@ import '../../media/media_version.dart';
 import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../services/live_seek_accumulator.dart';
 import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/scoped_player_prefs.dart';
@@ -650,10 +651,12 @@ class PlexVideoControls extends StatefulWidget {
   /// Seek callback for live TV time-shift (absolute epoch seconds; scrubber)
   final ValueChanged<int>? onLiveSeek;
 
-  /// Relative live-TV skip callback (delta seconds). The owning screen
+  /// Relative live-TV skip entry point (delta seconds). The owning screen
   /// accumulates rapid presses and debounces the transcode re-open, so skip
   /// buttons/dpad/remote keys must use this rather than `onLiveSeek` (#1253).
-  final ValueChanged<int>? onLiveSeekBy;
+  /// Returns the seconds actually applied — zero at the edge of the seekable
+  /// window — which is all the skip badge may announce (#2425).
+  final LiveSeekBy? onLiveSeekBy;
 
   final VoidCallback? onJumpToLive;
 

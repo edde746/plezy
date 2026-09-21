@@ -11,6 +11,7 @@ import '../../media/stepped_seek.dart';
 import '../../mpv/mpv.dart';
 import '../../media/media_source_info.dart';
 import '../../services/fullscreen_state_manager.dart';
+import '../../services/live_seek_accumulator.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/video_volume_controller.dart';
 import '../../utils/desktop_window_padding.dart';
@@ -80,8 +81,9 @@ class DesktopVideoControls extends StatefulWidget {
   final int Function(Duration position)? liveEpochForPosition;
   final ValueChanged<int>? onLiveSeek;
 
-  /// Relative live-TV skip callback (delta seconds); parent accumulates+debounces.
-  final ValueChanged<int>? onLiveSeekBy;
+  /// Relative live-TV skip entry point (delta seconds); the parent accumulates
+  /// and debounces, and reports back the seconds it actually applied.
+  final LiveSeekBy? onLiveSeekBy;
   final VoidCallback? onJumpToLive;
 
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)

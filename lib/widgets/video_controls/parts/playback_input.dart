@@ -44,6 +44,10 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   /// so a burst of presses cannot rebase off a position a slow backend has not
   /// applied yet — without that the badge would report a total the player
   /// never actually seeks.
+  ///
+  /// The badge announces what the accumulator accepted, not what was asked:
+  /// once the target is pinned at the start, the end, or the live edge, a
+  /// press applies nothing and must not add a step to the readout (#2425).
   void _seekByWithFeedback(Duration delta) {
     if (!widget.canControl || delta == Duration.zero) return;
     final forward = !delta.isNegative;
@@ -52,16 +56,19 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     // an absolute target is meaningless against a moving live edge (#1253).
     if (widget.isLive && widget.onLiveSeekBy != null) {
       final stepSeconds = (delta.inMilliseconds.abs() / 1000).round().clamp(1, 300);
-      widget.onLiveSeekBy!(forward ? stepSeconds : -stepSeconds);
-      _registerSkipFeedback(isForward: forward, seconds: stepSeconds);
+      final applied = widget.onLiveSeekBy!(forward ? stepSeconds : -stepSeconds);
+      _registerSkipFeedback(isForward: forward, seconds: applied.abs());
       return;
     }
 
     if (widget.player.state.duration.inMilliseconds <= 0) return;
 
-    _hiddenSeek.seekBy(delta);
-    _registerSkipFeedback(isForward: forward, seconds: (delta.inMilliseconds.abs() / 1000).round());
+    final applied = _hiddenSeek.seekBy(delta);
+    _registerSkipFeedback(isForward: forward, seconds: _wholeSeconds(applied));
   }
+
+  /// Badge granularity: nearest whole second of a travelled distance.
+  static int _wholeSeconds(Duration travelled) => (travelled.inMilliseconds.abs() / 1000).round();
 
   /// Seek requested by a configured keyboard shortcut (the default Left/Right
   /// and Shift+Left/Right bindings, plus any rebinding of them). Desktop never
@@ -686,8 +693,16 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   /// Accumulate skip feedback. Consecutive skips in the same direction stack
   /// into one running total; a direction flip restarts the count.
+  ///
+  /// [seconds] is the distance actually travelled, so a press the clamp
+  /// swallowed whole arrives as zero. With a same-direction total already up
+  /// that press keeps the readout alive at its current value — there is
+  /// nothing left to travel through, and the number not moving says so. With
+  /// nothing up it announces nothing: a `0s` badge, or a direction flip to
+  /// `0s`, would describe a seek that is not happening (#2425).
   void _registerSkipFeedback({required bool isForward, required int seconds}) {
     final stacking = _showDoubleTapFeedback && _lastDoubleTapWasForward == isForward;
+    if (seconds == 0 && !stacking) return;
     _accumulatedSkipSeconds.value = stacking ? _accumulatedSkipSeconds.value + seconds : seconds;
     _showSkipFeedback(isForward: isForward);
   }
@@ -729,6 +744,10 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }
 
   /// Handle a completed skip-zone double tap.
+  ///
+  /// The travelled distance is resolved here, synchronously, rather than read
+  /// back from the seek: the badge must go up with the tap, not after a slow
+  /// backend or a live transcode reopen has answered.
   void _handleDoubleTapSkip({required bool isForward}) {
     if (!widget.canControl) return;
 
@@ -737,10 +756,18 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     // triggered by this tap's own seek — would take down the readout this tap
     // is about to put up.
     _hiddenSeek.cancel();
-    _registerSkipFeedback(isForward: isForward, seconds: _seekTimeSmall);
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    unawaited(_seekByOffset(delta));
+    if (widget.isLive && widget.onLiveSeekBy != null) {
+      final applied = widget.onLiveSeekBy!(delta.inSeconds);
+      _registerSkipFeedback(isForward: isForward, seconds: applied.abs());
+      return;
+    }
+
+    final position = widget.player.state.position;
+    final target = clampSeekPosition(widget.player, position + delta);
+    _registerSkipFeedback(isForward: isForward, seconds: _wholeSeconds(target - position));
+    unawaited(_seekToPosition(target));
   }
 
   /// How long the skip badge stays at full opacity. 1200 ms gives time to read
