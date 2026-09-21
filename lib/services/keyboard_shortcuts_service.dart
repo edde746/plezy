@@ -263,7 +263,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onVolumeUp,
     VoidCallback? onVolumeDown,
     VoidCallback? onToggleMute,
-    ValueChanged<int>? onLiveSeekBy,
 
     /// Persists a speed changed by the speed shortcuts. Supplied by the
     /// player surface so the write can honor the configured persistence
@@ -329,14 +328,8 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onSeekBy(offsetSeconds);
           return;
         }
-        // Relative live-TV skip: route through the parent accumulator, which
-        // coalesces a rapid burst into one transcode re-open (#1253).
-        if (onLiveSeekBy != null) {
-          onLiveSeekBy(offsetSeconds);
-        } else {
-          final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
-          unawaited((onSeekRequested ?? player.seek)(target));
-        }
+        final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
+        unawaited((onSeekRequested ?? player.seek)(target));
       }
 
       void applyRate(double rate) {

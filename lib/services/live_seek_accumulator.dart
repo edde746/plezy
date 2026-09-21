@@ -5,8 +5,8 @@ import 'dart:async';
 typedef LiveSeekBounds = ({int start, int end});
 
 /// Relative live skip entry point: accumulates [deltaSeconds] and returns the
-/// signed seconds actually applied, which is what a readout may announce.
-/// See [LiveSeekAccumulator.seekBy].
+/// seconds actually applied in the direction of the press, or zero — which is
+/// all a readout may announce. See [LiveSeekAccumulator.seekBy].
 typedef LiveSeekBy = int Function(int deltaSeconds);
 
 /// Coalesces rapid relative live-TV skips into a single transcode re-open.
@@ -63,28 +63,37 @@ class LiveSeekAccumulator {
 
   /// Accumulate a relative skip of [deltaSeconds] and (re)arm the debounce.
   ///
-  /// Returns the signed seconds actually applied: the distance from the
-  /// current base to the target the window let through. Zero when there is no
-  /// seekable window or the target is already pinned at an edge — the common
-  /// fast-forward-at-live-edge press — so a readout announcing this never
-  /// promises travel that is not going to happen (#2425).
+  /// Returns the seconds actually applied in the direction of the press: the
+  /// distance from the current base to the target the window let through.
+  /// Zero when there is no seekable window, when the target is already pinned
+  /// at an edge — the common fast-forward-at-live-edge press — or when a window
+  /// that moved under a pending burst drags the target against the press, so a
+  /// readout announcing this never promises travel that is not going to happen
+  /// and never counts a rewind that actually went forward (#2425).
   ///
-  /// The base is the raw epoch, not its clamp: the window is only as fresh as
-  /// the last heartbeat, so at the live edge the playhead routinely runs a few
-  /// seconds past `end`. A rewind from there really does travel the full step,
-  /// and the target is computed from the same base for the same reason.
+  /// The base is the raw epoch and it caps the target, not the window's `end`:
+  /// unlike a VOD duration, the window is only as fresh as the 10s heartbeat,
+  /// so at the live edge the playhead routinely runs a few seconds past `end`
+  /// while genuinely sitting inside the buffer. A rewind from there really does
+  /// travel the full step, and one shorter than the overshoot must not clamp
+  /// back onto the origin and vanish; the flush re-clamps against whatever
+  /// window is current by then. Compare `DebouncedSeekAccumulator.seekBy`,
+  /// which measures from the clamped origin for the opposite reason.
   int seekBy(int deltaSeconds) {
     if (_disposed) return 0;
     final window = bounds();
     if (window == null) return 0;
 
     final base = _pendingEpoch ?? currentEpoch();
-    final clampedBase = base.clamp(window.start, window.end);
-    final target = (base + deltaSeconds).clamp(window.start, window.end);
-    // Do not rebuild the stream when a relative skip is clamped back to the
-    // position it already occupies (most commonly fast-forward at live edge).
-    // Once a burst has a pending target, keep its normal debounce semantics.
-    if (_pendingEpoch == null && target == clampedBase) return 0;
+    final ceiling = base > window.end ? base : window.end;
+    final target = (base + deltaSeconds).clamp(window.start, ceiling);
+    final travelled = target - base;
+    final applied = travelled.sign == deltaSeconds.sign ? travelled : 0;
+    // Do not rebuild the stream when a fresh press applies nothing (most
+    // commonly fast-forward at live edge). Once a burst has a pending target,
+    // keep its normal debounce semantics: the pin follows the clamp so it lands
+    // where the flush would anyway.
+    if (_pendingEpoch == null && applied == 0) return 0;
     if (target != _pendingEpoch) {
       _pendingEpoch = target;
       onChanged?.call();
@@ -92,7 +101,7 @@ class LiveSeekAccumulator {
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, () => unawaited(_flush()));
-    return target - base;
+    return applied;
   }
 
   Future<void> _flush() async {
