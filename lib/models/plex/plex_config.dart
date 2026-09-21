@@ -1,6 +1,5 @@
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../services/settings_service.dart';
 import '../../utils/device_identity.dart';
 
 class PlexConfig {
@@ -57,14 +56,10 @@ class PlexConfig {
     );
   }
 
-  /// Product string [headers] report to Plex: [product], unless the
-  /// "This is an Xbox" setting forces the Xbox identity.
-  String get reportedProduct => SettingsService.plexProductName(product);
-
   Map<String, String> get headers {
     final headers = {
       'X-Plex-Client-Identifier': clientIdentifier,
-      'X-Plex-Product': reportedProduct,
+      'X-Plex-Product': product,
       'X-Plex-Version': version,
       'X-Plex-Platform': platform,
       'X-Plex-Client-Profile-Name': 'Generic',

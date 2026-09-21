@@ -41,7 +41,6 @@ import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:plezy/widgets/setting_tile.dart';
-import 'package:plezy/widgets/settings_section.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/io_fakes.dart';
@@ -547,34 +546,6 @@ void main() {
 
     expect(find.text(t.settings.saveFailed), findsOneWidget);
     expect(find.text(t.settings.importSettingsSuccess), findsNothing);
-  });
-
-  testWidgets('Xbox identity toggle sits directly under Services and writes its preference', (tester) async {
-    final harness = await _pumpSettingsScreen(tester);
-    addTearDown(() => harness.dispose(tester));
-
-    final servicesTile = _navigationTileFor(t.settings.services);
-    expect(servicesTile, findsOneWidget);
-    final xboxTile = find.ancestor(
-      of: find.text(t.settings.thisIsAnXbox),
-      matching: find.byType(FocusableSwitchListTile),
-    );
-    expect(xboxTile, findsOneWidget);
-
-    // Same group as Services, on the row below it.
-    final servicesGroup = find.ancestor(of: servicesTile, matching: find.byType(SettingsGroup));
-    expect(find.descendant(of: servicesGroup, matching: xboxTile), findsOneWidget);
-    expect(tester.getTopLeft(xboxTile).dy, greaterThan(tester.getTopLeft(servicesTile).dy));
-    expect(tester.getTopLeft(xboxTile).dy, greaterThan(tester.getBottomLeft(servicesTile).dy));
-
-    expect(SettingsService.instance.read(SettingsService.thisIsAnXbox), isFalse);
-    await tester.tap(find.text(t.settings.thisIsAnXbox));
-    await _pumpUi(tester);
-    expect(SettingsService.instance.read(SettingsService.thisIsAnXbox), isTrue);
-    expect(
-      tester.widget<SwitchListTile>(find.descendant(of: xboxTile, matching: find.byType(SwitchListTile))).value,
-      isTrue,
-    );
   });
 }
 

@@ -736,20 +736,6 @@ class SettingsService extends BaseSharedPreferencesService {
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
   static const useExternalPlayer = _UseExternalPlayerPref();
   static const forceTvMode = BoolPref('force_tv_mode');
-
-  /// Report the app to Plex as "Plex for Xbox" instead of "Plezy" on every
-  /// request, for servers that treat the Xbox client differently.
-  static const thisIsAnXbox = BoolPref('this_is_an_xbox');
-
-  /// Product name every Plex request reports while [thisIsAnXbox] is on.
-  static const plexForXboxProductName = 'Plex for Xbox';
-
-  /// `X-Plex-Product` value to report to Plex: [configured] normally, the Xbox
-  /// identity while [thisIsAnXbox] is on. Resolved on every read; callers that
-  /// snapshot the value must refresh when the toggle flips.
-  static String plexProductName(String configured) =>
-      (instanceOrNull?.read(thisIsAnXbox) ?? false) ? plexForXboxProductName : configured;
-
   static const visualEffects = EnumPref<VisualEffectsSetting>(
     'visual_effects',
     values: VisualEffectsSetting.values,
@@ -1365,7 +1351,6 @@ class SettingsService extends BaseSharedPreferencesService {
     requireProfileSelectionOnOpen,
     useExternalPlayer,
     forceTvMode,
-    thisIsAnXbox,
     visualEffects,
     ambientLighting,
     audioPassthrough,

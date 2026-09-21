@@ -391,12 +391,6 @@ class PlexClient
   /// factory rather than a shared instance.
   final http.Client Function()? _endpointProbeHttpClientFactory;
 
-  /// The "This is an Xbox" preference, attached when settings were already
-  /// initialized as this client was built. Every request merges a snapshot of
-  /// [PlexConfig.headers], so that snapshot is rebuilt when the toggle flips;
-  /// the settings notifier outlives clients, so [close] removes the listener.
-  ValueNotifier<bool>? _xboxIdentityListenable;
-
   /// Server identifier - all PlexMetadataDto items created by this client are tagged with this
   @override
   final ServerId serverId;
@@ -545,9 +539,6 @@ class PlexClient
       onAllEndpointsExhausted: _onAllEndpointsExhausted,
       validateCandidate: _validateFailoverCandidate,
     );
-
-    _xboxIdentityListenable = SettingsService.instanceOrNull?.listenable(SettingsService.thisIsAnXbox)
-      ?..addListener(_refreshDefaultHeaders);
   }
 
   /// Test-only factory that injects an [http.Client] so URL-builder tests can
@@ -590,22 +581,12 @@ class PlexClient
 
   @override
   void close() {
-    _detachXboxIdentityListener();
     _http.close();
   }
 
   @override
   Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) {
-    _detachXboxIdentityListener();
     return _http.closeGracefully(drainTimeout: drainTimeout);
-  }
-
-  /// Rebuild the header snapshot the transport merges into every request.
-  void _refreshDefaultHeaders() => _http.defaultHeaders = Map.of(config.headers);
-
-  void _detachXboxIdentityListener() {
-    _xboxIdentityListenable?.removeListener(_refreshDefaultHeaders);
-    _xboxIdentityListenable = null;
   }
 
   /// Execute a GET request with endpoint failover (see [FailoverHttpClient]
@@ -797,7 +778,7 @@ class PlexClient
       final headers = <String, String>{'X-Plex-Token': token};
       if (clientIdentifier != null) {
         headers['X-Plex-Client-Identifier'] = clientIdentifier;
-        headers['X-Plex-Product'] = SettingsService.plexProductName('Plezy');
+        headers['X-Plex-Product'] = 'Plezy';
         headers['X-Plex-Device-Name'] = sanitizeHeaderValue(identity.deviceName) ?? 'Plezy';
       }
 
@@ -3147,7 +3128,7 @@ class PlexClient
   /// Client identity every transcode decision/start request carries, shared by
   /// the video and music parameter builders.
   Map<String, String> _transcodeClientParams() => <String, String>{
-    'X-Plex-Product': config.reportedProduct,
+    'X-Plex-Product': config.product,
     'X-Plex-Version': config.version,
     'X-Plex-Client-Identifier': config.clientIdentifier,
     'X-Plex-Platform': _transcodePlatformName(),
@@ -3319,7 +3300,7 @@ class PlexClient
       final authenticationChanged = config.token != newToken || profileScopeId != newProfileScopeId;
       config = config.copyWith(token: newToken);
       profileScopeId = newProfileScopeId;
-      _refreshDefaultHeaders();
+      _http.defaultHeaders = Map.of(config.headers);
       LogRedactionManager.registerToken(newToken);
       _commitMediaProviders(providers);
       if (authenticationChanged) _authenticationSessionId = Object();
@@ -3335,7 +3316,7 @@ class PlexClient
   void applyLanguageUpdate(String languageCode) {
     if (config.languageCode == languageCode) return;
     config = config.copyWith(languageCode: languageCode);
-    _refreshDefaultHeaders();
+    _http.defaultHeaders = Map.of(config.headers);
   }
 
   // ────────────────────────────────────────────────────────────────────

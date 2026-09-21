@@ -8,7 +8,6 @@ import '../media/media_kind.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/json_utils.dart';
-import 'settings_service.dart';
 
 /// Credentials for Plex's cloud Discover provider. The access token is scoped
 /// to the active Plex/Home profile; it must never be logged or persisted here.
@@ -346,7 +345,7 @@ class PlexDiscoverClient {
       'Content-Type': 'application/json',
       'X-Plex-Token': session.accessToken,
       'X-Plex-Client-Identifier': session.clientIdentifier,
-      'X-Plex-Product': SettingsService.plexProductName('Plezy'),
+      'X-Plex-Product': 'Plezy',
       'X-Plex-Version': '2',
     };
     final request = switch (method) {

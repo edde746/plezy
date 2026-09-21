@@ -1,8 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/plex/plex_config.dart';
-import 'package:plezy/services/settings_service.dart';
-
-import '../test_helpers/prefs.dart';
 
 void main() {
   group('PlexConfig.headers', () {
@@ -42,27 +39,6 @@ void main() {
         version: '1.0',
       );
       expect(config.headers['Accept'], 'application/json');
-    });
-  });
-
-  group('X-Plex-Product identity', () {
-    PlexConfig config() =>
-        PlexConfig(baseUrl: 'https://plex.example.com', clientIdentifier: 'client-1', product: 'Plezy', version: '1.0');
-
-    setUp(() async {
-      resetSharedPreferencesForTest();
-      await SettingsService.getInstance();
-    });
-
-    test('reports the configured product by default', () {
-      expect(config().headers['X-Plex-Product'], 'Plezy');
-    });
-
-    test('reports Plex for Xbox while the Xbox identity setting is on', () async {
-      await SettingsService.instance.write(SettingsService.thisIsAnXbox, true);
-
-      expect(config().reportedProduct, SettingsService.plexForXboxProductName);
-      expect(config().headers['X-Plex-Product'], 'Plex for Xbox');
     });
   });
 }
