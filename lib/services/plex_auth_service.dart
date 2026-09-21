@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
+import 'settings_service.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/account_preferences.dart';
@@ -54,6 +55,9 @@ class PlexAuthService {
   static const String _appName = 'Plezy';
   static const String _plexApiBase = 'https://plex.tv/api/v2';
   static const String _clientsApi = 'https://clients.plex.tv/api/v2';
+
+  /// Product reported to plex.tv; honors the "This is an Xbox" identity.
+  static String get _reportedAppName => SettingsService.plexProductName(_appName);
 
   final MediaServerHttpClient _http;
   final String _clientIdentifier;
@@ -109,7 +113,7 @@ class PlexAuthService {
   Map<String, String> _getCommonHeaders({String? authToken}) {
     final headers = {
       'Accept': 'application/json',
-      'X-Plex-Product': _appName,
+      'X-Plex-Product': _reportedAppName,
       'X-Plex-Client-Identifier': _clientIdentifier,
       'X-Plex-Platform': _platform,
       'X-Plex-Device-Name': ?_deviceName,
@@ -163,7 +167,7 @@ class PlexAuthService {
 
   /// Construct the Auth App URL for the user to visit
   String getAuthUrl(String pinCode) {
-    final params = {'clientID': _clientIdentifier, 'code': pinCode, 'context[device][product]': _appName};
+    final params = {'clientID': _clientIdentifier, 'code': pinCode, 'context[device][product]': _reportedAppName};
 
     return 'https://app.plex.tv/auth#?${encodeQueryParameters(params)}';
   }
@@ -311,7 +315,7 @@ class PlexAuthService {
       'includeProviders': '1',
       'includeSettings': '1',
       'includeSharedSettings': '1',
-      'X-Plex-Product': _appName,
+      'X-Plex-Product': _reportedAppName,
       'X-Plex-Version': _appVersion,
       'X-Plex-Client-Identifier': _clientIdentifier,
       'X-Plex-Platform': _platform,

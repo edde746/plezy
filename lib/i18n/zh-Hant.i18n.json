@@ -322,6 +322,7 @@
     "discordRichPresenceDescription": "在 Discord 上顯示您正在觀看的內容",
     "services": "外部服務",
     "servicesDescription": "連結 Trakt、MyAnimeList、Seerr 等服務",
+    "thisIsAnXbox": "",
     "manageLibrariesDescription": "重新排序與隱藏媒體庫",
     "companionRemoteServer": "隨身遙控器伺服器",
     "companionRemoteServerDescription": "允許區域網路中的行動裝置控制此應用程式",

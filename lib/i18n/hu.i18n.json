@@ -322,6 +322,7 @@
     "discordRichPresenceDescription": "Megjeleníti a Discordon, hogy éppen mit nézel",
     "services": "Szolgáltatások",
     "servicesDescription": "Trakt, MyAnimeList, Seerr és egyéb szolgáltatások csatlakoztatása",
+    "thisIsAnXbox": "",
     "manageLibrariesDescription": "Könyvtárak sorrendjének módosítása és elrejtése",
     "companionRemoteServer": "Kísérőtávirányító szervere",
     "companionRemoteServerDescription": "Lehetővé teszi, hogy a hálózaton lévő mobileszközökről vezéreld az alkalmazást",

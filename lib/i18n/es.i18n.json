@@ -322,6 +322,7 @@
     "discordRichPresenceDescription": "Mostrar lo que estás viendo en Discord",
     "services": "Servicios",
     "servicesDescription": "Conecta Trakt, MyAnimeList, Seerr y más",
+    "thisIsAnXbox": "",
     "manageLibrariesDescription": "Reordena y oculta bibliotecas",
     "companionRemoteServer": "Servidor de control remoto",
     "companionRemoteServerDescription": "Permitir que dispositivos móviles en tu red controlen esta aplicación",

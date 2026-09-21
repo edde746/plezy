@@ -1818,6 +1818,45 @@ void main() {
       expect(query, containsPair('duration', '1200000'));
     });
   });
+
+  test('every request reports Plex for Xbox once the Xbox identity setting is on', () async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+
+    final products = <String?>[];
+    final client = testPlexClient(
+      serverId: publicServerId,
+      profileScopeId: defaultProfileScopeId,
+      config: testPlexConfig(machineIdentifier: 'machine-1'),
+      handler: (request) async {
+        products.add(request.headers['X-Plex-Product']);
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {'Directory': <dynamic>[]},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      },
+    );
+    addTearDown(client.close);
+
+    await client.fetchLibraries();
+    expect(products.single, 'Plezy Test');
+
+    // An already-connected client refreshes its header snapshot when the
+    // toggle flips, so the change needs no reconnect.
+    await SettingsService.instance.write(SettingsService.thisIsAnXbox, true);
+    await client.fetchLibraries();
+
+    expect(products.last, SettingsService.plexForXboxProductName);
+    expect(products.last, 'Plex for Xbox');
+
+    await SettingsService.instance.write(SettingsService.thisIsAnXbox, false);
+    await client.fetchLibraries();
+
+    expect(products.last, 'Plezy Test');
+  });
 }
 
 class _AbortAwareActivitiesClient extends http.BaseClient {

@@ -1005,6 +1005,9 @@ class Translations$settings$en {
 	/// en: 'Connect Trakt, MyAnimeList, Seerr, and more'
 	String get servicesDescription => 'Connect Trakt, MyAnimeList, Seerr, and more';
 
+	/// en: 'This is an Xbox'
+	String get thisIsAnXbox => 'This is an Xbox';
+
 	/// en: 'Reorder and hide libraries'
 	String get manageLibrariesDescription => 'Reorder and hide libraries';
 
@@ -7528,6 +7531,7 @@ extension on Translations {
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
 			'settings.services' => 'Services',
 			'settings.servicesDescription' => 'Connect Trakt, MyAnimeList, Seerr, and more',
+			'settings.thisIsAnXbox' => 'This is an Xbox',
 			'settings.manageLibrariesDescription' => 'Reorder and hide libraries',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
@@ -7731,9 +7735,9 @@ extension on Translations {
 			'fileInfo.matchScore' => 'Match Score',
 			'fileInfo.externalDelivery' => 'Can Be Served Separately',
 			'fileInfo.sidecarPath' => 'Sidecar Path',
-			'fileInfo.sourceStream' => 'Copied From',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sourceStream' => 'Copied From',
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
@@ -8245,9 +8249,9 @@ extension on Translations {
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
-			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			'libraries.manageLibraries' => 'Manage Libraries',
@@ -8759,9 +8763,9 @@ extension on Translations {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
 			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} set the speed to ${speed}',
@@ -9273,9 +9277,9 @@ extension on Translations {
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Add to ${name}',
 			'addServer.signInWithPlexCard' => 'Sign in with Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
-			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',

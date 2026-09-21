@@ -322,6 +322,7 @@
     "discordRichPresenceDescription": "Discordで視聴中の内容を表示",
     "services": "サービス",
     "servicesDescription": "Trakt、MyAnimeList、Seerrなどを接続",
+    "thisIsAnXbox": "",
     "manageLibrariesDescription": "ライブラリを並べ替えたり非表示にしたりできます",
     "companionRemoteServer": "コンパニオンリモートサーバー",
     "companionRemoteServerDescription": "ネットワーク上のモバイルデバイスからこのアプリを操作できるようにする",

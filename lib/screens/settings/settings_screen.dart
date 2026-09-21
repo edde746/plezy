@@ -100,6 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kPlayback = 'playback';
   static const _kManageLibraries = 'manage_libraries';
   static const _kServices = 'services';
+  static const _kThisIsAnXbox = 'this_is_an_xbox';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
@@ -203,6 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                     _buildPlaybackTile(),
                     if (hasLibraries) _buildManageLibrariesTile(sheetContext),
                     _buildServicesTile(),
+                    _buildThisIsAnXboxTile(),
                   ],
                 ),
 
@@ -325,6 +327,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           destinationBuilder: (_) => const ServicesSettingsScreen(),
         );
       },
+    );
+  }
+
+  /// Identity override for Plex servers that treat the Xbox client
+  /// differently: every Plex request reports `X-Plex-Product: Plex for Xbox`
+  /// instead of the app's own product name, including plex.tv sign-in.
+  Widget _buildThisIsAnXboxTile() {
+    return SettingSwitchTile(
+      focusNode: _focusTracker.get(_kThisIsAnXbox),
+      pref: settings.SettingsService.thisIsAnXbox,
+      icon: Symbols.sports_esports_rounded,
+      title: t.settings.thisIsAnXbox,
     );
   }
 

@@ -322,6 +322,7 @@
     "discordRichPresenceDescription": "Показвай какво гледате в Discord",
     "services": "Услуги",
     "servicesDescription": "Свържи Trakt, MyAnimeList, Seerr и още",
+    "thisIsAnXbox": "",
     "manageLibrariesDescription": "Пренареждай и скривай библиотеки",
     "companionRemoteServer": "Сървър за дистанционно управление",
     "companionRemoteServerDescription": "Позволи на мобилни устройства във вашата мрежа да управляват това приложение",

@@ -322,6 +322,7 @@
     "discordRichPresenceDescription": "Vis på Discord, hvad du ser",
     "services": "Tjenester",
     "servicesDescription": "Forbind Trakt, MyAnimeList, Seerr og mere",
+    "thisIsAnXbox": "",
     "manageLibrariesDescription": "Omarranger og skjul biblioteker",
     "companionRemoteServer": "Fjernbetjeningsserver",
     "companionRemoteServerDescription": "Tillad mobilenheder på dit netværk at styre denne app",
