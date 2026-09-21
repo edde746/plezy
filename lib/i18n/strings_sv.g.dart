@@ -448,7 +448,7 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Slå på HDR för HDR-innehåll och sedan tillbaka till SDR';
 	@override String get displaySwitchDelay => 'Fördröjning vid skärmbyte';
 	@override String get tunneledPlayback => 'Tunneluppspelning';
-	@override String get tunneledPlaybackDescription => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.';
+	@override String get tunneledPlaybackDescription => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video eller rörelser hackar.';
 	@override String get audioPassthrough => 'Ljudgenomströmning';
 	@override String get audioPassthroughDescription => 'Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.';
@@ -462,7 +462,7 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Normalisera ljudstyrka vid nedmixning';
 	@override String get audioDownmixNormalizeDescription => 'Sänk ljudnivån för att förhindra klippning. Stäng av för att behålla originalvolymen (starka ljud kan då bli förvrängda).';
 	@override String get dvConversionMode => 'Dolby Vision-konvertering';
-	@override String get dvConversionModeDescription => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.';
+	@override String get dvConversionModeDescription => 'Välj hur Dolby Vision Profile 7-filer hanteras.';
 	@override String get dvConversionAuto => 'Auto';
 	@override String get dvConversionNative => 'Inbyggt / inaktiverat';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$sv extends Translations$downloads$en {
 	@override String get downloadQueued => 'Nedladdning köad';
 	@override String get downloadResumed => 'Nedladdning återupptagen';
 	@override String get serverErrorBitrate => 'Serverfel: filen kan överskrida serverns bithastighetsgräns';
-	@override String get storageFull => 'Nedladdningarna stoppades eftersom enhetens lagringsutrymme är fullt. Frigör utrymme och försök igen.';
+	@override String get storageFull => 'Nedladdningarna stoppades för att skydda det lediga lagringsutrymmet. Frigör utrymme eller välj en annan nedladdningsplats och försök igen.';
 	@override String get storageUnavailable => 'Nedladdningarna stoppades eftersom det lediga lagringsutrymmet inte kunde kontrolleras. Kontrollera nedladdningsplatsen och försök igen.';
 	@override String episodesQueued({required Object count}) => '${count} avsnitt köade för nedladdning';
 	@override String get downloadDeleted => 'Nedladdning borttagen';
@@ -2530,7 +2530,7 @@ class _Translations$libraries$sortLabels$sv extends Translations$libraries$sortL
 	@override String get dateShared => 'Delningsdatum';
 	@override String get latestEpisodeAirDate => 'Senaste avsnittets sändningsdatum';
 	@override String get lastEpisodeDateAdded => 'Datum då senaste avsnittet lades till';
-	@override String get dateDownloaded => 'Nedladdad';
+	@override String get dateDownloaded => 'Nedladdningsdatum';
 	@override String get size => 'Storlek';
 	@override String get library => 'Bibliotek';
 }
@@ -3342,7 +3342,7 @@ extension on TranslationsSv {
 			'settings.matchDynamicRangeDescription' => 'Slå på HDR för HDR-innehåll och sedan tillbaka till SDR',
 			'settings.displaySwitchDelay' => 'Fördröjning vid skärmbyte',
 			'settings.tunneledPlayback' => 'Tunneluppspelning',
-			'settings.tunneledPlaybackDescription' => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video.',
+			'settings.tunneledPlaybackDescription' => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video eller rörelser hackar.',
 			'settings.audioPassthrough' => 'Ljudgenomströmning',
 			'settings.audioPassthroughDescription' => 'Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.',
@@ -3356,7 +3356,7 @@ extension on TranslationsSv {
 			'settings.audioDownmixNormalize' => 'Normalisera ljudstyrka vid nedmixning',
 			'settings.audioDownmixNormalizeDescription' => 'Sänk ljudnivån för att förhindra klippning. Stäng av för att behålla originalvolymen (starka ljud kan då bli förvrängda).',
 			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
-			'settings.dvConversionModeDescription' => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.',
+			'settings.dvConversionModeDescription' => 'Välj hur Dolby Vision Profile 7-filer hanteras.',
 			'settings.dvConversionAuto' => 'Auto',
 			'settings.dvConversionNative' => 'Inbyggt / inaktiverat',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4103,7 +4103,7 @@ extension on TranslationsSv {
 			'libraries.sortLabels.dateShared' => 'Delningsdatum',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Senaste avsnittets sändningsdatum',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Datum då senaste avsnittet lades till',
-			'libraries.sortLabels.dateDownloaded' => 'Nedladdad',
+			'libraries.sortLabels.dateDownloaded' => 'Nedladdningsdatum',
 			'libraries.sortLabels.size' => 'Storlek',
 			'libraries.sortLabels.library' => 'Bibliotek',
 			'about.title' => 'Om',
@@ -4565,7 +4565,7 @@ extension on TranslationsSv {
 			'downloads.downloadQueued' => 'Nedladdning köad',
 			'downloads.downloadResumed' => 'Nedladdning återupptagen',
 			'downloads.serverErrorBitrate' => 'Serverfel: filen kan överskrida serverns bithastighetsgräns',
-			'downloads.storageFull' => 'Nedladdningarna stoppades eftersom enhetens lagringsutrymme är fullt. Frigör utrymme och försök igen.',
+			'downloads.storageFull' => 'Nedladdningarna stoppades för att skydda det lediga lagringsutrymmet. Frigör utrymme eller välj en annan nedladdningsplats och försök igen.',
 			'downloads.storageUnavailable' => 'Nedladdningarna stoppades eftersom det lediga lagringsutrymmet inte kunde kontrolleras. Kontrollera nedladdningsplatsen och försök igen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} avsnitt köade för nedladdning',
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',

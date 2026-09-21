@@ -448,7 +448,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'HDR 콘텐츠에서는 HDR로 전환한 뒤 SDR로 되돌림';
 	@override String get displaySwitchDelay => '디스플레이 전환 지연';
 	@override String get tunneledPlayback => '터널 재생';
-	@override String get tunneledPlaybackDescription => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.';
+	@override String get tunneledPlaybackDescription => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이거나 움직임이 끊기면 비활성화하세요.';
 	@override String get audioPassthrough => '오디오 패스스루';
 	@override String get audioPassthroughDescription => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.';
@@ -462,7 +462,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get audioDownmixNormalize => '다운믹스 시 음량 정규화';
 	@override String get audioDownmixNormalizeDescription => '클리핑을 방지하기 위해 믹스 음량을 낮춥니다. 원래 음량을 유지하려면 끄세요(큰 소리 장면에서 왜곡될 수 있음).';
 	@override String get dvConversionMode => 'Dolby Vision 변환';
-	@override String get dvConversionModeDescription => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.';
+	@override String get dvConversionModeDescription => 'Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.';
 	@override String get dvConversionAuto => '자동';
 	@override String get dvConversionNative => '네이티브 / 비활성화';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1764,7 +1764,7 @@ class _Translations$downloads$ko extends Translations$downloads$en {
 	@override String get downloadQueued => '다운로드 대기 중';
 	@override String get downloadResumed => '다운로드를 재개했습니다';
 	@override String get serverErrorBitrate => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다';
-	@override String get storageFull => '기기 저장 공간이 가득 차서 다운로드를 중지했습니다. 공간을 확보한 후 다시 시도하세요.';
+	@override String get storageFull => '사용 가능한 저장 공간을 보호하기 위해 다운로드를 중지했습니다. 공간을 확보하거나 다른 다운로드 위치를 선택한 후 다시 시도하세요.';
 	@override String get storageUnavailable => '사용 가능한 저장 공간을 확인할 수 없어 다운로드를 중지했습니다. 다운로드 위치를 확인한 후 다시 시도하세요.';
 	@override String episodesQueued({required Object count}) => '에피소드 ${count}개가 다운로드 대기열에 추가되었습니다';
 	@override String get downloadDeleted => '다운로드 삭제됨';
@@ -3331,7 +3331,7 @@ extension on TranslationsKo {
 			'settings.matchDynamicRangeDescription' => 'HDR 콘텐츠에서는 HDR로 전환한 뒤 SDR로 되돌림',
 			'settings.displaySwitchDelay' => '디스플레이 전환 지연',
 			'settings.tunneledPlayback' => '터널 재생',
-			'settings.tunneledPlaybackDescription' => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.',
+			'settings.tunneledPlaybackDescription' => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이거나 움직임이 끊기면 비활성화하세요.',
 			'settings.audioPassthrough' => '오디오 패스스루',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.',
@@ -3345,7 +3345,7 @@ extension on TranslationsKo {
 			'settings.audioDownmixNormalize' => '다운믹스 시 음량 정규화',
 			'settings.audioDownmixNormalizeDescription' => '클리핑을 방지하기 위해 믹스 음량을 낮춥니다. 원래 음량을 유지하려면 끄세요(큰 소리 장면에서 왜곡될 수 있음).',
 			'settings.dvConversionMode' => 'Dolby Vision 변환',
-			'settings.dvConversionModeDescription' => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.',
+			'settings.dvConversionModeDescription' => 'Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.',
 			'settings.dvConversionAuto' => '자동',
 			'settings.dvConversionNative' => '네이티브 / 비활성화',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4554,7 +4554,7 @@ extension on TranslationsKo {
 			'downloads.downloadQueued' => '다운로드 대기 중',
 			'downloads.downloadResumed' => '다운로드를 재개했습니다',
 			'downloads.serverErrorBitrate' => '서버 오류: 파일이 원격 비트레이트 제한을 초과할 수 있습니다',
-			'downloads.storageFull' => '기기 저장 공간이 가득 차서 다운로드를 중지했습니다. 공간을 확보한 후 다시 시도하세요.',
+			'downloads.storageFull' => '사용 가능한 저장 공간을 보호하기 위해 다운로드를 중지했습니다. 공간을 확보하거나 다른 다운로드 위치를 선택한 후 다시 시도하세요.',
 			'downloads.storageUnavailable' => '사용 가능한 저장 공간을 확인할 수 없어 다운로드를 중지했습니다. 다운로드 위치를 확인한 후 다시 시도하세요.',
 			'downloads.episodesQueued' => ({required Object count}) => '에피소드 ${count}개가 다운로드 대기열에 추가되었습니다',
 			'downloads.downloadDeleted' => '다운로드 삭제됨',

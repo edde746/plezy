@@ -448,7 +448,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Schakel HDR in voor HDR-content en daarna terug naar SDR';
 	@override String get displaySwitchDelay => 'Vertraging bij schermwisseling';
 	@override String get tunneledPlayback => 'Getunnelde weergave';
-	@override String get tunneledPlaybackDescription => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft.';
+	@override String get tunneledPlaybackDescription => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.';
 	@override String get audioPassthrough => 'Audio-doorvoer';
 	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.';
@@ -462,7 +462,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Volume normaliseren bij downmix';
 	@override String get audioDownmixNormalizeDescription => 'Verlaagt de mix om clipping te voorkomen. Zet uit om het originele volume te behouden (kan vervormen bij luide scènes).';
 	@override String get dvConversionMode => 'Dolby Vision-conversie';
-	@override String get dvConversionModeDescription => 'Kies hoe ExoPlayer Dolby Vision Profile 7-bestanden verwerkt.';
+	@override String get dvConversionModeDescription => 'Kies hoe Dolby Vision Profile 7-bestanden worden verwerkt.';
 	@override String get dvConversionAuto => 'Automatisch';
 	@override String get dvConversionNative => 'Native / uitgeschakeld';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download in wachtrij';
 	@override String get downloadResumed => 'Download hervat';
 	@override String get serverErrorBitrate => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet';
-	@override String get storageFull => 'Downloads zijn gestopt omdat de opslag van het apparaat vol is. Maak ruimte vrij en probeer het opnieuw.';
+	@override String get storageFull => 'Downloads zijn gestopt om de beschikbare opslagruimte te beschermen. Maak ruimte vrij of kies een andere downloadlocatie en probeer het opnieuw.';
 	@override String get storageUnavailable => 'Downloads zijn gestopt omdat de beschikbare opslag niet kon worden gecontroleerd. Controleer de downloadlocatie en probeer het opnieuw.';
 	@override String episodesQueued({required Object count}) => '${count} afleveringen in wachtrij voor download';
 	@override String get downloadDeleted => 'Download verwijderd';
@@ -3342,7 +3342,7 @@ extension on TranslationsNl {
 			'settings.matchDynamicRangeDescription' => 'Schakel HDR in voor HDR-content en daarna terug naar SDR',
 			'settings.displaySwitchDelay' => 'Vertraging bij schermwisseling',
 			'settings.tunneledPlayback' => 'Getunnelde weergave',
-			'settings.tunneledPlaybackDescription' => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft.',
+			'settings.tunneledPlaybackDescription' => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.',
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
@@ -3356,7 +3356,7 @@ extension on TranslationsNl {
 			'settings.audioDownmixNormalize' => 'Volume normaliseren bij downmix',
 			'settings.audioDownmixNormalizeDescription' => 'Verlaagt de mix om clipping te voorkomen. Zet uit om het originele volume te behouden (kan vervormen bij luide scènes).',
 			'settings.dvConversionMode' => 'Dolby Vision-conversie',
-			'settings.dvConversionModeDescription' => 'Kies hoe ExoPlayer Dolby Vision Profile 7-bestanden verwerkt.',
+			'settings.dvConversionModeDescription' => 'Kies hoe Dolby Vision Profile 7-bestanden worden verwerkt.',
 			'settings.dvConversionAuto' => 'Automatisch',
 			'settings.dvConversionNative' => 'Native / uitgeschakeld',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsNl {
 			'downloads.downloadQueued' => 'Download in wachtrij',
 			'downloads.downloadResumed' => 'Download hervat',
 			'downloads.serverErrorBitrate' => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet',
-			'downloads.storageFull' => 'Downloads zijn gestopt omdat de opslag van het apparaat vol is. Maak ruimte vrij en probeer het opnieuw.',
+			'downloads.storageFull' => 'Downloads zijn gestopt om de beschikbare opslagruimte te beschermen. Maak ruimte vrij of kies een andere downloadlocatie en probeer het opnieuw.',
 			'downloads.storageUnavailable' => 'Downloads zijn gestopt omdat de beschikbare opslag niet kon worden gecontroleerd. Controleer de downloadlocatie en probeer het opnieuw.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',

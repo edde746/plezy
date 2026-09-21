@@ -448,7 +448,7 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Attiva l\'HDR per i contenuti HDR, quindi torna all\'SDR';
 	@override String get displaySwitchDelay => 'Ritardo del cambio di modalità dello schermo';
 	@override String get tunneledPlayback => 'Riproduzione con tunneling';
-	@override String get tunneledPlaybackDescription => 'Usa il tunneling video. Disattivalo se durante la riproduzione HDR lo schermo rimane nero.';
+	@override String get tunneledPlaybackDescription => 'Usa il tunneling video. Disattivalo se durante la riproduzione HDR lo schermo rimane nero o il movimento scatta.';
 	@override String get audioPassthrough => 'Passthrough audio';
 	@override String get audioPassthroughDescription => 'Invia l\'audio Dolby/DTS al ricevitore o al televisore senza ricodificarlo, preservando l\'audio surround. Disattiva questa opzione se non senti alcun suono.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.';
@@ -462,7 +462,7 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Normalizza il volume durante il downmix';
 	@override String get audioDownmixNormalizeDescription => 'Riduce il volume del mix per evitare il clipping. Disattiva questa opzione per mantenere il volume originale (le scene più rumorose potrebbero risultare distorte).';
 	@override String get dvConversionMode => 'Conversione Dolby Vision';
-	@override String get dvConversionModeDescription => 'Scegli come ExoPlayer gestisce i file Dolby Vision con profilo 7.';
+	@override String get dvConversionModeDescription => 'Scegli come gestire i file Dolby Vision con profilo 7.';
 	@override String get dvConversionAuto => 'Auto';
 	@override String get dvConversionNative => 'Nativa / disattivata';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download in coda';
 	@override String get downloadResumed => 'Download ripreso';
 	@override String get serverErrorBitrate => 'Errore server: il file può superare il limite di bitrate remoto';
-	@override String get storageFull => 'I download sono stati interrotti perché lo spazio di archiviazione del dispositivo è esaurito. Libera spazio e riprova.';
+	@override String get storageFull => 'I download sono stati interrotti per preservare lo spazio disponibile. Libera spazio o scegli un’altra posizione di download, quindi riprova.';
 	@override String get storageUnavailable => 'I download sono stati interrotti perché non è stato possibile verificare lo spazio di archiviazione disponibile. Controlla la posizione di download e riprova.';
 	@override String episodesQueued({required Object count}) => '${count} episodi in coda per il download';
 	@override String get downloadDeleted => 'Download eliminato';
@@ -3342,7 +3342,7 @@ extension on TranslationsIt {
 			'settings.matchDynamicRangeDescription' => 'Attiva l\'HDR per i contenuti HDR, quindi torna all\'SDR',
 			'settings.displaySwitchDelay' => 'Ritardo del cambio di modalità dello schermo',
 			'settings.tunneledPlayback' => 'Riproduzione con tunneling',
-			'settings.tunneledPlaybackDescription' => 'Usa il tunneling video. Disattivalo se durante la riproduzione HDR lo schermo rimane nero.',
+			'settings.tunneledPlaybackDescription' => 'Usa il tunneling video. Disattivalo se durante la riproduzione HDR lo schermo rimane nero o il movimento scatta.',
 			'settings.audioPassthrough' => 'Passthrough audio',
 			'settings.audioPassthroughDescription' => 'Invia l\'audio Dolby/DTS al ricevitore o al televisore senza ricodificarlo, preservando l\'audio surround. Disattiva questa opzione se non senti alcun suono.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.',
@@ -3356,7 +3356,7 @@ extension on TranslationsIt {
 			'settings.audioDownmixNormalize' => 'Normalizza il volume durante il downmix',
 			'settings.audioDownmixNormalizeDescription' => 'Riduce il volume del mix per evitare il clipping. Disattiva questa opzione per mantenere il volume originale (le scene più rumorose potrebbero risultare distorte).',
 			'settings.dvConversionMode' => 'Conversione Dolby Vision',
-			'settings.dvConversionModeDescription' => 'Scegli come ExoPlayer gestisce i file Dolby Vision con profilo 7.',
+			'settings.dvConversionModeDescription' => 'Scegli come gestire i file Dolby Vision con profilo 7.',
 			'settings.dvConversionAuto' => 'Auto',
 			'settings.dvConversionNative' => 'Nativa / disattivata',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsIt {
 			'downloads.downloadQueued' => 'Download in coda',
 			'downloads.downloadResumed' => 'Download ripreso',
 			'downloads.serverErrorBitrate' => 'Errore server: il file può superare il limite di bitrate remoto',
-			'downloads.storageFull' => 'I download sono stati interrotti perché lo spazio di archiviazione del dispositivo è esaurito. Libera spazio e riprova.',
+			'downloads.storageFull' => 'I download sono stati interrotti per preservare lo spazio disponibile. Libera spazio o scegli un’altra posizione di download, quindi riprova.',
 			'downloads.storageUnavailable' => 'I download sono stati interrotti perché non è stato possibile verificare lo spazio di archiviazione disponibile. Controlla la posizione di download e riprova.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodi in coda per il download',
 			'downloads.downloadDeleted' => 'Download eliminato',

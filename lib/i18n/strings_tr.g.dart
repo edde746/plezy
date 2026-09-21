@@ -448,7 +448,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'HDR içerik için HDR\'yi aç, ardından SDR\'ye geri dön';
 	@override String get displaySwitchDelay => 'Ekran Değiştirme Gecikmesi';
 	@override String get tunneledPlayback => 'Tünelli Oynatma';
-	@override String get tunneledPlaybackDescription => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa devre dışı bırakın.';
+	@override String get tunneledPlaybackDescription => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.';
 	@override String get audioPassthrough => 'Ses Doğrudan Geçişi (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.';
@@ -462,7 +462,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Dönüştürmede Sesi Normalleştir';
 	@override String get audioDownmixNormalizeDescription => 'Ses patlamalarını önlemek için karışımı düşürün. Orijinal sesi korumak için kapatın (yüksek sesli sahnelerde bozulma yapabilir).';
 	@override String get dvConversionMode => 'Dolby Vision Dönüştürme';
-	@override String get dvConversionModeDescription => 'ExoPlayer\'ın Dolby Vision Profile 7 dosyalarını nasıl işleyeceğini seçin.';
+	@override String get dvConversionModeDescription => 'Dolby Vision Profile 7 dosyalarının nasıl işleneceğini seçin.';
 	@override String get dvConversionAuto => 'Otomatik';
 	@override String get dvConversionNative => 'Yerel / Devre Dışı';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$tr extends Translations$downloads$en {
 	@override String get downloadQueued => 'İndirme kuyruğa alındı';
 	@override String get downloadResumed => 'İndirme devam ettirildi';
 	@override String get serverErrorBitrate => 'Sunucu hatası: dosya uzak bit hızı sınırını aşıyor olabilir';
-	@override String get storageFull => 'Cihaz depolama alanı dolu olduğu için indirmeler durduruldu. Biraz alan boşaltıp tekrar deneyin.';
+	@override String get storageFull => 'Kullanılabilir depolama alanını korumak için indirmeler durduruldu. Alan boşaltın veya başka bir indirme konumu seçin, ardından tekrar deneyin.';
 	@override String get storageUnavailable => 'Kullanılabilir depolama alanı kontrol edilemediği için indirmeler durduruldu. İndirme konumunu kontrol edip tekrar deneyin.';
 	@override String episodesQueued({required Object count}) => 'İndirmek için ${count} bölüm kuyruğa alındı';
 	@override String get downloadDeleted => 'İndirme silindi';
@@ -3342,7 +3342,7 @@ extension on TranslationsTr {
 			'settings.matchDynamicRangeDescription' => 'HDR içerik için HDR\'yi aç, ardından SDR\'ye geri dön',
 			'settings.displaySwitchDelay' => 'Ekran Değiştirme Gecikmesi',
 			'settings.tunneledPlayback' => 'Tünelli Oynatma',
-			'settings.tunneledPlaybackDescription' => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa devre dışı bırakın.',
+			'settings.tunneledPlaybackDescription' => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.',
 			'settings.audioPassthrough' => 'Ses Doğrudan Geçişi (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
@@ -3356,7 +3356,7 @@ extension on TranslationsTr {
 			'settings.audioDownmixNormalize' => 'Dönüştürmede Sesi Normalleştir',
 			'settings.audioDownmixNormalizeDescription' => 'Ses patlamalarını önlemek için karışımı düşürün. Orijinal sesi korumak için kapatın (yüksek sesli sahnelerde bozulma yapabilir).',
 			'settings.dvConversionMode' => 'Dolby Vision Dönüştürme',
-			'settings.dvConversionModeDescription' => 'ExoPlayer\'ın Dolby Vision Profile 7 dosyalarını nasıl işleyeceğini seçin.',
+			'settings.dvConversionModeDescription' => 'Dolby Vision Profile 7 dosyalarının nasıl işleneceğini seçin.',
 			'settings.dvConversionAuto' => 'Otomatik',
 			'settings.dvConversionNative' => 'Yerel / Devre Dışı',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsTr {
 			'downloads.downloadQueued' => 'İndirme kuyruğa alındı',
 			'downloads.downloadResumed' => 'İndirme devam ettirildi',
 			'downloads.serverErrorBitrate' => 'Sunucu hatası: dosya uzak bit hızı sınırını aşıyor olabilir',
-			'downloads.storageFull' => 'Cihaz depolama alanı dolu olduğu için indirmeler durduruldu. Biraz alan boşaltıp tekrar deneyin.',
+			'downloads.storageFull' => 'Kullanılabilir depolama alanını korumak için indirmeler durduruldu. Alan boşaltın veya başka bir indirme konumu seçin, ardından tekrar deneyin.',
 			'downloads.storageUnavailable' => 'Kullanılabilir depolama alanı kontrol edilemediği için indirmeler durduruldu. İndirme konumunu kontrol edip tekrar deneyin.',
 			'downloads.episodesQueued' => ({required Object count}) => 'İndirmek için ${count} bölüm kuyruğa alındı',
 			'downloads.downloadDeleted' => 'İndirme silindi',

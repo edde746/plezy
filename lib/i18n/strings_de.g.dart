@@ -448,7 +448,7 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'HDR für HDR-Inhalte einschalten, danach zurück zu SDR';
 	@override String get displaySwitchDelay => 'Verzögerung beim Displaywechsel';
 	@override String get tunneledPlayback => 'Tunnelwiedergabe';
-	@override String get tunneledPlaybackDescription => 'Video-Tunneling verwenden. Deaktivieren, wenn HDR-Wiedergabe schwarzes Video zeigt.';
+	@override String get tunneledPlaybackDescription => 'Video-Tunneling verwenden. Deaktivieren, wenn HDR-Wiedergabe schwarzes Video zeigt oder Bewegungen ruckeln.';
 	@override String get audioPassthrough => 'Audio-Durchleitung';
 	@override String get audioPassthroughDescription => 'Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Apples nativen Dolby-Decoder für Dolby Digital Plus einschließlich Atmos verwenden. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Deaktivieren, wenn kein Ton zu hören ist.';
@@ -462,7 +462,7 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Lautstärke beim Downmix normalisieren';
 	@override String get audioDownmixNormalizeDescription => 'Senkt den Mix ab, um Übersteuerung zu vermeiden. Deaktivieren, um die Originallautstärke zu behalten (laute Szenen können verzerren).';
 	@override String get dvConversionMode => 'Dolby-Vision-Konvertierung';
-	@override String get dvConversionModeDescription => 'Wähle, wie ExoPlayer Dateien mit Dolby-Vision-Profil 7 behandelt.';
+	@override String get dvConversionModeDescription => 'Wähle, wie Dateien mit Dolby-Vision-Profil 7 behandelt werden.';
 	@override String get dvConversionAuto => 'Automatisch';
 	@override String get dvConversionNative => 'Nativ / deaktiviert';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$de extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download in Warteschlange';
 	@override String get downloadResumed => 'Download fortgesetzt';
 	@override String get serverErrorBitrate => 'Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit';
-	@override String get storageFull => 'Die Downloads wurden angehalten, weil der Gerätespeicher voll ist. Gib Speicherplatz frei und versuche es erneut.';
+	@override String get storageFull => 'Die Downloads wurden angehalten, um den freien Speicherplatz zu schützen. Gib Speicherplatz frei oder wähle einen anderen Download-Speicherort und versuche es erneut.';
 	@override String get storageUnavailable => 'Downloads wurden angehalten, weil der verfügbare Speicherplatz nicht geprüft werden konnte. Prüfe den Download-Speicherort und versuche es erneut.';
 	@override String episodesQueued({required Object count}) => '${count} Episoden zum Download hinzugefügt';
 	@override String get downloadDeleted => 'Download gelöscht';
@@ -3342,7 +3342,7 @@ extension on TranslationsDe {
 			'settings.matchDynamicRangeDescription' => 'HDR für HDR-Inhalte einschalten, danach zurück zu SDR',
 			'settings.displaySwitchDelay' => 'Verzögerung beim Displaywechsel',
 			'settings.tunneledPlayback' => 'Tunnelwiedergabe',
-			'settings.tunneledPlaybackDescription' => 'Video-Tunneling verwenden. Deaktivieren, wenn HDR-Wiedergabe schwarzes Video zeigt.',
+			'settings.tunneledPlaybackDescription' => 'Video-Tunneling verwenden. Deaktivieren, wenn HDR-Wiedergabe schwarzes Video zeigt oder Bewegungen ruckeln.',
 			'settings.audioPassthrough' => 'Audio-Durchleitung',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Apples nativen Dolby-Decoder für Dolby Digital Plus einschließlich Atmos verwenden. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Deaktivieren, wenn kein Ton zu hören ist.',
@@ -3356,7 +3356,7 @@ extension on TranslationsDe {
 			'settings.audioDownmixNormalize' => 'Lautstärke beim Downmix normalisieren',
 			'settings.audioDownmixNormalizeDescription' => 'Senkt den Mix ab, um Übersteuerung zu vermeiden. Deaktivieren, um die Originallautstärke zu behalten (laute Szenen können verzerren).',
 			'settings.dvConversionMode' => 'Dolby-Vision-Konvertierung',
-			'settings.dvConversionModeDescription' => 'Wähle, wie ExoPlayer Dateien mit Dolby-Vision-Profil 7 behandelt.',
+			'settings.dvConversionModeDescription' => 'Wähle, wie Dateien mit Dolby-Vision-Profil 7 behandelt werden.',
 			'settings.dvConversionAuto' => 'Automatisch',
 			'settings.dvConversionNative' => 'Nativ / deaktiviert',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsDe {
 			'downloads.downloadQueued' => 'Download in Warteschlange',
 			'downloads.downloadResumed' => 'Download fortgesetzt',
 			'downloads.serverErrorBitrate' => 'Serverfehler: Datei überschreitet möglicherweise das Remote-Bitrate-Limit',
-			'downloads.storageFull' => 'Die Downloads wurden angehalten, weil der Gerätespeicher voll ist. Gib Speicherplatz frei und versuche es erneut.',
+			'downloads.storageFull' => 'Die Downloads wurden angehalten, um den freien Speicherplatz zu schützen. Gib Speicherplatz frei oder wähle einen anderen Download-Speicherort und versuche es erneut.',
 			'downloads.storageUnavailable' => 'Downloads wurden angehalten, weil der verfügbare Speicherplatz nicht geprüft werden konnte. Prüfe den Download-Speicherort und versuche es erneut.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} Episoden zum Download hinzugefügt',
 			'downloads.downloadDeleted' => 'Download gelöscht',

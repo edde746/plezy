@@ -448,7 +448,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Slå HDR til for HDR-indhold og derefter tilbage til SDR';
 	@override String get displaySwitchDelay => 'Forsinkelse ved skærmskift';
 	@override String get tunneledPlayback => 'Tunneleret afspilning';
-	@override String get tunneledPlaybackDescription => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video.';
+	@override String get tunneledPlaybackDescription => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video, eller bevægelser hakker.';
 	@override String get audioPassthrough => 'Lyd-passthrough';
 	@override String get audioPassthroughDescription => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.';
@@ -462,7 +462,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Normaliser lydstyrken ved downmix';
 	@override String get audioDownmixNormalizeDescription => 'Sænk mixets lydstyrke for at undgå clipping. Slå fra for at bevare den oprindelige lydstyrke (høje scener kan blive forvrænget).';
 	@override String get dvConversionMode => 'Dolby Vision-konvertering';
-	@override String get dvConversionModeDescription => 'Vælg, hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.';
+	@override String get dvConversionModeDescription => 'Vælg, hvordan Dolby Vision Profile 7-filer håndteres.';
 	@override String get dvConversionAuto => 'Automatisk';
 	@override String get dvConversionNative => 'Indbygget / deaktiveret';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download i kø';
 	@override String get downloadResumed => 'Download genoptaget';
 	@override String get serverErrorBitrate => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate';
-	@override String get storageFull => 'Downloads blev stoppet, fordi enhedens lagerplads er fuld. Frigør plads, og prøv igen.';
+	@override String get storageFull => 'Downloads blev stoppet for at beskytte den ledige lagerplads. Frigør plads, eller vælg en anden downloadplacering, og prøv igen.';
 	@override String get storageUnavailable => 'Downloads blev stoppet, fordi den tilgængelige lagerplads ikke kunne kontrolleres. Tjek downloadplaceringen, og prøv igen.';
 	@override String episodesQueued({required Object count}) => '${count} episoder i downloadkø';
 	@override String get downloadDeleted => 'Download slettet';
@@ -3342,7 +3342,7 @@ extension on TranslationsDa {
 			'settings.matchDynamicRangeDescription' => 'Slå HDR til for HDR-indhold og derefter tilbage til SDR',
 			'settings.displaySwitchDelay' => 'Forsinkelse ved skærmskift',
 			'settings.tunneledPlayback' => 'Tunneleret afspilning',
-			'settings.tunneledPlaybackDescription' => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video.',
+			'settings.tunneledPlaybackDescription' => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video, eller bevægelser hakker.',
 			'settings.audioPassthrough' => 'Lyd-passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.',
@@ -3356,7 +3356,7 @@ extension on TranslationsDa {
 			'settings.audioDownmixNormalize' => 'Normaliser lydstyrken ved downmix',
 			'settings.audioDownmixNormalizeDescription' => 'Sænk mixets lydstyrke for at undgå clipping. Slå fra for at bevare den oprindelige lydstyrke (høje scener kan blive forvrænget).',
 			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
-			'settings.dvConversionModeDescription' => 'Vælg, hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.',
+			'settings.dvConversionModeDescription' => 'Vælg, hvordan Dolby Vision Profile 7-filer håndteres.',
 			'settings.dvConversionAuto' => 'Automatisk',
 			'settings.dvConversionNative' => 'Indbygget / deaktiveret',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsDa {
 			'downloads.downloadQueued' => 'Download i kø',
 			'downloads.downloadResumed' => 'Download genoptaget',
 			'downloads.serverErrorBitrate' => 'Serverfejl: filen overskrider muligvis grænsen for ekstern bitrate',
-			'downloads.storageFull' => 'Downloads blev stoppet, fordi enhedens lagerplads er fuld. Frigør plads, og prøv igen.',
+			'downloads.storageFull' => 'Downloads blev stoppet for at beskytte den ledige lagerplads. Frigør plads, eller vælg en anden downloadplacering, og prøv igen.',
 			'downloads.storageUnavailable' => 'Downloads blev stoppet, fordi den tilgængelige lagerplads ikke kunne kontrolleres. Tjek downloadplaceringen, og prøv igen.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episoder i downloadkø',
 			'downloads.downloadDeleted' => 'Download slettet',

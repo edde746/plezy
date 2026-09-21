@@ -448,7 +448,7 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Ativar HDR para conteúdo HDR e depois voltar para SDR';
 	@override String get displaySwitchDelay => 'Atraso na troca do modo de exibição';
 	@override String get tunneledPlayback => 'Reprodução em túnel';
-	@override String get tunneledPlaybackDescription => 'Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR.';
+	@override String get tunneledPlaybackDescription => 'Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR ou o movimento travar.';
 	@override String get audioPassthrough => 'Passagem direta de áudio';
 	@override String get audioPassthroughDescription => 'Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.';
@@ -462,7 +462,7 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Normalizar volume na conversão para estéreo';
 	@override String get audioDownmixNormalizeDescription => 'Reduzir o volume da mixagem para evitar saturação. Desative para manter o volume original, que pode distorcer em cenas muito altas.';
 	@override String get dvConversionMode => 'Conversão Dolby Vision';
-	@override String get dvConversionModeDescription => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.';
+	@override String get dvConversionModeDescription => 'Escolha como os arquivos Dolby Vision Profile 7 são tratados.';
 	@override String get dvConversionAuto => 'Automático';
 	@override String get dvConversionNative => 'Nativo / desativado';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$pt extends Translations$downloads$en {
 	@override String get downloadQueued => 'Download na fila';
 	@override String get downloadResumed => 'Download retomado';
 	@override String get serverErrorBitrate => 'Erro do servidor: o arquivo pode exceder o limite remoto de taxa de bits';
-	@override String get storageFull => 'Os downloads foram interrompidos porque o armazenamento do dispositivo está cheio. Libere espaço e tente novamente.';
+	@override String get storageFull => 'Os downloads foram interrompidos para proteger o espaço disponível. Libere espaço ou escolha outro local de download e tente novamente.';
 	@override String get storageUnavailable => 'Os downloads foram interrompidos porque não foi possível verificar o armazenamento disponível. Verifique o local de download e tente novamente.';
 	@override String episodesQueued({required Object count}) => '${count} episódios na fila de download';
 	@override String get downloadDeleted => 'Download excluído';
@@ -2898,7 +2898,7 @@ class _Translations$companionRemote$remote$pt extends Translations$companionRemo
 	@override String get tabPlay => 'Reproduzir';
 	@override String get tabMore => 'Mais';
 	@override String get menu => 'Menu';
-	@override String get tabNavigation => 'Navegação';
+	@override String get tabNavigation => 'Navegação por abas';
 	@override String get tabDiscover => 'Descobrir';
 	@override String get tabLibraries => 'Bibliotecas';
 	@override String get tabSearch => 'Buscar';
@@ -3342,7 +3342,7 @@ extension on TranslationsPt {
 			'settings.matchDynamicRangeDescription' => 'Ativar HDR para conteúdo HDR e depois voltar para SDR',
 			'settings.displaySwitchDelay' => 'Atraso na troca do modo de exibição',
 			'settings.tunneledPlayback' => 'Reprodução em túnel',
-			'settings.tunneledPlaybackDescription' => 'Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR.',
+			'settings.tunneledPlaybackDescription' => 'Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR ou o movimento travar.',
 			'settings.audioPassthrough' => 'Passagem direta de áudio',
 			'settings.audioPassthroughDescription' => 'Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.',
@@ -3356,7 +3356,7 @@ extension on TranslationsPt {
 			'settings.audioDownmixNormalize' => 'Normalizar volume na conversão para estéreo',
 			'settings.audioDownmixNormalizeDescription' => 'Reduzir o volume da mixagem para evitar saturação. Desative para manter o volume original, que pode distorcer em cenas muito altas.',
 			'settings.dvConversionMode' => 'Conversão Dolby Vision',
-			'settings.dvConversionModeDescription' => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.',
+			'settings.dvConversionModeDescription' => 'Escolha como os arquivos Dolby Vision Profile 7 são tratados.',
 			'settings.dvConversionAuto' => 'Automático',
 			'settings.dvConversionNative' => 'Nativo / desativado',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsPt {
 			'downloads.downloadQueued' => 'Download na fila',
 			'downloads.downloadResumed' => 'Download retomado',
 			'downloads.serverErrorBitrate' => 'Erro do servidor: o arquivo pode exceder o limite remoto de taxa de bits',
-			'downloads.storageFull' => 'Os downloads foram interrompidos porque o armazenamento do dispositivo está cheio. Libere espaço e tente novamente.',
+			'downloads.storageFull' => 'Os downloads foram interrompidos para proteger o espaço disponível. Libere espaço ou escolha outro local de download e tente novamente.',
 			'downloads.storageUnavailable' => 'Os downloads foram interrompidos porque não foi possível verificar o armazenamento disponível. Verifique o local de download e tente novamente.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episódios na fila de download',
 			'downloads.downloadDeleted' => 'Download excluído',
@@ -4718,7 +4718,7 @@ extension on TranslationsPt {
 			'companionRemote.remote.tabPlay' => 'Reproduzir',
 			'companionRemote.remote.tabMore' => 'Mais',
 			'companionRemote.remote.menu' => 'Menu',
-			'companionRemote.remote.tabNavigation' => 'Navegação',
+			'companionRemote.remote.tabNavigation' => 'Navegação por abas',
 			'companionRemote.remote.tabDiscover' => 'Descobrir',
 			'companionRemote.remote.tabLibraries' => 'Bibliotecas',
 			'companionRemote.remote.tabSearch' => 'Buscar',

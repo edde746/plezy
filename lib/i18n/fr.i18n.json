@@ -339,7 +339,7 @@
     "matchDynamicRangeDescription": "Activer HDR pour le contenu HDR, puis revenir en SDR",
     "displaySwitchDelay": "Délai de changement d'affichage",
     "tunneledPlayback": "Lecture tunnelée",
-    "tunneledPlaybackDescription": "Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir.",
+    "tunneledPlaybackDescription": "Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir ou si l’image saccade.",
     "audioPassthrough": "Transmission audio directe",
     "audioPassthroughDescription": "Envoyer l’audio Dolby/DTS à votre ampli ou téléviseur sans le réencoder afin de préserver le son surround. Désactivez cette option en l’absence de son.",
     "audioPassthroughDescriptionAppleTv": "Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.",
@@ -353,7 +353,7 @@
     "audioDownmixNormalize": "Normaliser le volume lors de la conversion en stéréo",
     "audioDownmixNormalizeDescription": "Atténuer le mixage pour éviter la saturation. Désactivez cette option pour conserver le volume d’origine, au risque de déformer les scènes bruyantes.",
     "dvConversionMode": "Conversion Dolby Vision",
-    "dvConversionModeDescription": "Choisir comment ExoPlayer gère les fichiers Dolby Vision de profil 7.",
+    "dvConversionModeDescription": "Choisir comment les fichiers Dolby Vision de profil 7 sont gérés.",
     "dvConversionAuto": "Auto",
     "dvConversionNative": "Natif / désactivé",
     "dvConversionDv81": "P7 → P8.1",
@@ -1270,8 +1270,8 @@
     "licensesCount": "${count} licences"
   },
   "navigation": {
-    "libraries": "Bibliothèque",
-    "downloads": "Téléchargement",
+    "libraries": "Bibliothèques",
+    "downloads": "Téléchargements",
     "liveTv": "TV en direct",
     "explore": "Explorer"
   },
@@ -1735,7 +1735,7 @@
     "downloadQueued": "Téléchargement en attente",
     "downloadResumed": "Téléchargement repris",
     "serverErrorBitrate": "Erreur du serveur : le fichier peut dépasser la limite de débit distant",
-    "storageFull": "Les téléchargements ont été arrêtés car le stockage de l’appareil est plein. Libérez de l’espace, puis réessayez.",
+    "storageFull": "Les téléchargements ont été arrêtés pour préserver l’espace de stockage disponible. Libérez de l’espace ou choisissez un autre emplacement de téléchargement, puis réessayez.",
     "storageUnavailable": "Les téléchargements ont été arrêtés car l’espace de stockage disponible n’a pas pu être vérifié. Vérifiez l’emplacement de téléchargement, puis réessayez.",
     "episodesQueued": "${count} épisodes en attente de téléchargement",
     "downloadDeleted": "Téléchargement supprimé",

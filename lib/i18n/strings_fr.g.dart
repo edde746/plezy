@@ -448,7 +448,7 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Activer HDR pour le contenu HDR, puis revenir en SDR';
 	@override String get displaySwitchDelay => 'Délai de changement d\'affichage';
 	@override String get tunneledPlayback => 'Lecture tunnelée';
-	@override String get tunneledPlaybackDescription => 'Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir.';
+	@override String get tunneledPlaybackDescription => 'Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir ou si l’image saccade.';
 	@override String get audioPassthrough => 'Transmission audio directe';
 	@override String get audioPassthroughDescription => 'Envoyer l’audio Dolby/DTS à votre ampli ou téléviseur sans le réencoder afin de préserver le son surround. Désactivez cette option en l’absence de son.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.';
@@ -462,7 +462,7 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Normaliser le volume lors de la conversion en stéréo';
 	@override String get audioDownmixNormalizeDescription => 'Atténuer le mixage pour éviter la saturation. Désactivez cette option pour conserver le volume d’origine, au risque de déformer les scènes bruyantes.';
 	@override String get dvConversionMode => 'Conversion Dolby Vision';
-	@override String get dvConversionModeDescription => 'Choisir comment ExoPlayer gère les fichiers Dolby Vision de profil 7.';
+	@override String get dvConversionModeDescription => 'Choisir comment les fichiers Dolby Vision de profil 7 sont gérés.';
 	@override String get dvConversionAuto => 'Auto';
 	@override String get dvConversionNative => 'Natif / désactivé';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1413,8 +1413,8 @@ class _Translations$navigation$fr extends Translations$navigation$en {
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get libraries => 'Bibliothèque';
-	@override String get downloads => 'Téléchargement';
+	@override String get libraries => 'Bibliothèques';
+	@override String get downloads => 'Téléchargements';
 	@override String get liveTv => 'TV en direct';
 	@override String get explore => 'Explorer';
 }
@@ -1773,7 +1773,7 @@ class _Translations$downloads$fr extends Translations$downloads$en {
 	@override String get downloadQueued => 'Téléchargement en attente';
 	@override String get downloadResumed => 'Téléchargement repris';
 	@override String get serverErrorBitrate => 'Erreur du serveur : le fichier peut dépasser la limite de débit distant';
-	@override String get storageFull => 'Les téléchargements ont été arrêtés car le stockage de l’appareil est plein. Libérez de l’espace, puis réessayez.';
+	@override String get storageFull => 'Les téléchargements ont été arrêtés pour préserver l’espace de stockage disponible. Libérez de l’espace ou choisissez un autre emplacement de téléchargement, puis réessayez.';
 	@override String get storageUnavailable => 'Les téléchargements ont été arrêtés car l’espace de stockage disponible n’a pas pu être vérifié. Vérifiez l’emplacement de téléchargement, puis réessayez.';
 	@override String episodesQueued({required Object count}) => '${count} épisodes en attente de téléchargement';
 	@override String get downloadDeleted => 'Téléchargement supprimé';
@@ -3342,7 +3342,7 @@ extension on TranslationsFr {
 			'settings.matchDynamicRangeDescription' => 'Activer HDR pour le contenu HDR, puis revenir en SDR',
 			'settings.displaySwitchDelay' => 'Délai de changement d\'affichage',
 			'settings.tunneledPlayback' => 'Lecture tunnelée',
-			'settings.tunneledPlaybackDescription' => 'Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir.',
+			'settings.tunneledPlaybackDescription' => 'Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir ou si l’image saccade.',
 			'settings.audioPassthrough' => 'Transmission audio directe',
 			'settings.audioPassthroughDescription' => 'Envoyer l’audio Dolby/DTS à votre ampli ou téléviseur sans le réencoder afin de préserver le son surround. Désactivez cette option en l’absence de son.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.',
@@ -3356,7 +3356,7 @@ extension on TranslationsFr {
 			'settings.audioDownmixNormalize' => 'Normaliser le volume lors de la conversion en stéréo',
 			'settings.audioDownmixNormalizeDescription' => 'Atténuer le mixage pour éviter la saturation. Désactivez cette option pour conserver le volume d’origine, au risque de déformer les scènes bruyantes.',
 			'settings.dvConversionMode' => 'Conversion Dolby Vision',
-			'settings.dvConversionModeDescription' => 'Choisir comment ExoPlayer gère les fichiers Dolby Vision de profil 7.',
+			'settings.dvConversionModeDescription' => 'Choisir comment les fichiers Dolby Vision de profil 7 sont gérés.',
 			'settings.dvConversionAuto' => 'Auto',
 			'settings.dvConversionNative' => 'Natif / désactivé',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4156,8 +4156,8 @@ extension on TranslationsFr {
 			'licenses.license' => 'Licence',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licence ${number}',
 			'licenses.licensesCount' => ({required Object count}) => '${count} licences',
-			'navigation.libraries' => 'Bibliothèque',
-			'navigation.downloads' => 'Téléchargement',
+			'navigation.libraries' => 'Bibliothèques',
+			'navigation.downloads' => 'Téléchargements',
 			'navigation.liveTv' => 'TV en direct',
 			'navigation.explore' => 'Explorer',
 			'explore.title' => 'Explorer',
@@ -4565,7 +4565,7 @@ extension on TranslationsFr {
 			'downloads.downloadQueued' => 'Téléchargement en attente',
 			'downloads.downloadResumed' => 'Téléchargement repris',
 			'downloads.serverErrorBitrate' => 'Erreur du serveur : le fichier peut dépasser la limite de débit distant',
-			'downloads.storageFull' => 'Les téléchargements ont été arrêtés car le stockage de l’appareil est plein. Libérez de l’espace, puis réessayez.',
+			'downloads.storageFull' => 'Les téléchargements ont été arrêtés pour préserver l’espace de stockage disponible. Libérez de l’espace ou choisissez un autre emplacement de téléchargement, puis réessayez.',
 			'downloads.storageUnavailable' => 'Les téléchargements ont été arrêtés car l’espace de stockage disponible n’a pas pu être vérifié. Vérifiez l’emplacement de téléchargement, puis réessayez.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} épisodes en attente de téléchargement',
 			'downloads.downloadDeleted' => 'Téléchargement supprimé',

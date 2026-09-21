@@ -153,7 +153,7 @@ class _Translations$common$es extends Translations$common$en {
 	@override String get edit => 'Editar';
 	@override String get shuffle => 'Reproducción aleatoria';
 	@override String get addTo => 'Añadir a...';
-	@override String get createNew => 'Crear';
+	@override String get createNew => 'Crear nuevo';
 	@override String get connect => 'Conectar';
 	@override String get disconnect => 'Desconectar';
 	@override String get play => 'Reproducir';
@@ -448,7 +448,7 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Activar HDR para contenido HDR y luego volver a SDR';
 	@override String get displaySwitchDelay => 'Retraso de cambio de pantalla';
 	@override String get tunneledPlayback => 'Reproducción tunelizada';
-	@override String get tunneledPlaybackDescription => 'Usar tunelización de video. Desactívala si HDR muestra video negro.';
+	@override String get tunneledPlaybackDescription => 'Usar tunelización de video. Desactívala si HDR muestra video negro o el movimiento se entrecorta.';
 	@override String get audioPassthrough => 'Transferencia directa de audio';
 	@override String get audioPassthroughDescription => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívala si no tienes sonido.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Usa el decodificador Dolby nativo de Apple para Dolby Digital Plus, incluido Atmos. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Desactívalo si no tienes sonido.';
@@ -462,7 +462,7 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Normalizar volumen al mezclar';
 	@override String get audioDownmixNormalizeDescription => 'Reduce la mezcla para evitar saturación. Desactívalo para mantener el volumen original (puede distorsionar escenas fuertes).';
 	@override String get dvConversionMode => 'Conversión de Dolby Vision';
-	@override String get dvConversionModeDescription => 'Elige cómo gestiona ExoPlayer los archivos Dolby Vision de perfil 7.';
+	@override String get dvConversionModeDescription => 'Elige cómo se gestionan los archivos Dolby Vision de perfil 7.';
 	@override String get dvConversionAuto => 'Automático';
 	@override String get dvConversionNative => 'Nativo / desactivado';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$es extends Translations$downloads$en {
 	@override String get downloadQueued => 'Descarga en cola';
 	@override String get downloadResumed => 'Descarga reanudada';
 	@override String get serverErrorBitrate => 'Error del servidor: el archivo puede superar el límite remoto de tasa de bits';
-	@override String get storageFull => 'Las descargas se detuvieron porque el almacenamiento del dispositivo está lleno. Libera espacio e inténtalo de nuevo.';
+	@override String get storageFull => 'Las descargas se detuvieron para proteger el espacio disponible. Libera espacio o elige otra ubicación de descarga e inténtalo de nuevo.';
 	@override String get storageUnavailable => 'Las descargas se detuvieron porque no se pudo comprobar el almacenamiento disponible. Comprueba la ubicación de descarga y vuelve a intentarlo.';
 	@override String episodesQueued({required Object count}) => '${count} episodios en cola para descargar';
 	@override String get downloadDeleted => 'Descarga eliminada';
@@ -3053,7 +3053,7 @@ extension on TranslationsEs {
 			'common.edit' => 'Editar',
 			'common.shuffle' => 'Reproducción aleatoria',
 			'common.addTo' => 'Añadir a...',
-			'common.createNew' => 'Crear',
+			'common.createNew' => 'Crear nuevo',
 			'common.connect' => 'Conectar',
 			'common.disconnect' => 'Desconectar',
 			'common.play' => 'Reproducir',
@@ -3342,7 +3342,7 @@ extension on TranslationsEs {
 			'settings.matchDynamicRangeDescription' => 'Activar HDR para contenido HDR y luego volver a SDR',
 			'settings.displaySwitchDelay' => 'Retraso de cambio de pantalla',
 			'settings.tunneledPlayback' => 'Reproducción tunelizada',
-			'settings.tunneledPlaybackDescription' => 'Usar tunelización de video. Desactívala si HDR muestra video negro.',
+			'settings.tunneledPlaybackDescription' => 'Usar tunelización de video. Desactívala si HDR muestra video negro o el movimiento se entrecorta.',
 			'settings.audioPassthrough' => 'Transferencia directa de audio',
 			'settings.audioPassthroughDescription' => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívala si no tienes sonido.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Usa el decodificador Dolby nativo de Apple para Dolby Digital Plus, incluido Atmos. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Desactívalo si no tienes sonido.',
@@ -3356,7 +3356,7 @@ extension on TranslationsEs {
 			'settings.audioDownmixNormalize' => 'Normalizar volumen al mezclar',
 			'settings.audioDownmixNormalizeDescription' => 'Reduce la mezcla para evitar saturación. Desactívalo para mantener el volumen original (puede distorsionar escenas fuertes).',
 			'settings.dvConversionMode' => 'Conversión de Dolby Vision',
-			'settings.dvConversionModeDescription' => 'Elige cómo gestiona ExoPlayer los archivos Dolby Vision de perfil 7.',
+			'settings.dvConversionModeDescription' => 'Elige cómo se gestionan los archivos Dolby Vision de perfil 7.',
 			'settings.dvConversionAuto' => 'Automático',
 			'settings.dvConversionNative' => 'Nativo / desactivado',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsEs {
 			'downloads.downloadQueued' => 'Descarga en cola',
 			'downloads.downloadResumed' => 'Descarga reanudada',
 			'downloads.serverErrorBitrate' => 'Error del servidor: el archivo puede superar el límite remoto de tasa de bits',
-			'downloads.storageFull' => 'Las descargas se detuvieron porque el almacenamiento del dispositivo está lleno. Libera espacio e inténtalo de nuevo.',
+			'downloads.storageFull' => 'Las descargas se detuvieron para proteger el espacio disponible. Libera espacio o elige otra ubicación de descarga e inténtalo de nuevo.',
 			'downloads.storageUnavailable' => 'Las descargas se detuvieron porque no se pudo comprobar el almacenamiento disponible. Comprueba la ubicación de descarga y vuelve a intentarlo.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodios en cola para descargar',
 			'downloads.downloadDeleted' => 'Descarga eliminada',

@@ -448,7 +448,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Включи HDR за HDR съдържание, после върни към SDR';
 	@override String get displaySwitchDelay => 'Забавяне при смяна на дисплея';
 	@override String get tunneledPlayback => 'Тунелно възпроизвеждане';
-	@override String get tunneledPlaybackDescription => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.';
+	@override String get tunneledPlaybackDescription => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран или движението прекъсва.';
 	@override String get audioPassthrough => 'Директно предаване на аудио';
 	@override String get audioPassthroughDescription => 'Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.';
@@ -462,7 +462,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Нормализиране на звука при смесване';
 	@override String get audioDownmixNormalizeDescription => 'Понижава микса, за да се предотврати клипинг. Изключете, за да запазите оригиналната сила на звука (възможни изкривявания при силни сцени).';
 	@override String get dvConversionMode => 'Преобразуване на Dolby Vision';
-	@override String get dvConversionModeDescription => 'Изберете как ExoPlayer обработва файлове с Dolby Vision Profile 7.';
+	@override String get dvConversionModeDescription => 'Изберете как да се обработват файлове с Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Автоматично';
 	@override String get dvConversionNative => 'Директно / изключено';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get downloadQueued => 'Изтеглянето е добавено в опашката';
 	@override String get downloadResumed => 'Изтеглянето е възобновено';
 	@override String get serverErrorBitrate => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт';
-	@override String get storageFull => 'Изтеглянията бяха спрени, защото паметта на устройството е пълна. Освободете място и опитайте отново.';
+	@override String get storageFull => 'Изтеглянията бяха спрени, за да се запази свободното място. Освободете място или изберете друго място за изтегляне и опитайте отново.';
 	@override String get storageUnavailable => 'Изтеглянията бяха спрени, защото наличното място не можа да бъде проверено. Проверете местоположението за изтегляне и опитайте отново.';
 	@override String episodesQueued({required Object count}) => '${count} епизода са добавени в опашката за изтегляне';
 	@override String get downloadDeleted => 'Изтеглянето е изтрито';
@@ -3342,7 +3342,7 @@ extension on TranslationsBg {
 			'settings.matchDynamicRangeDescription' => 'Включи HDR за HDR съдържание, после върни към SDR',
 			'settings.displaySwitchDelay' => 'Забавяне при смяна на дисплея',
 			'settings.tunneledPlayback' => 'Тунелно възпроизвеждане',
-			'settings.tunneledPlaybackDescription' => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран.',
+			'settings.tunneledPlaybackDescription' => 'Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран или движението прекъсва.',
 			'settings.audioPassthrough' => 'Директно предаване на аудио',
 			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.',
@@ -3356,7 +3356,7 @@ extension on TranslationsBg {
 			'settings.audioDownmixNormalize' => 'Нормализиране на звука при смесване',
 			'settings.audioDownmixNormalizeDescription' => 'Понижава микса, за да се предотврати клипинг. Изключете, за да запазите оригиналната сила на звука (възможни изкривявания при силни сцени).',
 			'settings.dvConversionMode' => 'Преобразуване на Dolby Vision',
-			'settings.dvConversionModeDescription' => 'Изберете как ExoPlayer обработва файлове с Dolby Vision Profile 7.',
+			'settings.dvConversionModeDescription' => 'Изберете как да се обработват файлове с Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Автоматично',
 			'settings.dvConversionNative' => 'Директно / изключено',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsBg {
 			'downloads.downloadQueued' => 'Изтеглянето е добавено в опашката',
 			'downloads.downloadResumed' => 'Изтеглянето е възобновено',
 			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
-			'downloads.storageFull' => 'Изтеглянията бяха спрени, защото паметта на устройството е пълна. Освободете място и опитайте отново.',
+			'downloads.storageFull' => 'Изтеглянията бяха спрени, за да се запази свободното място. Освободете място или изберете друго място за изтегляне и опитайте отново.',
 			'downloads.storageUnavailable' => 'Изтеглянията бяха спрени, защото наличното място не можа да бъде проверено. Проверете местоположението за изтегляне и опитайте отново.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',

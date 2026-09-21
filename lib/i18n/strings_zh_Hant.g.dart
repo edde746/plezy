@@ -449,7 +449,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get matchDynamicRangeDescription => 'HDR 內容切換至 HDR，播放結束切回 SDR';
 	@override String get displaySwitchDelay => '顯示器切換延遲時間';
 	@override String get tunneledPlayback => '通道化播放（Tunneled Playback）';
-	@override String get tunneledPlaybackDescription => '使用影片通道模式。若 HDR 播放出現黑畫面，請停用此項。';
+	@override String get tunneledPlaybackDescription => '使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。';
 	@override String get audioPassthrough => '音訊直通';
 	@override String get audioPassthroughDescription => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。';
 	@override String get audioPassthroughDescriptionAppleTv => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。';
@@ -463,7 +463,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get audioDownmixNormalize => '下混時音量標準化';
 	@override String get audioDownmixNormalizeDescription => '降低混音電平以防止破音。關閉以保持原始音量（大音量場景可能會失真）。';
 	@override String get dvConversionMode => 'Dolby Vision 轉換模式';
-	@override String get dvConversionModeDescription => '選擇 ExoPlayer 如何處理 Dolby Vision Profile 7 檔案。';
+	@override String get dvConversionModeDescription => '選擇如何處理 Dolby Vision Profile 7 檔案。';
 	@override String get dvConversionAuto => '自動';
 	@override String get dvConversionNative => '原生 / 停用';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1765,7 +1765,7 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get downloadQueued => '下載已排隊';
 	@override String get downloadResumed => '下載已繼續';
 	@override String get serverErrorBitrate => '伺服器錯誤：檔案位元率可能超過遠端位元率限制';
-	@override String get storageFull => '裝置儲存空間已滿，因此下載已停止。請釋出空間後再試一次。';
+	@override String get storageFull => '為保護剩餘儲存空間，下載已停止。請釋出空間或選擇其他下載位置，然後再試一次。';
 	@override String get storageUnavailable => '無法檢查可用儲存空間，因此下載已停止。請檢查下載位置後再試一次。';
 	@override String episodesQueued({required Object count}) => '已將 ${count} 集影片加入下載佇列';
 	@override String get downloadDeleted => '下載內容已刪除';
@@ -3332,7 +3332,7 @@ extension on TranslationsZhHant {
 			'settings.matchDynamicRangeDescription' => 'HDR 內容切換至 HDR，播放結束切回 SDR',
 			'settings.displaySwitchDelay' => '顯示器切換延遲時間',
 			'settings.tunneledPlayback' => '通道化播放（Tunneled Playback）',
-			'settings.tunneledPlaybackDescription' => '使用影片通道模式。若 HDR 播放出現黑畫面，請停用此項。',
+			'settings.tunneledPlaybackDescription' => '使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。',
 			'settings.audioPassthrough' => '音訊直通',
 			'settings.audioPassthroughDescription' => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。',
 			'settings.audioPassthroughDescriptionAppleTv' => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。',
@@ -3346,7 +3346,7 @@ extension on TranslationsZhHant {
 			'settings.audioDownmixNormalize' => '下混時音量標準化',
 			'settings.audioDownmixNormalizeDescription' => '降低混音電平以防止破音。關閉以保持原始音量（大音量場景可能會失真）。',
 			'settings.dvConversionMode' => 'Dolby Vision 轉換模式',
-			'settings.dvConversionModeDescription' => '選擇 ExoPlayer 如何處理 Dolby Vision Profile 7 檔案。',
+			'settings.dvConversionModeDescription' => '選擇如何處理 Dolby Vision Profile 7 檔案。',
 			'settings.dvConversionAuto' => '自動',
 			'settings.dvConversionNative' => '原生 / 停用',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4555,7 +4555,7 @@ extension on TranslationsZhHant {
 			'downloads.downloadQueued' => '下載已排隊',
 			'downloads.downloadResumed' => '下載已繼續',
 			'downloads.serverErrorBitrate' => '伺服器錯誤：檔案位元率可能超過遠端位元率限制',
-			'downloads.storageFull' => '裝置儲存空間已滿，因此下載已停止。請釋出空間後再試一次。',
+			'downloads.storageFull' => '為保護剩餘儲存空間，下載已停止。請釋出空間或選擇其他下載位置，然後再試一次。',
 			'downloads.storageUnavailable' => '無法檢查可用儲存空間，因此下載已停止。請檢查下載位置後再試一次。',
 			'downloads.episodesQueued' => ({required Object count}) => '已將 ${count} 集影片加入下載佇列',
 			'downloads.downloadDeleted' => '下載內容已刪除',

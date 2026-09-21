@@ -448,7 +448,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'Włącz HDR dla treści HDR, potem wróć do SDR';
 	@override String get displaySwitchDelay => 'Opóźnienie przełączania ekranu';
 	@override String get tunneledPlayback => 'Tunelowane odtwarzanie';
-	@override String get tunneledPlaybackDescription => 'Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz.';
+	@override String get tunneledPlaybackDescription => 'Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz lub ruch się zacina.';
 	@override String get audioPassthrough => 'Przekazywanie dźwięku';
 	@override String get audioPassthroughDescription => 'Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.';
@@ -462,7 +462,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Normalizacja głośności przy miksowaniu';
 	@override String get audioDownmixNormalizeDescription => 'Obniża miks, aby zapobiec przesterowaniu. Wyłącz, aby zachować oryginalną głośność (głośne sceny mogą być zniekształcone).';
 	@override String get dvConversionMode => 'Konwersja Dolby Vision';
-	@override String get dvConversionModeDescription => 'Wybierz, jak ExoPlayer obsługuje pliki Dolby Vision Profile 7.';
+	@override String get dvConversionModeDescription => 'Wybierz, jak mają być obsługiwane pliki Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Automatycznie';
 	@override String get dvConversionNative => 'Natywnie / wyłączone';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1791,7 +1791,7 @@ class _Translations$downloads$pl extends Translations$downloads$en {
 	@override String get downloadQueued => 'Pobranie w kolejce';
 	@override String get downloadResumed => 'Pobieranie wznowione';
 	@override String get serverErrorBitrate => 'Błąd serwera: plik może przekraczać zdalny limit bitrate';
-	@override String get storageFull => 'Pobieranie zostało zatrzymane, ponieważ pamięć urządzenia jest pełna. Zwolnij miejsce i spróbuj ponownie.';
+	@override String get storageFull => 'Pobieranie zostało zatrzymane, aby chronić wolne miejsce. Zwolnij miejsce lub wybierz inną lokalizację pobierania, a następnie spróbuj ponownie.';
 	@override String get storageUnavailable => 'Pobieranie zostało zatrzymane, ponieważ nie można sprawdzić dostępnego miejsca. Sprawdź lokalizację pobierania i spróbuj ponownie.';
 	@override String episodesQueued({required Object count}) => '${count} odcinków w kolejce pobierania';
 	@override String get downloadDeleted => 'Pobranie usunięte';
@@ -3364,7 +3364,7 @@ extension on TranslationsPl {
 			'settings.matchDynamicRangeDescription' => 'Włącz HDR dla treści HDR, potem wróć do SDR',
 			'settings.displaySwitchDelay' => 'Opóźnienie przełączania ekranu',
 			'settings.tunneledPlayback' => 'Tunelowane odtwarzanie',
-			'settings.tunneledPlaybackDescription' => 'Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz.',
+			'settings.tunneledPlaybackDescription' => 'Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz lub ruch się zacina.',
 			'settings.audioPassthrough' => 'Przekazywanie dźwięku',
 			'settings.audioPassthroughDescription' => 'Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.',
@@ -3378,7 +3378,7 @@ extension on TranslationsPl {
 			'settings.audioDownmixNormalize' => 'Normalizacja głośności przy miksowaniu',
 			'settings.audioDownmixNormalizeDescription' => 'Obniża miks, aby zapobiec przesterowaniu. Wyłącz, aby zachować oryginalną głośność (głośne sceny mogą być zniekształcone).',
 			'settings.dvConversionMode' => 'Konwersja Dolby Vision',
-			'settings.dvConversionModeDescription' => 'Wybierz, jak ExoPlayer obsługuje pliki Dolby Vision Profile 7.',
+			'settings.dvConversionModeDescription' => 'Wybierz, jak mają być obsługiwane pliki Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Automatycznie',
 			'settings.dvConversionNative' => 'Natywnie / wyłączone',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4587,7 +4587,7 @@ extension on TranslationsPl {
 			'downloads.downloadQueued' => 'Pobranie w kolejce',
 			'downloads.downloadResumed' => 'Pobieranie wznowione',
 			'downloads.serverErrorBitrate' => 'Błąd serwera: plik może przekraczać zdalny limit bitrate',
-			'downloads.storageFull' => 'Pobieranie zostało zatrzymane, ponieważ pamięć urządzenia jest pełna. Zwolnij miejsce i spróbuj ponownie.',
+			'downloads.storageFull' => 'Pobieranie zostało zatrzymane, aby chronić wolne miejsce. Zwolnij miejsce lub wybierz inną lokalizację pobierania, a następnie spróbuj ponownie.',
 			'downloads.storageUnavailable' => 'Pobieranie zostało zatrzymane, ponieważ nie można sprawdzić dostępnego miejsca. Sprawdź lokalizację pobierania i spróbuj ponownie.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} odcinków w kolejce pobierania',
 			'downloads.downloadDeleted' => 'Pobranie usunięte',

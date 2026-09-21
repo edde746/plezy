@@ -448,10 +448,10 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'HDR 内容切换到 HDR，随后切回 SDR';
 	@override String get displaySwitchDelay => '显示切换延迟';
 	@override String get tunneledPlayback => '隧道播放';
-	@override String get tunneledPlaybackDescription => '使用视频隧道模式。若播放 HDR 内容时出现黑屏，请将其关闭。';
+	@override String get tunneledPlaybackDescription => '使用视频隧道模式。若播放 HDR 内容时出现黑屏或画面卡顿，请将其关闭。';
 	@override String get audioPassthrough => '音频直通';
 	@override String get audioPassthroughDescription => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。';
-	@override String get audioPassthroughDescriptionAppleTv => '将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。';
+	@override String get audioPassthroughDescriptionAppleTv => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。';
 	@override String get audioPassthroughOverriddenByNormalization => '响度标准化开启时停用';
 	@override String get audioDownmix => '下混为立体声';
 	@override String get audioDownmixDescription => '将环绕声混合为双声道，适用于立体声音箱或耳机';
@@ -462,7 +462,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get audioDownmixNormalize => '下混时音量标准化';
 	@override String get audioDownmixNormalizeDescription => '降低混音电平以防止削波。关闭可保持原始音量（大音量场景可能失真）。';
 	@override String get dvConversionMode => 'Dolby Vision 转换';
-	@override String get dvConversionModeDescription => '选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。';
+	@override String get dvConversionModeDescription => '选择如何处理 Dolby Vision Profile 7 文件。';
 	@override String get dvConversionAuto => '自动';
 	@override String get dvConversionNative => '原生 / 禁用';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1764,7 +1764,7 @@ class Translations$downloads$zh extends Translations$downloads$en {
 	@override String get downloadQueued => '下载已排队';
 	@override String get downloadResumed => '下载已继续';
 	@override String get serverErrorBitrate => '服务器错误：文件可能超过远程比特率限制';
-	@override String get storageFull => '设备存储空间已满，因此下载已停止。请释放空间后重试。';
+	@override String get storageFull => '为保护剩余存储空间，下载已停止。请释放空间或选择其他下载位置，然后重试。';
 	@override String get storageUnavailable => '无法检查可用存储空间，因此下载已停止。请检查下载位置后重试。';
 	@override String episodesQueued({required Object count}) => '${count} 集已加入下载队列';
 	@override String get downloadDeleted => '下载已删除';
@@ -3331,10 +3331,10 @@ extension on TranslationsZh {
 			'settings.matchDynamicRangeDescription' => 'HDR 内容切换到 HDR，随后切回 SDR',
 			'settings.displaySwitchDelay' => '显示切换延迟',
 			'settings.tunneledPlayback' => '隧道播放',
-			'settings.tunneledPlaybackDescription' => '使用视频隧道模式。若播放 HDR 内容时出现黑屏，请将其关闭。',
+			'settings.tunneledPlaybackDescription' => '使用视频隧道模式。若播放 HDR 内容时出现黑屏或画面卡顿，请将其关闭。',
 			'settings.audioPassthrough' => '音频直通',
 			'settings.audioPassthroughDescription' => '将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。',
-			'settings.audioPassthroughDescriptionAppleTv' => '将 Dolby Digital Plus（含 Atmos）以比特流方式交给系统输出。DTS 和 TrueHD 仍以多声道 PCM 播放。快进快退时可能出现短暂声音中断。',
+			'settings.audioPassthroughDescriptionAppleTv' => '对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。',
 			'settings.audioPassthroughOverriddenByNormalization' => '响度标准化开启时停用',
 			'settings.audioDownmix' => '下混为立体声',
 			'settings.audioDownmixDescription' => '将环绕声混合为双声道，适用于立体声音箱或耳机',
@@ -3345,7 +3345,7 @@ extension on TranslationsZh {
 			'settings.audioDownmixNormalize' => '下混时音量标准化',
 			'settings.audioDownmixNormalizeDescription' => '降低混音电平以防止削波。关闭可保持原始音量（大音量场景可能失真）。',
 			'settings.dvConversionMode' => 'Dolby Vision 转换',
-			'settings.dvConversionModeDescription' => '选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。',
+			'settings.dvConversionModeDescription' => '选择如何处理 Dolby Vision Profile 7 文件。',
 			'settings.dvConversionAuto' => '自动',
 			'settings.dvConversionNative' => '原生 / 禁用',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4554,7 +4554,7 @@ extension on TranslationsZh {
 			'downloads.downloadQueued' => '下载已排队',
 			'downloads.downloadResumed' => '下载已继续',
 			'downloads.serverErrorBitrate' => '服务器错误：文件可能超过远程比特率限制',
-			'downloads.storageFull' => '设备存储空间已满，因此下载已停止。请释放空间后重试。',
+			'downloads.storageFull' => '为保护剩余存储空间，下载已停止。请释放空间或选择其他下载位置，然后重试。',
 			'downloads.storageUnavailable' => '无法检查可用存储空间，因此下载已停止。请检查下载位置后重试。',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} 集已加入下载队列',
 			'downloads.downloadDeleted' => '下载已删除',

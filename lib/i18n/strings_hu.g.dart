@@ -448,7 +448,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'HDR bekapcsolása HDR-tartalmak esetén, majd visszaváltás SDR-re';
 	@override String get displaySwitchDelay => 'Kijelzőváltási késleltetés';
 	@override String get tunneledPlayback => 'Alagutas lejátszás';
-	@override String get tunneledPlaybackDescription => 'Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép.';
+	@override String get tunneledPlaybackDescription => 'Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.';
 	@override String get audioPassthrough => 'Hangtovábbítás (passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.';
@@ -462,7 +462,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Hangerő normalizálása lekeveréskor';
 	@override String get audioDownmixNormalizeDescription => 'A keverés szintjének csökkentése a torzítás elkerülésére. Kapcsold ki az eredeti hangerő megőrzéséhez (a hangos jelenetek torzíthatnak).';
 	@override String get dvConversionMode => 'Dolby Vision-átalakítás';
-	@override String get dvConversionModeDescription => 'Válaszd ki, hogyan kezelje az ExoPlayer a Dolby Vision Profile 7 fájlokat.';
+	@override String get dvConversionModeDescription => 'Válaszd ki, hogyan legyenek kezelve a Dolby Vision Profile 7 fájlok.';
 	@override String get dvConversionAuto => 'Automatikus';
 	@override String get dvConversionNative => 'Natív / letiltva';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -1773,7 +1773,7 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get downloadQueued => 'Letöltés sorba állítva';
 	@override String get downloadResumed => 'Letöltés folytatva';
 	@override String get serverErrorBitrate => 'Szerverhiba: a fájl meghaladhatja a távoli bitrátakorlátot';
-	@override String get storageFull => 'A letöltések leálltak, mert az eszköz tárhelye megtelt. Szabadíts fel helyet, majd próbáld újra.';
+	@override String get storageFull => 'A letöltések leálltak a szabad tárhely védelme érdekében. Szabadíts fel helyet, vagy válassz másik letöltési helyet, majd próbáld újra.';
 	@override String get storageUnavailable => 'A letöltések leálltak, mert a rendelkezésre álló tárhely nem ellenőrizhető. Ellenőrizd a letöltési helyet, majd próbáld újra.';
 	@override String episodesQueued({required Object count}) => '${count} epizód letöltésre sorba állítva';
 	@override String get downloadDeleted => 'Letöltés törölve';
@@ -3342,7 +3342,7 @@ extension on TranslationsHu {
 			'settings.matchDynamicRangeDescription' => 'HDR bekapcsolása HDR-tartalmak esetén, majd visszaváltás SDR-re',
 			'settings.displaySwitchDelay' => 'Kijelzőváltási késleltetés',
 			'settings.tunneledPlayback' => 'Alagutas lejátszás',
-			'settings.tunneledPlaybackDescription' => 'Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép.',
+			'settings.tunneledPlaybackDescription' => 'Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.',
 			'settings.audioPassthrough' => 'Hangtovábbítás (passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
@@ -3356,7 +3356,7 @@ extension on TranslationsHu {
 			'settings.audioDownmixNormalize' => 'Hangerő normalizálása lekeveréskor',
 			'settings.audioDownmixNormalizeDescription' => 'A keverés szintjének csökkentése a torzítás elkerülésére. Kapcsold ki az eredeti hangerő megőrzéséhez (a hangos jelenetek torzíthatnak).',
 			'settings.dvConversionMode' => 'Dolby Vision-átalakítás',
-			'settings.dvConversionModeDescription' => 'Válaszd ki, hogyan kezelje az ExoPlayer a Dolby Vision Profile 7 fájlokat.',
+			'settings.dvConversionModeDescription' => 'Válaszd ki, hogyan legyenek kezelve a Dolby Vision Profile 7 fájlok.',
 			'settings.dvConversionAuto' => 'Automatikus',
 			'settings.dvConversionNative' => 'Natív / letiltva',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -4565,7 +4565,7 @@ extension on TranslationsHu {
 			'downloads.downloadQueued' => 'Letöltés sorba állítva',
 			'downloads.downloadResumed' => 'Letöltés folytatva',
 			'downloads.serverErrorBitrate' => 'Szerverhiba: a fájl meghaladhatja a távoli bitrátakorlátot',
-			'downloads.storageFull' => 'A letöltések leálltak, mert az eszköz tárhelye megtelt. Szabadíts fel helyet, majd próbáld újra.',
+			'downloads.storageFull' => 'A letöltések leálltak a szabad tárhely védelme érdekében. Szabadíts fel helyet, vagy válassz másik letöltési helyet, majd próbáld újra.',
 			'downloads.storageUnavailable' => 'A letöltések leálltak, mert a rendelkezésre álló tárhely nem ellenőrizhető. Ellenőrizd a letöltési helyet, majd próbáld újra.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} epizód letöltésre sorba állítva',
 			'downloads.downloadDeleted' => 'Letöltés törölve',
