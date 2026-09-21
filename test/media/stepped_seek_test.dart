@@ -70,11 +70,11 @@ void main() {
   test('reports the distance the clamp let through, not the step asked for', () {
     // #2425: a badge fed the requested step climbs past the start of the media
     // while the target sits pinned at zero. Three 10s steps back from 0:25 are
-    // 10, 10 and 5; anything after that is nothing.
+    // 10, 10 and 5; anything after that is nothing, and the burst's pin stays
+    // where it is.
     fakeAsync((async) {
-      var position = const Duration(seconds: 25);
       final accumulator = DebouncedSeekAccumulator(
-        currentPosition: () => position,
+        currentPosition: () => const Duration(seconds: 25),
         duration: () => const Duration(minutes: 1),
         seek: (_) {},
       );
@@ -85,14 +85,36 @@ void main() {
       expect(accumulator.seekBy(step), const Duration(seconds: -5));
       expect(accumulator.seekBy(step), Duration.zero);
       expect(accumulator.pendingPosition, Duration.zero);
+      accumulator.dispose();
+    });
+  });
 
-      // Symmetric at the end, and a position reported past the end is already
-      // "there": forward applies nothing, backward travels from the end itself.
-      accumulator.cancel();
+  test('a fresh press already at an edge arms nothing', () {
+    // Pressing back at the very start has nowhere to go: no pin, and no seek
+    // dispatched to the position the playhead already occupies. A position
+    // reported past the end counts as the end — forward applies nothing,
+    // backward travels from the end itself.
+    fakeAsync((async) {
+      var position = Duration.zero;
+      final seeks = <Duration>[];
+      final accumulator = DebouncedSeekAccumulator(
+        currentPosition: () => position,
+        duration: () => const Duration(minutes: 1),
+        seek: seeks.add,
+      );
+
+      expect(accumulator.seekBy(const Duration(seconds: -10)), Duration.zero);
+      expect(accumulator.pendingPosition, isNull);
+      async.elapse(const Duration(seconds: 1));
+      expect(seeks, isEmpty);
+
       position = const Duration(minutes: 1, milliseconds: 500);
       expect(accumulator.seekBy(const Duration(seconds: 10)), Duration.zero);
-      expect(accumulator.seekBy(const Duration(seconds: -10)), const Duration(seconds: -10));
-      expect(accumulator.pendingPosition, const Duration(seconds: 50));
+      expect(accumulator.pendingPosition, isNull);
+      expect(accumulator.seekBy(const Duration(seconds: -10)), const Duration(seconds: -9, milliseconds: -500));
+      expect(accumulator.pendingPosition, const Duration(seconds: 50, milliseconds: 500));
+      async.elapse(const Duration(seconds: 1));
+      expect(seeks, [const Duration(seconds: 50, milliseconds: 500)]);
       accumulator.dispose();
     });
   });

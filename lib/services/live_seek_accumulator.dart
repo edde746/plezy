@@ -63,12 +63,16 @@ class LiveSeekAccumulator {
 
   /// Accumulate a relative skip of [deltaSeconds] and (re)arm the debounce.
   ///
-  /// Returns the signed seconds actually applied to the pending target: the
-  /// request less whatever the seekable window swallowed, measured from the
-  /// clamped origin because the raw epoch overshoots after a reopen. Zero when
-  /// there is no seekable window or the target is already pinned at an edge —
-  /// the common fast-forward-at-live-edge press — so a readout announcing this
-  /// never promises travel that is not going to happen (#2425).
+  /// Returns the signed seconds actually applied: the distance from the
+  /// current base to the target the window let through. Zero when there is no
+  /// seekable window or the target is already pinned at an edge — the common
+  /// fast-forward-at-live-edge press — so a readout announcing this never
+  /// promises travel that is not going to happen (#2425).
+  ///
+  /// The base is the raw epoch, not its clamp: the window is only as fresh as
+  /// the last heartbeat, so at the live edge the playhead routinely runs a few
+  /// seconds past `end`. A rewind from there really does travel the full step,
+  /// and the target is computed from the same base for the same reason.
   int seekBy(int deltaSeconds) {
     if (_disposed) return 0;
     final window = bounds();
@@ -88,7 +92,7 @@ class LiveSeekAccumulator {
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, () => unawaited(_flush()));
-    return target - clampedBase;
+    return target - base;
   }
 
   Future<void> _flush() async {

@@ -117,11 +117,11 @@ void main() {
       });
     });
 
-    test('measures the applied skip from the window, not an overshooting epoch', () {
-      // After a reopen the raw epoch can sit past the live edge. Forward from
-      // there applies nothing. Backward still targets raw epoch minus the step,
-      // so the readout may only claim the distance from the edge to that
-      // target — a raw-base measurement would announce the full step.
+    test('a rewind from past a stale live edge travels the full step', () {
+      // The window refreshes on a 10s heartbeat, so at the live edge the raw
+      // epoch routinely runs past `end`. Forward from there applies nothing;
+      // backward targets raw epoch minus the step and the readout owes the
+      // user that whole distance — a clamped origin would under-read it.
       fakeAsync((async) {
         window = (start: 950, end: 1050);
         final acc = build();
@@ -129,7 +129,7 @@ void main() {
         currentEpoch = 1060;
         expect(acc.seekBy(15), 0);
         expect(acc.pendingEpoch, isNull);
-        expect(acc.seekBy(-15), -5);
+        expect(acc.seekBy(-15), -15);
         expect(acc.pendingEpoch, 1045);
         acc.dispose();
       });

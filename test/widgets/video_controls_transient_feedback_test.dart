@@ -221,11 +221,10 @@ void main() {
       await settleFeedback(tester);
     });
 
-    testWidgets('a press with nothing to rewind through raises no badge', (tester) async {
+    testWidgets('a press with nothing to rewind through raises no badge and no seek', (tester) async {
       // With no readout up, a swallowed press has nothing to announce: a `0s`
-      // badge would describe travel that is not happening. (Whether the
-      // accumulator still dispatches a seek to the position it is already at
-      // is its own business and not asserted here.)
+      // badge would describe travel that is not happening. Nor is a seek to
+      // the position the playhead already occupies worth dispatching.
       player.setPosition(Duration.zero);
       await pumpControls(tester);
 
@@ -235,6 +234,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(DoubleTapFeedback), findsNothing);
+      expect(player.seeks, isEmpty);
 
       // The other direction still travels, and starts its own count.
       await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
@@ -243,7 +243,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('10s'), findsOneWidget);
-      expect(player.seeks.last, const Duration(seconds: 10));
+      expect(player.seeks, [const Duration(seconds: 10)]);
 
       await settleFeedback(tester);
     });

@@ -117,6 +117,12 @@ class DebouncedSeekAccumulator {
   /// origin: a reported position past the end of the media is already "at the
   /// end" as far as travel is concerned. A readout that announces this rather
   /// than [delta] can never promise more than the playhead will travel (#2425).
+  ///
+  /// A fresh press the clamp swallows whole — already at the start, pressing
+  /// back — arms nothing: there is no target to pin and no seek worth
+  /// dispatching to the position the playhead already occupies. Once a burst
+  /// is pending its debounce keeps running so the flush still waits out the
+  /// user's hand.
   Duration seekBy(Duration delta) {
     if (_disposed) return Duration.zero;
     final maximum = duration();
@@ -126,6 +132,7 @@ class DebouncedSeekAccumulator {
     final originMs = base.inMilliseconds.clamp(0, maximum.inMilliseconds);
     final targetMs = (base + delta).inMilliseconds.clamp(0, maximum.inMilliseconds);
     final target = Duration(milliseconds: targetMs);
+    if (_pendingPosition == null && targetMs == originMs) return Duration.zero;
     if (target != _pendingPosition) {
       _settleTimer?.cancel();
       _settleTimer = null;
