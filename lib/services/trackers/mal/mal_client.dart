@@ -165,6 +165,7 @@ class MalClient implements DisposableTrackerClient {
       rewatching: list is Map && flexibleBool(list['is_rewatching']),
       completed: list is Map && list['status'] == 'completed',
       rewatchCount: list is Map ? (flexibleInt(list['num_times_rewatched']) ?? 0) : 0,
+      progress: list is Map ? (flexibleInt(list['num_watched_episodes']) ?? 0) : 0,
     );
   }
 

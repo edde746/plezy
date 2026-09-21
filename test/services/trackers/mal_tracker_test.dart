@@ -95,33 +95,56 @@ void main() {
       expect(Uri.splitQueryString(put.body), {'status': 'watching', 'num_watched_episodes': '12'});
     });
 
-    test('episode unwatch is a no-op', () async {
+    test('unwatch resets an in-progress entry to zero without deleting it', () async {
       final requests = <http.Request>[];
-      final client = MockClient((request) async {
-        requests.add(request);
-        fail('Unexpected ${request.method} ${request.url}');
-      });
+      final client = _listClient({
+        'num_episodes': 12,
+        'my_list_status': {'status': 'watching', 'num_watched_episodes': 5},
+      }, requests);
       tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
 
-      await tracker.markUnwatched(_episode(animeProgress: 1));
+      await tracker.markUnwatched(_episode(animeProgress: null));
 
-      expect(requests, isEmpty);
+      final put = requests.singleWhere((request) => request.method != 'GET');
+      expect(put.method, 'PUT');
+      expect(Uri.splitQueryString(put.body), {'status': 'watching', 'num_watched_episodes': '0'});
     });
 
-    test('removeFromList removes anime entry', () async {
+    test('unwatch keeps a rewatch in progress at zero', () async {
       final requests = <http.Request>[];
-      final client = MockClient((request) async {
-        requests.add(request);
-        if (request.method == 'DELETE') return http.Response('{}', 200);
-        fail('Unexpected ${request.method} ${request.url}');
-      });
+      final client = _listClient({
+        'num_episodes': 12,
+        'my_list_status': {'status': 'completed', 'is_rewatching': true, 'num_watched_episodes': 5},
+      }, requests);
       tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
 
-      await tracker.removeFromList(_episode());
+      await tracker.markUnwatched(_episode(animeProgress: null));
 
-      final delete = requests.single;
-      expect(delete.method, 'DELETE');
-      expect(delete.url.path, '/v2/anime/21/my_list_status');
+      final put = requests.singleWhere((request) => request.method == 'PUT');
+      expect(Uri.splitQueryString(put.body), {'is_rewatching': 'true', 'num_watched_episodes': '0'});
+    });
+
+    test('unwatch leaves a completed entry untouched (issue #2424)', () async {
+      final requests = <http.Request>[];
+      final client = _listClient({
+        'num_episodes': 12,
+        'my_list_status': {'status': 'completed', 'num_watched_episodes': 12, 'num_times_rewatched': 1},
+      }, requests);
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markUnwatched(_episode(animeProgress: null));
+
+      expect(requests.map((request) => request.method), ['GET']);
+    });
+
+    test('unwatch does not create an entry for an unlisted anime', () async {
+      final requests = <http.Request>[];
+      final client = _listClient({'num_episodes': 12}, requests);
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markUnwatched(_episode(animeProgress: null));
+
+      expect(requests.map((request) => request.method), ['GET']);
     });
 
     test('keeps the snapshot cached when the write fails', () async {

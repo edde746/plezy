@@ -336,6 +336,7 @@ class AnilistClient implements DisposableTrackerClient {
           mediaListEntry {
             status
             repeat
+            progress
           }
         }
       }
@@ -351,6 +352,7 @@ class AnilistClient implements DisposableTrackerClient {
       rewatching: status == 'REPEATING',
       completed: status == 'COMPLETED',
       rewatchCount: entry is Map ? (flexibleInt(entry['repeat']) ?? 0) : 0,
+      progress: entry is Map ? (flexibleInt(entry['progress']) ?? 0) : 0,
     );
   }
 

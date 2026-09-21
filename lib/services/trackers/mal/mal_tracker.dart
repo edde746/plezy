@@ -6,7 +6,6 @@ import '../../../utils/app_logger.dart';
 import '../anime_list_tracker_base.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
-import '../tracker_exceptions.dart';
 import '../tracker_session.dart';
 import 'mal_client.dart';
 
@@ -80,17 +79,6 @@ class MalTracker extends TrackerBase with ClientBackedTracker<MalClient>, AnimeL
     }
     await client.updateMyListStatus(animeId, fields);
     appLogger.d('MAL: updated list status (mal=$animeId, fields=$fields)');
-  }
-
-  @override
-  Future<void> deleteAnimeEntry(MalClient client, int malId) async {
-    try {
-      await client.deleteMyListStatus(malId);
-      appLogger.d('MAL: deleted list status (mal=$malId)');
-    } on TrackerApiException catch (e) {
-      if (e.statusCode == 404) return;
-      rethrow;
-    }
   }
 
   @override

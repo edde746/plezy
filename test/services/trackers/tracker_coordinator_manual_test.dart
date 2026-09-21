@@ -499,7 +499,7 @@ void main() {
       ]);
     });
 
-    test('removes manually unwatched split seasons from MAL and AniList lists', () async {
+    test('resets manually unwatched split seasons on MAL and AniList without deleting entries', () async {
       await simkl.setEnabled(false);
       await mal.setEnabled(true);
       await anilist.setEnabled(true);
@@ -518,38 +518,48 @@ void main() {
         ),
       );
 
-      final malDeletes = <int>[];
+      final malWrites = <int, Map<String, String>>{};
       final malHttp = MockClient((request) async {
-        expect(request.method, 'DELETE');
-        malDeletes.add(int.parse(request.url.pathSegments[2]));
+        final malId = int.parse(request.url.pathSegments[2]);
+        if (request.method == 'GET') {
+          return http.Response(
+            json.encode({
+              'num_episodes': 12,
+              'my_list_status': {'status': 'watching', 'num_watched_episodes': 4},
+            }),
+            200,
+          );
+        }
+        expect(request.method, 'PUT', reason: 'a list entry is reset, never deleted');
+        malWrites[malId] = Uri.splitQueryString(request.body);
         return http.Response('{}', 200);
       });
       mal.rebindSession(_malSession(), onSessionInvalidated: () {}, httpClient: malHttp);
 
-      final anilistDeletes = <int>[];
+      final anilistWrites = <Map<String, dynamic>>[];
       final anilistHttp = MockClient((request) async {
         final body = json.decode(request.body) as Map<String, dynamic>;
         final query = body['query'] as String;
         final variables = (body['variables'] as Map).cast<String, dynamic>();
-        if (query.contains('mediaListEntry')) {
-          final mediaId = variables['mediaId'] as int;
+        if (query.contains('Media(id:')) {
           return http.Response(
             json.encode({
               'data': {
                 'Media': {
-                  'mediaListEntry': {'id': mediaId + 100},
+                  'episodes': 12,
+                  'mediaListEntry': {'status': 'CURRENT', 'repeat': 0, 'progress': 4},
                 },
               },
             }),
             200,
           );
         }
-        if (query.contains('DeleteMediaListEntry')) {
-          anilistDeletes.add(variables['id'] as int);
+        if (query.contains('SaveMediaListEntry')) {
+          anilistWrites.add(variables);
           return http.Response(
             json.encode({
               'data': {
-                'DeleteMediaListEntry': {'deleted': true},
+                'SaveMediaListEntry': {'id': 1},
               },
             }),
             200,
@@ -568,8 +578,17 @@ void main() {
 
       await coordinator.markUnwatched(_show(), client);
 
-      expect(malDeletes, unorderedEquals([101, 102]));
-      expect(anilistDeletes, unorderedEquals([301, 302]));
+      expect(malWrites, {
+        101: {'status': 'watching', 'num_watched_episodes': '0'},
+        102: {'status': 'watching', 'num_watched_episodes': '0'},
+      });
+      expect(
+        anilistWrites,
+        unorderedEquals([
+          {'mediaId': 201, 'progress': 0, 'status': 'CURRENT'},
+          {'mediaId': 202, 'progress': 0, 'status': 'CURRENT'},
+        ]),
+      );
     });
 
     test('playback resolver is recreated when the server client changes', () async {

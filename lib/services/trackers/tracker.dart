@@ -75,7 +75,7 @@ abstract interface class EpisodeHistoryTracker implements Tracker {
 
 /// A tracker that keeps one progress counter per series instead of per-episode
 /// rows (MAL, AniList). The coordinator aggregates a container's episodes into
-/// a single entry update, and unwatching means dropping the whole entry.
+/// a single entry update, and unwatching a container resets that one counter.
 abstract interface class SeriesProgressTracker implements Tracker {
   /// Identity of the series entry this tracker would write for [ctx], or null
   /// when it cannot map the item. Episodes sharing an entry id collapse into
@@ -89,8 +89,6 @@ abstract interface class SeriesProgressTracker implements Tracker {
   /// coalesce to the higher, and a claim already covered by a completed write is
   /// dropped instead of walking the counter backwards.
   int? seriesProgress(TrackerContext ctx);
-
-  Future<void> removeFromList(TrackerContext ctx);
 }
 
 /// Playback state reported to trackers that accept real-time progress.

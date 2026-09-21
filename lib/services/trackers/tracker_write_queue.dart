@@ -246,7 +246,7 @@ class TrackerWriteQueue {
   /// Drop queued writes a completed direct write has superseded.
   ///
   /// [appliedProgress] null means the write superseded the key outright (a
-  /// history add/remove, or a removed series entry). Otherwise only claims at or
+  /// history add/remove, or a reset series entry). Otherwise only claims at or
   /// below the applied progress are covered; a queued higher claim is still a
   /// pending advance and survives.
   Future<void> invalidate(String userUuid, String coalesceKey, {int? appliedProgress}) async {
