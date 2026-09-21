@@ -2042,22 +2042,31 @@ void main() {
       expect(client.updateProgressCalls, isEmpty);
     });
 
-    test('startTracking is idempotent: a second call logs a warning and no-ops', () async {
-      final client = _FakePlexClient();
-      final player = _FakePlayer(playing: false); // skip the immediate fire
-      final tracker = PlaybackProgressTracker(
-        client: client,
-        metadata: _meta(),
-        player: player,
-        isOffline: false,
-        updateInterval: const Duration(hours: 1), // long enough that no tick fires in the test window
-      );
-      addTearDown(tracker.dispose);
+    test('startTracking is idempotent: a second call neither re-reports nor starts a second timer', () {
+      fakeAsync((async) {
+        final client = _FakePlexClient();
+        final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+        );
 
-      tracker.startTracking();
-      tracker.startTracking(); // second call should warn and bail
-      tracker.stopTracking();
-      // No exception is the contract.
+        tracker.startTracking();
+        tracker.startTracking(); // second call warns and bails
+        async.flushMicrotasks();
+        // Only the first call sends the immediate report.
+        expect(client.updateProgressCalls.map((call) => call.state), ['playing']);
+
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        // One periodic timer: one report per interval, not two.
+        expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'playing']);
+
+        tracker.dispose();
+      });
     });
 
     test('dispose is idempotent', () {

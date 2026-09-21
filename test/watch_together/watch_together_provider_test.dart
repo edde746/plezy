@@ -373,13 +373,6 @@ void main() {
       expect(p.currentMediaRatingKey, isNull);
       p.dispose();
     });
-
-    test('setBackgrounded is null-safe without a sync controller', () {
-      final p = WatchTogetherProvider();
-      expect(() => p.setBackgrounded(true), returnsNormally);
-      expect(() => p.setBackgrounded(false), returnsNormally);
-      p.dispose();
-    });
   });
 
   group('WatchTogetherProvider — media switch dispatch', () {

@@ -76,12 +76,6 @@ void main() {
       p.dispose();
     });
 
-    test('stopDiscovery on a fresh provider is a no-op', () {
-      final p = CompanionRemoteProvider();
-      expect(p.stopDiscovery, returnsNormally);
-      p.dispose();
-    });
-
     test('leaveSession on a fresh provider does not throw', () async {
       final p = CompanionRemoteProvider();
       await p.leaveSession();

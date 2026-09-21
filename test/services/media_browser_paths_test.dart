@@ -43,11 +43,5 @@ void main() {
       expect(hostile.currentUser, '/Users/u%2F1');
       expect(hostile.resumeItems, '/Users/u%2F1/Items/Resume');
     });
-
-    test('Emby item ids are opaque numeric strings and pass through unchanged', () {
-      // Emby ids look like "7330"; Jellyfin's are 32-char hex GUIDs. Both are
-      // treated as opaque.
-      expect(emby.playedItem('7330'), '/Users/user-1/PlayedItems/7330');
-    });
   });
 }

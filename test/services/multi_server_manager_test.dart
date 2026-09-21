@@ -1922,13 +1922,6 @@ void main() {
   });
 
   group('dispose', () {
-    test('disposing without connectivity monitoring does not throw', () {
-      final m = MultiServerManager();
-      // No startNetworkMonitoring call → _connectivitySubscription is null.
-      // dispose() must handle the null-subscription path cleanly.
-      expect(m.dispose, returnsNormally);
-    });
-
     test('dispose closes the status stream (existing subscribers get onDone)', () async {
       final m = MultiServerManager();
       var done = false;

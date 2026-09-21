@@ -309,16 +309,19 @@ void main() {
       expect(DownloadManagerService.downloadsSupportedFor(tvosBuild: false), isTrue);
     });
 
-    test('recovery is a no-op when downloads are unsupported', () async {
+    test('recovery skips native recovery entirely when downloads are unsupported', () async {
+      var nativeRecoveryCalls = 0;
       final unsupportedManager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
         clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
+        nativeRecoveryOverride: () async => nativeRecoveryCalls++,
       );
 
       await unsupportedManager.recoverInterruptedDownloads();
 
+      expect(nativeRecoveryCalls, 0);
       unsupportedManager.dispose();
     });
   });

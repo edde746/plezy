@@ -65,10 +65,12 @@ void main() {
     if (await root.exists()) await root.delete(recursive: true);
   });
 
-  test('a store the backend can read opens normally', () async {
+  test('a store the backend can read opens normally with its contents intact', () async {
     await store.writeAsString(jsonEncode({'theme': 'dark'}));
 
-    await expectLater(SettingsService.getInstance(), completes);
+    final settings = await SettingsService.getInstance();
+
+    expect(settings.readNullableString('theme'), 'dark');
   });
 
   test('an offset-0 store fails the gate as a repairable corruption', () async {
