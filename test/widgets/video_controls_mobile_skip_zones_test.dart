@@ -250,7 +250,9 @@ void main() {
 
   testWidgets('a double tap at the end of the item reports only the distance left', (tester) async {
     // #2425: five seconds from the end, a 10s skip travels five. The readout
-    // says so, and a second pair at the end adds nothing to it.
+    // says so, and a second pair at the end adds nothing to it — and dispatches
+    // nothing: a seek to the position already occupied would re-poke the
+    // end-of-item trigger and announce itself to a Watch Together room.
     player.setPosition(const Duration(minutes: 44, seconds: 55));
     await pumpControls(tester);
 
@@ -261,6 +263,39 @@ void main() {
     await doubleTap(tester, forwardZoneOf(tester));
     expect(find.text('5s'), findsOneWidget, reason: 'nothing left to skip through');
     expect(find.text('15s'), findsNothing);
+    expect(player.seeks, [const Duration(minutes: 45)], reason: 'a tap that travels nothing must not seek');
+
+    await settleFeedback(tester);
+  });
+
+  testWidgets('a backward double tap at the start neither seeks nor raises a badge', (tester) async {
+    player.setPosition(Duration.zero);
+    await pumpControls(tester);
+
+    await doubleTap(tester, backwardZoneOf(tester));
+
+    expect(player.seeks, isEmpty);
+    expect(find.byType(DoubleTapFeedback), findsNothing, reason: 'a 0s badge would describe a seek not happening');
+    expect(chrome.controlsVisible, isFalse, reason: 'the pair still counts as a skip attempt, not a chrome toggle');
+
+    await settleFeedback(tester);
+  });
+
+  testWidgets('a position reported past the end counts as the end', (tester) async {
+    // The duration is authoritative; a playhead reported beyond it is a
+    // reporting artifact. A forward tap there has nowhere to go and must not
+    // clamp backwards under a forward chevron; a backward tap travels its full
+    // step from the end itself.
+    player.setPosition(const Duration(minutes: 45, milliseconds: 500));
+    await pumpControls(tester);
+
+    await doubleTap(tester, forwardZoneOf(tester));
+    expect(player.seeks, isEmpty);
+    expect(find.byType(DoubleTapFeedback), findsNothing);
+
+    await doubleTap(tester, backwardZoneOf(tester));
+    expect(player.seeks, [const Duration(minutes: 44, seconds: 50)]);
+    expect(find.text('10s'), findsOneWidget);
 
     await settleFeedback(tester);
   });

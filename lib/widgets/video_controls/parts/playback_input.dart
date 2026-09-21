@@ -764,6 +764,14 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   /// The travelled distance is resolved here, synchronously, rather than read
   /// back from the seek: the badge must go up with the tap, not after a slow
   /// backend or a live transcode reopen has answered.
+  ///
+  /// Measured from the clamped origin, the same rule as [_hiddenSeek]: the
+  /// duration is authoritative, so a position reported past it is already at
+  /// the end and a forward tap there travels nothing rather than clamping
+  /// backwards under a forward chevron. A tap that travels nothing dispatches
+  /// nothing — a seek to the position the playhead already occupies is not
+  /// worth a round trip, and on the screen's seek path it would also announce
+  /// a seek to a Watch Together room and re-poke the end-of-item trigger.
   void _handleDoubleTapSkip({required bool isForward}) {
     if (!widget.canControl) return;
 
@@ -783,9 +791,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       return;
     }
 
-    final position = widget.player.state.position;
-    final target = clampSeekPosition(widget.player, position + delta);
-    _registerSkipFeedback(isForward: isForward, travelled: target - position);
+    final origin = clampSeekPosition(widget.player, widget.player.state.position);
+    final target = clampSeekPosition(widget.player, origin + delta);
+    final travelled = target - origin;
+    _registerSkipFeedback(isForward: isForward, travelled: travelled);
+    if (travelled == Duration.zero) return;
     unawaited(_seekToPosition(target));
   }
 
