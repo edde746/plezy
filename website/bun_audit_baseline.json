@@ -11,38 +11,6 @@
       "rationale": "GHSA-pxg6-pf52-xh8x: Static site has no cookies, hooks, actions, or forms; cookie serialization is not exercised."
     },
     {
-      "id": 1113319,
-      "package": "devalue",
-      "severity": "low",
-      "vulnerableRange": "<=5.6.2",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-33hq-fvwr-56pm: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
-    },
-    {
-      "id": 1113320,
-      "package": "devalue",
-      "severity": "low",
-      "vulnerableRange": "<=5.6.2",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-8qm3-746x-r74r: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
-    },
-    {
-      "id": 1114438,
-      "package": "devalue",
-      "severity": "moderate",
-      "vulnerableRange": "<5.6.4",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-cfw5-2vxh-hr84: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
-    },
-    {
-      "id": 1121800,
-      "package": "devalue",
-      "severity": "low",
-      "vulnerableRange": ">=4.0.0 <5.6.4",
-      "expiresOn": "2026-10-19",
-      "rationale": "GHSA-mwv9-gp5h-frr4: Prerender serialization receives fixed price/rating/count data; the site does not call parse, unflatten, or uneval."
-    },
-    {
       "id": 1115551,
       "package": "picomatch",
       "severity": "moderate",
