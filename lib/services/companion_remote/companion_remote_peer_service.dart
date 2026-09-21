@@ -62,6 +62,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     Future<List<int>> Function(List<int> homeSecret, List<int> hostNonce, List<int> clientNonce)? deriveSessionEncKey,
     ({Future<void> Function() close, Future<void> ready, Stream<dynamic> stream}) Function(Uri uri)? raceProbeFactory,
     this._afterHostUpgrade,
+    Future<List<NetworkInterface>> Function()? listNetworkInterfaces,
   }) : assert(maxTotalHostConnections > 0),
        assert(maxHostConnectionsPerSource > 0),
        assert(maxPreAuthMessageBytes > 0),
@@ -79,7 +80,11 @@ class CompanionRemotePeerService with KeepaliveMixin {
            ((homeSecret, hostNonce, clientNonce) {
              return RemoteAuthService.instance.deriveSessionEncKey(homeSecret, hostNonce, clientNonce);
            }),
-       _raceProbeFactory = raceProbeFactory ?? _openRaceProbe;
+       _raceProbeFactory = raceProbeFactory ?? _openRaceProbe,
+       _listNetworkInterfaces = listNetworkInterfaces ?? _listIpv4NetworkInterfaces;
+
+  static Future<List<NetworkInterface>> _listIpv4NetworkInterfaces() =>
+      NetworkInterface.list(type: InternetAddressType.IPv4);
 
   static _RaceProbeConnection _openRaceProbe(Uri uri) {
     final attempt = WebSocketConnectAttempt(uri, connectTimeout: const Duration(seconds: 5));
@@ -119,6 +124,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
   final _SessionKeyDeriver _deriveSessionEncKey;
   final _RaceProbeFactory _raceProbeFactory;
   final void Function()? _afterHostUpgrade;
+  final Future<List<NetworkInterface>> Function() _listNetworkInterfaces;
 
   // Server-side (host) fields
   HttpServer? _server;
@@ -190,13 +196,15 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
   Future<List<String>> _getAllLocalIpAddresses() async {
     try {
-      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
+      final interfaces = await _listNetworkInterfaces();
 
       final preferred = <String>[];
       final others = <String>[];
 
       for (final interface in interfaces) {
-        if (interface.name.toLowerCase().contains('lo')) continue;
+        // Match the loopback interface name exactly ('lo' on Linux/Android, 'lo0' on Apple platforms): a substring
+        // check also skipped onboard Wi-Fi interfaces such as `wlo1`.
+        if (const {'lo', 'lo0'}.contains(interface.name.toLowerCase())) continue;
 
         for (final addr in interface.addresses) {
           if (!addr.isLoopback && addr.type == InternetAddressType.IPv4) {

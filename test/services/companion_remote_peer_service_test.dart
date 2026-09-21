@@ -616,6 +616,79 @@ void main() {
     expect(errors, isEmpty);
     expect(statuses, [RemoteSessionStatus.disconnected]);
   });
+
+  group('host addresses', () {
+    CompanionRemotePeerService hostWith(List<NetworkInterface> interfaces) {
+      final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: () async => interfaces);
+      addTearDown(host.dispose);
+      return host;
+    }
+
+    Future<List<String>> advertisedIps(List<NetworkInterface> interfaces) async {
+      final session = await hostWith(interfaces).createSessionForContexts('Test Host', 'linux', [_authContext]);
+      return [for (final address in session.addresses) address.substring(0, address.lastIndexOf(':'))];
+    }
+
+    test('include an onboard Wi-Fi interface named wlo1 (#2390)', () async {
+      final ips = await advertisedIps([
+        _FakeNetworkInterface('lo', ['127.0.0.1']),
+        _FakeNetworkInterface('wlo1', ['192.168.1.20']),
+      ]);
+
+      expect(ips, ['192.168.1.20']);
+    });
+
+    test('include a Windows "Local Area Connection" adapter, not the loopback adapter', () async {
+      // The Windows loopback adapter is not named "lo"; its loopback address excludes it.
+      final ips = await advertisedIps([
+        _FakeNetworkInterface('Loopback Pseudo-Interface 1', ['127.0.0.1']),
+        _FakeNetworkInterface('Local Area Connection', ['10.0.0.5']),
+      ]);
+
+      expect(ips, ['10.0.0.5']);
+    });
+
+    test('fail with noNetworkInterface when only the loopback interface is up', () async {
+      final host = hostWith([
+        _FakeNetworkInterface('lo', ['127.0.0.1']),
+      ]);
+
+      await expectLater(
+        host.createSessionForContexts('Test Host', 'linux', [_authContext]),
+        throwsA(
+          isA<PeerError>()
+              .having((error) => error.type, 'type', PeerErrorType.networkError)
+              .having((error) => error.message, 'message', t.companionRemote.errors.noNetworkInterface),
+        ),
+      );
+    });
+  });
+}
+
+class _FakeNetworkInterface extends Fake implements NetworkInterface {
+  _FakeNetworkInterface(this.name, List<String> addresses)
+    : addresses = [for (final address in addresses) _FakeInterfaceAddress(InternetAddress(address))];
+
+  @override
+  final String name;
+
+  @override
+  final List<InterfaceAddress> addresses;
+}
+
+class _FakeInterfaceAddress extends Fake implements InterfaceAddress {
+  _FakeInterfaceAddress(this._address);
+
+  final InternetAddress _address;
+
+  @override
+  String get address => _address.address;
+
+  @override
+  InternetAddressType get type => _address.type;
+
+  @override
+  bool get isLoopback => _address.isLoopback;
 }
 
 typedef _TestRaceProbeConnection = ({Future<void> Function() close, Future<void> ready, Stream<dynamic> stream});
