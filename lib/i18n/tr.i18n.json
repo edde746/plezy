@@ -2137,8 +2137,6 @@
   "seerr": {
     "title": "Seerr",
     "connectTitle": "Seerr Bağla",
-    "serverUrl": "Sunucu URL'si",
-    "serverUrlHelper": "Seerr örneğinizin adresi",
     "checkServer": "Devam Et",
     "signInWithJellyfin": "Jellyfin ile Giriş Yap",
     "signInWithEmby": "Emby ile Giriş Yap",

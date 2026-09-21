@@ -2126,8 +2126,6 @@
   "seerr": {
     "title": "Seerr",
     "connectTitle": "Seerrに接続",
-    "serverUrl": "サーバー URL",
-    "serverUrlHelper": "Seerr インスタンスのアドレス",
     "checkServer": "続ける",
     "signInWithJellyfin": "Jellyfinでサインイン",
     "signInWithEmby": "Embyでサインイン",

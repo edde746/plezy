@@ -107,6 +107,43 @@ void main() {
       await client.send('GET', '/settings/public', authenticated: false);
       expect(cookies, ['${SeerrConstants.sessionCookieName}=abc', null]);
     });
+
+    test('a GET that cannot reach the active URL fails over to the next one and reports the switch', () async {
+      final events = <String>[];
+      final client = SeerrHttpClient(
+        baseUrl: 'http://seerr.lan:5055',
+        baseUrls: ['http://seerr.lan:5055', 'https://seerr.example.com'],
+        onEndpointSwitch: (url) => events.add('switch:$url'),
+        httpClient: MockClient((request) async {
+          events.add(request.url.host);
+          if (request.url.host == 'seerr.lan') throw http.ClientException('connection refused', request.url);
+          return _json({'ok': true});
+        }),
+      );
+
+      final res = await client.send('GET', '/settings/public', authenticated: false);
+      expect(res.statusCode, 200);
+      expect(client.baseUrl, 'https://seerr.example.com');
+      // The next request goes straight to the URL that answered.
+      await client.send('GET', '/auth/me');
+      expect(events, ['seerr.lan', 'seerr.example.com', 'switch:https://seerr.example.com', 'seerr.example.com']);
+    });
+
+    test('a write never fails over: a timed-out POST may have committed server-side', () async {
+      var attempts = 0;
+      final client = SeerrHttpClient(
+        baseUrl: 'http://seerr.lan:5055',
+        baseUrls: ['http://seerr.lan:5055', 'https://seerr.example.com'],
+        httpClient: MockClient((request) async {
+          attempts++;
+          throw http.ClientException('connection refused', request.url);
+        }),
+      );
+
+      await expectLater(client.send('POST', '/request', body: {}), throwsA(isA<http.ClientException>()));
+      expect(attempts, 1);
+      expect(client.baseUrl, 'http://seerr.lan:5055');
+    });
   });
 
   group('SeerrAuthService', () {
@@ -1351,6 +1388,16 @@ void main() {
       final legacy = _session().toJson()..remove('product');
       expect(SeerrSession.fromJson(legacy).product, SeerrProduct.unknown);
     });
+
+    test('round-trips the URL list; legacy payloads carry the active URL alone', () {
+      final session = _session().copyWith(baseUrls: ['http://seerr.lan:5055', 'https://seerr.example.com']);
+      final decoded = SeerrSession.decode(session.encode());
+      expect(decoded.baseUrls, ['http://seerr.lan:5055', 'https://seerr.example.com']);
+      expect(decoded.baseUrl, 'https://seerr.example.com');
+
+      final legacy = SeerrSession.fromJson(session.toJson()..remove('base_urls'));
+      expect(legacy.baseUrls, ['https://seerr.example.com']);
+    });
   });
 
   group('SeerrMediaStatus', () {
@@ -1482,6 +1529,82 @@ void main() {
       );
       await expectLater(auth.probeFirstReachable('/seerr'), throwsA(isA<SeerrUrlException>()));
       expect(requests, 0);
+    });
+  });
+
+  group('SeerrAuthService.probeInOrder', () {
+    test('the first entry typed wins over a later one that answers sooner', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.host == 'seerr.lan') await Future<void>.delayed(const Duration(milliseconds: 50));
+          return _json({'initialized': true});
+        }),
+      );
+
+      final reached = await auth.probeInOrder(['http://seerr.lan:5055', 'https://seerr.example.com']);
+
+      expect(reached.baseUrl, 'http://seerr.lan:5055');
+    });
+
+    test('an unreachable entry falls through to the next; none answering names the first', () async {
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.host == 'seerr.lan') throw http.ClientException('no route to host', request.url);
+          return _json({'initialized': true});
+        }),
+      );
+      final reached = await auth.probeInOrder(['http://seerr.lan:5055', 'https://seerr.example.com']);
+      expect(reached.baseUrl, 'https://seerr.example.com');
+
+      final offline = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async => throw http.ClientException('offline', request.url)),
+      );
+      await expectLater(
+        offline.probeInOrder(['http://seerr.lan:5055', 'https://seerr.example.com']),
+        throwsA(isA<SeerrUrlException>().having((e) => e.message, 'message', contains('http://seerr.lan:5055'))),
+      );
+    });
+
+    test('persistedBaseUrls keeps the typed order, the candidate that answered, and guesses for the rest', () {
+      expect(SeerrAuthService.persistedBaseUrls(['seerr.lan', 'https://seerr.example.com/'], 'http://seerr.lan:5055'), [
+        'http://seerr.lan:5055',
+        'https://seerr.example.com',
+      ]);
+      expect(SeerrAuthService.persistedBaseUrls(['seerr.lan', 'requests.example.com'], 'http://seerr.lan:5055'), [
+        'http://seerr.lan:5055',
+        'https://requests.example.com',
+        'http://requests.example.com',
+        'http://requests.example.com:5055',
+      ]);
+    });
+  });
+
+  group('SeerrClient endpoint selection', () {
+    test('selectEndpoint promotes the first reachable URL in order and persists it', () async {
+      final hosts = <String>[];
+      SeerrSession? persisted;
+      final mock = MockClient((request) async {
+        hosts.add(request.url.host);
+        if (request.url.host == 'seerr.example.com') throw http.ClientException('no hairpin', request.url);
+        if (request.url.path == '/api/v1/settings/public') return _json({'initialized': true});
+        return _json(_user());
+      });
+      // The stored active URL is the remote one; the LAN URL comes first in the list.
+      final client = SeerrClient(
+        _session().copyWith(baseUrls: ['http://seerr.lan:5055', 'https://seerr.example.com']),
+        onSessionInvalidated: () => fail('must remain linked'),
+        onSessionUpdated: (next) => persisted = next,
+        authService: SeerrAuthService(httpClientFactory: () => mock),
+        httpClient: mock,
+      );
+
+      await client.selectEndpoint();
+
+      expect(client.session.baseUrl, 'http://seerr.lan:5055');
+      expect(persisted?.baseUrl, 'http://seerr.lan:5055');
+      expect(persisted?.baseUrls, ['http://seerr.lan:5055', 'https://seerr.example.com']);
+      await client.getMe();
+      expect(hosts.last, 'seerr.lan');
     });
   });
 

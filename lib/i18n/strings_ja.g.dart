@@ -2141,8 +2141,6 @@ class _Translations$seerr$ja extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => 'Seerrに接続';
-	@override String get serverUrl => 'サーバー URL';
-	@override String get serverUrlHelper => 'Seerr インスタンスのアドレス';
 	@override String get checkServer => '続ける';
 	@override String get signInWithJellyfin => 'Jellyfinでサインイン';
 	@override String get signInWithEmby => 'Embyでサインイン';
@@ -4924,8 +4922,6 @@ extension on TranslationsJa {
 			'trakt.watchedSyncDescription' => 'Plezyで項目を視聴済みにすると、Traktでも視聴済みになります。',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerrに接続',
-			'seerr.serverUrl' => 'サーバー URL',
-			'seerr.serverUrlHelper' => 'Seerr インスタンスのアドレス',
 			'seerr.checkServer' => '続ける',
 			'seerr.signInWithJellyfin' => 'Jellyfinでサインイン',
 			'seerr.signInWithEmby' => 'Embyでサインイン',

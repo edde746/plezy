@@ -70,20 +70,46 @@ enum SeerrRejection {
 
 /// Thin wrapper around `package:http` for Seerr API calls.
 ///
-/// Adds the two things the tracker HTTP layer doesn't cover:
+/// Adds the three things the tracker HTTP layer doesn't cover:
 ///   1. `connect.sid` cookie capture from `Set-Cookie` on login, replayed as
 ///      `Cookie:` on every subsequent request — Express session auth.
 ///   2. Query encoding via [encodeQueryParameters] (`%20` for spaces): Seerr
 ///      proxies `/search` to TMDB, which rejects `+` in the query value.
+///   3. Failover across the instance's URLs (a LAN and a remote address) for
+///      GETs: one that cannot reach the active URL moves on to the next and,
+///      once that answers, reports the switch through [onEndpointSwitch].
+///      Writes never fail over, as with the media-server clients.
 class SeerrHttpClient {
-  final String baseUrl;
+  /// The instance's URLs in failover order, the initial [baseUrl] first.
+  /// Every entry must name the same instance: the session cookie is replayed
+  /// against whichever one answers.
+  final List<String> _baseUrls;
+  int _activeIndex = 0;
   final http.Client _http;
   String? _cookie;
 
-  SeerrHttpClient({required String baseUrl, http.Client? httpClient, String? cookie})
-    : baseUrl = normalizeBaseUrl(baseUrl),
-      _http = httpClient ?? platform.createPlatformClient(),
-      _cookie = (cookie?.isNotEmpty ?? false) ? cookie : null;
+  /// Fired with the URL a GET succeeded on after the previous one could not
+  /// be reached, so the owner can persist the switch.
+  final void Function(String baseUrl)? onEndpointSwitch;
+
+  SeerrHttpClient({
+    required String baseUrl,
+    List<String> baseUrls = const [],
+    http.Client? httpClient,
+    String? cookie,
+    this.onEndpointSwitch,
+  }) : _baseUrls = List.unmodifiable({normalizeBaseUrl(baseUrl), ...baseUrls.map(normalizeBaseUrl)}),
+       _http = httpClient ?? platform.createPlatformClient(),
+       _cookie = (cookie?.isNotEmpty ?? false) ? cookie : null;
+
+  /// The URL requests currently go to.
+  String get baseUrl => _baseUrls[_activeIndex];
+
+  /// Move to [value], one of the configured URLs; anything else is ignored.
+  set baseUrl(String value) {
+    final index = _baseUrls.indexOf(normalizeBaseUrl(value));
+    if (index >= 0) _activeIndex = index;
+  }
 
   /// Current `connect.sid` value (no `name=` prefix); null until a login
   /// response is captured or [cookie] was seeded.
@@ -131,33 +157,51 @@ class SeerrHttpClient {
     if (!const {'GET', 'POST', 'PUT', 'DELETE'}.contains(method)) {
       throw ArgumentError('Unsupported HTTP method: $method');
     }
-    final uri = _uri(path, query);
     final headers = <String, String>{
       'Accept': 'application/json',
       if (authenticated && _cookie != null) 'Cookie': '${SeerrConstants.sessionCookieName}=$_cookie',
       if (body != null) 'Content-Type': 'application/json',
     };
     final sw = Stopwatch()..start();
-    // Abortable so a timeout releases transport resources. A timed-out write
-    // may already have committed server-side and must never be replayed.
-    // Redirects are not followed: Seerr's
-    // API never issues one, so a 3xx is an auth proxy in front of it, and
-    // following it would turn that into an HTML 200 nobody can diagnose.
-    final response = await sendAbortableHttpRequest(
-      _http,
-      method,
-      uri,
-      headers: headers,
-      body: body == null ? null : jsonEncode(body),
-      timeout: timeout,
-      operation: 'Seerr $method $path',
-      followRedirects: false,
-    );
-    appLogger.d('Seerr $method $path -> ${response.statusCode} (${sw.elapsedMilliseconds}ms)');
-    return SeerrResponse(response, TrackerHttpClient.decodeJson(response.body));
+    // Only a GET walks the URL list when the transport fails: a timed-out
+    // write may already have committed server-side and must never be replayed.
+    for (var attempt = 0; ; attempt++) {
+      final index = _activeIndex;
+      final http.Response response;
+      try {
+        // Abortable so a timeout releases transport resources. Redirects are
+        // not followed: Seerr's API never issues one, so a 3xx is an auth
+        // proxy in front of it, and following it would turn that into an
+        // HTML 200 nobody can diagnose.
+        response = await sendAbortableHttpRequest(
+          _http,
+          method,
+          _uri(_baseUrls[index], path, query),
+          headers: headers,
+          body: body == null ? null : jsonEncode(body),
+          timeout: timeout,
+          operation: 'Seerr $method $path',
+          followRedirects: false,
+        );
+      } catch (e) {
+        if (method != 'GET' || attempt >= _baseUrls.length - 1) rethrow;
+        // A concurrent request may have moved on already; never move it back.
+        if (_activeIndex == index) {
+          _activeIndex = (index + 1) % _baseUrls.length;
+          appLogger.i(
+            'Seerr $method $path could not reach the active instance URL, trying the next one',
+            error: e.runtimeType,
+          );
+        }
+        continue;
+      }
+      appLogger.d('Seerr $method $path -> ${response.statusCode} (${sw.elapsedMilliseconds}ms)');
+      if (attempt > 0) onEndpointSwitch?.call(_baseUrls[index]);
+      return SeerrResponse(response, TrackerHttpClient.decodeJson(response.body));
+    }
   }
 
-  Uri _uri(String path, Map<String, Object?>? query) {
+  Uri _uri(String baseUrl, String path, Map<String, Object?>? query) {
     final base = Uri.parse('$baseUrl${SeerrConstants.apiPath}$path');
     final encoded = encodeQueryParameters(query);
     return encoded.isEmpty ? base : base.replace(query: encoded);

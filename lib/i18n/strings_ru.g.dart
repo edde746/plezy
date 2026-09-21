@@ -2168,8 +2168,6 @@ class _Translations$seerr$ru extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => 'Подключить Seerr';
-	@override String get serverUrl => 'URL сервера';
-	@override String get serverUrlHelper => 'Адрес вашего экземпляра Seerr';
 	@override String get checkServer => 'Продолжить';
 	@override String get signInWithJellyfin => 'Войти через Jellyfin';
 	@override String get signInWithEmby => 'Войти через Emby';
@@ -4957,8 +4955,6 @@ extension on TranslationsRu {
 			'trakt.watchedSyncDescription' => 'Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Подключить Seerr',
-			'seerr.serverUrl' => 'URL сервера',
-			'seerr.serverUrlHelper' => 'Адрес вашего экземпляра Seerr',
 			'seerr.checkServer' => 'Продолжить',
 			'seerr.signInWithJellyfin' => 'Войти через Jellyfin',
 			'seerr.signInWithEmby' => 'Войти через Emby',

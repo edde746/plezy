@@ -66,7 +66,7 @@ class SeerrSettingsScreen extends StatelessWidget {
                 ListTile(
                   leading: const AppIcon(Symbols.dns_rounded, fill: 1),
                   title: Text(session.instanceLabel.isNotEmpty ? session.instanceLabel : t.seerr.instance),
-                  subtitle: Text(session.baseUrl),
+                  subtitle: Text(session.baseUrls.join('\n')),
                 ),
               ],
             ),

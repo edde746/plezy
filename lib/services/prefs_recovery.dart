@@ -592,7 +592,7 @@ abstract final class PrefsRecovery {
         // `secret` is CredentialVault ciphertext at rest; the plaintext is not
         // available here, so register the stored form.
         LogRedactionManager.registerCustomValue(session.secret);
-        LogRedactionManager.registerServerUrl(session.baseUrl);
+        session.baseUrls.forEach(LogRedactionManager.registerServerUrl);
         return true;
       }
       final base = profileScopedCredentialBaseKey(key);

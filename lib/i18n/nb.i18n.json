@@ -2137,8 +2137,6 @@
   "seerr": {
     "title": "Seerr",
     "connectTitle": "Koble til Seerr",
-    "serverUrl": "Server-URL",
-    "serverUrlHelper": "Adressen til Seerr-instansen din",
     "checkServer": "Fortsett",
     "signInWithJellyfin": "Logg inn med Jellyfin",
     "signInWithEmby": "Logg inn med Emby",

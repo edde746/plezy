@@ -9,6 +9,8 @@ import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/seerr/seerr_public_settings.dart';
 import '../../models/seerr/seerr_session.dart';
 import '../../providers/seerr_account_provider.dart';
+import '../../services/jellyfin_endpoint_discovery.dart';
+import '../../services/seerr/seerr_auth_service.dart';
 import '../../services/seerr/seerr_constants.dart';
 import '../../services/seerr/seerr_exceptions.dart';
 import '../../theme/mono_tokens.dart';
@@ -23,9 +25,11 @@ import 'quick_connect_flow_mixin.dart';
 enum _CredentialForm { none, jellyfin, emby, local }
 
 /// Two-step Seerr connect flow:
-///   1. Probe the instance URL (`/settings/public`), racing https/http/default
+///   1. Probe the instance URLs (`/settings/public`), racing https/http/default
 ///      port candidates for schemeless input like the MediaBrowser add-server
 ///      form, but never settling on plaintext while TLS may still answer.
+///      Several URLs (LAN and remote) are probed together; the first typed
+///      that answers signs in and the rest become failover URLs.
 ///   2. Sign in with one of the methods the instance supports — one-tap
 ///      Plex (reusing the profile's stored token), Jellyfin/Emby
 ///      credentials, Jellyfin Quick Connect (Seerr 3.4+), or a local Seerr
@@ -56,6 +60,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
 
   SeerrPublicSettings? _instance;
   String _baseUrl = '';
+  List<String> _baseUrls = const [];
   bool _plexTokenAvailable = false;
   _CredentialForm _form = _CredentialForm.none;
 
@@ -93,8 +98,8 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
   }
 
   Future<void> _probe() async {
-    final input = _urlController.text.trim();
-    if (input.isEmpty) {
+    final inputs = JellyfinEndpointDiscovery.parseUserEnteredUrls(_urlController.text);
+    if (inputs.isEmpty) {
       setErrorText(t.addServer.required);
       return;
     }
@@ -103,13 +108,14 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
       // Schemeless input is common ("seerr.example.com", "192.168.1.5:5055"):
       // race https, plain http, and the default install port instead of
       // assuming https and failing every plain-HTTP LAN instance.
-      final reached = await account.authService.probeFirstReachable(input);
+      final reached = await account.authService.probeInOrder(inputs);
       final settings = reached.settings;
       final plexToken = await account.resolvePlexToken();
       if (!mounted) return;
       setState(() {
         _instance = settings;
         _baseUrl = reached.baseUrl;
+        _baseUrls = SeerrAuthService.persistedBaseUrls(inputs, reached.baseUrl);
         _plexTokenAvailable = plexToken != null && plexToken.isNotEmpty;
         // With exactly one credential form on offer, skip the method list.
         final mediaForm = _mediaServerForm;
@@ -206,7 +212,9 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
     // The probe already answered /settings/public; carry its label and the
     // product discriminator (MediaStatus 6/7 decode per product) into the
     // persisted session.
-    await account.adoptSession(session.copyWith(instanceLabel: _instance?.instanceLabel, product: _instance?.product));
+    await account.adoptSession(
+      session.copyWith(baseUrls: _baseUrls, instanceLabel: _instance?.instanceLabel, product: _instance?.product),
+    );
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }
@@ -258,12 +266,20 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
 
   List<Widget> _buildUrlStep(ThemeData theme) {
     return [
+      // The MediaBrowser add-server URL field, verbatim: several URLs (LAN
+      // and remote) separated by commas or newlines form the failover list.
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
+        // Native on every TV: on Apple TV `automatic` would route this
+        // wrap-to-4-lines field to the Flutter overlay, but it is logically
+        // single-line URL input the system keyboard handles (#1051, #1079).
+        tvTextInputPresentation: TvTextInputPresentation.platform,
         autofocus: true,
         tvTextInputAutoOpenBehavior: deferredUrlFieldAutoOpen,
         keyboardType: TextInputType.url,
+        minLines: 1,
+        maxLines: 4,
         autocorrect: false,
         enableSuggestions: false,
         enabled: !busy,
@@ -271,10 +287,10 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
         textInputAction: TextInputAction.go,
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
-          labelText: t.seerr.serverUrl,
+          labelText: t.addServer.serverUrls,
           // URL example — intentionally not localized.
           hintText: 'https://seerr.example.com',
-          helperText: t.seerr.serverUrlHelper,
+          helperText: t.addServer.serverUrlsHelper,
           prefixIcon: const AppIcon(Symbols.link_rounded, fill: 1),
         ),
       ),
@@ -431,7 +447,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
               children: [
                 Text(instance.instanceLabel, style: theme.textTheme.titleSmall),
                 Text(
-                  _baseUrl,
+                  _baseUrls.length > 1 ? '$_baseUrl +${_baseUrls.length - 1}' : _baseUrl,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),

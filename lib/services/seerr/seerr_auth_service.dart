@@ -124,6 +124,46 @@ class SeerrAuthService {
     return completer.future;
   }
 
+  /// Probes every entry of [inputs] at once and returns the first, in the
+  /// order given, that reached an initialized instance. The order is the
+  /// user's preference (a LAN URL before the remote one), so a later entry
+  /// answering sooner does not win. When none answers, the most informative
+  /// failure is thrown as [probeFirstReachable] would.
+  Future<SeerrReachableInstance> probeInOrder(List<String> inputs) async {
+    if (inputs.isEmpty) throw ArgumentError.value(inputs, 'inputs', 'at least one instance URL is required');
+    final failures = List<(Object, StackTrace)?>.filled(inputs.length, null);
+    final probes = [
+      for (final (index, input) in inputs.indexed)
+        probeFirstReachable(input).then<SeerrReachableInstance?>(
+          (reached) => reached,
+          onError: (Object error, StackTrace stackTrace) {
+            failures[index] = (error, stackTrace);
+            return null;
+          },
+        ),
+    ];
+    for (final probe in probes) {
+      final reached = await probe;
+      if (reached != null) return reached;
+    }
+    final (error, stackTrace) = _mostInformativeFailure(failures);
+    Error.throwWithStackTrace(error, stackTrace);
+  }
+
+  /// The URL list to persist for [inputs] once [activeBaseUrl] answered: the
+  /// order typed, with the entry that answered reduced to the candidate that
+  /// did and every other entry kept as typed — or, when schemeless, as all of
+  /// its [expandUrlCandidates] guesses, so failover can still discover it.
+  static List<String> persistedBaseUrls(Iterable<String> inputs, String activeBaseUrl) {
+    final active = SeerrHttpClient.normalizeBaseUrl(activeBaseUrl);
+    final urls = <String>{};
+    for (final input in inputs) {
+      final candidates = expandUrlCandidates(input).map(SeerrHttpClient.normalizeBaseUrl).toList();
+      urls.addAll(candidates.contains(active) ? [active] : candidates);
+    }
+    return List.unmodifiable(urls);
+  }
+
   static bool _isSecure(String baseUrl) => baseUrl.startsWith('https://');
 
   /// The failure worth showing: one that came back from a server outranks a

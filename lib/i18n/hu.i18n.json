@@ -2137,8 +2137,6 @@
   "seerr": {
     "title": "Seerr",
     "connectTitle": "Seerr csatlakoztatása",
-    "serverUrl": "Szerver URL-címe",
-    "serverUrlHelper": "A Seerr példányod címe",
     "checkServer": "Folytatás",
     "signInWithJellyfin": "Bejelentkezés Jellyfinnel",
     "signInWithEmby": "Bejelentkezés Emby-vel",

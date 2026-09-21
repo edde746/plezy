@@ -5291,12 +5291,6 @@ class Translations$seerr$en {
 	/// en: 'Connect Seerr'
 	String get connectTitle => 'Connect Seerr';
 
-	/// en: 'Server URL'
-	String get serverUrl => 'Server URL';
-
-	/// en: 'The address of your Seerr instance'
-	String get serverUrlHelper => 'The address of your Seerr instance';
-
 	/// en: 'Continue'
 	String get checkServer => 'Continue';
 
@@ -9165,8 +9159,6 @@ extension on Translations {
 			'trakt.watchedSyncDescription' => 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
-			'seerr.serverUrl' => 'Server URL',
-			'seerr.serverUrlHelper' => 'The address of your Seerr instance',
 			'seerr.checkServer' => 'Continue',
 			'seerr.signInWithJellyfin' => 'Sign in with Jellyfin',
 			'seerr.signInWithEmby' => 'Sign in with Emby',
@@ -9274,10 +9266,10 @@ extension on Translations {
 			'addServer.signInWithPlexCard' => 'Sign in with Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.',

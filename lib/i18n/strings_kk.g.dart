@@ -2150,8 +2150,6 @@ class _Translations$seerr$kk extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => 'Seerr қосу';
-	@override String get serverUrl => 'Сервер URL-і';
-	@override String get serverUrlHelper => 'Seerr мекенжайыңыз';
 	@override String get checkServer => 'Жалғастыру';
 	@override String get signInWithJellyfin => 'Jellyfin арқылы кіру';
 	@override String get signInWithEmby => 'Emby арқылы кіру';
@@ -4935,8 +4933,6 @@ extension on TranslationsKk {
 			'trakt.watchedSyncDescription' => 'Plezy-де белгіленгенде Trakt-та да белгіленеді.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr қосу',
-			'seerr.serverUrl' => 'Сервер URL-і',
-			'seerr.serverUrlHelper' => 'Seerr мекенжайыңыз',
 			'seerr.checkServer' => 'Жалғастыру',
 			'seerr.signInWithJellyfin' => 'Jellyfin арқылы кіру',
 			'seerr.signInWithEmby' => 'Emby арқылы кіру',

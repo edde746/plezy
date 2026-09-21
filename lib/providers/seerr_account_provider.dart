@@ -113,6 +113,9 @@ class SeerrAccountProvider extends ChangeNotifier with DisposableChangeNotifierM
     final client = _catalogClient;
     if (client == null) return;
     try {
+      // Bind and resume are when the network is likeliest to have changed:
+      // re-pick the instance URL in failover order before reading authority.
+      await client.selectEndpoint();
       await client.refreshUser();
     } catch (e, stackTrace) {
       appLogger.w('Seerr: user refresh failed', error: e, stackTrace: stackTrace);

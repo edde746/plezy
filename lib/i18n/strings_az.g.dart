@@ -2150,8 +2150,6 @@ class _Translations$seerr$az extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => 'Seerr qoş';
-	@override String get serverUrl => 'Server URL-i';
-	@override String get serverUrlHelper => 'Seerr ünvanınız';
 	@override String get checkServer => 'Davam et';
 	@override String get signInWithJellyfin => 'Jellyfin ilə daxil ol';
 	@override String get signInWithEmby => 'Emby ilə daxil ol';
@@ -4935,8 +4933,6 @@ extension on TranslationsAz {
 			'trakt.watchedSyncDescription' => 'Plezy-də baxıldı işarələdikdə Trakt-da da işarələnsin.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr qoş',
-			'seerr.serverUrl' => 'Server URL-i',
-			'seerr.serverUrlHelper' => 'Seerr ünvanınız',
 			'seerr.checkServer' => 'Davam et',
 			'seerr.signInWithJellyfin' => 'Jellyfin ilə daxil ol',
 			'seerr.signInWithEmby' => 'Emby ilə daxil ol',

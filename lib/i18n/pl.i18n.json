@@ -2159,8 +2159,6 @@
   "seerr": {
     "title": "Seerr",
     "connectTitle": "Połącz Seerr",
-    "serverUrl": "Adres URL serwera",
-    "serverUrlHelper": "Adres Twojej instancji Seerr",
     "checkServer": "Kontynuuj",
     "signInWithJellyfin": "Zaloguj się przez Jellyfin",
     "signInWithEmby": "Zaloguj się przez Emby",

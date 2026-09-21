@@ -2137,8 +2137,6 @@
   "seerr": {
     "title": "Seerr",
     "connectTitle": "Свързване със Seerr",
-    "serverUrl": "URL на сървъра",
-    "serverUrlHelper": "Адресът на твоята Seerr инстанция",
     "checkServer": "Продължи",
     "signInWithJellyfin": "Вход с Jellyfin",
     "signInWithEmby": "Вход с Emby",

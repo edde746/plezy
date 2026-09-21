@@ -2150,8 +2150,6 @@ class _Translations$seerr$tr extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => 'Seerr Bağla';
-	@override String get serverUrl => 'Sunucu URL\'si';
-	@override String get serverUrlHelper => 'Seerr örneğinizin adresi';
 	@override String get checkServer => 'Devam Et';
 	@override String get signInWithJellyfin => 'Jellyfin ile Giriş Yap';
 	@override String get signInWithEmby => 'Emby ile Giriş Yap';
@@ -4935,8 +4933,6 @@ extension on TranslationsTr {
 			'trakt.watchedSyncDescription' => 'Plezy\'de ögeleri izlendi olarak işaretlediğinizde, Trakt üzerinde de izlendi olarak işaretlenir.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr Bağla',
-			'seerr.serverUrl' => 'Sunucu URL\'si',
-			'seerr.serverUrlHelper' => 'Seerr örneğinizin adresi',
 			'seerr.checkServer' => 'Devam Et',
 			'seerr.signInWithJellyfin' => 'Jellyfin ile Giriş Yap',
 			'seerr.signInWithEmby' => 'Emby ile Giriş Yap',

@@ -31,6 +31,10 @@ typedef SeerrPlexTokenSupplier = Future<String?> Function();
 /// the stored secret; plex uses [plexTokenSupplier]), swaps the cookie, and
 /// retries once. Concurrent re-auths coalesce within this client binding so a
 /// burst of in-flight rejections triggers a single login POST.
+///
+/// A GET that cannot reach the active instance URL walks the session's URL
+/// list (see [SeerrHttpClient]); [selectEndpoint] re-picks the URL in that
+/// order when the owner binds or resumes.
 class SeerrClient {
   final FutureCoalescer<void> _reauth = FutureCoalescer();
   bool _disposed = false;
@@ -38,7 +42,7 @@ class SeerrClient {
   int _authorityRead = 0;
 
   SeerrSession _session;
-  final SeerrHttpClient _http;
+  late final SeerrHttpClient _http;
   final SeerrAuthService _auth;
   final SeerrPlexTokenSupplier? plexTokenSupplier;
 
@@ -57,10 +61,33 @@ class SeerrClient {
     SeerrAuthService? authService,
     http.Client? httpClient,
   }) : _session = session,
-       _http = SeerrHttpClient(baseUrl: session.baseUrl, httpClient: httpClient, cookie: session.cookie),
-       _auth = authService ?? SeerrAuthService();
+       _auth = authService ?? SeerrAuthService() {
+    _http = SeerrHttpClient(
+      baseUrl: session.baseUrl,
+      baseUrls: session.baseUrls,
+      httpClient: httpClient,
+      cookie: session.cookie,
+      onEndpointSwitch: (_) => _adoptActiveUrl(),
+    );
+  }
 
   SeerrSession get session => _session;
+
+  /// Re-pick the active instance URL in the session's failover order: the
+  /// first reachable one wins, so a LAN URL demoted while away is promoted
+  /// again once the app is back on its network. No-op with a single URL.
+  Future<void> selectEndpoint() async {
+    if (_session.baseUrls.length < 2) return;
+    final reached = await _auth.probeInOrder(_session.baseUrls);
+    if (_disposed) return;
+    _http.baseUrl = reached.baseUrl;
+    _adoptActiveUrl();
+  }
+
+  /// Persist the URL the transport moved to, by failover or [selectEndpoint].
+  void _adoptActiveUrl() {
+    if (_http.baseUrl != _session.baseUrl) _adopt(_session);
+  }
 
   void dispose() {
     _disposed = true;
@@ -370,7 +397,10 @@ class SeerrClient {
   void _adopt(SeerrSession next) {
     if (_disposed) return;
     final product = _publicSettingsCache?.product ?? _session.product;
-    final merged = product == SeerrProduct.unknown || product == next.product ? next : next.copyWith(product: product);
+    // The transport owns the active URL: a failover may have moved it while a
+    // re-auth completed from an older snapshot.
+    final merged = (product == SeerrProduct.unknown || product == next.product ? next : next.copyWith(product: product))
+        .copyWith(baseUrl: _http.baseUrl);
     _session = merged;
     _http.cookie = merged.cookie;
     onSessionUpdated?.call(merged);

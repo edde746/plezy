@@ -2126,8 +2126,6 @@
   "seerr": {
     "title": "Seerr",
     "connectTitle": "連線至 Seerr",
-    "serverUrl": "伺服器 URL",
-    "serverUrlHelper": "您的 Seerr 執行個體的連線位址",
     "checkServer": "繼續",
     "signInWithJellyfin": "使用 Jellyfin 登入",
     "signInWithEmby": "使用 Emby 登入",

@@ -41,7 +41,7 @@ enum SeerrProduct {
   unknown,
 }
 
-/// An authenticated Seerr session for one profile: instance URL, the Express
+/// An authenticated Seerr session for one profile: instance URLs, the Express
 /// session cookie, the credentials needed to re-login silently, and the
 /// Seerr-side user it maps to.
 ///
@@ -50,7 +50,9 @@ enum SeerrProduct {
 /// and after an unrecoverable decrypt failure (session then lives until the
 /// cookie expires and the user must reconnect).
 class SeerrSession {
+  /// The instance URL requests currently go to; always one of [baseUrls].
   final String baseUrl;
+  final List<String> _baseUrls;
   final SeerrAuthMethod method;
 
   /// Username (jellyfin/emby) or email (local); empty for plex.
@@ -76,6 +78,7 @@ class SeerrSession {
 
   const SeerrSession({
     required this.baseUrl,
+    this._baseUrls = const [],
     required this.method,
     required this.identifier,
     required this.secret,
@@ -88,7 +91,15 @@ class SeerrSession {
     required this.createdAt,
   });
 
+  /// Every URL the instance is reachable at, in the user's failover order
+  /// (a LAN URL before the remote one), [baseUrl] included. The order is
+  /// preference; [baseUrl] is whichever answered last. Sessions persisted
+  /// before URL lists existed carry [baseUrl] alone.
+  List<String> get baseUrls => _baseUrls.contains(baseUrl) ? _baseUrls : List.unmodifiable([baseUrl, ..._baseUrls]);
+
   SeerrSession copyWith({
+    String? baseUrl,
+    List<String>? baseUrls,
     String? secret,
     String? cookie,
     int? permissions,
@@ -96,7 +107,8 @@ class SeerrSession {
     String? instanceLabel,
     SeerrProduct? product,
   }) => SeerrSession(
-    baseUrl: baseUrl,
+    baseUrl: baseUrl ?? this.baseUrl,
+    baseUrls: baseUrls ?? _baseUrls,
     method: method,
     identifier: identifier,
     secret: secret ?? this.secret,
@@ -111,6 +123,7 @@ class SeerrSession {
 
   Map<String, Object?> toJson() => {
     'base_url': baseUrl,
+    'base_urls': baseUrls,
     'method': method.name,
     'identifier': identifier,
     'secret': secret,
@@ -125,6 +138,7 @@ class SeerrSession {
 
   factory SeerrSession.fromJson(Map<String, Object?> json) => SeerrSession(
     baseUrl: json['base_url'] as String,
+    baseUrls: (json['base_urls'] as List?)?.whereType<String>().toList(growable: false) ?? const [],
     // An unknown method must not fall back to another (re-auth would post
     // garbage credentials); the store's decode try/catch drops the session.
     method:

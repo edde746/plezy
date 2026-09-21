@@ -2141,8 +2141,6 @@ class _Translations$seerr$ko extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => 'Seerr에 연결';
-	@override String get serverUrl => '서버 URL';
-	@override String get serverUrlHelper => 'Seerr 인스턴스의 주소';
 	@override String get checkServer => '계속';
 	@override String get signInWithJellyfin => 'Jellyfin으로 로그인';
 	@override String get signInWithEmby => 'Emby로 로그인';
@@ -4924,8 +4922,6 @@ extension on TranslationsKo {
 			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr에 연결',
-			'seerr.serverUrl' => '서버 URL',
-			'seerr.serverUrlHelper' => 'Seerr 인스턴스의 주소',
 			'seerr.checkServer' => '계속',
 			'seerr.signInWithJellyfin' => 'Jellyfin으로 로그인',
 			'seerr.signInWithEmby' => 'Emby로 로그인',

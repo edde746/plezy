@@ -2150,8 +2150,6 @@ class _Translations$seerr$hu extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => 'Seerr csatlakoztatása';
-	@override String get serverUrl => 'Szerver URL-címe';
-	@override String get serverUrlHelper => 'A Seerr példányod címe';
 	@override String get checkServer => 'Folytatás';
 	@override String get signInWithJellyfin => 'Bejelentkezés Jellyfinnel';
 	@override String get signInWithEmby => 'Bejelentkezés Emby-vel';
@@ -4935,8 +4933,6 @@ extension on TranslationsHu {
 			'trakt.watchedSyncDescription' => 'Ha egy elemet megtekintettként jelölsz meg a Plezyben, a Trakt is megtekintettként jelöli.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Seerr csatlakoztatása',
-			'seerr.serverUrl' => 'Szerver URL-címe',
-			'seerr.serverUrlHelper' => 'A Seerr példányod címe',
 			'seerr.checkServer' => 'Folytatás',
 			'seerr.signInWithJellyfin' => 'Bejelentkezés Jellyfinnel',
 			'seerr.signInWithEmby' => 'Bejelentkezés Emby-vel',

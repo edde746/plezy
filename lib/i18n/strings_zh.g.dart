@@ -2141,8 +2141,6 @@ class Translations$seerr$zh extends Translations$seerr$en {
 	// Translations
 	@override String get title => 'Seerr';
 	@override String get connectTitle => '连接 Seerr';
-	@override String get serverUrl => '服务器 URL';
-	@override String get serverUrlHelper => '你的 Seerr 实例的地址';
 	@override String get checkServer => '继续';
 	@override String get signInWithJellyfin => '使用 Jellyfin 登录';
 	@override String get signInWithEmby => '使用 Emby 登录';
@@ -4924,8 +4922,6 @@ extension on TranslationsZh {
 			'trakt.watchedSyncDescription' => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => '连接 Seerr',
-			'seerr.serverUrl' => '服务器 URL',
-			'seerr.serverUrlHelper' => '你的 Seerr 实例的地址',
 			'seerr.checkServer' => '继续',
 			'seerr.signInWithJellyfin' => '使用 Jellyfin 登录',
 			'seerr.signInWithEmby' => '使用 Emby 登录',
