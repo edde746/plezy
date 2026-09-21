@@ -129,7 +129,7 @@ class MpvPlayerCore private constructor(
 
     /**
      * Every decoder registered under [DV_MIME_TYPES], in MediaCodecList
-     * order, for [GpuVoPolicy.nativeP5Decoder]. One walk per process: the
+     * order, for [GpuVoPolicy.nativeDvDecoder]. One walk per process: the
      * codec list is static. A type whose capabilities cannot be queried is
      * dropped, as FFmpeg drops it.
      */
@@ -316,7 +316,8 @@ class MpvPlayerCore private constructor(
 
   /** `dolby-vision-profile` of the video track the current file selected
    * (null when the bitstream carries no DOVI record); set per file by
-   * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome. */
+   * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome
+   * and by a mid-file [applyDvConversionMode]. */
   @Volatile private var pendingDvProfile: Long? = null
 
   /** Whether this core already decided its GL surface colorspace; set by the
@@ -1476,13 +1477,17 @@ class MpvPlayerCore private constructor(
    * Per-file Dolby Vision routing, decided from the bitstream: mpv exports
    * the DOVI configuration record's profile on the track list (never trust
    * server metadata for this — it mis-tags DV routinely; mpv omits the
-   * field when the bitstream carries no record). Re-evaluated on every
-   * file, so a following non-P5 file restores hardware decode and returns
-   * to the video plane. [track] is the pending video track, see
-   * [pendingVideoTrack].
+   * field when the bitstream carries no record). Two decisions, both
+   * re-evaluated on every file so a following file of another profile gets
+   * its own answer: whether the fork FFmpeg may hand the stream to a DV
+   * decoder at all (`dolby_vision`, [GpuVoPolicy.dvDecoderOptions] —
+   * written here, before the decoder opens, and again by
+   * [applyDvConversionMode] for the same file when the mode changes), and
+   * whether P5 has to leave the plane for gpu-next reshaping instead.
+   * [track] is the pending video track, see [pendingVideoTrack].
    *
-   * Native P5 support is what the bundled FFmpeg will actually open
-   * ([GpuVoPolicy.nativeP5Decoder]), not what the device advertises under
+   * Native support is what the bundled FFmpeg will actually open
+   * ([GpuVoPolicy.nativeDvDecoder]), not what the device advertises under
    * every DV MIME type: the two disagreed on devices whose only DV decoder
    * FFmpeg never probes, and the P5 base layer then reached the plane as
    * plain HEVC with inverted hue. [collectDecoderState] covers the case
@@ -1502,17 +1507,23 @@ class MpvPlayerCore private constructor(
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     pendingDvProfile = profile
     val mode = currentDvConversionMode
-    val nativeDecoder = GpuVoPolicy.nativeP5Decoder(dvDecoderCandidates)
+    val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
       conversionMode = mode,
-      canPlayP5Natively = nativeDecoder != null
+      canPlayP5Natively = p5Decoder != null
     )
+    val options = GpuVoPolicy.dvDecoderOptions(mode, displayDvSupported, profile, canPlayP5Natively = p5Decoder != null)
+    writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
       // report is diagnosed from, on the device and in the uploaded log.
-      val decision = "profile=$profile mode=$mode nativeP5Decoder=${nativeDecoder ?: "none"} " +
-        "displayDv=$displayDvSupported path=${if (needs) "software decode + gpu-next reshaping" else "video plane"}"
+      // `decoder` is what FFmpeg would open for this profile were the DV
+      // path enabled; `dolby_vision` is whether it is.
+      val fileDecoder = if (profile == 5L) p5Decoder else GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, profile)
+      val decision = "profile=$profile mode=$mode decoder=${fileDecoder ?: "none"} nativeP5Decoder=${p5Decoder ?: "none"} " +
+        "displayDv=$displayDvSupported dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode} " +
+        "path=${if (needs) "software decode + gpu-next reshaping" else "video plane"}"
       Log.i(TAG, "DV routing: $decision")
       emitLog("info", "dv-route", decision)
     }
@@ -1520,6 +1531,17 @@ class MpvPlayerCore private constructor(
       Log.i(TAG, "DV P5 (bitstream) without native support: software decode + gpu-next reshaping")
     }
     setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, needs)
+  }
+
+  /**
+   * Composes the per-file `dolby_vision`/`dv_p7_mode` into the session's
+   * decoder options and writes them. Runs only on the write worker: from
+   * the on_preloaded hook and from a queued mode change, so the two writers
+   * cannot interleave and both resolve against the same `pendingDvProfile`.
+   */
+  private suspend fun writeDvDecoderOptions(options: GpuVoPolicy.DvDecoderOptions) {
+    decoderOptions.put("dolby_vision" to if (options.dolbyVision) "1" else "0", "dv_p7_mode" to options.p7Mode)
+    writeProperty("vd-lavc-o", decoderOptions.compose())
   }
 
   /**
@@ -2409,29 +2431,28 @@ class MpvPlayerCore private constructor(
   /**
    * `dv-conversion-mode` is an app-level property shared with the ExoPlayer
    * and Apple cores, not an mpv one. It maps onto the fork FFmpeg
-   * hevc_mediacodec decoder options, mirroring the ExoPlayer DoviBridge
-   * decision tree. Single-layer profiles (5/8) use the Dolby Vision decoder
-   * whenever the path is enabled and the decoder advertises the profile.
+   * hevc_mediacodec decoder options through [GpuVoPolicy.dvDecoderOptions],
+   * resolved against the file currently loaded: the answer depends on its
+   * profile, and `vd-lavc-o` re-opens a running decoder, so a mode change
+   * mid-file must land the same value the on_preloaded hook would.
    */
   private fun applyDvConversionMode(value: String, onComplete: ((Result<Unit>) -> Unit)?) {
     val mode = value.trim().lowercase()
-    val displayDv = displayDvSupported
-    val nativeDecoder = DoviBridge.hasNativeDolbyVisionDecoder
-    val options = GpuVoPolicy.dvDecoderOptions(mode, displayDv, nativeDecoder)
-    if (options == null) {
+    if (mode !in GpuVoPolicy.DV_CONVERSION_MODES) {
       onComplete?.invoke(Result.failure(IllegalArgumentException("Invalid DV conversion mode: $value")))
       return
     }
     currentDvConversionMode = mode
-    val dolbyVision = if (options.dolbyVision) "1" else "0"
-    Log.i(
-      TAG,
-      "DV conversion mode '$value' (displayDV=$displayDv nativeDecoder=$nativeDecoder) -> " +
-        "dolby_vision=$dolbyVision dv_p7_mode=${options.p7Mode}"
-    )
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
-      decoderOptions.put("dolby_vision" to dolbyVision, "dv_p7_mode" to options.p7Mode)
-      writeProperty("vd-lavc-o", decoderOptions.compose())
+      val profile = pendingDvProfile
+      val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
+      val options = GpuVoPolicy.dvDecoderOptions(mode, displayDvSupported, profile, canPlayP5Natively = p5Decoder != null)
+      Log.i(
+        TAG,
+        "DV conversion mode '$value' (displayDV=$displayDvSupported profile=$profile p5Decoder=${p5Decoder ?: "none"}) -> " +
+          "dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode}"
+      )
+      writeDvDecoderOptions(options)
     }
   }
 

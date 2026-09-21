@@ -19,7 +19,7 @@ internal object GpuVoPolicy {
   fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean): Boolean = dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively
 
   /**
-   * A MediaCodec decoder as [nativeP5Decoder] sees it: the component name,
+   * A MediaCodec decoder as [nativeDvDecoder] sees it: the component name,
    * one MIME type it serves, the profiles it advertises for that type
    * (`MediaCodecInfo.CodecProfileLevel` values) and the API 29+
    * `isSoftwareOnly` flag (false below, where the platform does not classify).
@@ -32,25 +32,37 @@ internal object GpuVoPolicy {
   /** `MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn`: single-layer profile 5. */
   const val DV_PROFILE_DVHE_STN = 0x20
 
+  /** `MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt`: single-layer profile 8. */
+  const val DV_PROFILE_DVHE_ST = 0x100
+
   /**
    * The decoder the bundled FFmpeg's `hevc_mediacodec` will open for a
-   * single-layer P5 stream, or null when it opens none — in which case the
-   * base layer decodes as plain HEVC and scans out as SDR BT.2020 (inverted
-   * hue). Mirrors `ff_AMediaCodecList_getCodecNameByType` exactly, because
-   * the previous probe counted decoders FFmpeg never asks for and the two
-   * disagreed on real devices: only [DV_MIME] (`video/hevcdv` and
-   * `video/dv_hevc` are never probed), an exact [DV_PROFILE_DVHE_STN] match,
-   * `MediaCodecInfo.isSoftwareOnly` skipped, and FFmpeg's own software name
-   * blacklist skipped (`OMX.google*`, `OMX.ffmpeg*`, `OMX.SEC*.sw.*`,
+   * single-layer stream of [dvProfile] (5 or 8; null for any other profile,
+   * which FFmpeg never re-routes), or null when it opens none — in which case
+   * the base layer decodes as plain HEVC. Mirrors
+   * `ff_AMediaCodecList_getCodecNameByType` exactly, because the previous
+   * probe counted decoders FFmpeg never asks for and the two disagreed on
+   * real devices: only [DV_MIME] (`video/hevcdv` and `video/dv_hevc` are
+   * never probed), an exact `1 shl dvProfile` match
+   * ([DV_PROFILE_DVHE_STN]/[DV_PROFILE_DVHE_ST]), `MediaCodecInfo
+   * .isSoftwareOnly` skipped, and FFmpeg's own software name blacklist
+   * skipped (`OMX.google*`, `OMX.ffmpeg*`, `OMX.SEC*.sw.*`,
    * `OMX.qcom.video.decoder.hevcswvdec`). First match in list order, as
    * FFmpeg takes it.
    */
-  fun nativeP5Decoder(candidates: List<DvDecoderCandidate>): String? = candidates.firstOrNull { candidate ->
-    !candidate.isSoftwareOnly &&
-      !isFfmpegSoftwareDecoderName(candidate.name) &&
-      candidate.mime.equals(DV_MIME, ignoreCase = true) &&
-      DV_PROFILE_DVHE_STN in candidate.profiles
-  }?.name
+  fun nativeDvDecoder(candidates: List<DvDecoderCandidate>, dvProfile: Long?): String? {
+    val profileBit = when (dvProfile) {
+      5L -> DV_PROFILE_DVHE_STN
+      8L -> DV_PROFILE_DVHE_ST
+      else -> return null
+    }
+    return candidates.firstOrNull { candidate ->
+      !candidate.isSoftwareOnly &&
+        !isFfmpegSoftwareDecoderName(candidate.name) &&
+        candidate.mime.equals(DV_MIME, ignoreCase = true) &&
+        profileBit in candidate.profiles
+    }?.name
+  }
 
   /** FFmpeg's `mediacodec_wrapper.c` software-decoder name blacklist, substring-matched as it does. */
   private fun isFfmpegSoftwareDecoderName(name: String): Boolean = name.contains("OMX.google") ||
@@ -73,31 +85,41 @@ internal object GpuVoPolicy {
   /** `dolby_vision` and `dv_p7_mode` for the bundled FFmpeg's `vd-lavc-o`. */
   data class DvDecoderOptions(val dolbyVision: Boolean, val p7Mode: String)
 
+  /** The `dv-conversion-mode` values [dvDecoderOptions] accepts. */
+  val DV_CONVERSION_MODES: Set<String> = setOf("auto", "disabled", "native", "dv81", "hevc", "hevc_strip")
+
   /**
-   * How the Dolby Vision decoder is driven for [conversionMode]. Paired with
-   * [needsDvReshaping]: `dolby_vision=0` bypasses the DV decoder for *every*
-   * profile, so if this says no while that says no reshaping, single-layer P5
-   * reaches the plane as plain HEVC with inverted colour. They disagreed once;
+   * How the Dolby Vision decoder is driven for the file whose pending video
+   * track carries [dvProfile] (null when the bitstream has no DOVI record,
+   * or before any file is loaded) under [conversionMode]. Decided per file,
+   * because `dolby_vision=1` sends every single-layer profile (5 and 8) to
+   * the DV decoder and the right answer differs by profile. Paired with
+   * [needsDvReshaping]: `dolby_vision=0` bypasses the DV decoder, so if this
+   * says no for P5 while that says no reshaping, the P5 base layer reaches
+   * the plane as plain HEVC with inverted colour. They disagreed once;
    * keeping them adjacent is the point.
    *
-   * Only `auto` reads the device. It enables the DV path whenever the device
-   * can put DV on screen itself — either the display speaks it, or a decoder
-   * does and converts for the sink. A decoder advertising a single-layer
-   * profile converts for whatever is attached, measured on
-   * `c2.amlogic.dolby-vision.dvhe.decoder` against an HDR10-only sink. Without
-   * a DV display, dual-layer P7 still strips to its HDR10 base layer, which is
-   * what it got before. Returns null for an unrecognised mode.
+   * Only `auto` reads the device. With a DV display the DV decoder takes
+   * every profile. Without one, only P5 goes to the DV decoder, and only when
+   * the decoder FFmpeg will open advertises it ([canPlayP5Natively]): P5 has
+   * no compatible base layer, so a converting decoder is the only hardware
+   * path (measured on `c2.amlogic.dolby-vision.dvhe.decoder` against an
+   * HDR10-only sink, #2290). P8 decodes as plain HEVC instead: its base layer
+   * is compatible on its own, and what a DV decoder converts it *to* without
+   * a DV sink is vendor-defined — the Shield's `OMX.Nvidia.DOVI.decode`
+   * emits SDR, which scanned out muted with no HDR handoff (#2416). Dual-layer
+   * P7 strips to its base layer either way. Throws for an unrecognised mode;
+   * validate against [DV_CONVERSION_MODES] first.
    */
-  fun dvDecoderOptions(conversionMode: String, displaySupportsDv: Boolean, hasDvDecoder: Boolean): DvDecoderOptions? = when (conversionMode) {
+  fun dvDecoderOptions(conversionMode: String, displaySupportsDv: Boolean, dvProfile: Long?, canPlayP5Natively: Boolean): DvDecoderOptions = when (conversionMode) {
     "auto" -> when {
       displaySupportsDv -> DvDecoderOptions(dolbyVision = true, p7Mode = "auto")
-      hasDvDecoder -> DvDecoderOptions(dolbyVision = true, p7Mode = "strip")
-      else -> DvDecoderOptions(dolbyVision = false, p7Mode = "strip")
+      else -> DvDecoderOptions(dolbyVision = dvProfile == 5L && canPlayP5Natively, p7Mode = "strip")
     }
     "disabled", "native" -> DvDecoderOptions(dolbyVision = true, p7Mode = "native")
     "dv81" -> DvDecoderOptions(dolbyVision = true, p7Mode = "convert")
     "hevc", "hevc_strip" -> DvDecoderOptions(dolbyVision = true, p7Mode = "strip")
-    else -> null
+    else -> throw IllegalArgumentException("Invalid DV conversion mode: $conversionMode")
   }
 
   /**

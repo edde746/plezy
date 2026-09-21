@@ -1969,9 +1969,10 @@ class MpvPlayerPluginTest {
   @Test
   fun dvConversionModeMapsOntoForkDecoderOptions() {
     // The app-level `dv-conversion-mode` property must translate to the fork
-    // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
-    // modes. Robolectric reports no Dolby Vision display, so `auto` takes the
-    // no-DV branch deterministically.
+    // FFmpeg hevc_mediacodec options. Robolectric reports no Dolby Vision
+    // display and no file is loaded, so `auto` takes the no-DV branch for a
+    // file with no DOVI record deterministically; the per-file answer for a
+    // loaded P5/P8 is GpuVoPolicyTest's.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
