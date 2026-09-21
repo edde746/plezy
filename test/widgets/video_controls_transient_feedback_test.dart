@@ -248,6 +248,30 @@ void main() {
       await settleFeedback(tester);
     });
 
+    testWidgets('a held rewind of fractional steps reads the distance travelled, not rounded steps', (tester) async {
+      // #2425 in miniature: a 5s step accelerates to 7.5s on the first tier,
+      // so from 0:25 a press and three repeats travel 5, 7.5, 7.5 and 5 — 25s,
+      // landing on 0:00. Rounding each step before summing reads 5 + 8 + 8 + 5.
+      await SettingsService.instance.write(SettingsService.seekTimeSmall, 5);
+      player.setPosition(const Duration(seconds: 25));
+      await pumpControls(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      for (var i = 0; i < 3; i++) {
+        await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowLeft);
+        await tester.pump();
+      }
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+
+      expect(find.text('25s'), findsOneWidget);
+      expect(find.text('26s'), findsNothing);
+      expect(player.seeks, [Duration.zero]);
+
+      await settleFeedback(tester);
+    });
+
     testWidgets('a held arrow accelerates and commits exactly one seek on release', (tester) async {
       await pumpControls(tester);
 

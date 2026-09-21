@@ -794,6 +794,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   double _doubleTapFeedbackOpacity = 0.0;
   bool _lastDoubleTapWasForward = true;
   Timer? _feedbackTimer;
+  // Exact distance the current readout has travelled; the notifier below is
+  // its whole-second rendering, rounded once so a burst of fractional steps
+  // cannot drift the label off the distance travelled (#2425).
+  Duration _accumulatedSkip = Duration.zero;
   final ValueNotifier<int> _accumulatedSkipSeconds = ValueNotifier<int>(0);
   // Desktop double-click detection (more reliable than Flutter's onDoubleTap).
   // The mobile skip zones do not use this; they pair off _singleTapTimer.

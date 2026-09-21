@@ -57,18 +57,20 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     if (widget.isLive && widget.onLiveSeekBy != null) {
       final stepSeconds = (delta.inMilliseconds.abs() / 1000).round().clamp(1, 300);
       final applied = widget.onLiveSeekBy!(forward ? stepSeconds : -stepSeconds);
-      _registerSkipFeedback(isForward: forward, seconds: applied.abs());
+      _registerSkipFeedback(
+        isForward: forward,
+        travelled: Duration(seconds: applied),
+      );
       return;
     }
 
     if (widget.player.state.duration.inMilliseconds <= 0) return;
 
-    final applied = _hiddenSeek.seekBy(delta);
-    _registerSkipFeedback(isForward: forward, seconds: _wholeSeconds(applied));
+    _registerSkipFeedback(isForward: forward, travelled: _hiddenSeek.seekBy(delta));
   }
 
-  /// Badge granularity: nearest whole second of a travelled distance.
-  static int _wholeSeconds(Duration travelled) => (travelled.inMilliseconds.abs() / 1000).round();
+  /// Badge granularity: nearest whole second of a running total.
+  static int _wholeSeconds(Duration total) => (total.inMilliseconds / 1000).round();
 
   /// Seek requested by a configured keyboard shortcut (the default Left/Right
   /// and Shift+Left/Right bindings, plus any rebinding of them). Desktop never
@@ -694,17 +696,31 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   /// Accumulate skip feedback. Consecutive skips in the same direction stack
   /// into one running total; a direction flip restarts the count.
   ///
-  /// [seconds] is the distance actually travelled, so a press the clamp
-  /// swallowed whole arrives as zero. With a same-direction total already up
-  /// that press keeps the readout alive at its current value — there is
-  /// nothing left to travel through, and the number not moving says so. With
-  /// nothing up it announces nothing: a `0s` badge, or a direction flip to
-  /// `0s`, would describe a seek that is not happening (#2425).
-  void _registerSkipFeedback({required bool isForward, required int seconds}) {
+  /// [travelled] is the distance actually applied, so a press the clamp
+  /// swallowed whole arrives as zero. The exact total is kept and rounded once
+  /// for display, so a burst of fractional accelerated steps reads as the
+  /// distance travelled rather than as the sum of rounded steps (#2425).
+  ///
+  /// A press that leaves a same-direction readout up keeps it alive at its
+  /// current value even when it added nothing — there is nothing left to
+  /// travel through, and the number not moving says so. With nothing up, a
+  /// press whose total rounds to zero announces nothing: zero on the badge
+  /// means nothing worth reading, whether the seek was swallowed or moved the
+  /// playhead by less than half a second, and a `0s` readout looks like a
+  /// broken control either way.
+  void _registerSkipFeedback({required bool isForward, required Duration travelled}) {
     final stacking = _showDoubleTapFeedback && _lastDoubleTapWasForward == isForward;
-    if (seconds == 0 && !stacking) return;
-    _accumulatedSkipSeconds.value = stacking ? _accumulatedSkipSeconds.value + seconds : seconds;
+    final total = stacking ? _accumulatedSkip + travelled.abs() : travelled.abs();
+    if (_wholeSeconds(total) == 0 && !stacking) return;
+    _setSkipTotal(total);
     _showSkipFeedback(isForward: isForward);
+  }
+
+  /// The exact total and its whole-second rendering move together; the
+  /// notifier only rebuilds the label when the rounded value changes.
+  void _setSkipTotal(Duration total) {
+    _accumulatedSkip = total;
+    _accumulatedSkipSeconds.value = _wholeSeconds(total);
   }
 
   /// Wrap an absolute live action so it takes down the badge a pending live
@@ -760,13 +776,16 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
     if (widget.isLive && widget.onLiveSeekBy != null) {
       final applied = widget.onLiveSeekBy!(delta.inSeconds);
-      _registerSkipFeedback(isForward: isForward, seconds: applied.abs());
+      _registerSkipFeedback(
+        isForward: isForward,
+        travelled: Duration(seconds: applied),
+      );
       return;
     }
 
     final position = widget.player.state.position;
     final target = clampSeekPosition(widget.player, position + delta);
-    _registerSkipFeedback(isForward: isForward, seconds: _wholeSeconds(target - position));
+    _registerSkipFeedback(isForward: isForward, travelled: target - position);
     unawaited(_seekToPosition(target));
   }
 
@@ -813,7 +832,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
             _setControlsState(() {
               _showDoubleTapFeedback = false;
             });
-            _accumulatedSkipSeconds.value = 0;
+            _setSkipTotal(Duration.zero);
           }
         });
       }
@@ -828,12 +847,12 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _feedbackTimer = null;
     _feedbackHideTimer?.cancel();
     _feedbackHideTimer = null;
-    if (!mounted || (!_showDoubleTapFeedback && _accumulatedSkipSeconds.value == 0)) return;
+    if (!mounted || (!_showDoubleTapFeedback && _accumulatedSkip == Duration.zero)) return;
     _setControlsState(() {
       _showDoubleTapFeedback = false;
       _doubleTapFeedbackOpacity = 0.0;
     });
-    _accumulatedSkipSeconds.value = 0;
+    _setSkipTotal(Duration.zero);
   }
 
   void _handleControlsOverlayTap(TapUpDetails details, Size size) {
