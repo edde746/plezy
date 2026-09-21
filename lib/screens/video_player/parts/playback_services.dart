@@ -136,9 +136,24 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         // ending: it must never mark the item watched, prompt Play Next, or
         // exit a movie. Intercepted here and not inside _onVideoCompleted
         // because the credits-marker auto-skip legitimately calls
-        // _onVideoCompleted from mid-credits positions.
-        if (done && _eofRecovery.interceptEof(currentPlayer)) return;
-        _onVideoCompleted(done);
+        // _onVideoCompleted from mid-credits positions. The interceptor may
+        // yield to the player channel; a completion from a player the screen
+        // has since replaced or torn down must not reach the completion flow.
+        if (!done) {
+          _onVideoCompleted(false);
+          return;
+        }
+        unawaited(
+          _eofRecovery
+              .interceptEof(currentPlayer)
+              .then((intercepted) {
+                if (intercepted || !mounted || _shuttingDown || player != currentPlayer) return;
+                _onVideoCompleted(true);
+              })
+              .catchError((Object error, StackTrace stackTrace) {
+                appLogger.e('EOF classification failed; completion not run', error: error, stackTrace: stackTrace);
+              }),
+        );
       }),
     );
 

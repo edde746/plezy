@@ -832,9 +832,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   late final SpuriousEofRecovery _eofRecovery = SpuriousEofRecovery(
     isLive: widget.isLive,
     isOffline: () => _isOfflinePlayback,
+    isTranscoding: () => _isTranscoding,
     transitionGate: _transitionGate,
     player: () => player,
     metadata: () => _currentMetadata,
+    transportFaultSeen: () => _transportFaultSeen,
     reload: ({required Duration resumePosition, required String reason}) => _reloadMediaInPlace(
       metadata: _currentMetadata,
       resumePosition: resumePosition,
@@ -1183,7 +1185,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   @visibleForTesting
-  bool debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
+  Future<bool> debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
 
   @visibleForTesting
   bool get debugPlaybackParkedForTesting => _eofRecovery.parked;
@@ -2610,6 +2612,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   String? _lastLogError;
+
+  /// Whether the transport layer has logged a fault for the current file;
+  /// latched per open, read by [SpuriousEofRecovery] to classify an EOF.
+  bool _transportFaultSeen = false;
 
   /// Statuses in [fatalPlaybackHttpStatuses] the player's own log stream
   /// reported for this open. Each latches independently: the reconnect path

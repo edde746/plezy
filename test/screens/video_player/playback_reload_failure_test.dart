@@ -197,7 +197,7 @@ void main() {
               expect(peer.latestState.phase, PlaybackPhase.paused);
               expect(peer.latestState.anchorPositionMs, 121000);
               fakePlayer.setCompleted(true);
-              expect(key.currentState!.debugInterceptEofForTesting(), isTrue);
+              expect(await key.currentState!.debugInterceptEofForTesting(), isTrue);
               for (var i = 0; i < 400 && !key.currentState!.debugPlaybackParkedForTesting; i++) {
                 await tester.pump(const Duration(milliseconds: 50));
                 await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
