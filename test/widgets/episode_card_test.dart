@@ -139,13 +139,14 @@ void main() {
       labels: const ['Filler', 'Fansub'],
     );
 
+    // The default shows the canon/filler classification and nothing else.
     await _pumpEpisodeCard(tester, episode);
-    expect(find.text('Filler'), findsNothing);
+    expect(find.text('Filler'), findsOneWidget);
     expect(find.text('Fansub'), findsNothing);
 
-    await SettingsService.instance.write(SettingsService.episodeTags, EpisodeTagsMode.canonFiller);
+    await SettingsService.instance.write(SettingsService.episodeTags, EpisodeTagsMode.off);
     await tester.pump();
-    expect(find.text('Filler'), findsOneWidget);
+    expect(find.text('Filler'), findsNothing);
     expect(find.text('Fansub'), findsNothing);
 
     await SettingsService.instance.write(SettingsService.episodeTags, EpisodeTagsMode.all);

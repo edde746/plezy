@@ -746,13 +746,14 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
   static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
 
-  /// Which server tags the season episode rows show ([EpisodeTagsMode]). Off
-  /// by default: most libraries carry no per-episode tags, and the rows should
-  /// not grow a label the moment one appears.
+  /// Which server tags the season episode rows show ([EpisodeTagsMode]).
+  /// Canon/filler by default: those four tags only exist on episodes someone
+  /// deliberately classified, so untagged libraries look exactly as before,
+  /// while every other tag stays opt-in.
   static const episodeTags = EnumPref<EpisodeTagsMode>(
     'episode_tags',
     values: EpisodeTagsMode.values,
-    defaultValue: EpisodeTagsMode.off,
+    defaultValue: EpisodeTagsMode.canonFiller,
   );
 
   static const hideSpoilers = BoolPref('hide_spoilers');
