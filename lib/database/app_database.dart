@@ -367,7 +367,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration {
@@ -742,7 +742,35 @@ class AppDatabase extends _$AppDatabase {
           await _ignoreAlreadyExists('MusicSessions table', () => m.createTable(musicSessions));
         }
         if (from < 23) {
-          appLogger.i('Adding Plex download quality persistence (v23 migration)');
+          appLogger.i('Adding library identity columns to DownloadedMedia (v23 migration)');
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.libraryId column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.libraryId),
+          );
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.libraryTitle column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.libraryTitle),
+          );
+        }
+        if (from < 24) {
+          // Early download-quality builds also used v23, without the library
+          // columns introduced upstream. Support both v23 schema variants.
+          if (from == 23) {
+            await _ignoreAlreadyExists(
+              'DownloadedMedia.libraryId column',
+              () => m.addColumn(downloadedMedia, downloadedMedia.libraryId),
+            );
+            await _ignoreAlreadyExists(
+              'DownloadedMedia.libraryTitle column',
+              () => m.addColumn(downloadedMedia, downloadedMedia.libraryTitle),
+            );
+          }
+          final hadQualityDemands =
+              await customSelect(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'download_quality_demands'",
+              ).getSingleOrNull() !=
+              null;
+          appLogger.i('Adding Plex download quality persistence (v24 migration)');
           await _ignoreAlreadyExists(
             'DownloadedMedia.downloadQualityPreset column',
             () => m.addColumn(downloadedMedia, downloadedMedia.downloadQualityPreset),
@@ -760,10 +788,10 @@ class AppDatabase extends _$AppDatabase {
             'Index idx_download_quality_demands_source',
             () => m.create(idxDownloadQualityDemandsSource),
           );
-          // Plex rows historically have no client scope (Jellyfin rows do).
-          // Preserve their existing direct files as Original artifacts while
-          // making their legacy ownership follow the new global default.
-          await customStatement('''
+          // Do not recreate legacy demands already claimed or removed in
+          // pre-release v23 builds that included download quality persistence.
+          if (!hadQualityDemands) {
+            await customStatement('''
             INSERT OR IGNORE INTO download_quality_demands
               (profile_id, global_key, source_key, quality_preset)
             SELECT owners.profile_id, media.global_key, 'legacy', NULL
@@ -777,6 +805,7 @@ class AppDatabase extends _$AppDatabase {
                 OR media.client_scope_id LIKE '%/~plex-transfer'
               )
           ''');
+          }
         }
       },
     );
@@ -799,7 +828,6 @@ class AppDatabase extends _$AppDatabase {
     return value == null ? column.isNull() : column.equals(value);
   }
 
-  /// Get all pending offline watch actions for sync
   Future<List<OfflineWatchProgressItem>> getPendingWatchActions({String? profileId}) {
     final query = select(offlineWatchProgress)..orderBy([(t) => OrderingTerm.asc(t.createdAt)]);
     if (profileId != null) {
@@ -1094,23 +1122,16 @@ class AppDatabase extends _$AppDatabase {
   /// Update the retry state only if the action is still the snapshotted revision.
   Future<bool> updateSyncAttemptIfUnchanged(int id, int revision, String? errorMessage) {
     return _runPendingMutation(() async {
-      final existing = await (select(
-        offlineWatchProgress,
-      )..where((t) => t.id.equals(id) & t.updatedAt.equals(revision))).getSingleOrNull();
-      if (existing == null) return false;
-
-      final updated = await (update(offlineWatchProgress)..where((t) => t.id.equals(id) & t.updatedAt.equals(revision)))
-          .write(
-            OfflineWatchProgressCompanion(
-              syncAttempts: Value(existing.syncAttempts + 1),
-              lastError: Value(errorMessage),
-            ),
-          );
+      final updated = await customUpdate(
+        'UPDATE offline_watch_progress SET sync_attempts = sync_attempts + 1, last_error = ? '
+        'WHERE id = ? AND updated_at = ?',
+        variables: [Variable<String>(errorMessage), Variable<int>(id), Variable<int>(revision)],
+        updates: {offlineWatchProgress},
+      );
       return updated != 0;
     });
   }
 
-  /// Get count of pending sync items
   Future<int> getPendingSyncCount({String? profileId, int? maxSyncAttempts}) async {
     final query = selectOnly(offlineWatchProgress)..addColumns([offlineWatchProgress.id.count()]);
     if (profileId != null) {

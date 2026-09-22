@@ -334,6 +334,44 @@ void main() {
     expect(cardRights, isNotEmpty);
     expect(cardRights, everyElement(lessThanOrEqualTo(size.width - trailingInset)));
   });
+
+  testWidgets('folder grouping loads only the tree and reports its own readiness', (tester) async {
+    final harness = _PlexBrowseHarness();
+    addTearDown(harness.dispose);
+    final storage = await StorageService.getInstance();
+    await storage.saveLibraryGrouping(harness.library.globalKey, 'folders');
+    var readyNotifications = 0;
+
+    await pumpLibraryTab(
+      tester,
+      provider: harness.provider,
+      tab: LibraryBrowseTab(
+        library: harness.library,
+        canGroupByFolders: true,
+        isActive: true,
+        onDataLoaded: () => readyNotifications++,
+      ),
+    );
+    await _pumpUntil(tester, () => readyNotifications >= 1);
+    await pumpRequestFrames(tester);
+
+    expect(find.text('Folder One'), findsOneWidget);
+    expect(harness.folderRequestCount, greaterThanOrEqualTo(1));
+    // The tree is the rendered surface, so the flat page and the alpha
+    // character buckets are never fetched.
+    expect(harness.pageRequestCount, 0);
+    expect(harness.firstCharacterRequestCount, 0);
+    // Discovery still runs (the chips come back when the grouping changes),
+    // but it only asks for the filter schema.
+    expect(harness.filterMetadataRequestCount, 1);
+    // An assertion inside the mock handler could not fail this test: the HTTP
+    // client rewraps anything thrown there as a transport error, which
+    // discovery catches and answers from `/filters`.
+    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Size'], '0');
+    // A lone `Size=0` makes PMS return the whole section, so the schema probe
+    // has to carry the start offset too.
+    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Start'], '0');
+  });
 }
 
 FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
@@ -481,6 +519,9 @@ class _PlexBrowseHarness {
   late final MultiServerProvider provider;
   var pageRequestCount = 0;
   var firstCharacterRequestCount = 0;
+  var folderRequestCount = 0;
+  var filterMetadataRequestCount = 0;
+  final filterMetadataRequests = <Uri>[];
 
   _PlexBrowseHarness() : database = AppDatabase.forTesting(NativeDatabase.memory()) {
     PlexApiCache.initialize(database);
@@ -510,6 +551,60 @@ class _PlexBrowseHarness {
     Map<String, Object?> container;
     switch (request.url.path) {
       case '/library/sections/movies/all':
+        // Filter discovery reads the same endpoint with `includeMeta=1` and
+        // an explicit zero page size: it asks for the field/operator schema,
+        // never for items, so it is not a page request.
+        if (request.url.queryParameters['includeMeta'] == '1') {
+          filterMetadataRequestCount++;
+          filterMetadataRequests.add(request.url);
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {
+                'size': 0,
+                'totalSize': _itemCount,
+                'Meta': {
+                  'Type': [
+                    {
+                      'type': 'movie',
+                      'active': true,
+                      'Field': [
+                        {'key': 'genre', 'title': 'Genre', 'type': 'tag'},
+                        {'key': 'year', 'title': 'Year', 'type': 'integer'},
+                        {'key': 'unwatched', 'title': 'Unwatched', 'type': 'boolean'},
+                      ],
+                    },
+                  ],
+                  'FieldType': [
+                    {
+                      'type': 'tag',
+                      'Operator': [
+                        {'key': '=', 'title': 'is'},
+                        {'key': '!=', 'title': 'is not'},
+                      ],
+                    },
+                    {
+                      'type': 'integer',
+                      'Operator': [
+                        {'key': '=', 'title': 'is'},
+                        {'key': '>>=', 'title': 'is greater than'},
+                        {'key': '<<=', 'title': 'is less than'},
+                      ],
+                    },
+                    {
+                      'type': 'boolean',
+                      'Operator': [
+                        {'key': '=', 'title': 'is'},
+                        {'key': '!=', 'title': 'is not'},
+                      ],
+                    },
+                  ],
+                },
+              },
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
         pageRequestCount++;
         final start = int.tryParse(request.url.queryParameters['X-Plex-Container-Start'] ?? '') ?? 0;
         final requested = int.tryParse(request.url.queryParameters['X-Plex-Container-Size'] ?? '') ?? _itemCount;
@@ -528,6 +623,13 @@ class _PlexBrowseHarness {
           'Directory': [
             for (final letter in const ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
               {'key': letter, 'title': letter, 'size': '${_itemCount ~/ 8}'},
+          ],
+        };
+      case '/library/sections/movies/folder':
+        folderRequestCount++;
+        container = {
+          'Directory': [
+            {'key': '/library/sections/movies/folder?parent=1', 'type': 'folder', 'title': 'Folder One'},
           ],
         };
       case '/library/sections/movies/sorts':

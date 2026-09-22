@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
@@ -18,7 +17,6 @@ import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
-import '../../focus/focusable_wrapper.dart';
 import '../../models/livetv_capture_buffer.dart';
 import 'models/track_controls_state.dart';
 import 'player_chrome_controller.dart';
@@ -31,6 +29,7 @@ import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 import 'widgets/volume_control.dart';
 import 'widgets/track_chapter_controls.dart';
+import 'video_control_button.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatefulWidget {
@@ -73,7 +72,6 @@ class DesktopVideoControls extends StatefulWidget {
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
-  /// Channel name for live TV display
   final String? liveChannelName;
 
   // Live TV time-shift
@@ -89,10 +87,8 @@ class DesktopVideoControls extends StatefulWidget {
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)
   final bool useDpadNavigation;
 
-  /// Server ID for content strip images
   final String? serverId;
 
-  /// Whether to show the queue tab in the content strip
   final bool showQueueTab;
 
   /// Called when a queue item is selected in the content strip
@@ -101,7 +97,6 @@ class DesktopVideoControls extends StatefulWidget {
   /// Called to cancel auto-hide timer (e.g., when content strip is shown)
   final VoidCallback? onCancelAutoHide;
 
-  /// Called to start auto-hide timer
   final VoidCallback? onStartAutoHide;
 
   /// Called when content strip visibility changes
@@ -202,7 +197,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   FocusNode? _lastFocusedButtonNode;
 
-  /// Whether the content strip has any content to show
   bool get _hasStripContent {
     return widget.chapters.isNotEmpty || (widget.showQueueTab && widget.onQueueItemSelected != null);
   }
@@ -497,7 +491,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     );
   }
 
-  /// Reset progressive seek state
   void _resetSeekState() {
     _seekDirection = null;
     _seekRepeatCount = 0;
@@ -667,15 +660,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
       builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-        // In fullscreen on macOS, use less left padding since traffic lights auto-hide
-        // In normal mode on macOS, need more padding to avoid traffic lights
-        double leftPadding;
-        if (Platform.isMacOS) {
-          leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
-        } else {
-          leftPadding = DesktopWindowPadding.macOSLeftFullscreen;
-        }
+        // On macOS the traffic lights need clearing in normal mode; they auto-hide in fullscreen.
+        final leftPadding = Platform.isMacOS ? DesktopWindowPadding.macOSLeftCurrent : 0.0;
 
         return _buildTopBarContent(context, leftPadding);
       },
@@ -991,26 +977,16 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     double iconSize = 24,
     String? tooltip,
   }) {
-    return FocusableWrapper(
+    return VideoControlButton(
+      icon: icon,
+      iconSize: iconSize,
+      color: color,
+      tooltip: tooltip,
+      semanticLabel: semanticLabel,
       focusNode: focusNode,
-      onSelect: onPressed,
       onKeyEvent: (node, event) => _handleButtonKeyEvent(node, event, index),
       onFocusChange: _onFocusChange,
-      borderRadius: 20,
-      autoScroll: false,
-      useBackgroundFocus: true,
-      semanticLabel: semanticLabel,
-      child: Semantics(
-        label: semanticLabel,
-        button: true,
-        excludeSemantics: true,
-        child: IconButton(
-          icon: AppIcon(icon, fill: 1, color: color, size: iconSize),
-          iconSize: iconSize,
-          tooltip: tooltip,
-          onPressed: onPressed,
-        ),
-      ),
+      onPressed: onPressed,
     );
   }
 }

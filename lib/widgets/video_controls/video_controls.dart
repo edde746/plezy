@@ -18,16 +18,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 import 'package:flutter/services.dart'
-    show
-        SystemChrome,
-        DeviceOrientation,
-        LogicalKeyboardKey,
-        PhysicalKeyboardKey,
-        KeyEvent,
-        KeyDownEvent,
-        KeyUpEvent,
-        KeyRepeatEvent,
-        HardwareKeyboard;
+    show LogicalKeyboardKey, PhysicalKeyboardKey, KeyEvent, KeyDownEvent, KeyUpEvent, KeyRepeatEvent, HardwareKeyboard;
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
 import '../../services/pip_service.dart';
@@ -35,7 +26,7 @@ import '../../services/playback_initialization_types.dart';
 import '../../services/playback_subtitle_resolver.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../mixins/settings_effect_mixin.dart';
+import '../../mixins/listenable_bindings_mixin.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mpv/mpv.dart';
 import '../overlay_sheet.dart';
@@ -62,6 +53,7 @@ import '../../services/settings_service.dart';
 import '../../services/video_volume_controller.dart';
 import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';
+import '../../utils/orientation_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
 import '../../theme/mono_tokens.dart';
@@ -79,6 +71,7 @@ import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/double_tap_feedback.dart';
 import 'helpers/mobile_edge_adjustment_tracker.dart';
+import 'helpers/render_geometry.dart';
 import 'helpers/two_finger_tap_tracker.dart';
 import 'widgets/linux_keep_alive.dart';
 import 'widgets/mobile_edge_adjustment_indicator.dart';
@@ -96,6 +89,7 @@ import '../../providers/playback_state_provider.dart';
 import '../../providers/shader_provider.dart';
 import '../../services/shader_service.dart';
 import '../../watch_together/providers/watch_together_provider.dart';
+import '../../utils/error_message_utils.dart';
 
 part 'parts/key_events.dart';
 part 'parts/markers.dart';
@@ -661,7 +655,6 @@ class PlexVideoControls extends StatefulWidget {
   /// buttons/dpad/remote keys must use this rather than `onLiveSeek` (#1253).
   final ValueChanged<int>? onLiveSeekBy;
 
-  /// Jump to live edge callback
   final VoidCallback? onJumpToLive;
 
   /// Whether ambient lighting is enabled (passed to settings sheet)
@@ -754,7 +747,7 @@ class PlexVideoControls extends StatefulWidget {
 }
 
 class _PlexVideoControlsState extends State<PlexVideoControls>
-    with WindowListener, SettingsEffectMixin, MountedSetStateMixin {
+    with WindowListener, ListenableBindingsMixin, MountedSetStateMixin {
   bool get _showControls => widget.chromeController.controlsVisible;
   bool get _hasRenderedFirstFrame => widget.hasFirstFrame?.value ?? true;
 
@@ -768,7 +761,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   String? _extrasLoadKey;
   late List<MediaChapter> _chapters = widget.initialChapters ?? [];
   late bool _chaptersLoaded = widget.initialChapters != null;
-  bool _isFullscreen = false;
   bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
@@ -878,6 +870,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);
+
+  /// Releases the [PlayerChromeController] binding; rebound in
+  /// [didUpdateWidget] when the screen swaps controllers.
+  late VoidCallback _releaseChromeListener;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
@@ -959,7 +955,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // prompt now, not on the next position tick (paused playback never ticks).
     bindEffect(SettingsService.skipIntroMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     bindEffect(SettingsService.skipCreditsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
-    widget.chromeController.addListener(_onChromeChanged);
+    _releaseChromeListener = bindListenable(widget.chromeController, _onChromeChanged);
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
@@ -976,20 +972,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       onHide: _cancelEdgeAdjustmentGesture,
       onPause: _cancelEdgeAdjustmentGesture,
     );
-    // Add window listener for tracking fullscreen state (for button icon)
     if (PlatformDetector.isDesktopOS()) {
-      if (Platform.isMacOS) {
-        _isFullscreen = FullscreenStateManager().isFullscreen;
-        FullscreenStateManager().addListener(_onFullscreenStateChanged);
-      }
+      // Fullscreen chrome (the button icon, the macOS traffic lights) follows
+      // the manager on every desktop OS: window_manager never sees the Windows
+      // transition, which goes through the native Win32 channel (#2267).
+      bindListenable(FullscreenStateManager(), _onFullscreenStateChanged);
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
 
     // Register global key handler for focus-independent shortcuts (desktop only)
-    HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
-    // Listen for first frame to start auto-hide timer
-    widget.hasFirstFrame?.addListener(_onFirstFrameReady);
+    final globalKeyHandler = _handleGlobalKeyEvent;
+    HardwareKeyboard.instance.addHandler(globalKeyHandler);
+    ownDisposer(() => HardwareKeyboard.instance.removeHandler(globalKeyHandler));
+    // Listen for first frame to start auto-hide timer. The gate outlives this
+    // state — the screen's failure view unmounts the controls and Retry flips
+    // the gate again — so the binding must really come off in dispose; these
+    // listeners live in part-file extensions, whose tear-offs a bare
+    // removeListener never matches.
+    final hasFirstFrame = widget.hasFirstFrame;
+    if (hasFirstFrame != null) bindListenable(hasFirstFrame, _onFirstFrameReady);
     // Defer context-dependent initialization to after first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -1033,12 +1035,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _hiddenSeek.attachPlayheadJumps(widget.player.streams.playheadJump);
     }
     if (oldWidget.chromeController != widget.chromeController) {
-      oldWidget.chromeController.removeListener(_onChromeChanged);
+      _releaseChromeListener();
       _lastControlsVisible = widget.chromeController.controlsVisible;
       _controlsMounted = _lastControlsVisible;
       _controlsOpaque = _lastControlsVisible;
       if (_controlsOpaque) widget.chromeController.markControlsOpaque();
-      widget.chromeController.addListener(_onChromeChanged);
+      _releaseChromeListener = bindListenable(widget.chromeController, _onChromeChanged);
     }
     // The same controls instance survives in-place episode swaps — re-key
     // the per-item chapters/markers/skip state when the item changes.
@@ -1068,9 +1070,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void dispose() {
     ++_subtitleVisibilityWriteGeneration;
-    HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
-    widget.chromeController.removeListener(_onChromeChanged);
-    widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();
     _accumulatedSkipSeconds.dispose();
@@ -1113,20 +1112,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       }
     }
     if (Platform.isMacOS) {
-      FullscreenStateManager().removeListener(_onFullscreenStateChanged);
       _trafficLightVisibilityGeneration++;
       unawaited(MacOSWindowService.setTrafficLightsVisible(true));
     }
     super.dispose();
   }
 
+  /// [FullscreenStateManager] is the single source of desktop fullscreen truth
+  /// — macOS reports through its NSWindowDelegate, Windows through the native
+  /// Win32 channel, Linux through window_manager — and it only notifies on a
+  /// real change, so this just rebuilds the chrome that reads it.
   void _onFullscreenStateChanged() {
-    final isFullscreen = FullscreenStateManager().isFullscreen;
-    if (!mounted || _isFullscreen == isFullscreen) return;
-    setState(() {
-      _isFullscreen = isFullscreen;
-    });
-    _updateTrafficLightVisibility();
+    if (!mounted) return;
+    _setControlsState(() {});
+    if (Platform.isMacOS) _updateTrafficLightVisibility();
   }
 
   void _onEdgeAdjustmentPipChanged() {
@@ -1137,44 +1136,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _cancelEdgeAdjustmentGesture();
     } else {
       widget.chromeController.release(PlayerChromeHold.pip);
-    }
-  }
-
-  @override
-  void onWindowEnterFullScreen() {
-    if (mounted) {
-      setState(() {
-        _isFullscreen = true;
-      });
-    }
-  }
-
-  @override
-  void onWindowLeaveFullScreen() {
-    if (mounted) {
-      setState(() {
-        _isFullscreen = false;
-      });
-    }
-  }
-
-  @override
-  void onWindowMaximize() {
-    // On macOS, maximize is the same as fullscreen (green button)
-    if (mounted && Platform.isMacOS) {
-      setState(() {
-        _isFullscreen = true;
-      });
-    }
-  }
-
-  @override
-  void onWindowUnmaximize() {
-    // On macOS, unmaximize means exiting fullscreen
-    if (mounted && Platform.isMacOS) {
-      setState(() {
-        _isFullscreen = false;
-      });
     }
   }
 
@@ -1302,7 +1263,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 child: Builder(
                                   builder: (context) {
                                     return GestureDetector(
-                                      onTapUp: (details) => _handleControlsOverlayTap(details, _sizeOf(context)),
+                                      onTapUp: (details) =>
+                                          _handleControlsOverlayTap(details, renderBoxSizeOf(context)),
                                       onLongPressStart: (_) => _handleLongPressStart(),
                                       onLongPressEnd: (_) => _handleLongPressEnd(),
                                       onLongPressCancel: _handleLongPressCancel,

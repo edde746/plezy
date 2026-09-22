@@ -372,15 +372,6 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     return true;
   }
 
-  /// The account backing [connectionId] for the active profile, resolved fresh
-  /// so a caller during startup does not race the first snapshot.
-  Future<AccountPreferenceAccount?> accountForConnectionId(String connectionId) async {
-    for (final account in (await _readAccounts()).accounts) {
-      if (account.ref.connectionId == connectionId) return account;
-    }
-    return null;
-  }
-
   /// Build a transport for [ref], or null when the account is currently
   /// unreachable. Resolved per call: a Plex Home token is minted lazily by the
   /// binder and a MediaBrowser client only exists once its server is online.

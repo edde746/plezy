@@ -432,7 +432,6 @@ class MediaImageHelper {
     return key;
   }
 
-  /// Determines if an image path is suitable for transcoding
   static bool shouldTranscode(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) return false;
 

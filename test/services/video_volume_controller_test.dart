@@ -257,6 +257,42 @@ void main() {
     expect(controller.value, 40);
   });
 
+  test('user commands announce their clamped target; previews and player reports stay silent', () async {
+    final player = _ControlledVolumePlayer(50);
+    final announced = <double>[];
+    final controller = VideoVolumeController(
+      player: player,
+      settings: settings,
+      initialVolume: 50,
+      persistVolume: (_) async {},
+      onUserChange: announced.add,
+    );
+    addTearDown(controller.dispose);
+
+    // Volume the player reports on its own (a restore, a device change) is
+    // not a user command and must not produce feedback.
+    player.publish(30);
+    await _flush();
+    expect(controller.value, 30);
+    expect(announced, isEmpty);
+
+    controller.preview(60);
+    controller.preview(65);
+    expect(announced, isEmpty, reason: 'slider drag previews are not commands');
+    controller.commit(65);
+    expect(announced, [65]);
+
+    controller.toggleMute();
+    controller.toggleMute();
+    expect(announced, [65, 0, 65], reason: 'unmute announces the restored preferred volume');
+
+    // A wheel notch past the floor still announces "0": that is the warning
+    // a viewer who scrolled themselves to silence needs (#2357).
+    controller.adjust(-70);
+    controller.adjust(-5);
+    expect(announced, [65, 0, 65, 0, 0]);
+  });
+
   test('dispose invalidates pending native and persistence continuations', () async {
     final player = _ControlledVolumePlayer(50);
     final persisted = <double>[];
@@ -373,7 +409,7 @@ final class _ControlledVolumePlayer implements Player {
 
   double volume;
   final requestedVolumes = <double>[];
-  final _requests = <_VolumeRequest>[];
+  final _requests = <Completer<void>>[];
   final _volumeStream = StreamController<double>.broadcast();
   int _activeWrites = 0;
   int maxConcurrentWrites = 0;
@@ -408,10 +444,10 @@ final class _ControlledVolumePlayer implements Player {
     requestedVolumes.add(requested);
     _activeWrites++;
     if (_activeWrites > maxConcurrentWrites) maxConcurrentWrites = _activeWrites;
-    final request = _VolumeRequest(requested);
+    final request = Completer<void>();
     _requests.add(request);
     try {
-      await request.completer.future;
+      await request.future;
       volume = requested;
       _volumeStream.add(requested);
     } finally {
@@ -420,13 +456,11 @@ final class _ControlledVolumePlayer implements Player {
   }
 
   void succeedNext() {
-    final request = _requests.firstWhere((request) => !request.completer.isCompleted);
-    request.completer.complete();
+    _requests.firstWhere((request) => !request.isCompleted).complete();
   }
 
   void failNext(Object error) {
-    final request = _requests.firstWhere((request) => !request.completer.isCompleted);
-    request.completer.completeError(error);
+    _requests.firstWhere((request) => !request.isCompleted).completeError(error);
   }
 
   void publish(double observed) {
@@ -441,11 +475,4 @@ final class _ControlledVolumePlayer implements Player {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-final class _VolumeRequest {
-  _VolumeRequest(this.volume);
-
-  final double volume;
-  final Completer<void> completer = Completer<void>();
 }

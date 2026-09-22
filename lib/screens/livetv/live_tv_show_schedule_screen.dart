@@ -70,7 +70,6 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
     final toDt = DateTime.fromMillisecondsSinceEpoch(endsAt * 1000, isUtc: true);
     final programs = await genericClient.liveTv.fetchSchedule(from: fromDt, to: toDt);
 
-    // Filter for this show
     final filtered = programs.where((p) {
       if (p.grandparentTitle == widget.showTitle) return true;
       if (p.grandparentTitle == null && p.title == widget.showTitle) return true;

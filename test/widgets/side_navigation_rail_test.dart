@@ -83,6 +83,7 @@ Future<void> _pumpBasicRail(
   bool alwaysExpanded = false,
   double? height,
   CatalogSourcesProvider? catalogSources,
+  ValueChanged<bool>? onFloatingPanelChanged,
 }) async {
   await SettingsService.getInstance();
 
@@ -108,6 +109,7 @@ Future<void> _pumpBasicRail(
     alwaysExpanded: alwaysExpanded,
     onDestinationSelected: (_) {},
     onLibrarySelected: (_) {},
+    onFloatingPanelChanged: onFloatingPanelChanged,
   );
 
   await tester.pumpWidget(
@@ -538,7 +540,7 @@ void main() {
                 isSidebarFocused: false,
                 alwaysExpanded: false,
                 onDestinationSelected: (_) {},
-                onInteractionExpandedChanged: scrimReports.add,
+                onFloatingPanelChanged: scrimReports.add,
                 onLibrarySelected: (_) {},
               ),
             ),
@@ -575,6 +577,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.getSize(rail).width, SideNavigationRailState.collapsedWidth);
+    expect(scrimReports.last, isFalse);
+  });
+
+  /// An always-open rail is docked: hovering it must not report a floating
+  /// panel, or the shell scrims the app behind an already-visible sidebar.
+  testWidgets('always-open rail reports no floating panel on hover', (tester) async {
+    final scrimReports = <bool>[];
+    await _pumpBasicRail(tester, alwaysExpanded: true, onFloatingPanelChanged: scrimReports.add);
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
+
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
+    await gesture.addPointer(location: const Offset(799, 599));
+    await tester.pump();
+    await gesture.moveTo(tester.getCenter(rail));
+    await tester.pumpAndSettle();
+
+    expect(scrimReports, isNot(contains(true)));
+
+    // Toggling always-open off while still hovered converts the docked rail
+    // into a floating panel — the shell must be told to scrim.
+    await _pumpBasicRail(tester, alwaysExpanded: false, onFloatingPanelChanged: scrimReports.add);
+    expect(scrimReports.last, isTrue);
+
+    await gesture.moveTo(tester.getBottomRight(rail) + const Offset(100, -10));
+    await tester.pumpAndSettle();
     expect(scrimReports.last, isFalse);
   });
 

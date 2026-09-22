@@ -31,13 +31,23 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
     final isTrack = item.kind == MediaKind.track;
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     if (bundle == null) {
-      return isTrack ? buildAudioDirectStreamUrl(item.id) : buildDirectStreamUrl(item.id);
+      return isTrack
+          ? buildAudioDirectStreamUrl(item.id, containerExtension: true)
+          : buildDirectStreamUrl(item.id, containerExtension: true);
     }
     final container = bundle.container;
     final pinnedSourceId = bundle.pinnedSourceId;
+    // External players get `stream.{container}`: the extension is the only
+    // hint they get about the payload, and disc images (ISO) are unplayable
+    // for players that can't tell an ISO stream from a plain video file.
     return isTrack
-        ? buildAudioDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId)
-        : buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId);
+        ? buildAudioDirectStreamUrl(
+            item.id,
+            container: container,
+            mediaSourceId: pinnedSourceId,
+            containerExtension: true,
+          )
+        : buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId, containerExtension: true);
   }
 
   @override
@@ -111,10 +121,11 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
       if (index is! int) continue;
       final codec = fields.codec?.toLowerCase();
       final delivery = fields.deliveryUrl;
+      final streamFile = _segment('Stream.${CodecUtils.getSubtitleExtension(codec)}');
       final url = _withApiKey(
         delivery != null && delivery.isNotEmpty
             ? delivery
-            : '/Videos/${_segment(item.id)}/${_segment(subtitleMediaSourceId)}/Subtitles/$index/${_segment('Stream.${codec ?? 'srt'}')}',
+            : '/Videos/${_segment(item.id)}/${_segment(subtitleMediaSourceId)}/Subtitles/$index/$streamFile',
       );
       subtitles.add(
         DownloadSubtitleSpec(

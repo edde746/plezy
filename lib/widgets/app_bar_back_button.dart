@@ -61,33 +61,8 @@ class AppBarBackButton extends StatefulWidget {
   State<AppBarBackButton> createState() => _AppBarBackButtonState();
 }
 
-class _AppBarBackButtonState extends State<AppBarBackButton> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _backgroundAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 150), vsync: this);
-    _backgroundAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _onHoverChange(bool isHovered) {
-    if (isHovered) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
-    }
-  }
+class _AppBarBackButtonState extends State<AppBarBackButton> {
+  bool _hovered = false;
 
   void _handlePressed() {
     if (widget.onPressed != null) {
@@ -97,6 +72,8 @@ class _AppBarBackButtonState extends State<AppBarBackButton> with TickerProvider
     }
   }
 
+  /// Space is not in the shared select-key set (Enter/Select/gamepad A), which
+  /// [FocusableWrapper] already handles; this adds the plain-keyboard activation.
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     if (event.logicalKey != LogicalKeyboardKey.space) return KeyEventResult.ignored;
     if (event is KeyDownEvent) _handlePressed();
@@ -105,36 +82,18 @@ class _AppBarBackButtonState extends State<AppBarBackButton> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDarkTheme = theme.brightness == Brightness.dark;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final onTheme = isDarkTheme ? Colors.white : Colors.black;
 
-    final Color effectiveColor;
-    switch (widget.style) {
-      case BackButtonStyle.plain:
-        effectiveColor = widget.color ?? (isDarkTheme ? Colors.white : Colors.black);
-        break;
-      case BackButtonStyle.circular:
-      case BackButtonStyle.video:
-        effectiveColor = widget.color ?? Colors.white;
-        break;
-    }
-
-    final Color baseColor;
-    final Color hoverColor;
-    switch (widget.style) {
-      case BackButtonStyle.circular:
-        baseColor = Colors.black.withValues(alpha: 0.3);
-        hoverColor = Colors.black.withValues(alpha: 0.5);
-        break;
-      case BackButtonStyle.plain:
-        hoverColor = (isDarkTheme ? Colors.white : Colors.black).withValues(alpha: 0.2);
-        baseColor = Colors.transparent;
-        break;
-      case BackButtonStyle.video:
-        baseColor = Colors.transparent;
-        hoverColor = Colors.black.withValues(alpha: 0.3);
-        break;
-    }
+    final (Color icon, Color base, Color hover) = switch (widget.style) {
+      BackButtonStyle.circular => (
+        widget.color ?? Colors.white,
+        Colors.black.withValues(alpha: 0.3),
+        Colors.black.withValues(alpha: 0.5),
+      ),
+      BackButtonStyle.plain => (widget.color ?? onTheme, Colors.transparent, onTheme.withValues(alpha: 0.2)),
+      BackButtonStyle.video => (widget.color ?? Colors.white, Colors.transparent, Colors.black.withValues(alpha: 0.3)),
+    };
 
     final semanticLabel = widget.semanticLabel ?? t.common.back;
     final button = FocusableWrapper(
@@ -150,24 +109,19 @@ class _AppBarBackButtonState extends State<AppBarBackButton> with TickerProvider
         message: semanticLabel,
         excludeFromSemantics: true,
         child: MouseRegion(
-          onEnter: (_) => _onHoverChange(true),
-          onExit: (_) => _onHoverChange(false),
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
             excludeFromSemantics: true,
             onTap: _handlePressed,
-            child: AnimatedBuilder(
-              animation: _backgroundAnimation,
-              builder: (context, child) {
-                final currentColor = Color.lerp(baseColor, hoverColor, _backgroundAnimation.value);
-
-                return Container(
-                  margin: const EdgeInsets.all(8),
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(color: currentColor, shape: BoxShape.circle),
-                  child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: effectiveColor, size: 20),
-                );
-              },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeInOut,
+              margin: const EdgeInsets.all(8),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: _hovered ? hover : base, shape: BoxShape.circle),
+              child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: icon, size: 20),
             ),
           ),
         ),

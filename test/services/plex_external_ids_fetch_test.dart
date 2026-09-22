@@ -1,18 +1,16 @@
-import 'dart:convert';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
-
-http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+import '../test_helpers/http_fixtures.dart';
 
 /// A `/library/metadata/{id}` response carrying whichever guid shapes the
 /// server's agent produces.
-http.Response _metadata({List<Object>? guidArray, Object? scalarGuid}) => _json({
+http.Response _metadata({List<Object>? guidArray, Object? scalarGuid}) => jsonResponse({
   'MediaContainer': {
     'Metadata': [
       {'ratingKey': 'show-1', 'type': 'show', 'title': 'Show', 'guid': ?scalarGuid, 'Guid': ?guidArray},
@@ -99,15 +97,33 @@ void main() {
     expect(ids.tvdb, 789);
   });
 
-  test('an unmatched item and a failed request both resolve to no ids', () async {
-    final unmatched = testPlexClient(
+  test('an unmatched item resolves to no ids', () async {
+    final client = testPlexClient(
       handler: (request) async => _metadata(scalarGuid: 'com.plexapp.agents.none://315500'),
     );
-    addTearDown(unmatched.close);
-    expect((await unmatched.fetchExternalIds('show-1')).hasAny, isFalse);
+    addTearDown(client.close);
 
-    final failing = testPlexClient(handler: (request) async => http.Response('nope', 500));
-    addTearDown(failing.close);
-    expect((await failing.fetchExternalIds('show-1')).hasAny, isFalse);
+    expect((await client.fetchExternalIds('show-1')).hasAny, isFalse);
+  });
+
+  // Parity with the MediaBrowser side, whose `fetchItem` reports a gone item
+  // as null: there is nothing to map, not a server that failed to answer.
+  test('an item that is gone resolves to no ids', () async {
+    final client = testPlexClient(handler: (request) async => http.Response('not found', 404));
+    addTearDown(client.close);
+
+    expect((await client.fetchExternalIds('show-1')).hasAny, isFalse);
+  });
+
+  // Swallowing this made a dead server indistinguishable from an unmatched
+  // item, so trackers and the watchlist quietly gave up instead of reporting.
+  test('a failed request throws instead of reading as no ids', () async {
+    final client = testPlexClient(handler: (request) async => http.Response('nope', 500));
+    addTearDown(client.close);
+
+    await expectLater(
+      client.fetchExternalIds('show-1'),
+      throwsA(isA<MediaServerHttpException>().having((e) => e.statusCode, 'statusCode', 500)),
+    );
   });
 }

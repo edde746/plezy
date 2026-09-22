@@ -144,6 +144,56 @@ void main() {
       expect(queue.downloadArtwork, isFalse);
     });
 
+    test('a re-queue without library identity keeps the earlier stamp', () async {
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+        libraryId: 'lib-7',
+        libraryTitle: 'Movies',
+      );
+      await db.updateDownloadStatus('srv:existing', DownloadStatus.failed.index);
+
+      // Re-queue offline: no library resolution, must not erase the stamp.
+      final outcome = await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+      );
+
+      expect(outcome, QueueDownloadOutcome.admitted);
+      final row = (await db.getDownloadedMedia('srv:existing'))!;
+      expect(row.libraryId, 'lib-7');
+      expect(row.libraryTitle, 'Movies');
+    });
+
+    test('a re-queue with fresh library identity overwrites the stamp', () async {
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+        libraryId: 'lib-7',
+        libraryTitle: 'Movies',
+      );
+      await db.updateDownloadStatus('srv:existing', DownloadStatus.failed.index);
+
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+        libraryId: 'lib-9',
+        libraryTitle: 'Moved',
+      );
+
+      final row = (await db.getDownloadedMedia('srv:existing'))!;
+      expect(row.libraryId, 'lib-9');
+      expect(row.libraryTitle, 'Moved');
+    });
+
     test('admits cancelled and partial rows for a fresh attempt', () async {
       for (final status in [DownloadStatus.cancelled, DownloadStatus.partial]) {
         final key = 'srv:${status.name}';
@@ -668,6 +718,19 @@ void main() {
       expect(r.downloadedAt, isNotNull);
       expect(r.downloadedAt! >= before, isTrue);
       expect(r.downloadedAt! <= after, isTrue);
+    });
+
+    test('updateVideoFilePath without stamping preserves the original timestamp', () async {
+      await seed();
+      await db.updateVideoFilePath('srv:100', '/tmp/file.mkv');
+      final stamped = (await db.select(db.downloadedMedia).get()).single.downloadedAt;
+      expect(stamped, isNotNull);
+
+      await db.updateVideoFilePath('srv:100', 'downloads/normalized/file.mkv', stampDownloadedAt: false);
+
+      final row = (await db.select(db.downloadedMedia).get()).single;
+      expect(row.videoFilePath, 'downloads/normalized/file.mkv');
+      expect(row.downloadedAt, stamped);
     });
 
     test('SAF root assignment and reference queries track physical rows', () async {

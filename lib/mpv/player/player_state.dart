@@ -18,6 +18,12 @@ class PlayerState {
   final List<AudioDevice> audioDevices;
   final List<BufferRange> bufferRanges;
 
+  /// Whether the file the backend is currently on has rendered a frame:
+  /// set by `playback-restart`, cleared when a new file begins
+  /// (`start-file`, and `file-loaded` for backends that report no
+  /// `start-file`). Survives seeks and end of file.
+  final bool hasRenderedFrame;
+
   const PlayerState({
     this.playing = false,
     this.completed = false,
@@ -33,6 +39,7 @@ class PlayerState {
     this.audioDevice = AudioDevice.auto,
     this.audioDevices = const [],
     this.bufferRanges = const [],
+    this.hasRenderedFrame = false,
   });
 
   PlayerState copyWith({
@@ -50,6 +57,7 @@ class PlayerState {
     AudioDevice? audioDevice,
     List<AudioDevice>? audioDevices,
     List<BufferRange>? bufferRanges,
+    bool? hasRenderedFrame,
   }) {
     return PlayerState(
       playing: playing ?? this.playing,
@@ -66,6 +74,7 @@ class PlayerState {
       audioDevice: audioDevice ?? this.audioDevice,
       audioDevices: audioDevices ?? this.audioDevices,
       bufferRanges: bufferRanges ?? this.bufferRanges,
+      hasRenderedFrame: hasRenderedFrame ?? this.hasRenderedFrame,
     );
   }
 

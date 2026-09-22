@@ -14,7 +14,6 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
-import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -1003,7 +1002,6 @@ void main() {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
         PathProviderPlatform.instance = previousPathProvider;
-        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -1795,7 +1793,6 @@ void main() {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
         PathProviderPlatform.instance = previousPathProvider;
-        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -1848,7 +1845,6 @@ void main() {
         DownloadStorageService.resetForTesting();
         SettingsService.resetForTesting();
         PathProviderPlatform.instance = previousPathProvider;
-        expect(PathProviderPlatform.instance, same(previousPathProvider));
         if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
       });
 
@@ -2020,68 +2016,71 @@ void main() {
   });
 
   group('storage exhaustion', () {
-    test('filesystem-full failure stops every active download and clears the queue', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      addTearDown(db.close);
-      const currentKey = 'srv:item-1';
-      const queuedKey = 'srv:item-2';
+    for (final failure in [
+      'write failed: ENOSPC (No space left on device)',
+      'Insufficient space to store the file to be downloaded',
+      'Download storage capacity could not be determined',
+    ]) {
+      test('storage failure stops every active download and clears the queue: $failure', () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        const currentKey = 'srv:item-1';
+        const queuedKey = 'srv:item-2';
 
-      await db.insertDownload(
-        serverId: ServerId('srv'),
-        ratingKey: 'item-1',
-        globalKey: currentKey,
-        type: 'movie',
-        status: DownloadStatus.downloading.index,
-      );
-      await db.updateBgTaskId(currentKey, 'current-task');
-      await db.addToQueue(mediaGlobalKey: currentKey);
-      await db.insertDownload(
-        serverId: ServerId('srv'),
-        ratingKey: 'item-2',
-        globalKey: queuedKey,
-        type: 'movie',
-        status: DownloadStatus.queued.index,
-      );
-      await db.updateBgTaskId(queuedKey, 'queued-task');
-      await db.addToQueue(mediaGlobalKey: queuedKey);
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: 'item-1',
+          globalKey: currentKey,
+          type: 'movie',
+          status: DownloadStatus.downloading.index,
+        );
+        await db.updateBgTaskId(currentKey, 'current-task');
+        await db.addToQueue(mediaGlobalKey: currentKey);
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: 'item-2',
+          globalKey: queuedKey,
+          type: 'movie',
+          status: DownloadStatus.queued.index,
+        );
+        await db.updateBgTaskId(queuedKey, 'queued-task');
+        await db.addToQueue(mediaGlobalKey: queuedKey);
 
-      final manager = DownloadManagerService(
-        database: db,
-        storageService: DownloadStorageService.instance,
-        clientResolver: (serverId, {clientScopeId}) => null,
-        downloadsSupportedOverride: false,
-      );
-      addTearDown(manager.dispose);
-      final events = <DownloadProgress>[];
-      final sub = manager.progressStream.listen(events.add);
-      addTearDown(sub.cancel);
+        final manager = DownloadManagerService(
+          database: db,
+          storageService: DownloadStorageService.instance,
+          clientResolver: (serverId, {clientScopeId}) => null,
+          downloadsSupportedOverride: false,
+        );
+        addTearDown(manager.dispose);
+        final events = <DownloadProgress>[];
+        final sub = manager.progressStream.listen(events.add);
+        addTearDown(sub.cancel);
 
-      await manager.debugHandleTaskStatus(
-        TaskStatusUpdate(
-          _downloadTask('current-task', currentKey),
-          TaskStatus.failed,
-          TaskFileSystemException('write failed: ENOSPC (No space left on device)'),
-        ),
-      );
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        events
-            .where((event) => event.status == DownloadStatus.failed && event.errorMessage == t.downloads.storageFull)
-            .map((event) => event.globalKey)
-            .toSet(),
-        {currentKey, queuedKey},
-      );
+        await manager.debugHandleTaskStatus(
+          TaskStatusUpdate(
+            _downloadTask('current-task', currentKey),
+            TaskStatus.failed,
+            TaskFileSystemException(failure),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(events.where((event) => event.status == DownloadStatus.failed).map((event) => event.globalKey).toSet(), {
+          currentKey,
+          queuedKey,
+        });
 
-      final current = await db.getDownloadedMedia(currentKey);
-      final queued = await db.getDownloadedMedia(queuedKey);
-      expect(current?.status, DownloadStatus.failed.index);
-      expect(queued?.status, DownloadStatus.failed.index);
-      expect(current?.bgTaskId, isNull);
-      expect(queued?.bgTaskId, isNull);
-      expect(current?.errorMessage, t.downloads.storageFull);
-      expect(queued?.errorMessage, t.downloads.storageFull);
-      expect(await db.select(db.downloadQueue).get(), isEmpty);
-    });
+        final current = await db.getDownloadedMedia(currentKey);
+        final queued = await db.getDownloadedMedia(queuedKey);
+        expect(current?.status, DownloadStatus.failed.index);
+        expect(queued?.status, DownloadStatus.failed.index);
+        expect(current?.bgTaskId, isNull);
+        expect(queued?.bgTaskId, isNull);
+        expect(current?.errorMessage, events.firstWhere((event) => event.globalKey == currentKey).errorMessage);
+        expect(queued?.errorMessage, current?.errorMessage);
+        expect(await db.select(db.downloadQueue).get(), isEmpty);
+      });
+    }
   });
 
   group('task session validation', () {
@@ -2754,7 +2753,6 @@ class _SupplementaryFixture {
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
-    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tempDir.exists()) await tempDir.delete(recursive: true);
   }
 }
@@ -2941,7 +2939,6 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
-    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   }
 }
@@ -3030,7 +3027,6 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
-    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   }
 }

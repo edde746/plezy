@@ -24,7 +24,6 @@ import 'app_menu.dart';
 import 'bottom_sheet_page_scaffold.dart';
 import 'overlay_sheet.dart';
 
-/// A menu action item for context menus
 class ContextMenuItem {
   final String value;
   final IconData icon;

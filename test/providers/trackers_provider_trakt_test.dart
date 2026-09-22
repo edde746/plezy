@@ -259,10 +259,20 @@ void main() {
       p.dispose();
     });
 
-    test('onActiveProfileChanged after dispose is a no-op', () async {
+    test('onActiveProfileChanged after dispose binds nothing into the shared Trakt client', () async {
+      const uuid = 'profile-1';
+      await _store.save(uuid, _session(username: 'alice'));
+      BaseSharedPreferencesService.resetForTesting();
+
       final p = TrackersProvider();
       p.dispose();
-      await p.onActiveProfileChanged('any-uuid');
+      await _bindProfile(p, uuid);
+
+      // A disposed provider must not hand a stored account to the singleton
+      // tracker: nothing owns that binding anymore.
+      expect(p.isTraktConnected, isFalse);
+      expect(p.traktCatalogClient, isNull);
+      expect(TraktTracker.instance.client, isNull);
     });
   });
 }

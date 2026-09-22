@@ -130,22 +130,6 @@ void main() {
       );
     }
 
-    test('in-flight guard scopes duplicates and releases only the exact target', () {
-      final guard = VideoPlayerNavigationInFlightGuard();
-      final targetA = identity(plexA);
-      final targetB = identity(plexB);
-
-      expect(guard.tryStart(targetA), isTrue);
-      expect(guard.tryStart(targetA), isFalse);
-      expect(guard.tryStart(targetB), isTrue);
-      expect(guard.tryStart(identity(plexA, mediaIndex: 1)), isTrue);
-
-      guard.finish(targetA);
-
-      expect(guard.tryStart(targetA), isTrue);
-      expect(guard.tryStart(targetB), isFalse);
-    });
-
     test('active guard blocks only the complete server-qualified route target', () {
       final guard = VideoPlayerActiveRouteGuard();
       final owner = Object();

@@ -41,6 +41,7 @@ import '../../widgets/music/repeat_mode.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'queue_sheet.dart';
+import '../../utils/error_message_utils.dart';
 
 /// Full-screen music player. Pushed via [openNowPlaying]; popping never
 /// touches playback — audio continues under the mini-player.
@@ -117,7 +118,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
           context,
           error is PlayerInitializationException
               ? t.messages.playbackFailed
-              : t.messages.errorLoading(error: error.toString()),
+              : t.messages.errorLoading(error: localizedErrorReason(error)),
         );
       });
     }

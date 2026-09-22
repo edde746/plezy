@@ -16,7 +16,6 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_item.dart';
-import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
@@ -165,6 +164,54 @@ void main() {
     manager.dispose();
     await db.close();
   });
+
+  /// Registers a Plex server whose `/hubs` answers a single Continue Watching
+  /// hub built from [rows]; [metadata] answers `/library/metadata/<ratingKey>`
+  /// for the keys it recognises. Any other request is an unexpected one.
+  /// Returns the URLs the server was asked for.
+  List<Uri> registerContinueWatchingPlex(
+    List<Map<String, Object?>> rows, {
+    Map<String, Object?>? Function(String ratingKey)? metadata,
+  }) {
+    final requests = <Uri>[];
+    final client = testPlexClient(
+      serverId: ServerId('plex-1'),
+      serverName: 'Plex',
+      handler: (req) async {
+        requests.add(req.url);
+        if (req.url.path == '/hubs') {
+          return _json({
+            'MediaContainer': {
+              'Hub': [
+                {
+                  'key': '/hubs/home/continueWatching',
+                  'title': 'Continue Watching',
+                  'type': 'mixed',
+                  'hubIdentifier': 'home.continue',
+                  'size': rows.length,
+                  'Metadata': rows,
+                },
+              ],
+            },
+          });
+        }
+        if (metadata != null && req.url.path.startsWith('/library/metadata/')) {
+          final entry = metadata(req.url.pathSegments.last);
+          if (entry != null) {
+            return _json({
+              'MediaContainer': {
+                'Metadata': [entry],
+              },
+            });
+          }
+        }
+        return http.Response('unexpected request', 500);
+      },
+    );
+    addTearDown(client.close);
+    manager.debugRegisterClientForTesting(client);
+    return requests;
+  }
 
   for (final backend in ['plex', 'jellyfin', 'emby']) {
     test('$backend offline expected-server misses expire and reveal copies after recovery', () async {
@@ -643,13 +690,6 @@ void main() {
       final jellyfinRequests = <Uri>[];
 
       final plexClient = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
         serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
@@ -718,43 +758,9 @@ void main() {
     });
 
     test('getOnDeckFromAllServers forwards preview limit to clients', () async {
-      final captured = <Uri>[];
-
-      final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
-        serverId: ServerId('plex-1'),
-        serverName: 'Plex',
-        httpClient: MockClient((req) async {
-          captured.add(req.url);
-          if (req.url.path == '/hubs') {
-            return _json({
-              'MediaContainer': {
-                'Hub': [
-                  {
-                    'key': '/hubs/home/continueWatching',
-                    'title': 'Continue Watching',
-                    'type': 'mixed',
-                    'hubIdentifier': 'home.continue',
-                    'size': 1,
-                    'Metadata': [
-                      {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie 1'},
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          return http.Response('unexpected request', 500);
-        }),
-      );
-      addTearDown(client.close);
-      manager.debugRegisterClientForTesting(client);
+      final captured = registerContinueWatchingPlex([
+        {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie 1'},
+      ]);
 
       final result = await service.getOnDeckFromAllServers(limit: 21);
 
@@ -765,53 +771,22 @@ void main() {
     });
 
     test('getOnDeckFromAllServers filters hidden Plex continue-watching libraries', () async {
-      final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
-        serverId: ServerId('plex-1'),
-        serverName: 'Plex',
-        httpClient: MockClient((req) async {
-          if (req.url.path == '/hubs') {
-            return _json({
-              'MediaContainer': {
-                'Hub': [
-                  {
-                    'key': '/hubs/home/continueWatching',
-                    'title': 'Continue Watching',
-                    'type': 'mixed',
-                    'hubIdentifier': 'home.continue',
-                    'size': 2,
-                    'Metadata': [
-                      {
-                        'ratingKey': 'movie-visible',
-                        'type': 'movie',
-                        'title': 'Visible Movie',
-                        'lastViewedAt': 100,
-                        'librarySectionID': 1,
-                      },
-                      {
-                        'ratingKey': 'movie-hidden',
-                        'type': 'movie',
-                        'title': 'Hidden Movie',
-                        'lastViewedAt': 200,
-                        'librarySectionID': 2,
-                      },
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          return http.Response('unexpected request', 500);
-        }),
-      );
-      addTearDown(client.close);
-      manager.debugRegisterClientForTesting(client);
+      registerContinueWatchingPlex([
+        {
+          'ratingKey': 'movie-visible',
+          'type': 'movie',
+          'title': 'Visible Movie',
+          'lastViewedAt': 100,
+          'librarySectionID': 1,
+        },
+        {
+          'ratingKey': 'movie-hidden',
+          'type': 'movie',
+          'title': 'Hidden Movie',
+          'lastViewedAt': 200,
+          'librarySectionID': 2,
+        },
+      ]);
 
       final result = await service.getOnDeckFromAllServers(limit: 10, hiddenLibraryKeys: {'plex-1:2'});
 
@@ -820,75 +795,41 @@ void main() {
     });
 
     test('getOnDeckFromAllServers hides duplicate show entries by stable show ids', () async {
-      final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
-        serverId: ServerId('plex-1'),
-        serverName: 'Plex',
-        httpClient: MockClient((req) async {
-          if (req.url.path == '/hubs') {
-            return _json({
-              'MediaContainer': {
-                'Hub': [
-                  {
-                    'key': '/hubs/home/continueWatching',
-                    'title': 'Continue Watching',
-                    'type': 'mixed',
-                    'hubIdentifier': 'home.continue',
-                    'size': 2,
-                    'Metadata': [
-                      {
-                        'ratingKey': 'old-episode',
-                        'type': 'episode',
-                        'title': 'Episode 1',
-                        'grandparentRatingKey': 'old-show',
-                        'grandparentTitle': 'Shared Show',
-                        'guid': 'plex://episode/shared-episode-1',
-                        'lastViewedAt': 100,
-                        'librarySectionID': 1,
-                      },
-                      {
-                        'ratingKey': 'new-episode',
-                        'type': 'episode',
-                        'title': 'Episode 2',
-                        'grandparentRatingKey': 'new-show',
-                        'grandparentTitle': 'Shared Show',
-                        'guid': 'plex://episode/shared-episode-2',
-                        'lastViewedAt': 200,
-                        'librarySectionID': 2,
-                      },
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          if (req.url.path == '/library/metadata/old-show' || req.url.path == '/library/metadata/new-show') {
-            return _json({
-              'MediaContainer': {
-                'Metadata': [
-                  {
-                    'ratingKey': req.url.pathSegments.last,
-                    'type': 'show',
-                    'title': 'Shared Show',
-                    'Guid': [
-                      {'id': 'tvdb://12345'},
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          return http.Response('unexpected request', 500);
-        }),
+      registerContinueWatchingPlex(
+        [
+          {
+            'ratingKey': 'old-episode',
+            'type': 'episode',
+            'title': 'Episode 1',
+            'grandparentRatingKey': 'old-show',
+            'grandparentTitle': 'Shared Show',
+            'guid': 'plex://episode/shared-episode-1',
+            'lastViewedAt': 100,
+            'librarySectionID': 1,
+          },
+          {
+            'ratingKey': 'new-episode',
+            'type': 'episode',
+            'title': 'Episode 2',
+            'grandparentRatingKey': 'new-show',
+            'grandparentTitle': 'Shared Show',
+            'guid': 'plex://episode/shared-episode-2',
+            'lastViewedAt': 200,
+            'librarySectionID': 2,
+          },
+        ],
+        metadata: (ratingKey) {
+          if (ratingKey != 'old-show' && ratingKey != 'new-show') return null;
+          return {
+            'ratingKey': ratingKey,
+            'type': 'show',
+            'title': 'Shared Show',
+            'Guid': [
+              {'id': 'tvdb://12345'},
+            ],
+          };
+        },
       );
-      addTearDown(client.close);
-      manager.debugRegisterClientForTesting(client);
 
       final result = await service.getOnDeckFromAllServers(limit: 10);
 
@@ -902,76 +843,42 @@ void main() {
       // reliably. The locally recorded play must decide the surviving card —
       // and it must keep the winner in the group's original shelf slot,
       // ahead of the unrelated movie sorted between the two episodes (#1492).
-      final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
-        serverId: ServerId('plex-1'),
-        serverName: 'Plex',
-        httpClient: MockClient((req) async {
-          if (req.url.path == '/hubs') {
-            return _json({
-              'MediaContainer': {
-                'Hub': [
-                  {
-                    'key': '/hubs/home/continueWatching',
-                    'title': 'Continue Watching',
-                    'type': 'mixed',
-                    'hubIdentifier': 'home.continue',
-                    'size': 3,
-                    'Metadata': [
-                      {
-                        'ratingKey': 'hd-episode',
-                        'type': 'episode',
-                        'title': 'Episode 1',
-                        'grandparentRatingKey': 'hd-show',
-                        'grandparentTitle': 'Shared Show',
-                        'guid': 'plex://episode/shared-episode-hd',
-                        'lastViewedAt': 200,
-                        'librarySectionID': 1,
-                      },
-                      {'ratingKey': 'movie-between', 'type': 'movie', 'title': 'Unrelated Movie', 'lastViewedAt': 150},
-                      {
-                        'ratingKey': 'uhd-episode',
-                        'type': 'episode',
-                        'title': 'Episode 1',
-                        'grandparentRatingKey': 'uhd-show',
-                        'grandparentTitle': 'Shared Show',
-                        'guid': 'plex://episode/shared-episode-uhd',
-                        'lastViewedAt': 100,
-                        'librarySectionID': 2,
-                      },
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          if (req.url.path == '/library/metadata/hd-show' || req.url.path == '/library/metadata/uhd-show') {
-            return _json({
-              'MediaContainer': {
-                'Metadata': [
-                  {
-                    'ratingKey': req.url.pathSegments.last,
-                    'type': 'show',
-                    'title': 'Shared Show',
-                    'Guid': [
-                      {'id': 'tvdb://12345'},
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          return http.Response('unexpected request', 500);
-        }),
+      registerContinueWatchingPlex(
+        [
+          {
+            'ratingKey': 'hd-episode',
+            'type': 'episode',
+            'title': 'Episode 1',
+            'grandparentRatingKey': 'hd-show',
+            'grandparentTitle': 'Shared Show',
+            'guid': 'plex://episode/shared-episode-hd',
+            'lastViewedAt': 200,
+            'librarySectionID': 1,
+          },
+          {'ratingKey': 'movie-between', 'type': 'movie', 'title': 'Unrelated Movie', 'lastViewedAt': 150},
+          {
+            'ratingKey': 'uhd-episode',
+            'type': 'episode',
+            'title': 'Episode 1',
+            'grandparentRatingKey': 'uhd-show',
+            'grandparentTitle': 'Shared Show',
+            'guid': 'plex://episode/shared-episode-uhd',
+            'lastViewedAt': 100,
+            'librarySectionID': 2,
+          },
+        ],
+        metadata: (ratingKey) {
+          if (ratingKey != 'hd-show' && ratingKey != 'uhd-show') return null;
+          return {
+            'ratingKey': ratingKey,
+            'type': 'show',
+            'title': 'Shared Show',
+            'Guid': [
+              {'id': 'tvdb://12345'},
+            ],
+          };
+        },
       );
-      addTearDown(client.close);
-      manager.debugRegisterClientForTesting(client);
 
       // The user last played something in the 4K library's show tree.
       final settings = await SettingsService.getInstance();
@@ -986,71 +893,37 @@ void main() {
     });
 
     test('getOnDeckFromAllServers prefers a duplicate recorded by item key', () async {
-      final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
-        serverId: ServerId('plex-1'),
-        serverName: 'Plex',
-        httpClient: MockClient((req) async {
-          if (req.url.path == '/hubs') {
-            return _json({
-              'MediaContainer': {
-                'Hub': [
-                  {
-                    'key': '/hubs/home/continueWatching',
-                    'title': 'Continue Watching',
-                    'type': 'mixed',
-                    'hubIdentifier': 'home.continue',
-                    'size': 2,
-                    'Metadata': [
-                      {
-                        'ratingKey': 'movie-hd',
-                        'type': 'movie',
-                        'title': 'Shared Movie',
-                        'guid': 'plex://movie/shared-movie',
-                        'lastViewedAt': 200,
-                        'librarySectionID': 1,
-                      },
-                      {
-                        'ratingKey': 'movie-uhd',
-                        'type': 'movie',
-                        'title': 'Shared Movie',
-                        'guid': 'plex://movie/shared-movie',
-                        'lastViewedAt': 100,
-                        'librarySectionID': 2,
-                      },
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          if (req.url.path == '/library/metadata/movie-hd' || req.url.path == '/library/metadata/movie-uhd') {
-            return _json({
-              'MediaContainer': {
-                'Metadata': [
-                  {
-                    'ratingKey': req.url.pathSegments.last,
-                    'type': 'movie',
-                    'title': 'Shared Movie',
-                    'Guid': [
-                      {'id': 'tmdb://777'},
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          return http.Response('unexpected request', 500);
-        }),
+      registerContinueWatchingPlex(
+        [
+          {
+            'ratingKey': 'movie-hd',
+            'type': 'movie',
+            'title': 'Shared Movie',
+            'guid': 'plex://movie/shared-movie',
+            'lastViewedAt': 200,
+            'librarySectionID': 1,
+          },
+          {
+            'ratingKey': 'movie-uhd',
+            'type': 'movie',
+            'title': 'Shared Movie',
+            'guid': 'plex://movie/shared-movie',
+            'lastViewedAt': 100,
+            'librarySectionID': 2,
+          },
+        ],
+        metadata: (ratingKey) {
+          if (ratingKey != 'movie-hd' && ratingKey != 'movie-uhd') return null;
+          return {
+            'ratingKey': ratingKey,
+            'type': 'movie',
+            'title': 'Shared Movie',
+            'Guid': [
+              {'id': 'tmdb://777'},
+            ],
+          };
+        },
       );
-      addTearDown(client.close);
-      manager.debugRegisterClientForTesting(client);
 
       final settings = await SettingsService.getInstance();
       await settings.write(SettingsService.localLastPlayedAt, {'plex-1:movie-uhd': 999999});
@@ -1061,67 +934,32 @@ void main() {
     });
 
     test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {
-      final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
-        serverId: ServerId('plex-1'),
-        serverName: 'Plex',
-        httpClient: MockClient((req) async {
-          if (req.url.path == '/hubs') {
-            return _json({
-              'MediaContainer': {
-                'Hub': [
-                  {
-                    'key': '/hubs/home/continueWatching',
-                    'title': 'Continue Watching',
-                    'type': 'mixed',
-                    'hubIdentifier': 'home.continue',
-                    'size': 2,
-                    'Metadata': [
-                      {
-                        'ratingKey': 'old-unmatched',
-                        'type': 'episode',
-                        'title': 'Episode 1',
-                        'grandparentRatingKey': 'old-unmatched-show',
-                        'grandparentTitle': 'Shared Show',
-                        'guid': 'com.plexapp.agents.none://old-unmatched',
-                        'lastViewedAt': 100,
-                      },
-                      {
-                        'ratingKey': 'new-unmatched',
-                        'type': 'episode',
-                        'title': 'Episode 2',
-                        'grandparentRatingKey': 'new-unmatched-show',
-                        'grandparentTitle': 'Shared Show',
-                        'guid': 'com.plexapp.agents.none://new-unmatched',
-                        'lastViewedAt': 200,
-                      },
-                    ],
-                  },
-                ],
-              },
-            });
-          }
-          if (req.url.path == '/library/metadata/old-unmatched-show' ||
-              req.url.path == '/library/metadata/new-unmatched-show') {
-            return _json({
-              'MediaContainer': {
-                'Metadata': [
-                  {'ratingKey': req.url.pathSegments.last, 'type': 'show', 'title': 'Shared Show'},
-                ],
-              },
-            });
-          }
-          return http.Response('unexpected request', 500);
-        }),
+      registerContinueWatchingPlex(
+        [
+          {
+            'ratingKey': 'old-unmatched',
+            'type': 'episode',
+            'title': 'Episode 1',
+            'grandparentRatingKey': 'old-unmatched-show',
+            'grandparentTitle': 'Shared Show',
+            'guid': 'com.plexapp.agents.none://old-unmatched',
+            'lastViewedAt': 100,
+          },
+          {
+            'ratingKey': 'new-unmatched',
+            'type': 'episode',
+            'title': 'Episode 2',
+            'grandparentRatingKey': 'new-unmatched-show',
+            'grandparentTitle': 'Shared Show',
+            'guid': 'com.plexapp.agents.none://new-unmatched',
+            'lastViewedAt': 200,
+          },
+        ],
+        metadata: (ratingKey) {
+          if (ratingKey != 'old-unmatched-show' && ratingKey != 'new-unmatched-show') return null;
+          return {'ratingKey': ratingKey, 'type': 'show', 'title': 'Shared Show'};
+        },
       );
-      addTearDown(client.close);
-      manager.debugRegisterClientForTesting(client);
 
       final result = await service.getOnDeckFromAllServers(limit: 10);
 
@@ -1395,13 +1233,6 @@ void main() {
       final captured = <Uri>[];
 
       final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
         serverId: ServerId('plex-1'),
         serverName: 'Plex',
         promotedHubKey: '/hubs/promoted',
@@ -1470,13 +1301,6 @@ void main() {
       final captured = <Uri>[];
 
       final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
         serverId: ServerId('plex-1'),
         serverName: 'Plex',
         promotedHubKey: '/hubs/promoted',
@@ -1554,13 +1378,6 @@ void main() {
       // music leg as server success let DiscoverProvider replace every cached
       // movie/TV home row with the lone music row.
       final client = testPlexClient(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example.com',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
         serverId: ServerId('plex-1'),
         serverName: 'Plex',
         promotedHubKey: '/hubs/promoted',

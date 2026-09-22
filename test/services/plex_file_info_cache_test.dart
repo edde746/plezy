@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +12,7 @@ import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
 /// `/library/metadata/{id}` is a shared cache row, and `getPlaybackExtras`
@@ -44,7 +44,7 @@ void main() {
         final probe = _failoverProbe(request, serverId);
         if (probe != null) return probe;
         requested.add(request.url);
-        return failure ?? _jsonResponse(response ?? _fullMetadata);
+        return failure ?? jsonResponse(response ?? _fullMetadata);
       },
     );
     addTearDown(client.close);
@@ -140,7 +140,7 @@ void main() {
         final probe = _failoverProbe(request, serverId);
         if (probe != null) return probe;
         tokens.add(_plexToken(request));
-        return _jsonResponse(_fullMetadata);
+        return jsonResponse(_fullMetadata);
       },
     );
     addTearDown(client.close);
@@ -177,12 +177,12 @@ MediaItem _movie() => testMediaItem(id: 'movie-1', title: 'Movie', serverId: 'se
 /// The failover client probes server identity before the first real request.
 http.Response? _failoverProbe(http.Request request, ServerId serverId) {
   if (request.url.path == '/') {
-    return _jsonResponse({
+    return jsonResponse({
       'MediaContainer': {'machineIdentifier': serverId.value},
     });
   }
   if (request.url.path == '/media/providers') {
-    return _jsonResponse({
+    return jsonResponse({
       'MediaContainer': {'MediaProvider': <Object>[]},
     });
   }
@@ -195,9 +195,6 @@ String? _plexToken(http.Request request) {
   }
   return null;
 }
-
-http.Response _jsonResponse(Map<String, dynamic> body) =>
-    http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
 
 Map<String, dynamic> _metadata(List<Map<String, dynamic>> parts) => {
   'MediaContainer': {

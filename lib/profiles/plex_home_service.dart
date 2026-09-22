@@ -81,16 +81,7 @@ class PlexHomeService {
   /// connection changes, install the refresh timer, or issue a refresh.
   Future<void> hydrate() {
     if (_disposed) return Future.value();
-    final pending = _hydrateFuture;
-    if (pending != null) return pending;
-
-    final epoch = _lifecycleEpoch;
-    final future = _hydrate(epoch).catchError((Object error, StackTrace stackTrace) {
-      _hydrateFuture = null;
-      Error.throwWithStackTrace(error, stackTrace);
-    });
-    _hydrateFuture = future;
-    return future;
+    return _runOnce(_hydrateFuture, (future) => _hydrateFuture = future, _hydrate);
   }
 
   /// Start observing connections and refreshing Plex Home users.
@@ -99,15 +90,20 @@ class PlexHomeService {
   /// half-initialized cache or storage handle.
   Future<void> start() {
     if (_disposed || _started) return Future.value();
-    final pending = _startFuture;
-    if (pending != null) return pending;
+    return _runOnce(_startFuture, (future) => _startFuture = future, _start);
+  }
 
-    final epoch = _lifecycleEpoch;
-    final future = _start(epoch).catchError((Object error, StackTrace stackTrace) {
-      _startFuture = null;
+  /// Memoize [body] in a lifecycle slot: a [pending] run is shared, a failed
+  /// run clears the slot so the next call retries, and [body] receives the
+  /// epoch captured at scheduling time so it can bail once [clearAll] or
+  /// [dispose] has moved the service on.
+  Future<void> _runOnce(Future<void>? pending, void Function(Future<void>?) slot, Future<void> Function(int) body) {
+    if (pending != null) return pending;
+    final future = body(_lifecycleEpoch).catchError((Object error, StackTrace stackTrace) {
+      slot(null);
       Error.throwWithStackTrace(error, stackTrace);
     });
-    _startFuture = future;
+    slot(future);
     return future;
   }
 
@@ -139,19 +135,7 @@ class PlexHomeService {
 
     for (final conn in current.whereType<PlexAccountConnection>()) {
       if (!_isLifecycleCurrent(epoch)) return;
-      final raw = _storage!.getPlexHomeUsersCacheJson(conn.id);
-      final cached = _decodeCache(conn.id, raw);
-      if (cached == null || raw == null) {
-        _durablyCommittedCacheJson.remove(conn.id);
-        continue;
-      }
-      _durablyCommittedCacheJson[conn.id] = raw;
-      final previous = _byConnection[conn.id];
-      if (previous != null && encodePlexHomeUsersCacheJson(previous) == encodePlexHomeUsersCacheJson(cached)) {
-        continue;
-      }
-      _byConnection[conn.id] = cached;
-      changed = true;
+      if (_loadCachedUsers(conn.id)) changed = true;
     }
 
     if (changed && _isLifecycleCurrent(epoch)) _emit();
@@ -170,12 +154,7 @@ class PlexHomeService {
       ..clear()
       ..addAll(plexConnections.map((connection) => connection.id));
     for (final conn in plexConnections) {
-      final raw = _storage!.getPlexHomeUsersCacheJson(conn.id);
-      final cached = _decodeCache(conn.id, raw);
-      if (cached != null && raw != null) {
-        _byConnection[conn.id] = cached;
-        _durablyCommittedCacheJson[conn.id] = raw;
-      }
+      _loadCachedUsers(conn.id);
     }
     _emit();
   }
@@ -423,6 +402,26 @@ class PlexHomeService {
     if (!_storageCacheNeedsReload) return;
     await storage.prefs.reloadCache();
     _storageCacheNeedsReload = false;
+  }
+
+  /// Load [connectionId]'s users from the storage cache into the snapshot and
+  /// record the raw JSON as durably committed. Returns whether the in-memory
+  /// list changed. A missing or undecodable cache leaves the snapshot alone
+  /// and forgets the durable record so the next refresh writes through.
+  bool _loadCachedUsers(String connectionId) {
+    final raw = _storage!.getPlexHomeUsersCacheJson(connectionId);
+    final cached = _decodeCache(connectionId, raw);
+    if (cached == null || raw == null) {
+      _durablyCommittedCacheJson.remove(connectionId);
+      return false;
+    }
+    _durablyCommittedCacheJson[connectionId] = raw;
+    final previous = _byConnection[connectionId];
+    if (previous != null && encodePlexHomeUsersCacheJson(previous) == encodePlexHomeUsersCacheJson(cached)) {
+      return false;
+    }
+    _byConnection[connectionId] = cached;
+    return true;
   }
 
   List<PlexHomeUser>? _readCache(String connectionId) =>

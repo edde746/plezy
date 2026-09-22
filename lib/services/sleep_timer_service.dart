@@ -46,7 +46,6 @@ class SleepTimerService extends ChangeNotifier {
   /// The user-selected duration (unmodified by extendTimer)
   Duration? get originalDuration => _originalDuration;
 
-  /// Remaining time on the timer
   Duration? get remainingTime {
     if (_endTime == null) return null;
     final remaining = _endTime!.difference(_now());
@@ -155,7 +154,6 @@ class SleepTimerService extends ChangeNotifier {
     }
   }
 
-  /// Extend the current timer by the specified duration
   void extendTimer(Duration additionalTime) {
     if (_endTime != null) {
       _endTime = _endTime!.add(additionalTime);

@@ -16,6 +16,7 @@ import '../../utils/music_navigation.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/dpad_select_long_press_controller.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import 'package:provider/provider.dart';
@@ -144,6 +145,17 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   int _focusedColumn = 0; // 0=content, 1=drag handle, 2=remove button
   final ValueNotifier<int> _focusRevision = ValueNotifier<int>(0);
 
+  /// SELECT on the list node: short press activates the focused column, a
+  /// 500 ms hold opens the focused item's context menu (same gesture as a
+  /// [FocusableWrapper] card). The context-menu / gamepad-X key opens it too.
+  final _selectLongPress = DpadSelectLongPressController();
+
+  /// Cards are not focusable, so the list node reaches the focused item's
+  /// [MediaContextMenu] through its card state. Keyed by the same stable item
+  /// id as the row's [ValueKey] so a key follows its item through reorders
+  /// instead of being stolen between neighbouring rows.
+  final Map<String, GlobalKey<PlaylistItemCardState>> _cardKeys = {};
+
   void _notifyFocusChanged() => _focusRevision.value++;
 
   // Move mode state
@@ -168,6 +180,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   @override
   void dispose() {
     _continuation.dispose();
+    _selectLongPress.dispose();
     _listFocusNode.dispose();
     _continuationRetryFocusNode.dispose();
     _focusRevision.dispose();
@@ -470,6 +483,19 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       return backResult;
     }
 
+    // Navigation-mode SELECT needs the KeyUp too: the controller fires the
+    // column action on release and the context menu on a hold. Move-mode
+    // SELECT stays a one-shot confirm below; its trailing KeyUp lands here
+    // with no press in flight and is consumed without effect.
+    if (_movingIndex == null && key.isSelectKey) {
+      return _selectLongPress.handleKeyEvent(
+        event,
+        isOwnerActive: () => mounted,
+        onShortPress: _activateFocusedColumn,
+        onLongPress: _showContextMenuForFocusedItem,
+      );
+    }
+
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     if (_movingIndex != null) {
@@ -576,27 +602,48 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           return KeyEventResult.handled;
         }
       }
-      if (key.isSelectKey) {
-        if (_focusedColumn == 0) {
-          // Play from this item
-          _playFromItem(_focusedIndex);
-        } else if (_focusedColumn == 1 && _canMutatePlaylist) {
-          // Enter move mode
-          setState(() {
-            _movingIndex = _focusedIndex;
-            _originalIndex = _focusedIndex;
-            _originalOrder = List.from(items);
-          });
-        } else if (_focusedColumn == 2 && _canMutatePlaylist) {
-          // Remove item
-          _removeItem(_focusedIndex);
-        }
+      if (key.isContextMenuKey) {
+        _showContextMenuForFocusedItem();
         return KeyEventResult.handled;
       }
     }
 
     return KeyEventResult.ignored;
   }
+
+  /// Short SELECT press in navigation mode: play, enter move mode or remove,
+  /// depending on the focused column.
+  void _activateFocusedColumn() {
+    if (_focusedColumn == 0) {
+      _playFromItem(_focusedIndex);
+    } else if (_focusedColumn == 1 && _canMutatePlaylist) {
+      // Enter move mode
+      setState(() {
+        _movingIndex = _focusedIndex;
+        _originalIndex = _focusedIndex;
+        _originalOrder = List.from(items);
+      });
+    } else if (_focusedColumn == 2 && _canMutatePlaylist) {
+      _removeItem(_focusedIndex);
+    }
+  }
+
+  /// Opens the focused row's [MediaContextMenu] (rate, watched state,
+  /// download, details, ...) — the same menu long-press and right-click reach
+  /// on the card. Whichever column is focused, the item is the same.
+  void _showContextMenuForFocusedItem() {
+    if (_focusedIndex < 0 || _focusedIndex >= items.length) return;
+    _cardKeys[_itemKeyId(items[_focusedIndex])]?.currentState?.showContextMenu();
+  }
+
+  /// Stable per-row identity shared by the reorderable list's [ValueKey] and
+  /// [_cardKeys]. Playlist entries can repeat a media id, so the playlist item
+  /// id wins when the backend exposes one.
+  String _itemKeyId(MediaItem item) => switch (item) {
+    PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
+    JellyfinMediaItem(:final playlistItemId?) => 'j:$playlistItemId',
+    _ => item.id,
+  };
 
   /// Cancel move mode if active, returns true if cancelled
   bool _cancelMoveMode() {
@@ -699,7 +746,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         focusNode: _listFocusNode,
         onKeyEvent: _handleListKeyEvent,
         onFocusChange: (hasFocus) {
-          if (hasFocus && mounted) {
+          if (!hasFocus) {
+            // A hold that opened the context menu never sees its KeyUp here.
+            _selectLongPress.reset();
+            return;
+          }
+          if (mounted) {
             setState(() {
               isAppBarFocused = false;
             });
@@ -732,11 +784,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        final keyId = switch (item) {
-          PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
-          JellyfinMediaItem(:final playlistItemId?) => 'j:$playlistItemId',
-          _ => item.id,
-        };
+        final keyId = _itemKeyId(item);
         return ListenableSelector<(bool, int?, bool)>(
           key: ValueKey(keyId),
           listenable: _focusRevision,
@@ -749,6 +797,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             final isFocused = inKeyboardMode && focusState.$1;
             return RepaintBoundary(
               child: PlaylistItemCard(
+                key: _cardKeys.putIfAbsent(keyId, GlobalKey<PlaylistItemCardState>.new),
                 item: item,
                 index: index,
                 onRemove: _canMutatePlaylist ? () => _removeItem(index) : null,

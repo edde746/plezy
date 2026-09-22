@@ -73,7 +73,6 @@ String formatDurationTextual(int milliseconds, {bool abbreviated = true}) {
 ///
 /// Used for: sleep timer countdown.
 String formatDurationWithSeconds(Duration duration) {
-  // Get the appropriate locale for the duration package
   final durationLocale = _getDurationLocale();
 
   return prettyDuration(

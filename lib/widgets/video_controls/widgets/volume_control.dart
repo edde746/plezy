@@ -8,7 +8,9 @@ import '../../../focus/key_event_utils.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/video_volume_controller.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../focus/focus_theme.dart';
 import '../../../focus/focusable_wrapper.dart';
+import 'player_focus_disc.dart';
 
 /// A volume control widget that displays a mute/unmute button and volume slider.
 ///
@@ -125,18 +127,16 @@ class _VolumeControlState extends State<VolumeControl> {
           valueListenable: widget.volumeController,
           builder: (context, volume, _) {
             final isMuted = volume == 0;
-            final muteButton = Semantics(
-              label: isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton,
+            final muteIcon = isMuted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded;
+            final muteLabel = isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton;
+            Widget muteButton(Color iconColor) => Semantics(
+              label: muteLabel,
               button: true,
               enabled: true,
               onTap: widget.volumeController.toggleMute,
               excludeSemantics: true,
               child: IconButton(
-                icon: AppIcon(
-                  isMuted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded,
-                  fill: 1,
-                  color: Colors.white,
-                ),
+                icon: AppIcon(muteIcon, fill: 1, color: iconColor),
                 onPressed: widget.volumeController.toggleMute,
               ),
             );
@@ -150,18 +150,17 @@ class _VolumeControlState extends State<VolumeControl> {
                     onSelect: _enterAdjustMode,
                     onKeyEvent: _handleKeyEvent,
                     onFocusChange: _handleFocusChange,
-                    borderRadius: 20,
                     autoScroll: false,
-                    useBackgroundFocus: true,
-                    disableScale: true,
-                    semanticLabel: () {
-                      if (_isAdjustMode) return t.videoControls.volumeSlider;
-                      return isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton;
-                    }(),
-                    child: muteButton,
+                    delegateFocusBorder: true,
+                    focusScale: FocusTheme.playerControlFocusScale,
+                    semanticLabel: _isAdjustMode ? t.videoControls.volumeSlider : muteLabel,
+                    child: PlayerFocusDisc(
+                      iconColor: Colors.white,
+                      builder: (context, iconColor) => muteButton(iconColor),
+                    ),
                   )
                 else
-                  muteButton,
+                  muteButton(Colors.white),
                 const SizedBox(width: 8),
                 _buildVolumeSlider(volume, maxVolume),
               ],

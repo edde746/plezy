@@ -684,11 +684,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     });
   }
 
-  Size _sizeOf(BuildContext context) {
-    final renderObject = context.findRenderObject();
-    return renderObject is RenderBox ? renderObject.size : Size.zero;
-  }
-
   /// Accumulate skip feedback. Consecutive skips in the same direction stack
   /// into one running total; a direction flip restarts the count.
   void _registerSkipFeedback({required bool isForward, required int seconds}) {
@@ -814,7 +809,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _accumulatedSkipSeconds.value = 0;
   }
 
-  /// Handle tap on controls overlay - route to skip zones or toggle controls
   void _handleControlsOverlayTap(TapUpDetails details, Size size) {
     if (!PlatformDetector.isMobile(context)) {
       _handleDesktopClickToggle();

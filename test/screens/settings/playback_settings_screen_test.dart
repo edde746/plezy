@@ -200,6 +200,26 @@ void main() {
     expect(settings.read(SettingsService.gesturePinchToZoom), isTrue);
   });
 
+  testWidgets('shuffle starts at beginning toggle persists (#2303)', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Shuffle Starts at Beginning');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+
+    expect(SettingsService.instance.read(SettingsService.shuffleStartsFromBeginning), isTrue);
+    expect(SettingsService.instance.prefs.getBool(SettingsService.shuffleStartsFromBeginning.key), isTrue);
+  });
+
   testWidgets('gesture toggles stay hidden on non-mobile layouts', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);

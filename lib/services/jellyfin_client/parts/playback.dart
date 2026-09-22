@@ -66,7 +66,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
-    final item = await fetchItemFreshCacheFirst(itemId);
+    final item = forceRefresh ? await fetchItem(itemId) : await fetchItemFreshCacheFirst(itemId);
     final markers = item == null ? const <MediaMarker>[] : await _fetchMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
       item?.raw,
@@ -698,6 +698,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     String? playSessionId,
     String? liveStreamId,
     int? audioStreamIndex,
+    bool containerExtension = false,
   }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
@@ -710,6 +711,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       playSessionId: playSessionId,
       liveStreamId: liveStreamId,
       audioStreamIndex: audioStreamIndex,
+      containerExtension: containerExtension,
     );
   }
 
@@ -717,7 +719,12 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// same `Static=true` + token query + `DeviceId` self-authentication. Used
   /// for track direct-play fallback, downloads, and external players.
   @override
-  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
+  String buildAudioDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    bool containerExtension = false,
+  }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
       accessToken: connection.accessToken,
@@ -727,6 +734,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       mediaSegment: 'Audio',
       container: container,
       mediaSourceId: mediaSourceId,
+      containerExtension: containerExtension,
     );
   }
 
@@ -792,41 +800,34 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     /// the selected subtitle into a transcode instead of serving it alongside.
     bool burnSubtitles = false,
   }) async {
-    final query = <String, String>{
-      'userId': connection.userId,
-      'MaxStreamingBitrate': ?maxStreamingBitrate?.toString(),
+    // The same negotiation fields go out stringified in the query string and
+    // typed in the body.
+    final negotiation = <String, Object>{
+      'MaxStreamingBitrate': ?maxStreamingBitrate,
       'MediaSourceId': ?mediaSourceId,
       'LiveStreamId': ?liveStreamId,
-      'StartTimeTicks': ?startTimeTicks?.toString(),
-      'AudioStreamIndex': ?audioStreamIndex?.toString(),
-      'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
-      'AutoOpenLiveStream': ?autoOpenLiveStream?.toString(),
-      'EnableDirectPlay': ?enableDirectPlay?.toString(),
-      'EnableDirectStream': ?enableDirectStream?.toString(),
-      'EnableTranscoding': ?enableTranscoding?.toString(),
-      'AllowVideoStreamCopy': ?allowVideoStreamCopy?.toString(),
-      'AllowAudioStreamCopy': ?allowAudioStreamCopy?.toString(),
+      'StartTimeTicks': ?startTimeTicks,
+      'AudioStreamIndex': ?audioStreamIndex,
+      'SubtitleStreamIndex': ?subtitleStreamIndex,
+      'AutoOpenLiveStream': ?autoOpenLiveStream,
+      'EnableDirectPlay': ?enableDirectPlay,
+      'EnableDirectStream': ?enableDirectStream,
+      'EnableTranscoding': ?enableTranscoding,
+      'AllowVideoStreamCopy': ?allowVideoStreamCopy,
+      'AllowAudioStreamCopy': ?allowAudioStreamCopy,
     };
     final response = await _http.post(
       '/Items/${_segment(itemId)}/PlaybackInfo',
-      queryParameters: query,
+      queryParameters: {
+        'userId': connection.userId,
+        for (final MapEntry(:key, :value) in negotiation.entries) key: value.toString(),
+      },
       // Opening a cold tuner can delay response headers beyond the normal
       // connect budget (#2274). Keep VOD and metadata-only requests unchanged.
       timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tune : null,
       body: {
         'UserId': connection.userId,
-        'MaxStreamingBitrate': ?maxStreamingBitrate,
-        'MediaSourceId': ?mediaSourceId,
-        'LiveStreamId': ?liveStreamId,
-        'StartTimeTicks': ?startTimeTicks,
-        'AudioStreamIndex': ?audioStreamIndex,
-        'SubtitleStreamIndex': ?subtitleStreamIndex,
-        'AutoOpenLiveStream': ?autoOpenLiveStream,
-        'EnableDirectPlay': ?enableDirectPlay,
-        'EnableDirectStream': ?enableDirectStream,
-        'EnableTranscoding': ?enableTranscoding,
-        'AllowVideoStreamCopy': ?allowVideoStreamCopy,
-        'AllowAudioStreamCopy': ?allowAudioStreamCopy,
+        ...negotiation,
         'DeviceProfile': <String, Object?>{
           'Name': 'Plezy',
           'MaxStreamingBitrate': ?maxStreamingBitrate,

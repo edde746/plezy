@@ -425,7 +425,6 @@ class KnownPlayers {
     return _windowsCommandExists('PotPlayerMini64');
   }
 
-  /// Find a known player by ID
   static ExternalPlayer? findById(String id) {
     try {
       return _allPlayers.firstWhere((p) => p.id == id);

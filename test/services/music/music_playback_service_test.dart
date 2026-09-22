@@ -332,9 +332,6 @@ class FakePlayer implements Player {
   bool get supportsSecondarySubtitles => false;
 
   @override
-  bool get attachesExternalSubtitlesAtOpen => true;
-
-  @override
   bool get detectsFpsAfterRender => false;
 
   @override
@@ -342,9 +339,6 @@ class FakePlayer implements Player {
 
   @override
   bool get providesNativeStats => false;
-
-  @override
-  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {}
 
   @override
   Future<void> setVolume(double volume) async => volumes.add(volume);
@@ -696,6 +690,15 @@ class _Harness {
     );
     await pumpEventQueue();
   }
+
+  void dispose() {
+    service.dispose();
+    for (final player in players) {
+      player.closeControllers();
+    }
+    controls.closeControllers();
+    serverManager.dispose();
+  }
 }
 
 class _AgentDownloads extends Fake with ChangeNotifier implements DownloadProvider {
@@ -799,14 +802,7 @@ void main() {
     h = _Harness.create(volumePersistenceWriter: (volume) => persistenceWriter(volume));
   });
 
-  tearDown(() {
-    h.service.dispose();
-    for (final player in h.players) {
-      player.closeControllers();
-    }
-    h.controls.closeControllers();
-    h.serverManager.dispose();
-  });
+  tearDown(() => h.dispose());
 
   group('shuffled session start (#1811)', () {
     final playlist = [for (var i = 0; i < 6; i++) _track('p$i')];
@@ -1916,14 +1912,7 @@ void main() {
 
     _Harness harnessWithStore() {
       final harness = _Harness.create(sessionStore: store());
-      addTearDown(() {
-        harness.service.dispose();
-        for (final player in harness.players) {
-          player.closeControllers();
-        }
-        harness.controls.closeControllers();
-        harness.serverManager.dispose();
-      });
+      addTearDown(harness.dispose);
       return harness;
     }
 

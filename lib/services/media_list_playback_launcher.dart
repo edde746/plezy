@@ -17,7 +17,9 @@ import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import 'jellyfin_sequential_launcher.dart';
 import 'play_queue_launcher.dart';
+import 'settings_service.dart';
 import '../widgets/dialog_action_button.dart';
+import '../utils/error_message_utils.dart';
 
 /// Result type for play queue launches. Same shape as the previous
 /// [PlexPlayQueueLauncher] result so existing call sites can keep their
@@ -206,14 +208,14 @@ abstract class MediaListPlaybackLauncher {
       }
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
+        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: localizedErrorReason(e)));
       }
       return PlayQueueError(e);
     } catch (e) {
       if (abort?.isAborted ?? false) return const PlayQueueCancelled();
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
+        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: localizedErrorReason(e)));
       }
       return PlayQueueError(e);
     } finally {
@@ -241,7 +243,16 @@ abstract class MediaListPlaybackLauncher {
     }
 
     playbackState.setPlaybackFromLocalQueue(queue, contextKey: contextKey);
-    final itemToPlay = queue.items[currentIndex];
+    var itemToPlay = queue.items[currentIndex];
+    // Shuffle + "start at beginning" (#2303): strip the resume offset so
+    // external players — which read viewOffsetMs directly and cannot take an
+    // explicit start position — also open at 0:00. The built-in player
+    // applies the same override per item in resolveOpenResumePosition.
+    if (queue.shuffled && (itemToPlay.viewOffsetMs ?? 0) > 0) {
+      if ((await SettingsService.getInstance()).read(SettingsService.shuffleStartsFromBeginning)) {
+        itemToPlay = itemToPlay.copyWith(viewOffsetMs: 0);
+      }
+    }
     if (navigateForTesting != null) {
       await navigateForTesting(itemToPlay);
     } else {

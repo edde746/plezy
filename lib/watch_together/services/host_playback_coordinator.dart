@@ -272,13 +272,7 @@ class HostPlaybackCoordinator {
 
   /// Bind an output without changing selected media, rate, or timeline.
   /// Same-media source reloads retain alignment obligations and wait deadlines.
-  void attach(
-    AttachedPlayer player, {
-    required String ratingKey,
-    required String serverId,
-    bool hasFirstFrame = false,
-    Future<void>? startupHold,
-  }) {
+  void attach(AttachedPlayer player, {required String ratingKey, required String serverId, Future<void>? startupHold}) {
     detachPlayer();
     _boundMediaKey = PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId);
     _player = player;
@@ -299,8 +293,7 @@ class HostPlaybackCoordinator {
     _playerSubscriptions.add(player.playingIntents.listen(_onLocalPlayingIntent));
     _playerSubscriptions.add(player.playingAcks.listen(_onAcknowledgedPlaying));
     unawaited(player.setCachePauseWait(hostCachePauseWait));
-    if (hasFirstFrame) {
-      player.firstFrameSeen = true;
+    if (player.firstFrameSeen) {
       _localReady = true;
       _maybeLocalLoaded();
     }
@@ -529,7 +522,14 @@ class HostPlaybackCoordinator {
   }
 
   void _maybeLocalLoaded() {
-    if (!_matchingPlayer || !_localReady || !_startupHoldResolved || !hasActiveEpoch) return;
+    if (!_matchingPlayer || !hasActiveEpoch) return;
+    if (!_localReady || !_startupHoldResolved) {
+      appLogger.d(
+        'WatchTogether: Host player not ready yet '
+        '(frame=${_localReady ? 'seen' : 'pending'}, startupHold=${_startupHoldResolved ? 'released' : 'pending'})',
+      );
+      return;
+    }
     final player = _player!;
     if (_phase != PlaybackPhase.playing && player.playing) unawaited(player.pause());
     _alignToTransitionAnchor(player);
@@ -819,6 +819,11 @@ class HostPlaybackCoordinator {
     _setPhase(PlaybackPhase.waitingForPeers);
     _broadcast();
     _checkAllReady();
+    // Readiness may have scheduled a start already. Only hold the player if
+    // the room still needs to wait; _scheduleStart owns any timed group hold.
+    if (_phase == PlaybackPhase.waitingForPeers && _matchingPlayer && _player!.playing) {
+      unawaited(_player!.pause());
+    }
   }
 
   void _scheduleAllReadyCheck(int delayMs) {
@@ -1058,7 +1063,6 @@ class HostPlaybackCoordinator {
     final changed = _phase != phase;
     _phase = phase;
     if (phase == PlaybackPhase.waitingForPeers) {
-      if (_matchingPlayer && _player!.playing) unawaited(_player!.pause());
       _armSafetyIfGated();
     } else {
       _cancelSafety();

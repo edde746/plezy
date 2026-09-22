@@ -125,7 +125,6 @@ class DownloadStorageService {
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
-      // Test write access with a temp file
       final testFile = File(path.join(dir.path, '.write_test_${DateTime.now().millisecondsSinceEpoch}'));
       await testFile.writeAsString('test');
       await testFile.delete();
@@ -302,35 +301,35 @@ class DownloadStorageService {
     return disc != null && disc > 1 ? '$disc-$number - $title' : '$number - $title';
   }
 
-  Future<Directory> getMovieDirectory(MediaItem movie) async {
+  /// Resolve [components] (a `*SafPathComponents` list) under the downloads
+  /// directory, creating it. Filesystem downloads join the same component
+  /// lists SAF uses so the two layouts cannot drift.
+  Future<Directory> _downloadsSubdirectory(List<String> components) async {
     final baseDir = await getDownloadsDirectory();
-    final movieFolder = _getMovieFolderName(movie);
-    return _ensureDirectoryExists(Directory(path.join(baseDir.path, 'Movies', movieFolder)));
+    return _ensureDirectoryExists(Directory(path.joinAll([baseDir.path, ...components])));
   }
+
+  /// Get movie directory: downloads/Movies/{Movie Name (YYYY)}/
+  Future<Directory> getMovieDirectory(MediaItem movie) => _downloadsSubdirectory(getMovieSafPathComponents(movie));
 
   /// Get movie video file path: .../Movie Name (YYYY)/Movie Name (YYYY).{ext}
   Future<String> getMovieVideoPath(MediaItem movie, String extension) async {
     final movieDir = await getMovieDirectory(movie);
-    final fileName = _getMovieFolderName(movie);
-    return path.join(movieDir.path, '$fileName.$extension');
+    return path.join(movieDir.path, getMovieSafFileName(movie, extension));
   }
 
   /// Get show directory: downloads/TV Shows/{Show Name} ({Year})/
   /// [showYear]: Pass the show's premiere year explicitly (for episodes, the episode's
   /// year may differ from the show's year). If not provided, uses metadata.year.
-  Future<Directory> getShowDirectory(MediaItem metadata, {int? showYear}) async {
-    final baseDir = await getDownloadsDirectory();
-    final showFolder = _getShowFolderName(metadata, showYear: showYear);
-    return _ensureDirectoryExists(Directory(path.join(baseDir.path, 'TV Shows', showFolder)));
-  }
+  Future<Directory> getShowDirectory(MediaItem metadata, {int? showYear}) =>
+      _downloadsSubdirectory(getShowSafPathComponents(metadata, showYear: showYear));
 
   /// Get season directory: .../TV Shows/{Show}/Season {XX}/
+  /// The season number comes from `metadata.parentIndex` (episode metadata),
+  /// matching [getEpisodeSafPathComponents].
   /// [showYear]: Pass the show's premiere year (not episode or season year)
-  Future<Directory> getSeasonDirectory(MediaItem metadata, {int? showYear}) async {
-    final showDir = await getShowDirectory(metadata, showYear: showYear);
-    final seasonNum = padNumber(metadata.parentIndex ?? 0, 2);
-    return _ensureDirectoryExists(Directory(path.join(showDir.path, 'Season $seasonNum')));
-  }
+  Future<Directory> getSeasonDirectory(MediaItem metadata, {int? showYear}) =>
+      _downloadsSubdirectory(getEpisodeSafPathComponents(metadata, showYear: showYear));
 
   /// Get base path info for episode files (season directory path and formatted filename).
   /// [showYear]: Pass the show's premiere year (not episode year)
@@ -379,17 +378,12 @@ class DownloadStorageService {
   }
 
   /// Get album directory for a track: downloads/Music/{Artist}/{Album}/
-  Future<Directory> getTrackAlbumDirectory(MediaItem track) async {
-    final baseDir = await getDownloadsDirectory();
-    return _ensureDirectoryExists(
-      Directory(path.join(baseDir.path, 'Music', _getTrackArtistFolderName(track), _getTrackAlbumFolderName(track))),
-    );
-  }
+  Future<Directory> getTrackAlbumDirectory(MediaItem track) => _downloadsSubdirectory(getTrackSafPathComponents(track));
 
   /// Get track audio file path: .../Music/{Artist}/{Album}/{NN} - {Title}.{ext}
   Future<String> getTrackAudioPath(MediaItem track, String extension) async {
     final albumDir = await getTrackAlbumDirectory(track);
-    return path.join(albumDir.path, '${_formatTrackFileName(track)}.$extension');
+    return path.join(albumDir.path, getTrackSafFileName(track, extension));
   }
 
   /// Convert an absolute file path to a relative path (for database storage)
@@ -517,6 +511,11 @@ class DownloadStorageService {
     return fallback;
   }
 
+  // Download layout, as directory components relative to the download root.
+  // SAF writes these under the tree URI; the `get*Directory` methods above
+  // join them onto [getDownloadsDirectory].
+
+  /// Movie directory components: ['Movies', {Movie Name (YYYY)}]
   List<String> getMovieSafPathComponents(MediaItem movie) {
     return ['Movies', _getMovieFolderName(movie)];
   }

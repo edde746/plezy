@@ -1,7 +1,6 @@
 part of '../../plex_client.dart';
 
 mixin _PlexPlaylistMethods on _PlexClientInternals {
-  static const int _playlistPageSize = 200;
   static const int _defaultPlaylistContainerSize = 100;
 
   ({List<PlexPlaylistDto> items, int totalSize}) _extractPlaylistListResult(
@@ -12,18 +11,6 @@ mixin _PlexPlaylistMethods on _PlexClientInternals {
 
   Future<_LibraryContentResult> _getPlaylist(String playlistId, {int? start, int? size, AbortController? abort}) =>
       _fetchPaginatedList('/playlists/$playlistId/items', start: start, size: size, abort: abort);
-
-  Future<List<PlexPlaylistDto>> _getPlaylists({String playlistType = 'video', bool? smart}) async {
-    try {
-      return await drainPages<PlexPlaylistDto>((start, size) async {
-        final page = await _getPlaylistsPage(playlistType: playlistType, smart: smart, start: start, size: size);
-        return LibraryPage(items: page.items, totalCount: page.totalSize, offset: start);
-      }, pageSize: _playlistPageSize);
-    } catch (e, st) {
-      appLogger.e('Failed to get playlists', error: e, stackTrace: st);
-      return [];
-    }
-  }
 
   Future<({List<PlexPlaylistDto> items, int totalSize})> _getPlaylistsPage({
     String playlistType = 'video',
@@ -57,12 +44,6 @@ mixin _PlexPlaylistMethods on _PlexClientInternals {
   }
 
   @override
-  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) async {
-    final playlists = await _getPlaylists(playlistType: playlistType, smart: smart);
-    return playlists.map(PlexMappers.mediaPlaylist).toList();
-  }
-
-  @override
   Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
     String playlistType = 'video',
     bool? smart,
@@ -88,12 +69,6 @@ mixin _PlexPlaylistMethods on _PlexClientInternals {
   Future<MediaPlaylist?> fetchPlaylistMetadata(String id) async {
     final playlist = await _getPlaylistMetadata(id);
     return playlist == null ? null : PlexMappers.mediaPlaylist(playlist);
-  }
-
-  @override
-  Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100}) async {
-    final page = await fetchPlaylistPage(id, start: offset, size: limit);
-    return page.items;
   }
 
   @override

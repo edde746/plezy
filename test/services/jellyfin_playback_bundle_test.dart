@@ -423,5 +423,31 @@ void main() {
       expect(extras.chapters, hasLength(2));
       expect(itemGets(), 1, reason: "the controls' extras load must be served by the row playback start just used");
     });
+
+    test('fetchPlaybackExtras with forceRefresh re-fetches instead of riding the fresh row', () async {
+      var chapterCount = 2;
+      final (client, itemGets) = countingClient(
+        () => jsonEncode({
+          'Id': 'item-fresh',
+          'Type': 'Movie',
+          'MediaSources': [
+            {'Id': 'src-fresh', 'Container': 'mkv'},
+          ],
+          'Chapters': [
+            for (var i = 0; i < chapterCount; i++) {'Name': 'Chapter $i', 'StartPositionTicks': i * 6000000000},
+          ],
+        }),
+      );
+      addTearDown(client.close);
+
+      expect(await client.fetchItem('item-fresh'), isNotNull);
+      expect(itemGets(), 1);
+      chapterCount = 3;
+
+      final extras = await client.fetchPlaybackExtras('item-fresh', forceRefresh: true);
+
+      expect(itemGets(), 2, reason: 'forceRefresh must re-probe the server, not ride the row it already has');
+      expect(extras.chapters, hasLength(3), reason: 'the forced refresh must report the re-fetched payload');
+    });
   });
 }

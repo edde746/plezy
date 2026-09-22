@@ -48,10 +48,7 @@ class AttachedPlayer {
     _subscriptions.add(player.streams.buffering.listen(_onBufferingEvent));
     _subscriptions.add(
       player.streams.playbackRestart.listen((_) {
-        if (!_disposed) {
-          firstFrameSeen = true;
-          _loadedSignalsController.add(null);
-        }
+        if (!_disposed) _loadedSignalsController.add(null);
       }),
     );
   }
@@ -81,8 +78,13 @@ class AttachedPlayer {
   String? ratingKey;
   String? serverId;
   String? mediaTitle;
-  bool firstFrameSeen = false;
   Future<void>? startupHold;
+
+  /// Whether the player's current file has rendered a frame. Read from the
+  /// player itself so a binding made after the frame — a rebind around a
+  /// reload, a promotion, a room that adopted media before the screen bound
+  /// its output — sees the same fact as one that watched it happen.
+  bool get firstFrameSeen => _player.state.hasRenderedFrame;
 
   bool wraps(Player player) => identical(_player, player);
 
@@ -91,7 +93,6 @@ class AttachedPlayer {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
-    required bool hasFirstFrame,
     Future<void>? startupHold,
     Future<void> Function(Duration target)? remoteSeek,
   }) {
@@ -99,7 +100,6 @@ class AttachedPlayer {
     this.ratingKey = ratingKey;
     this.serverId = serverId;
     this.mediaTitle = mediaTitle;
-    firstFrameSeen = hasFirstFrame;
     this.startupHold = startupHold;
     _remoteSeek = remoteSeek;
   }

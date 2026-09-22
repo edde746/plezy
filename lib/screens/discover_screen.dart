@@ -75,7 +75,7 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, FullRefreshable, TabVisibilityAware, FocusableTab, WidgetsBindingObserver {
+    with Refreshable, ManualRefreshable, FullRefreshable, TabVisibilityAware, FocusableTab, WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
   static const Duration _indicatorUpdateInterval = Duration(milliseconds: 200);
 
@@ -95,7 +95,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _switchingProfile = false;
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
-  int _currentHeroIndex = 0;
   final ValueNotifier<int> _heroIndex = ValueNotifier<int>(0);
   Timer? _autoScrollTimer;
   Timer? _indicatorTimer;
@@ -325,7 +324,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
   }
@@ -363,17 +361,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final generation = _discover.loadGeneration;
     final isNewLoad = generation != _seenLoadGeneration;
     _seenLoadGeneration = generation;
-    final heroOutOfBounds = _currentHeroIndex >= _onDeck.length;
+    final heroOutOfBounds = _heroIndex.value >= _onDeck.length;
     final signature = _renderSignature;
     final renderChanged = isNewLoad || heroOutOfBounds || signature != _seenRenderSignature;
     _seenRenderSignature = signature;
 
     if (renderChanged) {
       setState(() {
-        if (isNewLoad || heroOutOfBounds) {
-          _currentHeroIndex = 0;
-          _heroIndex.value = 0;
-        }
+        if (isNewLoad || heroOutOfBounds) _heroIndex.value = 0;
         _updateHubKeys();
       });
     }
@@ -432,20 +427,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       },
       onUp: _focusTopActions,
       onLeft: () {
-        if (_currentHeroIndex > 0) {
+        if (_heroIndex.value > 0) {
           _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
         } else {
           _navigateToSidebar();
         }
       },
       onRight: () {
-        if (_currentHeroIndex < _onDeck.length - 1) {
+        if (_heroIndex.value < _onDeck.length - 1) {
           _heroController.nextPage(duration: tokens(context).slow, curve: Curves.easeInOut);
         }
       },
       onSelect: () {
-        if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
-          navigateToMediaItem(context, _onDeck[_currentHeroIndex], playDirectly: true);
+        final heroIndex = _heroIndex.value;
+        if (_onDeck.isNotEmpty && heroIndex < _onDeck.length) {
+          navigateToMediaItem(context, _onDeck[heroIndex], playDirectly: true);
         }
       },
     )(node, event);
@@ -499,12 +495,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       // Validate current index is within bounds before calculating next page
-      if (_currentHeroIndex >= _onDeck.length) {
-        _currentHeroIndex = 0;
-        _heroIndex.value = 0;
-      }
+      if (_heroIndex.value >= _onDeck.length) _heroIndex.value = 0;
 
-      final nextPage = (_currentHeroIndex + 1) % _onDeck.length;
+      final nextPage = (_heroIndex.value + 1) % _onDeck.length;
       _heroController.animateToPage(nextPage, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
       // Wait for page transition to complete before resetting progress
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -592,7 +585,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     // Center the active dot when possible
-    final center = _currentHeroIndex;
+    final center = _heroIndex.value;
     final int start = (center - 2).clamp(0, totalDots - 5);
     final int end = start + 4; // 5 dots total (0-4 inclusive)
 
@@ -617,6 +610,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     return 8.0; // Normal size
+  }
+
+  @override
+  void manualRefresh() => unawaited(_refreshFromToolbar());
+
+  Future<void> _refreshFromToolbar() async {
+    final outcome = await _discover.refreshNow();
+    if (!mounted) return;
+    switch (outcome) {
+      case DiscoverRefreshOutcome.failed:
+        showErrorSnackBar(context, t.errors.unableToLoad(context: t.discover.title));
+      case DiscoverRefreshOutcome.degraded:
+        appLogger.w('Discover refresh completed with partial server failures');
+      case DiscoverRefreshOutcome.cancelled:
+      case DiscoverRefreshOutcome.refreshed:
+        break;
+    }
   }
 
   // Public method to refresh content (for normal navigation)
@@ -794,33 +804,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
             builder: (context, watchTogether, companionRemote, _) {
               final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
+              void openWatchTogether() =>
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen()));
+              void openCompanionRemote() {
+                if (isDesktop) {
+                  RemoteSessionDialog.show(context);
+                } else {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+                }
+              }
 
               return FocusableActionBar(
                 key: _actionBarKey,
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
-                  FocusableAction(
-                    icon: Symbols.refresh_rounded,
-                    iconColor: foregroundColor,
-                    onPressed: () async {
-                      final outcome = await _discover.refreshNow();
-                      if (!context.mounted) return;
-                      switch (outcome) {
-                        case DiscoverRefreshOutcome.failed:
-                          showErrorSnackBar(context, t.errors.unableToLoad(context: t.discover.title));
-                        case DiscoverRefreshOutcome.degraded:
-                          appLogger.w('Discover refresh completed with partial server failures');
-                        case DiscoverRefreshOutcome.cancelled:
-                        case DiscoverRefreshOutcome.refreshed:
-                          break;
-                      }
-                    },
-                  ),
+                  FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
                   // Watch Together
                   FocusableAction(
-                    onPressed: () =>
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                    onPressed: openWatchTogether,
                     child: Stack(
                       children: [
                         IconButton(
@@ -829,8 +831,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: watchTogether.isInSession ? 1 : 0,
                             color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
                           ),
-                          onPressed: () =>
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                          onPressed: openWatchTogether,
                           tooltip: t.watchTogether.title,
                         ),
                         if (watchTogether.isInSession && watchTogether.participantCount > 1)
@@ -854,13 +855,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   ),
                   // Companion Remote
                   FocusableAction(
-                    onPressed: () {
-                      if (isDesktop) {
-                        RemoteSessionDialog.show(context);
-                      } else {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
-                      }
-                    },
+                    onPressed: openCompanionRemote,
                     child: Stack(
                       children: [
                         IconButton(
@@ -869,16 +864,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: companionRemote.isConnected ? 1 : 0,
                             color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
                           ),
-                          onPressed: () {
-                            if (isDesktop) {
-                              RemoteSessionDialog.show(context);
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                              );
-                            }
-                          },
+                          onPressed: openCompanionRemote,
                           tooltip: t.companionRemote.title,
                         ),
                         if (companionRemote.isConnected)
@@ -1169,7 +1155,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 itemCount: _onDeck.length,
                 onPageChanged: (index) {
                   if (index >= 0 && index < _onDeck.length) {
-                    _currentHeroIndex = index;
                     _heroIndex.value = index;
                     _resetAutoScrollTimer();
                   }
@@ -1214,13 +1199,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       const SizedBox(width: 8),
                       ValueListenableBuilder<int>(
                         valueListenable: _heroIndex,
-                        builder: (context, _, _) {
+                        builder: (context, heroIndex, _) {
                           final range = _getVisibleDotRange();
                           return Row(
                             mainAxisSize: MainAxisSize.min,
                             children: List.generate(range.end - range.start + 1, (i) {
                               final index = range.start + i;
-                              final isActive = _currentHeroIndex == index;
+                              final isActive = heroIndex == index;
                               final dotSize = _getDotSize(index, range.start, range.end);
 
                               return isActive
@@ -1437,24 +1422,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                           mainAxisSize: .min,
                           children: [
-                            // Show logo, falling back to the name/title
-                            ClearLogoImage(
-                              client: heroClient,
-                              logoPath: heroItem.clearLogoPath,
-                              width: heroLogoWidth,
-                              height: heroLogoHeight,
-                              alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                              // The hero scrim washes artwork toward the scaffold
-                              // background; light themes recolor light-toned logos.
-                              logoToneTarget: logoToneTargetFor(
-                                surface: theme.scaffoldBackgroundColor,
-                                foreground: colorScheme.onSurface,
-                              ),
-                              fallbackBuilder: (context) => FittingTitleText(
-                                showName,
-                                style: heroTitleStyle,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                            // Show logo, falling back to the name/title. The
+                            // logo keeps its slot; the title gets a wider one.
+                            LayoutBuilder(
+                              builder: (context, constraints) => ClearLogoImage(
+                                client: heroClient,
+                                logoPath: heroItem.clearLogoPath,
+                                width: math.min(heroLogoWidth, constraints.maxWidth),
+                                height: heroLogoHeight,
+                                fallbackWidth: ClearLogoImage.fallbackWidthFor(
+                                  logoWidth: heroLogoWidth,
+                                  available: constraints.maxWidth,
+                                ),
+                                alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                                // The hero scrim washes artwork toward the scaffold
+                                // background; light themes recolor light-toned logos.
+                                logoToneTarget: logoToneTargetFor(
+                                  surface: theme.scaffoldBackgroundColor,
+                                  foreground: colorScheme.onSurface,
+                                ),
+                                fallbackBuilder: (context) => FittingTitleText(
+                                  showName,
+                                  style: heroTitleStyle,
+                                  textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                  alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                                ),
                               ),
                             ),
 

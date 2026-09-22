@@ -5,6 +5,7 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../mixins/debounced_media_search.dart';
 import '../services/catalog/catalog_source.dart';
+import '../services/settings_service.dart';
 import '../utils/focus_utils.dart';
 import '../utils/platform_detector.dart';
 import '../widgets/focusable_media_card.dart';
@@ -93,7 +94,7 @@ class _CatalogSearchScreenState extends State<CatalogSearchScreen> with Debounce
       return FocusableMediaCard(
         key: Key(item.globalKey),
         item: item,
-        forceListMode: true,
+        viewModeOverride: ViewMode.list,
         disableScale: true,
         focusNode: index == 0 ? firstResultFocusNode : null,
         onNavigateUp: index == 0 ? searchFocusNode.requestFocus : null,

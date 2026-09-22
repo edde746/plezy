@@ -217,18 +217,16 @@ Object? _readPartAccessible(Map json, String _) => _partAccessibleFromJson(json[
 
 Object? _readPartExists(Map json, String _) => _partExistsFromJson(json['Part']);
 
-Object? _readMediaParts(Map json, String _) {
-  return _mediaPartsFromJson(
-    json['Part'],
-    fallbackId: (json['id'] ?? '').toString(),
-    fallbackContainer: json['container']?.toString(),
-    media: Map<String, dynamic>.from(json),
-  );
-}
+Object? _readMediaParts(Map json, String _) => json;
 
 List<MediaPart> _mediaPartsFromReadValue(Object? raw) {
-  if (raw is List<MediaPart>) return raw;
-  return const [];
+  if (raw is! Map<String, dynamic>) return const [];
+  return _mediaPartsFromJson(
+    raw['Part'],
+    fallbackId: flexibleIntOrZero(raw['id']).toString(),
+    fallbackContainer: raw['container']?.toString(),
+    media: raw,
+  );
 }
 
 String _hubTitleFromJson(Object? raw) {
@@ -1145,14 +1143,17 @@ class PlexMappers {
 
   /// Map a parsed [PlexMediaVersionDto] into a [MediaVersion].
   static MediaVersion mediaVersion(PlexMediaVersionDto dto) {
-    final part = MediaPart(
-      id: dto.id.toString(),
-      streamPath: dto.partKey,
-      container: dto.container,
-      accessible: dto.accessible,
-      exists: dto.exists,
-    );
-    final parts = dto.parts.isEmpty ? [part] : dto.parts;
+    final parts = dto.parts.isEmpty
+        ? [
+            MediaPart(
+              id: dto.id.toString(),
+              streamPath: dto.partKey,
+              container: dto.container,
+              accessible: dto.accessible,
+              exists: dto.exists,
+            ),
+          ]
+        : dto.parts;
     return MediaVersion(
       id: dto.id.toString(),
       width: dto.width,
@@ -1166,26 +1167,8 @@ class PlexMappers {
   }
 
   /// Map a Plex Media JSON entry directly into a [MediaVersion].
-  static MediaVersion mediaVersionFromJson(Map<String, dynamic> json) {
-    final dto = PlexMediaVersionDto.fromJson(json);
-    final parts = _mediaPartsFromJson(
-      json['Part'],
-      fallbackId: dto.id.toString(),
-      fallbackContainer: dto.container,
-      media: json,
-    );
-    if (parts.isEmpty) return mediaVersion(dto);
-    return MediaVersion(
-      id: dto.id.toString(),
-      width: dto.width,
-      height: dto.height,
-      videoResolution: dto.videoResolution,
-      videoCodec: dto.videoCodec,
-      bitrate: dto.bitrate,
-      container: dto.container,
-      parts: parts,
-    );
-  }
+  static MediaVersion mediaVersionFromJson(Map<String, dynamic> json) =>
+      mediaVersion(PlexMediaVersionDto.fromJson(json));
 
   static MediaDisplayCriteria? displayCriteriaFromJson(Map<String, dynamic>? media, Map<String, dynamic>? videoStream) {
     if (videoStream == null) return null;

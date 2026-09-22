@@ -63,9 +63,11 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
     // Live TV keeps its own epoch accumulator: an absolute target is
-    // meaningless against a moving live edge (#1253).
-    if (widget.isLive && _live.captureBuffer != null) {
-      _liveSeek.seekBy(delta.inSeconds);
+    // meaningless against a moving live edge (#1253). Without a capture
+    // buffer there is no window to step through at all, so the skip is
+    // dropped rather than handed to the VOD accumulator.
+    if (widget.isLive) {
+      if (_live.captureBuffer != null) _liveSeek.seekBy(delta.inSeconds);
       return;
     }
     _relativeSkip.seekBy(delta);

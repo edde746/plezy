@@ -2,22 +2,23 @@ import AVFoundation
 import AVKit
 import UIKit
 
+/// Delegate to notify the plugin of PiP lifecycle events
+protocol MpvPipDelegate: AnyObject {
+  func pipWillStart()
+  func pipDidStart()
+  func pipDidStop(restored: Bool)
+  func pipDidFailToStart(error: Error?)
+  func pipSetPlaying(_ playing: Bool)
+  func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void)
+  var isPipPlaying: Bool { get }
+  var pipDuration: Double { get }
+}
+
 #if os(tvOS)
   // tvOS stub: AVPictureInPictureController has different constraints on tvOS
   // and is not supported by the Plezy flow. Provide a no-op shell so callers
   // in MpvPlayerPlugin compile unchanged; isSupported reports false so PiP is
   // never attempted at runtime.
-  protocol MpvPipDelegate: AnyObject {
-    func pipWillStart()
-    func pipDidStart()
-    func pipDidStop(restored: Bool)
-    func pipDidFailToStart(error: Error?)
-    func pipSetPlaying(_ playing: Bool)
-    func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void)
-    var isPipPlaying: Bool { get }
-    var pipDuration: Double { get }
-  }
-
   class MpvPipController: NSObject {
     static var isSupported: Bool { false }
     weak var delegate: MpvPipDelegate?
@@ -32,22 +33,10 @@ import UIKit
     }
     func stopPip() {}
     func invalidatePlaybackState() {}
-    func syncTimebase(currentTime: Double, isPlaying: Bool) {}
     func teardown() {}
   }
 #else
 
-  /// Delegate to notify the plugin of PiP lifecycle events
-  protocol MpvPipDelegate: AnyObject {
-    func pipWillStart()
-    func pipDidStart()
-    func pipDidStop(restored: Bool)
-    func pipDidFailToStart(error: Error?)
-    func pipSetPlaying(_ playing: Bool)
-    func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void)
-    var isPipPlaying: Bool { get }
-    var pipDuration: Double { get }
-  }
   protocol MpvPictureInPictureControlling: AnyObject {
     var isPictureInPicturePossible: Bool { get }
     func startPictureInPicture()
@@ -167,10 +156,6 @@ import UIKit
       autoStartEnabled = enabled
       if enabled && !wasEnabled { systemStartExpected = false }
       pipController?.setAutomaticStart(enabled)
-    }
-
-    /// MPVKit owns the sample-buffer layer timebase. PiP only reads it.
-    func syncTimebase(currentTime: Double, isPlaying: Bool) {
     }
 
     /// Ensure the layer has MPVKit's renderer-owned timebase before PiP starts.

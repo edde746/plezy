@@ -12,7 +12,6 @@ import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
 import 'library_change_event.dart';
-import 'library_first_character.dart';
 import 'library_query.dart';
 import 'live_tv_support.dart';
 import 'lyrics.dart';
@@ -136,10 +135,6 @@ abstract class MediaServerClient {
   /// distinctly from a generic network failure.
   Future<HealthStatus> checkHealth();
 
-  /// Convenience predicate over [checkHealth] for callers that only need a
-  /// boolean. Treats both `offline` and `authError` as unhealthy.
-  Future<bool> isHealthy() async => (await checkHealth()) == HealthStatus.online;
-
   /// Server-reported unique identifier (Plex `machineIdentifier`,
   /// Jellyfin `Id`). Returns `null` if the probe fails.
   Future<String?> getMachineIdentifier();
@@ -163,10 +158,9 @@ abstract class MediaServerClient {
   /// Series rows rather than the recursive episode expansion the server
   /// defaults to. Plex ignores it (the section id already pins the type).
   ///
-  /// The previous `plexStyleFilters: Map<String,String>` parameter was
-  /// retired — the library UI now builds a neutral [LibraryQuery] at the
-  /// call boundary via `libraryQueryFromPlexMap`, and the Plex client
-  /// translates back to wire params via [PlexLibraryQueryTranslator].
+  /// The library UI builds a neutral [LibraryQuery] at the call boundary via
+  /// `libraryQueryFromSelection`, and the Plex client translates it back to
+  /// wire params via [PlexLibraryQueryTranslator].
   Future<LibraryPage<MediaItem>> fetchLibraryPagedContent(
     String libraryId, {
     required LibraryQuery query,
@@ -177,10 +171,15 @@ abstract class MediaServerClient {
   /// Filter categories for [libraryId] plus any values the backend serves
   /// up-front. Plex returns categories without values (the FiltersBottomSheet
   /// fetches values lazily per category); Jellyfin returns both in a single
-  /// `/Items/Filters` call and pre-populates [LibraryFilterResult.cachedValues].
+  /// `/Items/Filters` call and Emby reassembles the same payload from its
+  /// per-facet routes, pre-populating [LibraryFilterResult.cachedValues].
   /// [libraryKind] lets backends use media-appropriate labels for synthetic
   /// filters. Backends that have no filter listing return
   /// [LibraryFilterResult.empty].
+  ///
+  /// A transient failure (timeout, connection) degrades to the synthetic
+  /// filters with a partial or empty value set; every other failure (auth,
+  /// 5xx, cancellation) throws, on Jellyfin and Emby alike.
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind});
 
   /// Backend-aware sort options for [libraryId]. Plex hits
@@ -189,13 +188,6 @@ abstract class MediaServerClient {
   /// has no opinion. [libraryType] disambiguates Plex's per-type sort
   /// lists (movie vs show).
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType});
-
-  /// First-character bucket counts for the alpha-jump bar in the library
-  /// browse view. Plex returns real counts from
-  /// `/library/sections/{id}/firstCharacter` (filterable); Jellyfin has no
-  /// equivalent endpoint and synthesises a 27-letter alphabet so the bar
-  /// can act as a name-prefix filter (`size: 1` per entry).
-  Future<List<LibraryFirstCharacter>> fetchFirstCharacters(String libraryId, {Map<String, String>? filters});
 
   /// Queue a metadata refresh for [libraryId]. The id is the backend-native
   /// library identifier (Plex section id / Jellyfin view item id, both
@@ -388,7 +380,12 @@ abstract class MediaServerClient {
     HubFetchDiagnostics? diagnostics,
   });
 
-  /// "More like this" recommendations for [id].
+  /// Recommendations for [id]. Plex returns every row of
+  /// `/hubs/metadata/{id}/related` — collections, similar titles, and
+  /// "more from" director/actor — and its hub transport degrades any failure
+  /// to `[]` (logged) so a dead row never takes the screen down. Jellyfin/Emby
+  /// return exactly one "More like this" row from `/Items/{id}/Similar`, or
+  /// `[]` when it is empty, and request failures throw.
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});
 
   /// Playable extras attached to [id] (trailers, featurettes, deleted scenes,
@@ -396,9 +393,6 @@ abstract class MediaServerClient {
   /// the normal video playback flow; external/remote trailer URLs are out of
   /// scope for this neutral surface.
   Future<List<MediaItem>> fetchExtras(String id);
-
-  /// Media featuring a specific person/actor.
-  Future<List<MediaItem>> fetchPersonMedia(String personId);
 
   /// Page through media featuring a specific person/actor.
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(String personId, {int? start, int? size, AbortController? abort});
@@ -448,11 +442,8 @@ abstract class MediaServerClient {
   /// throw [UnsupportedError]. Throws [MediaServerHttpException] on failure.
   Future<void> setFavorite(MediaItem item, bool isFavorite);
 
-  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart});
-
   /// Page through server playlists. Used by the library Playlists tab so large
-  /// servers can render incrementally; [fetchPlaylists] remains the complete
-  /// list helper for dialogs and bulk operations.
+  /// servers can render incrementally.
   Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
     String playlistType = 'video',
     bool? smart,
@@ -461,10 +452,8 @@ abstract class MediaServerClient {
     AbortController? abort,
   });
 
-  /// Metadata only — items are fetched via [fetchPlaylistItems].
+  /// Metadata only — items are fetched via [fetchPlaylistPage].
   Future<MediaPlaylist?> fetchPlaylistMetadata(String id);
-
-  Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100});
 
   /// Page through items in [id]. Backends preserve playlist order and include
   /// per-playlist item ids where the server exposes them.
@@ -484,7 +473,7 @@ abstract class MediaServerClient {
   Future<bool> deletePlaylist(MediaPlaylist playlist);
 
   /// Move an item to a new position within a playlist. The item must have come
-  /// from this client's [fetchPlaylistItems] (i.e. carry a per-playlist id).
+  /// from this client's [fetchPlaylistPage] (i.e. carry a per-playlist id).
   ///
   /// [newIndex]  - 0-based target position after the move
   /// [afterItem] - the item that should sit immediately before [item] after
@@ -504,16 +493,12 @@ abstract class MediaServerClient {
   /// the same caveats about backend tagging and the per-playlist id.
   Future<bool> removeFromPlaylist({required String playlistId, required MediaItem item});
 
-  /// Collections in [libraryId]. Plex hits `/library/sections/{id}/collections`;
-  /// Jellyfin resolves its top-level `boxsets` view and walks that root in
-  /// bounded pages.
-  /// Each result carries `kind == MediaKind.collection`.
-  Future<List<MediaItem>> fetchCollections(String libraryId);
-
-  /// Page through collections in [libraryId]. Used by the library Collections
-  /// tab so large Jellyfin/Plex servers can render incrementally while the
-  /// user scrolls. [fetchCollections] remains the complete-list helper for
-  /// dialogs and bulk operations.
+  /// Page through collections in [libraryId]. Plex hits
+  /// `/library/sections/{id}/collections`; Jellyfin/Emby keep BoxSets in one
+  /// server-wide root, so this lists every collection regardless of
+  /// [libraryId]. Each result carries `kind == MediaKind.collection`. Used by
+  /// the library Collections tab so large servers can render incrementally
+  /// while the user scrolls.
   Future<LibraryPage<MediaItem>> fetchCollectionsPage(
     String libraryId, {
     int? start,
@@ -603,8 +588,11 @@ abstract class MediaServerClient {
 
   /// External IDs (IMDb / TMDB / TVDB) for [itemId]. Plex hits
   /// `/library/metadata/{id}?includeGuids=1`; Jellyfin reads the inline
-  /// `ProviderIds` map. Returns an empty [ExternalIds] when the server
-  /// has no external mapping for the item.
+  /// `ProviderIds` map. Returns an empty [ExternalIds] only when the server
+  /// has no external mapping for the item, including a 404 for an item that
+  /// is gone. Auth, server, transport and cancellation failures throw from
+  /// both backends, so a caller that wants "unknown" and "unmatched" to look
+  /// the same has to catch.
   Future<ExternalIds> fetchExternalIds(String itemId);
 
   /// Reverse lookup: find every library movie/show matching any of [ids].
@@ -810,10 +798,23 @@ abstract class MediaServerClient {
   ///
   /// [mediaIndex] selects among multiple media versions when an item has them.
   ///
-  /// A successful applicable response may contain no URL. Request,
-  /// cancellation, and malformed-payload failures throw rather than returning
-  /// a partial resolution.
+  /// A successful applicable response may contain no URL. The primary lookup
+  /// (item metadata, media source, direct-stream URL) throws on request,
+  /// cancellation, and malformed-payload failures. The external-subtitle
+  /// enrichment leg is best-effort: when Jellyfin/Emby's PlaybackInfo fails
+  /// (other than by auth rejection or cancellation, which still throw) or is
+  /// malformed, the result carries the static-stream URL alone with
+  /// [DownloadResolution.externalSubtitlesResolved] false, which the download
+  /// pipeline treats as "retry subtitles later", never as a failed download.
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
+
+  /// Return [item] with `libraryId`/`libraryTitle` populated when the backend
+  /// can resolve them. Plex items already carry librarySectionID/Title and are
+  /// returned unchanged; Jellyfin/Emby look the owning CollectionFolder up via
+  /// `/Items/{id}/Ancestors`. Used by the download pipeline to stamp library
+  /// identity onto the durable row. May throw — callers treat failure as
+  /// "unstamped" and must not let it block their work.
+  Future<MediaItem> stampLibrary(MediaItem item);
 
   /// The artwork files the download pipeline should persist for [item] so
   /// the offline UI can render its poster, clear logo, and background art.
@@ -823,9 +824,11 @@ abstract class MediaServerClient {
 
   /// Resolve a fully-qualified URL the OS-level external player (VLC, Infuse,
   /// MX Player, etc.) can fetch directly. Plex builds this from the chosen
-  /// media version's part path; Jellyfin returns its `/Videos/{id}/stream`
-  /// endpoint with `Static=true` so transcoding is bypassed. Returns null only
-  /// when a successful response has no playable URL for the item. Request,
+  /// media version's part path; Jellyfin returns its
+  /// `/Videos/{id}/stream.{container}` endpoint with `Static=true` so
+  /// transcoding is bypassed and the player gets a container extension hint
+  /// (required for disc images such as ISO). Returns null only when a
+  /// successful response has no playable URL for the item. Request,
   /// cancellation, and malformed-payload failures throw.
   ///
   /// Deliberately separate from the in-app playback funnel

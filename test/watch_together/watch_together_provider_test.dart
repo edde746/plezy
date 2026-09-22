@@ -373,13 +373,6 @@ void main() {
       expect(p.currentMediaRatingKey, isNull);
       p.dispose();
     });
-
-    test('setBackgrounded is null-safe without a sync controller', () {
-      final p = WatchTogetherProvider();
-      expect(() => p.setBackgrounded(true), returnsNormally);
-      expect(() => p.setBackgrounded(false), returnsNormally);
-      p.dispose();
-    });
   });
 
   group('WatchTogetherProvider — media switch dispatch', () {
@@ -1136,7 +1129,7 @@ void main() {
       final factory = _FakePeerServiceFactory();
       final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
       addTearDown(provider.dispose);
-      final player = FakeSyncPlayer();
+      final player = FakeSyncPlayer(hasRenderedFrame: true);
       addTearDown(player.dispose);
       await provider.joinSession('roundtrip', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
       final service = factory.services.single;
@@ -1149,13 +1142,7 @@ void main() {
       };
       provider.onPlayerMediaSwitched = (key, server, _) async {
         reloads.add(key);
-        provider.bindPlayer(
-          player,
-          ratingKey: key,
-          serverId: server,
-          hasFirstFrame: true,
-          lease: provider.capturePlaybackLease()!,
-        );
+        provider.bindPlayer(player, ratingKey: key, serverId: server, lease: provider.capturePlaybackLease()!);
         return true;
       };
       void publishA(int seq) => service.emitMessage(
@@ -1250,7 +1237,7 @@ void main() {
       final factory = _FakePeerServiceFactory();
       final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
       addTearDown(provider.dispose);
-      final player = FakeSyncPlayer();
+      final player = FakeSyncPlayer(hasRenderedFrame: true);
       addTearDown(player.dispose);
       await provider.createSession(
         controlMode: ControlMode.anyone,
@@ -1269,13 +1256,7 @@ void main() {
         provider.unbindPlayer();
         currentKey = key;
         reloads.add(key);
-        provider.bindPlayer(
-          player,
-          ratingKey: key,
-          serverId: server,
-          hasFirstFrame: true,
-          lease: provider.capturePlaybackLease()!,
-        );
+        provider.bindPlayer(player, ratingKey: key, serverId: server, lease: provider.capturePlaybackLease()!);
         return true;
       };
       provider.selectMedia(
@@ -1286,13 +1267,7 @@ void main() {
         rate: 1,
         lease: provider.capturePlaybackLease(selection: true),
       );
-      provider.bindPlayer(
-        player,
-        ratingKey: currentKey,
-        serverId: 'srv',
-        hasFirstFrame: true,
-        lease: provider.capturePlaybackLease()!,
-      );
+      provider.bindPlayer(player, ratingKey: currentKey, serverId: 'srv', lease: provider.capturePlaybackLease()!);
       service.emitHostChanged('other-host');
       await _flushProviderEvents();
       for (final (seq, key) in [(1, 'B'), (2, 'C')]) {

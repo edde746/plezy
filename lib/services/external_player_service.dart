@@ -59,7 +59,7 @@ class ExternalPlayerService {
   /// a local file path for downloaded content) or by asking [client] to
   /// resolve the streaming URL for [metadata]. Each backend implements
   /// `resolveExternalPlaybackUrl` for the right shape (Plex part URL,
-  /// Jellyfin `/Videos/{id}/stream?Static=true`).
+  /// Jellyfin `/Videos/{id}/stream.{container}?Static=true`).
   static Future<bool> launch({
     required BuildContext context,
     MediaItem? metadata,

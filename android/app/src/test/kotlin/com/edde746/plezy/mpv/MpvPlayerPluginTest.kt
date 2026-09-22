@@ -849,7 +849,7 @@ class MpvPlayerPluginTest {
     val core = MpvPlayerCore(activity)
     var created = 0
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ ->
+    plugin.createCore = { _, _, _, _ ->
       created++
       core
     }
@@ -890,7 +890,7 @@ class MpvPlayerPluginTest {
     setPluginField(plugin, "activity", activity)
     val core = MpvPlayerCore(activity)
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ -> core }
+    plugin.createCore = { _, _, _, _ -> core }
     plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
     val result = RecordingResult()
 
@@ -922,7 +922,7 @@ class MpvPlayerPluginTest {
     val core = MpvPlayerCore(activity)
     var created = 0
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ ->
+    plugin.createCore = { _, _, _, _ ->
       created++
       core
     }
@@ -961,7 +961,7 @@ class MpvPlayerPluginTest {
     setPluginField(plugin, "activity", activity)
     val successor = MpvPlayerCore(activity)
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _, _ -> successor }
+    plugin.createCore = { _, _, _, _ -> successor }
     plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
     val result = RecordingResult()
 
@@ -1969,9 +1969,10 @@ class MpvPlayerPluginTest {
   @Test
   fun dvConversionModeMapsOntoForkDecoderOptions() {
     // The app-level `dv-conversion-mode` property must translate to the fork
-    // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
-    // modes. Robolectric reports no Dolby Vision display, so `auto` takes the
-    // no-DV branch deterministically.
+    // FFmpeg hevc_mediacodec options. Robolectric reports no Dolby Vision
+    // display and no file is loaded, so `auto` takes the no-DV branch for a
+    // file with no DOVI record deterministically; the per-file answer for a
+    // loaded P5/P8 is GpuVoPolicyTest's.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
@@ -2034,45 +2035,15 @@ class MpvPlayerPluginTest {
   }
 
   @Test
-  fun decoderOptionsMergePreservesBackendChoiceAcrossDvChanges() {
-    // FFmpeg applies duplicate AVOptions in order; inspect the effective
-    // settings rather than requiring a particular serialization of the list.
-    fun effective(options: String): Map<String, String> = options.split(',').associate {
-      it.substringBefore('=') to it.substringAfter('=')
-    }
-
-    val converted = MpvPlayerCore.mergeDecoderOptions(
-      "ndk_codec=1,threads=4,dolby_vision=0,dv_p7_mode=strip",
-      "dolby_vision=1,dv_p7_mode=convert"
-    )
-    assertEquals(
-      mapOf("ndk_codec" to "1", "threads" to "4", "dolby_vision" to "1", "dv_p7_mode" to "convert"),
-      effective(converted)
-    )
-
-    // A user can explicitly choose Java and tune unrelated AVOptions. A later
-    // DV change must replace only the DV choices, not reinstate the NDK default.
-    val nativeDv = MpvPlayerCore.mergeDecoderOptions(
-      "$converted,ndk_codec=0,threads=2",
-      "dolby_vision=1,dv_p7_mode=native"
-    )
-    assertEquals(
-      mapOf("ndk_codec" to "0", "threads" to "2", "dolby_vision" to "1", "dv_p7_mode" to "native"),
-      effective(nativeDv)
-    )
-  }
-
-  @Test
   fun asynchronousMediaCodecFollowsMedia3sPlatformThreshold() {
     // Media3 trusts asynchronous MediaCodec from API 31; below it the decoder
     // stays synchronous (bounded waits, polled), on the NDK either way.
-    fun effective(options: String): Map<String, String> = options.split(',').associate {
-      it.substringBefore('=') to it.substringAfter('=')
-    }
-    assertEquals(mapOf("ndk_codec" to "1", "ndk_async" to "1"), effective(MpvPlayerCore.initialDecoderOptions(31)))
-    assertEquals(mapOf("ndk_codec" to "1", "ndk_async" to "1"), effective(MpvPlayerCore.initialDecoderOptions(36)))
-    assertEquals(mapOf("ndk_codec" to "1"), effective(MpvPlayerCore.initialDecoderOptions(30)))
-    assertEquals(mapOf("ndk_codec" to "1"), effective(MpvPlayerCore.initialDecoderOptions(25)))
+    fun entries(sdkInt: Int): Map<String, String> = MpvPlayerCore.initialDecoderEntries(sdkInt).toMap()
+    assertEquals("1", entries(31)["ndk_async"])
+    assertEquals("1", entries(36)["ndk_async"])
+    assertNull(entries(30)["ndk_async"])
+    assertNull(entries(25)["ndk_async"])
+    assertEquals("1", entries(25)["ndk_codec"])
   }
 
   private fun awaitQueueEntry(

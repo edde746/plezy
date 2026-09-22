@@ -151,7 +151,6 @@ class PlexAuthService {
     return false;
   }
 
-  /// Create a PIN for authentication
   Future<Map<String, dynamic>> createPin() async {
     final response = await _http.post(
       '$_plexApiBase/pins?strong=true',
@@ -262,7 +261,6 @@ class PlexAuthService {
     return servers;
   }
 
-  /// Get user information
   Future<Map<String, dynamic>> getUserInfo(String authToken) async {
     final response = await _getUser(authToken);
     _checkStatus(response);
@@ -299,7 +297,6 @@ class PlexAuthService {
     return getAccountPreferences(authToken);
   }
 
-  /// Get home users for the authenticated user
   Future<PlexHome> getHomeUsers(String authToken) async {
     final response = await _getClientsApi('/home/users', headers: _getCommonHeaders(authToken: authToken));
     _checkStatus(response);
@@ -380,15 +377,22 @@ class PlexServer {
 
     final List<dynamic> connectionsJson = json['connections'] as List<dynamic>;
     final connections = <PlexConnection>[];
+    // [toJson] persists the expanded list, so a stored server comes back with
+    // its synthetic fallbacks already in `connections`. Keeping the first of
+    // each equivalent endpoint makes re-expansion idempotent.
+    final seen = <String>{};
+    void addConnection(PlexConnection connection) {
+      if (seen.add(connection._endpointIdentity)) connections.add(connection);
+    }
 
     // Parse connections and generate HTTP fallbacks for HTTPS connections
     for (final c in connectionsJson) {
       try {
         final connection = PlexConnection.fromJson(c as Map<String, dynamic>);
-        connections.add(connection);
+        addConnection(connection);
 
         if (_allowsHttpFallback(connection)) {
-          connections.add(connection.toHttpFallback());
+          addConnection(connection.toHttpFallback());
         }
       } catch (e) {
         // Skip invalid connections rather than failing the entire server
@@ -574,7 +578,6 @@ class PlexServer {
     }
   }
 
-  /// Update a connection's URI to use the specified URL
   PlexConnection _updateConnectionUrl(PlexConnection connection, String url) {
     // If the URL matches the original URI, return as-is
     if (url == connection.uri) {
@@ -1044,6 +1047,11 @@ class PlexConnection {
       'IPv6': ipv6,
     };
   }
+
+  /// Identity used by [PlexServer.fromJson] to drop an endpoint it already
+  /// holds. Metadata is part of it: two rows for the same URL that disagree
+  /// about local/relay/IPv6 are different candidates.
+  String get _endpointIdentity => '$protocol|$address|$port|$uri|$local|$relay|$ipv6';
 
   /// Always return an HTTP URL that points directly at the IP/port combo.
   String get httpDirectUrl {

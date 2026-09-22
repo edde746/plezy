@@ -1552,21 +1552,85 @@ void main() {
     expect(result.playMethod, 'DirectPlay', reason: 'direct play lets the native player read it');
   });
 
-  test('transcode params preserve resolved media and part indices', () {
-    final client = makeClient((_) async => http.Response('not used', 500));
+  test('the transcode decision targets the resolved media and part, not the first ones', () async {
+    Uri? decisionUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/metadata/42') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {
+                  'ratingKey': '42',
+                  'Media': [
+                    {
+                      'id': 7,
+                      'container': 'mkv',
+                      'bitrate': 13137,
+                      'height': 1080,
+                      'Part': [
+                        {'id': 10, 'key': '/library/parts/10/file.mkv'},
+                      ],
+                    },
+                    {
+                      'id': 8,
+                      'container': 'mkv',
+                      'bitrate': 13137,
+                      'height': 1080,
+                      'Part': [
+                        {'id': 20, 'key': '/library/parts/20/file.mkv', 'exists': 0, 'accessible': 1},
+                        {'id': 21, 'key': '/library/parts/21/file.mkv', 'exists': 1, 'accessible': 1},
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path == '/video/:/transcode/universal/decision') {
+        decisionUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'transcodeDecisionCode': 1001,
+              'Metadata': [
+                {
+                  'Media': [
+                    {'container': 'mp4', 'protocol': 'hls', 'selected': true},
+                  ],
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('unexpected request', 500);
+    });
     addTearDown(client.close);
 
-    final params = client.buildTranscodeParamsForTesting(
-      ratingKey: '42',
-      mediaIndex: 1,
-      partIndex: 2,
-      preset: TranscodeQualityPreset.p720_3mbps,
-      sessionIdentifier: 'session-id',
-      transcodeSessionId: 'transcode-id',
+    final result = await client.getPlaybackInitialization(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(id: '42', backend: MediaBackend.plex, serverId: 'server-id'),
+        selectedMediaIndex: 1,
+        qualityPreset: TranscodeQualityPreset.p1080_10mbps,
+        sessionIdentifier: 'session-id',
+        transcodeSessionId: 'transcode-id',
+      ),
     );
 
-    expect(params['mediaIndex'], '1');
-    expect(params['partIndex'], '2');
+    expect(result.playMethod, 'Transcode');
+    expect(result.selectedMediaIndex, 1);
+    // The second version's first part is missing on disk, so the playable
+    // part is index 1; a decision aimed at Media[0]/Part[0] would transcode
+    // the wrong file.
+    expect(decisionUri?.queryParameters, containsPair('mediaIndex', '1'));
+    expect(decisionUri?.queryParameters, containsPair('partIndex', '1'));
   });
 
   test('download transcode targets progressive MKV with H.264, AAC, and the selected audio stream', () {

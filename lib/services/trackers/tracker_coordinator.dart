@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../../exceptions/media_server_exceptions.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
@@ -191,7 +192,24 @@ class TrackerCoordinator {
       _resolver = _newResolver(client, needsFribb: _anyTrackerNeedsFribb);
       _resolverClientKey = clientKey;
     }
-    final ctx = await _buildContext(metadata, _resolver!);
+    final TrackerContext? ctx;
+    try {
+      ctx = await _buildContext(metadata, _resolver!);
+    } catch (e, st) {
+      if (revision != _playbackRevision) return;
+      // Every backend throws here on auth/5xx/transport — only "no mapping"
+      // is an empty id set — so this is a server (or mapping download)
+      // failure, not an unmatched item, and nothing will scrobble: worth a
+      // warning, once per playback. A cancellation is the client being torn
+      // down mid-lookup and says nothing about the server.
+      if (e is MediaServerHttpException && e.isCancellation) {
+        appLogger.d('Trackers: id resolution cancelled for ${metadata.id}', error: e);
+      } else {
+        appLogger.w('Trackers: id resolution failed for ${metadata.id}, not scrobbling', error: e, stackTrace: st);
+      }
+      _reset();
+      return;
+    }
     if (revision != _playbackRevision) return;
     if (ctx == null) {
       appLogger.d('Trackers: no external IDs for ${metadata.id}');

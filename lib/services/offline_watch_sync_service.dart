@@ -11,6 +11,7 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/watch_progress.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../utils/app_logger.dart';
 import '../utils/active_client_scope.dart';
 import '../utils/global_key_utils.dart';
@@ -43,7 +44,7 @@ typedef _OfflineWatchReplayResult = ({
 /// - Queuing manual watch/unwatch actions
 /// - Auto-marking items as watched at the server's threshold
 /// - Syncing queued actions when connectivity is restored
-class OfflineWatchSyncService extends ChangeNotifier {
+class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifierMixin {
   final AppDatabase _database;
   final MultiServerManager _serverManager;
 
@@ -51,7 +52,6 @@ class OfflineWatchSyncService extends ChangeNotifier {
   VoidCallback? _offlineModeListener;
   bool _isSyncing = false;
   bool _isBidirectionalSyncing = false;
-  bool _isShutDown = false;
   DateTime? _lastSyncTime;
   bool _hasPerformedStartupSync = false;
   String? _activeProfileId;
@@ -117,7 +117,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Progress recorded *after* the mark is a genuine rewatch: it is queued
   /// later, so it is never touched here.
   void _onWatchStateChanged(WatchStateEvent event) {
-    if (_isShutDown) return;
+    if (isDisposed) return;
     if (event.changeType != WatchStateChangeType.watched && event.changeType != WatchStateChangeType.unwatched) {
       return;
     }
@@ -148,7 +148,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       );
       if (removed == 0) return;
       appLogger.d('Dropped $removed superseded queued progress action(s) for $serverId:$itemId');
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       appLogger.w('Failed to drop superseded queued progress for $serverId:$itemId', error: e);
     }
@@ -211,7 +211,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Push always happens immediately. Pull respects [minSyncInterval] unless [force] is true.
   Future<void> _performBidirectionalSync({bool force = false}) async {
-    if (_isShutDown) return;
+    if (isDisposed) return;
 
     // Prevent overlapping bidirectional syncs
     if (_isBidirectionalSyncing) {
@@ -252,7 +252,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// On mobile, always syncs immediately (device-switching scenario).
   /// On desktop, respects the throttle interval.
   void onAppResumed() {
-    if (_isShutDown) return;
+    if (isDisposed) return;
     if (_offlineModeSource?.isOffline != true) {
       final isMobile = Platform.isIOS || Platform.isAndroid;
       appLogger.d('App resumed - ${isMobile ? "forcing" : "checking"} sync');
@@ -265,7 +265,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Triggers the initial sync now that PlexClients are available.
   /// Only runs once per app session.
   void onServersConnected() {
-    if (_isShutDown) return;
+    if (isDisposed) return;
     if (_hasPerformedStartupSync) return;
     _hasPerformedStartupSync = true;
 
@@ -312,7 +312,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       'Queued offline progress: $serverId:$itemId at ${(viewOffset / 1000).toStringAsFixed(0)}s / $durationLabel ($percentLabel)',
     );
 
-    notifyListeners();
+    safeNotifyListeners();
     return (clientScopeId: clientScopeId, profileId: profileId, rowId: queued.rowId, revision: queued.revision);
   }
 
@@ -338,7 +338,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     );
 
     appLogger.d('Queued offline mark $actionType: $serverId:$itemId');
-    notifyListeners();
+    safeNotifyListeners();
     return (clientScopeId: clientScopeId, profileId: profileId, rowId: queued.rowId, revision: queued.revision);
   }
 
@@ -435,7 +435,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
 
     _isSyncing = true;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       await _adoptLegacyWatchActionsForActiveProfile();
@@ -505,7 +505,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       }
     } finally {
       _isSyncing = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -925,7 +925,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
         onWatchStatesRefreshed?.call();
       }
 
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       appLogger.w('Error syncing watch states from server: $e');
     }
@@ -934,12 +934,11 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Clear all pending watch actions (e.g., when logging out).
   Future<void> clearAll() async {
     await _database.clearAllWatchActions();
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   @override
   void dispose() {
-    _isShutDown = true;
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
     if (_offlineModeSource != null && _offlineModeListener != null) {

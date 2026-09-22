@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
@@ -174,6 +175,33 @@ void main() {
         PlatformDetector.isPackagedExecutablePath(r'C:\Users\someone\Downloads\WindowsApps-backup\plezy.exe'),
         isFalse,
       );
+    });
+  });
+
+  group('isTablet', () {
+    Future<bool> isTabletAt(WidgetTester tester, Size size, double devicePixelRatio) async {
+      late bool result;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(size: size, devicePixelRatio: devicePixelRatio),
+          child: Builder(
+            builder: (ctx) {
+              result = PlatformDetector.isTablet(ctx);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      return result;
+    }
+
+    testWidgets('classifies by the logical diagonal, independent of devicePixelRatio', (tester) async {
+      // Logical pixels are already density-independent; a dpr-scaled
+      // conversion inflated a low-density handset past the tablet threshold.
+      expect(await isTabletAt(tester, const Size(390, 844), 3), isFalse, reason: 'high-density phone');
+      expect(await isTabletAt(tester, const Size(360, 640), 1.5), isFalse, reason: 'low-density phone');
+      expect(await isTabletAt(tester, const Size(820, 1180), 2), isTrue, reason: 'large tablet');
+      expect(await isTabletAt(tester, const Size(600, 960), 2), isTrue, reason: 'small tablet at the 7-inch edge');
     });
   });
 }

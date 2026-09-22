@@ -1561,20 +1561,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void setRepeatMode(MusicRepeatMode mode) {
     if (_queue.repeatMode == mode) return;
     _queue.repeatMode = mode;
-    _rearmIfNeeded();
-    _syncControlsAvailability();
-    _persistSessionSnapshot();
-    notifyListeners();
+    _afterQueueEdit();
   }
 
   @override
   void toggleShuffle() {
     if (_queue.isEmpty) return;
     _queue.toggleShuffle();
-    _rearmIfNeeded();
-    _syncControlsAvailability();
-    _persistSessionSnapshot();
-    notifyListeners();
+    _afterQueueEdit();
   }
 
   @override
@@ -1591,20 +1585,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       unawaited(_advanceTo(_queue.cursor));
       return;
     }
-    _rearmIfNeeded();
-    _syncControlsAvailability();
-    _persistSessionSnapshot();
-    notifyListeners();
+    _afterQueueEdit();
   }
 
   @override
   void reorder(int from, int to) {
     if (from == to) return;
     _queue.move(from, to);
-    _rearmIfNeeded();
-    _syncControlsAvailability();
-    _persistSessionSnapshot();
-    notifyListeners();
+    _afterQueueEdit();
   }
 
   @override
@@ -1637,16 +1625,17 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     } else {
       _queue.addToEnd(tracks);
     }
-    _rearmIfNeeded();
-    _syncControlsAvailability();
-    _persistSessionSnapshot();
-    notifyListeners();
+    _afterQueueEdit();
   }
 
   @override
   void clearUpcoming() {
     if (_queue.isEmpty) return;
     _queue.clearUpcoming();
+    _afterQueueEdit();
+  }
+
+  void _afterQueueEdit() {
     _rearmIfNeeded();
     _syncControlsAvailability();
     _persistSessionSnapshot();

@@ -3,6 +3,7 @@ package com.edde746.plezy.mpv
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -40,46 +41,76 @@ class GpuVoPolicyTest {
   }
 
   @Test
-  fun `auto drives the DV decoder whenever the device can convert for the sink`() {
-    // A DV display takes full DV, P7 included.
-    assertEquals(
-      GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "auto"),
-      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = true, hasDvDecoder = true)
-    )
-    // No DV display but a decoder that converts: keep the DV path for
-    // single-layer profiles, keep stripping dual-layer P7 to its base layer.
-    assertEquals(
-      GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "strip"),
-      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, hasDvDecoder = true)
-    )
-    // Nothing on the device can convert, so software reshaping has to.
-    assertEquals(
-      GpuVoPolicy.DvDecoderOptions(dolbyVision = false, p7Mode = "strip"),
-      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, hasDvDecoder = false)
-    )
+  fun `a DV display takes every profile on the DV decoder`() {
+    for (profile in listOf(null, 5L, 7L, 8L)) {
+      for (p5Decoder in listOf(false, true)) {
+        assertEquals(
+          "profile=$profile p5=$p5Decoder",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "auto"),
+          GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = true, dvProfile = profile, canPlayP5Natively = p5Decoder)
+        )
+      }
+    }
   }
 
   @Test
-  fun `explicit conversion modes ignore the device and an unknown mode is rejected`() {
-    for (display in listOf(false, true)) {
-      for (decoder in listOf(false, true)) {
+  fun `without a DV display only P5 with a converting decoder stays on the DV path`() {
+    // P5 has no compatible base layer: the decoder that advertises it is the
+    // only hardware path (#2290).
+    assertEquals(
+      GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "strip"),
+      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, dvProfile = 5L, canPlayP5Natively = true)
+    )
+    // Nothing on the device converts P5, so software reshaping has to.
+    assertEquals(
+      GpuVoPolicy.DvDecoderOptions(dolbyVision = false, p7Mode = "strip"),
+      GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, dvProfile = 5L, canPlayP5Natively = false)
+    )
+    // P8 decodes its compatible base layer as plain HEVC whatever the device
+    // ships: a DV decoder without a DV sink may convert to SDR (#2416).
+    for (p5Decoder in listOf(false, true)) {
+      assertEquals(
+        "P8 p5=$p5Decoder",
+        GpuVoPolicy.DvDecoderOptions(dolbyVision = false, p7Mode = "strip"),
+        GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, dvProfile = 8L, canPlayP5Natively = p5Decoder)
+      )
+      // P7 and non-DV content: the DV decoder has nothing to take.
+      for (profile in listOf(null, 7L)) {
         assertEquals(
-          "disabled/$display/$decoder",
-          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "native"),
-          GpuVoPolicy.dvDecoderOptions("disabled", display, decoder)
+          "profile=$profile p5=$p5Decoder",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = false, p7Mode = "strip"),
+          GpuVoPolicy.dvDecoderOptions("auto", displaySupportsDv = false, dvProfile = profile, canPlayP5Natively = p5Decoder)
         )
-        assertEquals(
-          "dv81/$display/$decoder",
-          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "convert"),
-          GpuVoPolicy.dvDecoderOptions("dv81", display, decoder)
-        )
-        assertEquals(
-          "hevc_strip/$display/$decoder",
-          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "strip"),
-          GpuVoPolicy.dvDecoderOptions("hevc_strip", display, decoder)
-        )
-        assertNull(GpuVoPolicy.dvDecoderOptions("sideways", display, decoder))
       }
+    }
+  }
+
+  @Test
+  fun `explicit conversion modes ignore the device and file, and an unknown mode is rejected`() {
+    for (display in listOf(false, true)) {
+      for (profile in listOf(null, 5L, 8L)) {
+        assertEquals(
+          "disabled/$display/$profile",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "native"),
+          GpuVoPolicy.dvDecoderOptions("disabled", display, profile, canPlayP5Natively = false)
+        )
+        assertEquals(
+          "dv81/$display/$profile",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "convert"),
+          GpuVoPolicy.dvDecoderOptions("dv81", display, profile, canPlayP5Natively = false)
+        )
+        assertEquals(
+          "hevc_strip/$display/$profile",
+          GpuVoPolicy.DvDecoderOptions(dolbyVision = true, p7Mode = "strip"),
+          GpuVoPolicy.dvDecoderOptions("hevc_strip", display, profile, canPlayP5Natively = false)
+        )
+      }
+    }
+    assertThrows(IllegalArgumentException::class.java) {
+      GpuVoPolicy.dvDecoderOptions("sideways", displaySupportsDv = false, dvProfile = null, canPlayP5Natively = false)
+    }
+    for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
+      GpuVoPolicy.dvDecoderOptions(mode, displaySupportsDv = false, dvProfile = null, canPlayP5Natively = false)
     }
   }
 
@@ -90,24 +121,17 @@ class GpuVoPolicyTest {
    */
   @Test
   fun `P5 is never left on the plane with the DV decoder disabled`() {
-    // The two predicates are not the same question: a device can ship a DV
-    // decoder that does not advertise DvheStn, so it converts nothing for P5.
     for (display in listOf(false, true)) {
-      for (anyDvDecoder in listOf(false, true)) {
-        for (p5Decoder in listOf(false, true)) {
-          // DvheStn is read off the DV decoder list, so advertising P5 without
-          // owning a DV decoder cannot happen. Every other pairing can.
-          if (p5Decoder && !anyDvDecoder) continue
-          val reshaping = GpuVoPolicy.needsDvReshaping(5L, "auto", canPlayP5Natively = p5Decoder)
-          val options = GpuVoPolicy.dvDecoderOptions("auto", display, anyDvDecoder)!!
-          assertTrue("display=$display any=$anyDvDecoder p5=$p5Decoder", reshaping || options.dolbyVision)
-        }
+      for (p5Decoder in listOf(false, true)) {
+        val reshaping = GpuVoPolicy.needsDvReshaping(5L, "auto", canPlayP5Natively = p5Decoder)
+        val options = GpuVoPolicy.dvDecoderOptions("auto", display, dvProfile = 5L, canPlayP5Natively = p5Decoder)
+        assertTrue("display=$display p5=$p5Decoder", reshaping || options.dolbyVision)
       }
     }
   }
 
-  // Native P5 support is whether the bundled FFmpeg will open a decoder,
-  // which is narrower than what the device advertises: the app once counted
+  // Native support is whether the bundled FFmpeg will open a decoder, which
+  // is narrower than what the device advertises: the app once counted
   // decoders FFmpeg never asks for and sent P5 to the plane as plain HEVC.
 
   private fun candidate(
@@ -117,35 +141,45 @@ class GpuVoPolicyTest {
     isSoftwareOnly: Boolean = false
   ) = GpuVoPolicy.DvDecoderCandidate(name, mime, profiles, isSoftwareOnly)
 
+  private fun nativeP5Decoder(candidates: List<GpuVoPolicy.DvDecoderCandidate>) = GpuVoPolicy.nativeDvDecoder(candidates, 5L)
+
   @Test
   fun `a hardware DvheStn decoder under the FFmpeg MIME type is the native P5 path`() {
-    assertEquals("c2.amlogic.dolby-vision.dvhe.decoder", GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.amlogic.dolby-vision.dvhe.decoder"))))
+    assertEquals("c2.amlogic.dolby-vision.dvhe.decoder", nativeP5Decoder(listOf(candidate("c2.amlogic.dolby-vision.dvhe.decoder"))))
     // Case-insensitive MIME match, as FFmpeg compares it.
-    assertEquals("OMX.MTK.VIDEO.DECODER.DV", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.MTK.VIDEO.DECODER.DV", mime = "video/Dolby-Vision"))))
+    assertEquals("OMX.MTK.VIDEO.DECODER.DV", nativeP5Decoder(listOf(candidate("OMX.MTK.VIDEO.DECODER.DV", mime = "video/Dolby-Vision"))))
     // First match in list order, as FFmpeg takes it.
-    assertEquals("first", GpuVoPolicy.nativeP5Decoder(listOf(candidate("first"), candidate("second"))))
+    assertEquals("first", nativeP5Decoder(listOf(candidate("first"), candidate("second"))))
   }
 
   @Test
   fun `a decoder registered only under a vendor DV MIME type is never opened`() {
     // FFmpeg probes video/dolby-vision alone; a device whose DV decoder only
     // answers to video/hevcdv "has DV" to MediaCodecList and none to FFmpeg.
-    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", mime = "video/hevcdv"))))
-    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", mime = "video/dv_hevc"))))
+    assertNull(nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", mime = "video/hevcdv"))))
+    assertNull(nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", mime = "video/dv_hevc"))))
   }
 
   @Test
-  fun `only an exact DvheStn profile counts`() {
+  fun `only the exact profile bit FFmpeg probes counts`() {
     // P7 (DvheDtb) and P8 (DvheSt) decoders convert nothing for single-layer P5.
-    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", profiles = listOf(0x40, 0x100)))))
-    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", profiles = emptyList()))))
-    assertNull(GpuVoPolicy.nativeP5Decoder(emptyList()))
+    assertNull(nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", profiles = listOf(0x40, 0x100)))))
+    assertNull(nativeP5Decoder(listOf(candidate("c2.vendor.dv.decoder", profiles = emptyList()))))
+    assertNull(nativeP5Decoder(emptyList()))
+    // And a P5-only decoder is not what FFmpeg opens for a P8 stream.
+    val p8Only = listOf(candidate("OMX.Nvidia.DOVI.decode", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_ST)))
+    assertEquals("OMX.Nvidia.DOVI.decode", GpuVoPolicy.nativeDvDecoder(p8Only, 8L))
+    assertNull(GpuVoPolicy.nativeDvDecoder(p8Only, 5L))
+    // FFmpeg re-routes single-layer P5 and P8 only; P7 and non-DV never probe.
+    val both = listOf(candidate("c2.vendor.dv.decoder", profiles = listOf(0x20, 0x40, 0x100)))
+    assertNull(GpuVoPolicy.nativeDvDecoder(both, 7L))
+    assertNull(GpuVoPolicy.nativeDvDecoder(both, null))
   }
 
   @Test
   fun `software-only decoders are skipped as FFmpeg skips them`() {
     // The API 29+ platform flag.
-    assertNull(GpuVoPolicy.nativeP5Decoder(listOf(candidate("c2.android.dolby-vision.decoder", isSoftwareOnly = true))))
+    assertNull(nativeP5Decoder(listOf(candidate("c2.android.dolby-vision.decoder", isSoftwareOnly = true))))
     // FFmpeg's own name blacklist on releases without the flag.
     for (name in listOf(
       "OMX.google.dolby-vision.decoder",
@@ -153,14 +187,14 @@ class GpuVoPolicyTest {
       "OMX.SEC.hevc.sw.dec",
       "OMX.qcom.video.decoder.hevcswvdec"
     )) {
-      assertNull(name, GpuVoPolicy.nativeP5Decoder(listOf(candidate(name))))
+      assertNull(name, nativeP5Decoder(listOf(candidate(name))))
     }
     // The blacklist is exact where FFmpeg's is: Samsung hardware and the
     // Qualcomm hardware HEVC decoder are not software.
-    assertEquals("OMX.SEC.hevc.dec", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.SEC.hevc.dec"))))
-    assertEquals("OMX.qcom.video.decoder.hevc", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.qcom.video.decoder.hevc"))))
+    assertEquals("OMX.SEC.hevc.dec", nativeP5Decoder(listOf(candidate("OMX.SEC.hevc.dec"))))
+    assertEquals("OMX.qcom.video.decoder.hevc", nativeP5Decoder(listOf(candidate("OMX.qcom.video.decoder.hevc"))))
     // A hardware decoder later in the list still wins over an earlier software one.
-    assertEquals("c2.vendor.dv.decoder", GpuVoPolicy.nativeP5Decoder(listOf(candidate("OMX.google.dv", isSoftwareOnly = true), candidate("c2.vendor.dv.decoder"))))
+    assertEquals("c2.vendor.dv.decoder", nativeP5Decoder(listOf(candidate("OMX.google.dv", isSoftwareOnly = true), candidate("c2.vendor.dv.decoder"))))
   }
 
   @Test

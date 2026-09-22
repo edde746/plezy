@@ -568,6 +568,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         _primaryMediaReadyEmitted = false;
         _primaryFileLoaded = false;
         _lastErrorLogText = null;
+        _state = _state.copyWith(hasRenderedFrame: false);
         fileStartedController.add(null);
         if (sourceId != null) {
           sourceStartedController.add(PlayerSourceStarted(sourceId));
@@ -628,13 +629,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'file-loaded':
         if (sourceId != null && sourceId != _activeSourceId) break;
         _primaryFileLoaded = true;
-        _state = _state.copyWith(completed: false);
+        // ExoPlayer reports no start-file: its media-item transition is the
+        // only "new file" boundary before the frame it renders next.
+        _state = _state.copyWith(completed: false, hasRenderedFrame: false);
         completedController.add(false);
         fileLoadedController.add(null);
         break;
 
       case 'playback-restart':
         if (sourceId != null && sourceId != _activeSourceId) break;
+        _state = _state.copyWith(hasRenderedFrame: true);
         playbackRestartController.add(null);
         if (sourceId != null && !_activeSourceReadyEmitted) {
           final positionMs = _millisecondsFromSeconds(data?['positionSeconds'], round: true);
@@ -1128,6 +1132,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     _positionMs = position.inMilliseconds;
     // A source is being installed at this position; nothing has been reported
     // about it yet, and its predecessor's position says nothing about it.
+    // Neither does its predecessor's rendered frame: `open()` resolves before
+    // the backend's `start-file`, and a binding made in that window must not
+    // read the outgoing file's frame as the new file's readiness.
     _lastReportedPositionMs = position.inMilliseconds;
     _state = _state.copyWith(
       completed: false,
@@ -1135,6 +1142,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       duration: _timelineDuration ?? Duration.zero,
       buffer: Duration.zero,
       bufferRanges: const [],
+      hasRenderedFrame: false,
     );
     _takeOperationOwnership(++_playheadOperations);
     _lastPositionWriter = _playheadOperations;
@@ -1169,6 +1177,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       duration: snapshot.duration,
       buffer: snapshot.buffer,
       bufferRanges: snapshot.bufferRanges,
+      hasRenderedFrame: snapshot.hasRenderedFrame,
     );
     _takeOperationOwnership(++_playheadOperations);
     _lastPositionWriter = _playheadOperations;
@@ -1286,9 +1295,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   bool get supportsSecondarySubtitles => true;
-
-  @override
-  bool get attachesExternalSubtitlesAtOpen => false;
 
   @override
   bool get detectsFpsAfterRender => false;

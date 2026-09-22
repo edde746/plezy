@@ -246,6 +246,43 @@ void main() {
         'http://fd21-0-0-0-0-0-0-2.abc.plex.direct:32400',
       ]);
     });
+
+    test('persisting and re-parsing a server does not grow its expanded connection list', () {
+      final json = _serverJsonWithConnections([
+        _connectionJson(
+          protocol: 'https',
+          address: '192.168.1.50',
+          port: 32400,
+          uri: 'https://192-168-1-50.abc.plex.direct:32400',
+          local: true,
+        ),
+        _connectionJson(
+          protocol: 'http',
+          address: '192.168.1.50',
+          port: 32400,
+          uri: 'http://192.168.1.50:32400',
+          local: true,
+        ),
+      ]);
+
+      // The synthetic plex.direct HTTP alias and the advertised raw-IP HTTP row are different
+      // endpoints, so both survive; neither may be duplicated by a later parse.
+      const expanded = [
+        'https://192-168-1-50.abc.plex.direct:32400',
+        'http://192-168-1-50.abc.plex.direct:32400',
+        'http://192.168.1.50:32400',
+      ];
+
+      final parsed = PlexServer.fromJson(json);
+      final reparsed = PlexServer.fromJson(parsed.toJson());
+      final rereparsed = PlexServer.fromJson(reparsed.toJson());
+
+      expect(parsed.connections.map((c) => c.uri), expanded);
+      expect(reparsed.connections.map((c) => c.uri), expanded);
+      expect(rereparsed.connections.map((c) => c.uri), expanded);
+      expect(reparsed.connections.map((c) => c.local), [true, true, true]);
+      expect(reparsed.prioritizedEndpointUrls(), parsed.prioritizedEndpointUrls());
+    });
   });
 
   group('PlexServer connection discovery', () {

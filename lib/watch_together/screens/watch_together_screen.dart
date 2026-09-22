@@ -525,35 +525,28 @@ class _ActiveSessionContent extends StatelessWidget {
       children: [
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
             child: Column(
-              crossAxisAlignment: .start,
+              crossAxisAlignment: .stretch,
               children: [
-                Row(
-                  children: [
-                    AppIcon(
-                      watchTogether.isHost ? Symbols.star_rounded : Symbols.group_rounded,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: .start,
-                        children: [
-                          Text(
-                            watchTogether.isHost ? t.watchTogether.hostingSession : t.watchTogether.inSession,
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          _SessionCodeRow(sessionId: session.sessionId),
-                        ],
-                      ),
-                    ),
-                  ],
+                AppIcon(
+                  watchTogether.isHost ? Symbols.star_rounded : Symbols.group_rounded,
+                  size: 32,
+                  color: theme.colorScheme.primary,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
+                Text(
+                  watchTogether.isHost ? t.watchTogether.hostingSession : t.watchTogether.inSession,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                _SessionCodeHero(sessionId: session.sessionId),
+                const SizedBox(height: 8),
                 const Divider(),
                 const SizedBox(height: 8),
                 Row(
+                  mainAxisAlignment: .center,
                   children: [
                     AppIcon(
                       session.controlMode == ControlMode.anyone
@@ -563,11 +556,14 @@ class _ActiveSessionContent extends StatelessWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      session.controlMode == ControlMode.anyone
-                          ? t.watchTogether.anyoneCanControl
-                          : t.watchTogether.hostControlsPlayback,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    Flexible(
+                      child: Text(
+                        session.controlMode == ControlMode.anyone
+                            ? t.watchTogether.anyoneCanControl
+                            : t.watchTogether.hostControlsPlayback,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
                     ),
                   ],
                 ),
@@ -808,39 +804,74 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
   }
 }
 
-/// Tappable session code row with copy functionality
-class _SessionCodeRow extends StatelessWidget {
+/// The session code as the screen's centerpiece: the host reads it aloud to
+/// whoever is joining, so it is sized to be legible from across a room. The
+/// whole block copies the code on tap/select.
+class _SessionCodeHero extends StatelessWidget {
   final String sessionId;
 
-  const _SessionCodeRow({required this.sessionId});
+  const _SessionCodeHero({required this.sessionId});
+
+  /// Large enough to read from a couch; long custom codes and narrow phones
+  /// scale down through the [FittedBox] rather than wrapping.
+  static const _codeFontSize = 128.0;
+  static const _codeLetterSpacing = 12.0;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
 
-    return FocusableWrapper(
-      useBackgroundFocus: true,
-      disableScale: true,
-      borderRadius: 4,
-      onSelect: () => _copySessionCode(context),
-      child: InkWell(
-        onTap: () => _copySessionCode(context),
-        borderRadius: const BorderRadius.all(Radius.circular(4)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            mainAxisSize: .min,
-            children: [
-              Text(
-                '${t.watchTogether.sessionCode}: $sessionId',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontFamily: 'monospace',
-                  color: theme.colorScheme.onSurfaceVariant,
+    // A boundary of its own: otherwise the card's container node absorbs this
+    // button together with the sibling title/control-mode text, and assistive
+    // tech announces the whole card as one "copy" button.
+    return Semantics(
+      container: true,
+      child: FocusableWrapper(
+        useBackgroundFocus: true,
+        disableScale: true,
+        borderRadius: 12,
+        semanticLabel: t.watchTogether.copySessionCode,
+        semanticValue: sessionId,
+        descendantsAreFocusable: false,
+        onSelect: () => _copySessionCode(context),
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: () => _copySessionCode(context),
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              mainAxisSize: .min,
+              children: [
+                Row(
+                  mainAxisSize: .min,
+                  children: [
+                    Text(t.watchTogether.sessionCode, style: theme.textTheme.bodyMedium?.copyWith(color: muted)),
+                    const SizedBox(width: 6),
+                    AppIcon(Symbols.content_copy_rounded, size: 18, color: muted),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 4),
-              AppIcon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
-            ],
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    // letterSpacing adds a trailing gap after the last glyph;
+                    // matching left padding keeps the code optically centered.
+                    padding: const EdgeInsets.only(left: _codeLetterSpacing),
+                    child: Text(
+                      sessionId,
+                      maxLines: 1,
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        fontSize: _codeFontSize,
+                        fontFamily: 'monospace',
+                        fontWeight: .bold,
+                        letterSpacing: _codeLetterSpacing,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

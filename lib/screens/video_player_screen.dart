@@ -39,6 +39,7 @@ import '../models/transcode_quality_preset.dart';
 import '../media/media_source_info.dart';
 import '../media/stepped_seek.dart';
 import '../mixins/mounted_set_state_mixin.dart';
+import '../mixins/listenable_bindings_mixin.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
@@ -128,6 +129,7 @@ import '../focus/transport_keys.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/services/watch_together_controller.dart';
+import '../utils/error_message_utils.dart';
 
 part 'video_player/parts/companion_remote.dart';
 part 'video_player/parts/display_matching.dart';
@@ -500,7 +502,8 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
 }
 
-class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver, MountedSetStateMixin {
+class VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with WidgetsBindingObserver, MountedSetStateMixin, ListenableBindingsMixin {
   /// How close to the capture buffer's end counts as "live". A live-edge
   /// transcode starts behind the buffer's edge by tuner ingest and encoder
   /// start-up latency (10–20 s observed), so a tighter threshold would flag
@@ -829,9 +832,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late final SpuriousEofRecovery _eofRecovery = SpuriousEofRecovery(
     isLive: widget.isLive,
     isOffline: () => _isOfflinePlayback,
+    isTranscoding: () => _isTranscoding,
     transitionGate: _transitionGate,
     player: () => player,
     metadata: () => _currentMetadata,
+    transportFaultSeen: () => _transportFaultSeen,
     reload: ({required Duration resumePosition, required String reason}) => _reloadMediaInPlace(
       metadata: _currentMetadata,
       resumePosition: resumePosition,
@@ -918,6 +923,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     player: () => player,
     isMounted: () => mounted && !_shuttingDown,
     isLive: widget.isLive,
+    hasLiveSeekWindow: () => _live.captureBuffer != null,
+    hasNextLiveChannel: () => _hasNextChannel,
+    hasPreviousLiveChannel: () => _hasPreviousChannel,
     shouldSkipForPip: () => _shouldSkipForPip,
     isPlayerInitialized: () => _isPlayerInitialized,
     metadata: () => _currentMetadata,
@@ -939,7 +947,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _pipInitialized = false;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
-  bool _fullscreenListenerAttached = false;
+
+  /// Releases the Windows fullscreen-change binding (see [_onFullscreenChanged]).
+  VoidCallback? _releaseFullscreenListener;
+
+  /// Releases the PiP state binding; attached and detached with the PiP
+  /// feature (see [_attachPipStateListener]).
+  VoidCallback? _releasePipStateListener;
   Size? _lastVideoLayoutSize;
   Size? _pendingVideoLayoutSize;
   Player? _lastVideoLayoutPlayer;
@@ -960,10 +974,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     isMounted: () => mounted,
     canControlPlayback: () => _canControlPlayback(),
     volumeController: () => _volumeController,
-    hasNextEpisode: () => _episode.next != null,
+    hasNextItem: () => _hasNextItem,
     onStop: () => _handleBackButton(),
-    onPlayNext: () => _playNext(),
-    onPlayPrevious: () => _restartOrPlayPrevious(),
+    onNavigateToNextItem: _navigateToNextItem,
+    onNavigateToPreviousItem: _navigateToPreviousItem,
     skipByConfiguredStep: ({required bool forward}) => _skipByConfiguredStep(forward: forward),
     onCycleSubtitles: () => _cycleSubtitleTrack(),
     onCycleAudio: () => _cycleAudioTrack(),
@@ -1098,8 +1112,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   /// Collapse every waiter armed for the current open: the attempt's outcome
-  /// (frame-rate startup gate, post-open subtitle readiness, sidecar guard),
-  /// the track manager's pending automatic selection, and the 503 watchdog.
+  /// (frame-rate startup gate, sidecar guard), the track manager's pending
+  /// automatic selection, and the 503 watchdog.
   /// Idempotent. Called from the terminal player-error branches, shutdown,
   /// and dispose — before the player closes its streams, so nothing waits on
   /// a `Stream.first` that can only die with them.
@@ -1171,7 +1185,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   @visibleForTesting
-  bool debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
+  Future<bool> debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
 
   @visibleForTesting
   bool get debugPlaybackParkedForTesting => _eofRecovery.parked;
@@ -1198,6 +1212,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @visibleForTesting
   Future<void> debugWirePlayerStreamsForTesting() =>
       _wirePlayerStreams(currentPlayer: player!, settingsService: SettingsService.instance, useExoPlayer: false);
+
+  /// The service layer without standing up the whole player initialization —
+  /// the entry point for asserting what a screen publishes to the OS media
+  /// session.
+  @visibleForTesting
+  Future<void> debugInitializeServicesForTesting() => _initializeServices();
 
   /// Adjacency otherwise arrives from the backend's queue containers, which
   /// no widget test stands up; this seeds what [_loadAdjacentEpisodes] would
@@ -1672,10 +1692,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
         if (!_isPlayerInitializationCurrent(generation)) return;
-        if (!_fullscreenListenerAttached) {
-          FullscreenStateManager().addListener(_onFullscreenChanged);
-          _fullscreenListenerAttached = true;
-        }
+        _releaseFullscreenListener ??= bindListenable(FullscreenStateManager(), _onFullscreenChanged);
       }
 
       // One-native-instance rule: a live music session owns the only audio
@@ -2009,6 +2026,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         player: currentPlayer,
         settings: settingsService,
         initialVolume: savedVolume,
+        onUserChange: _announceVolumeCommand,
       );
 
       player = currentPlayer;
@@ -2049,7 +2067,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             OrientationHelper.setLandscapeOrientation();
           } else {
             // Unlocked: Allow all orientations immediately
-            unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
+            unawaited(OrientationHelper.restoreDefaultOrientations());
             unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
           }
           // Immersive mode is requested once; a fold/unfold or display switch
@@ -2373,10 +2391,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     DiscordRPCService.instance.stopPlayback();
     TrackerCoordinator.instance.stopPlayback();
 
-    if (_fullscreenListenerAttached) {
-      FullscreenStateManager().removeListener(_onFullscreenChanged);
-      _fullscreenListenerAttached = false;
-    }
+    // Released before the scope closes and the display mode is restored, so
+    // neither can re-enter the handler on a screen that is going away.
+    _releaseFullscreenListener?.call();
+    _releaseFullscreenListener = null;
     FullscreenStateManager().endScope();
     // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
     // the HDR hint before restoring, which dispose() cannot do. Fire the hint
@@ -2513,6 +2531,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
   }
 
+  /// Announce an accepted user volume command with the top pill, whatever the
+  /// chrome state. The visible chrome does render volume, but as a 100 px
+  /// slider that moves 3 % per wheel notch: a viewer on a handheld scrolled
+  /// themselves to silence without noticing (#2357). Every input reaches
+  /// here — wheel, shortcut keys, the OSD slider, companion remote — while
+  /// volume the player reports on its own never does.
+  void _announceVolumeCommand(double volume) {
+    if (!mounted) return;
+    final percent = volume.round();
+    final icon = percent == 0
+        ? Symbols.volume_off_rounded
+        : percent < 50
+        ? Symbols.volume_down_rounded
+        : Symbols.volume_up_rounded;
+    _toastController.show(icon, t.videoControls.volumePercent(percent: percent));
+  }
+
   /// Apply a transport command on behalf of a hardware remote (Apple TV bridge
   /// or a hardware media key). Mirrors the controls path: rewind-on-resume,
   /// then play/pause with playback intent, then announce.
@@ -2577,6 +2612,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   String? _lastLogError;
+
+  /// Whether the transport layer has logged a fault for the current file;
+  /// latched per open, read by [SpuriousEofRecovery] to classify an EOF.
+  bool _transportFaultSeen = false;
 
   /// Statuses in [fatalPlaybackHttpStatuses] the player's own log stream
   /// reported for this open. Each latches independently: the reconnect path

@@ -344,9 +344,6 @@ class _ObservedPlayer extends FakeSyncPlayer {
   }
 
   @override
-  bool get attachesExternalSubtitlesAtOpen => true;
-
-  @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
   @override

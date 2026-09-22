@@ -4,12 +4,6 @@ mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
   static const int _playlistsPageSize = 200;
 
   @override
-  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) => drainPages<MediaPlaylist>(
-    (start, size) => fetchPlaylistsPage(playlistType: playlistType, smart: smart, start: start, size: size),
-    pageSize: _playlistsPageSize,
-  );
-
-  @override
   Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
     String playlistType = 'video',
     bool? smart,
@@ -91,12 +85,6 @@ mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
       serverId: serverId,
       serverName: serverName,
     );
-  }
-
-  @override
-  Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100}) async {
-    final page = await fetchPlaylistPage(id, start: offset, size: limit);
-    return page.items;
   }
 
   @override

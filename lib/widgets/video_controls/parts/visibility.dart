@@ -80,7 +80,8 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     return const Duration(seconds: 3);
   }
 
-  /// Shared hide logic: hides controls, notifies parent, updates traffic lights, restores focus.
+  /// Hide the controls. Notifying the parent, updating the traffic lights and
+  /// restoring focus all moved into [ChromeController.hide].
   void _hideControls() {
     if (!mounted) return;
     widget.chromeController.hide();
@@ -122,14 +123,10 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Apply preferred orientations for the given lock state. Wired to
   /// [SettingsService.rotationLocked] via [bindEffect] so any change — from
-  /// this toggle or from the settings screen — fires the same SystemChrome call.
+  /// this toggle or from the settings screen — takes the same path, and
+  /// [OrientationHelper] keeps fixed-orientation platforms (car, TV) out of it.
   void _applyRotationLock(bool locked) {
-    if (PlatformDetector.isAutomotive()) return;
-    unawaited(
-      SystemChrome.setPreferredOrientations(
-        locked ? const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight] : DeviceOrientation.values,
-      ),
-    );
+    unawaited(locked ? OrientationHelper.lockLandscapeOrientation() : OrientationHelper.restoreDefaultOrientations());
   }
 
   void _toggleRotationLock() {

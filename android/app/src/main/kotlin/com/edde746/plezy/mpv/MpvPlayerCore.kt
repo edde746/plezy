@@ -53,13 +53,6 @@ class MpvPlayerCore private constructor(
   private val hardwareDecoding: Boolean,
   /** Subtitle "Render Resolution" as a fraction of the OSD plane's view size; see [OsdPlanePolicy]. */
   private val osdRenderScale: Float,
-  /**
-   * Display periods the vo=mediacodec OSD plane is presented after the video's
-   * timestamp: on some boxes the codec path puts the picture on screen a vsync
-   * after a GL layer given the same timestamp. Dart seeds it from the same
-   * perf-tier proxy the ExoPlayer overlay gets as `assVideoLatencyFrames`.
-   */
-  private val osdVsyncDelay: Int,
   private val initialLogLevel: String,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   /**
@@ -77,22 +70,21 @@ class MpvPlayerCore private constructor(
     audioOnly: Boolean = false,
     hardwareDecoding: Boolean = true,
     osdRenderScale: Float = 1f,
-    initialLogLevel: String = "warn",
-    osdVsyncDelay: Int = 0
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, osdVsyncDelay, initialLogLevel, null, null, false)
+    initialLogLevel: String = "warn"
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, 0, "warn", propertyWriter, null, true)
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, null, true)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?,
     commandRunner: suspend (Array<String>) -> Long?
-  ) : this(context, audioOnly, true, 1f, 0, "warn", propertyWriter, commandRunner, true)
+  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, commandRunner, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -137,7 +129,7 @@ class MpvPlayerCore private constructor(
 
     /**
      * Every decoder registered under [DV_MIME_TYPES], in MediaCodecList
-     * order, for [GpuVoPolicy.nativeP5Decoder]. One walk per process: the
+     * order, for [GpuVoPolicy.nativeDvDecoder]. One walk per process: the
      * codec list is static. A type whose capabilities cannot be queried is
      * dropped, as FFmpeg drops it.
      */
@@ -196,7 +188,8 @@ class MpvPlayerCore private constructor(
     internal fun initialVideoOutput(hardwareDecoding: Boolean): String = if (hardwareDecoding) "mediacodec,gpu" else "gpu,gpu-next"
 
     /**
-     * The bundled FFmpeg's MediaCodec decoder options for a video core.
+     * The bundled FFmpeg's MediaCodec decoder options every video core
+     * starts with (see [DecoderOptions]).
      *
      * `ndk_codec=1`: NDK MediaCodec, never the Java wrapper (#2255).
      *
@@ -211,8 +204,17 @@ class MpvPlayerCore private constructor(
      * `DefaultMediaCodecAdapterFactory` trusts asynchronous MediaCodec by
      * default from API 31 only, for the same device-quirk history. Below it
      * the decoder still bounds its wait (8 ms) and is polled.
+     *
+     * `priority=0`: realtime (MediaFormat `priority`), what Media3 declares
+     * beside an operating rate and what some vendors require beside one (a
+     * decoder on s5e8835/SA8155P refuses to configure with a rate and no
+     * priority).
      */
-    internal fun initialDecoderOptions(sdkInt: Int): String = if (sdkInt >= Build.VERSION_CODES.S) "ndk_codec=1,ndk_async=1" else "ndk_codec=1"
+    internal fun initialDecoderEntries(sdkInt: Int): List<Pair<String, String>> = buildList {
+      add("ndk_codec" to "1")
+      if (sdkInt >= Build.VERSION_CODES.S) add("ndk_async" to "1")
+      add("priority" to "0")
+    }
 
     /**
      * mpv's decoder thread and frame queue, for hardware sessions.
@@ -242,13 +244,6 @@ class MpvPlayerCore private constructor(
       "vd-queue-max-secs" to "0.5",
       "vd-queue-max-bytes" to "48MiB"
     )
-
-    /**
-     * The `-append` list-option suffixes are not exposed through the property
-     * interface, so the app's decoder options replace the whole list. FFmpeg
-     * keeps the last duplicate key, so any user mpv.conf entries go first.
-     */
-    internal fun mergeDecoderOptions(current: String?, ours: String): String = if (current.isNullOrBlank()) ours else "$current,$ours"
 
     /**
      * Whether content with this transfer is worth an HDR (BT.2020 PQ) GL
@@ -292,6 +287,20 @@ class MpvPlayerCore private constructor(
 
   private val parkedHwdec = java.util.concurrent.atomic.AtomicReference<String?>()
 
+  /** The `vd-lavc-o` list mpv sees: the session's keys composed with the
+   * user's own line ([DecoderOptions]). Mutated and written under
+   * [writeOperations]; the user's line arrives through [setProperty]. */
+  private val decoderOptions = DecoderOptions()
+
+  /** The MediaCodec operating rate the session declares ([DecoderOperatingRate]).
+   * Mutated and written under [writeOperations]; a user config line pins it
+   * through [setProperty]. */
+  private val operatingRate = DecoderOperatingRate()
+
+  /** A `framedrop` line in the user's config; the per-file policy stands
+   * down. Set and read under [writeOperations]. */
+  private var userFramedrop = false
+
   /** Whether the missing `pending-vid` property was logged; hook-serial. */
   private var pendingVidUnavailableLogged = false
 
@@ -307,7 +316,8 @@ class MpvPlayerCore private constructor(
 
   /** `dolby-vision-profile` of the video track the current file selected
    * (null when the bitstream carries no DOVI record); set per file by
-   * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome. */
+   * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome
+   * and by a mid-file [applyDvConversionMode]. */
   @Volatile private var pendingDvProfile: Long? = null
 
   /** Whether this core already decided its GL surface colorspace; set by the
@@ -949,13 +959,15 @@ class MpvPlayerCore private constructor(
                   // Use NDK MediaCodec so per-frame decode/release calls do not
                   // wait on ART JIT code-cache collection (#2255), and drive it
                   // asynchronously where the platform is trusted to (see
-                  // initialDecoderOptions). This belongs to every video core,
+                  // initialDecoderEntries). This belongs to every video core,
                   // not the DV or vo=mediacodec policy: GPU/copy hardware paths
                   // use the same decoder. Software decoders ignore these unknown
-                  // AVOptions without failing open. Set before init; DV writes
-                  // merge it, while a later custom vd-lavc-o keeps the existing
-                  // whole-list override precedence.
-                  setOption("vd-lavc-o", initialDecoderOptions(Build.VERSION.SDK_INT))
+                  // AVOptions without failing open. Every later write of the
+                  // list (per-file DV routing, the stream rate, the user's own
+                  // line) goes through decoderOptions, so none of them loses
+                  // the others' keys.
+                  decoderOptions.putAll(initialDecoderEntries(Build.VERSION.SDK_INT))
+                  setOption("vd-lavc-o", decoderOptions.compose())
                   if (hardwareDecoding) {
                     // Rationale on DECODER_QUEUE_OPTIONS.
                     for ((name, value) in DECODER_QUEUE_OPTIONS) setOption(name, value)
@@ -969,16 +981,6 @@ class MpvPlayerCore private constructor(
                   setOption("vd-lavc-film-grain", "cpu")
                   if (displayFpsOverride != null) {
                     setOption("display-fps-override", displayFpsOverride)
-                  }
-                  // Runtime option of the vo=mediacodec OSD plane (see the
-                  // constructor doc); a libmpv that predates it keeps the plane
-                  // on the video's own timestamp rather than failing the core.
-                  if (osdVsyncDelay != 0) {
-                    try {
-                      setOption("vo-mediacodec-osd-vsync-delay", osdVsyncDelay.toString())
-                    } catch (e: MpvException) {
-                      Log.w(TAG, "OSD vsync delay option unavailable in this libmpv: ${e.message}")
-                    }
                   }
                 }
                 if (demuxerBudget != null) {
@@ -1039,6 +1041,8 @@ class MpvPlayerCore private constructor(
                   val track = pendingVideoTrack(p)
                   applyDvReshapePolicy(p, track)
                   applySoftwareDecodePolicy(p, track)
+                  applyDecoderOperatingRate(track)
+                  applyFramedropPolicy()
                 }
               }
             }
@@ -1193,6 +1197,12 @@ class MpvPlayerCore private constructor(
         }
         if (change.name == "speed" && change is PropertyChange.Double) {
           frameRateVote.onPlaybackSpeed(change.value.toFloat())
+          // The decoder was told a rate for the previous speed; at 8x it needs eight times it.
+          if (usesMediaCodecVo) {
+            launchMpvWrite("operating rate") {
+              operatingRate.onSpeed(change.value)?.let { writeOperatingRate(it, "speed ${change.value}") }
+            }
+          }
         }
         delegate?.onPropertyChange(change.name, value, change.sourceId)
       }
@@ -1467,13 +1477,17 @@ class MpvPlayerCore private constructor(
    * Per-file Dolby Vision routing, decided from the bitstream: mpv exports
    * the DOVI configuration record's profile on the track list (never trust
    * server metadata for this — it mis-tags DV routinely; mpv omits the
-   * field when the bitstream carries no record). Re-evaluated on every
-   * file, so a following non-P5 file restores hardware decode and returns
-   * to the video plane. [track] is the pending video track, see
-   * [pendingVideoTrack].
+   * field when the bitstream carries no record). Two decisions, both
+   * re-evaluated on every file so a following file of another profile gets
+   * its own answer: whether the fork FFmpeg may hand the stream to a DV
+   * decoder at all (`dolby_vision`, [GpuVoPolicy.dvDecoderOptions] —
+   * written here, before the decoder opens, and again by
+   * [applyDvConversionMode] for the same file when the mode changes), and
+   * whether P5 has to leave the plane for gpu-next reshaping instead.
+   * [track] is the pending video track, see [pendingVideoTrack].
    *
-   * Native P5 support is what the bundled FFmpeg will actually open
-   * ([GpuVoPolicy.nativeP5Decoder]), not what the device advertises under
+   * Native support is what the bundled FFmpeg will actually open
+   * ([GpuVoPolicy.nativeDvDecoder]), not what the device advertises under
    * every DV MIME type: the two disagreed on devices whose only DV decoder
    * FFmpeg never probes, and the P5 base layer then reached the plane as
    * plain HEVC with inverted hue. [collectDecoderState] covers the case
@@ -1493,17 +1507,23 @@ class MpvPlayerCore private constructor(
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     pendingDvProfile = profile
     val mode = currentDvConversionMode
-    val nativeDecoder = GpuVoPolicy.nativeP5Decoder(dvDecoderCandidates)
+    val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
       conversionMode = mode,
-      canPlayP5Natively = nativeDecoder != null
+      canPlayP5Natively = p5Decoder != null
     )
+    val options = GpuVoPolicy.dvDecoderOptions(mode, displayDvSupported, profile, canPlayP5Natively = p5Decoder != null)
+    writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
       // report is diagnosed from, on the device and in the uploaded log.
-      val decision = "profile=$profile mode=$mode nativeP5Decoder=${nativeDecoder ?: "none"} " +
-        "displayDv=$displayDvSupported path=${if (needs) "software decode + gpu-next reshaping" else "video plane"}"
+      // `decoder` is what FFmpeg would open for this profile were the DV
+      // path enabled; `dolby_vision` is whether it is.
+      val fileDecoder = if (profile == 5L) p5Decoder else GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, profile)
+      val decision = "profile=$profile mode=$mode decoder=${fileDecoder ?: "none"} nativeP5Decoder=${p5Decoder ?: "none"} " +
+        "displayDv=$displayDvSupported dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode} " +
+        "path=${if (needs) "software decode + gpu-next reshaping" else "video plane"}"
       Log.i(TAG, "DV routing: $decision")
       emitLog("info", "dv-route", decision)
     }
@@ -1511,6 +1531,17 @@ class MpvPlayerCore private constructor(
       Log.i(TAG, "DV P5 (bitstream) without native support: software decode + gpu-next reshaping")
     }
     setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, needs)
+  }
+
+  /**
+   * Composes the per-file `dolby_vision`/`dv_p7_mode` into the session's
+   * decoder options and writes them. Runs only on the write worker: from
+   * the on_preloaded hook and from a queued mode change, so the two writers
+   * cannot interleave and both resolve against the same `pendingDvProfile`.
+   */
+  private suspend fun writeDvDecoderOptions(options: GpuVoPolicy.DvDecoderOptions) {
+    decoderOptions.put("dolby_vision" to if (options.dolbyVision) "1" else "0", "dv_p7_mode" to options.p7Mode)
+    writeProperty("vd-lavc-o", decoderOptions.compose())
   }
 
   /**
@@ -1532,6 +1563,50 @@ class MpvPlayerCore private constructor(
       Log.i(TAG, "$codec profile=$codecProfile without hardware support: native software decode on the GL vo")
     }
     setGpuVoRequirement(GpuVoPolicy.REASON_CODEC_SW_DECODE, needs)
+  }
+
+  /**
+   * Tells the file's MediaCodec decoder what rate to be ready for, before it
+   * is created ([DecoderOperatingRate]): the track's own rate and the
+   * decoder's advertised maximum at its size are known here and nowhere
+   * earlier. The stream rate rides along on the decoder options
+   * (`frame_rate`, Media3's KEY_FRAME_RATE); the operating rate itself is
+   * mpv's `hwdec-mediacodec-operating-rate`, which the player keeps current
+   * on a running decoder when the speed changes. Inert for a software
+   * decoder, so it is set regardless of the hwdec hold.
+   */
+  private suspend fun applyDecoderOperatingRate(track: org.json.JSONObject?) {
+    val fps = track?.optDouble("demux-fps", 0.0)?.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
+    val width = track?.optInt("demux-w", 0) ?: 0
+    val height = track?.optInt("demux-h", 0) ?: 0
+    val mime = MediaCodecQuery.mimeTypeForCodec(track?.optString("codec"))
+    val codecMax = mime?.let { MediaCodecQuery.maxDecoderFrameRate(it, width, height) }
+    decoderOptions.put("frame_rate" to fps.takeIf { it > 0.0 }?.let { String.format(Locale.ROOT, "%.3f", it) })
+    writeProperty("vd-lavc-o", decoderOptions.compose())
+    operatingRate.onFile(fps, codecMax)?.let {
+      writeOperatingRate(it, "file: fps=$fps ${width}x$height codecMax=${codecMax ?: "unknown"}")
+    }
+  }
+
+  private suspend fun writeOperatingRate(rate: Int, reason: String) {
+    writeProperty("hwdec-mediacodec-operating-rate", rate.toString())
+    Log.i(TAG, "Decoder operating rate $rate ($reason)")
+  }
+
+  /**
+   * `--framedrop` for the file. On the plane the VO owns late-frame policy
+   * (it declares VO_CAP_FRAMEDROP and shows a late frame at the next vsync),
+   * so the `vo` bit is inert there and `decoder` is what matters: the fork's
+   * MediaCodec decoder sheds the shown frame no later frame references when
+   * the core measures itself behind, which is the only way a hardware
+   * decoder can make time up. A software decode on the GL vo keeps mpv's
+   * default, where the renderer can be the bottleneck and decoder-side
+   * dropping is documented to mistime frames.
+   */
+  private suspend fun applyFramedropPolicy() {
+    if (userFramedrop) return
+    val hardwarePlane = usesMediaCodecVo && !hwdecHeld
+    writeProperty("framedrop", if (hardwarePlane) "decoder+vo" else "vo")
   }
 
   /**
@@ -2356,30 +2431,28 @@ class MpvPlayerCore private constructor(
   /**
    * `dv-conversion-mode` is an app-level property shared with the ExoPlayer
    * and Apple cores, not an mpv one. It maps onto the fork FFmpeg
-   * hevc_mediacodec decoder options, mirroring the ExoPlayer DoviBridge
-   * decision tree. Single-layer profiles (5/8) use the Dolby Vision decoder
-   * whenever the path is enabled and the decoder advertises the profile.
+   * hevc_mediacodec decoder options through [GpuVoPolicy.dvDecoderOptions],
+   * resolved against the file currently loaded: the answer depends on its
+   * profile, and `vd-lavc-o` re-opens a running decoder, so a mode change
+   * mid-file must land the same value the on_preloaded hook would.
    */
   private fun applyDvConversionMode(value: String, onComplete: ((Result<Unit>) -> Unit)?) {
     val mode = value.trim().lowercase()
-    val displayDv = displayDvSupported
-    val nativeDecoder = DoviBridge.hasNativeDolbyVisionDecoder
-    val options = GpuVoPolicy.dvDecoderOptions(mode, displayDv, nativeDecoder)
-    if (options == null) {
+    if (mode !in GpuVoPolicy.DV_CONVERSION_MODES) {
       onComplete?.invoke(Result.failure(IllegalArgumentException("Invalid DV conversion mode: $value")))
       return
     }
     currentDvConversionMode = mode
-    val dolbyVision = if (options.dolbyVision) "1" else "0"
-    Log.i(
-      TAG,
-      "DV conversion mode '$value' (displayDV=$displayDv nativeDecoder=$nativeDecoder) -> " +
-        "dolby_vision=$dolbyVision dv_p7_mode=${options.p7Mode}"
-    )
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
-      val ours = "dolby_vision=$dolbyVision,dv_p7_mode=${options.p7Mode}"
-      val merged = mergeDecoderOptions(player?.getString("vd-lavc-o"), ours)
-      writeProperty("vd-lavc-o", merged)
+      val profile = pendingDvProfile
+      val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
+      val options = GpuVoPolicy.dvDecoderOptions(mode, displayDvSupported, profile, canPlayP5Natively = p5Decoder != null)
+      Log.i(
+        TAG,
+        "DV conversion mode '$value' (displayDV=$displayDvSupported profile=$profile p5Decoder=${p5Decoder ?: "none"}) -> " +
+          "dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode}"
+      )
+      writeDvDecoderOptions(options)
     }
   }
 
@@ -2464,6 +2537,31 @@ class MpvPlayerCore private constructor(
 
     if (name == "content-color-transfer") {
       applyContentColorTransfer(value, onComplete)
+      return
+    }
+
+    // The user's custom decoder line composes with the session's own keys
+    // (DecoderOptions) instead of replacing them: an `ndk_async=0` in it
+    // still wins for that key, while the DV routing, the stream rate and
+    // the NDK backend the session set stay in force.
+    if (name == "vd-lavc-o") {
+      submitMpvOperation(writeOperations, "decoder options", { onComplete?.invoke(it) }) {
+        decoderOptions.setUser(value)
+        writeProperty("vd-lavc-o", decoderOptions.compose())
+      }
+      return
+    }
+
+    // The user's word on the two per-file options the session otherwise
+    // owns pins them: the policy stands down for the rest of the session.
+    // An operating rate of 0 leaves the platform default, which is how a
+    // decoder-bound collapse is reproduced on purpose.
+    if (name == "hwdec-mediacodec-operating-rate" || name == "framedrop") {
+      submitMpvOperation(writeOperations, "pinned $name", { onComplete?.invoke(it) }) {
+        writeProperty(name, value)
+        Log.i(TAG, "$name pinned by the user's config: $value")
+        if (name == "framedrop") userFramedrop = true else operatingRate.pin()
+      }
       return
     }
 

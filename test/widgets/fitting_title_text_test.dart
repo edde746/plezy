@@ -20,7 +20,8 @@ Future<double> _fittedSize(WidgetTester tester, String text, {required double wi
 }
 
 /// Whether [text] at [fontSize], wrapped to two lines like the widget does,
-/// fits [height] — the widget's own definition of fitting.
+/// fits [width] × [height] without ellipsizing — the widget's own definition
+/// of fitting.
 bool _fits(String text, double fontSize, {required double width, required double height}) {
   final painter = TextPainter(
     text: TextSpan(
@@ -31,7 +32,7 @@ bool _fits(String text, double fontSize, {required double width, required double
     ellipsis: '\u2026',
     textDirection: TextDirection.ltr,
   )..layout(maxWidth: width);
-  final fits = painter.height <= height + 0.1;
+  final fits = !painter.didExceedMaxLines && painter.height <= height + 0.1;
   painter.dispose();
   return fits;
 }
@@ -39,8 +40,17 @@ bool _fits(String text, double fontSize, {required double width, required double
 void main() {
   testWidgets('keeps the base size when two lines fit the box', (tester) async {
     expect(await _fittedSize(tester, 'ABCDE', width: 400, height: 100), 40);
-    // Width never shrinks the title: a too-long line is ellipsized instead.
-    expect(await _fittedSize(tester, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', width: 50, height: 100), 40);
+    // Wraps onto its second line and stays there.
+    expect(await _fittedSize(tester, 'ABCDE FGHIJ', width: 400, height: 100), 40);
+  });
+
+  testWidgets('a title too long for two lines shrinks instead of ellipsizing', (tester) async {
+    // #1796: 26 glyphs at 40px need 1040px; 200px holds two lines of 5.
+    const text = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    final size = await _fittedSize(tester, text, width: 200, height: 100);
+    expect(size, lessThan(40));
+    expect(_fits(text, size, width: 200, height: 100), isTrue);
+    expect(_fits(text, size + 0.5, width: 200, height: 100), isFalse, reason: 'not maximal');
   });
 
   testWidgets('a box shorter than two lines gets the largest size that still fits', (tester) async {

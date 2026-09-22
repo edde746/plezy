@@ -57,7 +57,6 @@ class LanDiscoveryService {
   final Map<String, DiscoveredHost> _discoveredHosts = {};
   final _hostsController = StreamController<List<DiscoveredHost>>.broadcast();
 
-  /// Whether the broadcaster is currently active.
   bool get isBroadcasting => _broadcastTimer != null;
 
   /// Whether the listener is currently active.

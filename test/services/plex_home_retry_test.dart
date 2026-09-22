@@ -12,6 +12,8 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
+
 typedef _RequestHandler = Future<http.StreamedResponse> Function(http.BaseRequest request);
 
 class _SequenceClient extends http.BaseClient {
@@ -72,17 +74,9 @@ void main() {
         (_) async => throw http.ClientException('connection reset on cold Plex start'),
         (_) async => _jsonResponse(_globalHubsPayload()),
       ]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: 'http://server:32400',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+      final client = testPlexClient(
+        baseUrl: 'http://server:32400',
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
       );
       addTearDown(client.close);
@@ -109,17 +103,9 @@ void main() {
         (_) async => throw TimeoutException('server still building the hub'),
         (_) async => _jsonResponse(_globalHubsPayload()),
       ]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: 'http://server:32400',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+      final client = testPlexClient(
+        baseUrl: 'http://server:32400',
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
       );
       addTearDown(client.close);
@@ -135,18 +121,9 @@ void main() {
       addTearDown(db.close);
 
       final httpClient = _SequenceClient([(_) async => _jsonResponse(_globalHubsPayload())]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: 'http://server:32400',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-          languageCode: 'fr',
-        ),
+      final client = testPlexClient(
+        config: testPlexConfig(baseUrl: 'http://server:32400', languageCode: 'fr'),
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
       );
       addTearDown(client.close);
@@ -166,18 +143,9 @@ void main() {
         (_) async => _jsonResponse(_globalHubsPayload()),
         (_) async => _jsonResponse(_globalHubsPayload()),
       ]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: 'http://server:32400',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-          languageCode: 'en',
-        ),
+      final client = testPlexClient(
+        config: testPlexConfig(baseUrl: 'http://server:32400', languageCode: 'en'),
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
       );
       addTearDown(client.close);
@@ -203,17 +171,9 @@ void main() {
         (_) async => throw http.ClientException('connection reset'),
         (_) async => _jsonResponse(_globalHubsPayload()),
       ]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: primary,
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+      final client = testPlexClient(
+        baseUrl: primary,
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
       );
@@ -236,17 +196,9 @@ void main() {
           'MediaContainer': {'machineIdentifier': 'server-id'},
         }),
       ]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: primary,
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+      final client = testPlexClient(
+        baseUrl: primary,
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
         // The candidate must validate for the cascade to reach the
@@ -282,13 +234,7 @@ void main() {
         (_) async => _jsonResponse(_globalHubsPayload()),
       ]);
       final client = await PlexClient.create(
-        PlexConfig(
-          baseUrl: 'http://server:32400',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+        testPlexConfig(baseUrl: 'http://server:32400'),
         serverId: ServerId('server-id'),
         profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
@@ -315,13 +261,7 @@ void main() {
         (_) async => _jsonResponse(_continueWatchingPayload()),
       ]);
       final client = await PlexClient.create(
-        PlexConfig(
-          baseUrl: 'http://server:32400',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+        testPlexConfig(baseUrl: 'http://server:32400'),
         serverId: ServerId('server-id'),
         profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
@@ -346,17 +286,9 @@ void main() {
       addTearDown(db.close);
 
       final httpClient = _SequenceClient([(_) async => _jsonResponse(_continueWatchingPayload())]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: 'http://server:32400',
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+      final client = testPlexClient(
+        baseUrl: 'http://server:32400',
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
       );
       addTearDown(client.close);
@@ -382,17 +314,9 @@ void main() {
         (_) async => throw http.ClientException('connection reset'),
         (_) async => _jsonResponse(_globalHubsPayload()),
       ]);
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: primary,
-          token: 'token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: 'test',
-        ),
+      final client = testPlexClient(
+        baseUrl: primary,
         serverId: ServerId('server-id'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-        serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
       );
@@ -486,19 +410,8 @@ void main() {
   });
 }
 
-PlexClient _continueWatchingTestClient(http.BaseClient httpClient) => PlexClient.forTesting(
-  config: PlexConfig(
-    baseUrl: 'http://server:32400',
-    token: 'token',
-    clientIdentifier: 'client-id',
-    product: 'Plezy',
-    version: 'test',
-  ),
-  serverId: ServerId('server-id'),
-  profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
-  serverName: 'Server',
-  httpClient: httpClient,
-);
+PlexClient _continueWatchingTestClient(http.BaseClient httpClient) =>
+    testPlexClient(baseUrl: 'http://server:32400', serverId: ServerId('server-id'), httpClient: httpClient);
 
 Future<http.StreamedResponse> _jsonResponse(Map<String, dynamic> body) async {
   return http.StreamedResponse(

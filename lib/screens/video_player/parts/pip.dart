@@ -2,13 +2,12 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerPipMethods on VideoPlayerScreenState {
   void _attachPipStateListener() {
-    final pipState = PipService().isPipActive;
-    pipState.removeListener(_onPipStateChanged);
-    pipState.addListener(_onPipStateChanged);
+    _releasePipStateListener ??= bindListenable(PipService().isPipActive, _onPipStateChanged);
   }
 
   void _detachPipStateListener() {
-    PipService().isPipActive.removeListener(_onPipStateChanged);
+    _releasePipStateListener?.call();
+    _releasePipStateListener = null;
   }
 
   void _clearAutoPipEnteringCallback() {

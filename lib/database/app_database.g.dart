@@ -255,6 +255,28 @@ class $DownloadedMediaTable extends DownloadedMedia
         requiredDuringInsert: false,
         defaultValue: const Constant('original'),
       );
+  static const VerificationMeta _libraryIdMeta = const VerificationMeta(
+    'libraryId',
+  );
+  @override
+  late final GeneratedColumn<String> libraryId = GeneratedColumn<String>(
+    'library_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _libraryTitleMeta = const VerificationMeta(
+    'libraryTitle',
+  );
+  @override
+  late final GeneratedColumn<String> libraryTitle = GeneratedColumn<String>(
+    'library_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -279,6 +301,8 @@ class $DownloadedMediaTable extends DownloadedMedia
     mediaIndex,
     mediaSourceId,
     downloadQualityPreset,
+    libraryId,
+    libraryTitle,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -461,6 +485,21 @@ class $DownloadedMediaTable extends DownloadedMedia
         ),
       );
     }
+    if (data.containsKey('library_id')) {
+      context.handle(
+        _libraryIdMeta,
+        libraryId.isAcceptableOrUnknown(data['library_id']!, _libraryIdMeta),
+      );
+    }
+    if (data.containsKey('library_title')) {
+      context.handle(
+        _libraryTitleMeta,
+        libraryTitle.isAcceptableOrUnknown(
+          data['library_title']!,
+          _libraryTitleMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -558,6 +597,14 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.string,
         data['${effectivePrefix}download_quality_preset'],
       )!,
+      libraryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_id'],
+      ),
+      libraryTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_title'],
+      ),
     );
   }
 
@@ -591,6 +638,13 @@ class DownloadedMediaItem extends DataClass
   final int mediaIndex;
   final String? mediaSourceId;
   final String downloadQualityPreset;
+
+  /// Owning library identity, stamped at enqueue time so downloads can be
+  /// grouped/filtered by library while offline. Plex items carry
+  /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
+  /// Null for rows enqueued before v23 or when resolution was skipped/failed.
+  final String? libraryId;
+  final String? libraryTitle;
   const DownloadedMediaItem({
     required this.id,
     required this.serverId,
@@ -614,6 +668,8 @@ class DownloadedMediaItem extends DataClass
     required this.mediaIndex,
     this.mediaSourceId,
     required this.downloadQualityPreset,
+    this.libraryId,
+    this.libraryTitle,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -662,6 +718,12 @@ class DownloadedMediaItem extends DataClass
       map['media_source_id'] = Variable<String>(mediaSourceId);
     }
     map['download_quality_preset'] = Variable<String>(downloadQualityPreset);
+    if (!nullToAbsent || libraryId != null) {
+      map['library_id'] = Variable<String>(libraryId);
+    }
+    if (!nullToAbsent || libraryTitle != null) {
+      map['library_title'] = Variable<String>(libraryTitle);
+    }
     return map;
   }
 
@@ -711,6 +773,12 @@ class DownloadedMediaItem extends DataClass
           ? const Value.absent()
           : Value(mediaSourceId),
       downloadQualityPreset: Value(downloadQualityPreset),
+      libraryId: libraryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(libraryId),
+      libraryTitle: libraryTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(libraryTitle),
     );
   }
 
@@ -746,6 +814,8 @@ class DownloadedMediaItem extends DataClass
       downloadQualityPreset: serializer.fromJson<String>(
         json['downloadQualityPreset'],
       ),
+      libraryId: serializer.fromJson<String?>(json['libraryId']),
+      libraryTitle: serializer.fromJson<String?>(json['libraryTitle']),
     );
   }
   @override
@@ -774,6 +844,8 @@ class DownloadedMediaItem extends DataClass
       'mediaIndex': serializer.toJson<int>(mediaIndex),
       'mediaSourceId': serializer.toJson<String?>(mediaSourceId),
       'downloadQualityPreset': serializer.toJson<String>(downloadQualityPreset),
+      'libraryId': serializer.toJson<String?>(libraryId),
+      'libraryTitle': serializer.toJson<String?>(libraryTitle),
     };
   }
 
@@ -800,6 +872,8 @@ class DownloadedMediaItem extends DataClass
     int? mediaIndex,
     Value<String?> mediaSourceId = const Value.absent(),
     String? downloadQualityPreset,
+    Value<String?> libraryId = const Value.absent(),
+    Value<String?> libraryTitle = const Value.absent(),
   }) => DownloadedMediaItem(
     id: id ?? this.id,
     serverId: serverId ?? this.serverId,
@@ -833,6 +907,8 @@ class DownloadedMediaItem extends DataClass
         ? mediaSourceId.value
         : this.mediaSourceId,
     downloadQualityPreset: downloadQualityPreset ?? this.downloadQualityPreset,
+    libraryId: libraryId.present ? libraryId.value : this.libraryId,
+    libraryTitle: libraryTitle.present ? libraryTitle.value : this.libraryTitle,
   );
   DownloadedMediaItem copyWithCompanion(DownloadedMediaCompanion data) {
     return DownloadedMediaItem(
@@ -884,6 +960,10 @@ class DownloadedMediaItem extends DataClass
       downloadQualityPreset: data.downloadQualityPreset.present
           ? data.downloadQualityPreset.value
           : this.downloadQualityPreset,
+      libraryId: data.libraryId.present ? data.libraryId.value : this.libraryId,
+      libraryTitle: data.libraryTitle.present
+          ? data.libraryTitle.value
+          : this.libraryTitle,
     );
   }
 
@@ -911,7 +991,9 @@ class DownloadedMediaItem extends DataClass
           ..write('bgTaskId: $bgTaskId, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('mediaSourceId: $mediaSourceId, ')
-          ..write('downloadQualityPreset: $downloadQualityPreset')
+          ..write('downloadQualityPreset: $downloadQualityPreset, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('libraryTitle: $libraryTitle')
           ..write(')'))
         .toString();
   }
@@ -940,6 +1022,8 @@ class DownloadedMediaItem extends DataClass
     mediaIndex,
     mediaSourceId,
     downloadQualityPreset,
+    libraryId,
+    libraryTitle,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -966,7 +1050,9 @@ class DownloadedMediaItem extends DataClass
           other.bgTaskId == this.bgTaskId &&
           other.mediaIndex == this.mediaIndex &&
           other.mediaSourceId == this.mediaSourceId &&
-          other.downloadQualityPreset == this.downloadQualityPreset);
+          other.downloadQualityPreset == this.downloadQualityPreset &&
+          other.libraryId == this.libraryId &&
+          other.libraryTitle == this.libraryTitle);
 }
 
 class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
@@ -992,6 +1078,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<int> mediaIndex;
   final Value<String?> mediaSourceId;
   final Value<String> downloadQualityPreset;
+  final Value<String?> libraryId;
+  final Value<String?> libraryTitle;
   const DownloadedMediaCompanion({
     this.id = const Value.absent(),
     this.serverId = const Value.absent(),
@@ -1015,6 +1103,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.mediaIndex = const Value.absent(),
     this.mediaSourceId = const Value.absent(),
     this.downloadQualityPreset = const Value.absent(),
+    this.libraryId = const Value.absent(),
+    this.libraryTitle = const Value.absent(),
   });
   DownloadedMediaCompanion.insert({
     this.id = const Value.absent(),
@@ -1039,6 +1129,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.mediaIndex = const Value.absent(),
     this.mediaSourceId = const Value.absent(),
     this.downloadQualityPreset = const Value.absent(),
+    this.libraryId = const Value.absent(),
+    this.libraryTitle = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -1067,6 +1159,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<int>? mediaIndex,
     Expression<String>? mediaSourceId,
     Expression<String>? downloadQualityPreset,
+    Expression<String>? libraryId,
+    Expression<String>? libraryTitle,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1093,6 +1187,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (mediaSourceId != null) 'media_source_id': mediaSourceId,
       if (downloadQualityPreset != null)
         'download_quality_preset': downloadQualityPreset,
+      if (libraryId != null) 'library_id': libraryId,
+      if (libraryTitle != null) 'library_title': libraryTitle,
     });
   }
 
@@ -1119,6 +1215,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<int>? mediaIndex,
     Value<String?>? mediaSourceId,
     Value<String>? downloadQualityPreset,
+    Value<String?>? libraryId,
+    Value<String?>? libraryTitle,
   }) {
     return DownloadedMediaCompanion(
       id: id ?? this.id,
@@ -1144,6 +1242,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       mediaSourceId: mediaSourceId ?? this.mediaSourceId,
       downloadQualityPreset:
           downloadQualityPreset ?? this.downloadQualityPreset,
+      libraryId: libraryId ?? this.libraryId,
+      libraryTitle: libraryTitle ?? this.libraryTitle,
     );
   }
 
@@ -1220,6 +1320,12 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
         downloadQualityPreset.value,
       );
     }
+    if (libraryId.present) {
+      map['library_id'] = Variable<String>(libraryId.value);
+    }
+    if (libraryTitle.present) {
+      map['library_title'] = Variable<String>(libraryTitle.value);
+    }
     return map;
   }
 
@@ -1247,7 +1353,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('bgTaskId: $bgTaskId, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('mediaSourceId: $mediaSourceId, ')
-          ..write('downloadQualityPreset: $downloadQualityPreset')
+          ..write('downloadQualityPreset: $downloadQualityPreset, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('libraryTitle: $libraryTitle')
           ..write(')'))
         .toString();
   }
@@ -7029,6 +7137,8 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<int> mediaIndex,
       Value<String?> mediaSourceId,
       Value<String> downloadQualityPreset,
+      Value<String?> libraryId,
+      Value<String?> libraryTitle,
     });
 typedef $$DownloadedMediaTableUpdateCompanionBuilder =
     DownloadedMediaCompanion Function({
@@ -7054,6 +7164,8 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<int> mediaIndex,
       Value<String?> mediaSourceId,
       Value<String> downloadQualityPreset,
+      Value<String?> libraryId,
+      Value<String?> libraryTitle,
     });
 
 class $$DownloadedMediaTableFilterComposer
@@ -7172,6 +7284,16 @@ class $$DownloadedMediaTableFilterComposer
 
   ColumnFilters<String> get downloadQualityPreset => $composableBuilder(
     column: $table.downloadQualityPreset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryTitle => $composableBuilder(
+    column: $table.libraryTitle,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -7294,6 +7416,16 @@ class $$DownloadedMediaTableOrderingComposer
     column: $table.downloadQualityPreset,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get libraryTitle => $composableBuilder(
+    column: $table.libraryTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DownloadedMediaTableAnnotationComposer
@@ -7396,6 +7528,14 @@ class $$DownloadedMediaTableAnnotationComposer
     column: $table.downloadQualityPreset,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get libraryId =>
+      $composableBuilder(column: $table.libraryId, builder: (column) => column);
+
+  GeneratedColumn<String> get libraryTitle => $composableBuilder(
+    column: $table.libraryTitle,
+    builder: (column) => column,
+  );
 }
 
 class $$DownloadedMediaTableTableManager
@@ -7457,6 +7597,8 @@ class $$DownloadedMediaTableTableManager
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String?> mediaSourceId = const Value.absent(),
                 Value<String> downloadQualityPreset = const Value.absent(),
+                Value<String?> libraryId = const Value.absent(),
+                Value<String?> libraryTitle = const Value.absent(),
               }) => DownloadedMediaCompanion(
                 id: id,
                 serverId: serverId,
@@ -7480,6 +7622,8 @@ class $$DownloadedMediaTableTableManager
                 mediaIndex: mediaIndex,
                 mediaSourceId: mediaSourceId,
                 downloadQualityPreset: downloadQualityPreset,
+                libraryId: libraryId,
+                libraryTitle: libraryTitle,
               ),
           createCompanionCallback:
               ({
@@ -7505,6 +7649,8 @@ class $$DownloadedMediaTableTableManager
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String?> mediaSourceId = const Value.absent(),
                 Value<String> downloadQualityPreset = const Value.absent(),
+                Value<String?> libraryId = const Value.absent(),
+                Value<String?> libraryTitle = const Value.absent(),
               }) => DownloadedMediaCompanion.insert(
                 id: id,
                 serverId: serverId,
@@ -7528,6 +7674,8 @@ class $$DownloadedMediaTableTableManager
                 mediaIndex: mediaIndex,
                 mediaSourceId: mediaSourceId,
                 downloadQualityPreset: downloadQualityPreset,
+                libraryId: libraryId,
+                libraryTitle: libraryTitle,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

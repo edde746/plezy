@@ -97,7 +97,7 @@ void main() {
         child: SizedBox(
           width: 200,
           height: 300,
-          child: MediaCard(item: item, forceGridMode: true, fullBleedImage: true, isOffline: true),
+          child: MediaCard(item: item, viewModeOverride: ViewMode.grid, fullBleedImage: true, isOffline: true),
         ),
       ),
     );
@@ -117,7 +117,11 @@ void main() {
 
     await tester.pumpWidget(
       _TestApp(
-        child: SizedBox(width: 200, height: 330, child: MediaCard(item: item, forceGridMode: true, isOffline: true)),
+        child: SizedBox(
+          width: 200,
+          height: 330,
+          child: MediaCard(item: item, viewModeOverride: ViewMode.grid, isOffline: true),
+        ),
       ),
     );
 
@@ -345,7 +349,7 @@ void main() {
         child: SizedBox(
           width: 420,
           height: 160,
-          child: MediaCard(item: item, forceListMode: true, fullBleedImage: true, isOffline: true),
+          child: MediaCard(item: item, viewModeOverride: ViewMode.list, fullBleedImage: true, isOffline: true),
         ),
       ),
     );
@@ -372,7 +376,11 @@ void main() {
 
     await tester.pumpWidget(
       _TestApp(
-        child: SizedBox(width: 420, height: 160, child: MediaCard(item: item, forceListMode: true, isOffline: true)),
+        child: SizedBox(
+          width: 420,
+          height: 160,
+          child: MediaCard(item: item, viewModeOverride: ViewMode.list, isOffline: true),
+        ),
       ),
     );
 
@@ -481,13 +489,14 @@ void main() {
       grandparentTitle: 'Semantic Series',
     );
 
-    for (final forceGridMode in [true, false]) {
+    for (final viewMode in ViewMode.values) {
+      final isGrid = viewMode == ViewMode.grid;
       await tester.pumpWidget(
         _TestApp(
           child: SizedBox(
-            width: forceGridMode ? 200 : 420,
-            height: forceGridMode ? 330 : 180,
-            child: MediaCard(item: item, forceGridMode: forceGridMode, forceListMode: !forceGridMode, isOffline: true),
+            width: isGrid ? 200 : 420,
+            height: isGrid ? 330 : 180,
+            child: MediaCard(item: item, viewModeOverride: viewMode, isOffline: true),
           ),
         ),
       );
@@ -519,7 +528,7 @@ void main() {
           title: 'Linked Movie',
           summary: 'Movie decorative summary',
         ),
-        forceGridMode: true,
+        viewMode: ViewMode.grid,
         detailLabel: 'Linked Movie',
         decorativeLabel: 'Movie decorative summary',
       ),
@@ -532,24 +541,20 @@ void main() {
           parentTitle: 'Linked Series',
           summary: 'Season decorative summary',
         ),
-        forceGridMode: false,
+        viewMode: ViewMode.list,
         detailLabel: 'Linked Series',
         decorativeLabel: 'Season Two',
       ),
     ];
 
     for (final scenario in scenarios) {
+      final isGrid = scenario.viewMode == ViewMode.grid;
       await tester.pumpWidget(
         _TestApp(
           child: SizedBox(
-            width: scenario.forceGridMode ? 200 : 420,
-            height: scenario.forceGridMode ? 330 : 180,
-            child: MediaCard(
-              item: scenario.item,
-              forceGridMode: scenario.forceGridMode,
-              forceListMode: !scenario.forceGridMode,
-              isOffline: true,
-            ),
+            width: isGrid ? 200 : 420,
+            height: isGrid ? 330 : 180,
+            child: MediaCard(item: scenario.item, viewModeOverride: scenario.viewMode, isOffline: true),
           ),
         ),
       );
@@ -631,7 +636,11 @@ void main() {
 
     await tester.pumpWidget(
       _TestApp(
-        child: SizedBox(width: 200, height: 330, child: MediaCard(item: item, forceGridMode: true, isOffline: true)),
+        child: SizedBox(
+          width: 200,
+          height: 330,
+          child: MediaCard(item: item, viewModeOverride: ViewMode.grid, isOffline: true),
+        ),
       ),
     );
 
@@ -652,7 +661,11 @@ void main() {
       _TestApp(
         child: MediaQuery(
           data: const MediaQueryData(accessibleNavigation: true),
-          child: SizedBox(width: 200, height: 330, child: MediaCard(item: item, forceGridMode: true, isOffline: true)),
+          child: SizedBox(
+            width: 200,
+            height: 330,
+            child: MediaCard(item: item, viewModeOverride: ViewMode.grid, isOffline: true),
+          ),
         ),
       ),
     );
@@ -674,19 +687,14 @@ void main() {
     );
     var tapCount = 0;
 
-    for (final forceGridMode in [true, false]) {
+    for (final viewMode in ViewMode.values) {
+      final isGrid = viewMode == ViewMode.grid;
       await tester.pumpWidget(
         _TestApp(
           child: SizedBox(
-            width: forceGridMode ? 200 : 420,
-            height: forceGridMode ? 330 : 180,
-            child: MediaCard(
-              item: item,
-              forceGridMode: forceGridMode,
-              forceListMode: !forceGridMode,
-              isOffline: true,
-              onTap: () => tapCount++,
-            ),
+            width: isGrid ? 200 : 420,
+            height: isGrid ? 330 : 180,
+            child: MediaCard(item: item, viewModeOverride: viewMode, isOffline: true, onTap: () => tapCount++),
           ),
         ),
       );
@@ -697,7 +705,7 @@ void main() {
       expect(find.bySemanticsLabel(RegExp('Decorative movie summary')), findsNothing);
 
       card.owner!.performAction(card.id, ui.SemanticsAction.tap);
-      expect(tapCount, forceGridMode ? 1 : 2);
+      expect(tapCount, isGrid ? 1 : 2);
     }
 
     semantics.dispose();
@@ -718,7 +726,13 @@ void main() {
         child: SizedBox(
           width: 200,
           height: 330,
-          child: MediaCard(key: cardKey, item: item, forceGridMode: true, isOffline: true, onTap: () => tapCount++),
+          child: MediaCard(
+            key: cardKey,
+            item: item,
+            viewModeOverride: ViewMode.grid,
+            isOffline: true,
+            onTap: () => tapCount++,
+          ),
         ),
       ),
     );
@@ -748,7 +762,7 @@ void main() {
           child: MediaCard(
             key: cardKey,
             item: item,
-            forceGridMode: true,
+            viewModeOverride: ViewMode.grid,
             isOffline: true,
             onLongPress: () => longPressCount++,
           ),
@@ -787,7 +801,7 @@ Widget _catalogGridHarness(MediaItem item, {Key? key, double width = 220}) {
         item: item,
         width: width,
         height: 280,
-        forceGridMode: true,
+        viewModeOverride: ViewMode.grid,
         isOffline: true,
         onTap: () {},
       ),

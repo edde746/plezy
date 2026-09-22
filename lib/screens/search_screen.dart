@@ -18,6 +18,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -40,7 +41,14 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen>
-    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, MountedSetStateMixin, DebouncedMediaSearch {
+    with
+        Refreshable,
+        ManualRefreshable,
+        FullRefreshable,
+        SearchInputFocusable,
+        FocusableTab,
+        MountedSetStateMixin,
+        DebouncedMediaSearch {
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
@@ -213,6 +221,11 @@ class _SearchScreenState extends State<SearchScreen>
     runSearch(searchController.text.trim());
   }
 
+  /// Cmd+R / Ctrl+R re-runs the query currently on screen; `runSearch` no-ops
+  /// on an empty field.
+  @override
+  void manualRefresh() => refresh();
+
   /// Focus the search input field
   @override
   void focusSearchInput() {
@@ -292,7 +305,6 @@ class _SearchScreenState extends State<SearchScreen>
     }
   }
 
-  /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
   }
@@ -438,7 +450,7 @@ class _SearchScreenState extends State<SearchScreen>
         return FocusableMediaCard(
           key: Key(item.globalKey),
           item: item,
-          forceListMode: true,
+          viewModeOverride: ViewMode.list,
           disableScale: true,
           focusNode: index == 0 ? firstResultFocusNode : null,
           onRefresh: updateItem,

@@ -79,12 +79,14 @@ internal fun isPcmEncoding(encoding: Int): Boolean = when (encoding) {
 /** The IEC 61937 track shape a codec's spdif burst rides. */
 internal enum class MpvIecShape { STEREO_48K, STEREO_192K, SURROUND_192K }
 
+/** The order the fork's audiotrack AO tries a codec's transports in. */
+private enum class MpvTransportOrder { CARRIER_ONLY, RAW_THEN_CARRIER, CARRIER_THEN_RAW }
+
 private class MpvSpdifCodec(
   val name: String,
   val encoding: Int,
   val shape: MpvIecShape,
-  /** Whether the fork's audiotrack AO opens this codec as a raw bitstream track first. */
-  val raw: Boolean = false
+  val order: MpvTransportOrder = MpvTransportOrder.CARRIER_ONLY
 )
 
 /**
@@ -96,30 +98,35 @@ private class MpvSpdifCodec(
  * and only falls back to the IEC 61937 carrier when the route rejects the raw encoding
  * outright. Raw tracks keep the platform's Dolby/DTS transcoder in the path; a pre-packed IEC
  * track bypasses it and drains into silence on routes whose sink cannot decode the codec
- * itself (#2177's Shield in front of a Dolby-Digital-only Sonos). TrueHD (MAT) and DTS-HD MA
- * stay on the 8-channel 192kHz IEC carrier the multichannel patch (0101) added: their raw
- * forms are not recoverable from the burst stream.
+ * itself (#2177's Shield in front of a Dolby-Digital-only Sonos).
+ *
+ * DTS-HD has both transports in the other order (0117): the AO keeps the 8-channel 192kHz IEC
+ * carrier wherever the route takes it — Fire OS advertises `ENCODING_DTS_HD`, opens the raw
+ * track and renders silence (#1988) while its carrier plays — and unwraps the burst into a raw
+ * `ENCODING_DTS_HD` track at 48kHz/7.1 only when the route refuses the carrier, which is the
+ * one transport a TCL C8K's eARC port offers (#2333). TrueHD (MAT) stays on the carrier: its
+ * raw form is not recovered from the burst stream.
  *
  * `dts-hd` supersedes plain `dts`: that literal is what selects the lossless `spdif_dts_hd`
  * decoder, and it enables spdif for the whole `dts` codec while doing so, with the core burst
  * still chosen per file for tracks that are not HD (`ad_spdif.c:240-249`, `:400-418`). HRA rides
- * a 2ch/192kHz burst under the same name, so gating it on the 8-channel carrier is the
+ * a 2ch/192kHz burst under the same name, so gating it on the 8-channel shapes is the
  * conservative choice.
  */
 private val MPV_SPDIF_CODECS: List<MpvSpdifCodec> = listOf(
-  MpvSpdifCodec("ac3", C.ENCODING_AC3, MpvIecShape.STEREO_48K, raw = true),
-  MpvSpdifCodec("eac3", C.ENCODING_E_AC3, MpvIecShape.STEREO_192K, raw = true),
+  MpvSpdifCodec("ac3", C.ENCODING_AC3, MpvIecShape.STEREO_48K, MpvTransportOrder.RAW_THEN_CARRIER),
+  MpvSpdifCodec("eac3", C.ENCODING_E_AC3, MpvIecShape.STEREO_192K, MpvTransportOrder.RAW_THEN_CARRIER),
   MpvSpdifCodec("truehd", C.ENCODING_DOLBY_TRUEHD, MpvIecShape.SURROUND_192K),
-  MpvSpdifCodec("dts", C.ENCODING_DTS, MpvIecShape.STEREO_48K, raw = true),
-  MpvSpdifCodec("dts-hd", C.ENCODING_DTS_HD, MpvIecShape.SURROUND_192K)
+  MpvSpdifCodec("dts", C.ENCODING_DTS, MpvIecShape.STEREO_48K, MpvTransportOrder.RAW_THEN_CARRIER),
+  MpvSpdifCodec("dts-hd", C.ENCODING_DTS_HD, MpvIecShape.SURROUND_192K, MpvTransportOrder.CARRIER_THEN_RAW)
 )
 
 /**
  * Builds an `audio-spdif` value naming only the codecs the route can carry: [supportsEncoding]
  * advertises the codec's encoding *and* a transport the AO's ladder can open exists —
- * [supportsRawTrack] for the raw bitstream track it tries first, or [supportsShape] for the
- * IEC 61937 burst it falls back to. Plain `dts` is dropped whenever `dts-hd` qualifies, which
- * already covers the core burst.
+ * [supportsRawTrack] for the raw bitstream track, [supportsShape] for the IEC 61937 burst —
+ * probed in the order the AO tries them, so the cheaper first choice spares the second probe.
+ * Plain `dts` is dropped whenever `dts-hd` qualifies, which already covers the core burst.
  *
  * mpv force-passes through every codec named here and has no decode fallback, so an
  * unsupported name leaves the file rendering video against a dead audio output (#1703).
@@ -136,7 +143,11 @@ internal fun mpvSpdifCodecs(
 ): String {
   val carried = MPV_SPDIF_CODECS.filter {
     supportsEncoding(it.encoding) &&
-      ((it.raw && supportsRawTrack(it.encoding)) || supportsShape(it.shape))
+      when (it.order) {
+        MpvTransportOrder.CARRIER_ONLY -> supportsShape(it.shape)
+        MpvTransportOrder.RAW_THEN_CARRIER -> supportsRawTrack(it.encoding) || supportsShape(it.shape)
+        MpvTransportOrder.CARRIER_THEN_RAW -> supportsShape(it.shape) || supportsRawTrack(it.encoding)
+      }
   }
   val dtsHd = carried.any { it.name == "dts-hd" }
   return (if (dtsHd) carried.filterNot { it.name == "dts" } else carried).joinToString(",") { it.name }
@@ -149,7 +160,8 @@ internal fun mpvSpdifCodecs(
  * - The route must accept a track shape the AO's ladder actually opens. For AC3, E-AC3 and the
  *   DTS core that is the raw bitstream track probed by [supportsMpvRawTrack], with the IEC
  *   stereo shapes ([supportsMpvIecShape], [supportsMpvHighRateIecShape]) as the AO's fallback
- *   transport; TrueHD and DTS-HD MA need the 192kHz/7.1 carrier ([supportsIecCarrier]).
+ *   transport; TrueHD needs the 192kHz/7.1 carrier ([supportsIecCarrier]), and DTS-HD MA takes
+ *   either that carrier or the raw 48kHz/7.1 `ENCODING_DTS_HD` track the AO opens without it.
  *   Advertising the raw encoding only says the receiver decodes it, not that the HAL takes the
  *   track: #1991's Shield strands playback on every mpv IEC attempt while bitstreaming AC3 raw.
  *   The probes are independent, so none of them may veto the whole list: a route that takes the
@@ -215,30 +227,38 @@ internal fun supportsMpvIecShape(context: Context): Boolean = iecRouteSupported(
 
 /**
  * Whether the route takes a raw bitstream `AudioTrack` for [encoding] at the shape the fork's
- * `ao_audiotrack` opens first: the codec frame rate with a stereo mask (Kodi's raw shape; the
- * HAL reads the real channel layout from the bitstream). Same probe tiering as the IEC shapes,
- * with two differences:
+ * `ao_audiotrack` opens: the codec frame rate at the burst's channel mask — stereo for AC3,
+ * E-AC3 and the DTS core (Kodi's raw shape; the HAL reads the real channel layout from the
+ * bitstream), 7.1 for DTS-HD MA. Same probe tiering as the IEC shapes, with two differences:
  * - On API 33+ any direct mode `getDirectPlaybackSupport` reports counts, not only the
  *   bitstream bit ([rawTrackDirectModeUsable]).
  * - Below API 29 no runtime oracle exists for raw tracks and media3 gates its raw path on the
  *   advertised encoding alone — which [supportedMpvSpdifCodecs] already requires via
- *   [AudioCapabilities]. #1991's API 28 Shield bitstreams AC3 exactly this way.
+ *   [AudioCapabilities]. #1991's API 28 Shield bitstreams AC3 exactly this way. DTS-HD is the
+ *   exception: the AO opens it raw only when the route oracle refuses the carrier, and with no
+ *   oracle it keeps the carrier, so on that tier only [supportsIecCarrier] can qualify it.
  */
-internal fun supportsMpvRawTrack(context: Context, encoding: Int): Boolean = iecRouteSupported(
-  sdkInt = Build.VERSION.SDK_INT,
-  canSizeBuffer = { canSizeDirectBuffer(MPV_IEC_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO, encoding) },
-  // The SDK_INT guards repeat iecRouteSupported's tiering only because lint's NewApi
-  // check cannot see through the injected lambdas.
-  bitstreamSupported = {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-      rawTrackDirectSupported(directProbeFormat(encoding, MPV_IEC_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO))
-  },
-  directPlaybackSupported = {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-      iecDirectPlaybackSupported(directProbeFormat(encoding, MPV_IEC_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_STEREO))
-  },
-  hdmiRouteAdvertised = { true }
-)
+internal fun supportsMpvRawTrack(context: Context, encoding: Int): Boolean {
+  val channelMask = mpvRawChannelMask(encoding)
+  return iecRouteSupported(
+    sdkInt = Build.VERSION.SDK_INT,
+    canSizeBuffer = { canSizeDirectBuffer(MPV_IEC_SAMPLE_RATE, channelMask, encoding) },
+    // The SDK_INT guards repeat iecRouteSupported's tiering only because lint's NewApi
+    // check cannot see through the injected lambdas.
+    bitstreamSupported = {
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        rawTrackDirectSupported(directProbeFormat(encoding, MPV_IEC_SAMPLE_RATE, channelMask))
+    },
+    directPlaybackSupported = {
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+        iecDirectPlaybackSupported(directProbeFormat(encoding, MPV_IEC_SAMPLE_RATE, channelMask))
+    },
+    hdmiRouteAdvertised = { encoding != C.ENCODING_DTS_HD }
+  )
+}
+
+/** The channel mask the fork's AO opens a raw track with: the burst's own, 7.1 for DTS-HD MA. */
+internal fun mpvRawChannelMask(encoding: Int): Int = if (encoding == C.ENCODING_DTS_HD) AudioFormat.CHANNEL_OUT_7POINT1_SURROUND else AudioFormat.CHANNEL_OUT_STEREO
 
 /**
  * Whether a `getDirectPlaybackSupport` answer lets the fork open its raw AC3/E-AC3/DTS track:

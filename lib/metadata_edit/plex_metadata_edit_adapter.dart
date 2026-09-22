@@ -110,6 +110,33 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
   }
 
   @override
+  Future<List<String>> fetchTagSuggestions(MetadataEditDraft draft, MetadataEditField field) async {
+    // Plex advertises per-library tag facets under /library/sections/{id}/filters;
+    // 'label' is the Plex name for what Jellyfin calls Tags. Older PMS versions
+    // may not advertise it — return empty and let recents fill in.
+    final filterName = switch (field.id) {
+      'label' => 'label',
+      'genre' => 'genre',
+      _ => null,
+    };
+    final sectionId = int.tryParse(draft.currentItem.libraryId ?? draft.sourceItem.libraryId ?? '');
+    if (filterName == null || sectionId == null) return const [];
+    try {
+      final filters = await client.getLibraryFilters(sectionId.toString());
+      final filter = filters.where((f) => f.filter == filterName).firstOrNull;
+      if (filter == null || filter.key.isEmpty) return const [];
+      final values = await client.getFilterValues(filter.key);
+      return [
+        for (final value in values)
+          if (value.title.isNotEmpty) value.title,
+      ];
+    } catch (e, st) {
+      appLogger.w('Failed to load Plex tag suggestions', error: e, stackTrace: st);
+      return const [];
+    }
+  }
+
+  @override
   Future<List<MetadataArtworkOption>> fetchArtwork(MetadataEditDraft draft, MetadataEditField field) async {
     final element = field.artwork?.key;
     if (element == null) return const [];

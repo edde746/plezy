@@ -137,7 +137,17 @@ class _DownloadMetadataStore extends ChangeNotifier {
             ? buildGlobalKey(ServerId(latest.clientScopeId!), latest.ratingKey)
             : latest.globalKey;
         hydrated.add(
-          HydratedWatchStatePatch(globalKey: scopedKey, patch: snapshot, updatedAt: latest.updatedAt, order: latest.id),
+          HydratedWatchStatePatch(
+            globalKey: scopedKey,
+            patch: snapshot,
+            updatedAt: latest.updatedAt,
+            order: latest.id,
+            patchId: WatchPatchId.offlineAction(
+              profileId: latest.profileId,
+              rowId: latest.id,
+              revision: latest.updatedAt,
+            ),
+          ),
         );
       }
       _watchStateStore.setHydratedPatches(hydrated);

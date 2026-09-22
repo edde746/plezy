@@ -3,9 +3,12 @@ import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/focusable_button.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -160,6 +163,41 @@ void main() {
     harness.buttonKey.currentState!.togglePanel();
     await tester.pump();
   });
+
+  testWidgets('arrow keys reach the cancel button, which shows focus and cancels on select', (tester) async {
+    final transport = _ControlledActivitiesClient(honorAbort: false);
+    await _pumpActivitiesHarness(tester, transport, trackInputMode: true);
+
+    transport.completeActivities(0, const ['Cancelable activity'], cancellable: true);
+    await tester.pump();
+    await tester.pump();
+
+    // Arrow enters keyboard mode and hands focus from the panel scope to the
+    // first cancel button.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    final cancel = find.byTooltip(t.common.cancel);
+    expect(find.ancestor(of: cancel, matching: find.byType(FocusableButton)), findsOneWidget);
+    expect(Focus.of(tester.element(cancel)).hasPrimaryFocus, isTrue);
+    expect(InputModeTracker.isKeyboardMode(tester.element(cancel)), isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    await tester.pump();
+
+    expect(transport.deleteCount, 1);
+    expect(transport.activityRequests, hasLength(2), reason: 'a cancel triggers an immediate refresh');
+    transport.completeActivities(1, const []);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(t.serverTasks.noTasks), findsOneWidget);
+
+    // Back still closes the panel once focus has moved into it.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.text(t.serverTasks.title), findsNothing);
+  });
 }
 
 class _ActivitiesHarness {
@@ -168,21 +206,25 @@ class _ActivitiesHarness {
   final GlobalKey<ServerActivitiesButtonState> buttonKey;
 }
 
-Future<_ActivitiesHarness> _pumpActivitiesHarness(WidgetTester tester, _ControlledActivitiesClient transport) async {
+Future<_ActivitiesHarness> _pumpActivitiesHarness(
+  WidgetTester tester,
+  _ControlledActivitiesClient transport, {
+  bool trackInputMode = false,
+}) async {
   final serverId = ServerId('plex-server');
   final client = testPlexClient(serverId: serverId, serverName: 'Test server', httpClient: transport);
   final multiServerProvider = testMultiServer(clients: [client]).provider;
   final buttonKey = GlobalKey<ServerActivitiesButtonState>();
 
+  Widget app = MaterialApp(
+    theme: monoTheme(dark: true),
+    home: Scaffold(body: ServerActivitiesButton(key: buttonKey)),
+  );
+  if (trackInputMode) app = InputModeTracker(child: app);
+
   await tester.pumpWidget(
     TranslationProvider(
-      child: ChangeNotifierProvider<MultiServerProvider>.value(
-        value: multiServerProvider,
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: Scaffold(body: ServerActivitiesButton(key: buttonKey)),
-        ),
-      ),
+      child: ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider, child: app),
     ),
   );
   buttonKey.currentState!.togglePanel();

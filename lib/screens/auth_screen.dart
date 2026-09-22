@@ -19,6 +19,7 @@ import '../services/storage_service.dart';
 import '../providers/account_preferences_controller.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
@@ -247,11 +248,13 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _showDebugTokenDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return _DebugTokenDialog(verifyService: _verifyOnlyService, onTokenAccepted: _connectToAllServersAndNavigate);
-      },
+    unawaited(
+      showScopedDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return _DebugTokenDialog(verifyService: _verifyOnlyService, onTokenAccepted: _connectToAllServersAndNavigate);
+        },
+      ),
     );
   }
 

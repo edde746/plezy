@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../media/ids.dart';
+import '../media/media_backend.dart';
 
 import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
@@ -51,15 +52,7 @@ Future<void> navigateToLiveTv(
   // The placeholder carries the actual backend through so any in-player
   // `metadata.backend` branch (transcoder hints, watch-state surfaces) sees
   // the right kind.
-  final placeholder = MediaItem(
-    id: channel.key,
-    backend: client.backend,
-    kind: MediaKind.clip,
-    title: channel.displayName,
-    serverId: channel.serverId,
-    serverName: channel.serverName,
-    raw: {'key': channel.key},
-  );
+  final placeholder = liveTvChannelItem(channel, backend: client.backend, serverId: serverInfo.serverId);
 
   final normalizedChannels = List<LiveTvChannel>.of(channels);
   var currentChannelIndex = normalizedChannels.indexWhere(
@@ -82,6 +75,31 @@ Future<void> navigateToLiveTv(
 
   unawaited(route.push(navigator));
   launchObserver?.mark('opening');
+}
+
+/// The backend-neutral placeholder item standing in for a tuned live channel.
+///
+/// Shared by the launch path and the in-player channel zap so the two cannot
+/// drift: everything keyed off the screen's current metadata — the OS media
+/// session, the client lookups, and the scoped player preferences — has to
+/// describe the channel that is actually tuned. [thumbPath] feeds the media
+/// session artwork through the same `MediaServerClient.thumbnailUrl` adapter
+/// VOD uses, so the Now Playing card carries the channel logo.
+///
+/// [serverId] overrides the channel's own scope for a channel that does not
+/// carry one: the live TV server the tune picks is the one that can serve its
+/// logo.
+MediaItem liveTvChannelItem(LiveTvChannel channel, {required MediaBackend backend, String? serverId}) {
+  return MediaItem(
+    id: channel.key,
+    backend: backend,
+    kind: MediaKind.clip,
+    title: channel.displayName,
+    serverId: serverId ?? channel.serverId,
+    serverName: channel.serverName,
+    thumbPath: channel.thumb ?? channel.art,
+    raw: {'key': channel.key},
+  );
 }
 
 /// Resolves the Live TV backend without weakening explicit channel ownership.

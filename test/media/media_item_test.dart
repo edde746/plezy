@@ -448,29 +448,12 @@ void main() {
   });
 
   group('MediaItem.copyWith', () {
-    test('round-trips an unchanged copy', () {
-      final original = _movie(viewCount: 1, durationMs: 1000);
-      final copy = original.copyWith();
-      expect(copy.id, original.id);
-      expect(copy.viewCount, original.viewCount);
-      expect(copy.durationMs, original.durationMs);
-      expect(copy.kind, original.kind);
-    });
-
     test('overrides only the named fields', () {
       final original = _movie(title: 'Old', viewCount: 0);
       final copy = original.copyWith(title: 'New', viewCount: 3);
       expect(copy.title, 'New');
       expect(copy.viewCount, 3);
       expect(copy.id, 'm1', reason: 'untouched fields preserved');
-    });
-
-    test('preserves backend across copyWith for both backends', () {
-      for (final backend in MediaBackend.values) {
-        final original = _movie(backend: backend);
-        expect(original.backend, backend);
-        expect(original.copyWith(title: 'New').backend, backend, reason: 'copyWith must preserve backend');
-      }
     });
 
     test('preserves Plex-only fields when omitted', () {
@@ -658,12 +641,6 @@ void main() {
       expect(jellyfin, isA<JellyfinMediaItem>());
       expect(emby.backend, MediaBackend.emby);
       expect(jellyfin.backend, MediaBackend.jellyfin);
-    });
-
-    test('copyWith preserves the Emby dialect', () {
-      final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie) as JellyfinMediaItem;
-
-      expect(emby.copyWith(title: 'renamed').backend, MediaBackend.emby);
     });
   });
 

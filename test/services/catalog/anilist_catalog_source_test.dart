@@ -416,8 +416,10 @@ void main() {
       await client.getPlanningIdsPage(7);
 
       final query = _requestBody(requests.single)['query'] as String;
-      expect(query, contains('id idMal'));
-      expect(query, isNot(contains(r'id\nidMal')));
+      // A literal backslash-n between the fields (an escape slip in the Dart
+      // string) reaches the wire verbatim and AniList rejects it as a syntax error.
+      expect(query, isNot(contains(r'\n')));
+      expect(query, matches(RegExp(r'media\s*\{\s*id\s+idMal\s*\}')));
     });
 
     test('row and detail documents select metadata on the deliberate request path', () async {

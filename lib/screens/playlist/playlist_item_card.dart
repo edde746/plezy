@@ -16,7 +16,12 @@ import '../../widgets/watched_indicator.dart';
 import '../../widgets/optimized_media_image.dart';
 
 /// Custom list item widget for playlist items
-/// Shows drag handle, poster, title/metadata, duration, and remove button
+/// Shows drag handle, poster, title/metadata, duration, and remove button.
+///
+/// The card is not focusable itself: the playlist screen owns one list focus
+/// node and paints focus through [isFocused]/[focusedColumn]. Long-press and
+/// right-click open the context menu here; the D-pad path reaches the same
+/// menu through [PlaylistItemCardState.showContextMenu] via a [GlobalKey].
 class PlaylistItemCard extends StatefulWidget {
   final MediaItem item;
   final int index;
@@ -43,10 +48,10 @@ class PlaylistItemCard extends StatefulWidget {
   });
 
   @override
-  State<PlaylistItemCard> createState() => _PlaylistItemCardState();
+  State<PlaylistItemCard> createState() => PlaylistItemCardState();
 }
 
-class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapMixin<PlaylistItemCard> {
+class PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapMixin<PlaylistItemCard> {
   MediaItem _effectiveItem(BuildContext context) => context.withFreshWatchState(widget.item);
 
   @override

@@ -713,6 +713,24 @@ void main() {
     expect(provider.hubs.single.items.map((i) => i.serverId), ['server_1']);
   });
 
+  test('a watched event evicts only the emitting server\'s copy of a colliding id', () async {
+    aggregation.onDeckResult = () => [_item('42', serverId: 'server_1'), _item('42', serverId: 'server_2')];
+    await provider.load();
+
+    // Hold the trailing refresh open so the immediate eviction is observable.
+    final gate = Completer<void>();
+    aggregation.onDeckGate = gate.future;
+    aggregation.onDeckStarted = Completer<void>();
+
+    WatchStateNotifier().notifyWatched(item: _item('42', serverId: 'server_1'));
+    await aggregation.onDeckStarted!.future;
+
+    expect(provider.onDeck.map((item) => item.globalKey), ['server_2:42']);
+
+    gate.complete();
+    await pumpEventQueue();
+  });
+
   test('library order change re-sorts hubs without any refetch', () async {
     aggregation.hubsResult = () => [_hub('hub-lib2', libraryId: 'lib-2'), _hub('hub-lib1', libraryId: 'lib-1')];
     await provider.load();

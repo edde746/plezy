@@ -14,7 +14,7 @@ void main() {
     SettingsService.resetForTesting();
   });
 
-  testWidgets('shared settings writes and resets reconcile the persisted Plex download quality', (tester) async {
+  testWidgets('shared settings writes, resets, and bulk replay reconcile Plex download quality', (tester) async {
     final settings = await SettingsService.getInstance();
     final downloads = _RecordingDownloads();
     addTearDown(downloads.dispose);
@@ -40,6 +40,17 @@ void main() {
     await mutations.write(context, pref, TranscodeQualityPreset.original, reset: true);
     expect(settings.prefs.containsKey(pref.key), isFalse);
     expect(downloads.reconciledPresets, [TranscodeQualityPreset.p240_320, TranscodeQualityPreset.original]);
+
+    await settings.write(pref, TranscodeQualityPreset.p720_3mbps);
+    await mutations.applyStoredEffects(
+      context,
+      previousRootConfiguration: SettingsMutationService.captureRootConfiguration(),
+    );
+    expect(downloads.reconciledPresets, [
+      TranscodeQualityPreset.p240_320,
+      TranscodeQualityPreset.original,
+      TranscodeQualityPreset.p720_3mbps,
+    ]);
   });
 }
 

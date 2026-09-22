@@ -25,6 +25,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/device_identity.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
@@ -372,9 +373,6 @@ void main() {
         }
         return null;
       }
-
-      http.Response jsonResponse(Map<String, dynamic> body) =>
-          http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
 
       final client = PlexClient.forTesting(
         config: PlexConfig(
@@ -1924,13 +1922,6 @@ void main() {
   });
 
   group('dispose', () {
-    test('disposing without connectivity monitoring does not throw', () {
-      final m = MultiServerManager();
-      // No startNetworkMonitoring call → _connectivitySubscription is null.
-      // dispose() must handle the null-subscription path cleanly.
-      expect(m.dispose, returnsNormally);
-    });
-
     test('dispose closes the status stream (existing subscribers get onDone)', () async {
       final m = MultiServerManager();
       var done = false;

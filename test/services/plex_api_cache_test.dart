@@ -55,11 +55,18 @@ void main() {
   };
 
   group('singleton', () {
-    test('initialize swaps the underlying database', () async {
+    test('initialize routes reads and writes to the new database', () async {
+      await cache.put(ServerId('srv'), '/old', {'value': 1});
+
       final newDb = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(newDb);
-      expect(identical(PlexApiCache.instance.database, newDb), isTrue);
-      await newDb.close();
+      addTearDown(newDb.close);
+
+      expect(await PlexApiCache.instance.get(ServerId('srv'), '/old'), isNull);
+
+      await PlexApiCache.instance.put(ServerId('srv'), '/new', {'value': 2});
+      expect(await newDb.select(newDb.apiCache).get(), hasLength(1));
+      expect(await cache.get(ServerId('srv'), '/new'), isNull, reason: 'old database is no longer written');
     });
 
     test('registered cleanup ignores backend initialization order and preserves pinned rows', () async {

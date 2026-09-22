@@ -73,6 +73,11 @@ protocol MpvPlayerDelegate: AnyObject {
       }
     }
 
+    // MoltenVK sets this from libmpv's VO thread when it tags the layer for
+    // the negotiated swapchain colorspace (on for PQ, HLG and Display P3, off
+    // for sRGB and pass-through). The screen only enters EDR mode for a write
+    // made on the main thread, so marshal it there; the colorspace itself
+    // takes effect from any thread.
     override var wantsExtendedDynamicRangeContent: Bool {
       get { super.wantsExtendedDynamicRangeContent }
       set {
@@ -234,6 +239,17 @@ class MpvPlayerCoreBase: NSObject {
     /// (the `sourceId` that entry's events carry); nil for every other command.
     case command((Result<Int64?, Error>) -> Void)
     case getProperty((Result<String?, Error>) -> Void)
+
+    func fail(with error: Error) {
+      switch self {
+      case .void(let completion):
+        completion(.failure(error))
+      case .command(let completion):
+        completion(.failure(error))
+      case .getProperty(let completion):
+        completion(.failure(error))
+      }
+    }
   }
 
   private var pendingRequests: [UInt64: PendingRequest] = [:]
@@ -893,6 +909,18 @@ class MpvPlayerCoreBase: NSObject {
       checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
       checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
       checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+      // The moltenvk context reports the screen as BT.2020 PQ once the layer
+      // carries an EDR headroom above 1 (MpvPlayerCore.publishDisplayHeadroom);
+      // that report is what lets the `auto` hint below engage at all. `source`
+      // hands HDR sources through as PQ/HLG with their own mastering metadata
+      // for WindowServer to map, the way AVFoundation does (#2393), and keeps
+      // SDR sources SDR: on such a screen libplacebo negotiates a Display P3
+      // BT.1886 surface for them, so they come out colour-managed instead of
+      // on the untagged pass-through surface an SDR screen keeps. The default
+      // `target` mode would re-encode SDR to PQ at 203 nits - where macOS then
+      // places that against SDR white is unmeasured - and have mpv tone-map to
+      // a display peak the context does not report.
+      checkError(mpv_set_option_string(mpv, "target-colorspace-hint-mode", "source"))
     #else
       checkError(mpv_set_option_string(mpv, "vo", "avfoundation"))
       #if targetEnvironment(simulator)
@@ -985,14 +1013,7 @@ class MpvPlayerCoreBase: NSObject {
     let error = MpvLifecycleUnavailableError("Player disposed")
     for (_, request) in pending {
       DispatchQueue.main.async {
-        switch request {
-        case .void(let completion):
-          completion(.failure(error))
-        case .command(let completion):
-          completion(.failure(error))
-        case .getProperty(let completion):
-          completion(.failure(error))
-        }
+        request.fail(with: error)
       }
     }
   }
@@ -1040,14 +1061,7 @@ class MpvPlayerCoreBase: NSObject {
     else {
       let error = lifecycleUnavailableError()
       completeOnMain {
-        switch request {
-        case .void(let completion):
-          completion(.failure(error))
-        case .command(let completion):
-          completion(.failure(error))
-        case .getProperty(let completion):
-          completion(.failure(error))
-        }
+        request.fail(with: error)
       }
       return
     }
@@ -1058,14 +1072,7 @@ class MpvPlayerCoreBase: NSObject {
     guard status < 0, let request = takeRequest(requestId) else { return }
     let error = mpvError(status)
     DispatchQueue.main.async {
-      switch request {
-      case .void(let completion):
-        completion(.failure(error))
-      case .command(let completion):
-        completion(.failure(error))
-      case .getProperty(let completion):
-        completion(.failure(error))
-      }
+      request.fail(with: error)
     }
   }
 

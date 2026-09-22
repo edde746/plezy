@@ -60,27 +60,29 @@ class _FrameRateStartupPlan {
   }
 }
 
-class _ExternalSubtitleOpenPlan {
-  const _ExternalSubtitleOpenPlan({required this.externalSubtitles, required this.attachesAtOpen, this.readyAfterOpen});
-
-  final List<SubtitleTrack> externalSubtitles;
-  final bool attachesAtOpen;
-
-  /// The open's file-loaded signal for the post-open sub-add path; false when
-  /// the open never got there.
-  final Future<bool>? readyAfterOpen;
-
-  bool get hasExternalSubtitles => externalSubtitles.isNotEmpty;
-  bool get requiresPostOpenAdd => !attachesAtOpen && hasExternalSubtitles;
-  bool get canStartBeforeTrackSetup => attachesAtOpen || !hasExternalSubtitles;
-  List<SubtitleTrack>? get subtitlesAtOpen => attachesAtOpen && hasExternalSubtitles ? externalSubtitles : null;
-}
-
 class _MediaOpenResult {
   const _MediaOpenResult({required this.didOpen, this.sidecarFallbackUsed = false});
 
   final bool didOpen;
   final bool sidecarFallbackUsed;
+}
+
+/// Start position for a fresh open, in precedence order: an explicit
+/// caller request (version switch, stream recovery, Watch Together), the
+/// shuffle-starts-from-beginning override (#2303), locally tracked offline
+/// progress, then the server-side view offset.
+Duration? resolveOpenResumePosition({
+  Duration? requested,
+  bool shuffleFromBeginning = false,
+  int? offlineOffsetMs,
+  int? viewOffsetMs,
+}) {
+  if (requested != null) return requested;
+  if (shuffleFromBeginning) return Duration.zero;
+  if (offlineOffsetMs != null && offlineOffsetMs > 0) {
+    return Duration(milliseconds: offlineOffsetMs);
+  }
+  return viewOffsetMs != null ? Duration(milliseconds: viewOffsetMs) : null;
 }
 
 /// Shared building blocks for opening media on the live player.
@@ -182,25 +184,38 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return rateEligible || resolutionEligible;
   }
 
-  /// Resolve where a fresh open should start: explicit request → locally
-  /// tracked offline progress → server view offset.
+  /// Resolve where a fresh open should start: explicit request → shuffle
+  /// override → locally tracked offline progress → server view offset.
   Future<Duration?> _resolveOpenResumePosition({
     required MediaItem metadata,
     required bool isOffline,
     required OfflineWatchSyncService offlineWatchService,
     Duration? requested,
   }) async {
-    if (requested != null) return requested;
+    // A shuffled queue opts out of resume when the user asked for it (#2303):
+    // every item opens at 0:00, including episodes reached through
+    // auto-advance and Plex server-side window refetches. Explicit requests
+    // still win, so the flag is only read when no request is in play.
+    final shuffleFromBeginning =
+        requested == null &&
+        mounted &&
+        context.read<PlaybackStateProvider>().isShuffleActive &&
+        (await SettingsService.getInstance()).read(SettingsService.shuffleStartsFromBeginning);
+    int? offlineOffsetMs;
     // In offline mode, prefer locally tracked progress over the cached server
     // value since the user may have watched further since downloading.
-    if (isOffline) {
-      final localOffset = await offlineWatchService.getLocalViewOffset(metadata.globalKey);
-      if (localOffset != null && localOffset > 0) {
-        appLogger.d('Resuming offline playback from local progress: ${localOffset}ms');
-        return Duration(milliseconds: localOffset);
+    if (requested == null && !shuffleFromBeginning && isOffline) {
+      offlineOffsetMs = await offlineWatchService.getLocalViewOffset(metadata.globalKey);
+      if (offlineOffsetMs != null && offlineOffsetMs > 0) {
+        appLogger.d('Resuming offline playback from local progress: ${offlineOffsetMs}ms');
       }
     }
-    return metadata.viewOffsetMs != null ? Duration(milliseconds: metadata.viewOffsetMs!) : null;
+    return resolveOpenResumePosition(
+      requested: requested,
+      shuffleFromBeginning: shuffleFromBeginning,
+      offlineOffsetMs: offlineOffsetMs,
+      viewOffsetMs: metadata.viewOffsetMs,
+    );
   }
 
   /// Decide the display strategy for an open. mpv (Android) and Apple TV
@@ -304,17 +319,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterStartupGate,
     Future<void>? watchTogetherStartupHold,
-    bool playbackResumedForStartupFrame = false,
   }) async {
-    Future<void> resumeAfterRefresh(String reason) async {
-      if (playbackResumedForStartupFrame) {
-        appLogger.d('Frame rate matching: continuing already-resumed playback after $reason');
-        await _playWithPlaybackIntent(currentPlayer);
-      } else {
-        await resumeAfterStartupGate(reason);
-      }
-    }
-
     // Fallback refresh-rate path. The player was opened paused;
     // setVideoFrameRate awaits the real display-change event (+ settle +
     // user delay) before returning, then we start playback.
@@ -342,7 +347,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       // Always resume — either the switch completed and we want to play,
       // or no switch was needed and we need to start playback now that the
       // preparation gate has been cleared.
-      await resumeAfterRefresh('post-open frame rate switch');
+      await resumeAfterStartupGate('post-open frame rate switch');
 
       unawaited(
         Sentry.addBreadcrumb(
@@ -356,9 +361,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           settingsService: settingsService,
           plan: plan,
           isCurrent: isCurrent,
-          resumeAfterRefresh: resumeAfterRefresh,
+          resumeAfterRefresh: resumeAfterStartupGate,
           watchTogetherStartupHold: watchTogetherStartupHold,
-          playbackResumedForStartupFrame: playbackResumedForStartupFrame,
         );
       } finally {
         _frameRate.endDisplayNegotiation(plan.displayNegotiation);
@@ -374,7 +378,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterRefresh,
     required Future<void>? watchTogetherStartupHold,
-    required bool playbackResumedForStartupFrame,
   }) async {
     appLogger.d('Display matching: waiting for the first frame before negotiating the display');
     final startupReady = await plan._startupFrameReady;
@@ -388,9 +391,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       return;
     }
 
-    // The post-open external-subtitle path resumed playback to get this
-    // frame; hold the clock again while the display is measured and the TV
-    // renegotiates HDMI.
+    // Hold the clock while the display is measured and the TV renegotiates
+    // HDMI.
     Future<void> holdResumedClock() async {
       if (!currentPlayer.state.playing) return;
       try {
@@ -402,13 +404,13 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     // Everything below drives pause/play transitions the viewer did not ask
     // for (the measurement window, the hold around the switch); a bound
-    // Watch Together room would broadcast them as intents.
+    // Watch Together room would broadcast them as intents and service remote
+    // requests against the player mid-measurement.
     await _withWatchTogetherDetached(startupHold: watchTogetherStartupHold, () async {
       try {
         if (PlatformDetector.isAppleTV()) {
           // The decoded stream's criteria already went to AVDisplayManager
           // natively; only the mode switch it may have started is waited out.
-          if (playbackResumedForStartupFrame) await holdResumedClock();
           await currentPlayer.awaitDisplayModeSwitch(
             extraDelayMs: settingsService.read(SettingsService.displaySwitchDelay) * 1000,
           );
@@ -611,65 +613,38 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return false;
   }
 
-  /// Resume playback once a frame-rate startup gate releases: a pending
-  /// post-open external-subtitle load resumes through the track manager
-  /// (which also arms selection), everything else plays directly. Shared by
-  /// the start and reload flows.
-  Future<void> _resumeAfterFrameRateStartupGate({
-    required Player currentPlayer,
-    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
-    required String reason,
-  }) async {
+  /// Resume playback once a frame-rate startup gate releases. Shared by the
+  /// start and reload flows.
+  Future<void> _resumeAfterFrameRateStartupGate({required Player currentPlayer, required String reason}) async {
     if (!mounted || player != currentPlayer) return;
-    final trackManager = _trackManager;
-    if (trackManager == null) return;
     appLogger.d('Frame rate matching: resuming playback after $reason');
     if (!automotivePlaybackAllowedNow()) {
       // The vehicle outranks the startup gate: releasing the frame-rate gate is not permission to
-      // play. Subtitle selection still has to land, or the track stays stuck waiting for it.
+      // play.
       _playbackIntentShouldPlay = false;
-      if (externalSubtitlePlan.requiresPostOpenAdd) {
-        trackManager.waitingForExternalSubsTrackSelection = false;
-        trackManager.applyTrackSelectionWhenReady();
-      }
       return;
     }
     _playbackIntentShouldPlay = true;
-    if (externalSubtitlePlan.requiresPostOpenAdd) {
-      await trackManager.resumeAfterSubtitleLoad();
-    } else {
-      await _playWithPlaybackIntent(currentPlayer);
-    }
+    await _playWithPlaybackIntent(currentPlayer);
   }
 
   /// Resolves the post-gate playback decision without inventing a play
-  /// intent. Track selection is still armed when playback must remain paused;
-  /// a Watch Together owner also receives its readiness release.
+  /// intent. A Watch Together owner also receives its readiness release.
   Future<void> _finishPlaybackAfterStartupGate({
     required Player currentPlayer,
-    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required String reason,
     required bool shouldResume,
     required bool watchTogetherOwnsStart,
     Completer<void>? wtStartupHold,
   }) async {
     if (shouldResume) {
-      return _resumeAfterFrameRateStartupGate(
-        currentPlayer: currentPlayer,
-        externalSubtitlePlan: externalSubtitlePlan,
-        reason: reason,
-      );
+      return _resumeAfterFrameRateStartupGate(currentPlayer: currentPlayer, reason: reason);
     }
     appLogger.d(
       watchTogetherOwnsStart
           ? 'Frame rate matching: yielding post-gate resume to Watch Together ($reason)'
           : 'Frame rate matching: preserving paused playback after $reason',
     );
-    final trackManager = _trackManager;
-    if (trackManager != null && externalSubtitlePlan.requiresPostOpenAdd) {
-      trackManager.waitingForExternalSubsTrackSelection = false;
-      trackManager.applyTrackSelectionWhenReady();
-    }
     if (watchTogetherOwnsStart && wtStartupHold != null && !wtStartupHold.isCompleted) {
       wtStartupHold.complete();
     }
@@ -696,23 +671,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       bold: settingsService.read(SettingsService.subtitleBold),
       italic: settingsService.read(SettingsService.subtitleItalic),
       anchorToScreen: settingsService.read(SettingsService.subtitleAnchorToScreen),
-    );
-  }
-
-  /// [readyAfterOpen] is the open outcome's file-loaded signal; omit it when
-  /// nothing is opened, so the plan never waits on a file that is not coming.
-  _ExternalSubtitleOpenPlan _prepareExternalSubtitleOpenPlan({
-    required Player player,
-    required List<SubtitleTrack> externalSubtitles,
-    Future<bool>? readyAfterOpen,
-  }) {
-    final attachesAtOpen = player.attachesExternalSubtitlesAtOpen;
-    final hasExternalSubtitles = externalSubtitles.isNotEmpty;
-
-    return _ExternalSubtitleOpenPlan(
-      externalSubtitles: externalSubtitles,
-      attachesAtOpen: attachesAtOpen,
-      readyAfterOpen: !attachesAtOpen && hasExternalSubtitles ? readyAfterOpen : null,
     );
   }
 
@@ -754,47 +712,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       },
       playbackRateOwnedExternally: _watchTogetherOwnsPlaybackRate,
     );
-  }
-
-  /// Apply track selection for a freshly opened source: backends that cannot
-  /// attach external subtitles during open use the post-open sub-add dance
-  /// (opened paused to avoid the issue #226 race), others arm selection
-  /// directly.
-  /// [shouldResumeAfterSubtitleLoad] lets a startup gate own the resume.
-  /// [applySelectionWhenResumeSkipped] is for flows that legitimately stay
-  /// paused (e.g. a transcode restart while paused): selection is still
-  /// armed and the waiting flag cleared instead of leaving both dangling.
-  Future<void> _applyTracksAfterOpen({
-    required TrackManager trackManager,
-    required _ExternalSubtitleOpenPlan externalSubtitlePlan,
-    required bool Function() shouldResumeAfterSubtitleLoad,
-    bool applySelectionWhenResumeSkipped = false,
-  }) async {
-    if (externalSubtitlePlan.requiresPostOpenAdd) {
-      trackManager.waitingForExternalSubsTrackSelection = true;
-      final opened = await trackManager.addExternalSubtitles(
-        externalSubtitlePlan.externalSubtitles,
-        waitUntilReady: externalSubtitlePlan.readyAfterOpen,
-      );
-      // An open that failed or was aborted before its file loaded has nothing
-      // to resume or select on.
-      if (!opened) return;
-      // A car must not start playing just because subtitles finished loading: the vehicle's
-      // verdict outranks the caller's startup gate, and a skipped resume still has to release the
-      // subtitle-selection wait.
-      final resumeWanted = shouldResumeAfterSubtitleLoad();
-      if (resumeWanted && automotivePlaybackAllowedNow()) {
-        _playbackIntentShouldPlay = true;
-        await trackManager.resumeAfterSubtitleLoad();
-      } else if (applySelectionWhenResumeSkipped || resumeWanted) {
-        trackManager.waitingForExternalSubsTrackSelection = false;
-        trackManager.applyTrackSelectionWhenReady();
-      }
-    } else {
-      // Subs attached at open time (ExoPlayer) or none: apply once tracks
-      // are available.
-      trackManager.applyTrackSelectionWhenReady();
-    }
   }
 
   /// Drop the previous item's scrub-preview source and kick off the async
@@ -936,6 +853,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       // Errors logged from here on belong to this file; a previous file's
       // last error must not be named by this open's failure view.
       _lastLogError = null;
+      _transportFaultSeen = false;
       onOpening?.call();
       return player.open(
         media,
@@ -1027,8 +945,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // Watch Together lease; reload: attempt.isCurrent + room lease.
     required bool Function() isCurrent,
     // The attempt's armed open outcome: every startup waiter below (frame-rate
-    // startup gate, post-open subtitle readiness, sidecar guard) derives from
-    // it, so a failed or aborted open settles them all at once.
+    // startup gate, sidecar guard) derives from it, so a failed or aborted
+    // open settles them all at once.
     required PlaybackOpenOutcome outcome,
     // Whether an active Watch Together session owns the (group) start. The
     // start flow reads it live right after the frame-rate negotiation (its
@@ -1118,7 +1036,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final shouldAutoStart = resolveShouldAutoStart(wtOwnsStart);
     var openSession = session;
     var openSubtitleSelection = subtitleSelection;
-    late _ExternalSubtitleOpenPlan externalSubtitlePlan;
 
     // Open video through Player
     if (result.videoUrl != null) {
@@ -1140,17 +1057,10 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       if (beforeArm != null && !await beforeArm()) return false;
 
       frameRatePlan.armFirstFrameGate(outcome, _frameRate);
-      externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
-        player: currentPlayer,
-        externalSubtitles: openSubtitleSelection.sidecarsAtOpen,
-        readyAfterOpen: outcome.fileLoaded,
-      );
-      final shouldAutoPlay =
-          shouldAutoStart && !frameRatePlan.holdPlaybackStart && externalSubtitlePlan.canStartBeforeTrackSetup;
+      final shouldAutoPlay = shouldAutoStart && !frameRatePlan.holdPlaybackStart;
 
-      // Backends that support at-open sidecars receive them with open()
-      // so tracks are discovered in a single prepare/loadfile cycle. Any
-      // backend that cannot do that still uses the post-open sub-add path.
+      // Sidecars ride along with open() so tracks are discovered in a single
+      // prepare/loadfile cycle.
       final openTiming = _playbackOpenTiming(
         isTranscoding: result.isTranscoding,
         resumePosition: resumePosition(),
@@ -1168,7 +1078,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         outcome: outcome,
         headers: headers,
         play: deferAutomotiveStart ? shouldAutoPlay && !PlatformDetector.isAutomotive() : shouldAutoPlay,
-        externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
+        externalSubtitlesAtOpen: openSubtitleSelection.sidecarsAtOpen,
         shouldContinue: isCurrent,
         onOpening: onOpening,
         onOpened: onOpened,
@@ -1180,22 +1090,16 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       if (openResult.sidecarFallbackUsed) {
         openSession = _commitSidecarFallbackSession(openSession);
         openSubtitleSelection = openSession.subtitleSelection;
-        externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(player: currentPlayer, externalSubtitles: const []);
       }
 
       if (!await afterMediaOpened(shouldAutoPlay, frameRatePlan.holdPlaybackStart, wtOwnsStart)) return false;
-    } else {
-      externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
-        player: currentPlayer,
-        externalSubtitles: openSubtitleSelection.sidecarsAtOpen,
-      );
     }
 
     if (beforeTrackSetup != null && !await beforeTrackSetup()) return false;
 
-    // Track manager: owns track selection, external subtitle loading, and Plex
-    // immediate stream writes. Jellyfin persists selected stream indexes through
-    // playback progress reports instead.
+    // Track manager: owns track selection and Plex immediate stream writes.
+    // Jellyfin persists selected stream indexes through playback progress
+    // reports instead.
     final trackManager = _buildTrackManager(
       forPlayer: currentPlayer,
       metadata: metadata,
@@ -1224,25 +1128,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     );
     _trackManager = trackManager;
 
-    // Store only the active sidecars for re-use after backend fallback.
-    trackManager.cacheExternalSubtitles(openSubtitleSelection.sidecarsAtOpen);
-
-    final resumeForStartupFrame =
-        shouldAutoStart && frameRatePlan.needsFirstFrameSwitch && externalSubtitlePlan.requiresPostOpenAdd;
-    await _applyTracksAfterOpen(
-      trackManager: trackManager,
-      externalSubtitlePlan: externalSubtitlePlan,
-      // When the startup gate below owns the resume, skip this one to avoid
-      // a double-play, and never resume a player a newer flow — or a fatal
-      // error — owns. Paused and Watch Together-owned starts arm selection
-      // through the resume-skipped branch instead. Post-open
-      // external-subtitle paths are the exception: after they attach we must
-      // resume once so mpv can produce the startup frame the first-frame
-      // display gate is waiting for.
-      shouldResumeAfterSubtitleLoad: () =>
-          shouldAutoStart && (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) && isCurrent(),
-      applySelectionWhenResumeSkipped: !shouldAutoStart && !frameRatePlan.holdPlaybackStart,
-    );
+    trackManager.applyTrackSelectionWhenReady();
     if (staleGuard != null && !staleGuard()) return false;
 
     await _releaseFrameRateStartupGate(
@@ -1251,19 +1137,16 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       plan: frameRatePlan,
       isCurrent: isCurrent,
       // Paused opens use the same no-resume branch as an externally
-      // coordinated start: track selection is armed without manufacturing a
-      // new play intent, and a Watch Together owner also gets its readiness
-      // hold released.
+      // coordinated start: no new play intent is manufactured, and a Watch
+      // Together owner also gets its readiness hold released.
       resumeAfterStartupGate: (reason) => _finishPlaybackAfterStartupGate(
         currentPlayer: currentPlayer,
-        externalSubtitlePlan: externalSubtitlePlan,
         reason: reason,
         shouldResume: shouldAutoStart,
         watchTogetherOwnsStart: wtOwnsStart,
         wtStartupHold: wtStartupHold?.call(),
       ),
       watchTogetherStartupHold: wtStartupHold?.call()?.future,
-      playbackResumedForStartupFrame: resumeForStartupFrame,
     );
 
     return true;

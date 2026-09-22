@@ -221,6 +221,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
       _lastLogError = _redactPlayerError(log.text.trim());
     }
+    if (SpuriousEofRecovery.isTransportFaultLog(log)) _transportFaultSeen = true;
     // A stream mpv gives up on at open (`error_on_track`) ends the file only
     // when the other stream is gone too; otherwise the load lives on with no
     // end-file and the viewer waits out the open deadline for an error mpv

@@ -9,6 +9,7 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
@@ -297,16 +298,12 @@ PlexAccountConnection _plexConnection() {
   );
 }
 
-JellyfinConnection _jellyfinConnection() {
-  return JellyfinConnection(
-    id: 'jf-machine/user-a',
-    baseUrl: 'https://jellyfin.example',
-    serverName: 'Jellyfin',
-    serverMachineId: 'jf-machine',
-    userId: 'user-a',
-    userName: 'User A',
-    accessToken: 'token',
-    deviceId: 'device',
-    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-  );
-}
+JellyfinConnection _jellyfinConnection() => testJellyfinConnection(
+  machineId: 'jf-machine',
+  userId: 'user-a',
+  baseUrl: 'https://jellyfin.example',
+  serverName: 'Jellyfin',
+  userName: 'User A',
+  deviceId: 'device',
+  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+);

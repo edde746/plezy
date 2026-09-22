@@ -99,8 +99,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         );
         if (!attempt.isCurrent) return;
 
-        _trackManager?.cacheExternalSubtitles(const []);
-
         await _initVideoFilterAndPip();
         if (!mounted || !attempt.isCurrent) return;
 
@@ -120,7 +118,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         unawaited(_sendLiveTimeline('stopped'));
         widget.launchObserver?.mark('failed', failure: 'playbackFailed');
         if (mounted && !_shuttingDown) {
-          showErrorSnackBar(context, e.toString());
+          showErrorSnackBar(context, t.liveTv.playbackStartFailed(reason: localizedErrorReason(e)));
           unawaited(_handleBackButton());
         }
       }

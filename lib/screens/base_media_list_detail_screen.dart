@@ -88,10 +88,8 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Load or reload the items (subclasses implement this)
   Future<void> loadItems();
 
-  /// Play all items in the list
   Future<void> playItems() => _playWithShuffle(false);
 
-  /// Shuffle play all items in the list
   Future<void> shufflePlayItems() => _playWithShuffle(true);
 
   /// Internal helper to play items with optional shuffle.

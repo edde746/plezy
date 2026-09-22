@@ -175,7 +175,6 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   }
 }
 
-/// InheritedWidget that provides the current input mode.
 class _InputModeProvider extends InheritedWidget {
   final InputMode mode;
 

@@ -11,7 +11,6 @@ class FocusMemoryTracker {
 
   FocusMemoryTracker({this._onFocusChanged, this._debugLabelPrefix = 'focus'});
 
-  /// Get or create a focus node for the given key
   FocusNode get(String key, {String? debugLabel}) {
     return _nodes.putIfAbsent(key, () {
       final node = FocusNode(debugLabel: debugLabel ?? '${_debugLabelPrefix}_$key');

@@ -504,6 +504,63 @@ void main() {
     expect(client.fetchChildrenCalled, isFalse);
   });
 
+  test('unwatched collection rule expands each member once and keeps watched members in membership', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _ShowCollectionClient([
+      _episode('ep-1', parentIndex: 1, index: 1),
+      _episode('ep-2', parentIndex: 1, index: 2, played: true),
+    ]);
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:collection-1';
+    final collection = testMediaItem(
+      id: 'collection-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.collection,
+      title: 'Collection',
+      serverId: 'plex-machine',
+    );
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'collection-1',
+      globalKey: ruleKey,
+      targetType: 'collection',
+      episodeCount: 0,
+      downloadFilter: SyncRuleFilter.unwatched,
+    );
+
+    final queued = <MediaItem>[];
+    final associated = <String>[];
+    final results = await SyncRuleExecutor(database: db).executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {
+        'plex-machine:ep-2': DownloadProgress(globalKey: 'plex-machine:ep-2', status: DownloadStatus.completed),
+      },
+      metadata: {ruleKey: collection},
+      associateDownload: (_, globalKey) async => associated.add(globalKey),
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item);
+        return true;
+      },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(client.fetchPlayableDescendantsCalls, ['show-1']);
+    expect(queued.map((item) => item.id), ['ep-1']);
+    // The watched member stays associated for cleanup provenance.
+    expect(associated, ['plex-machine:ep-2', 'plex-machine:ep-1']);
+    expect(results.single.queuedCount, 1);
+  });
+
   test('legacy list backfill associates active members without queueing', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final manager = MultiServerManager();
@@ -583,7 +640,13 @@ MediaItem _track(String id, {bool played = false}) {
   return testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.track, title: id, viewCount: played ? 1 : 0);
 }
 
-MediaItem _episode(String id, {required int parentIndex, required int index, String? originallyAvailableAt}) {
+MediaItem _episode(
+  String id, {
+  required int parentIndex,
+  required int index,
+  String? originallyAvailableAt,
+  bool played = false,
+}) {
   return testMediaItem(
     id: id,
     backend: MediaBackend.plex,
@@ -592,7 +655,59 @@ MediaItem _episode(String id, {required int parentIndex, required int index, Str
     parentIndex: parentIndex,
     index: index,
     originallyAvailableAt: originallyAvailableAt,
+    viewCount: played ? 1 : 0,
   );
+}
+
+class _ShowCollectionClient implements MediaServerClient {
+  _ShowCollectionClient(this.episodes);
+
+  final List<MediaItem> episodes;
+  final fetchPlayableDescendantsCalls = <String>[];
+
+  @override
+  ServerId get serverId => ServerId('plex-machine');
+
+  @override
+  String? get serverName => 'Plex';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  bool get isOfflineMode => false;
+
+  @override
+  void close() {}
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => null;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    fetchPlayableDescendantsCalls.add(parentId);
+    return episodes;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchCollectionPage(
+    String collectionId, {
+    int? start,
+    int? size,
+    abort,
+    String? libraryId,
+    String? libraryTitle,
+  }) async => LibraryPage(
+    items: [testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show')],
+    totalCount: 1,
+    offset: start ?? 0,
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _PlayableDescendantsClient implements MediaServerClient {

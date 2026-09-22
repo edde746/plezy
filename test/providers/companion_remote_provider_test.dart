@@ -16,6 +16,7 @@ import 'package:plezy/services/companion_remote/lan_discovery_service.dart';
 import 'package:plezy/services/companion_remote/remote_auth_context.dart';
 import 'package:plezy/services/companion_remote/remote_auth_service.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 
@@ -72,12 +73,6 @@ void main() {
       // status remains disconnected.
       expect(p.cancelReconnect, returnsNormally);
       expect(p.status, RemoteSessionStatus.disconnected);
-      p.dispose();
-    });
-
-    test('stopDiscovery on a fresh provider is a no-op', () {
-      final p = CompanionRemoteProvider();
-      expect(p.stopDiscovery, returnsNormally);
       p.dispose();
     });
 
@@ -810,19 +805,17 @@ PlexAccountConnection _plexAccount(String id, String clientIdentifier) {
   );
 }
 
-JellyfinConnection _jellyfinConnection(String id) {
-  return JellyfinConnection(
-    id: id,
-    baseUrl: 'https://jellyfin.example.test',
-    serverName: 'Jellyfin',
-    serverMachineId: 'machine-$id',
-    userId: 'user-$id',
-    userName: 'User $id',
-    accessToken: 'token-$id',
-    deviceId: 'device-$id',
-    createdAt: DateTime(2026, 1, 1),
-  );
-}
+JellyfinConnection _jellyfinConnection(String id) => testJellyfinConnection(
+  id: id,
+  machineId: 'machine-$id',
+  userId: 'user-$id',
+  baseUrl: 'https://jellyfin.example.test',
+  serverName: 'Jellyfin',
+  userName: 'User $id',
+  accessToken: 'token-$id',
+  deviceId: 'device-$id',
+  createdAt: DateTime(2026, 1, 1),
+);
 
 Profile _localProfile(String id) {
   return Profile.local(id: id, displayName: id, createdAt: DateTime(2026, 1, 1));

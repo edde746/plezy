@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../screens/settings/settings_utils.dart';
 import '../services/settings_service.dart';
 import '../services/settings_mutation_service.dart';
+import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'focusable_list_tile.dart';
 import 'settings_section.dart';
@@ -16,13 +17,17 @@ import 'settings_section.dart';
 
 /// Shared commit path for every tile: persist [value] under [pref], then hand
 /// it to the tile's optional [onAfterWrite] callback.
+///
+/// `onChanged` returns a future nobody awaits, so a declining effect has to be
+/// reported here — thrown past this point it becomes an unhandled async error.
 Future<void> _writeAndNotify<T>(
   BuildContext context,
   Pref<T> pref,
   T value,
   FutureOr<void> Function(T)? onAfterWrite,
 ) async {
-  await const SettingsMutationService().write(context, pref, value);
+  final failure = await const SettingsMutationService().write(context, pref, value);
+  if (failure != null && context.mounted) showErrorSnackBar(context, failure.display);
   if (onAfterWrite != null) await onAfterWrite(value);
 }
 

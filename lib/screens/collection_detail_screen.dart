@@ -9,6 +9,7 @@ import '../media/library_query.dart';
 import '../media/media_item.dart';
 import '../mixins/paginated_item_loader.dart';
 import '../mixins/standard_paginated_view.dart';
+import '../services/device_performance.dart';
 import '../providers/download_provider.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
@@ -192,7 +193,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     } catch (e) {
       appLogger.e('Failed to delete collection', error: e);
       if (mounted) {
-        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: e.toString()));
+        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: localizedErrorReason(e)));
       }
     }
   }
@@ -330,16 +331,24 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     final paths = usePoster ? [?widget.collection.thumbPath] : artPaths;
     if (paths.isEmpty) return const SizedBox.shrink();
 
-    Widget art = CyclingMediaBackdrop(
-      mediaKey: widget.collection.globalKey,
-      imagePaths: usePoster ? paths : widget.collection.heroRotationPaths(containerAspectRatio: containerAspect),
-      fallbackImagePaths: paths,
-      client: mediaClient,
-      width: size.width,
-      height: height,
-      fallbackColor: theme.colorScheme.surfaceContainerHighest,
-    );
-    if (usePoster) {
+    // A poster standing in for a missing backdrop only reads behind a heavy
+    // blur, and a full-bleed 40-sigma filter is precisely what the reduced
+    // tier exists to avoid. Fall back to the flat surface there, the way the
+    // music hero does (now_playing_screen.dart).
+    final flattenPoster = usePoster && DevicePerformance.isReduced;
+
+    Widget art = flattenPoster
+        ? ColoredBox(color: theme.colorScheme.surfaceContainerHighest)
+        : CyclingMediaBackdrop(
+            mediaKey: widget.collection.globalKey,
+            imagePaths: usePoster ? paths : widget.collection.heroRotationPaths(containerAspectRatio: containerAspect),
+            fallbackImagePaths: paths,
+            client: mediaClient,
+            width: size.width,
+            height: height,
+            fallbackColor: theme.colorScheme.surfaceContainerHighest,
+          );
+    if (usePoster && !flattenPoster) {
       art = ClipRect(
         child: ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 40, sigmaY: 40, tileMode: TileMode.clamp),

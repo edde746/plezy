@@ -36,7 +36,6 @@ class PlaybackProgressTracker {
   /// and are queued/dropped rather than re-routed.
   final MediaServerClient? client;
 
-  /// Metadata of the media being played
   final MediaItem metadata;
 
   /// Video player instance

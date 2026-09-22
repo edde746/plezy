@@ -90,6 +90,56 @@ internal object MediaCodecQuery {
     return null
   }
 
+  /**
+   * MediaFormat MIME type for an mpv/FFmpeg codec name, for the codecs a
+   * hardware decoder may serve; null for anything else.
+   */
+  fun mimeTypeForCodec(codec: String?): String? = when (codec?.lowercase(Locale.ROOT)) {
+    "h264" -> "video/avc"
+    "hevc" -> "video/hevc"
+    "av1" -> "video/av01"
+    "vp9" -> "video/x-vnd.on2.vp9"
+    "vp8" -> "video/x-vnd.on2.vp8"
+    "mpeg2video" -> "video/mpeg2"
+    "mpeg4" -> "video/mp4v-es"
+    else -> null
+  }
+
+  private val PERFORMANCE_POINT_RATES = intArrayOf(240, 120, 90, 60, 50, 30, 25, 24)
+
+  /**
+   * The highest frame rate the hardware decoder for [mimeType] advertises at
+   * [width]x[height]: the manufacturer's performance points on API 31+, the
+   * capability range below it. Null when there is no hardware decoder, the
+   * size is outside what it declares, or the platform answers nothing —
+   * the caller then applies its own ceiling.
+   */
+  fun maxDecoderFrameRate(mimeType: String, width: Int, height: Int): Int? {
+    if (width <= 0 || height <= 0) return null
+    val info = findHardwareDecoder(mimeType) ?: return null
+    val video = try {
+      info.getCapabilitiesForType(mimeType).videoCapabilities
+    } catch (e: IllegalArgumentException) {
+      return null
+    } ?: return null
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      val points = video.supportedPerformancePoints
+      if (!points.isNullOrEmpty()) {
+        // The platform exposes only coverage, not the point's own rate:
+        // ask for the rates a declaration would use, highest first.
+        for (rate in PERFORMANCE_POINT_RATES) {
+          val wanted = MediaCodecInfo.VideoCapabilities.PerformancePoint(width, height, rate)
+          if (points.any { it.covers(wanted) }) return rate
+        }
+      }
+    }
+    return try {
+      video.getSupportedFrameRatesFor(width, height).upper.toInt().takeIf { it > 0 }
+    } catch (e: IllegalArgumentException) {
+      null
+    }
+  }
+
   fun isHardwareAccelerated(info: MediaCodecInfo): Boolean {
     val name = info.name
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

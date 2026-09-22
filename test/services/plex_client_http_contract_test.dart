@@ -1797,10 +1797,11 @@ void main() {
       );
     });
 
-    test('normal timeline reply does not throw', () async {
+    test('normal timeline reply completes and reports the paused position on the wire', () async {
+      Map<String, String>? query;
       final client = timelineClient({
         'MediaContainer': {'size': 0},
-      });
+      }, onRequest: (request) => query = request.url.queryParameters);
       addTearDown(client.close);
 
       await client.reportPlaybackProgress(
@@ -1809,6 +1810,12 @@ void main() {
         duration: const Duration(minutes: 20),
         isPaused: true,
       );
+
+      expect(query, containsPair('ratingKey', '42'));
+      expect(query, containsPair('key', '/library/metadata/42'));
+      expect(query, containsPair('state', 'paused'));
+      expect(query, containsPair('time', '120000'));
+      expect(query, containsPair('duration', '1200000'));
     });
   });
 }

@@ -114,7 +114,6 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _notifyIfOfflineChanged();
   }
 
-  /// Updates network and server connection flags
   Future<void> _updateConnectionFlags() async {
     _lastConnectivityResults = await ConnectivityProbe.check();
     _lastWifiOrEthernetState = hasWifiOrEthernet;

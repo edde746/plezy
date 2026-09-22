@@ -9,11 +9,16 @@ import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 import '../../test_helpers/http_fixtures.dart';
 
-SeerrCatalogSource _source(MockClient mock, {SeerrProduct product = SeerrProduct.unknown}) {
+SeerrCatalogSource _source(
+  MockClient mock, {
+  SeerrProduct product = SeerrProduct.unknown,
+  int permissions = SeerrPermission.admin,
+}) {
   final client = SeerrClient(
     SeerrSession(
       baseUrl: 'https://seerr.example.com',
@@ -22,7 +27,7 @@ SeerrCatalogSource _source(MockClient mock, {SeerrProduct product = SeerrProduct
       secret: 'pw',
       cookie: 'cookie',
       userId: 1,
-      permissions: 2,
+      permissions: permissions,
       displayName: 'Alice',
       instanceLabel: 'Seerr',
       product: product,
@@ -671,10 +676,18 @@ void main() {
     });
 
     test('canRequest honors the per-kind permission split', () {
-      // permissions: 2 = ADMIN in the fixture session → everything allowed.
-      final source = _source(MockClient((request) async => jsonResponse({})));
-      expect(source.canRequest(MediaKind.movie), isTrue);
-      expect(source.canRequest(MediaKind.show), isTrue);
+      // Only the per-kind bits can tell the kinds apart: ADMIN and the generic
+      // REQUEST bit both grant everything.
+      final movieOnly = _source(
+        MockClient((request) async => jsonResponse({})),
+        permissions: SeerrPermission.requestMovie,
+      );
+      expect(movieOnly.canRequest(MediaKind.movie), isTrue);
+      expect(movieOnly.canRequest(MediaKind.show), isFalse);
+
+      final admin = _source(MockClient((request) async => jsonResponse({})));
+      expect(admin.canRequest(MediaKind.movie), isTrue);
+      expect(admin.canRequest(MediaKind.show), isTrue);
     });
 
     test('has no watchlist: membership unknown, mutations unsupported', () async {

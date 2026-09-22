@@ -95,7 +95,6 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     return _syntheticIds[idx];
   }
 
-  /// Whether shuffle mode is currently active
   bool get isShuffleActive => _playQueueShuffled;
 
   /// Whether playlist/collection mode is currently active
@@ -118,13 +117,11 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// The context key (show/season/playlist ratingKey) for the current session
   String? get shuffleContextKey => _contextKey;
 
-  /// Current play queue ID
   int? get playQueueId => _playQueueId;
 
   /// The currently loaded queue items (windowed subset of full queue)
   List<MediaItem> get loadedItems => List.unmodifiable(_loadedItems);
 
-  /// The current play queue item ID
   int? get currentPlayQueueItemID => _currentPlayQueueItemID;
 
   /// The queue item the cursor currently points at, or null when no queue
@@ -193,16 +190,18 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// Load a server queue window centered on [centerPlayQueueItemID].
   ///
-  /// Returns false for transport errors, malformed/empty responses, or when
-  /// the requested center is absent from the returned window.
+  /// Returns false for transport errors, malformed/empty responses, when
+  /// the requested center is absent from the returned window, or when the
+  /// queue was cleared or replaced while the fetch was in flight — a window
+  /// belongs to the queue id it was requested for and must never overwrite
+  /// a successor's items.
   Future<bool> _loadServerWindow(int centerPlayQueueItemID) async {
-    if (_windowFetcher == null || _playQueueId == null) return false;
+    final fetcher = _windowFetcher;
+    final queueId = _playQueueId;
+    if (fetcher == null || queueId == null) return false;
     try {
-      final response = await _windowFetcher!(
-        _playQueueId!,
-        center: centerPlayQueueItemID.toString(),
-        window: _windowSize,
-      );
+      final response = await fetcher(queueId, center: centerPlayQueueItemID.toString(), window: _windowSize);
+      if (isDisposed || _playQueueId != queueId) return false;
       final items = response?.items;
       if (response == null || items == null || items.isEmpty) return false;
 

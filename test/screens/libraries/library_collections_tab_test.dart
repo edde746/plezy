@@ -465,17 +465,6 @@ class _CollectionHarness {
     final client = JellyfinClient.forTesting(
       connection: testJellyfinConnection(machineId: _jellyfinServerId),
       httpClient: MockClient((request) async {
-        if (request.url.path == '/Users/user-1/Views') {
-          return http.Response(
-            jsonEncode({
-              'Items': [
-                {'Id': 'boxsets-root', 'Name': 'Collections', 'CollectionType': 'boxsets'},
-              ],
-            }),
-            200,
-            headers: {'content-type': 'application/json'},
-          );
-        }
         if (request.url.path == '/Items') {
           return http.Response(
             jsonEncode({

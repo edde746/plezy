@@ -121,12 +121,17 @@ class AgentSettingsCommands {
           if (key == 'enable_companion_remote_server' && value == true && !context.hasProfile) return;
           if (!context.context.mounted) return;
           try {
-            await const SettingsMutationService().applyEffects(
+            final failure = await const SettingsMutationService().applyEffects(
               context.context,
               pref,
               checkCurrent: context.checkCurrent,
               rebuildRoot: false,
             );
+            // A declining effect is returned rather than thrown now; agent
+            // clients still contract on `effectFailed` for it.
+            if (failure != null) {
+              throw AgentControlException('effectFailed', failure.display, details: const {'persisted': true});
+            }
           } on AgentControlException {
             rethrow;
           } catch (_) {
@@ -277,7 +282,7 @@ class AgentSettingsCommands {
   }
 
   static String _application(String key) {
-    if (key == 'app_locale' || key == 'force_tv_mode' || key == 'visual_effects') return 'rootRebuild';
+    if (SettingsMutationService.needsRootRebuild(key)) return 'rootRebuild';
     if (key == 'start_in_fullscreen' ||
         key == 'startup_section' ||
         key == 'require_profile_selection_on_open' ||

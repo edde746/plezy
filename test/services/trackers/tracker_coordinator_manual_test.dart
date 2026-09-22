@@ -4,6 +4,7 @@ import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -31,6 +32,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   final List<String> externalIdCalls = [];
   final List<String> descendantCalls = [];
 
+  /// Thrown by every [fetchExternalIds] call — the server failing, as both
+  /// backends report it, rather than an item with no mapping.
+  final Object? externalIdsError;
+
   @override
   final double watchedThreshold;
 
@@ -38,6 +43,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     ServerId? serverId,
     required this.externalIdsByItem,
     required this.descendantsByParent,
+    this.externalIdsError,
     this.watchedThreshold = 0.9,
   }) : serverId = serverId ?? ServerId('server-1');
 
@@ -47,6 +53,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async {
     externalIdCalls.add(itemId);
+    if (externalIdsError != null) throw externalIdsError!;
     return externalIdsByItem[itemId] ?? const ExternalIds();
   }
 
@@ -683,6 +690,46 @@ void main() {
       await pumpEventQueue();
 
       expect(requests, isNot(contains('/sync/history')));
+    });
+
+    // Both backends throw here on a server failure. Before the guard the
+    // error escaped `startPlayback` — fired unawaited by the player — and the
+    // previous item's context survived, so the crossing could write for it.
+    test('a failing external-id lookup leaves the coordinator reset instead of escalating', () async {
+      coordinator.debugUseResolverDependencies(
+        store: const _FakeFribbLookup([FribbMappingRow(tvdbId: 12345, malId: 101, tvdbSeason: 1, type: 'TV')]),
+        animeLists: const _FakeAnimeListsLookup(),
+      );
+      final writes = <String>[];
+      final httpClient = MockClient((request) async {
+        if (request.method == 'GET') return http.Response(json.encode({'num_episodes': 1}), 200);
+        writes.add(request.url.path);
+        return http.Response('{}', 200);
+      });
+      mal.rebindSession(_malSession(), onSessionInvalidated: () {}, httpClient: httpClient);
+
+      // A resolved playback first, so there is a stale context to clear.
+      final working = _FakeMediaServerClient(
+        externalIdsByItem: {'show-1': const ExternalIds(tvdb: 12345)},
+        descendantsByParent: const {},
+      );
+      await coordinator.startPlayback(_episode(1).copyWith(grandparentId: 'show-1'), working);
+
+      final failing = _FakeMediaServerClient(
+        serverId: ServerId('server-2'),
+        externalIdsByItem: const {},
+        descendantsByParent: const {},
+        externalIdsError: MediaServerHttpException(type: MediaServerHttpErrorType.unknown, statusCode: 500),
+      );
+      final nextEpisode = _episode(2).copyWith(serverId: ServerId('server-2'), grandparentId: 'show-1');
+      await expectLater(coordinator.startPlayback(nextEpisode, failing), completes);
+      expect(failing.externalIdCalls, ['show-1']);
+
+      coordinator.updateDuration(const Duration(seconds: 100));
+      coordinator.updatePosition(const Duration(seconds: 95));
+      await pumpEventQueue();
+
+      expect(writes, isEmpty);
     });
   });
 }

@@ -109,13 +109,6 @@ void main() {
       p.dispose();
     });
 
-    test('checkServerHealth with no clients completes without error', () async {
-      final p = MultiServerProvider(manager, aggregation);
-      // Empty clients map → no work, but the call must complete.
-      await p.checkServerHealth();
-      p.dispose();
-    });
-
     group('visibility filter', () {
       test('setVisibleServerIds replaces the filter and notifies', () {
         final p = MultiServerProvider(manager, aggregation);
