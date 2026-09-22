@@ -124,7 +124,8 @@ PHASES = [
 
 # channel -> (claude platform description, hard character limit)
 CHANNEL_SPECS = {
-    "appstore": ("iOS", 4000),
+    # One What's New text serves both the iOS and the tvOS App Store versions.
+    "appstore": ("iOS and tvOS (Apple TV)", 4000),
     "play": ("Android", 500),
     "amazon": ("Android (Amazon Appstore: Fire TV and Fire tablets)", 4000),
 }
