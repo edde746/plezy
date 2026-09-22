@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -156,6 +158,46 @@ void main() {
         expect(liveTv.startedChannels, ['ch-2']);
         expect(player.seekTargets, isEmpty);
 
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  });
+
+  testWidgets('a zap during the live start is refused instead of tuning beside it', (tester) async {
+    final channels = [
+      LiveTvChannel(key: 'ch-1', title: 'Channel 5', serverId: 'srv-1'),
+      LiveTvChannel(key: 'ch-2', title: 'Channel 6', serverId: 'srv-1'),
+    ];
+    final launchTune = Completer<LiveTvPlaybackSession?>();
+    final liveTv = _RecordingLiveTvSupport(firstStart: launchTune.future);
+    final player = _LiveMediaSessionPlayer();
+    final shell = _LiveShell(client: _LiveMediaServerClient(liveTv));
+
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async => call.method == 'initialize' ? false : null,
+      testBody: () async {
+        final key = GlobalKey<VideoPlayerScreenState>();
+        await tester.pumpWidget(shell.screen(key: key, channel: channels.first, channels: channels));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        final state = key.currentState!..player = player;
+        final router = state.debugMediaControlRouterForTesting();
+
+        unawaited(state.debugStartPlaybackForTesting());
+        await tester.pump();
+        expect(liveTv.startedChannels, ['ch-1']);
+
+        // The OS media session (and the companion remote) reach the zap
+        // before the start has built any on-screen control. Tuning here would
+        // leave two sessions racing to be adopted, one of them never stopped.
+        router.route(const NextTrackEvent());
+        await tester.pump();
+        expect(liveTv.startedChannels, ['ch-1']);
+
+        launchTune.complete(null);
+        await tester.pump();
         await tester.pumpWidget(const SizedBox.shrink());
       },
     );
@@ -344,6 +386,12 @@ class _LiveMediaSessionPlayer implements Player {
   Future<void> seek(Duration position) async => seekTargets.add(position);
 
   @override
+  Future<bool> requestAudioFocus() async => true;
+
+  @override
+  Future<void> setProperty(String name, String value) async {}
+
+  @override
   Future<void> dispose({bool preserveDisplayMode = false}) async {}
 
   @override
@@ -377,8 +425,12 @@ class _LiveMediaServerClient implements MediaServerClient {
 
 /// Records which channel a zap tunes. Declining the tune (Jellyfin's
 /// session-less negotiation returns null) keeps the test on the routing
-/// decision instead of standing up a replacement stream.
+/// decision instead of standing up a replacement stream. [firstStart] holds
+/// the first tune open for as long as a test needs it pending.
 class _RecordingLiveTvSupport implements LiveTvSupport {
+  _RecordingLiveTvSupport({this.firstStart});
+
+  final Future<LiveTvPlaybackSession?>? firstStart;
   final List<String> startedChannels = [];
 
   @override
@@ -388,6 +440,8 @@ class _RecordingLiveTvSupport implements LiveTvSupport {
     TranscodeQualityPreset quality = TranscodeQualityPreset.original,
   }) async {
     startedChannels.add(channelKey);
+    final pending = firstStart;
+    if (pending != null && startedChannels.length == 1) return pending;
     return null;
   }
 

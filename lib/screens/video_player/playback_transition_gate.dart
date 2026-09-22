@@ -1,9 +1,9 @@
 import 'dart:async';
 
-/// The in-place media-source transitions a player screen can run.
-/// They are mutually exclusive by construction — entry points bail while a
-/// transition is in flight.
-enum PlaybackTransition { idle, switchingSource, reloadingMedia, switchingChannel }
+/// The playback transitions a player screen can run in place, plus the live
+/// start a channel zap must not race. They are mutually exclusive by
+/// construction — entry points bail while a transition is in flight.
+enum PlaybackTransition { idle, startingLive, switchingSource, reloadingMedia, switchingChannel }
 
 /// Identity token for one owner of the in-place playback transition lock.
 ///

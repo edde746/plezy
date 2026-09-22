@@ -349,6 +349,9 @@ class _FakeSession implements LiveTvPlaybackSession {
   }) => Future.value(null);
 
   @override
+  Future<void> discard() async {}
+
+  @override
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) =>
       Future.value(this);
 

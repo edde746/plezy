@@ -1219,6 +1219,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @visibleForTesting
   Future<void> debugInitializeServicesForTesting() => _initializeServices();
 
+  /// The playback start otherwise runs only at the end of player
+  /// initialization, which no widget test finishes without a live native core.
+  @visibleForTesting
+  Future<void> debugStartPlaybackForTesting() => _startPlayback();
+
   /// Adjacency otherwise arrives from the backend's queue containers, which
   /// no widget test stands up; this seeds what [_loadAdjacentEpisodes] would
   /// have committed so an EOF can take the present-next path.

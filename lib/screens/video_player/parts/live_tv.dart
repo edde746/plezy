@@ -137,18 +137,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Fire-and-forget a stopped heartbeat for a session that started but was
-  /// never adopted (unmount or superseded mid-start) so the backend tears
-  /// down its tuner/transcode resources instead of waiting for a timeout.
-  void _abandonLiveSession(LiveTvPlaybackSession session) {
-    unawaited(() async {
-      try {
-        await session.reportTimeline(state: 'stopped', positionMs: 0, durationMs: session.program.durationMs ?? 0);
-      } catch (e) {
-        appLogger.d('Failed to stop abandoned live session', error: e);
-      }
-    }());
-  }
+  /// Release a session that started but was never adopted (unmount or
+  /// superseded mid-start) so the backend frees its tuner/transcode instead of
+  /// holding it until an idle timeout, or forever (#2394).
+  void _abandonLiveSession(LiveTvPlaybackSession session) => unawaited(session.discard());
 
   /// Resolve the owning live-TV server for [channel] and start a playback
   /// session on it — the shared resolution path for initial launch and
@@ -239,7 +231,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       },
       // Jellyfin's recover() returns the receiver, so the recovered object can
       // be the still-current session; the retry helper skips the discard by
-      // identity so a failed retry cannot terminally stop-report it.
+      // identity so a failed retry cannot terminally release it.
       currentSession: () => _live.session,
       discardSession: _abandonLiveSession,
       reportFailure: (error, stackTrace) {

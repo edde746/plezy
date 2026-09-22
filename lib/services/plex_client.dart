@@ -61,6 +61,7 @@ import '../utils/device_identity.dart';
 import '../utils/failover_http_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_retry.dart';
+import '../utils/future_extensions.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/active_client_scope.dart';
 import '../utils/log_redaction_manager.dart';

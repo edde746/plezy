@@ -18,6 +18,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
+import 'package:plezy/utils/media_server_timeouts.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
 
@@ -142,6 +143,113 @@ void main() {
       // Tune only — no transcode decision until the caller asks for a URL
       // (a watch-from-start dialog sits between the two).
       expect(requests, ['/livetv/dvrs/dvr-1/channels/ch-1/tune']);
+    });
+
+    test('discarding a tune stops its session without waiting for the idle expiry', () async {
+      final tuneSessions = <String?>[];
+      final timelines = <Map<String, String>>[];
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          tuneSessions.add(request.url.queryParameters['X-Plex-Session-Identifier']);
+          return jsonResponse(tuneResponse());
+        }
+        if (request.url.path == '/:/timeline') timelines.add(request.url.queryParameters);
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      final session = await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1');
+      await session!.discard();
+
+      expect(timelines, hasLength(1));
+      expect(timelines.single['state'], 'stopped');
+      expect(timelines.single['key'], '/livetv/sessions/session-abc');
+      expect(timelines.single['X-Plex-Session-Identifier'], tuneSessions.single);
+    });
+
+    test('a tune that answers after its caller gave up is stopped, not replayed', () {
+      fakeAsync((async) {
+        final tuneSessions = <String?>[];
+        final timelines = <Map<String, String>>[];
+        final client = makeClient((request) async {
+          if (request.url.path.endsWith('/tune')) {
+            tuneSessions.add(request.url.queryParameters['X-Plex-Session-Identifier']);
+            await Future<void>.delayed(const Duration(seconds: 45));
+            return jsonResponse(tuneResponse());
+          }
+          if (request.url.path == '/:/timeline') timelines.add(request.url.queryParameters);
+          return jsonResponse(const {});
+        });
+        try {
+          var resolved = false;
+          LiveTvPlaybackSession? session;
+          unawaited(
+            client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1').then((value) {
+              resolved = true;
+              session = value;
+            }),
+          );
+          async.elapse(MediaServerTimeouts.tune);
+          expect(resolved, isTrue, reason: 'the caller stops waiting at the tune budget');
+          expect(session, isNull);
+          expect(timelines, isEmpty);
+
+          async.elapse(const Duration(seconds: 15));
+          expect(tuneSessions, hasLength(1), reason: 'a tune that may already be tuning is never replayed');
+          expect(timelines, hasLength(1));
+          expect(timelines.single['state'], 'stopped');
+          expect(timelines.single['key'], '/livetv/sessions/session-abc');
+          expect(timelines.single['X-Plex-Session-Identifier'], tuneSessions.single);
+        } finally {
+          client.close();
+          async.flushMicrotasks();
+        }
+      });
+    });
+
+    test('a tune stuck past the transport ceiling is abandoned without a replay', () {
+      fakeAsync((async) {
+        final transport = _HangingLiveTuneClient();
+        final client = testPlexClient(
+          config: PlexConfig(
+            baseUrl: 'https://plex.example.com',
+            token: 'tok',
+            clientIdentifier: 'client',
+            product: 'Plezy',
+            version: '1',
+            machineIdentifier: 'machine-1',
+          ),
+          serverId: ServerId('machine-1'),
+          httpClient: transport,
+        );
+        try {
+          unawaited(client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'));
+          async.elapse(MediaServerTimeouts.tune);
+          expect(transport.aborted, isFalse, reason: 'the server may still be tuning');
+          async.elapse(MediaServerTimeouts.tuneTransport);
+          expect(transport.aborted, isTrue);
+          expect(transport.requests, 1);
+        } finally {
+          client.close();
+          async.flushMicrotasks();
+        }
+      });
+    });
+
+    test('a tune whose connection dropped is retried once', () async {
+      var tunes = 0;
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          tunes++;
+          if (tunes == 1) throw http.ClientException('Connection reset by peer', request.url);
+          return jsonResponse(tuneResponse());
+        }
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      expect(await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'), isNotNull);
+      expect(tunes, 2);
     });
 
     test('tune exposes only embedded bitmap subtitle streams as burn targets', () async {
@@ -535,38 +643,89 @@ void main() {
       });
     });
 
-    test('${connection.dialect.productName} aborts a stuck live tune at thirty seconds without replay', () {
-      fakeAsync((async) {
-        final transport = _HangingLiveTuneClient();
-        final client = JellyfinClient.forTesting(connection: connection, httpClient: transport);
-        try {
-          Object? failure;
-          unawaited(
-            client.liveTv
-                .startPlayback('channel-1')
-                .then<void>(
-                  (_) => fail('A stuck tuner must not start playback'),
-                  onError: (Object error) {
-                    failure = error;
+    test(
+      '${connection.dialect.productName} stops waiting for a stuck live tune at thirty seconds without hanging up',
+      () {
+        fakeAsync((async) {
+          final transport = _HangingLiveTuneClient();
+          final client = JellyfinClient.forTesting(connection: connection, httpClient: transport);
+          try {
+            Object? failure;
+            unawaited(
+              client.liveTv
+                  .startPlayback('channel-1')
+                  .then<void>(
+                    (_) => fail('A stuck tuner must not start playback'),
+                    onError: (Object error) {
+                      failure = error;
+                    },
+                  ),
+            );
+            async.elapse(const Duration(seconds: 29));
+            expect(failure, isNull);
+            async.elapse(const Duration(seconds: 1));
+            expect(
+              failure,
+              isA<MediaServerHttpException>().having((e) => e.type, 'type', MediaServerHttpErrorType.connectionTimeout),
+            );
+            // The server opens the tuner whether or not we are still connected
+            // (#2394); hanging up would drop the only answer that names it.
+            expect(transport.aborted, isFalse);
+            async.elapse(MediaServerTimeouts.tuneTransport);
+            expect(transport.aborted, isTrue, reason: 'a dead connection is still bounded');
+            expect(transport.requests, 1, reason: 'a tune is never replayed');
+          } finally {
+            client.close();
+            async.flushMicrotasks();
+          }
+        });
+      },
+    );
+
+    for (final (name, answerAfter, expectedCloses) in [
+      ('closes the stream of a tune that answers after its caller gave up', const Duration(seconds: 45), ['live-1']),
+      ('keeps the stream of a tune that answers in time', const Duration(seconds: 29), <String>[]),
+    ]) {
+      test('${connection.dialect.productName} $name', () {
+        fakeAsync((async) {
+          final followUps = <Uri>[];
+          final client = JellyfinClient.forTesting(
+            connection: connection,
+            httpClient: MockClient((request) async {
+              if (!request.url.path.endsWith('/PlaybackInfo')) {
+                followUps.add(request.url);
+                return http.Response('', 204);
+              }
+              await Future<void>.delayed(answerAfter);
+              return jsonResponse({
+                'PlaySessionId': 'play-1',
+                'MediaSources': [
+                  {
+                    'Id': 'source-1',
+                    'Container': 'ts',
+                    'LiveStreamId': 'live-1',
+                    'TranscodingUrl': '/Videos/channel-1/live.m3u8?LiveStreamId=live-1',
                   },
-                ),
+                ],
+              });
+            }),
           );
-          async.elapse(const Duration(seconds: 29));
-          expect(failure, isNull);
-          expect(transport.aborted, isFalse);
-          async.elapse(const Duration(seconds: 1));
-          expect(
-            failure,
-            isA<MediaServerHttpException>().having((e) => e.type, 'type', MediaServerHttpErrorType.connectionTimeout),
-          );
-          expect(transport.aborted, isTrue);
-          expect(transport.requests, 1);
-        } finally {
-          client.close();
-          async.flushMicrotasks();
-        }
+          try {
+            unawaited(client.liveTv.startPlayback('channel-1').then<void>((_) {}, onError: (Object _) {}));
+            async.elapse(MediaServerTimeouts.tuneTransport);
+            expect(
+              followUps.map((uri) => uri.queryParameters['liveStreamId']),
+              expectedCloses,
+              reason: 'only a stream nobody received is closed, exactly once',
+            );
+            expect(followUps.every((uri) => uri.path.endsWith('/LiveStreams/Close')), isTrue);
+          } finally {
+            client.close();
+            async.flushMicrotasks();
+          }
+        });
       });
-    });
+    }
 
     for (final (name, isLiveTv, autoOpen) in [
       ('VOD', false, null),
@@ -726,6 +885,61 @@ void main() {
       // Recovery re-opens the negotiated HLS URL.
       expect(await session.recover(directStream: false, directStreamAudio: false), same(session));
     });
+
+    for (final (name, source, expectedCalls) in [
+      (
+        'a transcode stops its encoding before closing the stream',
+        {
+          'Id': 'source-1',
+          'Container': 'ts',
+          'LiveStreamId': 'live-1',
+          'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-1',
+        },
+        [
+          'DELETE /Videos/ActiveEncodings deviceId=dev-xyz playSessionId=play-1',
+          'POST /LiveStreams/Close liveStreamId=live-1',
+        ],
+      ),
+      (
+        'a direct play only closes the stream',
+        {'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1', 'SupportsDirectPlay': true},
+        ['POST /LiveStreams/Close liveStreamId=live-1'],
+      ),
+    ]) {
+      // A stop report only closes a stream no other session plays (10.11+),
+      // and a transcode left to its idle timer closes the stream itself: the
+      // order is what keeps the release to exactly one (#2394).
+      test('discarding $name, with no stop report', () async {
+        final calls = <String>[];
+        final client = JellyfinClient.forTesting(
+          connection: conn(),
+          httpClient: MockClient((request) async {
+            if (request.url.path.endsWith('/PlaybackInfo')) {
+              return jsonResponse({
+                'PlaySessionId': 'play-1',
+                'MediaSources': [source],
+              });
+            }
+            final query = request.url.queryParameters;
+            calls.add(
+              [
+                request.method,
+                request.url.path,
+                for (final key in const ['deviceId', 'playSessionId', 'liveStreamId'])
+                  if (query[key] case final value?) '$key=$value',
+              ].join(' '),
+            );
+            return http.Response('', 204);
+          }),
+        );
+        addTearDown(client.close);
+
+        final session = await client.liveTv.startPlayback('channel-1');
+        await session!.discard();
+
+        expect(calls, expectedCalls);
+      });
+    }
 
     test('startPlayback propagates status and cancellation failures', () async {
       final handlers = <(String, Future<http.Response> Function(http.Request))>[

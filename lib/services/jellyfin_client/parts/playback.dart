@@ -823,8 +823,11 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         for (final MapEntry(:key, :value) in negotiation.entries) key: value.toString(),
       },
       // Opening a cold tuner can delay response headers beyond the normal
-      // connect budget (#2274). Keep VOD and metadata-only requests unchanged.
-      timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tune : null,
+      // connect budget (#2274), and the server finishes the open even if we
+      // hang up (#2394): the live tune keeps its transport until the server
+      // answers, and its caller bounds the wait. Keep VOD and metadata-only
+      // requests unchanged.
+      timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tuneTransport : null,
       body: {
         'UserId': connection.userId,
         ...negotiation,

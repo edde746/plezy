@@ -105,6 +105,12 @@ abstract class LiveTvPlaybackSession {
   /// window, playback-stream origin), null when it reports nothing.
   Future<LiveTimelineUpdate?> reportTimeline({required String state, required int positionMs, required int durationMs});
 
+  /// Release a session that was never adopted: nothing played it and no
+  /// heartbeat was ever sent for it (a superseded zap, an unmount mid-start, a
+  /// failed recovery). Best-effort; never throws. An adopted session ends with
+  /// a `'stopped'` [reportTimeline] instead.
+  Future<void> discard();
+
   /// Re-establish playback after stream death. Plex re-tunes (the previous
   /// capture session expires while the player exhausts its reconnect
   /// attempts) applying the degradation flags. Jellyfin re-negotiates a

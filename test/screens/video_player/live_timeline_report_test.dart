@@ -261,6 +261,9 @@ class _FakeSession implements LiveTvPlaybackSession {
   }
 
   @override
+  Future<void> discard() async {}
+
+  @override
   List<MediaSubtitleTrack> get subtitleTracks => const [];
 
   @override
