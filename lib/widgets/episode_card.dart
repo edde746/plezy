@@ -20,6 +20,7 @@ import '../widgets/download_status_icon.dart';
 import '../widgets/watched_indicator.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/platform_detector.dart';
+import '../utils/episode_tag_labels.dart';
 import '../utils/formatters.dart';
 import '../utils/media_quality_labels.dart';
 import '../widgets/media_context_menu.dart';
@@ -61,7 +62,7 @@ class EpisodeCard extends StatefulWidget {
 class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<EpisodeCard> {
   MediaItem _effectiveEpisode(BuildContext context) => context.withFreshWatchState(widget.episode);
 
-  Widget _buildEpisodeMetaRow(BuildContext context, MediaItem episode, List<String> qualityLabels) {
+  Widget _buildEpisodeMetaRow(BuildContext context, MediaItem episode, List<String> labels) {
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);
     final children = <Widget>[];
 
@@ -106,7 +107,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
       );
     }
 
-    for (final label in qualityLabels) {
+    for (final label in labels) {
       addSeparator();
       children.add(Text(label, style: mutedStyle));
     }
@@ -116,16 +117,26 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
 
   @override
   Widget build(BuildContext context) {
-    return SettingValueBuilder<bool>(
-      pref: SettingsService.hideSpoilers,
-      builder: (context, hideSpoilers, _) => _buildContent(context, hideSpoilers: hideSpoilers),
+    return SettingsBuilder(
+      prefs: const [SettingsService.hideSpoilers, SettingsService.episodeTags],
+      builder: (context) => _buildContent(
+        context,
+        hideSpoilers: context.settingsRead(SettingsService.hideSpoilers),
+        episodeTags: context.settingsRead(SettingsService.episodeTags),
+      ),
     );
   }
 
-  Widget _buildContent(BuildContext context, {required bool hideSpoilers}) {
+  Widget _buildContent(BuildContext context, {required bool hideSpoilers, required EpisodeTagsMode episodeTags}) {
     final episode = _effectiveEpisode(context);
     final shouldBlur = hideSpoilers && episode.shouldHideSpoiler;
-    final qualityLabels = [...buildMediaQualityLabels(episode), ?buildMediaSizeLabel(episode)];
+    // Server tags lead the file labels: they describe the episode, the rest
+    // describe its file.
+    final labels = [
+      ...buildEpisodeTagLabels(episode, episodeTags),
+      ...buildMediaQualityLabels(episode),
+      ?buildMediaSizeLabel(episode),
+    ];
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -296,7 +307,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ],
 
                           const SizedBox(height: 6),
-                          _buildEpisodeMetaRow(context, episode, qualityLabels),
+                          _buildEpisodeMetaRow(context, episode, labels),
                         ],
                       ),
                     ),

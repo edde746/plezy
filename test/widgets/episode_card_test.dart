@@ -127,6 +127,32 @@ void main() {
 
     expect(find.byType(MediaProgressBar), findsOneWidget);
   });
+
+  testWidgets('server tags join the meta row only in the modes that show them', (tester) async {
+    final episode = testMediaItem(
+      id: 'tagged_episode',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'A Detour',
+      index: 4,
+      durationMs: 24 * 60 * 1000,
+      labels: const ['Filler', 'Fansub'],
+    );
+
+    await _pumpEpisodeCard(tester, episode);
+    expect(find.text('Filler'), findsNothing);
+    expect(find.text('Fansub'), findsNothing);
+
+    await SettingsService.instance.write(SettingsService.episodeTags, EpisodeTagsMode.canonFiller);
+    await tester.pump();
+    expect(find.text('Filler'), findsOneWidget);
+    expect(find.text('Fansub'), findsNothing);
+
+    await SettingsService.instance.write(SettingsService.episodeTags, EpisodeTagsMode.all);
+    await tester.pump();
+    expect(find.text('Filler'), findsOneWidget);
+    expect(find.text('Fansub'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpEpisodeCard(WidgetTester tester, MediaItem episode) async {

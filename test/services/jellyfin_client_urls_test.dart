@@ -472,7 +472,7 @@ void main() {
       expect(extras[1].posterThumb(), extras[1].artPath);
     });
 
-    test('fetchChildren requests media sources for episode-row quality labels', () async {
+    test('fetchChildren requests media sources and tags for the episode-row labels', () async {
       final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -492,12 +492,15 @@ void main() {
       await scoped.fetchChildren('season-1');
 
       final directChildrenRequest = requests.firstWhere((uri) => uri.path == '/Items');
-      expect(directChildrenRequest.queryParameters['Fields']!.split(','), contains('MediaSources'));
+      expect(
+        directChildrenRequest.queryParameters['Fields']!.split(','),
+        containsAll(<String>['MediaSources', 'Tags']),
+      );
       expect(directChildrenRequest.queryParameters['SortBy'], 'ParentIndexNumber,IndexNumber,SortName');
       expect(directChildrenRequest.queryParameters['SortOrder'], 'Ascending,Ascending,Ascending');
     });
 
-    test('fetchPlayableDescendantsPage requests media sources for episode-row quality labels', () async {
+    test('fetchPlayableDescendantsPage requests media sources and tags for the episode-row labels', () async {
       Uri? capturedUri;
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -511,7 +514,7 @@ void main() {
       await scoped.fetchPlayableDescendantsPage('show-1');
 
       expect(capturedUri!.path, '/Items');
-      expect(capturedUri!.queryParameters['Fields']!.split(','), contains('MediaSources'));
+      expect(capturedUri!.queryParameters['Fields']!.split(','), containsAll(<String>['MediaSources', 'Tags']));
     });
 
     test('reportPlaybackProgress sends media source and stream indexes', () async {
