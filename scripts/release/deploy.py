@@ -1249,6 +1249,12 @@ def phase_tvos(ctx: Context) -> None:
     if _asc_has_uploaded_build(ctx, "TV_OS"):
         log(f"tvos: App Store Connect already has build {ctx.build_number}; skipping upload")
         return
+    # The tvOS build reads gitignored inputs that nothing else refreshes:
+    # Generated.xcconfig (engine path, version, deployment target) and the Pods
+    # project. Prepare them the way CI does so a stale checkout cannot archive
+    # an old version or a deployment target the current Xcode rejects.
+    run([str(ROOT / "tvos/scripts/fetch_engine.sh")])
+    run([str(ROOT / "tvos/scripts/pod_install.sh")])
     archive = ROOT / "build/tvos/Runner.xcarchive"
     run([
         "xcodebuild",
