@@ -822,41 +822,31 @@ def _execute_google_request(request):
 
 
 def _execute_resumable_google_upload(request, label: str):
+    # next_chunk retries HTTP status failures but raises on a dropped connection.
+    # Calling it again after a raise asks the server how much it holds and
+    # resumes there, or returns the finished resource when the last chunk
+    # landed before the response was lost (Play closed the socket that way
+    # after accepting the 2.21.0 bundle).
     response = None
+    transport_failures = 0
     while response is None:
-        status, response = request.next_chunk(num_retries=5)
+        try:
+            status, response = request.next_chunk(num_retries=5)
+        except (ConnectionError, TimeoutError) as error:
+            transport_failures += 1
+            if transport_failures > 5:
+                raise
+            log(f"{label}: upload connection lost ({error!r}); resuming")
+            time.sleep(2**transport_failures)
+            continue
         if status:
             log(f"{label}: upload {status.progress():.0%}")
     return response
 
 
-def phase_play(ctx: Context) -> None:
-    package = ctx.env["SUPPLY_PACKAGE_NAME"]
-    aab = ROOT / "build/app/outputs/bundle/release/app-release.aab"
-    if dry_guard(ctx, f"build AAB, upload symbols, publish {package} to Play production"):
-        return
-
-    commit = short_sha()
-    run([
-        "flutter", "build", "appbundle",
-        "--dart-define=ENABLE_SENTRY=true",
-        f"--dart-define=GIT_COMMIT={commit}",
-        "--dart-define=SENTRY_ENVIRONMENT=play-store",
-        "--dart-define=SENTRY_DIST=play-store",
-        "--obfuscate",
-        "--split-debug-info=debug-info/android-aab",
-        "--extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-aab/obfuscation.map.json",
-    ])
-    run(
-        [str(SCRIPTS_DIR / "upload-symbols.sh"), "android-aab"],
-        env={"SENTRY_DIST": "play-store"},
-    )
-    if not aab.is_file():
-        raise DeployError(f"play: AAB not found at {aab}")
-
+def _play_publisher(ctx: Context):
     from google.oauth2 import service_account  # noqa: PLC0415
     from googleapiclient.discovery import build as gapi_build  # noqa: PLC0415
-    from googleapiclient.http import MediaFileUpload  # noqa: PLC0415
 
     if ctx.env.get("SUPPLY_JSON_KEY_DATA"):
         info = json.loads(ctx.env["SUPPLY_JSON_KEY_DATA"])
@@ -871,31 +861,91 @@ def phase_play(ctx: Context) -> None:
     previous_timeout = socket.getdefaulttimeout()
     socket.setdefaulttimeout(1800)
     try:
-        publisher = gapi_build(
+        return gapi_build(
             "androidpublisher", "v3", credentials=credentials, cache_discovery=False
         )
     finally:
         socket.setdefaulttimeout(previous_timeout)
-    edits = publisher.edits()
 
-    edit_id = _execute_google_request(edits.insert(packageName=package, body={}))["id"]
-    log(f"play: created edit {edit_id}")
-    upload = edits.bundles().upload(
-        packageName=package,
-        editId=edit_id,
-        media_body=MediaFileUpload(
-            str(aab),
-            mimetype="application/octet-stream",
-            chunksize=10 * 1024 * 1024,
-            resumable=True,
-        ),
-    )
-    uploaded = _execute_resumable_google_upload(upload, "play")
-    version_code = uploaded["versionCode"]
-    if version_code != ctx.build_number:
-        raise DeployError(
-            f"play: uploaded versionCode {version_code} != expected {ctx.build_number}"
+
+def _play_pending_edit(ctx: Context, edits, package: str) -> str | None:
+    """The recorded edit id when it is still open and already holds this build."""
+    from googleapiclient.errors import HttpError  # noqa: PLC0415
+
+    edit_id = ctx.state.data.get("play_pending_edit_id")
+    if not edit_id:
+        return None
+    try:
+        _execute_google_request(edits.get(packageName=package, editId=edit_id))
+        bundles = _execute_google_request(
+            edits.bundles().list(packageName=package, editId=edit_id)
+        ).get("bundles", [])
+    except HttpError as error:
+        log(f"play: recorded edit {edit_id} is gone ({error.status_code}); starting over")
+        bundles = None
+    if bundles is not None and any(b.get("versionCode") == ctx.build_number for b in bundles):
+        return str(edit_id)
+    if bundles is not None:
+        log(f"play: recorded edit {edit_id} holds no versionCode {ctx.build_number}; starting over")
+    ctx.state.data.pop("play_pending_edit_id", None)
+    ctx.state.save()
+    return None
+
+
+def phase_play(ctx: Context) -> None:
+    package = ctx.env["SUPPLY_PACKAGE_NAME"]
+    aab = ROOT / "build/app/outputs/bundle/release/app-release.aab"
+    if dry_guard(ctx, f"build AAB, upload symbols, publish {package} to Play production"):
+        return
+
+    from googleapiclient.http import MediaFileUpload  # noqa: PLC0415
+
+    edits = _play_publisher(ctx).edits()
+    edit_id = _play_pending_edit(ctx, edits, package)
+    if edit_id:
+        log(f"play: resuming edit {edit_id}, which already holds versionCode {ctx.build_number}")
+        version_code = ctx.build_number
+    else:
+        commit = short_sha()
+        run([
+            "flutter", "build", "appbundle",
+            "--dart-define=ENABLE_SENTRY=true",
+            f"--dart-define=GIT_COMMIT={commit}",
+            "--dart-define=SENTRY_ENVIRONMENT=play-store",
+            "--dart-define=SENTRY_DIST=play-store",
+            "--obfuscate",
+            "--split-debug-info=debug-info/android-aab",
+            "--extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-aab/obfuscation.map.json",
+        ])
+        run(
+            [str(SCRIPTS_DIR / "upload-symbols.sh"), "android-aab"],
+            env={"SENTRY_DIST": "play-store"},
         )
+        if not aab.is_file():
+            raise DeployError(f"play: AAB not found at {aab}")
+
+        edit_id = _execute_google_request(edits.insert(packageName=package, body={}))["id"]
+        log(f"play: created edit {edit_id}")
+        # Recorded before the upload so a run that dies after Play accepted the
+        # bundle resumes this edit instead of rebuilding and re-uploading.
+        ctx.state.data["play_pending_edit_id"] = edit_id
+        ctx.state.save()
+        upload = edits.bundles().upload(
+            packageName=package,
+            editId=edit_id,
+            media_body=MediaFileUpload(
+                str(aab),
+                mimetype="application/octet-stream",
+                chunksize=10 * 1024 * 1024,
+                resumable=True,
+            ),
+        )
+        uploaded = _execute_resumable_google_upload(upload, "play")
+        version_code = uploaded["versionCode"]
+        if version_code != ctx.build_number:
+            raise DeployError(
+                f"play: uploaded versionCode {version_code} != expected {ctx.build_number}"
+            )
     release_notes = notes_path("play").read_text(encoding="utf-8").strip()
     _execute_google_request(
         edits.tracks().update(
@@ -943,6 +993,8 @@ def phase_play(ctx: Context) -> None:
             "for review (Play refused automatic submission for this app's current "
             "state); open the Play Console and press 'Send for review'"
         )
+    ctx.state.data.pop("play_pending_edit_id", None)
+    ctx.state.save()
 
 
 # ---------------------------------------------------------------------------
