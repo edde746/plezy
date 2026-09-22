@@ -16,3 +16,15 @@
     public static void onLogMessage(...);
     public static void onHook(...);
 }
+
+# main.cpp resolves MediaCodecCallbackBridge with FindClass and hands it to libavcodec
+# (av_jni_set_mediacodec_callback_class), which resolves the constructor, handler() and
+# release() with GetMethodID and binds the native methods with RegisterNatives. No app
+# code references the class, so R8 would drop it and the Java MediaCodec wrapper would
+# silently fall back to synchronous decoding with no rendered-frame feedback.
+-keep class com.edde746.plezy.libmpv.MediaCodecCallbackBridge {
+    <init>(long);
+    android.os.Handler handler();
+    void release();
+    native <methods>;
+}

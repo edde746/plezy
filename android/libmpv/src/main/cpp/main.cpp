@@ -51,6 +51,21 @@ static void prepare_environment(JNIEnv* env, jobject appctx) {
     jobject global_appctx = env->NewGlobalRef(appctx);
     if (global_appctx) av_jni_set_android_app_ctx(global_appctx, NULL);
 
+    // The Java MediaCodec wrapper's asynchronous mode and rendered-frame
+    // feedback need a Java object libavcodec cannot ship (jni.h); it resolves
+    // the constructor, handler() and release() with GetMethodID and binds the
+    // native methods with RegisterNatives - see consumer-rules.pro. Resolved
+    // here, on a Java-entered thread whose class loader sees app classes;
+    // libavcodec's own threads could not FindClass it.
+    jclass bridge = env->FindClass("com/edde746/plezy/libmpv/MediaCodecCallbackBridge");
+    if (bridge) {
+      jobject global_bridge = env->NewGlobalRef(bridge);
+      if (global_bridge) av_jni_set_mediacodec_callback_class(global_bridge, NULL);
+      env->DeleteLocalRef(bridge);
+    } else {
+      env->ExceptionClear();
+    }
+
     init_methods_cache(env);
   });
 }

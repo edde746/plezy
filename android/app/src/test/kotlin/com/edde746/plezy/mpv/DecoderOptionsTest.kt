@@ -16,12 +16,12 @@ class DecoderOptionsTest {
     options.putAll(MpvPlayerCore.initialDecoderEntries(36))
     options.put("dolby_vision" to "0", "dv_p7_mode" to "strip")
     // A custom mpv config line naming one session key must not discard the
-    // DV routing or the NDK backend along with it.
-    options.setUser("threads=2,ndk_async=0")
+    // DV routing or the wrapper choice along with it.
+    options.setUser("threads=2,async=0")
     assertEquals(
       mapOf(
-        "ndk_codec" to "1",
-        "ndk_async" to "0",
+        "ndk_codec" to "0",
+        "async" to "0",
         "priority" to "0",
         "dolby_vision" to "0",
         "dv_p7_mode" to "strip",
@@ -40,8 +40,8 @@ class DecoderOptionsTest {
     options.put("frame_rate" to "23.976")
     assertEquals(
       mapOf(
-        "ndk_codec" to "1",
-        "ndk_async" to "1",
+        "ndk_codec" to "0",
+        "async" to "1",
         "priority" to "0",
         "dolby_vision" to "1",
         "dv_p7_mode" to "convert",

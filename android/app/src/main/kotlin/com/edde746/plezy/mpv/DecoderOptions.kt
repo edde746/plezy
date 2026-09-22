@@ -5,13 +5,13 @@ package com.edde746.plezy.mpv
  *
  * mpv exposes the decoder's AVOptions as one key=value list with no append
  * form through the property interface, so every writer replaces the whole
- * list. Three writers exist: the session's own keys (`ndk_codec`, `ndk_async`,
+ * list. Three writers exist: the session's own keys (`ndk_codec`, `async`,
  * `priority`, the per-file Dolby Vision routing and stream rate), the
  * per-file updates to those, and the user's custom mpv config line. The list
  * mpv sees is always composed here as the app's keys followed by the user's
  * text: FFmpeg keeps the last duplicate key, so a user entry wins over the
  * app's for that key while every app key the user did not name survives. A
- * raw user write used to discard `ndk_async` and the DV routing along with
+ * raw user write used to discard `async` and the DV routing along with
  * everything else.
  */
 internal class DecoderOptions {

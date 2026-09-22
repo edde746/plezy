@@ -191,19 +191,28 @@ class MpvPlayerCore private constructor(
      * The bundled FFmpeg's MediaCodec decoder options every video core
      * starts with (see [DecoderOptions]).
      *
-     * `ndk_codec=1`: NDK MediaCodec, never the Java wrapper (#2255).
+     * `ndk_codec=0`: the Java MediaCodec wrapper, what Media3, Chromium, Kodi
+     * and mpv-android drive, and the only one that can read the decoder's
+     * crop rectangle below API 28: `AMediaFormat_getRect` is API 28 and the
+     * `crop-*` keys exist only in the Java `MediaFormat`, so the NDK wrapper
+     * sized padded output buffers as the picture there - a 1920x960 stream
+     * in a 1920x1088 buffer on the Fire TV Stick 4K rendered stretched
+     * (#2427). Its asynchronous mode, rendered-frame feedback and running
+     * parameter updates go through [MediaCodecCallbackBridge], which the fork
+     * binds to the wrapper (`libavcodec/jni.h`).
      *
-     * `ndk_async=1` from API 31: the codec reports free input slots and
-     * finished frames on its own thread instead of being polled. Without it
-     * a decoder that has fallen behind (Tensor's AV1 block on a grainy
-     * high-bitrate scene) holds mpv's playloop inside the decode call for as
-     * long as the hardware takes, and that thread also feeds the audio
-     * device and hands frames to the vo: audio underruns and late frames
-     * follow (#2361). Asynchronous, the decoder answers EAGAIN and wakes the
-     * decoder filter when it can move again. The threshold is Media3's:
+     * `async=1` from API 31: the codec reports free input slots and finished
+     * frames on its own thread instead of being polled. Without it a decoder
+     * that has fallen behind (Tensor's AV1 block on a grainy high-bitrate
+     * scene) holds mpv's playloop inside the decode call for as long as the
+     * hardware takes, and that thread also feeds the audio device and hands
+     * frames to the vo: audio underruns and late frames follow (#2361).
+     * Asynchronous, the decoder answers EAGAIN and wakes the decoder filter
+     * when it can move again. The threshold is Media3's:
      * `DefaultMediaCodecAdapterFactory` trusts asynchronous MediaCodec by
      * default from API 31 only, for the same device-quirk history. Below it
-     * the decoder still bounds its wait (8 ms) and is polled.
+     * the decoder still bounds its wait (8 ms) and is polled - Media3's
+     * synchronous adapter, in native clothing.
      *
      * `priority=0`: realtime (MediaFormat `priority`), what Media3 declares
      * beside an operating rate and what some vendors require beside one (a
@@ -211,8 +220,8 @@ class MpvPlayerCore private constructor(
      * priority).
      */
     internal fun initialDecoderEntries(sdkInt: Int): List<Pair<String, String>> = buildList {
-      add("ndk_codec" to "1")
-      if (sdkInt >= Build.VERSION_CODES.S) add("ndk_async" to "1")
+      add("ndk_codec" to "0")
+      if (sdkInt >= Build.VERSION_CODES.S) add("async" to "1")
       add("priority" to "0")
     }
 
@@ -955,10 +964,8 @@ class MpvPlayerCore private constructor(
                   setOption("vo", initialVideoOutput(hardwareDecoding))
                   setOption("gpu-context", "android")
                   setOption("opengl-es", "yes")
-                  // FFmpeg's auto backend chooses Java when a JVM is registered.
-                  // Use NDK MediaCodec so per-frame decode/release calls do not
-                  // wait on ART JIT code-cache collection (#2255), and drive it
-                  // asynchronously where the platform is trusted to (see
+                  // The Java MediaCodec wrapper, driven asynchronously where
+                  // the platform is trusted to (rationale on
                   // initialDecoderEntries). This belongs to every video core,
                   // not the DV or vo=mediacodec policy: GPU/copy hardware paths
                   // use the same decoder. Software decoders ignore these unknown
@@ -2541,9 +2548,9 @@ class MpvPlayerCore private constructor(
     }
 
     // The user's custom decoder line composes with the session's own keys
-    // (DecoderOptions) instead of replacing them: an `ndk_async=0` in it
-    // still wins for that key, while the DV routing, the stream rate and
-    // the NDK backend the session set stay in force.
+    // (DecoderOptions) instead of replacing them: an `async=0` in it still
+    // wins for that key, while the DV routing, the stream rate and the
+    // wrapper choice the session set stay in force.
     if (name == "vd-lavc-o") {
       submitMpvOperation(writeOperations, "decoder options", { onComplete?.invoke(it) }) {
         decoderOptions.setUser(value)

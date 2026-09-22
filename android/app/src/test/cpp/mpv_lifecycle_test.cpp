@@ -152,10 +152,12 @@ jboolean is_same_object(jobject a, jobject b) {
   return resolve(a) == resolve(b) ? JNI_TRUE : JNI_FALSE;
 }
 
+// The app context and the MediaCodec callback bridge class are process-wide
+// references prepare_environment takes once; only Surfaces are per session.
 int live_surface_refs() {
   int count = 0;
   for (const auto& entry : global_refs) {
-    if (entry.second != &app_context) ++count;
+    if (entry.second != &app_context && entry.second != &jni.found_class) ++count;
   }
   return count;
 }
@@ -839,6 +841,7 @@ extern "C" const char* mpv_error_string(int) { return "controlled MPV failure"; 
 extern "C" void mpv_free_node_contents(mpv_node*) {}
 extern "C" int av_jni_set_java_vm(void*, void*) { return 0; }
 extern "C" int av_jni_set_android_app_ctx(void*, void*) { return 0; }
+extern "C" int av_jni_set_mediacodec_callback_class(void*, void*) { return 0; }
 extern "C" int __android_log_print(int, const char*, const char*, ...) { return 0; }
 
 bool acquire_jni_env(JavaVM* supplied_vm, JNIEnv** env) {
