@@ -314,6 +314,8 @@
     "downloadOnWifiOnlyDescription": "Мобильді деректер пайдаланылғанда жүктеулерді кідірту",
     "autoRemoveWatchedDownloads": "Көрілген жүктеулерді автоматты өшіру",
     "autoRemoveWatchedDownloadsDescription": "Көрілген жүктеулерді автоматты түрде өшіру",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Мобильді желіде жүктеу бұғатталған. Wi-Fi пайдаланыңыз немесе параметрді өзгертіңіз.",
     "maxVolume": "Максималды дыбыс",
     "maxVolumeDescription": "Ақырын видеолар үшін дыбысты 100%-дан асыруға рұқсат беру",
