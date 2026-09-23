@@ -10,7 +10,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     final useDpad = playerDirectionalNavigationEnabled();
 
     return Listener(
-      behavior: HitTestBehavior.translucent,
+      behavior: HitTestBehavior.deferToChild,
       onPointerDown: (_) => _restartHideTimerForCurrentPlaybackState(),
       child: DesktopVideoControls(
         key: _desktopControlsKey,

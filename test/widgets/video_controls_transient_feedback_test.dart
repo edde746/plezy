@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:drift/native.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,11 +20,15 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:plezy/focus/transport_keys.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
+import 'package:plezy/widgets/video_controls/video_control_button.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/double_tap_feedback.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
+import 'package:plezy/widgets/video_controls/widgets/video_controls_header.dart';
+import 'package:plezy/widgets/video_controls/widgets/volume_control.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/video_controls/widgets/transport_feedback_indicator.dart';
 
@@ -949,7 +954,7 @@ void main() {
   // Desktop keyboard seeking never reaches the D-pad branch above: with
   // videoPlayerNavigationEnabled false and no TV, the configured Left/Right and
   // Shift+Left/Right shortcuts fall through to KeyboardShortcutsService.
-  group('desktop keyboard seeking', () {
+  group('desktop player controls', () {
     late _RecordingPlayer player;
     late PlayerChromeController chrome;
     late PlayerToastController toast;
@@ -1000,6 +1005,8 @@ void main() {
       ValueChanged<int>? onLiveSeek,
       VoidCallback? onNext,
       bool canNavigateMediaItems = false,
+      bool showControls = false,
+      VoidCallback? onBack,
     }) async {
       final active = withPlayer ?? player;
       await tester.pumpWidget(
@@ -1026,6 +1033,7 @@ void main() {
                   onLiveSeekBy: onLiveSeekBy,
                   onLiveSeek: onLiveSeek,
                   onNext: onNext,
+                  onBack: onBack,
                 ),
               ),
             ),
@@ -1035,10 +1043,12 @@ void main() {
       // The shortcuts service loads asynchronously; without it the arrow keys
       // are consumed before ever reaching a seek.
       await tester.pumpAndSettle();
-      chrome.hide();
-      chrome.markControlsHidden();
-      await tester.pump();
-      expect(chrome.controlsVisible, isFalse);
+      if (!showControls) {
+        chrome.hide();
+        chrome.markControlsHidden();
+        await tester.pump();
+      }
+      expect(chrome.controlsVisible, showControls);
     }
 
     Future<void> settleFeedback(WidgetTester tester) async {
@@ -1243,6 +1253,77 @@ void main() {
 
       await settleFeedback(tester);
     });
+
+    group('hold-to-2x routing', () {
+      Future<void> pumpHoldControls(WidgetTester tester, {bool visible = true}) async {
+        tester.view.physicalSize = const Size(1280, 720);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        player.setRateForTest(1.5);
+        await pumpDesktopControls(tester, showControls: visible, onBack: () {});
+      }
+
+      Finder playPause() => find.byWidgetPredicate(
+        (widget) => widget is VideoControlButton && widget.semanticLabel == t.videoControls.pauseButton,
+      );
+      Finder slider() => find.descendant(of: find.byType(VolumeControl), matching: find.byType(Slider));
+
+      final uiPresses = <String, Offset Function(WidgetTester)>{
+        'play/pause': (tester) => tester.getCenter(playPause()),
+        'volume slider': (tester) => tester.getCenter(slider()),
+        'back button': (tester) => tester.getCenter(find.byType(AppBarBackButton)),
+        'header padding': (tester) => tester.getRect(find.byType(VideoControlsHeader)).center,
+      };
+      for (final entry in uiPresses.entries) {
+        testWidgets('holding ${entry.key} does not request 2x', (tester) async {
+          await pumpHoldControls(tester);
+          final gesture = await tester.startGesture(entry.value(tester), kind: PointerDeviceKind.mouse);
+          await tester.pump(const Duration(milliseconds: 600));
+          expect(player.rateRequests, isEmpty);
+          expect(find.text('2x'), findsNothing);
+          await gesture.up();
+          if (entry.key == 'play/pause') expect(player.playOrPauseCalls, 1);
+          await settleFeedback(tester);
+        });
+      }
+
+      testWidgets('volume drag after a short hold still changes volume', (tester) async {
+        await pumpHoldControls(tester);
+        final gesture = await tester.startGesture(tester.getCenter(slider()), kind: PointerDeviceKind.mouse);
+        await tester.pump(const Duration(milliseconds: 200));
+        final beforeDrag = volume.value;
+        await gesture.moveBy(const Offset(-20, 0));
+        await tester.pump();
+        await gesture.moveBy(const Offset(-20, 0));
+        await tester.pump();
+        await gesture.up();
+        expect(volume.value, isNot(beforeDrag));
+        expect(player.rateRequests, isEmpty);
+        await settleFeedback(tester);
+      });
+
+      for (final visible in [true, false]) {
+        testWidgets('blank video hold with controls ${visible ? 'visible' : 'hidden'} restores 1.5x', (tester) async {
+          await pumpHoldControls(tester, visible: visible);
+          final gesture = await tester.startGesture(
+            tester.getCenter(find.byType(PlexVideoControls)),
+            kind: PointerDeviceKind.mouse,
+          );
+          await tester.pump(const Duration(milliseconds: 600));
+          expect(player.rateRequests, [2.0]);
+          expect(find.text('2x'), findsOneWidget);
+          if (visible) {
+            await gesture.cancel();
+          } else {
+            await gesture.up();
+          }
+          await tester.pump();
+          expect(player.rateRequests, [2.0, 1.5]);
+          expect(find.text('2x'), findsNothing);
+          await settleFeedback(tester);
+        });
+      }
+    });
   });
 
   group('formatSkipFeedbackLabel', () {
@@ -1287,6 +1368,7 @@ LiveSeekBy _acceptingLiveSeek(List<int> offsets) => (offset) {
 /// playing/position state so intent-dependent behaviour can be asserted.
 class _RecordingPlayer implements Player {
   final List<Duration> seeks = [];
+  final List<double> rateRequests = [];
   final StreamController<Duration?> _jumpController = StreamController<Duration?>.broadcast();
   int playCalls = 0;
   int pauseCalls = 0;
@@ -1297,9 +1379,12 @@ class _RecordingPlayer implements Player {
   bool freezePositionOnSeek = false;
 
   bool _playing = true;
+  double _rate = 1.0;
   Duration _position = const Duration(minutes: 10);
 
   void setPlaying(bool value) => _playing = value;
+
+  void setRateForTest(double value) => _rate = value;
 
   void setPosition(Duration value) => _position = value;
 
@@ -1314,8 +1399,13 @@ class _RecordingPlayer implements Player {
   String get playerType => 'mpv';
 
   @override
-  PlayerState get state =>
-      PlayerState(playing: _playing, position: _position, duration: const Duration(minutes: 45), seekable: true);
+  PlayerState get state => PlayerState(
+    playing: _playing,
+    position: _position,
+    duration: const Duration(minutes: 45),
+    seekable: true,
+    rate: _rate,
+  );
 
   @override
   PlayerStreams get streams => PlayerStreams(
@@ -1349,6 +1439,15 @@ class _RecordingPlayer implements Player {
     if (!freezePositionOnSeek) _position = position;
     _jumpController.add(position);
   }
+
+  @override
+  Future<void> setRate(double rate) async {
+    rateRequests.add(rate);
+    _rate = rate;
+  }
+
+  @override
+  Future<void> setVolume(double volume) async {}
 
   @override
   Future<void> dispose({bool preserveDisplayMode = false}) async {
