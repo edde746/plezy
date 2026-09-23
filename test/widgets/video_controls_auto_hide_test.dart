@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,7 @@ import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
+import 'package:plezy/widgets/video_controls/video_control_button.dart';
 
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
@@ -33,7 +35,7 @@ import '../test_helpers/theme.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('auto-hide on Android TV', () {
+  group('player controls auto-hide', () {
     late _RemotePlayer player;
     late PlayerChromeController chrome;
     late PlayerToastController toast;
@@ -83,7 +85,7 @@ void main() {
       await database.close();
     });
 
-    Widget shell(Widget child) => InputModeTracker(
+    Widget shell(Widget child, {bool desktop = false}) => InputModeTracker(
       child: MultiProvider(
         providers: [
           Provider<AppDatabase>.value(value: database),
@@ -91,7 +93,10 @@ void main() {
           ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
         ],
         child: MaterialApp(
-          theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
+          theme: ThemeData(
+            platform: desktop ? TargetPlatform.macOS : TargetPlatform.android,
+            extensions: const [testMonoTokens],
+          ),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -105,8 +110,12 @@ void main() {
 
     /// Mounts the controls with the OSD already up and the picture playing,
     /// the state a viewer is in when they start walking the control bar.
-    Future<void> pumpControls(WidgetTester tester) async {
-      await tester.pumpWidget(shell(const SizedBox.expand()));
+    Future<void> pumpControls(WidgetTester tester, {bool desktop = false}) async {
+      if (desktop) {
+        TvDetectionService.setForceTVSync(false);
+        PlatformDetector.debugSetIsDesktopOSOverride(true);
+      }
+      await tester.pumpWidget(shell(const SizedBox.expand(), desktop: desktop));
       await tester.pump();
 
       await tester.pumpWidget(
@@ -120,6 +129,7 @@ void main() {
             hasFirstFrame: hasFirstFrame,
             canNavigateMediaItems: false,
           ),
+          desktop: desktop,
         ),
       );
       await tester.pumpAndSettle();
@@ -160,6 +170,50 @@ void main() {
       expect(find.byType(DesktopVideoControls), findsOneWidget);
 
       chrome.cancelAutoHide();
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('held mouse movement over play/pause refreshes desktop auto-hide', (tester) async {
+      await pumpControls(tester, desktop: true);
+      final playPause = find.byWidgetPredicate(
+        (widget) => widget is VideoControlButton && widget.semanticLabel == t.videoControls.pauseButton,
+      );
+      expect(playPause, findsOneWidget);
+
+      final gesture = await tester.startGesture(tester.getCenter(playPause), kind: PointerDeviceKind.mouse);
+      // Leave the long-press gesture's slop before its deadline so this only
+      // exercises chrome visibility, not the separate hold-to-2x behavior.
+      await gesture.moveBy(const Offset(40, 0));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      await gesture.moveBy(const Offset(8, 0));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      await gesture.moveBy(const Offset(8, 0));
+      await tester.pump();
+      expect(chrome.controlsVisible, isTrue, reason: 'movement during a held click refreshes the 3s timer');
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(chrome.controlsVisible, isFalse, reason: 'the timer resumes after movement stops');
+      await gesture.up();
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('ordinary desktop mouse hover still restores and refreshes controls', (tester) async {
+      await pumpControls(tester, desktop: true);
+      await tester.pump(const Duration(seconds: 3));
+      expect(chrome.controlsVisible, isFalse);
+
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final center = tester.getCenter(find.byType(PlexVideoControls));
+      await gesture.addPointer(location: center);
+      await gesture.moveBy(const Offset(20, 0));
+      await tester.pump();
+      expect(chrome.controlsVisible, isTrue);
+
+      await tester.pump(const Duration(seconds: 3));
+      expect(chrome.controlsVisible, isFalse);
+      await gesture.removePointer();
       await tester.pumpWidget(const SizedBox.shrink());
     });
   });

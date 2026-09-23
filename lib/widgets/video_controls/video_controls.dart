@@ -1200,7 +1200,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (isMobile) _handleTouchPointerDown(event);
             },
             onPointerHover: (_) => _cancelAutoSkipFromUserInteraction(),
-            onPointerMove: isMobile ? _handleTouchPointerMove : null,
+            onPointerMove: (event) {
+              if (isMobile) {
+                _handleTouchPointerMove(event);
+              } else if (event.kind == PointerDeviceKind.mouse) {
+                _showControlsFromPointerActivity();
+              }
+            },
             onPointerUp: isMobile ? _handleTouchPointerUp : null,
             onPointerCancel: isMobile ? _handleTouchPointerCancel : null,
             onPointerSignal: _handlePointerSignal,
