@@ -1272,9 +1272,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                     return GestureDetector(
                                       onTapUp: (details) =>
                                           _handleControlsOverlayTap(details, renderBoxSizeOf(context)),
-                                      onLongPressStart: (_) => _handleLongPressStart(),
-                                      onLongPressEnd: (_) => _handleLongPressEnd(),
-                                      onLongPressCancel: _handleLongPressCancel,
+                                      onLongPressStart: isMobile ? (_) => _handleLongPressStart() : null,
+                                      onLongPressEnd: isMobile ? (_) => _handleLongPressEnd() : null,
+                                      onLongPressCancel: isMobile ? _handleLongPressCancel : null,
                                       behavior: HitTestBehavior.deferToChild,
                                       child: ValueListenableBuilder<bool>(
                                         valueListenable: widget.hasFirstFrame ?? _fallbackHasFirstFrame,
@@ -1284,21 +1284,28 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                           // on every in-place episode switch / live-TV zap, and
                                           // a runtimeType change here would re-inflate the whole
                                           // controls subtree and drop its state.
-                                          return RasterizedGradient(
-                                            gradient: hasFrame
-                                                ? LinearGradient(
-                                                    begin: Alignment.topCenter,
-                                                    end: Alignment.bottomCenter,
-                                                    colors: [
-                                                      Colors.black.withValues(alpha: 0.7),
-                                                      Colors.transparent,
-                                                      Colors.transparent,
-                                                      Colors.black.withValues(alpha: 0.7),
-                                                    ],
-                                                    stops: const [0.0, 0.2, 0.8, 1.0],
-                                                  )
-                                                : const LinearGradient(colors: [Colors.black, Colors.black]),
-                                            child: child,
+                                          final gradient = hasFrame
+                                              ? LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    Colors.black.withValues(alpha: 0.7),
+                                                    Colors.transparent,
+                                                    Colors.transparent,
+                                                    Colors.black.withValues(alpha: 0.7),
+                                                  ],
+                                                  stops: const [0.0, 0.2, 0.8, 1.0],
+                                                )
+                                              : const LinearGradient(colors: [Colors.black, Colors.black]);
+                                          if (isMobile) return RasterizedGradient(gradient: gradient, child: child);
+                                          return Stack(
+                                            children: [
+                                              // The scrim paints across the frame but does not claim blank video taps.
+                                              Positioned.fill(
+                                                child: IgnorePointer(child: RasterizedGradient(gradient: gradient)),
+                                              ),
+                                              Positioned.fill(child: child!),
+                                            ],
                                           );
                                         },
                                         child: isMobile
