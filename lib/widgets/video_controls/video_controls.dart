@@ -1100,7 +1100,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     unawaited(_deviceAdjustmentService.restoreBrightness());
     // A player exit mid-drag must not leak the hold into the route teardown.
     widget.chromeController.release(PlayerChromeHold.scrub, notify: false, restartAutoHide: false);
-    widget.chromeController.release(PlayerChromeHold.volumeDrag, notify: false, restartAutoHide: false);
+    widget.chromeController.release(PlayerChromeHold.pointerPress, notify: false, restartAutoHide: false);
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _positionSubscription?.cancel();
@@ -1201,16 +1201,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (isMobile) _handleTouchPointerDown(event);
             },
             onPointerHover: (_) => _cancelAutoSkipFromUserInteraction(),
-            onPointerMove: (event) {
-              _cancelAutoSkipFromUserInteraction();
-              if (isMobile) {
-                _handleTouchPointerMove(event);
-              } else if (event.kind == PointerDeviceKind.mouse) {
-                // A held button turns mouse movement into moves instead of
-                // hovers, so MouseRegion.onHover never sees it.
-                _showControlsFromPointerActivity();
-              }
-            },
+            onPointerMove: isMobile ? _handleTouchPointerMove : null,
             onPointerUp: isMobile ? _handleTouchPointerUp : null,
             onPointerCancel: isMobile ? _handleTouchPointerCancel : null,
             onPointerSignal: _handlePointerSignal,

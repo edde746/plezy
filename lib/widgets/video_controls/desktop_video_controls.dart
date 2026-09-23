@@ -52,8 +52,6 @@ class DesktopVideoControls extends StatefulWidget {
   final ValueChanged<Duration> onSeekEnd;
   final VoidCallback? onScrubStart;
   final VoidCallback? onScrubEnd;
-  final VoidCallback? onVolumeDragStart;
-  final VoidCallback? onVolumeDragEnd;
   final IconData Function(int) getReplayIcon;
   final IconData Function(int) getForwardIcon;
 
@@ -133,8 +131,6 @@ class DesktopVideoControls extends StatefulWidget {
     required this.onSeekEnd,
     this.onScrubStart,
     this.onScrubEnd,
-    this.onVolumeDragStart,
-    this.onVolumeDragEnd,
     required this.getReplayIcon,
     required this.getForwardIcon,
     this.onFocusActivity,
@@ -928,8 +924,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     onKeyEvent: _handleVolumeKeyEvent,
                     onFocusChange: _onFocusChange,
                     onFocusActivity: widget.onFocusActivity,
-                    onDragStart: widget.onVolumeDragStart,
-                    onDragEnd: widget.onVolumeDragEnd,
                   ),
                   const SizedBox(width: 16),
                 ],

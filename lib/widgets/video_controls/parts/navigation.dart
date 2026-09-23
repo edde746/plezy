@@ -9,9 +9,13 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     );
     final useDpad = playerDirectionalNavigationEnabled();
 
+    // Any press on the controls holds them until the last pointer lifts, so a
+    // held slider, scrub or button can't fade out and unmount under the pointer.
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _restartHideTimerForCurrentPlaybackState(),
+      onPointerDown: (event) => widget.chromeController.recordPointerDown(event.pointer),
+      onPointerUp: (event) => widget.chromeController.recordPointerUp(event.pointer),
+      onPointerCancel: (event) => widget.chromeController.recordPointerUp(event.pointer),
       child: DesktopVideoControls(
         key: _desktopControlsKey,
         player: widget.player,
@@ -32,8 +36,6 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         onSeekEnd: _finalizeSeek,
         onScrubStart: _holdTimelineScrub,
         onScrubEnd: _releaseTimelineScrub,
-        onVolumeDragStart: _holdVolumeDrag,
-        onVolumeDragEnd: _releaseVolumeDrag,
         onSeekRequested: widget.onSeekRequested,
         getReplayIcon: getReplayIcon,
         getForwardIcon: getForwardIcon,

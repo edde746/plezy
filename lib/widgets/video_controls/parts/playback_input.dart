@@ -273,14 +273,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     widget.chromeController.release(PlayerChromeHold.scrub);
   }
 
-  void _holdVolumeDrag() {
-    widget.chromeController.hold(PlayerChromeHold.volumeDrag);
-  }
-
-  void _releaseVolumeDrag() {
-    widget.chromeController.release(PlayerChromeHold.volumeDrag);
-  }
-
   bool get _isTouchTapSuppressed {
     final until = _suppressTouchTapUntil;
     if (until == null) return false;
