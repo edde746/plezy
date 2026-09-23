@@ -32,6 +32,8 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         onSeekEnd: _finalizeSeek,
         onScrubStart: _holdTimelineScrub,
         onScrubEnd: _releaseTimelineScrub,
+        onVolumeDragStart: _holdVolumeDrag,
+        onVolumeDragEnd: _releaseVolumeDrag,
         onSeekRequested: widget.onSeekRequested,
         getReplayIcon: getReplayIcon,
         getForwardIcon: getForwardIcon,

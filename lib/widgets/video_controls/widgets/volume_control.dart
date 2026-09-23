@@ -33,6 +33,12 @@ class VolumeControl extends StatefulWidget {
   /// Called on any keyboard activity (to reset hide timer).
   final VoidCallback? onFocusActivity;
 
+  /// Called when a slider drag starts, and when it ends or the slider is
+  /// disposed mid-drag. The player holds its chrome between the two so an
+  /// auto-hide cannot unmount the slider under the pointer.
+  final VoidCallback? onDragStart;
+  final VoidCallback? onDragEnd;
+
   const VolumeControl({
     super.key,
     required this.volumeController,
@@ -40,6 +46,8 @@ class VolumeControl extends StatefulWidget {
     this.onKeyEvent,
     this.onFocusChange,
     this.onFocusActivity,
+    this.onDragStart,
+    this.onDragEnd,
   });
 
   @override
@@ -50,10 +58,33 @@ class _VolumeControlState extends State<VolumeControl> {
   /// Whether we're in volume adjust mode (left/right adjusts volume).
   bool _isAdjustMode = false;
 
+  /// Whether a slider drag is in progress, so dispose can end it.
+  bool _dragging = false;
+
   /// Volume step size for keyboard adjustment.
   static const double _volumeStep = 5.0;
 
   SettingsService get _settings => SettingsService.instance;
+
+  @override
+  void dispose() {
+    if (_dragging) widget.onDragEnd?.call();
+    super.dispose();
+  }
+
+  void _handleDragStart(double _) {
+    _dragging = true;
+    widget.onDragStart?.call();
+  }
+
+  void _handleDragEnd(double volume) {
+    _dragging = false;
+    try {
+      widget.volumeController.commit(volume);
+    } finally {
+      widget.onDragEnd?.call();
+    }
+  }
 
   void _enterAdjustMode() {
     setState(() {
@@ -211,8 +242,9 @@ class _VolumeControlState extends State<VolumeControl> {
                 value: volume.clamp(0.0, maxVolumeDouble),
                 min: 0.0,
                 max: maxVolumeDouble,
+                onChangeStart: _handleDragStart,
                 onChanged: widget.volumeController.preview,
-                onChangeEnd: widget.volumeController.commit,
+                onChangeEnd: _handleDragEnd,
                 activeColor: Colors.white,
                 inactiveColor: Colors.white.withValues(alpha: 0.3),
               ),

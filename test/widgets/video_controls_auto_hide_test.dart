@@ -19,9 +19,10 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
+import 'package:plezy/widgets/video_controls/video_control_button.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
-import 'package:plezy/widgets/video_controls/video_control_button.dart';
+import 'package:plezy/widgets/video_controls/widgets/volume_control.dart';
 
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
@@ -32,6 +33,10 @@ import '../test_helpers/theme.dart';
 /// between presses and loses the chrome mid-way. A D-pad viewer gets 10s, and
 /// a paused D-pad viewer keeps the chrome until they dismiss it — a remote has
 /// no tap to bring it back.
+///
+/// On desktop the chrome must not fade out from under a held mouse button: a
+/// held button reports movement as moves rather than hovers, and a volume
+/// slider unmounted mid-drag never saves the chosen volume.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -173,47 +178,53 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('held mouse movement over play/pause refreshes desktop auto-hide', (tester) async {
+    testWidgets('held mouse movement restarts the desktop auto-hide delay', (tester) async {
       await pumpControls(tester, desktop: true);
       final playPause = find.byWidgetPredicate(
         (widget) => widget is VideoControlButton && widget.semanticLabel == t.videoControls.pauseButton,
       );
       expect(playPause, findsOneWidget);
 
+      // The press restarts the 3s delay. Holding it still engages hold-to-2x,
+      // which leaves the chrome alone, so only the later move can extend it.
       final gesture = await tester.startGesture(tester.getCenter(playPause), kind: PointerDeviceKind.mouse);
-      // Leave the long-press gesture's slop before its deadline so this only
-      // exercises chrome visibility, not the separate hold-to-2x behavior.
-      await gesture.moveBy(const Offset(40, 0));
-      await tester.pump();
       await tester.pump(const Duration(seconds: 2));
-      await gesture.moveBy(const Offset(8, 0));
+      await gesture.moveBy(const Offset(4, 0));
       await tester.pump();
-      await tester.pump(const Duration(seconds: 2));
-      await gesture.moveBy(const Offset(8, 0));
-      await tester.pump();
-      expect(chrome.controlsVisible, isTrue, reason: 'movement during a held click refreshes the 3s timer');
 
-      await tester.pump(const Duration(seconds: 3));
-      expect(chrome.controlsVisible, isFalse, reason: 'the timer resumes after movement stops');
+      await tester.pump(const Duration(seconds: 2));
+      expect(chrome.controlsVisible, isTrue, reason: 'the held move restarted the 3s delay');
+
       await gesture.up();
+      await tester.pump(const Duration(seconds: 1));
+      expect(chrome.controlsVisible, isFalse, reason: 'the restarted delay still runs out');
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('ordinary desktop mouse hover still restores and refreshes controls', (tester) async {
+    testWidgets('a held volume slider keeps desktop controls up and saves the volume on release', (tester) async {
       await pumpControls(tester, desktop: true);
-      await tester.pump(const Duration(seconds: 3));
-      expect(chrome.controlsVisible, isFalse);
+      final slider = find.descendant(of: find.byType(VolumeControl), matching: find.byType(Slider));
+      expect(slider, findsOneWidget);
 
-      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      final center = tester.getCenter(find.byType(PlexVideoControls));
-      await gesture.addPointer(location: center);
-      await gesture.moveBy(const Offset(20, 0));
+      final gesture = await tester.startGesture(tester.getCenter(slider), kind: PointerDeviceKind.mouse);
+      await gesture.moveBy(const Offset(-30, 0));
       await tester.pump();
-      expect(chrome.controlsVisible, isTrue);
+      final dragged = volume.value;
+      expect(dragged, lessThan(100), reason: 'precondition: the drag previewed a lower volume');
+
+      // Hold still well past the 3s delay and any fade-out.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(chrome.controlsVisible, isTrue, reason: 'a held slider keeps the chrome up');
+      expect(slider, findsOneWidget, reason: 'the slider stays mounted under the pointer');
+
+      await gesture.up();
+      await tester.pump();
+      await volume.idle;
+      expect(SettingsService.instance.read(SettingsService.volume), dragged);
 
       await tester.pump(const Duration(seconds: 3));
-      expect(chrome.controlsVisible, isFalse);
-      await gesture.removePointer();
+      expect(chrome.controlsVisible, isFalse, reason: 'releasing the slider resumes auto-hide');
       await tester.pumpWidget(const SizedBox.shrink());
     });
   });
@@ -231,6 +242,12 @@ class _RemotePlayer implements Player {
   }
 
   Future<void> close() => _playingController.close();
+
+  @override
+  Future<void> setRate(double rate) async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
 
   @override
   String get playerType => 'mpv';

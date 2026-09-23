@@ -5,7 +5,7 @@ import 'package:flutter/material.dart'
     show BuildContext, ListenableBuilder, MouseRegion, StatelessWidget, SystemMouseCursors, Widget;
 
 /// Reasons that keep the video-player chrome visible and suppress auto-hide.
-enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub }
+enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub, volumeDrag }
 
 /// Owns video-player chrome visibility and auto-hide policy for one player route.
 class PlayerChromeController extends ChangeNotifier implements ValueListenable<bool> {
