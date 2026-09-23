@@ -102,6 +102,21 @@ enum SpecialsOrdering {
   specialsLast,
 }
 
+/// Which of an episode's server tags the season episode rows show, beside
+/// the runtime. Consumed by `buildEpisodeTagLabels`.
+enum EpisodeTagsMode {
+  /// No tags on the rows.
+  off,
+
+  /// Only the canon/filler classification anime plugins (Jellyfin's Ronin)
+  /// write onto each episode as an ordinary tag; every other tag stays
+  /// hidden.
+  canonFiller,
+
+  /// Every tag on the episode, verbatim.
+  all,
+}
+
 /// What the player does when playback enters an intro or credits marker.
 /// One pref per marker kind (#2138).
 enum SkipMarkerMode {
@@ -730,6 +745,17 @@ class SettingsService extends BaseSharedPreferencesService {
   static const showWatchedIndicators = BoolPref('show_watched_indicators', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
   static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
+
+  /// Which server tags the season episode rows show ([EpisodeTagsMode]).
+  /// Canon/filler by default: those four tags only exist on episodes someone
+  /// deliberately classified, so untagged libraries look exactly as before,
+  /// while every other tag stays opt-in.
+  static const episodeTags = EnumPref<EpisodeTagsMode>(
+    'episode_tags',
+    values: EpisodeTagsMode.values,
+    defaultValue: EpisodeTagsMode.canonFiller,
+  );
+
   static const hideSpoilers = BoolPref('hide_spoilers');
   static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
@@ -1345,6 +1371,7 @@ class SettingsService extends BaseSharedPreferencesService {
     showWatchedIndicators,
     showEpisodeNumberOnCards,
     showSeasonPostersOnTabs,
+    episodeTags,
     hideSpoilers,
     showNavBarLabels,
     globalShaderPreset,

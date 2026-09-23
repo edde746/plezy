@@ -59,6 +59,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.showSeasonPostersOnTabs,
                 subtitle: t.settings.showSeasonPostersOnTabsDescription,
               ),
+            SettingSelectionTile<EpisodeTagsMode>(
+              pref: SettingsService.episodeTags,
+              icon: Symbols.label_rounded,
+              title: t.settings.episodeTags,
+              subtitleBuilder: (mode) => '${_episodeTagsLabel(mode)} · ${t.settings.episodeTagsDescription}',
+              options: EpisodeTagsMode.values.map((m) => DialogOption(value: m, title: _episodeTagsLabel(m))).toList(),
+            ),
             SettingSwitchTile(
               pref: SettingsService.hideSpoilers,
               icon: Symbols.visibility_off_rounded,
@@ -319,6 +326,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: EpisodeAction.details, label: Text(t.settings.episodeDetails)),
     ],
   );
+
+  String _episodeTagsLabel(EpisodeTagsMode mode) => switch (mode) {
+    EpisodeTagsMode.off => t.common.off,
+    EpisodeTagsMode.canonFiller => t.settings.episodeTagsCanonFiller,
+    EpisodeTagsMode.all => t.settings.episodeTagsAll,
+  };
 
   String _visualEffectsLabel(VisualEffectsSetting value) => switch (value) {
     VisualEffectsSetting.auto => t.settings.visualEffectsAuto,

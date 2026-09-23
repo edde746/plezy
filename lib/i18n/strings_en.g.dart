@@ -564,6 +564,18 @@ class Translations$settings$en {
 	/// en: 'Show each season's poster above its tab'
 	String get showSeasonPostersOnTabsDescription => 'Show each season\'s poster above its tab';
 
+	/// en: 'Show Tags on Episodes'
+	String get episodeTags => 'Show Tags on Episodes';
+
+	/// en: 'Show an episode's tags, such as a canon or filler mark, next to its runtime'
+	String get episodeTagsDescription => 'Show an episode\'s tags, such as a canon or filler mark, next to its runtime';
+
+	/// en: 'Canon and filler only'
+	String get episodeTagsCanonFiller => 'Canon and filler only';
+
+	/// en: 'All tags'
+	String get episodeTagsAll => 'All tags';
+
 	/// en: 'Full TV Cards'
 	String get tvFullCardLayout => 'Full TV Cards';
 
@@ -7381,6 +7393,10 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
+			'settings.episodeTags' => 'Show Tags on Episodes',
+			'settings.episodeTagsDescription' => 'Show an episode\'s tags, such as a canon or filler mark, next to its runtime',
+			'settings.episodeTagsCanonFiller' => 'Canon and filler only',
+			'settings.episodeTagsAll' => 'All tags',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
 			'settings.focusGlow' => 'Focus Glow',
@@ -7728,12 +7744,12 @@ extension on Translations {
 			'fileInfo.textBased' => 'Text Based',
 			'fileInfo.subtitleFormat' => 'Sidecar Format',
 			'fileInfo.provider' => 'Provider',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.matchScore' => 'Match Score',
 			'fileInfo.externalDelivery' => 'Can Be Served Separately',
 			'fileInfo.sidecarPath' => 'Sidecar Path',
 			'fileInfo.sourceStream' => 'Copied From',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
@@ -8242,12 +8258,12 @@ extension on Translations {
 			'libraries.thisLibraryIsEmpty' => 'This library is empty',
 			'libraries.noItemsMatchFilters' => 'No items match the active filters',
 			'libraries.resetFilters' => 'Reset filters',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			'libraries.manageLibraries' => 'Manage Libraries',
@@ -8756,12 +8772,12 @@ extension on Translations {
 			'watchTogether.currentPlayback' => 'Current Playback',
 			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
 			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} set the speed to ${speed}',
@@ -9270,12 +9286,12 @@ extension on Translations {
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
 			'addServer.enterMediaBrowserUrlError' => ({required Object product}) => 'Enter your ${product} server URL',
 			'addServer.addConnectionTitle' => 'Add connection',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Add to ${name}',
 			'addServer.signInWithPlexCard' => 'Sign in with Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',

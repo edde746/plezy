@@ -67,9 +67,10 @@ LibraryPage<T> _pagedItems<T>(
 ///    gates it behind `ItemFields`, and recency ordering ("Date Added" sorts,
 ///    [MediaItem.recencySortKey]) degrades to `addedAt` for never-played rows
 ///
-/// Heavier fields (`MediaSources`, `People`, `Genres`, `Tags`, `Studios`,
-/// `Taglines`, `ProviderIds`, `Chapters`) stay in [_detailFields] — together
-/// they added seconds to large-library pages on small home servers.
+/// Heavier fields (`MediaSources`, `People`, `Genres`, `Studios`, `Taglines`,
+/// `ProviderIds`, `Chapters`) stay in [_detailFields] — together they added
+/// seconds to large-library pages on small home servers. `Tags` is cheap but
+/// only the episode rows show it ([_baseEpisodeRowFields]).
 ///
 /// `UserData` and `PremiereDate` are deliberately absent: neither is a member
 /// of Jellyfin's `ItemFields` enum, so the server's
@@ -111,7 +112,14 @@ String _nextUpDateCutoff() =>
 /// Existing episode-row requests can show Plex-style quality labels when the
 /// response includes `MediaSources`. Keep this off broad library/search/latest
 /// queries because it is the heaviest item field Jellyfin returns.
-const _baseEpisodeRowFields = '$_baseBrowseFields,MediaSources';
+///
+/// `Tags` feeds the episode-tag labels (the `episode_tags` setting): the
+/// canon/filler classification anime plugins such as Ronin write onto each
+/// episode as an ordinary tag. Unlike the count fields it costs no per-row
+/// query — the server copies it off the item it already loaded
+/// (`DtoService.AttachBasicFields`) — and Emby answers it with `TagItems`,
+/// which the mapper already reads.
+const _baseEpisodeRowFields = '$_baseBrowseFields,MediaSources,Tags';
 
 /// Media types global search surfaces. Episodes are included so a user can
 /// find a single episode by name.
