@@ -1098,8 +1098,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _deviceAdjustmentService.onResume = null;
     _deviceAdjustmentService.setRestoreSuppressed(false);
     unawaited(_deviceAdjustmentService.restoreBrightness());
-    // A player exit mid-scrub must not leak the hold into the route teardown.
+    // A player exit mid-drag must not leak the hold into the route teardown.
     widget.chromeController.release(PlayerChromeHold.scrub, notify: false, restartAutoHide: false);
+    widget.chromeController.release(PlayerChromeHold.pointerPress, notify: false, restartAutoHide: false);
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _positionSubscription?.cancel();
@@ -1302,13 +1303,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                           );
                                         },
                                         child: isMobile
-                                            ? Listener(
-                                                behavior: HitTestBehavior.translucent,
-                                                onPointerDown: (_) {
-                                                  if (!widget.chromeController.contentStripVisible) {
-                                                    _restartHideTimerForCurrentPlaybackState();
-                                                  }
-                                                },
+                                            ? _holdChromeWhilePressed(
                                                 child: Builder(
                                                   builder: (context) {
                                                     final playbackState = context.watch<PlaybackStateProvider>();
