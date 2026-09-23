@@ -153,7 +153,7 @@ class _ClipPreviewPlayerSurfaceState extends State<_ClipPreviewPlayerSurface> {
       final outputPath = await widget.controller.saveScreenshot();
       if (mounted) showSuccessSnackBar(context, '${t.videoControls.screenshotSaved}: ${path.basename(outputPath)}');
     } catch (e) {
-      if (mounted) showErrorSnackBar(context, e.toString());
+      if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
     }
   }
 
