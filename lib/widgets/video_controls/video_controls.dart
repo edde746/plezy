@@ -1303,13 +1303,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                           );
                                         },
                                         child: isMobile
-                                            ? Listener(
-                                                behavior: HitTestBehavior.translucent,
-                                                onPointerDown: (_) {
-                                                  if (!widget.chromeController.contentStripVisible) {
-                                                    _restartHideTimerForCurrentPlaybackState();
-                                                  }
-                                                },
+                                            ? _holdChromeWhilePressed(
                                                 child: Builder(
                                                   builder: (context) {
                                                     final playbackState = context.watch<PlaybackStateProvider>();
