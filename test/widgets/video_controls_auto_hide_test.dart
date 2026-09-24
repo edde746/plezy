@@ -30,11 +30,10 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
-/// The OSD used to auto-hide on the same 5s a phone gets, which is shorter
-/// than a remote traversal of the control bar: the viewer reads each label
-/// between presses and loses the chrome mid-way. A D-pad viewer gets 10s, and
-/// a paused D-pad viewer keeps the chrome until they dismiss it — a remote has
-/// no tap to bring it back.
+/// A D-pad viewer gets the same 5s a phone does, restarted by every remote
+/// press so a traversal of the control bar never races it. A paused D-pad
+/// viewer keeps the chrome until they dismiss it — a remote has no tap to
+/// bring it back.
 ///
 /// A press on the controls holds them until it lifts, on desktop even when the
 /// drag leaves the player: a slider or scrubber unmounted mid-drag drops the
@@ -170,17 +169,17 @@ void main() {
       return gesture;
     }
 
-    testWidgets('a remote press mid-traversal keeps the OSD up past 5s, and it hides at 10s', (tester) async {
+    testWidgets('a remote press restarts the 5s delay, and an idle remote lets the OSD go', (tester) async {
       await pumpControls(tester);
 
       await tester.pump(const Duration(seconds: 4));
       await press(tester, LogicalKeyboardKey.arrowRight);
 
-      await tester.pump(const Duration(seconds: 6));
-      expect(chrome.controlsVisible, isTrue, reason: 'the viewer is still reading the next label');
-
       await tester.pump(const Duration(seconds: 4));
-      expect(chrome.controlsVisible, isFalse, reason: 'an idle remote does let the OSD go');
+      expect(chrome.controlsVisible, isTrue, reason: 'the press restarted the timer mid-traversal');
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(chrome.controlsVisible, isFalse, reason: 'an idle remote lets the OSD go after 5s');
 
       await tester.pumpWidget(const SizedBox.shrink());
     });

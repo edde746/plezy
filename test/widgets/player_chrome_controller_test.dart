@@ -105,18 +105,18 @@ void main() {
       expect(controller.controlsVisible, isFalse);
     });
 
-    // A remote traverses the OSD one press at a time, reading each label in
-    // between; the playing chrome still auto-hides, but on the longer delay.
-    testWidgets('directional navigation auto-hides playing controls only after the full delay', (tester) async {
+    // Directional navigation only suppresses the paused auto-hide; the playing
+    // chrome still hides on the configured delay.
+    testWidgets('directional navigation still auto-hides playing controls after the delay', (tester) async {
       final controller = PlayerChromeController();
       addTearDown(controller.dispose);
 
-      controller.configure(hideDelay: const Duration(seconds: 10), directionalNavigation: true);
+      controller.configure(hideDelay: const Duration(seconds: 5), directionalNavigation: true);
       controller.setPlaying(true);
 
-      await tester.pump(const Duration(seconds: 6));
-      expect(controller.controlsVisible, isTrue, reason: 'a remote traversal is still in progress at 6s');
       await tester.pump(const Duration(seconds: 4));
+      expect(controller.controlsVisible, isTrue);
+      await tester.pump(const Duration(seconds: 1));
       expect(controller.controlsVisible, isFalse);
     });
 
