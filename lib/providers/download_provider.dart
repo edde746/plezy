@@ -632,10 +632,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         if (item.isShow || item.isSeason || item.kind == MediaKind.album) item.globalKey,
     };
 
+    // Prefer the measured on-disk size so the sort agrees with the sizes the
+    // Downloads screen shows; rows measured before their files existed, or not
+    // measured yet, fall back to the bytes the transfer recorded.
     void accumulate(String key, DownloadProgress progress) {
       final existing = extras[key];
       final downloadedAt = progress.downloadedAt;
-      final totalBytes = progress.totalBytes;
+      final totalBytes = _downloadSizes[progress.globalKey] ?? progress.totalBytes;
       extras[key] = (
         downloadedAt: downloadedAt != null && downloadedAt > (existing?.downloadedAt ?? 0)
             ? downloadedAt

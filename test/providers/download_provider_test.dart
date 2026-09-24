@@ -3333,6 +3333,39 @@ void main() {
       p.dispose();
     });
 
+    test('downloadSortExtras prefers the measured on-disk size over recorded bytes', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:e1': const DownloadProgress(
+            globalKey: 'srv:e1',
+            status: DownloadStatus.completed,
+            downloadedAt: 100,
+            totalBytes: 10,
+          ),
+          // Never measured: keeps the bytes the transfer recorded.
+          'srv:e2': const DownloadProgress(
+            globalKey: 'srv:e2',
+            status: DownloadStatus.completed,
+            downloadedAt: 300,
+            totalBytes: 20,
+          ),
+        },
+        metadata: {'srv:e1': episode('e1', index: 1), 'srv:e2': episode('e2', index: 2)},
+        downloadSizes: {'srv:e1': 15},
+      );
+
+      final extras = p.downloadSortExtras([
+        testMediaItem(id: 'e1', backend: MediaBackend.plex, kind: MediaKind.episode, serverId: ServerId('srv')),
+        testMediaItem(id: 'e2', backend: MediaBackend.plex, kind: MediaKind.episode, serverId: ServerId('srv')),
+      ]);
+
+      expect(extras['srv:e1']?.totalBytes, 15);
+      expect(extras['srv:e2']?.totalBytes, 20);
+      p.dispose();
+    });
+
     test('downloadedSeasonsForShow prefers stored season metadata and scopes to the show', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
