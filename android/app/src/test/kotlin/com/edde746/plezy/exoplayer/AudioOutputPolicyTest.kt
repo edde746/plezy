@@ -139,7 +139,7 @@ class AudioOutputPolicyTest {
   }
 
   @Test
-  fun trueHdIsNotNamedWithoutTheCarrierShape() {
+  fun trueHdIsNotNamedWithoutTheCarrierShapeOrARawTrack() {
     assertEquals(
       "",
       spdifCodecs(
@@ -192,26 +192,26 @@ class AudioOutputPolicyTest {
     // #2333's TCL C8K: no IEC 61937 profile at all, but a native DTS-HD offload port at
     // 48kHz/7.1 that ExoPlayer plays DTS-HD MA through. The AO unwraps the burst into that
     // track when the route refuses the carrier, so raw support alone must name `dts-hd` — and
-    // it still supersedes the plain core name.
-    assertEquals("ac3,eac3,dts-hd", spdifCodecs(allEncodings, emptySet(), raw = allEncodings))
+    // it still supersedes the plain core name. The same port offers raw TrueHD.
+    assertEquals("ac3,eac3,truehd,dts-hd", spdifCodecs(allEncodings, emptySet(), raw = allEncodings))
   }
 
   @Test
-  fun rawSupportNeverQualifiesTrueHd() {
-    // TrueHD has no raw transport in the AO: MAT is not unwrapped. It rides the 192kHz/7.1
-    // carrier or decodes, so a route that takes every raw track but no carrier must not name it.
-    assertFalse(spdifCodecs(allEncodings, emptySet(), raw = allEncodings).contains("truehd"))
+  fun rawTrueHdTrackQualifiesTrueHdWithoutTheCarrier() {
+    // #2333's TCL C8K has no IEC 61937 profile but offloads raw TrueHD. The AO rebuilds the
+    // access units into Kodi's raw 192kHz/7.1 track when the route refuses the carrier.
+    assertEquals("truehd", spdifCodecs(setOf(C.ENCODING_DOLBY_TRUEHD), emptySet(), raw = setOf(C.ENCODING_DOLBY_TRUEHD)))
   }
 
   @Test
-  fun rawProbeIsOnlyConsultedForRawCandidates() {
-    // The raw probe costs real route calls; the carrier-only codec must never trigger it.
+  fun rawProbeIsSkippedForTheCarrierFirstCodecsWhenTheCarrierQualifiesThem() {
+    // The carrier is the AO's first choice for TrueHD and DTS-HD, and the cheaper probe here.
     val codecs = mpvSpdifCodecs(
       { true },
       { true },
       { encoding ->
-        if (encoding == C.ENCODING_DOLBY_TRUEHD) {
-          throw AssertionError("raw probe consulted for a carrier-only codec")
+        if (encoding == C.ENCODING_DTS_HD || encoding == C.ENCODING_DOLBY_TRUEHD) {
+          throw AssertionError("raw track probed for $encoding with the carrier present")
         }
         true
       }
@@ -220,26 +220,28 @@ class AudioOutputPolicyTest {
   }
 
   @Test
-  fun rawProbeIsSkippedForDtsHdWhenTheCarrierAlreadyQualifiesIt() {
-    // The carrier is the AO's first choice for DTS-HD, and it is the cheaper probe here.
-    val codecs = mpvSpdifCodecs(
-      { true },
-      { true },
-      { encoding ->
-        if (encoding == C.ENCODING_DTS_HD) throw AssertionError("raw DTS-HD probed with the carrier present")
-        true
-      }
-    )
-    assertEquals("ac3,eac3,truehd,dts-hd", codecs)
+  fun rawTracksAreProbedInTheShapeTheAoOpens() {
+    // ExoPlayer opened DTS-HD MA at 48kHz/8ch on #2333's route, and the AO opens raw TrueHD at
+    // Kodi's 192kHz/7.1, not media3's stream rate: probing any other shape asks about a track
+    // the AO never opens.
+    assertEquals(AudioFormat.CHANNEL_OUT_7POINT1_SURROUND, mpvRawChannelMask(C.ENCODING_DTS_HD))
+    assertEquals(AudioFormat.CHANNEL_OUT_7POINT1_SURROUND, mpvRawChannelMask(C.ENCODING_DOLBY_TRUEHD))
+    assertEquals(AudioFormat.CHANNEL_OUT_STEREO, mpvRawChannelMask(C.ENCODING_DTS))
+    assertEquals(AudioFormat.CHANNEL_OUT_STEREO, mpvRawChannelMask(C.ENCODING_E_AC3))
+    assertEquals(192_000, mpvRawSampleRate(C.ENCODING_DOLBY_TRUEHD))
+    assertEquals(48_000, mpvRawSampleRate(C.ENCODING_DTS_HD))
+    assertEquals(48_000, mpvRawSampleRate(C.ENCODING_AC3))
   }
 
   @Test
-  fun rawDtsHdOpensAtTheBurstsSevenPointOneMask() {
-    // ExoPlayer opened DTS-HD MA at 48kHz/8ch on #2333's route; a stereo probe would ask about
-    // a track the AO never opens for an MA burst.
-    assertEquals(AudioFormat.CHANNEL_OUT_7POINT1_SURROUND, mpvRawChannelMask(C.ENCODING_DTS_HD))
-    assertEquals(AudioFormat.CHANNEL_OUT_STEREO, mpvRawChannelMask(C.ENCODING_DTS))
-    assertEquals(AudioFormat.CHANNEL_OUT_STEREO, mpvRawChannelMask(C.ENCODING_E_AC3))
+  fun onlyRawFirstCodecsOpenRawWithoutARouteOracle() {
+    // Below API 29 the AO cannot ask the route, so it keeps the carrier for TrueHD and DTS-HD;
+    // naming them for a raw track there would hand the AO a codec it opens as a carrier.
+    assertTrue(mpvRawTrackWithoutOracle(C.ENCODING_AC3))
+    assertTrue(mpvRawTrackWithoutOracle(C.ENCODING_E_AC3))
+    assertTrue(mpvRawTrackWithoutOracle(C.ENCODING_DTS))
+    assertFalse(mpvRawTrackWithoutOracle(C.ENCODING_DTS_HD))
+    assertFalse(mpvRawTrackWithoutOracle(C.ENCODING_DOLBY_TRUEHD))
   }
 
   @Test
