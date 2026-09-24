@@ -777,7 +777,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
           // target and gives up HEVC/MPEG-2 copy; Original, which the server
           // only encodes when the codec is unplayable, keeps the broadcast
           // copy codecs.
-          videoTranscodeTarget: isOriginal ? _plexHlsLiveVideoTranscodeTarget : _plexHlsVodTsVideoTranscodeTarget,
+          videoTranscodeTarget: isOriginal ? _plexHlsLiveVideoTranscodeTarget() : _plexHlsVodTsVideoTranscodeTarget,
           maxVideoBitrateKbps: isOriginal ? null : preset.videoBitrateKbps,
         ),
         'X-Plex-Incomplete-Segments': '1',

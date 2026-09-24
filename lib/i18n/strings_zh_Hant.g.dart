@@ -312,6 +312,9 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get cellularQualitySameAsDefault => '與預設畫質相同';
 	@override String get directPlayCoveredQuality => '以原始畫質播放較小影片';
 	@override String get directPlayCoveredQualityDescription => '已在畫質限制內的影片直接播放，而非轉碼';
+	@override String get videoCodecs => '影片編解碼器';
+	@override String get videoCodecsDescription => '未勾選的編解碼器將由伺服器轉碼';
+	@override String get videoCodecsAlwaysAccepted => '一律接受';
 	@override String get musicQualityTitle => '音樂品質';
 	@override String get subtitleStyling => '字幕樣式';
 	@override String get subtitleStylingDescription => '調整字幕外觀';
@@ -3203,6 +3206,9 @@ extension on TranslationsZhHant {
 			'settings.cellularQualitySameAsDefault' => '與預設畫質相同',
 			'settings.directPlayCoveredQuality' => '以原始畫質播放較小影片',
 			'settings.directPlayCoveredQualityDescription' => '已在畫質限制內的影片直接播放，而非轉碼',
+			'settings.videoCodecs' => '影片編解碼器',
+			'settings.videoCodecsDescription' => '未勾選的編解碼器將由伺服器轉碼',
+			'settings.videoCodecsAlwaysAccepted' => '一律接受',
 			'settings.musicQualityTitle' => '音樂品質',
 			'settings.subtitleStyling' => '字幕樣式',
 			'settings.subtitleStylingDescription' => '調整字幕外觀',
@@ -3524,11 +3530,11 @@ extension on TranslationsZhHant {
 			'fileInfo.streamId' => '串流 ID',
 			'fileInfo.language' => '語言',
 			'fileInfo.languageCode' => '語言代碼',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.streamTitle' => '軌道名稱',
 			'fileInfo.channels' => '聲道數',
 			'fileInfo.sampleRate' => '取樣率',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.spatialAudio' => '空間音訊',
 			'fileInfo.textBased' => '文字型',
 			'fileInfo.subtitleFormat' => '附屬檔案格式',
@@ -4038,11 +4044,11 @@ extension on TranslationsZhHant {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '無法清空垃圾桶：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
 			'libraries.analysisStarted' => ({required Object title}) => '已開始分析「${title}」',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => '無法分析媒體庫：${error}',
 			'libraries.noLibrariesFound' => '找不到媒體庫',
 			'libraries.allLibrariesHidden' => '所有媒體庫都已隱藏',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '已隱藏的媒體庫（${count}）',
 			'libraries.thisLibraryIsEmpty' => '此媒體庫為空',
 			'libraries.noItemsMatchFilters' => '沒有符合目前篩選條件的項目',
@@ -4552,11 +4558,11 @@ extension on TranslationsZhHant {
 			'watchTogether.defaultDisplayName' => '使用者',
 			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
 			'watchTogether.errors.connectionLost' => '工作階段就緒前連線已中斷',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => '中繼伺服器傳回了非預期的回應',
 			'watchTogether.errors.sessionEnded' => '主持人已結束工作階段',
 			'watchTogether.errors.sessionUnavailable' => '無法恢復此工作階段。請加入或建立房間以繼續。',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.title' => '下載',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '影集',
@@ -5066,11 +5072,11 @@ extension on TranslationsZhHant {
 			'addServer.responseNotJson' => '伺服器回應不是有效的 JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => '回應缺少 ID 或伺服器名稱——這是 ${product} 伺服器嗎？',
 			'addServer.probeFailed' => ({required Object error}) => '無法連線至伺服器：${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '請輸入至少一個 ${product} 伺服器 URL',
 			'addServer.noReachableServer' => ({required Object product}) => '找不到可連線的 ${product} 伺服器',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '這些 URL 指向不同的 ${product} 伺服器',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.urlDoesNotMatchServer' => ({required Object product}) => '此 URL 與 ${product} 伺服器不符',
 			'addServer.redirectUnsupported' => '伺服器重新導向至不支援的 URL',
 			'addServer.redirectDifferentHost' => ({required Object product}) => '伺服器重新導向至不同的主機。請直接輸入最終的 ${product} URL。',

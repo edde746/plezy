@@ -225,6 +225,59 @@ class SettingSelectionTile<T> extends StatelessWidget {
   }
 }
 
+/// ListTile that opens [showChecklistDialog] for a pref holding the
+/// *unchecked* option values, so an option added later starts checked. The
+/// subtitle lists the checked options, then [description].
+class SettingChecklistTile extends StatelessWidget {
+  final Pref<List<String>> uncheckedPref;
+  final IconData icon;
+  final String title;
+  final String description;
+  final List<DialogOption<String>> options;
+
+  /// Options that are always checked and cannot be unchecked.
+  final Set<String> locked;
+
+  const SettingChecklistTile({
+    super.key,
+    required this.uncheckedPref,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.options,
+    this.locked = const {},
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<String>>(
+      valueListenable: SettingsService.instance.listenable(uncheckedPref),
+      builder: (_, unchecked, _) {
+        final checked = [
+          for (final option in options)
+            if (locked.contains(option.value) || !unchecked.contains(option.value)) option,
+        ];
+        return _SettingRow(
+          icon: icon,
+          title: title,
+          subtitle: Text('${checked.map((option) => option.title).join(', ')} · $description'),
+          onTap: () => showChecklistDialog<String>(
+            context: context,
+            title: title,
+            options: options,
+            checked: {for (final option in checked) option.value},
+            locked: locked,
+            onSave: (values) => _writeAndNotify(context, uncheckedPref, [
+              for (final option in options)
+                if (!values.contains(option.value)) option.value,
+            ], null),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// ListTile that opens [showRegexInputDialog] for a [Pref<String>].
 class SettingRegexTile extends StatelessWidget {
   final Pref<String> pref;

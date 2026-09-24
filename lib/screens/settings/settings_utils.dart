@@ -200,6 +200,60 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
   );
 }
 
+/// Shows a checkbox dialog with focusable rows and Save/Cancel. [onSave]
+/// receives the checked values in [options] order. Values in [locked] render
+/// checked and disabled, so D-pad traversal skips them.
+void showChecklistDialog<T>({
+  required BuildContext context,
+  required String title,
+  required List<DialogOption<T>> options,
+  required Set<T> checked,
+  Set<T> locked = const {},
+  required Future<void> Function(List<T> checked) onSave,
+}) {
+  final current = {...checked, ...locked};
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
+  final firstEditable = options.where((option) => !locked.contains(option.value)).firstOrNull?.value;
+
+  _showSettingsInputDialog(
+    context: context,
+    title: title,
+    contentBuilder: (_, _, setDialogState, _) => SingleChildScrollView(
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          for (final option in options)
+            FocusableCheckboxListTile(
+              key: ValueKey(option.value),
+              value: current.contains(option.value),
+              onChanged: locked.contains(option.value)
+                  ? null
+                  : (value) => setDialogState(() {
+                      if (value ?? false) {
+                        current.add(option.value);
+                      } else {
+                        current.remove(option.value);
+                      }
+                    }),
+              title: Text(option.title),
+              subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
+              autofocus: focusFirstItem && option.value == firstEditable,
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+            ),
+        ],
+      ),
+    ),
+    onSave: (_) async {
+      await onSave([
+        for (final option in options)
+          if (current.contains(option.value)) option.value,
+      ]);
+      return true;
+    },
+  );
+}
+
 /// Generic numeric input dialog.
 /// On TV/keyboard mode, uses a spinner widget with +/- buttons for D-pad navigation.
 /// On other platforms, uses a TextField with focus management.

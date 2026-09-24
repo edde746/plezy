@@ -662,6 +662,14 @@ class SettingsService extends BaseSharedPreferencesService {
   /// limitation (#2193). Plex-only by design: MediaBrowser servers make the
   /// equivalent direct-play-vs-transcode call server-side.
   static const directPlayCoveredQuality = BoolPref('direct_play_covered_quality', defaultValue: true);
+
+  /// Ids of the [RankedVideoCodec]s the user refused: the server transcodes
+  /// them instead of sending them, and never picks them as a transcode output
+  /// (#2443). Desktop-only because desktop has no hardware-decode probe; kept
+  /// device-local (not exported) because the point is one weak machine
+  /// refusing a codec the user's other devices decode fine. Stores the
+  /// unchecked codecs so a codec added to the list later starts accepted.
+  static const refusedVideoCodecs = StringListPref('refused_video_codecs');
   static const musicQualityPreset = EnumPref<AudioQualityPreset>(
     'music_quality_preset',
     values: AudioQualityPreset.values,
@@ -1462,6 +1470,7 @@ class SettingsService extends BaseSharedPreferencesService {
     customRelayUrl,
     companionRemoteLastHostAddress,
     rememberedBrightnessLevel,
+    refusedVideoCodecs,
   ];
 
   /// Settings that "Reset All Settings" actually resets.

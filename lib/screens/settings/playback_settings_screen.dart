@@ -9,6 +9,8 @@ import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/settings_service.dart';
+import '../../services/video_decode_capabilities.dart';
+import '../../utils/codec_utils.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
@@ -107,6 +109,9 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 // pattern; needs local/remote connection detection in the
                 // failover client.
                 _directPlayCoveredQualityTile(),
+                // Desktop has no hardware-decode probe, so this is where a
+                // machine too weak for a codec says so (#2443).
+                if (PlatformDetector.isDesktopOS()) _videoCodecsTile(),
                 _musicQualityTile(),
               ],
             ),
@@ -642,6 +647,25 @@ class PlaybackSettingsScreen extends StatelessWidget {
     icon: Symbols.bolt_rounded,
     title: t.settings.directPlayCoveredQuality,
     subtitle: t.settings.directPlayCoveredQualityDescription,
+  );
+
+  Widget _videoCodecsTile() => SettingChecklistTile(
+    uncheckedPref: SettingsService.refusedVideoCodecs,
+    icon: Symbols.video_settings_rounded,
+    title: t.settings.videoCodecs,
+    description: t.settings.videoCodecsDescription,
+    options: [
+      for (final codec in RankedVideoCodec.values)
+        DialogOption(
+          value: codec.id,
+          title: CodecUtils.formatVideoCodec(codec.id),
+          subtitle: codec.isRefusable ? null : t.settings.videoCodecsAlwaysAccepted,
+        ),
+    ],
+    locked: {
+      for (final codec in RankedVideoCodec.values)
+        if (!codec.isRefusable) codec.id,
+    },
   );
 
   Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset>(

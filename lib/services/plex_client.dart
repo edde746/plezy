@@ -49,6 +49,7 @@ import '../models/plex/play_queue_response.dart';
 import '../media/media_file_info.dart';
 import '../media/media_filter.dart';
 import '../media/media_source_info.dart';
+import '../media/media_version.dart';
 import '../models/plex/plex_subtitle_search_result.dart';
 import '../models/plex/plex_match_result.dart';
 import '../utils/codec_utils.dart';
@@ -80,6 +81,7 @@ import 'plex_playback_mapper.dart';
 import 'playback_initialization_types.dart';
 import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
+import 'video_decode_capabilities.dart';
 
 part 'plex_client/parts/live_tv.dart';
 part 'plex_client/parts/playlists.dart';
@@ -91,19 +93,25 @@ const _plexVideoTranscodeBaseEndpoint = '/video/:/transcode/universal';
 const _plexVideoHlsStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.m3u8';
 const _plexVideoHlsProtocol = 'hls';
 
-/// VOD transcode target: HLS with fragmented-MP4 segments.
+/// VOD transcode target: HLS with fragmented-MP4 segments, offering
+/// [VideoDecodeCapabilities.transcodeVideoCodecs] in their ranked order — the
+/// same list the MediaBrowser device profile sends.
 ///
-/// Every non-Original VOD request pins `directStream=0`, so this codec list is
-/// a menu of *encode* outputs, never copy targets. HEVC must not be offered in
-/// an mpegts target: a Plex Pass server with HEVC encoding enabled obliges,
-/// and its hardware HEVC encode → TS segmenter path emits parameter sets mpv
-/// rejects ("PPS changed between slices", issue #1859). Apple's HLS spec
-/// likewise requires fMP4 for HEVC. fMP4 decisions and segment output were
-/// verified against PMS 1.22 through 1.43; servers older than 1.22 fail the
-/// decision request itself regardless of container, so no version gate.
-const _plexHlsVodVideoTranscodeTarget =
+/// Every non-Original VOD request pins `directStream=0`, and an Original one
+/// transcodes only when the source codec was refused and is therefore absent
+/// here, so this codec list is a menu of *encode* outputs, never copy
+/// targets. HEVC must not be offered in an mpegts target: a Plex Pass server
+/// with HEVC encoding enabled obliges, and its hardware HEVC encode → TS
+/// segmenter path emits parameter sets mpv rejects ("PPS changed between
+/// slices", issue #1859). Apple's HLS spec likewise requires fMP4 for HEVC.
+/// fMP4 decisions and segment output were verified against PMS 1.22 through
+/// 1.43; servers older than 1.22 fail the decision request itself regardless
+/// of container, so no version gate. PMS 1.43 has no AV1 encoder and answers
+/// an AV1-led list with the same encode it picked before AV1 was offered.
+String _plexHlsVodVideoTranscodeTarget() =>
     'add-transcode-target(type=videoProfile&context=streaming'
-    '&protocol=hls&container=mp4&videoCodec=h264%2Chevc'
+    '&protocol=hls&container=mp4'
+    '&videoCodec=${VideoDecodeCapabilities.transcodeVideoCodecs.map((codec) => codec.id).join('%2C')}'
     '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
 
 /// Fallback VOD target for a server whose decision does not honour the fMP4
@@ -118,15 +126,18 @@ const _plexHlsVodTsVideoTranscodeTarget =
 /// Live TV target for Original quality: MPEG-TS with the broadcast codecs.
 /// Those sessions are copy-dominant (TS→TS remux — hevc/mpeg2video here are
 /// copy targets, and HEVC *copy* into TS is verified clean), so this
-/// deliberately does not follow the VOD target to fMP4. Residual risk
-/// accepted: a Plex Pass server electing to HEVC-*encode* an Original live
-/// channel would hit the same TS bug. A capped live preset also asks for
-/// `directStream=1` but carries a bitrate ceiling the server may have to
-/// encode down to, so it uses [_plexHlsVodTsVideoTranscodeTarget] instead,
-/// where HEVC is not on the encode menu.
-const _plexHlsLiveVideoTranscodeTarget =
+/// deliberately does not follow the VOD target to fMP4, and keeps H.264 ahead
+/// of HEVC rather than the ranked order. Residual risk accepted: a Plex Pass
+/// server electing to HEVC-*encode* an Original live channel would hit the
+/// same TS bug. A capped live preset also asks for `directStream=1` but
+/// carries a bitrate ceiling the server may have to encode down to, so it
+/// uses [_plexHlsVodTsVideoTranscodeTarget] instead, where HEVC is not on the
+/// encode menu. HEVC drops out when the device does not accept it, so a
+/// channel broadcast in HEVC is then encoded to H.264.
+String _plexHlsLiveVideoTranscodeTarget() =>
     'add-transcode-target(type=videoProfile&context=streaming'
-    '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'
+    '&protocol=hls&container=mpegts'
+    '&videoCodec=h264${VideoDecodeCapabilities.accepts(RankedVideoCodec.hevc) ? '%2Chevc' : ''}%2Cmpeg2video'
     '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
 
 const _plexHlsSubtitleTranscodeTarget =
@@ -2781,6 +2792,10 @@ class PlexClient
   /// seeks + quality/version/audio switches within one playback so the
   /// server-side transcode session is preserved.
   ///
+  /// [sourceCodecRefused] asks for a video encode even at Original quality:
+  /// the user refused the source's codec, so the file itself must not be
+  /// served (#2443).
+  ///
   /// Deliberately no `offset` request parameter: the start URL always
   /// describes the full title and the player seeks in-band by requesting the
   /// segment at the resume position (`Media(start:)`). Pre-warming the
@@ -2800,6 +2815,7 @@ class PlexClient
     int? audioStreamId,
     MediaSubtitleTrack? selectedSubtitleTrack,
     int? partId,
+    bool sourceCodecRefused = false,
   }) async {
     try {
       await selectSubtitleStreamForBurn(partId: partId, track: selectedSubtitleTrack);
@@ -2813,6 +2829,7 @@ class PlexClient
         audioStreamId: audioStreamId,
         selectedSubtitleTrack: selectedSubtitleTrack,
         useTsFallbackTarget: useTsFallbackTarget,
+        sourceCodecRefused: sourceCodecRefused,
       );
 
       final primary = await _runTranscodeDecision(
@@ -3010,11 +3027,12 @@ class PlexClient
     int? audioStreamId,
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
+    bool sourceCodecRefused = false,
   }) {
     final isOriginal = preset.isOriginal;
     final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
     final clientProfileExtra = _buildPlexHlsClientProfileExtra(
-      videoTranscodeTarget: useTsFallbackTarget ? _plexHlsVodTsVideoTranscodeTarget : _plexHlsVodVideoTranscodeTarget,
+      videoTranscodeTarget: useTsFallbackTarget ? _plexHlsVodTsVideoTranscodeTarget : _plexHlsVodVideoTranscodeTarget(),
       maxVideoBitrateKbps: !isOriginal ? preset.videoBitrateKbps : null,
     );
 
@@ -3031,7 +3049,14 @@ class PlexClient
       // image subtitles alike, while `directPlay=0` answers
       // `decision=transcode` on the video stream and `decision=burn` on the
       // subtitle.
-      'directPlay': selectedInternalSubtitle == null && isOriginal ? '1' : '0',
+      //
+      // A refused source codec contradicts it too: PMS 1.43 answers
+      // `directPlay=1` with "Direct play OK" for an HEVC or AV1 source even
+      // when the target omits that codec. With `directPlay=0` and
+      // `directStream=1` it copies the audio and encodes the video to the
+      // first target codec it can produce, at source resolution and 20 Mbps
+      // when no preset caps it.
+      'directPlay': selectedInternalSubtitle == null && isOriginal && !sourceCodecRefused ? '1' : '0',
       'directStream': isOriginal ? '1' : '0',
       'subtitleSize': '100',
       'audioBoost': '100',
@@ -3650,7 +3675,10 @@ class PlexClient
       // (resolution/videoQuality) and is ignored for audio.
       final isTrack = options.metadata.kind == MediaKind.track;
       final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
-      final wantTranscode = isTrack ? !audioPreset.isOriginal : _presetNeedsTranscode(options.qualityPreset, data);
+      final sourceCodecRefused = !isTrack && _sourceCodecRefused(data);
+      final wantTranscode = isTrack
+          ? !audioPreset.isOriginal
+          : sourceCodecRefused || _presetNeedsTranscode(options.qualityPreset, data);
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -3693,6 +3721,7 @@ class PlexClient
           audioStreamId: resolvedAudioId,
           selectedSubtitleTrack: requestedSubtitleTrack,
           partId: data.mediaInfo?.partId,
+          sourceCodecRefused: sourceCodecRefused,
         );
 
         // A transcode that cannot carry the requested caption is not the outcome we asked for. The
@@ -3757,9 +3786,7 @@ class PlexClient
     if (preset.isOriginal) return false;
     final settings = SettingsService.instanceOrNull;
     if (settings != null && !settings.read(SettingsService.directPlayCoveredQuality)) return true;
-    final version = data.selectedMediaIndex < data.availableVersions.length
-        ? data.availableVersions[data.selectedMediaIndex]
-        : null;
+    final version = _selectedVersion(data);
     if (!preset.coversSource(bitrateKbps: version?.bitrate, heightPx: version?.resolutionHeight)) return true;
     appLogger.i(
       'Preset ${preset.name} covers the source (${version?.bitrate} kbps, '
@@ -3767,6 +3794,22 @@ class PlexClient
     );
     return false;
   }
+
+  /// Whether the user refused the selected version's video codec (#2443). A
+  /// refused codec is transcoded at every preset, Original included: this
+  /// device cannot decode it in real time, so playing the file is not an
+  /// option. Only an explicit refusal gates Plex direct play; a device the
+  /// hardware probe reports without a decoder still direct-plays, as it
+  /// always has on Plex.
+  bool _sourceCodecRefused(PlexVideoPlaybackData data) {
+    final codec = RankedVideoCodec.fromServerCodec(_selectedVersion(data)?.videoCodec);
+    if (codec == null || !VideoDecodeCapabilities.isRefusedByUser(codec)) return false;
+    appLogger.i('Source codec ${codec.id} is refused in settings; transcoding');
+    return true;
+  }
+
+  MediaVersion? _selectedVersion(PlexVideoPlaybackData data) =>
+      data.selectedMediaIndex < data.availableVersions.length ? data.availableVersions[data.selectedMediaIndex] : null;
 
   /// Direct-play result for a transcode decision that fell back (failed or
   /// said direct-play only), surfacing the reason so the UI can notify the

@@ -12,18 +12,18 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
 /// Video codecs the client accepts in an original file, as a set: a codec
 /// missing here makes the server transcode instead of serving the file, which
 /// is the right trade when [VideoDecodeCapabilities] reports no hardware
-/// decoder. `h265` is Jellyfin's alternate spelling of `hevc` and travels with
-/// it; the unconditional entries software-decode cheaply on any device that
-/// plays video at all.
+/// decoder or the user refused the codec. `h265` is Jellyfin's alternate
+/// spelling of `hevc` and travels with it; the unconditional entries
+/// software-decode cheaply on any device that plays video at all.
 String _jellyfinDirectPlayVideoCodecs() {
-  final hevc = VideoDecodeCapabilities.supportsHevc;
+  final hevc = VideoDecodeCapabilities.accepts(RankedVideoCodec.hevc);
   return [
     if (hevc) 'hevc',
     'h264',
     if (hevc) 'h265',
     'vp8',
     'vp9',
-    if (VideoDecodeCapabilities.supportsAv1) 'av1',
+    if (VideoDecodeCapabilities.accepts(RankedVideoCodec.av1)) 'av1',
     'mpeg4',
     'mpeg2video',
   ].join(',');
@@ -39,15 +39,17 @@ String _jellyfinDirectPlayVideoCodecs() {
 /// with a codec the server cannot produce (#2230) — see
 /// [MediaBrowserDialect.rotatesDisabledTranscodeCodecs].
 String _jellyfinTranscodeVideoCodecs(MediaBrowserDialect dialect) => [
-  if (dialect.rotatesDisabledTranscodeCodecs && VideoDecodeCapabilities.supportsAv1) 'av1',
-  if (VideoDecodeCapabilities.supportsHevc) 'hevc',
-  'h264',
+  for (final codec in VideoDecodeCapabilities.transcodeVideoCodecs)
+    if (codec != RankedVideoCodec.av1 || dialect.rotatesDisabledTranscodeCodecs) codec.id,
 ].join(',');
 
 /// Transcode output codecs for the MPEG-TS fallback profile. A strict subset
 /// of [_jellyfinTranscodeVideoCodecs]: AV1 is absent because a TS segment
 /// cannot carry it — that gap is why the fMP4 profile exists (#2131).
-String _jellyfinTranscodeVideoCodecsTs() => [if (VideoDecodeCapabilities.supportsHevc) 'hevc', 'h264'].join(',');
+String _jellyfinTranscodeVideoCodecsTs() => [
+  for (final codec in VideoDecodeCapabilities.transcodeVideoCodecs)
+    if (codec != RankedVideoCodec.av1) codec.id,
+].join(',');
 
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
