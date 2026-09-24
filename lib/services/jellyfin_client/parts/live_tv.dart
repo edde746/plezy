@@ -209,9 +209,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   /// Jellyfin-only: Plex live URLs are only valid after a tune, so the shared
   /// entry point is [startPlayback].
   ///
-  /// The server yields one of two real outcomes — HTTP direct *stream* is
-  /// hard-disabled server-side, so `SupportsDirectStream` never comes back
-  /// without `SupportsDirectPlay`:
+  /// The server yields one of three outcomes, taken in this order:
   ///
   /// - **DirectPlay**: no `TranscodingUrl`; the client streams the source
   ///   through `/Videos/{id}/stream.{container}?Static=true`. Granted when the
@@ -222,6 +220,13 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   /// - **Transcode**: an HLS `TranscodingUrl`, capped by the preset's
   ///   bitrate when one is set. That is what a source above the ceiling comes
   ///   back with, and what [forceTranscode] recovery asks for outright.
+  ///   Jellyfin answers every non-direct-play decision this way, its
+  ///   direct-stream (remux) decisions included.
+  /// - **DirectStream**: Emby's answer for a source it will only direct
+  ///   stream — every HDHomeRun tuner, tvheadend's emulation included
+  ///   (#2411): `SupportsDirectStream` without `SupportsDirectPlay`, and no
+  ///   `TranscodingUrl`. It is served by the same static URL as direct play,
+  ///   which is what Emby's own web client builds for it.
   ///
   /// The caller waits [MediaServerTimeouts.tune] for the negotiation; the
   /// request itself runs on. The server opens the tuner whether or not the
@@ -279,7 +284,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     final liveStreamId = _openedLiveStreamId(source);
 
     final container = nonEmptyString(source['Container']);
-    if (wantsDirect && source['SupportsDirectPlay'] == true && container != null) {
+    LiveTvStreamResolution directResolution(String container, String playMethod) {
       // The server-proxied direct URL jellyfin-web builds (raw tuner `Path`
       // needs client-side reachability probing, so it is deliberately not
       // used). No PlaySessionId in the URL — it travels in the heartbeats.
@@ -298,32 +303,41 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
         playSessionId: playSessionId,
         mediaSourceId: mediaSourceId,
         liveStreamId: liveStreamId,
-        playMethod: 'DirectPlay',
+        playMethod: playMethod,
       );
+    }
+
+    if (wantsDirect && container != null && source['SupportsDirectPlay'] == true) {
+      return directResolution(container, 'DirectPlay');
     }
 
     final rawUrl = nonEmptyString(source['TranscodingUrl']);
     final rawUri = rawUrl == null ? null : Uri.tryParse(rawUrl);
-    if (rawUrl == null || rawUri == null || !rawUri.path.toLowerCase().endsWith('.m3u8')) {
-      appLogger.w('${_client.dialect.productName} Live TV negotiation returned no HLS transcode URL');
-      // AutoOpenLiveStream already opened the tuner; bailing without a
-      // session means no stop report will ever release it.
-      if (liveStreamId != null) {
-        unawaited(_client._closeLiveStream(liveStreamId));
-      }
-      return null;
+    if (rawUrl != null && rawUri != null && rawUri.path.toLowerCase().endsWith('.m3u8')) {
+      final url = _client._withApiKey(rawUrl);
+      final query = Uri.tryParse(url)?.queryParameters;
+      playSessionId ??= query?['PlaySessionId'];
+      mediaSourceId ??= query?['MediaSourceId'];
+      return LiveTvStreamResolution(
+        url: url,
+        playSessionId: playSessionId,
+        mediaSourceId: mediaSourceId,
+        liveStreamId: liveStreamId,
+        playMethod: 'Transcode',
+      );
     }
-    final url = _client._withApiKey(rawUrl);
-    final query = Uri.tryParse(url)?.queryParameters;
-    playSessionId ??= query?['PlaySessionId'];
-    mediaSourceId ??= query?['MediaSourceId'];
-    return LiveTvStreamResolution(
-      url: url,
-      playSessionId: playSessionId,
-      mediaSourceId: mediaSourceId,
-      liveStreamId: liveStreamId,
-      playMethod: 'Transcode',
-    );
+
+    if (wantsDirect && container != null && source['SupportsDirectStream'] == true) {
+      return directResolution(container, 'DirectStream');
+    }
+
+    appLogger.w('${_client.dialect.productName} Live TV negotiation returned neither a direct nor an HLS stream');
+    // AutoOpenLiveStream already opened the tuner; bailing without a
+    // session means no stop report will ever release it.
+    if (liveStreamId != null) {
+      unawaited(_client._closeLiveStream(liveStreamId));
+    }
+    return null;
   }
 
   /// The live stream a negotiation opened: named on the source, or failing
@@ -443,8 +457,9 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
 }
 
 /// A MediaBrowser live playback session: one negotiated stream URL — direct
-/// play or HLS transcode — plus `/Sessions/Playing*` heartbeats via
-/// [JellyfinLiveSessionTracker]. No program-scoped session and no time-shift.
+/// play, direct stream, or HLS transcode — plus `/Sessions/Playing*`
+/// heartbeats via [JellyfinLiveSessionTracker]. No program-scoped session and
+/// no time-shift.
 class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
   final JellyfinClient _client;
   final String _channelKey;
@@ -523,16 +538,17 @@ class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
 
   /// A transcode session returns itself so its negotiated HLS URL is
   /// re-opened — the server rebuilds the transcode job for the same
-  /// PlaySessionId. A direct-play session asked to drop [directStream]
-  /// re-negotiates a forced transcode instead: that negotiation opens its own
-  /// live stream, and the player adopts the replacement without ever
-  /// stop-reporting this session, so the old stream is released here. On a
-  /// failed re-negotiation this session stays current and is stop-reported by
-  /// the normal teardown, which also closes its stream. [directStreamAudio]
-  /// has no server-side lever beyond the transcode fallback and is ignored.
+  /// PlaySessionId. A direct session (direct play or direct stream) asked to
+  /// drop [directStream] re-negotiates a forced transcode instead: that
+  /// negotiation opens its own live stream, and the player adopts the
+  /// replacement without ever stop-reporting this session, so the old stream
+  /// is released here. On a failed re-negotiation this session stays current
+  /// and is stop-reported by the normal teardown, which also closes its
+  /// stream. [directStreamAudio] has no server-side lever beyond the transcode
+  /// fallback and is ignored.
   @override
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) async {
-    if (_playMethod != 'DirectPlay' || directStream) return this;
+    if (_playMethod == 'Transcode' || directStream) return this;
     final replacement = await _JellyfinLiveTvSupport(
       _client,
     )._resolveStreamUrl(_channelKey, quality: _quality, forceTranscode: true);

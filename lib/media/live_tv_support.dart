@@ -113,10 +113,11 @@ abstract class LiveTvPlaybackSession {
 
   /// Re-establish playback after stream death. Plex re-tunes (the previous
   /// capture session expires while the player exhausts its reconnect
-  /// attempts) applying the degradation flags. Jellyfin re-negotiates a
-  /// forced transcode when a direct-play session is asked to drop
-  /// [directStream] — releasing the direct session's live stream — and
-  /// otherwise returns itself so its negotiated HLS URL is re-opened.
+  /// attempts) applying the degradation flags. Jellyfin and Emby re-negotiate
+  /// a forced transcode when a direct-play or direct-stream session is asked
+  /// to drop [directStream] — releasing the direct session's live stream —
+  /// and otherwise return the session itself so its negotiated HLS URL is
+  /// re-opened.
   /// Returns `null` on failure.
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio});
 }

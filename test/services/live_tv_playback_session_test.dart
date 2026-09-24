@@ -1122,6 +1122,85 @@ void main() {
       expect(report['PlayMethod'], 'DirectPlay');
     });
 
+    // What Emby answers for an HDHomeRun channel, tvheadend's emulation
+    // included (#2411): direct stream only, with a `DirectStreamUrl` and no
+    // `TranscodingUrl` — the shape Emby 4.10 returns for that decision.
+    Map<String, dynamic> embyDirectStreamSource(String liveStreamId) => {
+      'Id': 'native_1',
+      'Container': 'ts',
+      'LiveStreamId': liveStreamId,
+      'IsInfiniteStream': true,
+      'SupportsDirectPlay': false,
+      'SupportsDirectStream': true,
+      'SupportsTranscoding': true,
+      'DirectStreamUrl': '/videos/channel-1/original.ts?MediaSourceId=native_1&LiveStreamId=$liveStreamId',
+    };
+
+    test('Emby direct-streams a live source it will not direct-play', () async {
+      final reports = <http.Request>[];
+      final closes = <http.Request>[];
+      final client = JellyfinClient.forTesting(
+        connection: testEmbyConnection(),
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('PlaybackInfo')) {
+            return jsonResponse({
+              'PlaySessionId': 'play-1',
+              'MediaSources': [embyDirectStreamSource('live-1')],
+            });
+          }
+          if (request.url.path.contains('LiveStreams/Close')) closes.add(request);
+          if (request.url.path.contains('Sessions/Playing')) reports.add(request);
+          return jsonResponse(const {});
+        }),
+      );
+      addTearDown(client.close);
+
+      final session = await client.liveTv.startPlayback('channel-1');
+
+      final url = Uri.parse((await session!.streamUrlAt())!);
+      expect(url.path, '/Videos/channel-1/stream.ts');
+      expect(url.queryParameters['Static'], 'true');
+      expect(url.queryParameters['MediaSourceId'], 'native_1');
+      expect(url.queryParameters['LiveStreamId'], 'live-1');
+
+      await session.reportTimeline(state: 'playing', positionMs: 1000, durationMs: 0);
+      final report = jsonDecode(reports.single.body) as Map<String, dynamic>;
+      expect(report['PlayMethod'], 'DirectStream');
+      expect(report['LiveStreamId'], 'live-1');
+      await pumpEventQueue();
+      expect(closes, isEmpty, reason: 'the stream being played must stay open');
+    });
+
+    test('an HLS TranscodingUrl outranks a direct-stream grant', () async {
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path.contains('PlaybackInfo')) {
+            // Jellyfin's answer to its own direct-stream (remux) decision:
+            // the flag is set, but the stream to play is the HLS remux.
+            return jsonResponse({
+              'PlaySessionId': 'play-1',
+              'MediaSources': [
+                {
+                  'Id': 'source-1',
+                  'Container': 'ts',
+                  'LiveStreamId': 'live-1',
+                  'SupportsDirectPlay': false,
+                  'SupportsDirectStream': true,
+                  'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-1',
+                },
+              ],
+            });
+          }
+          return jsonResponse(const {});
+        }),
+      );
+      addTearDown(client.close);
+
+      final session = await client.liveTv.startPlayback('channel-1');
+      expect(Uri.parse((await session!.streamUrlAt())!).path, '/Videos/channel-1/live.m3u8');
+    });
+
     test('a negotiation that yields no HLS URL closes the live stream it opened', () async {
       final closes = <http.Request>[];
       final client = JellyfinClient.forTesting(
@@ -1155,64 +1234,71 @@ void main() {
       expect(closes.single.url.queryParameters['liveStreamId'], 'live-1');
     });
 
-    test('recover degrades a direct-play session to a forced transcode and releases its stream', () async {
-      final negotiations = <http.Request>[];
-      final closes = <http.Request>[];
-      final client = JellyfinClient.forTesting(
-        connection: conn(),
-        httpClient: MockClient((request) async {
-          if (request.url.path.contains('PlaybackInfo')) {
-            negotiations.add(request);
-            if (negotiations.length == 1) {
+    for (final (name, connection, directSource) in [
+      (
+        'a direct-play',
+        conn(),
+        <String, dynamic>{'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1', 'SupportsDirectPlay': true},
+      ),
+      ('an Emby direct-stream', testEmbyConnection(), embyDirectStreamSource('live-1')),
+    ]) {
+      test('recover degrades $name session to a forced transcode and releases its stream', () async {
+        final negotiations = <http.Request>[];
+        final closes = <http.Request>[];
+        final client = JellyfinClient.forTesting(
+          connection: connection,
+          httpClient: MockClient((request) async {
+            if (request.url.path.contains('PlaybackInfo')) {
+              negotiations.add(request);
+              if (negotiations.length == 1) {
+                return jsonResponse({
+                  'PlaySessionId': 'play-1',
+                  'MediaSources': [directSource],
+                });
+              }
               return jsonResponse({
-                'PlaySessionId': 'play-1',
+                'PlaySessionId': 'play-2',
                 'MediaSources': [
-                  {'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1', 'SupportsDirectPlay': true},
+                  {
+                    'Id': 'source-1',
+                    'Container': 'ts',
+                    'LiveStreamId': 'live-2',
+                    'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-2',
+                  },
                 ],
               });
             }
-            return jsonResponse({
-              'PlaySessionId': 'play-2',
-              'MediaSources': [
-                {
-                  'Id': 'source-1',
-                  'Container': 'ts',
-                  'LiveStreamId': 'live-2',
-                  'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-2',
-                },
-              ],
-            });
-          }
-          if (request.url.path.contains('LiveStreams/Close')) {
-            closes.add(request);
-            return http.Response('', 204);
-          }
-          return jsonResponse(const {});
-        }),
-      );
-      addTearDown(client.close);
+            if (request.url.path.contains('LiveStreams/Close')) {
+              closes.add(request);
+              return http.Response('', 204);
+            }
+            return jsonResponse(const {});
+          }),
+        );
+        addTearDown(client.close);
 
-      final session = await client.liveTv.startPlayback('channel-1');
-      final recovered = await session!.recover(directStream: false, directStreamAudio: true);
+        final session = await client.liveTv.startPlayback('channel-1');
+        final recovered = await session!.recover(directStream: false, directStreamAudio: true);
 
-      expect(recovered, isNotNull);
-      expect(recovered, isNot(same(session)));
-      expect(Uri.parse((await recovered!.streamUrlAt())!).path, endsWith('.m3u8'));
+        expect(recovered, isNotNull);
+        expect(recovered, isNot(same(session)));
+        expect(Uri.parse((await recovered!.streamUrlAt())!).path, endsWith('.m3u8'));
 
-      // The re-negotiation must not ask for direct play again…
-      final retryBody = jsonDecode(negotiations[1].body) as Map<String, dynamic>;
-      expect(retryBody['EnableDirectPlay'], isFalse);
-      expect(retryBody['EnableDirectStream'], isFalse);
-      expect(retryBody['MaxStreamingBitrate'], 100_000_000);
+        // The re-negotiation must not ask for direct play again…
+        final retryBody = jsonDecode(negotiations[1].body) as Map<String, dynamic>;
+        expect(retryBody['EnableDirectPlay'], isFalse);
+        expect(retryBody['EnableDirectStream'], isFalse);
+        expect(retryBody['MaxStreamingBitrate'], 100_000_000);
 
-      // …and the replaced direct session's live stream is released: the
-      // player adopts the replacement without ever stop-reporting the old one.
-      await pumpEventQueue();
-      expect(closes.single.url.queryParameters['liveStreamId'], 'live-1');
+        // …and the replaced direct session's live stream is released: the
+        // player adopts the replacement without ever stop-reporting the old one.
+        await pumpEventQueue();
+        expect(closes.single.url.queryParameters['liveStreamId'], 'live-1');
 
-      // A transcode session keeps the documented re-open-the-URL behavior.
-      expect(await recovered.recover(directStream: false, directStreamAudio: false), same(recovered));
-    });
+        // A transcode session keeps the documented re-open-the-URL behavior.
+        expect(await recovered.recover(directStream: false, directStreamAudio: false), same(recovered));
+      });
+    }
   });
 }
 
