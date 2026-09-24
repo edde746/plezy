@@ -74,6 +74,8 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 if (Platform.isWindows) _matchDynamicRangeTile(),
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (Platform.isAndroid) _dvConversionModeTile(),
+                // mpv-only: ExoPlayer always leaves the conversion to the device.
+                if (Platform.isAndroid && !exoActive) _hdrSdrConversionTile(),
                 // mpv-only (#2149): ExoPlayer has no filter chain, so the
                 // tile disappears while the ExoPlayer backend is active.
                 if (!exoActive) _deinterlaceTile(),
@@ -562,6 +564,36 @@ class PlaybackSettingsScreen extends StatelessWidget {
     DvConversionModePreference.disabled => t.settings.dvConversionNative,
     DvConversionModePreference.dv81 => t.settings.dvConversionDv81,
     DvConversionModePreference.hevcStrip => t.settings.dvConversionHevcStrip,
+  };
+
+  Widget _hdrSdrConversionTile() => SettingSelectionTile<HdrSdrConversion>(
+    pref: SettingsService.hdrSdrConversion,
+    icon: Symbols.tonality_rounded,
+    title: t.settings.hdrSdrConversion,
+    subtitleBuilder: (mode) => '${_hdrSdrConversionLabel(mode)} · ${t.settings.hdrSdrConversionDescription}',
+    options: [
+      DialogOption(
+        value: HdrSdrConversion.auto,
+        title: t.settings.hdrSdrConversionAuto,
+        subtitle: t.settings.hdrSdrConversionAutoDescription,
+      ),
+      DialogOption(
+        value: HdrSdrConversion.device,
+        title: t.settings.hdrSdrConversionDevice,
+        subtitle: t.settings.hdrSdrConversionDeviceDescription,
+      ),
+      DialogOption(
+        value: HdrSdrConversion.player,
+        title: t.settings.hdrSdrConversionPlayer,
+        subtitle: t.settings.hdrSdrConversionPlayerDescription,
+      ),
+    ],
+  );
+
+  String _hdrSdrConversionLabel(HdrSdrConversion mode) => switch (mode) {
+    HdrSdrConversion.auto => t.settings.hdrSdrConversionAuto,
+    HdrSdrConversion.device => t.settings.hdrSdrConversionDevice,
+    HdrSdrConversion.player => t.settings.hdrSdrConversionPlayer,
   };
 
   Widget _playbackBufferTile() => SettingSelectionTile<PlaybackBufferTier>(

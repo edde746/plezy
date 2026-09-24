@@ -1734,6 +1734,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);
         await currentPlayer.setProperty('dv-conversion-mode', dvConversionMode.nativeValue);
       }
+      // Before the first file, so its opening route is already decided: a
+      // later write would start it on one renderer and move it to the other.
+      if (Platform.isAndroid && !useExoPlayer) {
+        final hdrSdrConversion = settingsService.read(SettingsService.hdrSdrConversion);
+        await currentPlayer.setProperty('hdr-sdr-conversion', hdrSdrConversion.nativeValue);
+      }
       if (Platform.isIOS || Platform.isMacOS) {
         await currentPlayer.setProperty('dv-conversion-log', debugLoggingEnabled ? 'yes' : 'no');
       }

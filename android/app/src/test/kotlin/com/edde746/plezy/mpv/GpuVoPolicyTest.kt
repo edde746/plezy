@@ -221,18 +221,39 @@ class GpuVoPolicyTest {
   }
 
   @Test
-  fun `hdr tone-mapping is needed only for a PQ or HLG signal on a non-HDR display`() {
-    assertTrue(GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = false))
-    assertTrue(GpuVoPolicy.needsHdrToneMapping("hlg", displaySupportsHdr = false))
-    // An HDR display scans the signal out itself.
-    assertFalse(GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = true))
-    assertFalse(GpuVoPolicy.needsHdrToneMapping("hlg", displaySupportsHdr = true))
-    // SDR transfers need no mapping, and mpv reports none before the first
-    // frame of a file.
-    assertFalse(GpuVoPolicy.needsHdrToneMapping("bt.1886", displaySupportsHdr = false))
-    assertFalse(GpuVoPolicy.needsHdrToneMapping("srgb", displaySupportsHdr = false))
-    assertFalse(GpuVoPolicy.needsHdrToneMapping(null, displaySupportsHdr = false))
-    assertFalse(GpuVoPolicy.needsHdrToneMapping("", displaySupportsHdr = false))
+  fun `auto leaves HDR on the plane from Android 9 and tone-maps in mpv below it`() {
+    for (gamma in listOf("pq", "hlg")) {
+      assertTrue(GpuVoPolicy.needsHdrToneMapping(gamma, displaySupportsHdr = false, conversionMode = "auto", sdkInt = 27))
+      assertFalse(GpuVoPolicy.needsHdrToneMapping(gamma, displaySupportsHdr = false, conversionMode = "auto", sdkInt = 28))
+    }
+  }
+
+  @Test
+  fun `an explicit mode overrides the API level`() {
+    assertTrue(GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = false, conversionMode = "player", sdkInt = 34))
+    assertFalse(GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = false, conversionMode = "device", sdkInt = 25))
+  }
+
+  @Test
+  fun `hdr tone-mapping is never needed for an HDR display or an SDR signal`() {
+    for (mode in GpuVoPolicy.HDR_SDR_CONVERSION_MODES) {
+      // An HDR display scans the signal out itself, whoever the user trusts
+      // with the conversion for an SDR one.
+      assertFalse(GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = true, conversionMode = mode, sdkInt = 25))
+      assertFalse(GpuVoPolicy.needsHdrToneMapping("hlg", displaySupportsHdr = true, conversionMode = mode, sdkInt = 25))
+      // SDR transfers need no mapping, and mpv reports none before the first
+      // frame of a file.
+      for (gamma in listOf("bt.1886", "srgb", null, "")) {
+        assertFalse(GpuVoPolicy.needsHdrToneMapping(gamma, displaySupportsHdr = false, conversionMode = mode, sdkInt = 25))
+      }
+    }
+  }
+
+  @Test
+  fun `an unknown conversion mode is rejected`() {
+    assertThrows(IllegalArgumentException::class.java) {
+      GpuVoPolicy.needsHdrToneMapping("pq", displaySupportsHdr = false, conversionMode = "platform", sdkInt = 34)
+    }
   }
 
   @Test

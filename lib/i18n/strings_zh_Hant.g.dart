@@ -472,6 +472,14 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get dvConversionNativeDescription => '強制使用原生 DV7 並停用 DV 轉換重試';
 	@override String get dvConversionDv81Description => '強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => '移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現';
+	@override String get hdrSdrConversion => 'HDR 轉 SDR';
+	@override String get hdrSdrConversionDescription => '選擇在顯示器無法顯示 HDR 時由誰轉換 HDR 影片。';
+	@override String get hdrSdrConversionAuto => '自動';
+	@override String get hdrSdrConversionAutoDescription => 'Android 9 及更新版本使用裝置，較舊版本使用播放器';
+	@override String get hdrSdrConversionDevice => '裝置';
+	@override String get hdrSdrConversionDeviceDescription => '由裝置的視訊硬體轉換。速度最快，但色彩取決於裝置';
+	@override String get hdrSdrConversionPlayer => '播放器';
+	@override String get hdrSdrConversionPlayerDescription => '由播放器轉換。色彩一致，但在低階電視盒上 4K 可能卡頓';
 	@override String get deinterlace => '去交錯';
 	@override String get deinterlaceDescription => '移除交錯影片中的梳狀雜訊（僅限 mpv 播放器）';
 	@override String get requireProfileSelectionOnOpen => '開啟應用程式時要求選擇使用者';
@@ -3355,6 +3363,14 @@ extension on TranslationsZhHant {
 			'settings.dvConversionNativeDescription' => '強制使用原生 DV7 並停用 DV 轉換重試',
 			'settings.dvConversionDv81Description' => '強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => '移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現',
+			'settings.hdrSdrConversion' => 'HDR 轉 SDR',
+			'settings.hdrSdrConversionDescription' => '選擇在顯示器無法顯示 HDR 時由誰轉換 HDR 影片。',
+			'settings.hdrSdrConversionAuto' => '自動',
+			'settings.hdrSdrConversionAutoDescription' => 'Android 9 及更新版本使用裝置，較舊版本使用播放器',
+			'settings.hdrSdrConversionDevice' => '裝置',
+			'settings.hdrSdrConversionDeviceDescription' => '由裝置的視訊硬體轉換。速度最快，但色彩取決於裝置',
+			'settings.hdrSdrConversionPlayer' => '播放器',
+			'settings.hdrSdrConversionPlayerDescription' => '由播放器轉換。色彩一致，但在低階電視盒上 4K 可能卡頓',
 			'settings.deinterlace' => '去交錯',
 			'settings.deinterlaceDescription' => '移除交錯影片中的梳狀雜訊（僅限 mpv 播放器）',
 			'settings.requireProfileSelectionOnOpen' => '開啟應用程式時要求選擇使用者',
@@ -3511,6 +3527,8 @@ extension on TranslationsZhHant {
 			'fileInfo.streamTitle' => '軌道名稱',
 			'fileInfo.channels' => '聲道數',
 			'fileInfo.sampleRate' => '取樣率',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.spatialAudio' => '空間音訊',
 			'fileInfo.textBased' => '文字型',
 			'fileInfo.subtitleFormat' => '附屬檔案格式',
@@ -3519,8 +3537,6 @@ extension on TranslationsZhHant {
 			'fileInfo.externalDelivery' => '可分開傳送',
 			'fileInfo.sidecarPath' => '附屬路徑',
 			'fileInfo.sourceStream' => '複製來源',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.temporary' => '暫時',
 			'fileInfo.timeBase' => '時間基準',
 			'fileInfo.overallBitrate' => '總位元率',
@@ -4025,6 +4041,8 @@ extension on TranslationsZhHant {
 			'libraries.failedToAnalyze' => ({required Object error}) => '無法分析媒體庫：${error}',
 			'libraries.noLibrariesFound' => '找不到媒體庫',
 			'libraries.allLibrariesHidden' => '所有媒體庫都已隱藏',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '已隱藏的媒體庫（${count}）',
 			'libraries.thisLibraryIsEmpty' => '此媒體庫為空',
 			'libraries.noItemsMatchFilters' => '沒有符合目前篩選條件的項目',
@@ -4033,8 +4051,6 @@ extension on TranslationsZhHant {
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '確定要掃描「${title}」嗎？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '確定要分析「${title}」嗎？',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '確定要重新整理「${title}」的中繼資料嗎？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '確定要清空「${title}」的垃圾桶嗎？',
 			'libraries.manageLibraries' => '管理媒體庫',
@@ -4539,6 +4555,8 @@ extension on TranslationsZhHant {
 			'watchTogether.errors.invalidRelayResponse' => '中繼伺服器傳回了非預期的回應',
 			'watchTogether.errors.sessionEnded' => '主持人已結束工作階段',
 			'watchTogether.errors.sessionUnavailable' => '無法恢復此工作階段。請加入或建立房間以繼續。',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.title' => '下載',
 			'downloads.manage' => '管理',
 			'downloads.tvShows' => '影集',
@@ -4547,8 +4565,6 @@ extension on TranslationsZhHant {
 			'downloads.tracksQueued' => ({required Object count}) => '已將 ${count} 首曲目加入下載佇列',
 			'downloads.noDownloads' => '目前沒有下載內容',
 			'downloads.noDownloadsDescription' => '下載的內容將顯示在此處，供您離線觀看',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadNow' => '下載',
 			'downloads.deleteDownload' => '刪除下載內容',
 			'downloads.retryDownload' => '重試下載',
@@ -5053,6 +5069,8 @@ extension on TranslationsZhHant {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '請輸入至少一個 ${product} 伺服器 URL',
 			'addServer.noReachableServer' => ({required Object product}) => '找不到可連線的 ${product} 伺服器',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '這些 URL 指向不同的 ${product} 伺服器',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.urlDoesNotMatchServer' => ({required Object product}) => '此 URL 與 ${product} 伺服器不符',
 			'addServer.redirectUnsupported' => '伺服器重新導向至不支援的 URL',
 			'addServer.redirectDifferentHost' => ({required Object product}) => '伺服器重新導向至不同的主機。請直接輸入最終的 ${product} URL。',

@@ -122,12 +122,38 @@ internal object GpuVoPolicy {
     else -> throw IllegalArgumentException("Invalid DV conversion mode: $conversionMode")
   }
 
+  /** `hdr-sdr-conversion` values: who converts HDR for a display without HDR output. */
+  val HDR_SDR_CONVERSION_MODES: Set<String> = setOf("auto", "device", "player")
+
   /**
-   * Whether an HDR signal has nowhere to tone-map: the video plane hands
-   * PQ/HLG straight to a display pipeline that advertises no HDR output, so
-   * it renders washed out (#2121). The GL vo tone-maps in the render chain.
+   * The first API level whose platform converts an HDR layer for a display
+   * without HDR output (Android 9). From P, AOSP SurfaceFlinger moves a PQ/HLG
+   * layer to GPU composition when the HWC reports no HDR10/HLG and tone-maps
+   * it in RenderEngine (libtonemap from 13). 7.x and 8.x have no such path,
+   * which is the washed-out Fire OS 6 (API 25) report in #2121.
    */
-  fun needsHdrToneMapping(gamma: String?, displaySupportsHdr: Boolean): Boolean = (gamma == "pq" || gamma == "hlg") && !displaySupportsHdr
+  const val PLATFORM_HDR_TO_SDR_MIN_SDK = 28
+
+  /**
+   * Whether an HDR signal bound for a display without HDR output must leave
+   * the video plane so mpv's GL vo tone-maps it. [conversionMode] is the
+   * user's `hdr-sdr-conversion`: `device` keeps the plane and trusts the
+   * platform, `player` always tone-maps in mpv, and `auto` keeps the plane
+   * from [PLATFORM_HDR_TO_SDR_MIN_SDK]. The plane is what media3, Kodi and VLC
+   * use for hardware-decoded HDR on SDR displays, and it costs no GPU time: a
+   * Box R (Mali-G31) shows 4K HDR10 at ~11 fps through the GL vo and 25 fps on
+   * the plane, where its Amlogic video layer converts. An HDR display keeps
+   * the plane in every mode.
+   */
+  fun needsHdrToneMapping(gamma: String?, displaySupportsHdr: Boolean, conversionMode: String, sdkInt: Int): Boolean {
+    if ((gamma != "pq" && gamma != "hlg") || displaySupportsHdr) return false
+    return when (conversionMode) {
+      "player" -> true
+      "device" -> false
+      "auto" -> sdkInt < PLATFORM_HDR_TO_SDR_MIN_SDK
+      else -> throw IllegalArgumentException("Invalid HDR-to-SDR conversion mode: $conversionMode")
+    }
+  }
 
   /**
    * Whether the decoder is handing mpv software frames, from `hwdec-current`.

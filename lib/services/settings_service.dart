@@ -159,6 +159,24 @@ extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
   };
 }
 
+/// Who converts HDR for a display without HDR output, on the Android mpv
+/// backend.
+///
+/// [device] leaves the video on the platform's video plane, as ExoPlayer,
+/// Kodi and VLC do: free on weak GPUs, colours up to the device. [player]
+/// tone-maps in mpv's GL renderer, which 4K outruns on low-end TV GPUs.
+/// [auto] picks [device] from Android 9, whose compositor converts an HDR
+/// layer itself, and [player] below it.
+enum HdrSdrConversion { auto, device, player }
+
+extension HdrSdrConversionNativeValue on HdrSdrConversion {
+  String get nativeValue => switch (this) {
+    HdrSdrConversion.auto => 'auto',
+    HdrSdrConversion.device => 'device',
+    HdrSdrConversion.player => 'player',
+  };
+}
+
 enum PlaybackBufferTier { auto, large, extraLarge }
 
 extension PlaybackBufferTierNativeValue on PlaybackBufferTier {
@@ -617,6 +635,11 @@ class SettingsService extends BaseSharedPreferencesService {
     'dv_conversion_mode',
     values: DvConversionModePreference.values,
     defaultValue: DvConversionModePreference.auto,
+  );
+  static const hdrSdrConversion = EnumPref<HdrSdrConversion>(
+    'hdr_sdr_conversion',
+    values: HdrSdrConversion.values,
+    defaultValue: HdrSdrConversion.auto,
   );
   static const defaultQualityPreset = EnumPref<TranscodeQualityPreset>(
     'default_quality_preset',
@@ -1323,6 +1346,7 @@ class SettingsService extends BaseSharedPreferencesService {
     matchContentResolution,
     tunneledPlayback,
     dvConversionMode,
+    hdrSdrConversion,
     musicVolume,
     resumeMusicOnLaunch,
     autoPlayNextEpisode,

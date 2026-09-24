@@ -346,6 +346,16 @@ class MpvPlayerCore private constructor(
 
   @Volatile private var displayDvSupported: Boolean = false
 
+  /** `hdr-sdr-conversion` the app last set; see [GpuVoPolicy.needsHdrToneMapping]. */
+  @Volatile private var hdrSdrConversionMode: String = "auto"
+
+  /** Latest `video-params/gamma`, kept so a mode change re-decides the live file. */
+  @Volatile private var videoGamma: String? = null
+
+  /** Serializes the HDR-to-SDR decision so a mode change and a gamma change
+   * cannot land their answers out of order. */
+  private val hdrToneMapLock = Any()
+
   @Volatile private var videoDisplayWidth: Int = 0
 
   @Volatile private var videoDisplayHeight: Int = 0
@@ -855,6 +865,8 @@ class MpvPlayerCore private constructor(
       hdrDisplayActive = false
       displayHdrSupported = false
       displayDvSupported = false
+      hdrSdrConversionMode = "auto"
+      videoGamma = null
       frameRateVote.onMediaFrameRate(0f)
       frameRateVote.onPlaybackSpeed(1f)
       publishedDisplayFpsOverride = null
@@ -1819,12 +1831,21 @@ class MpvPlayerCore private constructor(
   private fun collectHdrToneMapState(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "video-params/gamma" }.collect { change ->
-        val needsToneMap = GpuVoPolicy.needsHdrToneMapping(
-          gamma = change.value,
-          displaySupportsHdr = displayHdrSupported
-        )
-        setGpuVoRequirement(GpuVoPolicy.REASON_HDR_SDR, needsToneMap)
+        videoGamma = change.value
+        refreshHdrToneMapRequirement()
       }
+    }
+  }
+
+  private fun refreshHdrToneMapRequirement() {
+    synchronized(hdrToneMapLock) {
+      val needsToneMap = GpuVoPolicy.needsHdrToneMapping(
+        gamma = videoGamma,
+        displaySupportsHdr = displayHdrSupported,
+        conversionMode = hdrSdrConversionMode,
+        sdkInt = Build.VERSION.SDK_INT
+      )
+      setGpuVoRequirement(GpuVoPolicy.REASON_HDR_SDR, needsToneMap)
     }
   }
 
@@ -2464,6 +2485,24 @@ class MpvPlayerCore private constructor(
   }
 
   /**
+   * `hdr-sdr-conversion` is an app-level property: who converts HDR for a
+   * display without HDR output ([GpuVoPolicy.needsHdrToneMapping]). It
+   * re-decides the live file at once, so a change mid-file moves it between
+   * the plane and the GL vo like any other routing reason.
+   */
+  private fun applyHdrSdrConversion(value: String, onComplete: ((Result<Unit>) -> Unit)?) {
+    val mode = value.trim().lowercase()
+    if (mode !in GpuVoPolicy.HDR_SDR_CONVERSION_MODES) {
+      onComplete?.invoke(Result.failure(IllegalArgumentException("Invalid HDR-to-SDR conversion mode: $value")))
+      return
+    }
+    hdrSdrConversionMode = mode
+    emitLog("info", "video-route", "HDR-to-SDR conversion: $mode (displayHDR=$displayHdrSupported sdk=${Build.VERSION.SDK_INT})")
+    refreshHdrToneMapRequirement()
+    onComplete?.invoke(Result.success(Unit))
+  }
+
+  /**
    * `content-color-transfer` is an app-level property: Dart announces the
    * selected stream's transfer (server metadata) before playback so an HDR
    * session can get a BT.2020 PQ 10-bit GL surface instead of tone-mapped
@@ -2539,6 +2578,11 @@ class MpvPlayerCore private constructor(
 
     if (name == "dv-conversion-mode") {
       applyDvConversionMode(value, onComplete)
+      return
+    }
+
+    if (name == "hdr-sdr-conversion") {
+      applyHdrSdrConversion(value, onComplete)
       return
     }
 
