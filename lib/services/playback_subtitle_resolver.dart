@@ -5,6 +5,7 @@ import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
 import '../mpv/mpv.dart';
 import '../utils/subtitle_forced_semantics.dart';
+import '../utils/track_language_match.dart';
 import 'playback_initialization_types.dart';
 import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
@@ -391,6 +392,37 @@ class PlaybackSubtitleResolver {
       return null;
     }
     return findMpvTrackForPlexSubtitle(sourceTrack, nativeTracks, allPlexTracks: allSourceTracks);
+  }
+
+  /// Match a server subtitle row against remote-control criteria
+  /// (`{language}` / `{codec}` / `{external}`).
+  ///
+  /// Only the active sidecar is attached to the native player at open, so a
+  /// criteria search over the loaded track list cannot reach the rest of the
+  /// catalog. This matches the same criteria against the source rows instead,
+  /// letting a caller re-open on the requested track. Returns null when
+  /// nothing matches or no criteria were given.
+  ///
+  /// Plex populates `language`/`languageCode` and `title`/`displayTitle`
+  /// inconsistently, so both pairs are tried before a row is rejected.
+  static PlaybackSourceSubtitleChoice? matchSourceChoice(
+    List<MediaSubtitleTrack> tracks, {
+    String? language,
+    String? codec,
+    bool? external,
+  }) {
+    if (language == null && codec == null && external == null) return null;
+    for (final track in tracks) {
+      if (language != null &&
+          !trackLanguageMatches(query: language, language: track.languageCode, title: track.title) &&
+          !trackLanguageMatches(query: language, language: track.language, title: track.displayTitle)) {
+        continue;
+      }
+      if (codec != null && !'${track.codec ?? ''} ${track.title ?? ''}'.toLowerCase().contains(codec)) continue;
+      if (external != null && track.external != external) continue;
+      return PlaybackSourceSubtitleChoice.source(track.id);
+    }
+    return null;
   }
 
   static PlaybackSourceSubtitleChoice advanceSourceChoice(

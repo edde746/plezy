@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 /// Video transcode quality presets modeled on Plex Web's custom-quality table.
 ///
 /// When a non-[original] preset is selected, playback asks the active backend
@@ -23,6 +25,48 @@ enum TranscodeQualityPreset {
   final int? videoQuality;
 
   bool get isOriginal => this == TranscodeQualityPreset.original;
+
+  String get storageKey => name;
+
+  static TranscodeQualityPreset fromStorage(String? stored) {
+    if (stored == null) return TranscodeQualityPreset.original;
+    for (final v in TranscodeQualityPreset.values) {
+      if (v.name == stored) return v;
+    }
+    return TranscodeQualityPreset.original;
+  }
+
+  /// Resolve a free-form quality name ("1080p", "720p 3 mbps") to a preset.
+  ///
+  /// Matches the resolution height and, when given, the nearest bitrate at
+  /// that height; a bare resolution takes the highest bitrate. Returns null
+  /// when nothing matches rather than guessing a quality.
+  static TranscodeQualityPreset? matchByName(String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+    if (const {'original', 'source', 'max', 'maximum', 'best', 'full'}.contains(normalized)) return original;
+
+    for (final preset in values) {
+      if (preset.name.toLowerCase() == normalized) return preset;
+    }
+
+    final numbers = RegExp(r'\d+').allMatches(normalized).map((m) => int.parse(m.group(0)!)).toList();
+    if (numbers.isEmpty) return null;
+
+    final heights = {for (final p in values) p.resolutionHeight}..remove(null);
+    final height = numbers.firstWhere((n) => heights.contains(n), orElse: () => -1);
+    if (height < 0) return null;
+
+    final candidates = values.where((p) => p.resolutionHeight == height).toList();
+    // A second number is a bitrate: mbps when small ("3 mbps"), otherwise kbps.
+    final bitrate = numbers.where((n) => n != height).map((n) => n <= 100 ? n * 1000 : n).firstOrNull;
+    if (bitrate == null) {
+      return candidates.reduce((a, b) => (a.videoBitrateKbps ?? 0) >= (b.videoBitrateKbps ?? 0) ? a : b);
+    }
+    return candidates.reduce(
+      (a, b) => ((a.videoBitrateKbps ?? 0) - bitrate).abs() <= ((b.videoBitrateKbps ?? 0) - bitrate).abs() ? a : b,
+    );
+  }
 
   /// Resolution height (e.g. 720, 1080) parsed from [videoResolution]. Null for original.
   int? get resolutionHeight {

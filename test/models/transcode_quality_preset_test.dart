@@ -78,4 +78,43 @@ void main() {
       expect(TranscodeQualityPreset.original.coversSource(bitrateKbps: 1, heightPx: 1), isFalse);
     });
   });
+
+  group('matchByName', () {
+    test('names for the untranscoded stream all resolve to original', () {
+      for (final q in ['original', 'Original', ' source ', 'max', 'maximum', 'best', 'full']) {
+        expect(TranscodeQualityPreset.matchByName(q), TranscodeQualityPreset.original, reason: q);
+      }
+    });
+
+    test('a bare resolution picks the highest bitrate at that resolution', () {
+      expect(TranscodeQualityPreset.matchByName('1080p'), TranscodeQualityPreset.p1080_20mbps);
+      expect(TranscodeQualityPreset.matchByName('720p'), TranscodeQualityPreset.p720_4mbps);
+      expect(TranscodeQualityPreset.matchByName('480'), TranscodeQualityPreset.p480_1_5mbps);
+      expect(TranscodeQualityPreset.matchByName('240p'), TranscodeQualityPreset.p240_320);
+    });
+
+    test('an explicit bitrate disambiguates within a resolution', () {
+      expect(TranscodeQualityPreset.matchByName('720p 3mbps'), TranscodeQualityPreset.p720_3mbps);
+      expect(TranscodeQualityPreset.matchByName('720p 2'), TranscodeQualityPreset.p720_2mbps);
+      expect(TranscodeQualityPreset.matchByName('1080p 8 mbps'), TranscodeQualityPreset.p1080_8mbps);
+      expect(TranscodeQualityPreset.matchByName('1080p 12mbps'), TranscodeQualityPreset.p1080_12mbps);
+    });
+
+    test('an unavailable bitrate falls back to the nearest at that resolution', () {
+      // 5 mbps at 720p is not in the table, so the nearest bitrate wins.
+      expect(TranscodeQualityPreset.matchByName('720p 5mbps'), TranscodeQualityPreset.p720_4mbps);
+    });
+
+    test('the storage name matches itself, so pickers and remotes cannot drift', () {
+      for (final preset in TranscodeQualityPreset.values) {
+        expect(TranscodeQualityPreset.matchByName(preset.name), preset, reason: preset.name);
+      }
+    });
+
+    test('returns null when nothing sensible matches', () {
+      for (final q in ['', '   ', '8k', 'potato', 'subtitles']) {
+        expect(TranscodeQualityPreset.matchByName(q), isNull, reason: q);
+      }
+    });
+  });
 }

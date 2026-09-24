@@ -96,6 +96,22 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
     return true;
   }
 
+  /// Drive fullscreen to an absolute [enabled] state, idempotently.
+  ///
+  /// Unlike [toggleFullscreen] this cannot flip the wrong way, and unlike a
+  /// simulated 'f' keypress it needs no window focus. Queries the native source
+  /// (not the possibly-lagging listener flag) and only touches the window on a
+  /// genuine mismatch, so a request for the state already active is a no-op.
+  /// Used by the Companion Remote `setFullscreen` command.
+  Future<void> applyFullscreen(bool enabled) async {
+    if (!PlatformDetector.isDesktopOS()) return;
+
+    final isActive = await _platformIsFullscreen();
+    if (isActive == enabled) return;
+
+    await _platformSetFullscreen(enabled);
+  }
+
   Future<bool> _platformIsFullscreen() {
     if (Platform.isMacOS) return MacOSWindowService.isFullscreen();
     if (Platform.isWindows) return NativeWindowService.isFullScreen();

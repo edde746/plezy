@@ -52,6 +52,22 @@ enum RemoteCommandType {
   disconnect,
   ack,
   syncState,
+
+  playMedia,
+  seekTo,
+  shuffleMedia,
+  markWatched,
+  markUnwatched,
+  setSubtitleTrack,
+  setAudioTrack,
+  setQuality,
+  setAudioDevice,
+  setSubtitleSync,
+  setAudioSync,
+  setSpeed,
+  setSecondarySubtitleTrack,
+  setZoom,
+  setFullscreen,
 }
 
 class _RemoteCommandTypeConverter extends IndexedEnumConverter<RemoteCommandType> {
