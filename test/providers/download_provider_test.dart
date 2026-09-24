@@ -3333,6 +3333,39 @@ void main() {
       p.dispose();
     });
 
+    test('downloadSortExtras prefers the measured on-disk size over recorded bytes', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:e1': const DownloadProgress(
+            globalKey: 'srv:e1',
+            status: DownloadStatus.completed,
+            downloadedAt: 100,
+            totalBytes: 10,
+          ),
+          // Never measured: keeps the bytes the transfer recorded.
+          'srv:e2': const DownloadProgress(
+            globalKey: 'srv:e2',
+            status: DownloadStatus.completed,
+            downloadedAt: 300,
+            totalBytes: 20,
+          ),
+        },
+        metadata: {'srv:e1': episode('e1', index: 1), 'srv:e2': episode('e2', index: 2)},
+        downloadSizes: {'srv:e1': 15},
+      );
+
+      final extras = p.downloadSortExtras([
+        testMediaItem(id: 'e1', backend: MediaBackend.plex, kind: MediaKind.episode, serverId: ServerId('srv')),
+        testMediaItem(id: 'e2', backend: MediaBackend.plex, kind: MediaKind.episode, serverId: ServerId('srv')),
+      ]);
+
+      expect(extras['srv:e1']?.totalBytes, 15);
+      expect(extras['srv:e2']?.totalBytes, 20);
+      p.dispose();
+    });
+
     test('downloadedSeasonsForShow prefers stored season metadata and scopes to the show', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -3964,6 +3997,50 @@ void main() {
       await p.ensureInitialized();
 
       expect(p.downloadActivitySnapshot, equals(p.downloadActivitySnapshot));
+      p.dispose();
+    });
+  });
+
+  group('DownloadProvider — download sizes', () {
+    MediaItem episode(String id) => testMediaItem(id: id, kind: MediaKind.episode, serverId: ServerId('srv'));
+    MediaItem movie(String id) => testMediaItem(id: id, kind: MediaKind.movie, serverId: ServerId('srv'));
+    DownloadProgress progress(String key, DownloadStatus status) => DownloadProgress(globalKey: key, status: status);
+
+    test('only exposes sizes of completed downloads', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:done': progress('srv:done', DownloadStatus.completed),
+          'srv:again': progress('srv:again', DownloadStatus.downloading),
+        },
+        downloadSizes: {'srv:done': 500, 'srv:again': 900},
+      );
+
+      expect(p.downloadSizes, {'srv:done': 500});
+
+      p.dispose();
+    });
+
+    test('completedDownloadUsage totals completed downloads matching the filter', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          'srv:e1': progress('srv:e1', DownloadStatus.completed),
+          'srv:e2': progress('srv:e2', DownloadStatus.completed),
+          'srv:e3': progress('srv:e3', DownloadStatus.queued),
+          'srv:m1': progress('srv:m1', DownloadStatus.completed),
+        },
+        metadata: {'srv:e1': episode('e1'), 'srv:e2': episode('e2'), 'srv:e3': episode('e3'), 'srv:m1': movie('m1')},
+        // e2 has not been measured yet: counted, but adds no bytes.
+        downloadSizes: {'srv:e1': 100, 'srv:e3': 300, 'srv:m1': 4000},
+      );
+
+      expect(p.completedDownloadUsage(where: (item) => item.kind == MediaKind.episode), (bytes: 100, count: 2));
+      expect(p.completedDownloadUsage(where: (item) => item.kind == MediaKind.movie), (bytes: 4000, count: 1));
+      expect(p.completedDownloadUsage(), (bytes: 4100, count: 3));
+
       p.dispose();
     });
   });

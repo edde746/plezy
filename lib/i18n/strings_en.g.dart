@@ -4587,6 +4587,33 @@ class Translations$downloads$en {
 	/// en: '${completed}/${total} completed'
 	String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} completed';
 
+	/// en: 'Storage used: ${size}'
+	String storageUsed({required Object size}) => 'Storage used: ${size}';
+
+	/// en: '(one) {${n} download} (other) {${n} downloads}'
+	String downloadCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} download',
+		other: '${n} downloads',
+	);
+
+	/// en: '(one) {${n} show} (other) {${n} shows}'
+	String showCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} show',
+		other: '${n} shows',
+	);
+
+	/// en: '(one) {${n} movie} (other) {${n} movies}'
+	String movieCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} movie',
+		other: '${n} movies',
+	);
+
+	/// en: '(one) {${n} album} (other) {${n} albums}'
+	String albumCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} album',
+		other: '${n} albums',
+	);
+
 	/// en: 'File not found (404)'
 	String get errorFileNotFound => 'File not found (404)';
 
@@ -8933,6 +8960,11 @@ extension on Translations {
 			'downloads.unknownSeason' => 'Unknown Season',
 			'downloads.unknownAlbum' => 'Unknown Album',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} completed',
+			'downloads.storageUsed' => ({required Object size}) => 'Storage used: ${size}',
+			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} download', other: '${n} downloads', ), 
+			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} show', other: '${n} shows', ), 
+			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} movie', other: '${n} movies', ), 
+			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} album', other: '${n} albums', ), 
 			'downloads.errorFileNotFound' => 'File not found (404)',
 			'downloads.errorDownloadFailed' => 'Download failed',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Post-processing failed: ${error}',
@@ -9302,13 +9334,13 @@ extension on Translations {
 			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
 			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
 			'addServer.username' => 'Username',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',
 			'addServer.change' => 'Change',
 			'addServer.required' => 'Required',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
 			'addServer.addPlexTitle' => 'Sign in with Plex',

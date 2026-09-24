@@ -1866,6 +1866,31 @@
     "unknownSeason": "Неизвестный сезон",
     "unknownAlbum": "Неизвестный альбом",
     "completedOfTotal": "Завершено: ${completed}/${total}",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
     "errorFileNotFound": "Файл не найден (404)",
     "errorDownloadFailed": "Не удалось выполнить загрузку",
     "errorPostProcessing": "Не удалось выполнить постобработку: ${error}",

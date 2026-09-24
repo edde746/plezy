@@ -1844,6 +1844,23 @@
     "unknownSeason": "Onbekend seizoen",
     "unknownAlbum": "Onbekend album",
     "completedOfTotal": "${completed}/${total} voltooid",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Bestand niet gevonden (404)",
     "errorDownloadFailed": "Download mislukt",
     "errorPostProcessing": "Nabewerking mislukt: ${error}",
