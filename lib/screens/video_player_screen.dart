@@ -1,5 +1,10 @@
 import 'dart:async';
 import '../services/playback_launch_observer.dart';
+import '../models/companion_remote/remote_command.dart';
+import '../services/companion_remote/companion_remote_receiver.dart';
+import '../utils/track_language_match.dart';
+import '../utils/track_payload.dart';
+import '../widgets/video_controls/playback_extras_loader.dart';
 import '../media/ids.dart';
 import 'dart:io';
 
@@ -82,6 +87,8 @@ import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/account_preferences_controller.dart';
 import '../utils/app_logger.dart';
+import '../utils/audio_device_match.dart';
+import '../utils/codec_utils.dart';
 import '../utils/dialogs.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/immersive_mode_guard.dart';
@@ -708,6 +715,45 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   int _pendingSubtitleCycleCount = 0;
   bool _subtitleCycleDrainActive = false;
 
+  /// An explicit source subtitle track a remote asked for, queued for the same
+  /// drain loop as the cycle presses so the two cannot race the source switch.
+  PlaybackSourceSubtitleChoice? _pendingSubtitleTargetChoice;
+
+  /// Absolute A/V sync limit, matching the settings sheet's own slider bounds.
+  static const int _syncOffsetLimitMs = 60000;
+
+  /// Playback speed bounds, matching the settings sheet's own speed list.
+  static const double _minPlaybackSpeed = 0.5;
+  static const double _maxPlaybackSpeed = 3.0;
+
+  /// Whether the server is rendering the subtitle into the video frames.
+  ///
+  /// Plex burns an image-based subtitle into a transcode because HLS has no
+  /// bitmap subtitle rendition, so the player's track list is empty while a
+  /// subtitle is on screen. Mirrors the condition the transcode URL builder
+  /// computes as a local.
+  bool get _subtitleBurnedIn {
+    if (!_isTranscoding) return false;
+    final sourceId = _playbackSession?.subtitleSelection.primarySourceStreamId;
+    if (sourceId == null) return false;
+    // Sidecars are delivered as separate files, so they are never burned.
+    if ({for (final s in _sourceSubtitleSidecarsForControls()) ?s.sourceStreamId}.contains(sourceId)) return false;
+    for (final track in _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[]) {
+      if (track.id == sourceId) return CodecUtils.isImageSubtitleCodec(track.codec);
+    }
+    return false;
+  }
+
+  /// A/V sync offsets sampled one `syncState` tick ahead, because mpv exposes
+  /// them as async property reads and the frame builder is synchronous.
+  int? _subtitleSyncOffsetMs;
+  int? _audioSyncOffsetMs;
+
+  /// Volume ceiling for `syncState`, sampled alongside the sync offsets rather
+  /// than read inline: `SettingsService.instance` throws when uninitialized,
+  /// and the periodic frame must never throw.
+  double? _maxVolumeForRemote;
+
   /// Media key of the last Watch Together switch failure the user was
   /// toasted about — the heartbeat retry loop must not re-toast every 2s.
   String? _wtSwitchToastShownForKey;
@@ -984,6 +1030,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     onHome: () => _handleHomeButton(),
     readProvider: () => context.read<CompanionRemoteProvider>(),
   );
+
+  /// Coalesces a burst of state changes into one companion-remote frame.
+  Timer? _companionStateDebounce;
+  CompanionRemoteProvider? _companionRemoteProvider;
+  Timer? _companionNowPlayingTimer;
 
   /// Backend-neutral lookup. Returns whichever client (Plex or Jellyfin)
   /// owns this item. Used by the player initialization path.
@@ -1377,6 +1428,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
 
     _companionRemote.bind();
+    _installCompanionCommandSlots();
     _setupAppleTvRemotePlaybackActions();
 
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
@@ -2324,6 +2376,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     _transitionGate.completeIdleWaiters();
 
+    _removeCompanionCommandSlots();
     _companionRemote.unbind();
 
     final isReplacingWithVideo = _isReplacingWithVideo;
@@ -2561,20 +2614,43 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _toastController.show(icon, t.videoControls.volumePercent(percent: percent));
   }
 
-  /// Apply a transport command on behalf of a hardware remote (Apple TV bridge
-  /// or a hardware media key). Mirrors the controls path: rewind-on-resume,
-  /// then play/pause with playback intent, then announce.
+  /// Apply a transport command on behalf of a hardware remote (Apple TV bridge,
+  /// a hardware media key, or the companion remote). Mirrors the controls path:
+  /// rewind-on-resume, then play/pause with playback intent, then announce.
   Future<void> _remoteTransport(TransportCommand command, {required String source}) async {
-    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    if (!mounted) return;
+
+    // Every refusal below answers with the current state, so a controller can
+    // tell "refused" from "still working" instead of waiting out its window.
+    if (ModalRoute.of(context)?.isCurrent != true) {
+      appLogger.d('$source play/pause ignored: player route is not current');
+      _sendNowPlaying(active: true);
+      return;
+    }
 
     final currentPlayer = player;
     if (!_isPlayerInitialized || currentPlayer == null) {
       appLogger.d('$source play/pause ignored: player not ready');
+      _sendNowPlaying(active: true);
       return;
     }
 
     if (!_canControlPlayback()) {
       appLogger.d('$source play/pause ignored: playback control unavailable');
+      _sendNowPlaying(active: true);
+      return;
+    }
+
+    // An already-satisfied absolute command never reaches the state push, so
+    // answer it now. A toggle always changes something.
+    final alreadySatisfied = switch (command) {
+      TransportCommand.play => currentPlayer.state.playing,
+      TransportCommand.pause => !currentPlayer.state.playing,
+      TransportCommand.toggle => false,
+    };
+    if (alreadySatisfied) {
+      appLogger.d('$source play/pause ignored: already ${currentPlayer.state.playing ? 'playing' : 'paused'}');
+      _sendNowPlaying(active: true);
       return;
     }
 
@@ -2835,6 +2911,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _live.resumeTimelineOnResume = false;
     _stopLiveTimelineUpdates();
     _progressTracker?.stopTracking();
+    _removeCompanionCommandSlots();
     _companionRemote.unbind();
     _detachFromWatchTogetherSession(exiting: true);
     _detachPipStateListener();

@@ -46,6 +46,8 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/seerr_account_provider.dart';
+import '../services/media_list_playback_launcher.dart';
+import 'video_player_screen.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/tv_virtual_keyboard.dart';
 import '../services/api_cache.dart';
@@ -73,7 +75,6 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
-import 'video_player_screen.dart';
 import 'profile/profile_teardown.dart';
 import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
@@ -1050,6 +1051,85 @@ class _MainScreenState extends State<MainScreen>
         });
       }
     };
+    receiver.onSetFullscreen = (enabled) => unawaited(FullscreenStateManager().applyFullscreen(enabled));
+    receiver.onPlayMediaAction = (serverId, ratingKey, offset) async {
+      try {
+        final multiServer = context.read<MultiServerProvider>();
+        final client = multiServer.getClientForServer(ServerId(serverId));
+        if (client == null) {
+          appLogger.w('Companion remote playMedia: server $serverId not available');
+          return;
+        }
+        final metadata = await client.fetchItem(ratingKey);
+        if (metadata == null || !mounted) return;
+        // Honor an explicit start offset (jump to a clip); otherwise resume via
+        // watch state like the in-app Play button.
+        final item = (offset != null && offset > 0) ? metadata.copyWith(viewOffsetMs: offset) : metadata;
+        await _retireActivePlayerForRemote('playMedia');
+        if (!mounted) return;
+        unawaited(navigateToVideoPlayer(context, metadata: item, resolveWatchState: offset == null || offset <= 0));
+      } catch (e) {
+        appLogger.e('Companion remote playMedia: failed to start playback', error: e);
+      }
+    };
+    receiver.onShuffleMediaAction = (serverId, ratingKey) async {
+      try {
+        final multiServer = context.read<MultiServerProvider>();
+        final client = multiServer.getClientForServer(ServerId(serverId));
+        if (client == null) {
+          appLogger.w('Companion remote shuffleMedia: server $serverId not available');
+          return;
+        }
+        final metadata = await client.fetchItem(ratingKey);
+        if (metadata == null || !mounted) return;
+        await _retireActivePlayerForRemote('shuffleMedia');
+        if (!mounted) return;
+        await MediaListPlaybackLauncher.forItem(context, metadata).launchShuffledShow(metadata: metadata);
+      } catch (e) {
+        appLogger.e('Companion remote shuffleMedia: failed', error: e);
+      }
+    };
+    receiver.onSetWatchedAction = (serverId, ratingKey, watched) async {
+      try {
+        final multiServer = context.read<MultiServerProvider>();
+        final client = multiServer.getClientForServer(ServerId(serverId));
+        if (client == null) {
+          appLogger.w('Companion remote setWatched: server $serverId not available');
+          return;
+        }
+        final metadata = await client.fetchItem(ratingKey);
+        if (metadata == null) return;
+        await (watched ? client.markWatched(metadata) : client.markUnwatched(metadata));
+      } catch (e) {
+        appLogger.e('Companion remote setWatched: failed', error: e);
+      }
+    };
+  }
+
+  /// Close the open player, if any, before a remote starts a different title.
+  ///
+  /// Only a remote can start a title while a player is open, and a second
+  /// [VideoPlayerScreen] stacked on the single mpv core never receives the
+  /// initial `pause` observation (the native side skips it as already
+  /// registered): it reports paused while audio plays and its play button
+  /// does nothing. [navigateToVideoPlayer] already refuses to stack the same
+  /// item; this covers a different one.
+  Future<void> _retireActivePlayerForRemote(String command) async {
+    if (VideoPlayerScreenState.activeGlobalKey == null) return;
+    appLogger.d('Companion remote $command: retiring the active player first');
+
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop();
+
+    // dispose() clears activeGlobalKey, so wait for that rather than guessing a delay.
+    // Bounded: a player that will not let go must not strand the command.
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (VideoPlayerScreenState.activeGlobalKey != null && DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
+    if (VideoPlayerScreenState.activeGlobalKey != null) {
+      appLogger.w('Companion remote $command: active player did not close in time; starting anyway');
+    }
   }
 
   Future<void> _autoStartCompanionRemoteServer() async {
@@ -1101,6 +1181,10 @@ class _MainScreenState extends State<MainScreen>
         receiver.onTabSettings = null;
         receiver.onHome = null;
         receiver.onSearchAction = null;
+        receiver.onSetFullscreen = null;
+        receiver.onPlayMediaAction = null;
+        receiver.onShuffleMediaAction = null;
+        receiver.onSetWatchedAction = null;
         receiver.navigationOwner = null;
       }
     }

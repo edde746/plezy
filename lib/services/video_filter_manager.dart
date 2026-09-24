@@ -135,9 +135,7 @@ class VideoFilterManager {
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void cycleBoxFitMode() {
-    _boxFitMode = (_boxFitMode + 1) % 3;
-    onBoxFitModeChanged?.call(_boxFitMode);
-    updateVideoFilter();
+    setBoxFitMode(_boxFitMode + 1);
   }
 
   /// Apply an externally resolved BoxFit mode (scoped-preference re-resolution

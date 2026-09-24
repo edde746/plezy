@@ -933,4 +933,69 @@ void main() {
     expect(result.primarySourceStreamId, isNull);
     expect(result.sidecarsAtOpen.single.uri, 'file:///tmp/subtitle.srt');
   });
+
+  group('source choice matching by criteria', () {
+    test('matches a full language name against the ISO code', () {
+      final tracks = [_sourceSubtitle(1, language: 'eng'), _sourceSubtitle(2, language: 'heb')];
+
+      expect(
+        PlaybackSubtitleResolver.matchSourceChoice(tracks, language: 'hebrew'),
+        const PlaybackSourceSubtitleChoice.source(2),
+      );
+      expect(
+        PlaybackSubtitleResolver.matchSourceChoice(tracks, language: 'english'),
+        const PlaybackSourceSubtitleChoice.source(1),
+      );
+    });
+
+    test('returns the first qualifying track so repeated calls are stable', () {
+      final tracks = [_sourceSubtitle(3, language: 'eng'), _sourceSubtitle(4, language: 'eng')];
+
+      expect(
+        PlaybackSubtitleResolver.matchSourceChoice(tracks, language: 'english'),
+        const PlaybackSourceSubtitleChoice.source(3),
+      );
+    });
+
+    test('returns null when nothing matches or there is nothing to match', () {
+      final tracks = [_sourceSubtitle(1, language: 'eng')];
+
+      expect(PlaybackSubtitleResolver.matchSourceChoice(tracks, language: 'french'), isNull);
+      expect(PlaybackSubtitleResolver.matchSourceChoice(const [], language: 'english'), isNull);
+      expect(PlaybackSubtitleResolver.matchSourceChoice(tracks), isNull);
+    });
+
+    test('filters on the external flag', () {
+      final tracks = [_sourceSubtitle(1, language: 'heb'), _sourceSubtitle(2, language: 'heb', external: true)];
+
+      expect(
+        PlaybackSubtitleResolver.matchSourceChoice(tracks, language: 'hebrew', external: true),
+        const PlaybackSourceSubtitleChoice.source(2),
+      );
+      expect(
+        PlaybackSubtitleResolver.matchSourceChoice(tracks, language: 'hebrew', external: false),
+        const PlaybackSourceSubtitleChoice.source(1),
+      );
+    });
+
+    test('matches a codec substring', () {
+      final tracks = [_sourceSubtitle(1, language: 'eng'), _sourceSubtitle(2, language: 'heb')];
+      final withCodec = [
+        MediaSubtitleTrack(
+          id: 7,
+          language: 'eng',
+          languageCode: 'eng',
+          codec: 'subrip',
+          selected: false,
+          forced: false,
+        ),
+      ];
+
+      expect(PlaybackSubtitleResolver.matchSourceChoice(tracks, codec: 'subrip'), isNull);
+      expect(
+        PlaybackSubtitleResolver.matchSourceChoice(withCodec, codec: 'subrip'),
+        const PlaybackSourceSubtitleChoice.source(7),
+      );
+    });
+  });
 }

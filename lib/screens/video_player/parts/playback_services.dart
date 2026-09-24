@@ -174,6 +174,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _playerStreamSubscriptions.add(
       currentPlayer.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
+        // `buffering` is in the state frame, and it is how a controller tells
+        // "still loading" apart from "stalled".
+        _notifyCompanionRemoteStateChanged();
       }),
     );
 
@@ -733,6 +736,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Update OS media controls playback state
     _mediaControls.pushPlaybackState();
+
+    // Same reason as the OS media controls above: a companion remote is another
+    // out-of-process observer of transport state, and the 5s heartbeat is far
+    // too coarse for it to confirm a command it just sent.
+    _notifyCompanionRemoteStateChanged();
 
     // Update Discord Rich Presence + real-time trackers
     if (isPlaying) {
