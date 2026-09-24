@@ -9,6 +9,7 @@ import '../mixins/controller_disposer_mixin.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_list_tile.dart';
+import '../widgets/scroll_ink_boundary.dart';
 import 'focus_utils.dart';
 
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
@@ -532,53 +533,62 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
       constraints: const BoxConstraints(minWidth: 304),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       children: [
-        if (toggle != null)
-          MergeSemantics(
-            child: FocusableListTile(
-              title: Row(
-                children: [
-                  if (toggle.icon != null) ...[
-                    AppIcon(toggle.icon!, fill: 1, size: 24),
-                    const SizedBox(width: rowHorizontalTitleGap),
-                  ],
-                  Expanded(
-                    child: Text(
-                      toggle.label,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+        // SimpleDialog owns the scroll view, so the ink boundary goes inside it.
+        ScrollInkBoundary(
+          child: Column(
+            mainAxisSize: .min,
+            crossAxisAlignment: .stretch,
+            children: [
+              if (toggle != null)
+                MergeSemantics(
+                  child: FocusableListTile(
+                    title: Row(
+                      children: [
+                        if (toggle.icon != null) ...[
+                          AppIcon(toggle.icon!, fill: 1, size: 24),
+                          const SizedBox(width: rowHorizontalTitleGap),
+                        ],
+                        Expanded(
+                          child: Text(
+                            toggle.label,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: rowHorizontalTitleGap),
+                        ExcludeFocus(
+                          child: Switch(value: _toggleValue, onChanged: updateToggle),
+                        ),
+                      ],
                     ),
+                    contentPadding: rowPadding,
+                    onTap: () => updateToggle(!_toggleValue),
                   ),
-                  const SizedBox(width: rowHorizontalTitleGap),
-                  ExcludeFocus(
-                    child: Switch(value: _toggleValue, onChanged: updateToggle),
-                  ),
-                ],
-              ),
-              contentPadding: rowPadding,
-              onTap: () => updateToggle(!_toggleValue),
-            ),
+                ),
+              ...List.generate(widget.options.length, (index) {
+                final option = widget.options[index];
+                final icon = option.icon;
+                return FocusableListTile(
+                  focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                  leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
+                  title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+                  contentPadding: rowPadding,
+                  horizontalTitleGap: rowHorizontalTitleGap,
+                  minLeadingWidth: rowMinLeadingWidth,
+                  onTap: () async {
+                    if (widget.onBeforeClose != null) {
+                      final result = await widget.onBeforeClose!(option.value);
+                      if (context.mounted) Navigator.pop(context, result);
+                    } else {
+                      Navigator.pop(context, option.value);
+                    }
+                  },
+                );
+              }),
+            ],
           ),
-        ...List.generate(widget.options.length, (index) {
-          final option = widget.options[index];
-          final icon = option.icon;
-          return FocusableListTile(
-            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-            leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
-            title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
-            contentPadding: rowPadding,
-            horizontalTitleGap: rowHorizontalTitleGap,
-            minLeadingWidth: rowMinLeadingWidth,
-            onTap: () async {
-              if (widget.onBeforeClose != null) {
-                final result = await widget.onBeforeClose!(option.value);
-                if (context.mounted) Navigator.pop(context, result);
-              } else {
-                Navigator.pop(context, option.value);
-              }
-            },
-          );
-        }),
+        ),
       ],
     );
   }
