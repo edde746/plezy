@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Envoyer l’audio Dolby/DTS à votre ampli ou téléviseur sans le réencoder afin de préserver le son surround. Désactivez cette option en l’absence de son.",
     "audioPassthroughDescriptionAppleTv": "Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.",
     "audioPassthroughOverriddenByNormalization": "Désactivée tant que la normalisation du volume est active",
-    "audioDownmix": "Conversion en stéréo",
-    "audioDownmixDescription": "Convertir le son surround en deux canaux pour les enceintes stéréo ou le casque",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Renforcement du canal central",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Renforcement (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stéréo",
     "audioNormalization": "Normaliser le volume",
     "audioNormalizationDisablesPassthrough": "Décode l’audio en PCM ; la transmission directe est désactivée tant que cette option est active",
-    "audioNormalizationStereoMix": "Décode l’audio en un mixage stéréo ; la transmission directe est désactivée tant que cette option est active",
-    "audioDownmix": "Conversion en stéréo"
+    "audioNormalizationStereoMix": "Décode l’audio en un mixage stéréo ; la transmission directe est désactivée tant que cette option est active"
   },
   "performanceOverlay": {
     "color": "Couleur",

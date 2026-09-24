@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.",
     "audioPassthroughOverriddenByNormalization": "Дыбыс деңгейін нормалау қосулы кезде өшірулі",
-    "audioDownmix": "Стереоға түрлендіру (Downmix)",
-    "audioDownmixDescription": "Көп арналы дыбысты стерео динамиктер үшін екі арнаға төмендету",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Орталық арнаны күшейту",
     "downmixCenterBoostValue": "${db} дБ",
     "downmixCenterBoostLabel": "Күшейту (дБ)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Дыбыс деңгейін нормалау",
     "audioNormalizationDisablesPassthrough": "Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі",
-    "audioNormalizationStereoMix": "Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі",
-    "audioDownmix": "Стереоға түрлендіру"
+    "audioNormalizationStereoMix": "Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі"
   },
   "performanceOverlay": {
     "color": "Түс",

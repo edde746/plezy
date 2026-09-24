@@ -6,6 +6,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show listEquals, protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
+import '../../models/audio_channel_limit.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
@@ -1333,9 +1334,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// Google TV Streamer, Box R 4K Plus) 8ch adds +2.62 CPU-s per media second
   /// against ~1 core, so 5.1 holds 0.35–0.57x and 7.1 0.33x real time under an
   /// underrun storm while stereo holds 0.985x; arm64 (Pixel 7, SHIELD) still
-  /// underruns 5–20 times a minute at 8ch. Downmixing at the AO
-  /// (`audio-channels=stereo`, the "Downmix to Stereo" setting) does not help
-  /// because it lands after the filter. Desktop and Apple measured clean at
+  /// underruns 5–20 times a minute at 8ch. Limiting channels at the AO
+  /// (`audio-channels`, the "Audio Channels" setting) does not help because
+  /// it lands after the filter. Desktop and Apple measured clean at
   /// 7.1 and keep the multichannel chain. `format=channels=` remixes through
   /// swresample, so the downmix options (`audio-swresample-o`,
   /// `audio-normalize-downmix`) apply to it as well.
@@ -1348,25 +1349,45 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     await setProperty('af', enabled ? _loudnormFilter : '');
   }
 
+  /// mpv's `audio-channels` for each limit. The 5.1 limit is a list so stereo
+  /// sources stay stereo instead of being padded to 5.1, while 7.1 and 6.1
+  /// fold to 5.1 and quad or 5.0 are padded to it. A list also keeps the
+  /// decoder's own downmix out of it: mpv only asks the decoder when the list
+  /// has a single entry, which is what `stereo` relies on.
+  static String _audioChannelsFor(AudioChannelLimit limit) => switch (limit) {
+    AudioChannelLimit.original => 'auto-safe',
+    AudioChannelLimit.surround51 => 'stereo,5.1',
+    AudioChannelLimit.stereo => 'stereo',
+  };
+
   @override
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
-    if (enabled) {
-      // Kodi's mechanism: center coefficient = 10^((-3 + boost)/20); the
-      // surround (-3 dB) and LFE (dropped) swresample defaults already match.
-      final c = math.pow(10, (-3 + centerBoostDb.clamp(0, 12)) / 20).toStringAsFixed(4);
-      // Swresample AVOptions are read once at audio-filter creation, so they
-      // must land before audio-channels triggers the chain (re)build.
-      await setProperty('audio-swresample-o', 'center_mix_level=$c');
-      await setProperty('audio-normalize-downmix', normalize ? 'yes' : 'no');
-      // Bounce through auto-safe so boost/normalize changes re-apply while
-      // downmix is already active (same-value option sets are no-ops in mpv).
-      await setProperty('audio-channels', 'auto-safe');
-      await setProperty('audio-channels', 'stereo');
-    } else {
+  Future<void> setAudioChannelLimit(
+    AudioChannelLimit limit, {
+    required int centerBoostDb,
+    required bool normalize,
+  }) async {
+    if (limit == AudioChannelLimit.original) {
       await setProperty('audio-channels', 'auto-safe');
       await setProperty('audio-swresample-o', '');
       await setProperty('audio-normalize-downmix', 'no');
+      return;
     }
+    // Kodi's mechanism: center coefficient = 10^((-3 + boost)/20); the
+    // surround (-3 dB) and LFE (dropped) swresample defaults already match.
+    // Only a stereo fold mixes the center away, so only it takes the boost.
+    final centerMixLevel = limit == AudioChannelLimit.stereo
+        ? 'center_mix_level=${math.pow(10, (-3 + centerBoostDb.clamp(0, 12)) / 20).toStringAsFixed(4)}'
+        : '';
+    // Swresample AVOptions are read once at audio-filter creation, so they
+    // must land before audio-channels triggers the chain (re)build.
+    // `audio-normalize-downmix` is swresample's `rematrix_maxval`, so it
+    // guards the 7.1 → 5.1 fold against clipping just as it does stereo.
+    await setProperty('audio-swresample-o', centerMixLevel);
+    await setProperty('audio-normalize-downmix', normalize ? 'yes' : 'no');
+    // Bounce through auto-safe so option changes re-apply while the same limit
+    // is already active (same-value option sets are no-ops in mpv).
+    await setProperty('audio-channels', 'auto-safe');
+    await setProperty('audio-channels', _audioChannelsFor(limit));
   }
 
   @override

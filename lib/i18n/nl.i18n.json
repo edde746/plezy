@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.",
     "audioPassthroughDescriptionAppleTv": "Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.",
     "audioPassthroughOverriddenByNormalization": "Uit zolang volumenormalisatie aan staat",
-    "audioDownmix": "Downmixen naar stereo",
-    "audioDownmixDescription": "Mix surroundgeluid terug naar twee kanalen voor stereoluidsprekers of een koptelefoon",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Versterking middenkanaal",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Versterking (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Volume normaliseren",
     "audioNormalizationDisablesPassthrough": "Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat",
-    "audioNormalizationStereoMix": "Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat",
-    "audioDownmix": "Downmixen naar stereo"
+    "audioNormalizationStereoMix": "Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat"
   },
   "performanceOverlay": {
     "color": "Kleur",

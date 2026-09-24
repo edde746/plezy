@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.",
     "audioPassthroughDescriptionAppleTv": "Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.",
     "audioPassthroughOverriddenByNormalization": "Səsin gurluğunu normallaşdırma aktivkən söndürülüb",
-    "audioDownmix": "Stereo-ya çevir (Downmix)",
-    "audioDownmixDescription": "Çoxkanallı səsi stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endirir",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Mərkəz kanal gücləndirilməsi",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Gücləndirmə (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Səsin gurluğunu normallaşdır",
     "audioNormalizationDisablesPassthrough": "Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür",
-    "audioNormalizationStereoMix": "Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür",
-    "audioDownmix": "Stereo-ya çevir"
+    "audioNormalizationStereoMix": "Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür"
   },
   "performanceOverlay": {
     "color": "Rəng",

@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。",
     "audioPassthroughDescriptionAppleTv": "对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。",
     "audioPassthroughOverriddenByNormalization": "响度标准化开启时停用",
-    "audioDownmix": "下混为立体声",
-    "audioDownmixDescription": "将环绕声混合为双声道，适用于立体声音箱或耳机",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "中置声道增强",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "增强（dB）",
@@ -1958,8 +1964,7 @@
     "audioOutputStereo": "立体声",
     "audioNormalization": "响度标准化",
     "audioNormalizationDisablesPassthrough": "将音频解码为 PCM；开启时直通关闭",
-    "audioNormalizationStereoMix": "将音频解码为立体声混音；开启时直通关闭",
-    "audioDownmix": "下混为立体声"
+    "audioNormalizationStereoMix": "将音频解码为立体声混音；开启时直通关闭"
   },
   "performanceOverlay": {
     "color": "颜色",

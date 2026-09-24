@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import '../../models/audio_channel_limit.dart';
 import '../../media/playback_rate.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
@@ -220,16 +221,20 @@ abstract class Player {
   /// PCM output while enabled so the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);
 
-  /// Force a stereo downmix with a Kodi-style center channel boost.
+  /// Cap how many channels decoded audio reaches the output with.
   ///
-  /// [centerBoostDb] (0-12) raises the center channel above its standard
-  /// -3 dB downmix coefficient to improve dialogue clarity. [normalize]
-  /// attenuates the mix so it cannot clip; off keeps the original level
-  /// (Kodi's "maintain original volume"). mpv backends rebuild the audio
-  /// chain via `audio-channels`; Android ExoPlayer routes a
-  /// ChannelMixingAudioProcessor in the audio sink and force-decodes
-  /// encoded audio while enabled.
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize});
+  /// [AudioChannelLimit.stereo] folds everything to two channels with a
+  /// Kodi-style center boost: [centerBoostDb] (0-12) raises the center above
+  /// its standard -3 dB coefficient to improve dialogue clarity. It decodes
+  /// every track, so passthrough is off while it is selected.
+  /// [AudioChannelLimit.surround51] folds 7.1 to 5.1 for outputs whose PCM
+  /// stops there and leaves bitstreams alone. [normalize] attenuates a mix so
+  /// it cannot clip; off keeps the original level (Kodi's "maintain original
+  /// volume"). mpv backends rebuild the audio chain via `audio-channels`;
+  /// Android ExoPlayer only has the stereo fold (a ChannelMixingAudioProcessor
+  /// in the audio sink, force-decoding encoded audio) and plays
+  /// [AudioChannelLimit.surround51] as [AudioChannelLimit.original].
+  Future<void> setAudioChannelLimit(AudioChannelLimit limit, {required int centerBoostDb, required bool normalize});
 
   /// Show or hide the video rendering layer.
   ///

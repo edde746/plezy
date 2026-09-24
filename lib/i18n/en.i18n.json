@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
     "audioPassthroughDescriptionAppleTv": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
     "audioPassthroughOverriddenByNormalization": "Off while loudness normalization is on",
-    "audioDownmix": "Downmix to Stereo",
-    "audioDownmixDescription": "Mix surround audio down to two channels for stereo speakers or headphones",
+    "audioChannelLimit": "Audio Channels",
+    "audioChannelLimitDescription": "Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel",
+    "audioChannelLimitOriginal": "Original",
+    "audioChannelLimitOriginalDescription": "Play every channel in the track",
+    "audioChannelLimitSurround51": "Up to 5.1",
+    "audioChannelLimitSurround51Description": "Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.",
+    "audioChannelLimitStereo": "Stereo",
+    "audioChannelLimitStereoDescription": "Mix down to two channels for stereo speakers or headphones. Turns passthrough off.",
     "downmixCenterBoost": "Center Channel Boost",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Boost (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalize Loudness",
     "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on",
-    "audioNormalizationStereoMix": "Decodes audio to a stereo mix; passthrough is off while this is on",
-    "audioDownmix": "Downmix to Stereo"
+    "audioNormalizationStereoMix": "Decodes audio to a stereo mix; passthrough is off while this is on"
   },
   "performanceOverlay": {
     "color": "Color",

@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 
+import '../../../models/audio_channel_limit.dart';
 import '../../../services/device_performance.dart';
 import '../../../services/settings_service.dart';
 import '../../models.dart';
@@ -369,8 +370,14 @@ class PlayerAndroid extends PlayerBase {
   }
 
   @override
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
+  Future<void> setAudioChannelLimit(
+    AudioChannelLimit limit, {
+    required int centerBoostDb,
+    required bool normalize,
+  }) async {
     if (disposed) return;
+    final effective = limit.onExoPlayer;
+    final enabled = effective == AudioChannelLimit.stereo;
     _downmixEnabled = enabled;
     _downmixCenterBoostDb = centerBoostDb;
     _downmixNormalize = normalize;
@@ -379,8 +386,9 @@ class PlayerAndroid extends PlayerBase {
       () => _downmixEnabled == enabled && _downmixCenterBoostDb == centerBoostDb && _downmixNormalize == normalize,
     );
     // Keep the mpv properties flowing through setMpvProperty so the plugin's
-    // pendingMpvProperties replay applies downmix if exo falls back to mpv.
-    await super.setAudioDownmix(enabled: enabled, centerBoostDb: centerBoostDb, normalize: normalize);
+    // pendingMpvProperties replay applies the same limit if exo falls back to
+    // mpv mid-session.
+    await super.setAudioChannelLimit(effective, centerBoostDb: centerBoostDb, normalize: normalize);
   }
 
   @override

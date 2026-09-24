@@ -14,6 +14,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/mpv/models.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
@@ -377,7 +378,11 @@ class FakePlayer implements Player {
   Future<void> setAudioNormalization(bool enabled) async {}
 
   @override
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {}
+  Future<void> setAudioChannelLimit(
+    AudioChannelLimit limit, {
+    required int centerBoostDb,
+    required bool normalize,
+  }) async {}
 
   @override
   Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async => true;

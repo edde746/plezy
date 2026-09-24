@@ -97,8 +97,8 @@ class SettingsExportService {
     for (final pref in SettingsService.portablePrefs) pref.key: _PreferencePolicy(_storageTypeFor(pref)),
   };
 
-  static final Map<String, String> _obsoleteSkipMarkerKeys = {
-    for (final entry in SettingsService.legacySkipMarkerPrefs.entries) entry.value.key: entry.key,
+  static final Map<String, String> _obsoleteLegacyBoolKeys = {
+    for (final entry in SettingsService.legacyBoolPrefs.entries) entry.value.key: entry.key,
   };
 
   static const Set<String> _jsonStringListPreferenceKeys = {'hidden_libraries', 'library_order'};
@@ -188,7 +188,7 @@ class SettingsExportService {
 
     // A snapshot must preserve cold-upgrade choices without mutating storage
     // or depending on which typed preferences have been read by the UI.
-    for (final entry in SettingsService.legacySkipMarkerPrefs.entries) {
+    for (final entry in SettingsService.legacyBoolPrefs.entries) {
       final pref = entry.value;
       if (prefs.containsKey(pref.key)) continue;
       final legacyValue = prefs.get(entry.key);
@@ -265,7 +265,7 @@ class SettingsExportService {
 
       var type = rawEntry['type'];
       var value = rawEntry['value'];
-      final legacyPref = SettingsService.legacySkipMarkerPrefs[baseKey];
+      final legacyPref = SettingsService.legacyBoolPrefs[baseKey];
       if (version == 1 && legacyPref != null) {
         if (rawPrefs.containsKey(legacyPref.key)) {
           skipped++;
@@ -307,7 +307,7 @@ class SettingsExportService {
           targetKey: policy.userScoped ? '$userPrefix$baseKey' : baseKey,
           type: type,
           value: value,
-          obsoleteKey: _obsoleteSkipMarkerKeys[baseKey],
+          obsoleteKey: _obsoleteLegacyBoolKeys[baseKey],
         ),
       );
     }

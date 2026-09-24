@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。",
     "audioPassthroughDescriptionAppleTv": "Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。",
     "audioPassthroughOverriddenByNormalization": "ラウドネス正規化がオンの間はオフ",
-    "audioDownmix": "ステレオにダウンミックス",
-    "audioDownmixDescription": "サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "センターチャンネルブースト",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "ブースト (dB)",
@@ -1958,8 +1964,7 @@
     "audioOutputStereo": "ステレオ",
     "audioNormalization": "ラウドネス正規化",
     "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります",
-    "audioNormalizationStereoMix": "音声をステレオミックスにデコードします。オンの間はパススルーがオフになります",
-    "audioDownmix": "ステレオにダウンミックス"
+    "audioNormalizationStereoMix": "音声をステレオミックスにデコードします。オンの間はパススルーがオフになります"
   },
   "performanceOverlay": {
     "color": "色",

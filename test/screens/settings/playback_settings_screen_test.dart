@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
 import 'package:plezy/screens/settings/playback_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -150,6 +151,39 @@ void main() {
     await tester.tap(title);
     await tester.pumpAndSettle();
     expect(settings.read(SettingsService.audioPassthrough), isFalse);
+  });
+
+  testWidgets('picks an audio channel limit and shows only the mix options it uses', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Audio Channels');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    expect(find.text('Center Channel Boost'), findsNothing);
+    expect(find.text('Normalize Volume on Downmix'), findsNothing);
+
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Up to 5.1'));
+    await tester.pumpAndSettle();
+
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.audioChannelLimit), AudioChannelLimit.surround51);
+    // A 5.1 fold keeps the center channel, so only normalization applies.
+    expect(find.text('Center Channel Boost'), findsNothing);
+    expect(find.text('Normalize Volume on Downmix'), findsOneWidget);
+
+    await settings.write(SettingsService.audioChannelLimit, AudioChannelLimit.stereo);
+    await tester.pumpAndSettle();
+    expect(find.text('Center Channel Boost'), findsOneWidget);
+    expect(find.text('Normalize Volume on Downmix'), findsOneWidget);
   });
 
   testWidgets('turns the covered-source direct play off from the quality group (#2193)', (tester) async {

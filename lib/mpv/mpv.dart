@@ -44,6 +44,7 @@
 library;
 
 // Player
+export '../models/audio_channel_limit.dart';
 export 'player/audio_rendering_mode.dart';
 export 'player/player.dart';
 export 'player/player_state.dart';

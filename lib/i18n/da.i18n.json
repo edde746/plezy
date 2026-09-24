@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.",
     "audioPassthroughDescriptionAppleTv": "Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.",
     "audioPassthroughOverriddenByNormalization": "Fra, mens lydstyrkenormalisering er slået til",
-    "audioDownmix": "Downmix til stereo",
-    "audioDownmixDescription": "Mix surroundlyd ned til to kanaler til stereohøjttalere eller hovedtelefoner",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Forstærkning af centerkanal",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Forstærkning (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisér lydstyrke",
     "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; passthrough er fra, mens dette er slået til",
-    "audioNormalizationStereoMix": "Dekoder lyd til en stereomix; passthrough er fra, mens dette er slået til",
-    "audioDownmix": "Downmix til stereo"
+    "audioNormalizationStereoMix": "Dekoder lyd til en stereomix; passthrough er fra, mens dette er slået til"
   },
   "performanceOverlay": {
     "color": "Farve",

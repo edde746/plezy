@@ -2,6 +2,7 @@ import 'dart:async' show Completer;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_base.dart';
@@ -457,7 +458,7 @@ void main() {
             player.setVolume(25),
             player.setAudioPassthrough(true),
             player.setAudioNormalization(true),
-            player.setAudioDownmix(enabled: true, centerBoostDb: 3, normalize: true),
+            player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 3, normalize: true),
             player.updateFrame(),
             player.abandonAudioFocus(),
           ]);
@@ -940,12 +941,12 @@ void main() {
       testBody: () async {
         final player = PlayerNative();
         try {
-          await player.setAudioDownmix(enabled: true, centerBoostDb: 2, normalize: false);
+          await player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 2, normalize: false);
           writes.clear();
           rejectNextStereo = true;
 
           await expectLater(
-            player.setAudioDownmix(enabled: true, centerBoostDb: 9, normalize: true),
+            player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 9, normalize: true),
             throwsA(isA<PlatformException>()),
           );
 
@@ -1074,6 +1075,56 @@ void main() {
             ('audio-spdif', ''),
             ('af', 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp'),
             ('af', ''),
+            ('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd'),
+          ]);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('a 5.1 channel limit keeps passthrough, stereo takes it over, and original hands it back', () async {
+    final audioWrites = <(String, String)>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          final name = arguments['name'] as String;
+          if (name == 'audio-spdif' || name == 'audio-channels' || name == 'audio-swresample-o') {
+            audioWrites.add((name, arguments['value'] as String));
+          }
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioPassthrough(true);
+          await player.setAudioChannelLimit(AudioChannelLimit.surround51, centerBoostDb: 6, normalize: true);
+          expect(player.audioPassthroughActive, isTrue, reason: 'the 5.1 limit only shapes decoded PCM');
+
+          await player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 6, normalize: true);
+          expect(player.audioPassthroughActive, isFalse);
+
+          await player.setAudioChannelLimit(AudioChannelLimit.original, centerBoostDb: 6, normalize: true);
+          expect(player.audioPassthroughActive, isTrue);
+
+          expect(audioWrites, [
+            ('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd'),
+            // The center stays its own channel in a 5.1 fold, so no boost.
+            ('audio-swresample-o', ''),
+            ('audio-channels', 'auto-safe'),
+            ('audio-channels', 'stereo,5.1'),
+            ('audio-spdif', ''),
+            ('audio-swresample-o', 'center_mix_level=1.4125'),
+            ('audio-channels', 'auto-safe'),
+            ('audio-channels', 'stereo'),
+            ('audio-channels', 'auto-safe'),
+            ('audio-swresample-o', ''),
             ('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd'),
           ]);
         } finally {

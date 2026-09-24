@@ -352,7 +352,7 @@ void main() {
           final player = PlayerAndroid();
           try {
             await player.setAudioNormalization(true);
-            await player.setAudioDownmix(enabled: true, centerBoostDb: 4, normalize: false);
+            await player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 4, normalize: false);
 
             expect(calls.where((call) => call.method == 'setAudioNormalization'), isEmpty);
             expect(calls.where((call) => call.method == 'setAudioDownmix'), isEmpty);
@@ -363,6 +363,39 @@ void main() {
             expect((normalization.arguments as Map)['enabled'], isTrue);
             final downmix = calls.singleWhere((call) => call.method == 'setAudioDownmix');
             expect(downmix.arguments, {'enabled': true, 'centerBoostDb': 4, 'normalize': false});
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer plays a 5.1 channel limit as the original layout', () async {
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) async {
+          calls.add(call);
+          if (call.method == 'initialize') return true;
+          if (call.method == 'requestAudioFocus') return true;
+          return null;
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            expect(await player.requestAudioFocus(), isTrue);
+            calls.clear();
+
+            await player.setAudioChannelLimit(AudioChannelLimit.surround51, centerBoostDb: 4, normalize: false);
+
+            final downmix = calls.singleWhere((call) => call.method == 'setAudioDownmix');
+            expect(downmix.arguments, {'enabled': false, 'centerBoostDb': 4, 'normalize': false});
+            // The mpv fallback replays these; it must match what ExoPlayer plays.
+            final channels = calls
+                .where((call) => call.method == 'setMpvProperty' && (call.arguments as Map)['name'] == 'audio-channels')
+                .map((call) => (call.arguments as Map)['value']);
+            expect(channels, ['auto-safe']);
           } finally {
             await player.dispose();
           }

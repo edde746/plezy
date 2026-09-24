@@ -456,8 +456,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Uit zolang volumenormalisatie aan staat';
-	@override String get audioDownmix => 'Downmixen naar stereo';
-	@override String get audioDownmixDescription => 'Mix surroundgeluid terug naar twee kanalen voor stereoluidsprekers of een koptelefoon';
 	@override String get downmixCenterBoost => 'Versterking middenkanaal';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Versterking (dB)';
@@ -1934,7 +1932,6 @@ class _Translations$videoSettings$nl extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Volume normaliseren';
 	@override String get audioNormalizationDisablesPassthrough => 'Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat';
 	@override String get audioNormalizationStereoMix => 'Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat';
-	@override String get audioDownmix => 'Downmixen naar stereo';
 }
 
 // Path: performanceOverlay
@@ -3361,8 +3358,6 @@ extension on TranslationsNl {
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Uit zolang volumenormalisatie aan staat',
-			'settings.audioDownmix' => 'Downmixen naar stereo',
-			'settings.audioDownmixDescription' => 'Mix surroundgeluid terug naar twee kanalen voor stereoluidsprekers of een koptelefoon',
 			'settings.downmixCenterBoost' => 'Versterking middenkanaal',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Versterking (dB)',
@@ -3540,10 +3535,10 @@ extension on TranslationsNl {
 			'fileInfo.streamId' => 'Stream-ID',
 			'fileInfo.language' => 'Taal',
 			'fileInfo.languageCode' => 'Taalcode',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamTitle' => 'Tracktitel',
 			'fileInfo.channels' => 'Kanalen',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.sampleRate' => 'Samplingsnelheid',
 			'fileInfo.spatialAudio' => 'Ruimtelijke audio',
 			'fileInfo.textBased' => 'Op tekst gebaseerd',
@@ -4054,10 +4049,10 @@ extension on TranslationsNl {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kon prullenbak niet legen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestart voor "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}',
 			'libraries.noLibrariesFound' => 'Geen bibliotheken gevonden',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.allLibrariesHidden' => 'Alle bibliotheken zijn verborgen',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Verborgen bibliotheken (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Deze bibliotheek is leeg',
@@ -4568,10 +4563,10 @@ extension on TranslationsNl {
 			'watchTogether.defaultDisplayName' => 'Gebruiker',
 			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
 			'watchTogether.errors.connectionLost' => 'De verbinding is verbroken voordat de sessie gereed was',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'De relayserver heeft een onverwacht antwoord verzonden',
 			'watchTogether.errors.sessionEnded' => 'De host heeft de sessie beëindigd',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.errors.sessionUnavailable' => 'Kan deze sessie niet hervatten. Neem deel aan of maak een kamer om door te gaan.',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
@@ -4793,7 +4788,6 @@ extension on TranslationsNl {
 			'videoSettings.audioNormalization' => 'Volume normaliseren',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat',
 			'videoSettings.audioNormalizationStereoMix' => 'Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat',
-			'videoSettings.audioDownmix' => 'Downmixen naar stereo',
 			'performanceOverlay.color' => 'Kleur',
 			'performanceOverlay.performance' => 'Prestaties',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -5082,11 +5076,11 @@ extension on TranslationsNl {
 			'addServer.responseNotJson' => 'Het serverantwoord was geen geldige JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'In het antwoord ontbreekt een ID of servernaam — is dit een ${product}-server?',
 			'addServer.probeFailed' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Voer ten minste één URL van een ${product}-server in',
 			'addServer.noReachableServer' => ({required Object product}) => 'Er is geen bereikbare ${product}-server gevonden',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Deze URL\'s verwijzen naar verschillende ${product}-servers',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'Deze URL komt niet overeen met de ${product}-server',
 			'addServer.redirectUnsupported' => 'De server heeft doorgestuurd naar een niet-ondersteunde URL',
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'De server heeft doorgestuurd naar een andere host. Voer de uiteindelijke ${product}-URL rechtstreeks in.',

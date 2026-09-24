@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.",
     "audioPassthroughDescriptionAppleTv": "Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.",
     "audioPassthroughOverriddenByNormalization": "Wyłączone, gdy włączona jest normalizacja głośności",
-    "audioDownmix": "Miksowanie do stereo",
-    "audioDownmixDescription": "Miksuje dźwięk przestrzenny do dwóch kanałów dla głośników stereo lub słuchawek",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Wzmocnienie kanału centralnego",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Wzmocnienie (dB)",
@@ -1991,8 +1997,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalizacja głośności",
     "audioNormalizationDisablesPassthrough": "Dekoduje dźwięk do PCM; przekazywanie jest wyłączone, gdy ta opcja jest włączona",
-    "audioNormalizationStereoMix": "Dekoduje dźwięk do miksu stereo; przekazywanie jest wyłączone, gdy ta opcja jest włączona",
-    "audioDownmix": "Miksowanie do stereo"
+    "audioNormalizationStereoMix": "Dekoduje dźwięk do miksu stereo; przekazywanie jest wyłączone, gdy ta opcja jest włączona"
   },
   "performanceOverlay": {
     "color": "Kolor",

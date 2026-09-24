@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.",
     "audioPassthroughDescriptionAppleTv": "Apples nativen Dolby-Decoder für Dolby Digital Plus einschließlich Atmos verwenden. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Deaktivieren, wenn kein Ton zu hören ist.",
     "audioPassthroughOverriddenByNormalization": "Aus, solange die Lautstärkenormalisierung aktiv ist",
-    "audioDownmix": "Auf Stereo heruntermischen",
-    "audioDownmixDescription": "Surround-Ton für Stereolautsprecher oder Kopfhörer auf zwei Kanäle heruntermischen",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Verstärkung des Center-Kanals",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Verstärkung (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Lautstärke normalisieren",
     "audioNormalizationDisablesPassthrough": "Dekodiert Audio zu PCM; Durchleitung ist aus, solange dies aktiv ist",
-    "audioNormalizationStereoMix": "Dekodiert Audio zu einem Stereomix; Durchleitung ist aus, solange dies aktiv ist",
-    "audioDownmix": "Downmix auf Stereo"
+    "audioNormalizationStereoMix": "Dekodiert Audio zu einem Stereomix; Durchleitung ist aus, solange dies aktiv ist"
   },
   "performanceOverlay": {
     "color": "Farbe",

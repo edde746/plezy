@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.",
     "audioPassthroughDescriptionAppleTv": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.",
     "audioPassthroughOverriddenByNormalization": "Ki, amíg a hangerőnormalizálás be van kapcsolva",
-    "audioDownmix": "Lekeverés sztereóra",
-    "audioDownmixDescription": "A térhangzás lekeverése két csatornára sztereó hangszórókhoz vagy fejhallgatókhoz",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Középső csatorna kiemelése",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Kiemelés (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Sztereó",
     "audioNormalization": "Hangerő normalizálása",
     "audioNormalizationDisablesPassthrough": "PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva",
-    "audioNormalizationStereoMix": "Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva",
-    "audioDownmix": "Lekeverés sztereóra"
+    "audioNormalizationStereoMix": "Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva"
   },
   "performanceOverlay": {
     "color": "Szín",

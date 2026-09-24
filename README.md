@@ -127,7 +127,7 @@ sudo moss it plezy
 - Chapter navigation with thumbnail scrub previews
 - Playback speed from 0.25x to 8x, audio sync offset, sleep timer (fixed durations or end of video)
 - Video zoom 50-200% with pinch, presets, and hotkeys
-- Audio passthrough[^pass], stereo downmix with center-channel boost, and loudness normalization
+- Audio passthrough[^pass], output channel limit (5.1 or stereo, with center-channel boost), and loudness normalization
 - File Info sheet — every version, file, and stream the server reports
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]

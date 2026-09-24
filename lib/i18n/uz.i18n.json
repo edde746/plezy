@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.",
     "audioPassthroughOverriddenByNormalization": "Ovoz balandligini meʼyorlashtirish yoqilganda oʻchirilgan",
-    "audioDownmix": "Stereoga oʻtkazish (Downmix)",
-    "audioDownmixDescription": "Koʻp kanalli ovozni stereo dinamiklar uchun ikki kanalga tushirish",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Markaziy kanalni kuchaytirish",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Kuchaytirish (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ovoz balandligini meʼyorlashtirish",
     "audioNormalizationDisablesPassthrough": "Ovozni PCM-ga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi",
-    "audioNormalizationStereoMix": "Ovozni stereo miksga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi",
-    "audioDownmix": "Stereoga oʻtkazish"
+    "audioNormalizationStereoMix": "Ovozni stereo miksga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi"
   },
   "performanceOverlay": {
     "color": "Rang",

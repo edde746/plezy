@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.",
     "audioPassthroughOverriddenByNormalization": "음량 정규화가 켜져 있는 동안 꺼짐",
-    "audioDownmix": "스테레오로 다운믹스",
-    "audioDownmixDescription": "서라운드 오디오를 스테레오 스피커나 헤드폰용 2채널로 믹스합니다",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "센터 채널 부스트",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "부스트 (dB)",
@@ -1958,8 +1964,7 @@
     "audioOutputStereo": "스테레오",
     "audioNormalization": "음량 정규화",
     "audioNormalizationDisablesPassthrough": "오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다",
-    "audioNormalizationStereoMix": "오디오를 스테레오 믹스로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다",
-    "audioDownmix": "스테레오로 다운믹스"
+    "audioNormalizationStereoMix": "오디오를 스테레오 믹스로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다"
   },
   "performanceOverlay": {
     "color": "색상",

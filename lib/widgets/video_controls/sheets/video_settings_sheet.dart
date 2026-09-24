@@ -26,6 +26,7 @@ import '../../../utils/dialogs.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/audio_channel_limit_labels.dart';
 import '../../../utils/quality_preset_labels.dart';
 import '../../../utils/latest_async_write.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -40,7 +41,18 @@ import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 import 'version_quality_sheet.dart';
 
-enum _SettingsView { menu, speed, zoom, versionQuality, sleep, audioDevice, shader, dvConversion, hdrToneMapping }
+enum _SettingsView {
+  menu,
+  speed,
+  zoom,
+  versionQuality,
+  sleep,
+  audioDevice,
+  shader,
+  dvConversion,
+  hdrToneMapping,
+  audioChannelLimit,
+}
 
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
@@ -86,7 +98,7 @@ class _SettingsMenuItem extends StatelessWidget {
 
 /// Ordering for the sheet's asynchronous pref writes, keyed on the pref key.
 ///
-/// Shared by the toggle rows and the tone-mapping picker rather than owned by
+/// Shared by the toggle rows and the tone-mapping and audio-channel pickers rather than owned by
 /// either. A pick closes the sheet, so anything scoped to a widget cannot rank
 /// a write against one started by a *later* sheet - which is exactly the race
 /// here, since reopening and picking again is one tap. Keys are distinct per
@@ -356,6 +368,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   // hidden. Only the plane sees that, so it says so.
   StreamSubscription<void>? _hdrOutputChanged;
   late HdrToneMapping _hdrToneMapping;
+  late AudioChannelLimit _audioChannelLimit;
 
   TrackControlsState get _state => widget.trackControlsState;
 
@@ -385,6 +398,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _subtitleSyncOffset = _state.subtitleSyncOffset;
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
     _hdrToneMapping = SettingsService.instance.read(SettingsService.hdrToneMapping);
+    _audioChannelLimit = SettingsService.instance.read(SettingsService.audioChannelLimit);
     _loadDebugDvConversionMode();
     if (_probesHdrSupport) {
       _hdrSupportLifecycle = AppLifecycleListener(onResume: _refreshLinuxHdrSupport, onShow: _refreshLinuxHdrSupport);
@@ -491,6 +505,44 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     }());
   }
 
+  /// ExoPlayer only has the stereo fold; see [AudioChannelLimit.onExoPlayer].
+  bool get _isExoPlayer => Platform.isAndroid && widget.player.playerType == 'exoplayer';
+
+  AudioChannelLimit get _displayedAudioChannelLimit =>
+      _isExoPlayer ? _audioChannelLimit.onExoPlayer : _audioChannelLimit;
+
+  // Same ordering and undo contract as the tone-mapping picker above: the
+  // player takes the limit first, and a refused store write puts both back.
+  void _setAudioChannelLimit(AudioChannelLimit limit) {
+    final targetPlayer = widget.player;
+    final key = SettingsService.audioChannelLimit.key;
+    final writeToken = _prefWrites.begin(key);
+    unawaited(() async {
+      try {
+        final committed = await _prefWrites.commitIfLatest(
+          key,
+          writeToken,
+          () => _applyThenPersist(
+            SettingsService.audioChannelLimit,
+            limit,
+            (value) => targetPlayer.setAudioChannelLimit(
+              value,
+              centerBoostDb: SettingsService.instance.read(SettingsService.downmixCenterBoost),
+              normalize: SettingsService.instance.read(SettingsService.audioDownmixNormalize),
+            ),
+          ),
+        );
+        if (!committed || !mounted || targetPlayer != widget.player) return;
+        setState(() {
+          _audioChannelLimit = limit;
+        });
+        OverlaySheetController.of(context).close();
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to set the audio channel limit', error: error, stackTrace: stackTrace);
+      }
+    }());
+  }
+
   void _setDebugDvConversionMode(String mode) {
     final targetPlayer = widget.player;
     final generation = ++_dvConversionWriteGeneration;
@@ -591,6 +643,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.settings.dvConversionMode;
       case _SettingsView.hdrToneMapping:
         return t.videoSettings.hdrToneMapping;
+      case _SettingsView.audioChannelLimit:
+        return t.settings.audioChannelLimit;
     }
   }
 
@@ -614,6 +668,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.hdr_strong_rounded;
       case _SettingsView.hdrToneMapping:
         return Symbols.tonality_rounded;
+      case _SettingsView.audioChannelLimit:
+        return Symbols.speaker_group_rounded;
     }
   }
 
@@ -855,15 +911,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 
-        _SettingsToggleItem(
-          pref: SettingsService.audioDownmix,
-          icon: Symbols.headphones_rounded,
-          title: t.videoSettings.audioDownmix,
-          onAfterWrite: (enabled) => widget.player.setAudioDownmix(
-            enabled: enabled,
-            centerBoostDb: SettingsService.instance.read(SettingsService.downmixCenterBoost),
-            normalize: SettingsService.instance.read(SettingsService.audioDownmixNormalize),
-          ),
+        _SettingsMenuItem(
+          icon: Symbols.speaker_group_rounded,
+          title: t.settings.audioChannelLimit,
+          valueText: audioChannelLimitLabel(_displayedAudioChannelLimit),
+          isHighlighted: _displayedAudioChannelLimit != AudioChannelLimit.original,
+          onTap: () => _navigateTo(_SettingsView.audioChannelLimit),
         ),
 
         // Shader Preset (MPV only)
@@ -988,6 +1041,26 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             subtitle: Text(mode.subtitle, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
             trailing: _hdrToneMapping == mode.value ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
             onTap: () => _setHdrToneMapping(mode.value),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAudioChannelLimitView() {
+    final primary = Theme.of(context).colorScheme.primary;
+    final selected = _displayedAudioChannelLimit;
+
+    return ListView(
+      children: [
+        for (final limit in AudioChannelLimit.available(exoPlayer: _isExoPlayer))
+          FocusableListTile(
+            title: Text(audioChannelLimitLabel(limit), style: TextStyle(color: selected == limit ? primary : null)),
+            subtitle: Text(
+              audioChannelLimitDescription(limit),
+              style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+            ),
+            trailing: selected == limit ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+            onTap: () => _setAudioChannelLimit(limit),
           ),
       ],
     );
@@ -1425,6 +1498,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildDvConversionView();
           case _SettingsView.hdrToneMapping:
             return _buildHdrToneMappingView();
+          case _SettingsView.audioChannelLimit:
+            return _buildAudioChannelLimitView();
         }
       }(),
     );

@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../models/audio_channel_limit.dart';
 import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
+import '../../utils/audio_channel_limit_labels.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/settings_service.dart';
 import '../../services/video_decode_capabilities.dart';
@@ -38,12 +40,15 @@ class PlaybackSettingsScreen extends StatelessWidget {
         SettingsService.matchDynamicRange,
         SettingsService.matchContentFrameRate,
         SettingsService.matchContentResolution,
-        SettingsService.audioDownmix,
+        SettingsService.audioChannelLimit,
       ],
       builder: (context) {
         final svc = SettingsService.instance;
         final exoActive = Platform.isAndroid && svc.read(SettingsService.useExoPlayer);
-        final downmixOn = svc.read(SettingsService.audioDownmix);
+        // ExoPlayer only has the stereo fold, so a 5.1 limit set on mpv plays
+        // (and shows) as Original there.
+        final storedChannelLimit = svc.read(SettingsService.audioChannelLimit);
+        final channelLimit = exoActive ? storedChannelLimit.onExoPlayer : storedChannelLimit;
         final showDisplaySwitchDelay =
             PlatformDetector.isAppleTV() ||
             (Platform.isWindows &&
@@ -90,9 +95,10 @@ class PlaybackSettingsScreen extends StatelessWidget {
               title: t.settings.audio,
               children: [
                 if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
-                _audioDownmixTile(),
-                if (downmixOn) _downmixCenterBoostTile(),
-                if (downmixOn) _downmixNormalizeTile(),
+                _audioChannelLimitTile(exoActive: exoActive),
+                // Only a stereo fold mixes the center away; any fold can clip.
+                if (channelLimit == AudioChannelLimit.stereo) _downmixCenterBoostTile(),
+                if (channelLimit != AudioChannelLimit.original) _downmixNormalizeTile(),
                 _maxVolumeTile(),
               ],
             ),
@@ -504,11 +510,16 @@ class PlaybackSettingsScreen extends StatelessWidget {
     },
   );
 
-  Widget _audioDownmixTile() => SettingSwitchTile(
-    pref: SettingsService.audioDownmix,
-    icon: Symbols.headphones_rounded,
-    title: t.settings.audioDownmix,
-    subtitle: t.settings.audioDownmixDescription,
+  Widget _audioChannelLimitTile({required bool exoActive}) => SettingSelectionTile<AudioChannelLimit>(
+    pref: SettingsService.audioChannelLimit,
+    icon: Symbols.speaker_group_rounded,
+    title: t.settings.audioChannelLimit,
+    subtitleBuilder: (limit) =>
+        '${audioChannelLimitLabel(exoActive ? limit.onExoPlayer : limit)} · ${t.settings.audioChannelLimitDescription}',
+    options: [
+      for (final limit in AudioChannelLimit.available(exoPlayer: exoActive))
+        DialogOption(value: limit, title: audioChannelLimitLabel(limit), subtitle: audioChannelLimitDescription(limit)),
+    ],
   );
 
   Widget _downmixCenterBoostTile() => SettingNumberTile(

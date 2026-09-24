@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.",
     "audioPassthroughDescriptionAppleTv": "Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.",
     "audioPassthroughOverriddenByNormalization": "Desativada enquanto a normalização de intensidade sonora estiver ativa",
-    "audioDownmix": "Conversão para estéreo",
-    "audioDownmixDescription": "Converter o áudio surround em dois canais para alto-falantes estéreo ou fones de ouvido",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Reforço do canal central",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Reforço (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Estéreo",
     "audioNormalization": "Normalizar intensidade sonora",
     "audioNormalizationDisablesPassthrough": "Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa",
-    "audioNormalizationStereoMix": "Decodifica o áudio para uma mixagem estéreo; a passagem direta fica desativada enquanto esta opção estiver ativa",
-    "audioDownmix": "Conversão para estéreo"
+    "audioNormalizationStereoMix": "Decodifica o áudio para uma mixagem estéreo; a passagem direta fica desativada enquanto esta opção estiver ativa"
   },
   "performanceOverlay": {
     "color": "Cor",

@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.",
     "audioPassthroughDescriptionAppleTv": "Atmos dahil Dolby Digital Plus için Apple'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.",
     "audioPassthroughOverriddenByNormalization": "Ses normalleştirme açıkken kapalıdır",
-    "audioDownmix": "Stereo'ya Dönüştür (Downmix)",
-    "audioDownmixDescription": "Çevreleyen sesi stereo hoparlörler veya kulaklıklar için iki kanala dönüştürür",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Merkez Kanal Yükseltme",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Yükseltme (dB)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ses Yüksekliğini Normalleştir",
     "audioNormalizationDisablesPassthrough": "Sesi PCM'e çözer; bu açıkken doğrudan geçiş kapalıdır",
-    "audioNormalizationStereoMix": "Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır",
-    "audioDownmix": "Stereo'ya Dönüştür"
+    "audioNormalizationStereoMix": "Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır"
   },
   "performanceOverlay": {
     "color": "Renk",

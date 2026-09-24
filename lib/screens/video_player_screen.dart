@@ -1973,11 +1973,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         await currentPlayer.setAudioNormalization(true);
       }
 
-      // After the passthrough apply: downmix wins on both backends (mpv
-      // clears audio-spdif, ExoPlayer force-decodes encoded audio).
-      if (settingsService.read(SettingsService.audioDownmix)) {
-        await currentPlayer.setAudioDownmix(
-          enabled: true,
+      // After the passthrough apply: the stereo limit wins on both backends
+      // (mpv clears audio-spdif, ExoPlayer force-decodes encoded audio). The
+      // 5.1 limit only shapes decoded PCM and leaves passthrough alone.
+      final audioChannelLimit = settingsService.read(SettingsService.audioChannelLimit);
+      if (audioChannelLimit != AudioChannelLimit.original) {
+        await currentPlayer.setAudioChannelLimit(
+          audioChannelLimit,
           centerBoostDb: settingsService.read(SettingsService.downmixCenterBoost),
           normalize: settingsService.read(SettingsService.audioDownmixNormalize),
         );

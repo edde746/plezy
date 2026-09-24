@@ -5,6 +5,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
+import '../../models/audio_channel_limit.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
@@ -14,7 +15,7 @@ import 'player_base.dart';
 typedef _AudioStateRequest = ({
   bool passthrough,
   bool normalization,
-  bool downmix,
+  AudioChannelLimit channelLimit,
   int downmixCenterBoostDb,
   bool downmixNormalize,
   double rate,
@@ -845,7 +846,7 @@ class PlayerNative extends PlayerBase {
         _acceptedAudioState = (
           passthrough: accepted.passthrough,
           normalization: accepted.normalization,
-          downmix: accepted.downmix,
+          channelLimit: accepted.channelLimit,
           downmixCenterBoostDb: accepted.downmixCenterBoostDb,
           downmixNormalize: accepted.downmixNormalize,
           rate: rate,
@@ -968,8 +969,8 @@ class PlayerNative extends PlayerBase {
   bool _passthroughActive = false;
   bool _normalizationRequested = false;
   bool _normalizationActive = false;
-  bool _downmixRequested = false;
-  bool _downmixActive = false;
+  AudioChannelLimit _channelLimitRequested = AudioChannelLimit.original;
+  AudioChannelLimit _activeChannelLimit = AudioChannelLimit.original;
   int _downmixCenterBoostDb = 0;
   int _activeDownmixCenterBoostDb = 0;
   bool _downmixNormalize = false;
@@ -982,7 +983,7 @@ class PlayerNative extends PlayerBase {
   _AudioStateRequest _acceptedAudioState = const (
     passthrough: false,
     normalization: false,
-    downmix: false,
+    channelLimit: AudioChannelLimit.original,
     downmixCenterBoostDb: 0,
     downmixNormalize: false,
     rate: 1.0,
@@ -1015,7 +1016,7 @@ class PlayerNative extends PlayerBase {
   _AudioStateRequest get _requestedAudioState => (
     passthrough: _passthroughRequested,
     normalization: _normalizationRequested,
-    downmix: _downmixRequested,
+    channelLimit: _channelLimitRequested,
     downmixCenterBoostDb: _downmixCenterBoostDb,
     downmixNormalize: _downmixNormalize,
     rate: _requestedRate,
@@ -1024,7 +1025,7 @@ class PlayerNative extends PlayerBase {
   _AudioStateRequest _rebaseAudioState(_AudioStateRequest accepted, _AudioStateRequest requested, int fields) => (
     passthrough: fields & _passthroughAudioField != 0 ? requested.passthrough : accepted.passthrough,
     normalization: fields & _normalizationAudioField != 0 ? requested.normalization : accepted.normalization,
-    downmix: fields & _downmixAudioField != 0 ? requested.downmix : accepted.downmix,
+    channelLimit: fields & _downmixAudioField != 0 ? requested.channelLimit : accepted.channelLimit,
     downmixCenterBoostDb: fields & _downmixAudioField != 0
         ? requested.downmixCenterBoostDb
         : accepted.downmixCenterBoostDb,
@@ -1040,7 +1041,7 @@ class PlayerNative extends PlayerBase {
       _normalizationRequested = previous.normalization;
     }
     if (fields & _downmixAudioField != 0 && generations.downmix == _downmixGeneration) {
-      _downmixRequested = previous.downmix;
+      _channelLimitRequested = previous.channelLimit;
       _downmixCenterBoostDb = previous.downmixCenterBoostDb;
       _downmixNormalize = previous.downmixNormalize;
     }
@@ -1106,10 +1107,15 @@ class PlayerNative extends PlayerBase {
     // Normalization wins over passthrough: loudnorm is a filter and filters
     // cannot process a bitstream, so honouring the user's normalization choice
     // means decoding every track to PCM (AC3/DTS/TrueHD included). mpv also
-    // cannot scaletempo compressed audio. Passthrough therefore only engages
-    // when nothing else claims the decoded stream.
+    // cannot scaletempo compressed audio, and the stereo limit is a promise
+    // about everything that plays. Passthrough therefore only engages when
+    // nothing else claims the decoded stream; the 5.1 limit only shapes
+    // decoded PCM, so a bitstream passes it.
     final passthroughShouldBeActive =
-        target.passthrough && target.rate == 1.0 && !target.downmix && !target.normalization;
+        target.passthrough &&
+        target.rate == 1.0 &&
+        target.channelLimit != AudioChannelLimit.stereo &&
+        !target.normalization;
     final normalizationShouldBeActive = target.normalization;
 
     // Ordering keeps loudnorm off a bitstream in both directions: leave
@@ -1124,16 +1130,16 @@ class PlayerNative extends PlayerBase {
       _currentRate = target.rate;
     }
     if (forceDownmix ||
-        _downmixActive != target.downmix ||
-        (target.downmix &&
+        _activeChannelLimit != target.channelLimit ||
+        (target.channelLimit != AudioChannelLimit.original &&
             (_activeDownmixCenterBoostDb != target.downmixCenterBoostDb ||
                 _activeDownmixNormalize != target.downmixNormalize))) {
-      await super.setAudioDownmix(
-        enabled: target.downmix,
+      await super.setAudioChannelLimit(
+        target.channelLimit,
         centerBoostDb: target.downmixCenterBoostDb,
         normalize: target.downmixNormalize,
       );
-      _downmixActive = target.downmix;
+      _activeChannelLimit = target.channelLimit;
       _activeDownmixCenterBoostDb = target.downmixCenterBoostDb;
       _activeDownmixNormalize = target.downmixNormalize;
     }
@@ -1180,9 +1186,9 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) {
+  Future<void> setAudioChannelLimit(AudioChannelLimit limit, {required int centerBoostDb, required bool normalize}) {
     if (_nativeCoreUnavailable) return Future<void>.value();
-    _downmixRequested = enabled;
+    _channelLimitRequested = limit;
     _downmixCenterBoostDb = centerBoostDb;
     _downmixNormalize = normalize;
     return _enqueueAudioStateReconciliation(_downmixAudioField);

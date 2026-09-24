@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_state.dart';
@@ -55,7 +56,7 @@ void main() {
     // throws when the block is missing entirely, so the guard fails loudly instead.
     await tester.scrollUntilVisible(find.text('Normalize Loudness'), 300, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
-    expect(find.text('Downmix to Stereo'), findsOneWidget);
+    expect(find.text('Audio Channels'), findsOneWidget);
 
     expect(find.text('Audio Passthrough'), findsNothing);
   });
@@ -100,6 +101,33 @@ void main() {
 
     expect(appliedRates, [8.0]);
     expect(SettingsService.instance.read(SettingsService.defaultPlaybackSpeed), 8.0);
+  });
+
+  testWidgets('applies a picked audio channel limit to the player and stores it', (tester) async {
+    await SettingsService.instance.write(SettingsService.downmixCenterBoost, 4);
+    await SettingsService.instance.write(SettingsService.audioDownmixNormalize, false);
+    final applied = <(AudioChannelLimit, int, bool)>[];
+    final player = _FakeSettingsPlayer(
+      onSetAudioChannelLimit: (limit, centerBoostDb, normalize) async {
+        applied.add((limit, centerBoostDb, normalize));
+      },
+    );
+    await _pumpSheetViaOverlayRoute(tester, player);
+
+    await tester.scrollUntilVisible(find.text('Audio Channels'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Audio Channels'));
+    await tester.pumpAndSettle();
+    for (final label in ['Original', 'Up to 5.1', 'Stereo']) {
+      expect(find.text(label), findsOneWidget);
+    }
+    expect(_tickOn('Original'), findsOneWidget);
+
+    await tester.tap(find.text('Up to 5.1'));
+    await tester.pumpAndSettle();
+
+    expect(applied, [(AudioChannelLimit.surround51, 4, false)]);
+    expect(SettingsService.instance.read(SettingsService.audioChannelLimit), AudioChannelLimit.surround51);
+    expect(find.byType(VideoSettingsSheet), findsNothing);
   });
 
   testWidgets('localizes every ASS subtitle override enum label', (tester) async {
@@ -487,7 +515,12 @@ Future<void> _pumpSheetViaOverlayRoute(WidgetTester tester, Player player) async
 }
 
 class _FakeSettingsPlayer implements Player {
-  _FakeSettingsPlayer({this.onSetProperty, this.onSetRate, this.hdrOutputSupported = false});
+  _FakeSettingsPlayer({
+    this.onSetProperty,
+    this.onSetRate,
+    this.onSetAudioChannelLimit,
+    this.hdrOutputSupported = false,
+  });
 
   /// The plane's notice that the output under the window changed, which is the
   /// only thing that moves [isHdrOutputSupported]'s answer while a sheet is up.
@@ -504,6 +537,7 @@ class _FakeSettingsPlayer implements Player {
 
   final Future<void> Function(String name, String value)? onSetProperty;
   final Future<void> Function(double rate)? onSetRate;
+  final Future<void> Function(AudioChannelLimit limit, int centerBoostDb, bool normalize)? onSetAudioChannelLimit;
   bool hdrOutputSupported;
   int probeCount = 0;
 
@@ -533,6 +567,11 @@ class _FakeSettingsPlayer implements Player {
   @override
   Future<void> setRate(double rate) {
     return onSetRate?.call(rate) ?? Future<void>.value();
+  }
+
+  @override
+  Future<void> setAudioChannelLimit(AudioChannelLimit limit, {required int centerBoostDb, required bool normalize}) {
+    return onSetAudioChannelLimit?.call(limit, centerBoostDb, normalize) ?? Future<void>.value();
   }
 
   @override

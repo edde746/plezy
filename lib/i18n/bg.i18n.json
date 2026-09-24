@@ -347,8 +347,14 @@
     "audioPassthroughDescription": "Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.",
     "audioPassthroughDescriptionAppleTv": "Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.",
     "audioPassthroughOverriddenByNormalization": "Изключено, докато е включено нормализирането на силата на звука",
-    "audioDownmix": "Смесване до стерео",
-    "audioDownmixDescription": "Смесва съраунд звука до два канала за стерео тонколони или слушалки",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Усилване на централния канал",
     "downmixCenterBoostValue": "${db} дБ",
     "downmixCenterBoostLabel": "Усилване (дБ)",
@@ -1969,8 +1975,7 @@
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализиране на силата на звука",
     "audioNormalizationDisablesPassthrough": "Декодира аудиото до PCM; директното предаване е изключено, докато това е включено",
-    "audioNormalizationStereoMix": "Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено",
-    "audioDownmix": "Смесване до стерео"
+    "audioNormalizationStereoMix": "Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено"
   },
   "performanceOverlay": {
     "color": "Цвят",
