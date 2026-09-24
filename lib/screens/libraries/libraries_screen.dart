@@ -953,6 +953,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       body = buildSimpleScroll(body: const SizedBox.shrink());
     }
 
+    // Behavior scrollbars would bind the NestedScrollView's shared inner
+    // controller, which holds one position per kept-alive tab, and break once
+    // a second tab is built. Each tab draws its own NestedTabScrollbar instead.
     final scrollBody = ScrollConfiguration(
       behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
       child: body,

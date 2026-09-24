@@ -21,6 +21,7 @@ import '../../../utils/platform_detector.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/watch_state_notifier.dart';
 import '../../../widgets/hub_section.dart';
+import '../../../widgets/nested_tab_scrollbar.dart';
 import '../../../widgets/settings_builder.dart';
 import '../../../widgets/tv_browse_rail.dart';
 import '../../../widgets/tv_spotlight_scaffold.dart';
@@ -282,42 +283,44 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       );
     }
 
-    return CustomScrollView(
-      // Allow focus decoration to render outside scroll bounds
-      clipBehavior: Clip.none,
-      slivers: [
-        SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(0, _focusDecorationPadding, 0, 8),
-          sliver: SliverList.builder(
-            itemCount: items.length,
-            findChildIndexCallback: (key) {
-              final index = hubKeys.indexOf(key as GlobalKey<HubSectionState>);
-              return index < 0 ? null : index;
-            },
-            itemBuilder: (context, index) {
-              final hub = items[index];
-              final isContinueWatching = _isContinueWatchingHub(hub);
-              final usesContinueWatchingAction = _usesContinueWatchingAction(hub);
+    return NestedTabScrollbar(
+      child: CustomScrollView(
+        // Allow focus decoration to render outside scroll bounds
+        clipBehavior: Clip.none,
+        slivers: [
+          SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(0, _focusDecorationPadding, 0, 8),
+            sliver: SliverList.builder(
+              itemCount: items.length,
+              findChildIndexCallback: (key) {
+                final index = hubKeys.indexOf(key as GlobalKey<HubSectionState>);
+                return index < 0 ? null : index;
+              },
+              itemBuilder: (context, index) {
+                final hub = items[index];
+                final isContinueWatching = _isContinueWatchingHub(hub);
+                final usesContinueWatchingAction = _usesContinueWatchingAction(hub);
 
-              return HubSection(
-                key: hubKeys[index],
-                hub: hub,
-                focusMemory: _hubFocusMemory,
-                icon: hubIconFor(hub),
-                isInContinueWatching: isContinueWatching,
-                usesContinueWatchingAction: usesContinueWatchingAction,
-                onRefresh: updateItem,
-                onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
-                onVerticalNavigation: (isUp) => _handleVerticalNavigation(hubKeys, index, isUp),
-                onBack: widget.onBack,
-                onNavigateUp: index == 0 ? widget.onBack : null,
-                onNavigateToSidebar: _navigateToSidebar,
-              );
-            },
+                return HubSection(
+                  key: hubKeys[index],
+                  hub: hub,
+                  focusMemory: _hubFocusMemory,
+                  icon: hubIconFor(hub),
+                  isInContinueWatching: isContinueWatching,
+                  usesContinueWatchingAction: usesContinueWatchingAction,
+                  onRefresh: updateItem,
+                  onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
+                  onVerticalNavigation: (isUp) => _handleVerticalNavigation(hubKeys, index, isUp),
+                  onBack: widget.onBack,
+                  onNavigateUp: index == 0 ? widget.onBack : null,
+                  onNavigateToSidebar: _navigateToSidebar,
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
