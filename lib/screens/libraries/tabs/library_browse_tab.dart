@@ -491,6 +491,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       }
 
+      revealFirstItem();
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
       return;
@@ -507,6 +508,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       }
 
+      revealFirstItem();
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
     }
