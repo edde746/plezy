@@ -162,15 +162,37 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     if (player == null || _displayModeService == null) return;
 
     try {
-      final output = await PlayerOutputFormat.read(player!);
-      if (!mounted || player == null) return;
-      final sigPeak = double.tryParse(await player!.getProperty('video-params/sig-peak') ?? '');
+      final currentPlayer = player!;
+      final output = await PlayerOutputFormat.read(currentPlayer);
+      if (!mounted || player != currentPlayer) return;
+      final sigPeak = double.tryParse(await currentPlayer.getProperty('video-params/sig-peak') ?? '');
       if (!mounted || _displayModeService == null) return;
+      final displayModeService = _displayModeService!;
 
-      final delay = await _displayModeService!.applyDisplayMatching(fps: output.fps, sigPeak: sigPeak);
+      final delay = await displayModeService.applyDisplayMatching(fps: output.fps, sigPeak: sigPeak);
+      if (!mounted || player != currentPlayer) return;
+
+      // Leaving fullscreen clears mpv's colorspace hint so its HDR swapchain
+      // is released before system HDR goes off (_restoreWindowsDisplayMode).
+      // With system HDR on again, restore the hint the user's HDR setting
+      // asks for, or mpv keeps presenting SDR.
+      if (displayModeService.hdrStateChanged) {
+        final settingsService = await SettingsService.getInstance();
+        final enableHDR = settingsService.read(SettingsService.enableHDR);
+        await currentPlayer.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
+      }
 
       if (delay > Duration.zero) {
+        // The delay lets the display finish re-syncing before playback runs
+        // on, so hold playback through it (as the Android switch does) rather
+        // than just waiting while the video keeps playing.
+        final holdPlayback = currentPlayer.state.playing;
+        if (holdPlayback) await currentPlayer.pause();
         await Future.delayed(delay);
+        // A pause the viewer asked for meanwhile clears the play intent.
+        if (holdPlayback && mounted && player == currentPlayer && _playbackIntentShouldPlay) {
+          await _playWithPlaybackIntent(currentPlayer);
+        }
       }
     } catch (e) {
       appLogger.w('Failed to apply display mode matching', error: e);
