@@ -426,11 +426,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           icon: Symbols.wifi_rounded,
           title: t.settings.downloadOnWifiOnly,
           subtitle: t.settings.downloadOnWifiOnlyDescription,
-          // Apply what was persisted (the write can fail) to downloads that
-          // are already queued or running, not only to new ones.
-          onAfterWrite: (_) => context.read<DownloadProvider>().applyDownloadOnWifiOnly(
-            settings.SettingsService.instance.read(settings.SettingsService.downloadOnWifiOnly),
-          ),
         ),
         SettingSwitchTile(
           focusNode: _focusTracker.get(_kAutoRemoveWatchedDownloads),

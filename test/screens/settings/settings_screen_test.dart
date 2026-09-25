@@ -391,6 +391,30 @@ void main() {
     expect(requirements, [RequireWiFi.forAllTasks, RequireWiFi.forNoTasks]);
   });
 
+  testWidgets('importing Wi-Fi only applies it to downloads that are already queued', (tester) async {
+    final requirements = <RequireWiFi>[];
+    final harness = await _pumpSettingsScreen(
+      tester,
+      requireWiFiOverride: (requirement) async {
+        requirements.add(requirement);
+        return true;
+      },
+      settingsImporter: () async {
+        await SettingsService.instance.write(SettingsService.downloadOnWifiOnly, true);
+        return const ImportResult(keysImported: 1, keysSkipped: 0);
+      },
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.importSettings));
+    await _pumpUi(tester);
+    await tester.tap(find.widgetWithText(DialogActionButton, t.settings.importSettings));
+    await _pumpUi(tester);
+
+    expect(SettingsService.instance.read(SettingsService.downloadOnWifiOnly), isTrue);
+    expect(requirements, [RequireWiFi.forAllTasks]);
+  });
+
   testWidgets('download location reset uses the provider coordinator', (tester) async {
     await SettingsService.instance.write(
       SettingsService.customDownloadPath,
