@@ -47,9 +47,17 @@ class _FakeMusicService extends StubMusicPlaybackService {
 
   _FakeMusicService({required this.track, required this.context});
 
+  bool _ended = false;
+
   void advanceTo(MediaItem next) {
     track = next;
     _position = Duration.zero;
+    notifyListeners();
+  }
+
+  /// The session stopped elsewhere (stop, error, video claimed audio).
+  void end() {
+    _ended = true;
     notifyListeners();
   }
 
@@ -68,7 +76,7 @@ class _FakeMusicService extends StubMusicPlaybackService {
   void emitError(Object error) => _errorsController.add(error);
 
   @override
-  MediaItem get currentTrack => track;
+  MediaItem? get currentTrack => _ended ? null : track;
 
   @override
   MusicPlaybackStatus get status => MusicPlaybackStatus.playing;
@@ -179,6 +187,59 @@ void main() {
       expect(find.text(t.music.playingFrom(title: 'Second Album · 1999')), findsOneWidget);
     });
   }
+
+  testWidgets('an ended session removes a covered Now Playing without closing the screen above it', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1200, 700);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    PlatformDetector.debugSetIsDesktopOSOverride(true);
+
+    final service = _FakeMusicService(
+      track: _track(id: 'one', title: 'First Track', album: 'First Album', year: 1973),
+      context: const MusicPlayContext(title: 'First Album', kind: MusicPlayContextKind.album),
+    );
+    addTearDown(service.dispose);
+    final navigatorKey = GlobalKey<NavigatorState>();
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: testMultiServer().provider),
+              ChangeNotifierProvider<MusicPlaybackService>.value(value: service),
+            ],
+            child: MaterialApp(
+              navigatorKey: navigatorKey,
+              theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.windows),
+              home: const Scaffold(body: Text('Home')),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    unawaited(navigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const NowPlayingScreen())));
+    await tester.pump(const Duration(seconds: 1));
+    unawaited(
+      navigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Album')))),
+    );
+    await tester.pump(const Duration(seconds: 1));
+
+    service.end();
+    // One frame rebuilds the covered screen and schedules the close; the next
+    // drops the removed route.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Album'), findsOneWidget);
+    expect(find.byType(NowPlayingScreen, skipOffstage: false), findsNothing);
+
+    navigatorKey.currentState!.pop();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Home'), findsOneWidget);
+  });
 
   testWidgets('playlist playback retains its queue provenance label', (tester) async {
     final service = _FakeMusicService(
