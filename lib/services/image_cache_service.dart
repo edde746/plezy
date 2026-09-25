@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:cached_network_image_ce/cached_network_image.dart' show FileResponse;
+import 'package:cached_network_image_ce/cached_network_image.dart'
+    show FileResponse, HttpInterceptor, HttpRequestData, HttpRequestHandler;
 // CE's public conditional export hides the IO-only httpClientFactory parameter
 // behind a narrower unsupported-platform stub.
 // ignore: implementation_imports
@@ -37,12 +38,44 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
   static final PlexImageCacheManager instance = PlexImageCacheManager._();
 
   PlexImageCacheManager._()
-    : super(
-        stalePeriod: const Duration(days: 14),
-        maxNrOfCacheObjects: 3000,
+    : this.forTesting(
         httpClientFactory: () => _SharedHttpClient(_artworkHttpClient.inner, _artworkRequestLimiter),
         cacheDirectoryProvider: getApplicationCacheDirectory,
       );
+
+  @visibleForTesting
+  PlexImageCacheManager.forTesting({
+    required http.Client Function() httpClientFactory,
+    required ce_cache.CacheDirectoryProvider cacheDirectoryProvider,
+  }) : super(
+         stalePeriod: const Duration(days: 14),
+         maxNrOfCacheObjects: 3000,
+         httpClientFactory: httpClientFactory,
+         cacheDirectoryProvider: cacheDirectoryProvider,
+         httpInterceptors: const [_ArtworkCredentialInterceptor()],
+       );
+
+  /// Artwork URLs carry the server token in their query (see
+  /// [redactArtworkUrl]), and the cache persists each entry's URL — and, with
+  /// no explicit key, keys the entry by it — in plaintext metadata that
+  /// outlives sign-out. Hand the cache the redacted URL and let
+  /// [_ArtworkCredentialInterceptor] restore the real one for the download.
+  @override
+  Stream<FileResponse> getFileStream(
+    String url, {
+    String? key,
+    Map<String, String>? headers,
+    bool withProgress = false,
+  }) {
+    final redacted = redactArtworkUrl(url);
+    if (redacted == url) return super.getFileStream(url, key: key, headers: headers, withProgress: withProgress);
+    return super.getFileStream(
+      redacted,
+      key: key ?? redacted,
+      headers: {...?headers, _credentialedUrlHeader: url},
+      withProgress: withProgress,
+    );
+  }
 
   @override
   Stream<FileResponse> getImageFile(
@@ -56,6 +89,34 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
     // Plezy already requests server-sized artwork URLs. Avoid CE's disk-resize
     // path, which decodes downloaded images before writing resized PNG copies.
     return getFileStream(url, key: key, headers: headers, withProgress: withProgress);
+  }
+}
+
+/// Query parameters that carry a media-server credential in artwork URLs:
+/// Plex's `X-Plex-Token` and Jellyfin/Emby's `api_key`. Plex's photo
+/// transcoder URLs also nest one inside their percent-encoded `url=` value.
+final _artworkCredentialParam = RegExp(
+  r'((?:X-Plex-Token|api_key|ApiKey)(?:=|%3D|%253D))[^&#%]+',
+  caseSensitive: false,
+);
+
+/// [url] with every credential value blanked: what the artwork cache records.
+@visibleForTesting
+String redactArtworkUrl(String url) => url.replaceAllMapped(_artworkCredentialParam, (match) => match[1]!);
+
+/// Request header carrying the credentialed URL from
+/// [PlexImageCacheManager.getFileStream] to [_ArtworkCredentialInterceptor].
+/// Never sent: the interceptor removes it.
+const _credentialedUrlHeader = 'x-plezy-credentialed-url';
+
+class _ArtworkCredentialInterceptor extends HttpInterceptor {
+  const _ArtworkCredentialInterceptor();
+
+  @override
+  void onRequest(HttpRequestData request, HttpRequestHandler handler) {
+    final credentialedUrl = request.headers.remove(_credentialedUrlHeader);
+    if (credentialedUrl != null) request.url = credentialedUrl;
+    handler.next(request);
   }
 }
 
