@@ -353,6 +353,8 @@ void main() {
 
   group('profile switch clean-up of offline registrations', () {
     late _ControlledConnectManager controlled;
+    var resourceServerId = 'srv-1';
+    setUp(() => resourceServerId = 'srv-1');
 
     /// Two local profiles on one Plex account, as on a shared Plex Home:
     /// plex.tv serves `srv-1` for A's token and fails B's resource refresh,
@@ -386,7 +388,7 @@ void main() {
             client: MockClient((request) async {
               if (request.headers['X-Plex-Token'] != 'token-a') return http.Response('{}', 404);
               return http.Response(
-                jsonEncode([_serverJson(accessToken: 'server-token-a')]),
+                jsonEncode([_serverJson(clientIdentifier: resourceServerId, accessToken: 'server-token-a')]),
                 200,
                 headers: {'content-type': 'application/json'},
               );
@@ -457,6 +459,17 @@ void main() {
       await manager.reconnectOfflineServers();
       await pumpUntil(() async => multiServerProvider.onlineServerIds.contains('srv-1'));
       expect(controlled.connectedTokens, everyElement('server-token-a'));
+    });
+    test('a server plex.tv no longer lists is dropped although it was cached', () async {
+      await setUpSharedAccount();
+      await binder.rebindActive();
+      expect(manager.registeredServerIds, ['srv-1']);
+
+      // The account's membership moves from srv-1 to srv-2; neither connects.
+      resourceServerId = 'srv-2';
+      await binder.rebindActive();
+      expect(multiServerProvider.expectedServerIds, ['srv-2']);
+      expect(manager.registeredServerIds, ['srv-2']);
     });
   });
 

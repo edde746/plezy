@@ -24,16 +24,29 @@ typedef PlexHomePinPrompt = Future<String?> Function(Profile profile, {String? e
 typedef ShouldDeferInitialBind = FutureOr<bool> Function(Profile profile);
 
 class _ProfileBindResult {
-  const _ProfileBindResult({required this.visibleServerIds, required this.expectedServerIds});
+  const _ProfileBindResult({
+    required this.visibleServerIds,
+    required this.expectedServerIds,
+    this.discoveredMembership = const {},
+  });
 
-  const _ProfileBindResult.empty() : visibleServerIds = const {}, expectedServerIds = const {};
+  const _ProfileBindResult.empty()
+    : visibleServerIds = const {},
+      expectedServerIds = const {},
+      discoveredMembership = const {};
 
   _ProfileBindResult.visible(Set<String> ids)
     : visibleServerIds = Set.unmodifiable(ids),
-      expectedServerIds = Set.unmodifiable(ids);
+      expectedServerIds = Set.unmodifiable(ids),
+      discoveredMembership = const {};
 
   final Set<String> visibleServerIds;
   final Set<String> expectedServerIds;
+
+  /// Server ids per Plex connection id, for connections whose plex.tv
+  /// resource refresh succeeded in this bind. Authoritative: they replace the
+  /// connection's cached membership in the profile's expected set.
+  final Map<String, Set<String>> discoveredMembership;
 }
 
 /// Settled outcome of a `fetchServers` call, so the resource refresh can run
@@ -340,6 +353,21 @@ class ActiveProfileBinder {
       ]);
       if (!_isCurrentBind(profile.id, generation)) return false;
       final visibleServerIds = <String>{};
+      final discoveredMembership = <String, Set<String>>{for (final result in results) ...result.discoveredMembership};
+      // A successful resource refresh is authoritative for its connection:
+      // servers plex.tv no longer lists must not stay expected (and so
+      // registered) just because the persisted snapshot still has them.
+      // Connections whose refresh failed keep their cached membership.
+      expectedServerIds
+        ..clear()
+        ..addAll(
+          _expectedServerIdsForProfile(
+            profile,
+            joinRows: joinRows,
+            connectionsById: connectionsById,
+            discoveredMembership: discoveredMembership,
+          ),
+        );
       for (final result in results) {
         visibleServerIds.addAll(result.visibleServerIds);
         expectedServerIds.addAll(result.expectedServerIds);
@@ -416,24 +444,31 @@ class ActiveProfileBinder {
   /// `_serverIdsForProfile` (profile_connection_cleanup.dart) — that one is
   /// join-rows-only and [ServerId]-typed, while this set keeps growing with
   /// bind results and is compared against the manager's raw string ids.
+  ///
+  /// A Plex connection listed in [discoveredMembership] contributes that
+  /// fresh membership instead of its persisted server list.
   Set<String> _expectedServerIdsForProfile(
     Profile profile, {
     required List<ProfileConnection> joinRows,
     required Map<String, Connection> connectionsById,
+    Map<String, Set<String>> discoveredMembership = const {},
   }) {
+    Iterable<String> plexMembership(PlexAccountConnection account) =>
+        discoveredMembership[account.id] ?? account.servers.map((server) => server.clientIdentifier);
+
     final expected = <String>{};
     final parentId = profile.parentConnectionId;
     if (profile.isPlexHome && parentId != null) {
-      if (connectionsById[parentId] case PlexAccountConnection(:final servers)) {
-        expected.addAll(servers.map((server) => server.clientIdentifier));
+      if (connectionsById[parentId] case final PlexAccountConnection account) {
+        expected.addAll(plexMembership(account));
       }
     }
 
     for (final pc in joinRows) {
       if (parentId != null && pc.connectionId == parentId) continue;
       switch (connectionsById[pc.connectionId]) {
-        case PlexAccountConnection(:final servers):
-          expected.addAll(servers.map((server) => server.clientIdentifier));
+        case final PlexAccountConnection account:
+          expected.addAll(plexMembership(account));
         case JellyfinConnection(:final serverMachineId):
           expected.add(serverMachineId);
         case null:
@@ -575,7 +610,8 @@ class ActiveProfileBinder {
       }
       switch (conn) {
         case PlexAccountConnection():
-          expected.addAll(conn.servers.map((server) => server.clientIdentifier));
+          // Cached membership is seeded by the caller, which drops it when
+          // this bind's resource refresh replaces it.
           futures.add(
             _bindLocalPlexConnection(
               profile: profile,
@@ -591,11 +627,13 @@ class ActiveProfileBinder {
       }
     }
     final results = await Future.wait(futures);
+    final discovered = <String, Set<String>>{};
     for (final result in results) {
       visible.addAll(result.visibleServerIds);
       expected.addAll(result.expectedServerIds);
+      discovered.addAll(result.discoveredMembership);
     }
-    return _ProfileBindResult(visibleServerIds: visible, expectedServerIds: expected);
+    return _ProfileBindResult(visibleServerIds: visible, expectedServerIds: expected, discoveredMembership: discovered);
   }
 
   Future<_ProfileBindResult> _bindLocalPlexConnection({
@@ -723,7 +761,11 @@ class ActiveProfileBinder {
           final result = await _connectFromServers(account, token, servers, profileLabel, profileId: profileId);
           if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
           await markUsed?.call();
-          return result;
+          return _ProfileBindResult(
+            visibleServerIds: result.visibleServerIds,
+            expectedServerIds: result.expectedServerIds,
+            discoveredMembership: {account.id: result.expectedServerIds},
+          );
         case _ServerFetchStatus.empty:
           if (usingCachedToken) {
             appLogger.w(
