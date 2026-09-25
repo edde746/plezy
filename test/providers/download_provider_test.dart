@@ -159,12 +159,14 @@ class _DownloadOwnerSelectGate extends QueryInterceptor {
   Completer<void>? _started;
   Completer<void>? _release;
   String? _globalKey;
+  String _table = 'download_owners';
   int selectCount = 0;
 
   Future<void> get started => _started!.future;
 
-  void arm(String globalKey) {
+  void arm(String globalKey, {String table = 'download_owners'}) {
     _globalKey = globalKey;
+    _table = table;
     _started = Completer<void>();
     _release = Completer<void>();
   }
@@ -176,7 +178,7 @@ class _DownloadOwnerSelectGate extends QueryInterceptor {
     selectCount++;
     final started = _started;
     final release = _release;
-    if (started != null && !started.isCompleted && statement.contains('download_owners') && args.contains(_globalKey)) {
+    if (started != null && !started.isCompleted && statement.contains(_table) && args.contains(_globalKey)) {
       started.complete();
       await release!.future;
     }
@@ -1350,6 +1352,53 @@ void main() {
 
       expect(p.downloads, isEmpty);
       p.dispose();
+    });
+
+    test('profile switch during a show deletion leaves the new profile\'s episodes alone', () async {
+      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'profile-b');
+      for (final (id, owner) in [('ep-a', 'profile-a'), ('ep-b', 'profile-b')]) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'episode',
+          parentRatingKey: 'season-1',
+          grandparentRatingKey: 'show-1',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: owner, globalKey: 'srv:$id');
+      }
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final id in ['ep-a', 'ep-b'])
+            'srv:$id': DownloadProgress(globalKey: 'srv:$id', status: DownloadStatus.completed),
+        },
+        ownedDownloadKeys: const {},
+      );
+      expect(p.downloads.keys, ['srv:ep-a']);
+
+      // Hold the descendant row query, then switch profiles under it.
+      downloadOwnerSelectGate.arm('show-1', table: 'downloaded_media');
+      final deletion = p.deleteDownload('srv:show-1');
+      await downloadOwnerSelectGate.started;
+      p.setActiveProfileId('profile-b');
+      await p.debugWaitForProfileScopedReload();
+      expect(p.downloads.keys, ['srv:ep-b']);
+      downloadOwnerSelectGate.release();
+      await deletion;
+
+      expect(await db.getDownloadedMedia('srv:ep-b'), isNotNull);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv:ep-b'});
+      expect(p.downloads.keys, ['srv:ep-b']);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv:ep-a'});
     });
 
     test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {
