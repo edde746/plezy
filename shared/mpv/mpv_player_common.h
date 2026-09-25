@@ -582,8 +582,12 @@ class AudioRecoveryState {
       pending_request_generation_ = ++next_request_generation_;
       return {AudioReloadReason::kNullFallback, attempt, null_attempts_left_ == 0, pending_request_generation_};
     }
-    // The last reload has completed and the AO is still null: the episode's
-    // outcome, handed over exactly once.
+    // The last reload has completed and the AO is still null. Its reply only
+    // says the old AO was torn down; the replacement comes up afterwards and
+    // current-ao reports it later still. So the last reload gets the same
+    // backoff every earlier one had to show a real AO before the episode's
+    // outcome is handed over, exactly once.
+    if (now < null_next_attempt_) return {};
     gave_up_ = true;
     episode_active_ = false;
     return {AudioReloadReason::kGiveUp, kNullRetryBudget, true, 0};
