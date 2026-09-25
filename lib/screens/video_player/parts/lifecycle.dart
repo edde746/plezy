@@ -360,12 +360,18 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       preservedSubtitleTrack: SubtitlePreference.trackOrNull(restore.subtitleTrack),
       preservedSecondarySubtitleTrack: SubtitlePreference.trackOrNull(restore.secondarySubtitleTrack),
       startPaused: true,
+      // A failure raises the failure view below instead: a snackbar would sit
+      // over a player whose pipeline the suspend already released.
+      showErrorUi: false,
       reason: 'TV background suspend restore',
     );
     if (outcome == MediaReloadOutcome.rejected) {
       appLogger.w('TV background suspend restore: in-place reload rejected');
     } else if (outcome == MediaReloadOutcome.failed) {
       appLogger.w('TV background suspend restore: in-place reload failed');
+      // The rollback kept the suspended session, which stop() left with
+      // nothing to play; Retry re-runs the open from the playhead.
+      if (mounted && _playbackFailureMessage == null) _presentPlaybackFailure(t.messages.playbackFailed);
     }
   }
 }
