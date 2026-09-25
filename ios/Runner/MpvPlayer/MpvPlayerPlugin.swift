@@ -195,6 +195,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         result(MpvPipController.isSupported)
       case "enter":
         self.enterPip(manual: true, result: result)
+      case "exit":
+        self.pipController?.stopPip()
+        result(nil)
       case "setAutoPipReady":
         if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
           self.autoPipEnabled = ready
