@@ -52,9 +52,16 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   VoidCallback? _offlineModeListener;
   bool _isSyncing = false;
   bool _isBidirectionalSyncing = false;
+  // Profile generation the running bidirectional sync started under, and
+  // whether a sync for a newer profile was requested while it ran.
+  int? _bidirectionalSyncGeneration;
+  bool _bidirectionalSyncRerunRequested = false;
   DateTime? _lastSyncTime;
   bool _hasPerformedStartupSync = false;
   String? _activeProfileId;
+  // Bumped on every active-profile change so in-flight work can tell that the
+  // profile it started for is gone, even after a switch back (A → B → A).
+  int _profileGeneration = 0;
   int? _availableProfileCount;
   final Set<String> _legacyWatchActionsAdoptedForProfiles = <String>{};
 
@@ -158,6 +165,15 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   bool get isSyncing => _isSyncing;
 
   void setActiveProfileId(String? profileId, {int? availableProfileCount}) {
+    if (profileId != _activeProfileId) {
+      _profileGeneration++;
+      // The startup sync and the pull throttle covered the previous profile's
+      // queued actions and downloads. The servers-connected signal that
+      // follows the switch (once the new profile's clients are bound) must
+      // sync this profile instead of being dropped as a repeat.
+      _hasPerformedStartupSync = false;
+      _lastSyncTime = null;
+    }
     _activeProfileId = profileId;
     _availableProfileCount = availableProfileCount;
     if (profileId != null && profileId.isNotEmpty) {
@@ -215,6 +231,10 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
     // Prevent overlapping bidirectional syncs
     if (_isBidirectionalSyncing) {
+      // The running pass belongs to a previous profile and stops early once
+      // it notices the switch; replay for the new profile when it settles
+      // rather than dropping this request.
+      if (_bidirectionalSyncGeneration != _profileGeneration) _bidirectionalSyncRerunRequested = true;
       appLogger.d('Bidirectional sync already in progress, skipping');
       return;
     }
@@ -225,6 +245,8 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
     }
 
     _isBidirectionalSyncing = true;
+    final profileGeneration = _profileGeneration;
+    _bidirectionalSyncGeneration = profileGeneration;
     try {
       // Always push local changes to server (never throttle outbound sync)
       await syncPendingItems();
@@ -242,9 +264,14 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
       // Pull latest states from server
       await syncWatchStatesFromServer();
-      _lastSyncTime = DateTime.now();
+      if (profileGeneration == _profileGeneration) _lastSyncTime = DateTime.now();
     } finally {
       _isBidirectionalSyncing = false;
+      _bidirectionalSyncGeneration = null;
+      if (_bidirectionalSyncRerunRequested) {
+        _bidirectionalSyncRerunRequested = false;
+        if (!isDisposed) unawaited(_performBidirectionalSync(force: true));
+      }
     }
   }
 
@@ -731,18 +758,21 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
   /// Sync watch states for all episodes in a single season.
   ///
-  /// Returns the number of episodes synced, or -1 on failure.
+  /// Returns the number of episodes synced, or -1 on failure. Stops once
+  /// [isStale] reports that the pull's profile is no longer active.
   Future<int> _syncSeasonEpisodes(
     MediaServerClient client,
     ServerId serverId,
     String seasonRatingKey,
-    Set<String> downloadedEpisodeKeys,
-  ) async {
+    Set<String> downloadedEpisodeKeys, {
+    required bool Function() isStale,
+  }) async {
     try {
       final seasonEpisodes = await client.fetchChildren(seasonRatingKey);
       int synced = 0;
 
       for (final episode in seasonEpisodes) {
+        if (isStale()) return synced;
         if (!downloadedEpisodeKeys.contains(episode.id)) continue;
 
         final cacheServerId = client.cacheServerId;
@@ -817,6 +847,20 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
         return;
       }
 
+      // A profile switch rebinds the same server ids to the new user's clients.
+      // Pulling on would read that user's watch state into this profile's
+      // downloads, announce it, and mirror it to trackers, so the pull stops at
+      // the next step once the profile it started for is gone.
+      final profileGeneration = _profileGeneration;
+      var stopped = false;
+      bool isStale() {
+        if (!stopped && (isDisposed || profileGeneration != _profileGeneration)) {
+          stopped = true;
+          appLogger.i('Active profile changed mid-pull — stopping watch-state pull');
+        }
+        return stopped;
+      }
+
       await _database.adoptLegacyDownloadsForProfile(profileId);
       final ownedKeys = await _database.getDownloadOwnerKeysForProfile(profileId);
       if (ownedKeys.isEmpty) {
@@ -867,12 +911,20 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
       // Fetch episodes by season (batch) - one API call per season
       for (final scopeEntry in episodesByScopeAndSeason.entries) {
+        if (isStale()) return;
         final scope = scopeEntry.key;
         final seasonMap = scopeEntry.value;
 
         await _withOnlineClientForDownloadScope(scope.serverId, scope.clientScopeId, (client) async {
           for (final seasonEntry in seasonMap.entries) {
-            final result = await _syncSeasonEpisodes(client, scope.serverId, seasonEntry.key, seasonEntry.value);
+            if (isStale()) return;
+            final result = await _syncSeasonEpisodes(
+              client,
+              scope.serverId,
+              seasonEntry.key,
+              seasonEntry.value,
+              isStale: isStale,
+            );
             if (result >= 0) {
               syncedCount += result;
               seasonCount++;
@@ -883,11 +935,13 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
 
       // Fetch non-episode items individually (movies, etc.)
       for (final entry in nonEpisodeItems.entries) {
+        if (isStale()) return;
         final scope = entry.key;
         final ratingKeys = entry.value;
 
         await _withOnlineClientForDownloadScope(scope.serverId, scope.clientScopeId, (client) async {
           for (final ratingKey in ratingKeys) {
+            if (isStale()) return;
             try {
               // Snapshot prior viewCount through the neutral cache so we
               // can detect a watched-status change from another device.
@@ -897,6 +951,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
               // fetchItem already caches the full API response (with
               // chapters/markers) via the client's internal cache layer.
               final metadata = await client.fetchItem(ratingKey);
+              if (isStale()) return;
               if (metadata != null) {
                 syncedCount++;
                 final isWatched = (metadata.viewCount ?? 0) > 0;
@@ -917,6 +972,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
         });
       }
 
+      if (isStale()) return;
       final movieCount = nonEpisodeItems.values.fold(0, (a, b) => a + b.length);
       appLogger.i('Synced watch states: $seasonCount seasons, $movieCount other items ($syncedCount total)');
 
