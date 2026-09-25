@@ -83,11 +83,12 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   /// Auto-select the active profile after sign-in *only* when there's a
-  /// single Plex Home user — there's no choice for the user to make. With
-  /// multiple Home users (the "real" Home case) we leave the active id
-  /// unset so [MainScreen] forces the picker before the binder runs,
+  /// single, unprotected Plex Home user — there's no choice for the user to
+  /// make. With multiple Home users (the "real" Home case) we leave the active
+  /// id unset so [MainScreen] forces the picker before the binder runs,
   /// avoiding a surprise PIN prompt on whichever user we'd otherwise
-  /// pre-select.
+  /// pre-select. A PIN-protected single user also goes through the picker —
+  /// see [initialPlexHomeProfileFromCache].
   Future<void> _selectInitialProfile(
     PlexHomeService plexHome,
     ActiveProfileProvider activeProfiles,
@@ -480,9 +481,14 @@ class _AuthScreenState extends State<AuthScreen> {
 }
 
 @visibleForTesting
+/// The profile to auto-select after sign-in: the account's only Plex Home
+/// user, unless it is PIN-protected. A bare activation skips the PIN check
+/// the picker performs, and the first bind of the session may reuse a cached
+/// user token — after an in-app logout, the one the previous session minted —
+/// so a protected user must be picked (and its PIN entered) explicitly.
 Profile? initialPlexHomeProfileFromCache(PlexHomeService plexHome, PlexAccountConnection accountConn) {
   final users = plexHome.current[accountConn.id];
-  if (users == null || users.length != 1) return null;
+  if (users == null || users.length != 1 || users.single.protected) return null;
   return Profile.virtualPlexHome(connectionId: accountConn.id, homeUser: users.single);
 }
 
