@@ -410,18 +410,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       );
     }
 
-    // Media controls metadata. Fire-and-forget — the OS plugin downloads
-    // the poster synchronously inside `setMetadata` (~270 ms); the
-    // controls populate a beat after first frame which is fine.
-    if (_mediaControlsManager != null) {
-      unawaited(
-        _mediaControlsManager!.updateMetadata(
-          metadata: metadata,
-          client: mediaClient,
-          duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null,
-        ),
-      );
-    }
+    _publishMediaControlsMetadata(metadata, mediaClient);
 
     // Scrobblers — Discord RPC plus the tracker coordinator, which fans out to
     // every connected service. Both accept the neutral [MediaServerClient]; null
@@ -434,6 +423,21 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       }
       unawaited(TrackerCoordinator.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
     }
+  }
+
+  /// Media controls metadata. Fire-and-forget — the OS plugin downloads the
+  /// poster synchronously inside `setMetadata` (~270 ms); the controls
+  /// populate a beat after first frame which is fine.
+  void _publishMediaControlsMetadata(MediaItem metadata, MediaServerClient? mediaClient) {
+    final mediaControlsManager = _mediaControlsManager;
+    if (mediaControlsManager == null) return;
+    unawaited(
+      mediaControlsManager.updateMetadata(
+        metadata: metadata,
+        client: mediaClient,
+        duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null,
+      ),
+    );
   }
 
   /// (Re)create the [PlaybackProgressTracker] for the current play session.
@@ -519,9 +523,20 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   /// Initialize the service layer
-  Future<void> _initializeServices() async {
+  ///
+  /// An open that already failed leaves it down: there is no playback for an
+  /// OS media session or the scrobblers to describe. [_playbackServicesDeferred]
+  /// records that, and the reload that recovers from the failure brings it up
+  /// with [perItemServicesWired] set, since that reload already wired the
+  /// item's own services.
+  Future<void> _initializeServices({bool perItemServicesWired = false}) async {
     final currentPlayer = player;
-    if (!mounted || _shuttingDown || currentPlayer == null || _hasFatalPlaybackError) return;
+    if (!mounted || _shuttingDown || currentPlayer == null) return;
+    if (_hasFatalPlaybackError) {
+      _playbackServicesDeferred = true;
+      return;
+    }
+    _playbackServicesDeferred = false;
 
     // Live TV keeps the timeline heartbeats instead of the progress tracker
     // (see [_rebindProgressTracker]'s gate below), but it still owns an OS
@@ -571,14 +586,18 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Wire progress tracker, media-controls metadata, and the
     // Discord/Trakt/Tracker scrobblers. Shared with [_reloadMediaInPlace]
     // so the two flows can't drift.
-    _wirePerItemPlaybackServices(
-      metadata: _currentMetadata,
-      mediaClient: mediaClient,
-      offlineWatchService: offlineWatchService,
-      playSessionId: _playbackPlaySessionId,
-      playMethod: _playbackPlayMethod,
-      mediaInfo: _currentMediaInfo,
-    );
+    if (perItemServicesWired) {
+      _publishMediaControlsMetadata(_currentMetadata, mediaClient);
+    } else {
+      _wirePerItemPlaybackServices(
+        metadata: _currentMetadata,
+        mediaClient: mediaClient,
+        offlineWatchService: offlineWatchService,
+        playSessionId: _playbackPlaySessionId,
+        playMethod: _playbackPlayMethod,
+        mediaInfo: _currentMediaInfo,
+      );
+    }
 
     if (!mounted) return;
 

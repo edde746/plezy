@@ -727,6 +727,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           playMethod: _playbackPlayMethod,
           mediaInfo: _currentMediaInfo,
         );
+        // The first open failed before the service layer came up; this
+        // recovery is the first playback it can describe.
+        if (_playbackServicesDeferred) unawaited(_initializeServices(perItemServicesWired: true));
 
         if (isItemChange) {
           unawaited(_reapplyScopedPlayerPrefsForItemChange(previousMetadata: previousMetadata, metadata: metadata));

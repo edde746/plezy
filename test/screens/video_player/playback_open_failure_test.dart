@@ -87,11 +87,20 @@ void main() {
     final observer = PlaybackLaunchObserver(isCurrent: () => true);
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     const windowChannel = MethodChannel('window_manager');
+    // The recovered playback brings the OS media session up, which activates
+    // and cancels its event stream; an unmocked EventChannel reports its
+    // MissingPluginException as a test failure.
+    const mediaControlMethods = MethodChannel('com.edde746.os_media_controls/methods');
+    const mediaControlEvents = MethodChannel('com.edde746.os_media_controls/events');
     messenger.setMockMethodCallHandler(windowChannel, (call) async => call.method.startsWith('is') ? false : null);
+    messenger.setMockMethodCallHandler(mediaControlMethods, (call) async => null);
+    messenger.setMockMethodCallHandler(mediaControlEvents, (call) async => null);
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
       messenger.setMockMethodCallHandler(windowChannel, null);
+      messenger.setMockMethodCallHandler(mediaControlMethods, null);
+      messenger.setMockMethodCallHandler(mediaControlEvents, null);
       tester.view.reset();
       offlineWatch.dispose();
       accountPreferences.dispose();
@@ -201,6 +210,12 @@ void main() {
               'repeated errors from the same dead load must not re-run the failure policy',
         );
 
+        expect(
+          key.currentState!.debugMediaControlsActiveForTesting,
+          isFalse,
+          reason: 'a failed open has no playback for the OS media session to describe',
+        );
+
         await tester.tap(retry);
         await pumpUntil(tester, () => loadfileUrls.length == 2, describe: () => 'loadfiles=$loadfileUrls');
         expect(loadfileUrls[1], loadfileUrls[0], reason: 'Retry re-runs the same open');
@@ -210,6 +225,11 @@ void main() {
           describe: () => 'failure view still up after the retried open rendered',
         );
         expect(find.widgetWithText(FilledButton, t.common.retry), findsNothing);
+        await pumpUntil(
+          tester,
+          () => key.currentState!.debugMediaControlsActiveForTesting,
+          describe: () => 'the recovered playback never brought the OS media session up',
+        );
 
         var shutdownDone = false;
         final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);

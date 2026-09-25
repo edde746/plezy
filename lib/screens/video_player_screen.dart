@@ -923,6 +923,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
   MediaControlsManager? _mediaControlsManager;
+
+  /// [_initializeServices] ran while the open had already failed and left the
+  /// service layer down; the reload that recovers brings it up.
+  bool _playbackServicesDeferred = false;
   late final MediaControlsScreenController _mediaControls = MediaControlsScreenController(
     manager: () => _mediaControlsManager,
     player: () => player,
@@ -1234,6 +1238,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// session.
   @visibleForTesting
   Future<void> debugInitializeServicesForTesting() => _initializeServices();
+
+  /// Whether the OS media session is up, which the startup flow gives no
+  /// observable sign of without a native media-controls plugin.
+  @visibleForTesting
+  bool get debugMediaControlsActiveForTesting => _mediaControlsManager != null;
 
   /// The playback start otherwise runs only at the end of player
   /// initialization, which no widget test finishes without a live native core.
