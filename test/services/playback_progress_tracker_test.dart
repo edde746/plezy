@@ -751,6 +751,40 @@ void main() {
       expect(client.playbackStreamSelections.last.subtitleStreamIndex, 3);
     });
 
+    test('a burned-in subtitle is reported as its source stream, not as off', () async {
+      final client = _FakePlexClient();
+      const audio = AudioTrack(id: '1', language: 'jpn');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(audio: [audio]),
+        // The transcode paints the subtitle into the picture: no engine track.
+        track: const TrackSelection(audio: audio, subtitle: SubtitleTrack.off),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'jpn', selected: true)],
+        subtitleTracks: [
+          MediaSubtitleTrack(id: 3, languageCode: 'eng', codec: 'pgssub', selected: true, forced: false),
+        ],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+        burnedSubtitleStreamIndex: () => 3,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+
+      expect(client.playbackStreamSelections.single.subtitleStreamIndex, 3);
+    });
+
     test('Jellyfin progress reports selected source audio when player exposes a single output track', () async {
       final client = _FakePlexClient();
       const outputAudio = AudioTrack(id: 'audio_0', language: 'jpn');

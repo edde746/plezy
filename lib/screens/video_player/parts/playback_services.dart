@@ -472,6 +472,18 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         canReportPlayback: () => _firstFrame.rendered && !_hasFatalPlaybackError,
         hasRenderedPlayback: () => _firstFrame.rendered,
         subtitleOffIsDeliberate: () => _playbackSession?.subtitleSelection.declinedPreference == null,
+        burnedSubtitleStreamIndex: () {
+          final session = _playbackSession;
+          final sourceStreamId = session?.subtitleSelection.primarySourceStreamId;
+          if (session == null || sourceStreamId == null) return null;
+          final burned = PlaybackSubtitleResolver.burnsCurrentSelection(
+            isTranscoding: _isTranscoding,
+            isLive: widget.isLive,
+            choice: PlaybackSourceSubtitleChoice.source(sourceStreamId),
+            sidecars: session.context.result.subtitleSidecars,
+          );
+          return burned ? sourceStreamId : null;
+        },
         onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
             ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
             : null,

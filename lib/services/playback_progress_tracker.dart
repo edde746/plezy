@@ -95,6 +95,12 @@ class PlaybackProgressTracker {
   /// (#1785). Callers default to deliberate.
   final bool Function()? subtitleOffIsDeliberate;
 
+  /// The source subtitle stream the server is burning into the picture, if
+  /// any. A burned subtitle is pixels, not an engine track, so the engine
+  /// reads as off while the viewer watches with subtitles on; reporting that
+  /// as `-1` would make Jellyfin remember "off" for the item.
+  final int? Function()? burnedSubtitleStreamIndex;
+
   /// Timer for periodic progress updates
   Timer? _progressTimer;
 
@@ -205,6 +211,7 @@ class PlaybackProgressTracker {
     this.canReportPlayback,
     this.hasRenderedPlayback,
     this.subtitleOffIsDeliberate,
+    this.burnedSubtitleStreamIndex,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
        assert(isOffline || client != null, 'client is required when isOffline is false') {
@@ -761,6 +768,8 @@ class PlaybackProgressTracker {
   int? _currentSubtitleStreamIndex(MediaSourceInfo info) {
     final track = player.state.track.subtitle;
     if (track == null || track.id == 'no') {
+      final burned = burnedSubtitleStreamIndex?.call();
+      if (burned != null) return burned;
       // An off that merely fell out of a declined carry is withheld rather
       // than persisted as an explicit -1 (see [subtitleOffIsDeliberate]).
       return (subtitleOffIsDeliberate?.call() ?? true) ? -1 : null;
