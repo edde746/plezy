@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Diese Datei ist kein gültiger Plezy-Einstellungsexport",
     "importSettingsNoUser": "Vor dem Import bitte anmelden",
     "shortcutsReset": "Tastenkürzel auf Standard zurückgesetzt",
+    "resetShortcutsConfirm": "",
     "about": "Über",
     "aboutDescription": "App-Informationen und Lizenzen",
     "updates": "Updates",

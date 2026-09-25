@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Този файл не е валиден експорт на настройки от Plezy",
     "importSettingsNoUser": "Влезте, преди да импортирате настройки",
     "shortcutsReset": "Клавишните комбинации са нулирани до подразбиране",
+    "resetShortcutsConfirm": "",
     "about": "Относно",
     "aboutDescription": "Информация за приложението и лицензи",
     "updates": "Актуализации",

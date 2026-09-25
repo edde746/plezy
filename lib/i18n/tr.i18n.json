@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Bu dosya geçerli bir Plezy ayar dosyası değil",
     "importSettingsNoUser": "Ayarları içe aktarmadan önce giriş yapın",
     "shortcutsReset": "Kısayollar varsayılana sıfırlandı",
+    "resetShortcutsConfirm": "",
     "about": "Hakkında",
     "aboutDescription": "Uygulama bilgileri ve lisanslar",
     "updates": "Güncellemeler",

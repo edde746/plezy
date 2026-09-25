@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "此檔案不是有效的 Plezy 設定匯出檔",
     "importSettingsNoUser": "匯入設定前請先登入",
     "shortcutsReset": "快速鍵已重設為預設值",
+    "resetShortcutsConfirm": "",
     "about": "關於",
     "aboutDescription": "應用程式資訊與授權條款",
     "updates": "更新",

@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Ce fichier n’est pas une exportation valide des paramètres de Plezy",
     "importSettingsNoUser": "Connectez-vous avant d’importer les paramètres",
     "shortcutsReset": "Raccourcis réinitialisés aux valeurs par défaut",
+    "resetShortcutsConfirm": "",
     "about": "À propos",
     "aboutDescription": "Informations sur l'application et licences",
     "updates": "Mises à jour",

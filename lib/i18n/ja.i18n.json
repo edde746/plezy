@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "このファイルは有効なPlezyの設定エクスポートではありません",
     "importSettingsNoUser": "設定をインポートする前にサインインしてください",
     "shortcutsReset": "ショートカットをデフォルトにリセットしました",
+    "resetShortcutsConfirm": "",
     "about": "アプリについて",
     "aboutDescription": "アプリ情報とライセンス",
     "updates": "アップデート",

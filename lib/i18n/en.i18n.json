@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "This file isn't a valid Plezy settings export",
     "importSettingsNoUser": "Sign in before importing settings",
     "shortcutsReset": "Shortcuts reset to defaults",
+    "resetShortcutsConfirm": "This will replace your custom shortcuts with the defaults. Continue?",
     "about": "About",
     "aboutDescription": "App information and licenses",
     "updates": "Updates",

@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "유효한 Plezy 설정 내보내기 파일이 아닙니다",
     "importSettingsNoUser": "설정을 가져오기 전에 로그인하세요",
     "shortcutsReset": "단축키가 기본값으로 재설정되었습니다",
+    "resetShortcutsConfirm": "",
     "about": "정보",
     "aboutDescription": "앱 정보 및 라이선스",
     "updates": "업데이트",

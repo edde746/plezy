@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Bu fayl düzgün Plezy tənzimləmələr faylı deyil",
     "importSettingsNoUser": "Tənzimləmələri idxal etməzdən əvvəl daxil olun",
     "shortcutsReset": "Qısayollar defolt vəziyyətə sıfırlandı",
+    "resetShortcutsConfirm": "",
     "about": "Haqqında",
     "aboutDescription": "Tətbiq məlumatı və lisenziyalar",
     "updates": "Yenilənmələr",

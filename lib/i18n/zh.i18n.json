@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "此文件不是有效的 Plezy 设置导出",
     "importSettingsNoUser": "导入设置前请先登录",
     "shortcutsReset": "快捷键已重置为默认值",
+    "resetShortcutsConfirm": "",
     "about": "关于",
     "aboutDescription": "应用程序信息和许可证",
     "updates": "更新",

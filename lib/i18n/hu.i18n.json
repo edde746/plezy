@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Ez a fájl nem érvényes Plezy-beállításexport",
     "importSettingsNoUser": "Jelentkezz be a beállítások importálása előtt",
     "shortcutsReset": "A billentyűparancsok visszaálltak az alapértelmezettekre",
+    "resetShortcutsConfirm": "",
     "about": "Névjegy",
     "aboutDescription": "Alkalmazásadatok és licencek",
     "updates": "Frissítések",
