@@ -371,7 +371,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
-      } else if (!wantsOriginal) {
+      } else if (!wantsOriginal && chosenSource['SupportsDirectPlay'] != true) {
+        // No transcode is only a refusal when the server also declined direct
+        // play. A file that already fits the cap direct-plays with no
+        // `TranscodingUrl`, which is the capped request succeeding.
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
     }

@@ -2262,6 +2262,34 @@ void main() {
       expect(Uri.parse(result.videoUrl!).queryParameters['MediaSourceId'], 'src-1');
     });
 
+    test('a source that direct-plays within the cap is not a transcode refusal', () async {
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({
+          'MediaSources': [
+            {'Id': 'src-1', 'Bitrate': 1500000, 'SupportsDirectPlay': true},
+          ],
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.p720_2mbps,
+        ),
+      );
+
+      expect(result.isTranscoding, isFalse);
+      expect(result.fallbackReason, isNull);
+      expect(Uri.parse(result.videoUrl!).queryParameters['MediaSourceId'], 'src-1');
+    });
+
     test('a source above the cap without a transcode is still a refusal', () async {
       final scoped = _clientWithPlaybackInfo(
         (_) async => jsonResponse({
