@@ -148,8 +148,8 @@ class _SeasonEpisodePager {
 
   bool hasState(String seasonId) => _states.containsKey(seasonId);
 
-  /// Bumped by [resetSeason], so a first-page load started before a reset can
-  /// tell that its result no longer belongs to the season.
+  /// Bumped by [resetSeason], so a page load (first or continuation) started
+  /// before a reset can tell that its result no longer belongs to the season.
   final Map<String, int> _epochs = {};
 
   int epochOf(String seasonId) => _epochs[seasonId] ?? 0;
@@ -163,7 +163,12 @@ class _SeasonEpisodePager {
   }
 
   bool beginMoreLoad(String seasonId) => _moreLoadsInFlight.add(seasonId);
-  void endMoreLoad(String seasonId) => _moreLoadsInFlight.remove(seasonId);
+
+  /// Ends a continuation load started at [epoch]; like [endFirstPageLoad], a
+  /// superseded load leaves the in-flight mark to its replacement.
+  void endMoreLoad(String seasonId, {required int epoch}) {
+    if (epoch == epochOf(seasonId)) _moreLoadsInFlight.remove(seasonId);
+  }
 
   void markFirstPageLoading(String seasonId) {
     _states[seasonId] = stateFor(seasonId).startInitialLoad();
@@ -2058,7 +2063,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final loaded = state.items.length;
     if (!state.hasMore) return;
     if (!_seasonEpisodePager.beginMoreLoad(seasonId)) return;
+    // A refresh of this season (the epoch) retires the page as surely as a
+    // detail-wide reset (the generation): appending it to the refreshed first
+    // page would duplicate or skip rows.
     final generation = _episodesLoadGeneration;
+    final epoch = _seasonEpisodePager.epochOf(seasonId);
+    bool isCurrent() =>
+        mounted && generation == _episodesLoadGeneration && epoch == _seasonEpisodePager.epochOf(seasonId);
 
     setStateIfMounted(() {
       if (_isSelectedSeason(seasonIndex, seasonId)) {
@@ -2070,14 +2081,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final mediaClient = _getMediaClientForMetadata(context);
       if (mediaClient == null) {
         setStateIfMounted(() {
-          if (_isSelectedSeason(seasonIndex, seasonId)) {
+          if (isCurrent() && _isSelectedSeason(seasonIndex, seasonId)) {
             _seasonEpisodePager.completeMoreLoad(seasonId, expectedOffset: loaded, episodes: const [], total: loaded);
           }
         });
         return;
       }
       final page = await _fetchSeasonPage(mediaClient, season, start: loaded);
-      if (!mounted || generation != _episodesLoadGeneration) return;
+      if (!isCurrent()) return;
       setStateIfMounted(() {
         _seasonEpisodePager.completeMoreLoad(
           seasonId,
@@ -2089,13 +2100,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
     } catch (e, st) {
       appLogger.w('Season episodes page load failed', error: e, stackTrace: st);
-      if (mounted && generation == _episodesLoadGeneration && _isSelectedSeason(seasonIndex, seasonId)) {
+      if (isCurrent() && _isSelectedSeason(seasonIndex, seasonId)) {
         setStateIfMounted(() {
           _seasonEpisodePager.failMoreLoad(seasonId);
         });
       }
     } finally {
-      _seasonEpisodePager.endMoreLoad(seasonId);
+      _seasonEpisodePager.endMoreLoad(seasonId, epoch: epoch);
     }
   }
 
