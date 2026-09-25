@@ -127,6 +127,30 @@ void main() {
     });
   });
 
+  group('CompanionRemoteProvider — host player state', () {
+    test('a remote that pairs while the player is up is told it is active', () async {
+      final host = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(
+        _FakePeerFactory([host]).call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(harness.close);
+      await harness.provider.startHostServer();
+      harness.provider.setHostPlayerActive(true);
+      host.sentCommands.clear();
+
+      host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
+
+      expect(host.sentCommands.single.type, RemoteCommandType.syncState);
+      expect(host.sentCommands.single.data, {'playerActive': true});
+
+      harness.provider.setHostPlayerActive(false);
+      host.sentCommands.clear();
+      host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
+      expect(host.sentCommands.single.data, {'playerActive': false});
+    });
+  });
+
   group('CompanionRemoteProvider — dispose hygiene', () {
     test('cancelReconnect on a fresh provider does not throw', () {
       final p = CompanionRemoteProvider();
@@ -1030,6 +1054,10 @@ class _FakeCompanionRemotePeerService extends CompanionRemotePeerService {
   @override
   void sendPing() {
     pingsSent++;
+  }
+
+  void emitDeviceConnected(RemoteDevice device) {
+    if (!_streamsClosed) _connected.add(device);
   }
 
   void emitDeviceDisconnected() {

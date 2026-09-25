@@ -57,6 +57,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String _deviceName = t.companionRemote.unknownDevice;
   String _platform = 'unknown';
   bool _isPlayerActive = false;
+  // Whether this device's own video player is up, as last advertised to a
+  // remote. Kept so a remote that pairs mid-playback is told on connect.
+  bool _hostPlayerActive = false;
   // Listen addresses of a running host server (`ip:port`), surfaced so the
   // host UI can show what a phone's manual connection should target.
   List<String> _hostServerAddresses = const [];
@@ -890,6 +893,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       appLogger.d('CompanionRemote: Device connected: ${device.name}');
       _session = _session?.copyWith(status: RemoteSessionStatus.connected, connectedDevice: device);
       safeNotifyListeners();
+      // The player screen advertises its state once, when it opens; a remote
+      // that pairs (or re-pairs) later would otherwise keep showing the
+      // browse controls over a running player, or the player controls after
+      // it closed while the remote was away.
+      if (isHost) {
+        peer.sendCommand(RemoteCommand(type: RemoteCommandType.syncState, data: {'playerActive': _hostPlayerActive}));
+      }
     });
 
     _deviceDisconnectedSubscription = peer.onDeviceDisconnected.listen((_) {
@@ -977,6 +987,14 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _errorSubscription = null;
     _statusSubscription?.cancel();
     _statusSubscription = null;
+  }
+
+  /// Advertise whether this device's video player is up to the connected
+  /// remote, and remember it for a remote that connects later.
+  void setHostPlayerActive(bool active) {
+    _hostPlayerActive = active;
+    if (_peerService == null || !isConnected) return;
+    sendCommand(RemoteCommandType.syncState, data: {'playerActive': active});
   }
 
   void sendCommand(RemoteCommandType type, {Map<String, dynamic>? data}) {
