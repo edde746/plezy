@@ -80,6 +80,12 @@ class WatchTogetherProvider with ChangeNotifier {
   // Debounce map for action events (peerId+type → last emission timestamp)
   final Map<String, int> _lastActionEventMs = {};
 
+  // Peers the relay admitted since their last join reached us. Each is owed
+  // our join once, even if it is still listed: a peer that reconnects before
+  // the relay notices its old connection died is re-admitted without a leave,
+  // and it has already forgotten everyone else.
+  final Set<String> _peersOwedJoin = {};
+
   static String _generateDisplayName() {
     const adjectives = ['Happy', 'Sleepy', 'Sunny', 'Cozy', 'Chill', 'Swift', 'Brave', 'Calm', 'Jolly', 'Lucky'];
     const nouns = ['Panda', 'Koala', 'Fox', 'Owl', 'Cat', 'Dog', 'Bear', 'Bunny', 'Duck', 'Penguin'];
@@ -564,6 +570,7 @@ class WatchTogetherProvider with ChangeNotifier {
     _playbackPhase = null;
     _playbackDispatcher.reset();
     _lastActionEventMs.clear();
+    _peersOwedJoin.clear();
     _pendingTransferTargetName = null;
     _hostIntentionallyLeft = false;
 
@@ -671,6 +678,7 @@ class WatchTogetherProvider with ChangeNotifier {
     _peerConnectedSubscription = peerService.onPeerConnected.listen((peerId) {
       if (_disposed || !identical(_peerService, peerService)) return;
       appLogger.d('WatchTogether: Peer connected: $peerId');
+      _peersOwedJoin.add(peerId);
 
       // If host reconnected during grace period, cancel the timer
       if (!isHost && peerId == _session?.hostPeerId && _isWaitingForHostReconnect) {
@@ -694,6 +702,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
       // The sync controller observes peer disconnects itself.
       _participants.removeWhere((p) => p.peerId == peerId);
+      _peersOwedJoin.remove(peerId);
 
       // If host disconnected unexpectedly, start grace period for reconnection.
       // Skip if the host already sent a deliberate leave message.
@@ -780,6 +789,7 @@ class WatchTogetherProvider with ChangeNotifier {
         if (message.peerId != null && message.displayName != null) {
           // Check if participant already exists
           final existingIndex = _participants.indexWhere((p) => p.peerId == message.peerId);
+          final owedJoin = _peersOwedJoin.remove(message.peerId);
           if (existingIndex >= 0) {
             _participants[existingIndex] = Participant(
               peerId: message.peerId!,
@@ -793,23 +803,24 @@ class WatchTogetherProvider with ChangeNotifier {
             _participantEventController.add(
               ParticipantEvent(displayName: message.displayName!, type: ParticipantEventType.joined),
             );
+          }
 
-            // Send our join info back so the new peer adds us to their
-            // participant list. Only reply to NEW peers to avoid an
-            // infinite join ping-pong (A→join→B→join→A→...). The host's
-            // reply also carries the room's control mode so lobby guests
-            // learn it before any playback state exists.
-            if (_peerService != null) {
-              _peerService!.sendTo(
-                message.peerId!,
-                SyncMessage.join(
-                  peerId: _peerService!.myPeerId!,
-                  displayName: _displayName,
-                  isHost: isHost,
-                  controlMode: isHost ? _session?.controlMode : null,
-                ),
-              );
-            }
+          // Send our join info back so the peer adds us to their participant
+          // list. Only reply to a NEW peer, or to one the relay re-admitted
+          // since its last join, to avoid an infinite join ping-pong
+          // (A→join→B→join→A→...). The host's reply also carries the room's
+          // control mode so lobby guests learn it before any playback state
+          // exists.
+          if ((existingIndex < 0 || owedJoin) && _peerService != null) {
+            _peerService!.sendTo(
+              message.peerId!,
+              SyncMessage.join(
+                peerId: _peerService!.myPeerId!,
+                displayName: _displayName,
+                isHost: isHost,
+                controlMode: isHost ? _session?.controlMode : null,
+              ),
+            );
           }
 
           notifyListeners();
@@ -820,6 +831,7 @@ class WatchTogetherProvider with ChangeNotifier {
         if (message.peerId != null) {
           final leavingName = _displayNameForPeer(message.peerId);
           _participants.removeWhere((p) => p.peerId == message.peerId);
+          _peersOwedJoin.remove(message.peerId);
           if (leavingName != null) {
             _participantEventController.add(
               ParticipantEvent(displayName: leavingName, type: ParticipantEventType.left),
