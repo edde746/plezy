@@ -220,7 +220,9 @@ class TrackerIdResolver {
     final animeMatch = isMovie || isEpisodeSeason == null || episodeNumber == null
         ? null
         : await _lookupAnimeEpisodeMatchByCoordinate(external, isEpisodeSeason, episodeNumber);
-    final row = isMovie ? _pickMovieRow(rows) : _pickShowRow(rows, season: isEpisodeSeason, animeMatch: animeMatch);
+    final row = isMovie
+        ? _pickMovieRow(rows)
+        : _pickShowRow(rows, season: isEpisodeSeason, anidbId: anidbId, animeMatch: animeMatch);
     final anime = row == null ? null : AnimeIds.fromFribb(row);
     return TrackerIds(
       external: external,
@@ -262,9 +264,10 @@ class TrackerIdResolver {
   Future<TrackerIds?> _buildShowRating(ExternalIds external, {int? season}) async {
     if (!external.hasAny) return null;
     if (!_needsFribb()) return _withoutAnimeMapping(external);
+    final anidbId = _usableAnidbId(external, season: season);
     final rows = await _store.lookup(
       movie: false,
-      anidbId: _usableAnidbId(external, season: season),
+      anidbId: anidbId,
       tvdbId: external.tvdb,
       tmdbId: external.tmdb,
       imdbId: external.imdb,
@@ -277,7 +280,7 @@ class TrackerIdResolver {
     if (animeIds.length == 1) {
       row = _rowForAnidb(rows, animeIds.single);
     } else if (animeIds.isEmpty) {
-      row = _pickShowRow(rows, season: season, animeMatch: null);
+      row = _pickShowRow(rows, season: season, anidbId: anidbId, animeMatch: null);
     }
 
     return TrackerIds(external: external, anime: row == null ? null : AnimeIds.fromFribb(row));
@@ -338,28 +341,53 @@ class TrackerIdResolver {
   /// sharing the same show-level external ID (split-cour anime), prefer the
   /// one whose `season.tvdb` or `season.tmdb` matches the Plex episode's
   /// season; otherwise prefer regular TV/ONA rows.
-  FribbMappingRow? _pickShowRow(List<FribbMappingRow> rows, {int? season, AnimeEpisodeMatch? animeMatch}) {
+  FribbMappingRow? _pickShowRow(
+    List<FribbMappingRow> rows, {
+    int? season,
+    int? anidbId,
+    AnimeEpisodeMatch? animeMatch,
+  }) {
     if (rows.isEmpty) return null;
 
     final match = animeMatch;
     if (match != null) return _rowForAnidb(rows, match.anidbId);
 
+    // A usable AniDB id names its entry outright: HAMA numbers that entry as
+    // season 1 whatever season Fribb places it in.
+    if (anidbId != null) {
+      final row = _rowForAnidb(rows, anidbId);
+      if (row != null) return row;
+    }
+
+    var candidates = rows;
     if (season != null) {
       for (final row in rows) {
         if (row.tvdbSeason == season || row.tmdbSeason == season) return row;
       }
+      // A row mapped to a season describes that season alone, so a season
+      // Fribb has not mapped yet (a new cour, typically) must not land on
+      // another one — every episode would rewrite a finished season 1 entry
+      // as a rewatch. An unmapped row covers the show in absolute numbering
+      // and still applies, but never to specials, which that numbering leaves
+      // out.
+      if (season <= 0) return null;
+      candidates = [
+        for (final row in rows)
+          if (!_hasSeasonMapping(row)) row,
+      ];
+      if (candidates.isEmpty) return null;
     }
 
     // No season match — prefer regular TV/ONA rows over movies/OVAs/specials.
-    for (final row in rows) {
+    for (final row in candidates) {
       if (_isRegularSeriesRow(row)) return row;
     }
 
     // Fall back to the first non-MOVIE row (prefer series-like entries).
-    for (final row in rows) {
+    for (final row in candidates) {
       if (!row.isMovie) return row;
     }
-    return rows.first;
+    return candidates.first;
   }
 
   FribbMappingRow? _rowForAnidb(List<FribbMappingRow> rows, int anidbId) {
