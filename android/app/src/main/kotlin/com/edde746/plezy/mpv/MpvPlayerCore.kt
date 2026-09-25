@@ -179,9 +179,9 @@ class MpvPlayerCore private constructor(
      * renderer on the Android device zoo, and with film grain applied by the
      * decoder nothing else on this path needs libplacebo. Dolby Vision RPU
      * reshaping (#1902) is the one exception - it needs gpu-next, and the
-     * [GpuVoPolicy.REASON_DV_RESHAPE] observer moves the session there when a
-     * DV profile that needs reshaping appears. gpu-next under *hardware*
-     * decode is broken on Tegra (samplerExternalOES double declaration
+     * on_preloaded hook moves the session there for each file whose DV
+     * profile needs reshaping ([applySoftwareDvReshapeOutput]). gpu-next
+     * under *hardware* decode is broken on Tegra (samplerExternalOES double declaration
      * rejected by the GLES linker, blue screen on the Shield, #2010);
      * vo=mediacodec sidesteps that entire class by never touching GLES.
      */
@@ -286,6 +286,9 @@ class MpvPlayerCore private constructor(
   /** Native renderer last installed under [videoOutputMutex]. Surface callbacks
    * must follow its ownership, not a request still waiting for an OSD surface. */
   @Volatile private var appliedGpuVoTarget: String? = null
+
+  /** The `vo` a software session last wrote; see [applySoftwareDvReshapeOutput]. */
+  @Volatile private var softwareVideoOutput: String = initialVideoOutput(hardwareDecoding = false)
 
   /** Per-file reasons holding hwdec at `no` (DV P5 reshaping or unsupported
    * hardware decoding); the session's own hwdec value is parked in
@@ -1065,6 +1068,16 @@ class MpvPlayerCore private constructor(
                 }
               }
             }
+          } else if (!audioOnly) {
+            // The plane arbiter that moves a DV P5 file to gpu-next never
+            // runs in a software session, and its vo=gpu composites no RPU.
+            p.hookHandler = { name ->
+              if (name == "on_preloaded" && !disposing) {
+                writeOperations.run("preloaded hook") {
+                  applySoftwareDvReshapeOutput(pendingVideoTrack(p))
+                }
+              }
+            }
           }
 
           if (!audioOnly) {
@@ -1561,6 +1574,26 @@ class MpvPlayerCore private constructor(
   private suspend fun writeDvDecoderOptions(options: GpuVoPolicy.DvDecoderOptions) {
     decoderOptions.put("dolby_vision" to if (options.dolbyVision) "1" else "0", "dv_p7_mode" to options.p7Mode)
     writeProperty("vd-lavc-o", decoderOptions.compose())
+  }
+
+  /**
+   * Software-session counterpart of [applyDvReshapePolicy]: nothing here
+   * decodes P5 natively, so a P5 file under `auto` renders on gpu-next,
+   * which reshapes the RPU (#1902), and any other file goes back to
+   * [initialVideoOutput]. Written from on_preloaded, where this file has no
+   * decoder or video chain yet, so the vo write rebuilds nothing live.
+   */
+  private suspend fun applySoftwareDvReshapeOutput(track: org.json.JSONObject?) {
+    val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
+    pendingDvProfile = profile
+    val needs = GpuVoPolicy.needsDvReshaping(profile, currentDvConversionMode, canPlayP5Natively = false)
+    val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
+    if (output == softwareVideoOutput) return
+    val decision = "profile=$profile mode=$currentDvConversionMode path=software decode, vo=$output"
+    Log.i(TAG, "DV routing: $decision")
+    emitLog("info", "dv-route", decision)
+    writeProperty("vo", output)
+    softwareVideoOutput = output
   }
 
   /**
