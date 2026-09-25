@@ -183,20 +183,39 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       }
 
       if (delay > Duration.zero) {
-        // The delay lets the display finish re-syncing before playback runs
-        // on, so hold playback through it (as the Android switch does) rather
-        // than just waiting while the video keeps playing.
-        final holdPlayback = currentPlayer.state.playing;
-        if (holdPlayback) await currentPlayer.pause();
-        await Future.delayed(delay);
-        // A pause the viewer asked for meanwhile clears the play intent.
-        if (holdPlayback && mounted && player == currentPlayer && _playbackIntentShouldPlay) {
-          await _playWithPlaybackIntent(currentPlayer);
-        }
+        await _holdPlaybackForDisplaySwitch(currentPlayer, delay);
       }
     } catch (e) {
       appLogger.w('Failed to apply display mode matching', error: e);
     }
+  }
+
+  /// Hold playback through the user's display switch delay so the display
+  /// finishes re-syncing before playback runs on (as the Android switch
+  /// does), rather than just waiting while the video keeps playing.
+  ///
+  /// The pause and resume are the screen's own, not the viewer's: a bound
+  /// Watch Together room would take them as intents, so the hold runs
+  /// detached like the first-frame display negotiation. The resume answers
+  /// to the playback generation the hold started in: an in-place reload or
+  /// source switch that ran meanwhile owns the play state it left (its own
+  /// resume, or a room startup hold on the replacement), so the resume waits
+  /// for it to settle and stands down if it opened anything.
+  Future<void> _holdPlaybackForDisplaySwitch(Player currentPlayer, Duration delay) async {
+    if (!currentPlayer.state.playing) {
+      await Future<void>.delayed(delay);
+      return;
+    }
+    final generation = _transitionGate.generation;
+    bool isCurrent() => _isCurrentPlaybackGeneration(generation, currentPlayer);
+    await _withWatchTogetherDetached(() async {
+      await currentPlayer.pause();
+      await Future<void>.delayed(delay);
+      await _transitionGate.waitForIdle(isCurrent);
+      // A pause the viewer asked for meanwhile clears the play intent.
+      if (!isCurrent() || !_playbackIntentShouldPlay) return;
+      await _playWithPlaybackIntent(currentPlayer);
+    });
   }
 
   /// Called when fullscreen state changes — apply or restore Windows display

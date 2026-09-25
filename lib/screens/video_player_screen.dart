@@ -1204,6 +1204,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _attachToWatchTogetherSession(lease: widget.watchTogetherLease!);
   }
 
+  /// The Windows display-switch hold otherwise runs only behind a real
+  /// display-mode change on entering fullscreen.
+  @visibleForTesting
+  Future<void> debugHoldPlaybackForDisplaySwitchForTesting(Duration delay) =>
+      _holdPlaybackForDisplaySwitch(player!, delay);
+
   @visibleForTesting
   Future<bool> debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
 

@@ -638,6 +638,153 @@ void main() {
     );
   });
 
+  group('Windows display-switch hold', () {
+    Future<({GlobalKey<VideoPlayerScreenState> key, _ReloadPlayer player})> pumpHoldScreen(
+      WidgetTester tester, {
+      WatchTogetherProvider? watchTogether,
+    }) async {
+      final client = _ReloadClient();
+      final multi = testMultiServer(clients: [client]);
+      final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
+      final accountPreferences = AccountPreferencesController();
+      final initializationHold = Completer<void>();
+      Future<void> holdInitialization() => initializationHold.future;
+      PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        PlaybackCoordinator.instance.unregisterMusicSession(holdInitialization);
+        if (!initializationHold.isCompleted) initializationHold.complete();
+        await tester.pump();
+        offlineWatch.dispose();
+        accountPreferences.dispose();
+      });
+      final key = GlobalKey<VideoPlayerScreenState>();
+      final item = testMediaItem(id: 'movie-prior', serverId: 'srv-1', backend: MediaBackend.jellyfin);
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
+            ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+            ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
+            ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether ?? WatchTogetherProvider()),
+            Provider<AppDatabase>.value(value: db),
+            ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
+          ],
+          child: MaterialApp(
+            home: VideoPlayerScreen(
+              key: key,
+              metadata: item,
+              selectedQualityPreset: TranscodeQualityPreset.original,
+              watchTogetherLease: watchTogether?.capturePlaybackLease(),
+            ),
+          ),
+        ),
+      );
+      final fakePlayer = _ReloadPlayer(opens: true);
+      addTearDown(fakePlayer.dispose);
+      key.currentState!.player = fakePlayer;
+      return (key: key, player: fakePlayer);
+    }
+
+    testWidgets('the hold is not broadcast to the Watch Together room', (tester) async {
+      final peer = _ScreenPeerService();
+      final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
+      await watchTogether.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+      );
+      watchTogether.selectMedia(
+        ratingKey: 'movie-prior',
+        serverId: ServerId('srv-1'),
+        mediaTitle: 'Prior movie',
+        position: const Duration(seconds: 121),
+        rate: 1.25,
+        lease: watchTogether.capturePlaybackLease(selection: true),
+      );
+      addTearDown(watchTogether.dispose);
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final screen = await pumpHoldScreen(tester, watchTogether: watchTogether);
+          final fakePlayer = screen.player;
+          screen.key.currentState!.debugBindWatchTogetherForTesting();
+          fakePlayer.emitPlaybackRestart();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          // The viewer plays: the room follows.
+          fakePlayer.emitPlaying(false);
+          await tester.pump();
+          fakePlayer.emitPlaying(true);
+          await tester.pump();
+          expect(peer.latestState.phase, PlaybackPhase.playing);
+          final beforeHold = peer.states.length;
+
+          var held = false;
+          final hold = screen.key.currentState!
+              .debugHoldPlaybackForDisplaySwitchForTesting(const Duration(seconds: 2))
+              .whenComplete(() => held = true);
+          await tester.pump();
+          expect(fakePlayer.state.playing, isFalse, reason: 'playback is held through the delay');
+          await tester.pump(const Duration(seconds: 3));
+          await pumpUntil(tester, () => held);
+          await hold;
+
+          expect(fakePlayer.state.playing, isTrue);
+          expect(
+            peer.states.skip(beforeHold).where((state) => state.phase == PlaybackPhase.paused),
+            isEmpty,
+            reason: 'the internal hold must not pause the room',
+          );
+          expect(watchTogether.hasAttachedPlayer, isTrue, reason: 'the room rebinds once the hold ends');
+        },
+      );
+    });
+
+    testWidgets("a source reload during the hold owns the replacement's play state", (tester) async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final screen = await pumpHoldScreen(tester);
+          final fakePlayer = screen.player;
+          fakePlayer.emitPlaybackRestart();
+          await tester.pump();
+
+          var held = false;
+          final hold = screen.key.currentState!
+              .debugHoldPlaybackForDisplaySwitchForTesting(const Duration(seconds: 2))
+              .whenComplete(() => held = true);
+          await tester.pump();
+          expect(fakePlayer.commandLog, ['pause']);
+
+          // A quality change during the delay reuses the player and keeps the
+          // play intent, so only the playback generation tells the hold its
+          // player now carries another open.
+          PlaybackSourceChangeOutcome? outcome;
+          final switching = screen.key.currentState!
+              .debugSwitchPlaybackSourceForTesting(newPreset: TranscodeQualityPreset.p720_2mbps)
+              .then((value) => outcome = value);
+          for (var i = 0; i < 400 && (outcome == null || !held); i++) {
+            await tester.pump(const Duration(milliseconds: 50));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+          }
+          await switching;
+          await hold;
+
+          expect(fakePlayer.openCalls, 1, reason: 'the reload opened a replacement');
+          expect(
+            fakePlayer.commandLog.where((command) => command == 'play'),
+            isEmpty,
+            reason: 'the superseded hold must not resume the replacement',
+          );
+        },
+      );
+    });
+  });
+
   // The Plex part's stream selection is a persistence write, not how a source
   // switch is delivered: the reload carries the audio id itself. With
   // "Remember track selections" off there is nothing to write, so a source
