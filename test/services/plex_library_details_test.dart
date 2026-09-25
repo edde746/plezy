@@ -392,6 +392,42 @@ void main() {
     expect(page.items.single.libraryTitle, 'Movies');
   });
 
+  test('collection page stays under the server page-size cap', () async {
+    // Mirrors PMS servers that reject `/library/collections/{id}/children`
+    // pages above 120 items with HTTP 400 (#2468).
+    const total = 250;
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/collections/99/children') return http.Response('not found', 404);
+      final start = int.parse(request.url.queryParameters['X-Plex-Container-Start']!);
+      final size = int.parse(request.url.queryParameters['X-Plex-Container-Size']!);
+      if (size > 120) return http.Response('X-Plex-Container-Size header exceeds limit 120', 400);
+      final end = (start + size).clamp(start, total);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'offset': start,
+            'size': end - start,
+            'totalSize': total,
+            'Metadata': [
+              for (var i = start; i < end; i++) {'ratingKey': '$i', 'type': 'movie', 'title': 'Movie $i'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final first = await client.fetchCollectionPage('99', start: 0, size: 200);
+    expect(first.items.map((item) => item.id), [for (var i = 0; i < 200; i++) '$i']);
+    expect(first.totalCount, total);
+
+    final last = await client.fetchCollectionPage('99', start: 200, size: 200);
+    expect(last.items.map((item) => item.id), [for (var i = 200; i < total; i++) '$i']);
+    expect(last.offset, 200);
+  });
+
   test('library collection page passes requested pagination params', () async {
     Uri? requestUri;
     final client = makeClient((request) async {

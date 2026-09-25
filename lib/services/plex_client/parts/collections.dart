@@ -64,6 +64,13 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     );
   }
 
+  /// PMS caps `X-Plex-Container-Size` at 120 on
+  /// `/library/collections/{id}/children`. Some servers answer a larger page
+  /// with HTTP 400; the rest log that they eventually will (#2468).
+  static const int _collectionChildrenMaxPageSize = 120;
+
+  /// Serves [size] items from [start], split into requests the server
+  /// accepts. A null [size] reads to the end of the collection.
   @override
   Future<LibraryPage<MediaItem>> fetchCollectionPage(
     String collectionId, {
@@ -73,18 +80,28 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     String? libraryId,
     String? libraryTitle,
   }) async {
-    final result = await _getCollectionItems(
-      collectionId,
-      start: start,
-      size: size,
-      abort: abort,
-      librarySectionID: libraryId,
-      librarySectionTitle: libraryTitle,
-    );
+    final offset = start ?? 0;
+    final items = <PlexMetadataDto>[];
+    int totalSize;
+    while (true) {
+      final remaining = size == null ? _collectionChildrenMaxPageSize : size - items.length;
+      final result = await _getCollectionItems(
+        collectionId,
+        start: offset + items.length,
+        size: remaining.clamp(0, _collectionChildrenMaxPageSize),
+        abort: abort,
+        librarySectionID: libraryId,
+        librarySectionTitle: libraryTitle,
+      );
+      items.addAll(result.items);
+      totalSize = result.totalSize;
+      if (result.items.isEmpty || offset + items.length >= totalSize) break;
+      if (size != null && items.length >= size) break;
+    }
     return LibraryPage<MediaItem>(
-      items: result.items.map(PlexMappers.mediaItem).toList(),
-      totalCount: result.totalSize,
-      offset: start ?? 0,
+      items: items.map(PlexMappers.mediaItem).toList(),
+      totalCount: totalSize,
+      offset: offset,
     );
   }
 
