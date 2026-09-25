@@ -58,6 +58,7 @@ import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
+import '../utils/live_tv_deep_link.dart';
 import '../widgets/music/mini_player.dart';
 import '../widgets/navigation_label_fit.dart';
 import '../widgets/mobile_navigation_rail.dart';
@@ -905,6 +906,17 @@ class _MainScreenState extends State<MainScreen>
   /// Handle a launcher shelf content ID by fetching metadata and starting playback.
   Future<void> _handleShelfContentId(String contentId) async {
     if (!mounted) return;
+
+    // `plezy://live?...` links arrive through the same channel as shelf IDs.
+    final liveLink = LiveTvDeepLink.tryParse(contentId);
+    if (liveLink != null) {
+      try {
+        await liveLink.launch(context, context.read<MultiServerProvider>());
+      } catch (e) {
+        appLogger.e('Live TV deep link failed', error: e);
+      }
+      return;
+    }
 
     final parsed = SystemShelfService.parseContentId(contentId);
     if (parsed == null) {

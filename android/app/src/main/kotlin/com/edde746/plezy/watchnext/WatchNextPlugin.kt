@@ -27,12 +27,18 @@ class WatchNextPlugin() :
     internal const val SCHEMA_VERSION = 3
     private var pendingDeepLink: String? = null
 
+    /**
+     * Returns the payload to forward to Dart: the `content_id` of a
+     * `plezy://play` shelf link, or the whole URI of a `plezy://live` link
+     * (parsed by `LiveTvDeepLink` on the Dart side).
+     */
     fun handleIntent(intent: Intent?): String? {
       val data = intent?.data ?: return null
-      return if (data.scheme == "plezy" && data.authority == "play") {
-        data.getQueryParameter("content_id")
-      } else {
-        null
+      if (data.scheme != "plezy") return null
+      return when (data.authority) {
+        "play" -> data.getQueryParameter("content_id")
+        "live" -> data.toString()
+        else -> null
       }
     }
   }

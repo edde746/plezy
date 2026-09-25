@@ -23,6 +23,8 @@ import '../services/playback_launch_observer.dart';
 /// channel's server is reachable and packages the UX arguments.
 ///
 /// [channels] is the full channel list for channel up/down navigation.
+/// [startPosition] pre-answers the "watch from start" prompt shown when the
+/// channel already has recorded history.
 Future<void> navigateToLiveTv(
   BuildContext context, {
   required MultiServerProvider multiServer,
@@ -30,6 +32,7 @@ Future<void> navigateToLiveTv(
   required List<LiveTvChannel> channels,
   PlaybackLaunchObserver? launchObserver,
   bool Function()? isLaunchCurrent,
+  LiveTvStartPosition startPosition = LiveTvStartPosition.ask,
 }) async {
   if (!(isLaunchCurrent?.call() ?? true) || !(launchObserver?.isCurrent ?? true)) return;
   final serverInfo = liveTvServerInfoForChannel(multiServer, channel);
@@ -67,7 +70,12 @@ Future<void> navigateToLiveTv(
   final route = VideoPlayerRoute(
     builder: (_) => VideoPlayerScreen(
       metadata: placeholder,
-      live: LiveTvSessionArgs(channel: channel, channels: normalizedChannels, currentChannelIndex: currentChannelIndex),
+      live: LiveTvSessionArgs(
+        channel: channel,
+        channels: normalizedChannels,
+        currentChannelIndex: currentChannelIndex,
+        startPosition: startPosition,
+      ),
       launchObserver: launchObserver,
       isLaunchCurrent: isLaunchCurrent,
     ),
