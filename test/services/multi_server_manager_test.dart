@@ -997,6 +997,35 @@ void main() {
     });
   });
 
+  group('checkServerHealth', () {
+    test('a probe result from a client replaced mid-probe is not applied', () async {
+      final probeStarted = Completer<void>();
+      final original = testPlexClient(
+        serverId: ServerId('server-1'),
+        handler: (_) async {
+          if (!probeStarted.isCompleted) probeStarted.complete();
+          await Completer<void>().future;
+          throw StateError('unreachable');
+        },
+      );
+      final replacement = testPlexClient(serverId: ServerId('server-1'));
+      final manager = MultiServerManager();
+      addTearDown(manager.dispose);
+      manager.debugRegisterClientForTesting(original);
+
+      final health = manager.checkServerHealth();
+      await probeStarted.future;
+      // A profile switch: the old client is removed (aborting its probe) and
+      // the new profile's client is bound under the same server id.
+      manager.removeServer(ServerId('server-1'));
+      manager.debugRegisterClientForTesting(replacement);
+      await health;
+
+      expect(manager.getClient(ServerId('server-1')), same(replacement));
+      expect(manager.isServerOnline(ServerId('server-1')), isTrue);
+    });
+  });
+
   group('relay endpoint handling', () {
     test('a relay phase-1 winner is never persisted; a later direct promotion is', () async {
       final storage = await _prepareFreshPlexManagerTest();

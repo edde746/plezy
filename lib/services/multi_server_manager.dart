@@ -1029,6 +1029,13 @@ class MultiServerManager {
           return;
         }
       }
+      // A profile switch or reconnect can replace (or remove) the client
+      // while its probe is in flight; the old client's verdict says nothing
+      // about the new one, which may run under a different token.
+      if (!identical(_clients[serverId], client)) {
+        appLogger.d('Ignoring stale health result for $serverId');
+        return;
+      }
       _applyHealth(ServerId(serverId), status);
       if (status != HealthStatus.online) {
         appLogger.w('Server $serverId health check failed: ${status.name}');
