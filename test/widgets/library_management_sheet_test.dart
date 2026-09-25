@@ -35,7 +35,7 @@ const _qualifiedLibrary = MediaLibrary(
   serverId: 'server-a',
 );
 
-Future<({int Function() selects, int Function() backs})> _pumpLibraryManagementLauncher(
+Future<({int Function() selects, int Function() backs, LibrariesProvider libraries})> _pumpLibraryManagementLauncher(
   WidgetTester tester, {
   MediaLibrary library = _qualifiedLibrary,
   List<MediaLibrary>? libraries,
@@ -99,7 +99,7 @@ Future<({int Function() selects, int Function() backs})> _pumpLibraryManagementL
   );
   await tester.pumpAndSettle();
 
-  return (selects: () => underlyingSelects, backs: () => underlyingBacks);
+  return (selects: () => underlyingSelects, backs: () => underlyingBacks, libraries: librariesProvider);
 }
 
 Future<void> _openScanConfirmation(WidgetTester tester) async {
@@ -253,6 +253,48 @@ void main() {
       expect(rect.top, greaterThanOrEqualTo(viewport.top), reason: 'focused row $index sits above the viewport');
       expect(rect.bottom, lessThanOrEqualTo(viewport.bottom), reason: 'focused row $index sits below the viewport');
     }
+  });
+
+  test('reconcileLibraryOrder keeps the sheet order over the current libraries', () {
+    MediaLibrary library(String id, {String title = ''}) =>
+        MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: 'server-a');
+
+    final reconciled = reconcileLibraryOrder(
+      [library('b'), library('gone'), library('a')],
+      [library('a', title: 'fresh'), library('b'), library('new')],
+    );
+
+    expect(reconciled.map((l) => l.id), ['b', 'a', 'new']);
+    expect(reconciled[1].title, 'fresh');
+  });
+
+  testWidgets('a reorder after libraries load mid-sheet keeps the new libraries', (tester) async {
+    MediaLibrary library(String id) => MediaLibrary(
+      id: id,
+      backend: MediaBackend.plex,
+      title: 'Library $id',
+      kind: MediaKind.movie,
+      serverId: 'server-a',
+    );
+
+    final launcher = await _pumpLibraryManagementLauncher(tester, libraries: [library('a'), library('b')]);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    // Another server's libraries finish loading while the sheet is open.
+    await launcher.libraries.updateLibraryOrder([library('a'), library('b'), library('c')]);
+    await tester.pumpAndSettle();
+    expect(find.text('Library c'), findsOneWidget);
+
+    // Move the first row down one place and confirm.
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(launcher.libraries.libraries.map((l) => l.id), ['b', 'a', 'c']);
   });
 
   for (final action in ['scan', 'empty_trash']) {

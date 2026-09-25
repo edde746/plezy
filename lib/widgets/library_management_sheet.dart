@@ -59,7 +59,6 @@ Future<void> showLibraryManagementSheet(
 }) {
   final librariesProvider = context.read<LibrariesProvider>();
   final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-  final allLibraries = librariesProvider.libraries;
 
   Future<void> defaultToggleVisibility(MediaLibrary library) async {
     final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.globalKey);
@@ -72,10 +71,10 @@ Future<void> showLibraryManagementSheet(
 
   Widget buildSheet({required bool isDialog}) => _LibraryManagementSheet(
     isDialog: isDialog,
-    allLibraries: List.from(allLibraries),
+    librariesProvider: librariesProvider,
     hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
     onReorder: (reorderedLibraries) {
-      librariesProvider.updateLibraryOrder(reorderedLibraries);
+      librariesProvider.updateLibraryOrder(reconcileLibraryOrder(reorderedLibraries, librariesProvider.libraries));
       onOrderChanged?.call();
     },
     onToggleVisibility: onToggleVisibility ?? defaultToggleVisibility,
@@ -95,6 +94,17 @@ Future<void> showLibraryManagementSheet(
     isScrollControlled: true,
     builder: (context) => buildSheet(isDialog: false),
   );
+}
+
+/// [sheetOrder] as the sheet shows it, applied to the provider's [current]
+/// libraries: rows keep the sheet's order, libraries loaded since the sheet
+/// last synced follow in their current order, and libraries that have gone
+/// are dropped. A reorder therefore never saves a stale snapshot, which would
+/// drop newly loaded libraries or bring back removed ones.
+@visibleForTesting
+List<MediaLibrary> reconcileLibraryOrder(List<MediaLibrary> sheetOrder, List<MediaLibrary> current) {
+  final remaining = {for (final library in current) library.globalKey: library};
+  return [for (final library in sheetOrder) ?remaining.remove(library.globalKey), ...remaining.values];
 }
 
 List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
@@ -259,7 +269,7 @@ Future<void> _analyzeLibrary(BuildContext context, MediaLibrary library) {
 
 class _LibraryManagementSheet extends StatefulWidget {
   final bool isDialog;
-  final List<MediaLibrary> allLibraries;
+  final LibrariesProvider librariesProvider;
   final Set<String> hiddenLibraryKeys;
   final Function(List<MediaLibrary>) onReorder;
   final Function(MediaLibrary) onToggleVisibility;
@@ -268,7 +278,7 @@ class _LibraryManagementSheet extends StatefulWidget {
 
   const _LibraryManagementSheet({
     this.isDialog = false,
-    required this.allLibraries,
+    required this.librariesProvider,
     required this.hiddenLibraryKeys,
     required this.onReorder,
     required this.onToggleVisibility,
@@ -318,11 +328,27 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   @override
   void initState() {
     super.initState();
-    _tempLibraries = List.from(widget.allLibraries);
+    _tempLibraries = List.of(widget.librariesProvider.libraries);
+    widget.librariesProvider.addListener(_onLibrariesChanged);
+  }
+
+  /// Follows library loads and changes made while the sheet is open, keeping
+  /// the order shown. A move in progress keeps its rows; its confirm is
+  /// reconciled against the provider when it is saved.
+  void _onLibrariesChanged() {
+    if (!mounted || movingIndex != null) return;
+    setState(() {
+      _tempLibraries = reconcileLibraryOrder(_tempLibraries, widget.librariesProvider.libraries);
+      if (focusedIndex >= _tempLibraries.length) {
+        focusedIndex = _tempLibraries.isEmpty ? 0 : _tempLibraries.length - 1;
+        focusedColumn = 0;
+      }
+    });
   }
 
   @override
   void dispose() {
+    widget.librariesProvider.removeListener(_onLibrariesChanged);
     _listFocusNode.dispose();
     _dialogScrollController.dispose();
     _sheetScrollController.dispose();
