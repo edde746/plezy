@@ -309,7 +309,7 @@ void main() {
       expect(Uri.parse(url).path, '/Audio/track-7/stream.flac');
     });
 
-    test('resolveExternalPlaybackUrl gives external players the extension-hinted stream URL', () async {
+    test('resolveExternalPlayback gives external players the extension-hinted stream URL', () async {
       // External players can't sniff a bare `stream` path — the container
       // extension is the only hint they get, and disc images (ISO) are
       // unplayable without it (#2375).
@@ -321,17 +321,17 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final url = await scoped.resolveExternalPlaybackUrl(
+      final target = await scoped.resolveExternalPlayback(
         testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
       );
 
-      final uri = Uri.parse(url!);
+      final uri = Uri.parse(target!.url);
       expect(uri.path, '/Videos/item-1/stream.iso');
       expect(uri.queryParameters['Static'], 'true');
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
     });
 
-    test('resolveExternalPlaybackUrl uses the audio endpoint with extension for tracks', () async {
+    test('resolveExternalPlayback uses the audio endpoint with extension for tracks', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
@@ -350,11 +350,64 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final url = await scoped.resolveExternalPlaybackUrl(
+      final target = await scoped.resolveExternalPlayback(
         testMediaItem(id: 'track-1', backend: MediaBackend.jellyfin, kind: MediaKind.track, serverId: 'srv-1'),
       );
 
-      expect(Uri.parse(url!).path, '/Audio/track-1/stream.flac');
+      expect(Uri.parse(target!.url).path, '/Audio/track-1/stream.flac');
+    });
+
+    test('resolveExternalPlayback carries the external subtitle files, server default enabled', () async {
+      // External players load subtitles only from the launch intent (#2464).
+      // The embedded row stays behind: the player reads it from the container.
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({'MediaSources': []}),
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Container': 'mkv',
+            'DefaultSubtitleStreamIndex': 4,
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video'},
+              {'Index': 2, 'Type': 'Subtitle', 'Codec': 'ass', 'Language': 'jpn'},
+              {
+                'Index': 3,
+                'Type': 'Subtitle',
+                'Codec': 'subrip',
+                'Language': 'swe',
+                'DisplayTitle': 'Swedish - SRT',
+                'IsExternal': true,
+              },
+              {
+                'Index': 4,
+                'Type': 'Subtitle',
+                'Codec': 'subrip',
+                'Language': 'eng',
+                'DisplayTitle': 'English - SRT',
+                'IsExternal': true,
+              },
+            ],
+          },
+        ],
+      );
+      addTearDown(scoped.close);
+
+      final target = await scoped.resolveExternalPlayback(
+        testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+      );
+
+      final subtitles = target!.subtitles;
+      final uris = [for (final subtitle in subtitles) Uri.parse(subtitle.uri!)];
+      expect(uris.map((uri) => uri.path), [
+        '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+        '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
+      ]);
+      expect(
+        uris.map((uri) => uri.queryParameters.values),
+        everyElement(contains('tok-abc')),
+        reason: 'an external player cannot send the auth header',
+      );
+      expect(subtitles.map((subtitle) => subtitle.isDefault), [false, true]);
     });
 
     test('buildDirectStreamUrl canonicalizes a mixed-case scheme from stored config', () async {
@@ -893,7 +946,7 @@ void main() {
       );
     });
 
-    test('resolveExternalPlaybackUrl pins primary source id when alternates exist', () async {
+    test('resolveExternalPlayback pins primary source id when alternates exist', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
@@ -913,13 +966,13 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final url = await scoped.resolveExternalPlaybackUrl(
+      final target = await scoped.resolveExternalPlayback(
         testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
         mediaIndex: 0,
         mediaSourceId: 'item-1',
       );
 
-      final uri = Uri.parse(url!);
+      final uri = Uri.parse(target!.url);
       expect(uri.queryParameters['MediaSourceId'], 'item-1');
       expect(uri.queryParameters['Container'], 'mp4');
     });

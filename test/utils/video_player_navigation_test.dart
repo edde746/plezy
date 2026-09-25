@@ -19,6 +19,7 @@ import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/downloaded_video_source.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
@@ -435,9 +436,13 @@ class _ExternalUrlClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.plex;
 
   @override
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(
+    MediaItem item, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async {
     resolvedMediaIndexes.add(mediaIndex);
-    return 'https://server/stream/$mediaIndex';
+    return ExternalPlaybackTarget(url: 'https://server/stream/$mediaIndex');
   }
 
   @override

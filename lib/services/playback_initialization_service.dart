@@ -172,21 +172,7 @@ class PlaybackInitializationService {
     required int selectedMediaIndex,
     String? selectedMediaSourceId,
   }) async {
-    MediaSourceInfo? mediaInfo;
-    try {
-      final cacheServerId = await _resolveCacheServerId(metadata);
-      if (cacheServerId != null) {
-        mediaInfo = await CachedPlaybackMetadataService.fetchMediaSourceInfo(
-          backend: metadata.backend,
-          cacheServerId: cacheServerId,
-          itemId: metadata.id,
-          mediaIndex: selectedMediaIndex,
-        );
-      }
-    } catch (e) {
-      appLogger.d('Could not load cached media info for offline playback', error: e);
-    }
-
+    final mediaInfo = await _cachedMediaInfo(metadata, selectedMediaIndex);
     final subtitleSidecars = await _discoverSidecarSubtitles(
       offlineVideoPath,
       metadata: metadata,
@@ -203,6 +189,35 @@ class PlaybackInitializationService {
       selectedMediaIndex: selectedMediaIndex,
       selectedMediaSourceId: selectedMediaSourceId,
     );
+  }
+
+  /// Sidecar subtitles the downloader wrote for the local copy at
+  /// [videoPath] (a plain path or a SAF `content://` URI), labelled from the
+  /// cached media info when it is available. Used by the external-player
+  /// handoff, which plays the same local copy outside the app.
+  Future<List<PlaybackSubtitleSidecar>> discoverDownloadedSubtitles(
+    MediaItem metadata, {
+    required String videoPath,
+    required int mediaIndex,
+  }) async {
+    final mediaInfo = await _cachedMediaInfo(metadata, mediaIndex);
+    return _discoverSidecarSubtitles(videoPath, metadata: metadata, mediaInfo: mediaInfo);
+  }
+
+  Future<MediaSourceInfo?> _cachedMediaInfo(MediaItem metadata, int mediaIndex) async {
+    try {
+      final cacheServerId = await _resolveCacheServerId(metadata);
+      if (cacheServerId == null) return null;
+      return await CachedPlaybackMetadataService.fetchMediaSourceInfo(
+        backend: metadata.backend,
+        cacheServerId: cacheServerId,
+        itemId: metadata.id,
+        mediaIndex: mediaIndex,
+      );
+    } catch (e) {
+      appLogger.d('Could not load cached media info for offline playback', error: e);
+      return null;
+    }
   }
 
   Future<String?> _resolveCacheServerId(MediaItem metadata) async {

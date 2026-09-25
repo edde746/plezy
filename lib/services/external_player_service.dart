@@ -4,11 +4,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
+import '../database/app_database.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../media/watch_progress.dart';
 import '../models/external_player_models.dart';
+import '../mpv/models.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -16,6 +19,7 @@ import '../utils/watch_state_notifier.dart';
 import '../i18n/strings.g.dart';
 import 'settings_service.dart';
 import 'offline_watch_sync_service.dart';
+import 'playback_initialization_service.dart';
 import 'trackers/tracker_coordinator.dart';
 
 const _externalPlayerChannel = MethodChannel('com.plezy/external_player');
@@ -55,11 +59,12 @@ class _ExternalPlayerLaunchResult {
 }
 
 class ExternalPlayerService {
-  /// Launch an external player with either a pre-resolved [videoUrl] (e.g.
-  /// a local file path for downloaded content) or by asking [client] to
-  /// resolve the streaming URL for [metadata]. Each backend implements
-  /// `resolveExternalPlaybackUrl` for the right shape (Plex part URL,
-  /// Jellyfin `/Videos/{id}/stream.{container}?Static=true`).
+  /// Launch an external player with either a pre-resolved [videoUrl] (the
+  /// local file of a downloaded copy) or by asking [client] to resolve the
+  /// stream for [metadata]. Each backend implements `resolveExternalPlayback`
+  /// for the right URL shape (Plex part URL, Jellyfin
+  /// `/Videos/{id}/stream.{container}?Static=true`) and its external
+  /// subtitle files, which Android players receive through the intent.
   static Future<bool> launch({
     required BuildContext context,
     MediaItem? metadata,
@@ -78,22 +83,24 @@ class ExternalPlayerService {
 
     try {
       String resolvedUrl;
+      var subtitles = const <SubtitleTrack>[];
 
       if (videoUrl != null) {
         resolvedUrl = videoUrl;
       } else if (client != null && metadata != null) {
-        final url = await client.resolveExternalPlaybackUrl(
+        final target = await client.resolveExternalPlayback(
           metadata,
           mediaIndex: mediaIndex,
           mediaSourceId: mediaSourceId,
         );
-        if (url == null || url.isEmpty) {
+        if (target == null || target.url.isEmpty) {
           if (context.mounted) {
             showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
           }
           return false;
         }
-        resolvedUrl = url;
+        resolvedUrl = target.url;
+        subtitles = target.subtitles;
       } else {
         appLogger.e('ExternalPlayerService.launch requires either videoUrl or client+metadata');
         return false;
@@ -105,8 +112,25 @@ class ExternalPlayerService {
 
       // On Android, always use native intent to avoid url_launcher opening in browser
       if (Platform.isAndroid && context.mounted) {
+        // A downloaded copy's subtitles are the sidecar files saved with it.
+        if (videoUrl != null && metadata != null) {
+          subtitles = await _downloadedSubtitles(
+            context.read<AppDatabase>(),
+            videoUrl,
+            metadata: metadata,
+            client: client,
+            mediaIndex: mediaIndex,
+          );
+          if (!context.mounted || !current()) return false;
+        }
         onHandoffPending?.call();
-        final launchResult = await _launchAndroidNative(resolvedUrl, player, context, metadata: metadata);
+        final launchResult = await _launchAndroidNative(
+          resolvedUrl,
+          player,
+          context,
+          metadata: metadata,
+          subtitles: subtitles,
+        );
         if (launchResult.launched && current()) onLaunched?.call();
         if (launchResult.launched && metadata != null && current()) {
           await _reportAndroidExternalProgress(
@@ -138,6 +162,29 @@ class ExternalPlayerService {
     }
   }
 
+  /// Sidecar subtitles saved with the downloaded copy at [videoUrl].
+  /// Best-effort: a copy whose subtitles can't be listed still launches,
+  /// just without them.
+  static Future<List<SubtitleTrack>> _downloadedSubtitles(
+    AppDatabase database,
+    String videoUrl, {
+    required MediaItem metadata,
+    required MediaServerClient? client,
+    required int mediaIndex,
+  }) async {
+    final videoPath = videoUrl.startsWith('file://') ? videoUrl.substring('file://'.length) : videoUrl;
+    try {
+      final sidecars = await PlaybackInitializationService(
+        client: client,
+        database: database,
+      ).discoverDownloadedSubtitles(metadata, videoPath: videoPath, mediaIndex: mediaIndex);
+      return [for (final sidecar in sidecars) sidecar.track];
+    } catch (e, stackTrace) {
+      appLogger.w('Could not list downloaded subtitles for the external player', error: e, stackTrace: stackTrace);
+      return const [];
+    }
+  }
+
   /// Launch a video on Android using native ACTION_VIEW intent.
   /// Handles local files (file://, content://, absolute paths) and remote URLs.
   static Future<_ExternalPlayerLaunchResult> _launchAndroidNative(
@@ -145,6 +192,7 @@ class ExternalPlayerService {
     ExternalPlayer player,
     BuildContext context, {
     MediaItem? metadata,
+    List<SubtitleTrack> subtitles = const [],
   }) async {
     try {
       final packages = player.id == 'system_default' ? const <String>[] : KnownPlayers.androidPackageCandidates(player);
@@ -153,6 +201,7 @@ class ExternalPlayerService {
         if (metadata?.title?.trim().isNotEmpty == true) 'title': metadata!.title!.trim(),
         if ((metadata?.viewOffsetMs ?? 0) > 0) 'startPositionMs': metadata!.viewOffsetMs,
         if (packages.isNotEmpty) 'packages': packages,
+        if (subtitles.isNotEmpty) 'subtitles': [for (final track in subtitles) ?_subtitleArgument(track)],
       });
       return _ExternalPlayerLaunchResult.fromMap(result);
     } on PlatformException catch (e) {
@@ -163,6 +212,20 @@ class ExternalPlayerService {
       }
       return const _ExternalPlayerLaunchResult(launched: false);
     }
+  }
+
+  /// One `subtitles` entry for the native intent builder. Local sidecars go
+  /// as plain paths, the same shape as a downloaded video, so the native side
+  /// shares them through its FileProvider.
+  static Map<String, Object?>? _subtitleArgument(SubtitleTrack track) {
+    final uri = track.uri;
+    if (uri == null || uri.isEmpty) return null;
+    final name = track.title?.trim();
+    return {
+      'uri': uri.startsWith('file:') ? Uri.parse(uri).toFilePath() : uri,
+      if (name != null && name.isNotEmpty) 'name': name,
+      'enabled': track.isDefault,
+    };
   }
 
   static Future<void> _reportAndroidExternalProgress(

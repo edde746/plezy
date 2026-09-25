@@ -25,32 +25,6 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
   String externalImageUrl(String url, {int? width, int? height, bool cover = true}) => url;
 
   @override
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
-    // Tracks stream from /Audio/{id}/stream; the URL contract (Static=true,
-    // api_key in the query string) is otherwise identical to the video one.
-    final isTrack = item.kind == MediaKind.track;
-    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
-    if (bundle == null) {
-      return isTrack
-          ? buildAudioDirectStreamUrl(item.id, containerExtension: true)
-          : buildDirectStreamUrl(item.id, containerExtension: true);
-    }
-    final container = bundle.container;
-    final pinnedSourceId = bundle.pinnedSourceId;
-    // External players get `stream.{container}`: the extension is the only
-    // hint they get about the payload, and disc images (ISO) are unplayable
-    // for players that can't tell an ISO stream from a plain video file.
-    return isTrack
-        ? buildAudioDirectStreamUrl(
-            item.id,
-            container: container,
-            mediaSourceId: pinnedSourceId,
-            containerExtension: true,
-          )
-        : buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId, containerExtension: true);
-  }
-
-  @override
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     final selectedSourceId = bundle?.selectedSourceId;

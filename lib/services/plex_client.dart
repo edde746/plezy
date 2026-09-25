@@ -4849,9 +4849,17 @@ class PlexClient
   // ── Downloads ────────────────────────────────────────────────────
 
   @override
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(
+    MediaItem item, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async {
     final playbackData = await getVideoPlaybackData(item.id, mediaIndex: mediaIndex);
-    return playbackData.hasValidVideoUrl ? playbackData.videoUrl : null;
+    if (!playbackData.hasValidVideoUrl) return null;
+    return ExternalPlaybackTarget(
+      url: playbackData.videoUrl!,
+      subtitles: [for (final sidecar in _buildExternalSubtitles(playbackData.mediaInfo)) sidecar.track],
+    );
   }
 
   @override

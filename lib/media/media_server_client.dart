@@ -821,9 +821,10 @@ abstract class MediaServerClient {
   /// storage service hashes to deduplicate across items that share blobs.
   List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item);
 
-  /// Resolve a fully-qualified URL the OS-level external player (VLC, Infuse,
-  /// MX Player, etc.) can fetch directly. Plex builds this from the chosen
-  /// media version's part path; Jellyfin returns its
+  /// Resolve what an OS-level external player (VLC, Infuse, MX Player, etc.)
+  /// is handed: a fully-qualified URL it can fetch directly, plus the item's
+  /// external subtitle files. Plex builds the URL from the chosen media
+  /// version's part path; Jellyfin returns its
   /// `/Videos/{id}/stream.{container}` endpoint with `Static=true` so
   /// transcoding is bypassed and the player gets a container extension hint
   /// (required for disc images such as ISO). Returns null only when a
@@ -832,12 +833,12 @@ abstract class MediaServerClient {
   ///
   /// Deliberately separate from the in-app playback funnel
   /// (`PlaybackSourceResolver`): external players can't send custom headers,
-  /// so the URL must be self-contained (token in the query string), and
+  /// so every URL must be self-contained (token in the query string), and
   /// there's no session/transcode negotiation to carry. Likewise their
   /// progress reporting is a one-shot started/stopped pair in
   /// `ExternalPlayerService` — an external app exposes no live position
   /// stream for the in-player tracker to follow.
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 }
 
 /// Optional interface for backends whose public server id is not specific

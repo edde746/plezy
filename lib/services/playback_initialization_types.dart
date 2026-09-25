@@ -92,6 +92,21 @@ class PlaybackSubtitleSidecar {
   const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track, this.preload = false});
 }
 
+/// What an OS-level external player is handed: a stream URL it can fetch
+/// without custom headers (token in the query string), plus the external
+/// subtitle files it can load alongside that stream.
+///
+/// [subtitles] are real sidecar files only — the player reads embedded tracks
+/// from the container itself. Their URIs are equally self-contained, and
+/// [SubtitleTrack.isDefault] marks the track the server selected for this
+/// user, which is the one the player should switch on.
+class ExternalPlaybackTarget {
+  final String url;
+  final List<SubtitleTrack> subtitles;
+
+  const ExternalPlaybackTarget({required this.url, this.subtitles = const []});
+}
+
 /// Reason the transcode branch fell back to direct play.
 enum TranscodeFallbackReason {
   /// Plex decision said only direct-play is available.
