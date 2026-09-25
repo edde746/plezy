@@ -823,6 +823,31 @@ void main() {
       await provider.leaveSession();
       provider.dispose();
     });
+
+    test('a join reply racing its target out of the room keeps the host session', () async {
+      final factory = _FakePeerServiceFactory(rejectDisconnectedTargets: true);
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      await provider.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'race1',
+      );
+      await _flushProviderEvents();
+      final service = factory.services.single;
+
+      // The guest is already gone when its join is answered, so the relay
+      // rejects the directed reply with not_in_room.
+      service.emitMessage(SyncMessage.join(peerId: 'guest-9', displayName: 'Guest', isHost: false));
+      await _flushProviderEvents();
+
+      expect(provider.isInSession, isTrue);
+      expect(provider.session?.state, SessionState.connected);
+      expect(provider.session?.errorMessage, isNull);
+
+      await provider.leaveSession();
+      provider.dispose();
+    });
   });
 
   group('WatchTogetherProvider — release cleanup', () {

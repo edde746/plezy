@@ -724,12 +724,14 @@ class WatchTogetherProvider with ChangeNotifier {
 
     _errorSubscription = peerService.onError.listen((error) {
       if (_disposed || !identical(_peerService, peerService)) return;
-      final hostPeerId = _session?.hostPeerId;
-      if (error.serverCode == RelayProtocol.notInRoomCode &&
-          !isHost &&
-          hostPeerId != null &&
-          !peerService.connectedPeers.contains(hostPeerId)) {
-        appLogger.d('WatchTogether: Declared host is not connected yet; keeping the retained-room join pending');
+      // Membership ends through `ended`, a closed transport, or our own
+      // release after this listener is detached, so the relay reports
+      // not_in_room here only for a directed send whose target is not
+      // connected: a guest reaching a retained room's absent host, or a reply
+      // racing the target's own departure (which arrives separately as
+      // peerLeft). Either way the room is intact for us.
+      if (error.serverCode == RelayProtocol.notInRoomCode) {
+        appLogger.d('WatchTogether: Directed message target is not connected; keeping the session');
         return;
       }
       // A relay-atomic roster rejection is a failed transfer, not a failed
