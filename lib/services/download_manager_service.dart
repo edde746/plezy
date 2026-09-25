@@ -1590,6 +1590,7 @@ class DownloadManagerService {
           downloadSubtitles: queueItem.downloadSubtitles,
           record: record,
           showYear: showYear,
+          videoFilePath: record?.videoFilePath,
         );
         if (settled.artwork && settled.subtitles) {
           await _database.removeFromQueue(globalKey);
@@ -1635,23 +1636,35 @@ class DownloadManagerService {
     if (ok) appLogger.i('Deleted $description: $uri');
   }
 
-  /// Recursively delete a SAF directory — lists children in parallel, deletes
-  /// leaves, recurses into subdirectories, then removes the dir itself.
-  /// Manual recursion because DocumentsProvider-level recursion isn't guaranteed
-  /// across providers.
-  Future<void> _deleteSafDirRecursive(String dirUri, {required String description}) async {
-    final saf = _safStorage;
-    final children = await saf.list(dirUri);
-    if (children != null && children.isNotEmpty) {
-      await Future.wait(
-        children.map((child) {
-          return child.isDir
-              ? _deleteSafDirRecursive(child.uri, description: description)
-              : saf.delete(child.uri, isDir: false);
-        }),
-      );
+  /// Delete [dirUri] and the SAF directories below it, deepest first, but only
+  /// those that hold no files — files are never touched. Returns whether
+  /// [dirUri] is gone.
+  Future<bool> _pruneEmptySafDirTree(String dirUri) async {
+    final children = await _safStorage.list(dirUri);
+    if (children == null) return false;
+    var remaining = 0;
+    for (final child in children) {
+      if (!child.isDir || !await _pruneEmptySafDirTree(child.uri)) remaining++;
     }
-    await _tryDeleteSaf(dirUri, isDir: true, description: description);
+    if (remaining > 0 || !await _safStorage.delete(dirUri, isDir: true)) return false;
+    appLogger.i('Cleaned up empty SAF directory: $dirUri');
+    return true;
+  }
+
+  /// Delete the empty directories below [dir], deepest first; files (and
+  /// links) are never touched. Returns whether [dir] itself is left empty.
+  Future<bool> _pruneEmptySubdirectories(Directory dir) async {
+    if (!await dir.exists()) return false;
+    var empty = true;
+    for (final entry in await dir.list(followLinks: false).toList()) {
+      if (entry is Directory && await _pruneEmptySubdirectories(entry)) {
+        await entry.delete();
+        appLogger.i('Cleaned up empty directory: ${entry.path}');
+      } else {
+        empty = false;
+      }
+    }
+    return empty;
   }
 
   /// Walk a chain of SAF directory URIs (deepest-first) and delete each that is empty.
@@ -2114,6 +2127,9 @@ class DownloadManagerService {
 
           // Clean up partial files from previous attempts to prevent
           // background_downloader from creating numbered copies (File (1).mp4).
+          // The file name carries this item's identity, so anything at the
+          // target is this item's own leftover — never another server's or
+          // library's copy of the same title, nor a user file.
           await Future.wait([
             _deleteFileIfExists(File(downloadFilePath), 'stale video before re-download'),
             _deleteFileIfExists(File('$downloadFilePath.part'), 'stale .part before re-download'),
@@ -2648,6 +2664,7 @@ class DownloadManagerService {
             downloadSubtitles: downloadSubtitles,
             record: existingCheck,
             showYear: ctx?.showYear,
+            videoFilePath: storedPath,
             preresolvedSubtitles: ctx?.subtitles,
           );
           artworkSettled = settled.artwork;
@@ -2747,6 +2764,7 @@ class DownloadManagerService {
   /// and the deferred-repair path: [record] carries the media-source
   /// coordinates for re-resolving subtitles, [preresolvedSubtitles] skips that
   /// re-resolve, and [showYear] is caller-supplied because the paths differ.
+  /// [videoFilePath] is the stored video the subtitles belong next to.
   Future<({bool artwork, bool subtitles})> _runSupplementaryDownloads(
     String globalKey,
     MediaItem metadata,
@@ -2756,6 +2774,7 @@ class DownloadManagerService {
     required bool downloadSubtitles,
     required DownloadedMediaItem? record,
     required int? showYear,
+    required String? videoFilePath,
     List<DownloadSubtitleSpec>? preresolvedSubtitles,
   }) async {
     var artworkSettled = !downloadArtwork;
@@ -2791,6 +2810,7 @@ class DownloadManagerService {
             client,
             isRepair: isRepair,
             showYear: showYear,
+            videoFilePath: videoFilePath,
           );
         }
       } catch (e, st) {
@@ -2878,6 +2898,7 @@ class DownloadManagerService {
   }
 
   /// [showYear]: For episodes, pass the show's premiere year (not the episode's year)
+  /// [videoFilePath]: the stored video, when known
   Future<bool> _downloadSubtitles(
     String globalKey,
     MediaItem metadata,
@@ -2885,17 +2906,28 @@ class DownloadManagerService {
     MediaServerClient client, {
     required bool isRepair,
     int? showYear,
+    String? videoFilePath,
   }) async {
     if (!isRepair) {
       _emitProgress(globalKey, DownloadStatus.downloading, 0, currentFile: 'subtitles');
     }
     var allSettled = true;
 
+    // Movie and episode sidecars belong next to the video as it is named on
+    // disk, where playback looks for them — a download recorded under an older
+    // naming scheme keeps that name rather than today's template.
+    final sidecarDirectory =
+        (metadata.isMovie || metadata.isEpisode) && videoFilePath != null && !_storageService.isSafUri(videoFilePath)
+        ? _storageService.sidecarSubtitlesDirectoryPath(await _storageService.ensureAbsolutePath(videoFilePath))
+        : null;
+
     for (final subtitle in subtitles) {
       try {
         final extension = CodecUtils.getSubtitleExtension(subtitle.codec);
         final String subtitlePath;
-        if (_storageService.isUsingSaf) {
+        if (sidecarDirectory != null) {
+          subtitlePath = path.join(sidecarDirectory, '${subtitle.id}.$extension');
+        } else if (_storageService.isUsingSaf) {
           subtitlePath = await _storageService.getSubtitlePath(
             ServerId(metadata.serverId!),
             metadata.id,
@@ -3468,9 +3500,10 @@ class DownloadManagerService {
     }
   }
 
-  /// Delete episodes in a collection (season or show). In SAF mode, cleans up
-  /// app-private subtitle/thumbnail assets per episode — the SAF video files
-  /// and parent directories are wiped in one recursive call by the caller.
+  /// Delete episodes in a collection (season or show): each episode's recorded
+  /// video and the sidecars named after it (in SAF mode also the app-private
+  /// subtitle/thumbnail assets). The caller then removes the folders the
+  /// deletions left empty.
   Future<void> _deleteEpisodesInCollection({
     required List<DownloadedMediaItem> episodes,
     required ServerId serverId,
@@ -3502,6 +3535,7 @@ class DownloadManagerService {
               skipStorageVideoAndParents: true,
               batchRatingKeys: batchRatingKeys,
             );
+            await _deleteByFilePath(episode);
             return;
           }
         }
@@ -3576,49 +3610,64 @@ class DownloadManagerService {
 
   Future<void> _deleteMovieFiles(MediaItem movie, ServerId serverId, {String? clientScopeId}) async {
     try {
-      await _deleteMovieStorageDirectory(movie);
+      await _deleteMovieStorageVideo(movie);
 
       await _deleteChapterThumbnails(serverId, movie.id, clientScopeId: clientScopeId);
 
       // Safety net: verify the actual DB-recorded file is gone
       await _ensureDbFileDeleted(serverId, movie.id);
+
+      await _pruneStorageDirectory(_storageService.getMovieSafPathComponents(movie));
     } catch (e, stack) {
       final storageLabel = _storageService.isUsingSaf ? 'SAF ' : '';
       appLogger.e('Error deleting ${storageLabel}movie files', error: e, stackTrace: stack);
     }
   }
 
-  /// Delete one media directory and everything under it, on either storage backend.
-  /// [safComponents] and [fileDirectory] are thunks so only the branch that runs
-  /// resolves its path — the file-mode getters create the directory as a side effect.
-  Future<void> _deleteStorageDirectory({
-    required List<String> Function() safComponents,
-    required Future<Directory> Function() fileDirectory,
-    required String label,
-  }) async {
+  /// Remove the media directory at [components] (a `*SafPathComponents` list,
+  /// which both storage backends lay out) once it holds nothing: its empty
+  /// subdirectories, then the directory itself. Never recursive over files —
+  /// the folder is named by title alone, so it can hold another server's or
+  /// library's copy of the same title, or the user's own files in a custom
+  /// download location; downloads delete their own files by name beforehand.
+  Future<void> _pruneStorageDirectory(List<String> components) async {
     if (_storageService.isUsingSaf) {
       final safBaseUri = _storageService.safBaseUri;
       if (safBaseUri == null) return;
-      final dir = await _safStorage.getChild(safBaseUri, safComponents());
-      if (dir != null) {
-        await _deleteSafDirRecursive(dir.uri, description: '$label directory');
-      }
+      final dir = await _safStorage.getChild(safBaseUri, components);
+      if (dir != null) await _pruneEmptySafDirTree(dir.uri);
       return;
     }
 
-    final dir = await fileDirectory();
-    if (await dir.exists()) {
-      await dir.delete(recursive: true);
-      appLogger.i('Deleted $label directory: ${dir.path}');
-    }
+    final downloadsDir = await _storageService.getDownloadsDirectory();
+    final dir = Directory(path.joinAll([downloadsDir.path, ...components]));
+    if (await _pruneEmptySubdirectories(dir)) await _cleanupEmptyParentDirectories(dir);
   }
 
-  Future<void> _deleteMovieStorageDirectory(MediaItem movie) {
-    return _deleteStorageDirectory(
-      safComponents: () => _storageService.getMovieSafPathComponents(movie),
-      fileDirectory: () => _storageService.getMovieDirectory(movie),
-      label: 'movie',
-    );
+  /// Delete the movie's video at its current download path, with its sidecars.
+  /// The file name carries the item's identity, so nothing else can own it; a
+  /// download recorded under an older, title-only name is removed by
+  /// [_ensureDbFileDeleted] instead.
+  Future<void> _deleteMovieStorageVideo(MediaItem movie) async {
+    if (_storageService.isUsingSaf) {
+      final safBaseUri = _storageService.safBaseUri;
+      if (safBaseUri == null) return;
+      final movieDir = await _safStorage.getChild(safBaseUri, _storageService.getMovieSafPathComponents(movie));
+      if (movieDir == null) return;
+      final file = await _findSafFileByBaseName(movieDir.uri, _storageService.getMovieSafBaseName(movie));
+      if (file != null) await _tryDeleteSaf(file.uri, isDir: false, description: 'SAF movie video');
+      return;
+    }
+
+    final videoPathTemplate = await _storageService.getMovieVideoPath(movie, 'tmp');
+    final videoPathWithoutExt = videoPathTemplate.substring(0, videoPathTemplate.lastIndexOf('.'));
+    final actualVideoFile = await _findFileWithAnyExtension(videoPathWithoutExt);
+    if (actualVideoFile != null) {
+      await _deleteFilesystemVideoAssets(actualVideoFile.path);
+      return;
+    }
+    final subsDir = Directory(_storageService.sidecarSubtitlesDirectoryPath(videoPathTemplate));
+    if (await subsDir.exists()) await subsDir.delete(recursive: true);
   }
 
   Future<_EpisodeStorageDeletion> _deleteEpisodeStorageVideo(
@@ -3667,11 +3716,7 @@ class DownloadManagerService {
   }
 
   Future<void> _deleteSeasonStorageDirectory(MediaItem season, int? showYear) async {
-    await _deleteStorageDirectory(
-      safComponents: () => _storageService.getSeasonSafPathComponents(season, showYear: showYear),
-      fileDirectory: () => _storageService.getSeasonDirectory(season, showYear: showYear),
-      label: 'season',
-    );
+    await _pruneStorageDirectory(_storageService.getSeasonSafPathComponents(season, showYear: showYear));
 
     // Drop the parent show directory too if the deleted season left it empty.
     if (_storageService.isUsingSaf) {
@@ -3688,11 +3733,7 @@ class DownloadManagerService {
   }
 
   Future<void> _deleteShowStorageDirectory(MediaItem show) {
-    return _deleteStorageDirectory(
-      safComponents: () => _storageService.getShowSafPathComponents(show),
-      fileDirectory: () => _storageService.getShowDirectory(show),
-      label: 'show',
-    );
+    return _pruneStorageDirectory(_storageService.getShowSafPathComponents(show));
   }
 
   /// Safety net: after metadata-based deletion, verify the actual DB-recorded
@@ -3704,6 +3745,7 @@ class DownloadManagerService {
       if (record?.videoFilePath == null) return;
 
       final storedPath = record!.videoFilePath!;
+      if (await _isVideoPathSharedWithOtherDownload(record, storedPath)) return;
       if (_storageService.isSafUri(storedPath)) {
         // SAF mode: parent cleanup is handled by the type-specific SAF helpers —
         // here we only verify the video URI itself is gone.
@@ -3719,7 +3761,7 @@ class DownloadManagerService {
       if (await videoFile.exists()) {
         appLogger.w('Safety net: video still exists after metadata deletion, deleting: $videoPath');
       }
-      await _deleteFilesystemVideoAssets(videoPath);
+      await _deleteFilesystemVideoAssets(videoPath, withThumbnail: record.type == MediaKind.episode.id);
     } catch (e, stack) {
       appLogger.w('Safety net deletion failed', error: e, stackTrace: stack);
     }
@@ -3757,7 +3799,6 @@ class DownloadManagerService {
     final deleted = await _deleteDirectoryIfUnused(
       await _storageService.getSeasonDirectory(episode, showYear: showYear),
       label: 'season',
-      isContent: (e) => _videoExtensions.any((ext) => e.path.endsWith(ext)) || e.path.contains('_subs'),
       remainingRows: () async =>
           seasonKey == null ? const <DownloadedMediaItem>[] : await _database.getEpisodesBySeason(seasonKey),
       excludingGlobalKey: episode.globalKey,
@@ -3773,29 +3814,27 @@ class DownloadManagerService {
     await _deleteDirectoryIfUnused(
       await _storageService.getShowDirectory(metadata, showYear: showYear),
       label: 'show',
-      isContent: (e) => e is Directory && e.path.contains('Season '),
       remainingRows: () => _database.getEpisodesByShow(showKey),
       excludingGlobalKey: metadata.globalKey,
     );
   }
 
-  /// Delete [dir] once no entry [isContent] and no download row other than
-  /// [excludingGlobalKey] is left in [remainingRows] — a surviving sibling
-  /// still needs the artwork stored alongside. Returns true when the directory
-  /// is gone.
+  /// Delete [dir] once it is empty and no download row other than
+  /// [excludingGlobalKey] is left in [remainingRows] — a sibling still queued
+  /// or downloading writes into it. Never recursive: whatever is still in the
+  /// folder (another copy of the same title, the user's own files) is not
+  /// this download's. Returns true when the directory is gone.
   Future<bool> _deleteDirectoryIfUnused(
     Directory dir, {
     required String label,
-    required bool Function(FileSystemEntity entry) isContent,
     required Future<List<DownloadedMediaItem>> Function() remainingRows,
     required String excludingGlobalKey,
   }) async {
     if (!await dir.exists()) return false;
-    final contents = await dir.list().toList();
-    if (contents.any(isContent)) return false;
+    if (!await dir.list().isEmpty) return false;
     final rows = await remainingRows();
     if (rows.any((row) => row.globalKey != excludingGlobalKey)) return false;
-    await dir.delete(recursive: true);
+    await dir.delete();
     appLogger.i('Deleted empty $label directory: ${dir.path}');
     return true;
   }
@@ -3827,12 +3866,17 @@ class DownloadManagerService {
   /// Delete a downloaded file and the sidecars derived from its path. Sidecar
   /// cleanup is independent of the primary file because interrupted or manual
   /// video removal must not strand `.part` files or subtitle directories.
-  Future<void> _deleteFilesystemVideoAssets(String videoPath) async {
+  /// [withThumbnail] also removes the `{video}.jpg` thumbnail older versions
+  /// wrote next to episodes.
+  Future<void> _deleteFilesystemVideoAssets(String videoPath, {bool withThumbnail = false}) async {
     final videoFile = File(videoPath);
     await _deleteFileIfExists(videoFile, 'video file');
     await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
+    if (withThumbnail) {
+      await _deleteFileIfExists(File(path.setExtension(videoPath, '.jpg')), 'episode thumbnail');
+    }
 
-    final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
+    final subsPath = _storageService.sidecarSubtitlesDirectoryPath(videoPath);
     final subsDir = Directory(subsPath);
     if (await subsDir.exists()) {
       await subsDir.delete(recursive: true);
@@ -3849,13 +3893,16 @@ class DownloadManagerService {
   /// single-track delete must keep the file while sibling rows reference it.
   Future<void> _deleteByFilePath(DownloadedMediaItem record, {bool deleteThumb = true}) async {
     try {
-      if (record.videoFilePath != null && _storageService.isSafUri(record.videoFilePath!)) {
-        // Metadata is gone by the time this fallback runs, so parent-dir cleanup
-        // is not attempted here — SAF URIs don't expose a parent reliably.
-        await _tryDeleteSaf(record.videoFilePath!, isDir: false, description: 'SAF video file');
-      } else if (record.videoFilePath != null) {
-        final videoPath = await _storageService.ensureAbsolutePath(record.videoFilePath!);
-        await _deleteFilesystemVideoAssets(videoPath);
+      final storedPath = record.videoFilePath;
+      if (storedPath != null && !await _isVideoPathSharedWithOtherDownload(record, storedPath)) {
+        if (_storageService.isSafUri(storedPath)) {
+          // Metadata is gone by the time this fallback runs, so parent-dir cleanup
+          // is not attempted here — SAF URIs don't expose a parent reliably.
+          await _tryDeleteSaf(storedPath, isDir: false, description: 'SAF video file');
+        } else {
+          final videoPath = await _storageService.ensureAbsolutePath(storedPath);
+          await _deleteFilesystemVideoAssets(videoPath, withThumbnail: record.type == MediaKind.episode.id);
+        }
       }
 
       // thumbPath is a server-side API path (Plex /library/metadata/.../thumb,
@@ -3871,6 +3918,19 @@ class DownloadManagerService {
     } catch (e, stack) {
       appLogger.e('Error in fallback deletion', error: e, stackTrace: stack);
     }
+  }
+
+  /// Whether [storedPath], the video [record] recorded, is also another
+  /// download's video. Paths used to be built from titles alone, so two items
+  /// with the same title (two libraries, or the same movie on Plex and
+  /// Jellyfin) could end up on one file; it stays while another row plays it.
+  Future<bool> _isVideoPathSharedWithOtherDownload(DownloadedMediaItem record, String storedPath) async {
+    final shared = await _database.isVideoFilePathRecordedByOtherDownload(
+      storedPath,
+      excludingGlobalKey: record.globalKey,
+    );
+    if (shared) appLogger.i('Keeping $storedPath: another download still records it');
+    return shared;
   }
 
   Future<List<DownloadedMediaItem>> getAllDownloads() {

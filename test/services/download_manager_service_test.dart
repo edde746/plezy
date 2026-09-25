@@ -1298,8 +1298,13 @@ void main() {
       await firstManager.debugHandleTaskStatus(
         TaskStatusUpdate(_downloadTask('current-task', fixture.metadata.globalKey), TaskStatus.complete),
       );
-      final firstPath = await fixture.storage.getMovieSubtitlePath(fixture.metadata, 1, 'srt');
-      final secondPath = await fixture.storage.getMovieSubtitlePath(fixture.metadata, 2, 'srt');
+      // Sidecars sit next to the video as stored, where playback looks for them.
+      final storedVideoPath = (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.videoFilePath;
+      final subtitlesDirectory = fixture.storage.sidecarSubtitlesDirectoryPath(
+        await fixture.storage.ensureAbsolutePath(storedVideoPath!),
+      );
+      final firstPath = p.join(subtitlesDirectory, '1.srt');
+      final secondPath = p.join(subtitlesDirectory, '2.srt');
       expect(httpClient.trackRequests, [1, 2]);
       expect(File(firstPath).existsSync(), isFalse);
       expect(File(secondPath).existsSync(), isTrue);
@@ -1307,7 +1312,6 @@ void main() {
       expect(await fixture.db.getPendingSupplementaryQueueItems(), hasLength(1));
       firstManager.dispose();
 
-      final storedVideoPath = (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.videoFilePath;
       final restartedManager = DownloadManagerService(
         database: fixture.db,
         storageService: fixture.storage,
@@ -1984,8 +1988,44 @@ void main() {
         expect(filesystem, saf, reason: '${kind.id} deletion differs by storage backend');
         expect(
           filesystem,
-          const _ContainerDeletionResult(rowDeleted: true, cacheDeleted: true, directoryDeleted: true),
+          const _ContainerDeletionResult(
+            rowDeleted: true,
+            cacheDeleted: true,
+            directoryDeleted: true,
+            ownVideoDeleted: true,
+            foreignFileKept: true,
+          ),
         );
+      }
+    });
+
+    test('a folder holding files the download does not own is kept, with those files', () async {
+      for (final kind in [MediaKind.movie, MediaKind.season, MediaKind.show]) {
+        for (final saf in [false, true]) {
+          expect(
+            await _runContainerDeletion(kind: kind, saf: saf, withForeignFile: true),
+            const _ContainerDeletionResult(
+              rowDeleted: true,
+              cacheDeleted: true,
+              directoryDeleted: false,
+              ownVideoDeleted: true,
+              foreignFileKept: true,
+            ),
+            reason: '${kind.id} deletion (saf: $saf) removed what it does not own',
+          );
+        }
+      }
+    });
+
+    test('deleting one of two same-titled movies keeps the other copy', () async {
+      for (final saf in [false, true]) {
+        expect(await _runSameTitleMovieDeletion(saf: saf, legacySharedPath: false), isTrue, reason: 'saf: $saf');
+      }
+    });
+
+    test('a title-only path recorded by two downloads survives deleting one of them', () async {
+      for (final saf in [false, true]) {
+        expect(await _runSameTitleMovieDeletion(saf: saf, legacySharedPath: true), isTrue, reason: 'saf: $saf');
       }
     });
 
@@ -3040,7 +3080,15 @@ Future<_DeletionResult> _runEpisodeDeletion({required bool saf, bool failVideoDe
   }
 }
 
-Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind, required bool saf}) async {
+/// Deletes a movie, season or show download whose folder holds only what the
+/// download owns (for a movie, its own video), or with [withForeignFile] also a
+/// file it does not own — another copy of the title, or the user's own file in
+/// a custom download location.
+Future<_ContainerDeletionResult> _runContainerDeletion({
+  required MediaKind kind,
+  required bool saf,
+  bool withForeignFile = false,
+}) async {
   resetSharedPreferencesForTest();
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
@@ -3089,18 +3137,32 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
     status: DownloadStatus.completed.index,
   );
 
+  final components = switch (kind) {
+    MediaKind.movie => storage.getMovieSafPathComponents(metadata),
+    MediaKind.season => storage.getSeasonSafPathComponents(metadata),
+    MediaKind.show => storage.getShowSafPathComponents(metadata),
+    _ => throw StateError('Unsupported test kind: $kind'),
+  };
+  final ownsVideo = kind == MediaKind.movie;
   final safStorage = _FakeSafStorage();
   Directory? filesystemDirectory;
+  File? ownVideo;
+  File? foreignFile;
   if (saf) {
-    safStorage.addContainer(storage, metadata);
+    safStorage.addContainer(storage, metadata, withForeignFile: withForeignFile);
+    if (ownsVideo) await db.updateVideoFilePath(globalKey, _FakeSafStorage.containerVideoUri);
   } else {
-    filesystemDirectory = switch (kind) {
-      MediaKind.movie => await storage.getMovieDirectory(metadata),
-      MediaKind.season => await storage.getSeasonDirectory(metadata),
-      MediaKind.show => await storage.getShowDirectory(metadata),
-      _ => throw StateError('Unsupported test kind: $kind'),
-    };
-    await File(p.join(filesystemDirectory.path, 'asset.bin')).writeAsString('asset');
+    filesystemDirectory = Directory(p.joinAll([(await storage.getDownloadsDirectory()).path, ...components]));
+    await filesystemDirectory.create(recursive: true);
+    if (ownsVideo) {
+      ownVideo = File(await storage.getMovieVideoPath(metadata, 'mkv'));
+      await ownVideo.writeAsString('video');
+      await db.updateVideoFilePath(globalKey, await storage.toRelativePath(ownVideo.path));
+    }
+    if (withForeignFile) {
+      foreignFile = File(p.join(filesystemDirectory.path, 'asset.bin'));
+      await foreignFile.writeAsString('asset');
+    }
   }
 
   final manager = DownloadManagerService(
@@ -3117,7 +3179,100 @@ Future<_ContainerDeletionResult> _runContainerDeletion({required MediaKind kind,
       rowDeleted: await db.getDownloadedMedia(globalKey) == null,
       cacheDeleted: await PlexApiCache.instance.getMetadata(serverId, id) == null,
       directoryDeleted: saf ? !safStorage.existsSync('content://target') : !await filesystemDirectory!.exists(),
+      ownVideoDeleted: saf
+          ? !safStorage.existsSync(_FakeSafStorage.containerVideoUri)
+          : !(await ownVideo?.exists() ?? false),
+      foreignFileKept: saf
+          ? !withForeignFile || safStorage.existsSync('content://asset')
+          : !withForeignFile || await foreignFile!.exists(),
     );
+  } finally {
+    manager.dispose();
+    await db.close();
+    DownloadStorageService.resetForTesting();
+    SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+  }
+}
+
+/// Two same-titled movies from different servers sit in one folder. Deletes
+/// the first and reports whether the second copy's file survived. With
+/// [legacySharedPath] both rows record the same title-only file, as downloads
+/// made before paths carried the item identity could.
+Future<bool> _runSameTitleMovieDeletion({required bool saf, required bool legacySharedPath}) async {
+  resetSharedPreferencesForTest();
+  SettingsService.resetForTesting();
+  DownloadStorageService.resetForTesting();
+  final tmpRoot = await Directory.systemTemp.createTemp('download_manager_same_title_test_');
+  final previousPathProvider = PathProviderPlatform.instance;
+  PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+
+  final storage = saf ? DownloadStorageService.forTestingSaf('content://downloads') : DownloadStorageService.instance;
+  if (!saf) await storage.initialize(await SettingsService.getInstance());
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  PlexApiCache.initialize(db);
+  JellyfinApiCache.initialize(db);
+
+  MediaItem movie(String serverId) => testMediaItem(
+    id: 'movie-1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    serverId: ServerId(serverId),
+    title: 'Movie',
+    year: 2000,
+  );
+  final first = movie('srv-a');
+  final second = movie('srv-b');
+  final safStorage = _FakeSafStorage();
+  final storedPaths = <String, String>{};
+  for (final copy in [first, second]) {
+    await PlexApiCache.instance.put(ServerId(copy.serverId!), '/library/metadata/movie-1', {
+      'MediaContainer': {
+        'Metadata': [
+          {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie', 'year': 2000},
+        ],
+      },
+    });
+    await db.insertDownload(
+      serverId: ServerId(copy.serverId!),
+      ratingKey: 'movie-1',
+      globalKey: copy.globalKey,
+      type: 'movie',
+      status: DownloadStatus.completed.index,
+    );
+    final fileName = legacySharedPath ? 'Movie (2000).mkv' : storage.getMovieSafFileName(copy, 'mkv');
+    if (saf) {
+      storedPaths[copy.globalKey] = safStorage.addMovieFile(storage, copy, fileName);
+    } else {
+      final file = File(p.join((await storage.getMovieDirectory(copy)).path, fileName));
+      await file.writeAsString('video');
+      storedPaths[copy.globalKey] = await storage.toRelativePath(file.path);
+    }
+    await db.updateVideoFilePath(copy.globalKey, storedPaths[copy.globalKey]!);
+  }
+
+  final manager = DownloadManagerService(
+    database: db,
+    storageService: storage,
+    clientResolver: (serverId, {clientScopeId}) => null,
+    safStorage: safStorage,
+    downloadsSupportedOverride: false,
+  )..recoveryFuture = Future<void>.value();
+
+  try {
+    await manager.deleteDownload(first.globalKey);
+    final survivor = storedPaths[second.globalKey]!;
+    final firstGone = await db.getDownloadedMedia(first.globalKey) == null;
+    final secondKept = saf
+        ? safStorage.existsSync(survivor)
+        : await File(await storage.ensureAbsolutePath(survivor)).exists();
+    final firstFileGone =
+        legacySharedPath ||
+        (saf
+            ? !safStorage.existsSync(storedPaths[first.globalKey]!)
+            : !await File(await storage.ensureAbsolutePath(storedPaths[first.globalKey]!)).exists());
+    return firstGone && secondKept && firstFileGone;
   } finally {
     manager.dispose();
     await db.close();
@@ -3394,21 +3549,32 @@ class _ContainerDeletionResult {
     required this.rowDeleted,
     required this.cacheDeleted,
     required this.directoryDeleted,
+    required this.ownVideoDeleted,
+    required this.foreignFileKept,
   });
 
   final bool rowDeleted;
   final bool cacheDeleted;
   final bool directoryDeleted;
+  final bool ownVideoDeleted;
+  final bool foreignFileKept;
 
   @override
   bool operator ==(Object other) =>
       other is _ContainerDeletionResult &&
       rowDeleted == other.rowDeleted &&
       cacheDeleted == other.cacheDeleted &&
-      directoryDeleted == other.directoryDeleted;
+      directoryDeleted == other.directoryDeleted &&
+      ownVideoDeleted == other.ownVideoDeleted &&
+      foreignFileKept == other.foreignFileKept;
 
   @override
-  int get hashCode => Object.hash(rowDeleted, cacheDeleted, directoryDeleted);
+  int get hashCode => Object.hash(rowDeleted, cacheDeleted, directoryDeleted, ownVideoDeleted, foreignFileKept);
+
+  @override
+  String toString() =>
+      '_ContainerDeletionResult(row: $rowDeleted, cache: $cacheDeleted, directory: $directoryDeleted, '
+      'ownVideo: $ownVideoDeleted, foreignFileKept: $foreignFileKept)';
 }
 
 bool _listEquals(List<int> left, List<int> right) {
@@ -3459,12 +3625,15 @@ class _FakeSafStorage implements SafStorageOperations {
     _existing.addAll([rootUri, showUri, seasonUri, videoUri]);
   }
 
-  void addContainer(DownloadStorageService storage, MediaItem metadata) {
+  static const containerVideoUri = 'content://container-video';
+
+  /// A movie/season/show folder; a movie's holds its own video
+  /// ([containerVideoUri]), and [withForeignFile] adds a file it does not own.
+  void addContainer(DownloadStorageService storage, MediaItem metadata, {bool withForeignFile = false}) {
     const rootUri = 'content://downloads';
     const targetUri = 'content://target';
     const assetUri = 'content://asset';
     final target = _document(targetUri, metadata.displayTitle, isDir: true);
-    final asset = _document(assetUri, 'asset.bin', isDir: false);
     final components = switch (metadata.kind) {
       MediaKind.movie => storage.getMovieSafPathComponents(metadata),
       MediaKind.season => storage.getSeasonSafPathComponents(metadata),
@@ -3472,9 +3641,17 @@ class _FakeSafStorage implements SafStorageOperations {
       _ => throw StateError('Unsupported test kind: ${metadata.kind}'),
     };
     _childrenByPath[_pathKey(rootUri, components)] = target;
-    _childrenByUri[targetUri] = [asset];
-    _childrenByUri[assetUri] = [];
-    _existing.addAll([rootUri, targetUri, assetUri]);
+    _childrenByUri[targetUri] = [
+      if (metadata.kind == MediaKind.movie)
+        _document(containerVideoUri, storage.getMovieSafFileName(metadata, 'mkv'), isDir: false),
+      if (withForeignFile) _document(assetUri, 'asset.bin', isDir: false),
+    ];
+    _existing.addAll([
+      rootUri,
+      targetUri,
+      if (metadata.kind == MediaKind.movie) containerVideoUri,
+      if (withForeignFile) assetUri,
+    ]);
 
     if (metadata.kind == MediaKind.season) {
       const showUri = 'content://show';
@@ -3485,6 +3662,20 @@ class _FakeSafStorage implements SafStorageOperations {
     } else {
       _childrenByUri[rootUri] = [target];
     }
+  }
+
+  /// Adds [fileName] to [movie]'s shared title folder and returns its URI.
+  String addMovieFile(DownloadStorageService storage, MediaItem movie, String fileName) {
+    const rootUri = 'content://downloads';
+    const movieDirUri = 'content://movie-dir';
+    final pathKey = _pathKey(rootUri, storage.getMovieSafPathComponents(movie));
+    _childrenByPath[pathKey] ??= _document(movieDirUri, 'Movie (2000)', isDir: true);
+    _childrenByUri[rootUri] = [_childrenByPath[pathKey]!];
+    final uri = 'content://movie-file/$fileName';
+    final siblings = _childrenByUri.putIfAbsent(movieDirUri, () => []);
+    if (!siblings.any((child) => child.uri == uri)) siblings.add(_document(uri, fileName, isDir: false));
+    _existing.addAll([rootUri, movieDirUri, uri]);
+    return uri;
   }
 
   bool existsSync(String uri) => _existing.contains(uri);

@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:plezy/media/ids.dart';
 
 import 'package:background_downloader/background_downloader.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -484,14 +486,15 @@ void main() {
       final movie = _movie(title: 'My/Movie:Name?', year: 2023);
 
       expect(dss.getMovieSafPathComponents(movie), ['Movies', 'MyMovieName (2023)']);
-      expect(dss.getMovieSafFileName(movie, 'mkv'), 'MyMovieName (2023).mkv');
+      expect(dss.getMovieSafFileName(movie, 'mkv'), 'MyMovieName (2023) ${_tag(movie)}.mkv');
+      expect(dss.getMovieSafBaseName(movie), 'MyMovieName (2023) ${_tag(movie)}');
     });
 
     test('movie without year: no parenthesized suffix', () async {
       final dss = DownloadStorageService.instance;
       final movie = _movie(title: 'Untitled');
       expect(dss.getMovieSafPathComponents(movie), ['Movies', 'Untitled']);
-      expect(dss.getMovieSafFileName(movie, 'mp4'), 'Untitled.mp4');
+      expect(dss.getMovieSafFileName(movie, 'mp4'), 'Untitled ${_tag(movie)}.mp4');
     });
 
     test('episode components use show + season + S{XX}E{XX} - {Title}', () async {
@@ -505,8 +508,8 @@ void main() {
       );
 
       expect(dss.getEpisodeSafPathComponents(episode), ['TV Shows', 'My Show (2010)', 'Season 01']);
-      expect(dss.getEpisodeSafFileName(episode, 'mkv'), 'S01E05 - PilotPt 1.mkv');
-      expect(dss.getEpisodeSafBaseName(episode), 'S01E05 - PilotPt 1');
+      expect(dss.getEpisodeSafFileName(episode, 'mkv'), 'S01E05 - PilotPt 1 ${_tag(episode)}.mkv');
+      expect(dss.getEpisodeSafBaseName(episode), 'S01E05 - PilotPt 1 ${_tag(episode)}');
     });
 
     test('show components default to metadata title when grandparentTitle is absent', () async {
@@ -539,6 +542,53 @@ void main() {
     });
   });
 
+  group('download identity in file names', () {
+    MediaItem sameTitle(MediaKind kind, String serverId, String id) => testMediaItem(
+      id: id,
+      backend: MediaBackend.plex,
+      kind: kind,
+      serverId: ServerId(serverId),
+      title: 'Same Title',
+      year: 2000,
+      grandparentTitle: kind == MediaKind.episode ? 'Same Show' : 'Same Artist',
+      parentTitle: 'Same Album',
+      parentIndex: 1,
+      index: 1,
+    );
+
+    test('the tag is a stable digest of the server and item id', () {
+      final dss = DownloadStorageService.instance;
+      // Pinned: SAF recovery and in-flight downloads look files up by this name.
+      expect(
+        dss.getMovieSafFileName(sameTitle(MediaKind.movie, 'srv', '42'), 'mkv'),
+        'Same Title (2000) [20065bd2].mkv',
+      );
+    });
+
+    for (final kind in [MediaKind.movie, MediaKind.episode, MediaKind.track]) {
+      test('same-titled ${kind.id}s from other servers or libraries get their own file', () async {
+        final dss = DownloadStorageService.instance;
+        await dss.initialize(await SettingsService.getInstance());
+        Future<String> pathOf(MediaItem item) => switch (kind) {
+          MediaKind.movie => dss.getMovieVideoPath(item, 'mkv'),
+          MediaKind.episode => dss.getEpisodeVideoPath(item, 'mkv'),
+          _ => dss.getTrackAudioPath(item, 'mkv'),
+        };
+
+        final plex = sameTitle(kind, 'plex-srv', '42');
+        final paths = {
+          await pathOf(plex),
+          await pathOf(sameTitle(kind, 'jf-srv', '42')),
+          await pathOf(sameTitle(kind, 'plex-srv', '43')),
+        };
+
+        expect(paths, hasLength(3));
+        expect(paths.map(p.dirname).toSet(), hasLength(1), reason: 'copies still share the title folder');
+        expect(await pathOf(plex), paths.first, reason: 'the name is deterministic');
+      });
+    }
+  });
+
   group('track paths', () {
     test('getTrackAudioPath lays out Music/{Artist}/{Album}/{NN} - {Title}.{ext}', () async {
       final settings = await SettingsService.getInstance();
@@ -548,7 +598,7 @@ void main() {
       final track = _track(title: 'Song', artist: 'Artist', album: 'Album', trackNumber: 3);
       final audio = await dss.getTrackAudioPath(track, 'mp3');
       final downloads = await dss.getDownloadsDirectory();
-      expect(audio, p.join(downloads.path, 'Music', 'Artist', 'Album', '03 - Song.mp3'));
+      expect(audio, p.join(downloads.path, 'Music', 'Artist', 'Album', '03 - Song ${_tag(track)}.mp3'));
       expect(Directory(p.dirname(audio)).existsSync(), isTrue, reason: 'album directory is created');
     });
 
@@ -557,7 +607,7 @@ void main() {
       final track = _track(title: 'So/ng: Two?', artist: 'AC/DC', album: 'Back:In*Black', trackNumber: 1);
 
       expect(dss.getTrackSafPathComponents(track), ['Music', 'ACDC', 'BackInBlack']);
-      expect(dss.getTrackSafFileName(track, 'flac'), '01 - Song Two.flac');
+      expect(dss.getTrackSafFileName(track, 'flac'), '01 - Song Two ${_tag(track)}.flac');
     });
 
     test('safTarget routes tracks to the Music layout instead of the generic fallback', () {
@@ -566,7 +616,7 @@ void main() {
 
       final target = dss.safTarget(track, 'mp3', serverId: 'srv');
       expect(target.components, ['Music', 'Artist', 'Album']);
-      expect(target.fileName, '03 - Song.mp3');
+      expect(target.fileName, '03 - Song ${_tag(track)}.mp3');
     });
 
     test('missing or blank artist/album fall back to Unknown Artist/Unknown Album', () {
@@ -588,17 +638,17 @@ void main() {
     test('a track without an index is just the sanitized title', () {
       final dss = DownloadStorageService.instance;
       final track = _track(title: 'Hidden: Track', artist: 'Artist', album: 'Album');
-      expect(dss.getTrackSafFileName(track, 'mp3'), 'Hidden Track.mp3');
+      expect(dss.getTrackSafFileName(track, 'mp3'), 'Hidden Track ${_tag(track)}.mp3');
     });
 
     test('multi-disc albums prefix the disc number; disc 1 stays unprefixed', () {
       final dss = DownloadStorageService.instance;
 
       final discTwo = _track(title: 'Song', artist: 'Artist', album: 'Album', trackNumber: 5, discNumber: 2);
-      expect(dss.getTrackSafFileName(discTwo, 'mp3'), '2-05 - Song.mp3');
+      expect(dss.getTrackSafFileName(discTwo, 'mp3'), '2-05 - Song ${_tag(discTwo)}.mp3');
 
       final discOne = _track(title: 'Song', artist: 'Artist', album: 'Album', trackNumber: 5, discNumber: 1);
-      expect(dss.getTrackSafFileName(discOne, 'mp3'), '05 - Song.mp3');
+      expect(dss.getTrackSafFileName(discOne, 'mp3'), '05 - Song ${_tag(discOne)}.mp3');
     });
   });
 
@@ -624,7 +674,10 @@ void main() {
       final video = await dss.getMovieVideoPath(movie, 'mkv');
       expect(dir.existsSync(), isTrue);
       expect(p.dirname(video), dir.path);
-      expect(p.basename(video), 'Big Movie (2020).mkv');
+      expect(p.basename(video), 'Big Movie (2020) ${_tag(movie)}.mkv');
+
+      final subsDir = await dss.getMovieSubtitlesDirectory(movie);
+      expect(subsDir.path, dss.sidecarSubtitlesDirectoryPath(video), reason: 'playback derives it from the video');
     });
 
     test('getEpisodeVideoPath + thumbnail path share the same season directory', () async {
@@ -643,12 +696,12 @@ void main() {
       final video = await dss.getEpisodeVideoPath(episode, 'mkv');
       final thumb = await dss.getEpisodeThumbnailPath(episode);
       expect(p.dirname(video), p.dirname(thumb));
-      expect(p.basename(video), 'S02E04 - Pilot.mkv');
-      expect(p.basename(thumb), 'S02E04 - Pilot.jpg');
+      expect(p.basename(video), 'S02E04 - Pilot ${_tag(episode)}.mkv');
+      expect(p.basename(thumb), 'S02E04 - Pilot ${_tag(episode)}.jpg');
 
       final subsDir = await dss.getEpisodeSubtitlesDirectory(episode);
       expect(subsDir.existsSync(), isTrue);
-      expect(p.basename(subsDir.path), 'S02E04 - Pilot_subs');
+      expect(subsDir.path, dss.sidecarSubtitlesDirectoryPath(video));
     });
   });
 
@@ -726,3 +779,7 @@ MediaItem _track({required String title, String? artist, String? album, int? tra
     parentIndex: discNumber,
   );
 }
+
+/// Mirrors [DownloadStorageService]'s identity tag; the literal in the
+/// "stable digest" test pins the formula.
+String _tag(MediaItem item) => '[${md5.convert(utf8.encode(item.globalKey)).toString().substring(0, 8)}]';
