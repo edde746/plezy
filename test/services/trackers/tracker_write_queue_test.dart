@@ -78,6 +78,20 @@ void main() {
     expect(await queue.load('user-a'), isEmpty);
   });
 
+  test('a drain spaces Trakt writes by its one-write-per-second limit', () async {
+    final pauses = <Duration>[];
+    final queue = TrackerWriteQueue(pause: (duration) async => pauses.add(duration));
+    for (final (number, service) in [(1, TrackerService.trakt), (2, TrackerService.trakt), (3, TrackerService.simkl)]) {
+      final ctx = _episode(ratingKey: 'episode-$number', episodeNumber: number);
+      final key = trackerItemCoalesceKey(service, ctx, trackerExternalRowIdentity(ctx.external))!;
+      await queue.enqueue('user-a', _item(ctx: ctx, coalesceKey: key, service: service));
+    }
+
+    await queue.flush('user-a', send: (item) async => TrackerWriteDisposition.done);
+
+    expect(pauses, [const Duration(seconds: 1), const Duration(seconds: 1), const Duration(milliseconds: 50)]);
+  });
+
   test('failed flush increments attempts and a later flush drops an exhausted write without sending', () async {
     final queue = TrackerWriteQueue();
     final ctx = _episode();

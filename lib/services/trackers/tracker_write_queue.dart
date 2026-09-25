@@ -136,9 +136,19 @@ class TrackerWriteQueue {
 
   static const int maxAttempts = 5;
 
-  /// Inter-request delay during a drain, to stay under Trakt's
-  /// 1000 requests / 5 minutes budget.
-  static const Duration _requestSpacing = Duration(milliseconds: 50);
+  /// Pause after each request during a drain. Trakt takes one authenticated
+  /// POST/PUT/DELETE per second and answers a faster one with a 429, which
+  /// defers the rest of its rows to the next drain; the other services only
+  /// need a drain not to burst.
+  static Duration _requestSpacing(TrackerService service) => switch (service) {
+    TrackerService.trakt => const Duration(seconds: 1),
+    _ => const Duration(milliseconds: 50),
+  };
+
+  final Future<void> Function(Duration) _pause;
+
+  /// [pause] replaces the real wait between drained requests (tests).
+  TrackerWriteQueue({Future<void> Function(Duration)? pause}) : _pause = pause ?? Future<void>.delayed;
 
   /// Bound for items whose disk write threw (disk full, revoked SAF
   /// permission). Keyed by profile so a profile switch cannot replay one user's
@@ -420,10 +430,10 @@ class TrackerWriteQueue {
         final disposition = await send(item);
         switch (disposition) {
           case TrackerWriteDisposition.done:
-            await Future<void>.delayed(_requestSpacing);
+            await _pause(_requestSpacing(item.service));
           case TrackerWriteDisposition.failed:
             remaining.add(item.incrementAttempts());
-            await Future<void>.delayed(_requestSpacing);
+            await _pause(_requestSpacing(item.service));
           case TrackerWriteDisposition.deferredService:
             deferredServices.add(item.service);
             remaining.add(item);
