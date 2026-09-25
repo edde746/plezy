@@ -244,12 +244,25 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     final metadata = options.metadata;
-    final bundle = await fetchPlaybackBundle(
-      metadata.id,
-      sourceIndex: options.selectedMediaIndex,
-      sourceId: options.selectedMediaSourceId,
-      preferredSignature: options.preferredVersionSignature,
-    );
+    final JellyfinPlaybackBundle? bundle;
+    try {
+      // An immediate connection error is asked again (see
+      // [retryTransientMediaServerCall]); the deadline only backstops the
+      // HTTP layer's own connect + receive budgets, so it never cuts a slow
+      // but working server short.
+      bundle = await retryTransientMediaServerCall(
+        operation: 'Jellyfin playback item',
+        deadline: MediaServerTimeouts.connect + MediaServerTimeouts.receive,
+        call: (_, _) => fetchPlaybackBundle(
+          metadata.id,
+          sourceIndex: options.selectedMediaIndex,
+          sourceId: options.selectedMediaSourceId,
+          preferredSignature: options.preferredVersionSignature,
+        ),
+      );
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
+    }
     if (bundle == null) {
       throw PlaybackException(t.messages.playbackNoMediaSources, reason: PlaybackFailureReason.noPlayableSource);
     }

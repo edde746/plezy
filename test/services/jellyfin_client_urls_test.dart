@@ -2214,6 +2214,76 @@ void main() {
       },
     );
 
+    test('item fetch retries an immediate connection error before negotiating', () async {
+      var itemAttempts = 0;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            itemAttempts++;
+            if (itemAttempts == 1) throw http.ClientException('connection reset', request.url);
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'Movie',
+              'MediaSources': [
+                {'Id': 'src-1', 'Container': 'mkv'},
+              ],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            return jsonResponse({
+              'MediaSources': [
+                {'Id': 'src-1', 'SupportsDirectPlay': true},
+              ],
+            });
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      expect(itemAttempts, 2);
+      expect(Uri.parse(result.videoUrl!).queryParameters['MediaSourceId'], 'src-1');
+    });
+
+    test('item fetch failures are classified like other playback failures', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async => http.Response('{}', 401)),
+      );
+      addTearDown(scoped.close);
+
+      await expectLater(
+        scoped.getPlaybackInitialization(
+          PlaybackInitializationOptions(
+            metadata: testMediaItem(
+              id: 'item-1',
+              backend: MediaBackend.jellyfin,
+              kind: MediaKind.movie,
+              serverId: 'srv-1',
+            ),
+            selectedMediaIndex: 0,
+          ),
+        ),
+        throwsA(
+          isA<PlaybackException>().having((e) => e.reason, 'reason', PlaybackFailureReason.authenticationRequired),
+        ),
+      );
+    });
+
     test('empty successful negotiation falls back to the static VOD stream', () async {
       final scoped = _clientWithPlaybackInfo((_) async => jsonResponse({'MediaSources': []}));
       addTearDown(scoped.close);
