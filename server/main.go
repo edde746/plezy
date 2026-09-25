@@ -78,6 +78,8 @@ const (
 	maxRetainedRooms                = 2000
 	connRateBurst                   = 5
 	connRateSustained               = 1
+	roomLookupRateBurst             = 20
+	roomLookupRateSustained         = 1
 	snapshotFormatVersion           = 4
 	snapshotDebounce                = 100 * time.Millisecond
 	snapshotFlushTimeout            = 5 * time.Second
@@ -342,6 +344,20 @@ func pruneExpiredPeerReservationsLocked(room *Room, now time.Time) bool {
 		changed = true
 	}
 	return changed
+}
+
+// provesRetainedIdentityLocked reports whether an admission presents the
+// reconnect token of an identity the room already holds, which guessing room
+// codes cannot produce. The caller holds r.mu.
+func (r *Room) provesRetainedIdentityLocked(peerID string, presented reconnectVerifier, tokenValid bool) bool {
+	if !tokenValid {
+		return false
+	}
+	if peerID == r.HostPeerID {
+		return reconnectVerifierMatches(r.hostVerifier, presented)
+	}
+	reservation, reserved := r.peerReservations[peerID]
+	return reserved && reconnectVerifierMatches(reservation.verifier, presented)
 }
 
 func (r *Room) peerIDs() []string {
@@ -2004,6 +2020,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			} else if len(s.rooms) >= maxRetainedRooms {
 				rejection = &serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many retained rooms"}
 			}
+			// Whether a code is taken is a room lookup like any join: only
+			// the proven host above skips the source's lookup budget.
+			if !s.conns.allowRoomLookup(quotaOwnerKey, time.Now()) {
+				rejection = &serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many room lookups"}
+			}
 			if rejection == nil {
 				var reserved bool
 				if existing == nil {
@@ -2088,25 +2109,31 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			presentedVerifier, tokenValid := reconnectVerifierFromToken(msg.ReconnectToken)
 
 			s.mu.RLock()
-			room, exists := s.rooms[msg.SessionID]
-			if !exists {
-				s.mu.RUnlock()
-				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomNotFound, Message: "Room does not exist"})
-				continue
-			}
-			if s.beforeJoinRoomLock != nil {
-				s.beforeJoinRoomLock()
-			}
-			room.mu.Lock()
-			if s.rooms[msg.SessionID] != room {
-				room.mu.Unlock()
-				s.mu.RUnlock()
-				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomNotFound, Message: "Room does not exist"})
-				continue
+			room := s.rooms[msg.SessionID]
+			if room != nil {
+				if s.beforeJoinRoomLock != nil {
+					s.beforeJoinRoomLock()
+				}
+				room.mu.Lock()
+				if s.rooms[msg.SessionID] != room || room.closing {
+					room.mu.Unlock()
+					room = nil
+				}
 			}
 			s.mu.RUnlock()
-			if room.closing {
-				room.mu.Unlock()
+			// Every answer below tells a guessing client whether the code names
+			// a live room, so an admission that does not prove an identity the
+			// room already holds is charged to its source first, and an
+			// exhausted source gets the same answer for every code.
+			if (room == nil || !room.provesRetainedIdentityLocked(msg.PeerID, presentedVerifier, tokenValid)) &&
+				!s.conns.allowRoomLookup(quotaOwnerKey, time.Now()) {
+				if room != nil {
+					room.mu.Unlock()
+				}
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many room lookups"})
+				continue
+			}
+			if room == nil {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomNotFound, Message: "Room does not exist"})
 				continue
 			}

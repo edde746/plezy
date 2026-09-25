@@ -3781,6 +3781,62 @@ func TestStalePeerSkipsCleanupBroadcast(t *testing.T) {
 	}
 }
 
+func TestRoomLookupsAreThrottledPerSourceExceptProvenIdentities(t *testing.T) {
+	h := newRelayHarness(t)
+	_, _, _, guestToken := createModernRoomWithGuest(t, h, "REAL1", "6.10.0.1", "6.10.0.2")
+
+	probeIP := "6.10.0.3"
+	prober := h.dial(t, probeIP)
+	for i := range roomLookupRateBurst {
+		token, _ := mustReconnectToken(t)
+		prober.send(clientMsg{
+			Type:            relayTypeJoin,
+			SessionID:       fmt.Sprintf("NOPE%02d", i),
+			PeerID:          "P",
+			ReconnectToken:  token,
+			ProtocolVersion: relayProtocolVersion,
+		})
+		prober.expectError(relayErrorRoomNotFound)
+	}
+
+	// An exhausted source gets one answer whether or not a code is live, by
+	// join and by create alike.
+	for _, msg := range []clientMsg{
+		{Type: relayTypeJoin, SessionID: "REAL1"},
+		{Type: relayTypeJoin, SessionID: "NOPE99"},
+		{Type: relayTypeCreate, SessionID: "REAL1"},
+	} {
+		token, _ := mustReconnectToken(t)
+		msg.PeerID = "P"
+		msg.ReconnectToken = token
+		msg.ProtocolVersion = relayProtocolVersion
+		prober.send(msg)
+		prober.expectError(relayErrorRateLimited)
+	}
+
+	// A reconnect proving a held identity is not a guess.
+	resumed := h.dial(t, probeIP)
+	resumed.send(clientMsg{
+		Type:            relayTypeResume,
+		SessionID:       "REAL1",
+		PeerID:          "G",
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	resumed.expectAuthority(relayTypeResumed, "H")
+
+	otherToken, _ := mustReconnectToken(t)
+	other := h.dial(t, "6.10.0.4")
+	other.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "REAL1",
+		PeerID:          "O",
+		ReconnectToken:  otherToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	other.expectAuthority(relayTypeJoined, "H")
+}
+
 func TestResumeCannotEnterReplacementRoom(t *testing.T) {
 	for _, replacementHost := range []string{"NEW_HOST", "H"} {
 		t.Run(replacementHost, func(t *testing.T) {
