@@ -1091,6 +1091,13 @@ void mpv_audio_plugin_register_with_registrar(FlPluginRegistrar* registrar) {
   g_mpv_audio_plugin = mpv_plugin_new(registrar, "com.plezy/mpv_audio_player", TRUE);
 }
 
+// fl_method_success_response_new() takes its own reference to the result, so
+// a value created just for the reply must be released here.
+static FlMethodResponse* bool_success_response(gboolean value) {
+  g_autoptr(FlValue) result = fl_value_new_bool(value);
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(result));
+}
+
 /// Method call handler.
 static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall* method_call, gpointer user_data) {
   (void)channel;
@@ -1114,13 +1121,13 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         }
       }
       if (self->initialized) {
-        response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_bool(TRUE)));
+        response = bool_success_response(TRUE);
       } else {
         response =
             FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", "Failed to initialize MPV player", nullptr));
       }
     } else if (self->video_surface && self->video_surface->valid()) {
-      response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_bool(TRUE)));
+      response = bool_success_response(TRUE);
     } else {
       if (!self->player || self->player->IsDisposed()) {
         self->player = std::make_unique<mpv::MpvPlayer>();
@@ -1135,7 +1142,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         ++self->generation;
         self->player->SetEventCallback([self](FlValue* event) { send_event(self, event); });
         self->initialized = TRUE;
-        response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_bool(TRUE)));
+        response = bool_success_response(TRUE);
       } else {
         // There is no second render path. Refuse with the reason rather than
         // presenting into something the user cannot see.
@@ -1395,7 +1402,8 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
               if (error < 0 || value.empty()) {
                 async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
               } else {
-                async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_string(value.c_str())));
+                g_autoptr(FlValue) reply = fl_value_new_string(value.c_str());
+                async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(reply));
               }
               fl_method_call_respond(method_call, async_response, nullptr);
               g_object_unref(method_call);
@@ -1458,7 +1466,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
     // The output half of the gate is what stops the app offering an HDR toggle
     // on an SDR panel, where enabling it only invites the compositor to tone-map
     // a plane that never needed to be PQ in the first place.
-    response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_bool(hdr_available(self))));
+    response = bool_success_response(hdr_available(self));
   } else if (strcmp(method, "setVideoRect") == 0) {
     {
       auto read_int = [args](const char* key, int64_t* out) {
@@ -1541,7 +1549,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else if (strcmp(method, "isInitialized") == 0) {
     gboolean initialized = self->player && self->initialized;
-    response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_bool(initialized)));
+    response = bool_success_response(initialized);
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
