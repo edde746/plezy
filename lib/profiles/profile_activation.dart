@@ -223,6 +223,10 @@ Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
       if (!isCurrentActivation(previousProfile.id)) return false;
 
       binder.markUserInitiatedActivation(previousProfile.id);
+      // Returning to the profile the user was already on is not a new
+      // switch: its identity was verified when it became active, so reuse
+      // its cached Plex Home token rather than re-validating the PIN.
+      if (previousProfile.isPlexHome) binder.markPlexHomePreVerified(previousProfile.id);
       final rebind = binder.rebindActive();
       final restored = await activeProvider.awaitBindingSettle();
       if (!isCurrentActivation(previousProfile.id)) {
