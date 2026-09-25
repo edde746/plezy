@@ -205,7 +205,7 @@ jobs:
       - name: Create IPA
         run: |
           mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
+          cp -r build/ios/iphoneos/Plezy.app Payload/
           zip -r plezy-ios.ipa Payload
 
       - name: Attest IPA
