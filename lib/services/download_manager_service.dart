@@ -3004,23 +3004,28 @@ class DownloadManagerService {
   }) async {
     await _cancelNativeTasksForGlobalKey(globalKey, exceptTaskId: bgTaskId, reason: 'duplicate task before resume');
 
+    var markedDownloading = false;
     try {
       final task = await (taskForId ?? FileDownloader().taskForId)(bgTaskId);
       if (task == null || task is! DownloadTask) return false;
 
-      final resumed = await (resumeTask ?? FileDownloader().resume)(task);
-      if (!resumed) {
-        appLogger.w('Native resume returned false for $globalKey; re-enqueuing from scratch');
-        return false;
-      }
-
+      // The row must read downloading before the task is handed back: the
+      // downloader reports enqueued (on desktop synchronously, inside resume)
+      // and then progress for it, and a callback that still sees a paused row
+      // treats the task as stale and cancels it — discarding its resume data,
+      // so the download would restart from 0%.
       await _transitionStatus(globalKey, DownloadStatus.downloading);
-      appLogger.i('Resumed download via background_downloader for $globalKey');
-      return true;
+      markedDownloading = true;
+      if (await (resumeTask ?? FileDownloader().resume)(task)) {
+        appLogger.i('Resumed download via background_downloader for $globalKey');
+        return true;
+      }
+      appLogger.w('Native resume returned false for $globalKey; re-enqueuing from scratch');
     } catch (e) {
       appLogger.w('Native resume failed for $globalKey; re-enqueuing from scratch', error: e);
-      return false;
     }
+    if (markedDownloading) await _transitionStatus(globalKey, DownloadStatus.paused);
+    return false;
   }
 
   @visibleForTesting

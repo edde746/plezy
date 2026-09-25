@@ -2252,6 +2252,62 @@ void main() {
       expect(row?.status, DownloadStatus.downloading.index);
       expect(row?.bgTaskId, 'current-task');
     });
+
+    test('updates the downloader reports while resuming do not cancel the resumed task', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.paused.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final cancelledIds = <String>[];
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+        nativeOpsOverride: (
+          allTasks: () async => const <Task>[],
+          allRecords: () async => const <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (taskIds) async {
+            cancelledIds.addAll(taskIds);
+            return true;
+          },
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+      );
+      addTearDown(manager.dispose);
+      final events = <DownloadProgress>[];
+      final sub = manager.progressStream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      final resumed = await manager.debugTryResumeNativeTask(
+        globalKey,
+        'current-task',
+        taskForId: (_) async => _downloadTask('current-task', globalKey),
+        resumeTask: (task) async {
+          // The desktop downloader re-enqueues inside resume() and reports it
+          // (and the first progress) before resume() returns.
+          await manager.debugHandleTaskStatus(TaskStatusUpdate(task, TaskStatus.enqueued));
+          await manager.debugHandleTaskProgress(TaskProgressUpdate(task, 0.4, 1000));
+          return true;
+        },
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(resumed, isTrue);
+      expect(cancelledIds, isEmpty);
+      expect((await db.getDownloadedMedia(globalKey))?.status, DownloadStatus.downloading.index);
+      expect(events.where((event) => event.progress == 40), isNotEmpty);
+    });
   });
 
   group('SAF grant ownership', () {
