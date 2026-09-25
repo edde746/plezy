@@ -2174,15 +2174,18 @@ class DownloadManagerService {
       cancelStale: true,
     );
     if (existing == null) return;
+    // The task keeps reporting progress until a pause in flight (or one just
+    // recorded) actually stops it. Cancelling it here would discard the resume
+    // data the pause is producing, so resuming would restart from 0%. A task
+    // that was promoted or could not be paused reports enqueued/running and is
+    // cancelled by the status handler instead.
+    if (_pausingKeys.contains(globalKey) || existing.status == DownloadStatus.paused.index) {
+      appLogger.d('Ignoring progress for pausing download $globalKey from task ${update.task.taskId}');
+      return;
+    }
     if (existing.status != DownloadStatus.downloading.index) {
       appLogger.d('Ignoring progress for inactive download $globalKey from task ${update.task.taskId}');
       await _cancelNativeTask(globalKey, update.task.taskId, reason: 'progress for inactive download');
-      return;
-    }
-
-    // If this item is being paused, the holding queue promoted it — cancel it
-    if (_pausingKeys.contains(globalKey)) {
-      await _cancelNativeTask(globalKey, update.task.taskId, reason: 'pause in progress');
       return;
     }
     if (_cancellingKeys.contains(globalKey)) {
@@ -2964,8 +2967,12 @@ class DownloadManagerService {
       if (bgTaskId != null && downloadsSupported) {
         final task = await FileDownloader().taskForId(bgTaskId);
         if (task != null && task is DownloadTask) {
-          // Normal mode: native pause support
-          await FileDownloader().pause(task);
+          // Normal mode: native pause support. A task the downloader cannot
+          // pause (not started yet) is cancelled so it cannot keep running
+          // behind the paused row; resume then re-downloads it.
+          if (!await FileDownloader().pause(task)) {
+            await FileDownloader().cancelTaskWithId(bgTaskId);
+          }
         } else {
           // SAF mode (UriDownloadTask) or task not found: cancel (re-download on resume)
           await FileDownloader().cancelTaskWithId(bgTaskId);

@@ -2087,6 +2087,50 @@ void main() {
       expect(events.single.progress, 50);
     });
 
+    test('progress still in flight after a pause neither cancels the task nor reports downloading', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.paused.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final cancelledIds = <String>[];
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+        nativeOpsOverride: (
+          allTasks: () async => const <Task>[],
+          allRecords: () async => const <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (taskIds) async {
+            cancelledIds.addAll(taskIds);
+            return true;
+          },
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+      );
+      addTearDown(manager.dispose);
+      final events = <DownloadProgress>[];
+      final sub = manager.progressStream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugHandleTaskProgress(TaskProgressUpdate(_downloadTask('current-task', globalKey), 0.5, 1000));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cancelledIds, isEmpty, reason: 'cancelling would discard the resume data of the pause');
+      expect(events, isEmpty);
+      expect((await db.getDownloadedMedia(globalKey))?.status, DownloadStatus.paused.index);
+    });
+
     test('ignores terminal status from stale native task ids', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
