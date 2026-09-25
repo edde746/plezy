@@ -930,6 +930,57 @@ void main() {
       },
     );
 
+    test('a Plex client that connects after the timeout is closed instead of leaked', () async {
+      await _prepareFreshPlexManagerTest();
+      final endpoint = _plexEndpoint('late');
+      final server = _ControlledPlexServer(
+        serverId: 'late-server',
+        endpoints: [endpoint],
+        discoveryStreams: [() => Stream.value(endpoint)],
+      );
+      final release = Completer<void>();
+      final transport = _CloseRecordingHttpClient();
+      PlexClient? lateClient;
+      final manager = MultiServerManager(
+        connectivityChanges: () => const Stream.empty(),
+        plexClientFactory:
+            (
+              config, {
+              required serverId,
+              required profileScopeId,
+              serverName,
+              prioritizedEndpoints,
+              onEndpointChanged,
+              onAllEndpointsExhausted,
+              seedTranscoderVideoSupport,
+            }) async {
+              await release.future;
+              return lateClient = PlexClient.forTesting(
+                config: config,
+                serverId: serverId,
+                profileScopeId: profileScopeId,
+                httpClient: transport,
+              );
+            },
+      );
+      addTearDown(manager.dispose);
+
+      final bound = await manager.refreshTokensForProfile(
+        _plexAccount('late-account', [server]),
+        profileId: 'profile-a',
+        timeout: const Duration(milliseconds: 10),
+      );
+      expect(bound, isEmpty);
+      expect(manager.isServerOnline(ServerId('late-server')), isFalse);
+
+      release.complete();
+      await pumpEventQueue(times: 20);
+
+      expect(lateClient, isNotNull);
+      expect(manager.getClient(ServerId('late-server')), isNull);
+      expect(transport.closed, isTrue);
+    });
+
     test('an offline client of another profile is dropped when this profile cannot connect', () async {
       await _prepareFreshPlexManagerTest();
       final server = _ControlledPlexServer(

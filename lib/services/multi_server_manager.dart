@@ -704,11 +704,19 @@ class MultiServerManager {
         scope: profileScopeId,
       );
       try {
-        final client = await _createClientForServer(
-          server: server,
-          clientIdentifier: connection.clientIdentifier,
-          profileScopeId: profileScopeId,
-        ).namedTimeout(timeout, operation: 'connect to ${server.name}');
+        final client =
+            await _createClientForServer(
+              server: server,
+              clientIdentifier: connection.clientIdentifier,
+              profileScopeId: profileScopeId,
+            ).timeoutReleasingLate(
+              timeout,
+              operation: 'connect to ${server.name}',
+              // A connect that lands after the budget is not registered by
+              // anyone; close it instead of leaking its sockets and its
+              // background endpoint optimization.
+              releaseLate: _closeClientGracefully,
+            );
         if (isStale() || !identical(_plexServers[serverId], server)) {
           unawaited(_closeClientGracefully(client));
           return;
