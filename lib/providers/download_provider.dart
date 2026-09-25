@@ -1884,7 +1884,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         await _deleteOwnedContainerDownloads(globalKey, meta);
         return;
       }
-      if (!_ownsDownloadKey(globalKey)) return;
+      if (!_ownsDownloadKey(globalKey)) {
+        // A show, season, album or artist has no download row of its own, and
+        // its metadata can be missing (cache miss, failed parent fetch). Its
+        // leaves' rows still record it as their parent or grandparent.
+        if (meta == null) await _deleteOwnedContainerDownloads(globalKey, null);
+        return;
+      }
 
       final profileId = _requireActiveProfileId();
       final releasedAsShared = await _releaseDownloadForProfile(globalKey, profileId, onlyIfShared: true);
@@ -1923,20 +1929,43 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return released;
   }
 
-  Future<void> _deleteOwnedContainerDownloads(String globalKey, MediaItem container) async {
-    final descendants = _ownedDescendantEntries(container).toList();
+  /// Delete the active profile's downloads under the container [globalKey].
+  /// [container] is null when its metadata is not loaded; the leaves are then
+  /// found through their rows alone.
+  Future<void> _deleteOwnedContainerDownloads(String globalKey, MediaItem? container) async {
+    final descendantKeys = await _ownedDescendantKeys(globalKey, container);
+    if (container == null && descendantKeys.isEmpty) return;
     _batchDeletionDepth++;
     try {
-      for (final entry in descendants) {
-        await _deleteDownload(entry.key, notify: false);
-        DeletionNotifier().notifyDeletedItem(item: entry.value, isDownloadOnly: true);
+      for (final key in descendantKeys) {
+        final meta = _metadata[key];
+        await _deleteDownload(key, notify: false);
+        if (meta != null) DeletionNotifier().notifyDeletedItem(item: meta, isDownloadOnly: true);
       }
     } finally {
       _batchDeletionDepth--;
     }
 
-    DeletionNotifier().notifyDeletedItem(item: container, isDownloadOnly: true);
+    if (container != null) DeletionNotifier().notifyDeletedItem(item: container, isDownloadOnly: true);
     safeNotifyListeners();
+  }
+
+  /// Owned leaf downloads under the container [globalKey]: those whose loaded
+  /// metadata names [container] as parent or grandparent, plus those whose row
+  /// records it — the only link left for a leaf whose metadata is missing.
+  Future<List<String>> _ownedDescendantKeys(String globalKey, MediaItem? container) async {
+    final keys = <String>{if (container != null) ..._ownedDescendantEntries(container).map((entry) => entry.key)};
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed != null) {
+      // Plain parent / grandparent rating-key matches, so they cover albums
+      // and artists as well as seasons and shows.
+      final rows = [
+        ...await _database.getEpisodesBySeason(parsed.ratingKey, serverId: parsed.serverId),
+        ...await _database.getEpisodesByShow(parsed.ratingKey, serverId: parsed.serverId),
+      ];
+      keys.addAll(rows.map((row) => row.globalKey).where(_ownsDownloadKey));
+    }
+    return keys.toList();
   }
 
   Iterable<MapEntry<String, MediaItem>> _ownedDescendantEntries(MediaItem container) {

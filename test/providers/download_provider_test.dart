@@ -1305,6 +1305,53 @@ void main() {
       p.dispose();
     });
 
+    test('deleting a show whose metadata is missing removes its owned episodes', () async {
+      for (final (id, seasonId) in [('ep-1', 'season-1'), ('ep-2', 'season-2')]) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'episode',
+          parentRatingKey: seasonId,
+          grandparentRatingKey: 'show-1',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:$id');
+      }
+      // Another show's episode must survive.
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'other-ep',
+        globalKey: 'srv:other-ep',
+        type: 'episode',
+        parentRatingKey: 'season-9',
+        grandparentRatingKey: 'show-9',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:other-ep');
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final id in ['ep-1', 'ep-2', 'other-ep'])
+            'srv:$id': DownloadProgress(globalKey: 'srv:$id', status: DownloadStatus.completed),
+        },
+        ownedDownloadKeys: {'srv:ep-1', 'srv:ep-2', 'srv:other-ep'},
+      );
+
+      await p.deleteDownload('srv:show-1');
+
+      expect(p.downloads.keys, ['srv:other-ep']);
+      expect(await db.getDownloadedMedia('srv:ep-1'), isNull);
+      expect(await db.getDownloadedMedia('srv:ep-2'), isNull);
+      expect(await db.getDownloadedMedia('srv:other-ep'), isNotNull);
+
+      await p.deleteDownload('srv:season-9');
+
+      expect(p.downloads, isEmpty);
+      p.dispose();
+    });
+
     test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {
       MediaItem track(String id, {required int disc, required int number}) => testMediaItem(
         id: id,
