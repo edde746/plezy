@@ -47,11 +47,13 @@ const (
 	logLookupRateBurst             = 10
 	logLookupRateSustained         = 1
 	maxLogEntries                  = 500
+	maxLogEntriesPerSource         = 10
 	maxLogLookupSources            = 4096
 	maxConcurrentLogLookups        = 32
 	maxHTTPHeaderBytes             = 64 * 1024
 	maxPosterSize                  = 5 * 1024 * 1024
 	maxPosterStoreSize             = int64(1 * 1024 * 1024 * 1024)
+	maxPosterBytesPerSource        = int64(32 * 1024 * 1024)
 	posterMaxAge                   = 3 * time.Hour
 	posterIDLength                 = 16
 	posterPerIPRateBurst           = 3
@@ -496,7 +498,10 @@ func (r *Room) sendFrom(senderID string, sender *Client, targetID string, msg se
 
 const logFileExt = ".log"
 
-var errLogStoreFull = errors.New("log store full")
+var (
+	errLogStoreFull   = errors.New("log store full")
+	errLogSourceQuota = errors.New("log source quota exhausted")
+)
 
 // logStore rejects uploads when its artifact-count quota is full.
 type logStore struct {
@@ -526,10 +531,12 @@ func newLogStoreWithRemover(dir string, removeFile func(string) error) *logStore
 			acceptLoaded: func(_ string, size int64) (string, bool) {
 				return "", size > 0 && size <= maxLogSize
 			},
-			limit:       maxLogEntries,
-			cost:        func(int64) int64 { return 1 },
-			pendingCost: func(pendingRemoval) int64 { return 1 },
-			errFull:     errLogStoreFull,
+			limit:        maxLogEntries,
+			cost:         func(int64) int64 { return 1 },
+			pendingCost:  func(pendingRemoval) int64 { return 1 },
+			errFull:      errLogStoreFull,
+			ownerLimit:   maxLogEntriesPerSource,
+			errOwnerFull: errLogSourceQuota,
 		},
 		rateLimit:  make(map[string]time.Time),
 		lookupRate: make(map[string]*rateLimiter),
@@ -562,14 +569,16 @@ func logIDFromFilename(filename string) (string, bool) {
 	return id, validLogID(id)
 }
 
-func (ls *logStore) store(data []byte, now time.Time) (string, artifactEntry, error) {
+// store saves a log charged to source; an empty source is charged only to
+// the store quota.
+func (ls *logStore) store(source string, data []byte, now time.Time) (string, artifactEntry, error) {
 	if len(data) == 0 {
 		return "", artifactEntry{}, errors.New("empty log")
 	}
 	if len(data) > maxLogSize {
 		return "", artifactEntry{}, errors.New("log too large")
 	}
-	return ls.put(data, logFileExt, "", now)
+	return ls.put(source, data, logFileExt, "", now)
 }
 
 func (ls *logStore) lookup(id string, now time.Time) (artifactEntry, bool, error) {
@@ -652,6 +661,7 @@ func newPosterStoreWithRemover(
 		evictToFit:          true,
 		retryKnownDebtOnPut: true,
 		errFull:             errPosterStoreFull,
+		ownerLimit:          maxPosterBytesPerSource,
 	}}
 	ps.startupErr = ps.loadExisting(time.Now())
 	return ps
@@ -706,7 +716,10 @@ func posterIDFromFilename(filename string) (string, bool) {
 	return id, true
 }
 
-func (ps *posterStore) store(data []byte, contentType string, now time.Time) (string, artifactEntry, error) {
+// store saves a poster charged to source, recycling that source's oldest
+// posters once it holds its share; an empty source is charged only to the
+// store quota.
+func (ps *posterStore) store(source string, data []byte, contentType string, now time.Time) (string, artifactEntry, error) {
 	entrySize := int64(len(data))
 	if entrySize <= 0 {
 		return "", artifactEntry{}, errors.New("empty poster")
@@ -718,7 +731,7 @@ func (ps *posterStore) store(data []byte, contentType string, now time.Time) (st
 	if !ok {
 		return "", artifactEntry{}, errors.New("unsupported poster type")
 	}
-	return ps.put(data, ext, strings.ToLower(strings.SplitN(contentType, ";", 2)[0]), now)
+	return ps.put(source, data, ext, strings.ToLower(strings.SplitN(contentType, ";", 2)[0]), now)
 }
 
 func (ps *posterStore) lookup(filename string, now time.Time) (artifactEntry, bool, error) {
@@ -1531,10 +1544,14 @@ func (s *Server) handlePostLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, entry, err := s.logs.store(body, time.Now())
+	id, entry, err := s.logs.store(ip, body, time.Now())
 	if err != nil {
 		if errors.Is(err, errLogStoreFull) {
 			http.Error(w, "Log store full", http.StatusServiceUnavailable)
+			return
+		}
+		if errors.Is(err, errLogSourceQuota) {
+			http.Error(w, "Too many stored logs from this address", http.StatusTooManyRequests)
 			return
 		}
 		var removalErr *artifactRemovalError
@@ -1694,7 +1711,7 @@ func (s *Server) handlePostPosters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, entry, err := s.posters.store(body, contentType, time.Now())
+	id, entry, err := s.posters.store(ip, body, contentType, time.Now())
 	if err != nil {
 		var removalErr *artifactRemovalError
 		if errors.As(err, &removalErr) {
