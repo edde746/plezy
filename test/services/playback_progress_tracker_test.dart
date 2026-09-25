@@ -80,6 +80,10 @@ class _FakePlayer implements Player {
     _state = _state.copyWith(completed: value);
   }
 
+  set track(TrackSelection value) {
+    _state = _state.copyWith(track: value);
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -689,6 +693,62 @@ void main() {
       expect(progressSelection.mediaSourceId, 'source-1');
       expect(progressSelection.audioStreamIndex, 2);
       expect(progressSelection.subtitleStreamIndex, -1);
+    });
+
+    test('Jellyfin progress reports the selected subtitle by identity, not catalog position', () async {
+      final client = _FakePlexClient();
+      const audio = AudioTrack(id: '1', language: 'jpn');
+      // The engine lists the embedded track first and the sidecar after it;
+      // Jellyfin lists its external file first.
+      const embeddedJpn = SubtitleTrack(id: '1', language: 'jpn', codec: 'ass');
+      const sidecarEng = SubtitleTrack(
+        id: '2',
+        language: 'eng',
+        codec: 'subrip',
+        isExternal: true,
+        uri: 'https://jf.example/Videos/42/source-1/Subtitles/3/0/Stream.srt',
+      );
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(audio: [audio], subtitle: [embeddedJpn, sidecarEng]),
+        track: const TrackSelection(audio: audio, subtitle: embeddedJpn),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'jpn', selected: true)],
+        subtitleTracks: [
+          MediaSubtitleTrack(
+            id: 3,
+            languageCode: 'eng',
+            codec: 'srt',
+            selected: false,
+            forced: false,
+            external: true,
+            key: '/Videos/42/source-1/Subtitles/3/0/Stream.srt',
+          ),
+          MediaSubtitleTrack(id: 2, languageCode: 'jpn', codec: 'ass', selected: false, forced: false),
+        ],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      // Position would have reported the external row (3) for the embedded pick.
+      expect(client.playbackStreamSelections.single.subtitleStreamIndex, 2);
+
+      player.track = const TrackSelection(audio: audio, subtitle: sidecarEng);
+      await tracker.sendProgress('stopped');
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, 3);
     });
 
     test('Jellyfin progress reports selected source audio when player exposes a single output track', () async {

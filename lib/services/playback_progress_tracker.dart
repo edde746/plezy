@@ -775,16 +775,12 @@ class PlaybackProgressTracker {
       }
     }
 
-    final ordinal = player.state.tracks.subtitle.where((t) => t.id != 'auto' && t.id != 'no').toList().indexOf(track);
-    if (ordinal >= 0 && ordinal < info.subtitleTracks.length) return info.subtitleTracks[ordinal].id;
-
-    final matched = findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle);
-    if (matched != null) return matched.id;
-
-    final parsedId = int.tryParse(track.id);
-    if (parsedId != null && info.subtitleTracks.any((t) => t.id == parsedId)) return parsedId;
-
-    return null;
+    // Identity, never position: the two catalogs are ordered independently
+    // (Jellyfin lists external files first, the engine its embedded tracks),
+    // and a native track id is the engine's own ordinal, so neither the n-th
+    // row nor the row whose stream index happens to equal the native id is
+    // this track. An unmatched track is withheld rather than guessed.
+    return findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle)?.id;
   }
 
   /// Queue progress update locally (offline mode)
