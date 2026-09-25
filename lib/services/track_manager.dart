@@ -381,12 +381,19 @@ class TrackManager {
   /// track now playing so the caller can record it as the committed choice.
   /// Returns null when there was nothing to cycle.
   SubtitleTrack? cycleSubtitleTrack() {
-    final tracks = player.state.tracks.subtitle.where((t) => t.id != 'auto').toList();
-    if (tracks.isEmpty) return null;
+    final realTracks = player.state.tracks.subtitle
+        .where((t) => t.id != SubtitleTrack.auto.id && t.id != SubtitleTrack.off.id)
+        .toList();
+    if (realTracks.isEmpty) return null;
+    // The engine's track list names only real tracks, so Off is added as a
+    // stop of its own: without it the cycle wrapped from the last track back
+    // to the first and never turned subtitles off.
+    final tracks = [SubtitleTrack.off, ...realTracks];
 
     final current = player.state.track.subtitle;
+    // No selection, or one the list no longer holds, counts as Off.
     final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
-    final nextIndex = (currentIndex + 1) % tracks.length;
+    final nextIndex = (currentIndex < 0 ? 1 : currentIndex + 1) % tracks.length;
     final next = tracks[nextIndex];
     player.selectSubtitleTrack(next);
     unawaited(onSubtitleTrackSelectedByUser(next));
@@ -400,7 +407,8 @@ class TrackManager {
                 language: next.language,
                 codec: next.codec,
                 forced: next.isForced,
-                index: nextIndex,
+                // Position among the real tracks, as the track sheet numbers them.
+                index: nextIndex - 1,
               ).joined,
             );
       showMessage?.call(label, duration: const Duration(seconds: 1));

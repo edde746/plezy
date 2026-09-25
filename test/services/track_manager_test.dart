@@ -1563,6 +1563,21 @@ void main() {
     });
   });
 
+  test('cycleSubtitleTrack lands on Off after the last track, which the engine does not list', () async {
+    await SettingsService.getInstance();
+    const english = SubtitleTrack(id: '1', language: 'eng');
+    const swedish = SubtitleTrack(id: '2', language: 'swe');
+    final player = _FakePlayer(
+      tracks: const Tracks(subtitle: [english, swedish]),
+      track: const TrackSelection(subtitle: swedish),
+    );
+    final mgr = _make(player: player);
+    addTearDown(mgr.dispose);
+
+    expect(mgr.cycleSubtitleTrack()?.id, SubtitleTrack.off.id);
+    expect(player.selectedSubtitle.map((track) => track.id), [SubtitleTrack.off.id]);
+  });
+
   group('cycleAudioTrack', () {
     test('no-op when fewer than 2 real audio tracks exist', () {
       final player = _FakePlayer(
