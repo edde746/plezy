@@ -221,6 +221,19 @@ void main() {
     ]);
   });
 
+  testWidgets('What\'s On is hidden when no Live TV server is Plex', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+    harness.liveTv.favorites.complete(const []);
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.liveTv.guide), findsWidgets);
+    expect(find.text(t.liveTv.whatsOn), findsNothing);
+  });
+
   testWidgets('guide refresh reports a DVR reload failure instead of success', (tester) async {
     final dvr = _FakeLiveTvDvrSupport(reloadFailure: StateError('reload failed'));
     final harness = await _pumpLiveTvScreen(tester, dvr: dvr);
