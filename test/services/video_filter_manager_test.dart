@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/services/ambient_lighting_service.dart';
 import 'package:plezy/services/video_filter_manager.dart';
 
 void main() {
@@ -132,26 +131,6 @@ void main() {
     expect(player.zoomCalls, [1.0, 0.8]);
   });
 
-  test('ambient-active run leaves aspect-override unknown', () async {
-    final player = _RecordingPlayer();
-    final ambient = _FakeAmbientLightingService(player);
-    final manager = VideoFilterManager(player: player)..ambientLightingService = ambient;
-    addTearDown(manager.dispose);
-
-    await manager.updateVideoFilter();
-    player.clearRecords();
-
-    ambient.fakeEnabled = true;
-    await manager.updateVideoFilter();
-    expect(player.writes.where((write) => write.key == 'video-aspect-override'), isEmpty);
-
-    ambient.fakeEnabled = false;
-    await manager.updateVideoFilter();
-    final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
-    expect(aspectWrites, hasLength(1));
-    expect(aspectWrites.single.value, 'no');
-  });
-
   test('fill mode rewrites aspect on player size change', () async {
     final player = _RecordingPlayer();
     final manager = VideoFilterManager(player: player, initialBoxFitMode: 2, initialPlayerSize: const Size(1920, 1080));
@@ -243,13 +222,4 @@ class _SlowRecordingPlayer extends _RecordingPlayer {
     await super.setProperty(name, value);
     await Future<void>.delayed(const Duration(milliseconds: 2));
   }
-}
-
-class _FakeAmbientLightingService extends AmbientLightingService {
-  _FakeAmbientLightingService(super.player);
-
-  bool fakeEnabled = false;
-
-  @override
-  bool get isEnabled => fakeEnabled;
 }

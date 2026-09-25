@@ -229,10 +229,9 @@ void main() {
           isFalse,
           reason: 'the effect must be in place before the first frame is revealed, or the letterbox flashes',
         );
-        // Picture aspect for subtitle placement, player aspect for the fill:
-        // 1920/800 and the 1200x800 viewport.
+        // Picture aspect (1920/800) for subtitle placement, then the fill.
         expect(propertyWrites, contains(('sub-video-rect-aspect', '2.4')));
-        expect(propertyWrites, contains(('video-aspect-override', '1.5')));
+        expect(propertyWrites, contains(('keepaspect', 'no')));
 
         var shutdownDone = false;
         final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);
