@@ -69,8 +69,13 @@ class _FakeFribbLookup implements FribbMappingLookup {
   /// Filters by tvdb id so distinct shows map to distinct anime entries, which is
   /// what makes their queued rows distinct.
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async =>
-      rows.where((row) => tvdbId == null || row.tvdbId == tvdbId).toList();
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async => rows.where((row) => tvdbId == null || row.tvdbId == tvdbId).toList();
 
   @override
   Future<FribbMappingRow?> lookupByMal(int malId) async => rows.where((row) => row.malId == malId).firstOrNull;

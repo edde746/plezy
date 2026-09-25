@@ -223,7 +223,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
         anilist: row?.anilistId,
         simkl: row?.simklId,
         imdb: row?.imdbIds?.firstOrNull,
-        tmdb: row?.tmdbIds?.firstOrNull,
+        tmdb: row?.tmdbIdFor(movie: anime.isMovie),
         tvdb: row?.tvdbId,
       ),
       // Which season of the parent series this entry maps to, for the reverse
@@ -371,6 +371,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (!external.hasAny) return null;
     final rows = await _fribb.lookup(
+      movie: kind == MediaKind.movie,
       anidbId: external.anidb,
       tvdbId: external.tvdb,
       tmdbId: external.tmdb,

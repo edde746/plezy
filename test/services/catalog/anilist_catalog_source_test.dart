@@ -36,11 +36,17 @@ class _FakeFribb implements FribbMappingLookup {
   _FakeFribb(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => [
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async => [
     for (final row in rows)
       if ((anidbId != null && row.anidbId == anidbId) ||
-          (tvdbId != null && row.tvdbId == tvdbId) ||
-          (tmdbId != null && (row.tmdbIds?.contains(tmdbId) ?? false)) ||
+          (!movie && tvdbId != null && row.tvdbId == tvdbId) ||
+          (tmdbId != null && (movie ? (row.tmdbMovieIds?.contains(tmdbId) ?? false) : row.tmdbTvId == tmdbId)) ||
           (imdbId != null && (row.imdbIds?.contains(imdbId) ?? false)))
         row,
   ];
@@ -139,7 +145,7 @@ void main() {
   const movie = FribbMappingRow(
     anilistId: 21519,
     malId: 32281,
-    tmdbIds: [372058],
+    tmdbMovieIds: [372058],
     imdbIds: ['tt5311514'],
     type: 'MOVIE',
   );

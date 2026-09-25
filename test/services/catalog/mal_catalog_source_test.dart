@@ -148,11 +148,17 @@ class _FakeFribb implements FribbMappingLookup {
   _FakeFribb(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => [
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async => [
     for (final row in rows)
       if ((anidbId != null && row.anidbId == anidbId) ||
-          (tvdbId != null && row.tvdbId == tvdbId) ||
-          (tmdbId != null && (row.tmdbIds?.contains(tmdbId) ?? false)) ||
+          (!movie && tvdbId != null && row.tvdbId == tvdbId) ||
+          (tmdbId != null && (movie ? (row.tmdbMovieIds?.contains(tmdbId) ?? false) : row.tmdbTvId == tmdbId)) ||
           (imdbId != null && (row.imdbIds?.contains(imdbId) ?? false)))
         row,
   ];
@@ -227,7 +233,7 @@ void main() {
     imdbIds: ['tt2560140'],
   );
   // An anime movie.
-  const yourName = FribbMappingRow(malId: 32281, tmdbIds: [372058], imdbIds: ['tt5311514'], type: 'MOVIE');
+  const yourName = FribbMappingRow(malId: 32281, tmdbMovieIds: [372058], imdbIds: ['tt5311514'], type: 'MOVIE');
 
   group('MalCatalogSource', () {
     late List<http.Request> requests;
@@ -416,9 +422,7 @@ void main() {
           source.dispose();
           source = MalCatalogSource(
             client,
-            fribb: _FakeFribb(const [
-              FribbMappingRow(malId: 35760, tmdbIds: [1429], tvdbSeason: 3, tmdbSeason: 3),
-            ]),
+            fribb: _FakeFribb(const [FribbMappingRow(malId: 35760, tmdbTvId: 1429, tvdbSeason: 3, tmdbSeason: 3)]),
           );
           handlers.add(
             (_) => _json(

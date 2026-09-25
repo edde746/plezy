@@ -150,7 +150,7 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
       anilist: anime.id,
       mal: anime.idMal,
       imdb: row?.imdbIds?.firstOrNull,
-      tmdb: row?.tmdbIds?.firstOrNull,
+      tmdb: row?.tmdbIdFor(movie: anime.isMovie),
       tvdb: row?.tvdbId,
     ),
     season: row == null || (row.tvdbSeason == null && row.tmdbSeason == null)
@@ -365,6 +365,7 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (!external.hasAny) return null;
     final rows = await _fribb.lookup(
+      movie: kind == MediaKind.movie,
       anidbId: external.anidb,
       tvdbId: external.tvdb,
       tmdbId: external.tmdb,

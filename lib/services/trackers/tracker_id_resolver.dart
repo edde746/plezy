@@ -211,6 +211,7 @@ class TrackerIdResolver {
     if (!_needsFribb()) return _withoutAnimeMapping(external);
     final anidbId = _usableAnidbId(external, season: isMovie ? null : isEpisodeSeason);
     final rows = await _store.lookup(
+      movie: isMovie,
       anidbId: anidbId,
       tvdbId: external.tvdb,
       tmdbId: external.tmdb,
@@ -262,6 +263,7 @@ class TrackerIdResolver {
     if (!external.hasAny) return null;
     if (!_needsFribb()) return _withoutAnimeMapping(external);
     final rows = await _store.lookup(
+      movie: false,
       anidbId: _usableAnidbId(external, season: season),
       tvdbId: external.tvdb,
       tmdbId: external.tmdb,
@@ -326,8 +328,9 @@ class TrackerIdResolver {
     if (rows.isEmpty) return null;
     final movies = rows.where((r) => r.isMovie);
     if (movies.isNotEmpty) return movies.first;
-    // Fall back to any row if no explicit MOVIE row matches — some rows have
-    // no type field.
+    // Fall back to any row if no explicit MOVIE row matches: the lookup only
+    // searched movie-namespace ids, and some rows have no type field while TMDB
+    // lists some OVAs and specials as films.
     return rows.first;
   }
 

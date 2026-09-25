@@ -32,15 +32,23 @@ class _FakeFribbLookup implements FribbMappingLookup {
   final List<FribbMappingRow> rows;
   int lookups = 0;
   int? lastAnidbId;
+  bool? lastMovie;
 
   _FakeFribbLookup(this.rows);
 
   /// Mirrors the real store: an AniDB id is the dataset's primary key and
   /// resolves at most one row, so it short-circuits the tvdb/tmdb/imdb ladder.
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async {
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async {
     lookups++;
     lastAnidbId = anidbId;
+    lastMovie = movie;
     if (anidbId != null) {
       final hit = rows.where((row) => row.anidbId == anidbId).firstOrNull;
       if (hit != null) return [hit];
@@ -149,14 +157,7 @@ void main() {
       final resolver = _resolver(
         animeProgress: animeProgress,
         rows: const [
-          FribbMappingRow(
-            tvdbId: 81797,
-            tmdbIds: [37854],
-            imdbIds: ['tt0388629'],
-            malId: 21,
-            anilistId: 21,
-            type: 'TV',
-          ),
+          FribbMappingRow(tvdbId: 81797, tmdbTvId: 37854, imdbIds: ['tt0388629'], malId: 21, anilistId: 21, type: 'TV'),
         ],
       );
 
@@ -396,6 +397,33 @@ void main() {
 
       expect(ids?.external.tvdb, 81797);
       expect(ids?.anime, isNull);
+    });
+  });
+
+  group('TrackerIdResolver id namespaces', () {
+    // TMDB and TVDB number films apart from series, so the store must be told
+    // which one a library item's ids belong to.
+    test('a movie looks its ids up as movie ids', () async {
+      final lookup = _FakeFribbLookup(const []);
+      final resolver = TrackerIdResolver(
+        _FakeMediaServerClient({'movie-1': const ExternalIds(tmdb: 982)}),
+        store: lookup,
+        animeLists: const _FakeAnimeListsLookup(),
+        animeProgress: _FakeAnimeProgressLookup(null),
+      );
+
+      await resolver.resolveForMovie('movie-1');
+
+      expect(lookup.lastMovie, isTrue);
+    });
+
+    test('an episode looks its show ids up as series ids', () async {
+      final lookup = _FakeFribbLookup(const []);
+      final resolver = _resolver(rows: const [], lookup: lookup, animeProgress: _FakeAnimeProgressLookup(null));
+
+      await resolver.resolveShowForEpisode(_episode(season: 1, number: 4));
+
+      expect(lookup.lastMovie, isFalse);
     });
   });
 }
