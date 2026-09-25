@@ -970,6 +970,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   WatchTogetherProvider? _watchTogetherProvider;
   Object? _watchTogetherBinding;
   WatchPlaybackLease? _watchTogetherLease;
+
+  /// The one instance registered as the provider's player media-switch
+  /// owner. Every tear-off of an extension method is a new closure that never
+  /// compares equal, so detach identifies its own registration by this field.
+  late final MediaSwitchCallback _watchTogetherMediaSwitchHandler = _handlePlayerMediaSwitch;
   int _userRateOperation = 0;
   Future<void> _userRateMutation = Future<void>.value();
   Completer<void>? _nativeSeekDrain;
@@ -1268,7 +1273,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (watchTogether != null && watchTogether.isPlaybackLeaseCurrent(launchLease)) {
         _watchTogetherProvider = watchTogether;
         _watchTogetherLease = launchLease;
-        watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+        watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
       }
     }
     unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.player));

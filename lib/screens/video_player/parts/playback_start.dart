@@ -10,7 +10,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     _watchTogetherLease = watchTogetherLease;
     if (watchTogether != null && watchTogetherLease != null && watchTogetherLease.isCurrent) {
       _watchTogetherProvider = watchTogether;
-      watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+      watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
     }
     bool isCurrentStart() => attempt.isCurrent && (watchTogetherLease == null || watchTogetherLease.isCurrent);
     _firstFrame.resetRenderedForAttempt();

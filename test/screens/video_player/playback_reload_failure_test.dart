@@ -482,6 +482,9 @@ void main() {
           expect(watchTogether.isPlaybackLeaseCurrent(lease), continuesRoom);
           expect(peer.hostExitCount, continuesRoom ? 0 : 1);
           expect(watchTogether.hasAttachedPlayer, isFalse);
+          // The disposed screen releases its own media-switch registration
+          // but never the one a continuing successor made in its place.
+          expect(watchTogether.onPlayerMediaSwitched, continuesRoom ? isNotNull : isNull);
           if (continuesRoom) {
             successorKey.currentState!.debugBindWatchTogetherForTesting();
             successorPlayer.emitPlaybackRestart();
