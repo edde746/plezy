@@ -41,12 +41,13 @@ const (
 	pingInterval                   = 30 * time.Second
 	maxLogSize                     = 1 * 1024 * 1024
 	logMaxAge                      = 3 * 24 * time.Hour
-	logIDLength                    = 5
+	logIDLength                    = 10
+	legacyLogIDLength              = 5
 	logRateInterval                = 1 * time.Minute
 	logLookupRateBurst             = 10
 	logLookupRateSustained         = 1
 	maxLogEntries                  = 500
-	maxFailedLogLookupSources      = 4096
+	maxLogLookupSources            = 4096
 	maxConcurrentLogLookups        = 32
 	maxHTTPHeaderBytes             = 64 * 1024
 	maxPosterSize                  = 5 * 1024 * 1024
@@ -500,8 +501,8 @@ var errLogStoreFull = errors.New("log store full")
 // logStore rejects uploads when its artifact-count quota is full.
 type logStore struct {
 	artifactStore
-	rateLimit        map[string]time.Time // IP -> last upload time
-	failedLookupRate map[string]*rateLimiter
+	rateLimit  map[string]time.Time // IP -> last upload time
+	lookupRate map[string]*rateLimiter
 }
 
 func newLogStore(dir string) *logStore {
@@ -530,8 +531,8 @@ func newLogStoreWithRemover(dir string, removeFile func(string) error) *logStore
 			pendingCost: func(pendingRemoval) int64 { return 1 },
 			errFull:     errLogStoreFull,
 		},
-		rateLimit:        make(map[string]time.Time),
-		failedLookupRate: make(map[string]*rateLimiter),
+		rateLimit:  make(map[string]time.Time),
+		lookupRate: make(map[string]*rateLimiter),
 	}
 	ls.startupErr = ls.loadExisting(time.Now())
 	return ls
@@ -545,12 +546,20 @@ func generateLogID() string {
 	return generateID(logIDLength)
 }
 
+// Log IDs are bearer capabilities for uploads that can hold account
+// identifiers, so they carry enough entropy that the per-source lookup budget
+// cannot enumerate them. Five-character IDs issued before that stay
+// retrievable until they expire.
+func validLogID(id string) bool {
+	return validID(id, logIDLength) || validID(id, legacyLogIDLength)
+}
+
 func logIDFromFilename(filename string) (string, bool) {
 	if filepath.Ext(filename) != logFileExt {
 		return "", false
 	}
 	id := strings.TrimSuffix(filename, logFileExt)
-	return id, validID(id, logIDLength)
+	return id, validLogID(id)
 }
 
 func (ls *logStore) store(data []byte, now time.Time) (string, artifactEntry, error) {
@@ -564,23 +573,26 @@ func (ls *logStore) store(data []byte, now time.Time) (string, artifactEntry, er
 }
 
 func (ls *logStore) lookup(id string, now time.Time) (artifactEntry, bool, error) {
-	if !validID(id, logIDLength) {
+	if !validLogID(id) {
 		return artifactEntry{}, false, nil
 	}
 	return ls.lookupEntry(id, now, nil)
 }
 
-func (ls *logStore) allowFailedLookup(source string, now time.Time) bool {
+// allowLookup charges one lookup to source. Every lookup is charged, hits
+// included, before the ID is resolved: a source that could still tell a hit
+// from a miss once its budget ran out could keep guessing at full speed.
+func (ls *logStore) allowLookup(source string, now time.Time) bool {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
-	limiter := ls.failedLookupRate[source]
+	limiter := ls.lookupRate[source]
 	if limiter == nil {
-		cleanupRateLimiters(ls.failedLookupRate, now, nil)
-		if len(ls.failedLookupRate) >= maxFailedLogLookupSources {
+		cleanupRateLimiters(ls.lookupRate, now, nil)
+		if len(ls.lookupRate) >= maxLogLookupSources {
 			return false
 		}
 		limiter = newRateLimiterAt(logLookupRateBurst, logLookupRateSustained, now)
-		ls.failedLookupRate[source] = limiter
+		ls.lookupRate[source] = limiter
 	}
 	return limiter.allowAt(now)
 }
@@ -590,7 +602,7 @@ func (ls *logStore) cleanup(now time.Time) error {
 	defer ls.mu.Unlock()
 	removalErr := ls.cleanupLocked(now)
 	cleanupRateWindows(ls.rateLimit, now, logRateInterval)
-	cleanupRateLimiters(ls.failedLookupRate, now, nil)
+	cleanupRateLimiters(ls.lookupRate, now, nil)
 	return removalErr
 }
 
@@ -1572,6 +1584,12 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 				message: "Invalid client address",
 			}
 		}
+		if !s.logs.allowLookup(source, time.Now()) {
+			return lookupResult{
+				status:  http.StatusTooManyRequests,
+				message: "Too many lookups",
+			}
+		}
 		id := strings.TrimPrefix(r.URL.Path, "/logs/")
 		entry, ok, err := s.logs.lookup(id, time.Now())
 		if err != nil {
@@ -1582,12 +1600,6 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if !ok {
-			if !s.logs.allowFailedLookup(source, time.Now()) {
-				return lookupResult{
-					status:  http.StatusTooManyRequests,
-					message: "Too many failed lookups",
-				}
-			}
 			return lookupResult{status: http.StatusNotFound, message: "Not found"}
 		}
 

@@ -7185,7 +7185,7 @@ func TestLogStoreRetiresLegacyCapabilitiesOnStartup(t *testing.T) {
 	}
 }
 
-func TestLogsFailedLookupsAreBoundedButValidCapabilitiesRemainAvailable(t *testing.T) {
+func TestLogLookupsAreThrottledPerSourceBeforeResolvingIDs(t *testing.T) {
 	h := newRelayHarness(t)
 	payload := []byte("retrievable")
 	validID := postLogAndGetID(t, h.baseURL, "203.0.113.1", payload)
@@ -7211,10 +7211,18 @@ func TestLogsFailedLookupsAreBoundedButValidCapabilitiesRemainAvailable(t *testi
 		t.Fatalf("throttled Cache-Control=%q", got)
 	}
 
-	success := getLog(t, h.baseURL, source, validID)
+	// An exhausted source must not learn which guesses hit: a valid ID is
+	// refused exactly like an unknown one.
+	exhaustedHit := getLog(t, h.baseURL, source, validID)
+	exhaustedHit.Body.Close()
+	if exhaustedHit.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("valid capability from exhausted source status=%d, want 429", exhaustedHit.StatusCode)
+	}
+
+	success := getLog(t, h.baseURL, "203.0.113.51", validID)
 	defer success.Body.Close()
 	if success.StatusCode != http.StatusOK {
-		t.Fatalf("valid capability after exhausted failures status=%d", success.StatusCode)
+		t.Fatalf("valid capability from independent source status=%d", success.StatusCode)
 	}
 	got, err := io.ReadAll(success.Body)
 	if err != nil || !bytes.Equal(got, payload) {
@@ -7224,14 +7232,50 @@ func TestLogsFailedLookupsAreBoundedButValidCapabilitiesRemainAvailable(t *testi
 		t.Fatalf("success Cache-Control=%q", cache)
 	}
 
-	independent := getLog(t, h.baseURL, "203.0.113.51", strings.Repeat("x", logIDLength))
-	independent.Body.Close()
-	if independent.StatusCode != http.StatusNotFound {
-		t.Fatalf("independent source status=%d, want 404", independent.StatusCode)
+	// Hits spend the same budget as misses.
+	hitter := "203.0.113.52"
+	for i := range logLookupRateBurst {
+		resp := getLog(t, h.baseURL, hitter, validID)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("hit %d status=%d, want 200", i, resp.StatusCode)
+		}
+	}
+	overBudget := getLog(t, h.baseURL, hitter, validID)
+	overBudget.Body.Close()
+	if overBudget.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("hit beyond budget status=%d, want 429", overBudget.StatusCode)
 	}
 }
 
-func TestLogFailedLookupCleanupIsDeterministic(t *testing.T) {
+func TestLogStoreKeepsServingLegacyLengthIDsUntilExpiry(t *testing.T) {
+	dir := t.TempDir()
+	legacyID := strings.Repeat("q", legacyLogIDLength)
+	legacyPath := filepath.Join(dir, legacyID+logFileExt)
+	if err := os.WriteFile(legacyPath, []byte("legacy link"), 0o644); err != nil {
+		t.Fatalf("seed legacy log: %v", err)
+	}
+	now := time.Now()
+	store := newLogStore(dir)
+	if _, err := os.Stat(legacyPath); err != nil {
+		t.Fatalf("legacy-length log was retired on startup: %v", err)
+	}
+	if _, ok, err := store.lookup(legacyID, now); err != nil || !ok {
+		t.Fatalf("legacy-length lookup=(ok=%v, err=%v), want indexed", ok, err)
+	}
+	if _, ok, err := store.lookup(legacyID, now.Add(logMaxAge+time.Minute)); err != nil || ok {
+		t.Fatalf("expired legacy-length lookup=(ok=%v, err=%v), want absent", ok, err)
+	}
+	id, _, err := store.store([]byte("new"), now)
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	if len(id) != logIDLength {
+		t.Fatalf("new id=%q len=%d, want %d", id, len(id), logIDLength)
+	}
+}
+
+func TestLogLookupLimiterCleanupIsDeterministic(t *testing.T) {
 	store := newLogStore(t.TempDir())
 	now := time.Unix(1_700_000_000, 0)
 	id, _, err := store.store([]byte("keep"), now)
@@ -7239,19 +7283,19 @@ func TestLogFailedLookupCleanupIsDeterministic(t *testing.T) {
 		t.Fatalf("store: %v", err)
 	}
 	for range logLookupRateBurst {
-		if !store.allowFailedLookup("203.0.113.1", now) {
+		if !store.allowLookup("203.0.113.1", now) {
 			t.Fatal("burst rejected early")
 		}
 	}
-	if store.allowFailedLookup("203.0.113.1", now) {
+	if store.allowLookup("203.0.113.1", now) {
 		t.Fatal("lookup beyond burst unexpectedly allowed")
 	}
 	store.cleanup(now)
-	if _, ok := store.failedLookupRate["203.0.113.1"]; !ok {
+	if _, ok := store.lookupRate["203.0.113.1"]; !ok {
 		t.Fatal("cleanup removed an effective limiter")
 	}
 	store.cleanup(now.Add(time.Duration(logLookupRateBurst) * time.Second))
-	if _, ok := store.failedLookupRate["203.0.113.1"]; ok {
+	if _, ok := store.lookupRate["203.0.113.1"]; ok {
 		t.Fatal("cleanup retained a fully refilled limiter")
 	}
 	if _, ok := store.entries[id]; !ok {
@@ -7352,9 +7396,9 @@ func TestLogsUseTrustedCanonicalClientIdentity(t *testing.T) {
 		}
 		h.srv.logs.mu.RLock()
 		defer h.srv.logs.mu.RUnlock()
-		if len(h.srv.logs.entries) != 0 || len(h.srv.logs.rateLimit) != 0 || len(h.srv.logs.failedLookupRate) != 0 {
+		if len(h.srv.logs.entries) != 0 || len(h.srv.logs.rateLimit) != 0 || len(h.srv.logs.lookupRate) != 0 {
 			t.Fatalf("malformed chain mutated log state: entries=%d uploads=%d failures=%d",
-				len(h.srv.logs.entries), len(h.srv.logs.rateLimit), len(h.srv.logs.failedLookupRate))
+				len(h.srv.logs.entries), len(h.srv.logs.rateLimit), len(h.srv.logs.lookupRate))
 		}
 	})
 
