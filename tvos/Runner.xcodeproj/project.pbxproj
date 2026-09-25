@@ -1175,7 +1175,7 @@
 			repositoryURL = "https://github.com/edde746/mpv-build";
 			requirement = {
 				kind = revision;
-				revision = 85e315312a474f14edc0641b9b44694516aafd46;
+				revision = 434cdcbd6f58425fe29b768f8ab3fbd3a00c41c2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
