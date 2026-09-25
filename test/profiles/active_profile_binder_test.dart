@@ -698,6 +698,28 @@ void main() {
       expect(account?.servers.single.accessToken, 'server-token');
     });
 
+    test('a background refresh landing after sign-out does not re-insert the account', () async {
+      final fetchStarted = Completer<void>();
+      final fetchGate = Completer<void>();
+      await preparePlexHomeBind(
+        protected: false,
+        httpClient: MockClient((request) async {
+          if (!fetchStarted.isCompleted) fetchStarted.complete();
+          await fetchGate.future;
+          return http.Response(jsonEncode([_serverJson()]), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      await binder.rebindActive().timeout(const Duration(seconds: 2));
+      await fetchStarted.future;
+
+      await connections.remove('plex.account');
+      fetchGate.complete();
+      // Nothing observable follows the persist step once the profile is gone.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+
+      expect(await connections.get('plex.account'), isNull);
+    });
+
     test('defers distinct PMS resource tokens until plex.tv refreshes them', () async {
       final fetchStarted = Completer<void>();
       final fetchGate = Completer<void>();

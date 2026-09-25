@@ -922,9 +922,17 @@ class ActiveProfileBinder {
   /// Persist a freshly fetched resource list onto the stored account row so
   /// later cold starts (and the cached-metadata fallbacks) work from current
   /// URIs instead of the sign-in-day snapshot. Best-effort.
+  ///
+  /// Written only while the stored row still matches the bind's [account]
+  /// snapshot: plex.tv can answer after a sign-out removed the account (an
+  /// upsert would re-insert it) or after a re-sign-in replaced its token.
   Future<void> _persistRefreshedServers(PlexAccountConnection account, List<PlexServer> servers) async {
     try {
-      await connections.upsert(account.copyWith(servers: servers));
+      await connections.upsert(account.copyWith(servers: servers), expected: account);
+    } on StateError {
+      appLogger.d(
+        'ActiveProfileBinder: ${account.accountLabel} changed or was removed; not persisting refreshed servers',
+      );
     } catch (e, st) {
       appLogger.w(
         'ActiveProfileBinder: failed to persist refreshed servers for ${account.accountLabel}',
