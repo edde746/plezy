@@ -57,17 +57,28 @@ enum ShelfFetcher {
     return request
   }
 
+  /// `userScopedRoute` selects Emby's `/Users/{id}/Items/Resume`: Emby only
+  /// ships the user-scoped spelling, and `/UserItems/Resume` is Jellyfin
+  /// 10.9's rename (see MediaBrowserPaths.resumeItems on the Dart side).
   static func mediaBrowserResumeRequest(
     baseUrl: String,
     token: String,
     userId: String,
-    maxItems: Int
+    maxItems: Int,
+    userScopedRoute: Bool = false
   ) -> URLRequest? {
-    mediaBrowserRequest(
+    let path: String
+    if userScopedRoute {
+      guard let encodedUserId = ShelfItemMapper.encodeQueryComponent(userId) else { return nil }
+      path = "/Users/\(encodedUserId)/Items/Resume"
+    } else {
+      path = "/UserItems/Resume"
+    }
+    return mediaBrowserRequest(
       baseUrl: baseUrl,
       token: token,
       userId: userId,
-      path: "/UserItems/Resume",
+      path: path,
       trailingQuery: "MediaTypes=Video&Recursive=true&EnableTotalRecordCount=false",
       maxItems: maxItems
     )
@@ -146,7 +157,8 @@ enum ShelfFetcher {
           baseUrl: descriptor.baseUrl,
           token: server.token,
           userId: userId,
-          maxItems: maxItems
+          maxItems: maxItems,
+          userScopedRoute: descriptor.kind == .emby
         ),
         let nextUpRequest = mediaBrowserNextUpRequest(
           baseUrl: descriptor.baseUrl,
