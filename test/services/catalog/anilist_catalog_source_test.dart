@@ -570,17 +570,71 @@ void main() {
       expect(requests, hasLength(1));
     });
 
-    test('remove is a no-op when the media-list entry is already absent', () async {
-      responder = (request) {
-        final query = _requestBody(request)['query'] as String;
-        expect(query, contains('mediaListEntry'));
+    /// Answers the snapshot load with [planned] on Planning, and the entry
+    /// lookup with [entry]; any other request (a delete) fails the test.
+    http.Response Function(http.Request) listResponder({
+      required List<int> planned,
+      required Map<String, dynamic>? entry,
+    }) => (request) {
+      final query = _requestBody(request)['query'] as String;
+      if (query.contains('Viewer { id }')) {
         return _data({
-          'Media': {'mediaListEntry': null},
+          'Viewer': {'id': 7},
         });
-      };
+      }
+      if (query.contains('MediaListCollection')) {
+        return _data({
+          'MediaListCollection': {
+            'hasNextChunk': false,
+            'lists': [
+              {
+                'isCustomList': false,
+                'entries': [
+                  for (final id in planned)
+                    {
+                      'media': {'id': id, 'idMal': id},
+                    },
+                ],
+              },
+            ],
+          },
+        });
+      }
+      expect(query, contains('mediaListEntry'), reason: 'nothing may be deleted');
+      return _data({
+        'Media': {'mediaListEntry': entry},
+      });
+    };
+
+    test('remove is a no-op when the media-list entry is already absent', () async {
+      responder = listResponder(planned: const [], entry: null);
 
       await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498));
-      expect(requests, hasLength(1));
+      await source.ensureWatchlistLoaded();
+
+      expect(
+        requests.map((request) => _requestBody(request)['query'] as String),
+        everyElement(isNot(contains('DeleteMediaListEntry'))),
+      );
+    });
+
+    test('remove leaves an entry that moved past Planning alone', () async {
+      responder = listResponder(planned: const [16498], entry: {'id': 99, 'status': 'PLANNING'});
+      await source.ensureWatchlistLoaded();
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498)), isTrue);
+
+      // The snapshot still lists it, but the user has since started watching:
+      // AniList would delete the entry's progress, score and dates with it.
+      responder = listResponder(planned: const [], entry: {'id': 99, 'status': 'CURRENT'});
+      requests.clear();
+      await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498));
+      await source.ensureWatchlistLoaded();
+
+      expect(requests.map((request) => _requestBody(request)['query'] as String), [
+        contains('mediaListEntry'),
+        contains('MediaListCollection'),
+      ]);
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498)), isFalse);
     });
 
     test('failed mutation restores optimistic watchlist membership', () async {
@@ -611,7 +665,7 @@ void main() {
         if (query.contains('mediaListEntry')) {
           return _data({
             'Media': {
-              'mediaListEntry': {'id': 99},
+              'mediaListEntry': {'id': 99, 'status': 'PLANNING'},
             },
           });
         }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../media/media_kind.dart';
@@ -50,6 +52,12 @@ mixin CatalogWatchlistMachinery {
   Future<CatalogItemIds> resolveWatchlistMutationIds(MediaKind kind, CatalogItemIds ids) async => ids;
 
   /// The actual API mutation for the resolved [ids].
+  ///
+  /// The snapshot is loaded once per session, so a removal must not trust it:
+  /// where the service's delete takes more than the watchlist entry with it
+  /// (MAL, AniList and Simkl drop the whole list entry), re-read the entry's
+  /// current state first and leave anything no longer on the watchlist alone,
+  /// calling [reloadWatchlistSnapshot] since the snapshot has proven stale.
   Future<void> performWatchlistMutation(MediaKind kind, CatalogItemIds ids, {required bool add});
 
   // ---------- CatalogSource watchlist surface ----------
@@ -88,6 +96,14 @@ mixin CatalogWatchlistMachinery {
     } catch (e) {
       appLogger.w('$watchlistLogLabel snapshot load failed', error: e);
     }
+  }
+
+  /// Drop the snapshot and load it afresh; for a source that found the service
+  /// disagreeing with it. Membership reads as unknown until the reload lands.
+  @protected
+  void reloadWatchlistSnapshot() {
+    _watchlistKeyGroups = null;
+    unawaited(ensureWatchlistLoaded());
   }
 
   bool? isOnWatchlist(MediaKind kind, CatalogItemIds ids) {

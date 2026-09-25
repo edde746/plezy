@@ -557,14 +557,42 @@ void main() {
       expect(requests, isEmpty);
     });
 
+    http.Response listStatus(String status) => http.Response(
+      json.encode({
+        'id': 16498,
+        'my_list_status': {'status': status, 'num_watched_episodes': 3},
+      }),
+      200,
+    );
+
     test('removeFromWatchlist DELETEs and treats 404 as success', () async {
       await source.ensureWatchlistLoaded();
       requests.clear();
 
-      handlers.add((request) => http.Response('', 404));
+      handlers
+        ..add((request) => listStatus('plan_to_watch'))
+        ..add((request) => http.Response('', 404));
       await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498));
 
-      expect(requests.single.method, 'DELETE');
+      expect(requests.map((request) => request.method), ['GET', 'DELETE']);
+      expect(requests.first.url.queryParameters['fields'], 'my_list_status');
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498)), isFalse);
+    });
+
+    test('removeFromWatchlist leaves an entry that moved past Plan to Watch alone', () async {
+      await source.ensureWatchlistLoaded();
+      requests.clear();
+
+      // The snapshot still lists it, but the user has since started watching:
+      // deleting would take their progress, score and dates with it.
+      handlers
+        ..add((request) => listStatus('watching'))
+        ..add((request) => http.Response(json.encode(_pageBody(const [])), 200));
+      await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498));
+      await source.ensureWatchlistLoaded();
+
+      expect(requests.map((request) => request.method), ['GET', 'GET'], reason: 'status read + snapshot reload');
+      expect(requests.last.url.path, '/v2/users/@me/animelist');
       expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498)), isFalse);
     });
 
