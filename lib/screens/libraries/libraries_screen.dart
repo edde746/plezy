@@ -216,7 +216,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Focus the first item in the currently active tab.
   /// Used for initial load and tab switching - focuses the grid content directly.
-  void _focusCurrentTab() {
+  ///
+  /// With [awaitLoad], a tab that is still loading only parks focus on its tab
+  /// chip (see [_focusTabContent]) so its load completion focuses the content.
+  void _focusCurrentTab({bool awaitLoad = false}) {
     // Don't focus during tab animations - wait for animation to complete
     // This prevents race conditions during focus restoration
     if (tabController.indexIsChanging) {
@@ -239,23 +242,36 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
       final tabState = _getTabState(tabController.index);
       if (tabState != null) {
-        (tabState as dynamic).focusContentOrChrome();
+        _focusTabContent(tabState, awaitLoad: awaitLoad);
       } else {
         // State not available yet, retry after another frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          _focusCurrentTabImmediate();
+          _focusCurrentTabImmediate(awaitLoad: awaitLoad);
         });
       }
     });
   }
 
   /// Focus without additional frame delay (used for retry)
-  void _focusCurrentTabImmediate() {
+  void _focusCurrentTabImmediate({bool awaitLoad = false}) {
     final tabState = _getTabState(tabController.index);
     if (tabState != null) {
-      (tabState as dynamic).focusContentOrChrome();
+      _focusTabContent(tabState, awaitLoad: awaitLoad);
     }
+  }
+
+  void _focusTabContent(State tabState, {required bool awaitLoad}) {
+    // A loading tab has no content yet, so focusContentOrChrome would fall
+    // back to focusTabBar, which sets suppressAutoFocus — and the load's
+    // onDataLoaded then leaves focus stranded on the tab bar. Hold focus on
+    // the tab chip without suppressing, so that completion moves it on.
+    if (awaitLoad && tabState is BaseLibraryTabState && tabState.isLoading) {
+      _resetOuterScroll();
+      getTabChipFocusNode(tabController.index).requestFocus();
+      return;
+    }
+    (tabState as dynamic).focusContentOrChrome();
   }
 
   /// Focus tab content when navigating DOWN from the tab bar.
@@ -333,11 +349,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Called by parent when the Libraries screen becomes visible.
   /// If the active tab has already loaded data (often the case after preloading
   /// while on another main tab), re-request focus so the first item is focused
-  /// once the screen is actually shown.
+  /// once the screen is actually shown. A tab still loading gets its content
+  /// focused when the load lands instead.
   @override
   void focusActiveTabIfReady() {
     if (_selectedLibraryGlobalKey == null) return;
-    _focusCurrentTab();
+    _focusCurrentTab(awaitLoad: true);
   }
 
   @override

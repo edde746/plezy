@@ -349,6 +349,34 @@ void main() {
     expect(_focusedHub(), 'B');
   });
 
+  testWidgets('entering the screen while its tab loads focuses the content once it lands', (tester) async {
+    final client = _HubClient();
+    final harness = await _Harness.create(
+      _GatedPreferences({'selected_library_key': _libraryA.globalKey}),
+      clients: [client],
+      libraryOrder: const [_libraryA],
+    );
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    final gate = Completer<List<MediaHub>>();
+    client.nextHubs = gate.future;
+    final screen = tester.state(find.byType(LibrariesScreen));
+    (screen as Refreshable).refresh();
+    await tester.pump();
+    (screen as FocusableTab).focusActiveTabIfReady();
+    // The loading tab renders a spinner, so it never settles.
+    await tester.pump();
+    await tester.pump();
+
+    gate.complete([_recommendationHub('A'), _recommendationHub('B')]);
+    await tester.pumpAndSettle();
+
+    expect(_focusedHub(), 'A', reason: 'focus must not stay parked on the tab bar');
+  });
+
   testWidgets('service removals evict Discover and Recommended without bypassing their pacers', (tester) async {
     final client = _HubClient();
     final harness = await _Harness.create(
