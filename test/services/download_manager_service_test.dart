@@ -1613,6 +1613,61 @@ void main() {
       expect(lateResolveAttempts, 1);
       expect((await fixture.db.getDownloadedMedia('late:late-1'))?.status, DownloadStatus.failed.index);
     });
+
+    test('a manual retry re-arms the queue after the circuit breaker trips', () async {
+      final fixture = await _createSupplementaryFixture();
+      // Nothing is cached for these ids and the client cannot fetch them, so
+      // every preparation fails permanently: three in a row trip the breaker
+      // before the lowest-priority item is reached.
+      for (var i = 1; i <= 4; i++) {
+        await fixture.db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: 'missing-$i',
+          globalKey: 'srv:missing-$i',
+          type: 'movie',
+          status: DownloadStatus.queued.index,
+        );
+        await fixture.db.addToQueue(mediaGlobalKey: 'srv:missing-$i', priority: 10 - i);
+      }
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+      );
+      addTearDown(manager.dispose);
+
+      final firstPassFailures = manager.progressStream
+          .where((event) => event.status == DownloadStatus.failed)
+          .take(3)
+          .toList();
+      manager.resumeQueuedDownloads(client);
+      await firstPassFailures;
+      List<DownloadQueueItem> queueRows;
+      do {
+        await Future<void>.delayed(Duration.zero);
+        queueRows = await fixture.db.select(fixture.db.downloadQueue).get();
+      } while (queueRows.length != 1);
+      expect(queueRows.single.mediaGlobalKey, 'srv:missing-4', reason: 'the breaker stopped the first pass');
+
+      final lastItemAttempted = manager.progressStream.firstWhere(
+        (event) => event.globalKey == 'srv:missing-4' && event.status == DownloadStatus.failed,
+      );
+      await manager.retryDownload('srv:missing-1', client);
+      await lastItemAttempted.timeout(const Duration(seconds: 5));
+      // The re-armed pass also retries the requeued item; let it drain.
+      do {
+        await Future<void>.delayed(Duration.zero);
+        queueRows = await fixture.db.select(fixture.db.downloadQueue).get();
+      } while (queueRows.isNotEmpty);
+
+      expect((await fixture.db.getDownloadedMedia('srv:missing-4'))?.status, DownloadStatus.failed.index);
+    });
   });
 
   group('deferred supplementary repair', () {

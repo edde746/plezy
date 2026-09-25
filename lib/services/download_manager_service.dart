@@ -1686,7 +1686,7 @@ class DownloadManagerService {
     int mediaIndex = 0,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return metadata;
-    _resumeQueueAfterStorageFailure('new download');
+    _rearmQueueForUserAction('new download');
 
     final globalKey = metadata.globalKey;
 
@@ -2316,11 +2316,16 @@ class DownloadManagerService {
     await _requeueDownload(globalKey);
   }
 
-  void _resumeQueueAfterStorageFailure(String operation) {
+  /// Re-arms the queue for a user action (new download, resume, retry): lifts a
+  /// storage-failure block and resets the consecutive-failure circuit breaker.
+  /// A tripped breaker otherwise only resets on an unrelated completion or
+  /// auto-retry, so after a run of permanent failures every retry would be a
+  /// silent no-op.
+  void _rearmQueueForUserAction(String operation) {
+    _consecutiveQueueFailures = 0;
     if (!_queueBlockedByStorageFailure) return;
     appLogger.i('Resuming download queue after storage failure: $operation');
     _queueBlockedByStorageFailure = false;
-    _consecutiveQueueFailures = 0;
   }
 
   Future<void> _handleStorageFullFailure(String globalKey, String taskId, {String? message}) async {
@@ -2979,7 +2984,7 @@ class DownloadManagerService {
   /// Resume a paused download
   Future<void> resumeDownload(String globalKey, MediaServerClient client) async {
     if (_skipDownloadsUnsupported('download resume')) return;
-    _resumeQueueAfterStorageFailure('manual resume');
+    _rearmQueueForUserAction('manual resume');
 
     final bgTaskId = await _database.getBgTaskId(globalKey);
 
@@ -3031,7 +3036,7 @@ class DownloadManagerService {
   /// Retry a failed download
   Future<void> retryDownload(String globalKey, MediaServerClient client) async {
     if (_skipDownloadsUnsupported('download retry')) return;
-    _resumeQueueAfterStorageFailure('manual retry');
+    _rearmQueueForUserAction('manual retry');
 
     _autoRetryTimers.remove(globalKey)?.cancel();
     await _cleanupStaleDownload(globalKey);
