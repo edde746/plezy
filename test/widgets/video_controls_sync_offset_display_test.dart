@@ -10,7 +10,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/player_setting_scope.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
-import 'package:plezy/services/scoped_player_prefs.dart';
+import 'package:plezy/services/player_sync_offsets.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -25,12 +25,10 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
-/// The sync-offset display must resolve through the same scope the write and
-/// the player-apply path use. With "Scope sync offsets" set to Title, a scoped
-/// write previously stored into [SettingsService.scopedPlayerPrefValues] while
-/// the chrome kept reading the untouched global pref: the sheet rows showed
-/// 0 ms and the sync slider seeded from centre while mpv was applying the
-/// stored offset, so the first nudge jumped by the whole stored amount.
+/// The sync-offset display follows the offset the player applies, not the
+/// stored pref. Under "Don't save" nothing is stored, so a display that read
+/// the pref showed 0 ms while mpv applied the viewer's change, and the sync
+/// slider seeded from centre (#2069).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -121,54 +119,37 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   }
 
-  testWidgets('a title-scoped write updates the displayed offsets and slider seed', (tester) async {
-    await settings.write(SettingsService.syncOffsetScope, PlayerSettingScope.title);
+  testWidgets('a "Don\'t save" offset shows while applied and clears on the next item', (tester) async {
+    await settings.write(SettingsService.syncOffsetScope, PlayerSettingScope.off);
     await pumpControls(tester);
+    final offsets = PlayerSyncOffsets.of(player);
 
-    expect(displayedTrackState(tester).audioSyncOffset, 0);
+    // What SyncOffsetControl records after its native write.
+    offsets.recordApplied(PlayerSyncOffsets.subtitleProperty, 500);
+    await tester.pump();
+
+    expect(
+      displayedTrackState(tester).subtitleSyncOffset,
+      500,
+      reason: 'display and slider seed show the applied offset',
+    );
+    expect(settings.read(SettingsService.subtitleSyncOffset), 0, reason: '"Don\'t save" stores nothing');
+
+    await offsets.applyFor(testMediaItem(id: 'next-item', serverId: 'server-a'));
+    await tester.pump();
+
     expect(displayedTrackState(tester).subtitleSyncOffset, 0);
-
-    await ScopedPlayerPrefs.write(ScopedPlayerPrefs.audioSyncOffset, metadata, -400);
-    await ScopedPlayerPrefs.write(ScopedPlayerPrefs.subtitleSyncOffset, metadata, 150);
-    await tester.pump();
-
-    final state = displayedTrackState(tester);
-    expect(state.audioSyncOffset, -400, reason: 'display and slider seed must read the title-scoped store');
-    expect(state.subtitleSyncOffset, 150);
-    expect(
-      settings.read(SettingsService.audioSyncOffset),
-      0,
-      reason: 'the scoped write never touches the global pref, so a global read would show 0 ms',
-    );
-
-    await unmountControls(tester);
-  });
-
-  testWidgets('switching the sync-offset scope re-resolves the displayed offsets', (tester) async {
-    await settings.write(SettingsService.syncOffsetScope, PlayerSettingScope.title);
-    await ScopedPlayerPrefs.write(ScopedPlayerPrefs.audioSyncOffset, metadata, -400);
-    await settings.write(SettingsService.audioSyncOffset, 75);
-    await pumpControls(tester);
-
-    expect(displayedTrackState(tester).audioSyncOffset, -400);
-
-    await settings.write(SettingsService.syncOffsetScope, PlayerSettingScope.global);
-    await tester.pump();
-
-    expect(
-      displayedTrackState(tester).audioSyncOffset,
-      75,
-      reason: 'a scope change alone must rebuild the chrome and re-resolve against the new scope',
-    );
 
     await unmountControls(tester);
   });
 }
 
 /// Minimal [Player] with static state so the controls have no stream activity
-/// to react to; rebuilds in these tests can then only come from settings
-/// notifications.
+/// to react to; rebuilds in these tests can then only come from the offsets.
 class _IdlePlayer implements Player {
+  @override
+  Future<void> setProperty(String name, String value) async {}
+
   @override
   String get playerType => 'mpv';
 

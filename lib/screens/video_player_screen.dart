@@ -68,6 +68,7 @@ import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
 import '../services/media_control_router.dart';
+import '../services/player_sync_offsets.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
@@ -1970,17 +1971,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       }
 
-      final audioSyncOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, _currentMetadata);
-      if (audioSyncOffset != 0) {
-        final offsetSeconds = audioSyncOffset / 1000.0;
-        await currentPlayer.setProperty('audio-delay', offsetSeconds.toString());
-      }
-
-      final subtitleSyncOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, _currentMetadata);
-      if (subtitleSyncOffset != 0) {
-        final offsetSeconds = subtitleSyncOffset / 1000.0;
-        await currentPlayer.setProperty('sub-delay', offsetSeconds.toString());
-      }
+      await PlayerSyncOffsets.of(currentPlayer).applyFor(_currentMetadata);
 
       if (settingsService.read(SettingsService.audioNormalization)) {
         await currentPlayer.setAudioNormalization(true);
