@@ -257,6 +257,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       if let pip = self.pipController, pip.isActive {
         pip.stopPip()
         pip.detachLayer()
+        // The controller is released below, before PiP's close callback
+        // (pipDidStop) can arrive, so tell Dart PiP ended here; otherwise
+        // later players stay covered by the PiP placeholder.
+        self.playerCore?.isPipActive = false
+        self.enteredPipViaAuto = false
+        self.pipChannel?.invokeMethod("onPipChanged", arguments: false)
       }
       self.pipController = nil
       self.autoPipEnabled = false
