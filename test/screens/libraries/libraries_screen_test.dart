@@ -114,6 +114,23 @@ void main() {
     expect(mountedTabs.map((tab) => tab.library.globalKey).toSet(), {_libraryB.globalKey});
   });
 
+  testWidgets('libraries arriving after an empty first load select the default library', (tester) async {
+    final harness = await _Harness.create(_GatedPreferences({}), libraryOrder: const []);
+    addTearDown(harness.dispose);
+    final selected = <String>[];
+
+    await harness.pump(tester, onLibrarySelected: selected.add);
+    expect(selected, isEmpty);
+
+    // Nothing else selects a library once they load (the phone dropdown only
+    // renders with a selection), so the screen must pick the default itself.
+    await harness.libraries.updateLibraryOrder(const [_libraryA, _libraryB]);
+    await tester.pumpAndSettle();
+
+    expect(selected, [_libraryA.globalKey]);
+    expect(find.byWidgetPredicate((widget) => widget is BaseLibraryTab), findsWidgets);
+  });
+
   testWidgets('stale saved tab cannot replace the current library tab', (tester) async {
     final preferences = _GatedPreferences({
       'selected_library_key': _libraryB.globalKey,

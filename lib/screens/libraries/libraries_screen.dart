@@ -73,6 +73,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
   bool _isRestoringTab = false;
 
+  /// Whether a post-frame [_initializeWithLibraries] is already queued.
+  bool _initializeScheduled = false;
+
   /// Track which tabs have loaded data (used to trigger focus after tab restore)
   final Set<int> _loadedTabs = {};
 
@@ -127,7 +130,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     super.initState();
     initTabNavigation();
 
+    _scheduleInitializeWithLibraries();
+  }
+
+  /// Run [_initializeWithLibraries] after the current frame, at most once per
+  /// frame. Besides the mount, the build schedules it whenever libraries are
+  /// on hand but none is selected: a first load that found none returns early,
+  /// and nothing else selects one when they arrive later — on phones the
+  /// library dropdown only renders once a library is selected, so the body
+  /// would stay blank.
+  void _scheduleInitializeWithLibraries() {
+    if (_initializeScheduled) return;
+    _initializeScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeScheduled = false;
       if (!mounted) return;
       _initializeWithLibraries();
     });
@@ -950,6 +966,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         );
       }
     } else {
+      if (_selectedLibraryGlobalKey == null) _scheduleInitializeWithLibraries();
       body = buildSimpleScroll(body: const SizedBox.shrink());
     }
 
