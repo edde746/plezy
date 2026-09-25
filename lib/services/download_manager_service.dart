@@ -504,7 +504,21 @@ class DownloadManagerService {
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return _getClient(null);
     final record = await _database.getDownloadedMedia(globalKey);
-    return _getClient(parsed.serverId, clientScopeId: record?.clientScopeId);
+    final rowScopeId = record?.clientScopeId;
+    final client = _getClient(parsed.serverId, clientScopeId: rowScopeId);
+    if (client != null || rowScopeId == null) return client;
+
+    // A shared row keeps the user scope of the profile that queued it first.
+    // While a co-owner is active that scope has no live client, so the row
+    // would wait as "server offline" forever; another owner's live scope can
+    // fetch the same file.
+    for (final owner in await _database.getValidDownloadOwnersForKey(globalKey)) {
+      final ownerScopeId = resolveActiveClientScopeId(serverId: parsed.serverId, cacheServerId: owner.clientScopeId);
+      if (ownerScopeId == null || ownerScopeId == rowScopeId) continue;
+      final ownerClient = _getClient(parsed.serverId, clientScopeId: ownerScopeId);
+      if (ownerClient != null) return ownerClient;
+    }
+    return null;
   }
 
   String? activeClientScopeIdForServer(ServerId serverId) {

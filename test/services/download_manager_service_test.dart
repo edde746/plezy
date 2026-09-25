@@ -1614,6 +1614,60 @@ void main() {
       expect((await fixture.db.getDownloadedMedia('late:late-1'))?.status, DownloadStatus.failed.index);
     });
 
+    test('a shared row queued under an inactive co-owner scope drains through the active owner', () async {
+      final fixture = await _createSupplementaryFixture();
+      final globalKey = fixture.metadata.globalKey;
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        clientScopeId: 'srv/user-a',
+        ratingKey: fixture.metadata.id,
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.queued.index,
+      );
+      await fixture.db.addToQueue(mediaGlobalKey: globalKey);
+      for (final (profileId, scopeId) in [('profile-a', 'srv/user-a'), ('profile-b', 'srv/user-b')]) {
+        await fixture.db.addDownloadOwner(
+          profileId: profileId,
+          globalKey: globalKey,
+          backendId: MediaBackend.jellyfin.id,
+          clientScopeId: scopeId,
+        );
+      }
+
+      var resolveAttempts = 0;
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () {
+          resolveAttempts++;
+          // Non-retryable: settles the item in one attempt without timers.
+          throw MediaServerHttpException(type: MediaServerHttpErrorType.unknown, statusCode: 401, message: 'denied');
+        },
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        // Only profile B's user scope is bound; the row carries profile A's.
+        clientResolver: (serverId, {clientScopeId}) => clientScopeId == 'srv/user-b' ? client : null,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+      );
+      addTearDown(manager.dispose);
+      final attempted = manager.progressStream.firstWhere(
+        (event) => event.globalKey == globalKey && event.status == DownloadStatus.failed,
+      );
+
+      manager.resumeQueuedDownloads(client);
+      await attempted.timeout(const Duration(seconds: 5));
+      List<DownloadQueueItem> queueRows;
+      do {
+        await Future<void>.delayed(Duration.zero);
+        queueRows = await fixture.db.select(fixture.db.downloadQueue).get();
+      } while (queueRows.isNotEmpty);
+
+      expect(resolveAttempts, 1);
+    });
+
     test('a manual retry re-arms the queue after the circuit breaker trips', () async {
       final fixture = await _createSupplementaryFixture();
       // Nothing is cached for these ids and the client cannot fetch them, so
