@@ -111,6 +111,9 @@ struct _MpvPlugin {
   // must cost one transaction, not the whole queue. Zero-initialised like every
   // other scalar here; release_video_resources cancels a live source.
   guint hdr_mpv_leg_timeout_source_ = 0;
+  // Pending retry of a failed plane render (see schedule_render_retry); zero
+  // when none is scheduled. release_video_resources cancels a live source.
+  guint render_retry_source_ = 0;
   // Exactly one HDR transaction runs at a time, end to end.
   //
   // A transaction spans staging and validating the image description, switching
@@ -227,6 +230,11 @@ static void release_video_resources(MpvPlugin* self) {
   if (self->hdr_mpv_leg_timeout_source_ != 0) {
     g_source_remove(self->hdr_mpv_leg_timeout_source_);
     self->hdr_mpv_leg_timeout_source_ = 0;
+  }
+  // Same for a pending render retry, which also holds a raw `self`.
+  if (self->render_retry_source_ != 0) {
+    g_source_remove(self->render_retry_source_);
+    self->render_retry_source_ = 0;
   }
   // Queued transactions will never run, and each may be holding a reference to a
   // Dart method call that has to be answered or it is leaked along with its
@@ -346,6 +354,29 @@ static bool post_render_job(MpvPlugin* self, std::function<bool()> job, std::fun
   return true;
 }
 
+static void render_video_plane(MpvPlugin* self, gboolean force);
+
+// Delay before re-running a render whose job failed.
+constexpr guint kRenderRetryDelayMs = 100;
+
+// A failed render (a lost EGL surface, a driver error) is retried after a delay
+// instead of straight from its completion: a persistent failure would otherwise
+// spin the render thread, and under PLEZY_PLANE_RENDER_MAIN_THREAD, where the
+// completion runs inside post_render_job, recurse until the stack overflows.
+// plane_needs_render stays set, so the retry still owes the frame.
+static void schedule_render_retry(MpvPlugin* self) {
+  if (self->render_retry_source_ != 0) return;
+  self->render_retry_source_ = g_timeout_add(
+      kRenderRetryDelayMs,
+      +[](gpointer data) -> gboolean {
+        MpvPlugin* self = static_cast<MpvPlugin*>(data);
+        self->render_retry_source_ = 0;
+        render_video_plane(self, FALSE);
+        return G_SOURCE_REMOVE;
+      },
+      self);
+}
+
 // Renders and presents one frame on the native video plane. Skipped while the
 // plane is hidden or has not been given a rect yet; both of those paths render
 // explicitly once the condition clears, because mpv's redraw latch stays set
@@ -424,8 +455,8 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
         self->render_in_flight = FALSE;
         if (self->video_surface == nullptr) return;
         // A swap failure leaves plane_needs_render set, so the retry - and the
-        // frame callback CompletePresent just cleared - are both owed to the
-        // next event that moves the plane, exactly as before the split.
+        // frame callback CompletePresent just cleared - are owed to the next
+        // event that moves the plane, or to the delayed retry scheduled below.
         if (self->video_surface->CompletePresent(swapped)) self->plane_needs_render = FALSE;
         // Work that had to wait out the flight, in dependency order: geometry
         // first (wl_egl_window_resize must not race a swap), then the HDR
@@ -440,7 +471,11 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
           self->hdr_start_deferred = FALSE;
           run_next_hdr_transaction(self);
         }
-        render_video_plane(self, FALSE);
+        if (swapped) {
+          render_video_plane(self, FALSE);
+        } else {
+          schedule_render_retry(self);
+        }
       });
   if (!posted) {
     // Shutdown has begun; the job will never run. Undo the prepare so the
