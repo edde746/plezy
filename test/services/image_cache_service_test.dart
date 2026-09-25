@@ -119,6 +119,50 @@ void main() {
     expect(ok.statusCode, 200);
   });
 
+  test('a response whose headers never arrive releases its slot', () async {
+    final stalled = Completer<http.StreamedResponse>();
+    final client = createArtworkHttpClientForTest(
+      MockClient.streaming((request, _) async {
+        if (request.url.path == '/stalled') return stalled.future;
+        return http.StreamedResponse(Stream.value('poster-bytes'.codeUnits), 200);
+      }),
+      maxConcurrent: 1,
+      stallTimeout: const Duration(milliseconds: 20),
+    );
+
+    await expectLater(client.send(get('/stalled')).timeout(timeout), throwsA(isA<TimeoutException>()));
+
+    final ok = await client.send(get('/poster')).timeout(timeout);
+    expect(await ok.stream.bytesToString().timeout(timeout), 'poster-bytes');
+
+    // A late answer from a transport that ignored the abort is discarded.
+    final lateBodyCancelled = Completer<void>();
+    final lateBody = StreamController<List<int>>(onCancel: () => lateBodyCancelled.complete());
+    stalled.complete(http.StreamedResponse(lateBody.stream, 200));
+    await lateBodyCancelled.future.timeout(timeout);
+    await lateBody.close();
+  });
+
+  test('a body that stops mid-transfer releases its slot', () async {
+    final body = StreamController<List<int>>();
+    final client = createArtworkHttpClientForTest(
+      MockClient.streaming((request, _) async {
+        if (request.url.path == '/stalled') return http.StreamedResponse(body.stream, 200);
+        return http.StreamedResponse(Stream.value('poster-bytes'.codeUnits), 200);
+      }),
+      maxConcurrent: 1,
+      stallTimeout: const Duration(milliseconds: 20),
+    );
+
+    final stalled = await client.send(get('/stalled')).timeout(timeout);
+    body.add('partial'.codeUnits);
+    await expectLater(stalled.stream.drain<void>().timeout(timeout), throwsA(isA<TimeoutException>()));
+
+    final ok = await client.send(get('/poster')).timeout(timeout);
+    expect(await ok.stream.bytesToString().timeout(timeout), 'poster-bytes');
+    await body.close();
+  });
+
   test('cancelling a successful body releases its slot', () async {
     final client = createArtworkHttpClientForTest(mixedClient(), maxConcurrent: 1);
 

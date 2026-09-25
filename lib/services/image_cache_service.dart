@@ -66,13 +66,20 @@ class _SharedHttpClient extends http.BaseClient {
   final http.Client _inner;
   final _RequestLimiter _limiter;
   final Duration _unclaimedResponseTimeout;
+  final Duration _stallTimeout;
 
-  _SharedHttpClient(this._inner, this._limiter, {this._unclaimedResponseTimeout = const Duration(seconds: 2)});
+  _SharedHttpClient(
+    this._inner,
+    this._limiter, {
+    this._unclaimedResponseTimeout = const Duration(seconds: 2),
+    this._stallTimeout = const Duration(seconds: 30),
+  });
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final permit = await _limiter.acquire();
     var released = false;
+    final abort = Completer<void>();
 
     void release() {
       if (released) return;
@@ -80,8 +87,25 @@ class _SharedHttpClient extends http.BaseClient {
       permit.release();
     }
 
+    void abortTransport() {
+      if (!abort.isCompleted) abort.complete();
+    }
+
     try {
-      final response = await _inner.send(request);
+      // CE sets no timeouts, so a server that accepts the connection but never
+      // answers (or stops mid-body) would hold this slot forever, and once
+      // every slot is stuck no artwork loads until restart. Give up after
+      // [_stallTimeout] without progress and cancel the transfer.
+      final sent = _inner.send(_abortable(request, abort.future));
+      final response = await sent.timeout(
+        _stallTimeout,
+        onTimeout: () {
+          abortTransport();
+          // Transports without abort support may still answer later.
+          unawaited(sent.then<void>((late) => _cancelUnclaimedBody(late.stream), onError: (Object _) {}));
+          throw TimeoutException('Artwork response headers stalled', _stallTimeout);
+        },
+      );
 
       // CE's cache manager throws for any status other than 200/202 without
       // listening to the body, so _releaseWhenDone would never fire and the
@@ -106,7 +130,13 @@ class _SharedHttpClient extends http.BaseClient {
       }
 
       return http.StreamedResponse(
-        _releaseWhenDone(response.stream, release, claimTimeout: _unclaimedResponseTimeout),
+        _releaseWhenDone(
+          response.stream,
+          release,
+          claimTimeout: _unclaimedResponseTimeout,
+          stallTimeout: _stallTimeout,
+          onStall: abortTransport,
+        ),
         response.statusCode,
         contentLength: response.contentLength,
         request: response.request,
@@ -125,6 +155,19 @@ class _SharedHttpClient extends http.BaseClient {
   void close() {}
 }
 
+/// CE sends plain [http.Request]s; re-issue one as abortable so a stalled
+/// transfer is cancelled at the transport instead of only being abandoned.
+http.BaseRequest _abortable(http.BaseRequest request, Future<void> abortTrigger) {
+  if (request is! http.Request || request is http.Abortable) return request;
+  final abortable = http.AbortableRequest(request.method, request.url, abortTrigger: abortTrigger)
+    ..headers.addAll(request.headers)
+    ..followRedirects = request.followRedirects
+    ..maxRedirects = request.maxRedirects
+    ..persistentConnection = request.persistentConnection;
+  if (request.bodyBytes.isNotEmpty) abortable.bodyBytes = request.bodyBytes;
+  return abortable;
+}
+
 // ignore: unused-code
 /// Test hook: builds the throttled artwork client with an isolated limiter.
 @visibleForTesting
@@ -132,12 +175,20 @@ http.Client createArtworkHttpClientForTest(
   http.Client inner, {
   int maxConcurrent = 6,
   Duration unclaimedResponseTimeout = const Duration(seconds: 2),
-}) => _SharedHttpClient(inner, _RequestLimiter(maxConcurrent), unclaimedResponseTimeout: unclaimedResponseTimeout);
+  Duration stallTimeout = const Duration(seconds: 30),
+}) => _SharedHttpClient(
+  inner,
+  _RequestLimiter(maxConcurrent),
+  unclaimedResponseTimeout: unclaimedResponseTimeout,
+  stallTimeout: stallTimeout,
+);
 
 Stream<List<int>> _releaseWhenDone(
   Stream<List<int>> stream,
   void Function() release, {
   required Duration claimTimeout,
+  required Duration stallTimeout,
+  required void Function() onStall,
 }) {
   var claimed = false;
   var abandoned = false;
@@ -162,9 +213,12 @@ Stream<List<int>> _releaseWhenDone(
     claimed = true;
     claimTimer.cancel();
     try {
-      await for (final chunk in stream) {
+      await for (final chunk in stream.timeout(stallTimeout)) {
         yield chunk;
       }
+    } on TimeoutException {
+      onStall();
+      rethrow;
     } finally {
       release();
     }
