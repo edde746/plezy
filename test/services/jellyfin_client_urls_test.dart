@@ -2821,6 +2821,61 @@ void main() {
       expect(uri.queryParameters['ApiKey'], 'tok-abc');
     });
 
+    test('getPlaybackInitialization keeps the token off subtitle URLs on another host', () async {
+      final scoped = _clientWithPlaybackInfo(
+        (_) async {
+          return jsonResponse({
+            'MediaSources': [
+              {'Id': 'src-1'},
+            ],
+          });
+        },
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Container': 'mp4',
+            'MediaStreams': [
+              {
+                'Index': 3,
+                'Type': 'Subtitle',
+                'Codec': 'srt',
+                'Language': 'eng',
+                'IsExternal': true,
+                'DeliveryUrl': 'https://subs.example.org/files/3.srt?sig=1',
+              },
+              {
+                'Index': 4,
+                'Type': 'Subtitle',
+                'Codec': 'srt',
+                'Language': 'swe',
+                'IsExternal': true,
+                'DeliveryUrl': 'https://jf.example.com/Videos/item-1/src-1/Subtitles/4/Stream.srt',
+              },
+            ],
+          },
+        ],
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      final byStream = {
+        for (final sidecar in result.subtitleSidecars) sidecar.sourceStreamId: Uri.parse(sidecar.track.uri!),
+      };
+      expect(byStream[3].toString(), 'https://subs.example.org/files/3.srt?sig=1');
+      expect(byStream[4]!.queryParameters['ApiKey'], 'tok-abc');
+    });
+
     test('live TV playback start negotiates an HLS transcode', () async {
       final requests = <({Uri url, String body})>[];
       final scoped = JellyfinClient.forTesting(

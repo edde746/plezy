@@ -216,6 +216,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
+    // A server-supplied absolute URL can point at another host (a remote
+    // subtitle provider, a tuner); the token only ever goes to the server's
+    // own origin.
+    final base = Uri.tryParse(connection.baseUrl);
+    if (base == null || uri.scheme != base.scheme || uri.host != base.host || uri.port != base.port) {
+      return uri.toString();
+    }
     final params = Map<String, String>.from(uri.queryParameters)
       ..[connection.dialect.tokenQueryParam] = connection.accessToken;
     return uri.replace(queryParameters: params).toString();
