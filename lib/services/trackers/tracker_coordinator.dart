@@ -391,7 +391,11 @@ class TrackerCoordinator {
   }
 
   Future<void> _markSingleWatched(MediaItem item, TrackerIdResolver resolver, _WriteScope scope) async {
-    final ctx = await _buildContext(item, resolver);
+    // Every caller reaches here after the server recorded the watch, so the
+    // watched counts the progress rollup reads already include this episode,
+    // while [item] may still carry its unwatched view count. Adding it on top,
+    // as playback start must, would count it twice.
+    final ctx = await _buildContext(item, resolver, includeCurrentEpisode: false);
     if (ctx == null) {
       appLogger.d('Trackers: no external IDs for manually watched ${item.id}');
       return;

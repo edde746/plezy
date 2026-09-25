@@ -29,6 +29,7 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   final Map<String, ExternalIds> externalIdsByItem;
   final Map<String, List<MediaItem>> descendantsByParent;
+  final Map<String, List<MediaItem>> childrenByParent;
   final List<String> externalIdCalls = [];
   final List<String> descendantCalls = [];
 
@@ -43,6 +44,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     ServerId? serverId,
     required this.externalIdsByItem,
     required this.descendantsByParent,
+    this.childrenByParent = const {},
     this.externalIdsError,
     this.watchedThreshold = 0.9,
   }) : serverId = serverId ?? ServerId('server-1');
@@ -62,6 +64,9 @@ class _FakeMediaServerClient implements MediaServerClient {
     descendantCalls.add(parentId);
     return descendantsByParent[parentId] ?? const [];
   }
+
+  @override
+  Future<List<MediaItem>> fetchChildren(String parentId) async => childrenByParent[parentId] ?? const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -390,6 +395,50 @@ void main() {
       expect(anilistSaves, [
         {'mediaId': 30, 'progress': 4, 'status': 'CURRENT'},
       ]);
+    });
+
+    test('a manually watched episode is not counted on top of the server rollup', () async {
+      await simkl.setEnabled(false);
+      await mal.setEnabled(true);
+      coordinator.debugUseResolverDependencies(
+        store: const _FakeFribbLookup([FribbMappingRow(tvdbId: 12345, malId: 21, type: 'TV')]),
+        animeLists: const _FakeAnimeListsLookup(),
+      );
+
+      final malUpdates = <int, Map<String, String>>{};
+      final malHttp = MockClient((request) async {
+        final malId = int.parse(request.url.pathSegments[2]);
+        if (request.method == 'GET') return http.Response(json.encode({'num_episodes': 12}), 200);
+        malUpdates[malId] = Uri.splitQueryString(request.body);
+        return http.Response('{}', 200);
+      });
+      mal.rebindSession(_malSession(), onSessionInvalidated: () {}, httpClient: malHttp);
+
+      // The server already counts episode 4 (the mark reached it first), while
+      // the item handed over still carries its pre-mark view count.
+      final client = _FakeMediaServerClient(
+        externalIdsByItem: {'show-1': const ExternalIds(tvdb: 12345)},
+        descendantsByParent: const {},
+        childrenByParent: {
+          'show-1': [
+            testMediaItem(
+              id: 'season-1',
+              backend: MediaBackend.plex,
+              kind: MediaKind.season,
+              title: 'Season 1',
+              index: 1,
+              leafCount: 12,
+              viewedLeafCount: 4,
+            ),
+          ],
+        },
+      );
+
+      await coordinator.markWatched(_episodeOfShow(4), client);
+
+      expect(malUpdates, {
+        21: {'status': 'watching', 'num_watched_episodes': '4'},
+      });
     });
 
     test('groups manually watched same-season split cours by Anime-Lists ranges', () async {
