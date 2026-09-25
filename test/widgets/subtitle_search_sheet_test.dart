@@ -95,8 +95,10 @@ void main() {
       await _pumpSearchSheet(tester, multiServer: provider);
 
       // [PlexClient._wrapListApiCall] rethrows HTTP failures; the sheet's
-      // catch must render its error text instead of an empty-result state.
-      expect(find.textContaining('HTTP 500'), findsOneWidget);
+      // catch must render its error text instead of an empty-result state,
+      // and that text is the localized reason, never the raw exception.
+      expect(find.text(t.errors.searchFailed(error: t.errors.reasonServerError)), findsOneWidget);
+      expect(find.textContaining('HTTP 500'), findsNothing);
       expect(find.text(t.videoControls.noSubtitlesFound), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
