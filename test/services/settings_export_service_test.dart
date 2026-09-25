@@ -800,6 +800,35 @@ void main() {
       expect(prefs.getInt('seek_time_small'), isNull);
     });
 
+    test('skips values that the settings screens would reject', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': SettingsExportService.formatVersion,
+          'prefs': {
+            'view_mode': {'type': 'string', 'value': 'carousel'},
+            'seek_time_small': {'type': 'int', 'value': 5000},
+            'subtitle_text_color': {'type': 'string', 'value': 'red'},
+            'keyboard_hotkeys': {'type': 'string', 'value': 'not json'},
+            'seek_time_large': {'type': 'int', 'value': 45},
+            'subtitle_border_color': {'type': 'string', 'value': '#102030'},
+          },
+        },
+        prefs,
+        currentUserUuid: 'alice',
+      );
+
+      expect(result.keysImported, 2);
+      expect(result.keysSkipped, 4);
+      expect(prefs.getString('view_mode'), isNull);
+      expect(prefs.getInt('seek_time_small'), isNull);
+      expect(prefs.getString('subtitle_text_color'), isNull);
+      expect(prefs.getString('keyboard_hotkeys'), isNull);
+      expect(prefs.getInt('seek_time_large'), 45);
+      expect(prefs.getString('subtitle_border_color'), '#102030');
+    });
+
     test('rolls every mutation back when a later preference write fails', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setBool('enable_hdr', false);
