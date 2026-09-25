@@ -10,6 +10,7 @@ import '../media/media_playlist.dart';
 import '../models/plex/play_queue_response.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../utils/media_server_http_client.dart';
 import '../utils/video_player_navigation.dart';
 import '../i18n/strings.g.dart';
 import 'media_list_playback_launcher.dart';
@@ -108,11 +109,16 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     final ratingKey = facts.id;
     final itemServerId = facts.serverId ?? serverId;
     final itemServerName = facts.serverName ?? serverName;
+    // The loading dialog's Cancel/Back aborts the launch. The Plex queue
+    // requests cannot be torn down mid-flight, so each step checks it
+    // instead and a cancelled launch never publishes or navigates.
+    final abort = AbortController();
 
     return executeWithLoading(
       context: context,
       showLoading: showLoadingIndicator,
       actionLabel: t.common.shuffle,
+      abort: abort,
       execute: (dismissLoading) async {
         PlayQueueResponse playQueue;
         final sourceLibraryId = facts.isCollection && item is MediaItem ? item.libraryId : null;
@@ -124,6 +130,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
 
         if (facts.isCollection) {
           final machineId = client.config.machineIdentifier ?? await client.getMachineIdentifier();
+          abort.throwIfAborted();
 
           if (machineId == null) {
             throw Exception('Could not get server machine identifier');
@@ -148,10 +155,13 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           );
         }
 
+        abort.throwIfAborted();
         playQueue = await _refetchIfEmpty(playQueue, libraryId: sourceLibraryId, libraryTitle: sourceLibraryTitle);
+        abort.throwIfAborted();
 
         // Close loading dialog before navigating to the player
         await dismissLoading();
+        abort.throwIfAborted();
 
         return _launchFromQueue(
           playQueue: playQueue,
@@ -176,10 +186,13 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       return PlayQueueError(Exception('Shuffle play only works for shows and seasons'));
     }
 
+    final abort = AbortController();
+
     return executeWithLoading(
       context: context,
       showLoading: showLoadingIndicator,
       actionLabel: t.common.shuffle,
+      abort: abort,
       execute: (dismissLoading) async {
         // Determine the rating key for the play queue
         String showRatingKey;
@@ -199,9 +212,11 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           librarySectionID: metadata.libraryId,
           librarySectionTitle: metadata.libraryTitle,
         );
+        abort.throwIfAborted();
 
         // Close loading dialog before navigating to the player
         await dismissLoading();
+        abort.throwIfAborted();
 
         return _launchFromQueue(
           playQueue: playQueue,
@@ -233,12 +248,16 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     final libraryId = folder.libraryId;
     final libraryTitle = folder.libraryTitle;
 
+    final abort = AbortController();
+
     return executeWithLoading(
       context: context,
       showLoading: showLoadingIndicator,
       actionLabel: shuffle ? t.common.shuffle : t.common.play,
+      abort: abort,
       execute: (dismissLoading) async {
         final folderUri = await client.buildFolderUri(folderKey);
+        abort.throwIfAborted();
 
         var playQueue = await client.createPlayQueue(
           uri: folderUri,
@@ -248,9 +267,12 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
           librarySectionTitle: libraryTitle,
         );
 
+        abort.throwIfAborted();
         playQueue = await _refetchIfEmpty(playQueue, libraryId: libraryId, libraryTitle: libraryTitle);
+        abort.throwIfAborted();
 
         await dismissLoading();
+        abort.throwIfAborted();
 
         return _launchFromQueue(
           playQueue: playQueue,
