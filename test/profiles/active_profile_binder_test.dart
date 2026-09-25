@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
@@ -19,8 +20,11 @@ import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_auth_service.dart';
+import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
 
@@ -344,6 +348,115 @@ void main() {
 
       expect(activeProfile.lastBindingSucceeded, isTrue);
       expect(binder.lastBindFailureConnectivityOnly, isFalse);
+    });
+  });
+
+  group('profile switch clean-up of offline registrations', () {
+    late _ControlledConnectManager controlled;
+
+    /// Two local profiles on one Plex account, as on a shared Plex Home:
+    /// plex.tv serves `srv-1` for A's token and fails B's resource refresh,
+    /// so B still expects `srv-1` but cannot bind it.
+    Future<({Profile a, Profile b})> setUpSharedAccount() async {
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.example.plezy',
+        version: '1.0.0',
+        buildNumber: '1',
+        buildSignature: '',
+      );
+      DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test'));
+      addTearDown(() => DeviceIdentityService.debugOverride(null));
+      PlexApiCache.initialize(db);
+      binder.dispose();
+      multiServerProvider.dispose();
+      controlled = _ControlledConnectManager();
+      manager = controlled;
+      multiServerProvider = testMultiServerProvider(manager);
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async => null,
+        shouldDeferInitialBind: (_) async => false,
+        plexAuth: PlexAuthService.forTesting(
+          http: MediaServerHttpClient(
+            client: MockClient((request) async {
+              if (request.headers['X-Plex-Token'] != 'token-a') return http.Response('{}', 404);
+              return http.Response(
+                jsonEncode([_serverJson(accessToken: 'server-token-a')]),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }),
+          ),
+        ),
+      );
+
+      final account = PlexAccountConnection(
+        id: 'plex.account',
+        accountToken: 'account-token',
+        clientIdentifier: 'client-id',
+        accountLabel: 'Owner',
+        servers: [_server(accessToken: 'account-server-token')],
+        createdAt: DateTime(2026, 1, 1),
+      );
+      await connections.upsert(account);
+      final a = await createActiveLocalProfile('local-a');
+      final b = Profile.local(id: 'local-b', displayName: 'B', createdAt: DateTime(2026, 1, 2));
+      await profiles.upsert(b);
+      for (final (profile, token) in [(a, 'token-a'), (b, 'token-b')]) {
+        await profileConnections.upsert(
+          ProfileConnection(
+            profileId: profile.id,
+            connectionId: account.id,
+            userToken: token,
+            userIdentifier: 'uuid-${profile.id}',
+            tokenAcquiredAt: DateTime(2026, 1, 1),
+          ),
+        );
+      }
+      return (a: a, b: b);
+    }
+
+    test('an offline server of the previous profile cannot come back with its token', () async {
+      final shared = await setUpSharedAccount();
+      await binder.rebindActive();
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+      // Expected but unreachable: registered without a client, under A.
+      expect(manager.getClient(ServerId('srv-1')), isNull);
+      expect(manager.registeredServerIds, contains('srv-1'));
+
+      expect(await activeProfile.activate(shared.b), isTrue);
+      await binder.rebindActive();
+      expect(multiServerProvider.expectedServerIds, ['srv-1']);
+      expect(manager.registeredServerIds, isEmpty);
+
+      // The trigger of the leak: the server returns and a reconnect runs.
+      controlled.reachable = true;
+      await manager.reconnectOfflineServers();
+      expect(manager.getClient(ServerId('srv-1')), isNull);
+      expect(controlled.connectedTokens, isEmpty);
+    });
+
+    test('an expected server that goes offline stays registered across a rebind of its profile', () async {
+      await setUpSharedAccount();
+      controlled.reachable = true;
+      await binder.rebindActive();
+      expect(multiServerProvider.onlineServerIds, ['srv-1']);
+
+      manager.updateServerStatus(ServerId('srv-1'), false);
+      controlled.reachable = false;
+      await binder.rebindActive();
+      expect(multiServerProvider.onlineServerIds, isEmpty);
+      expect(manager.registeredServerIds, ['srv-1']);
+
+      controlled.reachable = true;
+      await manager.reconnectOfflineServers();
+      await pumpUntil(() async => multiServerProvider.onlineServerIds.contains('srv-1'));
+      expect(controlled.connectedTokens, everyElement('server-token-a'));
     });
   });
 
@@ -1234,15 +1347,19 @@ class _AuthRejectingPlexManager extends MultiServerManager {
   }
 }
 
-/// Like [_AuthRejectingPlexManager], but also surfaces the rejected server to
-/// the binder's visibility sweep via [serverIds] — mirroring a pre-registered
-/// client whose token was rejected mid-refresh (it stays in `serverIds` until
-/// swept, and `removeServer` then clears its auth marker).
+/// Like [_AuthRejectingPlexManager], but the rejected server is still held by
+/// the previous profile — mirroring its pre-registered client whose token was
+/// rejected mid-refresh. The binder's visibility sweep must drop it (and
+/// `removeServer` then clears its auth marker).
 class _SweptAuthRejectingPlexManager extends MultiServerManager {
   final Set<String> _rejected = {};
 
   @override
-  List<String> get serverIds => {...super.serverIds, ..._rejected}.toList();
+  bool isRegisteredForOtherProfile(
+    ServerId serverId, {
+    required String profileId,
+    Set<String> jellyfinConnectionIds = const {},
+  }) => _rejected.contains(serverId);
 
   @override
   Future<Set<String>> refreshTokensForProfile(
@@ -1317,5 +1434,77 @@ class _BlockingMixedMultiServerManager extends MultiServerManager {
     if (!jellyfinStarted.isCompleted) jellyfinStarted.complete();
     updateServerStatus(ServerId(connection.serverMachineId), true);
     return true;
+  }
+}
+
+/// Real [MultiServerManager] registration bookkeeping, with Plex endpoint
+/// discovery gated on [reachable] and clients built without a network.
+class _ControlledConnectManager extends MultiServerManager {
+  _ControlledConnectManager() : this._(<String>[]);
+
+  _ControlledConnectManager._(this.connectedTokens)
+    : super(
+        connectivityChanges: () => const Stream.empty(),
+        plexClientFactory:
+            (
+              config, {
+              required serverId,
+              required profileScopeId,
+              serverName,
+              prioritizedEndpoints,
+              onEndpointChanged,
+              onAllEndpointsExhausted,
+              seedTranscoderVideoSupport,
+            }) async {
+              connectedTokens.add(config.token!);
+              return PlexClient.forTesting(
+                config: config,
+                serverId: serverId,
+                profileScopeId: profileScopeId,
+                serverName: serverName,
+                httpClient: MockClient((_) async => http.Response('{}', 200)),
+              );
+            },
+      );
+
+  /// PMS tokens of every client the factory built.
+  final List<String> connectedTokens;
+  bool reachable = false;
+
+  @override
+  Future<Set<String>> refreshTokensForProfile(
+    PlexAccountConnection connection, {
+    required String profileId,
+    Duration timeout = MediaServerTimeouts.perServerConnect,
+  }) {
+    return super.refreshTokensForProfile(
+      connection.copyWith(servers: [for (final server in connection.servers) _GatedPlexServer(server, this)]),
+      profileId: profileId,
+      timeout: timeout,
+    );
+  }
+}
+
+class _GatedPlexServer extends PlexServer {
+  _GatedPlexServer(PlexServer server, this._manager)
+    : super(
+        name: server.name,
+        clientIdentifier: server.clientIdentifier,
+        accessToken: server.accessToken,
+        connections: server.connections,
+        owned: server.owned,
+      );
+
+  final _ControlledConnectManager _manager;
+
+  @override
+  Stream<PlexConnection> findBestWorkingConnection({
+    String? preferredUri,
+    String? clientIdentifier,
+    void Function(bool)? onTranscoderCapability,
+  }) {
+    if (!_manager.reachable) return const Stream.empty();
+    onTranscoderCapability?.call(true);
+    return Stream.value(connections.first);
   }
 }

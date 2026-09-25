@@ -930,6 +930,35 @@ void main() {
       },
     );
 
+    test('an offline client of another profile is dropped when this profile cannot connect', () async {
+      await _prepareFreshPlexManagerTest();
+      final server = _ControlledPlexServer(
+        serverId: 'server-1',
+        endpoints: [_plexEndpoint('down')],
+        discoveryStreams: [],
+      );
+      final transport = _CloseRecordingHttpClient();
+      final previous = testPlexClient(
+        serverId: ServerId('server-1'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'profile-a'),
+        httpClient: transport,
+      );
+      final manager = MultiServerManager(connectivityChanges: () => const Stream.empty());
+      addTearDown(manager.dispose);
+      manager.debugRegisterClientForTesting(previous, online: false);
+
+      final bound = await manager.refreshTokensForProfile(_plexAccount('account', [server]), profileId: 'profile-b');
+      await pumpEventQueue();
+
+      expect(bound, isEmpty);
+      expect(manager.getClient(ServerId('server-1')), isNull);
+      expect(transport.closed, isTrue);
+      // Still registered — for profile B, so a reconnect retries it with B's token.
+      expect(manager.registeredServerIds, ['server-1']);
+      expect(manager.isRegisteredForOtherProfile(ServerId('server-1'), profileId: 'profile-b'), isFalse);
+      expect(manager.isRegisteredForOtherProfile(ServerId('server-1'), profileId: 'profile-a'), isTrue);
+    });
+
     test('dispose cancels a pending connectivity debounce with no later mutation', () async {
       final storage = await _prepareFreshPlexManagerTest();
       final endpoint = _plexEndpoint('pending');
@@ -2156,4 +2185,15 @@ class _TrackedStreamSubscription<T> implements StreamSubscription<T> {
 
   @override
   Future<E> asFuture<E>([E? futureValue]) => _delegate.asFuture(futureValue);
+}
+
+class _CloseRecordingHttpClient extends http.BaseClient {
+  bool closed = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async =>
+      http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
+
+  @override
+  void close() => closed = true;
 }

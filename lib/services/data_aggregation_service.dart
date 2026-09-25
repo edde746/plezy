@@ -135,11 +135,14 @@ class DataAggregationService {
 
   DataAggregationService(this._serverManager);
 
-  /// Online clients, optionally restricted to [serverIds] — delta refreshes
-  /// fan out to newly-online servers only.
+  /// Online clients visible to the active profile, or the online clients in
+  /// [serverIds]. A supplied set is already profile-scoped: delta refreshes
+  /// fan out to newly-online visible servers, and catalog lookups to the
+  /// profile's expected servers, which can come online a status emission
+  /// before the visibility filter promotes them.
   Map<String, MediaServerClient> _clientsFor(Set<String>? serverIds) {
+    if (serverIds == null) return _serverManager.visibleOnlineClients;
     final clients = _serverManager.onlineClients;
-    if (serverIds == null) return clients;
     return {
       for (final entry in clients.entries)
         if (serverIds.contains(entry.key)) entry.key: entry.value,
@@ -753,7 +756,7 @@ class DataAggregationService {
     }
 
     abort?.throwIfAborted();
-    final clients = _serverManager.onlineClients;
+    final clients = _serverManager.visibleOnlineClients;
     if (clients.isEmpty) {
       return (
         items: const <MediaItem>[],

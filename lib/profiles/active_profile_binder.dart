@@ -351,14 +351,29 @@ class ActiveProfileBinder {
       // would misclassify a revoked token as a connectivity failure.
       final authErrorServerIds = serverManager.authErrorServerIds;
 
-      // Remove servers the profile no longer has access to. Always set the
-      // filter to the bound set (even when empty) so a profile with no
-      // connections shows nothing — falling back to "all visible" on empty
-      // would leak servers attached to other profiles.
-      for (final serverId in serverManager.serverIds.toList()) {
-        if (!visibleServerIds.contains(serverId)) {
-          serverManager.removeServer(ServerId(serverId));
+      // Remove servers the profile no longer has access to, including
+      // client-less registrations (a failed connect): a reconnect would
+      // otherwise rebuild them with the previous profile's token. Servers the
+      // profile expects stay registered while offline so a reconnect can
+      // bring them back, unless what is registered was made for another
+      // profile. Always set the filter to the bound set (even when empty) so
+      // a profile with no connections shows nothing — falling back to "all
+      // visible" on empty would leak servers attached to other profiles.
+      final jellyfinConnectionIds = <String>{
+        for (final pc in joinRows)
+          if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) id,
+      };
+      for (final serverId in serverManager.registeredServerIds) {
+        final belongs = visibleServerIds.contains(serverId) || expectedServerIds.contains(serverId);
+        if (belongs &&
+            !serverManager.isRegisteredForOtherProfile(
+              ServerId(serverId),
+              profileId: profile.id,
+              jellyfinConnectionIds: jellyfinConnectionIds,
+            )) {
+          continue;
         }
+        serverManager.removeServer(ServerId(serverId));
       }
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
       multiServerProvider.setVisibleServerIds(visibleServerIds);
@@ -745,7 +760,7 @@ class ActiveProfileBinder {
             error: fetched.error,
             stackTrace: fetched.stackTrace,
           );
-          serverManager.markPlexConnectionAuthError(account);
+          serverManager.markPlexConnectionAuthError(account, profileId: profileId);
           return _ProfileBindResult.visible(account.servers.map((server) => server.clientIdentifier).toSet());
         case _ServerFetchStatus.transientFailure:
           appLogger.w(
@@ -974,7 +989,7 @@ class ActiveProfileBinder {
             // but only surface the auth banner while this profile is active.
             await onAuthRejected();
             if (_isCurrentBind(profileId, generation)) {
-              serverManager.markPlexConnectionAuthError(account);
+              serverManager.markPlexConnectionAuthError(account, profileId: profileId);
             }
           } else {
             appLogger.w(
@@ -1064,7 +1079,7 @@ class ActiveProfileBinder {
   }
 
   void _clearBoundServers() {
-    for (final serverId in serverManager.serverIds.toList()) {
+    for (final serverId in serverManager.registeredServerIds) {
       serverManager.removeServer(ServerId(serverId));
     }
     multiServerProvider.setExpectedVisibleServerIds(<String>{});
