@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_item_types.dart';
@@ -138,6 +139,20 @@ class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// [_ScopedTestClient] that also answers the parent-artwork step of a queue
+/// with no artwork to fetch.
+class _ArtworkFreeScopedClient extends _ScopedTestClient {
+  _ArtworkFreeScopedClient({
+    required super.serverId,
+    required super.scopedServerId,
+    super.fetchItemHandler,
+    super.clientBackend,
+  });
+
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => const [];
 }
 
 class _DownloadOwnerSelectGate extends QueryInterceptor {
@@ -977,6 +992,68 @@ void main() {
       expect(count, 1);
       expect(p.downloads.keys, ['srv:1']);
       expect(await db.getDownloadOwnerKeysForProfile('test-profile'), {'srv:1'});
+
+      p.dispose();
+    });
+
+    test('claiming an existing download loads its metadata for the claiming profile', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      // Another profile's physical download: nothing about it is loaded here.
+      p.debugSeedState(
+        downloads: {'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed)},
+        ownedDownloadKeys: const {},
+      );
+      expect(p.downloadedMovies, isEmpty);
+
+      final count = await p.queueDownload(movie, _ThrowingClient());
+
+      expect(count, 1);
+      expect(p.downloadedMovies.map((m) => m.title), ['Owned Movie']);
+
+      p.dispose();
+    });
+
+    test('claiming an existing episode download also loads its show and season', () async {
+      final episode = testMediaItem(
+        id: 'ep-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Pilot',
+        serverId: ServerId('srv'),
+        parentId: 'season-1',
+        grandparentId: 'show-1',
+        grandparentTitle: 'Show',
+      );
+      final client = _ArtworkFreeScopedClient(
+        serverId: ServerId('srv'),
+        scopedServerId: 'srv',
+        clientBackend: MediaBackend.plex,
+        fetchItemHandler: (id) async => switch (id) {
+          'show-1' => testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show'),
+          'season-1' => testMediaItem(
+            id: 'season-1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.season,
+            title: 'Season 1',
+          ),
+          _ => null,
+        },
+      );
+      testClientResolver = (serverId, {clientScopeId}) => client;
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {'srv:ep-1': const DownloadProgress(globalKey: 'srv:ep-1', status: DownloadStatus.completed)},
+        ownedDownloadKeys: const {},
+      );
+
+      final count = await p.queueDownload(episode, client);
+
+      expect(count, 1);
+      expect(p.getMetadata('srv:ep-1')?.title, 'Pilot');
+      expect(p.getMetadata('srv:show-1')?.title, 'Show');
+      expect(p.getMetadata('srv:season-1')?.title, 'Season 1');
 
       p.dispose();
     });

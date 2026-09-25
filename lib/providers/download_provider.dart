@@ -1516,7 +1516,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         if (!_isQueueOwnershipCurrent(ownership)) return false;
         final claimed = await _claimDownloadForProfile(globalKey, ownership, client);
         if (!_isQueueOwnershipCurrent(ownership)) return false;
-        if (claimed) safeNotifyListeners();
+        if (claimed) {
+          await _hydrateClaimedDownload(metadataToStore, client, ownership: ownership, relatedContext: relatedContext);
+          if (!_isQueueOwnershipCurrent(ownership)) return false;
+          safeNotifyListeners();
+        }
         return claimed;
       }
     }
@@ -1603,6 +1607,42 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _downloadLibraries[globalKey] = (libraryId: storedMetadata.libraryId, libraryTitle: storedMetadata.libraryTitle);
     }
     return true;
+  }
+
+  /// Load display metadata for a physical download [metadata] the profile in
+  /// [ownership] just claimed. The profile's maps were loaded without it, so
+  /// without this the claimed row stays without a title (and an episode
+  /// without its show) until the next full reload. Mirrors the fresh-queue
+  /// path: the leaf from the claiming profile's cache scope (falling back to
+  /// the caller's copy), then the parents for episodes and tracks.
+  Future<void> _hydrateClaimedDownload(
+    MediaItem metadata,
+    MediaServerClient client, {
+    required _QueueOwnership ownership,
+    _RelatedMetadataDownloadContext? relatedContext,
+  }) async {
+    final globalKey = metadata.globalKey;
+    final hydration = await _hydrateDownloadMetadata(globalKey, (
+      items: const <String, MediaItem>{},
+      scopesByServer: const <String, String?>{},
+    ), isStale: () => !_isQueueOwnershipCurrent(ownership));
+    if (hydration.stale) return;
+    final hydrated = hydration.metadata ?? metadata;
+    _metadata[globalKey] = hydrated;
+
+    if (hydrated.isEpisode || hydrated.kind == MediaKind.track) {
+      try {
+        await _fetchAndStoreParentMetadata(
+          hydrated,
+          client,
+          ownership: ownership,
+          context: relatedContext ?? _RelatedMetadataDownloadContext(),
+        );
+      } catch (e) {
+        // The claim is already durable; parent enrichment is best effort.
+        appLogger.w('Failed to load parent metadata while claiming $globalKey', error: e);
+      }
+    }
   }
 
   /// Fetch and store parent metadata for a leaf item — show + season for an
