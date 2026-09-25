@@ -67,7 +67,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _collectionsTabKey = GlobalKey();
   final _playlistsTabKey = GlobalKey();
 
-  String? _errorMessage;
   String? _selectedLibraryGlobalKey;
 
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
@@ -459,7 +458,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
-      _errorMessage = null;
       _loadedTabs.clear();
     });
     widget.onLibrarySelected?.call(libraryGlobalKey);
@@ -534,8 +532,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // ignore: no-empty-block - visibility mixin contract; nothing to pause.
   void onTabHidden() {}
 
+  /// The toolbar refresh. Without a selected library the screen is showing the
+  /// provider's empty or error state, and there are no tabs to refetch: reload
+  /// the library list itself (the build selects one once they arrive).
   @override
-  void manualRefresh() => _refreshSelectedLibraryTabs();
+  void manualRefresh() {
+    if (_selectedLibraryGlobalKey == null) {
+      unawaited(context.read<LibrariesProvider>().refresh());
+      return;
+    }
+    _refreshSelectedLibraryTabs();
+  }
 
   void _refreshSelectedLibraryTabs() {
     for (var i = 0; i < _visibleTabs.length; i++) {
@@ -552,7 +559,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     appLogger.d('LibrariesScreen.fullRefresh() called - reloading all content');
     setState(() {
       _selectedLibraryGlobalKey = null;
-      _errorMessage = null;
     });
 
     // Reinitialize with current libraries from provider
@@ -733,6 +739,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final librariesProvider = context.watch<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
     final isLoadingLibraries = librariesProvider.isLoading;
+    final librariesErrorMessage = librariesProvider.errorMessage;
 
     // Watch for hidden libraries changes to trigger rebuild
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
@@ -860,15 +867,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     Widget body;
     if (isLoadingLibraries) {
       body = buildSimpleScroll(body: const Center(child: CircularProgressIndicator()));
-    } else if (_errorMessage != null && visibleLibraries.isEmpty && selectedLibrary == null) {
+    } else if (librariesErrorMessage != null && visibleLibraries.isEmpty && selectedLibrary == null) {
       body = buildSimpleScroll(
         body: ErrorStateWidget(
-          message: _errorMessage!,
+          message: librariesErrorMessage,
           icon: Symbols.error_outline_rounded,
-          onRetry: () {
-            final librariesProvider = context.read<LibrariesProvider>();
-            librariesProvider.refresh();
-          },
+          onRetry: manualRefresh,
         ),
       );
     } else if (visibleLibraries.isEmpty && selectedLibrary == null) {

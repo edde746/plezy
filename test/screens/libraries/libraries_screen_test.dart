@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
 import 'package:plezy/media/library_query.dart';
@@ -129,6 +130,22 @@ void main() {
 
     expect(selected, [_libraryA.globalKey]);
     expect(find.byWidgetPredicate((widget) => widget is BaseLibraryTab), findsWidgets);
+  });
+
+  testWidgets('toolbar refresh reloads the library list while none is selected', (tester) async {
+    final harness = await _Harness.create(_GatedPreferences({}), clients: [_HubClient()], libraryOrder: const []);
+    addTearDown(harness.dispose);
+    harness.libraries.initialize(harness.multiServer.aggregationService);
+    final selected = <String>[];
+
+    await harness.pump(tester, onLibrarySelected: selected.add);
+    expect(find.text(t.libraries.noLibrariesFound), findsOneWidget);
+
+    // No tabs exist to refetch, so the button must reload the list itself.
+    await tester.tap(find.byTooltip(t.common.refresh));
+    await tester.pumpAndSettle();
+
+    expect(selected, [_libraryA.globalKey]);
   });
 
   testWidgets('stale saved tab cannot replace the current library tab', (tester) async {
