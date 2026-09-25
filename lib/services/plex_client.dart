@@ -1356,11 +1356,12 @@ class PlexClient
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
     // ignore: unused_element_parameter
     AbortController? abort,
+    int pageSize = _fetchAllPageSize,
   }) {
     return drainPages<PlexMetadataDto>((start, size) async {
       final page = await fetchPage(start, size, abort);
       return LibraryPage(items: page.items, totalCount: page.totalSize, offset: start);
-    }, pageSize: _fetchAllPageSize);
+    }, pageSize: pageSize);
   }
 
   /// Walk every page of [path] and return a single synthesized response whose
@@ -2506,6 +2507,18 @@ class PlexClient
     filter: _videoOrCollectionHubItem,
   );
 
+  static final RegExp _collectionChildrenPath = RegExp(r'^/library/collections/[^/]+/children/?$');
+
+  /// Largest page a request for [hubKey] may ask for. A collection hub's key
+  /// is `/library/collections/{id}/children`, which PMS caps (#2468); other
+  /// hub keys take the regular fetch-all page size.
+  int _hubRequestPageSize(String hubKey) {
+    final path = Uri.tryParse(hubKey)?.path ?? hubKey;
+    return _collectionChildrenPath.hasMatch(path)
+        ? _PlexCollectionMethods._collectionChildrenMaxPageSize
+        : _fetchAllPageSize;
+  }
+
   /// Get full content from a hub using its hub key
   /// Returns the complete list of metadata items in the hub
   Future<List<PlexMetadataDto>> _getHubContent(String hubKey) async {
@@ -2514,6 +2527,7 @@ class PlexClient
       final items = await _fetchAllPages(
         (start, size, abort) =>
             _fetchPaginatedList(hubKey, start: start, size: size, abort: abort, librarySectionID: hubSectionID),
+        pageSize: _hubRequestPageSize(hubKey),
       );
       return items.where(_videoOrMusicHubItem).toList();
     } catch (e, st) {
@@ -2530,7 +2544,12 @@ class PlexClient
   }) async {
     final filteredOffset = start ?? 0;
     final pageSize = size ?? _fetchAllPageSize;
-    final rawPageSize = pageSize > _fetchAllPageSize ? pageSize : _fetchAllPageSize;
+    final maxRawPageSize = _hubRequestPageSize(hubKey);
+    // The loop below fills the page across as many raw requests as it takes,
+    // so a capped hub just makes more, smaller requests.
+    final rawPageSize = maxRawPageSize < _fetchAllPageSize
+        ? maxRawPageSize
+        : (pageSize > _fetchAllPageSize ? pageSize : _fetchAllPageSize);
     final hubSectionID = _librarySectionIdFromString(hubKey);
     final pageItems = <PlexMetadataDto>[];
     var rawOffset = 0;
