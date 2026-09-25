@@ -1,8 +1,16 @@
+import 'dart:convert';
+
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -249,6 +257,41 @@ void main() {
 
         p.dispose();
       });
+    });
+
+    test('a failed Live TV re-probe keeps the DVR the last check found', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      PlexApiCache.initialize(db);
+      var failing = false;
+      manager.debugRegisterClientForTesting(
+        testPlexClient(
+          serverId: ServerId('srv-1'),
+          handler: (_) async => failing
+              ? http.Response('', 503)
+              : http.Response(
+                  jsonEncode({
+                    'MediaContainer': {
+                      'Dvr': [
+                        {'key': 'dvr-1', 'uuid': 'dvr-1'},
+                      ],
+                    },
+                  }),
+                  200,
+                  headers: {'content-type': 'application/json'},
+                ),
+        ),
+      );
+      final p = MultiServerProvider(manager, aggregation);
+      addTearDown(p.dispose);
+
+      await p.checkLiveTvAvailability();
+      expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+
+      failing = true;
+      await p.checkLiveTvAvailability();
+      expect(p.hasLiveTv, isTrue);
+      expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
     });
 
     test('dispose runs cleanly and cancels the status subscription', () async {

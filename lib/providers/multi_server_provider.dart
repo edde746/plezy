@@ -286,6 +286,10 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
         }
       } catch (e) {
         appLogger.d('LiveTV check failed for server $serverId', error: e);
+        // A failed re-probe (timeout, transient 5xx) is no evidence the DVR
+        // went away; keep what the last successful check found for this
+        // still-online server instead of dropping Live TV on a blip.
+        newLiveTvServers.addAll(_liveTvServers.where((s) => s.serverId == serverId));
       }
     }
 
