@@ -119,6 +119,76 @@ func makeRoomSnapshots(count int, maximumLengthIDs bool, now time.Time) []roomSn
 	return rooms
 }
 
+func TestSnapshotKeepsOccupiedRoomsAcrossRestart(t *testing.T) {
+	dir := t.TempDir()
+	stateFile := filepath.Join(dir, "rooms.json")
+	h := newRelayHarnessAt(t, t.TempDir(), stateFile)
+	createModernRoomWithGuest(t, h, "BUSY", "6.9.0.1", "6.9.0.2")
+
+	// Only relayed messages have happened since the last membership change,
+	// and those never dirty the snapshot.
+	h.srv.mu.RLock()
+	room := h.srv.rooms["BUSY"]
+	h.srv.mu.RUnlock()
+	stale := time.Now().Add(-emptyRoomMaxAge - time.Minute)
+	room.mu.Lock()
+	room.LastActivityAt = stale
+	room.mu.Unlock()
+
+	captured := h.srv.buildSnapshot()
+	if len(captured.Rooms) != 1 || !captured.Rooms[0].LastActivityAt.Equal(captured.SavedAt) {
+		t.Fatalf("occupied room activity=%v, want capture time %v", captured.Rooms, captured.SavedAt)
+	}
+
+	// The periodic cleanup persists that activity without any mutation.
+	waitForSnapshot := func(done func(stateSnapshot) bool) stateSnapshot {
+		t.Helper()
+		deadline := time.Now().Add(2 * time.Second)
+		for {
+			var persisted stateSnapshot
+			data, err := os.ReadFile(stateFile)
+			if err == nil && json.Unmarshal(data, &persisted) == nil && done(persisted) {
+				return persisted
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("expected snapshot was never persisted: %s", data)
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+	admitted := waitForSnapshot(func(persisted stateSnapshot) bool {
+		return len(persisted.Rooms) == 1 && persisted.Rooms[0].PeerReservations["G"].Verifier != ""
+	})
+	h.srv.runCleanupStep(time.Now())
+	waitForSnapshot(func(persisted stateSnapshot) bool {
+		return persisted.SavedAt.After(admitted.SavedAt) &&
+			len(persisted.Rooms) == 1 && persisted.Rooms[0].LastActivityAt.Equal(persisted.SavedAt)
+	})
+
+	restarted := newTestServer(t, copySnapshotForRestart(t, stateFile))
+	if _, err := restarted.loadSnapshot(restarted.snap.path); err != nil {
+		t.Fatalf("loadSnapshot: %v", err)
+	}
+	if restarted.rooms["BUSY"] == nil {
+		t.Fatal("restart dropped a room that had connected peers")
+	}
+
+	// An empty room keeps its own activity and still ages out.
+	empty := &Room{
+		SessionID:      "IDLE",
+		HostPeerID:     "H",
+		Peers:          map[string]*Client{},
+		CreatedAt:      stale,
+		LastActivityAt: stale,
+	}
+	restarted.rooms["IDLE"] = empty
+	for _, snapshot := range restarted.buildSnapshot().Rooms {
+		if snapshot.SessionID == "IDLE" && !snapshot.LastActivityAt.Equal(stale) {
+			t.Fatalf("empty room activity=%v, want %v", snapshot.LastActivityAt, stale)
+		}
+	}
+}
+
 func TestSnapshotRoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "rooms.json")

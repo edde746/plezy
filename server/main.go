@@ -1288,6 +1288,14 @@ func (s *Server) captureSnapshot(captureSequence func() uint64) (stateSnapshot, 
 				}
 			}
 		}
+		// A room with connected peers is active when captured. Relayed
+		// messages keep it active without dirtying the snapshot, so its own
+		// LastActivityAt may be long past; a restart would then discard the
+		// room its peers are about to resume into.
+		lastActivityAt := room.LastActivityAt
+		if len(room.Peers) != 0 && snapshot.SavedAt.After(lastActivityAt) {
+			lastActivityAt = snapshot.SavedAt
+		}
 		snapshot.Rooms = append(snapshot.Rooms, roomSnapshot{
 			SessionID:             room.SessionID,
 			HostPeerID:            room.HostPeerID,
@@ -1295,7 +1303,7 @@ func (s *Server) captureSnapshot(captureSequence func() uint64) (stateSnapshot, 
 			HostReconnectVerifier: encodeReconnectVerifier(room.hostVerifier),
 			PeerReservations:      reservations,
 			CreatedAt:             room.CreatedAt,
-			LastActivityAt:        room.LastActivityAt,
+			LastActivityAt:        lastActivityAt,
 		})
 	}
 
@@ -1449,6 +1457,22 @@ func (s *Server) loadSnapshot(path string) (bool, error) {
 	return rewriteReservations, nil
 }
 
+// recordOccupiedRoomActivity queues a snapshot when any room has connected
+// peers, refreshing the activity that a restart judges those rooms by.
+func (s *Server) recordOccupiedRoomActivity() {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, room := range s.rooms {
+		room.mu.RLock()
+		occupied := len(room.Peers) != 0
+		room.mu.RUnlock()
+		if occupied {
+			s.snap.recordMutation()
+			return
+		}
+	}
+}
+
 func (s *Server) cleanupLoop() {
 	ticker := time.NewTicker(cleanupInterval)
 	defer ticker.Stop()
@@ -1487,6 +1511,7 @@ func (s *Server) runCleanupStep(now time.Time) {
 	}
 	roomCount := len(s.rooms)
 	s.mu.Unlock()
+	s.recordOccupiedRoomActivity()
 
 	for _, client := range expiredClients {
 		client.close()
@@ -2602,6 +2627,9 @@ func main() {
 	case s := <-sig:
 		log.Printf("shutdown signal received (%s), draining...", s)
 	}
+	// Relay sockets outlive HTTP shutdown, so rooms are still occupied here.
+	// Queue their activity now; the final flush below makes it durable.
+	srv.recordOccupiedRoomActivity()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
