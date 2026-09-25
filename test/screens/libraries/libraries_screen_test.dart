@@ -650,7 +650,7 @@ class _HubClient extends _PagedClient {
   }) async => List.of(hubs);
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
     onDeckCalls++;
     return hubs.first.items;
   }

@@ -1592,31 +1592,87 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
+    if (excludedLibraryIds.isEmpty) {
+      final rows = await _continueWatchingRows(count: count);
+      return _mergeContinueWatchingAndNextUp(resume: rows.resume, nextUp: rows.nextUp, limit: count);
+    }
+
+    // Resume and Next Up rows name no library, so the caller cannot drop a
+    // hidden library's rows. As in [searchItems] (#1970), asking each visible
+    // library on its own is the only way to leave one out, and it stamps every
+    // row with the library it came from. Music is skipped: both queries are
+    // video-only there.
+    var libraries = _loadedLibraryViews;
+    if (libraries == null) {
+      libraries = await _fetchLibraries();
+      _loadedLibraryViews ??= libraries;
+    }
+    final visible = [
+      for (final library in libraries)
+        if (!excludedLibraryIds.contains(library.id) && library.kind != MediaKind.artist) library,
+    ];
+    const concurrency = 3;
+    final resume = <MediaItem>[];
+    final nextUp = <MediaItem>[];
+    for (var start = 0; start < visible.length; start += concurrency) {
+      final batch = await Future.wait([
+        for (final library in visible.skip(start).take(concurrency))
+          _continueWatchingRows(count: count, library: library),
+      ]);
+      for (final rows in batch) {
+        resume.addAll(rows.resume);
+        nextUp.addAll(rows.nextUp);
+      }
+    }
+    return _mergeContinueWatchingAndNextUp(resume: resume, nextUp: nextUp, limit: count);
+  }
+
+  /// The two Continue Watching halves, server-wide or scoped to [library]
+  /// (whose rows are then stamped with it).
+  Future<({List<MediaItem> resume, List<MediaItem> nextUp})> _continueWatchingRows({
+    int? count,
+    MediaLibrary? library,
+  }) async {
+    final parentId = library?.id;
+    List<MediaItem> stamped(List<MediaItem> items) => library == null
+        ? items
+        : [for (final item in items) item.copyWith(libraryId: library.id, libraryTitle: library.title)];
+
     if (!dialect.resumeReturnsOnlyStartedItems) {
       // Emby: both shelf halves ride the one hide-aware window request — see
       // [_embyResumeWindowQuery].
       final split = _splitEmbyResumeRows(
-        await _fetchItemsArray(paths.resumeItems, _embyResumeWindowQuery(), retry: _continueWatchingRetry),
+        await _fetchItemsArray(
+          paths.resumeItems,
+          _embyResumeWindowQuery(parentId: parentId),
+          retry: _continueWatchingRetry,
+        ),
       );
-      return _mergeContinueWatchingAndNextUp(
-        resume: _mapItems(split.resume),
-        nextUp: _mapItems(await _stampEmbyNextUpRows(split.nextUp)),
-        limit: count,
+      return (
+        resume: stamped(_mapItems(split.resume)),
+        nextUp: stamped(_mapItems(await _stampEmbyNextUpRows(split.nextUp, parentId: parentId))),
       );
     }
 
     final results = await Future.wait([
-      _fetchItemsArray(paths.resumeItems, _resumeItemsQuery(limit: count), retry: _continueWatchingRetry),
-      _safeFetchItemsArray('/Shows/NextUp', _nextUpQuery(limit: count), retry: _continueWatchingRetry),
+      _fetchItemsArray(
+        paths.resumeItems,
+        _resumeItemsQuery(limit: count, parentId: parentId),
+        retry: _continueWatchingRetry,
+      ),
+      _safeFetchItemsArray(
+        '/Shows/NextUp',
+        _nextUpQuery(limit: count, parentId: parentId),
+        retry: _continueWatchingRetry,
+      ),
     ]);
 
-    return _mergeContinueWatchingAndNextUp(
-      resume: _mapItems(results.first),
+    return (
+      resume: stamped(_mapItems(results.first)),
       // `/Shows/NextUp` rows carry no series play date, so stamp them with one
       // before the recency merge.
-      nextUp: await _attachSeriesLastPlayed(_mapItems(results[1])),
-      limit: count,
+      nextUp: stamped(await _attachSeriesLastPlayed(_mapItems(results[1]))),
     );
   }
 

@@ -252,8 +252,11 @@ class DataAggregationService {
     final fetched = await _fanOut<MediaItem>(
       clients,
       failureMessage: (serverId) => 'Failed on-deck fetch from $serverId',
-      fetch: (_, client) async {
-        final rows = await client.fetchContinueWatching(count: limit);
+      fetch: (serverId, client) async {
+        final rows = await client.fetchContinueWatching(
+          count: limit,
+          excludedLibraryIds: _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys),
+        );
         // Capture the scope here: after the fan-out flattens and dedup runs,
         // there is no way back to the client that produced a row.
         final scope = client.cacheServerId;

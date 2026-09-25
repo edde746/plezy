@@ -4350,8 +4350,10 @@ class PlexClient
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
+  /// [excludedLibraryIds] is unused: every row carries its `librarySectionID`,
+  /// so the caller filters hidden libraries out of the mapped results.
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
     final items = await _getContinueWatching(count: count);
     return items.map((m) => PlexMappers.mediaItem(m)).toList();
   }

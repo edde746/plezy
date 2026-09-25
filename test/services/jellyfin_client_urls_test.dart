@@ -4084,6 +4084,44 @@ void main() {
       );
     });
 
+    test('fetchContinueWatching leaves hidden libraries out and stamps the rest with their library', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          final parentId = req.url.queryParameters['ParentId'];
+          if (req.url.path == '/Users/user-1/Views') {
+            return jsonResponse({
+              'Items': [
+                {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+                {'Id': 'lib-hidden', 'Name': 'Hidden', 'CollectionType': 'movies'},
+                {'Id': 'lib-music', 'Name': 'Music', 'CollectionType': 'music'},
+              ],
+            });
+          }
+          if (req.url.path == '/UserItems/Resume') {
+            return jsonResponse({
+              'Items': [
+                if (parentId == 'lib-movies') {'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Visible Movie'},
+                if (parentId == 'lib-hidden') {'Id': 'movie-2', 'Type': 'Movie', 'Name': 'Hidden Movie'},
+              ],
+            });
+          }
+          if (req.url.path == '/Shows/NextUp') return jsonResponse({'Items': []});
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching(count: 5, excludedLibraryIds: {'lib-hidden'});
+
+      expect(items.map((item) => item.id), ['movie-1']);
+      expect(items.single.libraryId, 'lib-movies');
+      final scopedRequests = requests.where((uri) => uri.path == '/UserItems/Resume' || uri.path == '/Shows/NextUp');
+      expect(scopedRequests.map((uri) => uri.queryParameters['ParentId']).toSet(), {'lib-movies'});
+    });
+
     test('fetchContinueWatching orders a recently watched series Next Up above an older resume item', () async {
       final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(
