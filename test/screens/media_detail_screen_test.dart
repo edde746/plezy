@@ -53,6 +53,7 @@ import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
+import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_details_sheet.dart';
@@ -2471,6 +2472,104 @@ void main() {
 
       expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isFalse);
       expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
+    });
+
+    Future<void> tapSeason(WidgetTester tester, String title) async {
+      await tester.tap(find.text(title));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('a failed season switch shows its error, not the previous season episodes', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+        },
+        childrenPageErrors: {season2.id: StateError('offline')},
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      expect(episodeCardFor('1. Episode S1E1'), findsOneWidget);
+
+      await tapSeason(tester, 'Season 2');
+
+      expect(episodeCardFor('1. Episode S1E1'), findsNothing);
+      expect(find.text(t.messages.episodesLoadFailed), findsOneWidget);
+    });
+
+    testWidgets('returning to a season whose load is still running shows its episodes when it lands', (tester) async {
+      final show = buildShow();
+      final seasons = [for (var index = 1; index <= 3; index++) buildSeason(show, index)];
+      final season2Page = Completer<List<MediaItem>>();
+      final season3Page = Completer<List<MediaItem>>();
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: seasons,
+          seasons[0].id: [buildEpisode(show, seasons[0], 1)],
+        },
+        childrenPageFutures: {seasons[1].id: season2Page.future, seasons[2].id: season3Page.future},
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      // Season 2 starts loading, Season 3 starts another load, and the return
+      // to Season 2 finds its first load still running.
+      await tapSeason(tester, 'Season 2');
+      await tapSeason(tester, 'Season 3');
+      await tapSeason(tester, 'Season 2');
+
+      season3Page.complete([buildEpisode(show, seasons[2], 1)]);
+      season2Page.complete([buildEpisode(show, seasons[1], 1)]);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(episodeCardFor('1. Episode S2E1'), findsOneWidget);
+      expect(episodeCardFor('1. Episode S3E1'), findsNothing);
+    });
+
+    testWidgets('deleting the selected season moves the selection to its neighbour', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [buildEpisode(show, season2, 1)],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      expect(episodeCardFor('1. Episode S1E1'), findsOneWidget);
+
+      await emit(
+        tester,
+        () => DeletionNotifier().notify(
+          DeletionEvent(
+            itemId: season1.id,
+            serverId: ServerId('server_1'),
+            parentChain: const [],
+            mediaType: 'season',
+            isDownloadOnly: false,
+            origin: DeletionOrigin.serverPush,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Season 1'), findsNothing);
+      expect(episodeCardFor('1. Episode S1E1'), findsNothing);
+      expect(episodeCardFor('1. Episode S2E1'), findsOneWidget);
+      final season2Chip = tester.widget<FocusableTabChip>(
+        find.ancestor(of: find.text('Season 2'), matching: find.byType(FocusableTabChip)),
+      );
+      expect(season2Chip.isSelected, isTrue);
     });
   });
 
