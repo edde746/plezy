@@ -124,11 +124,11 @@ class PlaybackInitializationService {
         metadata.id,
         mediaIndex: options.selectedMediaIndex,
         selectedMediaSourceId: options.selectedMediaSourceId,
-        // With no client there is nothing to stream from, so any downloaded
-        // version beats failing. With a client the strict match must stand:
-        // an explicitly requested non-downloaded version streams from the
-        // server (issue #1440).
-        allowAnyDownloadedVersion: client == null,
+        // With no client, or when playback must stay offline, there is nothing
+        // to stream from, so any downloaded version beats failing. Otherwise
+        // the strict match must stand: an explicitly requested non-downloaded
+        // version streams from the server (issue #1440).
+        allowAnyDownloadedVersion: client == null || requireOffline,
       );
     }
 

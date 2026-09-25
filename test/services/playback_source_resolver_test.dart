@@ -229,5 +229,21 @@ void main() {
       expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
       expect(context.result.videoUrl, 'https://example.com/video.mp4');
     });
+
+    test('offline library mode plays the downloaded version even when another one is preferred', () async {
+      // The server is reachable, but offline mode has nothing to stream from:
+      // the version on disk beats failing, as it does with no client at all.
+      final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+          selectedMediaIndex: 1,
+          qualityPreset: TranscodeQualityPreset.original,
+        ),
+        offlineLibraryMode: true,
+      );
+
+      expect(context.sourceKind, PlaybackSourceKind.localFile);
+      expect(context.result.videoUrl, 'content://sdcard/movie-1.mkv');
+    });
   });
 }
