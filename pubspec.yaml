@@ -58,12 +58,13 @@ dependencies:
   dart_discord_presence: ^1.2.0
   flutter_svg: ^2.2.3
   # Fork 54a34a0 fixes upstream #649's missing desktop temp parent; 7ee4588
-  # survives a host with no documents directory (Linux without xdg-user-dirs).
-  # Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
+  # survives a host with no documents directory (Linux without xdg-user-dirs);
+  # 7f500a1 reads real macOS volume capacity and skips unknown capacity on
+  # desktop. Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 1bcc9978e9b5e503dd08176cc423cfabee703761
+      ref: 7f500a1ed64fdef0173e1a69548e898b0d23c581
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
