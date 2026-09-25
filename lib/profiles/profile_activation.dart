@@ -145,17 +145,31 @@ Future<_ProfileActivationResult> _activateVerifiedProfile(BuildContext context, 
 /// server/token binding has settled. Shows the standard switch failure message
 /// for activation and binding failures — but not for a PIN-dialog cancel,
 /// which is the user changing their mind, not an error.
+///
+/// Past the PIN prompt nothing here needs [context]: a switch started from a
+/// profile-scoped screen (Discover's profile menu) outlives that screen,
+/// whose subtree the activation rebuilds, so the offline keep-active decision
+/// and the failure message must not depend on it staying mounted.
 Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
   final activeProvider = context.read<ActiveProfileProvider>();
   final binder = context.read<ActiveProfileBinder>();
+  final database = context.read<AppDatabase>();
   final shelf = SystemShelfService();
+  void showSwitchFailed() {
+    final message = t.errors.failedToSwitchProfile(displayName: profile.displayName);
+    if (context.mounted) {
+      showErrorSnackBar(context, message);
+    } else {
+      showGlobalErrorSnackBar(message);
+    }
+  }
+
   final activation = await _activateProfileWithPin(context, profile);
-  if (!context.mounted) return false;
   switch (activation.outcome) {
     case ProfileActivationOutcome.cancelled:
       return false;
     case ProfileActivationOutcome.failed:
-      showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
+      showSwitchFailed();
       return false;
     case ProfileActivationOutcome.activated:
       break;
@@ -173,7 +187,7 @@ Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
   if (!isCurrentActivation(profile.id)) return false;
   if (bound) return true;
 
-  if (binder.lastBindFailureConnectivityOnly && context.mounted) {
+  if (binder.lastBindFailureConnectivityOnly) {
     // The bind failed purely for connectivity — identity was already verified
     // before activation (local PIN hash or the Plex /switch round-trip). When
     // the profile owns downloads, keep it active instead of rolling back: the
@@ -181,7 +195,7 @@ Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
     // the Downloads UI while the files sit on disk. OfflineModeProvider drives
     // the offline UI from the empty visible-server set. Auth-classified bind
     // failures never set the flag and keep today's rollback + snackbar.
-    final ownedDownloadKeys = await context.read<AppDatabase>().getDownloadOwnerKeysForProfile(profile.id);
+    final ownedDownloadKeys = await database.getDownloadOwnerKeysForProfile(profile.id);
     if (!isCurrentActivation(profile.id)) return false;
     if (ownedDownloadKeys.isNotEmpty) {
       appLogger.i(
@@ -231,9 +245,7 @@ Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
       activeProvider.finishIdentityMutationRequest(rollbackRequestGeneration);
     }
   }
-  if (context.mounted && activeProvider.committedIdentityGeneration == activationGeneration) {
-    showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
-  }
+  if (activeProvider.committedIdentityGeneration == activationGeneration) showSwitchFailed();
   return false;
 }
 

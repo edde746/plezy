@@ -275,6 +275,28 @@ void main() {
     expect(find.byType(SnackBar), findsNothing);
   });
 
+  testWidgets('a switch whose screen is torn down mid-switch still keeps a downloads-owning profile offline', (
+    tester,
+  ) async {
+    final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true, gateTargetBindingFailure: true);
+    addTearDown(harness.dispose);
+    final binder = harness.rollbackBinder!;
+    binder.lastBindFailureConnectivityOnly = true;
+    await harness.database.addDownloadOwner(profileId: 'target', globalKey: 'srv-1/episode-1');
+
+    final switchFuture = switchProfileFromUi(harness.context, harness.target);
+    await binder.targetBindingStarted.future;
+    // Discover's profile menu: the activation rebuilds the profile-scoped
+    // subtree the switch was started from.
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(harness.context.mounted, isFalse);
+    binder.targetBindingRelease!.complete();
+
+    expect(await switchFuture, isTrue);
+    expect(harness.active.activeId, 'target');
+    expect(binder.rebindStarted.isCompleted, isFalse);
+  });
+
   testWidgets('connectivity-only bind failure without owned downloads still rolls back', (tester) async {
     final harness = await _pumpHarness(tester, channel, simulateBindingRollback: true);
     addTearDown(harness.dispose);
