@@ -159,6 +159,11 @@ mixin CatalogWatchlistMachinery {
       }
       rethrow;
     }
+    // The optimistic notify above (if any — none without a loaded snapshot,
+    // or for an entry the snapshot already agreed on) reached listeners before
+    // the service had the change. Listeners that read the service itself, like
+    // the Watchlist row, need to hear once it has.
+    _watchlistChanges.notify();
   }
 
   /// Remove every entry group hit by [keys] from [map], returning them for
