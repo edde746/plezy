@@ -95,12 +95,19 @@ void main() {
     messenger.setMockMethodCallHandler(windowChannel, (call) async => call.method.startsWith('is') ? false : null);
     messenger.setMockMethodCallHandler(mediaControlMethods, (call) async => null);
     messenger.setMockMethodCallHandler(mediaControlEvents, (call) async => null);
+    final wakelockToggles = <bool>[];
+    messenger.setMockMessageHandler(_wakelockToggleChannel, (message) async {
+      final args = _wakelockCodec.decodeMessage(message) as List<Object?>;
+      wakelockToggles.add((args.single! as List<Object?>).single! as bool);
+      return _wakelockCodec.encodeMessage(<Object?>[]);
+    });
     tester.view.physicalSize = const Size(1200, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
       messenger.setMockMethodCallHandler(windowChannel, null);
       messenger.setMockMethodCallHandler(mediaControlMethods, null);
       messenger.setMockMethodCallHandler(mediaControlEvents, null);
+      messenger.setMockMessageHandler(_wakelockToggleChannel, null);
       tester.view.reset();
       offlineWatch.dispose();
       accountPreferences.dispose();
@@ -215,6 +222,11 @@ void main() {
           isFalse,
           reason: 'a failed open has no playback for the OS media session to describe',
         );
+        await pumpUntil(
+          tester,
+          () => wakelockToggles.isNotEmpty && !wakelockToggles.last,
+          describe: () => 'the failure view still holds the screen awake: $wakelockToggles',
+        );
 
         await tester.tap(retry);
         await pumpUntil(tester, () => loadfileUrls.length == 2, describe: () => 'loadfiles=$loadfileUrls');
@@ -240,6 +252,20 @@ void main() {
       },
     );
   });
+}
+
+const _wakelockToggleChannel = 'dev.flutter.pigeon.wakelock_plus_platform_interface.WakelockPlusApi.toggle';
+
+/// The wakelock plugin's pigeon codec: its messages ride custom type ids
+/// wrapping a plain list of fields.
+const _wakelockCodec = _PigeonListCodec();
+
+class _PigeonListCodec extends StandardMessageCodec {
+  const _PigeonListCodec();
+
+  @override
+  Object? readValueOfType(int type, ReadBuffer buffer) =>
+      type >= 128 ? readValue(buffer) : super.readValueOfType(type, buffer);
 }
 
 /// Resolves to a stream URL the mocked mpv plane accepts and then fails.
