@@ -50,6 +50,21 @@ void main() {
     expect(light.colorScheme.onSurface, isNot(dark.colorScheme.onSurface));
   });
 
+  test('filled and elevated buttons look disabled when disabled', () {
+    for (final theme in [monoTheme(dark: false), monoTheme(dark: true)]) {
+      for (final style in [theme.filledButtonTheme.style!, theme.elevatedButtonTheme.style!]) {
+        final enabledBackground = style.backgroundColor!.resolve(const {});
+        final disabledBackground = style.backgroundColor!.resolve(const {WidgetState.disabled});
+        final enabledForeground = style.foregroundColor!.resolve(const {});
+        final disabledForeground = style.foregroundColor!.resolve(const {WidgetState.disabled});
+
+        expect(disabledBackground, isNot(enabledBackground));
+        expect(disabledForeground, isNot(enabledForeground));
+        expect(disabledBackground!.a, lessThan(enabledBackground!.a));
+      }
+    }
+  });
+
   group('target platform is part of the cache key', () {
     tearDown(() => debugDefaultTargetPlatformOverride = null);
 
