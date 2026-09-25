@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show PointerDeviceKind;
 import 'package:plezy/media/ids.dart';
 
@@ -10,6 +11,8 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/navigation/navigation_tabs.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
@@ -26,6 +29,33 @@ import 'package:provider/provider.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
+
+/// A server whose library fetch waits on [libraries], holding the provider in
+/// its loading state (the rail then swaps the library rows for a spinner).
+class _GatedLibrariesClient implements MediaServerClient {
+  final libraries = Completer<List<MediaLibrary>>();
+
+  @override
+  ServerId get serverId => ServerId('server-a');
+
+  @override
+  String get serverName => 'Server A';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  Future<List<MediaLibrary>> fetchLibraries() => libraries.future;
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 /// Minimal source-bearing stand-in: the rail only reads [hasAnySource].
 class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
@@ -348,6 +378,79 @@ void main() {
     final targetRect = tester.getRect(find.text(targetLibrary.title));
     expect(targetRect.top, greaterThanOrEqualTo(railRect.top));
     expect(targetRect.bottom, lessThanOrEqualTo(railRect.bottom));
+  });
+
+  testWidgets('focusActiveItem skips a remembered library row that has unmounted', (tester) async {
+    await SettingsService.getInstance();
+    final movies = _library(id: '1', title: 'Movies', serverId: ServerId('server-a'), serverName: 'Server A');
+
+    final librariesProvider = LibrariesProvider();
+    await librariesProvider.updateLibraryOrder([movies]);
+    addTearDown(librariesProvider.dispose);
+
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    await hiddenLibrariesProvider.ensureInitialized();
+    addTearDown(hiddenLibrariesProvider.dispose);
+
+    final client = _GatedLibrariesClient();
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final multiServerProvider = testMultiServerProvider(manager);
+    addTearDown(multiServerProvider.dispose);
+
+    final sideNavKey = GlobalKey<SideNavigationRailState>();
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: SideNavigationRail(
+                key: sideNavKey,
+                selectedTab: NavigationTabId.libraries,
+                selectedLibraryKey: movies.globalKey,
+                isSidebarFocused: true,
+                alwaysExpanded: true,
+                onDestinationSelected: (_) {},
+                onLibrarySelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    sideNavKey.currentState!.focusActiveItem();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<NavigationRailItem>(find.widgetWithText(NavigationRailItem, 'Movies')).focusNode.hasFocus,
+      isTrue,
+    );
+    FocusManager.instance.primaryFocus!.unfocus();
+    await tester.pump();
+
+    // A reload swaps the rows for a spinner; the remembered row's node keeps
+    // its old context, so a null-context check still takes it for mounted.
+    librariesProvider.initialize(multiServerProvider.aggregationService);
+    unawaited(librariesProvider.loadLibraries());
+    await tester.pump();
+    expect(find.widgetWithText(NavigationRailItem, 'Movies'), findsNothing);
+
+    sideNavKey.currentState!.focusActiveItem();
+    await tester.pump();
+
+    expect(
+      tester.widget<NavigationRailItem>(find.widgetWithText(NavigationRailItem, 'Libraries')).focusNode.hasFocus,
+      isTrue,
+    );
+
+    client.libraries.complete([movies]);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Explore item follows the showExploreTab appearance setting', (tester) async {

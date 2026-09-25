@@ -609,8 +609,14 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   FocusNode? _mountedFocusNodeFor(String? key) {
     if (key == null) return null;
     final node = _focusTracker.nodeFor(key);
-    return node?.context == null ? null : node;
+    return node != null && _isMounted(node) ? node : null;
   }
+
+  /// Whether [node] is attached to a mounted row. A detached node keeps its
+  /// last context after the row unmounts (a collapsed library section or
+  /// server group), so a null check alone lets focus land on a row that is
+  /// gone and the request goes nowhere.
+  static bool _isMounted(FocusNode node) => node.context?.mounted ?? false;
 
   /// Derive a focus key from the current selection state (tab + library).
   /// Returns null if no meaningful selected item exists.
@@ -814,7 +820,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final step = isDown ? 1 : -1;
     for (var index = currentIndex + step; index >= 0 && index < focusOrder.length; index += step) {
       final node = _focusTracker.nodeFor(focusOrder[index]);
-      if (node == null || node.context == null || !node.canRequestFocus) continue;
+      if (node == null || !_isMounted(node) || !node.canRequestFocus) continue;
       _requestFocusAndReveal(node);
       return KeyEventResult.handled;
     }
