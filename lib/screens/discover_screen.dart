@@ -1072,8 +1072,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
       isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
       usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
-      loadMoreItems: (hub) =>
-          hub.id == 'continue_watching' ? _discover.loadAllContinueWatching() : Future.value(hub.items),
+      // Every other hub pages from its server in View All, as on phones; handing
+      // it the preview items only showed that preview again.
+      loadMoreItems: (hub) => hub.id == 'continue_watching' ? _discover.loadAllContinueWatching : null,
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
