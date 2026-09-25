@@ -12,15 +12,22 @@ class PlaybackSourceResolver {
 
   const PlaybackSourceResolver({required this.serverManager, required this.database});
 
-  /// Prefers a downloaded copy when in offline library mode or when the
-  /// requested quality preset is original (an omitted preset keeps it on).
-  Future<PlaybackContext> resolve(PlaybackInitializationOptions options, {required bool offlineLibraryMode}) async {
+  /// Prefers a downloaded copy when in offline library mode, when the
+  /// requested quality preset is original (an omitted preset keeps it on), or
+  /// when [downloadOutranksQuality] says the preset carries no user intent a
+  /// local copy would violate — the saved startup default rather than a
+  /// quality picked for this playback (issue #2466).
+  Future<PlaybackContext> resolve(
+    PlaybackInitializationOptions options, {
+    required bool offlineLibraryMode,
+    bool downloadOutranksQuality = false,
+  }) async {
     final metadata = options.metadata;
     final reportingClient = _playbackClient(serverIdOrNull(metadata.serverId), offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
     final result = await service.getPlaybackData(
       options,
-      preferOffline: offlineLibraryMode || options.qualityPreset.isOriginal,
+      preferOffline: offlineLibraryMode || options.qualityPreset.isOriginal || downloadOutranksQuality,
       requireOffline: offlineLibraryMode,
     );
 

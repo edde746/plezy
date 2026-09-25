@@ -723,6 +723,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   // Transcode / quality state
   late TranscodeQualityPreset _selectedQualityPreset;
+
+  /// Whether the user picked the quality — at launch ("Play Version…") or in
+  /// the player — rather than playback starting at the saved default. Sticky
+  /// for this screen, so later episodes and retries honor the pick too.
+  bool _qualityPresetExplicit = false;
   int? _selectedAudioStreamId;
   AudioTrack? _preferredAudioTrack;
   SubtitlePreference? _preferredSubtitleTrack;
@@ -1014,6 +1019,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool get _usesLocalPlaybackSource => _effectiveIsOffline;
 
   bool get _isOfflinePlayback => _offlineLibraryMode || _effectiveIsOffline;
+
+  /// Whether a downloaded copy may stand in for a capped
+  /// [_selectedQualityPreset] (issue #2466). Only the saved startup default
+  /// yields; a picked quality is honored. Watch Together keeps the preset's
+  /// source because a local session does not sync with the room.
+  bool get _downloadOutranksQuality => !_qualityPresetExplicit && _activeWatchTogetherSession() == null;
 
   /// Atomically publish a freshly opened [PlaybackSession] and refine the
   /// selection-intent fields from what the backend actually delivered
@@ -1319,6 +1330,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _preferredSubtitleTrack = SubtitlePreference.trackOrNull(widget.preferredSubtitleTrack);
     _preferredSecondarySubtitleTrack = SubtitlePreference.trackOrNull(widget.preferredSecondarySubtitleTrack);
     _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
+    _qualityPresetExplicit = widget.selectedQualityPreset != null;
 
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
     _playNextConfirmFocusNode = FocusNode(debugLabel: 'PlayNextConfirm');
@@ -1671,6 +1683,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             transcodeSessionId: _playbackTranscodeSessionId,
           ),
           offlineLibraryMode: false,
+          downloadOutranksQuality: _downloadOutranksQuality,
         );
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an

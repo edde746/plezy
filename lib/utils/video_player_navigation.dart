@@ -328,12 +328,15 @@ Future<bool?> navigateToVideoPlayer(
       : null;
 
   // Plain Play on a downloaded item must target the version actually on
-  // disk. Only one version can be downloaded per item, and saved version
-  // preferences describe online intent — they may point at a version that
-  // was never downloaded (issue #1440). Explicit caller selections still win.
+  // disk, online too, so the player can open the local copy instead of
+  // streaming it (issue #2466). Only one version can be downloaded per item,
+  // and saved version preferences describe online intent — they may point at
+  // a version that was never downloaded (issue #1440). Explicit caller
+  // selections still win. A Watch Together launch keeps the room's version:
+  // a local session does not sync with the room.
   int? downloadedMediaIndex;
   String? downloadedMediaSourceId;
-  if (isOffline && selectedMediaIndex == null && selectedMediaSourceId == null) {
+  if ((isOffline || playbackLease == null) && selectedMediaIndex == null && selectedMediaSourceId == null) {
     final downloaded = await downloadProvider.getCompletedDownload(metadata.globalKey);
     if (downloaded != null) {
       downloadedMediaIndex = downloaded.mediaIndex;
@@ -396,7 +399,9 @@ Future<bool?> navigateToVideoPlayer(
             return null;
           }
           String? videoUrl;
-          if (isOffline) {
+          // A reachable download of the requested version plays from disk,
+          // online too; anything else streams from the server.
+          if (isOffline || downloadProvider.isDownloaded(metadata.globalKey)) {
             final videoPath = await downloadProvider.getVideoFilePath(
               metadata.globalKey,
               mediaIndex: mediaIndex,

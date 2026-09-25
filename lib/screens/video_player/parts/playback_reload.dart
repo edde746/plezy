@@ -196,6 +196,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 
+      // A quality picked here outranks a downloaded copy from now on — for
+      // this switch, a retry of it, and later episodes (issue #2466).
+      if (isPresetChange) _qualityPresetExplicit = true;
+
       final outcome = await _reloadMediaInPlace(
         metadata: _currentMetadata.copyWith(viewOffsetMs: currentPlayer.state.position.inMilliseconds),
         selectedMediaIndex: effectiveMediaIndex,
@@ -477,6 +481,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
       final targetQualityPreset = qualityPreset ?? _selectedQualityPreset;
+      final downloadOutranksQuality = _downloadOutranksQuality;
       final targetAudioStreamId = useCurrentAudioStreamSelection
           ? selectedAudioStreamId ?? _selectedAudioStreamId
           : selectedAudioStreamId;
@@ -563,6 +568,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             transcodeSessionId: _playbackTranscodeSessionId,
           ),
           offlineLibraryMode: _offlineLibraryMode,
+          downloadOutranksQuality: downloadOutranksQuality,
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final result = playbackContext.result;
