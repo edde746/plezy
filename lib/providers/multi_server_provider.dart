@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../exceptions/media_server_exceptions.dart';
 import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
@@ -37,6 +38,11 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Info about servers with DVR capability
   final List<LiveTvServerInfo> _liveTvServers = [];
   List<LiveTvServerInfo> get liveTvServers => List.unmodifiable(_liveTvServers);
+
+  /// The client whose probe produced each server's [_liveTvServers] entries.
+  /// A failed re-probe may carry entries over only on this same client: a
+  /// replaced client (reconnect, profile switch) must earn them again.
+  Map<String, MediaServerClient> _liveTvProbeClients = {};
 
   /// Previously-seen set of online server IDs, used to detect new servers
   Set<String> _previousOnlineServerIds = {};
@@ -264,6 +270,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     if (isDisposed) return;
     final generation = ++_liveTvCheckGeneration;
     final newLiveTvServers = <LiveTvServerInfo>[];
+    final newProbeClients = <String, MediaServerClient>{};
     for (final serverId in onlineServerIds) {
       final genericClient = _serverManager.getClient(ServerId(serverId));
       if (genericClient == null) continue;
@@ -284,12 +291,17 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
             LiveTvServerInfo(serverId: serverId, dvrKey: genericClient.backend.id, lineup: null, dvrs: const []),
           );
         }
+        newProbeClients[serverId] = genericClient;
       } catch (e) {
         appLogger.d('LiveTV check failed for server $serverId', error: e);
-        // A failed re-probe (timeout, transient 5xx) is no evidence the DVR
-        // went away; keep what the last successful check found for this
-        // still-online server instead of dropping Live TV on a blip.
-        newLiveTvServers.addAll(_liveTvServers.where((s) => s.serverId == serverId));
+        // A transient failure (timeout, connection error, 5xx) is no evidence
+        // the DVR went away; keep what the last successful check on this same
+        // client found instead of dropping Live TV on a blip. A definitive
+        // answer (401/403, other 4xx, bad data) drops the entry.
+        if (_isTransientLiveTvProbeFailure(e) && identical(_liveTvProbeClients[serverId], genericClient)) {
+          newLiveTvServers.addAll(_liveTvServers.where((s) => s.serverId == serverId));
+          newProbeClients[serverId] = genericClient;
+        }
       }
     }
 
@@ -304,12 +316,20 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _liveTvServers
       ..clear()
       ..addAll(visibleLiveTvServers);
+    _liveTvProbeClients = newProbeClients;
     _hasLiveTv = visibleLiveTvServers.isNotEmpty;
 
     // Notify when availability changes OR when the server set changes
     if (hadLiveTv != _hasLiveTv || !oldServerIds.containsAll(newServerIds) || !newServerIds.containsAll(oldServerIds)) {
       safeNotifyListeners();
     }
+  }
+
+  static bool _isTransientLiveTvProbeFailure(Object error) {
+    if (error is! MediaServerHttpException || error.isCancellation) return false;
+    final status = error.statusCode;
+    if (status == 401 || status == 403) return false;
+    return error.isTransient || status != null && status >= 500;
   }
 
   @override

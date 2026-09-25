@@ -9,6 +9,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 
@@ -259,39 +260,66 @@ void main() {
       });
     });
 
-    test('a failed Live TV re-probe keeps the DVR the last check found', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      addTearDown(db.close);
-      PlexApiCache.initialize(db);
-      var failing = false;
-      manager.debugRegisterClientForTesting(
-        testPlexClient(
-          serverId: ServerId('srv-1'),
-          handler: (_) async => failing
-              ? http.Response('', 503)
-              : http.Response(
-                  jsonEncode({
-                    'MediaContainer': {
-                      'Dvr': [
-                        {'key': 'dvr-1', 'uuid': 'dvr-1'},
-                      ],
-                    },
-                  }),
-                  200,
-                  headers: {'content-type': 'application/json'},
-                ),
-        ),
+    group('Live TV re-probe failures', () {
+      http.Response? failure;
+
+      setUp(() {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        PlexApiCache.initialize(db);
+        failure = null;
+      });
+
+      PlexClient dvrClient() => testPlexClient(
+        serverId: ServerId('srv-1'),
+        handler: (_) async =>
+            failure ??
+            http.Response(
+              jsonEncode({
+                'MediaContainer': {
+                  'Dvr': [
+                    {'key': 'dvr-1', 'uuid': 'dvr-1'},
+                  ],
+                },
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
       );
-      final p = MultiServerProvider(manager, aggregation);
-      addTearDown(p.dispose);
 
-      await p.checkLiveTvAvailability();
-      expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+      Future<MultiServerProvider> providerWithFoundDvr() async {
+        manager.debugRegisterClientForTesting(dvrClient());
+        final p = MultiServerProvider(manager, aggregation);
+        addTearDown(p.dispose);
+        await p.checkLiveTvAvailability();
+        expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+        return p;
+      }
 
-      failing = true;
-      await p.checkLiveTvAvailability();
-      expect(p.hasLiveTv, isTrue);
-      expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+      test('a transient failure keeps the DVR the last check found', () async {
+        final p = await providerWithFoundDvr();
+        failure = http.Response('', 503);
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isTrue);
+        expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+      });
+
+      test('an authorization failure drops the DVR', () async {
+        final p = await providerWithFoundDvr();
+        failure = http.Response('', 403);
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+      });
+
+      test('a transient failure on a replaced client drops the DVR', () async {
+        final p = await providerWithFoundDvr();
+        failure = http.Response('', 503);
+        manager.debugRegisterClientForTesting(dvrClient());
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+      });
     });
 
     test('dispose runs cleanly and cancels the status subscription', () async {
