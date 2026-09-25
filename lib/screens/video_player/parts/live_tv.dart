@@ -185,8 +185,6 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _liveSeek.cancel();
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null) return;
-    final generation = _transitionGate.generation;
-    bool isCurrent() => _isCurrentPlaybackGeneration(generation, currentPlayer);
     final session = _live.session;
     if (session == null) {
       _live.retrying = false;
@@ -195,6 +193,36 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       unawaited(_handleBackButton());
       return;
     }
+
+    // Recovery reopens the stream, so it holds the transition lock like any
+    // other in-place transition. A zap or start in flight is replacing the
+    // stream that failed; recovering the old session under it would reopen
+    // the previous channel over the new one. The new stream reports its own
+    // failures once it is in place.
+    final lease = _transitionGate.tryAcquire(PlaybackTransition.recoveringLive);
+    if (lease == null) {
+      _live.retrying = false;
+      appLogger.d('Live stream retry skipped: ${_transitionGate.transition.name} in flight');
+      return;
+    }
+    try {
+      await _recoverLiveStream(currentPlayer, session, lease);
+    } finally {
+      _transitionGate.release(lease);
+    }
+  }
+
+  Future<void> _recoverLiveStream(
+    Player currentPlayer,
+    LiveTvPlaybackSession session,
+    PlaybackTransitionLease lease,
+  ) async {
+    final generation = _transitionGate.generation;
+    // A zap supersedes the recovery by taking the lock over (see
+    // [_switchLiveChannel]); everything recovered after that is discarded.
+    bool isCurrent() =>
+        _isCurrentPlaybackGeneration(generation, currentPlayer) &&
+        _transitionGate.owns(lease, expected: PlaybackTransition.recoveringLive);
 
     final ds = _live.fallbackLevel < 1;
     final dsa = _live.fallbackLevel < 2;
@@ -481,6 +509,13 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
 
+    // Zapping away from a failing channel must not wait out its recovery (a
+    // re-tune can take the whole tune budget): the zap replaces that stream,
+    // so it supersedes the recovery, which discards whatever it recovered.
+    if (_transitionGate.transition == PlaybackTransition.recoveringLive) {
+      _transitionGate.forceIdle();
+      _live.retrying = false;
+    }
     final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingChannel);
     if (transitionLease == null) return; // debounce concurrent switches
     bool isCurrentChannelSwitch() =>
