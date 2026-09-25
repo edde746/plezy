@@ -568,8 +568,13 @@ class MainActivity : FlutterActivity() {
 
     if (isAndroidTvDevice()) installTextEditorProxy()
 
-    // Handle Watch Next deep link from initial launch
-    handleWatchNextIntent(intent)
+    // Handle Watch Next deep link from initial launch. A restored activity or a
+    // relaunch from Recents carries the original launch intent, whose tap was
+    // already handled; replaying it would start that item again.
+    val launchedFromHistory = (intent?.flags ?: 0) and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+    if (savedInstanceState == null && !launchedFromHistory) {
+      handleWatchNextIntent(intent)
+    }
   }
 
   override fun onNewIntent(intent: Intent) {
