@@ -657,22 +657,32 @@ class MainActivity : FlutterActivity() {
     val args = super.getFlutterShellArgs()
     selectedFlutterRenderer = selectFlutterRenderer()
     selectedFlutterRenderer.shellArgument?.let { args.add(it) }
+    // FlutterLoader appends its own defaults after these args and the engine
+    // keeps the last value of a flag. The manifest's OldGenHeapSize meta-data
+    // suppresses the loader's old-gen default, so the value set here is the
+    // one that sticks. Skia's resource cache threshold has no such opt-out;
+    // Dart caps that cache over the flutter/skia channel (DevicePerformance).
     if (isLowRamClass()) {
-      // Bound the memory pools Dart can't reach: Skia's GPU resource cache
-      // is sized from the surface area (hundreds of MB on a 4K-composited
-      // TV) and the Dart old gen defaults to a large fraction of physical
-      // RAM. Both drive LMK kills on 2GB boxes (#1349).
-      if (selectedFlutterRenderer == FlutterRenderer.SKIA) {
-        args.add("--resource-cache-max-bytes-threshold=50331648")
-      }
+      // The Dart old gen defaults to half of physical RAM, which drives LMK
+      // kills on 2GB boxes (#1349).
       args.add("--old-gen-heap-size=256")
       Log.i(
         TAG,
         "Low-RAM device: capped engine caches " +
           "(renderer=${selectedFlutterRenderer.diagnosticName}, oldGen=256MB)"
       )
+    } else {
+      args.add("--old-gen-heap-size=${defaultOldGenHeapSizeMegabytes()}")
     }
     return args
+  }
+
+  /** FlutterLoader's own default (half of physical RAM), which the manifest meta-data turns off. */
+  private fun defaultOldGenHeapSizeMegabytes(): Int {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return (memoryInfo.totalMem / 1e6 / 2).toInt()
   }
 
   private fun selectFlutterRenderer(): FlutterRenderer {
