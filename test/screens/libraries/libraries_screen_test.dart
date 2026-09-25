@@ -65,6 +65,16 @@ const _libraryB = MediaLibrary(
   kind: MediaKind.show,
   serverId: 'server',
 );
+// Shared libraries show only Browse and Playlists, so switching to one
+// rebuilds the tab set.
+const _sharedLibrary = MediaLibrary(
+  id: 'shared',
+  backend: MediaBackend.plex,
+  title: 'Shared',
+  kind: MediaKind.movie,
+  isShared: true,
+  serverId: 'server',
+);
 // Mirrors the library_browse_tab_test harness: a Jellyfin music library whose
 // server has a live fake client, so the browse tab loads real (fake) pages.
 const _musicLibrary = MediaLibrary(
@@ -175,6 +185,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(selected.last, _libraryB.globalKey);
     expect(harness.controller(tester).index, 1);
+  });
+
+  testWidgets('a tab set change restores the destination library saved tab', (tester) async {
+    final preferences = _GatedPreferences({
+      'selected_library_key': _libraryA.globalKey,
+      'library_tab_${_libraryA.globalKey}': LibraryTabType.playlists.name,
+      'library_tab_${_sharedLibrary.globalKey}': LibraryTabType.browse.name,
+    });
+    final harness = await _Harness.create(preferences, libraryOrder: const [_libraryA, _sharedLibrary]);
+    addTearDown(harness.dispose);
+
+    await harness.pump(tester);
+    expect(harness.controller(tester).index, LibraryTabType.playlists.index);
+
+    // Playlists carries over to index 1 of the two shared tabs; that carry-over
+    // must not overwrite the Browse tab the shared library saved.
+    (tester.state(find.byType(LibrariesScreen)) as LibraryLoadable).loadLibraryByKey(_sharedLibrary.globalKey);
+    await tester.pumpAndSettle();
+
+    expect(harness.controller(tester).index, 0);
+    final storage = await StorageService.getInstance();
+    expect(storage.getLibraryTab(_sharedLibrary.globalKey), LibraryTabType.browse.name);
   });
 
   testWidgets('restoration applies a saved first tab', (tester) async {

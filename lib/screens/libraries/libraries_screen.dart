@@ -201,8 +201,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void onTabChanged() {
     if (_selectedLibraryGlobalKey != null && !tabController.indexIsChanging) {
       if (!_isRestoringTab) {
+        // Resolve both now: by the time storage resolves, a library switch may
+        // have replaced the selection.
+        final libraryGlobalKey = _selectedLibraryGlobalKey!;
+        final tabName = _visibleTabs[tabController.index].name;
         StorageService.getInstance().then((storage) {
-          storage.saveLibraryTab(_selectedLibraryGlobalKey!, _visibleTabs[tabController.index].name);
+          storage.saveLibraryTab(libraryGlobalKey, tabName);
         });
 
         if (!suppressAutoFocus) {
@@ -389,7 +393,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     final newIndex = currentTabType != null ? newTabs.indexOf(currentTabType) : -1;
     if (newIndex > 0) {
+      // Carrying the tab type over is not a user pick: it must neither focus
+      // nor save — the save would overwrite the destination library's saved
+      // tab before [_loadLibraryContent] restores it.
+      _isRestoringTab = true;
       tabController.index = newIndex;
+      _isRestoringTab = false;
     }
   }
 
