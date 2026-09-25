@@ -166,6 +166,10 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         timer.cancel();
         return;
       }
+      // A backgrounded app on a platform that pauses there has nobody to
+      // answer the prompt, and advancing would start the next episode behind
+      // the viewer's back; the countdown holds until they return.
+      if (_playNextPromptBackgrounded()) return;
       final nextCountdown = _episode.autoPlayCountdown.value - 1;
       _episode.autoPlayCountdown.value = nextCountdown;
       if (nextCountdown <= 0) {
@@ -173,6 +177,28 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         _playNext();
       }
     });
+  }
+
+  /// Whether the Play Next prompt is out of the viewer's sight: the app is in
+  /// the background on a platform that pauses playback there
+  /// ([shouldPauseVideoForBackground]). PiP stays visible, and its own path
+  /// advances without a prompt.
+  bool _playNextPromptBackgrounded() {
+    if (PipService().isPipActive.value) return false;
+    final isAutomotive = PlatformDetector.isAutomotive();
+    final state = WidgetsBinding.instance.lifecycleState;
+    final backgrounded =
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused ||
+        // A car reports its background transition as inactive (see
+        // didChangeAppLifecycleState).
+        (isAutomotive && state == AppLifecycleState.inactive);
+    return backgrounded &&
+        shouldPauseVideoForBackground(
+          isHandheld: PlatformDetector.isMobile(context),
+          isTv: PlatformDetector.isTV(),
+          isAutomotive: isAutomotive,
+        );
   }
 
   /// Re-present the Play Next prompt after an EOF-driven advance failed on a
