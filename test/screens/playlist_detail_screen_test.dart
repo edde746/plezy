@@ -585,6 +585,26 @@ void main() {
     expect(_visiblePlaylistItemIds(tester), ['item_2']);
   });
 
+  testWidgets('refreshing a row keeps its playlist entry id for the next removal', (tester) async {
+    final items = [
+      for (final (index, item) in _mediaItems(2).indexed) (item as PlexMediaItem).copyWith(playlistItemId: 100 + index),
+    ];
+    final harness = await _createHarness(items);
+    await _pushPlaylistRoute(tester, harness);
+
+    final firstCard = tester.widget<PlaylistItemCard>(find.byType(PlaylistItemCard).first);
+    firstCard.onRefresh!(firstCard.item);
+    await tester.pumpAndSettle();
+    expect(find.text('Item 0 (refreshed)'), findsOneWidget);
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    final removed = harness.client.removeRequests.single.item as PlexMediaItem;
+    expect(removed.playlistItemId, 100);
+    harness.client.completeRemove(0, true, applyToServer: true);
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('D-pad walking a long playlist keeps the whole focused card on screen', (tester) async {
     final harness = await _createHarness(_mediaItems(60));
     await _pushPlaylistRoute(tester, harness);
@@ -986,6 +1006,13 @@ class _PagedPlaylistClient implements MediaServerClient {
   Future<bool> deletePlaylist(MediaPlaylist playlist) async {
     deleteCalls++;
     return deleteResult;
+  }
+
+  /// Item metadata, like the real endpoints: it carries no playlist entry id.
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    final item = items.firstWhere((item) => item.id == id);
+    return item is PlexMediaItem ? item.copyWith(playlistItemId: null, title: '${item.title} (refreshed)') : item;
   }
 
   @override
