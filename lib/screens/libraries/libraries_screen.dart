@@ -922,79 +922,78 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           isActive: tabController.index == index,
           tabIndex: index,
         );
-        if (useTvRecommendedBackdrop) return tabContent;
-
-        return ClipRect(child: tabContent);
+        // Clip each tab so horizontal overflow (e.g. hub rows with Clip.none)
+        // doesn't bleed into adjacent tabs during swipe transitions — except
+        // the TV Recommended backdrop, which draws full-bleed. Toggling the
+        // clip rather than the wrapper keeps the page's widget type stable.
+        return ClipRect(clipBehavior: useTvRecommendedBackdrop ? Clip.none : Clip.hardEdge, child: tabContent);
       }
 
-      Widget buildTabs({bool activeOnly = false}) {
-        if (activeOnly) return buildTab(currentTabIndex);
+      final tabs = TabBarView(
+        key: ValueKey(_selectedLibraryGlobalKey),
+        controller: tabController,
+        // Disable swipe on desktop/TV - trackpad and d-pad scroll actions can trigger accidental tab switches.
+        // See: https://github.com/flutter/flutter/issues/11132
+        physics: useSideNavigation ? const NeverScrollableScrollPhysics() : null,
+        children: [for (int i = 0; i < _visibleTabs.length; i++) buildTab(i)],
+      );
 
-        final children = [for (int i = 0; i < _visibleTabs.length; i++) buildTab(i)];
-
-        return TabBarView(
-          key: ValueKey(_selectedLibraryGlobalKey),
-          controller: tabController,
-          // Disable swipe on desktop/TV - trackpad and d-pad scroll actions can trigger accidental tab switches.
-          // See: https://github.com/flutter/flutter/issues/11132
-          physics: useSideNavigation ? const NeverScrollableScrollPhysics() : null,
-          // Wrap each tab in ClipRect so horizontal overflow (e.g. hub rows
-          // with Clip.none) doesn't bleed into adjacent tabs during swipe transitions.
-          children: children,
-        );
-      }
-
-      if (useTvRecommendedBackdrop) {
-        body = Focus(
-          canRequestFocus: false,
-          skipTraversal: true,
-          onKeyEvent: (_, event) => event.logicalKey.isDpadDirection ? KeyEventResult.handled : KeyEventResult.ignored,
-          child: Stack(
-            fit: StackFit.expand,
-            clipBehavior: Clip.none,
-            children: [
-              buildTabs(activeOnly: true),
-              Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),
-            ],
-          ),
-        );
-      } else {
-        body = NestedScrollView(
-          controller: _outerScrollController,
-          floatHeaderSlivers: true,
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: appBar(floating: true),
-            ),
-            if (showMobileTabsRow)
-              SliverToBoxAdapter(
-                child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (int i = 0; i < _visibleTabs.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 8),
-                          buildTabChip(
-                            _getTabLabel(_visibleTabs[i]),
-                            i,
-                            onSelectWhenActive: _focusCurrentTab,
-                            onNavigateDown: _focusCurrentTabFromTabBar,
-                            onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
-                          ),
-                        ],
-                      ],
+      // One tree shape for both layouts: the TV Recommended backdrop only
+      // drops the header slivers and overlays a transparent top bar. Swapping
+      // in a different body there unmounted the TabBarView and with it every
+      // kept-alive sibling tab, so each switch in or out of Recommended
+      // reloaded them from scratch and lost their scroll and filter state.
+      body = Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: useTvRecommendedBackdrop
+            ? (_, event) => event.logicalKey.isDpadDirection ? KeyEventResult.handled : KeyEventResult.ignored
+            : null,
+        child: Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: [
+            NestedScrollView(
+              controller: _outerScrollController,
+              floatHeaderSlivers: true,
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                if (!useTvRecommendedBackdrop)
+                  SliverOverlapAbsorber(
+                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                    sliver: appBar(floating: true),
+                  ),
+                if (showMobileTabsRow && !useTvRecommendedBackdrop)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (int i = 0; i < _visibleTabs.length; i++) ...[
+                              if (i > 0) const SizedBox(width: 8),
+                              buildTabChip(
+                                _getTabLabel(_visibleTabs[i]),
+                                i,
+                                onSelectWhenActive: _focusCurrentTab,
+                                onNavigateDown: _focusCurrentTabFromTabBar,
+                                onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+              ],
+              body: tabs,
+            ),
+            if (useTvRecommendedBackdrop)
+              Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),
           ],
-          body: buildTabs(),
-        );
-      }
+        ),
+      );
     } else {
       if (_selectedLibraryGlobalKey == null) _scheduleInitializeWithLibraries();
       body = buildSimpleScroll(body: const SizedBox.shrink());

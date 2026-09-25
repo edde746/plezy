@@ -27,6 +27,7 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/libraries_screen.dart';
 import 'package:plezy/screens/collection_detail_screen.dart';
+import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
 import 'package:plezy/screens/libraries/tabs/library_recommended_tab.dart';
 import 'package:plezy/screens/libraries/tabs/base_library_tab.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -276,6 +277,35 @@ void main() {
     // In place: no re-selection churn.
     expect(selected.length, selectionsBefore);
   });
+  testWidgets('switching through the TV Recommended backdrop keeps sibling tabs mounted', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final client = _HubClient();
+    final harness = await _Harness.create(
+      _GatedPreferences({'selected_library_key': _libraryA.globalKey}),
+      clients: [client],
+      libraryOrder: const [_libraryA],
+    );
+    addTearDown(harness.dispose);
+    await harness.pump(tester, settle: false);
+    await pumpRequestFrames(tester);
+    final controller = harness.controller(tester);
+    expect(controller.index, LibraryTabType.recommended.index);
+
+    controller.index = LibraryTabType.browse.index;
+    await pumpRequestFrames(tester);
+    final browse = tester.state(find.byType(LibraryBrowseTab));
+    final loads = client.pageRequestCount;
+    expect(loads, greaterThan(0));
+
+    controller.index = LibraryTabType.recommended.index;
+    await pumpRequestFrames(tester);
+    controller.index = LibraryTabType.browse.index;
+    await pumpRequestFrames(tester);
+
+    expect(tester.state(find.byType(LibraryBrowseTab)), same(browse));
+    expect(client.pageRequestCount, loads, reason: 'a kept-alive tab must not reload');
+  });
+
   testWidgets('Recommended keeps navigation and selection through pending, failed and successful refreshes', (
     tester,
   ) async {
