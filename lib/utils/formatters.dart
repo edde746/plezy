@@ -150,8 +150,10 @@ String formatClockTime(DateTime time, {required bool is24Hour}) {
 /// Formats a date as Today/Tomorrow or a localized abbreviated weekday.
 String formatRelativeDayLabel(DateTime date, {DateTime? now}) {
   final reference = now ?? DateTime.now();
-  final today = DateTime(reference.year, reference.month, reference.day);
-  final targetDay = DateTime(date.year, date.month, date.day);
+  // Whole calendar days, counted in UTC: local midnights are 23 or 25 hours
+  // apart across a DST change, which inDays would truncate.
+  final today = DateTime.utc(reference.year, reference.month, reference.day);
+  final targetDay = DateTime.utc(date.year, date.month, date.day);
   final diff = targetDay.difference(today).inDays;
   return switch (diff) {
     0 => t.liveTv.today,

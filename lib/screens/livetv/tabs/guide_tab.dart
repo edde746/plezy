@@ -1220,7 +1220,8 @@ class GuideTabState extends State<GuideTab>
     final target = DateTime(day.year, day.month, day.day);
 
     if (target == today) return t.liveTv.today;
-    if (target == today.add(const Duration(days: 1))) return t.liveTv.tomorrow;
+    // Calendar arithmetic: across a DST change a day is 23 or 25 hours.
+    if (target == DateTime(today.year, today.month, today.day + 1)) return t.liveTv.tomorrow;
 
     return DateFormat('EEEE', LocaleSettings.currentLocale.intlLocaleName).format(target);
   }
@@ -1253,7 +1254,7 @@ class GuideTabState extends State<GuideTab>
 
     final days = <DateTime>[];
     for (var i = 0; i < 8; i++) {
-      days.add(today.add(Duration(days: i)));
+      days.add(DateTime(today.year, today.month, today.day + i));
     }
 
     final value = await showAppMenu<Object>(
