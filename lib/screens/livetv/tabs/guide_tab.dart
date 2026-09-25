@@ -152,7 +152,7 @@ class GuideTabState extends State<GuideTab>
   final ScrollController _gridVerticalController = ScrollController();
   bool _syncingScroll = false;
 
-  final _programSelectController = DpadSelectLongPressController();
+  final _selectLongPressController = DpadSelectLongPressController();
   final _dayPickerKey = GlobalKey();
 
   // Stale-window catch-up state (#1297). The grid window is only auto
@@ -348,7 +348,7 @@ class GuideTabState extends State<GuideTab>
   @override
   void dispose() {
     _programLoadGeneration++;
-    _programSelectController.dispose();
+    _selectLongPressController.dispose();
     _guideFocusNode.dispose();
     _gridVerticalController.dispose();
     _gridHorizontalController.removeListener(_syncGridToHeader);
@@ -362,7 +362,7 @@ class GuideTabState extends State<GuideTab>
 
   void _handleGuideFocusChange(bool hasFocus) {
     if (_hasFocus == hasFocus) return;
-    if (!hasFocus) _resetProgramSelectLongPressState();
+    if (!hasFocus) _resetSelectLongPressState();
     _hasFocus = hasFocus;
     _publishFocusSnapshot();
   }
@@ -383,7 +383,7 @@ class GuideTabState extends State<GuideTab>
     );
   }
 
-  void _resetProgramSelectLongPressState() => _programSelectController.reset();
+  void _resetSelectLongPressState() => _selectLongPressController.reset();
 
   void _syncGridToHeader() {
     if (_syncingScroll) return;
@@ -779,7 +779,7 @@ class GuideTabState extends State<GuideTab>
 
     final ownerChannelIndex = _gridChannelIndex;
     final targetIdentity = guideAiringIdentity(target.channel, target.program);
-    return _programSelectController.handleKeyEvent(
+    return _selectLongPressController.handleKeyEvent(
       event,
       isOwnerActive: () {
         if (!mounted || _focusZone != _GuideZone.grid || _gridColumn != 1 || _gridChannelIndex != ownerChannelIndex) {
@@ -792,10 +792,46 @@ class GuideTabState extends State<GuideTab>
       },
       onShortPress: () => _activateProgram(target.channel, target.program),
       onLongPress: () {
-        _programSelectController.reset();
+        _selectLongPressController.reset();
         _showProgramDetails(target.channel, target.program);
       },
     );
+  }
+
+  LiveTvChannel? _focusedChannelTarget() {
+    if (_focusZone != _GuideZone.grid || _gridColumn != 0) return null;
+    if (_gridChannelIndex < 0 || _gridChannelIndex >= widget.channels.length) return null;
+    return widget.channels[_gridChannelIndex];
+  }
+
+  /// TV SELECT on a channel cell: a short press tunes and a hold toggles the
+  /// favorite, the same split as a tap and a long press on the cell.
+  KeyEventResult _handleFocusedChannelSelectKey(KeyEvent event) {
+    final onToggleFavorite = widget.onToggleFavorite;
+    final channel = _focusedChannelTarget();
+    if (onToggleFavorite == null || channel == null) return KeyEventResult.ignored;
+
+    final ownerChannelIndex = _gridChannelIndex;
+    return _selectLongPressController.handleKeyEvent(
+      event,
+      isOwnerActive: () => mounted && _focusedChannelTarget() != null && _gridChannelIndex == ownerChannelIndex,
+      onShortPress: () => tuneChannel(channel),
+      onLongPress: () {
+        _selectLongPressController.reset();
+        onToggleFavorite(channel);
+      },
+    );
+  }
+
+  /// The context-menu key (gamepad X, keyboard Menu) toggles the focused
+  /// channel's favorite. Down only, so a held key cannot flip it back and forth.
+  KeyEventResult _handleFocusedChannelContextMenuKey(KeyEvent event) {
+    if (!event.logicalKey.isContextMenuKey) return KeyEventResult.ignored;
+    final onToggleFavorite = widget.onToggleFavorite;
+    final channel = _focusedChannelTarget();
+    if (onToggleFavorite == null || channel == null) return KeyEventResult.ignored;
+    if (event is KeyDownEvent) onToggleFavorite(channel);
+    return KeyEventResult.handled;
   }
 
   KeyEventResult _handleFocusedProgramContextMenuKey(KeyEvent event) {
@@ -803,7 +839,7 @@ class GuideTabState extends State<GuideTab>
     final target = _focusedProgramTarget();
     if (target == null) return KeyEventResult.ignored;
 
-    _resetProgramSelectLongPressState();
+    _resetSelectLongPressState();
     _showProgramDetails(target.channel, target.program);
     return KeyEventResult.handled;
   }
@@ -813,7 +849,7 @@ class GuideTabState extends State<GuideTab>
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
       if (event is KeyUpEvent && key.isSelectKey) {
-        _resetProgramSelectLongPressState();
+        _resetSelectLongPressState();
       }
       return KeyEventResult.handled;
     }
@@ -838,10 +874,14 @@ class GuideTabState extends State<GuideTab>
     if (PlatformDetector.isTV()) {
       final selectResult = _handleFocusedProgramSelectKey(event);
       if (selectResult != KeyEventResult.ignored) return selectResult;
+      final channelSelectResult = _handleFocusedChannelSelectKey(event);
+      if (channelSelectResult != KeyEventResult.ignored) return channelSelectResult;
     }
 
     final contextMenuResult = _handleFocusedProgramContextMenuKey(event);
     if (contextMenuResult != KeyEventResult.ignored) return contextMenuResult;
+    final channelContextMenuResult = _handleFocusedChannelContextMenuKey(event);
+    if (channelContextMenuResult != KeyEventResult.ignored) return channelContextMenuResult;
 
     if (!event.isActionable) return KeyEventResult.ignored;
 
@@ -908,9 +948,20 @@ class GuideTabState extends State<GuideTab>
       } else if (key.isUpKey || (position != -1 && position < order.length - 1)) {
         _updateFocus(() {
           _gridChannelIndex = order[key.isUpKey ? position - 1 : position + 1];
-          if (_gridColumn == 1) _focusedProgram = _findCurrentProgram(_gridChannelIndex);
+          if (_gridColumn == 1) {
+            // Keep the focused time rather than jumping back to what airs now,
+            // which may be scrolled out of view (or outside a picked window).
+            final anchor = _focusedProgram;
+            _focusedProgram = anchor == null
+                ? _findCurrentProgram(_gridChannelIndex)
+                : _programNearTime(_gridChannelIndex, _programAnchorEpoch(anchor));
+            // A row with nothing in this window has no program cell; land on
+            // its channel cell instead of nowhere.
+            if (_focusedProgram == null) _gridColumn = 0;
+          }
         });
         _scrollToChannel(_gridChannelIndex);
+        if (_gridColumn == 1) _scrollToProgramTime(_focusedProgram);
       }
       return KeyEventResult.handled;
     }
@@ -980,6 +1031,33 @@ class GuideTabState extends State<GuideTab>
       if ((p.endsAt ?? 0) > now) return p;
     }
     return programs.firstOrNull;
+  }
+
+  /// Epoch second a vertical move should stay at: the focused program's start,
+  /// or the window start when it began before the window.
+  int _programAnchorEpoch(LiveTvProgram program) {
+    final gridStartEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
+    final begin = program.beginsAt ?? gridStartEpoch;
+    return begin < gridStartEpoch ? gridStartEpoch : begin;
+  }
+
+  /// The program on [channelIndex] airing at [epoch], else the one closest to
+  /// it, or null when the channel has nothing in this window.
+  LiveTvProgram? _programNearTime(int channelIndex, int epoch) {
+    if (channelIndex < 0 || channelIndex >= widget.channels.length) return null;
+    LiveTvProgram? nearest;
+    var nearestDistance = 0;
+    for (final program in _getProgramsForChannel(widget.channels[channelIndex])) {
+      final begin = program.beginsAt ?? 0;
+      final end = program.endsAt ?? begin;
+      if (begin <= epoch && end > epoch) return program;
+      final distance = begin > epoch ? begin - epoch : epoch - end;
+      if (nearest == null || distance < nearestDistance) {
+        nearest = program;
+        nearestDistance = distance;
+      }
+    }
+    return nearest;
   }
 
   /// Navigate to the next or previous program on the same channel.

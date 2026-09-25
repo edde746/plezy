@@ -392,6 +392,90 @@ void main() {
     expect(_focusedCellFinder(tester), findsNothing);
   });
 
+  testWidgets('up/down in the program column keeps the focused time', (tester) async {
+    final harness = _GuideHarness.twoServers();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    harness.serverA.schedule.completeSlots(0, 12);
+    await tester.pump();
+    harness.serverB!.schedule.completeSlots(0, 12);
+    await tester.pumpAndSettle();
+
+    await _focusGrid(tester);
+    _expectFocusedChannel(tester, 'A');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    // The window opens an hour before the current half-hour, so what airs
+    // now is always the third slot.
+    expect(find.ancestor(of: find.text('Slot 3'), matching: _focusedCellFinder(tester)), findsOneWidget);
+    for (var i = 0; i < 5; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+    }
+    expect(find.ancestor(of: find.text('Slot 8'), matching: _focusedCellFinder(tester)), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+
+    final focusedSlot8 = find.ancestor(of: find.text('Slot 8'), matching: _focusedCellFinder(tester));
+    expect(focusedSlot8, findsOneWidget);
+    // It is channel B's block, and it was scrolled into view.
+    expect(tester.getCenter(focusedSlot8).dy, closeTo(tester.getCenter(find.text('B')).dy, 20));
+    expect(tester.getRect(focusedSlot8).overlaps(tester.getRect(find.byType(GuideTab))), isTrue);
+  });
+
+  testWidgets('moving into a row with no programs focuses its channel cell', (tester) async {
+    final harness = _GuideHarness.twoServers();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    harness.serverA.schedule.completeSlots(0, 12);
+    await tester.pump();
+    harness.serverB!.schedule.completeEmpty(0);
+    await tester.pumpAndSettle();
+
+    await _focusGrid(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(find.ancestor(of: find.text('Slot 3'), matching: _focusedCellFinder(tester)), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'B');
+  });
+
+  testWidgets('the context-menu key toggles the focused channel favorite once per press', (tester) async {
+    final toggled = <String?>[];
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester, onToggleFavorite: (channel) => toggled.add(channel.callSign));
+    await harness.completeInitialEmpty(tester);
+
+    await _focusGrid(tester);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonX);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.gameButtonX);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonX);
+    await tester.pump();
+
+    expect(toggled, ['A']);
+  });
+
+  testWidgets('on TV a SELECT hold on a channel cell toggles its favorite', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final toggled = <String?>[];
+    final harness = _GuideHarness.oneServer();
+    addTearDown(harness.dispose);
+    await harness.pump(tester, onToggleFavorite: (channel) => toggled.add(channel.callSign));
+    await harness.completeInitialEmpty(tester);
+
+    await _focusGrid(tester);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    expect(toggled, ['A']);
+  });
+
   testWidgets('guide-search jump during load is stashed, wins over default anchoring, and lands focus', (tester) async {
     final harness = _GuideHarness.twoServers();
     addTearDown(harness.dispose);
@@ -544,7 +628,7 @@ final class _GuideHarness {
   final MultiServerProvider provider;
   final List<LiveTvChannel> channels;
 
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(WidgetTester tester, {void Function(LiveTvChannel)? onToggleFavorite}) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 720);
     addTearDown(() {
@@ -559,7 +643,9 @@ final class _GuideHarness {
             value: provider,
             child: MaterialApp(
               theme: monoTheme(dark: true),
-              home: Scaffold(body: GuideTab(channels: channels)),
+              home: Scaffold(
+                body: GuideTab(channels: channels, onToggleFavorite: onToggleFavorite),
+              ),
             ),
           ),
         ),
