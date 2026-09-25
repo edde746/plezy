@@ -2007,6 +2007,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _downloadManager.resumeQueuedDownloads(client);
   }
 
+  /// Re-evaluate queued and running downloads after the "download on Wi-Fi
+  /// only" setting changed.
+  Future<void> applyDownloadOnWifiOnly(bool wifiOnly) => _downloadManager.applyDownloadOnWifiOnly(wifiOnly);
+
   /// Backend-aware metadata lookup for offline UI. Routes through
   /// [DownloadManagerService] which dispatches to [PlexApiCache] or
   /// [JellyfinApiCache] based on the connection's `kind`.

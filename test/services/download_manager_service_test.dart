@@ -2282,6 +2282,39 @@ void main() {
     });
   });
 
+  group('Wi-Fi only policy', () {
+    Future<List<RequireWiFi>> applyAll(List<bool> values, {required bool supported}) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final requirements = <RequireWiFi>[];
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: supported,
+        requireWiFiOverride: (requirement) async {
+          requirements.add(requirement);
+          return true;
+        },
+      );
+      addTearDown(manager.dispose);
+      for (final value in values) {
+        await manager.applyDownloadOnWifiOnly(value);
+      }
+      return requirements;
+    }
+
+    test('overrides every native task in both directions', () async {
+      // asSetByTask would leave tasks enqueued with requiresWiFi waiting for
+      // Wi-Fi after the setting is turned off.
+      expect(await applyAll([true, false], supported: true), [RequireWiFi.forAllTasks, RequireWiFi.forNoTasks]);
+    });
+
+    test('is a no-op where downloads are unsupported', () async {
+      expect(await applyAll([true], supported: false), isEmpty);
+    });
+  });
+
   group('resume handling', () {
     test('failed native resume leaves paused row paused', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());

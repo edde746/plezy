@@ -145,6 +145,7 @@ class DownloadManagerService {
   final Future<void> Function()? _nativeRecoveryOverride;
   final Future<void> Function()? _fileDownloaderInitializerOverride;
   final NativeDownloaderOps? _nativeOpsOverride;
+  final Future<bool> Function(RequireWiFi requirement)? _requireWiFiOverride;
 
   final DownloadLocationSnapshot Function()? _downloadLocationReader;
   final Future<void> Function(String?) _writeDownloadPath;
@@ -268,6 +269,7 @@ class DownloadManagerService {
     @visibleForTesting Future<void> Function()? fileDownloaderInitializerOverride,
     @visibleForTesting Future<void> Function()? nativeRecoveryOverride,
     @visibleForTesting NativeDownloaderOps? nativeOpsOverride,
+    @visibleForTesting Future<bool> Function(RequireWiFi requirement)? requireWiFiOverride,
     @visibleForTesting DownloadLocationSnapshot Function()? downloadLocationReader,
     @visibleForTesting Future<void> Function(String?)? downloadPathWriter,
     @visibleForTesting Future<void> Function(String?)? downloadPathTypeWriter,
@@ -279,6 +281,7 @@ class DownloadManagerService {
        _database = database,
        _fileDownloaderInitializerOverride = fileDownloaderInitializerOverride,
        _nativeOpsOverride = nativeOpsOverride,
+       _requireWiFiOverride = requireWiFiOverride,
        _storageService = storageService,
        _clientResolver = clientResolver,
        _http = http ?? httpClient,
@@ -909,12 +912,31 @@ class DownloadManagerService {
     await FileDownloader().configure(
       globalConfig: [(Config.checkAvailableSpace, true), (Config.holdingQueue, (1, 1, 1))],
     );
+    // Bring the downloader's persisted policy in line with the setting (it
+    // may have been changed, e.g. by a settings import, while not running).
+    await applyDownloadOnWifiOnly((await SettingsService.getInstance()).read(SettingsService.downloadOnWifiOnly));
 
     await FileDownloader().trackTasks();
     // Deliver status updates from iOS background-to-foreground transitions
     await FileDownloader().resumeFromBackground();
 
     _fileDownloaderInitialized = true;
+  }
+
+  /// Apply the "download on Wi-Fi only" preference to every download the
+  /// native downloader holds. Each task's own flag is fixed at enqueue, so a
+  /// toggle would otherwise leave queued and running downloads on the old
+  /// policy — still waiting for Wi-Fi after it was turned off, or still on
+  /// cellular after it was turned on. The downloader's global policy overrides
+  /// the per-task flag and reschedules the tasks whose requirement changed.
+  Future<void> applyDownloadOnWifiOnly(bool wifiOnly) async {
+    if (!downloadsSupported) return;
+    final requirement = wifiOnly ? RequireWiFi.forAllTasks : RequireWiFi.forNoTasks;
+    try {
+      await (_requireWiFiOverride ?? FileDownloader().requireWiFi)(requirement);
+    } catch (e, st) {
+      appLogger.w('Failed to apply Wi-Fi-only download policy ($requirement)', error: e, stackTrace: st);
+    }
   }
 
   /// Recover downloads that were interrupted when the app was killed.
