@@ -386,12 +386,17 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         }
       }
 
+      var serversTried = 0;
+      var serversFailed = 0;
+      Object? firstFailure;
+
       // One liveTvServers entry per DVR: visit them all; channels dedupe below.
       await forEachLiveTvServer(
         multiServer,
         resolveClient: multiServer.getClientForServer,
         dedupeByServerId: false,
         body: (genericClient, serverInfo) async {
+          serversTried++;
           final liveTv = genericClient.liveTv;
           final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
           final sourceTitle = _sourceTitleForServerInfo(serverInfo);
@@ -427,9 +432,27 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           }
         },
         onError: (client, serverInfo, error, stackTrace) {
+          serversFailed++;
+          firstFailure ??= error;
           appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: error);
         },
       );
+
+      final failure = firstFailure;
+      if (failure != null && serversFailed == serversTried) {
+        if (!mounted) return;
+        // Every server failed, so there is nothing to replace the loaded
+        // channels with: keep them and report the failure, or show the error
+        // state when there were none (not an empty "no channels" guide).
+        final message = localizedLoadErrorText(failure, context: t.liveTv.title);
+        final keepChannels = _channels.isNotEmpty;
+        setState(() {
+          _isLoading = false;
+          if (!keepChannels) _error = message;
+        });
+        if (keepChannels) showErrorSnackBar(context, message);
+        return;
+      }
 
       allChannels.sort((a, b) {
         final aNum = double.tryParse(a.number ?? '') ?? 999999;

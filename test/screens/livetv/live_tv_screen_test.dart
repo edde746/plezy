@@ -234,6 +234,39 @@ void main() {
     expect(find.text(t.liveTv.whatsOn), findsNothing);
   });
 
+  testWidgets('a refresh that fails on every server keeps the loaded channels', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester, channelKeys: const ['channel-a', 'channel-b']);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+    harness.liveTv.favorites.complete(const []);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.liveTv.showAllChannels));
+    await tester.pumpAndSettle();
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+
+    harness.liveTv.channelsFailure = StateError('offline');
+    await tester.tap(find.byIcon(Symbols.refresh_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+    expect(find.text(t.errors.unableToLoad(context: t.liveTv.title)), findsOneWidget);
+    expect(find.text(t.liveTv.noChannels), findsNothing);
+  });
+
+  testWidgets('a first load that fails on every server shows the error state', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester, channelsFailure: StateError('offline'));
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+
+    expect(find.text(t.errors.unableToLoad(context: t.liveTv.title)), findsOneWidget);
+    expect(find.text(t.liveTv.noChannels), findsNothing);
+  });
+
   testWidgets('guide refresh reports a DVR reload failure instead of success', (tester) async {
     final dvr = _FakeLiveTvDvrSupport(reloadFailure: StateError('reload failed'));
     final harness = await _pumpLiveTvScreen(tester, dvr: dvr);
@@ -280,8 +313,9 @@ Future<_LiveTvHarness> _pumpLiveTvScreen(
   WidgetTester tester, {
   List<String>? channelKeys,
   _FakeLiveTvDvrSupport? dvr,
+  Object? channelsFailure,
 }) async {
-  final liveTv = _FakeLiveTvSupport(channelKeys: channelKeys, dvr: dvr);
+  final liveTv = _FakeLiveTvSupport(channelKeys: channelKeys, dvr: dvr)..channelsFailure = channelsFailure;
   final client = _FakeMediaServerClient(liveTv);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final provider = testMultiServerProvider(manager);
@@ -349,6 +383,7 @@ class _FakeLiveTvSupport implements LiveTvSupport {
   final String serverId;
   final String storeKey;
   final List<String> channelKeys;
+  Object? channelsFailure;
   final List<Completer<List<FavoriteChannel>>> _favoriteRequests = [];
   int _servedFavoriteRequests = 0;
 
@@ -378,6 +413,7 @@ class _FakeLiveTvSupport implements LiveTvSupport {
 
   @override
   Future<List<LiveTvChannel>> fetchChannels({String? lineup}) async => [
+    if (channelsFailure case final failure?) throw failure,
     for (final key in channelKeys)
       LiveTvChannel(
         key: key,
