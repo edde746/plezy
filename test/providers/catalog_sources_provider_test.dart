@@ -181,6 +181,23 @@ void main() {
       expect(client.calls, 2);
     });
 
+    test('an answer missing a source that failed to resolve is retried instead of cached', () async {
+      final trakt = _FakeWatchlistSource(CatalogSourceId.trakt);
+      final mal = _FakeWatchlistSource(CatalogSourceId.mal)..resolveError = StateError('mapping unavailable');
+      final provider = _FakeSourcesProvider([trakt, mal]);
+      addTearDown(provider.dispose);
+      final client = _ExternalIdsClient(const ExternalIds(imdb: 'tt1'));
+
+      final partial = await provider.watchlistCandidatesFor(item, client: client);
+      expect(partial.map((candidate) => candidate.source.id), [CatalogSourceId.trakt]);
+      expect(provider.cachedWatchlistCandidatesFor(item), isNull);
+
+      mal.resolveError = null;
+      final complete = await provider.watchlistCandidatesFor(item, client: client);
+      expect(complete.map((candidate) => candidate.source.id), [CatalogSourceId.trakt, CatalogSourceId.mal]);
+      expect(provider.cachedWatchlistCandidatesFor(item), same(complete));
+    });
+
     test('a null client resolves to nothing without caching the miss', () async {
       final provider = _FakeSourcesProvider([_FakeWatchlistSource(CatalogSourceId.trakt)]);
       addTearDown(provider.dispose);
@@ -241,12 +258,17 @@ class _FakeWatchlistSource implements CatalogSource {
   @override
   final CatalogSourceId id;
 
+  /// Thrown by [resolveItemIds] while set — the provider being unreachable.
+  Object? resolveError;
+
   @override
   bool get supportsWatchlist => true;
 
   @override
-  Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async =>
-      CatalogItemIds(imdb: external.imdb);
+  Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
+    if (resolveError != null) throw resolveError!;
+    return CatalogItemIds(imdb: external.imdb);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
