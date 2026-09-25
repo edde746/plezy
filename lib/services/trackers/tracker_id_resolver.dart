@@ -220,6 +220,11 @@ class TrackerIdResolver {
     final animeMatch = isMovie || isEpisodeSeason == null || episodeNumber == null
         ? null
         : await _lookupAnimeEpisodeMatchByCoordinate(external, isEpisodeSeason, episodeNumber);
+    // An AniDB special (anidbseason 0) is numbered S1, S2… beside its entry's
+    // regular episodes, and the list trackers have nowhere to count it: its
+    // number written as progress would rewind or complete the main series.
+    // Trackers that address the episode by its external ids still get it.
+    if (animeMatch != null && animeMatch.anidbSeason == 0) return _withoutAnimeMapping(external);
     final row = isMovie
         ? _pickMovieRow(rows)
         : _pickShowRow(rows, season: isEpisodeSeason, anidbId: anidbId, animeMatch: animeMatch);
@@ -239,7 +244,8 @@ class TrackerIdResolver {
     );
   }
 
-  /// The id set with no Fribb mapping attached, for trackers that never use one.
+  /// The id set with no Fribb mapping attached, for trackers that never use one
+  /// and for an episode no anime entry counts.
   ///
   /// Null for an AniDB-only item: Trakt and Simkl are the only trackers that
   /// report `needsFribb == false`, and neither speaks AniDB, so handing them a

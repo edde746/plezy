@@ -307,6 +307,37 @@ void main() {
     });
   });
 
+  group('TrackerIdResolver AniDB specials', () {
+    test('an episode Anime-Lists maps to an AniDB special writes no series progress', () async {
+      final animeProgress = _FakeAnimeProgressLookup(3);
+      final resolver = _resolver(
+        animeProgress: animeProgress,
+        animeLists: const _FakeAnimeListsLookup(
+          matches: {
+            '1-13': AnimeEpisodeMatch(
+              anidbId: 111,
+              anidbSeason: 0,
+              anidbEpisode: 3,
+              provider: AnimeListProvider.tvdb,
+              externalSeason: 1,
+              externalEpisode: 13,
+              kind: AnimeListMatchKind.explicit,
+            ),
+          },
+        ),
+        rows: const [FribbMappingRow(anidbId: 111, tvdbId: 81797, malId: 101, tvdbSeason: 1, type: 'TV')],
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 13));
+
+      expect(ids?.external.tvdb, 81797);
+      expect(ids?.anime, isNull);
+      expect(ids?.animeEpisodeNumber, isNull);
+      expect(ids?.animeProgress, isNull);
+      expect(animeProgress.resolveCalls, 0);
+    });
+  });
+
   group('TrackerIdResolver unmapped seasons', () {
     const season1 = FribbMappingRow(tvdbId: 81797, malId: 100, tvdbSeason: 1, tmdbSeason: 1, type: 'TV');
 
