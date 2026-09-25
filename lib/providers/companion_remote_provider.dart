@@ -179,7 +179,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (!isHostServerRunning) return;
 
     await _serializeLifecycle(() async {
-      if (!isHostServerRunning) return;
+      if (isDisposed || !isHostServerRunning) return;
+      final generation = _remoteGeneration;
       final ok = await _ensureCryptoReadyLocked(
         null,
         connections: connections,
@@ -190,8 +191,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       // Unchanged identities leave the host running (no restart). When they
       // change, the rebuild tore the host down — bring it back so the new set
       // is what's broadcasting. When every identity is gone the host stays
-      // down by design (`ok` is false).
-      if (ok && !isHostServerRunning) {
+      // down by design (`ok` is false). Nor is it restarted when the provider
+      // was disposed (a profile switch replaces it) or the session moved on
+      // while the rebuild ran: a server and a LAN broadcast started now would
+      // belong to no one.
+      if (ok && !isHostServerRunning && !isDisposed && generation == _remoteGeneration) {
         await _startHostServerLocked();
       }
     });
@@ -586,7 +590,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
   Future<void> _startHostServerLocked({void Function()? checkCurrent}) async {
     checkCurrent?.call();
-    if (_peerService?.isServerRunning == true) return;
+    if (isDisposed || _peerService?.isServerRunning == true) return;
     if (!isCryptoReady) {
       appLogger.w('CompanionRemote: Cannot start host — crypto not initialized');
       return;
