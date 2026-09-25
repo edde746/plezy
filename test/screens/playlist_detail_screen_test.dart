@@ -558,6 +558,33 @@ void main() {
     expect(harness.client.peakMutationCount, 1);
   });
 
+  testWidgets('a successful removal keeps the playlist editable', (tester) async {
+    final harness = await _createHarness(_mediaItems(3));
+    await _pushPlaylistRoute(tester, harness);
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    harness.client.completeRemove(0, true, applyToServer: true);
+    await tester.pumpAndSettle();
+
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_2']);
+    expect(
+      tester.widgetList<PlaylistItemCard>(find.byType(PlaylistItemCard)),
+      everyElement(
+        isA<PlaylistItemCard>()
+            .having((card) => card.canReorder, 'canReorder', isTrue)
+            .having((card) => card.onRemove, 'onRemove', isNotNull),
+      ),
+    );
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    expect(harness.client.removeRequests, hasLength(2));
+    harness.client.completeRemove(1, true, applyToServer: true);
+    await tester.pumpAndSettle();
+    expect(_visiblePlaylistItemIds(tester), ['item_2']);
+  });
+
   testWidgets('D-pad walking a long playlist keeps the whole focused card on screen', (tester) async {
     final harness = await _createHarness(_mediaItems(60));
     await _pushPlaylistRoute(tester, harness);
