@@ -407,6 +407,13 @@ class PlexClient
   @override
   final ServerId serverId;
   PlexProfileScopeId profileScopeId;
+
+  /// [PlexAccountConnection.id] of the plex.tv account this client is bound
+  /// under, set by the owning [MultiServerManager]. Scopes the account-level
+  /// Live TV favorites store ([favoriteStoreKey]).
+  @override
+  String? plexAccountId;
+
   Object _authenticationSessionId = Object();
 
   @override

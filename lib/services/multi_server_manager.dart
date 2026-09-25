@@ -116,6 +116,11 @@ class MultiServerManager {
   final Map<String, String> _clientIdByServer = {};
   final Map<String, PlexProfileScopeId> _plexScopeByServer = {};
 
+  /// Per-server owning [PlexAccountConnection.id]. The clientIdentifier above
+  /// is device-wide, so this is what tells two accounts' servers apart
+  /// (see [PlexClient.plexAccountId]).
+  final Map<String, String> _plexAccountByServer = {};
+
   String? _resolveClientIdentifier(ServerId serverId) => _clientIdByServer[serverId];
 
   /// Record the Plex identity a server is bound under — the single writer for
@@ -126,11 +131,15 @@ class MultiServerManager {
     String serverId,
     PlexServer server, {
     required String clientIdentifier,
+    required String accountId,
     PlexProfileScopeId? scope,
   }) {
     _clientIdByServer[serverId] = clientIdentifier;
+    _plexAccountByServer[serverId] = accountId;
     _plexServers[serverId] = server;
     if (scope != null) _plexScopeByServer[serverId] = scope;
+    final client = _clients[serverId];
+    if (client is PlexClient) client.plexAccountId = accountId;
   }
 
   /// Whether [compoundId] is still the client bound as the active user for
@@ -283,7 +292,7 @@ class MultiServerManager {
   void markPlexConnectionAuthError(PlexAccountConnection connection) {
     for (final server in connection.servers) {
       final id = server.clientIdentifier;
-      _registerPlexServer(id, server, clientIdentifier: connection.clientIdentifier);
+      _registerPlexServer(id, server, clientIdentifier: connection.clientIdentifier, accountId: connection.id);
       _serverStatus[id] = false;
       _authErrorServers.add(id);
     }
@@ -398,6 +407,7 @@ class MultiServerManager {
       onAllEndpointsExhausted: () => _onServerEndpointsExhausted(ServerId(serverId)),
       seedTranscoderVideoSupport: observedTranscoderVideo,
     );
+    client.plexAccountId = _plexAccountByServer[serverId];
 
     // Save the initial endpoint (relay is refused — see _savePreferredEndpoint)
     await _savePreferredEndpoint(ServerId(serverId), storage, baseUrl, capturedServer: server);
@@ -542,6 +552,7 @@ class MultiServerManager {
     _activeJellyfinMachine.remove(serverId);
     _plexServers.remove(serverId);
     _clientIdByServer.remove(serverId);
+    _plexAccountByServer.remove(serverId);
     _plexScopeByServer.remove(serverId);
     _serverStatus.remove(serverId);
     _authErrorServers.remove(serverId);
@@ -601,7 +612,13 @@ class MultiServerManager {
           );
           if (!applied || isStale() || !identical(_clients[serverId], existing)) return;
 
-          _registerPlexServer(serverId, server, clientIdentifier: connection.clientIdentifier, scope: profileScopeId);
+          _registerPlexServer(
+            serverId,
+            server,
+            clientIdentifier: connection.clientIdentifier,
+            accountId: connection.id,
+            scope: profileScopeId,
+          );
           _authErrorServers.remove(serverId);
           _serverStatus[serverId] = true;
           bound.add(serverId);
@@ -616,7 +633,13 @@ class MultiServerManager {
         return;
       }
 
-      _registerPlexServer(serverId, server, clientIdentifier: connection.clientIdentifier, scope: profileScopeId);
+      _registerPlexServer(
+        serverId,
+        server,
+        clientIdentifier: connection.clientIdentifier,
+        accountId: connection.id,
+        scope: profileScopeId,
+      );
       try {
         final client = await _createClientForServer(
           server: server,
@@ -1480,6 +1503,7 @@ class MultiServerManager {
     _serverStatus.clear();
     _authErrorServers.clear();
     _clientIdByServer.clear();
+    _plexAccountByServer.clear();
     _plexScopeByServer.clear();
     _activeOptimizations.clear();
     if (!_statusController.isClosed) {

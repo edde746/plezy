@@ -451,6 +451,8 @@ void main() {
       expect(manager.authErrorServerIds, isNot(contains('server-1')));
       expect(client.config.token, 'new-token');
       expect(client.profileScopeId, buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'new-profile'));
+      // Live TV favorites are keyed by the owning account, not the device.
+      expect(client.plexAccountId, 'account-1');
       expect((await client.fetchLibraries()).map((library) => library.title), ['Fallback Movies']);
     });
 
@@ -993,6 +995,7 @@ void main() {
 
       final client = factory.clients['relay-server']!;
       expect(client.config.baseUrl, relay.uri);
+      expect(client.plexAccountId, 'relay-account');
       expect(storage.getServerEndpoint(ServerId('relay-server')), isNull);
       expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('relay-server')), isTrue);
 
