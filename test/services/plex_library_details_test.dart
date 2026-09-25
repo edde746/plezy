@@ -792,6 +792,35 @@ void main() {
     expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']).toList(), ['0', '0', '2']);
     expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
   });
+
+  test('music hub content keeps the artists, albums and tracks its preview row shows', () async {
+    final client = makeClient((request) async {
+      if (request.url.path != '/hubs/sections/3/recentlyAdded') return http.Response('not found', 404);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'size': 3,
+            'totalSize': 3,
+            'Metadata': [
+              {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Artist'},
+              {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album'},
+              {'ratingKey': 'track-1', 'type': 'track', 'title': 'Track'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final all = await client.fetchMoreHubItems('/hubs/sections/3/recentlyAdded');
+    final page = await client.fetchMoreHubItemsPage('/hubs/sections/3/recentlyAdded', start: 0, size: 50);
+
+    expect(all.map((item) => item.id), ['artist-1', 'album-1', 'track-1']);
+    expect(page.items.map((item) => item.id), ['artist-1', 'album-1', 'track-1']);
+    expect(page.totalCount, 3);
+  });
 }
 
 Map<String, dynamic> _filtersPayload() => {

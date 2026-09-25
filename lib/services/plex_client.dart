@@ -2515,14 +2515,12 @@ class PlexClient
         (start, size, abort) =>
             _fetchPaginatedList(hubKey, start: start, size: size, abort: abort, librarySectionID: hubSectionID),
       );
-      return items.where(_isVideoMetadata).toList();
+      return items.where(_videoOrMusicHubItem).toList();
     } catch (e, st) {
       appLogger.e('Failed to get hub content', error: e, stackTrace: st);
       return [];
     }
   }
-
-  bool _isVideoMetadata(PlexMetadataDto item) => ContentTypes.videoTypes.contains(item.type?.toLowerCase());
 
   Future<_LibraryContentResult> _getHubContentPage(
     String hubKey, {
@@ -2553,7 +2551,9 @@ class PlexClient
       rawOffset += rawItems.length;
 
       for (final item in rawItems) {
-        if (!_isVideoMetadata(item)) continue;
+        // Same filter as the library-hub preview rows, so a music hub's
+        // "View All" lists what its row showed.
+        if (!_videoOrMusicHubItem(item)) continue;
         if (filteredSeen >= filteredOffset && pageItems.length < pageSize) {
           pageItems.add(item);
         }
