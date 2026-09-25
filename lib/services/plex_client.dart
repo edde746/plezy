@@ -3421,6 +3421,28 @@ class PlexClient
     }
   }
 
+  /// The item's current server-side metadata for the metadata editor. Unlike
+  /// [fetchItem] it never falls back to the API cache: the editor diffs tag
+  /// edits against these values, so a stale copy would re-add or drop tags.
+  Future<MediaItem?> fetchEditableItem(String id) async {
+    final MediaServerResponse response;
+    try {
+      response = await _getWithFailover('/library/metadata/$id');
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
+    final metadataJson = _getFirstMetadataJson(response);
+    if (metadataJson == null) return null;
+    final container = _getMediaContainer(response);
+    final metadata = _tagMetadataWithLibrary(
+      PlexMetadataDto.fromJsonWithImages(metadataJson),
+      librarySectionID: _librarySectionIdFromJson(metadataJson) ?? _librarySectionIdFromJson(container),
+      librarySectionTitle: _librarySectionTitleFromJson(metadataJson) ?? _librarySectionTitleFromJson(container),
+    );
+    return PlexMappers.mediaItem(metadata);
+  }
+
   @override
   Future<List<MediaItem>> fetchChildren(String parentId) async {
     final children = await _getChildren(parentId);
