@@ -428,7 +428,7 @@ class PlexServer {
     if (json['clientIdentifier'] is! String || (json['clientIdentifier'] as String).isEmpty) {
       return false;
     }
-    if (json['accessToken'] is! String || (json['accessToken'] as String).isEmpty) {
+    if (json['accessToken'] is! String) {
       return false;
     }
 
