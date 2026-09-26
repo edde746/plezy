@@ -654,9 +654,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // transcode (Jellyfin v1, or Plex installs without a working
     // transcoder) would just bounce straight to playback with default
     // settings, which is what the regular Play action already does.
-    // Both backends inline their version list in browse responses
-    // (`Media[]` for Plex, `MediaSources` for Jellyfin), so the count
-    // is known up front. Also hidden while the item's server is
+    // A row's version list, when present, is complete (the
+    // [MediaItem.mediaVersions] contract), so the count is known up
+    // front. Also hidden while the item's server is
     // unreachable: at most one version exists locally and plain Play
     // already targets it, so the picker would be a no-op detour
     // offering versions that can't play (issue #1440).

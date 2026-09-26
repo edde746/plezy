@@ -174,6 +174,11 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemStringList) List<String>? styles,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? moods,
     @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? roles,
+
+    /// The item's versions, one per Plex `Media`. Null means the response
+    /// carried none, so fetch the item; a non-empty list is complete.
+    /// Version pickers, saved-version resolution and delete impact trust it
+    /// without a detail fetch. Plex inlines every `Media` on list rows.
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
@@ -261,6 +266,11 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemStringList) List<String>? styles,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? moods,
     @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? roles,
+
+    /// The item's versions, one per `MediaSources` entry. Same contract as
+    /// the Plex variant: null means not fetched, non-empty means complete.
+    /// Emby list rows are complete only when `AlternateMediaSources` is
+    /// requested beside `MediaSources` (#2474); the client adds it.
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,

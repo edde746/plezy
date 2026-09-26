@@ -209,12 +209,32 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     'UserDataLastPlayedDate',
   ];
 
+  /// Emby's companion to `MediaSources` on list rows.
+  ///
+  /// Emby list routes answer `Fields=MediaSources` with the row item's own
+  /// file only, dropping every version merged with it; the single-item route
+  /// returns them all. Measured on Emby 4.10.0.40 with two merged episode
+  /// versions: `/Shows/{id}/Episodes` and `/Users/{id}/Items?ParentId=` gave
+  /// one source to admin and non-admin users alike, and two — in the detail
+  /// route's order — once this token was named. Emby staff recommend it for
+  /// exactly this (community topic 148258). A one-entry list on a merged item
+  /// breaks the [MediaItem.mediaVersions] completeness contract: pickers,
+  /// saved-version resolution and delete impact all trust it (#2474).
+  ///
+  /// Only added where `MediaSources` is already requested: the server resolves
+  /// alternates per row, a cost the lighter row sets have no use for.
+  static const _embyAlternateMediaSourcesField = 'AlternateMediaSources';
+
   /// Append the fields this dialect withholds, skipping any the set already
   /// names so Jellyfin's request strings stay byte-identical.
   String _withDialectRowFields(String fields) {
     if (dialect != MediaBrowserDialect.emby) return fields;
     final present = fields.split(',').map((field) => field.trim()).toSet();
-    final missing = _embyWithheldRowFields.where((field) => !present.contains(field));
+    final missing = [
+      ..._embyWithheldRowFields.where((field) => !present.contains(field)),
+      if (present.contains('MediaSources') && !present.contains(_embyAlternateMediaSourcesField))
+        _embyAlternateMediaSourcesField,
+    ];
     return missing.isEmpty ? fields : '$fields,${missing.join(',')}';
   }
 

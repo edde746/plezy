@@ -269,6 +269,55 @@ void main() {
       );
     });
 
+    test('Emby episode rows carry every merged version (#2474)', () async {
+      // Models the measured Emby 4.10 behavior: list routes answer
+      // Fields=MediaSources with the row item's own file only, and add the
+      // versions merged with it once AlternateMediaSources is named too.
+      final requests = _RequestCapture((request) {
+        // A season id is not a series: the Seasons probe finds nothing and the
+        // client falls through to its ParentId episode route.
+        if (request.url.path.endsWith('/Seasons')) return jsonResponse({'Items': <Object?>[], 'TotalRecordCount': 0});
+        final fields = (request.url.queryParameters['Fields'] ?? '').split(',');
+        return jsonResponse({
+          'Items': [
+            {
+              'Id': '9',
+              'Name': 'S01E01 [DropBox]',
+              'Type': 'Episode',
+              'MediaSources': [
+                if (fields.contains('AlternateMediaSources'))
+                  {'Id': 'mediasource_12', 'Name': 'S01E01 [Teldrive]', 'MediaStreams': <Object?>[]},
+                {'Id': 'mediasource_9', 'Name': 'S01E01 [DropBox]', 'MediaStreams': <Object?>[]},
+              ],
+            },
+          ],
+          'TotalRecordCount': 1,
+        });
+      });
+      final emby = testEmbyClient(handler: requests.handle);
+      addTearDown(emby.close);
+
+      final seasonPage = await emby.fetchSeasonEpisodesPage('series-1', 'season-1');
+      final parentPage = await emby.fetchChildrenPage('season-1');
+
+      for (final row in [seasonPage.items.single, parentPage.items.single]) {
+        expect(row.mediaVersions!.map((version) => version.id), ['mediasource_12', 'mediasource_9']);
+      }
+    });
+
+    test('Emby rows without MediaSources skip the per-row alternate lookup', () async {
+      final requests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[], 'TotalRecordCount': 0}));
+      final emby = testEmbyClient(handler: requests.handle);
+      addTearDown(emby.close);
+
+      await emby.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
+      await emby.fetchContinueWatching(count: 5);
+
+      for (final request in requests.requests) {
+        expect(request.url.queryParameters['Fields'] ?? '', isNot(contains('AlternateMediaSources')));
+      }
+    });
+
     test('Emby scopes trailers and special features while Jellyfin keeps item routes', () async {
       final embyRequests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[]}));
       final jellyfinRequests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[]}));
@@ -321,16 +370,19 @@ void main() {
       }
     });
 
-    test('Jellyfin request strings stay free of the Emby-only token', () async {
+    test('Jellyfin request strings stay free of the Emby-only tokens', () async {
       final requests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[]}));
       final client = testJellyfinClient(handler: requests.handle);
       addTearDown(client.close);
 
       await client.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
+      // The ParentId episode route names MediaSources; Jellyfin's rows already
+      // carry every version there.
       await client.fetchChildren('season-1');
 
       for (final request in requests.requests) {
         expect(request.url.query, isNot(contains('UserDataLastPlayedDate')));
+        expect(request.url.query, isNot(contains('AlternateMediaSources')));
       }
     });
   });
