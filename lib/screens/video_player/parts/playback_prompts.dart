@@ -256,6 +256,47 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     if (countdown) _startAutoPlayTimer();
   }
 
+  /// Put the Play Next prompt back after a reload of the same item cleared it
+  /// (TV background suspend restore), resuming its countdown where it held;
+  /// a countdown of -1 means auto-play was off and the prompt waits.
+  Future<void> _restorePlayNextPrompt({required int countdown}) async {
+    if (!mounted || !_canNavigateMediaItems()) return;
+    if (_episode.isLoadingNext || _episode.showPlayNextDialog || _showStillWatchingPrompt) return;
+
+    // The restored stream sits at the finished episode's end; its EOF must
+    // not raise a second prompt while this one is being put back.
+    if (!_episode.completionLatch.triggered) _episode.completionLatch.latch();
+
+    // The reload dropped the adjacent episodes and re-resolves them in the
+    // background; the prompt needs its target now.
+    if (_episode.next == null) {
+      final metadata = _currentMetadata;
+      await _loadAdjacentEpisodes(metadata: metadata);
+      if (!mounted || _currentMetadata != metadata) return;
+    }
+    if (_episode.isLoadingNext || _episode.showPlayNextDialog || _showStillWatchingPrompt) return;
+    if (_episode.next == null) {
+      // Nothing to advance to after all: hand the parked end back to the
+      // ordinary completion flow, which retries or exits.
+      _episode.completionLatch.reset();
+      return;
+    }
+
+    final remaining = countdown == 0 ? 1 : countdown;
+    _setPlayerState(() {
+      _episode.showPlayNextDialog = true;
+      _episode.autoPlayCountdown.value = remaining;
+    });
+
+    if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _playNextConfirmFocusNode.requestFocus();
+      });
+    }
+
+    if (remaining > 0) _startAutoPlayTimer();
+  }
+
   void _cancelAutoPlay() {
     if (_shuttingDown) return;
     _episode.autoPlayTimer?.cancel();

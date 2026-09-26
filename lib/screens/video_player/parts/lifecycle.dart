@@ -351,6 +351,11 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null || !_isPlayerInitialized) return;
 
+    // The countdown holds while backgrounded, so a suspend can land with the
+    // Play Next prompt up. The reload below clears the prompt; without it the
+    // finished episode parks at its last frame with nothing to advance it.
+    final playNextCountdown = _episode.showPlayNextDialog ? _episode.autoPlayCountdown.value : null;
+
     _recordLifecycleState('resumed', action: 'tv_background_suspend_reload');
     final outcome = await _reloadMediaInPlace(
       metadata: _currentMetadata,
@@ -365,7 +370,9 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       showErrorUi: false,
       reason: 'TV background suspend restore',
     );
-    if (outcome == MediaReloadOutcome.rejected) {
+    if (outcome == MediaReloadOutcome.opened) {
+      if (playNextCountdown != null) await _restorePlayNextPrompt(countdown: playNextCountdown);
+    } else if (outcome == MediaReloadOutcome.rejected) {
       appLogger.w('TV background suspend restore: in-place reload rejected');
     } else if (outcome == MediaReloadOutcome.failed) {
       appLogger.w('TV background suspend restore: in-place reload failed');

@@ -12,6 +12,7 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/play_queue.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/models/livetv_channel.dart';
@@ -23,6 +24,7 @@ import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/screens/video_player/live_tv_session_args.dart';
 import 'package:plezy/services/download_storage_service.dart';
+import 'package:plezy/services/episode_navigation_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_coordinator.dart';
@@ -638,55 +640,133 @@ void main() {
     );
   });
 
-  group('Windows display-switch hold', () {
-    Future<({GlobalKey<VideoPlayerScreenState> key, _ReloadPlayer player})> pumpHoldScreen(
-      WidgetTester tester, {
-      WatchTogetherProvider? watchTogether,
-    }) async {
-      final client = _ReloadClient();
-      final multi = testMultiServer(clients: [client]);
-      final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
-      final accountPreferences = AccountPreferencesController();
-      final initializationHold = Completer<void>();
-      Future<void> holdInitialization() => initializationHold.future;
-      PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox.shrink());
-        PlaybackCoordinator.instance.unregisterMusicSession(holdInitialization);
-        if (!initializationHold.isCompleted) initializationHold.complete();
-        await tester.pump();
-        offlineWatch.dispose();
-        accountPreferences.dispose();
-      });
-      final key = GlobalKey<VideoPlayerScreenState>();
-      final item = testMediaItem(id: 'movie-prior', serverId: 'srv-1', backend: MediaBackend.jellyfin);
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
-            ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
-            ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-            ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
-            ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether ?? WatchTogetherProvider()),
-            Provider<AppDatabase>.value(value: db),
-            ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
-          ],
-          child: MaterialApp(
-            home: VideoPlayerScreen(
-              key: key,
-              metadata: item,
-              selectedQualityPreset: TranscodeQualityPreset.original,
-              watchTogetherLease: watchTogether?.capturePlaybackLease(),
-            ),
+  Future<({GlobalKey<VideoPlayerScreenState> key, _ReloadPlayer player})> pumpReloadScreen(
+    WidgetTester tester, {
+    WatchTogetherProvider? watchTogether,
+  }) async {
+    final client = _ReloadClient();
+    final multi = testMultiServer(clients: [client]);
+    final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
+    final accountPreferences = AccountPreferencesController();
+    final initializationHold = Completer<void>();
+    Future<void> holdInitialization() => initializationHold.future;
+    PlaybackCoordinator.instance.registerMusicSession(stopAndDispose: holdInitialization);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      PlaybackCoordinator.instance.unregisterMusicSession(holdInitialization);
+      if (!initializationHold.isCompleted) initializationHold.complete();
+      await tester.pump();
+      offlineWatch.dispose();
+      accountPreferences.dispose();
+    });
+    final key = GlobalKey<VideoPlayerScreenState>();
+    final item = testMediaItem(id: 'movie-prior', serverId: 'srv-1', backend: MediaBackend.jellyfin);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
+          ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+          ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
+          ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether ?? WatchTogetherProvider()),
+          Provider<AppDatabase>.value(value: db),
+          ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
+        ],
+        child: MaterialApp(
+          home: VideoPlayerScreen(
+            key: key,
+            metadata: item,
+            selectedQualityPreset: TranscodeQualityPreset.original,
+            watchTogetherLease: watchTogether?.capturePlaybackLease(),
           ),
         ),
-      );
-      final fakePlayer = _ReloadPlayer(opens: true);
-      addTearDown(fakePlayer.dispose);
-      key.currentState!.player = fakePlayer;
-      return (key: key, player: fakePlayer);
-    }
+      ),
+    );
+    final fakePlayer = _ReloadPlayer(opens: true);
+    addTearDown(fakePlayer.dispose);
+    key.currentState!.player = fakePlayer;
+    return (key: key, player: fakePlayer);
+  }
 
+  group('TV background suspend', () {
+    testWidgets('a suspend under the Play Next prompt restores the prompt and its countdown', (tester) async {
+      TvDetectionService.debugSetAppleTVOverride(true);
+      addTearDown(() {
+        TvDetectionService.debugSetAppleTVOverride(null);
+      });
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final screen = await pumpReloadScreen(tester);
+          final state = screen.key.currentState!;
+          final fakePlayer = screen.player;
+          await state.debugWirePlayerStreamsForTesting();
+          fakePlayer.emitPlaybackRestart();
+          await state.debugMarkPlaybackStartedForTesting();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          // The restore's reload drops the adjacent episodes and resolves them
+          // again, here from the queue the episode was launched in.
+          final next = testMediaItem(
+            id: 'next',
+            title: 'Next episode',
+            serverId: 'srv-1',
+            backend: MediaBackend.jellyfin,
+          );
+          Provider.of<PlaybackStateProvider>(
+            screen.key.currentContext!,
+            listen: false,
+          ).setPlaybackFromLocalQueue(LocalPlayQueue(items: [state.widget.metadata, next], currentIndex: 0));
+          state.debugCommitAdjacentEpisodesForTesting(
+            AdjacentEpisodes(
+              next: next,
+              nextStatus: QueueNavigationStatus.found,
+              previousStatus: QueueNavigationStatus.boundary,
+            ),
+          );
+
+          fakePlayer.setPosition(fakePlayer.state.duration - const Duration(seconds: 2));
+          fakePlayer.emitPlaying(false);
+          fakePlayer.setCompleted(true);
+          state.debugCompleteVideoForTesting();
+          await pumpUntil(tester, () => state.debugPlayNextPromptVisibleForTesting);
+          final countdownAtBackground = state.debugAutoPlayCountdownForTesting;
+          expect(countdownAtBackground, greaterThan(0));
+
+          // Backgrounded, the countdown holds; the TV grace timer then
+          // releases the pipeline.
+          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+          await tester.pump(const Duration(seconds: 3));
+          expect(state.debugAutoPlayCountdownForTesting, countdownAtBackground);
+          await state.debugSuspendForTvBackgroundForTesting();
+          expect(fakePlayer.stopCalls, 1);
+
+          // Returning restores the finished episode in place, which clears the
+          // prompt; it has to come back with the countdown where it held.
+          final opensBefore = fakePlayer.openCalls;
+          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+          for (var i = 0; i < 400 && fakePlayer.openCalls == opensBefore; i++) {
+            await tester.pump(const Duration(milliseconds: 50));
+            if (fakePlayer.openCalls == opensBefore) {
+              await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+            }
+          }
+          expect(fakePlayer.openCalls, opensBefore + 1, reason: 'the restore reopens the suspended item');
+          await pumpUntil(tester, () => state.debugPlayNextPromptVisibleForTesting);
+          expect(state.debugAutoPlayCountdownForTesting, countdownAtBackground);
+
+          await tester.pump(const Duration(seconds: 1));
+          expect(state.debugAutoPlayCountdownForTesting, countdownAtBackground - 1, reason: 'the countdown resumes');
+        },
+      );
+    });
+  });
+
+  group('Windows display-switch hold', () {
     testWidgets('the hold is not broadcast to the Watch Together room', (tester) async {
       final peer = _ScreenPeerService();
       final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
@@ -708,7 +788,7 @@ void main() {
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
-          final screen = await pumpHoldScreen(tester, watchTogether: watchTogether);
+          final screen = await pumpReloadScreen(tester, watchTogether: watchTogether);
           final fakePlayer = screen.player;
           screen.key.currentState!.debugBindWatchTogetherForTesting();
           fakePlayer.emitPlaybackRestart();
@@ -764,7 +844,7 @@ void main() {
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
-          final screen = await pumpHoldScreen(tester, watchTogether: watchTogether);
+          final screen = await pumpReloadScreen(tester, watchTogether: watchTogether);
           final fakePlayer = screen.player;
           screen.key.currentState!.debugBindWatchTogetherForTesting();
           fakePlayer.emitPlaybackRestart();
@@ -819,7 +899,7 @@ void main() {
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
-          final screen = await pumpHoldScreen(tester);
+          final screen = await pumpReloadScreen(tester);
           final fakePlayer = screen.player;
           fakePlayer.emitPlaybackRestart();
           await tester.pump();

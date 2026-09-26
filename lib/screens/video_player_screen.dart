@@ -1210,6 +1210,35 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void> debugHoldPlaybackForDisplaySwitchForTesting(Duration delay) =>
       _holdPlaybackForDisplaySwitch(player!, delay);
 
+  /// The TV background suspend otherwise fires only from its Android TV grace
+  /// timer; the restore then runs from the ordinary resume path.
+  @visibleForTesting
+  Future<void> debugSuspendForTvBackgroundForTesting() => _suspendPlayerForTvBackground();
+
+  /// What a completed startup leaves behind, for tests that seed [player]
+  /// directly instead of running the full open.
+  @visibleForTesting
+  Future<void> debugMarkPlaybackStartedForTesting() async {
+    final settings = await SettingsService.getInstance();
+    _volumeController ??= VideoVolumeController(
+      player: player!,
+      settings: settings,
+      initialVolume: 100,
+      onUserChange: _announceVolumeCommand,
+    );
+    setState(() => _isPlayerInitialized = true);
+    _firstFrame.markReady();
+  }
+
+  @visibleForTesting
+  void debugCompleteVideoForTesting() => _onVideoCompleted(true);
+
+  @visibleForTesting
+  bool get debugPlayNextPromptVisibleForTesting => _episode.showPlayNextDialog;
+
+  @visibleForTesting
+  int get debugAutoPlayCountdownForTesting => _episode.autoPlayCountdown.value;
+
   @visibleForTesting
   Future<bool> debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
 
