@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/favorite_channels_repository.dart';
+import 'package:plezy/services/prefs_recovery.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../test_helpers/prefs.dart';
@@ -126,6 +127,50 @@ void main() {
       final result = await repo.read(key: _key, legacyKey: _legacyKey);
       expect(result.map((c) => c.id), ['ch-current']);
       expect((await SharedPreferences.getInstance()).getString(_key), isNotNull);
+    });
+
+    test('desktop adopts the prefixed legacy entry through the shared cache', () async {
+      // Windows and Linux keep both stores in one file, so the legacy entry is
+      // visible to the shared cache under its `flutter.` spelling. The legacy
+      // plugin must not be used to clear it: it rewrites the whole file from
+      // its launch-time copy, wiping every setting saved since.
+      _seedPostMigrationStores(
+        async: {
+          '$legacyKeyPrefix$_key': _list(['ch-desktop']),
+          'other_setting': 'changed-after-launch',
+        },
+        legacy: {
+          _key: _list(['ch-desktop']),
+        },
+      );
+      PrefsRecovery.debugSetSupportedPlatformOverride(true);
+
+      final result = await repo.read(key: _key, legacyKey: _legacyKey);
+      expect(result.map((c) => c.id), ['ch-desktop']);
+
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      expect(prefs.getString(_key), _list(['ch-desktop']));
+      expect(prefs.getString('$legacyKeyPrefix$_key'), isNull);
+      expect(prefs.getString('other_setting'), 'changed-after-launch');
+      // Untouched: nothing was written through the legacy plugin.
+      expect((await SharedPreferences.getInstance()).getString(_key), isNotNull);
+    });
+
+    test('desktop adopts the prefixed bare-machineId legacy entry last', () async {
+      _seedPostMigrationStores(
+        async: {
+          '$legacyKeyPrefix$_legacyKey': _list(['ch-oldest']),
+        },
+        legacy: {},
+      );
+      PrefsRecovery.debugSetSupportedPlatformOverride(true);
+
+      final result = await repo.read(key: _key, legacyKey: _legacyKey);
+      expect(result.map((c) => c.id), ['ch-oldest']);
+
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      expect(prefs.getString(_key), _list(['ch-oldest']));
+      expect(prefs.getString('$legacyKeyPrefix$_legacyKey'), isNull);
     });
 
     test('migrate: false reads the legacy store without moving it', () async {

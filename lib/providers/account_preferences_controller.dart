@@ -304,6 +304,38 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
     // the same notification, including transitions to no eligible principal.
     if (changed || refChanged) safeNotifyListeners();
     if (ref != null && (refChanged || repository.cached(ref) == null)) await _loadActive(ref);
+    unawaited(_loadNextUpRewatchingAccounts(accounts, playbackRef: ref));
+  }
+
+  /// Next Up rewatching is the one preference a Jellyfin client applies from
+  /// its own account's read ([AccountPreferenceKey.rewatchingInNextUp]), and
+  /// every Jellyfin account the profile browses shows Next Up, not only the
+  /// one playback takes its defaults from. Nothing waits on these, so they
+  /// load in the background once the bind has connected the clients.
+  Future<void> _loadNextUpRewatchingAccounts(
+    List<AccountPreferenceAccount> accounts, {
+    required AccountRef? playbackRef,
+  }) async {
+    final generation = _generation;
+    final accountGeneration = _accountGeneration;
+    await _activeProfile?.awaitBindingSettle();
+    for (final account in accounts) {
+      if (isDisposed || generation != _generation || accountGeneration != _accountGeneration) return;
+      final ref = account.ref;
+      if (ref == playbackRef || !(ref.backend.dialect?.supportsNextUpRewatching ?? false)) continue;
+      if (repository.cached(ref) != null) continue;
+      try {
+        await repository.load(ref);
+      } on AccountPreferencesUnavailableException {
+        appLogger.d('AccountPreferencesController: ${ref.key} unreachable, its Next Up keeps the default');
+      } catch (error, stackTrace) {
+        appLogger.w(
+          'AccountPreferencesController: failed to load ${ref.key} preferences',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
   }
 
   static bool _sameCredentials(AccountPreferenceAccount a, AccountPreferenceAccount b) {

@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:cached_network_image_ce/cached_network_image.dart' show FileInfo;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -119,6 +122,50 @@ void main() {
     expect(ok.statusCode, 200);
   });
 
+  test('a response whose headers never arrive releases its slot', () async {
+    final stalled = Completer<http.StreamedResponse>();
+    final client = createArtworkHttpClientForTest(
+      MockClient.streaming((request, _) async {
+        if (request.url.path == '/stalled') return stalled.future;
+        return http.StreamedResponse(Stream.value('poster-bytes'.codeUnits), 200);
+      }),
+      maxConcurrent: 1,
+      stallTimeout: const Duration(milliseconds: 20),
+    );
+
+    await expectLater(client.send(get('/stalled')).timeout(timeout), throwsA(isA<TimeoutException>()));
+
+    final ok = await client.send(get('/poster')).timeout(timeout);
+    expect(await ok.stream.bytesToString().timeout(timeout), 'poster-bytes');
+
+    // A late answer from a transport that ignored the abort is discarded.
+    final lateBodyCancelled = Completer<void>();
+    final lateBody = StreamController<List<int>>(onCancel: () => lateBodyCancelled.complete());
+    stalled.complete(http.StreamedResponse(lateBody.stream, 200));
+    await lateBodyCancelled.future.timeout(timeout);
+    await lateBody.close();
+  });
+
+  test('a body that stops mid-transfer releases its slot', () async {
+    final body = StreamController<List<int>>();
+    final client = createArtworkHttpClientForTest(
+      MockClient.streaming((request, _) async {
+        if (request.url.path == '/stalled') return http.StreamedResponse(body.stream, 200);
+        return http.StreamedResponse(Stream.value('poster-bytes'.codeUnits), 200);
+      }),
+      maxConcurrent: 1,
+      stallTimeout: const Duration(milliseconds: 20),
+    );
+
+    final stalled = await client.send(get('/stalled')).timeout(timeout);
+    body.add('partial'.codeUnits);
+    await expectLater(stalled.stream.drain<void>().timeout(timeout), throwsA(isA<TimeoutException>()));
+
+    final ok = await client.send(get('/poster')).timeout(timeout);
+    expect(await ok.stream.bytesToString().timeout(timeout), 'poster-bytes');
+    await body.close();
+  });
+
   test('cancelling a successful body releases its slot', () async {
     final client = createArtworkHttpClientForTest(mixedClient(), maxConcurrent: 1);
 
@@ -129,5 +176,58 @@ void main() {
     final ok = await client.send(get('/poster')).timeout(timeout);
     expect(ok.statusCode, 200);
     await ok.stream.drain<void>();
+  });
+
+  group('artwork credentials', () {
+    const token = 'secret-token';
+    const plexUrl =
+        'https://srv.example:32400/photo/:/transcode?width=200&minSize=1'
+        '&url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F99%3FX-Plex-Token%3D$token&X-Plex-Token=$token';
+
+    test('redaction blanks outer and nested Plex tokens and Jellyfin api keys', () {
+      expect(
+        redactArtworkUrl(plexUrl),
+        'https://srv.example:32400/photo/:/transcode?width=200&minSize=1'
+        '&url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F99%3FX-Plex-Token%3D&X-Plex-Token=',
+      );
+      expect(
+        redactArtworkUrl('https://jf.example/Items/1/Images/Primary?maxWidth=300&api_key=$token'),
+        'https://jf.example/Items/1/Images/Primary?maxWidth=300&api_key=',
+      );
+      expect(redactArtworkUrl('https://cdn.example/poster.jpg'), 'https://cdn.example/poster.jpg');
+    });
+
+    test('the cache stores the redacted URL but downloads with the token', () async {
+      final dir = await Directory.systemTemp.createTemp('artwork_cache_test');
+      addTearDown(() => dir.delete(recursive: true));
+      final requests = <http.BaseRequest>[];
+      final manager = PlexImageCacheManager.forTesting(
+        httpClientFactory: () => MockClient((request) async {
+          requests.add(request);
+          return http.Response.bytes([1, 2, 3], 200);
+        }),
+        cacheDirectoryProvider: () async => dir,
+      );
+
+      // No explicit key: the cache falls back to keying the entry by its URL.
+      final downloaded = await manager.getFileStream(plexUrl).firstWhere((r) => r is FileInfo) as FileInfo;
+      final cached = await manager.getFileFromCache(redactArtworkUrl(plexUrl));
+      await manager.dispose();
+
+      expect(requests.single.url.queryParameters['X-Plex-Token'], token);
+      expect(requests.single.url.queryParameters['url'], contains('X-Plex-Token=$token'));
+      expect(requests.single.headers.keys.map((k) => k.toLowerCase()), isNot(contains('x-plezy-credentialed-url')));
+      expect(downloaded.originalUrl, isNot(contains(token)));
+      expect(cached?.originalUrl, redactArtworkUrl(plexUrl));
+
+      final persisted = <String>[];
+      await for (final entity in dir.list(recursive: true)) {
+        if (entity is File && entity.path.contains('hive')) {
+          persisted.add(utf8.decode(await entity.readAsBytes(), allowMalformed: true));
+        }
+      }
+      expect(persisted, isNotEmpty);
+      expect(persisted.join(), isNot(contains(token)));
+    });
   });
 }

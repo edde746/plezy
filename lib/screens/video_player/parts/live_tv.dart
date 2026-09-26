@@ -24,9 +24,31 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     });
   }
 
+  /// Release a live start's or zap's transition lock and run recovery for a
+  /// failure of its replacement stream that arrived before it committed.
+  void _finishLiveReplacement(PlaybackTransitionLease lease, int replacement, {required bool committed}) {
+    final ownsLock = _transitionGate.owns(lease);
+    final runDeferred = _live.endReplacement(replacement, committed: committed && ownsLock);
+    _transitionGate.release(lease);
+    if (runDeferred && mounted && !_shuttingDown && !_isExiting.value && !_hasFatalPlaybackError) {
+      appLogger.w('Replacement live stream failed before its transition committed; recovering now');
+      _beginLiveLadderRetry();
+    }
+  }
+
   /// Advance the fallback ladder and retry — the error path's entry point.
   void _beginLiveLadderRetry() {
     if (_shuttingDown) return;
+    // A start or zap that already opened its stream owns it but has not
+    // adopted its session yet: recovering now would re-tune the session being
+    // replaced, and the gate turns the retry away. Park the failure until the
+    // replacement commits (see [_finishLiveReplacement]).
+    final transition = _transitionGate.transition;
+    if ((transition == PlaybackTransition.startingLive || transition == PlaybackTransition.switchingChannel) &&
+        _live.deferReplacementFailure()) {
+      appLogger.d('Live stream failure deferred until ${transition.name} commits');
+      return;
+    }
     _live.fallbackLevel++;
     _live.retrying = true;
     appLogger.w('Live stream failed, retrying with fallback level ${_live.fallbackLevel}');
@@ -185,8 +207,6 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _liveSeek.cancel();
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null) return;
-    final generation = _transitionGate.generation;
-    bool isCurrent() => _isCurrentPlaybackGeneration(generation, currentPlayer);
     final session = _live.session;
     if (session == null) {
       _live.retrying = false;
@@ -195,6 +215,36 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       unawaited(_handleBackButton());
       return;
     }
+
+    // Recovery reopens the stream, so it holds the transition lock like any
+    // other in-place transition. A zap or start in flight is replacing the
+    // stream that failed; recovering the old session under it would reopen
+    // the previous channel over the new one. The new stream reports its own
+    // failures once it is in place.
+    final lease = _transitionGate.tryAcquire(PlaybackTransition.recoveringLive);
+    if (lease == null) {
+      _live.retrying = false;
+      appLogger.d('Live stream retry skipped: ${_transitionGate.transition.name} in flight');
+      return;
+    }
+    try {
+      await _recoverLiveStream(currentPlayer, session, lease);
+    } finally {
+      _transitionGate.release(lease);
+    }
+  }
+
+  Future<void> _recoverLiveStream(
+    Player currentPlayer,
+    LiveTvPlaybackSession session,
+    PlaybackTransitionLease lease,
+  ) async {
+    final generation = _transitionGate.generation;
+    // A zap supersedes the recovery by taking the lock over (see
+    // [_switchLiveChannel]); everything recovered after that is discarded.
+    bool isCurrent() =>
+        _isCurrentPlaybackGeneration(generation, currentPlayer) &&
+        _transitionGate.owns(lease, expected: PlaybackTransition.recoveringLive);
 
     final ds = _live.fallbackLevel < 1;
     final dsa = _live.fallbackLevel < 2;
@@ -481,8 +531,17 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
 
+    // Zapping away from a failing channel must not wait out its recovery (a
+    // re-tune can take the whole tune budget): the zap replaces that stream,
+    // so it supersedes the recovery, which discards whatever it recovered.
+    if (_transitionGate.transition == PlaybackTransition.recoveringLive) {
+      _transitionGate.forceIdle();
+      _live.retrying = false;
+    }
     final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingChannel);
     if (transitionLease == null) return; // debounce concurrent switches
+    final replacement = _live.beginReplacement();
+    var committed = false;
     bool isCurrentChannelSwitch() =>
         mounted &&
         !_shuttingDown &&
@@ -556,6 +615,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
 
       _live.adoptSession(session);
       _live.fallbackLevel = 0;
+      committed = true;
 
       if (!mounted) return;
       _setPlayerState(() {
@@ -595,7 +655,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       appLogger.e('Failed to switch channel', error: e);
       if (mounted) showErrorSnackBar(context, t.liveTv.channelSwitchFailed(reason: localizedErrorReason(e)));
     } finally {
-      _transitionGate.release(transitionLease);
+      _finishLiveReplacement(transitionLease, replacement, committed: committed);
     }
   }
 

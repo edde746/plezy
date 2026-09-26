@@ -65,21 +65,64 @@ void main() {
     expect(await client.liveTv.buildFavoriteChannelSource(lineup: 'provider-b'), 'server://machine-1/provider-b');
   });
 
-  test('favorite store is account device scoped instead of token scoped', () {
+  test('favorite store is account scoped instead of token scoped', () {
     final a = makeClient(
       (_) async => http.Response('{}', 200),
       token: 'server-token-a',
       clientIdentifier: 'account-device',
-    );
+    )..plexAccountId = 'plex.account-1';
     final b = makeClient(
       (_) async => http.Response('{}', 200),
       token: 'server-token-b',
       clientIdentifier: 'account-device',
-    );
+    )..plexAccountId = 'plex.account-1';
     addTearDown(a.close);
     addTearDown(b.close);
 
     expect(a.liveTv.favoriteStoreKey, b.liveTv.favoriteStoreKey);
+  });
+
+  test('favorite stores of two accounts on one device stay separate', () {
+    // X-Plex-Client-Identifier is device-wide, shared by every account.
+    final a = makeClient((_) async => http.Response('{}', 200), clientIdentifier: 'device')
+      ..plexAccountId = 'plex.account-1';
+    final b = makeClient((_) async => http.Response('{}', 200), clientIdentifier: 'device')
+      ..plexAccountId = 'plex.account-2';
+    addTearDown(a.close);
+    addTearDown(b.close);
+
+    expect(a.liveTv.favoriteStoreKey, isNot(b.liveTv.favoriteStoreKey));
+  });
+
+  test('a failing plex.tv favorites read never fails the media server over', () async {
+    final requests = <Uri>[];
+    final client = PlexClient.forTesting(
+      config: PlexConfig(
+        baseUrl: 'https://plex.example.com',
+        token: 'tok',
+        clientIdentifier: 'client',
+        product: 'Plezy',
+        version: '1',
+        machineIdentifier: 'machine-1',
+      ),
+      serverId: ServerId('machine-1'),
+      profileScopeId: buildPlexProfileScopeId(serverId: ServerId('machine-1'), profileId: 'profile-a'),
+      httpClient: MockClient((request) async {
+        requests.add(request.url);
+        return http.Response('service unavailable', 503);
+      }),
+      prioritizedEndpoints: const ['https://plex.example.com', 'https://backup.example.com'],
+      endpointProbeHttpClientFactory: () => MockClient((request) async {
+        requests.add(request.url);
+        return jsonResponse({'MediaContainer': <String, dynamic>{}});
+      }),
+    );
+    addTearDown(client.close);
+
+    await expectLater(client.liveTv.fetchFavoriteChannels(), throwsA(isA<MediaServerHttpException>()));
+
+    expect(requests.map((u) => u.host), ['epg.provider.plex.tv']);
+    expect(client.config.baseUrl, 'https://plex.example.com');
   });
 
   test('favorite read preserves a successful empty response', () async {

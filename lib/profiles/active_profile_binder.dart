@@ -24,16 +24,29 @@ typedef PlexHomePinPrompt = Future<String?> Function(Profile profile, {String? e
 typedef ShouldDeferInitialBind = FutureOr<bool> Function(Profile profile);
 
 class _ProfileBindResult {
-  const _ProfileBindResult({required this.visibleServerIds, required this.expectedServerIds});
+  const _ProfileBindResult({
+    required this.visibleServerIds,
+    required this.expectedServerIds,
+    this.discoveredMembership = const {},
+  });
 
-  const _ProfileBindResult.empty() : visibleServerIds = const {}, expectedServerIds = const {};
+  const _ProfileBindResult.empty()
+    : visibleServerIds = const {},
+      expectedServerIds = const {},
+      discoveredMembership = const {};
 
   _ProfileBindResult.visible(Set<String> ids)
     : visibleServerIds = Set.unmodifiable(ids),
-      expectedServerIds = Set.unmodifiable(ids);
+      expectedServerIds = Set.unmodifiable(ids),
+      discoveredMembership = const {};
 
   final Set<String> visibleServerIds;
   final Set<String> expectedServerIds;
+
+  /// Server ids per Plex connection id, for connections whose plex.tv
+  /// resource refresh succeeded in this bind. Authoritative: they replace the
+  /// connection's cached membership in the profile's expected set.
+  final Map<String, Set<String>> discoveredMembership;
 }
 
 /// Settled outcome of a `fetchServers` call, so the resource refresh can run
@@ -340,6 +353,21 @@ class ActiveProfileBinder {
       ]);
       if (!_isCurrentBind(profile.id, generation)) return false;
       final visibleServerIds = <String>{};
+      final discoveredMembership = <String, Set<String>>{for (final result in results) ...result.discoveredMembership};
+      // A successful resource refresh is authoritative for its connection:
+      // servers plex.tv no longer lists must not stay expected (and so
+      // registered) just because the persisted snapshot still has them.
+      // Connections whose refresh failed keep their cached membership.
+      expectedServerIds
+        ..clear()
+        ..addAll(
+          _expectedServerIdsForProfile(
+            profile,
+            joinRows: joinRows,
+            connectionsById: connectionsById,
+            discoveredMembership: discoveredMembership,
+          ),
+        );
       for (final result in results) {
         visibleServerIds.addAll(result.visibleServerIds);
         expectedServerIds.addAll(result.expectedServerIds);
@@ -351,14 +379,29 @@ class ActiveProfileBinder {
       // would misclassify a revoked token as a connectivity failure.
       final authErrorServerIds = serverManager.authErrorServerIds;
 
-      // Remove servers the profile no longer has access to. Always set the
-      // filter to the bound set (even when empty) so a profile with no
-      // connections shows nothing — falling back to "all visible" on empty
-      // would leak servers attached to other profiles.
-      for (final serverId in serverManager.serverIds.toList()) {
-        if (!visibleServerIds.contains(serverId)) {
-          serverManager.removeServer(ServerId(serverId));
+      // Remove servers the profile no longer has access to, including
+      // client-less registrations (a failed connect): a reconnect would
+      // otherwise rebuild them with the previous profile's token. Servers the
+      // profile expects stay registered while offline so a reconnect can
+      // bring them back, unless what is registered was made for another
+      // profile. Always set the filter to the bound set (even when empty) so
+      // a profile with no connections shows nothing — falling back to "all
+      // visible" on empty would leak servers attached to other profiles.
+      final jellyfinConnectionIds = <String>{
+        for (final pc in joinRows)
+          if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) id,
+      };
+      for (final serverId in serverManager.registeredServerIds) {
+        final belongs = visibleServerIds.contains(serverId) || expectedServerIds.contains(serverId);
+        if (belongs &&
+            !serverManager.isRegisteredForOtherProfile(
+              ServerId(serverId),
+              profileId: profile.id,
+              jellyfinConnectionIds: jellyfinConnectionIds,
+            )) {
+          continue;
         }
+        serverManager.removeServer(ServerId(serverId));
       }
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
       multiServerProvider.setVisibleServerIds(visibleServerIds);
@@ -401,24 +444,31 @@ class ActiveProfileBinder {
   /// `_serverIdsForProfile` (profile_connection_cleanup.dart) — that one is
   /// join-rows-only and [ServerId]-typed, while this set keeps growing with
   /// bind results and is compared against the manager's raw string ids.
+  ///
+  /// A Plex connection listed in [discoveredMembership] contributes that
+  /// fresh membership instead of its persisted server list.
   Set<String> _expectedServerIdsForProfile(
     Profile profile, {
     required List<ProfileConnection> joinRows,
     required Map<String, Connection> connectionsById,
+    Map<String, Set<String>> discoveredMembership = const {},
   }) {
+    Iterable<String> plexMembership(PlexAccountConnection account) =>
+        discoveredMembership[account.id] ?? account.servers.map((server) => server.clientIdentifier);
+
     final expected = <String>{};
     final parentId = profile.parentConnectionId;
     if (profile.isPlexHome && parentId != null) {
-      if (connectionsById[parentId] case PlexAccountConnection(:final servers)) {
-        expected.addAll(servers.map((server) => server.clientIdentifier));
+      if (connectionsById[parentId] case final PlexAccountConnection account) {
+        expected.addAll(plexMembership(account));
       }
     }
 
     for (final pc in joinRows) {
       if (parentId != null && pc.connectionId == parentId) continue;
       switch (connectionsById[pc.connectionId]) {
-        case PlexAccountConnection(:final servers):
-          expected.addAll(servers.map((server) => server.clientIdentifier));
+        case final PlexAccountConnection account:
+          expected.addAll(plexMembership(account));
         case JellyfinConnection(:final serverMachineId):
           expected.add(serverMachineId);
         case null:
@@ -560,7 +610,8 @@ class ActiveProfileBinder {
       }
       switch (conn) {
         case PlexAccountConnection():
-          expected.addAll(conn.servers.map((server) => server.clientIdentifier));
+          // Cached membership is seeded by the caller, which drops it when
+          // this bind's resource refresh replaces it.
           futures.add(
             _bindLocalPlexConnection(
               profile: profile,
@@ -576,11 +627,13 @@ class ActiveProfileBinder {
       }
     }
     final results = await Future.wait(futures);
+    final discovered = <String, Set<String>>{};
     for (final result in results) {
       visible.addAll(result.visibleServerIds);
       expected.addAll(result.expectedServerIds);
+      discovered.addAll(result.discoveredMembership);
     }
-    return _ProfileBindResult(visibleServerIds: visible, expectedServerIds: expected);
+    return _ProfileBindResult(visibleServerIds: visible, expectedServerIds: expected, discoveredMembership: discovered);
   }
 
   Future<_ProfileBindResult> _bindLocalPlexConnection({
@@ -708,7 +761,11 @@ class ActiveProfileBinder {
           final result = await _connectFromServers(account, token, servers, profileLabel, profileId: profileId);
           if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
           await markUsed?.call();
-          return result;
+          return _ProfileBindResult(
+            visibleServerIds: result.visibleServerIds,
+            expectedServerIds: result.expectedServerIds,
+            discoveredMembership: {account.id: result.expectedServerIds},
+          );
         case _ServerFetchStatus.empty:
           if (usingCachedToken) {
             appLogger.w(
@@ -745,7 +802,7 @@ class ActiveProfileBinder {
             error: fetched.error,
             stackTrace: fetched.stackTrace,
           );
-          serverManager.markPlexConnectionAuthError(account);
+          serverManager.markPlexConnectionAuthError(account, profileId: profileId);
           return _ProfileBindResult.visible(account.servers.map((server) => server.clientIdentifier).toSet());
         case _ServerFetchStatus.transientFailure:
           appLogger.w(
@@ -907,9 +964,17 @@ class ActiveProfileBinder {
   /// Persist a freshly fetched resource list onto the stored account row so
   /// later cold starts (and the cached-metadata fallbacks) work from current
   /// URIs instead of the sign-in-day snapshot. Best-effort.
+  ///
+  /// Written only while the stored row still matches the bind's [account]
+  /// snapshot: plex.tv can answer after a sign-out removed the account (an
+  /// upsert would re-insert it) or after a re-sign-in replaced its token.
   Future<void> _persistRefreshedServers(PlexAccountConnection account, List<PlexServer> servers) async {
     try {
-      await connections.upsert(account.copyWith(servers: servers));
+      await connections.upsert(account.copyWith(servers: servers), expected: account);
+    } on StateError {
+      appLogger.d(
+        'ActiveProfileBinder: ${account.accountLabel} changed or was removed; not persisting refreshed servers',
+      );
     } catch (e, st) {
       appLogger.w(
         'ActiveProfileBinder: failed to persist refreshed servers for ${account.accountLabel}',
@@ -974,7 +1039,7 @@ class ActiveProfileBinder {
             // but only surface the auth banner while this profile is active.
             await onAuthRejected();
             if (_isCurrentBind(profileId, generation)) {
-              serverManager.markPlexConnectionAuthError(account);
+              serverManager.markPlexConnectionAuthError(account, profileId: profileId);
             }
           } else {
             appLogger.w(
@@ -1064,7 +1129,7 @@ class ActiveProfileBinder {
   }
 
   void _clearBoundServers() {
-    for (final serverId in serverManager.serverIds.toList()) {
+    for (final serverId in serverManager.registeredServerIds) {
       serverManager.removeServer(ServerId(serverId));
     }
     multiServerProvider.setExpectedVisibleServerIds(<String>{});

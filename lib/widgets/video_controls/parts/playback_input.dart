@@ -782,7 +782,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _hiddenSeek.cancel();
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    if (widget.isLive && widget.onLiveSeekBy != null) {
+    if (widget.isLive) {
+      // Without a capture buffer there is no window to move within: the
+      // stream is pinned to the live edge, and a raw player seek would only
+      // disturb it. Same rule as [_seekByWithFeedback].
+      if (widget.onLiveSeekBy == null) return;
       final applied = widget.onLiveSeekBy!(delta.inSeconds);
       _registerSkipFeedback(
         isForward: isForward,

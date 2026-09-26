@@ -35,11 +35,14 @@ const _qualifiedLibrary = MediaLibrary(
   serverId: 'server-a',
 );
 
-Future<({int Function() selects, int Function() backs})> _pumpLibraryManagementLauncher(
+Future<({int Function() selects, int Function() backs, LibrariesProvider libraries})> _pumpLibraryManagementLauncher(
   WidgetTester tester, {
   MediaLibrary library = _qualifiedLibrary,
   List<MediaLibrary>? libraries,
   MultiServerProvider? multiServerProvider,
+  // Admin actions are offered to owners and administrators only. Most tests
+  // exercise the actions themselves, so they skip that check; null keeps it.
+  bool Function(MediaLibrary library)? canAdministerLibrary = _alwaysAdmin,
 }) async {
   final librariesProvider = LibrariesProvider();
   await librariesProvider.updateLibraryOrder(libraries ?? [library]);
@@ -84,7 +87,8 @@ Future<({int Function() selects, int Function() backs})> _pumpLibraryManagementL
                     child: Builder(
                       builder: (context) => ElevatedButton(
                         autofocus: true,
-                        onPressed: () => showLibraryManagementSheet(context),
+                        onPressed: () =>
+                            showLibraryManagementSheet(context, canAdministerLibrary: canAdministerLibrary),
                         child: const Text('Open library management'),
                       ),
                     ),
@@ -99,8 +103,10 @@ Future<({int Function() selects, int Function() backs})> _pumpLibraryManagementL
   );
   await tester.pumpAndSettle();
 
-  return (selects: () => underlyingSelects, backs: () => underlyingBacks);
+  return (selects: () => underlyingSelects, backs: () => underlyingBacks, libraries: librariesProvider);
 }
+
+bool _alwaysAdmin(MediaLibrary library) => true;
 
 Future<void> _openScanConfirmation(WidgetTester tester) async {
   // Switch from the desktop pointer default to keyboard mode, then activate the
@@ -253,6 +259,87 @@ void main() {
       expect(rect.top, greaterThanOrEqualTo(viewport.top), reason: 'focused row $index sits above the viewport');
       expect(rect.bottom, lessThanOrEqualTo(viewport.bottom), reason: 'focused row $index sits below the viewport');
     }
+  });
+
+  test('reconcileLibraryOrder keeps the sheet order over the current libraries', () {
+    MediaLibrary library(String id, {String title = ''}) =>
+        MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: 'server-a');
+
+    final reconciled = reconcileLibraryOrder(
+      [library('b'), library('gone'), library('a')],
+      [library('a', title: 'fresh'), library('b'), library('new')],
+    );
+
+    expect(reconciled.map((l) => l.id), ['b', 'a', 'new']);
+    expect(reconciled[1].title, 'fresh');
+  });
+
+  testWidgets('a reorder after libraries load mid-sheet keeps the new libraries', (tester) async {
+    MediaLibrary library(String id) => MediaLibrary(
+      id: id,
+      backend: MediaBackend.plex,
+      title: 'Library $id',
+      kind: MediaKind.movie,
+      serverId: 'server-a',
+    );
+
+    final launcher = await _pumpLibraryManagementLauncher(tester, libraries: [library('a'), library('b')]);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    // Another server's libraries finish loading while the sheet is open.
+    await launcher.libraries.updateLibraryOrder([library('a'), library('b'), library('c')]);
+    await tester.pumpAndSettle();
+    expect(find.text('Library c'), findsOneWidget);
+
+    // Move the first row down one place and confirm.
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(launcher.libraries.libraries.map((l) => l.id), ['b', 'a', 'c']);
+  });
+
+  testWidgets('library admin actions are offered only on servers the user administers', (tester) async {
+    final adminClient = testJellyfinClient(
+      connection: testJellyfinConnection(machineId: 'admin-srv', isAdministrator: true),
+    );
+    final userClient = testJellyfinClient(connection: testJellyfinConnection(machineId: 'user-srv'));
+    final manager = MultiServerManager()
+      ..debugRegisterJellyfinClientForTesting(adminClient)
+      ..debugRegisterJellyfinClientForTesting(userClient);
+    final provider = testMultiServerProvider(manager);
+    addTearDown(() {
+      provider.dispose();
+      manager.dispose();
+    });
+
+    MediaLibrary library(String serverId, String title) => MediaLibrary(
+      id: '$serverId-movies',
+      backend: MediaBackend.jellyfin,
+      title: title,
+      kind: MediaKind.movie,
+      serverId: serverId,
+    );
+
+    await _pumpLibraryManagementLauncher(
+      tester,
+      libraries: [library('admin-srv', 'Admin Movies'), library('user-srv', 'User Movies')],
+      multiServerProvider: provider,
+      canAdministerLibrary: null,
+    );
+    await tester.tap(find.text('Open library management'));
+    await tester.pumpAndSettle();
+
+    Finder optionsIn(String title) => find.descendant(
+      of: find.ancestor(of: find.text(title), matching: find.byType(ListTile)),
+      matching: find.byTooltip(t.libraries.libraryOptions),
+    );
+    expect(optionsIn('Admin Movies'), findsOneWidget);
+    expect(optionsIn('User Movies'), findsNothing);
   });
 
   for (final action in ['scan', 'empty_trash']) {

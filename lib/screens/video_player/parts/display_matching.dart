@@ -162,19 +162,65 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     if (player == null || _displayModeService == null) return;
 
     try {
-      final output = await PlayerOutputFormat.read(player!);
-      if (!mounted || player == null) return;
-      final sigPeak = double.tryParse(await player!.getProperty('video-params/sig-peak') ?? '');
+      final currentPlayer = player!;
+      final output = await PlayerOutputFormat.read(currentPlayer);
+      if (!mounted || player != currentPlayer) return;
+      final sigPeak = double.tryParse(await currentPlayer.getProperty('video-params/sig-peak') ?? '');
       if (!mounted || _displayModeService == null) return;
+      final displayModeService = _displayModeService!;
 
-      final delay = await _displayModeService!.applyDisplayMatching(fps: output.fps, sigPeak: sigPeak);
+      final delay = await displayModeService.applyDisplayMatching(fps: output.fps, sigPeak: sigPeak);
+      if (!mounted || player != currentPlayer) return;
+
+      // Leaving fullscreen clears mpv's colorspace hint so its HDR swapchain
+      // is released before system HDR goes off (_restoreWindowsDisplayMode).
+      // With system HDR on again, restore the hint the user's HDR setting
+      // asks for, or mpv keeps presenting SDR.
+      if (displayModeService.hdrStateChanged) {
+        final settingsService = await SettingsService.getInstance();
+        final enableHDR = settingsService.read(SettingsService.enableHDR);
+        await currentPlayer.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
+      }
 
       if (delay > Duration.zero) {
-        await Future.delayed(delay);
+        await _holdPlaybackForDisplaySwitch(currentPlayer, delay);
       }
     } catch (e) {
       appLogger.w('Failed to apply display mode matching', error: e);
     }
+  }
+
+  /// Hold playback through the user's display switch delay so the display
+  /// finishes re-syncing before playback runs on (as the Android switch
+  /// does), rather than just waiting while the video keeps playing.
+  ///
+  /// The pause and resume are the screen's own, not the viewer's: a bound
+  /// Watch Together room would take them as intents, so the hold runs
+  /// detached like the first-frame display negotiation. The resume answers
+  /// to the playback generation the hold started in: an in-place reload or
+  /// source switch that ran meanwhile owns the play state it left (its own
+  /// resume, or a room startup hold on the replacement), so the resume waits
+  /// for it to settle and stands down if it opened anything.
+  Future<void> _holdPlaybackForDisplaySwitch(Player currentPlayer, Duration delay) async {
+    if (!currentPlayer.state.playing) {
+      await Future<void>.delayed(delay);
+      return;
+    }
+    final generation = _transitionGate.generation;
+    bool isCurrent() => _isCurrentPlaybackGeneration(generation, currentPlayer);
+    await _withWatchTogetherDetached(() async {
+      await currentPlayer.pause();
+      await Future<void>.delayed(delay);
+      // Wait out the transition itself, not just its generation bump: leaving
+      // this window rebinds the room, and a reload still opening its
+      // replacement owns that rebind (and the startup hold it carries). Once
+      // it has rebound, the stale binding keeps this window from rebinding
+      // again.
+      await _transitionGate.waitForIdle(() => mounted && !_shuttingDown && player == currentPlayer);
+      // A pause the viewer asked for meanwhile clears the play intent.
+      if (!isCurrent() || !_playbackIntentShouldPlay) return;
+      await _playWithPlaybackIntent(currentPlayer);
+    });
   }
 
   /// Called when fullscreen state changes — apply or restore Windows display

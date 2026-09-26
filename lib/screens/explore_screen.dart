@@ -529,7 +529,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 onFocusedItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {
                   final rowHub = _rowForHub(hub);
-                  return rowHub == null ? Future.value(hub.items) : _explore.loadAllForHub(rowHub);
+                  return rowHub == null ? () => Future.value(hub.items) : () => _explore.loadAllForHub(rowHub);
                 },
                 onNavigateUp: _actionBarKey.currentState?.requestFocusOnFirst,
                 onNavigateToSidebar: _navigateToSidebar,

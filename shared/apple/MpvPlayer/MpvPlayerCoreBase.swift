@@ -199,9 +199,20 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   /// Properties that must still flow to Dart while backgrounded (state-critical).
+  /// The track properties change about once per file, and Dart's track
+  /// selection for an episode that auto-advances in PiP or background playback
+  /// waits on them; dropped, that episode loses its audio/subtitle choice.
   private static let criticalProperties: Set<String> = [
     "pause", "eof-reached", "paused-for-cache", "time-pos", "duration", "seekable",
+    "track-list", "aid", "sid", "secondary-sid",
   ]
+
+  /// Latest value of each other property dropped while backgrounded, replayed
+  /// when the core leaves the background: mpv reports a property again only
+  /// when it changes, so a dropped update would otherwise stay lost (e.g. the
+  /// initial audio-device-list of a macOS core that starts hidden). Accessed
+  /// only on `queue`.
+  private var backgroundedPropertyChanges: [String: (value: Any?, sourceId: Int64?)] = [:]
 
   private static let internalSigPeakObserverId: UInt64 = UInt64.max - 1
   private static let internalWidthObserverId: UInt64 = UInt64.max - 2
@@ -288,6 +299,21 @@ class MpvPlayerCoreBase: NSObject {
     lifecycleLock.lock()
     lifecycleState.isBackgrounded = backgrounded
     lifecycleLock.unlock()
+    guard !backgrounded else { return }
+    queue.async { [weak self] in
+      self?.replayBackgroundedPropertyChanges()
+    }
+  }
+
+  /// Runs on `queue` after property events that saw the core foregrounded, so
+  /// a live delivery has already removed its stale entry here.
+  private func replayBackgroundedPropertyChanges() {
+    guard !isLifecycleBackgrounded, !backgroundedPropertyChanges.isEmpty else { return }
+    let changes = backgroundedPropertyChanges
+    backgroundedPropertyChanges.removeAll()
+    for (name, change) in changes {
+      dispatchDelegateProperty(name: name, value: change.value, sourceId: change.sourceId)
+    }
   }
 
   var hasActiveMpv: Bool {
@@ -1457,8 +1483,12 @@ class MpvPlayerCoreBase: NSObject {
     }
 
     if Self.internalObserverIds.contains(replyUserdata) { return }
-    if isLifecycleBackgrounded && !Self.criticalProperties.contains(name) { return }
+    if isLifecycleBackgrounded && !Self.criticalProperties.contains(name) {
+      backgroundedPropertyChanges[name] = (value: value, sourceId: sourceId)
+      return
+    }
 
+    backgroundedPropertyChanges.removeValue(forKey: name)
     dispatchDelegateProperty(name: name, value: value, sourceId: sourceId)
   }
 

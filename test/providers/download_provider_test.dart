@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_item_types.dart';
@@ -140,16 +141,32 @@ class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// [_ScopedTestClient] that also answers the parent-artwork step of a queue
+/// with no artwork to fetch.
+class _ArtworkFreeScopedClient extends _ScopedTestClient {
+  _ArtworkFreeScopedClient({
+    required super.serverId,
+    required super.scopedServerId,
+    super.fetchItemHandler,
+    super.clientBackend,
+  });
+
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => const [];
+}
+
 class _DownloadOwnerSelectGate extends QueryInterceptor {
   Completer<void>? _started;
   Completer<void>? _release;
   String? _globalKey;
+  String _table = 'download_owners';
   int selectCount = 0;
 
   Future<void> get started => _started!.future;
 
-  void arm(String globalKey) {
+  void arm(String globalKey, {String table = 'download_owners'}) {
     _globalKey = globalKey;
+    _table = table;
     _started = Completer<void>();
     _release = Completer<void>();
   }
@@ -161,7 +178,7 @@ class _DownloadOwnerSelectGate extends QueryInterceptor {
     selectCount++;
     final started = _started;
     final release = _release;
-    if (started != null && !started.isCompleted && statement.contains('download_owners') && args.contains(_globalKey)) {
+    if (started != null && !started.isCompleted && statement.contains(_table) && args.contains(_globalKey)) {
       started.complete();
       await release!.future;
     }
@@ -981,6 +998,68 @@ void main() {
       p.dispose();
     });
 
+    test('claiming an existing download loads its metadata for the claiming profile', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      // Another profile's physical download: nothing about it is loaded here.
+      p.debugSeedState(
+        downloads: {'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.completed)},
+        ownedDownloadKeys: const {},
+      );
+      expect(p.downloadedMovies, isEmpty);
+
+      final count = await p.queueDownload(movie, _ThrowingClient());
+
+      expect(count, 1);
+      expect(p.downloadedMovies.map((m) => m.title), ['Owned Movie']);
+
+      p.dispose();
+    });
+
+    test('claiming an existing episode download also loads its show and season', () async {
+      final episode = testMediaItem(
+        id: 'ep-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Pilot',
+        serverId: ServerId('srv'),
+        parentId: 'season-1',
+        grandparentId: 'show-1',
+        grandparentTitle: 'Show',
+      );
+      final client = _ArtworkFreeScopedClient(
+        serverId: ServerId('srv'),
+        scopedServerId: 'srv',
+        clientBackend: MediaBackend.plex,
+        fetchItemHandler: (id) async => switch (id) {
+          'show-1' => testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show'),
+          'season-1' => testMediaItem(
+            id: 'season-1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.season,
+            title: 'Season 1',
+          ),
+          _ => null,
+        },
+      );
+      testClientResolver = (serverId, {clientScopeId}) => client;
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {'srv:ep-1': const DownloadProgress(globalKey: 'srv:ep-1', status: DownloadStatus.completed)},
+        ownedDownloadKeys: const {},
+      );
+
+      final count = await p.queueDownload(episode, client);
+
+      expect(count, 1);
+      expect(p.getMetadata('srv:ep-1')?.title, 'Pilot');
+      expect(p.getMetadata('srv:show-1')?.title, 'Show');
+      expect(p.getMetadata('srv:season-1')?.title, 'Season 1');
+
+      p.dispose();
+    });
+
     test('queueDownload applies the client server id before checking existing downloads', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -1226,6 +1305,100 @@ void main() {
       expect(p.downloads, isEmpty);
       expect(deletionEvents.map((event) => event.itemId), unorderedEquals(['t1', 't2', 'album-1']));
       p.dispose();
+    });
+
+    test('deleting a show whose metadata is missing removes its owned episodes', () async {
+      for (final (id, seasonId) in [('ep-1', 'season-1'), ('ep-2', 'season-2')]) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'episode',
+          parentRatingKey: seasonId,
+          grandparentRatingKey: 'show-1',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:$id');
+      }
+      // Another show's episode must survive.
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'other-ep',
+        globalKey: 'srv:other-ep',
+        type: 'episode',
+        parentRatingKey: 'season-9',
+        grandparentRatingKey: 'show-9',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:other-ep');
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final id in ['ep-1', 'ep-2', 'other-ep'])
+            'srv:$id': DownloadProgress(globalKey: 'srv:$id', status: DownloadStatus.completed),
+        },
+        ownedDownloadKeys: {'srv:ep-1', 'srv:ep-2', 'srv:other-ep'},
+      );
+
+      await p.deleteDownload('srv:show-1');
+
+      expect(p.downloads.keys, ['srv:other-ep']);
+      expect(await db.getDownloadedMedia('srv:ep-1'), isNull);
+      expect(await db.getDownloadedMedia('srv:ep-2'), isNull);
+      expect(await db.getDownloadedMedia('srv:other-ep'), isNotNull);
+
+      await p.deleteDownload('srv:season-9');
+
+      expect(p.downloads, isEmpty);
+      p.dispose();
+    });
+
+    test('profile switch during a show deletion leaves the new profile\'s episodes alone', () async {
+      await _insertProfile(db, 'profile-a');
+      await _insertProfile(db, 'profile-b');
+      for (final (id, owner) in [('ep-a', 'profile-a'), ('ep-b', 'profile-b')]) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: id,
+          globalKey: 'srv:$id',
+          type: 'episode',
+          parentRatingKey: 'season-1',
+          grandparentRatingKey: 'show-1',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: owner, globalKey: 'srv:$id');
+      }
+      final p = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {
+          for (final id in ['ep-a', 'ep-b'])
+            'srv:$id': DownloadProgress(globalKey: 'srv:$id', status: DownloadStatus.completed),
+        },
+        ownedDownloadKeys: const {},
+      );
+      expect(p.downloads.keys, ['srv:ep-a']);
+
+      // Hold the descendant row query, then switch profiles under it.
+      downloadOwnerSelectGate.arm('show-1', table: 'downloaded_media');
+      final deletion = p.deleteDownload('srv:show-1');
+      await downloadOwnerSelectGate.started;
+      p.setActiveProfileId('profile-b');
+      await p.debugWaitForProfileScopedReload();
+      expect(p.downloads.keys, ['srv:ep-b']);
+      downloadOwnerSelectGate.release();
+      await deletion;
+
+      expect(await db.getDownloadedMedia('srv:ep-b'), isNotNull);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv:ep-b'});
+      expect(p.downloads.keys, ['srv:ep-b']);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv:ep-a'});
     });
 
     test('album aggregates, downloadedAlbums, and per-album track order come from track downloads', () async {

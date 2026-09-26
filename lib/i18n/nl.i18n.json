@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Dit bestand is geen geldige Plezy-export",
     "importSettingsNoUser": "Meld je aan voordat je instellingen importeert",
     "shortcutsReset": "Sneltoetsen gereset naar standaard",
+    "resetShortcutsConfirm": "",
     "about": "Over",
     "aboutDescription": "App-informatie en licenties",
     "updates": "Updates",

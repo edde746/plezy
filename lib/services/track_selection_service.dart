@@ -1286,8 +1286,11 @@ class TrackSelectionService {
       }
     }
 
-    // Apply default playback speed from settings
-    if (defaultPlaybackSpeed != null && defaultPlaybackSpeed != 1.0) {
+    // Apply the resolved playback speed. Compared with the live rate, not with
+    // 1.0: an in-place reload keeps the previous item's rate, so a resolved
+    // 1.0 (another show's scoped speed, or the global default) must still be
+    // applied over it.
+    if (defaultPlaybackSpeed != null && defaultPlaybackSpeed != player.state.rate) {
       if (!canMutatePlayer()) return false;
       final rateMutation = player.setRate(defaultPlaybackSpeed);
       onPlayerMutationDispatched?.call(rateMutation);

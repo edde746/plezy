@@ -257,6 +257,24 @@ void main() {
       expect(scrollable.position.pixels, greaterThan(0));
     });
 
+    testWidgets('focusing the first item scrolls back once its card has unmounted', (tester) async {
+      final harness = _CollectionHarness.plexMovies(collectionCount: 120);
+      addTearDown(harness.dispose);
+
+      await _pumpTab(tester, harness: harness, library: _movieLibrary);
+      await _enterGridAndFocusFirstCard(tester);
+      for (var i = 0; i < 12; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('Collection 0', skipOffstage: false), findsNothing);
+
+      (tester.state(find.byType(LibraryCollectionsTab)) as dynamic).focusFirstItem();
+      await tester.pumpAndSettle();
+
+      expect(_cardFor(tester, 'Collection 0').focusNode!.hasPrimaryFocus, isTrue);
+    });
+
     testWidgets('UP from the first row hands focus to onBack', (tester) async {
       final harness = _CollectionHarness.plexMovies(collectionCount: 60);
       addTearDown(harness.dispose);

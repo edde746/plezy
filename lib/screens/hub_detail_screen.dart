@@ -164,8 +164,15 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       appLogger.e('Failed to load sorts', error: e, stackTrace: stackTrace);
     }
     if (!mounted) return;
+    // Sorting runs client-side over the loaded items, so offer only the
+    // section sorts it can honor instead of ones that would silently fall
+    // back to title order.
+    final supported = [
+      for (final sort in sorts)
+        if (_comparatorFor(sort.key) != null) sort,
+    ];
     setState(() {
-      _sortOptions = sorts.isNotEmpty ? sorts : _getDefaultSortOptions();
+      _sortOptions = supported.isNotEmpty ? supported : _getDefaultSortOptions();
     });
   }
 
@@ -184,36 +191,39 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     ];
   }
 
+  /// Orders items by the field a sort [key] names — the default sorts' keys
+  /// and the Plex section sort keys alike — or null for a key naming nothing
+  /// the items carry (Plex's resolution, bitrate, random or latest-episode
+  /// sorts), which [_loadSorts] leaves out of the options.
+  static Comparator<MediaItem>? _comparatorFor(String key) {
+    Comparator<MediaItem> by(Comparable<Object> Function(MediaItem item) value) =>
+        (a, b) => value(a).compareTo(value(b));
+    return switch (key) {
+      'titleSort' || 'title' => by((item) => (item.titleSort ?? item.title ?? '').toLowerCase()),
+      'addedAt' => by((item) => item.addedAt ?? 0),
+      'year' => by((item) => item.year ?? 0),
+      // ISO dates order lexically; an undated item sorts by its year.
+      'originallyAvailableAt' => by((item) => item.originallyAvailableAt ?? '${item.year ?? ''}'),
+      'rating' => by((item) => item.rating ?? 0),
+      'userRating' => by((item) => item.userRating ?? 0),
+      'contentRating' => by((item) => item.contentRating ?? ''),
+      'duration' => by((item) => item.durationMs ?? 0),
+      'viewOffset' => by((item) => item.viewOffsetMs ?? 0),
+      'viewCount' => by((item) => item.viewCount ?? 0),
+      'lastViewedAt' => by((item) => item.lastViewedAt ?? 0),
+      'unviewedLeafCount' => by((item) => item.unwatchedCount ?? 0),
+      _ => null,
+    };
+  }
+
   void _applySort() {
     setState(() {
       _filteredItems = List.from(_items);
 
-      if (_selectedSort != null) {
-        final sortKey = _selectedSort!.key;
-        _filteredItems.sort((a, b) {
-          int comparison = 0;
-
-          switch (sortKey) {
-            case 'titleSort':
-            case 'title':
-              comparison = (a.title ?? '').compareTo(b.title ?? '');
-              break;
-            case 'addedAt':
-              comparison = (a.addedAt ?? 0).compareTo(b.addedAt ?? 0);
-              break;
-            case 'originallyAvailableAt':
-            case 'year':
-              comparison = (a.year ?? 0).compareTo(b.year ?? 0);
-              break;
-            case 'rating':
-              comparison = (a.rating ?? 0).compareTo(b.rating ?? 0);
-              break;
-            default:
-              comparison = (a.title ?? '').compareTo(b.title ?? '');
-          }
-
-          return _isSortDescending ? -comparison : comparison;
-        });
+      final selectedSort = _selectedSort;
+      if (selectedSort != null) {
+        final compare = _comparatorFor(selectedSort.key) ?? _comparatorFor('titleSort')!;
+        _filteredItems.sort((a, b) => _isSortDescending ? compare(b, a) : compare(a, b));
       }
     });
     _remapFocusToFocusedItem();

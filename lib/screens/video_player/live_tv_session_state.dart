@@ -107,6 +107,42 @@ class LiveTvSessionState {
   /// The player route is closed instead of attempting to reuse that session.
   bool exitOnResume = false;
 
+  int _replacementToken = 0;
+  int? _replacementBaseline;
+  int? _deferredFailureGeneration;
+
+  /// A live start or channel zap is about to replace the stream. Returns the
+  /// token [endReplacement] takes; a newer replacement supersedes this one.
+  int beginReplacement() {
+    _replacementBaseline = streamGeneration;
+    _deferredFailureGeneration = null;
+    return ++_replacementToken;
+  }
+
+  /// A stream failure arrived while a replacement holds the transition lock.
+  /// Once the replacement has opened its stream, the failure is that
+  /// stream's: it is parked (returns true) for [endReplacement] to hand back.
+  /// A failure of the stream being replaced returns false — the replacement
+  /// supersedes it.
+  bool deferReplacementFailure() {
+    final baseline = _replacementBaseline;
+    if (baseline == null || streamGeneration == baseline) return false;
+    _deferredFailureGeneration = streamGeneration;
+    return true;
+  }
+
+  /// End the replacement [token] began. Returns whether a failure parked by
+  /// [deferReplacementFailure] must now run recovery: only when the
+  /// replacement [committed] (its session is the one adopted) and the failed
+  /// stream is still the one playing.
+  bool endReplacement(int token, {required bool committed}) {
+    if (token != _replacementToken) return false;
+    final deferred = _deferredFailureGeneration;
+    _replacementBaseline = null;
+    _deferredFailureGeneration = null;
+    return committed && deferred != null && deferred == streamGeneration;
+  }
+
   /// Register an offset-based MPV open before dispatching `loadfile`. The
   /// returned generation is the handle the caller binds to the source id the
   /// load reports ([bindClockOpen]); until then the open is unbound and no

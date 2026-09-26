@@ -19,12 +19,23 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   HANDLE mutex = CreateMutex(nullptr, TRUE, L"com.edde746.Plezy.SingleInstance");
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
     HWND existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"Plezy");
-    if (existing) {
+    if (existing && IsWindowVisible(existing)) {
       ShowWindow(existing, SW_RESTORE);
       SetForegroundWindow(existing);
+      CloseHandle(mutex);
+      return EXIT_SUCCESS;
     }
-    CloseHandle(mutex);
-    return EXIT_SUCCESS;
+    // A hidden (or already destroyed) window is either still starting - it
+    // shows itself on its first frame - or exiting: the exit path hides the
+    // window before a teardown of up to 15 s. Restoring it would bring back a
+    // window that is about to vanish. Wait for the other instance instead:
+    // if it is exiting, it releases the mutex and this launch takes over.
+    constexpr DWORD kExitingInstanceWaitMs = 20000;
+    const DWORD wait = WaitForSingleObject(mutex, kExitingInstanceWaitMs);
+    if (wait != WAIT_OBJECT_0 && wait != WAIT_ABANDONED) {
+      CloseHandle(mutex);
+      return EXIT_SUCCESS;
+    }
   }
 
   // Attach to console when present (e.g., 'flutter run') or create a

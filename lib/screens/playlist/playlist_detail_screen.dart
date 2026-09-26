@@ -409,6 +409,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
       if (!mounted) return;
       if (success) {
+        // The server's total shrank with the list; without this the loaded
+        // rows fall one short of the old total and editing locks.
+        _continuation.noteLoadedItemsRemoved();
         showSuccessSnackBar(context, t.playlists.itemRemoved);
         return;
       }

@@ -179,7 +179,7 @@ void main() {
       await p.initialize();
 
       multi.setExpectedVisibleServerIds({'plex-server'});
-      manager.markPlexConnectionAuthError(_plexConnection());
+      manager.markPlexConnectionAuthError(_plexConnection(), profileId: 'profile-a');
       await Future<void>.delayed(Duration.zero);
 
       expect(multi.authErrorServerIds, ['plex-server']);

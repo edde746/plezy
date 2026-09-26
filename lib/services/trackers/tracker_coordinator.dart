@@ -77,9 +77,12 @@ class TrackerCoordinator {
   final Map<String, _RowIntents> _rowIntents = {};
 
   /// Resolver persists across episode swaps so back-to-back episodes of the
-  /// same show reuse the cached IDs. Cleared only on profile switch.
+  /// same show reuse the cached IDs. Rebuilt whenever playback arrives with a
+  /// different client object — a reconnect replaces the client under the same
+  /// server id and closes the old one, whose every request then fails as
+  /// cancelled — and dropped on profile switch.
   TrackerIdResolver? _resolver;
-  String? _resolverClientKey;
+  MediaServerClient? _resolverClient;
   String? _activeLibraryGlobalKey;
   FribbMappingLookup? _debugFribbStore;
   AnimeListsMappingLookup? _debugAnimeListsStore;
@@ -186,11 +189,10 @@ class TrackerCoordinator {
     }
 
     _activeLibraryGlobalKey = libraryGlobalKey;
-    final clientKey = client.cacheServerId;
-    if (_resolver == null || _resolverClientKey != clientKey) {
+    if (_resolver == null || !identical(_resolverClient, client)) {
       _resolver?.clearCache();
       _resolver = _newResolver(client, needsFribb: _anyTrackerNeedsFribb);
-      _resolverClientKey = clientKey;
+      _resolverClient = client;
     }
     final TrackerContext? ctx;
     try {
@@ -389,7 +391,11 @@ class TrackerCoordinator {
   }
 
   Future<void> _markSingleWatched(MediaItem item, TrackerIdResolver resolver, _WriteScope scope) async {
-    final ctx = await _buildContext(item, resolver);
+    // Every caller reaches here after the server recorded the watch, so the
+    // watched counts the progress rollup reads already include this episode,
+    // while [item] may still carry its unwatched view count. Adding it on top,
+    // as playback start must, would count it twice.
+    final ctx = await _buildContext(item, resolver, includeCurrentEpisode: false);
     if (ctx == null) {
       appLogger.d('Trackers: no external IDs for manually watched ${item.id}');
       return;
@@ -496,7 +502,7 @@ class TrackerCoordinator {
     _reset();
     _resolver?.clearCache();
     _resolver = null;
-    _resolverClientKey = null;
+    _resolverClient = null;
   }
 
   /// Drop the resolver's ID cache without touching in-flight playback state.

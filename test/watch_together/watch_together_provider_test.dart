@@ -784,6 +784,72 @@ void main() {
     });
   });
 
+  group('WatchTogetherProvider — participant roster', () {
+    test('a peer re-admitted without a leave is sent our join again, once', () async {
+      final factory = _FakePeerServiceFactory();
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      await provider.joinSession(
+        'roster1',
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Guest',
+      );
+      await _flushProviderEvents();
+      final service = factory.services.single;
+      final hostPeerId = provider.session!.hostPeerId!;
+      Iterable<SyncMessage> joinsToHost() => service.directMessages
+          .where((entry) => entry.$1 == hostPeerId && entry.$2.type == SyncMessageType.join)
+          .map((entry) => entry.$2);
+      SyncMessage hostJoin() => SyncMessage.join(peerId: hostPeerId, displayName: 'Host', isHost: true);
+
+      service.emitMessage(hostJoin());
+      await _flushProviderEvents();
+      expect(joinsToHost(), hasLength(1));
+
+      // The host reconnects before the relay notices its old connection
+      // died: the relay re-admits it without a leave, and the host, which
+      // dropped its roster with the old connection, announces itself again.
+      service.emitPeerConnected(hostPeerId);
+      service.emitMessage(hostJoin());
+      await _flushProviderEvents();
+      expect(joinsToHost(), hasLength(2));
+      expect(joinsToHost().last.peerId, service.myPeerId);
+      expect(provider.participants.where((participant) => participant.peerId == hostPeerId), hasLength(1));
+
+      // The host's answer to that reply is not answered again.
+      service.emitMessage(hostJoin());
+      await _flushProviderEvents();
+      expect(joinsToHost(), hasLength(2));
+
+      await provider.leaveSession();
+      provider.dispose();
+    });
+
+    test('a join reply racing its target out of the room keeps the host session', () async {
+      final factory = _FakePeerServiceFactory(rejectDisconnectedTargets: true);
+      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+      await provider.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+        displayName: 'Host',
+        sessionId: 'race1',
+      );
+      await _flushProviderEvents();
+      final service = factory.services.single;
+
+      // The guest is already gone when its join is answered, so the relay
+      // rejects the directed reply with not_in_room.
+      service.emitMessage(SyncMessage.join(peerId: 'guest-9', displayName: 'Guest', isHost: false));
+      await _flushProviderEvents();
+
+      expect(provider.isInSession, isTrue);
+      expect(provider.session?.state, SessionState.connected);
+      expect(provider.session?.errorMessage, isNull);
+
+      await provider.leaveSession();
+      provider.dispose();
+    });
+  });
+
   group('WatchTogetherProvider — release cleanup', () {
     test('release failure is surfaced after local session teardown completes', () async {
       final releaseFailure = StateError('relay release failed');

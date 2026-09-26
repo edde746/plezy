@@ -148,11 +148,17 @@ class _FakeFribb implements FribbMappingLookup {
   _FakeFribb(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => [
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async => [
     for (final row in rows)
       if ((anidbId != null && row.anidbId == anidbId) ||
-          (tvdbId != null && row.tvdbId == tvdbId) ||
-          (tmdbId != null && (row.tmdbIds?.contains(tmdbId) ?? false)) ||
+          (!movie && tvdbId != null && row.tvdbId == tvdbId) ||
+          (tmdbId != null && (movie ? (row.tmdbMovieIds?.contains(tmdbId) ?? false) : row.tmdbTvId == tmdbId)) ||
           (imdbId != null && (row.imdbIds?.contains(imdbId) ?? false)))
         row,
   ];
@@ -227,7 +233,7 @@ void main() {
     imdbIds: ['tt2560140'],
   );
   // An anime movie.
-  const yourName = FribbMappingRow(malId: 32281, tmdbIds: [372058], imdbIds: ['tt5311514'], type: 'MOVIE');
+  const yourName = FribbMappingRow(malId: 32281, tmdbMovieIds: [372058], imdbIds: ['tt5311514'], type: 'MOVIE');
 
   group('MalCatalogSource', () {
     late List<http.Request> requests;
@@ -416,9 +422,7 @@ void main() {
           source.dispose();
           source = MalCatalogSource(
             client,
-            fribb: _FakeFribb(const [
-              FribbMappingRow(malId: 35760, tmdbIds: [1429], tvdbSeason: 3, tmdbSeason: 3),
-            ]),
+            fribb: _FakeFribb(const [FribbMappingRow(malId: 35760, tmdbTvId: 1429, tvdbSeason: 3, tmdbSeason: 3)]),
           );
           handlers.add(
             (_) => _json(
@@ -553,14 +557,42 @@ void main() {
       expect(requests, isEmpty);
     });
 
+    http.Response listStatus(String status) => http.Response(
+      json.encode({
+        'id': 16498,
+        'my_list_status': {'status': status, 'num_watched_episodes': 3},
+      }),
+      200,
+    );
+
     test('removeFromWatchlist DELETEs and treats 404 as success', () async {
       await source.ensureWatchlistLoaded();
       requests.clear();
 
-      handlers.add((request) => http.Response('', 404));
+      handlers
+        ..add((request) => listStatus('plan_to_watch'))
+        ..add((request) => http.Response('', 404));
       await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498));
 
-      expect(requests.single.method, 'DELETE');
+      expect(requests.map((request) => request.method), ['GET', 'DELETE']);
+      expect(requests.first.url.queryParameters['fields'], 'my_list_status');
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498)), isFalse);
+    });
+
+    test('removeFromWatchlist leaves an entry that moved past Plan to Watch alone', () async {
+      await source.ensureWatchlistLoaded();
+      requests.clear();
+
+      // The snapshot still lists it, but the user has since started watching:
+      // deleting would take their progress, score and dates with it.
+      handlers
+        ..add((request) => listStatus('watching'))
+        ..add((request) => http.Response(json.encode(_pageBody(const [])), 200));
+      await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498));
+      await source.ensureWatchlistLoaded();
+
+      expect(requests.map((request) => request.method), ['GET', 'GET'], reason: 'status read + snapshot reload');
+      expect(requests.last.url.path, '/v2/users/@me/animelist');
       expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498)), isFalse);
     });
 

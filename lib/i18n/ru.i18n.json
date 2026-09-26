@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Этот файл не является действительным экспортом настроек Plezy",
     "importSettingsNoUser": "Войдите в систему перед импортом настроек",
     "shortcutsReset": "Горячие клавиши сброшены по умолчанию",
+    "resetShortcutsConfirm": "",
     "about": "О приложении",
     "aboutDescription": "Информация о приложении и лицензии",
     "updates": "Обновления",

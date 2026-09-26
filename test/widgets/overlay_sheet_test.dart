@@ -660,6 +660,38 @@ void main() {
     expect(find.text('Existing root page'), findsNothing);
   });
 
+  testWidgets('a pushed page keeps the page below it mounted with its state', (tester) async {
+    final controller = await _pumpIdleHost(tester);
+    unawaited(controller.show<void>(builder: (_) => const _CounterPage()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Increment'));
+    await tester.pump();
+    expect(find.text('Count: 1'), findsOneWidget);
+    final rootState = tester.state<_CounterPageState>(find.byType(_CounterPage));
+
+    final nested = controller.push<String>(builder: (_) => const SizedBox(height: 80, child: Text('Nested page')));
+    await tester.pumpAndSettle();
+
+    // Covered, not replaced: the root keeps its State (and so a context that
+    // is still mounted when the nested page's future completes), but is
+    // hidden from painting, hit testing and focus.
+    expect(find.text('Nested page'), findsOneWidget);
+    expect(find.text('Count: 1'), findsNothing);
+    expect(find.text('Count: 1', skipOffstage: false), findsOneWidget);
+    expect(rootState.mounted, isTrue);
+    expect(rootState.incrementFocus.canRequestFocus, isFalse);
+
+    controller.pop('done');
+    expect(await nested, 'done');
+    expect(rootState.mounted, isTrue);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Count: 1'), findsOneWidget);
+    expect(tester.state<_CounterPageState>(find.byType(_CounterPage)), same(rootState));
+    expect(rootState.incrementFocus.canRequestFocus, isTrue);
+  });
+
   group('opt-in canPop / onSystemBack', () {
     // Pushes an OverlaySheetHost route on top of a home route so we can observe
     // whether a simulated system back pops the route. The host's child has an
@@ -810,6 +842,39 @@ void main() {
 /// Shrink-wrapping list for the sizing tests: 40px rows by default, or a
 /// 40/64/88 cycle when [varyHeights] is set so the sliver's estimated extent
 /// keeps changing as rows are laid out.
+class _CounterPage extends StatefulWidget {
+  const _CounterPage();
+
+  @override
+  State<_CounterPage> createState() => _CounterPageState();
+}
+
+class _CounterPageState extends State<_CounterPage> {
+  final incrementFocus = FocusNode();
+  int _count = 0;
+
+  @override
+  void dispose() {
+    incrementFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 120,
+    child: Column(
+      children: [
+        Text('Count: $_count'),
+        ElevatedButton(
+          focusNode: incrementFocus,
+          onPressed: () => setState(() => _count++),
+          child: const Text('Increment'),
+        ),
+      ],
+    ),
+  );
+}
+
 class _FixedRowList extends StatelessWidget {
   final int rowCount;
   final bool varyHeights;

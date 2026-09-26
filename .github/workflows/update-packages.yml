@@ -102,6 +102,8 @@ jobs:
   update-winget:
     needs: resolve-release
     runs-on: windows-latest
+    # The releaser authenticates with WINGET_TOKEN; GITHUB_TOKEN needs no scopes.
+    permissions: {}
     steps:
       - uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
         with:

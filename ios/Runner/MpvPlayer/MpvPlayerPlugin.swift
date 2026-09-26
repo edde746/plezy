@@ -195,6 +195,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         result(MpvPipController.isSupported)
       case "enter":
         self.enterPip(manual: true, result: result)
+      case "exit":
+        self.pipController?.stopPip()
+        result(nil)
       case "setAutoPipReady":
         if let args = call.arguments as? [String: Any], let ready = args["ready"] as? Bool {
           self.autoPipEnabled = ready
@@ -304,6 +307,18 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     if notify { pipChannel?.invokeMethod("onPipChanged", arguments: false) }
   }
 
+  /// Tear PiP down with its player. The controller detaches its delegate
+  /// before stopping the system PiP, so the did-stop callback never arrives;
+  /// tell Dart PiP ended here, or it keeps hiding every later player's controls.
+  private func teardownPip() {
+    let wasActive = playerCore?.isPipActive == true
+    pipController?.teardown()
+    pipController = nil
+    guard wasActive else { return }
+    playerCore?.isPipActive = false
+    pipChannel?.invokeMethod("onPipChanged", arguments: false)
+  }
+
   /// Scene became active — restore inline playback if needed and re-warm the
   /// sample-buffer layer so future auto-PiP remains possible.
   @objc private func sceneDidActivate() {
@@ -336,8 +351,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       }
 
       // A partially torn-down core must not survive a rapid route replacement.
-      self.pipController?.teardown()
-      self.pipController = nil
+      self.teardownPip()
       self.pendingInlineRestoreAfterPip = false
       self.playerCore?.dispose()
       self.playerCore = nil
@@ -365,8 +379,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     DispatchQueue.main.async { [weak self] in
       guard let self = self else { result(nil); return }
       MpvLog.debug("[MpvPlayerPlugin] dispose preserveDisplayMode=\(preserveDisplayMode.description)")
-      self.pipController?.teardown()
-      self.pipController = nil
+      self.teardownPip()
       self.autoPipEnabled = false
       self.pendingInlineRestoreAfterPip = false
       self.unregisterSceneActivationObserver()

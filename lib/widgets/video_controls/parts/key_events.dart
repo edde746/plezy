@@ -197,6 +197,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // (e.g. after controls auto-hide). The !hasFocus guard prevents
     // double-handling when the Focus onKeyEvent already processes the event.
     if (!_focusNode.hasFocus && _keyboardService != null) {
+      // Drift means focus fell back to a scope or to an ancestor of the
+      // controls. A prompt holding focus (Play Next, Still Watching) moves
+      // between its buttons with the arrows, so those stay with it.
+      if (event.logicalKey.isDpadDirection && _focusRestsOnAnotherControl()) return false;
       final result = _dispatchShortcut(event);
       if (result == KeyEventResult.handled) {
         _focusNode.requestFocus(); // self-heal focus
@@ -205,6 +209,14 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     }
 
     return false;
+  }
+
+  /// Whether primary focus sits on a control outside this one rather than
+  /// having drifted to a scope or up to an ancestor of [_focusNode].
+  bool _focusRestsOnAnotherControl() {
+    final primary = FocusManager.instance.primaryFocus;
+    if (primary == null || primary is FocusScopeNode) return false;
+    return !_focusNode.ancestors.contains(primary);
   }
 
   KeyEventResult _handleControlsKeyEvent(KeyEvent event, bool isMobile) {

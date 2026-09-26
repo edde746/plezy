@@ -116,21 +116,30 @@ class MultiServerManager {
   final Map<String, String> _clientIdByServer = {};
   final Map<String, PlexProfileScopeId> _plexScopeByServer = {};
 
+  /// Per-server owning [PlexAccountConnection.id]. The clientIdentifier above
+  /// is device-wide, so this is what tells two accounts' servers apart
+  /// (see [PlexClient.plexAccountId]).
+  final Map<String, String> _plexAccountByServer = {};
+
   String? _resolveClientIdentifier(ServerId serverId) => _clientIdByServer[serverId];
 
   /// Record the Plex identity a server is bound under — the single writer for
   /// all three per-server Plex registrations. A null [scope] (only
-  /// [markPlexConnectionAuthError], which has no profile yet) leaves any
-  /// previously recorded scope in place.
+  /// [markPlexConnectionAuthError], which has no connected client to scope)
+  /// leaves any previously recorded scope in place.
   void _registerPlexServer(
     String serverId,
     PlexServer server, {
     required String clientIdentifier,
+    required String accountId,
     PlexProfileScopeId? scope,
   }) {
     _clientIdByServer[serverId] = clientIdentifier;
+    _plexAccountByServer[serverId] = accountId;
     _plexServers[serverId] = server;
     if (scope != null) _plexScopeByServer[serverId] = scope;
+    final client = _clients[serverId];
+    if (client is PlexClient) client.plexAccountId = accountId;
   }
 
   /// Whether [compoundId] is still the client bound as the active user for
@@ -186,6 +195,32 @@ class MultiServerManager {
   /// MediaBrowser-only profiles.
   List<String> get serverIds => _clients.keys.toList();
 
+  /// Every server id the manager holds state for: live clients plus
+  /// client-less registrations (a Plex server whose connect failed, or one
+  /// marked auth-rejected before a client existed). A reconnect sweep can
+  /// bring any of these back online, so profile clean-up must walk this set
+  /// rather than [serverIds].
+  List<String> get registeredServerIds => {..._clients.keys, ..._plexServers.keys, ..._serverStatus.keys}.toList();
+
+  /// Whether anything registered under [serverId] was made for a profile
+  /// other than [profileId]: a live Plex client, or the Plex identity a
+  /// reconnect would rebuild one with, scoped to another profile, or a live
+  /// MediaBrowser client that is not one of [jellyfinConnectionIds]. Such a
+  /// registration still carries the other profile's token. A registration
+  /// with no identity (an auth-error marker for a server that never had a
+  /// client, which a reconnect refuses to rebuild) belongs to no profile.
+  bool isRegisteredForOtherProfile(
+    ServerId serverId, {
+    required String profileId,
+    Set<String> jellyfinConnectionIds = const {},
+  }) {
+    final client = _clients[serverId];
+    if (client is JellyfinClient && !jellyfinConnectionIds.contains(client.connection.id)) return true;
+    if (client is PlexClient && client.profileScopeId.profileId != profileId) return true;
+    final scope = _plexScopeByServer[serverId];
+    return scope != null && scope.profileId != profileId;
+  }
+
   List<String> get onlineServerIds => _serverStatus.entries.where((e) => e.value).map((e) => e.key).toList();
 
   List<String> get offlineServerIds => _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();
@@ -211,7 +246,18 @@ class MultiServerManager {
 
   Set<String>? get visibleServerIds => _visibleServerIds;
 
-  void setVisibleServerIds(Set<String>? ids) => _visibleServerIds = ids;
+  final _visibilityController = StreamController<void>.broadcast();
+
+  /// Fires when [visibleServerIds] changes. Kept off [statusStream], whose
+  /// emissions mean "a connect pass settled" to the startup splash and the
+  /// offline-mode detector.
+  Stream<void> get visibilityChanges => _visibilityController.stream;
+
+  void setVisibleServerIds(Set<String>? ids) {
+    if (setEquals(_visibleServerIds, ids)) return;
+    _visibleServerIds = ids;
+    if (!_visibilityController.isClosed) _visibilityController.add(null);
+  }
 
   bool isServerVisible(ServerId serverId) => _visibleServerIds?.contains(serverId) ?? true;
 
@@ -280,10 +326,19 @@ class MultiServerManager {
   /// Mark every cached Plex server on [connection] as auth-rejected without
   /// requiring a live client. Startup auth failures happen before a client can
   /// exist, but the UI still needs a server id/name for the re-auth banner.
-  void markPlexConnectionAuthError(PlexAccountConnection connection) {
+  ///
+  /// A registration another profile left for one of these servers is dropped
+  /// first: the marker makes the server visible to [profileId], and a health
+  /// probe or reconnect would otherwise bring it back with that profile's
+  /// token.
+  void markPlexConnectionAuthError(PlexAccountConnection connection, {required String profileId}) {
     for (final server in connection.servers) {
       final id = server.clientIdentifier;
-      _registerPlexServer(id, server, clientIdentifier: connection.clientIdentifier);
+      if (isRegisteredForOtherProfile(ServerId(id), profileId: profileId)) {
+        final stale = _forgetServer(id);
+        if (stale != null) unawaited(_closeClientGracefully(stale));
+      }
+      _registerPlexServer(id, server, clientIdentifier: connection.clientIdentifier, accountId: connection.id);
       _serverStatus[id] = false;
       _authErrorServers.add(id);
     }
@@ -322,6 +377,14 @@ class MultiServerManager {
     }
     return result;
   }
+
+  /// [onlineClients] restricted to the active profile's visibility filter —
+  /// what cross-server readers (hubs, search, push channels, shelves) fan out
+  /// to, so a registration the profile does not own is never queried.
+  Map<String, MediaServerClient> get visibleOnlineClients => {
+    for (final entry in onlineClients.entries)
+      if (isServerVisible(ServerId(entry.key))) entry.key: entry.value,
+  };
 
   bool isServerOnline(ServerId serverId) => _serverStatus[serverId] ?? false;
 
@@ -398,6 +461,7 @@ class MultiServerManager {
       onAllEndpointsExhausted: () => _onServerEndpointsExhausted(ServerId(serverId)),
       seedTranscoderVideoSupport: observedTranscoderVideo,
     );
+    client.plexAccountId = _plexAccountByServer[serverId];
 
     // Save the initial endpoint (relay is refused — see _savePreferredEndpoint)
     await _savePreferredEndpoint(ServerId(serverId), storage, baseUrl, capturedServer: server);
@@ -542,6 +606,7 @@ class MultiServerManager {
     _activeJellyfinMachine.remove(serverId);
     _plexServers.remove(serverId);
     _clientIdByServer.remove(serverId);
+    _plexAccountByServer.remove(serverId);
     _plexScopeByServer.remove(serverId);
     _serverStatus.remove(serverId);
     _authErrorServers.remove(serverId);
@@ -601,7 +666,13 @@ class MultiServerManager {
           );
           if (!applied || isStale() || !identical(_clients[serverId], existing)) return;
 
-          _registerPlexServer(serverId, server, clientIdentifier: connection.clientIdentifier, scope: profileScopeId);
+          _registerPlexServer(
+            serverId,
+            server,
+            clientIdentifier: connection.clientIdentifier,
+            accountId: connection.id,
+            scope: profileScopeId,
+          );
           _authErrorServers.remove(serverId);
           _serverStatus[serverId] = true;
           bound.add(serverId);
@@ -616,13 +687,36 @@ class MultiServerManager {
         return;
       }
 
-      _registerPlexServer(serverId, server, clientIdentifier: connection.clientIdentifier, scope: profileScopeId);
+      // An offline client another profile left here still carries that
+      // profile's token. Drop it now rather than keep it as the fallback
+      // while this profile connects: if the connect fails, the server stays
+      // registered for this profile, and a health probe must not find the
+      // old client reachable and publish it as this profile's.
+      if (existing is PlexClient && existing.profileScopeId != profileScopeId) {
+        final stale = _forgetServer(serverId);
+        if (stale != null) unawaited(_closeClientGracefully(stale));
+      }
+      _registerPlexServer(
+        serverId,
+        server,
+        clientIdentifier: connection.clientIdentifier,
+        accountId: connection.id,
+        scope: profileScopeId,
+      );
       try {
-        final client = await _createClientForServer(
-          server: server,
-          clientIdentifier: connection.clientIdentifier,
-          profileScopeId: profileScopeId,
-        ).namedTimeout(timeout, operation: 'connect to ${server.name}');
+        final client =
+            await _createClientForServer(
+              server: server,
+              clientIdentifier: connection.clientIdentifier,
+              profileScopeId: profileScopeId,
+            ).timeoutReleasingLate(
+              timeout,
+              operation: 'connect to ${server.name}',
+              // A connect that lands after the budget is not registered by
+              // anyone; close it instead of leaking its sockets and its
+              // background endpoint optimization.
+              releaseLate: _closeClientGracefully,
+            );
         if (isStale() || !identical(_plexServers[serverId], server)) {
           unawaited(_closeClientGracefully(client));
           return;
@@ -942,6 +1036,13 @@ class MultiServerManager {
           appLogger.d('Ignoring stale Jellyfin health result for ${client.connection.serverName}');
           return;
         }
+      }
+      // A profile switch or reconnect can replace (or remove) the client
+      // while its probe is in flight; the old client's verdict says nothing
+      // about the new one, which may run under a different token.
+      if (!identical(_clients[serverId], client)) {
+        appLogger.d('Ignoring stale health result for $serverId');
+        return;
       }
       _applyHealth(ServerId(serverId), status);
       if (status != HealthStatus.online) {
@@ -1480,6 +1581,7 @@ class MultiServerManager {
     _serverStatus.clear();
     _authErrorServers.clear();
     _clientIdByServer.clear();
+    _plexAccountByServer.clear();
     _plexScopeByServer.clear();
     _activeOptimizations.clear();
     if (!_statusController.isClosed) {
@@ -1499,6 +1601,7 @@ class MultiServerManager {
   Future<void> shutdown({Duration drainTimeout = const Duration(seconds: 5)}) async {
     if (!_statusController.isClosed) unawaited(_statusController.close());
     if (!_connectProgressController.isClosed) unawaited(_connectProgressController.close());
+    if (!_visibilityController.isClosed) unawaited(_visibilityController.close());
     await disconnectAllGracefully(drainTimeout: drainTimeout);
   }
 
@@ -1509,6 +1612,9 @@ class MultiServerManager {
     }
     if (!_connectProgressController.isClosed) {
       _connectProgressController.close();
+    }
+    if (!_visibilityController.isClosed) {
+      _visibilityController.close();
     }
   }
 }

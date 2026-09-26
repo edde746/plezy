@@ -17,6 +17,7 @@ import 'package:plezy/services/trackers/tracker_account_store.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trackers/trakt/trakt_tracker.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/rating_bottom_sheet.dart';
@@ -68,6 +69,24 @@ void main() {
 
     expect(tester.getSize(_sheetFinder).height, heightAfterResolve);
     expect(tester.getRect(find.text(t.rateSheet.server)).top, serverRowTop);
+  });
+
+  testWidgets('tracker rows settle with an error when the item ids cannot be resolved', (tester) async {
+    await _seedAllTrackerSessions(_profileUuid);
+    await _pumpRatingSheet(
+      tester,
+      viewport: const Size(1280, 800),
+      serverClient: _StubServerClient(ServerCapabilities.plex, externalIdsError: StateError('server unreachable')),
+      profileUuid: _profileUuid,
+      item: testMediaItem(id: 'movie-1', kind: MediaKind.movie, serverId: 'server-1', serverName: 'Living Room'),
+    );
+
+    expect(find.text(t.errors.failedToRate), findsNWidgets(5));
+    expect(
+      find.descendant(of: _sheetFinder, matching: find.byType(CircularProgressIndicator)),
+      findsNothing,
+      reason: 'no row may keep loading',
+    );
   });
 }
 
@@ -171,10 +190,19 @@ void _resetTrackerBindings() {
 /// [capabilities] (which decides whether the server row renders at all),
 /// [backend], [serverName], and [serverId].
 class _StubServerClient implements MediaServerClient {
-  _StubServerClient(this.capabilities);
+  _StubServerClient(this.capabilities, {this.externalIdsError});
 
   @override
   final ServerCapabilities capabilities;
+
+  /// Thrown by [fetchExternalIds] when set — the server failing the lookup.
+  final Object? externalIdsError;
+
+  @override
+  Future<ExternalIds> fetchExternalIds(String itemId) async {
+    if (externalIdsError != null) throw externalIdsError!;
+    return const ExternalIds();
+  }
 
   @override
   ServerId get serverId => ServerId('server-1');

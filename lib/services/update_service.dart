@@ -128,10 +128,13 @@ class UpdateService {
 
   /// Internal method that performs the actual update check
   /// [respectCooldown] - if true, checks cooldown and records the attempt before the request
+  /// [throwOnFailure] - if true, a failed check (network, non-200, bad payload)
+  /// is rethrown instead of reading as "no update"
   static Future<Map<String, dynamic>?> _performUpdateCheck({
     required bool respectCooldown,
     MediaServerHttpClient? client,
     bool forceEnabled = false,
+    bool throwOnFailure = false,
   }) async {
     if (!forceEnabled && !isUpdateCheckAvailable) {
       return null;
@@ -155,35 +158,37 @@ class UpdateService {
         headers: {'Accept': 'application/vnd.github+json'},
       );
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final latestVersion = data['tag_name'] as String;
+      if (response.statusCode != 200) {
+        throw StateError('Release check returned HTTP ${response.statusCode}');
+      }
+      final data = response.data;
+      final latestVersion = data['tag_name'] as String;
 
-        // Remove 'v' prefix if present
-        final cleanVersion = latestVersion.startsWith('v') ? latestVersion.substring(1) : latestVersion;
+      // Remove 'v' prefix if present
+      final cleanVersion = latestVersion.startsWith('v') ? latestVersion.substring(1) : latestVersion;
 
-        final hasUpdate = _isNewerVersion(cleanVersion, currentVersion);
+      final hasUpdate = _isNewerVersion(cleanVersion, currentVersion);
 
-        if (hasUpdate) {
-          // Check if this version was skipped
-          final skippedVersion = await getSkippedVersion();
-          if (skippedVersion == cleanVersion) {
-            return null;
-          }
-
-          return {
-            'hasUpdate': true,
-            'currentVersion': currentVersion,
-            'latestVersion': cleanVersion,
-            'releaseUrl': data['html_url'] as String,
-            'releaseName': data['name'] as String? ?? 'Version $cleanVersion',
-            'releaseNotes': data['body'] as String? ?? '',
-            'publishedAt': data['published_at'] as String,
-          };
+      if (hasUpdate) {
+        // Check if this version was skipped
+        final skippedVersion = await getSkippedVersion();
+        if (skippedVersion == cleanVersion) {
+          return null;
         }
+
+        return {
+          'hasUpdate': true,
+          'currentVersion': currentVersion,
+          'latestVersion': cleanVersion,
+          'releaseUrl': data['html_url'] as String,
+          'releaseName': data['name'] as String? ?? 'Version $cleanVersion',
+          'releaseNotes': data['body'] as String? ?? '',
+          'publishedAt': data['published_at'] as String,
+        };
       }
     } catch (error, stackTrace) {
       appLogger.e('Failed to check for updates', error: error, stackTrace: stackTrace);
+      if (throwOnFailure) rethrow;
     }
 
     return null;
@@ -193,14 +198,22 @@ class UpdateService {
   static Future<Map<String, dynamic>?> debugPerformUpdateCheck({
     required bool respectCooldown,
     required MediaServerHttpClient client,
+    bool throwOnFailure = false,
   }) {
-    return _performUpdateCheck(respectCooldown: respectCooldown, client: client, forceEnabled: true);
+    return _performUpdateCheck(
+      respectCooldown: respectCooldown,
+      client: client,
+      forceEnabled: true,
+      throwOnFailure: throwOnFailure,
+    );
   }
 
   /// Check for updates on GitHub (manual check, ignores cooldown)
-  /// Returns a map with update info, or null if no update or error
+  /// Returns a map with update info, or null when there is no update (or the
+  /// release is skipped). Throws when the check itself fails, so the caller
+  /// can say so instead of reporting the latest version.
   static Future<Map<String, dynamic>?> checkForUpdates() {
-    return _performUpdateCheck(respectCooldown: false);
+    return _performUpdateCheck(respectCooldown: false, throwOnFailure: true);
   }
 
   /// Check for updates on startup (respects cooldown and skipped versions)

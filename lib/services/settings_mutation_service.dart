@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -6,6 +8,8 @@ import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../profiles/active_profile_provider.dart';
 import '../providers/companion_remote_provider.dart';
+import '../providers/discover_provider.dart';
+import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/platform_detector.dart';
 import 'device_performance.dart';
@@ -91,6 +95,20 @@ class SettingsMutationService {
     ),
     for (final service in TrackerService.values) _scrobbleEffect(service),
     _SettingsEffect(SettingsService.enableCompanionRemoteServer, _applyCompanionRemoteServer),
+    // Home hubs are fetched in the chosen layout, so a switch only shows once
+    // they are fetched again. The load runs in the background: the setting is
+    // already saved, and the home screen shows its own loading state.
+    _SettingsEffect(SettingsService.useGlobalHubs, (context, _, _) async {
+      unawaited(context.read<DiscoverProvider?>()?.load());
+    }),
+    // The native downloader's global Wi-Fi policy overrides each task's own
+    // flag, so every change — tile, import, reset — must reach it, or queued
+    // and running downloads keep the old policy.
+    _SettingsEffect(SettingsService.downloadOnWifiOnly, (context, settings, _) async {
+      await context.read<DownloadProvider?>()?.applyDownloadOnWifiOnly(
+        settings.read(SettingsService.downloadOnWifiOnly),
+      );
+    }),
   ];
 
   /// [Pref] compares by identity and [SettingsService.scrobblePref] mints a

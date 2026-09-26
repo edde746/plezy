@@ -216,6 +216,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
+    // A server-supplied absolute URL can point at another host (a remote
+    // subtitle provider, a tuner); the token only ever goes to the server's
+    // own origin.
+    final base = Uri.tryParse(connection.baseUrl);
+    if (base == null || uri.scheme != base.scheme || uri.host != base.host || uri.port != base.port) {
+      return uri.toString();
+    }
     final params = Map<String, String>.from(uri.queryParameters)
       ..[connection.dialect.tokenQueryParam] = connection.accessToken;
     return uri.replace(queryParameters: params).toString();
@@ -237,12 +244,25 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     final metadata = options.metadata;
-    final bundle = await fetchPlaybackBundle(
-      metadata.id,
-      sourceIndex: options.selectedMediaIndex,
-      sourceId: options.selectedMediaSourceId,
-      preferredSignature: options.preferredVersionSignature,
-    );
+    final JellyfinPlaybackBundle? bundle;
+    try {
+      // An immediate connection error is asked again (see
+      // [retryTransientMediaServerCall]); the deadline only backstops the
+      // HTTP layer's own connect + receive budgets, so it never cuts a slow
+      // but working server short.
+      bundle = await retryTransientMediaServerCall(
+        operation: 'Jellyfin playback item',
+        deadline: MediaServerTimeouts.connect + MediaServerTimeouts.receive,
+        call: (_, _) => fetchPlaybackBundle(
+          metadata.id,
+          sourceIndex: options.selectedMediaIndex,
+          sourceId: options.selectedMediaSourceId,
+          preferredSignature: options.preferredVersionSignature,
+        ),
+      );
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
+    }
     if (bundle == null) {
       throw PlaybackException(t.messages.playbackNoMediaSources, reason: PlaybackFailureReason.noPlayableSource);
     }
@@ -371,7 +391,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
-      } else if (!wantsOriginal) {
+      } else if (!wantsOriginal && chosenSource['SupportsDirectPlay'] != true) {
+        // No transcode is only a refusal when the server also declined direct
+        // play. A file that already fits the cap direct-plays with no
+        // `TranscodingUrl`, which is the capped request succeeding.
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
     }

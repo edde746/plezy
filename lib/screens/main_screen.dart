@@ -1389,10 +1389,15 @@ class _MainScreenState extends State<MainScreen>
     }
     _updateTvosMenuPassthrough();
 
-    // Refresh sidebar focus after rebuilding navigation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sideNavKey.currentState?.focusActiveItem();
-    });
+    // Refresh sidebar focus after rebuilding navigation. Not when the content
+    // held focus: it keeps it (or has it restored above), and pulling it into
+    // the rail would leave _isSidebarFocused false with the rail focused.
+    if (!restoreContentFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _sideNavKey.currentState?.focusActiveItem();
+      });
+    }
 
     // Ensure profile settings are warmed when coming back online
     if (!_isOffline) {

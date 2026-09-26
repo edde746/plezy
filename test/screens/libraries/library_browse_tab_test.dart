@@ -175,6 +175,36 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
+  testWidgets('a sort change after a failed load clears the stale error', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+
+    const sorts = [MediaSort(key: 'title', title: 'Title'), MediaSort(key: 'year', title: 'Year')];
+    final client = _BrowseClient('server-a', 'Library A', sortResponse: Future.value(sorts));
+    final harness = _BrowseHarness(clientA: client);
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    await _pumpUntil(tester, () => client.pageRequestCount >= 1);
+
+    client.pageResponses.add(() => Future<LibraryPage<MediaItem>>.error(StateError('temporary browse failure')));
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Year').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(ErrorStateWidget), findsOneWidget);
+
+    client.pageResponses.add(() => Future.value(const LibraryPage<MediaItem>(items: [], totalCount: 0)));
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Title').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ErrorStateWidget), findsNothing);
+    expect(find.byType(EmptyStateWidget), findsOneWidget);
+
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('mixed library all grouping applies its explicit root kinds', (tester) async {
     final client = _BrowseClient('server-a', 'Mixed');
     final harness = _BrowseHarness(clientA: client);

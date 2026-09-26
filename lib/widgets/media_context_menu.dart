@@ -305,11 +305,33 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// non-Plex backends — Plex-only flows (Add to Collection, match,
   /// unmatch, etc.) call this directly. Backend-neutral flows must use
   /// [_getMediaClientForItem] instead.
-  PlexClient _getClientForItem() => context.getPlexClientWithFallback(serverIdOrNull(_itemServerId));
+  ///
+  /// An item that names its server never falls back to another server's
+  /// client: its id means nothing there, so an action would fail or, with
+  /// colliding ids, change a different item. Throws when that server has no
+  /// client instead.
+  PlexClient _getClientForItem() {
+    final serverId = serverIdOrNull(_itemServerId);
+    return serverId != null ? context.getPlexClientForServer(serverId) : context.getPlexClientWithFallback(null);
+  }
 
   /// Backend-neutral client for the active item's server. Used by flows
-  /// that work for Jellyfin too (downloads, basic browse).
-  MediaServerClient _getMediaClientForItem() => context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
+  /// that work for Jellyfin too (downloads, basic browse). Like
+  /// [_getClientForItem], never another server's client for an item that
+  /// names its own.
+  MediaServerClient _getMediaClientForItem() {
+    final serverId = serverIdOrNull(_itemServerId);
+    return serverId != null ? context.getMediaClientForServer(serverId) : context.getMediaClientWithFallback(null);
+  }
+
+  /// [_getMediaClientForItem], or null when there is no such client, for flows
+  /// that can go on without one (a downloaded file needs no server).
+  MediaServerClient? _tryGetMediaClientForItem() {
+    final serverId = serverIdOrNull(_itemServerId);
+    return serverId != null
+        ? context.tryGetMediaClientForServer(serverId)
+        : context.tryGetMediaClientWithFallback(null);
+  }
 
   /// Ask the server whether the signed-in user may delete [item] right now.
   ///
@@ -921,7 +943,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } else {
       await _executeAction(context, () async {
-        await WatchActions.setWatched(context, item, watched: watched, offline: false);
+        final outcome = await WatchActions.setWatched(context, item, watched: watched, offline: false);
+        // Nothing was marked: the item names no server, or its server has no
+        // client. Report that rather than a success.
+        if (outcome == WatchMarkOutcome.skipped) throw const _ItemServerUnavailable();
       }, watched ? t.messages.markedAsWatched : t.messages.markedAsUnwatched);
     }
   }
@@ -1065,7 +1090,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
+        final reason = e is _ItemServerUnavailable ? t.errors.reasonUnreachable : localizedErrorReason(e);
+        showErrorSnackBar(context, t.messages.errorLoading(error: reason));
       }
     }
   }
@@ -1680,7 +1706,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Check if the item is downloaded and use local file path if available
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final offlineWatchService = Provider.of<OfflineWatchSyncService>(context, listen: false);
-    final client = _getMediaClientForItem();
+    // A downloaded file plays without its server, so a missing client only
+    // matters when streaming.
+    final client = _tryGetMediaClientForItem();
     final globalKey = item.globalKey;
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
@@ -1698,6 +1726,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
 
     if (!context.mounted) return;
+    if (client == null) {
+      showErrorSnackBar(context, t.messages.errorLoading(error: t.errors.reasonUnreachable));
+      return;
+    }
     await ExternalPlayerService.launch(
       context: context,
       metadata: item,
@@ -1976,4 +2008,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // is still accessible programmatically via showContextMenu().
     return widget.child;
   }
+}
+
+/// Thrown inside [MediaContextMenuState._executeAction] when an action could
+/// not reach the item's server at all, so it reports that instead of success.
+class _ItemServerUnavailable implements Exception {
+  const _ItemServerUnavailable();
 }

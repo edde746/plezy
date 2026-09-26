@@ -127,4 +127,48 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
     await tester.pump(const Duration(seconds: 1));
   });
+
+  testWidgets('a code arriving after the screen is gone cancels the connect', (tester) async {
+    final connect = Completer<bool>();
+    var cancelCount = 0;
+    void Function(String)? deliverCode;
+    late Future<void> launch;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () {
+              launch = launchTrackerConnect<String>(
+                context,
+                isBusyOrConnected: false,
+                serviceName: 'Example',
+                connect: (onCodeReady) {
+                  deliverCode = onCodeReady;
+                  return connect.future;
+                },
+                onCancel: () {
+                  cancelCount++;
+                  if (!connect.isCompleted) connect.complete(false);
+                },
+                buildDialog: (payload, cancel) => const SizedBox(),
+                urlFor: (payload) => 'https://example.com/activate',
+              );
+            },
+            child: const Text('connect'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('connect'));
+    await tester.pump();
+
+    // The user leaves before the device code comes back.
+    await tester.pumpWidget(const SizedBox());
+    deliverCode!('payload');
+    await launch;
+
+    expect(cancelCount, 1, reason: 'nobody can see the code, so the poll must stop');
+    expect(connect.isCompleted, isTrue);
+  });
 }

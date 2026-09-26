@@ -285,17 +285,27 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
       }
     });
 
-    TrackerRatingContext ctx;
-    try {
-      ctx = await _resolveTrackerContext();
-    } on TrackerRatingUnavailableException {
+    void settleAll(_SectionStatus status) {
       if (!mounted) return;
       setState(() {
         for (final source in sources) {
           _loading.remove(source.service.name);
-          _statuses[source.service.name] = _SectionStatus(t.rateSheet.notAvailable, isError: true);
+          _statuses[source.service.name] = status;
         }
       });
+    }
+
+    TrackerRatingContext ctx;
+    try {
+      ctx = await _resolveTrackerContext();
+    } on TrackerRatingUnavailableException {
+      settleAll(_SectionStatus(t.rateSheet.notAvailable, isError: true));
+      return;
+    } catch (e) {
+      // The server or the anime mapping failed to answer: settle the rows the
+      // same way a per-tracker load failure does, or they spin forever.
+      appLogger.w('Failed to resolve tracker rating ids', error: e);
+      settleAll(_SectionStatus(t.errors.failedToRate, isError: true));
       return;
     }
 

@@ -451,6 +451,8 @@ void main() {
       expect(manager.authErrorServerIds, isNot(contains('server-1')));
       expect(client.config.token, 'new-token');
       expect(client.profileScopeId, buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'new-profile'));
+      // Live TV favorites are keyed by the owning account, not the device.
+      expect(client.plexAccountId, 'account-1');
       expect((await client.fetchLibraries()).map((library) => library.title), ['Fallback Movies']);
     });
 
@@ -928,6 +930,86 @@ void main() {
       },
     );
 
+    test('a Plex client that connects after the timeout is closed instead of leaked', () async {
+      await _prepareFreshPlexManagerTest();
+      final endpoint = _plexEndpoint('late');
+      final server = _ControlledPlexServer(
+        serverId: 'late-server',
+        endpoints: [endpoint],
+        discoveryStreams: [() => Stream.value(endpoint)],
+      );
+      final release = Completer<void>();
+      final transport = _CloseRecordingHttpClient();
+      PlexClient? lateClient;
+      final manager = MultiServerManager(
+        connectivityChanges: () => const Stream.empty(),
+        plexClientFactory:
+            (
+              config, {
+              required serverId,
+              required profileScopeId,
+              serverName,
+              prioritizedEndpoints,
+              onEndpointChanged,
+              onAllEndpointsExhausted,
+              seedTranscoderVideoSupport,
+            }) async {
+              await release.future;
+              return lateClient = PlexClient.forTesting(
+                config: config,
+                serverId: serverId,
+                profileScopeId: profileScopeId,
+                httpClient: transport,
+              );
+            },
+      );
+      addTearDown(manager.dispose);
+
+      final bound = await manager.refreshTokensForProfile(
+        _plexAccount('late-account', [server]),
+        profileId: 'profile-a',
+        timeout: const Duration(milliseconds: 10),
+      );
+      expect(bound, isEmpty);
+      expect(manager.isServerOnline(ServerId('late-server')), isFalse);
+
+      release.complete();
+      await pumpEventQueue(times: 20);
+
+      expect(lateClient, isNotNull);
+      expect(manager.getClient(ServerId('late-server')), isNull);
+      expect(transport.closed, isTrue);
+    });
+
+    test('an offline client of another profile is dropped when this profile cannot connect', () async {
+      await _prepareFreshPlexManagerTest();
+      final server = _ControlledPlexServer(
+        serverId: 'server-1',
+        endpoints: [_plexEndpoint('down')],
+        discoveryStreams: [],
+      );
+      final transport = _CloseRecordingHttpClient();
+      final previous = testPlexClient(
+        serverId: ServerId('server-1'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'profile-a'),
+        httpClient: transport,
+      );
+      final manager = MultiServerManager(connectivityChanges: () => const Stream.empty());
+      addTearDown(manager.dispose);
+      manager.debugRegisterClientForTesting(previous, online: false);
+
+      final bound = await manager.refreshTokensForProfile(_plexAccount('account', [server]), profileId: 'profile-b');
+      await pumpEventQueue();
+
+      expect(bound, isEmpty);
+      expect(manager.getClient(ServerId('server-1')), isNull);
+      expect(transport.closed, isTrue);
+      // Still registered — for profile B, so a reconnect retries it with B's token.
+      expect(manager.registeredServerIds, ['server-1']);
+      expect(manager.isRegisteredForOtherProfile(ServerId('server-1'), profileId: 'profile-b'), isFalse);
+      expect(manager.isRegisteredForOtherProfile(ServerId('server-1'), profileId: 'profile-a'), isTrue);
+    });
+
     test('dispose cancels a pending connectivity debounce with no later mutation', () async {
       final storage = await _prepareFreshPlexManagerTest();
       final endpoint = _plexEndpoint('pending');
@@ -966,6 +1048,35 @@ void main() {
     });
   });
 
+  group('checkServerHealth', () {
+    test('a probe result from a client replaced mid-probe is not applied', () async {
+      final probeStarted = Completer<void>();
+      final original = testPlexClient(
+        serverId: ServerId('server-1'),
+        handler: (_) async {
+          if (!probeStarted.isCompleted) probeStarted.complete();
+          await Completer<void>().future;
+          throw StateError('unreachable');
+        },
+      );
+      final replacement = testPlexClient(serverId: ServerId('server-1'));
+      final manager = MultiServerManager();
+      addTearDown(manager.dispose);
+      manager.debugRegisterClientForTesting(original);
+
+      final health = manager.checkServerHealth();
+      await probeStarted.future;
+      // A profile switch: the old client is removed (aborting its probe) and
+      // the new profile's client is bound under the same server id.
+      manager.removeServer(ServerId('server-1'));
+      manager.debugRegisterClientForTesting(replacement);
+      await health;
+
+      expect(manager.getClient(ServerId('server-1')), same(replacement));
+      expect(manager.isServerOnline(ServerId('server-1')), isTrue);
+    });
+  });
+
   group('relay endpoint handling', () {
     test('a relay phase-1 winner is never persisted; a later direct promotion is', () async {
       final storage = await _prepareFreshPlexManagerTest();
@@ -993,6 +1104,7 @@ void main() {
 
       final client = factory.clients['relay-server']!;
       expect(client.config.baseUrl, relay.uri);
+      expect(client.plexAccountId, 'relay-account');
       expect(storage.getServerEndpoint(ServerId('relay-server')), isNull);
       expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('relay-server')), isTrue);
 
@@ -2153,4 +2265,15 @@ class _TrackedStreamSubscription<T> implements StreamSubscription<T> {
 
   @override
   Future<E> asFuture<E>([E? futureValue]) => _delegate.asFuture(futureValue);
+}
+
+class _CloseRecordingHttpClient extends http.BaseClient {
+  bool closed = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async =>
+      http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
+
+  @override
+  void close() => closed = true;
 }

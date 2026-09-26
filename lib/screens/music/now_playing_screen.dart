@@ -241,6 +241,23 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     }
   }
 
+  /// Leaves the screen once the session has ended. Another screen (an artist
+  /// or album page, or the video that claimed audio) may have been pushed on
+  /// top meanwhile: popping would close that one, so a covered route removes
+  /// itself instead. The first route stays rather than strand an empty
+  /// navigator.
+  void _closeForIdle() {
+    if (!mounted) return;
+    final route = ModalRoute.of(context);
+    if (route == null || route.isFirst || !route.isActive) return;
+    final navigator = Navigator.of(context);
+    if (route.isCurrent) {
+      navigator.pop();
+    } else {
+      navigator.removeRoute(route);
+    }
+  }
+
   // -------------------------------------------------------------------
   // Build
   // -------------------------------------------------------------------
@@ -256,9 +273,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       // empty player is a dead end, leave the screen.
       if (!_poppedForIdle) {
         _poppedForIdle = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && Navigator.canPop(context)) Navigator.pop(context);
-        });
+        WidgetsBinding.instance.addPostFrameCallback((_) => _closeForIdle());
       }
       return Scaffold(backgroundColor: tk.bg, body: const SizedBox.expand());
     }

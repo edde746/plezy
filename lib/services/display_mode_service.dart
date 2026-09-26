@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/app_logger.dart';
@@ -117,7 +118,7 @@ class DisplayModeService {
     final modes = await _channel.invokeListMethod<Map>('getDisplayModes');
     if (modes == null || modes.isEmpty) return false;
 
-    final bestRate = _findBestRefreshRate(fps, modes, currentWidth, currentHeight);
+    final bestRate = findBestRefreshRate(fps, modes, currentWidth, currentHeight);
     if (bestRate == 0 || bestRate == currentRate) return false;
 
     final success = await _channel.invokeMethod<bool>('setDisplayMode', {
@@ -151,9 +152,21 @@ class DisplayModeService {
     return false;
   }
 
-  /// Find the best matching refresh rate for a video fps.
-  /// Mirrors the C++ FindBestRefreshRate algorithm.
-  static int _findBestRefreshRate(double videoFps, List<Map> modes, int currentWidth, int currentHeight) {
+  /// The refresh rate a Windows mode really runs at. Windows reports whole
+  /// hertz, and the NTSC-family 1000/1001 rates (23.976, 29.97, 59.94, and
+  /// their multiples such as 47.952 or 119.88) come through as one below the
+  /// nominal rate: 23, 29, 59, 47, 119.
+  static double _effectiveRefreshRate(int rate) {
+    final nominal = rate + 1;
+    if (nominal % 24 == 0 || nominal % 30 == 0) return nominal * 1000 / 1001;
+    return rate.toDouble();
+  }
+
+  /// Find the best matching refresh rate for a video fps: the lowest whole
+  /// multiple of it within 0.5%, and of those the closest match — so
+  /// 23.976fps content takes a 23 (23.976) Hz mode over 24 Hz.
+  @visibleForTesting
+  static int findBestRefreshRate(double videoFps, List<Map> modes, int currentWidth, int currentHeight) {
     if (videoFps <= 0) return 0;
 
     final rates = <int>{};
@@ -169,9 +182,10 @@ class DisplayModeService {
 
     int bestRate = 0;
     int bestMultiplier = 0;
+    double bestDeviation = 0;
 
     for (final rate in rates) {
-      final ratio = rate / videoFps;
+      final ratio = _effectiveRefreshRate(rate) / videoFps;
       final rounded = ratio.roundToDouble();
 
       if (rounded < 1.0) continue;
@@ -182,9 +196,15 @@ class DisplayModeService {
       // Within 0.5% tolerance.
       if (deviation > 0.005) continue;
 
-      if (bestRate == 0 || multiplier < bestMultiplier || (multiplier == bestMultiplier && rate > bestRate)) {
+      final better =
+          bestRate == 0 ||
+          multiplier < bestMultiplier ||
+          (multiplier == bestMultiplier &&
+              (deviation < bestDeviation || (deviation == bestDeviation && rate > bestRate)));
+      if (better) {
         bestRate = rate;
         bestMultiplier = multiplier;
+        bestDeviation = deviation;
       }
     }
 

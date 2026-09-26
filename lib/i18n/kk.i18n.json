@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Бұл файл дұрыс Plezy баптаулар файлы емес",
     "importSettingsNoUser": "Баптауларды импорттау алдында жүйеге кіріңіз",
     "shortcutsReset": "Пернелер тіркесі әдепкі күйге қайтарылды",
+    "resetShortcutsConfirm": "",
     "about": "Қолданба туралы",
     "aboutDescription": "Қолданба туралы ақпарат пен лицензиялар",
     "updates": "Жаңартулар",

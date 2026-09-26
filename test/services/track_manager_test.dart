@@ -66,6 +66,10 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
     _state = _state.copyWith(tracks: t);
   }
 
+  set rate(double value) {
+    _state = _state.copyWith(rate: value);
+  }
+
   void emitTracks(Tracks t) {
     tracks = t;
     tracksController.add(t);
@@ -240,6 +244,26 @@ void main() {
 
       expect(player.selectedSubtitle, hasLength(1));
       expect(player.selectedSubtitle.single.id, 'no');
+    });
+
+    test('a resolved speed of 1.0 replaces the rate an in-place reload kept', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.0);
+
+      fakeAsync((async) {
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: 'native-audio', language: 'eng')],
+          ),
+        )..rate = 1.5;
+        final mgr = _make(player: player);
+
+        mgr.applyTrackSelectionWhenReady();
+        async.flushMicrotasks();
+
+        expect(player.rates, [1.0]);
+        mgr.dispose();
+      });
     });
 
     test('a server-rendered primary does not wait for a native subtitle track', () async {
@@ -1561,6 +1585,21 @@ void main() {
       expect(mgr.cycleSubtitleTrack()?.id, SubtitleTrack.off.id);
       expect(player.selectedSubtitle.map((track) => track.id), [SubtitleTrack.off.id]);
     });
+  });
+
+  test('cycleSubtitleTrack lands on Off after the last track, which the engine does not list', () async {
+    await SettingsService.getInstance();
+    const english = SubtitleTrack(id: '1', language: 'eng');
+    const swedish = SubtitleTrack(id: '2', language: 'swe');
+    final player = _FakePlayer(
+      tracks: const Tracks(subtitle: [english, swedish]),
+      track: const TrackSelection(subtitle: swedish),
+    );
+    final mgr = _make(player: player);
+    addTearDown(mgr.dispose);
+
+    expect(mgr.cycleSubtitleTrack()?.id, SubtitleTrack.off.id);
+    expect(player.selectedSubtitle.map((track) => track.id), [SubtitleTrack.off.id]);
   });
 
   group('cycleAudioTrack', () {

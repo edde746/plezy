@@ -407,6 +407,13 @@ class PlexClient
   @override
   final ServerId serverId;
   PlexProfileScopeId profileScopeId;
+
+  /// [PlexAccountConnection.id] of the plex.tv account this client is bound
+  /// under, set by the owning [MultiServerManager]. Scopes the account-level
+  /// Live TV favorites store ([favoriteStoreKey]).
+  @override
+  String? plexAccountId;
+
   Object _authenticationSessionId = Object();
 
   @override
@@ -1356,11 +1363,12 @@ class PlexClient
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
     // ignore: unused_element_parameter
     AbortController? abort,
+    int pageSize = _fetchAllPageSize,
   }) {
     return drainPages<PlexMetadataDto>((start, size) async {
       final page = await fetchPage(start, size, abort);
       return LibraryPage(items: page.items, totalCount: page.totalSize, offset: start);
-    }, pageSize: _fetchAllPageSize);
+    }, pageSize: pageSize);
   }
 
   /// Walk every page of [path] and return a single synthesized response whose
@@ -2506,6 +2514,18 @@ class PlexClient
     filter: _videoOrCollectionHubItem,
   );
 
+  static final RegExp _collectionChildrenPath = RegExp(r'^/library/collections/[^/]+/children/?$');
+
+  /// Largest page a request for [hubKey] may ask for. A collection hub's key
+  /// is `/library/collections/{id}/children`, which PMS caps (#2468); other
+  /// hub keys take the regular fetch-all page size.
+  int _hubRequestPageSize(String hubKey) {
+    final path = Uri.tryParse(hubKey)?.path ?? hubKey;
+    return _collectionChildrenPath.hasMatch(path)
+        ? _PlexCollectionMethods._collectionChildrenMaxPageSize
+        : _fetchAllPageSize;
+  }
+
   /// Get full content from a hub using its hub key
   /// Returns the complete list of metadata items in the hub
   Future<List<PlexMetadataDto>> _getHubContent(String hubKey) async {
@@ -2514,15 +2534,14 @@ class PlexClient
       final items = await _fetchAllPages(
         (start, size, abort) =>
             _fetchPaginatedList(hubKey, start: start, size: size, abort: abort, librarySectionID: hubSectionID),
+        pageSize: _hubRequestPageSize(hubKey),
       );
-      return items.where(_isVideoMetadata).toList();
+      return items.where(_videoOrMusicHubItem).toList();
     } catch (e, st) {
       appLogger.e('Failed to get hub content', error: e, stackTrace: st);
       return [];
     }
   }
-
-  bool _isVideoMetadata(PlexMetadataDto item) => ContentTypes.videoTypes.contains(item.type?.toLowerCase());
 
   Future<_LibraryContentResult> _getHubContentPage(
     String hubKey, {
@@ -2532,7 +2551,12 @@ class PlexClient
   }) async {
     final filteredOffset = start ?? 0;
     final pageSize = size ?? _fetchAllPageSize;
-    final rawPageSize = pageSize > _fetchAllPageSize ? pageSize : _fetchAllPageSize;
+    final maxRawPageSize = _hubRequestPageSize(hubKey);
+    // The loop below fills the page across as many raw requests as it takes,
+    // so a capped hub just makes more, smaller requests.
+    final rawPageSize = maxRawPageSize < _fetchAllPageSize
+        ? maxRawPageSize
+        : (pageSize > _fetchAllPageSize ? pageSize : _fetchAllPageSize);
     final hubSectionID = _librarySectionIdFromString(hubKey);
     final pageItems = <PlexMetadataDto>[];
     var rawOffset = 0;
@@ -2553,7 +2577,9 @@ class PlexClient
       rawOffset += rawItems.length;
 
       for (final item in rawItems) {
-        if (!_isVideoMetadata(item)) continue;
+        // Same filter as the library-hub preview rows, so a music hub's
+        // "View All" lists what its row showed.
+        if (!_videoOrMusicHubItem(item)) continue;
         if (filteredSeen >= filteredOffset && pageItems.length < pageSize) {
           pageItems.add(item);
         }
@@ -3393,6 +3419,28 @@ class PlexClient
       if (error.statusCode == 404) return null;
       rethrow;
     }
+  }
+
+  /// The item's current server-side metadata for the metadata editor. Unlike
+  /// [fetchItem] it never falls back to the API cache: the editor diffs tag
+  /// edits against these values, so a stale copy would re-add or drop tags.
+  Future<MediaItem?> fetchEditableItem(String id) async {
+    final MediaServerResponse response;
+    try {
+      response = await _getWithFailover('/library/metadata/$id');
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
+    final metadataJson = _getFirstMetadataJson(response);
+    if (metadataJson == null) return null;
+    final container = _getMediaContainer(response);
+    final metadata = _tagMetadataWithLibrary(
+      PlexMetadataDto.fromJsonWithImages(metadataJson),
+      librarySectionID: _librarySectionIdFromJson(metadataJson) ?? _librarySectionIdFromJson(container),
+      librarySectionTitle: _librarySectionTitleFromJson(metadataJson) ?? _librarySectionTitleFromJson(container),
+    );
+    return PlexMappers.mediaItem(metadata);
   }
 
   @override
@@ -4302,8 +4350,10 @@ class PlexClient
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
+  /// [excludedLibraryIds] is unused: every row carries its `librarySectionID`,
+  /// so the caller filters hidden libraries out of the mapped results.
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
     final items = await _getContinueWatching(count: count);
     return items.map((m) => PlexMappers.mediaItem(m)).toList();
   }

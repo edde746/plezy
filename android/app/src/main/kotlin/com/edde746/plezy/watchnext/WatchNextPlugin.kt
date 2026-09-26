@@ -223,7 +223,22 @@ class WatchNextPlugin() :
   fun notifyDeepLink(contentId: String) {
     pendingDeepLink = contentId
     try {
-      methodChannel.invokeMethod("onWatchNextTap", mapOf("contentId" to contentId))
+      methodChannel.invokeMethod(
+        "onWatchNextTap",
+        mapOf("contentId" to contentId),
+        object : MethodChannel.Result {
+          // Dart answers true only once a live tap handler took the link; until
+          // then it stays pending for getInitialDeepLink. Clearing it here keeps
+          // the next main screen (profile switch, sign-in) from replaying it.
+          override fun success(result: Any?) {
+            if (result == true && pendingDeepLink == contentId) pendingDeepLink = null
+          }
+
+          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {}
+
+          override fun notImplemented() {}
+        }
+      )
     } catch (_: Exception) {
       Log.d(TAG, "Method channel not ready; deep link retained")
     }

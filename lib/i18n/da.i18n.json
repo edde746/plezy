@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Denne fil er ikke en gyldig eksport af Plezy-indstillinger",
     "importSettingsNoUser": "Log ind før import af indstillinger",
     "shortcutsReset": "Genveje nulstillet til standard",
+    "resetShortcutsConfirm": "",
     "about": "Om",
     "aboutDescription": "App-information og licenser",
     "updates": "Opdateringer",

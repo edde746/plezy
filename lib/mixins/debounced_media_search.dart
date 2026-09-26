@@ -112,8 +112,12 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
     if (query == lastSearchedQuery) {
       // Reverted to what's already shown: the pending debounce and any
       // in-flight pass for the intermediate text must not land afterwards.
+      // The spinner goes with them unless a pass for this very text is still
+      // running — including one an earlier keystroke already invalidated,
+      // which left isSearching set with nothing left to clear it.
       _debounceTimer?.cancel();
-      if (_invalidateStaleInFlight(query)) setState(() => isSearching = false);
+      _invalidateStaleInFlight(query);
+      if (isSearching && _inFlightQuery == null) setState(() => isSearching = false);
       return;
     }
 

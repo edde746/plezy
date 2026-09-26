@@ -10,7 +10,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     _watchTogetherLease = watchTogetherLease;
     if (watchTogether != null && watchTogetherLease != null && watchTogetherLease.isCurrent) {
       _watchTogetherProvider = watchTogether;
-      watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+      watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
     }
     bool isCurrentStart() => attempt.isCurrent && (watchTogetherLease == null || watchTogetherLease.isCurrent);
     _firstFrame.resetRenderedForAttempt();
@@ -26,6 +26,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       // remote) would otherwise tune alongside it, and whichever adopted last
       // would orphan the other's session. The attempt above idled the gate.
       final startLease = _transitionGate.tryAcquire(PlaybackTransition.startingLive);
+      final replacement = _live.beginReplacement();
+      var committed = false;
       try {
         _firstFrame.resetUiForOpen();
         await currentPlayer.requestAudioFocus();
@@ -118,6 +120,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (PlatformDetector.isAutomotive()) {
           await _playWithPlaybackIntent(currentPlayer);
         }
+        committed = attempt.isCurrent;
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));
@@ -127,7 +130,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           unawaited(_handleBackButton());
         }
       } finally {
-        if (startLease != null) _transitionGate.release(startLease);
+        if (startLease != null) _finishLiveReplacement(startLease, replacement, committed: committed);
       }
       return;
     }

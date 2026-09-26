@@ -914,6 +914,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// codecs.
   final TvBackgroundSuspendState _tvSuspend = TvBackgroundSuspendState();
 
+  /// The item a TV background suspend released; its restore reloads only that
+  /// item, never one the viewer moved to while the suspend was settling.
+  MediaItem? _tvSuspendedMetadata;
+
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// Apple auto-PiP is system-initiated during the background transition, and
   /// Android auto-PiP on API 26-30 has a brief native transition window before
@@ -924,6 +928,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
   MediaControlsManager? _mediaControlsManager;
+
+  /// [_initializeServices] ran while the open had already failed and left the
+  /// service layer down; the reload that recovers brings it up.
+  bool _playbackServicesDeferred = false;
   late final MediaControlsScreenController _mediaControls = MediaControlsScreenController(
     manager: () => _mediaControlsManager,
     player: () => player,
@@ -971,6 +979,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   WatchTogetherProvider? _watchTogetherProvider;
   Object? _watchTogetherBinding;
   WatchPlaybackLease? _watchTogetherLease;
+
+  /// The one instance registered as the provider's player media-switch
+  /// owner. Every tear-off of an extension method is a new closure that never
+  /// compares equal, so detach identifies its own registration by this field.
+  late final MediaSwitchCallback _watchTogetherMediaSwitchHandler = _handlePlayerMediaSwitch;
   int _userRateOperation = 0;
   Future<void> _userRateMutation = Future<void>.value();
   Completer<void>? _nativeSeekDrain;
@@ -1196,6 +1209,41 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _attachToWatchTogetherSession(lease: widget.watchTogetherLease!);
   }
 
+  /// The Windows display-switch hold otherwise runs only behind a real
+  /// display-mode change on entering fullscreen.
+  @visibleForTesting
+  Future<void> debugHoldPlaybackForDisplaySwitchForTesting(Duration delay) =>
+      _holdPlaybackForDisplaySwitch(player!, delay);
+
+  /// The TV background suspend otherwise fires only from its Android TV grace
+  /// timer; the restore then runs from the ordinary resume path.
+  @visibleForTesting
+  Future<void> debugSuspendForTvBackgroundForTesting() => _suspendPlayerForTvBackground();
+
+  /// What a completed startup leaves behind, for tests that seed [player]
+  /// directly instead of running the full open.
+  @visibleForTesting
+  Future<void> debugMarkPlaybackStartedForTesting() async {
+    final settings = await SettingsService.getInstance();
+    _volumeController ??= VideoVolumeController(
+      player: player!,
+      settings: settings,
+      initialVolume: 100,
+      onUserChange: _announceVolumeCommand,
+    );
+    setState(() => _isPlayerInitialized = true);
+    _firstFrame.markReady();
+  }
+
+  @visibleForTesting
+  void debugCompleteVideoForTesting() => _onVideoCompleted(true);
+
+  @visibleForTesting
+  bool get debugPlayNextPromptVisibleForTesting => _episode.showPlayNextDialog;
+
+  @visibleForTesting
+  int get debugAutoPlayCountdownForTesting => _episode.autoPlayCountdown.value;
+
   @visibleForTesting
   Future<bool> debugInterceptEofForTesting() => _eofRecovery.interceptEof(player!);
 
@@ -1230,6 +1278,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// session.
   @visibleForTesting
   Future<void> debugInitializeServicesForTesting() => _initializeServices();
+
+  /// Whether the OS media session is up, which the startup flow gives no
+  /// observable sign of without a native media-controls plugin.
+  @visibleForTesting
+  bool get debugMediaControlsActiveForTesting => _mediaControlsManager != null;
 
   /// The playback start otherwise runs only at the end of player
   /// initialization, which no widget test finishes without a live native core.
@@ -1269,7 +1322,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (watchTogether != null && watchTogether.isPlaybackLeaseCurrent(launchLease)) {
         _watchTogetherProvider = watchTogether;
         _watchTogetherLease = launchLease;
-        watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+        watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
       }
     }
     unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.player));

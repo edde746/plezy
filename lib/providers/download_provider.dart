@@ -1516,7 +1516,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         if (!_isQueueOwnershipCurrent(ownership)) return false;
         final claimed = await _claimDownloadForProfile(globalKey, ownership, client);
         if (!_isQueueOwnershipCurrent(ownership)) return false;
-        if (claimed) safeNotifyListeners();
+        if (claimed) {
+          await _hydrateClaimedDownload(metadataToStore, client, ownership: ownership, relatedContext: relatedContext);
+          if (!_isQueueOwnershipCurrent(ownership)) return false;
+          safeNotifyListeners();
+        }
         return claimed;
       }
     }
@@ -1603,6 +1607,42 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _downloadLibraries[globalKey] = (libraryId: storedMetadata.libraryId, libraryTitle: storedMetadata.libraryTitle);
     }
     return true;
+  }
+
+  /// Load display metadata for a physical download [metadata] the profile in
+  /// [ownership] just claimed. The profile's maps were loaded without it, so
+  /// without this the claimed row stays without a title (and an episode
+  /// without its show) until the next full reload. Mirrors the fresh-queue
+  /// path: the leaf from the claiming profile's cache scope (falling back to
+  /// the caller's copy), then the parents for episodes and tracks.
+  Future<void> _hydrateClaimedDownload(
+    MediaItem metadata,
+    MediaServerClient client, {
+    required _QueueOwnership ownership,
+    _RelatedMetadataDownloadContext? relatedContext,
+  }) async {
+    final globalKey = metadata.globalKey;
+    final hydration = await _hydrateDownloadMetadata(globalKey, (
+      items: const <String, MediaItem>{},
+      scopesByServer: const <String, String?>{},
+    ), isStale: () => !_isQueueOwnershipCurrent(ownership));
+    if (hydration.stale) return;
+    final hydrated = hydration.metadata ?? metadata;
+    _metadata[globalKey] = hydrated;
+
+    if (hydrated.isEpisode || hydrated.kind == MediaKind.track) {
+      try {
+        await _fetchAndStoreParentMetadata(
+          hydrated,
+          client,
+          ownership: ownership,
+          context: relatedContext ?? _RelatedMetadataDownloadContext(),
+        );
+      } catch (e) {
+        // The claim is already durable; parent enrichment is best effort.
+        appLogger.w('Failed to load parent metadata while claiming $globalKey', error: e);
+      }
+    }
   }
 
   /// Fetch and store parent metadata for a leaf item — show + season for an
@@ -1834,17 +1874,29 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
-  Future<void> deleteDownload(String globalKey) => _deleteDownload(globalKey, notify: true);
+  Future<void> deleteDownload(String globalKey) =>
+      _deleteDownload(globalKey, notify: true, profileGeneration: _profileGeneration);
 
-  Future<void> _deleteDownload(String globalKey, {required bool notify}) async {
+  /// [profileGeneration] is the profile generation that initiated the
+  /// deletion. Ownership checks read the mutable active-profile view, so a
+  /// profile switch during an await aborts the rest of the operation rather
+  /// than continuing under the new profile's identity.
+  Future<void> _deleteDownload(String globalKey, {required bool notify, required int profileGeneration}) async {
+    if (profileGeneration != _profileGeneration) return;
     try {
       final meta = _metadata[globalKey];
       if (meta != null &&
           (meta.isShow || meta.isSeason || meta.kind == MediaKind.album || meta.kind == MediaKind.artist)) {
-        await _deleteOwnedContainerDownloads(globalKey, meta);
+        await _deleteOwnedContainerDownloads(globalKey, meta, profileGeneration);
         return;
       }
-      if (!_ownsDownloadKey(globalKey)) return;
+      if (!_ownsDownloadKey(globalKey)) {
+        // A show, season, album or artist has no download row of its own, and
+        // its metadata can be missing (cache miss, failed parent fetch). Its
+        // leaves' rows still record it as their parent or grandparent.
+        if (meta == null) await _deleteOwnedContainerDownloads(globalKey, null, profileGeneration);
+        return;
+      }
 
       final profileId = _requireActiveProfileId();
       final releasedAsShared = await _releaseDownloadForProfile(globalKey, profileId, onlyIfShared: true);
@@ -1883,20 +1935,52 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return released;
   }
 
-  Future<void> _deleteOwnedContainerDownloads(String globalKey, MediaItem container) async {
-    final descendants = _ownedDescendantEntries(container).toList();
+  /// Delete the active profile's downloads under the container [globalKey].
+  /// [container] is null when its metadata is not loaded; the leaves are then
+  /// found through their rows alone.
+  Future<void> _deleteOwnedContainerDownloads(String globalKey, MediaItem? container, int profileGeneration) async {
+    bool isStale() => profileGeneration != _profileGeneration;
+    final descendantKeys = await _ownedDescendantKeys(globalKey, container);
+    // The keys were filtered through the initiating profile's ownership; after
+    // a switch they, and every later step, would act for the new profile.
+    if (isStale()) return;
+    if (container == null && descendantKeys.isEmpty) return;
     _batchDeletionDepth++;
     try {
-      for (final entry in descendants) {
-        await _deleteDownload(entry.key, notify: false);
-        DeletionNotifier().notifyDeletedItem(item: entry.value, isDownloadOnly: true);
+      for (final key in descendantKeys) {
+        if (isStale()) return;
+        final meta = _metadata[key];
+        await _deleteDownload(key, notify: false, profileGeneration: profileGeneration);
+        if (meta != null) DeletionNotifier().notifyDeletedItem(item: meta, isDownloadOnly: true);
       }
     } finally {
       _batchDeletionDepth--;
     }
 
-    DeletionNotifier().notifyDeletedItem(item: container, isDownloadOnly: true);
+    if (container != null) DeletionNotifier().notifyDeletedItem(item: container, isDownloadOnly: true);
     safeNotifyListeners();
+  }
+
+  /// Owned leaf downloads under the container [globalKey]: those whose loaded
+  /// metadata names [container] as parent or grandparent, plus those whose row
+  /// records it — the only link left for a leaf whose metadata is missing.
+  Future<List<String>> _ownedDescendantKeys(String globalKey, MediaItem? container) async {
+    final profileGeneration = _profileGeneration;
+    final keys = <String>{if (container != null) ..._ownedDescendantEntries(container).map((entry) => entry.key)};
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed != null) {
+      // Plain parent / grandparent rating-key matches, so they cover albums
+      // and artists as well as seasons and shows.
+      final rows = [
+        ...await _database.getEpisodesBySeason(parsed.ratingKey, serverId: parsed.serverId),
+        ...await _database.getEpisodesByShow(parsed.ratingKey, serverId: parsed.serverId),
+      ];
+      // _ownsDownloadKey reads the active profile's set; the caller discards
+      // the result once the profile changed during the queries above.
+      if (profileGeneration != _profileGeneration) return const [];
+      keys.addAll(rows.map((row) => row.globalKey).where(_ownsDownloadKey));
+    }
+    return keys.toList();
   }
 
   Iterable<MapEntry<String, MediaItem>> _ownedDescendantEntries(MediaItem container) {
@@ -1937,6 +2021,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (!_downloadManager.downloadsSupported) return;
     _downloadManager.resumeQueuedDownloads(client);
   }
+
+  /// Re-evaluate queued and running downloads after the "download on Wi-Fi
+  /// only" setting changed.
+  Future<void> applyDownloadOnWifiOnly(bool wifiOnly) => _downloadManager.applyDownloadOnWifiOnly(wifiOnly);
 
   /// Backend-aware metadata lookup for offline UI. Routes through
   /// [DownloadManagerService] which dispatches to [PlexApiCache] or
@@ -2036,6 +2124,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// [activeGlobalKey] is excluded from deletion to protect the currently playing item.
   Future<List<String>> autoDeleteWatchedDownloads({String? activeGlobalKey}) async {
     final deletedTitles = <String>[];
+    final profileGeneration = _profileGeneration;
 
     final completedKeys = _downloads.entries
         .where((e) => _ownsDownloadKey(e.key) && e.value.status == DownloadStatus.completed)
@@ -2043,6 +2132,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         .toList();
 
     for (final globalKey in completedKeys) {
+      // The keys and watched judgments belong to the profile that started the
+      // sweep; stop rather than act for a profile switched to mid-sweep.
+      if (profileGeneration != _profileGeneration) break;
       final meta = _resolvedMetadata(globalKey);
       if (meta == null) continue;
       if (!meta.isWatched) continue;
@@ -2324,7 +2416,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           }
           final wasOwned = _ownsDownloadKey(downloadKey);
           final metadata = _metadata[downloadKey];
-          await _deleteDownload(downloadKey, notify: false);
+          await _deleteDownload(downloadKey, notify: false, profileGeneration: ownership.generation);
           if (wasOwned && metadata != null) {
             DeletionNotifier().notifyDeletedItem(item: metadata, isDownloadOnly: true);
           }

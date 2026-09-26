@@ -141,6 +141,18 @@ class _KeyUpSuppressor {
   }
 }
 
+/// Feed a key event that reaches the focus tree without passing through
+/// [HardwareKeyboard] to the suppressors' KeyUp observers. The key simulator
+/// (gamepad, companion remote, Apple TV touch) dispatches straight to focus
+/// handlers, and it delivers a held key's KeyUp to the node that got the
+/// KeyDown — so after a long press moves focus (e.g. into a context menu), no
+/// focus-phase consumer sees that release either, and the armed suppression
+/// would swallow the next press.
+void observeSimulatedKeyEvent(KeyEvent event) {
+  SelectKeyUpSuppressor._instance._observeKeyUp(event);
+  BackKeyUpSuppressor._instance._observeKeyUp(event);
+}
+
 /// Global helper to suppress the next SELECT key-up event.
 class SelectKeyUpSuppressor {
   static final _instance = _KeyUpSuppressor((k) => k.isSelectKey);

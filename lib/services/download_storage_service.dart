@@ -102,12 +102,21 @@ class DownloadStorageService {
   /// A `saf` root is a `content://` tree URI instead — see [safBaseUri].
   String? get customFileRootPath => _customPathType == 'file' ? _customDownloadPath : null;
 
-  /// Format episode filename base: S{XX}E{XX} - {Title}
+  /// Short tag that makes a download's file name unique to its item, e.g.
+  /// `[1a2b3c4d]`. Titles alone collide — the same movie in "Movies" and
+  /// "Movies 4K", or on both a Plex and a Jellyfin server — and the copies
+  /// would overwrite, and on deletion remove, each other's files. It is a
+  /// digest of the server and item ids (the ids themselves run to 32-40
+  /// characters), so enqueue, completion and SAF recovery all derive the same
+  /// name, and it must not change: in-flight downloads are looked up by it.
+  String _itemTag(MediaItem item) => '[${md5.convert(utf8.encode(item.globalKey)).toString().substring(0, 8)}]';
+
+  /// Format episode filename base: S{XX}E{XX} - {Title} [{tag}]
   String _formatEpisodeFileName(MediaItem episode) {
     final season = padNumber(episode.parentIndex ?? 0, 2);
     final ep = padNumber(episode.index ?? 0, 2);
     final episodeName = _sanitizeFileName(episode.title!);
-    return 'S${season}E$ep - $episodeName';
+    return 'S${season}E$ep - $episodeName ${_itemTag(episode)}';
   }
 
   bool isUsingCustomPath() => _customDownloadPath != null;
@@ -267,6 +276,10 @@ class DownloadStorageService {
     return _formatTitleWithYear(movie.title!, movie.year);
   }
 
+  /// Movie file base name: "Title (YYYY) [{tag}]". The folder stays
+  /// title-only, so copies of the same title share it; the file is the item's.
+  String _getMovieFileBaseName(MediaItem movie) => '${_getMovieFolderName(movie)} ${_itemTag(movie)}';
+
   /// Get the folder name for a TV show: "Show Name (YYYY)"
   /// [showYear]: Pass explicitly for episodes (episode.year may differ from show's year)
   String _getShowFolderName(MediaItem metadata, {int? showYear}) {
@@ -289,11 +302,11 @@ class DownloadStorageService {
     return album.isEmpty ? 'Unknown Album' : album;
   }
 
-  /// Format track filename base: {NN} - {Title}, prefixed with the disc
-  /// number on multi-disc albums: {D}-{NN} - {Title}. A track without an
-  /// index is just the sanitized title.
+  /// Format track filename base: {NN} - {Title} [{tag}], prefixed with the
+  /// disc number on multi-disc albums: {D}-{NN} - {Title} [{tag}]. A track
+  /// without an index is just the sanitized title and tag.
   String _formatTrackFileName(MediaItem track) {
-    final title = _sanitizeFileName(track.title!);
+    final title = '${_sanitizeFileName(track.title!)} ${_itemTag(track)}';
     final trackNumber = track.trackNumber;
     if (trackNumber == null) return title;
     final number = padNumber(trackNumber, 2);
@@ -312,7 +325,7 @@ class DownloadStorageService {
   /// Get movie directory: downloads/Movies/{Movie Name (YYYY)}/
   Future<Directory> getMovieDirectory(MediaItem movie) => _downloadsSubdirectory(getMovieSafPathComponents(movie));
 
-  /// Get movie video file path: .../Movie Name (YYYY)/Movie Name (YYYY).{ext}
+  /// Get movie video file path: .../Movie Name (YYYY)/Movie Name (YYYY) [{tag}].{ext}
   Future<String> getMovieVideoPath(MediaItem movie, String extension) async {
     final movieDir = await getMovieDirectory(movie);
     return path.join(movieDir.path, getMovieSafFileName(movie, extension));
@@ -339,21 +352,21 @@ class DownloadStorageService {
     return (seasonDirPath: seasonDir.path, fileName: fileName);
   }
 
-  /// Get episode video file path: .../Season XX/S{XX}E{XX} - {Title}.{ext}
+  /// Get episode video file path: .../Season XX/S{XX}E{XX} - {Title} [{tag}].{ext}
   /// [showYear]: Pass the show's premiere year (not episode year)
   Future<String> getEpisodeVideoPath(MediaItem episode, String extension, {int? showYear}) async {
     final base = await _getEpisodeBasePath(episode, showYear: showYear);
     return path.join(base.seasonDirPath, '${base.fileName}.$extension');
   }
 
-  /// Get episode thumbnail path: .../Season XX/S{XX}E{XX} - {Title}.jpg
+  /// Get episode thumbnail path: .../Season XX/S{XX}E{XX} - {Title} [{tag}].jpg
   /// [showYear]: Pass the show's premiere year (not episode year)
   Future<String> getEpisodeThumbnailPath(MediaItem episode, {int? showYear}) async {
     final base = await _getEpisodeBasePath(episode, showYear: showYear);
     return path.join(base.seasonDirPath, '${base.fileName}.jpg');
   }
 
-  /// Get subtitles directory for episode: .../Season XX/S{XX}E{XX} - {Title}_subs/
+  /// Get subtitles directory for episode: .../Season XX/S{XX}E{XX} - {Title} [{tag}]_subs/
   /// [showYear]: Pass the show's premiere year (not episode year)
   Future<Directory> getEpisodeSubtitlesDirectory(MediaItem episode, {int? showYear}) async {
     final base = await _getEpisodeBasePath(episode, showYear: showYear);
@@ -368,9 +381,13 @@ class DownloadStorageService {
 
   Future<Directory> getMovieSubtitlesDirectory(MediaItem movie) async {
     final movieDir = await getMovieDirectory(movie);
-    final baseName = _getMovieFolderName(movie);
-    return _ensureDirectoryExists(Directory(path.join(movieDir.path, '${baseName}_subs')));
+    return _ensureDirectoryExists(Directory(path.join(movieDir.path, '${_getMovieFileBaseName(movie)}_subs')));
   }
+
+  /// Sidecar subtitle directory of a downloaded video file: the video path with
+  /// its extension replaced by `_subs`. Playback looks subtitles up there, so
+  /// they must follow the name the video actually has on disk.
+  String sidecarSubtitlesDirectoryPath(String videoPath) => videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
 
   Future<String> getMovieSubtitlePath(MediaItem movie, int trackId, String extension) async {
     final subsDir = await getMovieSubtitlesDirectory(movie);
@@ -380,7 +397,7 @@ class DownloadStorageService {
   /// Get album directory for a track: downloads/Music/{Artist}/{Album}/
   Future<Directory> getTrackAlbumDirectory(MediaItem track) => _downloadsSubdirectory(getTrackSafPathComponents(track));
 
-  /// Get track audio file path: .../Music/{Artist}/{Album}/{NN} - {Title}.{ext}
+  /// Get track audio file path: .../Music/{Artist}/{Album}/{NN} - {Title} [{tag}].{ext}
   Future<String> getTrackAudioPath(MediaItem track, String extension) async {
     final albumDir = await getTrackAlbumDirectory(track);
     return path.join(albumDir.path, getTrackSafFileName(track, extension));
@@ -545,8 +562,11 @@ class DownloadStorageService {
   }
 
   String getMovieSafFileName(MediaItem movie, String extension) {
-    return '${_getMovieFolderName(movie)}.$extension';
+    return '${_getMovieFileBaseName(movie)}.$extension';
   }
+
+  /// Get the extension-less movie filename used for SAF lookups.
+  String getMovieSafBaseName(MediaItem movie) => _getMovieFileBaseName(movie);
 
   String getEpisodeSafFileName(MediaItem episode, String extension) {
     final fileName = _formatEpisodeFileName(episode);

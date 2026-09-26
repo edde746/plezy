@@ -121,6 +121,9 @@ type artifactEntry struct {
 	ContentType string
 	CreatedAt   time.Time
 	ExpiresAt   time.Time
+	// owner is the upload source charged for this entry. It is process-local:
+	// entries loaded from disk have none and count only toward the store quota.
+	owner string
 }
 
 type artifactStore struct {
@@ -145,6 +148,13 @@ type artifactStore struct {
 	// retryKnownDebtOnPut retries only size-accounted pending removals.
 	retryKnownDebtOnPut bool
 	errFull             error
+	// ownerLimit caps the cost one upload source may hold, so a single source
+	// cannot fill the shared quota (or, with evictToFit, evict everyone
+	// else's entries). A source at its cap is refused with errOwnerFull, or
+	// with evictToFit recycles its own oldest entries. Zero disables it.
+	ownerLimit   int64
+	errOwnerFull error
+	ownerUsed    map[string]int64
 
 	// Unaccounted pending removals are tracked only in pendingRemovals.
 	used        int64 // accounted cost of live entries
@@ -215,8 +225,9 @@ func (as *artifactStore) loadExisting(now time.Time) error {
 	return removalErr
 }
 
-// put writes data to a quota-approved `<id><ext>` file.
-func (as *artifactStore) put(data []byte, ext, contentType string, now time.Time) (string, artifactEntry, error) {
+// put writes data to a quota-approved `<id><ext>` file charged to owner; an
+// empty owner is charged only to the store quota.
+func (as *artifactStore) put(owner string, data []byte, ext, contentType string, now time.Time) (string, artifactEntry, error) {
 	as.mu.Lock()
 	defer as.mu.Unlock()
 
@@ -226,6 +237,18 @@ func (as *artifactStore) put(data []byte, ext, contentType string, now time.Time
 	// Removal failures stay accounted as debt instead of blocking the write.
 	_ = as.retryPendingLocked(as.retryKnownDebtOnPut)
 	_ = as.cleanupExpiredLocked(now)
+	if owner != "" && as.ownerLimit > 0 {
+		switch {
+		case cost > as.ownerLimit:
+			return "", artifactEntry{}, as.errFull
+		case as.evictToFit:
+			if err := as.evictOwnerOldestLocked(owner, as.ownerLimit-cost); err != nil {
+				return "", artifactEntry{}, err
+			}
+		case as.ownerUsed[owner]+cost > as.ownerLimit:
+			return "", artifactEntry{}, as.errOwnerFull
+		}
+	}
 	var headroom int64
 	if as.evictToFit {
 		headroom = cost
@@ -266,9 +289,16 @@ func (as *artifactStore) put(data []byte, ext, contentType string, now time.Time
 		ContentType: contentType,
 		CreatedAt:   now,
 		ExpiresAt:   now.Add(as.maxAge),
+		owner:       owner,
 	}
 	as.entries[id] = entry
 	as.used += cost
+	if owner != "" {
+		if as.ownerUsed == nil {
+			as.ownerUsed = make(map[string]int64)
+		}
+		as.ownerUsed[owner] += cost
+	}
 	return id, entry, nil
 }
 
@@ -342,6 +372,28 @@ func (as *artifactStore) evictOldestLocked(headroom int64) error {
 	return nil
 }
 
+// evictOwnerOldestLocked deletes owner's oldest entries until it holds at
+// most maxUsed cost units.
+func (as *artifactStore) evictOwnerOldestLocked(owner string, maxUsed int64) error {
+	for as.ownerUsed[owner] > maxUsed {
+		var oldestID string
+		var oldest artifactEntry
+		for id, entry := range as.entries {
+			if entry.owner == owner && (oldestID == "" || entry.CreatedAt.Before(oldest.CreatedAt)) {
+				oldestID = id
+				oldest = entry
+			}
+		}
+		if oldestID == "" {
+			return nil
+		}
+		if err := as.deleteEntryLocked(oldestID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (as *artifactStore) deleteEntryLocked(id string) error {
 	entry, ok := as.entries[id]
 	if !ok {
@@ -351,7 +403,15 @@ func (as *artifactStore) deleteEntryLocked(id string) error {
 		return err
 	}
 	delete(as.entries, id)
-	as.used -= as.cost(entry.Size)
+	cost := as.cost(entry.Size)
+	as.used -= cost
+	if entry.owner != "" {
+		if remaining := as.ownerUsed[entry.owner] - cost; remaining > 0 {
+			as.ownerUsed[entry.owner] = remaining
+		} else {
+			delete(as.ownerUsed, entry.owner)
+		}
+	}
 	return nil
 }
 

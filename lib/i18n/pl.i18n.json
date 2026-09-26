@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Ten plik nie jest prawidłowym eksportem Plezy",
     "importSettingsNoUser": "Zaloguj się przed importem ustawień",
     "shortcutsReset": "Skróty przywrócone do domyślnych",
+    "resetShortcutsConfirm": "",
     "about": "O aplikacji",
     "aboutDescription": "Informacje o aplikacji i licencje",
     "updates": "Aktualizacje",

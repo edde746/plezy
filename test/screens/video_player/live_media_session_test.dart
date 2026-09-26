@@ -11,8 +11,10 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/live_tv_support.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/models/livetv_capture_buffer.dart';
 import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
@@ -199,6 +201,40 @@ void main() {
         launchTune.complete(null);
         await tester.pump();
         await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  });
+
+  testWidgets('a replacement stream failing before the live start commits is recovered once it does', (tester) async {
+    final channel = LiveTvChannel(key: 'ch-1', title: 'Channel 5', serverId: 'srv-1');
+    final session = _RecoveringLiveSession();
+    final liveTv = _RecordingLiveTvSupport(firstStart: Future.value(session));
+    final player = _FailingOpenLivePlayer();
+    addTearDown(player.errors.close);
+    final shell = _LiveShell(client: _LiveMediaServerClient(liveTv));
+
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async => call.method == 'initialize' ? false : null,
+      testBody: () async {
+        final key = GlobalKey<VideoPlayerScreenState>();
+        await tester.pumpWidget(shell.screen(key: key, channel: channel));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        final state = key.currentState!..player = player;
+        await state.debugWirePlayerStreamsForTesting();
+
+        // The stream the start opened fails while the start still holds the
+        // transition lock. The gate turns the recovery away then; it must run
+        // once the start has committed rather than be lost.
+        await state.debugStartPlaybackForTesting();
+
+        expect(player.opened, 1);
+        expect(session.recoveries, 1, reason: 'the failed replacement stream must take the fallback ladder');
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(seconds: 3));
       },
     );
   });
@@ -396,6 +432,68 @@ class _LiveMediaSessionPlayer implements Player {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A live player whose open reports a stream failure while the open is still
+/// in flight — the native error racing the transition that opened the stream.
+class _FailingOpenLivePlayer extends _LiveMediaSessionPlayer {
+  final StreamController<PlayerError> errors = StreamController<PlayerError>.broadcast(sync: true);
+  int opened = 0;
+
+  @override
+  PlayerStreams get streams => emptyPlayerStreams(error: errors.stream);
+
+  @override
+  Future<void> open(
+    Media media, {
+    bool play = true,
+    bool isLive = false,
+    List<SubtitleTrack>? externalSubtitles,
+    Duration? timelineDuration,
+  }) async {
+    opened++;
+    if (opened == 1) errors.add(const PlayerError('stream failed'));
+  }
+}
+
+class _RecoveringLiveSession implements LiveTvPlaybackSession {
+  int recoveries = 0;
+
+  @override
+  LiveTvBackgroundPolicy get backgroundPolicy => LiveTvBackgroundPolicy.retainSession;
+
+  @override
+  CaptureBuffer? get captureBuffer => null;
+
+  @override
+  bool get canTimeShift => false;
+
+  @override
+  LiveProgramInfo get program => LiveProgramInfo.none;
+
+  @override
+  List<MediaSubtitleTrack> get subtitleTracks => const [];
+
+  @override
+  Future<LiveTimelineUpdate?> reportTimeline({
+    required String state,
+    required int positionMs,
+    required int durationMs,
+  }) => Future.value(null);
+
+  @override
+  Future<void> discard() async {}
+
+  @override
+  Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) {
+    recoveries++;
+    // Held open: the assertion is that recovery started, not how it ends.
+    return Completer<LiveTvPlaybackSession?>().future;
+  }
+
+  @override
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack}) =>
+      Future.value('http://example.invalid/live.ts');
 }
 
 class _LiveMediaServerClient implements MediaServerClient {

@@ -428,6 +428,43 @@ void main() {
     expect(last.offset, 200);
   });
 
+  test('collection hub View All stays under the server page-size cap', () async {
+    // A library's collection hub is keyed by `/library/collections/{id}/children`,
+    // the endpoint PMS caps at 120 items per request (#2468).
+    const total = 250;
+    final sizes = <int>[];
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/collections/99/children') return http.Response('not found', 404);
+      final start = int.parse(request.url.queryParameters['X-Plex-Container-Start']!);
+      final size = int.parse(request.url.queryParameters['X-Plex-Container-Size']!);
+      sizes.add(size);
+      if (size > 120) return http.Response('X-Plex-Container-Size header exceeds limit 120', 400);
+      final end = (start + size).clamp(start, total);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'offset': start,
+            'size': end - start,
+            'totalSize': total,
+            'Metadata': [
+              for (var i = start; i < end; i++) {'ratingKey': '$i', 'type': 'movie', 'title': 'Movie $i'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchMoreHubItemsPage('/library/collections/99/children', start: 0, size: 200);
+    expect(page.items.map((item) => item.id), [for (var i = 0; i < 200; i++) '$i']);
+
+    final all = await client.fetchMoreHubItems('/library/collections/99/children');
+    expect(all.map((item) => item.id), [for (var i = 0; i < total; i++) '$i']);
+    expect(sizes, everyElement(lessThanOrEqualTo(120)));
+  });
+
   test('library collection page passes requested pagination params', () async {
     Uri? requestUri;
     final client = makeClient((request) async {
@@ -791,6 +828,35 @@ void main() {
     expect(secondPage.offset, 1);
     expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']).toList(), ['0', '0', '2']);
     expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
+  });
+
+  test('music hub content keeps the artists, albums and tracks its preview row shows', () async {
+    final client = makeClient((request) async {
+      if (request.url.path != '/hubs/sections/3/recentlyAdded') return http.Response('not found', 404);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'size': 3,
+            'totalSize': 3,
+            'Metadata': [
+              {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Artist'},
+              {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album'},
+              {'ratingKey': 'track-1', 'type': 'track', 'title': 'Track'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final all = await client.fetchMoreHubItems('/hubs/sections/3/recentlyAdded');
+    final page = await client.fetchMoreHubItemsPage('/hubs/sections/3/recentlyAdded', start: 0, size: 50);
+
+    expect(all.map((item) => item.id), ['artist-1', 'album-1', 'track-1']);
+    expect(page.items.map((item) => item.id), ['artist-1', 'album-1', 'track-1']);
+    expect(page.totalCount, 3);
   });
 }
 

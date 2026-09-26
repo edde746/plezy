@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Filen är inte en giltig export av Plezy-inställningar",
     "importSettingsNoUser": "Logga in innan du importerar inställningar",
     "shortcutsReset": "Genvägarna har återställts till standard",
+    "resetShortcutsConfirm": "",
     "about": "Om",
     "aboutDescription": "Appinformation och licenser",
     "updates": "Uppdateringar",

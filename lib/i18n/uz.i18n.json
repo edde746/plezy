@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Ushbu fayl toʻgʻri Plezy sozlamalar fayli emas",
     "importSettingsNoUser": "Sozlamalarni import qilishdan oldin tizimga kiring",
     "shortcutsReset": "Tugmalar birlashmasi standart holatga qaytarildi",
+    "resetShortcutsConfirm": "",
     "about": "Dastur haqida",
     "aboutDescription": "Ilova haqida maʼlumot va litsenziyalar",
     "updates": "Yangilanishlar",

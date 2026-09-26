@@ -57,6 +57,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String _deviceName = t.companionRemote.unknownDevice;
   String _platform = 'unknown';
   bool _isPlayerActive = false;
+  // Whether this device's own video player is up, as last advertised to a
+  // remote. Kept so a remote that pairs mid-playback is told on connect.
+  bool _hostPlayerActive = false;
   // Listen addresses of a running host server (`ip:port`), surfaced so the
   // host UI can show what a phone's manual connection should target.
   List<String> _hostServerAddresses = const [];
@@ -179,7 +182,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (!isHostServerRunning) return;
 
     await _serializeLifecycle(() async {
-      if (!isHostServerRunning) return;
+      if (isDisposed || !isHostServerRunning) return;
+      final generation = _remoteGeneration;
       final ok = await _ensureCryptoReadyLocked(
         null,
         connections: connections,
@@ -190,8 +194,11 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       // Unchanged identities leave the host running (no restart). When they
       // change, the rebuild tore the host down — bring it back so the new set
       // is what's broadcasting. When every identity is gone the host stays
-      // down by design (`ok` is false).
-      if (ok && !isHostServerRunning) {
+      // down by design (`ok` is false). Nor is it restarted when the provider
+      // was disposed (a profile switch replaces it) or the session moved on
+      // while the rebuild ran: a server and a LAN broadcast started now would
+      // belong to no one.
+      if (ok && !isHostServerRunning && !isDisposed && generation == _remoteGeneration) {
         await _startHostServerLocked();
       }
     });
@@ -586,7 +593,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
   Future<void> _startHostServerLocked({void Function()? checkCurrent}) async {
     checkCurrent?.call();
-    if (_peerService?.isServerRunning == true) return;
+    if (isDisposed || _peerService?.isServerRunning == true) return;
     if (!isCryptoReady) {
       appLogger.w('CompanionRemote: Cannot start host — crypto not initialized');
       return;
@@ -886,6 +893,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       appLogger.d('CompanionRemote: Device connected: ${device.name}');
       _session = _session?.copyWith(status: RemoteSessionStatus.connected, connectedDevice: device);
       safeNotifyListeners();
+      // The player screen advertises its state once, when it opens; a remote
+      // that pairs (or re-pairs) later would otherwise keep showing the
+      // browse controls over a running player, or the player controls after
+      // it closed while the remote was away.
+      if (isHost) {
+        peer.sendCommand(RemoteCommand(type: RemoteCommandType.syncState, data: {'playerActive': _hostPlayerActive}));
+      }
     });
 
     _deviceDisconnectedSubscription = peer.onDeviceDisconnected.listen((_) {
@@ -973,6 +987,14 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _errorSubscription = null;
     _statusSubscription?.cancel();
     _statusSubscription = null;
+  }
+
+  /// Advertise whether this device's video player is up to the connected
+  /// remote, and remember it for a remote that connects later.
+  void setHostPlayerActive(bool active) {
+    _hostPlayerActive = active;
+    if (_peerService == null || !isConnected) return;
+    sendCommand(RemoteCommandType.syncState, data: {'playerActive': active});
   }
 
   void sendCommand(RemoteCommandType type, {Map<String, dynamic>? data}) {

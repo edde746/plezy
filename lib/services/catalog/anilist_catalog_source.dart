@@ -150,7 +150,7 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
       anilist: anime.id,
       mal: anime.idMal,
       imdb: row?.imdbIds?.firstOrNull,
-      tmdb: row?.tmdbIds?.firstOrNull,
+      tmdb: row?.tmdbIdFor(movie: anime.isMovie),
       tvdb: row?.tvdbId,
     ),
     season: row == null || (row.tvdbSeason == null && row.tmdbSeason == null)
@@ -365,6 +365,7 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (!external.hasAny) return null;
     final rows = await _fribb.lookup(
+      movie: kind == MediaKind.movie,
       anidbId: external.anidb,
       tvdbId: external.tvdb,
       tmdbId: external.tmdb,
@@ -447,8 +448,10 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
     final anilistId = ids.anilist!;
     if (add) {
       await _client.setMediaListStatus(mediaId: anilistId, status: 'PLANNING');
-    } else {
-      await _client.deleteMediaListEntry(anilistId);
+    } else if (!await _client.deletePlanningMediaListEntry(anilistId)) {
+      // Nothing on Planning to remove: the entry moved on or went away since
+      // the snapshot loaded, and is already off the watchlist.
+      reloadWatchlistSnapshot();
     }
   }
 

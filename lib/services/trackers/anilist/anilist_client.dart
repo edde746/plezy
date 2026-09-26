@@ -267,23 +267,29 @@ class AnilistClient implements DisposableTrackerClient {
     await query(mutation, variables: {'mediaId': mediaId, 'progress': progress, 'status': status, 'repeat': ?repeat});
   }
 
-  Future<void> deleteMediaListEntry(int mediaId) async {
+  /// Delete the viewer's list entry for [mediaId] if it is still on Planning.
+  ///
+  /// AniList deletes the whole entry — progress, score, dates and rewatches —
+  /// so an entry that has moved on to another status is left alone. Returns
+  /// whether an entry was deleted; false when there was none on Planning.
+  Future<bool> deletePlanningMediaListEntry(int mediaId) async {
     const idQuery = '''
       query(\$mediaId: Int) {
         Media(id: \$mediaId, type: ANIME) {
           mediaListEntry {
             id
+            status
           }
         }
       }
     ''';
     final data = await query(idQuery, variables: {'mediaId': mediaId});
     final media = data['Media'];
-    if (media is! Map) return;
+    if (media is! Map) return false;
     final entry = media['mediaListEntry'];
-    if (entry is! Map) return;
+    if (entry is! Map || entry['status'] != 'PLANNING') return false;
     final entryId = flexibleInt(entry['id']);
-    if (entryId == null) return;
+    if (entryId == null) return false;
 
     const mutation = '''
       mutation(\$id: Int) {
@@ -293,6 +299,7 @@ class AnilistClient implements DisposableTrackerClient {
       }
     ''';
     await query(mutation, variables: {'id': entryId});
+    return true;
   }
 
   Future<void> setMediaListScore({required int mediaId, required int score}) async {

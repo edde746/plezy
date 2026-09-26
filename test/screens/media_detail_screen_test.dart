@@ -53,6 +53,7 @@ import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
+import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_details_sheet.dart';
@@ -2472,6 +2473,164 @@ void main() {
       expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isFalse);
       expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
     });
+
+    Future<void> tapSeason(WidgetTester tester, String title) async {
+      await tester.tap(find.text(title));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('a failed season switch shows its error, not the previous season episodes', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+        },
+        childrenPageErrors: {season2.id: StateError('offline')},
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      expect(episodeCardFor('1. Episode S1E1'), findsOneWidget);
+
+      await tapSeason(tester, 'Season 2');
+
+      expect(episodeCardFor('1. Episode S1E1'), findsNothing);
+      expect(find.text(t.messages.episodesLoadFailed), findsOneWidget);
+    });
+
+    testWidgets('returning to a season whose load is still running shows its episodes when it lands', (tester) async {
+      final show = buildShow();
+      final seasons = [for (var index = 1; index <= 3; index++) buildSeason(show, index)];
+      final season2Page = Completer<List<MediaItem>>();
+      final season3Page = Completer<List<MediaItem>>();
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: seasons,
+          seasons[0].id: [buildEpisode(show, seasons[0], 1)],
+        },
+        childrenPageFutures: {seasons[1].id: season2Page.future, seasons[2].id: season3Page.future},
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      // Season 2 starts loading, Season 3 starts another load, and the return
+      // to Season 2 finds its first load still running.
+      await tapSeason(tester, 'Season 2');
+      await tapSeason(tester, 'Season 3');
+      await tapSeason(tester, 'Season 2');
+
+      season3Page.complete([buildEpisode(show, seasons[2], 1)]);
+      season2Page.complete([buildEpisode(show, seasons[1], 1)]);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(episodeCardFor('1. Episode S2E1'), findsOneWidget);
+      expect(episodeCardFor('1. Episode S3E1'), findsNothing);
+    });
+
+    testWidgets('refreshing a season discards its older continuation page', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final episodes = [for (var index = 1; index <= 250; index++) buildEpisode(show, season1, index)];
+      // The continuation requested before the refresh answers with the rows
+      // the season had back then.
+      final staleContinuation = Completer<List<MediaItem>>();
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: episodes,
+        },
+        childrenPageFuturesByStart: {'${season1.id}@200': staleContinuation.future},
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      final list = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).first;
+      int continuationRequests() =>
+          client.childrenPageCalls.where((call) => call.parentId == season1.id && call.start == 200).length;
+      Future<void> scrollToEnd({required int untilRequests}) async {
+        // Back off first: paging reacts to scrolling, and the list may already
+        // rest at its end.
+        await tester.drag(list, const Offset(0, 1000));
+        await tester.pump();
+        for (var i = 0; i < 40 && continuationRequests() < untilRequests; i++) {
+          await tester.drag(list, const Offset(0, -4000));
+          await tester.pump();
+        }
+      }
+
+      await scrollToEnd(untilRequests: 1);
+      expect(continuationRequests(), 1);
+
+      // Refresh the season while its old continuation is still in flight.
+      final refresh = tester.widget<EpisodeCard>(find.byType(EpisodeCard).first).onListRefresh!();
+      await tester.pump();
+      await refresh;
+      await tester.pump();
+
+      staleContinuation.complete([
+        ...episodes.take(200),
+        for (var index = 201; index <= 250; index++)
+          buildEpisode(show, season1, index).copyWith(title: 'Stale S1E$index'),
+      ]);
+      await tester.pump();
+      await tester.pump();
+
+      // The refreshed first page asks for its own continuation.
+      await scrollToEnd(untilRequests: 2);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.drag(list, const Offset(0, -100000));
+      await tester.pump();
+
+      expect(find.textContaining('Stale S1E'), findsNothing);
+      expect(continuationRequests(), 2);
+      expect(episodeCardFor('250. Episode S1E250'), findsOneWidget);
+    });
+
+    testWidgets('deleting the selected season moves the selection to its neighbour', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [buildEpisode(show, season2, 1)],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show);
+      expect(episodeCardFor('1. Episode S1E1'), findsOneWidget);
+
+      await emit(
+        tester,
+        () => DeletionNotifier().notify(
+          DeletionEvent(
+            itemId: season1.id,
+            serverId: ServerId('server_1'),
+            parentChain: const [],
+            mediaType: 'season',
+            isDownloadOnly: false,
+            origin: DeletionOrigin.serverPush,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Season 1'), findsNothing);
+      expect(episodeCardFor('1. Episode S1E1'), findsNothing);
+      expect(episodeCardFor('1. Episode S2E1'), findsOneWidget);
+      final season2Chip = tester.widget<FocusableTabChip>(
+        find.ancestor(of: find.text('Season 2'), matching: find.byType(FocusableTabChip)),
+      );
+      expect(season2Chip.isSelected, isTrue);
+    });
   });
 
   group('deletion leaves via the detail route', () {
@@ -3040,6 +3199,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   final MediaItem show;
   final Map<String, List<MediaItem>> childrenByParent;
   final Map<String, Future<List<MediaItem>>> childrenPageFutures;
+
+  /// One-shot overrides keyed by `parentId@start`: the next page request at
+  /// that offset is sliced from this future's list instead.
+  final Map<String, Future<List<MediaItem>>> childrenPageFuturesByStart;
   final Map<String, Future<List<MediaItem>>> childrenFutures;
   final Map<String, Object> childrenPageErrors;
   final Future<List<MediaItem>>? pendingPlayableDescendants;
@@ -3069,12 +3232,14 @@ class _FakeMediaServerClient implements MediaServerClient {
     required this.show,
     required this.childrenByParent,
     this.childrenPageFutures = const {},
+    Map<String, Future<List<MediaItem>>>? childrenPageFuturesByStart,
     this.childrenFutures = const {},
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
     Map<String, Map<String, dynamic>>? rawItems,
-  }) : rawItems = rawItems ?? {};
+  }) : rawItems = rawItems ?? {},
+       childrenPageFuturesByStart = childrenPageFuturesByStart ?? {};
 
   @override
   ServerId get serverId => ServerId('server_1');
@@ -3164,7 +3329,9 @@ class _FakeMediaServerClient implements MediaServerClient {
     final error = childrenPageErrors[parentId];
     if (error != null) throw error;
     final all =
-        await (childrenPageFutures[parentId] ?? Future.value(childrenByParent[parentId] ?? const <MediaItem>[]));
+        await (childrenPageFuturesByStart.remove('$parentId@$start') ??
+            childrenPageFutures[parentId] ??
+            Future.value(childrenByParent[parentId] ?? const <MediaItem>[]));
     return fakeLibraryPage(all, start: start, size: size);
   }
 

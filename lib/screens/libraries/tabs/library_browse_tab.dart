@@ -491,6 +491,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       }
 
+      revealFirstItem();
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
       return;
@@ -507,6 +508,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       }
 
+      revealFirstItem();
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
     }
@@ -855,6 +857,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final contentEpoch = epoch ?? snapshotLibraryContentEpoch();
     setState(() {
       isLoading = true;
+      // A failed earlier load must not outlive this one: the state slivers
+      // rank the error above the empty state.
+      errorMessage = null;
       items = [];
       resetPaginationState();
       // Increment content version when loading fresh content
