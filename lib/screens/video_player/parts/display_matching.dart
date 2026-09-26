@@ -211,7 +211,12 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     await _withWatchTogetherDetached(() async {
       await currentPlayer.pause();
       await Future<void>.delayed(delay);
-      await _transitionGate.waitForIdle(isCurrent);
+      // Wait out the transition itself, not just its generation bump: leaving
+      // this window rebinds the room, and a reload still opening its
+      // replacement owns that rebind (and the startup hold it carries). Once
+      // it has rebound, the stale binding keeps this window from rebinding
+      // again.
+      await _transitionGate.waitForIdle(() => mounted && !_shuttingDown && player == currentPlayer);
       // A pause the viewer asked for meanwhile clears the play intent.
       if (!isCurrent() || !_playbackIntentShouldPlay) return;
       await _playWithPlaybackIntent(currentPlayer);

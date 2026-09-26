@@ -743,6 +743,77 @@ void main() {
       );
     });
 
+    testWidgets('a hold outlasted by a room source reload leaves reattachment to the reload', (tester) async {
+      final peer = _ScreenPeerService();
+      final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
+      await watchTogether.createSession(
+        controlMode: ControlMode.anyone,
+        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+      );
+      watchTogether.selectMedia(
+        ratingKey: 'movie-prior',
+        serverId: ServerId('srv-1'),
+        mediaTitle: 'Prior movie',
+        position: const Duration(seconds: 121),
+        rate: 1.25,
+        lease: watchTogether.capturePlaybackLease(selection: true),
+      );
+      addTearDown(watchTogether.dispose);
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final screen = await pumpHoldScreen(tester, watchTogether: watchTogether);
+          final fakePlayer = screen.player;
+          screen.key.currentState!.debugBindWatchTogetherForTesting();
+          fakePlayer.emitPlaybackRestart();
+          await tester.pump();
+          await tester.pump(const Duration(seconds: 1));
+          expect(watchTogether.hasAttachedPlayer, isTrue);
+
+          var held = false;
+          final hold = screen.key.currentState!
+              .debugHoldPlaybackForDisplaySwitchForTesting(const Duration(seconds: 2))
+              .whenComplete(() => held = true);
+          await tester.pump();
+
+          // The replacement's open is held past the display delay: the reload
+          // is still in flight, with the room detached, when the hold's delay
+          // runs out.
+          final openGate = Completer<void>();
+          fakePlayer.openGate = openGate;
+          PlaybackSourceChangeOutcome? outcome;
+          final switching = screen.key.currentState!
+              .debugSwitchPlaybackSourceForTesting(newPreset: TranscodeQualityPreset.p720_2mbps)
+              .then((value) => outcome = value);
+          for (var i = 0; i < 400 && fakePlayer.openCalls == 0; i++) {
+            await tester.pump(const Duration(milliseconds: 50));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+          }
+          expect(fakePlayer.openCalls, 1, reason: 'the reload reached its open');
+          await tester.pump(const Duration(seconds: 3));
+
+          expect(outcome, isNull);
+          expect(held, isFalse, reason: 'the hold waits out the reload in flight');
+          expect(watchTogether.hasAttachedPlayer, isFalse, reason: 'the room stays detached until the reload settles');
+
+          openGate.complete();
+          for (var i = 0; i < 400 && (outcome == null || !held); i++) {
+            await tester.pump(const Duration(milliseconds: 50));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+          }
+          await switching;
+          await hold;
+
+          expect(outcome, PlaybackSourceChangeOutcome.applied);
+          // The room, not the hold, starts the replacement once its startup
+          // hold clears, so play commands here are the room's own.
+          expect(watchTogether.hasAttachedPlayer, isTrue, reason: 'the reload reattaches the room itself');
+        },
+      );
+    });
+
     testWidgets("a source reload during the hold owns the replacement's play state", (tester) async {
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
@@ -883,6 +954,9 @@ class _ReloadPlayer extends FakeSyncPlayer {
     : super(playing: true, position: const Duration(seconds: 121), duration: const Duration(minutes: 40), rate: 1.25);
   bool opens;
   int openCalls = 0;
+
+  /// When set, open() waits for it before loading.
+  Completer<void>? openGate;
   int stopCalls = 0;
 
   @override
@@ -922,6 +996,8 @@ class _ReloadPlayer extends FakeSyncPlayer {
     Duration? timelineDuration,
   }) async {
     openCalls++;
+    final gate = openGate;
+    if (gate != null) await gate.future;
     if (!opens) throw StateError('open failed before the open boundary');
     setPosition(media.start ?? Duration.zero);
     setCompleted(false);
