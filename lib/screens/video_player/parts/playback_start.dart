@@ -64,10 +64,19 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             'beginsAt=$programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
           );
           if (elapsed > 60) {
-            widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
-            final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
-            widget.launchObserver?.mark('opening');
-            if (!mounted || !attempt.isCurrent) return;
+            // A launcher/automation deep link may pre-answer the prompt.
+            final bool? watchFromStart;
+            switch (widget.live!.startPosition) {
+              case LiveTvStartPosition.beginning:
+                watchFromStart = true;
+              case LiveTvStartPosition.live:
+                watchFromStart = false;
+              case LiveTvStartPosition.ask:
+                widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
+                watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
+                widget.launchObserver?.mark('opening');
+                if (!mounted || !attempt.isCurrent) return;
+            }
             if (watchFromStart == true) {
               offsetSeconds = useProgramStart ? offsetProgramStart : captureBuffer.seekStartSeconds.round();
             }
