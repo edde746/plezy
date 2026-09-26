@@ -39,10 +39,13 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   final List<LiveTvServerInfo> _liveTvServers = [];
   List<LiveTvServerInfo> get liveTvServers => List.unmodifiable(_liveTvServers);
 
-  /// The client whose probe produced each server's [_liveTvServers] entries.
-  /// A failed re-probe may carry entries over only on this same client: a
-  /// replaced client (reconnect, profile switch) must earn them again.
-  Map<String, MediaServerClient> _liveTvProbeClients = {};
+  /// The client, and its authentication session at probe time, whose probe
+  /// produced each server's [_liveTvServers] entries. A failed re-probe may
+  /// carry entries over only on this same client and session: a replaced
+  /// client (reconnect) or an in-place profile switch
+  /// (`PlexClient.applyProfileUpdate` rotates the session) must earn them
+  /// again.
+  Map<String, ({MediaServerClient client, Object authentication})> _liveTvProbes = {};
 
   /// Previously-seen set of online server IDs, used to detect new servers
   Set<String> _previousOnlineServerIds = {};
@@ -270,37 +273,48 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     if (isDisposed) return;
     final generation = ++_liveTvCheckGeneration;
     final newLiveTvServers = <LiveTvServerInfo>[];
-    final newProbeClients = <String, MediaServerClient>{};
+    final newProbes = <String, ({MediaServerClient client, Object authentication})>{};
     for (final serverId in onlineServerIds) {
       final genericClient = _serverManager.getClient(ServerId(serverId));
       if (genericClient == null) continue;
+      final probe = (client: genericClient, authentication: genericClient.authenticationSessionId);
+      // An answer obtained under a session the client has since left belongs
+      // to the previous profile; drop it rather than show or carry it over.
+      bool sessionChanged() => !identical(genericClient.authenticationSessionId, probe.authentication);
 
       try {
         final liveTv = genericClient.liveTv;
         final dvr = genericClient.liveTvDvr;
         final dvrs = dvr == null ? const <LiveTvDvr>[] : await dvr.fetchDvrs();
+        if (sessionChanged()) continue;
         if (dvrs.isNotEmpty) {
           // Plex: one entry per DVR with its own lineup.
           for (final dvr in dvrs) {
             newLiveTvServers.add(LiveTvServerInfo(serverId: serverId, dvrKey: dvr.key, lineup: dvr.lineup, dvrs: dvrs));
           }
-        } else if (await liveTv.isAvailable()) {
+        } else if (await liveTv.isAvailable() && !sessionChanged()) {
           // MediaBrowser: no per-DVR partitioning; synthesize a single entry
           // so the rest of the UI's per-DVR loop works uniformly.
           newLiveTvServers.add(
             LiveTvServerInfo(serverId: serverId, dvrKey: genericClient.backend.id, lineup: null, dvrs: const []),
           );
         }
-        newProbeClients[serverId] = genericClient;
+        if (sessionChanged()) continue;
+        newProbes[serverId] = probe;
       } catch (e) {
         appLogger.d('LiveTV check failed for server $serverId', error: e);
         // A transient failure (timeout, connection error, 5xx) is no evidence
         // the DVR went away; keep what the last successful check on this same
-        // client found instead of dropping Live TV on a blip. A definitive
-        // answer (401/403, other 4xx, bad data) drops the entry.
-        if (_isTransientLiveTvProbeFailure(e) && identical(_liveTvProbeClients[serverId], genericClient)) {
+        // client and session found instead of dropping Live TV on a blip. A
+        // definitive answer (401/403, other 4xx, bad data) drops the entry.
+        final previous = _liveTvProbes[serverId];
+        if (_isTransientLiveTvProbeFailure(e) &&
+            !sessionChanged() &&
+            previous != null &&
+            identical(previous.client, genericClient) &&
+            identical(previous.authentication, probe.authentication)) {
           newLiveTvServers.addAll(_liveTvServers.where((s) => s.serverId == serverId));
-          newProbeClients[serverId] = genericClient;
+          newProbes[serverId] = probe;
         }
       }
     }
@@ -316,7 +330,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _liveTvServers
       ..clear()
       ..addAll(visibleLiveTvServers);
-    _liveTvProbeClients = newProbeClients;
+    _liveTvProbes = newProbes;
     _hasLiveTv = visibleLiveTvServers.isNotEmpty;
 
     // Notify when availability changes OR when the server set changes
