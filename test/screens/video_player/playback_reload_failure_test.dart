@@ -747,7 +747,13 @@ void main() {
           // Returning restores the finished episode in place, which clears the
           // prompt; it has to come back with the countdown where it held.
           final opensBefore = fakePlayer.openCalls;
+          // On the way back the app is no longer backgrounded before the
+          // restore runs (a slow stop report can hold it there); the released
+          // player must not be advanced from under the restore meanwhile.
           tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+          await tester.pump(Duration(seconds: countdownAtBackground + 2));
+          expect(state.debugAutoPlayCountdownForTesting, countdownAtBackground);
+          expect(fakePlayer.openCalls, opensBefore, reason: 'the countdown must not start the next episode');
           tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
           for (var i = 0; i < 400 && fakePlayer.openCalls == opensBefore; i++) {
             await tester.pump(const Duration(milliseconds: 50));

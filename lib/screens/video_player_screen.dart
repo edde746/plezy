@@ -913,6 +913,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// codecs.
   final TvBackgroundSuspendState _tvSuspend = TvBackgroundSuspendState();
 
+  /// The item a TV background suspend released; its restore reloads only that
+  /// item, never one the viewer moved to while the suspend was settling.
+  MediaItem? _tvSuspendedMetadata;
+
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// Apple auto-PiP is system-initiated during the background transition, and
   /// Android auto-PiP on API 26-30 has a brief native transition window before

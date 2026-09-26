@@ -277,6 +277,11 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       subtitleTrack: currentPlayer.state.track.subtitle,
       secondarySubtitleTrack: currentPlayer.state.track.secondarySubtitle,
     );
+    _tvSuspendedMetadata = _currentMetadata;
+    // A Play Next countdown only holds while the app counts as backgrounded;
+    // returning before the restore runs would let it advance over a released
+    // player. The restore puts it back once the item has reopened.
+    _episode.autoPlayTimer?.cancel();
     // Stop the heartbeat timer first: its paused tick also pings any Plex
     // transcode session, which would keep that alive past the stop report.
     // Start the stopped report before releasing the native stream — the same
@@ -291,6 +296,8 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       _recordLifecycleState('hidden', action: 'tv_background_suspend');
     } catch (e) {
       _tvSuspend.clear();
+      _tvSuspendedMetadata = null;
+      if (_episode.showPlayNextDialog && _episode.autoPlayCountdown.value > 0) _startAutoPlayTimer();
       // The player still holds its native state, so re-arm reporting: the
       // next paused heartbeat re-opens a server session at the same position
       // and the pause stays resumable in place.
@@ -347,9 +354,17 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// position must remain intact across backgrounding.
   Future<void> _restorePlayerAfterTvBackgroundSuspend() async {
     final restore = _tvSuspend.consumeForRestore();
+    final suspendedMetadata = _tvSuspendedMetadata;
+    _tvSuspendedMetadata = null;
 
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null || !_isPlayerInitialized) return;
+    if (suspendedMetadata == null || suspendedMetadata.globalKey != _currentMetadata.globalKey) {
+      // The viewer moved to another item while the suspend was settling; that
+      // item's own open already replaced the released stream.
+      _recordLifecycleState('resumed', action: 'tv_background_suspend_restore_skipped_item_changed');
+      return;
+    }
 
     // The countdown holds while backgrounded, so a suspend can land with the
     // Play Next prompt up. The reload below clears the prompt; without it the
