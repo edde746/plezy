@@ -142,13 +142,20 @@ private val MPV_SPDIF_CODECS: List<MpvSpdifCodec> = listOf(
 internal fun mpvSpdifCodecs(
   supportsEncoding: (Int) -> Boolean,
   supportsShape: (MpvIecShape) -> Boolean,
-  supportsRawTrack: (Int) -> Boolean = { false }
+  supportsRawTrack: (Int) -> Boolean = { false },
+  sinkDecodes: (Int) -> Boolean = { true }
 ): String {
   val carried = MPV_SPDIF_CODECS.filter {
     supportsEncoding(it.encoding) &&
       when (it.order) {
-        MpvTransportOrder.RAW_THEN_CARRIER -> supportsRawTrack(it.encoding) || supportsShape(it.shape)
-        MpvTransportOrder.CARRIER_THEN_RAW -> supportsShape(it.shape) || supportsRawTrack(it.encoding)
+        MpvTransportOrder.RAW_THEN_CARRIER ->
+          supportsRawTrack(it.encoding) || (sinkDecodes(it.encoding) && supportsShape(it.shape))
+        MpvTransportOrder.CARRIER_THEN_RAW ->
+          if (sinkDecodes(it.encoding)) {
+            supportsShape(it.shape) || supportsRawTrack(it.encoding)
+          } else {
+            !supportsShape(it.shape) && supportsRawTrack(it.encoding)
+          }
       }
   }
   val dtsHd = carried.any { it.name == "dts-hd" }
@@ -188,10 +195,12 @@ internal fun supportedMpvSpdifCodecs(context: Context): String {
   // Every probe costs real route calls and may be shared by more than one codec, so probe once.
   val shapeProbed = HashMap<MpvIecShape, Boolean>(3)
   val rawProbed = HashMap<Int, Boolean>(3)
+  val sinkDecodesDts by lazy { hdmiSinkDecodesDts(context) }
   val codecs = mpvSpdifCodecs(
     capabilities::supportsEncoding,
     { shape -> shapeProbed.getOrPut(shape) { routeTakesIecShape(context, shape) } },
-    { encoding -> rawProbed.getOrPut(encoding) { supportsMpvRawTrack(context, encoding) } }
+    { encoding -> rawProbed.getOrPut(encoding) { supportsMpvRawTrack(context, encoding) } },
+    { encoding -> !isDtsEncoding(encoding) || sinkDecodesDts }
   )
   if (codecs.isEmpty()) {
     Log.i(TAG, "Route takes no passthrough track mpv can fill; mpv will decode instead of bitstreaming")
@@ -364,15 +373,40 @@ internal fun supportsIecCarrier(context: Context): Boolean = iecRouteSupported(
  */
 internal fun dtsHdCarrierUsable(
   supportsEncoding: (Int) -> Boolean,
-  supportsCarrier: () -> Boolean
-): Boolean = supportsEncoding(C.ENCODING_DTS_HD) && supportsCarrier()
+  supportsCarrier: () -> Boolean,
+  sinkDecodesDts: () -> Boolean = { true }
+): Boolean = supportsEncoding(C.ENCODING_DTS_HD) && sinkDecodesDts() && supportsCarrier()
 
 /** [dtsHdCarrierUsable] resolved against the audio route [context] is currently routed to. */
 internal fun supportsDtsHdIecCarrier(context: Context): Boolean = dtsHdCarrierUsable(
   // Encoding first: it skips the carrier tiering's several route calls.
   supportsEncoding = { encoding -> routeSupportsEncoding(context, encoding) },
-  supportsCarrier = { supportsIecCarrier(context) }
+  supportsCarrier = { supportsIecCarrier(context) },
+  sinkDecodesDts = { hdmiSinkDecodesDts(context) }
 )
+
+internal fun isDtsEncoding(encoding: Int): Boolean = encoding == C.ENCODING_DTS || encoding == C.ENCODING_DTS_HD
+
+internal fun sinkAdvertisesDts(hdmiSinkEncodings: List<IntArray>): Boolean {
+  val describedSinks = hdmiSinkEncodings.filter { encodings -> encodings.any { !isPcmEncoding(it) } }
+  if (describedSinks.isEmpty()) return true
+  return describedSinks.any { encodings -> encodings.any(::isDtsEncoding) }
+}
+
+private fun hdmiSinkDecodesDts(context: Context): Boolean = try {
+  val manager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+  val hdmiSinkEncodings = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+    .filter { it.type == AudioDeviceInfo.TYPE_HDMI || it.type == AudioDeviceInfo.TYPE_HDMI_ARC }
+    .map { it.encodings }
+  sinkAdvertisesDts(hdmiSinkEncodings).also { decodes ->
+    if (!decodes) {
+      Log.i(TAG, "HDMI sink advertises no DTS (${hdmiSinkEncodings.joinToString { it.contentToString() }}); DTS will not ride the IEC carrier")
+    }
+  }
+} catch (error: Exception) {
+  Log.w(TAG, "HDMI sink inspection failed; keeping the DTS carrier decision to the route probes", error)
+  true
+}
 
 @Suppress("DEPRECATION")
 @OptIn(UnstableApi::class)
