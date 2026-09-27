@@ -879,6 +879,12 @@ class Translations$settings$en {
 	/// en: 'Start each episode at the beginning when shuffling instead of resuming'
 	String get shuffleStartsFromBeginningDescription => 'Start each episode at the beginning when shuffling instead of resuming';
 
+	/// en: 'Play Pre-Roll Before Movies'
+	String get plexCinemaPreRoll => 'Play Pre-Roll Before Movies';
+
+	/// en: 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only'
+	String get plexCinemaPreRollDescription => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only';
+
 	/// en: 'Play Next Countdown'
 	String get playNextCountdown => 'Play Next Countdown';
 
@@ -7537,6 +7543,8 @@ extension on Translations {
 			'settings.autoPlayNextEpisodeDescription' => 'Start the next episode automatically when one ends',
 			'settings.shuffleStartsFromBeginning' => 'Shuffle Starts at Beginning',
 			'settings.shuffleStartsFromBeginningDescription' => 'Start each episode at the beginning when shuffling instead of resuming',
+			'settings.plexCinemaPreRoll' => 'Play Pre-Roll Before Movies',
+			'settings.plexCinemaPreRollDescription' => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only',
 			'settings.playNextCountdown' => 'Play Next Countdown',
 			'settings.playNextCountdownImmediate' => 'Play immediately',
 			'settings.skipIntroMode' => 'Skip Intro',
@@ -7781,10 +7789,10 @@ extension on Translations {
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
-			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
-			'fileInfo.avcBitstream' => 'AVC Bitstream',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
+			'fileInfo.avcBitstream' => 'AVC Bitstream',
 			'fileInfo.nalLengthSize' => 'NAL Length Size',
 			'fileInfo.scalingMatrix' => 'Custom Scaling Matrix',
 			'fileInfo.streamIdentifier' => 'Stream Identifier',
@@ -8295,10 +8303,10 @@ extension on Translations {
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
-			'libraries.analyze' => 'Analyze',
-			'libraries.analyzeLibrary' => 'Analyze Library',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analyze' => 'Analyze',
+			'libraries.analyzeLibrary' => 'Analyze Library',
 			'libraries.refreshMetadata' => 'Refresh Metadata',
 			'libraries.emptyTrash' => 'Empty Trash',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Emptying trash for "${title}"...',
@@ -8809,10 +8817,10 @@ extension on Translations {
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
 			'watchTogether.end' => 'End',
-			'watchTogether.leave' => 'Leave',
-			'watchTogether.syncing' => 'Syncing...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.leave' => 'Leave',
+			'watchTogether.syncing' => 'Syncing...',
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
@@ -9323,10 +9331,10 @@ extension on Translations {
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
 			'addServer.findServer' => 'Find server',
-			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
-			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
+			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',

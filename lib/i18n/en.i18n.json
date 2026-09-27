@@ -280,6 +280,8 @@
     "autoPlayNextEpisodeDescription": "Start the next episode automatically when one ends",
     "shuffleStartsFromBeginning": "Shuffle Starts at Beginning",
     "shuffleStartsFromBeginningDescription": "Start each episode at the beginning when shuffling instead of resuming",
+    "plexCinemaPreRoll": "Play Pre-Roll Before Movies",
+    "plexCinemaPreRollDescription": "Play the pre-roll configured on your Plex server before a movie starts. Plex servers only",
     "playNextCountdown": "Play Next Countdown",
     "playNextCountdownImmediate": "Play immediately",
     "skipIntroMode": "Skip Intro",

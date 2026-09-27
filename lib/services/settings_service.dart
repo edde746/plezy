@@ -715,6 +715,12 @@ class SettingsService extends BaseSharedPreferencesService {
   /// from the server-side view offset (#2303). Off preserves resume behavior.
   static const shuffleStartsFromBeginning = BoolPref('shuffle_starts_from_beginning');
 
+  /// Play the pre-roll configured on the Plex server before a movie (#970).
+  /// The server resolves the clip itself and returns it as the head of the
+  /// play queue, so nothing here reads `CinemaTrailersPrerollID`. Plex only:
+  /// Jellyfin and Emby have no equivalent.
+  static const plexCinemaPreRoll = BoolPref('plex_cinema_preroll');
+
   /// Seconds the Play Next prompt counts down before auto-advancing (#1827).
   /// 0 skips the prompt entirely and starts the next episode immediately.
   /// Only consulted while [autoPlayNextEpisode] is on.
@@ -1395,6 +1401,7 @@ class SettingsService extends BaseSharedPreferencesService {
     autoPlayNextEpisode,
     playNextCountdown,
     shuffleStartsFromBeginning,
+    plexCinemaPreRoll,
     gestureBrightnessSwipe,
     gestureVolumeSwipe,
     gesturePinchToZoom,

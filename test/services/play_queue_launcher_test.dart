@@ -8,6 +8,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/models/plex/play_queue_response.dart';
+import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
@@ -28,9 +29,22 @@ class _StubPlexClient implements PlexClient {
 
   final PlayQueueResponse? response;
 
+  @override
+  PlexConfig get config => PlexConfig(
+    baseUrl: 'http://stub',
+    clientIdentifier: 'stub-client',
+    product: 'Plezy',
+    version: 'test',
+    machineIdentifier: 'stub-machine',
+  );
+
   /// Holds [createPlayQueue] open until completed, so a test can act while the
   /// launch's loading dialog is up.
   final Completer<void>? gate;
+
+  /// Records the [extrasPrefixCount] the launcher passed, so a test can assert
+  /// on it without reaching into the HTTP layer.
+  int? lastExtrasPrefixCount;
 
   @override
   Future<PlayQueueResponse> createPlayQueue({
@@ -41,9 +55,11 @@ class _StubPlexClient implements PlexClient {
     int shuffle = 0,
     int repeat = 0,
     int continuous = 0,
+    int? extrasPrefixCount,
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
+    lastExtrasPrefixCount = extrasPrefixCount;
     await gate?.future;
     return response!;
   }
@@ -67,6 +83,16 @@ Future<BuildContext> _pumpContext(WidgetTester tester) async {
     ),
   );
   return capturedContext;
+}
+
+PlayQueueResponse _queueWithItems(List<MediaItem> items) {
+  return PlayQueueResponse(
+    playQueueID: 73,
+    playQueueSelectedItemID: 41,
+    playQueueShuffled: false,
+    playQueueTotalCount: items.length,
+    items: items,
+  );
 }
 
 PlayQueueResponse _queueWith(MediaItem item, {bool shuffled = false}) {
@@ -224,6 +250,47 @@ void main() {
       expect(playbackState.currentQueueItem, same(item));
     });
   });
+  group('Plex cinema pre-roll (#970)', () {
+    testWidgets('asks the server for the pre-roll and plays it ahead of the movie', (tester) async {
+      final context = await _pumpContext(tester);
+      const preRoll = MediaItem.plex(id: 'preroll-1', kind: MediaKind.clip, title: 'Pre-roll', playQueueItemId: 40);
+      const movie = MediaItem.plex(id: 'movie-1', kind: MediaKind.movie, title: 'Movie', playQueueItemId: 41);
+      final client = _StubPlexClient(response: _queueWithItems([preRoll, movie]));
+      final navigated = <MediaItem>[];
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: client,
+        playbackStateForTesting: PlaybackStateProvider(),
+        navigateForTesting: (selected) async => navigated.add(selected),
+      );
+
+      final result = await launcher.launchMovieWithCinemaExtras(movie: movie);
+
+      // 0 is "pre-roll, no trailers" — the server prefixes the pre-roll
+      // whenever the parameter is present at all.
+      expect(client.lastExtrasPrefixCount, 0);
+      expect(result, isA<PlayQueueSuccess>());
+      expect(navigated.single, same(preRoll));
+    });
+
+    testWidgets('declines when the server prefixes nothing, leaving direct playback to the caller', (tester) async {
+      final context = await _pumpContext(tester);
+      const movie = MediaItem.plex(id: 'movie-1', kind: MediaKind.movie, title: 'Movie', playQueueItemId: 41);
+      final navigated = <MediaItem>[];
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: _StubPlexClient(response: _queueWithItems([movie])),
+        playbackStateForTesting: PlaybackStateProvider(),
+        navigateForTesting: (selected) async => navigated.add(selected),
+      );
+
+      final result = await launcher.launchMovieWithCinemaExtras(movie: movie);
+
+      expect(result, isNull);
+      expect(navigated, isEmpty);
+    });
+  });
+
   group('shuffle starts from beginning (#2303)', () {
     testWidgets('strips the launched item\'s resume offset when the pref is on', (tester) async {
       final context = await _pumpContext(tester);

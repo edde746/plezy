@@ -10,6 +10,7 @@ import '../media/media_playlist.dart';
 import '../models/plex/play_queue_response.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/video_player_navigation.dart';
 import '../i18n/strings.g.dart';
@@ -89,6 +90,49 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       serverId: itemServerId,
       serverName: itemServerName,
     );
+  }
+
+  /// Launch a single movie through a server-side queue so the server can
+  /// prefix it with the pre-roll configured in its Extras settings (#970).
+  ///
+  /// The pre-roll arrives as an ordinary `clip` queue item, so ordering,
+  /// progress reporting and resume all run through the queue machinery that
+  /// collections and folders already use.
+  ///
+  /// Returns null when no queue could be created or the server sent nothing
+  /// back ahead of the movie, letting the caller fall through to its ordinary
+  /// direct-playback path rather than failing the launch.
+  Future<PlayQueueResult?> launchMovieWithCinemaExtras({required MediaItem movie}) async {
+    try {
+      final machineId = client.config.machineIdentifier ?? await client.getMachineIdentifier();
+      if (machineId == null) return null;
+
+      final playQueue = await client.createPlayQueue(
+        uri: 'server://$machineId/com.plexapp.plugins.library/library/metadata/${movie.id}',
+        type: 'video',
+        extrasPrefixCount: 0,
+        librarySectionID: movie.libraryId,
+        librarySectionTitle: movie.libraryTitle,
+      );
+
+      // Nothing was prefixed — no pre-roll is configured, or the server chose
+      // not to send one. Direct playback is the cheaper path for that case.
+      final items = playQueue.items;
+      if (items == null || items.length < 2) return null;
+
+      return await _launchFromQueue(
+        playQueue: playQueue,
+        ratingKey: movie.id,
+        shuffle: false,
+        serverId: serverIdOrNull(movie.serverId ?? serverId),
+        serverName: movie.serverName ?? serverName,
+        libraryId: movie.libraryId,
+        libraryTitle: movie.libraryTitle,
+      );
+    } catch (e, stackTrace) {
+      appLogger.w('Cinema extras queue failed, falling back to direct playback', error: e, stackTrace: stackTrace);
+      return null;
+    }
   }
 
   /// Launch playback from a collection or playlist.
@@ -384,7 +428,14 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     if (navigateForTesting != null) {
       await navigateForTesting!(itemToPlay);
     } else {
-      await navigateToVideoPlayer(context, metadata: itemToPlay, resolveWatchState: !stripResumeOffset);
+      // skipCinemaExtras: the queue already carries whatever the server
+      // prefixed, so the movie must not build a second one on its way in.
+      await navigateToVideoPlayer(
+        context,
+        metadata: itemToPlay,
+        resolveWatchState: !stripResumeOffset,
+        skipCinemaExtras: true,
+      );
     }
 
     return const PlayQueueSuccess();
