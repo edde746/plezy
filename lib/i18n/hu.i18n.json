@@ -843,6 +843,8 @@
     "serverBusyBody": "A szerver ismételten megtagadta ennek a fájlnak a streamelését (HTTP 503). Lehet, hogy újraindul, túlterhelt, vagy a fájl tárhelye nem érhető el. Próbáld újra egy kis idő múlva – ha a probléma továbbra is fennáll, kérd meg a szerver tulajdonosát, hogy ellenőrizze a szervert és a fájl tárhelyét.",
     "logsUploaded": "Naplók feltöltve",
     "logsUploadFailed": "Nem sikerült a naplók feltöltése",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Naplóazonosító",
     "burnedSubtitlesUseMenu": "A feliratok bele vannak égetve ebbe a streambe. A feliratmenüben módosíthatod őket.",
     "noVideoUrl": "Nem érhető el videó-URL",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Naplók törlése",
     "copyLogs": "Naplók másolása",
+    "saveLogs": "",
     "uploadLogs": "Naplók feltöltése"
   },
   "startup": {

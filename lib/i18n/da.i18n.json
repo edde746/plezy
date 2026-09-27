@@ -843,6 +843,8 @@
     "serverBusyBody": "Serveren blev ved med at afvise at streame denne fil (HTTP 503). Den er muligvis ved at genstarte eller optaget, eller filens lager er muligvis offline. Prøv igen om et øjeblik – hvis det bliver ved med at ske, skal du bede serverejeren om at kontrollere serveren og filens lager.",
     "logsUploaded": "Logfilerne blev uploadet",
     "logsUploadFailed": "Logfilerne kunne ikke uploades",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Log-ID",
     "burnedSubtitlesUseMenu": "Underteksterne er indbrændt i denne stream. Skift dem i undertekstmenuen.",
     "noVideoUrl": "Ingen video-URL er tilgængelig",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Ryd logfiler",
     "copyLogs": "Kopiér logfiler",
+    "saveLogs": "",
     "uploadLogs": "Upload logfiler"
   },
   "startup": {

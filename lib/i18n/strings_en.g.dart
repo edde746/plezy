@@ -2464,6 +2464,12 @@ class Translations$messages$en {
 	/// en: 'Failed to upload logs'
 	String get logsUploadFailed => 'Failed to upload logs';
 
+	/// en: 'Logs saved'
+	String get logsSaved => 'Logs saved';
+
+	/// en: 'Failed to save logs'
+	String get logsSaveFailed => 'Failed to save logs';
+
 	/// en: 'Log ID'
 	String get logId => 'Log ID';
 
@@ -3360,6 +3366,9 @@ class Translations$logs$en {
 
 	/// en: 'Copy Logs'
 	String get copyLogs => 'Copy Logs';
+
+	/// en: 'Save Logs'
+	String get saveLogs => 'Save Logs';
 
 	/// en: 'Upload Logs'
 	String get uploadLogs => 'Upload Logs';
@@ -8065,6 +8074,8 @@ extension on Translations {
 			'messages.serverBusyBody' => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logsSaved' => 'Logs saved',
+			'messages.logsSaveFailed' => 'Failed to save logs',
 			'messages.logId' => 'Log ID',
 			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'messages.noVideoUrl' => 'No video URL available',
@@ -8295,10 +8306,10 @@ extension on Translations {
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
-			'libraries.analyze' => 'Analyze',
-			'libraries.analyzeLibrary' => 'Analyze Library',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analyze' => 'Analyze',
+			'libraries.analyzeLibrary' => 'Analyze Library',
 			'libraries.refreshMetadata' => 'Refresh Metadata',
 			'libraries.emptyTrash' => 'Empty Trash',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Emptying trash for "${title}"...',
@@ -8420,6 +8431,7 @@ extension on Translations {
 			'hubDetail.noItemsFound' => 'No items found',
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
+			'logs.saveLogs' => 'Save Logs',
 			'logs.uploadLogs' => 'Upload Logs',
 			'startup.failedTitle' => 'Plezy could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
@@ -8808,11 +8820,11 @@ extension on Translations {
 			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.end' => 'End',
 			'watchTogether.leave' => 'Leave',
 			'watchTogether.syncing' => 'Syncing...',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
@@ -9322,11 +9334,11 @@ extension on Translations {
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.findServer' => 'Find server',
 			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
 			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',

@@ -843,6 +843,8 @@
     "serverBusyBody": "Server bu faylı yayımlamaqdan dəfələrlə imtina etdi (HTTP 503). Server yenidən başladılır və ya məşğul ola bilər, yaxud faylın yerləşdiyi yaddaş oflayn ola bilər. Bir az sonra təzədən cəhd edin — problem davam edərsə, server sahibindən serveri və faylın yerləşdiyi yaddaşı yoxlamasını istəyin.",
     "logsUploaded": "Jurnallar yükləndi",
     "logsUploadFailed": "Jurnallar yüklənə bilmədi",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Jurnal ID-si",
     "burnedSubtitlesUseMenu": "Altyazılar bu yayıma həkk edilib. Onları altyazı menyusundan dəyişin.",
     "noVideoUrl": "Video URL-i mövcud deyil",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Jurnalları təmizlə",
     "copyLogs": "Jurnalları kopyala",
+    "saveLogs": "",
     "uploadLogs": "Jurnalları yüklə"
   },
   "startup": {

@@ -843,6 +843,8 @@
     "serverBusyBody": "Le serveur a refusé à plusieurs reprises de diffuser ce fichier (HTTP 503). Il est peut-être en cours de redémarrage ou occupé, ou le stockage du fichier est peut-être hors ligne. Réessayez dans un instant. Si le problème persiste, demandez au propriétaire du serveur de vérifier le serveur et le stockage du fichier.",
     "logsUploaded": "Journaux envoyés",
     "logsUploadFailed": "Échec de l’envoi des journaux",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Identifiant du journal",
     "burnedSubtitlesUseMenu": "Les sous-titres sont incrustés à l’image de ce flux. Modifiez-les depuis le menu des sous-titres.",
     "noVideoUrl": "Aucune URL vidéo disponible",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Effacer les journaux",
     "copyLogs": "Copier les journaux",
+    "saveLogs": "",
     "uploadLogs": "Envoyer les journaux"
   },
   "startup": {

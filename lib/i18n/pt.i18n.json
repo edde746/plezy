@@ -843,6 +843,8 @@
     "serverBusyBody": "O servidor continuou se recusando a transmitir este arquivo (HTTP 503). Ele pode estar reiniciando ou ocupado, ou o armazenamento do arquivo pode estar offline. Tente novamente em instantes — se isso continuar acontecendo, peça ao proprietário do servidor para verificar o servidor e o armazenamento do arquivo.",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "ID do log",
     "burnedSubtitlesUseMenu": "As legendas estão incorporadas a esta transmissão. Altere-as no menu de legendas.",
     "noVideoUrl": "Nenhuma URL de vídeo disponível",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Limpar Logs",
     "copyLogs": "Copiar Logs",
+    "saveLogs": "",
     "uploadLogs": "Enviar Logs"
   },
   "startup": {

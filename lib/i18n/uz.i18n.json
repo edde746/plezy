@@ -843,6 +843,8 @@
     "serverBusyBody": "Server bu faylni uzatishni qayta-qayta rad etdi (HTTP 503). U qayta ishga tushayotgan yoki band boʻlishi, yoxud fayl saqlanadigan xotira oflayn boʻlishi mumkin. Birozdan keyin qaytadan urinib koʻring. Muammo davom etsa, server egasidan server va fayl xotirasini tekshirishni soʻrang.",
     "logsUploaded": "Jurnallar yuklandi",
     "logsUploadFailed": "Jurnallarni yuklab boʻlmadi",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Jurnal ID-si",
     "burnedSubtitlesUseMenu": "Subtitrlar bu oqim tasviriga singdirilgan. Ularni subtitr menyusidan oʻzgartiring.",
     "noVideoUrl": "Video URL mavjud emas",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Jurnallarni tozalash",
     "copyLogs": "Jurnallarni nusxalash",
+    "saveLogs": "",
     "uploadLogs": "Jurnallarni yuklash"
   },
   "startup": {

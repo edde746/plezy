@@ -851,6 +851,8 @@
     "serverBusyBody": "Serwer wielokrotnie odmawiał strumieniowania tego pliku (HTTP 503). Być może jest ponownie uruchamiany lub zajęty albo magazyn danych zawierający plik jest offline. Spróbuj ponownie za chwilę — jeśli problem będzie się powtarzać, poproś właściciela serwera o sprawdzenie serwera i magazynu danych zawierającego plik.",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "ID logu",
     "burnedSubtitlesUseMenu": "Napisy są wtopione w ten strumień. Zmień je w menu napisów.",
     "noVideoUrl": "Brak dostępnego adresu URL wideo",
@@ -1257,6 +1259,7 @@
   "logs": {
     "clearLogs": "Wyczyść logi",
     "copyLogs": "Kopiuj logi",
+    "saveLogs": "",
     "uploadLogs": "Prześlij logi"
   },
   "startup": {

@@ -843,6 +843,8 @@
     "serverBusyBody": "De server bleef weigeren dit bestand te streamen (HTTP 503). Mogelijk wordt de server opnieuw opgestart, is deze bezet of is de opslag van het bestand offline. Probeer het over een moment opnieuw — als dit blijft gebeuren, vraag dan de servereigenaar om de server en de opslag van het bestand te controleren.",
     "logsUploaded": "Logbestanden geüpload",
     "logsUploadFailed": "Uploaden van logbestanden mislukt",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Logboek-ID",
     "burnedSubtitlesUseMenu": "De ondertitels zijn in deze stream ingebrand. Wijzig ze via het ondertitelmenu.",
     "noVideoUrl": "Geen video-URL beschikbaar",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Logbestanden wissen",
     "copyLogs": "Logbestanden kopiëren",
+    "saveLogs": "",
     "uploadLogs": "Logbestanden uploaden"
   },
   "startup": {

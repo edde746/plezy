@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -20,6 +21,7 @@ import '../../utils/dialogs.dart';
 import '../../main.dart' show gitCommit;
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/device_performance.dart';
+import '../../services/log_file_service.dart';
 import '../../services/log_upload_service.dart';
 import '../../services/startup_diagnostics.dart';
 import '../../services/video_decode_capabilities.dart';
@@ -97,10 +99,11 @@ class _LogRecordState extends State<_LogRecord> {
 }
 
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({super.key, this.httpClient, this.deviceInfoPlugin});
+  const LogsScreen({super.key, this.httpClient, this.deviceInfoPlugin, this.logFileSaver});
 
   final MediaServerHttpClient? httpClient;
   final DeviceInfoPlugin? deviceInfoPlugin;
+  final LogFileSaver? logFileSaver;
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
@@ -316,6 +319,32 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     }
   }
 
+  Future<void> _saveLogs() async {
+    final bytes = Uint8List.fromList(utf8.encode(_formatAllLogs()));
+    final String? path;
+    try {
+      path = await (widget.logFileSaver ?? saveLogFile)(bytes, logFileName(DateTime.now()));
+    } catch (error, stackTrace) {
+      appLogger.e('Saving logs to a file failed', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.messages.logsSaveFailed);
+      return;
+    }
+    if (!mounted || path == null) return;
+    final savedPath = path;
+    unawaited(
+      showScopedDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(t.messages.logsSaved),
+          content: SelectableText(savedPath, style: const TextStyle(fontFamily: 'monospace')),
+          actions: [
+            DialogActionButton(autofocus: true, onPressed: () => Navigator.of(ctx).pop(), label: t.common.close),
+          ],
+        ),
+      ),
+    );
+  }
+
   Color _getLevelColor(Level level) {
     switch (level) {
       case Level.error:
@@ -482,6 +511,11 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                               icon: Symbols.upload_rounded,
                               tooltip: t.logs.uploadLogs,
                               onPressed: _hasDiagnostics ? _uploadLogs : null,
+                            ),
+                            FocusableAction(
+                              icon: Symbols.save_rounded,
+                              tooltip: t.logs.saveLogs,
+                              onPressed: _hasDiagnostics ? _saveLogs : null,
                             ),
                             FocusableAction(
                               icon: Symbols.content_copy_rounded,

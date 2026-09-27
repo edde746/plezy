@@ -843,6 +843,8 @@
     "serverBusyBody": "El servidor siguió rechazando la reproducción de este archivo (HTTP 503). Puede que se esté reiniciando, esté ocupado o que el almacenamiento del archivo no esté disponible. Inténtalo de nuevo dentro de un momento; si sigue ocurriendo, pide al propietario del servidor que revise el servidor y el almacenamiento del archivo.",
     "logsUploaded": "Registros subidos",
     "logsUploadFailed": "Error al subir registros",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "ID de registro",
     "burnedSubtitlesUseMenu": "Los subtítulos están incrustados en esta transmisión. Cámbialos desde el menú de subtítulos.",
     "noVideoUrl": "No hay ninguna URL de vídeo disponible",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Borrar registros",
     "copyLogs": "Copiar registros",
+    "saveLogs": "",
     "uploadLogs": "Subir registros"
   },
   "startup": {
