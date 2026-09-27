@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "Il server ha rifiutato lo streaming di questo elemento (HTTP 403). Il tuo account potrebbe non avere l'autorizzazione per riprodurlo, oppure il server potrebbe consentire la riproduzione solo sulla sua rete locale.",
     "logsUploaded": "Log caricati",
     "logsUploadFailed": "Impossibile caricare i log",
+    "logsSaved": "Log salvati",
+    "logsSaveFailed": "Impossibile salvare i log",
     "logId": "ID log",
     "burnedSubtitlesUseMenu": "I sottotitoli sono incorporati in questo stream. Cambiali dal menu dei sottotitoli.",
     "noVideoUrl": "Nessun URL video disponibile",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Cancella log",
     "copyLogs": "Copia log",
+    "saveLogs": "Salva log",
     "uploadLogs": "Carica log"
   },
   "startup": {

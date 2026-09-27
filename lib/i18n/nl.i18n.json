@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "De server weigerde dit item te streamen (HTTP 403). Je account heeft mogelijk geen toestemming om het af te spelen, of de server staat afspelen alleen toe op het eigen lokale netwerk.",
     "logsUploaded": "Logbestanden geüpload",
     "logsUploadFailed": "Uploaden van logbestanden mislukt",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Logboek-ID",
     "burnedSubtitlesUseMenu": "De ondertitels zijn in deze stream ingebrand. Wijzig ze via het ondertitelmenu.",
     "noVideoUrl": "Geen video-URL beschikbaar",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Logbestanden wissen",
     "copyLogs": "Logbestanden kopiëren",
+    "saveLogs": "",
     "uploadLogs": "Logbestanden uploaden"
   },
   "startup": {

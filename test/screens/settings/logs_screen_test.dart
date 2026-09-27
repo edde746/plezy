@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/screens/settings/logs_screen.dart';
+import 'package:plezy/services/log_file_service.dart';
 import 'package:plezy/services/log_upload_service.dart';
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/utils/app_logger.dart';
@@ -490,6 +492,93 @@ void main() {
       expect(clipboardText, isNot(contains('older-row')));
       expect(clipboardText, isNot(endsWith('\n')));
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  test('log file names carry the local date and time', () {
+    expect(logFileName(DateTime(2026, 9, 28, 9, 3, 5)), 'plezy-logs-20260928-090305.log');
+  });
+
+  group('saving logs to a file', () {
+    late DeviceInfoPlugin deviceInfo;
+
+    setUp(() {
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '1.2.3',
+        buildNumber: '45',
+        buildSignature: '',
+      );
+      deviceInfo = DeviceInfoPlugin.setMockInitialValues(
+        linuxDeviceInfo: LinuxDeviceInfo(
+          name: 'Test Linux',
+          id: 'test-linux',
+          prettyName: 'Test Linux',
+          machineId: 'test-machine',
+        ),
+      );
+    });
+
+    Future<void> pumpLogs(WidgetTester tester, LogFileSaver saver) async {
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(
+            child: MaterialApp(
+              home: LogsScreen(deviceInfoPlugin: deviceInfo, logFileSaver: saver),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('writes the whole log, beyond the upload limit, and shows where it went', (tester) async {
+      final printer = MemoryAwareLogPrinter(SimplePrinter());
+      final line = 'x' * 1000;
+      for (var i = 0; i < 1200; i++) {
+        printer.log(LogEvent(Level.debug, '$i $line'));
+      }
+      Uint8List? savedBytes;
+      String? savedName;
+      await pumpLogs(tester, (bytes, fileName) async {
+        savedBytes = bytes;
+        savedName = fileName;
+        return '/storage/emulated/0/Android/data/com.edde746.plezy/files/$fileName';
+      });
+
+      await tester.tap(find.byTooltip(t.logs.saveLogs));
+      await tester.pumpAndSettle();
+
+      final saved = utf8.decode(savedBytes!);
+      expect(savedBytes!.length, greaterThan(maxLogUploadBytes));
+      expect(saved, contains('0 $line'));
+      expect(saved, contains('1199 $line'));
+      expect(savedName, matches(RegExp(r'^plezy-logs-\d{8}-\d{6}\.log$')));
+      expect(find.text(t.messages.logsSaved), findsOneWidget);
+      expect(find.text('/storage/emulated/0/Android/data/com.edde746.plezy/files/$savedName'), findsOneWidget);
+    });
+
+    testWidgets('a failed save says so and opens no dialog', (tester) async {
+      appLogger.i('seed');
+      await pumpLogs(tester, (bytes, fileName) async => throw const FileSystemException('read-only'));
+
+      await tester.tap(find.byTooltip(t.logs.saveLogs));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.messages.logsSaveFailed), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('a cancelled save leaves the screen as it was', (tester) async {
+      appLogger.i('seed');
+      await pumpLogs(tester, (bytes, fileName) async => null);
+
+      await tester.tap(find.byTooltip(t.logs.saveLogs));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text(t.messages.logsSaveFailed), findsNothing);
     });
   });
 

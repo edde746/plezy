@@ -856,6 +856,8 @@
     "playbackNotAllowedBody": "Serwer odmówił strumieniowania tego elementu (HTTP 403). Twoje konto może nie mieć uprawnień do jego odtwarzania albo serwer może zezwalać na odtwarzanie tylko w swojej sieci lokalnej.",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "ID logu",
     "burnedSubtitlesUseMenu": "Napisy są wtopione w ten strumień. Zmień je w menu napisów.",
     "noVideoUrl": "Brak dostępnego adresu URL wideo",
@@ -1266,6 +1268,7 @@
   "logs": {
     "clearLogs": "Wyczyść logi",
     "copyLogs": "Kopiuj logi",
+    "saveLogs": "",
     "uploadLogs": "Prześlij logi"
   },
   "startup": {

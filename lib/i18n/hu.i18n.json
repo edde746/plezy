@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "A szerver megtagadta ennek az elemnek a streamelését (HTTP 403). Lehet, hogy a fiókodnak nincs engedélye a lejátszására, vagy a szerver csak a helyi hálózatán engedélyezi a lejátszást.",
     "logsUploaded": "Naplók feltöltve",
     "logsUploadFailed": "Nem sikerült a naplók feltöltése",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Naplóazonosító",
     "burnedSubtitlesUseMenu": "A feliratok bele vannak égetve ebbe a streambe. A feliratmenüben módosíthatod őket.",
     "noVideoUrl": "Nem érhető el videó-URL",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Naplók törlése",
     "copyLogs": "Naplók másolása",
+    "saveLogs": "",
     "uploadLogs": "Naplók feltöltése"
   },
   "startup": {

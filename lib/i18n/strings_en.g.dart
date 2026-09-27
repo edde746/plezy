@@ -2479,6 +2479,12 @@ class Translations$messages$en {
 	/// en: 'Failed to upload logs'
 	String get logsUploadFailed => 'Failed to upload logs';
 
+	/// en: 'Logs saved'
+	String get logsSaved => 'Logs saved';
+
+	/// en: 'Failed to save logs'
+	String get logsSaveFailed => 'Failed to save logs';
+
 	/// en: 'Log ID'
 	String get logId => 'Log ID';
 
@@ -3387,6 +3393,9 @@ class Translations$logs$en {
 
 	/// en: 'Copy Logs'
 	String get copyLogs => 'Copy Logs';
+
+	/// en: 'Save Logs'
+	String get saveLogs => 'Save Logs';
 
 	/// en: 'Upload Logs'
 	String get uploadLogs => 'Upload Logs';
@@ -8176,6 +8185,8 @@ extension on Translations {
 			'messages.playbackNotAllowedBody' => 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
+			'messages.logsSaved' => 'Logs saved',
+			'messages.logsSaveFailed' => 'Failed to save logs',
 			'messages.logId' => 'Log ID',
 			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'messages.noVideoUrl' => 'No video URL available',
@@ -8401,10 +8412,10 @@ extension on Translations {
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
-			'errors.reasonRefused' => 'the server refused the request',
-			'errors.reasonNotFound' => 'the item is no longer on the server',
 			_ => null,
 		} ?? switch (path) {
+			'errors.reasonRefused' => 'the server refused the request',
+			'errors.reasonNotFound' => 'the item is no longer on the server',
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -8535,6 +8546,7 @@ extension on Translations {
 			'hubDetail.noItemsFound' => 'No items found',
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
+			'logs.saveLogs' => 'Save Logs',
 			'logs.uploadLogs' => 'Upload Logs',
 			'startup.failedTitle' => 'Plezy could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
@@ -8914,11 +8926,11 @@ extension on Translations {
 			'watchTogether.transfer' => 'Transfer',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
 			'watchTogether.youAreNowHost' => 'You are now the host',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -9428,11 +9440,11 @@ extension on Translations {
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',
+			_ => null,
+		} ?? switch (path) {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
-			_ => null,
-		} ?? switch (path) {
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',

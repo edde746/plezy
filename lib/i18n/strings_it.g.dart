@@ -981,6 +981,8 @@ class _Translations$messages$it extends Translations$messages$en {
 	@override String get playbackNotAllowedBody => 'Il server ha rifiutato lo streaming di questo elemento (HTTP 403). Il tuo account potrebbe non avere l\'autorizzazione per riprodurlo, oppure il server potrebbe consentire la riproduzione solo sulla sua rete locale.';
 	@override String get logsUploaded => 'Log caricati';
 	@override String get logsUploadFailed => 'Impossibile caricare i log';
+	@override String get logsSaved => 'Log salvati';
+	@override String get logsSaveFailed => 'Impossibile salvare i log';
 	@override String get logId => 'ID log';
 	@override String get burnedSubtitlesUseMenu => 'I sottotitoli sono incorporati in questo stream. Cambiali dal menu dei sottotitoli.';
 	@override String get noVideoUrl => 'Nessun URL video disponibile';
@@ -1366,6 +1368,7 @@ class _Translations$logs$it extends Translations$logs$en {
 	// Translations
 	@override String get clearLogs => 'Cancella log';
 	@override String get copyLogs => 'Copia log';
+	@override String get saveLogs => 'Salva log';
 	@override String get uploadLogs => 'Carica log';
 }
 
@@ -3827,6 +3830,8 @@ extension on TranslationsIt {
 			'messages.playbackNotAllowedBody' => 'Il server ha rifiutato lo streaming di questo elemento (HTTP 403). Il tuo account potrebbe non avere l\'autorizzazione per riprodurlo, oppure il server potrebbe consentire la riproduzione solo sulla sua rete locale.',
 			'messages.logsUploaded' => 'Log caricati',
 			'messages.logsUploadFailed' => 'Impossibile caricare i log',
+			'messages.logsSaved' => 'Log salvati',
+			'messages.logsSaveFailed' => 'Impossibile salvare i log',
 			'messages.logId' => 'ID log',
 			'messages.burnedSubtitlesUseMenu' => 'I sottotitoli sono incorporati in questo stream. Cambiali dal menu dei sottotitoli.',
 			'messages.noVideoUrl' => 'Nessun URL video disponibile',
@@ -4062,10 +4067,10 @@ extension on TranslationsIt {
 			'libraries.analyze' => 'Analizza',
 			'libraries.analyzeLibrary' => 'Analizza libreria',
 			'libraries.refreshMetadata' => 'Aggiorna metadati',
-			'libraries.emptyTrash' => 'Svuota cestino',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Svuotamento del cestino di "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Svuota cestino',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Svuotamento del cestino di "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Cestino di "${title}" svuotato',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Impossibile svuotare il cestino: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analisi di "${title}"...',
@@ -4157,6 +4162,7 @@ extension on TranslationsIt {
 			'hubDetail.noItemsFound' => 'Nessun elemento trovato',
 			'logs.clearLogs' => 'Cancella log',
 			'logs.copyLogs' => 'Copia log',
+			'logs.saveLogs' => 'Salva log',
 			'logs.uploadLogs' => 'Carica log',
 			'startup.failedTitle' => 'Plezy non ha potuto avviarsi',
 			'startup.failedBody' => 'Si è verificato un errore durante l\'avvio. I dettagli seguenti indicano cosa non ha funzionato.',
@@ -4575,11 +4581,11 @@ extension on TranslationsIt {
 			'watchTogether.waitingForParticipants' => 'In attesa che gli altri carichino...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'In attesa di ${name}...',
 			'watchTogether.recentRooms' => 'Stanze usate di recente',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Rinomina stanza',
 			'watchTogether.removeRoom' => 'Rimuovi',
 			'watchTogether.guestSwitchUnavailable' => 'Impossibile cambiare — server non disponibile per la sincronizzazione',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Impossibile cambiare — contenuto non trovato su questo server',
 			'watchTogether.defaultDisplayName' => 'Utente',
 			'watchTogether.errors.timedOut' => 'Il server relay non ha risposto in tempo',
@@ -5089,11 +5095,11 @@ extension on TranslationsIt {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connettiti a ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Inserisci l\'URL del server, il nome utente e la password.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Accedi al tuo server ${product}. Associato a ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Prendi in prestito da un altro profilo',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Riutilizza la connessione di un altro profilo. I profili protetti da PIN richiedono un PIN.',
 			'addServer.invalidCredentials' => 'Nome utente o password non validi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'La risposta di autenticazione non era un JSON valido',
 			'addServer.authResponseIncomplete' => 'La risposta di accesso del server era incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect è stato rifiutato dal server',

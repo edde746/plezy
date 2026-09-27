@@ -844,6 +844,8 @@
     "playbackNotAllowedBody": "服务器拒绝传输此项目（HTTP 403）。此账户可能没有播放权限，或服务器可能仅允许在其局域网内播放。",
     "logsUploaded": "日志已上传",
     "logsUploadFailed": "上传日志失败",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "日志 ID",
     "burnedSubtitlesUseMenu": "字幕已烧录到此视频流中。请从字幕菜单中更改。",
     "noVideoUrl": "没有可用的视频 URL",
@@ -1251,6 +1253,7 @@
   "logs": {
     "clearLogs": "清除日志",
     "copyLogs": "复制日志",
+    "saveLogs": "",
     "uploadLogs": "上传日志"
   },
   "startup": {

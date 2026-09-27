@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "Serveren nektet å strømme dette elementet (HTTP 403). Kontoen din har kanskje ikke tillatelse til å spille det av, eller serveren tillater kanskje bare avspilling på sitt lokale nettverk.",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Logg-ID",
     "burnedSubtitlesUseMenu": "Undertekstene er brent inn i denne strømmen. Endre dem fra undertekstmenyen.",
     "noVideoUrl": "Ingen video-URL er tilgjengelig",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Tøm logger",
     "copyLogs": "Kopier logger",
+    "saveLogs": "",
     "uploadLogs": "Last opp logger"
   },
   "startup": {

@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "El servidor se negó a transmitir este elemento (HTTP 403). Es posible que tu cuenta no tenga permiso para reproducirlo o que el servidor solo permita la reproducción en su red local.",
     "logsUploaded": "Registros subidos",
     "logsUploadFailed": "Error al subir registros",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "ID de registro",
     "burnedSubtitlesUseMenu": "Los subtítulos están incrustados en esta transmisión. Cámbialos desde el menú de subtítulos.",
     "noVideoUrl": "No hay ninguna URL de vídeo disponible",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Borrar registros",
     "copyLogs": "Copiar registros",
+    "saveLogs": "",
     "uploadLogs": "Subir registros"
   },
   "startup": {
