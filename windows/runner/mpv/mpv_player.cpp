@@ -772,6 +772,12 @@ void MpvPlayer::NotifyPowerSuspend() { LogRecovery("system suspending"); }
 
 void MpvPlayer::NotifyPowerResume() { audio_recovery_.RequestResume(); }
 
+void MpvPlayer::NotifyDisplayChange(WPARAM wparam, LPARAM lparam) {
+  if (!hwnd_) return;
+  HWND inner = ::FindWindowExW(hwnd_, nullptr, nullptr, nullptr);
+  if (inner) ::PostMessageW(inner, WM_DISPLAYCHANGE, wparam, lparam);
+}
+
 void MpvPlayer::LogRecovery(const std::string& text) {
   char log_msg[512];
   snprintf(log_msg, sizeof(log_msg), "MPV [warn] audio-recovery: %s", text.c_str());

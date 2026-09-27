@@ -93,6 +93,13 @@ class MpvPlayer {
   void NotifyPowerSuspend();
   void NotifyPowerResume();
 
+  // Display-change notification, called from the platform thread (window
+  // proc) on WM_DISPLAYCHANGE. mpv only re-reads the refresh rate when its
+  // own window gets that message, and its inner window under the video host
+  // does not, so after a refresh-rate switch display-fps kept the old rate
+  // (#2484). Posted, not sent: the inner window lives on mpv's thread.
+  void NotifyDisplayChange(WPARAM wparam, LPARAM lparam);
+
  private:
   friend class MpvPlayerPropertyContractTestPeer;
 

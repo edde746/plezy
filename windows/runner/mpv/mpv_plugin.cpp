@@ -145,10 +145,11 @@ void MpvPlayerPlugin::HandleMethodCall(
 
     flutter_window_ = GetWindow();
 
-    // The only top-level message we care about is the platform-task wakeup;
-    // mouse-over-video input is forwarded by the mpv inner-window subclass
-    // (see MpvPlayer), and compositing/z-order is handled by the engine's
-    // topmost DComp visual — there is no separate container window to manage.
+    // Top-level messages handled here: the platform-task wakeup, power
+    // broadcasts, and display changes. Mouse-over-video input is forwarded by
+    // the mpv inner-window subclass (see MpvPlayer), and compositing/z-order is
+    // handled by the engine's topmost DComp visual — there is no separate
+    // container window to manage.
     proc_id_ =
         registrar_->RegisterTopLevelWindowProcDelegate([this](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
           if (message == platform_task_message_) {
@@ -165,6 +166,9 @@ void MpvPlayerPlugin::HandleMethodCall(
             } else if (wparam == PBT_APMRESUMEAUTOMATIC || wparam == PBT_APMRESUMESUSPEND) {
               player_->NotifyPowerResume();
             }
+          }
+          if (message == WM_DISPLAYCHANGE && player_ && player_->IsInitialized()) {
+            player_->NotifyDisplayChange(wparam, lparam);
           }
           return std::optional<HRESULT>(std::nullopt);
         });
