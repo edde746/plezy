@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_version.dart';
 import '../media/media_version_preference.dart';
 import '../mpv/mpv.dart';
@@ -18,6 +19,8 @@ import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/services/watch_together_controller.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
+import '../services/media_list_playback_launcher.dart';
+import '../services/play_queue_launcher.dart';
 import '../services/local_playback_history.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
@@ -302,6 +305,7 @@ Future<bool?> navigateToVideoPlayer(
   bool strictMediaSelection = false,
   bool explicitStartPolicy = false,
   PlaybackLaunchObserver? launchObserver,
+  bool skipCinemaExtras = false,
 }) async {
   if (!isOffline && watchTogetherLease == null) {
     final watchTogether = context.read<WatchTogetherProvider?>();
@@ -314,6 +318,24 @@ Future<bool?> navigateToVideoPlayer(
   if (resolveWatchState) {
     metadata = context.readFreshWatchState(metadata);
   }
+
+  // Plex pre-roll (#970): a movie the user plays directly has no queue, so
+  // build one and let the server prefix its configured pre-roll. Declining
+  // returns null and playback continues below, unchanged. Skipped for
+  // downloads and Watch Together, where a server-side queue has no meaning.
+  if (!skipCinemaExtras && !isOffline && watchTogetherLease == null && metadata.kind == MediaKind.movie) {
+    final settings = await SettingsService.getInstance();
+    if (settings.read(SettingsService.plexCinemaPreRoll) && metadata is PlexMediaItem) {
+      if (!context.mounted || !launchCurrent()) return null;
+      final extras = await PlexPlayQueueLauncher.forContext(
+        context,
+        metadata,
+      ).launchMovieWithCinemaExtras(movie: metadata);
+      if (extras is PlayQueueSuccess) return true;
+    }
+  }
+
+  if (!context.mounted) return null;
   final navigator = Navigator.of(context);
   final sourceRoute = ModalRoute.of(context);
   final downloadProvider = context.read<DownloadProvider>();
