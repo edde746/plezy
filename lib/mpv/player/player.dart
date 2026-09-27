@@ -294,7 +294,7 @@ abstract class Player {
   ///
   /// Call this when playback ends to restore the normal display refresh rate.
   /// On other platforms, this is a no-op.
-  Future<void> clearVideoFrameRate();
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false});
 
   /// Apply subtitle styling to the native rendering layer.
   ///

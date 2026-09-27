@@ -1235,9 +1235,9 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> clearVideoFrameRate() async {
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {
     if (_nativeCoreUnavailable || !Platform.isAndroid || !initialized) return;
-    await invoke('clearVideoFrameRate');
+    await invoke('clearVideoFrameRate', {'awaitDisplayRestore': awaitDisplayRestore});
   }
 
   @override

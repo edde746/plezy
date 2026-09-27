@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -130,6 +131,91 @@ void main() {
     expect(find.text('Browse'), findsNothing, reason: 'the exit must not unwind past the covering route');
     expect(player.pauseCalls, 1);
   });
+
+  testWidgets('Back on Android leaves the player only once the display mode is restored', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      final player = _DisplayRestorePlayer();
+      player.pauseGate.complete();
+      final screen = await _pushHeldPlayer(tester, player);
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      expect(player.restoreRequests, [true]);
+      expect(screen.key.currentState, isNotNull, reason: 'the page below must not show while the link renegotiates');
+
+      player.restoreGate.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(screen.key.currentState, isNull);
+      expect(find.text('Browse'), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('A display restore that never settles still lets Back leave the player', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      final player = _DisplayRestorePlayer();
+      player.pauseGate.complete();
+      final screen = await _pushHeldPlayer(tester, player);
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 4));
+      expect(screen.key.currentState, isNotNull);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(screen.key.currentState, isNull);
+      expect(find.text('Browse'), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('Back off Android does not wait for a display restore', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      final player = _DisplayRestorePlayer();
+      player.pauseGate.complete();
+      final screen = await _pushHeldPlayer(tester, player);
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(player.restoreRequests, isEmpty);
+      expect(screen.key.currentState, isNull);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('A player that never pauses leaves on the navigation budget without a display wait', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      final player = _DisplayRestorePlayer();
+      final screen = await _pushHeldPlayer(tester, player);
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(player.restoreRequests, isEmpty);
+      expect(screen.key.currentState, isNull);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+}
+
+class _DisplayRestorePlayer extends _TouchExitPlayer {
+  final restoreGate = Completer<void>();
+  final restoreRequests = <bool>[];
+
+  @override
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {
+    restoreRequests.add(awaitDisplayRestore);
+    if (awaitDisplayRestore) await restoreGate.future;
+  }
 }
 
 class _TouchExitPlayer extends FakeSyncPlayer {

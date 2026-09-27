@@ -551,9 +551,9 @@ class PlayerAndroid extends PlayerBase {
   }
 
   @override
-  Future<void> clearVideoFrameRate() async {
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {
     if (disposed || !initialized) return;
-    await invoke('clearVideoFrameRate');
+    await invoke('clearVideoFrameRate', {'awaitDisplayRestore': awaitDisplayRestore});
   }
 
   @override
