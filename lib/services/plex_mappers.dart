@@ -24,6 +24,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
+import '../media/media_person.dart';
 import '../media/media_playlist.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
@@ -1027,7 +1028,8 @@ String? _nonEmptyRatingString(Object? value) {
 /// [PlexClient] keeps the DTO step internally for caching, copying, and
 /// OnDeck composition. A few raw-JSON helpers remain for callers without a
 /// DTO surface: [mediaItemFromCacheJson] (offline cache),
-/// [mediaVersionFromJson], and [displayCriteriaFromJson].
+/// [mediaVersionFromJson], [displayCriteriaFromJson], and
+/// [personFromSearchResultJson].
 ///
 /// Pure: no HTTP, no client state, no token-aware image-URL resolution.
 /// Token-aware image URLs are layered on at the [PlexClient] boundary via
@@ -1036,6 +1038,12 @@ String? _nonEmptyRatingString(Object? value) {
 /// instance.
 class PlexMappers {
   PlexMappers._();
+
+  /// Plex `tagType` of an actor (`Role`) tag.
+  static const int _actorTagType = 6;
+
+  /// Plex `tagType` of a `Director` tag.
+  static const int _directorTagType = 4;
 
   /// Parse a Plex `/library/metadata/{id}` JSON object into a neutral
   /// [MediaItem]. Used by the offline cache layer to convert persisted Plex
@@ -1139,6 +1147,40 @@ class PlexMappers {
   /// Map a parsed [PlexRoleDto] into a [MediaRole].
   static MediaRole role(PlexRoleDto dto) {
     return MediaRole(id: dto.id?.toString(), tag: dto.tag, role: dto.role, thumbPath: dto.thumb);
+  }
+
+  /// Map one `Directory` row of a `/library/search?searchTypes=people`
+  /// response into a [MediaPerson] owned by [serverId]. Returns null for rows
+  /// that are not an actor or director tag; throws [FormatException] for a
+  /// person tag without an id or name.
+  ///
+  /// [MediaPerson.thumbPath] keeps `thumb` verbatim — usually an absolute
+  /// `metadata-static.plex.tv` URL the client resolves at render time.
+  static MediaPerson? personFromSearchResultJson(
+    Map<String, dynamic> json, {
+    required ServerId serverId,
+    String? serverName,
+  }) {
+    if (json['type'] != 'tag') return null;
+    final credit = switch (flexibleInt(json['tagType'])) {
+      _actorTagType => PersonCredit.actor,
+      _directorTagType => PersonCredit.director,
+      _ => null,
+    };
+    if (credit == null) return null;
+
+    final id = flexibleInt(json['id']);
+    final name = _stringOrNull(json['tag']);
+    if (id == null || name == null) throw const FormatException('Plex person search row without id or name');
+    return MediaPerson(
+      id: id.toString(),
+      name: name,
+      thumbPath: _stringOrNull(json['thumb']),
+      credit: credit,
+      backend: MediaBackend.plex,
+      serverId: serverId,
+      serverName: serverName,
+    );
   }
 
   /// Map a parsed [PlexMediaVersionDto] into a [MediaVersion].

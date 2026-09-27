@@ -22,12 +22,16 @@ import '../services/scrub_preview_source.dart';
 import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_library.dart';
+import 'media_person.dart';
 import 'media_playlist.dart';
 import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
 
 /// Default number of items requested for horizontal hub previews.
 const int defaultHubPreviewLimit = 20;
+
+/// Default number of people [MediaServerClient.searchPeople] returns.
+const int defaultPeopleSearchLimit = 20;
 
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
 ///
@@ -344,6 +348,26 @@ abstract class MediaServerClient {
   Future<List<MediaItem>> searchItems(
     String query, {
     int limit = 100,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  });
+
+  /// People (actors and directors) whose name matches [query], best match
+  /// first, at most [limit]. Every person returned opens a non-empty
+  /// [fetchPersonMediaPage]; a backend whose person index also lists people
+  /// without any title the user can see MUST drop them.
+  ///
+  /// [excludedLibraryIds] names server-local libraries the user has hidden.
+  /// A person whose only titles sit in those libraries MUST be left out; one
+  /// with a title in any other library stays. [abort] cancels every request
+  /// owned by this call.
+  ///
+  /// Plex: `/library/search?searchTypes=people`. Jellyfin/Emby: `/Persons`,
+  /// with each candidate checked against `/Items?PersonIds=`. Every backend
+  /// supports it, so no [ServerCapabilities] flag gates it.
+  Future<List<MediaPerson>> searchPeople(
+    String query, {
+    int limit = defaultPeopleSearchLimit,
     AbortController? abort,
     Set<String> excludedLibraryIds = const {},
   });

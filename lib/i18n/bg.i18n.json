@@ -442,7 +442,8 @@
     "hint": "Търсене на филми, сериали, музика...",
     "tryDifferentTerm": "Опитайте с различна дума за търсене",
     "searchYourMedia": "Търсете в медийното си съдържание",
-    "enterTitleActorOrKeyword": "Въведете заглавие, актьор или ключова дума"
+    "enterTitleActorOrKeyword": "Въведете заглавие, актьор или ключова дума",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Задай клавишна комбинация за ${actionName}",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Друго"
     },
     "creditRole": {
+      "actor": "",
       "director": "Режисьор",
       "writer": "Сценарист",
       "producer": "Продуцент",

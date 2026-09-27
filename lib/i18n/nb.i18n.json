@@ -442,7 +442,8 @@
     "hint": "Søk i filmer, serier, musikk...",
     "tryDifferentTerm": "Prøv et annet søkeord",
     "searchYourMedia": "Søk i mediene dine",
-    "enterTitleActorOrKeyword": "Skriv inn tittel, skuespiller eller nøkkelord"
+    "enterTitleActorOrKeyword": "Skriv inn tittel, skuespiller eller nøkkelord",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Angi snarvei for ${actionName}",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Annet"
     },
     "creditRole": {
+      "actor": "",
       "director": "Regissør",
       "writer": "Forfatter",
       "producer": "Produsent",

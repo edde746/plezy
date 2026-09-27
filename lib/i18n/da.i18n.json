@@ -442,7 +442,8 @@
     "hint": "Søg film, serier, musik...",
     "tryDifferentTerm": "Prøv en anden søgning",
     "searchYourMedia": "Søg i dine medier",
-    "enterTitleActorOrKeyword": "Indtast titel, skuespiller eller nøgleord"
+    "enterTitleActorOrKeyword": "Indtast titel, skuespiller eller nøgleord",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Indstil genvej for ${actionName}",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Andet"
     },
     "creditRole": {
+      "actor": "",
       "director": "Instruktør",
       "writer": "Forfatter",
       "producer": "Producer",

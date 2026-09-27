@@ -442,7 +442,8 @@
     "hint": "Buscar filmes, séries, músicas...",
     "tryDifferentTerm": "Tente um termo de busca diferente",
     "searchYourMedia": "Buscar suas mídias",
-    "enterTitleActorOrKeyword": "Insira um título, ator ou palavra-chave"
+    "enterTitleActorOrKeyword": "Insira um título, ator ou palavra-chave",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Definir Atalho para ${actionName}",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Outro"
     },
     "creditRole": {
+      "actor": "",
       "director": "Diretor",
       "writer": "Roteirista",
       "producer": "Produtor",

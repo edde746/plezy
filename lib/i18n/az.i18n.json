@@ -442,7 +442,8 @@
     "hint": "Kino, serial, musiqi axtar...",
     "tryDifferentTerm": "Fərqli axtarış sözü cəhd edin",
     "searchYourMedia": "Mediyanızda axtarın",
-    "enterTitleActorOrKeyword": "Ad, aktyor və ya açar söz daxil edin"
+    "enterTitleActorOrKeyword": "Ad, aktyor və ya açar söz daxil edin",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} üçün qısayol təyin et",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Digər"
     },
     "creditRole": {
+      "actor": "",
       "director": "Rejissor",
       "writer": "Ssenarist",
       "producer": "Prodüser",

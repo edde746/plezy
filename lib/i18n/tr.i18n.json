@@ -442,7 +442,8 @@
     "hint": "Film, dizi, müzik ara...",
     "tryDifferentTerm": "Farklı bir arama terimi deneyin",
     "searchYourMedia": "Medyanızda arayın",
-    "enterTitleActorOrKeyword": "Başlık, oyuncu veya anahtar kelime girin"
+    "enterTitleActorOrKeyword": "Başlık, oyuncu veya anahtar kelime girin",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} için Kısayol Ayarla",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Diğer"
     },
     "creditRole": {
+      "actor": "",
       "director": "Yönetmen",
       "writer": "Senarist",
       "producer": "Yapımcı",

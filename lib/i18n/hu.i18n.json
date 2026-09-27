@@ -442,7 +442,8 @@
     "hint": "Keresés filmek, sorozatok és zenék között...",
     "tryDifferentTerm": "Próbálj másik keresési kifejezést",
     "searchYourMedia": "Keresés a saját médiatartalmak között",
-    "enterTitleActorOrKeyword": "Adj meg egy címet, színészt vagy kulcsszót"
+    "enterTitleActorOrKeyword": "Adj meg egy címet, színészt vagy kulcsszót",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Billentyűparancs beállítása ehhez: ${actionName}",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Egyéb"
     },
     "creditRole": {
+      "actor": "",
       "director": "Rendező",
       "writer": "Író",
       "producer": "Producer",

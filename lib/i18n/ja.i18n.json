@@ -442,7 +442,8 @@
     "hint": "映画、番組、音楽を検索…",
     "tryDifferentTerm": "別の検索語をお試しください",
     "searchYourMedia": "メディアを検索",
-    "enterTitleActorOrKeyword": "タイトル、俳優、またはキーワードを入力"
+    "enterTitleActorOrKeyword": "タイトル、俳優、またはキーワードを入力",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}のショートカットを設定",
@@ -1409,6 +1410,7 @@
       "otherMedia": "その他"
     },
     "creditRole": {
+      "actor": "",
       "director": "監督",
       "writer": "脚本",
       "producer": "プロデューサー",

@@ -442,7 +442,8 @@
     "hint": "Filme, Serien und Musik suchen …",
     "tryDifferentTerm": "Anderen Suchbegriff versuchen",
     "searchYourMedia": "In den eigenen Medien suchen",
-    "enterTitleActorOrKeyword": "Titel, Schauspieler oder Stichwort eingeben"
+    "enterTitleActorOrKeyword": "Titel, Schauspieler oder Stichwort eingeben",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Tastenkürzel festlegen für ${actionName}",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Sonstiges"
     },
     "creditRole": {
+      "actor": "",
       "director": "Regisseur",
       "writer": "Autor",
       "producer": "Produzent",

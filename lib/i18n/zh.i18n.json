@@ -442,7 +442,8 @@
     "hint": "搜索电影、剧集、音乐…",
     "tryDifferentTerm": "尝试不同的搜索词",
     "searchYourMedia": "搜索媒体",
-    "enterTitleActorOrKeyword": "输入标题、演员或关键词"
+    "enterTitleActorOrKeyword": "输入标题、演员或关键词",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "为 ${actionName} 设置快捷键",
@@ -1409,6 +1410,7 @@
       "otherMedia": "其他"
     },
     "creditRole": {
+      "actor": "",
       "director": "导演",
       "writer": "编剧",
       "producer": "制片人",

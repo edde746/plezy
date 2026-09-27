@@ -442,7 +442,8 @@
     "hint": "搜尋電影、影集、音樂…",
     "tryDifferentTerm": "嘗試不同的關鍵字",
     "searchYourMedia": "搜尋媒體庫",
-    "enterTitleActorOrKeyword": "輸入標題、演員或關鍵字"
+    "enterTitleActorOrKeyword": "輸入標題、演員或關鍵字",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "為 ${actionName} 設定快速鍵",
@@ -1409,6 +1410,7 @@
       "otherMedia": "其他"
     },
     "creditRole": {
+      "actor": "",
       "director": "導演",
       "writer": "編劇",
       "producer": "製作人",

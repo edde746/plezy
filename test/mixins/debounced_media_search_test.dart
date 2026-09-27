@@ -16,7 +16,7 @@ class _SearchProbe extends StatefulWidget {
   State<_SearchProbe> createState() => _SearchProbeState();
 }
 
-class _SearchProbeState extends State<_SearchProbe> with DebouncedMediaSearch<_SearchProbe> {
+class _SearchProbeState extends State<_SearchProbe> with DebouncedMediaSearch<_SearchProbe, MediaItem> {
   @override
   Future<List<MediaItem>> performSearchQuery(String query) => widget.search(query);
 

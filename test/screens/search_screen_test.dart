@@ -10,16 +10,19 @@ import 'package:plezy/focus/focusable_text_field.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
+import 'package:plezy/media/media_person.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/actor_media_screen.dart';
 import 'package:plezy/screens/search_screen.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -31,6 +34,7 @@ import 'package:plezy/widgets/backend_badge.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
+import 'package:plezy/widgets/person_search_row.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -691,11 +695,135 @@ void main() {
     await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
   });
+
+  testWidgets('a query that matches only a person shows the person instead of No results', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: [], people: [_christophWaltz()]);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('waltz');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['waltz']);
+    expect(find.widgetWithText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
+    expect(find.text(t.messages.noResultsFound), findsNothing);
+  });
+
+  testWidgets('tapping a person opens their filmography on their server', (tester) async {
+    final (client, _) = await _pumpTvSearchScreen(tester, tv: false, items: [], people: [_christophWaltz()]);
+    await tester.pumpAndSettle();
+
+    _searchController(tester).text = 'waltz';
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(PersonSearchRow));
+    await tester.pumpAndSettle();
+
+    final screen = tester.widget<ActorMediaScreen>(find.byType(ActorMediaScreen));
+    expect(screen.personId, '38797');
+    expect(screen.serverId, 'server_1');
+    expect(screen.actorName, 'Christoph Waltz');
+    expect(client.fetchedPersonIds, ['38797']);
+  });
+
+  testWidgets('TV submit focuses a person listed first and Select opens their filmography', (tester) async {
+    final (client, _) = await _pumpTvSearchScreen(tester, items: [], people: [_christophWaltz()]);
+    await tester.pumpAndSettle();
+
+    _searchController(tester).text = 'waltz';
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['waltz']);
+    final focused = FocusManager.instance.primaryFocus;
+    expect(focused?.debugLabel, 'SearchFirstResult');
+    expect(focused!.context!.findAncestorWidgetOfExactType<PersonSearchRow>()?.person.id, '38797');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    final screen = tester.widget<ActorMediaScreen>(find.byType(ActorMediaScreen));
+    expect(screen.personId, '38797');
+    expect(screen.serverId, 'server_1');
+  });
+
+  testWidgets('the People chip needs another filter option beside it and shows only people', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: [], people: [_christophWaltz()]);
+    await tester.pumpAndSettle();
+    final searchInput = key.currentState! as SearchInputFocusable;
+
+    // People alone have nothing to filter.
+    searchInput.submitSearchQuery('waltz');
+    await tester.pumpAndSettle();
+    expect(find.byType(PersonSearchRow), findsOneWidget);
+    expect(find.byType(FocusableTabChip), findsNothing);
+
+    client.items.add(
+      testMediaItem(
+        id: 'movie_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Waltz with Bashir',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    );
+    searchInput.submitSearchQuery('waltz with');
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.search.people), findsOneWidget);
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    expect(find.byType(PersonSearchRow), findsOneWidget);
+
+    // D-pad: up from the first result to All, then right past Movies to People.
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChipAll');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchPeopleChip');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsNothing);
+    expect(find.widgetWithText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
+
+    // Down lands on the person, now the first row.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    final focused = FocusManager.instance.primaryFocus;
+    expect(focused?.debugLabel, 'SearchFirstResult');
+    expect(focused!.context!.findAncestorWidgetOfExactType<PersonSearchRow>(), isNotNull);
+
+    // The filter holds across a refined query while people remain...
+    searchInput.submitSearchQuery('waltz with b');
+    await tester.pumpAndSettle();
+    expect(tester.widget<FocusableTabChip>(find.widgetWithText(FocusableTabChip, t.search.people)).isSelected, isTrue);
+    expect(find.byType(FocusableMediaCard), findsNothing);
+    expect(find.byType(PersonSearchRow), findsOneWidget);
+
+    // ...and falls back to All once they are gone.
+    client.people = [];
+    searchInput.submitSearchQuery('waltz with bashir');
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableTabChip), findsNothing);
+    expect(find.byType(PersonSearchRow), findsNothing);
+    expect(find.widgetWithText(FocusableMediaCard, 'Waltz with Bashir'), findsOneWidget);
+  });
 }
 
 Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(
   WidgetTester tester, {
   List<MediaItem>? items,
+  List<MediaPerson> people = const [],
+  // False pumps a touch/pointer build instead of TV.
+  bool tv = true,
   // When false, no server is registered, so performSearchQuery throws — the
   // path a companion-remote submit hits when the search fails outright.
   bool registerClient = true,
@@ -704,7 +832,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   HiddenLibrariesProvider? hiddenLibraries,
   List<MediaLibrary> libraries = const [],
 }) async {
-  TvDetectionService.debugSetAppleTVOverride(true);
+  TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1280, 720);
   addTearDown(() {
@@ -726,6 +854,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
           ),
         ],
     searchError: searchError,
+    people: people,
   );
   final manager = MultiServerManager();
   if (registerClient) manager.debugRegisterClientForTesting(client);
@@ -824,6 +953,16 @@ List<MediaItem> _mixedKindItems() => [
 MediaLibrary _library(String id, String title) =>
     MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: 'server_1');
 
+/// A Plex actor on `server_1`, shaped like a `searchTypes=people` row.
+MediaPerson _christophWaltz() => MediaPerson(
+  id: '38797',
+  name: 'Christoph Waltz',
+  credit: PersonCredit.actor,
+  backend: MediaBackend.plex,
+  serverId: ServerId('server_1'),
+  serverName: 'Server',
+);
+
 TextEditingController _searchController(WidgetTester tester) {
   return tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller;
 }
@@ -843,9 +982,11 @@ class _FakeMediaServerClient implements MediaServerClient {
   final String serverIdValue;
   final String serverNameValue;
   final List<MediaItem> items;
+  List<MediaPerson> people;
   Object? searchError;
   final List<String> queries = [];
   final List<String> fetchedItemIds = [];
+  final List<String> fetchedPersonIds = [];
   MediaItem? itemResult;
   Completer<void>? fetchGate;
   Completer<void>? searchGate;
@@ -856,6 +997,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.serverIdValue = 'server_1',
     this.serverNameValue = 'Server',
     this.searchError,
+    this.people = const [],
   });
 
   @override
@@ -893,6 +1035,28 @@ class _FakeMediaServerClient implements MediaServerClient {
     final gate = fetchGate;
     if (gate != null) await gate.future;
     return itemResult;
+  }
+
+  @override
+  Future<List<MediaPerson>> searchPeople(
+    String query, {
+    int limit = defaultPeopleSearchLimit,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
+    abort?.throwIfAborted();
+    return people;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
+    String personId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    fetchedPersonIds.add(personId);
+    return const LibraryPage<MediaItem>(items: [], totalCount: 0);
   }
 
   @override

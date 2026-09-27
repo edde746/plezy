@@ -442,7 +442,8 @@
     "hint": "Фильмдер, сериалдар, музыка іздеу...",
     "tryDifferentTerm": "Басқа іздеу сөзін байқап көріңіз",
     "searchYourMedia": "Медиафайлдардан іздеу",
-    "enterTitleActorOrKeyword": "Атауын, актерді немесе кілт сөзді енгізіңіз"
+    "enterTitleActorOrKeyword": "Атауын, актерді немесе кілт сөзді енгізіңіз",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} үшін пернелер тіркесін орнату",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Басқа"
     },
     "creditRole": {
+      "actor": "",
       "director": "Режиссер",
       "writer": "Сценарист",
       "producer": "Продюсер",

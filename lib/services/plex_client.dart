@@ -18,6 +18,7 @@ import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
+import '../media/media_person.dart';
 import '../media/media_playlist.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
@@ -4348,6 +4349,50 @@ class PlexClient
   }) async {
     final results = await _search(query, limit: limit, abort: abort);
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
+  }
+
+  /// `/library/search?searchTypes=people` answers actors and directors only,
+  /// one row per library section the person has titles in, in Plex score
+  /// order; `limit` counts those rows. People share no request with
+  /// [searchItems] because a mixed `searchTypes` splits a single `limit`.
+  ///
+  /// Rows in [excludedLibraryIds] are dropped before de-duplicating by person
+  /// id, so someone hidden in one section still surfaces through another.
+  @override
+  Future<List<MediaPerson>> searchPeople(
+    String query, {
+    int limit = defaultPeopleSearchLimit,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
+    // Generous: one person can fill a row per section.
+    const rowLimit = 100;
+    final response = await _getWithFailover(
+      '/library/search',
+      queryParameters: {'query': query, 'limit': rowLimit, 'searchTypes': 'people', 'X-Plex-Container-Size': rowLimit},
+      abort: abort,
+    );
+    final searchResults = _getMediaContainer(response)?['SearchResult'];
+    if (searchResults is! List) return const [];
+
+    final people = <String, MediaPerson>{};
+    for (final result in searchResults) {
+      if (people.length >= limit) break;
+      try {
+        if (result is! Map) continue;
+        final directory = result['Directory'];
+        if (directory is! Map<String, dynamic>) continue;
+
+        final sectionId = _librarySectionIdFromJson(directory);
+        if (sectionId != null && excludedLibraryIds.contains(sectionId.toString())) continue;
+
+        final person = PlexMappers.personFromSearchResultJson(directory, serverId: serverId, serverName: serverName);
+        if (person != null) people.putIfAbsent(person.id, () => person);
+      } catch (e) {
+        appLogger.w('Failed to parse people search result', error: e);
+      }
+    }
+    return people.values.toList();
   }
 
   /// [excludedLibraryIds] is unused: every row carries its `librarySectionID`,

@@ -442,7 +442,8 @@
     "hint": "Filmlar, seriallar, musiqa qidirish...",
     "tryDifferentTerm": "Boshqa qidiruv soʻzini kiriting",
     "searchYourMedia": "Medialaringizdan qidiring",
-    "enterTitleActorOrKeyword": "Nomini, aktyorni yoki kalit soʻzni kiriting"
+    "enterTitleActorOrKeyword": "Nomini, aktyorni yoki kalit soʻzni kiriting",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} uchun tugmalar birlashmasini oʻrnatish",
@@ -1417,6 +1418,7 @@
       "otherMedia": "Boshqa"
     },
     "creditRole": {
+      "actor": "",
       "director": "Rejissyor",
       "writer": "Ssenarist",
       "producer": "Prodyuser",

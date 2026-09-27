@@ -92,7 +92,7 @@ import '../utils/library_content_notifier.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/fitting_title_text.dart';
-import 'actor_media_screen.dart';
+import '../utils/media_navigation_helper.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/loading_indicator_box.dart';
@@ -1480,18 +1480,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final personId = actor.id;
     if (personId == null || _metadata.serverId == null) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ActorMediaScreen(
-          actorName: actor.tag,
-          personId: personId,
-          actorThumb: actor.thumbPath,
-          characterName: actor.role,
-          serverId: _metadata.serverId!,
-          serverName: _metadata.serverName,
-          backend: _metadata.backend,
-        ),
+    unawaited(
+      navigateToPersonMedia(
+        context,
+        personId: personId,
+        name: actor.tag,
+        thumbPath: actor.thumbPath,
+        characterName: actor.role,
+        serverId: _metadata.serverId!,
+        serverName: _metadata.serverName,
+        backend: _metadata.backend,
       ),
     );
   }

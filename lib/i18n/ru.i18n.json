@@ -442,7 +442,8 @@
     "hint": "Поиск фильмов, сериалов, музыки...",
     "tryDifferentTerm": "Попробуйте другой запрос",
     "searchYourMedia": "Поиск в вашей медиатеке",
-    "enterTitleActorOrKeyword": "Введите название, актёра или ключевое слово"
+    "enterTitleActorOrKeyword": "Введите название, актёра или ключевое слово",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Назначить клавишу для ${actionName}",
@@ -1433,6 +1434,7 @@
       "otherMedia": "Другое"
     },
     "creditRole": {
+      "actor": "",
       "director": "Режиссёр",
       "writer": "Сценарист",
       "producer": "Продюсер",

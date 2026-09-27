@@ -55,7 +55,12 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class ExploreScreenState extends State<ExploreScreen>
-    with ManualRefreshable, FullRefreshable, TabVisibilityAware, FocusableTab, DebouncedMediaSearch {
+    with
+        ManualRefreshable,
+        FullRefreshable,
+        TabVisibilityAware,
+        FocusableTab,
+        DebouncedMediaSearch<ExploreScreen, MediaItem> {
   late ExploreProvider _explore;
   late CatalogSourcesProvider _sources;
   CatalogSourceId? _activeSourceId;

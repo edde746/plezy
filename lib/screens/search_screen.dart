@@ -11,6 +11,8 @@ import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_item_merge.dart';
+import '../media/media_person.dart';
+import '../media/search_hit.dart';
 import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
@@ -29,6 +31,7 @@ import '../widgets/loading_indicator_box.dart';
 import '../widgets/search_input_field.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/focusable_tab_chip.dart';
+import '../widgets/person_search_row.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
@@ -48,21 +51,24 @@ class _SearchScreenState extends State<SearchScreen>
         SearchInputFocusable,
         FocusableTab,
         MountedSetStateMixin,
-        DebouncedMediaSearch {
+        DebouncedMediaSearch<SearchScreen, SearchHit> {
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
   ({String query, SearchAggregationResult result})? _pendingSearchOutcome;
 
-  /// Media-kind filter over the current results. Chips and the filtered view
-  /// derive from [_searchCandidates] — the pre-rank pool behind the ranked
-  /// [searchResults] — so a kind ranked out of the "All" top-N still gets a
-  /// chip, and selecting it shows everything the servers returned for it.
-  MediaKind? _selectedKind;
+  /// Filter over the current results: everything, one media kind, or only
+  /// people. Chips and the filtered views derive from [_searchCandidates] and
+  /// [_searchPeople] — the pre-rank pools behind the ranked [searchResults] —
+  /// so a kind ranked out of the "All" top-N still gets a chip, and selecting
+  /// a chip shows everything the servers returned for it.
+  _SearchFilter _selectedFilter = const _AllResults();
   List<MediaItem> _searchCandidates = const [];
+  List<MediaPerson> _searchPeople = const [];
   List<MediaKind> _candidateKinds = const [];
-  List<MediaItem>? _rankedKindResults;
+  List<SearchHit>? _filteredResults;
   late final FocusNode _allChipFocusNode = FocusNode(debugLabel: 'SearchKindChipAll');
+  late final FocusNode _peopleChipFocusNode = FocusNode(debugLabel: 'SearchPeopleChip');
   final Map<MediaKind, FocusNode> _kindChipFocusNodes = {};
 
   HiddenLibrariesProvider? _hiddenLibraries;
@@ -79,6 +85,7 @@ class _SearchScreenState extends State<SearchScreen>
   void dispose() {
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
+    _peopleChipFocusNode.dispose();
     for (final node in _kindChipFocusNodes.values) {
       node.dispose();
     }
@@ -114,7 +121,7 @@ class _SearchScreenState extends State<SearchScreen>
   String get searchDebugLabel => 'Search';
 
   @override
-  Future<List<MediaItem>> performSearchQuery(String query) async {
+  Future<List<SearchHit>> performSearchQuery(String query) async {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
     if (!multiServerProvider.hasConnectedServers) {
       throw const _SearchUnavailableException();
@@ -146,7 +153,7 @@ class _SearchScreenState extends State<SearchScreen>
         );
       }
       _pendingSearchOutcome = (query: query, result: result);
-      return result.items;
+      return result.hits;
     } finally {
       if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
     }
@@ -163,7 +170,7 @@ class _SearchScreenState extends State<SearchScreen>
   void onSearchError(Object error) {
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
-    _resetKindFilter();
+    _resetFilter();
     final message = error is _SearchUnavailableException
         ? t.errors.searchUnavailable
         : t.errors.searchFailed(error: error);
@@ -174,23 +181,34 @@ class _SearchScreenState extends State<SearchScreen>
   void onSearchCleared() {
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
-    _resetKindFilter();
+    _resetFilter();
   }
 
   @override
-  void onSearchCompleted(String query, List<MediaItem> results) {
+  void onSearchCompleted(String query, List<SearchHit> results) {
     final outcome = _pendingSearchOutcome;
     _pendingSearchOutcome = null;
     final matched = outcome != null && outcome.query == query ? outcome.result : null;
 
     // Committed alongside the results the pending setState renders (build has
-    // not run yet): the pre-rank pool the kind chips derive from. A selected
-    // filter survives a refined query as long as its kind still has
-    // candidates; otherwise it falls back to "All".
-    _searchCandidates = matched?.candidates ?? results;
+    // not run yet): the pre-rank pools the filter chips derive from. A selected
+    // filter survives a refined query as long as it still has candidates;
+    // otherwise it falls back to "All".
+    _searchCandidates =
+        matched?.candidates ??
+        [
+          for (final hit in results)
+            if (hit case MediaSearchHit(:final item)) item,
+        ];
+    _searchPeople =
+        matched?.people ??
+        [
+          for (final hit in results)
+            if (hit case PersonSearchHit(:final person)) person,
+        ];
     _candidateKinds = _kindsIn(_searchCandidates);
-    if (_selectedKind != null && !_candidateKinds.contains(_selectedKind)) _selectedKind = null;
-    _rankedKindResults = _rankKindResults(_selectedKind, query);
+    if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
+    _filteredResults = _rankFilteredResults(_selectedFilter, query);
 
     if (matched != null && matched.failedServerIds.isNotEmpty) {
       showAppSnackBar(context, t.messages.searchPartialResults);
@@ -290,14 +308,14 @@ class _SearchScreenState extends State<SearchScreen>
       // library-less row would lose its label (#1970); keep the identity
       // and library context the search stamped on the original row.
       final merged = mergeFetchedMediaItem(fetched: updated, fallbackServerId: ServerId(serverId), existing: source);
-      // The same row can sit in the ranked "All" list, the kind-filtered
-      // view, and the candidate pool; refresh every copy so a later chip
-      // switch cannot resurrect the stale row.
-      var replaced = _replaceByGlobalKey(searchResults, source.globalKey, merged);
+      // The same row can sit in the ranked "All" list, the filtered view,
+      // and the candidate pool; refresh every copy so a later chip switch
+      // cannot resurrect the stale row.
+      var replaced = _replaceHitByGlobalKey(searchResults, source.globalKey, merged);
       replaced = _replaceByGlobalKey(_searchCandidates, source.globalKey, merged) || replaced;
-      final filtered = _rankedKindResults;
+      final filtered = _filteredResults;
       if (filtered != null) {
-        replaced = _replaceByGlobalKey(filtered, source.globalKey, merged) || replaced;
+        replaced = _replaceHitByGlobalKey(filtered, source.globalKey, merged) || replaced;
       }
       if (replaced) setState(() {});
     } catch (e) {
@@ -340,51 +358,94 @@ class _SearchScreenState extends State<SearchScreen>
     return true;
   }
 
-  /// The list the results sliver renders: the aggregation's ranked list, or
-  /// the selected kind's candidates re-ranked with the full display budget.
-  List<MediaItem> get _visibleResults => _rankedKindResults ?? searchResults;
-
-  /// A single-kind result set has nothing to filter.
-  bool get _showKindChips => _candidateKinds.length > 1;
-
-  List<MediaItem>? _rankKindResults(MediaKind? kind, String query) {
-    if (kind == null) return null;
-    return rankMediaSearchResults(
-      [
-        for (final item in _searchCandidates)
-          if (item.kind == kind) item,
-      ],
-      query,
-      limit: defaultMediaSearchLimit,
-    );
+  static bool _replaceHitByGlobalKey(List<SearchHit> hits, String globalKey, MediaItem replacement) {
+    final index = hits.indexWhere((hit) => hit is MediaSearchHit && hit.globalKey == globalKey);
+    if (index == -1) return false;
+    hits[index] = MediaSearchHit(replacement);
+    return true;
   }
 
-  void _selectKindFilter(MediaKind? kind) {
-    if (kind == _selectedKind) return;
+  /// The list the results sliver renders: the aggregation's ranked list, or
+  /// the selected filter's pool re-ranked with the full display budget.
+  List<SearchHit> get _visibleResults => _filteredResults ?? searchResults;
+
+  /// Chip order: All, the media kinds present, then People.
+  List<_SearchFilter> get _filterOptions => [
+    const _AllResults(),
+    for (final kind in _candidateKinds) _KindResults(kind),
+    if (_searchPeople.isNotEmpty) const _PeopleResults(),
+  ];
+
+  /// "All" plus a single other option (one kind, or only people) has nothing
+  /// to filter.
+  bool get _showFilterChips => _candidateKinds.length + (_searchPeople.isEmpty ? 0 : 1) > 1;
+
+  bool _hasCandidatesFor(_SearchFilter filter) => switch (filter) {
+    _AllResults() => true,
+    _KindResults(:final kind) => _candidateKinds.contains(kind),
+    _PeopleResults() => _searchPeople.isNotEmpty,
+  };
+
+  /// The selected filter's pool re-ranked with the full display budget, or
+  /// null for "All" (the aggregation's ranked list).
+  List<SearchHit>? _rankFilteredResults(_SearchFilter filter, String query) {
+    switch (filter) {
+      case _AllResults():
+        return null;
+      case _KindResults(:final kind):
+        final ofKind = [
+          for (final candidate in _searchCandidates)
+            if (candidate.kind == kind) candidate,
+        ];
+        return [
+          for (final item in rankMediaSearchResults(ofKind, query, limit: defaultMediaSearchLimit))
+            MediaSearchHit(item),
+        ];
+      case _PeopleResults():
+        return [
+          for (final person in rankPeopleSearchResults(_searchPeople, query, limit: defaultMediaSearchLimit))
+            PersonSearchHit(person),
+        ];
+    }
+  }
+
+  void _selectFilter(_SearchFilter filter) {
+    if (filter == _selectedFilter) return;
     setState(() {
-      _selectedKind = kind;
-      _rankedKindResults = _rankKindResults(kind, lastSearchedQuery);
+      _selectedFilter = filter;
+      _filteredResults = _rankFilteredResults(filter, lastSearchedQuery);
     });
   }
 
-  void _resetKindFilter() {
-    _selectedKind = null;
+  void _resetFilter() {
+    _selectedFilter = const _AllResults();
     _searchCandidates = const [];
+    _searchPeople = const [];
     _candidateKinds = const [];
-    _rankedKindResults = null;
+    _filteredResults = null;
   }
 
-  FocusNode _chipFocusNode(MediaKind? kind) {
-    if (kind == null) return _allChipFocusNode;
-    return _kindChipFocusNodes.putIfAbsent(kind, () => FocusNode(debugLabel: 'SearchKindChip_${kind.id}'));
-  }
+  FocusNode _chipFocusNode(_SearchFilter filter) => switch (filter) {
+    _AllResults() => _allChipFocusNode,
+    _KindResults(:final kind) => _kindChipFocusNodes.putIfAbsent(
+      kind,
+      () => FocusNode(debugLabel: 'SearchKindChip_${kind.id}'),
+    ),
+    _PeopleResults() => _peopleChipFocusNode,
+  };
 
   /// D-pad landing point for the chip row: the chip that is currently active.
-  void _focusKindChips() => _chipFocusNode(_selectedKind).requestFocus();
+  void _focusFilterChips() => _chipFocusNode(_selectedFilter).requestFocus();
 
   void _focusFirstResult() {
     if (_visibleResults.isNotEmpty) firstResultFocusNode.requestFocus();
   }
+
+  String _filterLabel(_SearchFilter filter) => switch (filter) {
+    _AllResults() => t.libraries.groupings.all,
+    _KindResults(:final kind) => _kindFilterLabel(kind),
+    _PeopleResults() => t.search.people,
+  };
 
   String _kindFilterLabel(MediaKind kind) => switch (kind) {
     MediaKind.movie => t.libraries.groupings.movies,
@@ -400,11 +461,11 @@ class _SearchScreenState extends State<SearchScreen>
     MediaKind.clip || MediaKind.photo || MediaKind.folder || MediaKind.unknown => kind.id,
   };
 
-  Widget _buildKindFilterChips() {
+  Widget _buildFilterChips() {
     // Chips trap RIGHT to keep focus inside the strip (see
     // FocusableChipStateMixin), so left/right neighbors are wired explicitly,
     // like every other tab-chip strip.
-    final kinds = <MediaKind?>[null, ..._candidateKinds];
+    final filters = _filterOptions;
     return SliverToBoxAdapter(
       child: Padding(
         // The search field's own bottom padding provides the gap above; the
@@ -413,16 +474,18 @@ class _SearchScreenState extends State<SearchScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TabChipStrip(
           children: [
-            for (final (index, kind) in kinds.indexed) ...[
+            for (final (index, filter) in filters.indexed) ...[
               if (index > 0) const SizedBox(width: 8),
               FocusableTabChip(
-                label: kind == null ? t.libraries.groupings.all : _kindFilterLabel(kind),
-                isSelected: _selectedKind == kind,
-                focusNode: _chipFocusNode(kind),
-                onSelect: () => _selectKindFilter(kind),
-                onNavigateLeft: index == 0 ? _navigateToSidebar : () => _chipFocusNode(kinds[index - 1]).requestFocus(),
-                onNavigateRight: index < kinds.length - 1
-                    ? () => _chipFocusNode(kinds[index + 1]).requestFocus()
+                label: _filterLabel(filter),
+                isSelected: _selectedFilter == filter,
+                focusNode: _chipFocusNode(filter),
+                onSelect: () => _selectFilter(filter),
+                onNavigateLeft: index == 0
+                    ? _navigateToSidebar
+                    : () => _chipFocusNode(filters[index - 1]).requestFocus(),
+                onNavigateRight: index < filters.length - 1
+                    ? () => _chipFocusNode(filters[index + 1]).requestFocus()
                     : null,
                 onNavigateUp: focusSearchInput,
                 onNavigateDown: _focusFirstResult,
@@ -439,27 +502,39 @@ class _SearchScreenState extends State<SearchScreen>
     final multiServer = context.watch<MultiServerProvider>();
     final libraries = context.watch<LibrariesProvider>();
     final showServerName = multiServer.totalServerCount > 1;
+    final showChips = _showFilterChips;
     final visible = _visibleResults;
     return buildResultsSliver(
       childCount: visible.length,
       // Half the default top padding when the chip strip sits directly above:
       // the strip already separates results from the search field.
-      padding: _showKindChips ? const EdgeInsets.fromLTRB(16, 8, 16, 16) : const EdgeInsets.all(16),
+      padding: showChips ? const EdgeInsets.fromLTRB(16, 8, 16, 16) : const EdgeInsets.all(16),
       (context, index) {
-        final item = visible[index];
-        return FocusableMediaCard(
-          key: Key(item.globalKey),
-          item: item,
-          viewModeOverride: ViewMode.list,
-          disableScale: true,
-          focusNode: index == 0 ? firstResultFocusNode : null,
-          onRefresh: updateItem,
-          onListRefresh: refresh,
-          onNavigateLeft: _navigateToSidebar,
-          onNavigateUp: index == 0 ? (_showKindChips ? _focusKindChips : focusSearchInput) : null,
-          showServerName: showServerName,
-          libraryName: libraries.libraryLabelFor(item),
-        );
+        final isFirst = index == 0;
+        final onNavigateUp = isFirst ? (showChips ? _focusFilterChips : focusSearchInput) : null;
+        return switch (visible[index]) {
+          MediaSearchHit(:final item) => FocusableMediaCard(
+            key: Key(item.globalKey),
+            item: item,
+            viewModeOverride: ViewMode.list,
+            disableScale: true,
+            focusNode: isFirst ? firstResultFocusNode : null,
+            onRefresh: updateItem,
+            onListRefresh: refresh,
+            onNavigateLeft: _navigateToSidebar,
+            onNavigateUp: onNavigateUp,
+            showServerName: showServerName,
+            libraryName: libraries.libraryLabelFor(item),
+          ),
+          PersonSearchHit(:final person) => PersonSearchRow(
+            key: Key(person.globalKey),
+            person: person,
+            focusNode: isFirst ? firstResultFocusNode : null,
+            showServerName: showServerName,
+            onNavigateLeft: _navigateToSidebar,
+            onNavigateUp: onNavigateUp,
+          ),
+        };
       },
     );
   }
@@ -481,7 +556,7 @@ class _SearchScreenState extends State<SearchScreen>
                 tvTextInputController: _tvTextInputController,
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: searchResults.isNotEmpty && !isSearching
-                    ? (_showKindChips ? _focusKindChips : firstResultFocusNode.requestFocus)
+                    ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
                     : null,
                 onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
                 onBack: () {
@@ -518,7 +593,7 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
               )
             else ...[
-              if (_showKindChips) _buildKindFilterChips(),
+              if (_showFilterChips) _buildFilterChips(),
               _buildResultsList(context),
             ],
           ],
@@ -530,4 +605,29 @@ class _SearchScreenState extends State<SearchScreen>
 
 final class _SearchUnavailableException implements Exception {
   const _SearchUnavailableException();
+}
+
+/// One chip of the search results filter strip.
+sealed class _SearchFilter {
+  const _SearchFilter();
+}
+
+final class _AllResults extends _SearchFilter {
+  const _AllResults();
+}
+
+final class _KindResults extends _SearchFilter {
+  final MediaKind kind;
+
+  const _KindResults(this.kind);
+
+  @override
+  bool operator ==(Object other) => other is _KindResults && other.kind == kind;
+
+  @override
+  int get hashCode => kind.hashCode;
+}
+
+final class _PeopleResults extends _SearchFilter {
+  const _PeopleResults();
 }

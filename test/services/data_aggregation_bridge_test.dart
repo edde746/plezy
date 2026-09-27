@@ -14,8 +14,10 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/media/media_person.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/search_hit.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
@@ -49,6 +51,8 @@ class _LibrariesClient implements MediaServerClient {
     this.libraries = const [],
     this.searchError,
     this.searchResults = const [],
+    this.peopleError,
+    this.peopleResults = const [],
   });
 
   @override
@@ -61,7 +65,10 @@ class _LibrariesClient implements MediaServerClient {
   final List<MediaLibrary> libraries;
   final Object? searchError;
   final List<MediaItem> searchResults;
+  final Object? peopleError;
+  final List<MediaPerson> peopleResults;
   Set<String>? lastExcludedLibraryIds;
+  Set<String>? lastPeopleExcludedLibraryIds;
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async {
@@ -83,11 +90,36 @@ class _LibrariesClient implements MediaServerClient {
   }
 
   @override
+  Future<List<MediaPerson>> searchPeople(
+    String query, {
+    int limit = defaultPeopleSearchLimit,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
+    lastPeopleExcludedLibraryIds = excludedLibraryIds;
+    abort?.throwIfAborted();
+    if (peopleError != null) throw peopleError!;
+    return peopleResults;
+  }
+
+  @override
   void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
+
+MediaPerson _person(String id, String name, {required String serverId}) =>
+    MediaPerson(id: id, name: name, backend: MediaBackend.plex, serverId: ServerId(serverId));
+
+/// Hit identities in rank order: a title's id, or `person:<id>`.
+List<String> _hitIds(SearchAggregationResult result) => [
+  for (final hit in result.hits)
+    switch (hit) {
+      MediaSearchHit(:final item) => item.id,
+      PersonSearchHit(:final person) => 'person:${person.id}',
+    },
+];
 
 /// Per-library hub client whose fetches are held open individually, so a test
 /// can observe exactly when the fan-out starts each library.
@@ -489,8 +521,9 @@ void main() {
 
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
       final search = await service.searchAcrossServers('hello');
-      expect(search.items, isEmpty);
+      expect(search.hits, isEmpty);
       expect(search.candidates, isEmpty);
+      expect(search.people, isEmpty);
       expect(search.succeededServerIds, isEmpty);
       expect(search.cancelledServerIds, isEmpty);
       expect(search.failedServerIds, isEmpty);
@@ -554,7 +587,7 @@ void main() {
 
       final result = await service.searchAcrossServers('Target');
 
-      expect(result.items.map((item) => item.id), ['show-1']);
+      expect(_hitIds(result), ['show-1']);
       expect(result.succeededServerIds, {'ok'});
       expect(result.cancelledServerIds, {'cancelled'});
       expect(result.failedServerIds, {'failed'});
@@ -593,7 +626,7 @@ void main() {
 
       final result = await service.searchAcrossServers('Target', hiddenLibraryKeys: {'plex:2'});
 
-      expect(result.items.map((item) => item.id), unorderedEquals(['visible-1', 'shared-1']));
+      expect(_hitIds(result), unorderedEquals(['visible-1', 'shared-1']));
       expect(result.succeededServerIds, {'plex'});
     });
 
@@ -621,7 +654,7 @@ void main() {
 
       final result = await service.searchAcrossServers('Target', limit: 1, hiddenLibraryKeys: {'plex:2'});
 
-      expect(result.items.map((item) => item.id), ['visible-1']);
+      expect(_hitIds(result), ['visible-1']);
     });
 
     test('candidates keeps rows the ranked limit dropped, minus hidden ones', () async {
@@ -658,7 +691,7 @@ void main() {
 
       final result = await service.searchAcrossServers('Target', limit: 1, hiddenLibraryKeys: {'plex:2'});
 
-      expect(result.items.map((item) => item.id), ['movie-1']);
+      expect(_hitIds(result), ['movie-1']);
       expect(result.candidates.map((item) => item.id), unorderedEquals(['movie-1', 'episode-1']));
     });
 
@@ -674,6 +707,98 @@ void main() {
 
       expect(alpha.lastExcludedLibraryIds, {'1', '9'});
       expect(beta.lastExcludedLibraryIds, {'1'});
+      // People span libraries, so each backend drops hidden-only people itself
+      // and needs the same scoping.
+      expect(alpha.lastPeopleExcludedLibraryIds, {'1', '9'});
+      expect(beta.lastPeopleExcludedLibraryIds, {'1'});
+    });
+
+    test('a failed or cancelled people search keeps that server\'s titles and success', () async {
+      final failingPeople = testMediaItem(
+        id: 'movie-a',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target',
+        serverId: 'a',
+      );
+      final cancelledPeople = testMediaItem(
+        id: 'movie-b',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target',
+        serverId: 'b',
+      );
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('a'),
+          searchResults: [failingPeople],
+          peopleError: MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'refused'),
+        ),
+      );
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('b'),
+          searchResults: [cancelledPeople],
+          peopleError: MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'closing'),
+        ),
+      );
+
+      final result = await service.searchAcrossServers('Target');
+
+      expect(_hitIds(result), unorderedEquals(['movie-a', 'movie-b']));
+      expect(result.people, isEmpty);
+      expect(result.succeededServerIds, {'a', 'b'});
+      expect(result.failedServerIds, isEmpty);
+      expect(result.cancelledServerIds, isEmpty);
+    });
+
+    test('titles and people rank on one scale', () async {
+      // An exact title outranks a person whose name merely contains the
+      // query; a person whose name is the query outranks a loose title.
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('plex'),
+          searchResults: [
+            testMediaItem(
+              id: 'oppenheimer',
+              backend: MediaBackend.plex,
+              kind: MediaKind.movie,
+              title: 'Oppenheimer',
+              serverId: 'plex',
+            ),
+            testMediaItem(
+              id: 'waltz-with-bashir',
+              backend: MediaBackend.plex,
+              kind: MediaKind.movie,
+              title: 'Waltz with Bashir',
+              serverId: 'plex',
+            ),
+          ],
+          peopleResults: [
+            _person('38906', 'Brianna Oppenheimer', serverId: 'plex'),
+            _person('38797', 'Christoph Waltz', serverId: 'plex'),
+          ],
+        ),
+      );
+
+      final byTitle = await service.searchAcrossServers('Oppenheimer');
+      final byPerson = await service.searchAcrossServers('Christoph Waltz');
+
+      expect(_hitIds(byTitle).take(2), ['oppenheimer', 'person:38906']);
+      expect(_hitIds(byPerson).first, 'person:38797');
+      expect(byPerson.people.map((person) => person.id), unorderedEquals(['38906', '38797']));
+    });
+
+    test('a query only people match still returns hits', () async {
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(ServerId('plex'), peopleResults: [_person('38797', 'Christoph Waltz', serverId: 'plex')]),
+      );
+
+      final result = await service.searchAcrossServers('Christoph Waltz');
+
+      expect(_hitIds(result), ['person:38797']);
+      expect(result.candidates, isEmpty);
+      expect(result.succeededServerIds, {'plex'});
     });
 
     test('no hidden libraries passes an empty exclusion set', () async {
@@ -694,6 +819,11 @@ void main() {
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           plexRequests.add(req.url);
+          if (req.url.path == '/library/search' && req.url.queryParameters['searchTypes'] == 'people') {
+            return _json({
+              'MediaContainer': {'SearchResult': <Object>[]},
+            });
+          }
           if (req.url.path == '/library/search') {
             return _json({
               'MediaContainer': {
@@ -730,6 +860,9 @@ void main() {
               ],
             });
           }
+          if (req.url.path == '/Persons') {
+            return _json({'Items': <Object>[]});
+          }
           return http.Response('unexpected request', 500);
         }),
       );
@@ -738,15 +871,17 @@ void main() {
 
       final results = await service.searchAcrossServers('Spider Man', limit: 1);
 
-      expect(results.items.map((item) => item.id), ['jf-show']);
+      expect(_hitIds(results), ['jf-show']);
       // The winning hit carries the library it was found in — a scoped
       // request per visible library is the only way a Jellyfin search row
       // ever learns its library (#1970).
-      expect(results.items.single.libraryId, 'shows');
-      expect(results.items.single.libraryTitle, 'Shows');
-      expect(plexRequests.single.queryParameters['query'], 'Spider Man');
-      expect(plexRequests.single.queryParameters['limit'], '100');
-      expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv,music,otherVideos');
+      final winner = (results.hits.single as MediaSearchHit).item;
+      expect(winner.libraryId, 'shows');
+      expect(winner.libraryTitle, 'Shows');
+      final plexTitleRequest = plexRequests.singleWhere((url) => url.queryParameters['searchTypes'] != 'people');
+      expect(plexTitleRequest.queryParameters['query'], 'Spider Man');
+      expect(plexTitleRequest.queryParameters['limit'], '100');
+      expect(plexTitleRequest.queryParameters['searchTypes'], 'movies,tv,music,otherVideos');
       // Jellyfin search is always library-scoped: each visible library gets
       // its own /Items request with the full candidate budget, and a video
       // library issues no /Artists leg.
