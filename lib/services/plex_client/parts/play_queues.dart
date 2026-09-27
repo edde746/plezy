@@ -48,6 +48,12 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
   /// callers can tell "the server said no" (#2141) from a queue that is
   /// genuinely empty. The POST rides the shared endpoint failover: replaying
   /// it is safe because an orphaned duplicate queue on the server is inert.
+  /// [extrasPrefixCount] asks the server to prefix the queue with the cinema
+  /// extras it is configured for. The server resolves them itself — the
+  /// client never reads `CinemaTrailersPrerollID`. Verified against PMS
+  /// 1.43.3: omitting it yields the item alone, `0` prefixes the configured
+  /// pre-roll, and `n > 0` prefixes `n` trailers ahead of that pre-roll. The
+  /// extras arrive as ordinary `clip` queue items with their own part ids.
   Future<PlayQueueResponse> createPlayQueue({
     String? uri,
     int? playlistID,
@@ -56,6 +62,7 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
     int shuffle = 0,
     int repeat = 0,
     int continuous = 0,
+    int? extrasPrefixCount,
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
@@ -68,6 +75,7 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
         'uri': ?uri,
         'playlistID': ?playlistID,
         'key': ?key,
+        'extrasPrefixCount': ?extrasPrefixCount,
       };
       final response = await _postWithFailover('/playQueues', queryParameters: queryParameters);
       return _parsePlayQueueResponse(
