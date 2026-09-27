@@ -72,6 +72,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="plezy" android:host="play"/>
             </intent-filter>
+            <!-- Deep link for tuning a live TV channel: plezy://live?channel=...&start=beginning|live -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="plezy" android:host="live"/>
+            </intent-filter>
         </activity>
         <provider
             android:name="androidx.core.content.FileProvider"
