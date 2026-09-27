@@ -914,6 +914,8 @@
     "signOut": "Шығу",
     "signOutPlexTitle": "Plex-тен шығу?",
     "signOutPlexMessage": "${displayName} мен барлық Plex Home пайдаланушылары өшірілсін бе? Кез келген уақытта қайта кіре аласыз.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex-тен шықтыңыз.",
     "signOutFailed": "Шығу мүмкін болмады.",
     "sectionTitle": "Профильдер",

@@ -922,6 +922,8 @@
     "signOut": "Выйти",
     "signOutPlexTitle": "Выйти из Plex?",
     "signOutPlexMessage": "Удалить ${displayName} и всех пользователей Plex Home? Вы сможете войти снова в любое время.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Вы вышли из Plex.",
     "signOutFailed": "Не удалось выйти.",
     "sectionTitle": "Профили",

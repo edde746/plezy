@@ -914,6 +914,8 @@
     "signOut": "Sair",
     "signOutPlexTitle": "Sair do Plex?",
     "signOutPlexMessage": "Remover ${displayName} e todos os usuários do Plex Home? Você pode entrar novamente quando quiser.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Saiu do Plex.",
     "signOutFailed": "Falha ao sair.",
     "sectionTitle": "Perfis",

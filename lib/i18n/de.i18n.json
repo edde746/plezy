@@ -914,6 +914,8 @@
     "signOut": "Abmelden",
     "signOutPlexTitle": "Von Plex abmelden?",
     "signOutPlexMessage": "${displayName} und alle Plex Home-Benutzer entfernen? Du kannst dich jederzeit wieder anmelden.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Von Plex abgemeldet.",
     "signOutFailed": "Abmeldung fehlgeschlagen.",
     "sectionTitle": "Profile",

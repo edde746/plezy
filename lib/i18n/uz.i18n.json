@@ -914,6 +914,8 @@
     "signOut": "Chiqish",
     "signOutPlexTitle": "Plex-dan chiqilsinmi?",
     "signOutPlexMessage": "${displayName} va barcha Plex Home foydalanuvchilari oʻchirilsinmi? Istalgan vaqtda qayta kirishingiz mumkin.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex-dan chiqdingiz.",
     "signOutFailed": "Chiqish amalga oshmadi.",
     "sectionTitle": "Profillar",

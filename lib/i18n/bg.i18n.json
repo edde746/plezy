@@ -914,6 +914,8 @@
     "signOut": "Изход",
     "signOutPlexTitle": "Изход от Plex?",
     "signOutPlexMessage": "Премахване на ${displayName} и всички Plex Home потребители? Можете да влезете отново по всяко време.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Излязохте от Plex.",
     "signOutFailed": "Изходът е неуспешен.",
     "sectionTitle": "Профили",

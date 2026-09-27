@@ -914,6 +914,8 @@
     "signOut": "Çıkış Yap",
     "signOutPlexTitle": "Plex'ten çıkış yapılsın mı?",
     "signOutPlexMessage": "${displayName} ve tüm Plex Ev kullanıcıları kaldırılsın mı? İstediğiniz zaman tekrar giriş yapabilirsiniz.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex'ten çıkış yapıldı.",
     "signOutFailed": "Çıkış yapılamadı.",
     "sectionTitle": "Profiller",

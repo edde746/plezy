@@ -910,6 +910,8 @@
     "signOut": "退出登录",
     "signOutPlexTitle": "退出 Plex 登录？",
     "signOutPlexMessage": "要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "已退出 Plex 登录。",
     "signOutFailed": "退出登录失败。",
     "sectionTitle": "用户资料",

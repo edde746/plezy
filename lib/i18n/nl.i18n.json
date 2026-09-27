@@ -914,6 +914,8 @@
     "signOut": "Afmelden",
     "signOutPlexTitle": "Afmelden bij Plex?",
     "signOutPlexMessage": "${displayName} en alle Plex Home-gebruikers verwijderen? Je kunt altijd opnieuw inloggen.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Afgemeld bij Plex.",
     "signOutFailed": "Afmelden mislukt.",
     "sectionTitle": "Profielen",

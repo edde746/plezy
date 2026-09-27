@@ -15,6 +15,7 @@ import 'package:plezy/media/media_item_types.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/api_cache.dart';
@@ -2716,6 +2717,68 @@ void main() {
 
       expect(provider.getMetadata(key), isNull);
       expect(await db.getDownloadedMedia(key), isNotNull);
+    });
+
+    test('a download kept through Plex sign-out stays with its Plex Home user until the account returns', () async {
+      const accountId = 'plex-account';
+      final homeProfileId = plexHomeProfileId(accountConnectionId: accountId, homeUserUuid: 'aaaaaaaaaaaaaaaa');
+      final homeScope = buildPlexProfileScopeId(serverId: serverId, profileId: homeProfileId);
+      Future<void> addAccount() => db
+          .into(db.connections)
+          .insert(
+            ConnectionsCompanion.insert(
+              id: accountId,
+              kind: 'plex',
+              displayName: 'Plex',
+              configJson: jsonEncode({
+                'servers': [
+                  {'clientIdentifier': serverId.value},
+                ],
+              }),
+              createdAt: 0,
+            ),
+          );
+      await addAccount();
+      await _insertProfile(db, 'profile-b');
+      await db.insertDownload(
+        serverId: serverId,
+        clientScopeId: homeScope,
+        ratingKey: '123',
+        globalKey: key,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      await db.addDownloadOwner(
+        profileId: homeProfileId,
+        globalKey: key,
+        backendId: MediaBackend.plex.id,
+        clientScopeId: homeScope,
+      );
+      await _putPinnedPlexMetadata(homeScope, id: '123', title: 'Kept download', viewCount: 1, viewOffset: 0);
+
+      // Signing out while keeping downloads removes the account, not the
+      // download's owner row or pinned snapshot.
+      await (db.delete(db.connections)..where((t) => t.id.equals(accountId))).go();
+
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-b',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {key: const DownloadProgress(globalKey: key, status: DownloadStatus.completed)},
+        ownedDownloadKeys: const {},
+      );
+      await provider.refreshMetadataFromCache();
+      expect(provider.downloads, isEmpty);
+      expect(await db.getDownloadOwnerKeysForProfile('profile-b'), isEmpty);
+
+      await addAccount();
+      await waitForProfileReload(provider, homeProfileId, () => provider.getMetadata(key)?.title == 'Kept download');
+      expect(provider.downloads.keys, [key]);
+      expect(provider.getMetadata(key)?.isWatched, isTrue);
     });
 
     test('a missing episode leaf does not evict parents loaded for a downloaded sibling', () async {

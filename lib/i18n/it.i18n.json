@@ -914,6 +914,8 @@
     "signOut": "Esci",
     "signOutPlexTitle": "Uscire da Plex?",
     "signOutPlexMessage": "Verranno rimossi ${displayName} e tutti gli utenti Plex Home. Potrai accedere di nuovo in qualsiasi momento.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Disconnessione da Plex completata.",
     "signOutFailed": "Disconnessione non riuscita.",
     "sectionTitle": "Profili",

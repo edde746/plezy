@@ -910,6 +910,8 @@
     "signOut": "로그아웃",
     "signOutPlexTitle": "Plex에서 로그아웃하시겠습니까?",
     "signOutPlexMessage": "${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex에서 로그아웃되었습니다.",
     "signOutFailed": "로그아웃에 실패했습니다.",
     "sectionTitle": "프로필",

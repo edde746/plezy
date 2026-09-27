@@ -2689,6 +2689,12 @@ class Translations$profiles$en {
 	/// en: 'Remove ${displayName} and all Plex Home users? Sign back in anytime.'
 	String signOutPlexMessage({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.';
 
+	/// en: 'Also delete downloads'
+	String get signOutPlexDeleteDownloads => 'Also delete downloads';
+
+	/// en: 'Otherwise they stay on this device and come back when you sign back in to this account.'
+	String get signOutPlexDeleteDownloadsDescription => 'Otherwise they stay on this device and come back when you sign back in to this account.';
+
 	/// en: 'Signed out of Plex.'
 	String get signedOutPlex => 'Signed out of Plex.';
 
@@ -8128,6 +8134,8 @@ extension on Translations {
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
+			'profiles.signOutPlexDeleteDownloads' => 'Also delete downloads',
+			'profiles.signOutPlexDeleteDownloadsDescription' => 'Otherwise they stay on this device and come back when you sign back in to this account.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
@@ -8295,10 +8303,10 @@ extension on Translations {
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
-			'libraries.analyze' => 'Analyze',
-			'libraries.analyzeLibrary' => 'Analyze Library',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analyze' => 'Analyze',
+			'libraries.analyzeLibrary' => 'Analyze Library',
 			'libraries.refreshMetadata' => 'Refresh Metadata',
 			'libraries.emptyTrash' => 'Empty Trash',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Emptying trash for "${title}"...',
@@ -8809,10 +8817,10 @@ extension on Translations {
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
 			'watchTogether.end' => 'End',
-			'watchTogether.leave' => 'Leave',
-			'watchTogether.syncing' => 'Syncing...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.leave' => 'Leave',
+			'watchTogether.syncing' => 'Syncing...',
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
@@ -9323,10 +9331,10 @@ extension on Translations {
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
 			'addServer.findServer' => 'Find server',
-			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
-			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
+			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',

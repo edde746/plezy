@@ -910,6 +910,8 @@
     "signOut": "サインアウト",
     "signOutPlexTitle": "Plexからサインアウトしますか？",
     "signOutPlexMessage": "${displayName}とすべてのPlex Homeユーザーを削除しますか？いつでも再度サインインできます。",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plexからサインアウトしました。",
     "signOutFailed": "サインアウトに失敗しました。",
     "sectionTitle": "プロフィール",

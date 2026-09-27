@@ -914,6 +914,8 @@
     "signOut": "Kijelentkezés",
     "signOutPlexTitle": "Kijelentkezel a Plexből?",
     "signOutPlexMessage": "Eltávolítod a(z) ${displayName} profilt és az összes Plex Home-felhasználót? Bármikor visszajelentkezhetsz.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Kijelentkezve a Plexből.",
     "signOutFailed": "A kijelentkezés nem sikerült.",
     "sectionTitle": "Profilok",

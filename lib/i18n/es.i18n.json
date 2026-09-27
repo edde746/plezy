@@ -914,6 +914,8 @@
     "signOut": "Cerrar sesión",
     "signOutPlexTitle": "¿Cerrar sesión de Plex?",
     "signOutPlexMessage": "¿Eliminar ${displayName} y todos los usuarios de Plex Home? Puedes iniciar sesión de nuevo cuando quieras.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Sesión de Plex cerrada.",
     "signOutFailed": "Error al cerrar sesión.",
     "sectionTitle": "Perfiles",

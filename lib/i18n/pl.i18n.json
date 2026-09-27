@@ -922,6 +922,8 @@
     "signOut": "Wyloguj się",
     "signOutPlexTitle": "Wylogować się z Plex?",
     "signOutPlexMessage": "Usunąć ${displayName} i wszystkich użytkowników Plex Home? Możesz zalogować się ponownie w każdej chwili.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Wylogowano z Plex.",
     "signOutFailed": "Wylogowanie nie powiodło się.",
     "sectionTitle": "Profile",

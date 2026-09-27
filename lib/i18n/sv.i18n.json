@@ -914,6 +914,8 @@
     "signOut": "Logga ut",
     "signOutPlexTitle": "Logga ut från Plex?",
     "signOutPlexMessage": "Ta bort ${displayName} och alla Plex Home-användare? Du kan logga in igen när som helst.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Utloggad från Plex.",
     "signOutFailed": "Utloggningen misslyckades.",
     "sectionTitle": "Profiler",

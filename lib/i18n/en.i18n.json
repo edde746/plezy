@@ -914,6 +914,8 @@
     "signOut": "Sign out",
     "signOutPlexTitle": "Sign out of Plex?",
     "signOutPlexMessage": "Remove ${displayName} and all Plex Home users? Sign back in anytime.",
+    "signOutPlexDeleteDownloads": "Also delete downloads",
+    "signOutPlexDeleteDownloadsDescription": "Otherwise they stay on this device and come back when you sign back in to this account.",
     "signedOutPlex": "Signed out of Plex.",
     "signOutFailed": "Sign out failed.",
     "sectionTitle": "Profiles",

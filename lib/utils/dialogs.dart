@@ -295,6 +295,73 @@ Future<bool> showDeleteConfirmation(
   );
 }
 
+/// Shows a confirmation whose destructive side effect is opt-in through one
+/// switch that starts off. Returns null when cancelled, otherwise the switch
+/// value. The confirm button takes the error colour when [isDestructive], or
+/// once the switch is on.
+Future<bool?> showConfirmWithSwitchDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmText,
+  required String switchTitle,
+  String? switchSubtitle,
+  bool isDestructive = false,
+  Key? switchKey,
+}) {
+  var switchValue = false;
+  return showScopedDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return AlertDialog(
+            title: Text(title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(message),
+                const SizedBox(height: 12),
+                FocusableSwitchListTile(
+                  key: switchKey,
+                  value: switchValue,
+                  onChanged: (value) => setState(() => switchValue = value),
+                  title: Text(switchTitle),
+                  subtitle: switchSubtitle == null ? null : Text(switchSubtitle),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+            actions: [
+              DialogActionButton(
+                autofocus: true,
+                onPressed: () => Navigator.pop(dialogContext),
+                label: t.common.cancel,
+                style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+              ),
+              DialogActionButton(
+                onPressed: () => Navigator.pop(dialogContext, switchValue),
+                label: confirmText,
+                isPrimary: true,
+                style: isDestructive || switchValue
+                    ? FilledButton.styleFrom(
+                        padding: _buttonPadding,
+                        shape: _buttonShape,
+                        backgroundColor: colorScheme.error,
+                        foregroundColor: colorScheme.onError,
+                      )
+                    : FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
 /// Shows a text input dialog and returns validated submitted text.
 ///
 /// Returns `null` when the dialog is cancelled or dismissed. Validation errors
