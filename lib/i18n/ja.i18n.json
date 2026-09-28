@@ -1849,6 +1849,8 @@
     "errorFileNotFound": "ファイルが見つかりません（404）",
     "errorDownloadNotAllowed": "サーバーがダウンロードを許可していません（403）",
     "errorDownloadFailed": "ダウンロードに失敗しました",
+    "errorDownloadFailedWithReason": "ダウンロードに失敗しました: ${reason}",
+    "errorHttpStatus": "ダウンロードに失敗しました（HTTP ${status}）",
     "errorPostProcessing": "後処理に失敗しました: ${error}",
     "notificationDownloading": "ダウンロード中…",
     "notificationComplete": "ダウンロードが完了しました",

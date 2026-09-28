@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Bestand niet gevonden (404)",
     "errorDownloadNotAllowed": "Downloaden niet toegestaan door de server (403)",
     "errorDownloadFailed": "Download mislukt",
+    "errorDownloadFailedWithReason": "Download mislukt: ${reason}",
+    "errorHttpStatus": "Download mislukt (HTTP ${status})",
     "errorPostProcessing": "Nabewerking mislukt: ${error}",
     "notificationDownloading": "Downloaden...",
     "notificationComplete": "Download voltooid",

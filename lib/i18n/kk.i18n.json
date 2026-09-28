@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Файл табылмады (404)",
     "errorDownloadNotAllowed": "Сервер жүктеп алуға рұқсат бермейді (403)",
     "errorDownloadFailed": "Жүктеу сәтсіз аяқталды",
+    "errorDownloadFailedWithReason": "Жүктеу сәтсіз аяқталды: ${reason}",
+    "errorHttpStatus": "Жүктеу сәтсіз аяқталды (HTTP ${status})",
     "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${error}",
     "notificationDownloading": "Жүктелуде...",
     "notificationComplete": "Жүктеу аяқталды",

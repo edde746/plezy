@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Archivo no encontrado (404)",
     "errorDownloadNotAllowed": "El servidor no permite la descarga (403)",
     "errorDownloadFailed": "Error en la descarga",
+    "errorDownloadFailedWithReason": "Error en la descarga: ${reason}",
+    "errorHttpStatus": "Error en la descarga (HTTP ${status})",
     "errorPostProcessing": "Error en el posprocesamiento: ${error}",
     "notificationDownloading": "Descargando...",
     "notificationComplete": "Descarga completada",

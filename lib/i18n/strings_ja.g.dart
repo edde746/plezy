@@ -1847,6 +1847,8 @@ class _Translations$downloads$ja extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'ファイルが見つかりません（404）';
 	@override String get errorDownloadNotAllowed => 'サーバーがダウンロードを許可していません（403）';
 	@override String get errorDownloadFailed => 'ダウンロードに失敗しました';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'ダウンロードに失敗しました: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'ダウンロードに失敗しました（HTTP ${status}）';
 	@override String errorPostProcessing({required Object error}) => '後処理に失敗しました: ${error}';
 	@override String get notificationDownloading => 'ダウンロード中…';
 	@override String get notificationComplete => 'ダウンロードが完了しました';
@@ -4673,6 +4675,8 @@ extension on TranslationsJa {
 			'downloads.errorFileNotFound' => 'ファイルが見つかりません（404）',
 			'downloads.errorDownloadNotAllowed' => 'サーバーがダウンロードを許可していません（403）',
 			'downloads.errorDownloadFailed' => 'ダウンロードに失敗しました',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'ダウンロードに失敗しました: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'ダウンロードに失敗しました（HTTP ${status}）',
 			'downloads.errorPostProcessing' => ({required Object error}) => '後処理に失敗しました: ${error}',
 			'downloads.notificationDownloading' => 'ダウンロード中…',
 			'downloads.notificationComplete' => 'ダウンロードが完了しました',
@@ -5069,10 +5073,10 @@ extension on TranslationsJa {
 			'addServer.quickConnectPollRejected' => 'Quick Connectのポーリングがサーバーに拒否されました',
 			'addServer.serverTimedOut' => 'サーバーが時間内に応答しませんでした',
 			'addServer.responseNotJson' => 'サーバーのレスポンスが有効なJSONではありません',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'レスポンスにIDまたはサーバー名がありません。これは${product}サーバーですか？',
-			'addServer.probeFailed' => ({required Object error}) => 'サーバーに接続できませんでした: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'レスポンスにIDまたはサーバー名がありません。これは${product}サーバーですか？',
+			'addServer.probeFailed' => ({required Object error}) => 'サーバーに接続できませんでした: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '${product}サーバーのURLを1つ以上入力してください',
 			'addServer.noReachableServer' => ({required Object product}) => '接続可能な${product}サーバーが見つかりませんでした',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'これらのURLは異なる${product}サーバーを指しています',

@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "A fájl nem található (404)",
     "errorDownloadNotAllowed": "A szerver nem engedélyezi a letöltést (403)",
     "errorDownloadFailed": "A letöltés nem sikerült",
+    "errorDownloadFailedWithReason": "A letöltés nem sikerült: ${reason}",
+    "errorHttpStatus": "A letöltés nem sikerült (HTTP ${status})",
     "errorPostProcessing": "Az utófeldolgozás nem sikerült: ${error}",
     "notificationDownloading": "Letöltés...",
     "notificationComplete": "Letöltés kész",

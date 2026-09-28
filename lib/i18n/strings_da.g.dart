@@ -1856,6 +1856,8 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Filen blev ikke fundet (404)';
 	@override String get errorDownloadNotAllowed => 'Serveren tillader ikke download (403)';
 	@override String get errorDownloadFailed => 'Download mislykkedes';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download mislykkedes: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Download mislykkedes (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Efterbehandling mislykkedes: ${error}';
 	@override String get notificationDownloading => 'Downloader...';
 	@override String get notificationComplete => 'Download fuldført';
@@ -4684,6 +4686,8 @@ extension on TranslationsDa {
 			'downloads.errorFileNotFound' => 'Filen blev ikke fundet (404)',
 			'downloads.errorDownloadNotAllowed' => 'Serveren tillader ikke download (403)',
 			'downloads.errorDownloadFailed' => 'Download mislykkedes',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download mislykkedes: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download mislykkedes (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Efterbehandling mislykkedes: ${error}',
 			'downloads.notificationDownloading' => 'Downloader...',
 			'downloads.notificationComplete' => 'Download fuldført',
@@ -5080,10 +5084,10 @@ extension on TranslationsDa {
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling blev afvist af serveren',
 			'addServer.serverTimedOut' => 'Serveren svarede ikke i tide',
 			'addServer.responseNotJson' => 'Serversvaret var ikke gyldig JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret mangler et ID eller servernavn – er dette en ${product}-server?',
-			'addServer.probeFailed' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret mangler et ID eller servernavn – er dette en ${product}-server?',
+			'addServer.probeFailed' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Indtast mindst én URL til en ${product}-server',
 			'addServer.noReachableServer' => ({required Object product}) => 'Der blev ikke fundet nogen ${product}-server, som kunne nås',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Disse URL\'er peger på forskellige ${product}-servere',

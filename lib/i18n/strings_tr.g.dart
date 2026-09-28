@@ -1856,6 +1856,8 @@ class _Translations$downloads$tr extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Dosya bulunamadı (404)';
 	@override String get errorDownloadNotAllowed => 'Sunucu indirmeye izin vermiyor (403)';
 	@override String get errorDownloadFailed => 'İndirme başarısız oldu';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'İndirme başarısız oldu: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'İndirme başarısız oldu (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Son işleme başarısız oldu: ${error}';
 	@override String get notificationDownloading => 'İndiriliyor...';
 	@override String get notificationComplete => 'İndirme tamamlandı';
@@ -4684,6 +4686,8 @@ extension on TranslationsTr {
 			'downloads.errorFileNotFound' => 'Dosya bulunamadı (404)',
 			'downloads.errorDownloadNotAllowed' => 'Sunucu indirmeye izin vermiyor (403)',
 			'downloads.errorDownloadFailed' => 'İndirme başarısız oldu',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'İndirme başarısız oldu: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'İndirme başarısız oldu (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Son işleme başarısız oldu: ${error}',
 			'downloads.notificationDownloading' => 'İndiriliyor...',
 			'downloads.notificationComplete' => 'İndirme tamamlandı',
@@ -5080,10 +5084,10 @@ extension on TranslationsTr {
 			'addServer.quickConnectPollRejected' => 'Quick Connect yoklaması sunucu tarafından reddedildi',
 			'addServer.serverTimedOut' => 'Sunucu zamanında yanıt vermedi',
 			'addServer.responseNotJson' => 'Sunucu yanıtı geçerli bir JSON değildi',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'Yanıtta kimlik veya sunucu adı eksik — bu bir ${product} sunucusu mu?',
-			'addServer.probeFailed' => ({required Object error}) => 'Sunucuya ulaşılamadı: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Yanıtta kimlik veya sunucu adı eksik — bu bir ${product} sunucusu mu?',
+			'addServer.probeFailed' => ({required Object error}) => 'Sunucuya ulaşılamadı: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'En az bir ${product} sunucu URL\'si girin',
 			'addServer.noReachableServer' => ({required Object product}) => 'Ulaşılabilir ${product} sunucusu bulunamadı',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Bu URL\'ler farklı ${product} sunucularını gösteriyor',

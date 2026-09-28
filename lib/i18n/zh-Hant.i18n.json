@@ -1849,6 +1849,8 @@
     "errorFileNotFound": "找不到檔案（404）",
     "errorDownloadNotAllowed": "伺服器不允許下載（403）",
     "errorDownloadFailed": "下載失敗",
+    "errorDownloadFailedWithReason": "下載失敗：${reason}",
+    "errorHttpStatus": "下載失敗（HTTP ${status}）",
     "errorPostProcessing": "後續處理失敗：${error}",
     "notificationDownloading": "正在下載…",
     "notificationComplete": "下載完成",

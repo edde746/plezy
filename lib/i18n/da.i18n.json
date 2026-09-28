@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Filen blev ikke fundet (404)",
     "errorDownloadNotAllowed": "Serveren tillader ikke download (403)",
     "errorDownloadFailed": "Download mislykkedes",
+    "errorDownloadFailedWithReason": "Download mislykkedes: ${reason}",
+    "errorHttpStatus": "Download mislykkedes (HTTP ${status})",
     "errorPostProcessing": "Efterbehandling mislykkedes: ${error}",
     "notificationDownloading": "Downloader...",
     "notificationComplete": "Download fuldført",

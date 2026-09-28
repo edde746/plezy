@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Dosya bulunamadı (404)",
     "errorDownloadNotAllowed": "Sunucu indirmeye izin vermiyor (403)",
     "errorDownloadFailed": "İndirme başarısız oldu",
+    "errorDownloadFailedWithReason": "İndirme başarısız oldu: ${reason}",
+    "errorHttpStatus": "İndirme başarısız oldu (HTTP ${status})",
     "errorPostProcessing": "Son işleme başarısız oldu: ${error}",
     "notificationDownloading": "İndiriliyor...",
     "notificationComplete": "İndirme tamamlandı",

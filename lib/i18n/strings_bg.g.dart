@@ -1856,6 +1856,8 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Файлът не е намерен (404)';
 	@override String get errorDownloadNotAllowed => 'Сървърът не разрешава изтеглянето (403)';
 	@override String get errorDownloadFailed => 'Изтеглянето е неуспешно';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Изтеглянето е неуспешно: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Изтеглянето е неуспешно (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Последващата обработка е неуспешна: ${error}';
 	@override String get notificationDownloading => 'Изтегляне...';
 	@override String get notificationComplete => 'Изтеглянето завърши';
@@ -4684,6 +4686,8 @@ extension on TranslationsBg {
 			'downloads.errorFileNotFound' => 'Файлът не е намерен (404)',
 			'downloads.errorDownloadNotAllowed' => 'Сървърът не разрешава изтеглянето (403)',
 			'downloads.errorDownloadFailed' => 'Изтеглянето е неуспешно',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Изтеглянето е неуспешно: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Изтеглянето е неуспешно (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Последващата обработка е неуспешна: ${error}',
 			'downloads.notificationDownloading' => 'Изтегляне...',
 			'downloads.notificationComplete' => 'Изтеглянето завърши',
@@ -5080,10 +5084,10 @@ extension on TranslationsBg {
 			'addServer.quickConnectPollRejected' => 'Запитването на Quick Connect беше отхвърлено от сървъра',
 			'addServer.serverTimedOut' => 'Сървърът не отговори навреме',
 			'addServer.responseNotJson' => 'Отговорът на сървъра не беше валиден JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'В отговора липсва ID или име на сървъра — това сървър на ${product} ли е?',
-			'addServer.probeFailed' => ({required Object error}) => 'Сървърът не може да бъде достигнат: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'В отговора липсва ID или име на сървъра — това сървър на ${product} ли е?',
+			'addServer.probeFailed' => ({required Object error}) => 'Сървърът не може да бъде достигнат: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Въведете поне един URL на сървър на ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Не беше намерен достъпен сървър на ${product}',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Тези URL адреси сочат към различни сървъри на ${product}',

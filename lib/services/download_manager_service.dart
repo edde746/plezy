@@ -37,6 +37,7 @@ import '../utils/active_client_scope.dart';
 import '../utils/codec_utils.dart';
 import '../utils/connectivity_link_type.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/storage_failure.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -2179,6 +2180,9 @@ class DownloadManagerService {
         return true;
       }
       appLogger.e('Failed to prepare download for $globalKey', error: e, stackTrace: st);
+      // `toString()` carries the runtime type, request host and path; the row
+      // gets the localized reason and the log keeps the detail.
+      final errorMessage = t.downloads.errorDownloadFailedWithReason(reason: localizedErrorReason(e));
       final existing = await _database.getDownloadedMedia(globalKey);
       if (_isRetryablePrepareFailure(e) &&
           existing != null &&
@@ -2189,11 +2193,11 @@ class DownloadManagerService {
           globalKey,
           client,
           existing.retryCount,
-          e.toString(),
+          errorMessage,
           processQueueAfterProgress: false,
         );
       } else {
-        await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
+        await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
         await _database.removeFromQueue(globalKey);
       }
       _pendingDownloadContext.remove(globalKey);
@@ -2454,10 +2458,24 @@ class DownloadManagerService {
 
   /// Handle a failed download — stop the queue on storage exhaustion,
   /// otherwise auto-retry if retries remain.
+  ///
+  /// Every native downloader fills an HTTP failure's description with the
+  /// server's raw response body. That is diagnostics for the log, never user
+  /// copy (a Plex refusal names a paid plan, #2510), and never evidence about
+  /// this device's storage or network: a server whose own disk is full answers
+  /// "No space left on device", which says nothing about local space.
   Future<void> _onDownloadFailed(String globalKey, String taskId, TaskException? exception) async {
     final existing = await _claimTerminalEvent(globalKey, taskId, event: 'failure');
     if (existing == null) return;
-    if (_isStorageFullDownloadFailure(exception)) {
+    final description = exception?.description;
+    final httpStatus = exception is TaskHttpException ? exception.httpResponseCode : null;
+    if (httpStatus != null) {
+      final body = description ?? '';
+      appLogger.w(
+        'Download of $globalKey answered HTTP $httpStatus: '
+        '${body.length > 500 ? '${body.substring(0, 500)}…' : body}',
+      );
+    } else if (_isStorageFullDownloadFailure(exception)) {
       await _handleStorageFullFailure(
         globalKey,
         taskId,
@@ -2467,24 +2485,25 @@ class DownloadManagerService {
       );
       return;
     }
-    // A refusal of this account or connection does not clear on retry, and the
-    // native downloader puts the server's raw response body in the description
-    // — for Plex, copy naming a paid plan the app must not relay (#2510).
-    if (exception is TaskHttpException && exception.httpResponseCode == 403) {
+    // A refusal of this account or connection does not clear on retry (#2510).
+    if (httpStatus == 403) {
       await _onDownloadPermanentlyFailed(globalKey, taskId, t.downloads.errorDownloadNotAllowed);
       return;
     }
-    final errorMessage = exception?.description ?? t.downloads.errorDownloadFailed;
+    final errorMessage = httpStatus != null
+        ? t.downloads.errorHttpStatus(status: httpStatus)
+        : description ?? t.downloads.errorDownloadFailed;
     final retryCount = existing.retryCount;
 
     // DNS/connection errors fail instantly and exhaust native retries in milliseconds,
     // creating a retry storm. Treat them as permanent failures.
     final isNetworkError =
-        errorMessage.contains('Unable to resolve host') ||
-        errorMessage.contains('No address associated with hostname') ||
-        errorMessage.contains('Network is unreachable') ||
-        errorMessage.contains('Connection refused');
-    final isServerError = errorMessage.contains('500 Internal Server Error');
+        httpStatus == null &&
+        (errorMessage.contains('Unable to resolve host') ||
+            errorMessage.contains('No address associated with hostname') ||
+            errorMessage.contains('Network is unreachable') ||
+            errorMessage.contains('Connection refused'));
+    final isServerError = httpStatus == 500 && (description?.contains('500 Internal Server Error') ?? false);
 
     final client = await _getClientForDownloadKey(globalKey);
     final hadProgress = existing.downloadedBytes > 0;

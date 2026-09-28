@@ -1882,6 +1882,8 @@
     "errorFileNotFound": "Файл не найден (404)",
     "errorDownloadNotAllowed": "Сервер не разрешает загрузку (403)",
     "errorDownloadFailed": "Не удалось выполнить загрузку",
+    "errorDownloadFailedWithReason": "Не удалось выполнить загрузку: ${reason}",
+    "errorHttpStatus": "Не удалось выполнить загрузку (HTTP ${status})",
     "errorPostProcessing": "Не удалось выполнить постобработку: ${error}",
     "notificationDownloading": "Загрузка...",
     "notificationComplete": "Загрузка завершена",

@@ -1856,6 +1856,8 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Bestand niet gevonden (404)';
 	@override String get errorDownloadNotAllowed => 'Downloaden niet toegestaan door de server (403)';
 	@override String get errorDownloadFailed => 'Download mislukt';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download mislukt: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Download mislukt (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Nabewerking mislukt: ${error}';
 	@override String get notificationDownloading => 'Downloaden...';
 	@override String get notificationComplete => 'Download voltooid';
@@ -4684,6 +4686,8 @@ extension on TranslationsNl {
 			'downloads.errorFileNotFound' => 'Bestand niet gevonden (404)',
 			'downloads.errorDownloadNotAllowed' => 'Downloaden niet toegestaan door de server (403)',
 			'downloads.errorDownloadFailed' => 'Download mislukt',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download mislukt: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download mislukt (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Nabewerking mislukt: ${error}',
 			'downloads.notificationDownloading' => 'Downloaden...',
 			'downloads.notificationComplete' => 'Download voltooid',
@@ -5080,10 +5084,10 @@ extension on TranslationsNl {
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling is door de server geweigerd',
 			'addServer.serverTimedOut' => 'De server heeft niet op tijd gereageerd',
 			'addServer.responseNotJson' => 'Het serverantwoord was geen geldige JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'In het antwoord ontbreekt een ID of servernaam — is dit een ${product}-server?',
-			'addServer.probeFailed' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'In het antwoord ontbreekt een ID of servernaam — is dit een ${product}-server?',
+			'addServer.probeFailed' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Voer ten minste één URL van een ${product}-server in',
 			'addServer.noReachableServer' => ({required Object product}) => 'Er is geen bereikbare ${product}-server gevonden',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Deze URL\'s verwijzen naar verschillende ${product}-servers',

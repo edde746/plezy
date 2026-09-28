@@ -1882,6 +1882,8 @@
     "errorFileNotFound": "Nie znaleziono pliku (404)",
     "errorDownloadNotAllowed": "Serwer nie zezwala na pobieranie (403)",
     "errorDownloadFailed": "Pobieranie nie powiodło się",
+    "errorDownloadFailedWithReason": "Pobieranie nie powiodło się: ${reason}",
+    "errorHttpStatus": "Pobieranie nie powiodło się (HTTP ${status})",
     "errorPostProcessing": "Przetwarzanie końcowe nie powiodło się: ${error}",
     "notificationDownloading": "Pobieranie...",
     "notificationComplete": "Pobieranie zakończone",

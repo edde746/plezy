@@ -1847,6 +1847,8 @@ class _Translations$downloads$ko extends Translations$downloads$en {
 	@override String get errorFileNotFound => '파일을 찾을 수 없음(404)';
 	@override String get errorDownloadNotAllowed => '서버에서 다운로드를 허용하지 않음(403)';
 	@override String get errorDownloadFailed => '다운로드 실패';
+	@override String errorDownloadFailedWithReason({required Object reason}) => '다운로드 실패: ${reason}';
+	@override String errorHttpStatus({required Object status}) => '다운로드 실패(HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => '후처리 실패: ${error}';
 	@override String get notificationDownloading => '다운로드 중...';
 	@override String get notificationComplete => '다운로드 완료';
@@ -4673,6 +4675,8 @@ extension on TranslationsKo {
 			'downloads.errorFileNotFound' => '파일을 찾을 수 없음(404)',
 			'downloads.errorDownloadNotAllowed' => '서버에서 다운로드를 허용하지 않음(403)',
 			'downloads.errorDownloadFailed' => '다운로드 실패',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => '다운로드 실패: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => '다운로드 실패(HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => '후처리 실패: ${error}',
 			'downloads.notificationDownloading' => '다운로드 중...',
 			'downloads.notificationComplete' => '다운로드 완료',
@@ -5069,10 +5073,10 @@ extension on TranslationsKo {
 			'addServer.quickConnectPollRejected' => '서버에서 Quick Connect 폴링을 거부했습니다',
 			'addServer.serverTimedOut' => '서버가 제시간에 응답하지 않았습니다',
 			'addServer.responseNotJson' => '서버 응답이 유효한 JSON이 아닙니다',
-			'addServer.responseMissingIdentity' => ({required Object product}) => '응답에 ID 또는 서버 이름이 없습니다. 이 서버가 ${product} 서버인가요?',
-			'addServer.probeFailed' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => '응답에 ID 또는 서버 이름이 없습니다. 이 서버가 ${product} 서버인가요?',
+			'addServer.probeFailed' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '${product} 서버 URL을 하나 이상 입력하세요',
 			'addServer.noReachableServer' => ({required Object product}) => '연결 가능한 ${product} 서버를 찾을 수 없습니다',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '이 URL들은 서로 다른 ${product} 서버를 가리킵니다',

@@ -1856,6 +1856,8 @@ class _Translations$downloads$uz extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Fayl topilmadi (404)';
 	@override String get errorDownloadNotAllowed => 'Server yuklab olishga ruxsat bermaydi (403)';
 	@override String get errorDownloadFailed => 'Yuklab boʻlmadi';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Yuklab boʻlmadi: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Yuklab boʻlmadi (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Keyingi ishlov berishda xatolik: ${error}';
 	@override String get notificationDownloading => 'Yuklanmoqda...';
 	@override String get notificationComplete => 'Yuklash tugallandi';
@@ -4684,6 +4686,8 @@ extension on TranslationsUz {
 			'downloads.errorFileNotFound' => 'Fayl topilmadi (404)',
 			'downloads.errorDownloadNotAllowed' => 'Server yuklab olishga ruxsat bermaydi (403)',
 			'downloads.errorDownloadFailed' => 'Yuklab boʻlmadi',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Yuklab boʻlmadi: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Yuklab boʻlmadi (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Keyingi ishlov berishda xatolik: ${error}',
 			'downloads.notificationDownloading' => 'Yuklanmoqda...',
 			'downloads.notificationComplete' => 'Yuklash tugallandi',
@@ -5080,10 +5084,10 @@ extension on TranslationsUz {
 			'addServer.quickConnectPollRejected' => 'Quick Connect soʻrovi server tomonidan rad etildi',
 			'addServer.serverTimedOut' => 'Server oʻz vaqtida javob bermadi',
 			'addServer.responseNotJson' => 'Server javobi yaroqli JSON emas',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'Javobda ID yoki server nomi yoʻq — bu ${product} serverimi?',
-			'addServer.probeFailed' => ({required Object error}) => 'Serverga ulanib boʻlmadi: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Javobda ID yoki server nomi yoʻq — bu ${product} serverimi?',
+			'addServer.probeFailed' => ({required Object error}) => 'Serverga ulanib boʻlmadi: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Kamida bitta ${product} server URL-ini kiriting',
 			'addServer.noReachableServer' => ({required Object product}) => 'Ulanish mumkin boʻlgan ${product} serveri topilmadi',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Bu URL-lar turli ${product} serverlariga olib boradi',

@@ -4632,6 +4632,12 @@ class Translations$downloads$en {
 	/// en: 'Download failed'
 	String get errorDownloadFailed => 'Download failed';
 
+	/// en: 'Download failed: ${reason}'
+	String errorDownloadFailedWithReason({required Object reason}) => 'Download failed: ${reason}';
+
+	/// en: 'Download failed (HTTP ${status})'
+	String errorHttpStatus({required Object status}) => 'Download failed (HTTP ${status})';
+
 	/// en: 'Post-processing failed: ${error}'
 	String errorPostProcessing({required Object error}) => 'Post-processing failed: ${error}';
 
@@ -8988,6 +8994,8 @@ extension on Translations {
 			'downloads.errorFileNotFound' => 'File not found (404)',
 			'downloads.errorDownloadNotAllowed' => 'Download not allowed by the server (403)',
 			'downloads.errorDownloadFailed' => 'Download failed',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download failed: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download failed (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Post-processing failed: ${error}',
 			'downloads.notificationDownloading' => 'Downloading...',
 			'downloads.notificationComplete' => 'Download complete',
@@ -9344,10 +9352,10 @@ extension on Translations {
 			'services.libraryFilter.modeBlacklist' => 'Blacklist',
 			'services.libraryFilter.modeWhitelist' => 'Whitelist',
 			'services.libraryFilter.modeHintBlacklist' => 'Sync every library except the ones checked below.',
-			'services.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
-			'services.libraryFilter.libraries' => 'Libraries',
 			_ => null,
 		} ?? switch (path) {
+			'services.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
+			'services.libraryFilter.libraries' => 'Libraries',
 			'services.libraryFilter.noLibraries' => 'No libraries available',
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
 			'addServer.serverUrls' => 'Server URLs',

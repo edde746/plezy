@@ -1848,6 +1848,8 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get errorFileNotFound => '找不到檔案（404）';
 	@override String get errorDownloadNotAllowed => '伺服器不允許下載（403）';
 	@override String get errorDownloadFailed => '下載失敗';
+	@override String errorDownloadFailedWithReason({required Object reason}) => '下載失敗：${reason}';
+	@override String errorHttpStatus({required Object status}) => '下載失敗（HTTP ${status}）';
 	@override String errorPostProcessing({required Object error}) => '後續處理失敗：${error}';
 	@override String get notificationDownloading => '正在下載…';
 	@override String get notificationComplete => '下載完成';
@@ -4674,6 +4676,8 @@ extension on TranslationsZhHant {
 			'downloads.errorFileNotFound' => '找不到檔案（404）',
 			'downloads.errorDownloadNotAllowed' => '伺服器不允許下載（403）',
 			'downloads.errorDownloadFailed' => '下載失敗',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => '下載失敗：${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => '下載失敗（HTTP ${status}）',
 			'downloads.errorPostProcessing' => ({required Object error}) => '後續處理失敗：${error}',
 			'downloads.notificationDownloading' => '正在下載…',
 			'downloads.notificationComplete' => '下載完成',
@@ -5070,10 +5074,10 @@ extension on TranslationsZhHant {
 			'addServer.quickConnectPollRejected' => 'Quick Connect 輪詢遭到伺服器拒絕',
 			'addServer.serverTimedOut' => '伺服器未及時回應',
 			'addServer.responseNotJson' => '伺服器回應不是有效的 JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => '回應缺少 ID 或伺服器名稱——這是 ${product} 伺服器嗎？',
-			'addServer.probeFailed' => ({required Object error}) => '無法連線至伺服器：${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => '回應缺少 ID 或伺服器名稱——這是 ${product} 伺服器嗎？',
+			'addServer.probeFailed' => ({required Object error}) => '無法連線至伺服器：${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '請輸入至少一個 ${product} 伺服器 URL',
 			'addServer.noReachableServer' => ({required Object product}) => '找不到可連線的 ${product} 伺服器',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '這些 URL 指向不同的 ${product} 伺服器',

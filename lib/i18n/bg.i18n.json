@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Файлът не е намерен (404)",
     "errorDownloadNotAllowed": "Сървърът не разрешава изтеглянето (403)",
     "errorDownloadFailed": "Изтеглянето е неуспешно",
+    "errorDownloadFailedWithReason": "Изтеглянето е неуспешно: ${reason}",
+    "errorHttpStatus": "Изтеглянето е неуспешно (HTTP ${status})",
     "errorPostProcessing": "Последващата обработка е неуспешна: ${error}",
     "notificationDownloading": "Изтегляне...",
     "notificationComplete": "Изтеглянето завърши",

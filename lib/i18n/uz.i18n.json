@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Fayl topilmadi (404)",
     "errorDownloadNotAllowed": "Server yuklab olishga ruxsat bermaydi (403)",
     "errorDownloadFailed": "Yuklab boʻlmadi",
+    "errorDownloadFailedWithReason": "Yuklab boʻlmadi: ${reason}",
+    "errorHttpStatus": "Yuklab boʻlmadi (HTTP ${status})",
     "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${error}",
     "notificationDownloading": "Yuklanmoqda...",
     "notificationComplete": "Yuklash tugallandi",

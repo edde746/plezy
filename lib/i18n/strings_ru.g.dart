@@ -1874,6 +1874,8 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Файл не найден (404)';
 	@override String get errorDownloadNotAllowed => 'Сервер не разрешает загрузку (403)';
 	@override String get errorDownloadFailed => 'Не удалось выполнить загрузку';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Не удалось выполнить загрузку: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Не удалось выполнить загрузку (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Не удалось выполнить постобработку: ${error}';
 	@override String get notificationDownloading => 'Загрузка...';
 	@override String get notificationComplete => 'Загрузка завершена';
@@ -4706,6 +4708,8 @@ extension on TranslationsRu {
 			'downloads.errorFileNotFound' => 'Файл не найден (404)',
 			'downloads.errorDownloadNotAllowed' => 'Сервер не разрешает загрузку (403)',
 			'downloads.errorDownloadFailed' => 'Не удалось выполнить загрузку',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Не удалось выполнить загрузку: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Не удалось выполнить загрузку (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Не удалось выполнить постобработку: ${error}',
 			'downloads.notificationDownloading' => 'Загрузка...',
 			'downloads.notificationComplete' => 'Загрузка завершена',
@@ -5102,10 +5106,10 @@ extension on TranslationsRu {
 			'addServer.quickConnectPollRejected' => 'Опрос Quick Connect был отклонён сервером',
 			'addServer.serverTimedOut' => 'Сервер не ответил вовремя',
 			'addServer.responseNotJson' => 'Ответ сервера не является допустимым JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'В ответе отсутствует идентификатор или имя сервера. Это точно сервер ${product}?',
-			'addServer.probeFailed' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'В ответе отсутствует идентификатор или имя сервера. Это точно сервер ${product}?',
+			'addServer.probeFailed' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Введите хотя бы один URL сервера ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Не найдено ни одного доступного сервера ${product}',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Эти URL указывают на разные серверы ${product}',

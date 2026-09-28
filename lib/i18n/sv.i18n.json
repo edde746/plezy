@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Filen hittades inte (404)",
     "errorDownloadNotAllowed": "Servern tillåter inte nedladdning (403)",
     "errorDownloadFailed": "Nedladdningen misslyckades",
+    "errorDownloadFailedWithReason": "Nedladdningen misslyckades: ${reason}",
+    "errorHttpStatus": "Nedladdningen misslyckades (HTTP ${status})",
     "errorPostProcessing": "Efterbehandlingen misslyckades: ${error}",
     "notificationDownloading": "Laddar ned...",
     "notificationComplete": "Nedladdningen är klar",

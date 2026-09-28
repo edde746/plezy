@@ -1856,6 +1856,8 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'A fájl nem található (404)';
 	@override String get errorDownloadNotAllowed => 'A szerver nem engedélyezi a letöltést (403)';
 	@override String get errorDownloadFailed => 'A letöltés nem sikerült';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'A letöltés nem sikerült: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'A letöltés nem sikerült (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Az utófeldolgozás nem sikerült: ${error}';
 	@override String get notificationDownloading => 'Letöltés...';
 	@override String get notificationComplete => 'Letöltés kész';
@@ -4684,6 +4686,8 @@ extension on TranslationsHu {
 			'downloads.errorFileNotFound' => 'A fájl nem található (404)',
 			'downloads.errorDownloadNotAllowed' => 'A szerver nem engedélyezi a letöltést (403)',
 			'downloads.errorDownloadFailed' => 'A letöltés nem sikerült',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'A letöltés nem sikerült: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'A letöltés nem sikerült (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Az utófeldolgozás nem sikerült: ${error}',
 			'downloads.notificationDownloading' => 'Letöltés...',
 			'downloads.notificationComplete' => 'Letöltés kész',
@@ -5080,10 +5084,10 @@ extension on TranslationsHu {
 			'addServer.quickConnectPollRejected' => 'A szerver elutasította a Quick Connect lekérdezését',
 			'addServer.serverTimedOut' => 'A szerver nem válaszolt időben',
 			'addServer.responseNotJson' => 'A szerver válasza nem érvényes JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'A válaszból hiányzik az azonosító vagy a szerver neve – ez valóban ${product}-szerver?',
-			'addServer.probeFailed' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'A válaszból hiányzik az azonosító vagy a szerver neve – ez valóban ${product}-szerver?',
+			'addServer.probeFailed' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Adj meg legalább egy ${product}-szerverhez tartozó URL-t',
 			'addServer.noReachableServer' => ({required Object product}) => 'Nem található elérhető ${product}-szerver',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Ezek az URL-ek különböző ${product}-szerverekre mutatnak',

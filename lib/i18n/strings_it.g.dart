@@ -1856,6 +1856,8 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'File non trovato (404)';
 	@override String get errorDownloadNotAllowed => 'Download non consentito dal server (403)';
 	@override String get errorDownloadFailed => 'Download non riuscito';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download non riuscito: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Download non riuscito (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Post-elaborazione non riuscita: ${error}';
 	@override String get notificationDownloading => 'Download in corso...';
 	@override String get notificationComplete => 'Download completato';
@@ -4684,6 +4686,8 @@ extension on TranslationsIt {
 			'downloads.errorFileNotFound' => 'File non trovato (404)',
 			'downloads.errorDownloadNotAllowed' => 'Download non consentito dal server (403)',
 			'downloads.errorDownloadFailed' => 'Download non riuscito',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download non riuscito: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download non riuscito (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Post-elaborazione non riuscita: ${error}',
 			'downloads.notificationDownloading' => 'Download in corso...',
 			'downloads.notificationComplete' => 'Download completato',
@@ -5080,10 +5084,10 @@ extension on TranslationsIt {
 			'addServer.quickConnectPollRejected' => 'Il polling di Quick Connect è stato rifiutato dal server',
 			'addServer.serverTimedOut' => 'Il server non ha risposto in tempo',
 			'addServer.responseNotJson' => 'La risposta del server non era un JSON valido',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'Nella risposta manca un ID o il nome del server: è un server ${product}?',
-			'addServer.probeFailed' => ({required Object error}) => 'Impossibile raggiungere il server: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Nella risposta manca un ID o il nome del server: è un server ${product}?',
+			'addServer.probeFailed' => ({required Object error}) => 'Impossibile raggiungere il server: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Inserisci almeno un URL di un server ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Non è stato trovato alcun server ${product} raggiungibile',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Questi URL rimandano a server ${product} diversi',

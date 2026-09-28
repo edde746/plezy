@@ -1856,6 +1856,8 @@ class _Translations$downloads$sv extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Filen hittades inte (404)';
 	@override String get errorDownloadNotAllowed => 'Servern tillåter inte nedladdning (403)';
 	@override String get errorDownloadFailed => 'Nedladdningen misslyckades';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Nedladdningen misslyckades: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Nedladdningen misslyckades (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Efterbehandlingen misslyckades: ${error}';
 	@override String get notificationDownloading => 'Laddar ned...';
 	@override String get notificationComplete => 'Nedladdningen är klar';
@@ -4684,6 +4686,8 @@ extension on TranslationsSv {
 			'downloads.errorFileNotFound' => 'Filen hittades inte (404)',
 			'downloads.errorDownloadNotAllowed' => 'Servern tillåter inte nedladdning (403)',
 			'downloads.errorDownloadFailed' => 'Nedladdningen misslyckades',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Nedladdningen misslyckades: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Nedladdningen misslyckades (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Efterbehandlingen misslyckades: ${error}',
 			'downloads.notificationDownloading' => 'Laddar ned...',
 			'downloads.notificationComplete' => 'Nedladdningen är klar',
@@ -5080,10 +5084,10 @@ extension on TranslationsSv {
 			'addServer.quickConnectPollRejected' => 'Servern avvisade avsökningen för Quick Connect',
 			'addServer.serverTimedOut' => 'Servern svarade inte i tid',
 			'addServer.responseNotJson' => 'Serversvaret var inte ett giltigt JSON-svar',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret saknar ett ID eller servernamn – är det här en ${product}-server?',
-			'addServer.probeFailed' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret saknar ett ID eller servernamn – är det här en ${product}-server?',
+			'addServer.probeFailed' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Ange minst en server-URL för ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Ingen nåbar ${product}-server hittades',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'De här URL:erna pekar på olika servrar för ${product}',

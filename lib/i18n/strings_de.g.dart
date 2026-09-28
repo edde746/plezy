@@ -1856,6 +1856,8 @@ class _Translations$downloads$de extends Translations$downloads$en {
 	@override String get errorFileNotFound => 'Datei nicht gefunden (404)';
 	@override String get errorDownloadNotAllowed => 'Download vom Server nicht erlaubt (403)';
 	@override String get errorDownloadFailed => 'Download fehlgeschlagen';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download fehlgeschlagen: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Download fehlgeschlagen (HTTP ${status})';
 	@override String errorPostProcessing({required Object error}) => 'Nachbearbeitung fehlgeschlagen: ${error}';
 	@override String get notificationDownloading => 'Wird heruntergeladen …';
 	@override String get notificationComplete => 'Download abgeschlossen';
@@ -4684,6 +4686,8 @@ extension on TranslationsDe {
 			'downloads.errorFileNotFound' => 'Datei nicht gefunden (404)',
 			'downloads.errorDownloadNotAllowed' => 'Download vom Server nicht erlaubt (403)',
 			'downloads.errorDownloadFailed' => 'Download fehlgeschlagen',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download fehlgeschlagen: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download fehlgeschlagen (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Nachbearbeitung fehlgeschlagen: ${error}',
 			'downloads.notificationDownloading' => 'Wird heruntergeladen …',
 			'downloads.notificationComplete' => 'Download abgeschlossen',
@@ -5080,10 +5084,10 @@ extension on TranslationsDe {
 			'addServer.quickConnectPollRejected' => 'Die Quick Connect-Abfrage wurde vom Server abgelehnt',
 			'addServer.serverTimedOut' => 'Der Server hat nicht rechtzeitig geantwortet',
 			'addServer.responseNotJson' => 'Die Serverantwort war kein gültiges JSON',
-			'addServer.responseMissingIdentity' => ({required Object product}) => 'In der Antwort fehlt eine ID oder ein Servername – ist dies ein ${product}-Server?',
-			'addServer.probeFailed' => ({required Object error}) => 'Server nicht erreichbar: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'In der Antwort fehlt eine ID oder ein Servername – ist dies ein ${product}-Server?',
+			'addServer.probeFailed' => ({required Object error}) => 'Server nicht erreichbar: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Gib mindestens eine URL eines ${product}-Servers ein',
 			'addServer.noReachableServer' => ({required Object product}) => 'Es wurde kein erreichbarer ${product}-Server gefunden',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Diese URLs verweisen auf verschiedene ${product}-Server',

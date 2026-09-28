@@ -1849,6 +1849,8 @@
     "errorFileNotFound": "파일을 찾을 수 없음(404)",
     "errorDownloadNotAllowed": "서버에서 다운로드를 허용하지 않음(403)",
     "errorDownloadFailed": "다운로드 실패",
+    "errorDownloadFailedWithReason": "다운로드 실패: ${reason}",
+    "errorHttpStatus": "다운로드 실패(HTTP ${status})",
     "errorPostProcessing": "후처리 실패: ${error}",
     "notificationDownloading": "다운로드 중...",
     "notificationComplete": "다운로드 완료",

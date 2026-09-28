@@ -1860,6 +1860,8 @@
     "errorFileNotFound": "Fayl tapılmadı (404)",
     "errorDownloadNotAllowed": "Server yükləməyə icazə vermir (403)",
     "errorDownloadFailed": "Yükləmə uğursuz oldu",
+    "errorDownloadFailedWithReason": "Yükləmə uğursuz oldu: ${reason}",
+    "errorHttpStatus": "Yükləmə uğursuz oldu (HTTP ${status})",
     "errorPostProcessing": "Sonrakı emal uğursuz oldu: ${error}",
     "notificationDownloading": "Yüklənir...",
     "notificationComplete": "Yükləmə tamamlandı",
