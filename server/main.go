@@ -41,8 +41,9 @@ const (
 	pingInterval                   = 30 * time.Second
 	maxLogSize                     = 1 * 1024 * 1024
 	logMaxAge                      = 3 * 24 * time.Hour
-	logIDLength                    = 10
-	legacyLogIDLength              = 5
+	logIDLength                    = 6
+	legacyLogIDLength              = 10 // pre-logIDChars; served until expiry
+	legacyShortLogIDLength         = 5  // pre-logIDChars; served until expiry
 	logRateInterval                = 1 * time.Minute
 	logLookupRateBurst             = 10
 	logLookupRateSustained         = 1
@@ -561,28 +562,61 @@ func newLogStoreWithRemover(dir string, removeFile func(string) error) *logStore
 	return ls
 }
 
-func (ls *logStore) filePath(id string) string {
-	return ls.artifactStore.filePath(id + logFileExt)
-}
+// logIDChars is Crockford's base32 alphabet in lowercase. It has no i, l, o,
+// or u, so an ID copied by hand from a TV screen has only one reading.
+const logIDChars = "0123456789abcdefghjkmnpqrstvwxyz"
 
 func generateLogID() string {
-	return generateID(logIDLength)
+	return generateID(logIDChars, logIDLength)
 }
 
-// Log IDs are bearer capabilities for uploads that can hold account
-// identifiers, so they carry enough entropy that the per-source lookup budget
-// cannot enumerate them. Five-character IDs issued before that stay
-// retrievable until they expire.
-func validLogID(id string) bool {
-	return validID(id, logIDLength) || validID(id, legacyLogIDLength)
+// canonicalLogID resolves a Log ID as typed to its stored spelling. Current
+// IDs are short enough to transcribe, so they match case-insensitively with
+// i/l read as 1 and o as 0. They are still bearer capabilities for uploads
+// that can hold account identifiers, and only the per-source lookup budget
+// (allowLookup) slows guessing. Legacy IDs match exactly.
+func canonicalLogID(id string) (string, bool) {
+	if len(id) != logIDLength {
+		if validID(id, legacyLogIDLength) || validID(id, legacyShortLogIDLength) {
+			return id, true
+		}
+		return "", false
+	}
+	var canonical [logIDLength]byte
+	changed := false
+	for i := range logIDLength {
+		c := id[i]
+		switch c {
+		case 'I', 'i', 'L', 'l':
+			c = '1'
+		case 'O', 'o':
+			c = '0'
+		default:
+			if 'A' <= c && c <= 'Z' {
+				c += 'a' - 'A'
+			}
+		}
+		if strings.IndexByte(logIDChars, c) < 0 {
+			return "", false
+		}
+		changed = changed || c != id[i]
+		canonical[i] = c
+	}
+	if !changed {
+		return id, true
+	}
+	return string(canonical[:]), true
 }
 
+// logIDFromFilename accepts only stored spellings; lookups resolve
+// look-alikes to them.
 func logIDFromFilename(filename string) (string, bool) {
 	if filepath.Ext(filename) != logFileExt {
 		return "", false
 	}
 	id := strings.TrimSuffix(filename, logFileExt)
-	return id, validLogID(id)
+	canonical, ok := canonicalLogID(id)
+	return id, ok && canonical == id
 }
 
 // store saves a log charged to source; an empty source is charged only to
@@ -598,7 +632,8 @@ func (ls *logStore) store(source string, data []byte, now time.Time) (string, ar
 }
 
 func (ls *logStore) lookup(id string, now time.Time) (artifactEntry, bool, error) {
-	if !validLogID(id) {
+	id, ok := canonicalLogID(id)
+	if !ok {
 		return artifactEntry{}, false, nil
 	}
 	return ls.lookupEntry(id, now, nil)
@@ -684,7 +719,7 @@ func newPosterStoreWithRemover(
 }
 
 func generatePosterID() string {
-	return generateID(posterIDLength)
+	return generateID(idChars, posterIDLength)
 }
 
 func posterExtForContentType(contentType string) (string, bool) {
@@ -1648,8 +1683,7 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 				message: "Too many lookups",
 			}
 		}
-		id := strings.TrimPrefix(r.URL.Path, "/logs/")
-		entry, ok, err := s.logs.lookup(id, time.Now())
+		entry, ok, err := s.logs.lookup(strings.TrimPrefix(r.URL.Path, "/logs/"), time.Now())
 		if err != nil {
 			s.logRemovalError("logs", "lookup", err)
 			return lookupResult{
@@ -1661,7 +1695,8 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 			return lookupResult{status: http.StatusNotFound, message: "Not found"}
 		}
 
-		data, err := os.ReadFile(s.logs.filePath(id))
+		// Read the entry's own file: the request may use a look-alike spelling.
+		data, err := os.ReadFile(s.logs.artifactStore.filePath(entry.Filename))
 		if err != nil {
 			return lookupResult{status: http.StatusNotFound, message: "Not found"}
 		}

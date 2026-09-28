@@ -2271,7 +2271,7 @@ func TestGenerateLogIDShape(t *testing.T) {
 			t.Fatalf("len=%d want %d (id=%q)", len(id), logIDLength, id)
 		}
 		for _, c := range id {
-			if !strings.ContainsRune(idChars, c) {
+			if !strings.ContainsRune(logIDChars, c) {
 				t.Fatalf("id %q has unexpected char %q", id, c)
 			}
 		}
@@ -6764,6 +6764,11 @@ func postLog(t *testing.T, baseURL, ip string, body []byte) *http.Response {
 	return resp
 }
 
+// filePath is where the store keeps the log stored under the canonical id.
+func (ls *logStore) filePath(id string) string {
+	return ls.artifactStore.filePath(id + logFileExt)
+}
+
 func getLog(t *testing.T, baseURL, ip, id string) *http.Response {
 	t.Helper()
 	req, err := http.NewRequest(http.MethodGet, baseURL+"/logs/"+id, nil)
@@ -7376,21 +7381,25 @@ func TestLogLookupsAreThrottledPerSourceBeforeResolvingIDs(t *testing.T) {
 
 func TestLogStoreKeepsServingLegacyLengthIDsUntilExpiry(t *testing.T) {
 	dir := t.TempDir()
-	legacyID := strings.Repeat("q", legacyLogIDLength)
-	legacyPath := filepath.Join(dir, legacyID+logFileExt)
-	if err := os.WriteFile(legacyPath, []byte("legacy link"), 0o644); err != nil {
-		t.Fatalf("seed legacy log: %v", err)
+	// Legacy IDs predate logIDChars and may hold i, l, o, and u.
+	legacyIDs := []string{"legacyloiu", "qloiu"}
+	for _, legacyID := range legacyIDs {
+		if err := os.WriteFile(filepath.Join(dir, legacyID+logFileExt), []byte("legacy link"), 0o644); err != nil {
+			t.Fatalf("seed legacy log %q: %v", legacyID, err)
+		}
 	}
 	now := time.Now()
 	store := newLogStore(dir)
-	if _, err := os.Stat(legacyPath); err != nil {
-		t.Fatalf("legacy-length log was retired on startup: %v", err)
-	}
-	if _, ok, err := store.lookup(legacyID, now); err != nil || !ok {
-		t.Fatalf("legacy-length lookup=(ok=%v, err=%v), want indexed", ok, err)
-	}
-	if _, ok, err := store.lookup(legacyID, now.Add(logMaxAge+time.Minute)); err != nil || ok {
-		t.Fatalf("expired legacy-length lookup=(ok=%v, err=%v), want absent", ok, err)
+	for _, legacyID := range legacyIDs {
+		if _, err := os.Stat(store.filePath(legacyID)); err != nil {
+			t.Fatalf("legacy log %q was retired on startup: %v", legacyID, err)
+		}
+		if _, ok, err := store.lookup(legacyID, now); err != nil || !ok {
+			t.Fatalf("legacy lookup %q=(ok=%v, err=%v), want indexed", legacyID, ok, err)
+		}
+		if _, ok, err := store.lookup(legacyID, now.Add(logMaxAge+time.Minute)); err != nil || ok {
+			t.Fatalf("expired legacy lookup %q=(ok=%v, err=%v), want absent", legacyID, ok, err)
+		}
 	}
 	id, _, err := store.store("", []byte("new"), now)
 	if err != nil {
@@ -7398,6 +7407,36 @@ func TestLogStoreKeepsServingLegacyLengthIDsUntilExpiry(t *testing.T) {
 	}
 	if len(id) != logIDLength {
 		t.Fatalf("new id=%q len=%d, want %d", id, len(id), logIDLength)
+	}
+}
+
+// Log IDs are copied by hand from TV screens: case and the look-alikes that
+// Crockford's alphabet leaves out must still reach the stored log.
+func TestLogsGetResolvesLookAlikeSpellings(t *testing.T) {
+	h := newRelayHarness(t)
+	h.srv.logs.mu.Lock()
+	h.srv.logs.generateID = func() string { return "01abcd" }
+	h.srv.logs.mu.Unlock()
+	id := postLogAndGetID(t, h.baseURL, "7.3.0.9", []byte("look-alike body"))
+	if id != "01abcd" {
+		t.Fatalf("stored id=%q, want 01abcd", id)
+	}
+
+	for _, typed := range []string{"01abcd", "01ABCD", "o1abcd", "OIabcd", "0labcd", "0Labcd"} {
+		resp := getLog(t, h.baseURL, "", typed)
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			t.Fatalf("read %q: %v", typed, err)
+		}
+		if resp.StatusCode != http.StatusOK || string(body) != "look-alike body" {
+			t.Fatalf("typed %q: status=%d body=%q, want the stored log", typed, resp.StatusCode, body)
+		}
+	}
+	miss := getLog(t, h.baseURL, "", "u1abcd")
+	miss.Body.Close()
+	if miss.StatusCode != http.StatusNotFound {
+		t.Fatalf("u is outside the alphabet: status=%d, want 404", miss.StatusCode)
 	}
 }
 

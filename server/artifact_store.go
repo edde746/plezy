@@ -87,11 +87,11 @@ func removeConfinedDirectory(root, path string) error {
 
 const idChars = "abcdefghijklmnopqrstuvwxyz0123456789"
 
-func generateID(length int) string {
+func generateID(alphabet string, length int) string {
 	b := make([]byte, length)
 	for i := range b {
-		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(idChars))))
-		b[i] = idChars[n.Int64()]
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(alphabet))))
+		b[i] = alphabet[n.Int64()]
 	}
 	return string(b)
 }
