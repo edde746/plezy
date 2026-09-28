@@ -839,6 +839,8 @@
     "serverBusyBody": "伺服器持續拒絕串流此檔案（HTTP 503）。伺服器可能正在重新啟動、忙碌中，或檔案所在的儲存裝置可能已離線。請稍後再試；若問題持續發生，請要求伺服器擁有者檢查伺服器及檔案所在的儲存裝置。",
     "logsUploaded": "日誌已上傳",
     "logsUploadFailed": "上傳日誌失敗",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "日誌 ID",
     "burnedSubtitlesUseMenu": "字幕已燒錄至此串流中。請從字幕選單變更字幕。",
     "noVideoUrl": "沒有可用的視訊 URL",
@@ -1242,6 +1244,7 @@
   "logs": {
     "clearLogs": "清除日誌",
     "copyLogs": "複製日誌",
+    "saveLogs": "",
     "uploadLogs": "上傳日誌"
   },
   "startup": {

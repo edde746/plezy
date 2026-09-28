@@ -843,6 +843,8 @@
     "serverBusyBody": "Der Server hat das Streamen dieser Datei wiederholt abgelehnt (HTTP 503). Möglicherweise wird er neu gestartet, ist ausgelastet oder der Speicherort der Datei ist offline. Versuche es gleich noch einmal. Falls das Problem weiterhin auftritt, bitte den Serverbetreiber, den Server und den Speicherort der Datei zu überprüfen.",
     "logsUploaded": "Protokolle hochgeladen",
     "logsUploadFailed": "Protokolle konnten nicht hochgeladen werden",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Protokoll-ID",
     "burnedSubtitlesUseMenu": "Die Untertitel sind in diesen Stream eingebrannt. Ändere sie über das Untertitelmenü.",
     "noVideoUrl": "Keine Video-URL verfügbar",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Protokolle löschen",
     "copyLogs": "Protokolle kopieren",
+    "saveLogs": "",
     "uploadLogs": "Protokolle hochladen"
   },
   "startup": {

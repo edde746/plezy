@@ -843,6 +843,8 @@
     "serverBusyBody": "Sunucu bu dosyayı yayınlamayı sürekli reddetti (HTTP 503). Sunucu yeniden başlatılıyor veya meşgul olabilir ya da dosyanın bulunduğu depolama birimi çevrim dışı olabilir. Kısa süre sonra tekrar deneyin — sorun devam ederse sunucu sahibinden sunucuyu ve dosyanın bulunduğu depolama birimini kontrol etmesini isteyin.",
     "logsUploaded": "Günlükler yüklendi",
     "logsUploadFailed": "Günlükler yüklenemedi",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Günlük Kimliği (ID)",
     "burnedSubtitlesUseMenu": "Altyazılar bu akışın görüntüsüne gömülü. Bunları altyazı menüsünden değiştirin.",
     "noVideoUrl": "Kullanılabilir video URL'si yok",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Günlükleri Temizle",
     "copyLogs": "Günlükleri Kopyala",
+    "saveLogs": "",
     "uploadLogs": "Günlükleri Yükle"
   },
   "startup": {

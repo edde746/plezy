@@ -843,6 +843,8 @@
     "serverBusyBody": "Il server ha continuato a rifiutare la riproduzione in streaming di questo file (HTTP 503). Potrebbe essere in fase di riavvio, occupato oppure l'unità in cui si trova il file potrebbe essere offline. Riprova tra qualche istante. Se il problema persiste, chiedi al proprietario del server di controllare il server e l'unità di archiviazione del file.",
     "logsUploaded": "Log caricati",
     "logsUploadFailed": "Impossibile caricare i log",
+    "logsSaved": "Log salvati",
+    "logsSaveFailed": "Impossibile salvare i log",
     "logId": "ID log",
     "burnedSubtitlesUseMenu": "I sottotitoli sono incorporati in questo stream. Cambiali dal menu dei sottotitoli.",
     "noVideoUrl": "Nessun URL video disponibile",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Cancella log",
     "copyLogs": "Copia log",
+    "saveLogs": "Salva log",
     "uploadLogs": "Carica log"
   },
   "startup": {

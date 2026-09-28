@@ -843,6 +843,8 @@
     "serverBusyBody": "Servern nekade upprepade gånger att strömma den här filen (HTTP 503). Den kan hålla på att startas om eller vara upptagen, eller så kan lagringen där filen finns vara offline. Försök igen om en stund – om det fortsätter, be serverns ägare att kontrollera servern och lagringen där filen finns.",
     "logsUploaded": "Loggarna har laddats upp",
     "logsUploadFailed": "Det gick inte att ladda upp loggarna",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Logg-ID",
     "burnedSubtitlesUseMenu": "Undertexterna är inbrända i den här strömmen. Ändra dem via undertextmenyn.",
     "noVideoUrl": "Ingen video-URL är tillgänglig",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
+    "saveLogs": "",
     "uploadLogs": "Ladda upp loggar"
   },
   "startup": {

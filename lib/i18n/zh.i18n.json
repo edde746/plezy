@@ -839,6 +839,8 @@
     "serverBusyBody": "服务器持续拒绝传输此文件（HTTP 503）。服务器可能正在重启或正忙，也可能是文件所在的存储设备已离线。请稍后重试；如果问题持续出现，请联系服务器所有者检查服务器和文件存储设备。",
     "logsUploaded": "日志已上传",
     "logsUploadFailed": "上传日志失败",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "日志 ID",
     "burnedSubtitlesUseMenu": "字幕已烧录到此视频流中。请从字幕菜单中更改。",
     "noVideoUrl": "没有可用的视频 URL",
@@ -1242,6 +1244,7 @@
   "logs": {
     "clearLogs": "清除日志",
     "copyLogs": "复制日志",
+    "saveLogs": "",
     "uploadLogs": "上传日志"
   },
   "startup": {

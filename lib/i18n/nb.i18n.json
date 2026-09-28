@@ -843,6 +843,8 @@
     "serverBusyBody": "Serveren fortsatte å nekte å strømme denne filen (HTTP 503). Den kan være i ferd med å starte på nytt eller være opptatt, eller lagringsstedet til filen kan være frakoblet. Prøv igjen om litt – hvis det fortsetter å skje, kan du be eieren av serveren om å kontrollere serveren og lagringsstedet til filen.",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Logg-ID",
     "burnedSubtitlesUseMenu": "Undertekstene er brent inn i denne strømmen. Endre dem fra undertekstmenyen.",
     "noVideoUrl": "Ingen video-URL er tilgjengelig",
@@ -1247,6 +1249,7 @@
   "logs": {
     "clearLogs": "Tøm logger",
     "copyLogs": "Kopier logger",
+    "saveLogs": "",
     "uploadLogs": "Last opp logger"
   },
   "startup": {
