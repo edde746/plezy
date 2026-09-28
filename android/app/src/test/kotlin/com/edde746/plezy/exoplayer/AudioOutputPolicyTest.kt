@@ -1,5 +1,6 @@
 package com.edde746.plezy.exoplayer
 
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
 import androidx.media3.common.C
@@ -360,6 +361,117 @@ class AudioOutputPolicyTest {
     assertFalse(iecShapeDirectModeUsable(AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED))
   }
 
+  @Test
+  fun miBoxRouteWithASinkWithoutDtsDecodesEveryDtsTrackInMpv() {
+    assertEquals(
+      "ac3,eac3,truehd",
+      spdifCodecs(
+        allEncodings,
+        allShapes,
+        raw = setOf(C.ENCODING_AC3, C.ENCODING_E_AC3, C.ENCODING_DTS),
+        sinkDecodes = noDtsSink
+      )
+    )
+  }
+
+  @Test
+  fun aSinkWithoutDtsGetsNoDtsCodecOnARawOnlyRouteEither() {
+    assertEquals(
+      "ac3,eac3,truehd",
+      spdifCodecs(allEncodings, emptySet(), raw = allEncodings, sinkDecodes = noDtsSink)
+    )
+    assertEquals("", spdifCodecs(setOf(C.ENCODING_DTS), allShapes, raw = setOf(C.ENCODING_DTS), sinkDecodes = noDtsSink))
+  }
+
+  @Test
+  fun dtsHdCarrierIsRefusedWhenTheSinkAdvertisesNoDts() {
+    assertFalse(dtsHdCarrierUsable({ true }, { true }, sinkDecodesDts = { false }))
+    assertFalse(
+      dtsHdCarrierUsable(
+        { true },
+        { throw AssertionError("carrier probed for a sink without DTS") },
+        sinkDecodesDts = { false }
+      )
+    )
+    assertTrue(dtsHdCarrierUsable({ true }, { true }, sinkDecodesDts = { true }))
+  }
+
+  @Test
+  fun sinkWithoutADtsDescriptorDoesNotAdvertiseDts() {
+    val miBoxHdmiSink = intArrayOf(
+      AudioFormat.ENCODING_PCM_16BIT,
+      AudioFormat.ENCODING_AC3,
+      AudioFormat.ENCODING_E_AC3,
+      AudioFormat.ENCODING_IEC61937,
+      AudioFormat.ENCODING_E_AC3_JOC
+    )
+
+    assertFalse(sinkAdvertisesDts(listOf(miBoxHdmiSink)))
+    assertTrue(sinkAdvertisesDts(listOf(miBoxHdmiSink + AudioFormat.ENCODING_DTS)))
+    assertTrue(sinkAdvertisesDts(listOf(miBoxHdmiSink, intArrayOf(AudioFormat.ENCODING_AC3, AudioFormat.ENCODING_DTS_HD))))
+    val encodingDtsHdMa = 29
+    assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_AC3, encodingDtsHdMa))))
+  }
+
+  @Test
+  fun sinkWhoseCapabilitiesAreUnknownKeepsTheCurrentDtsBehaviour() {
+    assertTrue(sinkAdvertisesDts(emptyList()))
+    assertTrue(sinkAdvertisesDts(listOf(intArrayOf())))
+    assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_PCM_FLOAT))))
+    assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_IEC61937))))
+    assertTrue(sinkAdvertisesDts(listOf(dolbyOnlyHdmiEncodings, intArrayOf(AudioFormat.ENCODING_PCM_16BIT))))
+  }
+
+  @Test
+  fun anActiveOpticalOrUsbOutputIsNotJudgedByAnInactiveHdmiSink() {
+    for (activeType in listOf(AudioDeviceInfo.TYPE_LINE_DIGITAL, AudioDeviceInfo.TYPE_USB_DEVICE)) {
+      val active = AudioOutputRef(activeType, "active")
+      val encodings = movieSinkEncodings(listOf(inactiveHdmiWithoutDts, active), activeRoute = listOf(active))
+
+      assertEquals(emptyList<IntArray>(), encodings)
+      assertTrue(sinkAdvertisesDts(encodings))
+    }
+  }
+
+  @Test
+  fun theActiveHdmiOutputIsTheSinkThatIsJudged() {
+    val activeHdmiWithDts = AudioOutputRef(
+      AudioDeviceInfo.TYPE_HDMI_ARC,
+      "arc",
+      intArrayOf(AudioFormat.ENCODING_AC3, AudioFormat.ENCODING_DTS)
+    )
+    val outputs = listOf(inactiveHdmiWithoutDts, activeHdmiWithDts)
+
+    val encodings = movieSinkEncodings(outputs, activeRoute = listOf(AudioOutputRef(AudioDeviceInfo.TYPE_HDMI_ARC, "arc")))
+
+    assertEquals(listOf(activeHdmiWithDts.encodings.toList()), encodings.map { it.toList() })
+    assertTrue(sinkAdvertisesDts(encodings))
+  }
+
+  @Test
+  fun everyHdmiOutputCountsWhenTheActiveRouteIsUnknownOrUnmatched() {
+    val outputs = listOf(inactiveHdmiWithoutDts)
+    val expected = listOf(dolbyOnlyHdmiEncodings.toList())
+
+    assertEquals(expected, movieSinkEncodings(outputs, activeRoute = null).map { it.toList() })
+    assertEquals(expected, movieSinkEncodings(outputs, activeRoute = emptyList()).map { it.toList() })
+    assertEquals(
+      expected,
+      movieSinkEncodings(outputs, activeRoute = listOf(AudioOutputRef(AudioDeviceInfo.TYPE_HDMI, "other"))).map { it.toList() }
+    )
+  }
+
+  private val dolbyOnlyHdmiEncodings = intArrayOf(
+    AudioFormat.ENCODING_PCM_16BIT,
+    AudioFormat.ENCODING_AC3,
+    AudioFormat.ENCODING_E_AC3,
+    AudioFormat.ENCODING_IEC61937
+  )
+
+  private val inactiveHdmiWithoutDts = AudioOutputRef(AudioDeviceInfo.TYPE_HDMI, "hdmi", dolbyOnlyHdmiEncodings)
+
+  private val noDtsSink: (Int) -> Boolean = { !isDtsEncoding(it) }
+
   /** Every encoding the spdif table can ask for, i.e. a receiver that decodes all of them. */
   private val allEncodings = setOf(
     C.ENCODING_AC3,
@@ -371,5 +483,10 @@ class AudioOutputPolicyTest {
 
   private val allShapes = MpvIecShape.values().toSet()
 
-  private fun spdifCodecs(encodings: Set<Int>, shapes: Set<MpvIecShape>, raw: Set<Int> = emptySet()): String = mpvSpdifCodecs({ it in encodings }, { it in shapes }, { it in raw })
+  private fun spdifCodecs(
+    encodings: Set<Int>,
+    shapes: Set<MpvIecShape>,
+    raw: Set<Int> = emptySet(),
+    sinkDecodes: (Int) -> Boolean = { true }
+  ): String = mpvSpdifCodecs({ it in encodings }, { it in shapes }, { it in raw }, sinkDecodes)
 }
