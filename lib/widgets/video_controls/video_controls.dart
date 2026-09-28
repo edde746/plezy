@@ -74,10 +74,12 @@ import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/double_tap_feedback.dart';
 import 'helpers/mobile_edge_adjustment_tracker.dart';
+import 'helpers/mobile_seek_scrub_tracker.dart';
 import 'helpers/render_geometry.dart';
 import 'helpers/two_finger_tap_tracker.dart';
 import 'widgets/linux_keep_alive.dart';
 import 'widgets/mobile_edge_adjustment_indicator.dart';
+import 'widgets/mobile_seek_scrub_indicator.dart';
 import 'widgets/mobile_skip_zones.dart';
 import 'widgets/skip_marker_button.dart';
 import 'widgets/track_chapter_controls.dart';
@@ -545,6 +547,8 @@ enum PlaybackSourceChangeOutcome { applied, unchanged, busy, unavailable, supers
 
 typedef _EdgeAdjustmentIndicatorState = ({bool visible, MobileEdgeAdjustmentSide? side, double value});
 
+typedef _SeekScrubIndicatorState = ({bool visible, Duration target, Duration delta, bool forward});
+
 class PlexVideoControls extends StatefulWidget {
   final Player player;
   final VideoVolumeController volumeController;
@@ -813,6 +817,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Timer? _singleTapTimer;
   final TwoFingerTapTracker _twoFingerTapTracker = TwoFingerTapTracker();
   final MobileEdgeAdjustmentTracker _edgeAdjustmentTracker = MobileEdgeAdjustmentTracker();
+  final MobileSeekScrubTracker _seekScrubTracker = MobileSeekScrubTracker();
   final DeviceAdjustmentService _deviceAdjustmentService = DeviceAdjustmentService.instance;
   DateTime? _suppressTouchTapUntil;
   final ValueNotifier<_EdgeAdjustmentIndicatorState> _edgeAdjustmentIndicator = ValueNotifier((
@@ -830,6 +835,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   MobileEdgeAdjustmentSide? _edgeAdjustmentBaselineSide;
   int _edgeAdjustmentBaselineGeneration = 0;
   double? _lastKnownBrightness;
+
+  /// Horizontal swipe-to-seek: the readout previews the landing point while the
+  /// finger drags, and the seek itself is committed once on release.
+  final ValueNotifier<_SeekScrubIndicatorState> _seekScrubIndicator = ValueNotifier((
+    visible: false,
+    target: Duration.zero,
+    delta: Duration.zero,
+    forward: true,
+  ));
+  Duration? _seekScrubStartPosition;
+  Timer? _seekScrubIndicatorHideTimer;
   double? _lastKnownMediaVolume;
   DateTime? _lastEdgeAdjustmentWriteAt;
   double? _lastEdgeAdjustmentWriteValue;
@@ -1100,6 +1116,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _hiddenSeek.dispose();
     _edgeAdjustmentTracker.cancel();
     _edgeAdjustmentIndicator.dispose();
+    _seekScrubTracker.cancel();
+    _seekScrubIndicatorHideTimer?.cancel();
+    _seekScrubIndicator.dispose();
     _pipService.isPipActive.removeListener(_onEdgeAdjustmentPipChanged);
     _deviceAdjustmentService.onResume = null;
     _deviceAdjustmentService.setRestoreSuppressed(false);
@@ -1439,6 +1458,32 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                   key: ValueKey(side),
                                   side: side,
                                   value: indicator.value,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  // Horizontal swipe-to-seek readout. Sits with the other
+                  // transient overlays so it shows without raising the chrome.
+                  if (isMobile)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: ValueListenableBuilder<_SeekScrubIndicatorState>(
+                          valueListenable: _seekScrubIndicator,
+                          builder: (context, indicator, _) {
+                            if (!indicator.visible && indicator.target == Duration.zero) {
+                              return const SizedBox.shrink();
+                            }
+                            return AnimatedOpacity(
+                              opacity: indicator.visible ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 160),
+                              child: RepaintBoundary(
+                                child: MobileSeekScrubIndicator(
+                                  target: indicator.target,
+                                  delta: indicator.delta,
+                                  forward: indicator.forward,
                                 ),
                               ),
                             );

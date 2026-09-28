@@ -415,6 +415,12 @@ class PlaybackSettingsScreen extends StatelessWidget {
         title: t.settings.gesturePinchToZoom,
         subtitle: t.settings.gesturePinchToZoomDescription,
       ),
+      SettingSwitchTile(
+        pref: SettingsService.gestureSeekSwipe,
+        icon: Symbols.swipe_rounded,
+        title: t.settings.gestureSeekSwipe,
+        subtitle: t.settings.gestureSeekSwipeDescription,
+      ),
     ],
   );
 

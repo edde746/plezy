@@ -733,6 +733,13 @@ class SettingsService extends BaseSharedPreferencesService {
   static const gestureVolumeSwipe = BoolPref('gesture_volume_swipe', defaultValue: true);
   static const gesturePinchToZoom = BoolPref('gesture_pinch_to_zoom', defaultValue: true);
 
+  /// Horizontal swipe anywhere on the player surface to seek.
+  ///
+  /// Off by default: the vertical swipes correct the device, while this one
+  /// moves the playhead, and an accidental horizontal drag while reading
+  /// subtitles should not skip the video.
+  static const gestureSeekSwipe = BoolPref('gesture_seek_swipe');
+
   /// Remember the brightness level set by the swipe gesture (#2178). When on,
   /// playback starts at [rememberedBrightnessLevel] instead of the system
   /// level; the player exit still restores the pre-playback brightness.
@@ -1407,6 +1414,7 @@ class SettingsService extends BaseSharedPreferencesService {
     gestureBrightnessSwipe,
     gestureVolumeSwipe,
     gesturePinchToZoom,
+    gestureSeekSwipe,
     rememberBrightnessLevel,
     directPlayCoveredQuality,
     deinterlace,
