@@ -84,15 +84,25 @@ import '../watch_together/watch_together.dart';
 // navigation/main_screen_scope.dart (re-exported above) so widgets like the
 // browse rail can import the scope without an import cycle through this file.
 
+/// Desktop embedders report every hardware key as a keyboard key, so a remote
+/// (HDMI-CEC, IR receiver) Escape cannot be told apart from a keyboard Escape.
+/// TV mode is the signal that the machine is remote-driven: there Escape stays
+/// Back and keeps the press-back-again exit (#2490).
 @visibleForTesting
 bool shouldHandleDesktopRootEscape({
   required bool isDesktop,
+  required bool isTV,
   required bool isPhysicalKeyboardEvent,
   required LogicalKeyboardKey logicalKey,
   required bool isCurrentRoute,
   required bool isHomeTab,
 }) {
-  return isDesktop && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
+  return isDesktop &&
+      !isTV &&
+      isPhysicalKeyboardEvent &&
+      logicalKey == LogicalKeyboardKey.escape &&
+      isCurrentRoute &&
+      isHomeTab;
 }
 
 /// Whether a lifecycle resume should raise the "ask for a profile on open"
@@ -374,7 +384,7 @@ class _MainScreenState extends State<MainScreen>
     with RouteAware, WindowListener, WidgetsBindingObserver, MountedSetStateMixin {
   NavigationTabId _currentTab = NavigationTabId.discover;
   String? _selectedLibraryGlobalKey;
-  Future<void>? _windowCloseFuture;
+  Future<void>? _desktopExitFuture;
 
   /// Whether the app is in offline mode (no server connection)
   bool _isOffline = false;
@@ -1126,17 +1136,22 @@ class _MainScreenState extends State<MainScreen>
   }
 
   @override
-  void onWindowClose() {
+  void onWindowClose() => _requestDesktopExit();
+
+  /// Quits through the root exit observer so exit teardown runs. Shared by the
+  /// window close button and the root press-back-again exit; overlapping
+  /// requests join the one in flight.
+  void _requestDesktopExit() {
     unawaited(
-      _windowCloseFuture ??= _exitOnWindowClose().whenComplete(() {
-        _windowCloseFuture = null;
+      _desktopExitFuture ??= _exitDesktopGracefully().whenComplete(() {
+        _desktopExitFuture = null;
       }),
     );
   }
 
   /// The root exit observer owns the shutdown deadline. Do not time out its
   /// dispatch here or interpret a canceled close as permission to force exit.
-  Future<void> _exitOnWindowClose() async {
+  Future<void> _exitDesktopGracefully() async {
     try {
       await AppExitService.requestGracefulExit();
     } catch (e, st) {
@@ -1543,7 +1558,13 @@ class _MainScreenState extends State<MainScreen>
     final lastBackPressAt = _lastBackPressAt;
     if (lastBackPressAt != null && now.difference(lastBackPressAt) < _backExitWindow) {
       _lastBackPressAt = null;
-      unawaited(AppExitService.requestExit());
+      // AppExitService.requestExit is a required exit on desktop, which skips
+      // the root exit observer's teardown; quit the way the close button does.
+      if (PlatformDetector.isDesktopOS()) {
+        _requestDesktopExit();
+      } else {
+        unawaited(AppExitService.requestExit());
+      }
       return KeyEventResult.handled;
     }
 
@@ -1618,14 +1639,16 @@ class _MainScreenState extends State<MainScreen>
 
   /// Desktop physical-keyboard Escape at root Home is reserved for leaving
   /// window fullscreen; it never arms the press-back-again quit, so an Escape
-  /// aimed at fullscreen can't close the app (#1748). Remotes, gamepad B, and
-  /// system back keep the double-press exit path. On macOS this also keeps
-  /// player Escape away from native fullscreen, which is window state shared
-  /// by every route.
+  /// aimed at fullscreen can't close the app (#1748). In TV mode Escape is the
+  /// remote's Back and keeps the double-press exit path, as do gamepad B,
+  /// companion-remote back, and system back. On macOS this also keeps player
+  /// Escape away from native fullscreen, which is window state shared by
+  /// every route.
   KeyEventResult _handleDesktopRootEscape(KeyEvent event) {
     final tabs = _getVisibleTabs(_isOffline);
     final shouldHandle = shouldHandleDesktopRootEscape(
       isDesktop: PlatformDetector.isDesktopOS(),
+      isTV: PlatformDetector.isTV(),
       isPhysicalKeyboardEvent: event.isPhysicalKeyboardEvent,
       logicalKey: event.logicalKey,
       isCurrentRoute: ModalRoute.of(context)?.isCurrent == true,
