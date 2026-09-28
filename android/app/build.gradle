@@ -39,6 +39,7 @@ android {
         applicationId 'com.jialim.plezygkui'
         minSdk 19
         targetSdk 34
+        multiDexEnabled true
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
 
@@ -74,6 +75,12 @@ android {
             useLegacyPackaging true
         }
     }
+
+    lint {
+        // Plezy never instantiates ExoPlayer's offline DownloadService.
+        // Do not request Android 13 notification access for unreachable library code.
+        disable 'NotificationPermission'
+    }
 }
 
 flutter {
@@ -81,4 +88,12 @@ flutter {
 }
 
 dependencies {
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-hls:2.19.1'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.19.1'
+    implementation('com.google.android.exoplayer:extension-okhttp:2.19.1') {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
 }

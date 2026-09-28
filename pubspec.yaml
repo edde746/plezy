@@ -1,7 +1,7 @@
 name: plezy
 description: "Plezy GKUI compatibility fork"
 publish_to: "none"
-version: 0.1.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ">=3.3.4 <3.4.0"
@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cached_network_image: 3.4.0
+  dio: 5.9.0
+  qr_flutter: 4.1.0
+  shared_preferences: 2.2.3
+  uuid: 4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -18,6 +23,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/plezy.png
+    - assets/ca/legacy-roots.pem
   fonts:
     - family: PlezySans
       fonts:
