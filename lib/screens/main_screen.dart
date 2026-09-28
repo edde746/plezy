@@ -594,11 +594,12 @@ class _MainScreenState extends State<MainScreen>
       // `_handleOfflineStatusChanged` starts it if we come online later.
       if (!_isOffline) unawaited(_plexHomeService!.start());
       final manager = context.read<MultiServerProvider>().serverManager;
-      // Read the binder so the Provider's `lazy: false` create has fired
-      // for sure; start only in online mode so explicit startup offline does
-      // not immediately kick off the same connection attempts it skipped.
+      // Read the binder so the Provider's `lazy: false` create has fired for
+      // sure. `start()` is idempotent; SetupScreen normally started it already,
+      // and the offline shell needs it running too so a server that connects
+      // later brings the app online.
       final binder = context.read<ActiveProfileBinder>();
-      if (!_isOffline) binder.start();
+      binder.start();
       _runStartupOnFirstOnlineServer(manager);
 
       if (!_isOffline) {

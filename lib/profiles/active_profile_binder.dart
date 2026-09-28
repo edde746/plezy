@@ -127,6 +127,11 @@ class ActiveProfileBinder {
   /// still uses the cache unless the user enabled profile selection on open.
   bool _hasBoundOnce = false;
 
+  /// False when [start] asked for a passive initial bind. Consumed by the
+  /// first pass that reaches the PIN decision; later rebinds (Reconnect, the
+  /// offline shell coming online) follow the normal policy.
+  bool _initialBindMayPromptPin = true;
+
   /// Plex Home profile ids whose PIN was just verified by the activation
   /// UI via a successful `/home/users/{uuid}/switch` round-trip. Consumed
   /// once by [_bindPlexHome] to permit the freshly cached user-token for
@@ -159,9 +164,14 @@ class ActiveProfileBinder {
     return _userInitiatedActivations.remove(profileId);
   }
 
-  void start() {
+  /// [allowInitialPinPrompt] false keeps the session's initial bind from
+  /// opening a Plex Home PIN dialog. SetupScreen passes it when the OS reports
+  /// no network: the PIN can only be verified by plex.tv, and the splash's
+  /// bounded wait would navigate out from under the open dialog.
+  void start({bool allowInitialPinPrompt = true}) {
     if (_started) return;
     _started = true;
+    _initialBindMayPromptPin = allowInitialPinPrompt;
     // Flip `isBinding` before anything else: callers navigate right after
     // start(), and screens (DiscoverScreen's no-servers gate) read the flag
     // synchronously during their first build. Deferring the mark to the
@@ -171,8 +181,8 @@ class ActiveProfileBinder {
     // notification — the microtask stays the single initial-rebind entry.
     activeProfile.markBindingStarted();
     activeProfile.addListener(_onActiveProfileChanged);
-    // Callers invoke start() from async contexts after the offline decision
-    // has been made (SetupScreen, MainScreen post-frame, AuthScreen). The
+    // Callers invoke start() from async contexts once the active profile is
+    // hydrated (SetupScreen, MainScreen post-frame, AuthScreen). The
     // microtask keeps the initial rebind — and any PIN prompt it pops — out
     // of the caller's current frame.
     scheduleMicrotask(() {
@@ -316,7 +326,8 @@ class ActiveProfileBinder {
       // session's initial bind (cold-start resume). Passive rebinds — an
       // hourly Plex Home refresh, an unrelated table write — must never pop
       // a modal PIN dialog over whatever the user is doing.
-      final allowPinPrompt = userInitiated || !_hasBoundOnce;
+      final allowPinPrompt = userInitiated || (!_hasBoundOnce && _initialBindMayPromptPin);
+      _initialBindMayPromptPin = true;
 
       final expectedServerIds = _expectedServerIdsForProfile(
         profile,

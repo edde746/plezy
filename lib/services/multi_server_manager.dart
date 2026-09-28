@@ -853,9 +853,6 @@ class MultiServerManager {
         'Added ${resolvedConnection.dialect.productName} server: '
         '${resolvedConnection.serverName}${healthy ? '' : ' (unhealthy)'}',
       );
-      if (_connectivitySubscription == null && healthy) {
-        _startNetworkMonitoring();
-      }
       return healthy;
     } catch (e, stackTrace) {
       appLogger.e(
@@ -923,9 +920,6 @@ class MultiServerManager {
       'Reusing existing Jellyfin client for ${client.connection.serverName}'
       '${healthy ? '' : ' (unhealthy)'} (connection unchanged)',
     );
-    if (_connectivitySubscription == null && healthy) {
-      _startNetworkMonitoring();
-    }
     return healthy;
   }
 
@@ -1003,6 +997,14 @@ class MultiServerManager {
         appLogger.d('Server $serverId status changed to: $isOnline');
       }
     }
+
+    // The offline verdict rests on connectivity changes re-probing every
+    // server, so monitoring must run whenever a server is online — including
+    // one that came online through a reconnect or health probe after a
+    // session that started with everything unreachable (#2505).
+    if (isOnline && _connectivitySubscription == null && _clients.containsKey(serverId)) {
+      _startNetworkMonitoring();
+    }
   }
 
   /// Test connection health for all servers. The probe is backend-defined:
@@ -1066,11 +1068,11 @@ class MultiServerManager {
         (results) {
           final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
 
-          if (status == ConnectivityResult.none) {
-            appLogger.w('Connectivity lost, pausing optimization until network returns');
-            return;
-          }
-
+          // `none` re-probes like any other change instead of pausing: it means
+          // "no internet-capable adapter", not "no route to the server". The
+          // health check drops servers that really became unreachable (the
+          // offline verdict rests on exactly that) and keeps loopback or
+          // LAN-without-WAN servers online (#2505).
           // Debounce rapid connectivity events (e.g. WiFi flapping) into a single trigger
           _connectivityDebounce?.cancel();
           _connectivityDebounce = Timer(_connectivityDebounceDuration, () {

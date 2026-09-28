@@ -10,14 +10,14 @@ import '../utils/connectivity_link_type.dart';
 
 enum OfflineModeReason {
   online,
-  noNetworkConnection,
   waitingForServerStatus,
   noKnownVisibleServers,
   onlyAuthErrorServers,
   noServerConnection,
 }
 
-/// Tracks offline mode status based on network connectivity and server reachability.
+/// Tracks offline mode status from media-server reachability, and owns the
+/// app's single OS connectivity subscription for consumers that need it.
 class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMixin implements OfflineModeSource {
   final MultiServerManager _serverManager;
   MultiServerProvider? _multiServerProvider;
@@ -59,14 +59,19 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _multiServerProvider?.addListener(_handleMultiServerProviderChanged);
   }
 
-  /// Whether the app is currently in offline mode
-  /// Offline = no network OR (we know servers are unreachable)
+  /// Whether the app is currently in offline mode: no visible server is
+  /// reachable.
+  ///
+  /// OS connectivity is deliberately not part of the verdict. `none` from
+  /// connectivity_plus means "no internet-capable adapter", not "no route to
+  /// the server": a server on loopback, or on a LAN whose WAN is down (Windows
+  /// reports `none` whenever NCSI finds no internet), is still reachable
+  /// (#2505). [MultiServerManager] re-probes servers on every connectivity
+  /// change, so unreachable servers still drop the app offline promptly.
   @override
-  bool get isOffline =>
-      offlineReason == OfflineModeReason.noNetworkConnection || offlineReason == OfflineModeReason.noServerConnection;
+  bool get isOffline => offlineReason == OfflineModeReason.noServerConnection;
 
   OfflineModeReason get offlineReason {
-    if (!_hasNetworkConnection) return OfflineModeReason.noNetworkConnection;
     if (!_hasReceivedServerStatus) return OfflineModeReason.waitingForServerStatus;
     if (!_hasKnownVisibleServers) return OfflineModeReason.noKnownVisibleServers;
     if (_hasOnlyAuthErrorServers) return OfflineModeReason.onlyAuthErrorServers;
@@ -138,13 +143,10 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     safeNotifyListeners();
   }
 
-  /// Apply a connectivity snapshot and notify when anything observable moved.
-  ///
-  /// All three observable answers count, not just [isOffline]: regaining
-  /// cellular while every media server stays unreachable leaves [isOffline] true
-  /// through `noServerConnection` and [hasWifiOrEthernet] false, yet
-  /// [hasNetworkConnection] has flipped — and consumers that only need the
-  /// internet (tracker history writes) can act on exactly that.
+  /// Apply a connectivity snapshot and notify when either connectivity answer
+  /// moved. It never moves [isOffline] — server reachability owns that — but
+  /// consumers that only need the internet (tracker history writes) or the
+  /// link type (the WiFi-reconnect sync) act on these flags directly.
   @visibleForTesting
   void applyConnectivityResults(List<ConnectivityResult> results) {
     final hadNetwork = _hasNetworkConnection;
@@ -152,13 +154,9 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _hasNetworkConnection = !results.contains(ConnectivityResult.none);
 
     final wifiNow = hasWifiOrEthernet;
-    final offline = isOffline;
-    final changed =
-        _hasNetworkConnection != hadNetwork || wifiNow != _lastWifiOrEthernetState || offline != _lastOfflineState;
-    if (!changed) return;
+    if (_hasNetworkConnection == hadNetwork && wifiNow == _lastWifiOrEthernetState) return;
 
     _lastWifiOrEthernetState = wifiNow;
-    _lastOfflineState = offline;
     safeNotifyListeners();
   }
 

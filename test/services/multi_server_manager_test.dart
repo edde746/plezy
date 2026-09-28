@@ -868,7 +868,7 @@ void main() {
     });
 
     test(
-      'connectivity monitoring is lazy, singular, ignores none, and coalesces connected events for two seconds',
+      'connectivity monitoring is lazy, singular, and coalesces every change, none included, for two seconds',
       () async {
         await _prepareFreshPlexManagerTest();
         final endpoint = _plexEndpoint('monitor');
@@ -900,19 +900,17 @@ void main() {
         expect(factory.calls, hasLength(1));
 
         fakeAsync((async) {
+          // Losing the network re-probes like any other change: it is how an
+          // unreachable server gets marked offline (#2505). A burst of changes
+          // still coalesces into one pass.
           connectivity.add([ConnectivityResult.none]);
-          async.flushMicrotasks();
-          async.elapse(const Duration(seconds: 3));
-          async.flushMicrotasks();
-          expect(server.discoveryCalls, 1);
-          expect(factory.requests['monitor-server']!.map((request) => request.url.path), ['/', '/media/providers']);
-
           connectivity.add([ConnectivityResult.wifi]);
           connectivity.add([ConnectivityResult.mobile]);
           async.flushMicrotasks();
           async.elapse(const Duration(milliseconds: 1999));
           async.flushMicrotasks();
           expect(server.discoveryCalls, 1);
+          expect(factory.requests['monitor-server']!.map((request) => request.url.path), ['/', '/media/providers']);
           async.elapse(const Duration(milliseconds: 1));
           async.flushMicrotasks();
 
@@ -922,6 +920,19 @@ void main() {
             '/media/providers',
             '/',
           ]);
+
+          connectivity.add([ConnectivityResult.none]);
+          async.flushMicrotasks();
+          async.elapse(const Duration(seconds: 2));
+          async.flushMicrotasks();
+
+          expect(server.discoveryCalls, 3);
+          expect(factory.requests['monitor-server']!.map((request) => request.url.path), [
+            '/',
+            '/media/providers',
+            '/',
+            '/',
+          ]);
           expect(connectivity.cancelCount, 0);
         });
 
@@ -929,6 +940,79 @@ void main() {
         expect(connectivity.cancelCount, 1);
       },
     );
+
+    test('losing the network keeps a reachable server online and drops an unreachable one (#2505)', () async {
+      final previousHttpOverrides = HttpOverrides.current;
+      HttpOverrides.global = null;
+      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
+      final loopback = await _LoopbackJellyfinServer.start(machineId: 'jf-loopback');
+      final remote = await _LoopbackJellyfinServer.start(machineId: 'jf-remote');
+      addTearDown(loopback.close);
+      addTearDown(remote.close);
+      final connectivity = _DirectConnectivityStream();
+      final manager = MultiServerManager(
+        connectivityChanges: () => connectivity,
+        connectivityDebounceDuration: Duration.zero,
+      );
+      addTearDown(manager.dispose);
+
+      expect(
+        await manager.addJellyfinConnection(
+          testJellyfinConnection(machineId: 'jf-loopback', baseUrl: loopback.baseUrl),
+        ),
+        isTrue,
+      );
+      expect(
+        await manager.addJellyfinConnection(testJellyfinConnection(machineId: 'jf-remote', baseUrl: remote.baseUrl)),
+        isTrue,
+      );
+      expect(connectivity.listenCount, 1);
+
+      // The adapter goes down: the remote server loses its route, the
+      // loopback one does not, and connectivity_plus reports `none`.
+      await remote.close();
+      final remoteDropped = manager.statusStream.firstWhere((status) => status['jf-remote'] == false);
+      connectivity.add(const [ConnectivityResult.none]);
+      await remoteDropped.timeout(const Duration(seconds: 5));
+
+      expect(manager.isServerOnline(ServerId('jf-remote')), isFalse);
+      expect(manager.isServerOnline(ServerId('jf-loopback')), isTrue);
+    });
+
+    test('a server recovered by a health probe is re-probed when the network drops (#2505)', () async {
+      var reachable = true;
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((_) async {
+          if (!reachable) throw const SocketException('Connection refused');
+          return http.Response(
+            '{"Policy":{"IsAdministrator":false}}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+      final connectivity = _DirectConnectivityStream();
+      final manager = MultiServerManager(
+        connectivityChanges: () => connectivity,
+        connectivityDebounceDuration: Duration.zero,
+      );
+      addTearDown(manager.dispose);
+
+      // The session started with the server unreachable, so no bind brought
+      // it online; the Reconnect / resume health probe does.
+      manager.debugRegisterJellyfinClientForTesting(client, online: false);
+      await manager.checkServerHealth();
+      expect(manager.isServerOnline(ServerId('jf-machine')), isTrue);
+
+      reachable = false;
+      final dropped = manager.statusStream.firstWhere((status) => status['jf-machine'] == false);
+      connectivity.add(const [ConnectivityResult.none]);
+      await dropped.timeout(const Duration(seconds: 5));
+
+      expect(manager.isServerOnline(ServerId('jf-machine')), isFalse);
+    });
 
     test('a Plex client that connects after the timeout is closed instead of leaked', () async {
       await _prepareFreshPlexManagerTest();

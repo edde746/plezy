@@ -207,12 +207,19 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
     }
 
     _offlineModeSource = source;
+    // The source also notifies for connectivity-only changes (a lost network
+    // while a loopback/LAN server stays reachable, a WiFi/cellular swap), so
+    // sync on the offline→online edge only. A pass fired at network loss
+    // would burn a retry attempt on every queued action for a server that is
+    // about to be marked unreachable.
+    var wasOffline = source.isOffline;
     _offlineModeListener = () {
-      if (!source.isOffline) {
-        // We just came online - trigger bidirectional sync
-        appLogger.i('Connectivity restored - starting bidirectional watch sync');
-        _performBidirectionalSync();
-      }
+      final offline = source.isOffline;
+      final cameOnline = wasOffline && !offline;
+      wasOffline = offline;
+      if (!cameOnline) return;
+      appLogger.i('Connectivity restored - starting bidirectional watch sync');
+      _performBidirectionalSync();
     };
 
     source.addListener(_offlineModeListener!);

@@ -46,6 +46,10 @@ class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource
     notifyListeners();
   }
 
+  /// A connectivity-only change: the real provider notifies without moving
+  /// [isOffline] when the network drops while a server stays reachable.
+  void notifyConnectivityChanged() => notifyListeners();
+
   // ChangeNotifier.hasListeners is `@protected` — re-export for tests.
   @override
   // ignore: unnecessary_overrides
@@ -1347,6 +1351,28 @@ void main() {
       // First's listener was removed; second now has one.
       expect(first.hasListeners, isFalse);
       expect(second.hasListeners, isTrue);
+    });
+
+    test('syncs when the source comes online, not on connectivity-only notifications', () async {
+      final (svc: svc, db: _, mgr: mgr) = _makeService();
+      svc.setActiveProfileId('profile-a');
+      final client = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-a');
+      mgr.debugRegisterClientForTesting(client);
+      final source = _FakeOfflineModeSource(initial: true);
+      svc.startConnectivityMonitoring(source);
+
+      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
+      source.setOffline(false);
+      await pumpEventQueue();
+      expect(client.watched, ['item-1']);
+
+      // The network drops while the server stays reachable: the source
+      // notifies but is still online, so no pass (and no retry attempt) runs.
+      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-2');
+      source.notifyConnectivityChanged();
+      await pumpEventQueue();
+      expect(client.watched, ['item-1']);
+      expect(await svc.getPendingSyncCount(), 1);
     });
 
     test('dispose() before startConnectivityMonitoring is safe', () async {

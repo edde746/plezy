@@ -223,6 +223,37 @@ void main() {
         manager.dispose();
       });
 
+      test('a reachable server keeps the app online while the OS reports no network (#2505)', () async {
+        final manager = MultiServerManager();
+        final multi = testMultiServerProvider(manager);
+        final p = OfflineModeProvider(manager, multiServerProvider: multi);
+        await p.initialize();
+        multi.setExpectedVisibleServerIds({'loopback-server'});
+        multi.setVisibleServerIds({'loopback-server'});
+        manager.updateServerStatus(ServerId('loopback-server'), true);
+        await Future<void>.delayed(Duration.zero);
+        expect(p.isOffline, isFalse);
+
+        var notifications = 0;
+        p.addListener(() => notifications++);
+
+        // A server on 127.0.0.1 (or a LAN without internet on Windows) stays
+        // reachable when connectivity_plus reports `none`.
+        p.applyConnectivityResults(const [ConnectivityResult.none]);
+        expect(p.hasNetworkConnection, isFalse);
+        expect(p.isOffline, isFalse);
+        expect(notifications, 1, reason: 'internet-only consumers still hear the network loss');
+
+        // Only the server actually becoming unreachable takes the app offline.
+        manager.updateServerStatus(ServerId('loopback-server'), false);
+        await Future<void>.delayed(Duration.zero);
+        expect(p.isOffline, isTrue);
+
+        p.dispose();
+        multi.dispose();
+        manager.dispose();
+      });
+
       test('an unchanged connectivity snapshot notifies nobody', () async {
         final manager = MultiServerManager();
         final p = OfflineModeProvider(manager);

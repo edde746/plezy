@@ -1244,6 +1244,66 @@ void main() {
       await binder.rebindActive();
       expect(pinPrompts, 1);
     });
+
+    test('a no-network start keeps the initial bind PIN-free; a later explicit rebind may prompt', () async {
+      binder.dispose();
+      multiServerProvider.dispose();
+
+      var pinPrompts = 0;
+      manager = _CapturingMultiServerManager();
+      multiServerProvider = testMultiServerProvider(manager);
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async {
+          pinPrompts++;
+          return null;
+        },
+        shouldDeferInitialBind: (_) async => false,
+        plexAuth: PlexAuthService.forTesting(
+          http: MediaServerHttpClient(client: MockClient((_) async => http.Response('{}', 500))),
+        ),
+      );
+
+      final account = PlexAccountConnection(
+        id: 'plex.account',
+        accountToken: 'account-token',
+        clientIdentifier: 'client-id',
+        accountLabel: 'Owner',
+        servers: [_server(accessToken: 'account-server-token')],
+        createdAt: DateTime(2026, 1, 1),
+      );
+      await connections.upsert(account);
+      final homeUser = PlexHomeUser(
+        id: 1,
+        uuid: 'protected-uuid',
+        title: 'Protected',
+        thumb: '',
+        hasPassword: true,
+        restricted: false,
+        updatedAt: null,
+        admin: false,
+        guest: false,
+        protected: true,
+      );
+      fetchedHomeUsers = [homeUser];
+      await storage.savePlexHomeUsersCache(account.id, [homeUser.toJson()]);
+
+      // Cold start on a protected profile with no cached user-token: the
+      // initial bind would normally mint one via a PIN-gated /switch.
+      await activeProfile.activate(Profile.virtualPlexHome(connectionId: account.id, homeUser: homeUser));
+      binder.start(allowInitialPinPrompt: false);
+      await pumpUntil(() async => !activeProfile.isBinding);
+      expect(pinPrompts, 0);
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+
+      // Reconnect from the offline shell follows the normal cold-start policy.
+      await binder.rebindActive();
+      expect(pinPrompts, 1);
+    });
   });
 }
 
