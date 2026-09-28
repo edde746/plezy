@@ -174,8 +174,8 @@ internal fun mpvSpdifCodecs(
  *   transport; TrueHD and DTS-HD MA take the 192kHz/7.1 carrier ([supportsIecCarrier]) or, without
  *   it, the raw track the AO opens instead: 192kHz/7.1 `ENCODING_DOLBY_TRUEHD`, 48kHz/7.1
  *   `ENCODING_DTS_HD`.
- *   Advertising the raw encoding only says the receiver decodes it, not that the HAL takes the
- *   track: #1991's Shield strands playback on every mpv IEC attempt while bitstreaming AC3 raw.
+ *   A route that takes one transport need not take the other: #1991's Shield strands playback
+ *   on every mpv IEC attempt while bitstreaming AC3 raw.
  *   The probes are independent, so none of them may veto the whole list: a route that takes the
  *   192kHz carrier but no raw track still bitstreams TrueHD and DTS-HD MA.
  * - The platform must accept the codec's raw encoding on the current [AudioCapabilities].
@@ -423,38 +423,65 @@ private fun isDtsSinkEncoding(encoding: Int): Boolean = when (encoding) {
  *
  * A sink counts as described only when it lists a compressed codec. PCM is not one, and
  * neither is `ENCODING_IEC61937`, which is a transport. #1458's Dynalink (Amlogic, Android TV
- * 14) reports `pcm16|iec61937` alone for a sink that does decode E-AC3. An undescribed sink
- * keeps the route probes' verdict (returns true), so a HAL that reports no codecs never loses
- * DTS bitstreaming.
+ * 14) reports `pcm16|iec61937` alone for a sink that does decode E-AC3. If no sink is given,
+ * or any of them is undescribed, the route probes keep the verdict (returns true): the
+ * undescribed one may be the sink in use, and a HAL that reports no codecs never loses DTS
+ * bitstreaming.
  *
- * A described sink without a DTS entry does not decode DTS. On a Mi Box S (Android 14) in front
+ * Otherwise a sink without a DTS entry does not decode DTS. On a Mi Box S (Android 14) in front
  * of a Samsung QE55S95F with an HW-Q930F, the output lists
  * `pcm16|e-ac3-joc|ac3|e-ac3|iec61937`, the HAL logs `get_sink_dts_capability: PCM_16_BIT`, and
  * the DTS-HD carrier plays silent although the platform advertises `ENCODING_DTS_HD`.
  */
 internal fun sinkAdvertisesDts(hdmiSinkEncodings: List<IntArray>): Boolean {
-  val describedSinks = hdmiSinkEncodings.filter { encodings ->
-    encodings.any { !isPcmEncoding(it) && it != AudioFormat.ENCODING_IEC61937 }
-  }
-  if (describedSinks.isEmpty()) return true
-  return describedSinks.any { encodings -> encodings.any(::isDtsSinkEncoding) }
+  val undescribed = { encodings: IntArray -> encodings.none { !isPcmEncoding(it) && it != AudioFormat.ENCODING_IEC61937 } }
+  if (hdmiSinkEncodings.isEmpty() || hdmiSinkEncodings.any(undescribed)) return true
+  return hdmiSinkEncodings.any { encodings -> encodings.any(::isDtsSinkEncoding) }
+}
+
+/** An audio output as `AudioDeviceInfo` or `AudioDeviceAttributes` describes it. */
+internal class AudioOutputRef(val type: Int, val address: String, val encodings: IntArray = IntArray(0))
+
+/**
+ * The encodings of the HDMI sinks a movie would play through, from every output [outputs] and
+ * the active movie route [activeRoute] (`getAudioDevicesForAttributes`, API 33+; null below).
+ *
+ * - No active route known (below API 33, or the lookup returned nothing): every HDMI output.
+ * - An active route with no HDMI device (optical, USB, Bluetooth): none. There is no HDMI sink
+ *   to judge, so [sinkAdvertisesDts] leaves the verdict to the route probes.
+ * - Otherwise the active HDMI outputs, matched by type and address, or every HDMI output
+ *   when none matches.
+ */
+internal fun movieSinkEncodings(
+  outputs: List<AudioOutputRef>,
+  activeRoute: List<AudioOutputRef>?,
+  isHdmiOutput: (Int) -> Boolean = ::isHdmiOutputType
+): List<IntArray> {
+  val hdmiOutputs = outputs.filter { isHdmiOutput(it.type) }
+  if (activeRoute.isNullOrEmpty()) return hdmiOutputs.map { it.encodings }
+  val activeHdmi = activeRoute.filter { isHdmiOutput(it.type) }
+  if (activeHdmi.isEmpty()) return emptyList()
+  return hdmiOutputs
+    .filter { device -> activeHdmi.any { it.type == device.type && it.address == device.address } }
+    .ifEmpty { hdmiOutputs }
+    .map { it.encodings }
 }
 
 private fun isHdmiOutputType(type: Int): Boolean = type == AudioDeviceInfo.TYPE_HDMI ||
   type == AudioDeviceInfo.TYPE_HDMI_ARC ||
   (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && type == AudioDeviceInfo.TYPE_HDMI_EARC)
 
-/**
- * The HDMI outputs a movie would play through. On API 33+ that is the active route from
- * `getAudioDevicesForAttributes`, matched back to its `AudioDeviceInfo` for the encodings.
- * Below that, or when the active route is not HDMI, every HDMI output counts.
- */
-private fun movieHdmiOutputs(manager: AudioManager): List<AudioDeviceInfo> {
-  val hdmiOutputs = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).filter { isHdmiOutputType(it.type) }
-  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return hdmiOutputs
-  val active = manager.getAudioDevicesForAttributes(movieAudioAttributes()).filter { isHdmiOutputType(it.type) }
-  val activeOutputs = hdmiOutputs.filter { device -> active.any { it.type == device.type && it.address == device.address } }
-  return activeOutputs.ifEmpty { hdmiOutputs }
+private fun movieHdmiSinkEncodings(manager: AudioManager): List<IntArray> {
+  val outputs = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).map { device ->
+    val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) device.address else ""
+    AudioOutputRef(device.type, address, device.encodings)
+  }
+  val activeRoute = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    manager.getAudioDevicesForAttributes(movieAudioAttributes()).map { AudioOutputRef(it.type, it.address) }
+  } else {
+    null
+  }
+  return movieSinkEncodings(outputs, activeRoute)
 }
 
 @Volatile private var lastLoggedSinkVerdict: String? = null
@@ -468,7 +495,7 @@ private fun movieHdmiOutputs(manager: AudioManager): List<AudioDeviceInfo> {
  */
 private fun hdmiSinkDecodesDts(context: Context): Boolean = try {
   val manager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-  val hdmiSinkEncodings = movieHdmiOutputs(manager).map { it.encodings }
+  val hdmiSinkEncodings = movieHdmiSinkEncodings(manager)
   sinkAdvertisesDts(hdmiSinkEncodings).also { decodes ->
     val verdict = "$decodes ${hdmiSinkEncodings.joinToString { it.contentToString() }}"
     if (verdict != lastLoggedSinkVerdict) {

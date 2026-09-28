@@ -1,5 +1,6 @@
 package com.edde746.plezy.exoplayer
 
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
 import androidx.media3.common.C
@@ -418,7 +419,56 @@ class AudioOutputPolicyTest {
     assertTrue(sinkAdvertisesDts(listOf(intArrayOf())))
     assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_PCM_FLOAT))))
     assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_IEC61937))))
+    assertTrue(sinkAdvertisesDts(listOf(dolbyOnlyHdmiEncodings, intArrayOf(AudioFormat.ENCODING_PCM_16BIT))))
   }
+
+  @Test
+  fun anActiveOpticalOrUsbOutputIsNotJudgedByAnInactiveHdmiSink() {
+    for (activeType in listOf(AudioDeviceInfo.TYPE_LINE_DIGITAL, AudioDeviceInfo.TYPE_USB_DEVICE)) {
+      val active = AudioOutputRef(activeType, "active")
+      val encodings = movieSinkEncodings(listOf(inactiveHdmiWithoutDts, active), activeRoute = listOf(active))
+
+      assertEquals(emptyList<IntArray>(), encodings)
+      assertTrue(sinkAdvertisesDts(encodings))
+    }
+  }
+
+  @Test
+  fun theActiveHdmiOutputIsTheSinkThatIsJudged() {
+    val activeHdmiWithDts = AudioOutputRef(
+      AudioDeviceInfo.TYPE_HDMI_ARC,
+      "arc",
+      intArrayOf(AudioFormat.ENCODING_AC3, AudioFormat.ENCODING_DTS)
+    )
+    val outputs = listOf(inactiveHdmiWithoutDts, activeHdmiWithDts)
+
+    val encodings = movieSinkEncodings(outputs, activeRoute = listOf(AudioOutputRef(AudioDeviceInfo.TYPE_HDMI_ARC, "arc")))
+
+    assertEquals(listOf(activeHdmiWithDts.encodings.toList()), encodings.map { it.toList() })
+    assertTrue(sinkAdvertisesDts(encodings))
+  }
+
+  @Test
+  fun everyHdmiOutputCountsWhenTheActiveRouteIsUnknownOrUnmatched() {
+    val outputs = listOf(inactiveHdmiWithoutDts)
+    val expected = listOf(dolbyOnlyHdmiEncodings.toList())
+
+    assertEquals(expected, movieSinkEncodings(outputs, activeRoute = null).map { it.toList() })
+    assertEquals(expected, movieSinkEncodings(outputs, activeRoute = emptyList()).map { it.toList() })
+    assertEquals(
+      expected,
+      movieSinkEncodings(outputs, activeRoute = listOf(AudioOutputRef(AudioDeviceInfo.TYPE_HDMI, "other"))).map { it.toList() }
+    )
+  }
+
+  private val dolbyOnlyHdmiEncodings = intArrayOf(
+    AudioFormat.ENCODING_PCM_16BIT,
+    AudioFormat.ENCODING_AC3,
+    AudioFormat.ENCODING_E_AC3,
+    AudioFormat.ENCODING_IEC61937
+  )
+
+  private val inactiveHdmiWithoutDts = AudioOutputRef(AudioDeviceInfo.TYPE_HDMI, "hdmi", dolbyOnlyHdmiEncodings)
 
   private val noDtsSink: (Int) -> Boolean = { !isDtsEncoding(it) }
 
