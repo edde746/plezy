@@ -361,35 +361,25 @@ class AudioOutputPolicyTest {
   }
 
   @Test
-  fun dtsLeavesTheCarrierToASinkThatAdvertisesNoDts() {
-    val miBoxPlatformEncodings = setOf(C.ENCODING_AC3, C.ENCODING_E_AC3, C.ENCODING_DOLBY_TRUEHD, C.ENCODING_DTS_HD)
-
+  fun miBoxRouteWithASinkWithoutDtsDecodesEveryDtsTrackInMpv() {
     assertEquals(
       "ac3,eac3,truehd",
-      spdifCodecs(miBoxPlatformEncodings, allShapes, sinkDecodes = noDtsSink)
+      spdifCodecs(
+        allEncodings,
+        allShapes,
+        raw = setOf(C.ENCODING_AC3, C.ENCODING_E_AC3, C.ENCODING_DTS),
+        sinkDecodes = noDtsSink
+      )
     )
   }
 
   @Test
-  fun dtsHdStillOpensRawWhenTheRouteRefusesTheCarrierAndTheSinkAdvertisesNoDts() {
+  fun aSinkWithoutDtsGetsNoDtsCodecOnARawOnlyRouteEither() {
     assertEquals(
-      "ac3,eac3,truehd,dts-hd",
+      "ac3,eac3,truehd",
       spdifCodecs(allEncodings, emptySet(), raw = allEncodings, sinkDecodes = noDtsSink)
     )
-  }
-
-  @Test
-  fun dtsHdFallsBackToTheRawCoreWhenTheSinkAdvertisesNoDtsAndTheRouteTakesTheCarrier() {
-    assertEquals(
-      "ac3,eac3,truehd,dts",
-      spdifCodecs(allEncodings, allShapes, raw = allEncodings, sinkDecodes = noDtsSink)
-    )
-  }
-
-  @Test
-  fun dtsCoreKeepsOnlyItsRawTrackWhenTheSinkAdvertisesNoDts() {
-    assertEquals("dts", spdifCodecs(setOf(C.ENCODING_DTS), allShapes, raw = setOf(C.ENCODING_DTS), sinkDecodes = noDtsSink))
-    assertEquals("", spdifCodecs(setOf(C.ENCODING_DTS), allShapes, sinkDecodes = noDtsSink))
+    assertEquals("", spdifCodecs(setOf(C.ENCODING_DTS), allShapes, raw = setOf(C.ENCODING_DTS), sinkDecodes = noDtsSink))
   }
 
   @Test
@@ -418,6 +408,8 @@ class AudioOutputPolicyTest {
     assertFalse(sinkAdvertisesDts(listOf(miBoxHdmiSink)))
     assertTrue(sinkAdvertisesDts(listOf(miBoxHdmiSink + AudioFormat.ENCODING_DTS)))
     assertTrue(sinkAdvertisesDts(listOf(miBoxHdmiSink, intArrayOf(AudioFormat.ENCODING_AC3, AudioFormat.ENCODING_DTS_HD))))
+    val encodingDtsHdMa = 29
+    assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_AC3, encodingDtsHdMa))))
   }
 
   @Test
@@ -425,6 +417,7 @@ class AudioOutputPolicyTest {
     assertTrue(sinkAdvertisesDts(emptyList()))
     assertTrue(sinkAdvertisesDts(listOf(intArrayOf())))
     assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_PCM_FLOAT))))
+    assertTrue(sinkAdvertisesDts(listOf(intArrayOf(AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_IEC61937))))
   }
 
   private val noDtsSink: (Int) -> Boolean = { !isDtsEncoding(it) }
