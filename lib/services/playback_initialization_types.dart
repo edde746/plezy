@@ -189,6 +189,11 @@ class PlaybackInitializationResult {
 /// response body, or authentication metadata.
 enum PlaybackFailureReason {
   authenticationRequired,
+
+  /// The server answered HTTP 403: it knows this account and refuses it this
+  /// item or this connection (a Jellyfin user denied remote access, Plex's
+  /// remote-playback rules). Signing in again changes nothing.
+  playbackNotAllowed,
   serverUnavailable,
   cancelled,
   invalidPlaybackData,
@@ -213,8 +218,10 @@ class PlaybackException implements Exception {
 /// Backend-neutral on purpose: Plex and Jellyfin both throw the same
 /// [MediaServerException] hierarchy, so both clients classify identically.
 PlaybackException classifyPlaybackFailure(Object error) {
-  if (error is MediaServerAuthException ||
-      error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
+  if (error is MediaServerHttpException && error.statusCode == 403) {
+    return PlaybackException(t.messages.playbackNotAllowedBody, reason: PlaybackFailureReason.playbackNotAllowed);
+  }
+  if (error is MediaServerAuthException || error is MediaServerHttpException && error.statusCode == 401) {
     return PlaybackException(
       t.messages.playbackAuthenticationRequired,
       reason: PlaybackFailureReason.authenticationRequired,

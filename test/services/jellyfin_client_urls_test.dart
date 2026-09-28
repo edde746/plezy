@@ -917,34 +917,35 @@ void main() {
       }
     });
 
-    test('getPlaybackInitialization maps negotiation authentication failures', () async {
-      final scoped = _clientWithPlaybackInfo(
-        (_) async => http.Response('{}', 403, headers: {'content-type': 'application/json'}),
-      );
-      addTearDown(scoped.close);
+    for (final (status, reason) in [
+      (401, PlaybackFailureReason.authenticationRequired),
+      // A user the server knows but refuses (remote access disabled) — signing
+      // in again cannot help, so it must not be reported as an auth failure.
+      (403, PlaybackFailureReason.playbackNotAllowed),
+    ]) {
+      test('getPlaybackInitialization maps a negotiation HTTP $status to ${reason.name}', () async {
+        final scoped = _clientWithPlaybackInfo(
+          (_) async => http.Response('{}', status, headers: {'content-type': 'application/json'}),
+        );
+        addTearDown(scoped.close);
 
-      await expectLater(
-        scoped.getPlaybackInitialization(
-          PlaybackInitializationOptions(
-            metadata: testMediaItem(
-              id: 'item-1',
-              backend: MediaBackend.jellyfin,
-              kind: MediaKind.movie,
-              serverId: 'srv-1',
+        await expectLater(
+          scoped.getPlaybackInitialization(
+            PlaybackInitializationOptions(
+              metadata: testMediaItem(
+                id: 'item-1',
+                backend: MediaBackend.jellyfin,
+                kind: MediaKind.movie,
+                serverId: 'srv-1',
+              ),
+              selectedMediaIndex: 0,
+              qualityPreset: TranscodeQualityPreset.original,
             ),
-            selectedMediaIndex: 0,
-            qualityPreset: TranscodeQualityPreset.original,
           ),
-        ),
-        throwsA(
-          isA<PlaybackException>().having(
-            (error) => error.reason,
-            'reason',
-            PlaybackFailureReason.authenticationRequired,
-          ),
-        ),
-      );
-    });
+          throwsA(isA<PlaybackException>().having((error) => error.reason, 'reason', reason)),
+        );
+      });
+    }
 
     test('resolveExternalPlayback pins primary source id when alternates exist', () async {
       final scoped = JellyfinClient.forTesting(
