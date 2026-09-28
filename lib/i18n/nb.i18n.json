@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "Legg til for ${displayName}: Plex, Jellyfin, Emby eller en annen profiltilkobling",
     "sessionExpiredOne": "Økten er utløpt for ${name}",
     "sessionExpiredMany": "Økten er utløpt for ${count} servere",
+    "accessDeniedOne": "${name} nektet tilgang for denne kontoen",
+    "accessDeniedMany": "${count} servere nektet tilgang for denne kontoen",
     "signInAgain": "Logg inn igjen",
     "editMediaBrowserTitle": "Rediger ${product}-tilkobling",
     "editMediaBrowserIntro": "Legg til eller fjern URL-er for ${serverName}. Plezy vil bruke den nåbare URL-en med lavest ventetid."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Tilgjengelig",
     "syncRuleOffline": "Frakoblet",
     "syncRuleSignInRequired": "Innlogging kreves",
+    "syncRuleAccessDenied": "Tilgang nektet",
     "syncRuleNotAvailableForProfile": "Ikke tilgjengelig for gjeldende profil",
     "syncRuleUnknownServer": "Ukjent server",
     "syncRuleListCreated": "Synkroniseringsregel opprettet",

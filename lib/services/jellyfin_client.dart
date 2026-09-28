@@ -547,8 +547,10 @@ class JellyfinClient
   /// profile avatars catch server-side changes without requiring re-auth
   /// (see [onConnectionUpdated]).
   ///
-  /// 401/403 surfaces as [HealthStatus.authError] so the manager can
-  /// distinguish a revoked token from a generic transport failure.
+  /// 401 surfaces as [HealthStatus.authError] and 403 as
+  /// [HealthStatus.accessDenied] (a user denied remote access or outside their
+  /// parental schedule) so the manager can tell a revoked token and a refused
+  /// account from a generic transport failure.
   @override
   Future<HealthStatus> checkHealth() async {
     try {
@@ -582,17 +584,19 @@ class JellyfinClient
         }
         return HealthStatus.online;
       }
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        return HealthStatus.authError;
-      }
-      return HealthStatus.offline;
+      return _refusalHealth(response.statusCode) ?? HealthStatus.offline;
     } on MediaServerHttpException catch (e) {
-      if (e.statusCode == 401 || e.statusCode == 403) return HealthStatus.authError;
-      return HealthStatus.offline;
+      return _refusalHealth(e.statusCode) ?? HealthStatus.offline;
     } catch (_) {
       return HealthStatus.offline;
     }
   }
+
+  static HealthStatus? _refusalHealth(int? statusCode) => switch (statusCode) {
+    401 => HealthStatus.authError,
+    403 => HealthStatus.accessDenied,
+    _ => null,
+  };
 
   @override
   Future<String?> getMachineIdentifier() async {

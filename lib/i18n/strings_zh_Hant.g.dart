@@ -1143,6 +1143,8 @@ class _Translations$connections$zh_Hant extends Translations$connections$zh {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線';
 	@override String sessionExpiredOne({required Object name}) => '${name} 的工作階段已過期';
 	@override String sessionExpiredMany({required Object count}) => '${count} 個伺服器的工作階段已過期';
+	@override String accessDeniedOne({required Object name}) => '${name} 拒絕此帳戶存取';
+	@override String accessDeniedMany({required Object count}) => '${count} 台伺服器拒絕此帳戶存取';
 	@override String get signInAgain => '重新登入';
 	@override String editMediaBrowserTitle({required Object product}) => '編輯 ${product} 連線';
 	@override String editMediaBrowserIntro({required Object serverName}) => '為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。';
@@ -1834,6 +1836,7 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get syncRuleAvailable => '可用';
 	@override String get syncRuleOffline => '離線';
 	@override String get syncRuleSignInRequired => '需要登入';
+	@override String get syncRuleAccessDenied => '存取遭拒';
 	@override String get syncRuleNotAvailableForProfile => '目前使用者設定檔無法使用';
 	@override String get syncRuleUnknownServer => '未知伺服器';
 	@override String get syncRuleListCreated => '同步規則已建立';
@@ -3932,6 +3935,8 @@ extension on TranslationsZhHant {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 個伺服器的工作階段已過期',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} 拒絕此帳戶存取',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} 台伺服器拒絕此帳戶存取',
 			'connections.signInAgain' => '重新登入',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '編輯 ${product} 連線',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。',
@@ -4047,10 +4052,10 @@ extension on TranslationsZhHant {
 			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
 			'libraries.trashEmptied' => ({required Object title}) => '已清空「${title}」的垃圾桶',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '無法清空垃圾桶：${error}',
-			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
-			'libraries.analysisStarted' => ({required Object title}) => '已開始分析「${title}」',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
+			'libraries.analysisStarted' => ({required Object title}) => '已開始分析「${title}」',
 			'libraries.failedToAnalyze' => ({required Object error}) => '無法分析媒體庫：${error}',
 			'libraries.noLibrariesFound' => '找不到媒體庫',
 			'libraries.allLibrariesHidden' => '所有媒體庫都已隱藏',
@@ -4561,10 +4566,10 @@ extension on TranslationsZhHant {
 			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
 			'watchTogether.guestSwitchFailed' => '無法切換 — 在此伺服器上找不到內容',
 			'watchTogether.defaultDisplayName' => '使用者',
-			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
-			'watchTogether.errors.connectionLost' => '工作階段就緒前連線已中斷',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
+			'watchTogether.errors.connectionLost' => '工作階段就緒前連線已中斷',
 			'watchTogether.errors.invalidRelayResponse' => '中繼伺服器傳回了非預期的回應',
 			'watchTogether.errors.sessionEnded' => '主持人已結束工作階段',
 			'watchTogether.errors.sessionUnavailable' => '無法恢復此工作階段。請加入或建立房間以繼續。',
@@ -4640,6 +4645,7 @@ extension on TranslationsZhHant {
 			'downloads.syncRuleAvailable' => '可用',
 			'downloads.syncRuleOffline' => '離線',
 			'downloads.syncRuleSignInRequired' => '需要登入',
+			'downloads.syncRuleAccessDenied' => '存取遭拒',
 			'downloads.syncRuleNotAvailableForProfile' => '目前使用者設定檔無法使用',
 			'downloads.syncRuleUnknownServer' => '未知伺服器',
 			'downloads.syncRuleListCreated' => '同步規則已建立',
@@ -5074,11 +5080,11 @@ extension on TranslationsZhHant {
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
 			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',
 			'addServer.quickConnectNotJson' => 'Quick Connect 回應不是有效的 JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 回應缺少代碼或密鑰',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect 輪詢遭到伺服器拒絕',
 			'addServer.serverTimedOut' => '伺服器未及時回應',
 			'addServer.responseNotJson' => '伺服器回應不是有效的 JSON',

@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı",
     "sessionExpiredOne": "${name} için oturum süresi doldu",
     "sessionExpiredMany": "${count} sunucu için oturum süresi doldu",
+    "accessDeniedOne": "${name} bu hesabın erişimini reddetti",
+    "accessDeniedMany": "${count} sunucu bu hesabın erişimini reddetti",
     "signInAgain": "Tekrar giriş yap",
     "editMediaBrowserTitle": "${product} bağlantısını düzenle",
     "editMediaBrowserIntro": "${serverName} için URL ekleyin veya kaldırın. Plezy, erişilebilir olan en düşük gecikmeli URL'yi kullanacak."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Kullanılabilir",
     "syncRuleOffline": "Çevrimdışı",
     "syncRuleSignInRequired": "Giriş gerekli",
+    "syncRuleAccessDenied": "Erişim reddedildi",
     "syncRuleNotAvailableForProfile": "Mevcut profil için kullanılamaz",
     "syncRuleUnknownServer": "Bilinmeyen sunucu",
     "syncRuleListCreated": "Eşitleme kuralı oluşturuldu",

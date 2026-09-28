@@ -12,7 +12,11 @@ enum OfflineModeReason {
   online,
   waitingForServerStatus,
   noKnownVisibleServers,
-  onlyAuthErrorServers,
+
+  /// Every visible server answered and refused this account (a rejected token
+  /// or a refused account). They are reachable, so this is not offline mode;
+  /// the refusal banner explains the empty app instead.
+  onlyRefusedServers,
   noServerConnection,
 }
 
@@ -74,7 +78,7 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   OfflineModeReason get offlineReason {
     if (!_hasReceivedServerStatus) return OfflineModeReason.waitingForServerStatus;
     if (!_hasKnownVisibleServers) return OfflineModeReason.noKnownVisibleServers;
-    if (_hasOnlyAuthErrorServers) return OfflineModeReason.onlyAuthErrorServers;
+    if (_hasOnlyRefusedServers) return OfflineModeReason.onlyRefusedServers;
     if (!hasServerConnection) return OfflineModeReason.noServerConnection;
     return OfflineModeReason.online;
   }
@@ -100,11 +104,11 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   bool get _hasKnownVisibleServers =>
       (_multiServerProvider?.expectedServerIds.length ?? _serverManager.serverIds.length) > 0;
 
-  bool get _hasOnlyAuthErrorServers {
+  bool get _hasOnlyRefusedServers {
     final provider = _multiServerProvider;
     if (provider == null) return false;
     final serverCount = provider.expectedServerIds.length;
-    return serverCount > 0 && provider.authErrorServerIds.length == serverCount;
+    return serverCount > 0 && provider.refusedServerIds.length == serverCount;
   }
 
   /// Attach the profile-visible server provider. Offline state is evaluated

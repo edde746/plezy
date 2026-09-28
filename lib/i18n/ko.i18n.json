@@ -976,6 +976,8 @@
     "addConnectionSubtitleScoped": "${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결",
     "sessionExpiredOne": "${name}의 세션이 만료되었습니다",
     "sessionExpiredMany": "${count}개 서버의 세션이 만료되었습니다",
+    "accessDeniedOne": "${name}에서 이 계정의 접근을 거부했습니다",
+    "accessDeniedMany": "${count}개 서버에서 이 계정의 접근을 거부했습니다",
     "signInAgain": "다시 로그인",
     "editMediaBrowserTitle": "${product} 연결 편집",
     "editMediaBrowserIntro": "${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다."
@@ -1806,6 +1808,7 @@
     "syncRuleAvailable": "사용 가능",
     "syncRuleOffline": "오프라인",
     "syncRuleSignInRequired": "로그인 필요",
+    "syncRuleAccessDenied": "접근 거부됨",
     "syncRuleNotAvailableForProfile": "현재 프로필에서 사용할 수 없음",
     "syncRuleUnknownServer": "알 수 없는 서버",
     "syncRuleListCreated": "동기화 규칙이 생성되었습니다",

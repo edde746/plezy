@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat",
     "sessionExpiredOne": "A(z) ${name} munkamenete lejárt",
     "sessionExpiredMany": "${count} szerver munkamenete lejárt",
+    "accessDeniedOne": "A(z) ${name} megtagadta a hozzáférést ettől a fióktól",
+    "accessDeniedMany": "${count} szerver megtagadta a hozzáférést ettől a fióktól",
     "signInAgain": "Bejelentkezés újra",
     "editMediaBrowserTitle": "A(z) ${product} kapcsolat szerkesztése",
     "editMediaBrowserIntro": "Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Elérhető",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Bejelentkezés szükséges",
+    "syncRuleAccessDenied": "Hozzáférés megtagadva",
     "syncRuleNotAvailableForProfile": "Nem érhető el a jelenlegi profilhoz",
     "syncRuleUnknownServer": "Ismeretlen szerver",
     "syncRuleListCreated": "Szinkronizálási szabály létrehozva",

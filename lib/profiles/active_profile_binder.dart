@@ -385,10 +385,11 @@ class ActiveProfileBinder {
       }
 
       // Snapshot before the visibility sweep below: removeServer() clears a
-      // swept server's auth-error marker, and an auth-rejected server is by
-      // definition not visible — reading authErrorServerIds after the sweep
-      // would misclassify a revoked token as a connectivity failure.
-      final authErrorServerIds = serverManager.authErrorServerIds;
+      // swept server's refusal marker, and a refusing server is by definition
+      // not visible — reading refusedServerIds after the sweep would
+      // misclassify a revoked token or a refused account as a connectivity
+      // failure.
+      final refusedServerIds = serverManager.refusedServerIds;
 
       // Remove servers the profile no longer has access to, including
       // client-less registrations (a failed connect): a reconnect would
@@ -419,10 +420,10 @@ class ActiveProfileBinder {
       success = (profile.isLocal && !localProfileHasJoinRows) || visibleServerIds.isNotEmpty;
       if (!success) {
         // A failed pass that expected servers, reached none (`!success`
-        // implies `visibleServerIds.isEmpty` here), and saw no auth
-        // rejection is offline, not misconfigured or revoked.
+        // implies `visibleServerIds.isEmpty` here), and saw no refusal is
+        // offline, not misconfigured, revoked, or refused.
         _lastBindFailureConnectivityOnly =
-            expectedServerIds.isNotEmpty && expectedServerIds.every((id) => !authErrorServerIds.contains(id));
+            expectedServerIds.isNotEmpty && expectedServerIds.every((id) => !refusedServerIds.contains(id));
       }
       // Once we've bound a profile with real servers in this session,
       // we've crossed the cold-start boundary — every subsequent rebind
@@ -1111,10 +1112,10 @@ class ActiveProfileBinder {
       return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
     }
     // `addJellyfinConnection` registers the client even when the health probe
-    // returns authError. Keep that server in the active profile's visibility
-    // filter so the re-auth banner can surface it instead of hiding it as if
+    // returns a refusal. Keep that server in the active profile's visibility
+    // filter so the refusal banner can surface it instead of hiding it as if
     // the profile had no server.
-    if (ok || serverManager.authErrorServerIds.contains(conn.serverMachineId)) {
+    if (ok || serverManager.refusedServerIds.contains(conn.serverMachineId)) {
       return _ProfileBindResult.visible({conn.serverMachineId});
     }
     return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});

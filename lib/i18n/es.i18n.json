@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "Añadir a ${displayName}: Plex, Jellyfin, Emby u otra conexión de perfil",
     "sessionExpiredOne": "Sesión caducada para ${name}",
     "sessionExpiredMany": "Sesión caducada para ${count} servidores",
+    "accessDeniedOne": "${name} denegó el acceso a esta cuenta",
+    "accessDeniedMany": "${count} servidores denegaron el acceso a esta cuenta",
     "signInAgain": "Iniciar sesión de nuevo",
     "editMediaBrowserTitle": "Editar conexión de ${product}",
     "editMediaBrowserIntro": "Añade o elimina URL para ${serverName}. Plezy usará la URL accesible con menor latencia."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Disponible",
     "syncRuleOffline": "Sin conexión",
     "syncRuleSignInRequired": "Se requiere iniciar sesión",
+    "syncRuleAccessDenied": "Acceso denegado",
     "syncRuleNotAvailableForProfile": "No disponible para el perfil actual",
     "syncRuleUnknownServer": "Servidor desconocido",
     "syncRuleListCreated": "Regla de sincronización creada",

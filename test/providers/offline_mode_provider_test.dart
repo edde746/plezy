@@ -99,27 +99,32 @@ void main() {
       manager.dispose();
     });
 
-    test('auth-error-only visible servers do not collapse to generic offline', () async {
-      final manager = MultiServerManager();
-      final client = JellyfinClient.forTesting(
-        connection: _jellyfinConnection(),
-        httpClient: MockClient((_) async => http.Response('', 401)),
-      );
-      manager.debugRegisterJellyfinClientForTesting(client, online: false);
-      final multi = testMultiServerProvider(manager);
-      final p = OfflineModeProvider(manager, multiServerProvider: multi);
-      await p.initialize();
+    for (final (label, mark) in <(String, void Function(MultiServerManager, ServerId))>[
+      ('auth-error', (m, id) => m.debugMarkAuthErrorForTesting(id)),
+      ('access-denied', (m, id) => m.debugMarkAccessDeniedForTesting(id)),
+    ]) {
+      test('$label-only visible servers do not collapse to generic offline', () async {
+        final manager = MultiServerManager();
+        final client = JellyfinClient.forTesting(
+          connection: _jellyfinConnection(),
+          httpClient: MockClient((_) async => http.Response('', 401)),
+        );
+        manager.debugRegisterJellyfinClientForTesting(client, online: false);
+        final multi = testMultiServerProvider(manager);
+        final p = OfflineModeProvider(manager, multiServerProvider: multi);
+        await p.initialize();
 
-      manager.debugMarkAuthErrorForTesting(ServerId('jf-machine'));
-      await Future<void>.delayed(Duration.zero);
+        mark(manager, ServerId('jf-machine'));
+        await Future<void>.delayed(Duration.zero);
 
-      expect(multi.authErrorServerIds, contains('jf-machine'));
-      expect(p.isOffline, isFalse);
+        expect(multi.refusedServerIds, contains('jf-machine'));
+        expect(p.isOffline, isFalse);
 
-      p.dispose();
-      multi.dispose();
-      manager.dispose();
-    });
+        p.dispose();
+        multi.dispose();
+        manager.dispose();
+      });
+    }
 
     test('expected but unreachable visible servers enter offline without live clients', () async {
       final manager = MultiServerManager();

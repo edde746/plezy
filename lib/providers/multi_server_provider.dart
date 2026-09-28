@@ -230,25 +230,36 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// helpers) so it doesn't render against a MediaBrowser-only profile.
   bool get hasOnlinePlexServers => onlineServerIds.any((id) => _serverManager.getPlexClient(ServerId(id)) != null);
 
-  /// Visibility-filtered server ids whose latest health probe was rejected
-  /// with HTTP 401/403 (token expired or revoked). UI uses this to show a
-  /// "Sign in again" banner distinct from generic "Server offline".
-  List<String> get authErrorServerIds {
-    final all = _serverManager.authErrorServerIds;
-    final filter = _expectedVisibleServerIds ?? _visibleServerIds;
-    if (filter == null) return all.toList();
-    return all.where(filter.contains).toList();
-  }
+  /// Visibility-filtered server ids whose latest probe rejected the token
+  /// (HTTP 401 — expired or revoked). UI uses this to show a "Sign in again"
+  /// banner distinct from generic "Server offline".
+  List<String> get authErrorServerIds => _visibleOf(_serverManager.authErrorServerIds);
 
   bool get hasAuthErrorServers => authErrorServerIds.isNotEmpty;
 
   /// Display names for the visible auth-errored servers, in stable order.
   /// Falls back to the server id when the client doesn't expose a name.
-  List<({ServerId serverId, String displayName})> get authErrorServers {
-    return authErrorServerIds
-        .map((id) => (serverId: ServerId(id), displayName: _serverManager.serverDisplayName(ServerId(id))))
-        .toList();
+  List<({ServerId serverId, String displayName})> get authErrorServers => _namedServers(authErrorServerIds);
+
+  /// Visibility-filtered server ids that refuse this account (HTTP 403). A new
+  /// sign-in does not help, so UI must not offer one.
+  List<String> get accessDeniedServerIds => _visibleOf(_serverManager.accessDeniedServerIds);
+
+  /// Display names for the visible access-denied servers, in stable order.
+  List<({ServerId serverId, String displayName})> get accessDeniedServers => _namedServers(accessDeniedServerIds);
+
+  /// Visibility-filtered servers that answered and refuse this account, for
+  /// either reason: reachable, but unusable until the refusal clears.
+  List<String> get refusedServerIds => _visibleOf(_serverManager.refusedServerIds);
+
+  List<String> _visibleOf(Set<String> all) {
+    final filter = _expectedVisibleServerIds ?? _visibleServerIds;
+    if (filter == null) return all.toList();
+    return all.where(filter.contains).toList();
   }
+
+  List<({ServerId serverId, String displayName})> _namedServers(List<String> ids) =>
+      ids.map((id) => (serverId: ServerId(id), displayName: _serverManager.serverDisplayName(ServerId(id)))).toList();
 
   void clearAllConnections() {
     _serverManager.disconnectAll();

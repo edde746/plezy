@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым",
     "sessionExpiredOne": "${name} үшін сеанс мерзімі өтті",
     "sessionExpiredMany": "${count} сервер үшін сеанс мерзімі өтті",
+    "accessDeniedOne": "${name} бұл тіркелгіге кіруден бас тартты",
+    "accessDeniedMany": "${count} сервер бұл тіркелгіге кіруден бас тартты",
     "signInAgain": "Қайтадан кіру",
     "editMediaBrowserTitle": "${product} қосылымын өңдеу",
     "editMediaBrowserIntro": "${serverName} үшін URL мекенжайларды қосыңыз немесе өшіріңіз. Plezy ең төмен кідірісі бар қолжетімді URL мекенжайды пайдаланады."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Қолжетімді",
     "syncRuleOffline": "Офлайн",
     "syncRuleSignInRequired": "Кіру қажет",
+    "syncRuleAccessDenied": "Кіруге тыйым салынды",
     "syncRuleNotAvailableForProfile": "Ағымдағы профиль үшін қолжетімсіз",
     "syncRuleUnknownServer": "Белгісіз сервер",
     "syncRuleListCreated": "Синхрондау ережесі жасалды",

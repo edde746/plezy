@@ -2890,6 +2890,12 @@ class Translations$connections$en {
 	/// en: 'Session expired for ${count} servers'
 	String sessionExpiredMany({required Object count}) => 'Session expired for ${count} servers';
 
+	/// en: '${name} refused access for this account'
+	String accessDeniedOne({required Object name}) => '${name} refused access for this account';
+
+	/// en: '${count} servers refused access for this account'
+	String accessDeniedMany({required Object count}) => '${count} servers refused access for this account';
+
 	/// en: 'Sign in again'
 	String get signInAgain => 'Sign in again';
 
@@ -4591,6 +4597,9 @@ class Translations$downloads$en {
 
 	/// en: 'Sign in required'
 	String get syncRuleSignInRequired => 'Sign in required';
+
+	/// en: 'Access denied'
+	String get syncRuleAccessDenied => 'Access denied';
 
 	/// en: 'Not available for current profile'
 	String get syncRuleNotAvailableForProfile => 'Not available for current profile';
@@ -8228,6 +8237,8 @@ extension on Translations {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers refused access for this account',
 			'connections.signInAgain' => 'Sign in again',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edit ${product} connection',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.',
@@ -8331,10 +8342,10 @@ extension on Translations {
 			'errors.reasonNotFound' => 'the item is no longer on the server',
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
-			'errors.reasonUnexpected' => 'an unexpected error occurred',
-			'libraries.title' => 'Libraries',
 			_ => null,
 		} ?? switch (path) {
+			'errors.reasonUnexpected' => 'an unexpected error occurred',
+			'libraries.title' => 'Libraries',
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
@@ -8845,10 +8856,10 @@ extension on Translations {
 			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
-			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
-			'watchTogether.endSessionConfirm' => 'This will end the session for all participants.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
+			'watchTogether.endSessionConfirm' => 'This will end the session for all participants.',
 			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
@@ -8964,6 +8975,7 @@ extension on Translations {
 			'downloads.syncRuleAvailable' => 'Available',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Sign in required',
+			'downloads.syncRuleAccessDenied' => 'Access denied',
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',
@@ -9358,11 +9370,11 @@ extension on Translations {
 			'services.libraryFilter.title' => 'Library filter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Syncing all libraries',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Nothing syncing',
+			_ => null,
+		} ?? switch (path) {
 			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blocked',
 			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} allowed',
 			'services.libraryFilter.mode' => 'Filter mode',
-			_ => null,
-		} ?? switch (path) {
 			'services.libraryFilter.modeBlacklist' => 'Blacklist',
 			'services.libraryFilter.modeWhitelist' => 'Whitelist',
 			'services.libraryFilter.modeHintBlacklist' => 'Sync every library except the ones checked below.',

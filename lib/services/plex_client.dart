@@ -1041,20 +1041,21 @@ class PlexClient
   /// a revoked or expired token would still report healthy, only to 401 on
   /// the very next real call. Mirrors Jellyfin's `/Users/Me` choice.
   ///
-  /// Distinguishes 401/403 (token revoked / wrong user) as
-  /// [HealthStatus.authError] from generic transport failures so the
-  /// manager can route them to a re-auth banner instead of generic
-  /// "server offline" UI.
+  /// Distinguishes 401 (token revoked / wrong user) as [HealthStatus.authError]
+  /// and 403 (the server refuses this account) as [HealthStatus.accessDenied]
+  /// from generic transport failures, so the manager can route them to their
+  /// own banners instead of generic "server offline" UI.
   @override
   Future<HealthStatus> checkHealth() async {
     try {
       final response = await _getWithFailover('/', timeout: MediaServerTimeouts.plexProbe);
       return response.statusCode == 200 ? HealthStatus.online : HealthStatus.offline;
     } on MediaServerHttpException catch (e) {
-      if (e.statusCode == 401 || e.statusCode == 403) {
-        return HealthStatus.authError;
-      }
-      return HealthStatus.offline;
+      return switch (e.statusCode) {
+        401 => HealthStatus.authError,
+        403 => HealthStatus.accessDenied,
+        _ => HealthStatus.offline,
+      };
     } catch (_) {
       return HealthStatus.offline;
     }

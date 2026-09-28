@@ -976,6 +976,8 @@
     "addConnectionSubtitleScoped": "新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線",
     "sessionExpiredOne": "${name} 的工作階段已過期",
     "sessionExpiredMany": "${count} 個伺服器的工作階段已過期",
+    "accessDeniedOne": "${name} 拒絕此帳戶存取",
+    "accessDeniedMany": "${count} 台伺服器拒絕此帳戶存取",
     "signInAgain": "重新登入",
     "editMediaBrowserTitle": "編輯 ${product} 連線",
     "editMediaBrowserIntro": "為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。"
@@ -1806,6 +1808,7 @@
     "syncRuleAvailable": "可用",
     "syncRuleOffline": "離線",
     "syncRuleSignInRequired": "需要登入",
+    "syncRuleAccessDenied": "存取遭拒",
     "syncRuleNotAvailableForProfile": "目前使用者設定檔無法使用",
     "syncRuleUnknownServer": "未知伺服器",
     "syncRuleListCreated": "同步規則已建立",

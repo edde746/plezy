@@ -66,10 +66,12 @@ const int defaultPeopleSearchLimit = 20;
 /// can't be parsed; auth/server errors throw rather than silently dropping
 /// to `null`.
 
-/// Outcome of a health probe. Distinguishes "session expired" (token was
-/// rejected) from a generic transport failure, so the manager can route the
-/// two states to different UI ("Sign in again" vs "Server offline").
-enum HealthStatus { online, offline, authError }
+/// Outcome of a health probe. Distinguishes the two refusals a reachable
+/// server can answer with from a generic transport failure, so the manager can
+/// route each to its own UI: [authError] (HTTP 401 — the token was rejected;
+/// "Sign in again"), [accessDenied] (HTTP 403 — the server knows the account
+/// and refuses it; a new sign-in changes nothing), and [offline].
+enum HealthStatus { online, offline, authError, accessDenied }
 
 abstract interface class GracefullyCloseable {
   Future<void> closeGracefully({Duration drainTimeout});
@@ -133,9 +135,10 @@ abstract class MediaServerClient {
   LibraryEventChannel? createLibraryEventChannel() => null;
 
   /// Probe the server with a lightweight auth-required round-trip and
-  /// classify the outcome. Implementations must surface 401/403 as
-  /// [HealthStatus.authError] so the manager can flag a revoked token
-  /// distinctly from a generic network failure.
+  /// classify the outcome. Implementations must surface 401 as
+  /// [HealthStatus.authError] and 403 as [HealthStatus.accessDenied] so the
+  /// manager can flag a revoked token and a refused account distinctly from a
+  /// generic network failure.
   Future<HealthStatus> checkHealth();
 
   /// Server-reported unique identifier (Plex `machineIdentifier`,

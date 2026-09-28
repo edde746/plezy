@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "Toevoegen aan ${displayName}: Plex, Jellyfin, Emby of een andere profielverbinding",
     "sessionExpiredOne": "Sessie verlopen voor ${name}",
     "sessionExpiredMany": "Sessie verlopen voor ${count} servers",
+    "accessDeniedOne": "${name} weigerde toegang voor dit account",
+    "accessDeniedMany": "${count} servers weigerden toegang voor dit account",
     "signInAgain": "Opnieuw aanmelden",
     "editMediaBrowserTitle": "${product}-verbinding bewerken",
     "editMediaBrowserIntro": "Voeg URL's toe aan ${serverName} of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Beschikbaar",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Inloggen vereist",
+    "syncRuleAccessDenied": "Toegang geweigerd",
     "syncRuleNotAvailableForProfile": "Niet beschikbaar voor huidig profiel",
     "syncRuleUnknownServer": "Onbekende server",
     "syncRuleListCreated": "Synchronisatieregel aangemaakt",

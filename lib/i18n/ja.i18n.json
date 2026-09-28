@@ -976,6 +976,8 @@
     "addConnectionSubtitleScoped": "${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続",
     "sessionExpiredOne": "${name} のセッションの有効期限が切れました",
     "sessionExpiredMany": "${count} 台のサーバーのセッションの有効期限が切れました",
+    "accessDeniedOne": "${name} がこのアカウントへのアクセスを拒否しました",
+    "accessDeniedMany": "${count} 台のサーバーがこのアカウントへのアクセスを拒否しました",
     "signInAgain": "再度サインイン",
     "editMediaBrowserTitle": "${product}接続を編集",
     "editMediaBrowserIntro": "${serverName}のURLを追加または削除します。Plezyは到達可能なURLのうち、レイテンシーが最も低いものを使用します。"
@@ -1806,6 +1808,7 @@
     "syncRuleAvailable": "利用可能",
     "syncRuleOffline": "オフライン",
     "syncRuleSignInRequired": "サインインが必要",
+    "syncRuleAccessDenied": "アクセスが拒否されました",
     "syncRuleNotAvailableForProfile": "現在のプロフィールでは利用できません",
     "syncRuleUnknownServer": "不明なサーバー",
     "syncRuleListCreated": "同期ルールを作成しました",

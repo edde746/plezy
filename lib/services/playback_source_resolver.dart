@@ -72,7 +72,7 @@ class PlaybackSourceResolver {
   MediaServerClient? _playbackClient(ServerId? serverId, {required bool offlineLibraryMode}) {
     if (serverId == null ||
         !serverManager.isServerVisible(serverId) ||
-        serverManager.authErrorServerIds.contains(serverId)) {
+        serverManager.refusedServerIds.contains(serverId)) {
       return null;
     }
     final client = serverManager.getClient(serverId);

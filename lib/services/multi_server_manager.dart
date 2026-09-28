@@ -38,9 +38,16 @@ typedef PlexClientFactory =
       bool? seedTranscoderVideoSupport,
     });
 
-bool _isMediaServerAuthFailure(Object error) =>
-    error is MediaServerAuthException ||
-    error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403);
+/// The refusal a failed connect or token rotation reports, or null when the
+/// server did not answer with one: a rejected token (401, or a rejected
+/// sign-in) needs a new sign-in; a 403 is the server refusing an account it
+/// knows, which a new sign-in does not change.
+HealthStatus? _refusalFor(Object error) => switch (error) {
+  MediaServerAuthException() => HealthStatus.authError,
+  MediaServerHttpException(statusCode: 401) => HealthStatus.authError,
+  MediaServerHttpException(statusCode: 403) => HealthStatus.accessDenied,
+  _ => null,
+};
 
 /// Manages multiple media-server connections simultaneously.
 ///
@@ -70,11 +77,13 @@ class MultiServerManager {
 
   final Map<String, bool> _serverStatus = {};
 
-  /// Servers whose last health probe rejected the auth token (HTTP 401/403).
-  /// These rows also have `_serverStatus[serverId] == false` — auth errors are
-  /// a *kind* of offline. Surfaces through [authErrorServerIds] so UI can
-  /// show a "Sign in again" banner instead of a generic offline state.
-  final Set<String> _authErrorServers = {};
+  /// Servers whose last probe was answered with a refusal, and which one:
+  /// [HealthStatus.authError] (HTTP 401 — the token is expired or revoked, and
+  /// a new sign-in fixes it) or [HealthStatus.accessDenied] (HTTP 403 — the
+  /// server knows the account and refuses it, and a new sign-in does not).
+  /// Holds no other status. These rows also have `_serverStatus[serverId] ==
+  /// false` — a refusal is a *kind* of offline.
+  final Map<String, HealthStatus> _refusedServers = {};
 
   final _statusController = StreamController<Map<String, bool>>.broadcast();
 
@@ -98,10 +107,26 @@ class MultiServerManager {
 
   Stream<({String serverId, bool online})> get connectProgressStream => _connectProgressController.stream;
 
-  /// Servers whose authentication has failed (token rejected). A re-auth flow
-  /// should be offered for these — they will remain "offline" until the user
-  /// signs in again. Cleared once a probe succeeds.
-  Set<String> get authErrorServerIds => Set.unmodifiable(_authErrorServers);
+  /// Servers whose token was rejected (HTTP 401). A re-auth flow should be
+  /// offered for these — they remain "offline" until the user signs in again.
+  /// Cleared once a probe succeeds.
+  Set<String> get authErrorServerIds => _refusedServerIdsOf(HealthStatus.authError);
+
+  /// Servers that know this account and refuse it (HTTP 403), such as a
+  /// Jellyfin user denied remote access or outside their parental schedule. A
+  /// new sign-in cannot help; the server owner or the network the device is on
+  /// can. Cleared once a probe succeeds.
+  Set<String> get accessDeniedServerIds => _refusedServerIdsOf(HealthStatus.accessDenied);
+
+  /// Servers that answered and refuse this account, for either reason:
+  /// reachable, so never a connectivity failure, and unusable until the
+  /// refusal clears.
+  Set<String> get refusedServerIds => Set.unmodifiable(_refusedServers.keys.toSet());
+
+  Set<String> _refusedServerIdsOf(HealthStatus kind) => Set.unmodifiable({
+    for (final MapEntry(:key, :value) in _refusedServers.entries)
+      if (value == kind) key,
+  });
 
   /// Connectivity subscription for network monitoring
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
@@ -314,7 +339,14 @@ class MultiServerManager {
   @visibleForTesting
   void debugMarkAuthErrorForTesting(ServerId serverId) {
     _serverStatus[serverId] = false;
-    _authErrorServers.add(serverId);
+    _refusedServers[serverId] = HealthStatus.authError;
+    _emitStatus();
+  }
+
+  @visibleForTesting
+  void debugMarkAccessDeniedForTesting(ServerId serverId) {
+    _serverStatus[serverId] = false;
+    _refusedServers[serverId] = HealthStatus.accessDenied;
     _emitStatus();
   }
 
@@ -340,7 +372,7 @@ class MultiServerManager {
       }
       _registerPlexServer(id, server, clientIdentifier: connection.clientIdentifier, accountId: connection.id);
       _serverStatus[id] = false;
-      _authErrorServers.add(id);
+      _refusedServers[id] = HealthStatus.authError;
     }
     _emitStatus();
   }
@@ -609,7 +641,7 @@ class MultiServerManager {
     _plexAccountByServer.remove(serverId);
     _plexScopeByServer.remove(serverId);
     _serverStatus.remove(serverId);
-    _authErrorServers.remove(serverId);
+    _refusedServers.remove(serverId);
     return client;
   }
 
@@ -658,7 +690,7 @@ class MultiServerManager {
       final serverId = server.clientIdentifier;
       final profileScopeId = buildPlexProfileScopeId(serverId: ServerId(serverId), profileId: profileId);
       final existing = _clients[serverId];
-      if (existing is PlexClient && ((_serverStatus[serverId] ?? false) || _authErrorServers.contains(serverId))) {
+      if (existing is PlexClient && ((_serverStatus[serverId] ?? false) || _refusedServers.containsKey(serverId))) {
         try {
           final applied = await existing.applyProfileUpdate(
             newToken: server.accessToken,
@@ -673,7 +705,7 @@ class MultiServerManager {
             accountId: connection.id,
             scope: profileScopeId,
           );
-          _authErrorServers.remove(serverId);
+          _refusedServers.remove(serverId);
           _serverStatus[serverId] = true;
           bound.add(serverId);
           _connectProgressController.add((serverId: serverId, online: true));
@@ -681,7 +713,7 @@ class MultiServerManager {
           if (isStale() || !identical(_clients[serverId], existing)) return;
           appLogger.e('refreshTokensForProfile: failed to refresh ${server.name}', error: e, stackTrace: stackTrace);
           _serverStatus[serverId] = false;
-          if (_isMediaServerAuthFailure(e)) _authErrorServers.add(serverId);
+          _markRefusal(serverId, e);
           _connectProgressController.add((serverId: serverId, online: false));
         }
         return;
@@ -725,7 +757,7 @@ class MultiServerManager {
         if (oldClient != null) unawaited(_closeClientGracefully(oldClient));
         _clients[serverId] = client;
         _serverStatus[serverId] = true;
-        _authErrorServers.remove(serverId);
+        _refusedServers.remove(serverId);
         bound.add(serverId);
         _syncRelayEscape(ServerId(serverId));
         _connectProgressController.add((serverId: serverId, online: true));
@@ -733,7 +765,7 @@ class MultiServerManager {
         if (isStale() || !identical(_plexServers[serverId], server)) return;
         appLogger.e('refreshTokensForProfile: failed to connect ${server.name}', error: e, stackTrace: stackTrace);
         _serverStatus[serverId] = false;
-        if (_isMediaServerAuthFailure(e)) _authErrorServers.add(serverId);
+        _markRefusal(serverId, e);
         _connectProgressController.add((serverId: serverId, online: false));
       }
     });
@@ -977,24 +1009,27 @@ class MultiServerManager {
   /// without an auth-distinct signal should use [updateServerStatus].
   void _applyHealth(ServerId serverId, HealthStatus status) {
     final isOnline = status == HealthStatus.online;
-    final isAuthError = status == HealthStatus.authError;
+    final refusal = status == HealthStatus.authError || status == HealthStatus.accessDenied ? status : null;
     final prevOnline = _serverStatus[serverId];
-    final hadAuthError = _authErrorServers.contains(serverId);
+    final prevRefusal = _refusedServers[serverId];
 
     _serverStatus[serverId] = isOnline;
-    if (isAuthError) {
-      _authErrorServers.add(serverId);
+    if (refusal != null) {
+      _refusedServers[serverId] = refusal;
     } else {
-      _authErrorServers.remove(serverId);
+      _refusedServers.remove(serverId);
     }
 
-    final changed = prevOnline != isOnline || hadAuthError != isAuthError;
+    final changed = prevOnline != isOnline || prevRefusal != refusal;
     if (changed) {
       _emitStatus();
-      if (isAuthError) {
-        appLogger.w('Server $serverId auth rejected — token expired or revoked');
-      } else {
-        appLogger.d('Server $serverId status changed to: $isOnline');
+      switch (refusal) {
+        case HealthStatus.authError:
+          appLogger.w('Server $serverId auth rejected — token expired or revoked');
+        case HealthStatus.accessDenied:
+          appLogger.w('Server $serverId refused this account (HTTP 403)');
+        case _:
+          appLogger.d('Server $serverId status changed to: $isOnline');
       }
     }
 
@@ -1005,6 +1040,13 @@ class MultiServerManager {
     if (isOnline && _connectivitySubscription == null && _clients.containsKey(serverId)) {
       _startNetworkMonitoring();
     }
+  }
+
+  /// Record the refusal a failed connect or token rotation carried, if any.
+  /// Any other failure leaves the server's refusal state alone.
+  void _markRefusal(String serverId, Object error) {
+    final refusal = _refusalFor(error);
+    if (refusal != null) _refusedServers[serverId] = refusal;
   }
 
   /// Test connection health for all servers. The probe is backend-defined:
@@ -1501,7 +1543,8 @@ class MultiServerManager {
       }
 
       _applyHealth(serverId, health);
-      if (health == HealthStatus.authError) return;
+      // The server answered: failing over to another endpoint gets the same refusal.
+      if (health == HealthStatus.authError || health == HealthStatus.accessDenied) return;
 
       final plexServer = _plexServers[serverId];
       final jellyfinClient = client is JellyfinClient ? client : null;
@@ -1581,7 +1624,7 @@ class MultiServerManager {
     _jellyfinHealthByCompoundId.clear();
     _plexServers.clear();
     _serverStatus.clear();
-    _authErrorServers.clear();
+    _refusedServers.clear();
     _clientIdByServer.clear();
     _plexAccountByServer.clear();
     _plexScopeByServer.clear();

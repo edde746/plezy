@@ -183,6 +183,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
   String _serverStatusForRule(_RuleServerInfo serverInfo) {
     if (!serverInfo.isKnown) return t.downloads.syncRuleUnknownServer;
     if (multiServerProvider.authErrorServerIds.contains(rule.serverId)) return t.downloads.syncRuleSignInRequired;
+    if (multiServerProvider.accessDeniedServerIds.contains(rule.serverId)) return t.downloads.syncRuleAccessDenied;
     if (!multiServerProvider.serverIds.contains(rule.serverId)) return t.downloads.syncRuleNotAvailableForProfile;
     return multiServerProvider.isServerOnline(ServerId(rule.serverId))
         ? t.downloads.syncRuleAvailable

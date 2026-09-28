@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish",
     "sessionExpiredOne": "${name} uchun seans vaqti tugadi",
     "sessionExpiredMany": "${count} server uchun seans vaqti tugadi",
+    "accessDeniedOne": "${name} ushbu hisobga kirishni rad etdi",
+    "accessDeniedMany": "${count} ta server ushbu hisobga kirishni rad etdi",
     "signInAgain": "Qaytadan kirish",
     "editMediaBrowserTitle": "${product} ulanishini tahrirlash",
     "editMediaBrowserIntro": "${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Mavjud",
     "syncRuleOffline": "Oflayn",
     "syncRuleSignInRequired": "Kirish talab etiladi",
+    "syncRuleAccessDenied": "Kirish rad etildi",
     "syncRuleNotAvailableForProfile": "Joriy profil uchun mavjud emas",
     "syncRuleUnknownServer": "Nomaʼlum server",
     "syncRuleListCreated": "Sinxronlash qoidasi yaratildi",

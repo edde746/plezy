@@ -229,6 +229,31 @@ void main() {
       ]);
     });
 
+    test('an account refusal (403) is published as access denied, not as a sign-in prompt', () async {
+      final manager = MultiServerManager();
+      addTearDown(manager.dispose);
+      final client = testJellyfinClient(
+        connection: _jellyfinConnection('user-a'),
+        handler: (_) async => http.Response('', 403),
+      );
+      manager.debugRegisterJellyfinClientForTesting(client);
+
+      final emitted = <Map<String, bool>>[];
+      final sub = manager.statusStream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugVerifyServerEndpointsExhaustedForTesting(ServerId('jf-machine'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(manager.isServerOnline(ServerId('jf-machine')), isFalse);
+      expect(manager.accessDeniedServerIds, {'jf-machine'});
+      expect(manager.authErrorServerIds, isEmpty, reason: 'a new sign-in gets the same refusal');
+      // The server answered, so no endpoint failover or reconnection follows.
+      expect(emitted, [
+        {'jf-machine': false},
+      ]);
+    });
+
     test('confirmed-offline probe publishes offline once and schedules reconnection', () async {
       final manager = MultiServerManager();
       addTearDown(manager.dispose);
@@ -556,50 +581,56 @@ void main() {
       expect(libraries.map((library) => library.title), ['Profile B Movies']);
     });
 
-    test('rejected refreshed Plex token remains offline and auth-failed', () async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      PlexApiCache.initialize(db);
-      addTearDown(db.close);
+    for (final (status, refusal) in [(401, 'auth-failed'), (403, 'access-denied')]) {
+      test('refreshed Plex token rejected with $status remains offline and $refusal', () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        PlexApiCache.initialize(db);
+        addTearDown(db.close);
 
-      final client = PlexClient.forTesting(
-        config: PlexConfig(
-          baseUrl: 'https://plex.example',
-          token: 'old-token',
-          clientIdentifier: 'client-id',
-          product: 'Plezy',
-          version: '1.0.0',
-        ),
-        serverId: ServerId('server-1'),
-        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'old-profile'),
-        serverName: 'Plex',
-        httpClient: MockClient((request) async {
-          expect(request.url.path, '/');
-          return http.Response('rejected', 401);
-        }),
-      );
-      final manager = MultiServerManager();
-      addTearDown(manager.dispose);
-      manager.debugRegisterClientForTesting(client, online: true);
-
-      final bound = await manager.refreshTokensForProfile(
-        _plexAccount('account-1', [
-          PlexServer(
-            name: 'Plex',
-            clientIdentifier: 'server-1',
-            accessToken: 'rejected-token',
-            connections: const [],
-            owned: true,
+        final client = PlexClient.forTesting(
+          config: PlexConfig(
+            baseUrl: 'https://plex.example',
+            token: 'old-token',
+            clientIdentifier: 'client-id',
+            product: 'Plezy',
+            version: '1.0.0',
           ),
-        ]),
-        profileId: 'profile-b',
-      );
+          serverId: ServerId('server-1'),
+          profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'old-profile'),
+          serverName: 'Plex',
+          httpClient: MockClient((request) async {
+            expect(request.url.path, '/');
+            return http.Response('rejected', status);
+          }),
+        );
+        final manager = MultiServerManager();
+        addTearDown(manager.dispose);
+        manager.debugRegisterClientForTesting(client, online: true);
 
-      expect(bound, isEmpty);
-      expect(manager.isServerOnline(ServerId('server-1')), isFalse);
-      expect(manager.authErrorServerIds, contains('server-1'));
-      expect(client.config.token, 'old-token');
-      expect(client.profileScopeId, buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'old-profile'));
-    });
+        final bound = await manager.refreshTokensForProfile(
+          _plexAccount('account-1', [
+            PlexServer(
+              name: 'Plex',
+              clientIdentifier: 'server-1',
+              accessToken: 'rejected-token',
+              connections: const [],
+              owned: true,
+            ),
+          ]),
+          profileId: 'profile-b',
+        );
+
+        expect(bound, isEmpty);
+        expect(manager.isServerOnline(ServerId('server-1')), isFalse);
+        expect(status == 401 ? manager.authErrorServerIds : manager.accessDeniedServerIds, contains('server-1'));
+        expect(status == 401 ? manager.accessDeniedServerIds : manager.authErrorServerIds, isEmpty);
+        expect(client.config.token, 'old-token');
+        expect(
+          client.profileScopeId,
+          buildPlexProfileScopeId(serverId: ServerId('server-1'), profileId: 'old-profile'),
+        );
+      });
+    }
 
     test('required Plex probe rejects a different server identity without committing the candidate', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -1691,7 +1722,7 @@ void main() {
 
       expect(m.getClient(ServerId('jf-machine')), same(userB));
       expect(m.isServerOnline(ServerId('jf-machine')), isTrue);
-      expect(m.authErrorServerIds, isNot(contains('jf-machine')));
+      expect(m.refusedServerIds, isNot(contains('jf-machine')));
     });
   });
 

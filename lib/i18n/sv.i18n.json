@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "Lägg till för ${displayName}: Plex, Jellyfin, Emby eller en annan profilanslutning",
     "sessionExpiredOne": "Sessionen har gått ut för ${name}",
     "sessionExpiredMany": "Sessionen har gått ut för ${count} servrar",
+    "accessDeniedOne": "${name} nekade åtkomst för det här kontot",
+    "accessDeniedMany": "${count} servrar nekade åtkomst för det här kontot",
     "signInAgain": "Logga in igen",
     "editMediaBrowserTitle": "Redigera ${product}-anslutning",
     "editMediaBrowserIntro": "Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL:en med lägst latens."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Tillgänglig",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Inloggning krävs",
+    "syncRuleAccessDenied": "Åtkomst nekad",
     "syncRuleNotAvailableForProfile": "Inte tillgänglig för aktuell profil",
     "syncRuleUnknownServer": "Okänd server",
     "syncRuleListCreated": "Synkroniseringsregel skapad",

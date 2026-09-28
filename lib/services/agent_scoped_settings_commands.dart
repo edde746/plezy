@@ -1211,7 +1211,7 @@ class _ScopedGuard {
       multi.hasExplicitVisibleServerFilter &&
       multi.serverIds.contains(id) &&
       multi.expectedServerIds.contains(id) &&
-      !multi.authErrorServerIds.contains(id);
+      !multi.refusedServerIds.contains(id);
 
   void checkProfileIdentity() {
     context.checkCurrent(requireProfile: true);

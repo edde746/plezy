@@ -1142,6 +1142,8 @@ class Translations$connections$zh extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => '添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接';
 	@override String sessionExpiredOne({required Object name}) => '${name} 的会话已过期';
 	@override String sessionExpiredMany({required Object count}) => '${count} 个服务器的会话已过期';
+	@override String accessDeniedOne({required Object name}) => '${name} 拒绝此账户访问';
+	@override String accessDeniedMany({required Object count}) => '${count} 台服务器拒绝此账户访问';
 	@override String get signInAgain => '重新登录';
 	@override String editMediaBrowserTitle({required Object product}) => '编辑 ${product} 连接';
 	@override String editMediaBrowserIntro({required Object serverName}) => '为 ${serverName} 添加或移除 URL。Plezy 会使用延迟最低且可访问的 URL。';
@@ -1833,6 +1835,7 @@ class Translations$downloads$zh extends Translations$downloads$en {
 	@override String get syncRuleAvailable => '可用';
 	@override String get syncRuleOffline => '离线';
 	@override String get syncRuleSignInRequired => '需要登录';
+	@override String get syncRuleAccessDenied => '访问被拒绝';
 	@override String get syncRuleNotAvailableForProfile => '当前用户资料不可用';
 	@override String get syncRuleUnknownServer => '未知服务器';
 	@override String get syncRuleListCreated => '同步规则已创建';
@@ -3931,6 +3934,8 @@ extension on TranslationsZh {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的会话已过期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 个服务器的会话已过期',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} 拒绝此账户访问',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} 台服务器拒绝此账户访问',
 			'connections.signInAgain' => '重新登录',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '编辑 ${product} 连接',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '为 ${serverName} 添加或移除 URL。Plezy 会使用延迟最低且可访问的 URL。',
@@ -4046,10 +4051,10 @@ extension on TranslationsZh {
 			'libraries.emptyingTrash' => ({required Object title}) => '正在清空“${title}”的回收站…',
 			'libraries.trashEmptied' => ({required Object title}) => '已清空“${title}”的回收站',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '无法清空回收站：${error}',
-			'libraries.analyzing' => ({required Object title}) => '正在分析“${title}”…',
-			'libraries.analysisStarted' => ({required Object title}) => '已开始分析“${title}”',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analyzing' => ({required Object title}) => '正在分析“${title}”…',
+			'libraries.analysisStarted' => ({required Object title}) => '已开始分析“${title}”',
 			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库：${error}',
 			'libraries.noLibrariesFound' => '未找到媒体库',
 			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
@@ -4560,10 +4565,10 @@ extension on TranslationsZh {
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器不可用于同步',
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
 			'watchTogether.defaultDisplayName' => '用户',
-			'watchTogether.errors.timedOut' => '中继服务器未及时响应',
-			'watchTogether.errors.connectionLost' => '会话准备就绪前连接已断开',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.errors.timedOut' => '中继服务器未及时响应',
+			'watchTogether.errors.connectionLost' => '会话准备就绪前连接已断开',
 			'watchTogether.errors.invalidRelayResponse' => '中继服务器返回了意外的响应',
 			'watchTogether.errors.sessionEnded' => '主持人已结束会话',
 			'watchTogether.errors.sessionUnavailable' => '无法恢复此会话。请加入或创建房间以继续。',
@@ -4639,6 +4644,7 @@ extension on TranslationsZh {
 			'downloads.syncRuleAvailable' => '可用',
 			'downloads.syncRuleOffline' => '离线',
 			'downloads.syncRuleSignInRequired' => '需要登录',
+			'downloads.syncRuleAccessDenied' => '访问被拒绝',
 			'downloads.syncRuleNotAvailableForProfile' => '当前用户资料不可用',
 			'downloads.syncRuleUnknownServer' => '未知服务器',
 			'downloads.syncRuleListCreated' => '同步规则已创建',
@@ -5073,11 +5079,11 @@ extension on TranslationsZh {
 			'addServer.invalidCredentials' => '用户名或密码无效',
 			'addServer.authResponseNotJson' => '身份验证响应不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => '服务器拒绝了 Quick Connect 轮询',
 			'addServer.serverTimedOut' => '服务器未及时响应',
 			'addServer.responseNotJson' => '服务器响应不是有效的 JSON',

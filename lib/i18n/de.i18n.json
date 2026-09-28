@@ -980,6 +980,8 @@
     "addConnectionSubtitleScoped": "Zu ${displayName} hinzufügen: Plex, Jellyfin, Emby oder eine andere Profilverbindung",
     "sessionExpiredOne": "Sitzung für ${name} abgelaufen",
     "sessionExpiredMany": "Sitzungen für ${count} Server abgelaufen",
+    "accessDeniedOne": "${name} verweigert diesem Konto den Zugriff",
+    "accessDeniedMany": "${count} Server verweigern diesem Konto den Zugriff",
     "signInAgain": "Erneut anmelden",
     "editMediaBrowserTitle": "Verbindung zu ${product} bearbeiten",
     "editMediaBrowserIntro": "URLs für ${serverName} hinzufügen oder entfernen. Plezy verwendet die erreichbare URL mit der geringsten Latenz."
@@ -1817,6 +1819,7 @@
     "syncRuleAvailable": "Verfügbar",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Anmeldung erforderlich",
+    "syncRuleAccessDenied": "Zugriff verweigert",
     "syncRuleNotAvailableForProfile": "Für das aktuelle Profil nicht verfügbar",
     "syncRuleUnknownServer": "Unbekannter Server",
     "syncRuleListCreated": "Synchronisierungsregel erstellt",
