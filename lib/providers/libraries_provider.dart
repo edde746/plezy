@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../i18n/strings.g.dart';
+import '../media/ids.dart';
+import '../media/library_query.dart';
 import '../media/media_item.dart';
 import '../media/library_change_event.dart';
 import '../media/media_library.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/error_message_utils.dart';
@@ -19,12 +22,26 @@ import 'multi_server_provider.dart';
 /// Load state for the libraries provider
 enum LibrariesLoadState { initial, loading, loaded, error }
 
+typedef LibraryEmptinessProbe = Future<bool> Function(MediaLibrary library);
+
 /// Provider that serves as the single source of truth for library data.
 /// Both SideNavigationRail and LibrariesScreen consume this provider
 /// instead of independently fetching library data.
 class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  LibrariesProvider({this._storageService, this._multiServer, bool Function()? isProfileBinding})
-    : _isProfileBinding = isProfileBinding ?? _neverBinding {
+  LibrariesProvider({
+    this._storageService,
+    this._multiServer,
+    bool Function()? isProfileBinding,
+    LibraryEmptinessProbe? emptinessProbe,
+    bool Function()? hideEmptyLibraries,
+    Listenable? hideEmptyLibrariesChanges,
+  }) : _isProfileBinding = isProfileBinding ?? _neverBinding,
+       _hideEmptyLibraries = hideEmptyLibraries ?? _hideEmptyLibrariesSetting,
+       _hideEmptyLibrariesChanges =
+           hideEmptyLibrariesChanges ??
+           SettingsService.instanceOrNull?.listenableOf(SettingsService.hideEmptyLibraries) {
+    _emptinessProbe = emptinessProbe ?? _probeThroughServerClient;
+    _hideEmptyLibrariesChanges?.addListener(_onHideEmptyLibrariesChanged);
     _loadCoordinator = CoalescedLoadCoordinator<String>(onFull: _loadLibrariesInternal, onDelta: _loadDelta);
     // Reload libraries when a new server comes online. Servers bind in waves
     // on sign-in / profile switch and slow ones reconnect after the initial
@@ -38,6 +55,83 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   }
 
   static bool _neverBinding() => false;
+
+  static bool _hideEmptyLibrariesSetting() =>
+      SettingsService.instanceOrNull?.read(SettingsService.hideEmptyLibraries) ?? false;
+
+  late final LibraryEmptinessProbe _emptinessProbe;
+  final bool Function() _hideEmptyLibraries;
+  final Listenable? _hideEmptyLibrariesChanges;
+  final Map<String, bool> _isEmptyByGlobalKey = {};
+  final Set<String> _emptinessProbesInFlight = {};
+
+  Set<String> get emptyLibraryKeys {
+    if (!_hideEmptyLibraries()) return const {};
+    return {
+      for (final entry in _isEmptyByGlobalKey.entries)
+        if (entry.value) entry.key,
+    };
+  }
+
+  void _onHideEmptyLibrariesChanged() {
+    if (isDisposed) return;
+    _probeEmptyLibraries();
+    safeNotifyListeners();
+  }
+
+  void _probeEmptyLibraries() {
+    if (isDisposed || !_hideEmptyLibraries()) return;
+    final pending = [
+      for (final library in _libraries)
+        if (!library.isShared &&
+            !_isEmptyByGlobalKey.containsKey(library.globalKey) &&
+            _emptinessProbesInFlight.add(library.globalKey))
+          library,
+    ];
+    if (pending.isEmpty) return;
+    final stopwatch = Stopwatch()..start();
+    unawaited(
+      Future.wait(pending.map(_probeLibrary)).then((changes) {
+        if (isDisposed) return;
+        final empty = pending.where((library) => _isEmptyByGlobalKey[library.globalKey] == true).length;
+        appLogger.i(
+          'LibrariesProvider: checked ${pending.length} libraries for content in ${stopwatch.elapsedMilliseconds}ms ($empty empty)',
+        );
+        if (changes.any((changed) => changed)) safeNotifyListeners();
+      }),
+    );
+  }
+
+  Future<bool> _probeLibrary(MediaLibrary library) async {
+    final key = library.globalKey;
+    try {
+      final empty = await _emptinessProbe(library);
+      if (isDisposed || !_emptinessProbesInFlight.contains(key)) return false;
+      final wasEmpty = _isEmptyByGlobalKey[key] ?? false;
+      _isEmptyByGlobalKey[key] = empty;
+      return wasEmpty != empty;
+    } catch (error) {
+      appLogger.d(
+        'LibrariesProvider: could not tell whether ${library.title} is empty; keeping it visible',
+        error: error,
+      );
+      return false;
+    } finally {
+      _emptinessProbesInFlight.remove(key);
+    }
+  }
+
+  Future<bool> _probeThroughServerClient(MediaLibrary library) async {
+    final serverId = library.serverId;
+    final client = serverId == null ? null : _multiServer?.getClientForServer(ServerId(serverId));
+    if (client == null) throw StateError('No client for server $serverId');
+    final page = await client.fetchLibraryPagedContent(
+      library.id,
+      query: const LibraryQuery(limit: 1),
+      libraryKind: library.kind,
+    );
+    return page.items.isEmpty;
+  }
 
   final MultiServerProvider? _multiServer;
 
@@ -102,11 +196,16 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     // Resolved once per event, not per library: the loop below is the only
     // hot consumer and resolution walks the named ids.
     final coversServer = _eventCoversServer(event);
+    var revealedEmptyLibrary = false;
     for (final library in _libraries) {
       if (library.serverId != event.serverId.value) continue;
       if (!coversServer && !event.libraryIds.contains(library.id)) continue;
       _contentEpochByGlobalKey[library.globalKey] = (_contentEpochByGlobalKey[library.globalKey] ?? 0) + 1;
+      _emptinessProbesInFlight.remove(library.globalKey);
+      if (_isEmptyByGlobalKey.remove(library.globalKey) == true) revealedEmptyLibrary = true;
     }
+    if (revealedEmptyLibrary && _hideEmptyLibraries()) safeNotifyListeners();
+    _probeEmptyLibraries();
   }
 
   /// Single matcher for push events, shared with the visible tab's live pass
@@ -270,6 +369,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
       appLogger.i('LibrariesProvider: merged ${fresh.length} libraries from $ids');
       safeNotifyListeners();
+      _probeEmptyLibraries();
     } catch (e, stackTrace) {
       if (isDisposed) return;
       appLogger.e('LibrariesProvider: delta load failed for $ids', error: e, stackTrace: stackTrace);
@@ -367,6 +467,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
       appLogger.i('LibrariesProvider: Loaded ${_libraries.length} libraries');
       safeNotifyListeners();
+      _probeEmptyLibraries();
     } catch (e, stackTrace) {
       if (isDisposed) return;
       appLogger.e('LibrariesProvider: Failed to load libraries', error: e, stackTrace: stackTrace);
@@ -426,6 +527,8 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     _loadState = LibrariesLoadState.initial;
     _errorMessage = null;
     _loadedServerIds = {};
+    _isEmptyByGlobalKey.clear();
+    _emptinessProbesInFlight.clear();
     _loadCoordinator.clearPending();
     safeNotifyListeners();
     appLogger.d('LibrariesProvider: Cleared library data');
@@ -434,6 +537,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   @override
   void dispose() {
     _multiServer?.removeOnlineServersListener(syncToOnlineServers);
+    _hideEmptyLibrariesChanges?.removeListener(_onHideEmptyLibrariesChanged);
     _libraryEventSubscription?.cancel();
     _libraryEventSubscription = null;
     _loadCoordinator.dispose();

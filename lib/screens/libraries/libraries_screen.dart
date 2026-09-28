@@ -173,7 +173,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       return;
     }
 
-    final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+    final hiddenKeys = {...hiddenLibrariesProvider.hiddenLibraryKeys, ...librariesProvider.emptyLibraryKeys};
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     final storage = await StorageService.getInstance();
@@ -608,8 +608,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (isCurrentlySelected) {
         // Compute visible libraries after hiding
         final allLibraries = librariesProvider.libraries;
+        final emptyKeys = librariesProvider.emptyLibraryKeys;
         final visibleLibraries = allLibraries
-            .where((lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.globalKey))
+            .where(
+              (lib) =>
+                  !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.globalKey) &&
+                  !emptyKeys.contains(lib.globalKey),
+            )
             .toList();
 
         if (visibleLibraries.isNotEmpty) {
@@ -769,7 +774,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Watch for hidden libraries changes to trigger rebuild
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
-    final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+    final hiddenKeys = {...hiddenLibrariesProvider.hiddenLibraryKeys, ...librariesProvider.emptyLibraryKeys};
 
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();

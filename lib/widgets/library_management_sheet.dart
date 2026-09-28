@@ -515,6 +515,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     int? focusedColumn,
   }) {
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
+    final isEmpty = context.watch<LibrariesProvider>().emptyLibraryKeys.contains(library.globalKey);
+    final subtitleParts = [if (showServerName) library.serverName!, if (isEmpty) t.libraries.emptyLibrary];
     final colorScheme = Theme.of(context).colorScheme;
 
     Color? tileColor;
@@ -548,9 +550,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
           ],
         ),
         title: Text(library.title),
-        subtitle: showServerName
+        subtitle: subtitleParts.isNotEmpty
             ? Text(
-                library.serverName!,
+                subtitleParts.join(' · '),
                 style: TextStyle(
                   fontSize: 11,
                   color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),

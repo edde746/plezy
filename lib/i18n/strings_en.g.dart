@@ -528,6 +528,12 @@ class Translations$settings$en {
 	/// en: 'Always show server names in hub titles.'
 	String get showServerNameOnHubsDescription => 'Always show server names in hub titles.';
 
+	/// en: 'Hide Empty Libraries'
+	String get hideEmptyLibraries => 'Hide Empty Libraries';
+
+	/// en: 'Leave libraries with no items out of the sidebar and the library tabs.'
+	String get hideEmptyLibrariesDescription => 'Leave libraries with no items out of the sidebar and the library tabs.';
+
 	/// en: 'Group Libraries by Server'
 	String get groupLibrariesByServer => 'Group Libraries by Server';
 
@@ -3249,6 +3255,9 @@ class Translations$libraries$en {
 
 	/// en: 'Hide library'
 	String get hideLibrary => 'Hide library';
+
+	/// en: 'Empty'
+	String get emptyLibrary => 'Empty';
 
 	/// en: 'Library options'
 	String get libraryOptions => 'Library options';
@@ -7420,6 +7429,8 @@ extension on Translations {
 			'settings.useGlobalHubsDescription' => 'Show unified home hubs. Otherwise use library recommendations.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Always show server names in hub titles.',
+			'settings.hideEmptyLibraries' => 'Hide Empty Libraries',
+			'settings.hideEmptyLibrariesDescription' => 'Leave libraries with no items out of the sidebar and the library tabs.',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
 			'settings.groupLibrariesByServerDescription' => 'Group sidebar libraries under each media server.',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
@@ -7781,10 +7792,10 @@ extension on Translations {
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
-			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
-			'fileInfo.avcBitstream' => 'AVC Bitstream',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
+			'fileInfo.avcBitstream' => 'AVC Bitstream',
 			'fileInfo.nalLengthSize' => 'NAL Length Size',
 			'fileInfo.scalingMatrix' => 'Custom Scaling Matrix',
 			'fileInfo.streamIdentifier' => 'Stream Identifier',
@@ -8295,10 +8306,10 @@ extension on Translations {
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
-			'libraries.analyze' => 'Analyze',
-			'libraries.analyzeLibrary' => 'Analyze Library',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.analyze' => 'Analyze',
+			'libraries.analyzeLibrary' => 'Analyze Library',
 			'libraries.refreshMetadata' => 'Refresh Metadata',
 			'libraries.emptyTrash' => 'Empty Trash',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Emptying trash for "${title}"...',
@@ -8326,6 +8337,7 @@ extension on Translations {
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
+			'libraries.emptyLibrary' => 'Empty',
 			'libraries.libraryOptions' => 'Library options',
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
@@ -8808,11 +8820,11 @@ extension on Translations {
 			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.end' => 'End',
 			'watchTogether.leave' => 'Leave',
 			'watchTogether.syncing' => 'Syncing...',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
@@ -9322,11 +9334,11 @@ extension on Translations {
 			'addServer.addMediaBrowserTitle' => ({required Object product}) => 'Add ${product} server',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.findServer' => 'Find server',
 			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
 			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',

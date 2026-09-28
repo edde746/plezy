@@ -272,6 +272,8 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get useGlobalHubsDescription => 'Mostra sezioni Home unificate. In caso contrario, usa i consigli della libreria.';
 	@override String get showServerNameOnHubs => 'Mostra il nome del server nelle sezioni';
 	@override String get showServerNameOnHubsDescription => 'Mostra sempre i nomi dei server nei titoli delle sezioni.';
+	@override String get hideEmptyLibraries => 'Nascondi librerie vuote';
+	@override String get hideEmptyLibrariesDescription => 'Le librerie senza elementi non compaiono nella barra laterale e nelle schede delle librerie.';
 	@override String get groupLibrariesByServer => 'Raggruppa le librerie per server';
 	@override String get groupLibrariesByServerDescription => 'Raggruppa le librerie della barra laterale sotto ciascun server multimediale.';
 	@override String get alwaysKeepSidebarOpen => 'Mantieni sempre aperta la barra laterale';
@@ -1297,6 +1299,7 @@ class _Translations$libraries$it extends Translations$libraries$en {
 	@override String get confirmActionMessage => 'Sei sicuro di voler eseguire questa azione?';
 	@override String get showLibrary => 'Mostra libreria';
 	@override String get hideLibrary => 'Nascondi libreria';
+	@override String get emptyLibrary => 'Vuota';
 	@override String get libraryOptions => 'Opzioni libreria';
 	@override String get content => 'contenuto della libreria';
 	@override String get selectLibrary => 'Seleziona libreria';
@@ -3174,6 +3177,8 @@ extension on TranslationsIt {
 			'settings.useGlobalHubsDescription' => 'Mostra sezioni Home unificate. In caso contrario, usa i consigli della libreria.',
 			'settings.showServerNameOnHubs' => 'Mostra il nome del server nelle sezioni',
 			'settings.showServerNameOnHubsDescription' => 'Mostra sempre i nomi dei server nei titoli delle sezioni.',
+			'settings.hideEmptyLibraries' => 'Nascondi librerie vuote',
+			'settings.hideEmptyLibrariesDescription' => 'Le librerie senza elementi non compaiono nella barra laterale e nelle schede delle librerie.',
 			'settings.groupLibrariesByServer' => 'Raggruppa le librerie per server',
 			'settings.groupLibrariesByServerDescription' => 'Raggruppa le librerie della barra laterale sotto ciascun server multimediale.',
 			'settings.alwaysKeepSidebarOpen' => 'Mantieni sempre aperta la barra laterale',
@@ -3535,10 +3540,10 @@ extension on TranslationsIt {
 			'fileInfo.streamId' => 'ID flusso',
 			'fileInfo.language' => 'Lingua',
 			'fileInfo.languageCode' => 'Codice lingua',
-			'fileInfo.streamTitle' => 'Titolo traccia',
-			'fileInfo.channels' => 'Canali',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.streamTitle' => 'Titolo traccia',
+			'fileInfo.channels' => 'Canali',
 			'fileInfo.sampleRate' => 'Frequenza di campionamento',
 			'fileInfo.spatialAudio' => 'Audio spaziale',
 			'fileInfo.textBased' => 'Testuale',
@@ -4049,10 +4054,10 @@ extension on TranslationsIt {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Impossibile svuotare il cestino: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analisi di "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analisi avviata per "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Impossibile analizzare la libreria: ${error}',
-			'libraries.noLibrariesFound' => 'Nessuna libreria trovata',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Impossibile analizzare la libreria: ${error}',
+			'libraries.noLibrariesFound' => 'Nessuna libreria trovata',
 			'libraries.allLibrariesHidden' => 'Tutte le librerie sono nascoste',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Librerie nascoste (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Questa libreria è vuota',
@@ -4071,6 +4076,7 @@ extension on TranslationsIt {
 			'libraries.confirmActionMessage' => 'Sei sicuro di voler eseguire questa azione?',
 			'libraries.showLibrary' => 'Mostra libreria',
 			'libraries.hideLibrary' => 'Nascondi libreria',
+			'libraries.emptyLibrary' => 'Vuota',
 			'libraries.libraryOptions' => 'Opzioni libreria',
 			'libraries.content' => 'contenuto della libreria',
 			'libraries.selectLibrary' => 'Seleziona libreria',
@@ -4562,11 +4568,11 @@ extension on TranslationsIt {
 			'watchTogether.guestSwitchFailed' => 'Impossibile cambiare — contenuto non trovato su questo server',
 			'watchTogether.defaultDisplayName' => 'Utente',
 			'watchTogether.errors.timedOut' => 'Il server relay non ha risposto in tempo',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.errors.connectionLost' => 'La connessione si è chiusa prima che la sessione fosse pronta',
 			'watchTogether.errors.invalidRelayResponse' => 'Il server relay ha inviato una risposta imprevista',
 			'watchTogether.errors.sessionEnded' => 'L’host ha terminato la sessione',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.sessionUnavailable' => 'Impossibile riprendere questa sessione. Partecipa a una stanza o creane una per continuare.',
 			'downloads.title' => 'Download',
 			'downloads.manage' => 'Gestisci',
@@ -5076,11 +5082,11 @@ extension on TranslationsIt {
 			'addServer.responseNotJson' => 'La risposta del server non era un JSON valido',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Nella risposta manca un ID o il nome del server: è un server ${product}?',
 			'addServer.probeFailed' => ({required Object error}) => 'Impossibile raggiungere il server: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Inserisci almeno un URL di un server ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Non è stato trovato alcun server ${product} raggiungibile',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Questi URL rimandano a server ${product} diversi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'Questo URL non corrisponde al server ${product}',
 			'addServer.redirectUnsupported' => 'Il server ha reindirizzato a un URL non supportato',
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'Il server ha reindirizzato a un host diverso. Inserisci direttamente l\'URL finale del server ${product}.',

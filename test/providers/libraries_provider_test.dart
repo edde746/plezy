@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_change_event.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -948,6 +949,136 @@ void main() {
       expect(p.libraryContentEpoch('s1:1'), 0);
       expect(p.libraryContentEpoch('s1:2'), 0);
       expect(p.libraryContentEpoch('s2:1'), 0);
+    });
+  });
+
+  group('hide empty libraries', () {
+    late MultiServerManager manager;
+    late ValueNotifier<bool> hideEmpty;
+    late List<String> probed;
+    late Set<String> emptyIds;
+    late Set<String> failingIds;
+
+    setUp(() {
+      manager = MultiServerManager();
+      manager.debugRegisterClientForTesting(
+        _FakeClient(
+          serverId: ServerId('A'),
+          libraries: [
+            _serverLib(ServerId('A'), '1', 'Movies'),
+            _serverLib(ServerId('A'), '2', 'Kids'),
+            _serverLib(ServerId('A'), '3', 'Music Videos'),
+          ],
+        ),
+      );
+      hideEmpty = ValueNotifier(false);
+      probed = [];
+      emptyIds = {'2'};
+      failingIds = {};
+    });
+
+    tearDown(() {
+      hideEmpty.dispose();
+      manager.dispose();
+    });
+
+    LibrariesProvider build() {
+      final p = LibrariesProvider(
+        emptinessProbe: (library) async {
+          probed.add(library.id);
+          if (failingIds.contains(library.id)) throw StateError('offline');
+          return emptyIds.contains(library.id);
+        },
+        hideEmptyLibraries: () => hideEmpty.value,
+        hideEmptyLibrariesChanges: hideEmpty,
+      )..initialize(DataAggregationService(manager));
+      addTearDown(p.dispose);
+      return p;
+    }
+
+    test('with the setting off no library is checked', () async {
+      final p = build();
+
+      await p.syncToOnlineServers({'A'});
+      await pumpEventQueue();
+
+      expect(probed, isEmpty);
+      expect(p.emptyLibraryKeys, isEmpty);
+    });
+
+    test('with the setting on an empty library is reported once its check answers', () async {
+      hideEmpty.value = true;
+      final p = build();
+      var listenersSawEmptyLibrary = false;
+      p.addListener(() => listenersSawEmptyLibrary |= p.emptyLibraryKeys.isNotEmpty);
+
+      await p.syncToOnlineServers({'A'});
+      await pumpEventQueue();
+
+      expect(probed.toSet(), {'1', '2', '3'});
+      expect(p.emptyLibraryKeys, {'A:2'});
+      expect(listenersSawEmptyLibrary, isTrue);
+    });
+
+    test('a library whose check fails stays visible', () async {
+      hideEmpty.value = true;
+      failingIds = {'2'};
+      final p = build();
+
+      await p.syncToOnlineServers({'A'});
+      await pumpEventQueue();
+
+      expect(p.emptyLibraryKeys, isEmpty);
+    });
+
+    test('turning the setting on checks the loaded libraries; turning it off shows them all', () async {
+      final p = build();
+      await p.syncToOnlineServers({'A'});
+      await pumpEventQueue();
+      expect(probed, isEmpty);
+
+      hideEmpty.value = true;
+      await pumpEventQueue();
+      expect(p.emptyLibraryKeys, {'A:2'});
+
+      hideEmpty.value = false;
+      await pumpEventQueue();
+      expect(p.emptyLibraryKeys, isEmpty);
+    });
+
+    test('new content in an empty library brings it back and rechecks it', () async {
+      hideEmpty.value = true;
+      final p = build();
+      await p.syncToOnlineServers({'A'});
+      await pumpEventQueue();
+      expect(p.emptyLibraryKeys, {'A:2'});
+
+      emptyIds = {};
+      LibraryContentNotifier().notifyChanged(
+        LibraryChangeEvent(serverId: ServerId('A'), libraryIds: const {'2'}, itemsAdded: true),
+      );
+      await pumpEventQueue();
+
+      expect(p.emptyLibraryKeys, isEmpty);
+      expect(probed.where((id) => id == '2').length, 2);
+    });
+
+    test('shared libraries are never checked', () async {
+      hideEmpty.value = true;
+      final p = build();
+      await p.updateLibraryOrder([
+        MediaLibrary(
+          id: 'shared',
+          backend: MediaBackend.plex,
+          title: 'Shared with me',
+          isShared: true,
+          serverId: ServerId('A'),
+        ),
+      ]);
+      await p.syncToOnlineServers({'A'});
+      await pumpEventQueue();
+
+      expect(probed, isNot(contains('shared')));
     });
   });
 }

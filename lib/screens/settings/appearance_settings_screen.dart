@@ -119,6 +119,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
               title: t.settings.showServerNameOnHubs,
               subtitle: t.settings.showServerNameOnHubsDescription,
             ),
+            SettingSwitchTile(
+              pref: SettingsService.hideEmptyLibraries,
+              icon: Symbols.folder_off_rounded,
+              title: t.settings.hideEmptyLibraries,
+              subtitle: t.settings.hideEmptyLibrariesDescription,
+            ),
           ],
         ),
 
