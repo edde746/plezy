@@ -8,6 +8,9 @@
 #ifdef GDK_WINDOWING_WAYLAND
 #include <gdk/gdkwayland.h>
 #endif
+#ifdef GDK_WINDOWING_X11
+#include <gdk/gdkx.h>
+#endif
 #include <locale.h>
 
 // EGL 1.5 names; EGL_KHR_create_context introduced the same values earlier.
@@ -509,6 +512,9 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
     }
   };
 
+  // Drop Flutter's GLX context before binding EGL. On X11 that GdkGLContext is
+  // still current on this thread
+  gdk_gl_context_clear_current();
   if (!eglMakeCurrent(display, surface, surface, candidate_context)) {
     g_warning("MPV: Failed to activate the video-plane EGL context: 0x%x", eglGetError());
     destroy_candidate_context();
@@ -594,6 +600,15 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
     params[2].data = gdk_wayland_display_get_wl_display(gdk_display);
   } else if (software_renderer) {
     g_message("MPV video plane: software GL renderer; not handing mpv the Wayland display for VAAPI interop");
+  }
+#endif
+#ifdef GDK_WINDOWING_X11
+  if (!software_renderer) {
+    GdkDisplay* x11_display = gdk_display_get_default();
+    if (x11_display != nullptr && GDK_IS_X11_DISPLAY(x11_display)) {
+      params[2].type = MPV_RENDER_PARAM_X11_DISPLAY;
+      params[2].data = gdk_x11_display_get_xdisplay(x11_display);
+    }
   }
 #endif
 
