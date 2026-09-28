@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Échec du téléchargement",
     "errorDownloadFailedWithReason": "Échec du téléchargement : ${reason}",
     "errorHttpStatus": "Échec du téléchargement (HTTP ${status})",
-    "errorPostProcessing": "Échec du post-traitement : ${error}",
+    "errorPostProcessing": "Échec du post-traitement : ${reason}",
+    "reasonFileNotSaved": "le fichier n'a pas pu être enregistré sur cet appareil",
+    "reasonCannotResume": "le téléchargement partiel n'a pas pu être repris",
+    "reasonDeviceStorageFull": "cet appareil n'a plus d'espace de stockage",
     "notificationDownloading": "Téléchargement...",
     "notificationComplete": "Téléchargement terminé",
     "notificationPaused": "Téléchargement en pause"

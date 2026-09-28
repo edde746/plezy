@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "İndirme başarısız oldu",
     "errorDownloadFailedWithReason": "İndirme başarısız oldu: ${reason}",
     "errorHttpStatus": "İndirme başarısız oldu (HTTP ${status})",
-    "errorPostProcessing": "Son işleme başarısız oldu: ${error}",
+    "errorPostProcessing": "Son işleme başarısız oldu: ${reason}",
+    "reasonFileNotSaved": "dosya bu cihaza kaydedilemedi",
+    "reasonCannotResume": "yarım kalan indirme sürdürülemedi",
+    "reasonDeviceStorageFull": "bu cihazda depolama alanı kalmadı",
     "notificationDownloading": "İndiriliyor...",
     "notificationComplete": "İndirme tamamlandı",
     "notificationPaused": "İndirme duraklatıldı"

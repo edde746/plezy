@@ -1858,7 +1858,10 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Download mislukt';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download mislukt: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Download mislukt (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Nabewerking mislukt: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Nabewerking mislukt: ${reason}';
+	@override String get reasonFileNotSaved => 'het bestand kon niet op dit apparaat worden opgeslagen';
+	@override String get reasonCannotResume => 'de gedeeltelijke download kon niet worden hervat';
+	@override String get reasonDeviceStorageFull => 'dit apparaat heeft geen opslagruimte meer';
 	@override String get notificationDownloading => 'Downloaden...';
 	@override String get notificationComplete => 'Download voltooid';
 	@override String get notificationPaused => 'Download gepauzeerd';
@@ -4688,7 +4691,10 @@ extension on TranslationsNl {
 			'downloads.errorDownloadFailed' => 'Download mislukt',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download mislukt: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Download mislukt (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Nabewerking mislukt: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Nabewerking mislukt: ${reason}',
+			'downloads.reasonFileNotSaved' => 'het bestand kon niet op dit apparaat worden opgeslagen',
+			'downloads.reasonCannotResume' => 'de gedeeltelijke download kon niet worden hervat',
+			'downloads.reasonDeviceStorageFull' => 'dit apparaat heeft geen opslagruimte meer',
 			'downloads.notificationDownloading' => 'Downloaden...',
 			'downloads.notificationComplete' => 'Download voltooid',
 			'downloads.notificationPaused' => 'Download gepauzeerd',
@@ -5081,11 +5087,11 @@ extension on TranslationsNl {
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling is door de server geweigerd',
 			'addServer.serverTimedOut' => 'De server heeft niet op tijd gereageerd',
 			'addServer.responseNotJson' => 'Het serverantwoord was geen geldige JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'In het antwoord ontbreekt een ID of servernaam — is dit een ${product}-server?',
 			'addServer.probeFailed' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Voer ten minste één URL van een ${product}-server in',

@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Download mislukt",
     "errorDownloadFailedWithReason": "Download mislukt: ${reason}",
     "errorHttpStatus": "Download mislukt (HTTP ${status})",
-    "errorPostProcessing": "Nabewerking mislukt: ${error}",
+    "errorPostProcessing": "Nabewerking mislukt: ${reason}",
+    "reasonFileNotSaved": "het bestand kon niet op dit apparaat worden opgeslagen",
+    "reasonCannotResume": "de gedeeltelijke download kon niet worden hervat",
+    "reasonDeviceStorageFull": "dit apparaat heeft geen opslagruimte meer",
     "notificationDownloading": "Downloaden...",
     "notificationComplete": "Download voltooid",
     "notificationPaused": "Download gepauzeerd"

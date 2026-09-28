@@ -1858,7 +1858,10 @@ class _Translations$downloads$uz extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Yuklab boʻlmadi';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Yuklab boʻlmadi: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Yuklab boʻlmadi (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Keyingi ishlov berishda xatolik: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Keyingi ishlov berishda xatolik: ${reason}';
+	@override String get reasonFileNotSaved => 'faylni ushbu qurilmada saqlab boʻlmadi';
+	@override String get reasonCannotResume => 'qisman yuklab olishni davom ettirib boʻlmadi';
+	@override String get reasonDeviceStorageFull => 'ushbu qurilmada xotira qolmadi';
 	@override String get notificationDownloading => 'Yuklanmoqda...';
 	@override String get notificationComplete => 'Yuklash tugallandi';
 	@override String get notificationPaused => 'Yuklash toʻxtatib turildi';
@@ -4688,7 +4691,10 @@ extension on TranslationsUz {
 			'downloads.errorDownloadFailed' => 'Yuklab boʻlmadi',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Yuklab boʻlmadi: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Yuklab boʻlmadi (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Keyingi ishlov berishda xatolik: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Keyingi ishlov berishda xatolik: ${reason}',
+			'downloads.reasonFileNotSaved' => 'faylni ushbu qurilmada saqlab boʻlmadi',
+			'downloads.reasonCannotResume' => 'qisman yuklab olishni davom ettirib boʻlmadi',
+			'downloads.reasonDeviceStorageFull' => 'ushbu qurilmada xotira qolmadi',
 			'downloads.notificationDownloading' => 'Yuklanmoqda...',
 			'downloads.notificationComplete' => 'Yuklash tugallandi',
 			'downloads.notificationPaused' => 'Yuklash toʻxtatib turildi',
@@ -5081,11 +5087,11 @@ extension on TranslationsUz {
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect javobi yaroqli JSON emas',
 			'addServer.quickConnectMissingFields' => 'Quick Connect javobida kod yoki maxfiy kalit yoʻq',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect soʻrovi server tomonidan rad etildi',
 			'addServer.serverTimedOut' => 'Server oʻz vaqtida javob bermadi',
 			'addServer.responseNotJson' => 'Server javobi yaroqli JSON emas',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Javobda ID yoki server nomi yoʻq — bu ${product} serverimi?',
 			'addServer.probeFailed' => ({required Object error}) => 'Serverga ulanib boʻlmadi: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Kamida bitta ${product} server URL-ini kiriting',

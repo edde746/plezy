@@ -2302,6 +2302,122 @@ void main() {
     });
   });
 
+  group('native failure copy', () {
+    // Descriptions as each platform's downloader actually reports them.
+    final cases = <(String, TaskException, String Function())>[
+      (
+        'Android DNS failure, typed as a file-system error',
+        TaskFileSystemException(
+          'java.net.UnknownHostException: Unable to resolve host "plex.example.com": No address associated with hostname',
+        ),
+        () => t.errors.reasonUnreachable,
+      ),
+      (
+        'desktop DNS failure, typed as a file-system error',
+        TaskFileSystemException(
+          "SocketException: Failed host lookup: 'plex.example.com' (OS Error: nodename nor servname provided, errno = 8)",
+        ),
+        () => t.errors.reasonUnreachable,
+      ),
+      ('native timeout', TaskConnectionException('Task timed out'), () => t.errors.reasonTimedOut),
+      (
+        "Android's catch-all quoting the tokenized URL",
+        TaskException('Error for url https://plex.example.com/library/parts/1/file.mkv?X-Plex-Token=secret: boom'),
+        () => t.errors.reasonUnexpected,
+      ),
+      (
+        'local write failure',
+        TaskFileSystemException("FileSystemException: Cannot open file, path = '/data/user/0/app/downloads/x.mkv'"),
+        () => t.downloads.reasonFileNotSaved,
+      ),
+      (
+        'lost resume data',
+        TaskResumeException('Task was paused but cannot resume'),
+        () => t.downloads.reasonCannotResume,
+      ),
+    ];
+    for (final (label, exception, reason) in cases) {
+      test('$label shows a localized reason, never the platform text', () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        const globalKey = 'srv:item-1';
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: 'item-1',
+          globalKey: globalKey,
+          type: 'movie',
+          status: DownloadStatus.downloading.index,
+        );
+        await db.updateBgTaskId(globalKey, 'current-task');
+
+        final manager = DownloadManagerService(
+          database: db,
+          storageService: DownloadStorageService.instance,
+          clientResolver: (serverId, {clientScopeId}) => null,
+          downloadsSupportedOverride: false,
+        );
+        addTearDown(manager.dispose);
+
+        await manager.debugHandleTaskStatus(
+          TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.failed, exception),
+        );
+
+        final row = await db.getDownloadedMedia(globalKey);
+        expect(row?.status, DownloadStatus.failed.index);
+        expect(row?.errorMessage, t.downloads.errorDownloadFailedWithReason(reason: reason()));
+      });
+    }
+
+    for (final (label, error, reason) in <(String, FileSystemException, String Function())>[
+      (
+        'a full device',
+        const FileSystemException('Write failed', '/storage/emulated/0/x.mkv', OSError('No space left on device', 28)),
+        () => t.downloads.reasonDeviceStorageFull,
+      ),
+      (
+        'any other file error',
+        const FileSystemException('Cannot open file', '/data/user/0/app/downloads/x.mkv'),
+        () => t.downloads.reasonFileNotSaved,
+      ),
+    ]) {
+      test('post-processing that fails on $label shows a localized reason, never the path', () async {
+        final fixture = await _createSupplementaryFixture();
+        final globalKey = fixture.metadata.globalKey;
+        await fixture.db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: fixture.metadata.id,
+          globalKey: globalKey,
+          type: 'movie',
+          status: DownloadStatus.downloading.index,
+        );
+        await fixture.db.updateBgTaskId(globalKey, 'saf-task');
+        // Recovering a SAF completion resolves the task's root first; the
+        // failure lands there.
+        final manager = DownloadManagerService(
+          database: fixture.db,
+          storageService: fixture.storage,
+          clientResolver: (serverId, {clientScopeId}) => null,
+          safStorage: _FakeSafStorage(resolveOverride: (_) async => throw error),
+          downloadsSupportedOverride: false,
+        );
+        addTearDown(manager.dispose);
+        final task = UriDownloadTask(
+          taskId: 'saf-task',
+          url: 'https://example.test/video.mp4',
+          filename: 'video.mp4',
+          directoryUri: Uri.parse('content://dir'),
+          metaData: globalKey,
+        );
+
+        await manager.debugHandleTaskStatus(TaskStatusUpdate(task, TaskStatus.complete));
+
+        final row = await fixture.db.getDownloadedMedia(globalKey);
+        expect(row?.status, DownloadStatus.failed.index);
+        expect(row?.errorMessage, t.downloads.errorPostProcessing(reason: reason()));
+      });
+    }
+  });
+
   group('task session validation', () {
     test('ignores progress from stale native task ids', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());

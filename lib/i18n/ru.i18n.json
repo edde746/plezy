@@ -1884,7 +1884,10 @@
     "errorDownloadFailed": "Не удалось выполнить загрузку",
     "errorDownloadFailedWithReason": "Не удалось выполнить загрузку: ${reason}",
     "errorHttpStatus": "Не удалось выполнить загрузку (HTTP ${status})",
-    "errorPostProcessing": "Не удалось выполнить постобработку: ${error}",
+    "errorPostProcessing": "Не удалось выполнить постобработку: ${reason}",
+    "reasonFileNotSaved": "не удалось сохранить файл на этом устройстве",
+    "reasonCannotResume": "не удалось возобновить частичную загрузку",
+    "reasonDeviceStorageFull": "на этом устройстве закончилось место",
     "notificationDownloading": "Загрузка...",
     "notificationComplete": "Загрузка завершена",
     "notificationPaused": "Загрузка приостановлена"

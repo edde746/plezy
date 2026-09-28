@@ -1884,7 +1884,10 @@
     "errorDownloadFailed": "Pobieranie nie powiodło się",
     "errorDownloadFailedWithReason": "Pobieranie nie powiodło się: ${reason}",
     "errorHttpStatus": "Pobieranie nie powiodło się (HTTP ${status})",
-    "errorPostProcessing": "Przetwarzanie końcowe nie powiodło się: ${error}",
+    "errorPostProcessing": "Przetwarzanie końcowe nie powiodło się: ${reason}",
+    "reasonFileNotSaved": "nie udało się zapisać pliku na tym urządzeniu",
+    "reasonCannotResume": "nie udało się wznowić częściowego pobierania",
+    "reasonDeviceStorageFull": "na tym urządzeniu zabrakło miejsca",
     "notificationDownloading": "Pobieranie...",
     "notificationComplete": "Pobieranie zakończone",
     "notificationPaused": "Pobieranie wstrzymane"

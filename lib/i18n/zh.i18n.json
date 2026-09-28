@@ -1851,7 +1851,10 @@
     "errorDownloadFailed": "下载失败",
     "errorDownloadFailedWithReason": "下载失败：${reason}",
     "errorHttpStatus": "下载失败（HTTP ${status}）",
-    "errorPostProcessing": "后处理失败：${error}",
+    "errorPostProcessing": "后处理失败：${reason}",
+    "reasonFileNotSaved": "无法将文件保存到此设备",
+    "reasonCannotResume": "无法继续未完成的下载",
+    "reasonDeviceStorageFull": "此设备的存储空间已满",
     "notificationDownloading": "正在下载…",
     "notificationComplete": "下载完成",
     "notificationPaused": "下载已暂停"

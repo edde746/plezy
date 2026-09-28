@@ -1849,7 +1849,10 @@ class _Translations$downloads$ko extends Translations$downloads$en {
 	@override String get errorDownloadFailed => '다운로드 실패';
 	@override String errorDownloadFailedWithReason({required Object reason}) => '다운로드 실패: ${reason}';
 	@override String errorHttpStatus({required Object status}) => '다운로드 실패(HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => '후처리 실패: ${error}';
+	@override String errorPostProcessing({required Object reason}) => '후처리 실패: ${reason}';
+	@override String get reasonFileNotSaved => '이 기기에 파일을 저장할 수 없습니다';
+	@override String get reasonCannotResume => '일부만 받은 다운로드를 이어서 받을 수 없습니다';
+	@override String get reasonDeviceStorageFull => '이 기기의 저장 공간이 부족합니다';
 	@override String get notificationDownloading => '다운로드 중...';
 	@override String get notificationComplete => '다운로드 완료';
 	@override String get notificationPaused => '다운로드 일시 중지';
@@ -4677,7 +4680,10 @@ extension on TranslationsKo {
 			'downloads.errorDownloadFailed' => '다운로드 실패',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => '다운로드 실패: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => '다운로드 실패(HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => '후처리 실패: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => '후처리 실패: ${reason}',
+			'downloads.reasonFileNotSaved' => '이 기기에 파일을 저장할 수 없습니다',
+			'downloads.reasonCannotResume' => '일부만 받은 다운로드를 이어서 받을 수 없습니다',
+			'downloads.reasonDeviceStorageFull' => '이 기기의 저장 공간이 부족합니다',
 			'downloads.notificationDownloading' => '다운로드 중...',
 			'downloads.notificationComplete' => '다운로드 완료',
 			'downloads.notificationPaused' => '다운로드 일시 중지',
@@ -5070,11 +5076,11 @@ extension on TranslationsKo {
 			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',
 			'addServer.quickConnectNotJson' => 'Quick Connect 응답이 유효한 JSON이 아닙니다',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => '서버에서 Quick Connect 폴링을 거부했습니다',
 			'addServer.serverTimedOut' => '서버가 제시간에 응답하지 않았습니다',
 			'addServer.responseNotJson' => '서버 응답이 유효한 JSON이 아닙니다',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => '응답에 ID 또는 서버 이름이 없습니다. 이 서버가 ${product} 서버인가요?',
 			'addServer.probeFailed' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '${product} 서버 URL을 하나 이상 입력하세요',

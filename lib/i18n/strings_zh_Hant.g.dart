@@ -1850,7 +1850,10 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get errorDownloadFailed => '下載失敗';
 	@override String errorDownloadFailedWithReason({required Object reason}) => '下載失敗：${reason}';
 	@override String errorHttpStatus({required Object status}) => '下載失敗（HTTP ${status}）';
-	@override String errorPostProcessing({required Object error}) => '後續處理失敗：${error}';
+	@override String errorPostProcessing({required Object reason}) => '後續處理失敗：${reason}';
+	@override String get reasonFileNotSaved => '無法將檔案儲存到此裝置';
+	@override String get reasonCannotResume => '無法繼續未完成的下載';
+	@override String get reasonDeviceStorageFull => '此裝置的儲存空間已滿';
 	@override String get notificationDownloading => '正在下載…';
 	@override String get notificationComplete => '下載完成';
 	@override String get notificationPaused => '下載已暫停';
@@ -4678,7 +4681,10 @@ extension on TranslationsZhHant {
 			'downloads.errorDownloadFailed' => '下載失敗',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => '下載失敗：${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => '下載失敗（HTTP ${status}）',
-			'downloads.errorPostProcessing' => ({required Object error}) => '後續處理失敗：${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => '後續處理失敗：${reason}',
+			'downloads.reasonFileNotSaved' => '無法將檔案儲存到此裝置',
+			'downloads.reasonCannotResume' => '無法繼續未完成的下載',
+			'downloads.reasonDeviceStorageFull' => '此裝置的儲存空間已滿',
 			'downloads.notificationDownloading' => '正在下載…',
 			'downloads.notificationComplete' => '下載完成',
 			'downloads.notificationPaused' => '下載已暫停',
@@ -5071,11 +5077,11 @@ extension on TranslationsZhHant {
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',
 			'addServer.quickConnectNotJson' => 'Quick Connect 回應不是有效的 JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 回應缺少代碼或密鑰',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect 輪詢遭到伺服器拒絕',
 			'addServer.serverTimedOut' => '伺服器未及時回應',
 			'addServer.responseNotJson' => '伺服器回應不是有效的 JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => '回應缺少 ID 或伺服器名稱——這是 ${product} 伺服器嗎？',
 			'addServer.probeFailed' => ({required Object error}) => '無法連線至伺服器：${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '請輸入至少一個 ${product} 伺服器 URL',

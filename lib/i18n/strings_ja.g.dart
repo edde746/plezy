@@ -1849,7 +1849,10 @@ class _Translations$downloads$ja extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'ダウンロードに失敗しました';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'ダウンロードに失敗しました: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'ダウンロードに失敗しました（HTTP ${status}）';
-	@override String errorPostProcessing({required Object error}) => '後処理に失敗しました: ${error}';
+	@override String errorPostProcessing({required Object reason}) => '後処理に失敗しました: ${reason}';
+	@override String get reasonFileNotSaved => 'このデバイスにファイルを保存できませんでした';
+	@override String get reasonCannotResume => '途中までのダウンロードを再開できませんでした';
+	@override String get reasonDeviceStorageFull => 'このデバイスのストレージが不足しています';
 	@override String get notificationDownloading => 'ダウンロード中…';
 	@override String get notificationComplete => 'ダウンロードが完了しました';
 	@override String get notificationPaused => 'ダウンロードを一時停止しました';
@@ -4677,7 +4680,10 @@ extension on TranslationsJa {
 			'downloads.errorDownloadFailed' => 'ダウンロードに失敗しました',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'ダウンロードに失敗しました: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'ダウンロードに失敗しました（HTTP ${status}）',
-			'downloads.errorPostProcessing' => ({required Object error}) => '後処理に失敗しました: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => '後処理に失敗しました: ${reason}',
+			'downloads.reasonFileNotSaved' => 'このデバイスにファイルを保存できませんでした',
+			'downloads.reasonCannotResume' => '途中までのダウンロードを再開できませんでした',
+			'downloads.reasonDeviceStorageFull' => 'このデバイスのストレージが不足しています',
 			'downloads.notificationDownloading' => 'ダウンロード中…',
 			'downloads.notificationComplete' => 'ダウンロードが完了しました',
 			'downloads.notificationPaused' => 'ダウンロードを一時停止しました',
@@ -5070,11 +5076,11 @@ extension on TranslationsJa {
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',
 			'addServer.quickConnectNotJson' => 'Quick Connectのレスポンスが有効なJSONではありません',
 			'addServer.quickConnectMissingFields' => 'Quick Connectのレスポンスにコードまたはシークレットがありません',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connectのポーリングがサーバーに拒否されました',
 			'addServer.serverTimedOut' => 'サーバーが時間内に応答しませんでした',
 			'addServer.responseNotJson' => 'サーバーのレスポンスが有効なJSONではありません',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'レスポンスにIDまたはサーバー名がありません。これは${product}サーバーですか？',
 			'addServer.probeFailed' => ({required Object error}) => 'サーバーに接続できませんでした: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '${product}サーバーのURLを1つ以上入力してください',

@@ -1851,7 +1851,10 @@
     "errorDownloadFailed": "下載失敗",
     "errorDownloadFailedWithReason": "下載失敗：${reason}",
     "errorHttpStatus": "下載失敗（HTTP ${status}）",
-    "errorPostProcessing": "後續處理失敗：${error}",
+    "errorPostProcessing": "後續處理失敗：${reason}",
+    "reasonFileNotSaved": "無法將檔案儲存到此裝置",
+    "reasonCannotResume": "無法繼續未完成的下載",
+    "reasonDeviceStorageFull": "此裝置的儲存空間已滿",
     "notificationDownloading": "正在下載…",
     "notificationComplete": "下載完成",
     "notificationPaused": "下載已暫停"

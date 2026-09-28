@@ -1858,7 +1858,10 @@ class _Translations$downloads$tr extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'İndirme başarısız oldu';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'İndirme başarısız oldu: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'İndirme başarısız oldu (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Son işleme başarısız oldu: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Son işleme başarısız oldu: ${reason}';
+	@override String get reasonFileNotSaved => 'dosya bu cihaza kaydedilemedi';
+	@override String get reasonCannotResume => 'yarım kalan indirme sürdürülemedi';
+	@override String get reasonDeviceStorageFull => 'bu cihazda depolama alanı kalmadı';
 	@override String get notificationDownloading => 'İndiriliyor...';
 	@override String get notificationComplete => 'İndirme tamamlandı';
 	@override String get notificationPaused => 'İndirme duraklatıldı';
@@ -4688,7 +4691,10 @@ extension on TranslationsTr {
 			'downloads.errorDownloadFailed' => 'İndirme başarısız oldu',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'İndirme başarısız oldu: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'İndirme başarısız oldu (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Son işleme başarısız oldu: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Son işleme başarısız oldu: ${reason}',
+			'downloads.reasonFileNotSaved' => 'dosya bu cihaza kaydedilemedi',
+			'downloads.reasonCannotResume' => 'yarım kalan indirme sürdürülemedi',
+			'downloads.reasonDeviceStorageFull' => 'bu cihazda depolama alanı kalmadı',
 			'downloads.notificationDownloading' => 'İndiriliyor...',
 			'downloads.notificationComplete' => 'İndirme tamamlandı',
 			'downloads.notificationPaused' => 'İndirme duraklatıldı',
@@ -5081,11 +5087,11 @@ extension on TranslationsTr {
 			'addServer.quickConnectRejected' => 'Quick Connect sunucu tarafından reddedildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect yanıtı geçerli bir JSON değildi',
 			'addServer.quickConnectMissingFields' => 'Quick Connect yanıtında kod veya gizli anahtar eksik',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect yoklaması sunucu tarafından reddedildi',
 			'addServer.serverTimedOut' => 'Sunucu zamanında yanıt vermedi',
 			'addServer.responseNotJson' => 'Sunucu yanıtı geçerli bir JSON değildi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Yanıtta kimlik veya sunucu adı eksik — bu bir ${product} sunucusu mu?',
 			'addServer.probeFailed' => ({required Object error}) => 'Sunucuya ulaşılamadı: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'En az bir ${product} sunucu URL\'si girin',

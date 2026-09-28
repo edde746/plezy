@@ -1851,7 +1851,10 @@
     "errorDownloadFailed": "ダウンロードに失敗しました",
     "errorDownloadFailedWithReason": "ダウンロードに失敗しました: ${reason}",
     "errorHttpStatus": "ダウンロードに失敗しました（HTTP ${status}）",
-    "errorPostProcessing": "後処理に失敗しました: ${error}",
+    "errorPostProcessing": "後処理に失敗しました: ${reason}",
+    "reasonFileNotSaved": "このデバイスにファイルを保存できませんでした",
+    "reasonCannotResume": "途中までのダウンロードを再開できませんでした",
+    "reasonDeviceStorageFull": "このデバイスのストレージが不足しています",
     "notificationDownloading": "ダウンロード中…",
     "notificationComplete": "ダウンロードが完了しました",
     "notificationPaused": "ダウンロードを一時停止しました"

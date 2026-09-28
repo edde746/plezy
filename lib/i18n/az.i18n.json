@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Yükləmə uğursuz oldu",
     "errorDownloadFailedWithReason": "Yükləmə uğursuz oldu: ${reason}",
     "errorHttpStatus": "Yükləmə uğursuz oldu (HTTP ${status})",
-    "errorPostProcessing": "Sonrakı emal uğursuz oldu: ${error}",
+    "errorPostProcessing": "Sonrakı emal uğursuz oldu: ${reason}",
+    "reasonFileNotSaved": "fayl bu cihazda saxlanıla bilmədi",
+    "reasonCannotResume": "yarımçıq yükləməni davam etdirmək mümkün olmadı",
+    "reasonDeviceStorageFull": "bu cihazda yer qalmayıb",
     "notificationDownloading": "Yüklənir...",
     "notificationComplete": "Yükləmə tamamlandı",
     "notificationPaused": "Yükləmə dayandırıldı"

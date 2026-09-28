@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Download mislykkedes",
     "errorDownloadFailedWithReason": "Download mislykkedes: ${reason}",
     "errorHttpStatus": "Download mislykkedes (HTTP ${status})",
-    "errorPostProcessing": "Efterbehandling mislykkedes: ${error}",
+    "errorPostProcessing": "Efterbehandling mislykkedes: ${reason}",
+    "reasonFileNotSaved": "filen kunne ikke gemmes på denne enhed",
+    "reasonCannotResume": "den delvise download kunne ikke genoptages",
+    "reasonDeviceStorageFull": "der er ikke mere lagerplads på denne enhed",
     "notificationDownloading": "Downloader...",
     "notificationComplete": "Download fuldført",
     "notificationPaused": "Download sat på pause"

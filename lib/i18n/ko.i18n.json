@@ -1851,7 +1851,10 @@
     "errorDownloadFailed": "다운로드 실패",
     "errorDownloadFailedWithReason": "다운로드 실패: ${reason}",
     "errorHttpStatus": "다운로드 실패(HTTP ${status})",
-    "errorPostProcessing": "후처리 실패: ${error}",
+    "errorPostProcessing": "후처리 실패: ${reason}",
+    "reasonFileNotSaved": "이 기기에 파일을 저장할 수 없습니다",
+    "reasonCannotResume": "일부만 받은 다운로드를 이어서 받을 수 없습니다",
+    "reasonDeviceStorageFull": "이 기기의 저장 공간이 부족합니다",
     "notificationDownloading": "다운로드 중...",
     "notificationComplete": "다운로드 완료",
     "notificationPaused": "다운로드 일시 중지"

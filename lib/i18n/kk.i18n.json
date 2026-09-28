@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Жүктеу сәтсіз аяқталды",
     "errorDownloadFailedWithReason": "Жүктеу сәтсіз аяқталды: ${reason}",
     "errorHttpStatus": "Жүктеу сәтсіз аяқталды (HTTP ${status})",
-    "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${error}",
+    "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${reason}",
+    "reasonFileNotSaved": "файлды осы құрылғыда сақтау мүмкін болмады",
+    "reasonCannotResume": "ішінара жүктеуді жалғастыру мүмкін болмады",
+    "reasonDeviceStorageFull": "бұл құрылғыда бос орын қалмады",
     "notificationDownloading": "Жүктелуде...",
     "notificationComplete": "Жүктеу аяқталды",
     "notificationPaused": "Жүктеу кідіртілді"

@@ -1858,7 +1858,10 @@ class _Translations$downloads$kk extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Жүктеу сәтсіз аяқталды';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Жүктеу сәтсіз аяқталды: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Жүктеу сәтсіз аяқталды (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${reason}';
+	@override String get reasonFileNotSaved => 'файлды осы құрылғыда сақтау мүмкін болмады';
+	@override String get reasonCannotResume => 'ішінара жүктеуді жалғастыру мүмкін болмады';
+	@override String get reasonDeviceStorageFull => 'бұл құрылғыда бос орын қалмады';
 	@override String get notificationDownloading => 'Жүктелуде...';
 	@override String get notificationComplete => 'Жүктеу аяқталды';
 	@override String get notificationPaused => 'Жүктеу кідіртілді';
@@ -4688,7 +4691,10 @@ extension on TranslationsKk {
 			'downloads.errorDownloadFailed' => 'Жүктеу сәтсіз аяқталды',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Жүктеу сәтсіз аяқталды: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Жүктеу сәтсіз аяқталды (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Кейінгі өңдеу сәтсіз аяқталды: ${reason}',
+			'downloads.reasonFileNotSaved' => 'файлды осы құрылғыда сақтау мүмкін болмады',
+			'downloads.reasonCannotResume' => 'ішінара жүктеуді жалғастыру мүмкін болмады',
+			'downloads.reasonDeviceStorageFull' => 'бұл құрылғыда бос орын қалмады',
 			'downloads.notificationDownloading' => 'Жүктелуде...',
 			'downloads.notificationComplete' => 'Жүктеу аяқталды',
 			'downloads.notificationPaused' => 'Жүктеу кідіртілді',
@@ -5081,11 +5087,11 @@ extension on TranslationsKk {
 			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',
 			'addServer.quickConnectNotJson' => 'Quick Connect жауабы жарамды JSON болмады',
 			'addServer.quickConnectMissingFields' => 'Quick Connect жауабында код немесе құпия кілт жоқ',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Сервер Quick Connect сұрауын тексеруді қабылдамады',
 			'addServer.serverTimedOut' => 'Сервер уақытында жауап бермеді',
 			'addServer.responseNotJson' => 'Сервер жауабы жарамды JSON болмады',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Жауапта ID немесе сервер атауы жоқ — бұл ${product} сервері ме?',
 			'addServer.probeFailed' => ({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Кемінде бір ${product} серверінің URL-ін енгізіңіз',

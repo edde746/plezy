@@ -1858,7 +1858,10 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Изтеглянето е неуспешно';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Изтеглянето е неуспешно: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Изтеглянето е неуспешно (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Последващата обработка е неуспешна: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Последващата обработка е неуспешна: ${reason}';
+	@override String get reasonFileNotSaved => 'файлът не можа да бъде запазен на това устройство';
+	@override String get reasonCannotResume => 'частичното изтегляне не можа да бъде продължено';
+	@override String get reasonDeviceStorageFull => 'на това устройство няма свободно място';
 	@override String get notificationDownloading => 'Изтегляне...';
 	@override String get notificationComplete => 'Изтеглянето завърши';
 	@override String get notificationPaused => 'Изтеглянето е на пауза';
@@ -4688,7 +4691,10 @@ extension on TranslationsBg {
 			'downloads.errorDownloadFailed' => 'Изтеглянето е неуспешно',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Изтеглянето е неуспешно: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Изтеглянето е неуспешно (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Последващата обработка е неуспешна: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Последващата обработка е неуспешна: ${reason}',
+			'downloads.reasonFileNotSaved' => 'файлът не можа да бъде запазен на това устройство',
+			'downloads.reasonCannotResume' => 'частичното изтегляне не можа да бъде продължено',
+			'downloads.reasonDeviceStorageFull' => 'на това устройство няма свободно място',
 			'downloads.notificationDownloading' => 'Изтегляне...',
 			'downloads.notificationComplete' => 'Изтеглянето завърши',
 			'downloads.notificationPaused' => 'Изтеглянето е на пауза',
@@ -5081,11 +5087,11 @@ extension on TranslationsBg {
 			'addServer.quickConnectRejected' => 'Quick Connect беше отхвърлен от сървъра',
 			'addServer.quickConnectNotJson' => 'Отговорът на Quick Connect не беше валиден JSON',
 			'addServer.quickConnectMissingFields' => 'В отговора на Quick Connect липсва код или таен ключ',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Запитването на Quick Connect беше отхвърлено от сървъра',
 			'addServer.serverTimedOut' => 'Сървърът не отговори навреме',
 			'addServer.responseNotJson' => 'Отговорът на сървъра не беше валиден JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'В отговора липсва ID или име на сървъра — това сървър на ${product} ли е?',
 			'addServer.probeFailed' => ({required Object error}) => 'Сървърът не може да бъде достигнат: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Въведете поне един URL на сървър на ${product}',

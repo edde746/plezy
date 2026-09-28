@@ -1858,7 +1858,10 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'A letöltés nem sikerült';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'A letöltés nem sikerült: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'A letöltés nem sikerült (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Az utófeldolgozás nem sikerült: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Az utófeldolgozás nem sikerült: ${reason}';
+	@override String get reasonFileNotSaved => 'a fájlt nem sikerült menteni erre az eszközre';
+	@override String get reasonCannotResume => 'a részleges letöltést nem sikerült folytatni';
+	@override String get reasonDeviceStorageFull => 'az eszközön elfogyott a tárhely';
 	@override String get notificationDownloading => 'Letöltés...';
 	@override String get notificationComplete => 'Letöltés kész';
 	@override String get notificationPaused => 'Letöltés szüneteltetve';
@@ -4688,7 +4691,10 @@ extension on TranslationsHu {
 			'downloads.errorDownloadFailed' => 'A letöltés nem sikerült',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'A letöltés nem sikerült: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'A letöltés nem sikerült (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Az utófeldolgozás nem sikerült: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Az utófeldolgozás nem sikerült: ${reason}',
+			'downloads.reasonFileNotSaved' => 'a fájlt nem sikerült menteni erre az eszközre',
+			'downloads.reasonCannotResume' => 'a részleges letöltést nem sikerült folytatni',
+			'downloads.reasonDeviceStorageFull' => 'az eszközön elfogyott a tárhely',
 			'downloads.notificationDownloading' => 'Letöltés...',
 			'downloads.notificationComplete' => 'Letöltés kész',
 			'downloads.notificationPaused' => 'Letöltés szüneteltetve',
@@ -5081,11 +5087,11 @@ extension on TranslationsHu {
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',
 			'addServer.quickConnectNotJson' => 'A Quick Connect válasza nem érvényes JSON',
 			'addServer.quickConnectMissingFields' => 'A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'A szerver elutasította a Quick Connect lekérdezését',
 			'addServer.serverTimedOut' => 'A szerver nem válaszolt időben',
 			'addServer.responseNotJson' => 'A szerver válasza nem érvényes JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'A válaszból hiányzik az azonosító vagy a szerver neve – ez valóban ${product}-szerver?',
 			'addServer.probeFailed' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Adj meg legalább egy ${product}-szerverhez tartozó URL-t',

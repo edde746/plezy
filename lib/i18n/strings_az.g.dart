@@ -1858,7 +1858,10 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Yükləmə uğursuz oldu';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Yükləmə uğursuz oldu: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Yükləmə uğursuz oldu (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Sonrakı emal uğursuz oldu: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Sonrakı emal uğursuz oldu: ${reason}';
+	@override String get reasonFileNotSaved => 'fayl bu cihazda saxlanıla bilmədi';
+	@override String get reasonCannotResume => 'yarımçıq yükləməni davam etdirmək mümkün olmadı';
+	@override String get reasonDeviceStorageFull => 'bu cihazda yer qalmayıb';
 	@override String get notificationDownloading => 'Yüklənir...';
 	@override String get notificationComplete => 'Yükləmə tamamlandı';
 	@override String get notificationPaused => 'Yükləmə dayandırıldı';
@@ -4688,7 +4691,10 @@ extension on TranslationsAz {
 			'downloads.errorDownloadFailed' => 'Yükləmə uğursuz oldu',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Yükləmə uğursuz oldu: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Yükləmə uğursuz oldu (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Sonrakı emal uğursuz oldu: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Sonrakı emal uğursuz oldu: ${reason}',
+			'downloads.reasonFileNotSaved' => 'fayl bu cihazda saxlanıla bilmədi',
+			'downloads.reasonCannotResume' => 'yarımçıq yükləməni davam etdirmək mümkün olmadı',
+			'downloads.reasonDeviceStorageFull' => 'bu cihazda yer qalmayıb',
 			'downloads.notificationDownloading' => 'Yüklənir...',
 			'downloads.notificationComplete' => 'Yükləmə tamamlandı',
 			'downloads.notificationPaused' => 'Yükləmə dayandırıldı',
@@ -5081,11 +5087,11 @@ extension on TranslationsAz {
 			'addServer.quickConnectRejected' => 'Quick Connect server tərəfindən rədd edildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect cavabı etibarlı JSON deyildi',
 			'addServer.quickConnectMissingFields' => 'Quick Connect cavabında kod və ya məxfi açar yoxdur',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect sorğulaması server tərəfindən rədd edildi',
 			'addServer.serverTimedOut' => 'Server vaxtında cavab vermədi',
 			'addServer.responseNotJson' => 'Server cavabı etibarlı JSON deyildi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Cavabda ID və ya server adı yoxdur — bu, ${product} serveridir?',
 			'addServer.probeFailed' => ({required Object error}) => 'Serverə çatmaq olmadı: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Ən azı bir ${product} server URL-i daxil edin',

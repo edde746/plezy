@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Nedladdningen misslyckades",
     "errorDownloadFailedWithReason": "Nedladdningen misslyckades: ${reason}",
     "errorHttpStatus": "Nedladdningen misslyckades (HTTP ${status})",
-    "errorPostProcessing": "Efterbehandlingen misslyckades: ${error}",
+    "errorPostProcessing": "Efterbehandlingen misslyckades: ${reason}",
+    "reasonFileNotSaved": "filen kunde inte sparas på den här enheten",
+    "reasonCannotResume": "den delvisa nedladdningen kunde inte återupptas",
+    "reasonDeviceStorageFull": "den här enheten har slut på lagringsutrymme",
     "notificationDownloading": "Laddar ned...",
     "notificationComplete": "Nedladdningen är klar",
     "notificationPaused": "Nedladdningen har pausats"

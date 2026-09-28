@@ -1876,7 +1876,10 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Не удалось выполнить загрузку';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Не удалось выполнить загрузку: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Не удалось выполнить загрузку (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Не удалось выполнить постобработку: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Не удалось выполнить постобработку: ${reason}';
+	@override String get reasonFileNotSaved => 'не удалось сохранить файл на этом устройстве';
+	@override String get reasonCannotResume => 'не удалось возобновить частичную загрузку';
+	@override String get reasonDeviceStorageFull => 'на этом устройстве закончилось место';
 	@override String get notificationDownloading => 'Загрузка...';
 	@override String get notificationComplete => 'Загрузка завершена';
 	@override String get notificationPaused => 'Загрузка приостановлена';
@@ -4710,7 +4713,10 @@ extension on TranslationsRu {
 			'downloads.errorDownloadFailed' => 'Не удалось выполнить загрузку',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Не удалось выполнить загрузку: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Не удалось выполнить загрузку (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Не удалось выполнить постобработку: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Не удалось выполнить постобработку: ${reason}',
+			'downloads.reasonFileNotSaved' => 'не удалось сохранить файл на этом устройстве',
+			'downloads.reasonCannotResume' => 'не удалось возобновить частичную загрузку',
+			'downloads.reasonDeviceStorageFull' => 'на этом устройстве закончилось место',
 			'downloads.notificationDownloading' => 'Загрузка...',
 			'downloads.notificationComplete' => 'Загрузка завершена',
 			'downloads.notificationPaused' => 'Загрузка приостановлена',
@@ -5103,11 +5109,11 @@ extension on TranslationsRu {
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',
 			'addServer.quickConnectNotJson' => 'Ответ Quick Connect не является допустимым JSON',
 			'addServer.quickConnectMissingFields' => 'В ответе Quick Connect отсутствует код или секрет',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Опрос Quick Connect был отклонён сервером',
 			'addServer.serverTimedOut' => 'Сервер не ответил вовремя',
 			'addServer.responseNotJson' => 'Ответ сервера не является допустимым JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'В ответе отсутствует идентификатор или имя сервера. Это точно сервер ${product}?',
 			'addServer.probeFailed' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Введите хотя бы один URL сервера ${product}',

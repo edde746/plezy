@@ -1876,7 +1876,10 @@ class _Translations$downloads$pl extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Pobieranie nie powiodło się';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Pobieranie nie powiodło się: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Pobieranie nie powiodło się (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Przetwarzanie końcowe nie powiodło się: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Przetwarzanie końcowe nie powiodło się: ${reason}';
+	@override String get reasonFileNotSaved => 'nie udało się zapisać pliku na tym urządzeniu';
+	@override String get reasonCannotResume => 'nie udało się wznowić częściowego pobierania';
+	@override String get reasonDeviceStorageFull => 'na tym urządzeniu zabrakło miejsca';
 	@override String get notificationDownloading => 'Pobieranie...';
 	@override String get notificationComplete => 'Pobieranie zakończone';
 	@override String get notificationPaused => 'Pobieranie wstrzymane';
@@ -4710,7 +4713,10 @@ extension on TranslationsPl {
 			'downloads.errorDownloadFailed' => 'Pobieranie nie powiodło się',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Pobieranie nie powiodło się: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Pobieranie nie powiodło się (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Przetwarzanie końcowe nie powiodło się: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Przetwarzanie końcowe nie powiodło się: ${reason}',
+			'downloads.reasonFileNotSaved' => 'nie udało się zapisać pliku na tym urządzeniu',
+			'downloads.reasonCannotResume' => 'nie udało się wznowić częściowego pobierania',
+			'downloads.reasonDeviceStorageFull' => 'na tym urządzeniu zabrakło miejsca',
 			'downloads.notificationDownloading' => 'Pobieranie...',
 			'downloads.notificationComplete' => 'Pobieranie zakończone',
 			'downloads.notificationPaused' => 'Pobieranie wstrzymane',
@@ -5103,11 +5109,11 @@ extension on TranslationsPl {
 			'addServer.quickConnectRejected' => 'Quick Connect został odrzucony przez serwer',
 			'addServer.quickConnectNotJson' => 'Odpowiedź Quick Connect ma nieprawidłowy format JSON',
 			'addServer.quickConnectMissingFields' => 'W odpowiedzi Quick Connect brakuje kodu lub sekretu',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Odpytywanie Quick Connect zostało odrzucone przez serwer',
 			'addServer.serverTimedOut' => 'Serwer nie odpowiedział w wymaganym czasie',
 			'addServer.responseNotJson' => 'Odpowiedź serwera ma nieprawidłowy format JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'W odpowiedzi brakuje identyfikatora lub nazwy serwera — czy to serwer ${product}?',
 			'addServer.probeFailed' => ({required Object error}) => 'Nie udało się połączyć z serwerem: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Wprowadź co najmniej jeden adres URL serwera ${product}',

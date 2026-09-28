@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Download non riuscito",
     "errorDownloadFailedWithReason": "Download non riuscito: ${reason}",
     "errorHttpStatus": "Download non riuscito (HTTP ${status})",
-    "errorPostProcessing": "Post-elaborazione non riuscita: ${error}",
+    "errorPostProcessing": "Post-elaborazione non riuscita: ${reason}",
+    "reasonFileNotSaved": "non è stato possibile salvare il file su questo dispositivo",
+    "reasonCannotResume": "non è stato possibile riprendere il download parziale",
+    "reasonDeviceStorageFull": "lo spazio di archiviazione di questo dispositivo è esaurito",
     "notificationDownloading": "Download in corso...",
     "notificationComplete": "Download completato",
     "notificationPaused": "Download in pausa"

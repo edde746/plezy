@@ -1858,7 +1858,10 @@ class _Translations$downloads$de extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Download fehlgeschlagen';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download fehlgeschlagen: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Download fehlgeschlagen (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Nachbearbeitung fehlgeschlagen: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Nachbearbeitung fehlgeschlagen: ${reason}';
+	@override String get reasonFileNotSaved => 'die Datei konnte auf diesem Gerät nicht gespeichert werden';
+	@override String get reasonCannotResume => 'der unvollständige Download konnte nicht fortgesetzt werden';
+	@override String get reasonDeviceStorageFull => 'auf diesem Gerät ist kein Speicherplatz mehr frei';
 	@override String get notificationDownloading => 'Wird heruntergeladen …';
 	@override String get notificationComplete => 'Download abgeschlossen';
 	@override String get notificationPaused => 'Download pausiert';
@@ -4688,7 +4691,10 @@ extension on TranslationsDe {
 			'downloads.errorDownloadFailed' => 'Download fehlgeschlagen',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download fehlgeschlagen: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Download fehlgeschlagen (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Nachbearbeitung fehlgeschlagen: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Nachbearbeitung fehlgeschlagen: ${reason}',
+			'downloads.reasonFileNotSaved' => 'die Datei konnte auf diesem Gerät nicht gespeichert werden',
+			'downloads.reasonCannotResume' => 'der unvollständige Download konnte nicht fortgesetzt werden',
+			'downloads.reasonDeviceStorageFull' => 'auf diesem Gerät ist kein Speicherplatz mehr frei',
 			'downloads.notificationDownloading' => 'Wird heruntergeladen …',
 			'downloads.notificationComplete' => 'Download abgeschlossen',
 			'downloads.notificationPaused' => 'Download pausiert',
@@ -5081,11 +5087,11 @@ extension on TranslationsDe {
 			'addServer.quickConnectRejected' => 'Quick Connect wurde vom Server abgelehnt',
 			'addServer.quickConnectNotJson' => 'Die Quick Connect-Antwort war kein gültiges JSON',
 			'addServer.quickConnectMissingFields' => 'In der Quick Connect-Antwort fehlt ein Code oder Geheimnis',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Die Quick Connect-Abfrage wurde vom Server abgelehnt',
 			'addServer.serverTimedOut' => 'Der Server hat nicht rechtzeitig geantwortet',
 			'addServer.responseNotJson' => 'Die Serverantwort war kein gültiges JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'In der Antwort fehlt eine ID oder ein Servername – ist dies ein ${product}-Server?',
 			'addServer.probeFailed' => ({required Object error}) => 'Server nicht erreichbar: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Gib mindestens eine URL eines ${product}-Servers ein',

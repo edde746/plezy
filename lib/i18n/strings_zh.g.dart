@@ -1849,7 +1849,10 @@ class Translations$downloads$zh extends Translations$downloads$en {
 	@override String get errorDownloadFailed => '下载失败';
 	@override String errorDownloadFailedWithReason({required Object reason}) => '下载失败：${reason}';
 	@override String errorHttpStatus({required Object status}) => '下载失败（HTTP ${status}）';
-	@override String errorPostProcessing({required Object error}) => '后处理失败：${error}';
+	@override String errorPostProcessing({required Object reason}) => '后处理失败：${reason}';
+	@override String get reasonFileNotSaved => '无法将文件保存到此设备';
+	@override String get reasonCannotResume => '无法继续未完成的下载';
+	@override String get reasonDeviceStorageFull => '此设备的存储空间已满';
 	@override String get notificationDownloading => '正在下载…';
 	@override String get notificationComplete => '下载完成';
 	@override String get notificationPaused => '下载已暂停';
@@ -4677,7 +4680,10 @@ extension on TranslationsZh {
 			'downloads.errorDownloadFailed' => '下载失败',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => '下载失败：${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => '下载失败（HTTP ${status}）',
-			'downloads.errorPostProcessing' => ({required Object error}) => '后处理失败：${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => '后处理失败：${reason}',
+			'downloads.reasonFileNotSaved' => '无法将文件保存到此设备',
+			'downloads.reasonCannotResume' => '无法继续未完成的下载',
+			'downloads.reasonDeviceStorageFull' => '此设备的存储空间已满',
 			'downloads.notificationDownloading' => '正在下载…',
 			'downloads.notificationComplete' => '下载完成',
 			'downloads.notificationPaused' => '下载已暂停',
@@ -5070,11 +5076,11 @@ extension on TranslationsZh {
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => '服务器拒绝了 Quick Connect 轮询',
 			'addServer.serverTimedOut' => '服务器未及时响应',
 			'addServer.responseNotJson' => '服务器响应不是有效的 JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => '响应中缺少 ID 或服务器名称——这是 ${product} 服务器吗？',
 			'addServer.probeFailed' => ({required Object error}) => '无法连接到服务器：${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '请输入至少一个 ${product} 服务器 URL',

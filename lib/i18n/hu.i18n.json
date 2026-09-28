@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "A letöltés nem sikerült",
     "errorDownloadFailedWithReason": "A letöltés nem sikerült: ${reason}",
     "errorHttpStatus": "A letöltés nem sikerült (HTTP ${status})",
-    "errorPostProcessing": "Az utófeldolgozás nem sikerült: ${error}",
+    "errorPostProcessing": "Az utófeldolgozás nem sikerült: ${reason}",
+    "reasonFileNotSaved": "a fájlt nem sikerült menteni erre az eszközre",
+    "reasonCannotResume": "a részleges letöltést nem sikerült folytatni",
+    "reasonDeviceStorageFull": "az eszközön elfogyott a tárhely",
     "notificationDownloading": "Letöltés...",
     "notificationComplete": "Letöltés kész",
     "notificationPaused": "Letöltés szüneteltetve"

@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Nedlastingen mislyktes",
     "errorDownloadFailedWithReason": "Nedlastingen mislyktes: ${reason}",
     "errorHttpStatus": "Nedlastingen mislyktes (HTTP ${status})",
-    "errorPostProcessing": "Etterbehandlingen mislyktes: ${error}",
+    "errorPostProcessing": "Etterbehandlingen mislyktes: ${reason}",
+    "reasonFileNotSaved": "filen kunne ikke lagres på denne enheten",
+    "reasonCannotResume": "den delvise nedlastingen kunne ikke gjenopptas",
+    "reasonDeviceStorageFull": "denne enheten er tom for lagringsplass",
     "notificationDownloading": "Laster ned...",
     "notificationComplete": "Nedlastingen er fullført",
     "notificationPaused": "Nedlastingen er satt på pause"

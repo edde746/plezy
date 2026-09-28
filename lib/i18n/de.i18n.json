@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Download fehlgeschlagen",
     "errorDownloadFailedWithReason": "Download fehlgeschlagen: ${reason}",
     "errorHttpStatus": "Download fehlgeschlagen (HTTP ${status})",
-    "errorPostProcessing": "Nachbearbeitung fehlgeschlagen: ${error}",
+    "errorPostProcessing": "Nachbearbeitung fehlgeschlagen: ${reason}",
+    "reasonFileNotSaved": "die Datei konnte auf diesem Gerät nicht gespeichert werden",
+    "reasonCannotResume": "der unvollständige Download konnte nicht fortgesetzt werden",
+    "reasonDeviceStorageFull": "auf diesem Gerät ist kein Speicherplatz mehr frei",
     "notificationDownloading": "Wird heruntergeladen …",
     "notificationComplete": "Download abgeschlossen",
     "notificationPaused": "Download pausiert"

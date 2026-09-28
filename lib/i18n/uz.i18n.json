@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Yuklab boʻlmadi",
     "errorDownloadFailedWithReason": "Yuklab boʻlmadi: ${reason}",
     "errorHttpStatus": "Yuklab boʻlmadi (HTTP ${status})",
-    "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${error}",
+    "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${reason}",
+    "reasonFileNotSaved": "faylni ushbu qurilmada saqlab boʻlmadi",
+    "reasonCannotResume": "qisman yuklab olishni davom ettirib boʻlmadi",
+    "reasonDeviceStorageFull": "ushbu qurilmada xotira qolmadi",
     "notificationDownloading": "Yuklanmoqda...",
     "notificationComplete": "Yuklash tugallandi",
     "notificationPaused": "Yuklash toʻxtatib turildi"

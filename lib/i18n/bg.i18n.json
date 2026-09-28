@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Изтеглянето е неуспешно",
     "errorDownloadFailedWithReason": "Изтеглянето е неуспешно: ${reason}",
     "errorHttpStatus": "Изтеглянето е неуспешно (HTTP ${status})",
-    "errorPostProcessing": "Последващата обработка е неуспешна: ${error}",
+    "errorPostProcessing": "Последващата обработка е неуспешна: ${reason}",
+    "reasonFileNotSaved": "файлът не можа да бъде запазен на това устройство",
+    "reasonCannotResume": "частичното изтегляне не можа да бъде продължено",
+    "reasonDeviceStorageFull": "на това устройство няма свободно място",
     "notificationDownloading": "Изтегляне...",
     "notificationComplete": "Изтеглянето завърши",
     "notificationPaused": "Изтеглянето е на пауза"

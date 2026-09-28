@@ -1858,7 +1858,10 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Download mislykkedes';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download mislykkedes: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Download mislykkedes (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Efterbehandling mislykkedes: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Efterbehandling mislykkedes: ${reason}';
+	@override String get reasonFileNotSaved => 'filen kunne ikke gemmes på denne enhed';
+	@override String get reasonCannotResume => 'den delvise download kunne ikke genoptages';
+	@override String get reasonDeviceStorageFull => 'der er ikke mere lagerplads på denne enhed';
 	@override String get notificationDownloading => 'Downloader...';
 	@override String get notificationComplete => 'Download fuldført';
 	@override String get notificationPaused => 'Download sat på pause';
@@ -4688,7 +4691,10 @@ extension on TranslationsDa {
 			'downloads.errorDownloadFailed' => 'Download mislykkedes',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download mislykkedes: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Download mislykkedes (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Efterbehandling mislykkedes: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Efterbehandling mislykkedes: ${reason}',
+			'downloads.reasonFileNotSaved' => 'filen kunne ikke gemmes på denne enhed',
+			'downloads.reasonCannotResume' => 'den delvise download kunne ikke genoptages',
+			'downloads.reasonDeviceStorageFull' => 'der er ikke mere lagerplads på denne enhed',
 			'downloads.notificationDownloading' => 'Downloader...',
 			'downloads.notificationComplete' => 'Download fuldført',
 			'downloads.notificationPaused' => 'Download sat på pause',
@@ -5081,11 +5087,11 @@ extension on TranslationsDa {
 			'addServer.quickConnectRejected' => 'Quick Connect blev afvist af serveren',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var ikke gyldig JSON',
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret mangler en kode eller hemmelighed',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling blev afvist af serveren',
 			'addServer.serverTimedOut' => 'Serveren svarede ikke i tide',
 			'addServer.responseNotJson' => 'Serversvaret var ikke gyldig JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret mangler et ID eller servernavn – er dette en ${product}-server?',
 			'addServer.probeFailed' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Indtast mindst én URL til en ${product}-server',

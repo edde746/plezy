@@ -4638,8 +4638,17 @@ class Translations$downloads$en {
 	/// en: 'Download failed (HTTP ${status})'
 	String errorHttpStatus({required Object status}) => 'Download failed (HTTP ${status})';
 
-	/// en: 'Post-processing failed: ${error}'
-	String errorPostProcessing({required Object error}) => 'Post-processing failed: ${error}';
+	/// en: 'Post-processing failed: ${reason}'
+	String errorPostProcessing({required Object reason}) => 'Post-processing failed: ${reason}';
+
+	/// en: 'the file could not be saved on this device'
+	String get reasonFileNotSaved => 'the file could not be saved on this device';
+
+	/// en: 'the partial download could not be resumed'
+	String get reasonCannotResume => 'the partial download could not be resumed';
+
+	/// en: 'this device is out of storage'
+	String get reasonDeviceStorageFull => 'this device is out of storage';
 
 	/// en: 'Downloading...'
 	String get notificationDownloading => 'Downloading...';
@@ -8996,7 +9005,10 @@ extension on Translations {
 			'downloads.errorDownloadFailed' => 'Download failed',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download failed: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Download failed (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Post-processing failed: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Post-processing failed: ${reason}',
+			'downloads.reasonFileNotSaved' => 'the file could not be saved on this device',
+			'downloads.reasonCannotResume' => 'the partial download could not be resumed',
+			'downloads.reasonDeviceStorageFull' => 'this device is out of storage',
 			'downloads.notificationDownloading' => 'Downloading...',
 			'downloads.notificationComplete' => 'Download complete',
 			'downloads.notificationPaused' => 'Download paused',
@@ -9349,11 +9361,11 @@ extension on Translations {
 			'services.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blocked',
 			'services.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} allowed',
 			'services.libraryFilter.mode' => 'Filter mode',
+			_ => null,
+		} ?? switch (path) {
 			'services.libraryFilter.modeBlacklist' => 'Blacklist',
 			'services.libraryFilter.modeWhitelist' => 'Whitelist',
 			'services.libraryFilter.modeHintBlacklist' => 'Sync every library except the ones checked below.',
-			_ => null,
-		} ?? switch (path) {
 			'services.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
 			'services.libraryFilter.libraries' => 'Libraries',
 			'services.libraryFilter.noLibraries' => 'No libraries available',

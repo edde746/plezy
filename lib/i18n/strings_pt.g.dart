@@ -1858,7 +1858,10 @@ class _Translations$downloads$pt extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Falha no download';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Falha no download: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Falha no download (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Falha no pós-processamento: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Falha no pós-processamento: ${reason}';
+	@override String get reasonFileNotSaved => 'não foi possível salvar o arquivo neste dispositivo';
+	@override String get reasonCannotResume => 'não foi possível retomar o download parcial';
+	@override String get reasonDeviceStorageFull => 'este dispositivo está sem espaço de armazenamento';
 	@override String get notificationDownloading => 'Baixando...';
 	@override String get notificationComplete => 'Download concluído';
 	@override String get notificationPaused => 'Download pausado';
@@ -4688,7 +4691,10 @@ extension on TranslationsPt {
 			'downloads.errorDownloadFailed' => 'Falha no download',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Falha no download: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Falha no download (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Falha no pós-processamento: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Falha no pós-processamento: ${reason}',
+			'downloads.reasonFileNotSaved' => 'não foi possível salvar o arquivo neste dispositivo',
+			'downloads.reasonCannotResume' => 'não foi possível retomar o download parcial',
+			'downloads.reasonDeviceStorageFull' => 'este dispositivo está sem espaço de armazenamento',
 			'downloads.notificationDownloading' => 'Baixando...',
 			'downloads.notificationComplete' => 'Download concluído',
 			'downloads.notificationPaused' => 'Download pausado',
@@ -5081,11 +5087,11 @@ extension on TranslationsPt {
 			'addServer.quickConnectRejected' => 'O Quick Connect foi rejeitado pelo servidor',
 			'addServer.quickConnectNotJson' => 'A resposta do Quick Connect não era um JSON válido',
 			'addServer.quickConnectMissingFields' => 'A resposta do Quick Connect não contém um código ou segredo',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'A consulta do Quick Connect foi rejeitada pelo servidor',
 			'addServer.serverTimedOut' => 'O servidor não respondeu a tempo',
 			'addServer.responseNotJson' => 'A resposta do servidor não era um JSON válido',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'A resposta não contém um ID ou nome de servidor — este é um servidor ${product}?',
 			'addServer.probeFailed' => ({required Object error}) => 'Não foi possível conectar ao servidor: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Insira pelo menos uma URL de servidor ${product}',

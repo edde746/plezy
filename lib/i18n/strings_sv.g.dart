@@ -1858,7 +1858,10 @@ class _Translations$downloads$sv extends Translations$downloads$en {
 	@override String get errorDownloadFailed => 'Nedladdningen misslyckades';
 	@override String errorDownloadFailedWithReason({required Object reason}) => 'Nedladdningen misslyckades: ${reason}';
 	@override String errorHttpStatus({required Object status}) => 'Nedladdningen misslyckades (HTTP ${status})';
-	@override String errorPostProcessing({required Object error}) => 'Efterbehandlingen misslyckades: ${error}';
+	@override String errorPostProcessing({required Object reason}) => 'Efterbehandlingen misslyckades: ${reason}';
+	@override String get reasonFileNotSaved => 'filen kunde inte sparas på den här enheten';
+	@override String get reasonCannotResume => 'den delvisa nedladdningen kunde inte återupptas';
+	@override String get reasonDeviceStorageFull => 'den här enheten har slut på lagringsutrymme';
 	@override String get notificationDownloading => 'Laddar ned...';
 	@override String get notificationComplete => 'Nedladdningen är klar';
 	@override String get notificationPaused => 'Nedladdningen har pausats';
@@ -4688,7 +4691,10 @@ extension on TranslationsSv {
 			'downloads.errorDownloadFailed' => 'Nedladdningen misslyckades',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Nedladdningen misslyckades: ${reason}',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Nedladdningen misslyckades (HTTP ${status})',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Efterbehandlingen misslyckades: ${error}',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Efterbehandlingen misslyckades: ${reason}',
+			'downloads.reasonFileNotSaved' => 'filen kunde inte sparas på den här enheten',
+			'downloads.reasonCannotResume' => 'den delvisa nedladdningen kunde inte återupptas',
+			'downloads.reasonDeviceStorageFull' => 'den här enheten har slut på lagringsutrymme',
 			'downloads.notificationDownloading' => 'Laddar ned...',
 			'downloads.notificationComplete' => 'Nedladdningen är klar',
 			'downloads.notificationPaused' => 'Nedladdningen har pausats',
@@ -5081,11 +5087,11 @@ extension on TranslationsSv {
 			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var inte ett giltigt JSON-svar',
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret saknar en kod eller hemlig nyckel',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.quickConnectPollRejected' => 'Servern avvisade avsökningen för Quick Connect',
 			'addServer.serverTimedOut' => 'Servern svarade inte i tid',
 			'addServer.responseNotJson' => 'Serversvaret var inte ett giltigt JSON-svar',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret saknar ett ID eller servernamn – är det här en ${product}-server?',
 			'addServer.probeFailed' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Ange minst en server-URL för ${product}',

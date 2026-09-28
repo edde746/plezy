@@ -1862,7 +1862,10 @@
     "errorDownloadFailed": "Falha no download",
     "errorDownloadFailedWithReason": "Falha no download: ${reason}",
     "errorHttpStatus": "Falha no download (HTTP ${status})",
-    "errorPostProcessing": "Falha no pós-processamento: ${error}",
+    "errorPostProcessing": "Falha no pós-processamento: ${reason}",
+    "reasonFileNotSaved": "não foi possível salvar o arquivo neste dispositivo",
+    "reasonCannotResume": "não foi possível retomar o download parcial",
+    "reasonDeviceStorageFull": "este dispositivo está sem espaço de armazenamento",
     "notificationDownloading": "Baixando...",
     "notificationComplete": "Download concluído",
     "notificationPaused": "Download pausado"
