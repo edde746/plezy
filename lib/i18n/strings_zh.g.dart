@@ -971,6 +971,8 @@ class Translations$messages$zh extends Translations$messages$en {
 	@override String get mediaUnreadableBody => '服务器找到了此项目，但无法读取其文件（HTTP 404）。文件可能已被移动、删除，或其存储已离线。请联系服务器管理员检查文件并重新扫描媒体库。';
 	@override String get serverBusyTitle => '视频流不可用';
 	@override String get serverBusyBody => '服务器持续拒绝传输此文件（HTTP 503）。服务器可能正在重启或正忙，也可能是文件所在的存储设备已离线。请稍后重试；如果问题持续出现，请联系服务器所有者检查服务器和文件存储设备。';
+	@override String get playbackNotAllowedTitle => '不允许播放';
+	@override String get playbackNotAllowedBody => '服务器拒绝传输此项目（HTTP 403）。此账户可能没有播放权限，或服务器可能仅允许在其局域网内播放。';
 	@override String get logsUploaded => '日志已上传';
 	@override String get logsUploadFailed => '上传日志失败';
 	@override String get logId => '日志 ID';
@@ -1843,6 +1845,7 @@ class Translations$downloads$zh extends Translations$downloads$en {
 	@override String get unknownAlbum => '未知专辑';
 	@override String completedOfTotal({required Object completed, required Object total}) => '已完成 ${completed}/${total}';
 	@override String get errorFileNotFound => '未找到文件（404）';
+	@override String get errorDownloadNotAllowed => '服务器不允许下载（403）';
 	@override String get errorDownloadFailed => '下载失败';
 	@override String errorPostProcessing({required Object error}) => '后处理失败：${error}';
 	@override String get notificationDownloading => '正在下载…';
@@ -3797,6 +3800,8 @@ extension on TranslationsZh {
 			'messages.mediaUnreadableBody' => '服务器找到了此项目，但无法读取其文件（HTTP 404）。文件可能已被移动、删除，或其存储已离线。请联系服务器管理员检查文件并重新扫描媒体库。',
 			'messages.serverBusyTitle' => '视频流不可用',
 			'messages.serverBusyBody' => '服务器持续拒绝传输此文件（HTTP 503）。服务器可能正在重启或正忙，也可能是文件所在的存储设备已离线。请稍后重试；如果问题持续出现，请联系服务器所有者检查服务器和文件存储设备。',
+			'messages.playbackNotAllowedTitle' => '不允许播放',
+			'messages.playbackNotAllowedBody' => '服务器拒绝传输此项目（HTTP 403）。此账户可能没有播放权限，或服务器可能仅允许在其局域网内播放。',
 			'messages.logsUploaded' => '日志已上传',
 			'messages.logsUploadFailed' => '上传日志失败',
 			'messages.logId' => '日志 ID',
@@ -4038,10 +4043,10 @@ extension on TranslationsZh {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '无法清空回收站：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析“${title}”…',
 			'libraries.analysisStarted' => ({required Object title}) => '已开始分析“${title}”',
-			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库：${error}',
-			'libraries.noLibrariesFound' => '未找到媒体库',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库：${error}',
+			'libraries.noLibrariesFound' => '未找到媒体库',
 			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '已隐藏的媒体库 (${count})',
 			'libraries.thisLibraryIsEmpty' => '此媒体库为空',
@@ -4552,10 +4557,10 @@ extension on TranslationsZh {
 			'watchTogether.defaultDisplayName' => '用户',
 			'watchTogether.errors.timedOut' => '中继服务器未及时响应',
 			'watchTogether.errors.connectionLost' => '会话准备就绪前连接已断开',
-			'watchTogether.errors.invalidRelayResponse' => '中继服务器返回了意外的响应',
-			'watchTogether.errors.sessionEnded' => '主持人已结束会话',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.errors.invalidRelayResponse' => '中继服务器返回了意外的响应',
+			'watchTogether.errors.sessionEnded' => '主持人已结束会话',
 			'watchTogether.errors.sessionUnavailable' => '无法恢复此会话。请加入或创建房间以继续。',
 			'downloads.title' => '下载',
 			'downloads.manage' => '管理',
@@ -4666,6 +4671,7 @@ extension on TranslationsZh {
 			'downloads.unknownAlbum' => '未知专辑',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '已完成 ${completed}/${total}',
 			'downloads.errorFileNotFound' => '未找到文件（404）',
+			'downloads.errorDownloadNotAllowed' => '服务器不允许下载（403）',
 			'downloads.errorDownloadFailed' => '下载失败',
 			'downloads.errorPostProcessing' => ({required Object error}) => '后处理失败：${error}',
 			'downloads.notificationDownloading' => '正在下载…',
@@ -5065,11 +5071,11 @@ extension on TranslationsZh {
 			'addServer.responseNotJson' => '服务器响应不是有效的 JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => '响应中缺少 ID 或服务器名称——这是 ${product} 服务器吗？',
 			'addServer.probeFailed' => ({required Object error}) => '无法连接到服务器：${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '请输入至少一个 ${product} 服务器 URL',
 			'addServer.noReachableServer' => ({required Object product}) => '未找到可连接的 ${product} 服务器',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '这些 URL 指向不同的 ${product} 服务器',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.urlDoesNotMatchServer' => ({required Object product}) => '此 URL 与 ${product} 服务器不匹配',
 			'addServer.redirectUnsupported' => '服务器重定向到了不受支持的 URL',
 			'addServer.redirectDifferentHost' => ({required Object product}) => '服务器重定向到了其他主机。请直接输入最终的 ${product} URL。',

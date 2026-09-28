@@ -975,6 +975,8 @@ class _Translations$messages$fr extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'Le serveur a trouvé cet élément mais n\'a pas pu lire son fichier (HTTP 404). Le fichier a probablement été déplacé, supprimé, ou son stockage est hors ligne. Demandez au propriétaire du serveur de vérifier le fichier et de relancer l\'analyse de la bibliothèque.';
 	@override String get serverBusyTitle => 'Flux indisponible';
 	@override String get serverBusyBody => 'Le serveur a refusé à plusieurs reprises de diffuser ce fichier (HTTP 503). Il est peut-être en cours de redémarrage ou occupé, ou le stockage du fichier est peut-être hors ligne. Réessayez dans un instant. Si le problème persiste, demandez au propriétaire du serveur de vérifier le serveur et le stockage du fichier.';
+	@override String get playbackNotAllowedTitle => 'Lecture non autorisée';
+	@override String get playbackNotAllowedBody => 'Le serveur a refusé de diffuser cet élément (HTTP 403). Votre compte n\'a peut-être pas l\'autorisation de le lire, ou le serveur n\'autorise peut-être la lecture que sur son réseau local.';
 	@override String get logsUploaded => 'Journaux envoyés';
 	@override String get logsUploadFailed => 'Échec de l’envoi des journaux';
 	@override String get logId => 'Identifiant du journal';
@@ -1852,6 +1854,7 @@ class _Translations$downloads$fr extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Album inconnu';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} terminés';
 	@override String get errorFileNotFound => 'Fichier introuvable (404)';
+	@override String get errorDownloadNotAllowed => 'Téléchargement non autorisé par le serveur (403)';
 	@override String get errorDownloadFailed => 'Échec du téléchargement';
 	@override String errorPostProcessing({required Object error}) => 'Échec du post-traitement : ${error}';
 	@override String get notificationDownloading => 'Téléchargement...';
@@ -3808,6 +3811,8 @@ extension on TranslationsFr {
 			'messages.mediaUnreadableBody' => 'Le serveur a trouvé cet élément mais n\'a pas pu lire son fichier (HTTP 404). Le fichier a probablement été déplacé, supprimé, ou son stockage est hors ligne. Demandez au propriétaire du serveur de vérifier le fichier et de relancer l\'analyse de la bibliothèque.',
 			'messages.serverBusyTitle' => 'Flux indisponible',
 			'messages.serverBusyBody' => 'Le serveur a refusé à plusieurs reprises de diffuser ce fichier (HTTP 503). Il est peut-être en cours de redémarrage ou occupé, ou le stockage du fichier est peut-être hors ligne. Réessayez dans un instant. Si le problème persiste, demandez au propriétaire du serveur de vérifier le serveur et le stockage du fichier.',
+			'messages.playbackNotAllowedTitle' => 'Lecture non autorisée',
+			'messages.playbackNotAllowedBody' => 'Le serveur a refusé de diffuser cet élément (HTTP 403). Votre compte n\'a peut-être pas l\'autorisation de le lire, ou le serveur n\'autorise peut-être la lecture que sur son réseau local.',
 			'messages.logsUploaded' => 'Journaux envoyés',
 			'messages.logsUploadFailed' => 'Échec de l’envoi des journaux',
 			'messages.logId' => 'Identifiant du journal',
@@ -4049,10 +4054,10 @@ extension on TranslationsFr {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Échec du vidage de la corbeille : ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyse de « ${title} »…',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse lancée pour « ${title} »',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l’analyse de la bibliothèque : ${error}',
-			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l’analyse de la bibliothèque : ${error}',
+			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
 			'libraries.allLibrariesHidden' => 'Toutes les bibliothèques sont masquées',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliothèques masquées (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Cette bibliothèque est vide',
@@ -4563,10 +4568,10 @@ extension on TranslationsFr {
 			'watchTogether.defaultDisplayName' => 'Utilisateur',
 			'watchTogether.errors.timedOut' => 'Le serveur relais n’a pas répondu à temps',
 			'watchTogether.errors.connectionLost' => 'La connexion s’est fermée avant que la session ne soit prête',
-			'watchTogether.errors.invalidRelayResponse' => 'Le serveur relais a renvoyé une réponse inattendue',
-			'watchTogether.errors.sessionEnded' => 'L’hôte a mis fin à la session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.errors.invalidRelayResponse' => 'Le serveur relais a renvoyé une réponse inattendue',
+			'watchTogether.errors.sessionEnded' => 'L’hôte a mis fin à la session',
 			'watchTogether.errors.sessionUnavailable' => 'Impossible de reprendre cette session. Rejoignez ou créez un salon pour continuer.',
 			'downloads.title' => 'Téléchargements',
 			'downloads.manage' => 'Gérer',
@@ -4677,6 +4682,7 @@ extension on TranslationsFr {
 			'downloads.unknownAlbum' => 'Album inconnu',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} terminés',
 			'downloads.errorFileNotFound' => 'Fichier introuvable (404)',
+			'downloads.errorDownloadNotAllowed' => 'Téléchargement non autorisé par le serveur (403)',
 			'downloads.errorDownloadFailed' => 'Échec du téléchargement',
 			'downloads.errorPostProcessing' => ({required Object error}) => 'Échec du post-traitement : ${error}',
 			'downloads.notificationDownloading' => 'Téléchargement...',
@@ -5076,11 +5082,11 @@ extension on TranslationsFr {
 			'addServer.responseNotJson' => 'La réponse du serveur n’était pas au format JSON valide',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Il manque un identifiant ou un nom de serveur dans la réponse : s’agit-il d’un serveur ${product} ?',
 			'addServer.probeFailed' => ({required Object error}) => 'Impossible de joindre le serveur : ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Saisissez l’URL d’au moins un serveur ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Aucun serveur ${product} joignable n’a été trouvé',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Ces URL renvoient vers différents serveurs ${product}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'Cette URL ne correspond pas au serveur ${product}',
 			'addServer.redirectUnsupported' => 'Le serveur a redirigé vers une URL non prise en charge',
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'Le serveur a redirigé vers un hôte différent. Saisissez directement l’URL finale du serveur ${product}.',

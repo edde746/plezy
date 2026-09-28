@@ -1549,12 +1549,14 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   /// Injects the log + error events that would fire when the server rejects the
   /// stream with [status]. Used by the in-player debug buttons to preview the
-  /// end-to-end detection path without needing a real misbehaving server: 500
-  /// is a shared-user bandwidth/transcoding limit, 404 a file the server can no
-  /// longer read, 503 a server that keeps refusing the stream (the error event
-  /// stands in for the open-phase watchdog, which cannot arm once playback has
-  /// a frame). The warn-level log mirrors ffmpeg's real wording, which is what
-  /// [PlayerError.httpStatusFromLog] parses.
+  /// end-to-end detection path without needing a real misbehaving server: 403
+  /// is a refusal of this account or connection, 500 a shared-user
+  /// bandwidth/transcoding limit, 404 a file the server can no longer read, 503
+  /// a server that keeps refusing the stream (the error event stands in for the
+  /// open-phase watchdog, which cannot arm once playback has a frame). The
+  /// warn-level log mirrors ffmpeg's real wording, which is what
+  /// [PlayerError.httpStatusFromLog] parses; 403 has no cause tag, so the
+  /// latched status alone drives it, as it does for a real mpv open.
   void debugSimulateServerHttpError(int status) {
     if (_disposed) return;
     logController.add(

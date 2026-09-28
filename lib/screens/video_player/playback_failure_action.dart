@@ -5,6 +5,9 @@ const int maxLiveFallbackLevel = 2;
 
 /// What the player screen should do about one playback error.
 enum PlaybackFailureAction {
+  /// Server refused this account or connection with HTTP 403.
+  playbackNotAllowedDialog,
+
   /// Server rejected the session with HTTP 500 — a bandwidth/transcoding limit.
   serverLimitDialog,
 
@@ -36,11 +39,16 @@ enum PlaybackFailureAction {
 /// Live TV deliberately diverges on 404: an HLS segment that has rolled off the
 /// playlist, or a transcode session restarting under us, answers 404 mid-stream,
 /// and the bounded ladder exists to ride that out. Only on-demand playback
-/// treats 404 as terminal, where it does mean the file is unreadable. 500 stays
-/// terminal for both — a limit rejection is not something a retry clears. 503
-/// arrives only as the open-phase watchdog's cause tag (it never latches into
-/// [fatalHttpStatuses]); by then the reconnect loop has had its chances, so
-/// on-demand playback surfaces it while live TV keeps its ladder.
+/// treats 404 as terminal, where it does mean the file is unreadable. 403 takes
+/// the same split: on-demand it is a refusal of this account or connection
+/// (#2510), while live TV has no observed 403 cause worth abandoning the bounded
+/// ladder for. It outranks every other status latched on the same open — until
+/// the server lets this account stream, what it says about the file or session
+/// is moot. 500 stays terminal for both — a limit rejection is not something a
+/// retry clears. 503 arrives only as the open-phase watchdog's cause tag (it
+/// never latches into [fatalHttpStatuses]); by then the reconnect loop has had
+/// its chances, so on-demand playback surfaces it while live TV keeps its
+/// ladder.
 ///
 /// An audio-output failure is checked first: the device stopped taking audio,
 /// so a latched status or the live ladder would only re-open a stream into the
@@ -59,6 +67,8 @@ PlaybackFailureAction resolvePlaybackFailureAction({
   required bool liveRetryFailed,
 }) {
   if (cause == PlayerError.audioOutputFailed) return PlaybackFailureAction.fatal;
+
+  if (!isLive && fatalHttpStatuses.contains(403)) return PlaybackFailureAction.playbackNotAllowedDialog;
 
   if (cause == PlayerError.serverHttp500 || fatalHttpStatuses.contains(500)) {
     return PlaybackFailureAction.serverLimitDialog;

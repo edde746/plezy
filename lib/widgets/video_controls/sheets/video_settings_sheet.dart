@@ -980,7 +980,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         if (kDebugMode)
-          for (final status in const [500, 404, 503])
+          for (final status in const [403, 500, 404, 503])
             FocusableListTile(
               leading: AppIcon(Symbols.bug_report_rounded, fill: 1, color: tokens(context).textMuted),
               title: Text('Simulate HTTP $status from server'),

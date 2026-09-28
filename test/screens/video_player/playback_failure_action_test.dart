@@ -21,6 +21,29 @@ PlaybackFailureAction resolve({
 }
 
 void main() {
+  group('HTTP 403', () {
+    test('on-demand playback treats the refusal as terminal', () {
+      // The server refused this account or connection (#2510); no retry,
+      // quality change, or backend switch gets past it.
+      expect(resolve(statuses: {403}), PlaybackFailureAction.playbackNotAllowedDialog);
+    });
+
+    test('outranks a 404 or 500 latched on the same open', () {
+      // Until the server lets this account stream, what it says about the file
+      // or the session is moot.
+      expect(resolve(statuses: {403, 404}), PlaybackFailureAction.playbackNotAllowedDialog);
+      expect(resolve(statuses: {403, 500}), PlaybackFailureAction.playbackNotAllowedDialog);
+      expect(
+        resolve(cause: PlayerError.serverHttp503, statuses: {403}),
+        PlaybackFailureAction.playbackNotAllowedDialog,
+      );
+    });
+
+    test('live TV keeps its fallback ladder', () {
+      expect(resolve(statuses: {403}, isLive: true), PlaybackFailureAction.liveRetry);
+    });
+  });
+
   group('HTTP 404', () {
     test('on-demand playback treats it as terminal', () {
       // The file behind the item is unreadable server-side (#1750); no retry,

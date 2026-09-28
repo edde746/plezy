@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:http/http.dart' as http;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/download_resolution.dart';
@@ -2142,6 +2143,54 @@ void main() {
         expect(await db.select(db.downloadQueue).get(), isEmpty);
       });
     }
+  });
+
+  group('server refusal', () {
+    test('HTTP 403 fails for good with localized copy instead of retrying into the server body', () async {
+      final fixture = await _createSupplementaryFixture();
+      final globalKey = fixture.metadata.globalKey;
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: fixture.metadata.id,
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await fixture.db.updateBgTaskId(globalKey, 'current-task');
+      await fixture.db.addToQueue(mediaGlobalKey: globalKey);
+
+      // A client is resolvable, so any other failure would schedule an app retry.
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/video'),
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: false,
+        autoRetryDelay: Duration.zero,
+        queueProcessorOverride: (_) async {},
+      );
+      addTearDown(manager.dispose);
+
+      // The native downloader reports the raw response body as the description.
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(
+          _downloadTask('current-task', globalKey),
+          TaskStatus.failed,
+          TaskHttpException('<html><body>Upgrade your subscription to download</body></html>', 403),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      final row = await fixture.db.getDownloadedMedia(globalKey);
+      // An app retry would have requeued the row by now.
+      expect(row?.status, DownloadStatus.failed.index);
+      expect(row?.errorMessage, t.downloads.errorDownloadNotAllowed);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), isEmpty);
+    });
   });
 
   group('task session validation', () {

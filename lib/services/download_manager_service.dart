@@ -2467,6 +2467,13 @@ class DownloadManagerService {
       );
       return;
     }
+    // A refusal of this account or connection does not clear on retry, and the
+    // native downloader puts the server's raw response body in the description
+    // — for Plex, copy naming a paid plan the app must not relay (#2510).
+    if (exception is TaskHttpException && exception.httpResponseCode == 403) {
+      await _onDownloadPermanentlyFailed(globalKey, taskId, t.downloads.errorDownloadNotAllowed);
+      return;
+    }
     final errorMessage = exception?.description ?? t.downloads.errorDownloadFailed;
     final retryCount = existing.retryCount;
 

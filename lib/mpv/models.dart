@@ -11,11 +11,11 @@ sealed class BufferRange with _$BufferRange {
 final RegExp _httpStatusPattern = RegExp(r'\b(?:HTTP error |Response code: )(\d{3})\b');
 
 /// Server statuses that end playback outright: nothing client-side recovers a
-/// transcoding-limit rejection or a file the server cannot read. Everything
-/// else is transient — notably 503, which the reconnect path retries
-/// mid-stream (#1520) and the player screen's open-phase watchdog bounds at
-/// open time instead of latching here (#1830).
-const Set<int> fatalPlaybackHttpStatuses = {404, 500};
+/// refusal of this account or connection, a transcoding-limit rejection, or a
+/// file the server cannot read. Everything else is transient — notably 503,
+/// which the reconnect path retries mid-stream (#1520) and the player screen's
+/// open-phase watchdog bounds at open time instead of latching here (#1830).
+const Set<int> fatalPlaybackHttpStatuses = {403, 404, 500};
 
 /// The native player core failed to come up. Carries no message: the UI
 /// owns the wording so `lib/mpv` stays free of user-facing copy.

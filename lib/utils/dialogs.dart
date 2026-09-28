@@ -210,6 +210,29 @@ class ScopedLoadingDialogController {
   }
 }
 
+/// Shows the server-side 403 modal: the server refused this account or
+/// connection. Never relay the refusal's response body: Plex's names a paid
+/// plan, which the app must not advertise (#2510).
+Future<void> showPlaybackNotAllowedDialog(BuildContext context) async {
+  await showScopedDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.playbackNotAllowedTitle),
+      content: Text(t.messages.playbackNotAllowedBody),
+      actions: [
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
 Future<void> showServerLimitDialog(BuildContext context) async {
   await showScopedDialog<void>(
