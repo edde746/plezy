@@ -1,0 +1,84 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'dev.flutter.flutter-gradle-plugin'
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode', '1')
+def flutterVersionName = localProperties.getProperty('flutter.versionName', '0.1.0')
+
+def gkuiKeystorePath = System.getenv('GKUI_KEYSTORE_PATH')
+def hasGkuiKeystore = gkuiKeystorePath != null && !gkuiKeystorePath.isBlank()
+
+android {
+    namespace 'com.edde746.plezy'
+    compileSdk 34
+    buildToolsVersion '34.0.0'
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        applicationId 'com.jialim.plezygkui'
+        minSdk 19
+        targetSdk 34
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
+    }
+
+    signingConfigs {
+        if (hasGkuiKeystore) {
+            gkuiTest {
+                storeFile file(gkuiKeystorePath)
+                storePassword System.getenv('GKUI_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('GKUI_KEY_ALIAS')
+                keyPassword System.getenv('GKUI_KEY_PASSWORD')
+                enableV1Signing true
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (hasGkuiKeystore) {
+                signingConfig signingConfigs.gkuiTest
+            }
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
+        }
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+}

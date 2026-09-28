@@ -1,99 +1,24 @@
 name: plezy
-description: "A beautiful Plex client for Flutter"
+description: "Plezy GKUI compatibility fork"
 publish_to: "none"
-version: 1.8.1+21
+version: 0.1.0+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: ">=3.3.4 <3.4.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^5.4.0
-  json_annotation: ^4.8.1
-  shared_preferences: ^2.2.2
-  cached_network_image: ^3.4.1
-  media_kit: ^1.1.10+1
-  media_kit_video: ^1.2.4
-  media_kit_libs_video: ^1.0.4
-  macos_window_utils: ^1.9.0
-  url_launcher: ^6.3.0
-  uuid: ^4.4.0
-  window_manager: ^0.4.3
-  logger: ^2.0.2
-  package_info_plus: ^9.0.0
-  provider: ^6.1.2
-  hotkey_manager: ^0.2.3
-  flex_color_picker: ^3.6.0
-  qr_flutter: ^4.1.0
-  slang: ^3.31.2
-  slang_flutter: ^3.31.0
-  duration: ^4.0.3
-  connectivity_plus: ^6.0.5
-  os_media_controls:
-    git:
-      url: https://github.com/edde746/os-media-controls
-      ref: 75dc5642cd148c54c03fe96976702b8d31c48599
-
-dependency_overrides:
-  media_kit:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: media_kit
-  media_kit_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: media_kit_video
-  media_kit_libs_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/universal/media_kit_libs_video
-  media_kit_libs_macos_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/macos/media_kit_libs_macos_video
-  media_kit_libs_ios_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/ios/media_kit_libs_ios_video
-  media_kit_libs_android_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/android/media_kit_libs_android_video
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  build_runner: ^2.4.7
-  json_serializable: ^6.7.1
-  flutter_launcher_icons: ^0.14.4
-  slang_build_runner: ^3.31.0
-  dart_code_linter: ^3.1.1
 
 flutter:
   uses-material-design: true
   assets:
-    - lib/data/iso_639_codes.json
     - assets/plezy.png
-    - assets/droid-sans.ttf
-
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: "assets/plezy.png"
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/plezy_android_foreground.png"
-  adaptive_icon_monochrome: "assets/plezy_monochrome.png"
-  macos:
-    generate: false
-  windows:
-    generate: true
-  linux:
-    generate: true
+  fonts:
+    - family: PlezySans
+      fonts:
+        - asset: assets/droid-sans.ttf

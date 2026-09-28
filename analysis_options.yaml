@@ -1,12 +1,11 @@
-include: package:flutter_lints/flutter.yaml
-
 analyzer:
   exclude:
-    - "**/*.g.dart"
-    - "**/*.freezed.dart"
-  plugins:
-    - dart_code_linter
+    - .audit/**
+    - build/**
+    - lib/**/*.g.dart
 
-dart_code_linter:
+linter:
   rules:
-    - avoid-unused-parameters
+    avoid_print: true
+    prefer_const_constructors: true
+    prefer_final_locals: true
