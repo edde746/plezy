@@ -38,6 +38,7 @@ This is the consolidated API 19 / ARMv7 release for the ECARX XE1115H head unit.
 - APK manifest: version 1.2.2 (8), minimum API 19, target API 34.
 - APK native ABI: armeabi-v7a only.
 - APK signatures: v1 and v2 verified.
+- APK SHA-256: `0defa6cb5fa7c803bb6459433fdeb0858ac670967c3dbf513bff0839a759482f`.
 
 ## One-pass M5 check
 
