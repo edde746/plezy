@@ -1860,6 +1860,7 @@ class _AppShell extends StatelessWidget {
                     navigatorKey: rootNavigatorKey,
                     navigatorObservers: [BackKeySuppressorObserver()],
                     home: SetupScreen(databaseRecoveryOutcome: databaseRecoveryOutcome),
+                    scrollBehavior: const AllPointerScrollBehavior(),
                     // Siri Remote select + gamepad A report as
                     // LogicalKeyboardKey.{select,gameButtonA} which aren't
                     // in Flutter's default shortcut set — Material-level
@@ -1891,6 +1892,21 @@ class _AppShell extends StatelessWidget {
       },
     );
   }
+}
+
+/// [ScrollBehavior] that extends Flutter's default [MaterialScrollBehavior] to
+/// General scroll behavior that enables drag-scrolling for all pointer device
+/// kinds, including [PointerDeviceKind.mouse] and [PointerDeviceKind.unknown].
+///
+/// This provides universal pointer drag support across desktop, mobile, TV,
+/// and spatial/VR computing (e.g. Meta Quest hand-tracking pinch-drag and
+/// controller ray drag), ensuring all scrollable views respond consistently
+/// regardless of the hardware pointer classification.
+class AllPointerScrollBehavior extends MaterialScrollBehavior {
+  const AllPointerScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {...super.dragDevices, PointerDeviceKind.mouse, PointerDeviceKind.unknown};
 }
 
 /// The root shell every route renders inside.

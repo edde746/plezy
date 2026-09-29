@@ -3,6 +3,7 @@ import '../media/ids.dart';
 import 'dart:io' show Platform;
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import '../widgets/server_activities_button.dart';
@@ -1094,35 +1095,52 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       resolveSpotlight: () => _spotlight.resolve(browseHubs),
       resolveClient: _getMediaClientForItem,
       hideSpoilers: hideSpoilers,
-      foreground: Stack(
-        fit: StackFit.expand,
-        clipBehavior: Clip.none,
-        children: [
-          if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
-          if (_errorMessage != null)
-            ErrorStateWidget(
-              message: _errorMessage!,
-              icon: Symbols.error_outline_rounded,
-              onRetry: _discover.load,
-              actionAutofocus: true,
-              actionUseBackgroundFocus: true,
-            ),
-          if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)
-            EmptyStateWidget(
-              message: t.discover.noContentAvailable,
-              subtitle: t.discover.addMediaToLibraries,
-              icon: Symbols.movie_rounded,
-            ),
-          if (browseHubs.isNotEmpty)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
-            ),
-          TvToolbarOverlay(child: _buildOverlaidAppBar()),
-          if (_switchingProfile) const ProfileSwitchingOverlay(),
-        ],
+      foreground: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerSignal: (event) {
+          if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+            final railState = _tvBrowseRailKey.currentState;
+            if (railState != null && railState.mounted) {
+              final railBox = _tvBrowseRailKey.currentContext?.findRenderObject() as RenderBox?;
+              if (railBox != null && railBox.hasSize) {
+                final railTop = railBox.localToGlobal(Offset.zero).dy;
+                if (event.position.dy < railTop) {
+                  railState.scrollBy(event.scrollDelta.dy);
+                }
+              }
+            }
+          }
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: [
+            if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
+            if (_errorMessage != null)
+              ErrorStateWidget(
+                message: _errorMessage!,
+                icon: Symbols.error_outline_rounded,
+                onRetry: _discover.load,
+                actionAutofocus: true,
+                actionUseBackgroundFocus: true,
+              ),
+            if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)
+              EmptyStateWidget(
+                message: t.discover.noContentAvailable,
+                subtitle: t.discover.addMediaToLibraries,
+                icon: Symbols.movie_rounded,
+              ),
+            if (browseHubs.isNotEmpty)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
+              ),
+            TvToolbarOverlay(child: _buildOverlaidAppBar()),
+            if (_switchingProfile) const ProfileSwitchingOverlay(),
+          ],
+        ),
       ),
     );
   }
