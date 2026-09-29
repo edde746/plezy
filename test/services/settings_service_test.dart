@@ -369,15 +369,6 @@ void main() {
       expect(settings.read(SettingsService.audioPassthrough), isFalse);
     });
 
-    test('forces external player off on Apple TV even when stored enabled', () async {
-      final settings = await SettingsService.getInstance();
-      await settings.write(SettingsService.useExternalPlayer, true);
-
-      TvDetectionService.debugSetAppleTVOverride(true);
-
-      expect(settings.read(SettingsService.useExternalPlayer), isFalse);
-    });
-
     test('forces auto PiP off on Apple TV even when stored enabled', () async {
       final settings = await SettingsService.getInstance();
       await settings.write(SettingsService.autoPip, true);

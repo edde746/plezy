@@ -429,9 +429,11 @@ class PlaybackSettingsScreen extends StatelessWidget {
       return SettingNavigationTile(
         icon: Symbols.open_in_new_rounded,
         title: t.externalPlayer.title,
-        subtitle: useExt
-            ? (player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name)
-            : t.externalPlayer.off,
+        subtitle: !useExt
+            ? t.externalPlayer.off
+            : !player.isAvailable
+            ? t.externalPlayer.selectPlayer
+            : (player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name),
         destinationBuilder: (_) => const ExternalPlayerScreen(),
       );
     },

@@ -109,6 +109,12 @@ class ExternalPlayerService {
       final settings = await SettingsService.getInstance();
       if (!current()) return false;
       final player = settings.read(SettingsService.selectedExternalPlayer);
+      // Nothing to hand off to: System Default on Apple TV is the case this
+      // exists for, since it stays the stored default there.
+      if (!player.isAvailable) {
+        if (context.mounted) showErrorSnackBar(context, t.externalPlayer.launchFailed);
+        return false;
+      }
 
       // On Android, always use native intent to avoid url_launcher opening in browser
       if (Platform.isAndroid && context.mounted) {
