@@ -111,6 +111,11 @@ class MpvPlayer {
   void SendActiveSourceEvent(const std::string& name);
   void SendPlaybackRestartEvent(const double* position_seconds);
   void SendEvent(const std::string& name, const flutter::EncodableMap& data = {});
+  // Hands one message to the event callback, or to held_events_ while an error
+  // end-file's drain is holding everything but log lines.
+  void DeliverEvent(flutter::EncodableValue message, bool is_log_message);
+  // Ends the hold and delivers what it kept, in order.
+  void ReleaseHeldEvents();
   void MaybeRunAudioRecovery();
   void TryAudioReload(const char* reason, int attempt, uint64_t request_generation);
   void LogRecovery(const std::string& text);
@@ -139,6 +144,10 @@ class MpvPlayer {
 
   plezy::mpv_common::AsyncRequestRegistry pending_requests_;
   plezy::mpv_common::PropertyObservationRegistry observed_properties_;
+  // What an error END_FILE's drain holds back until it reaches
+  // MPV_EVENT_NONE, so the log lines explaining the failure reach Dart first
+  // (see ErrorEndFileHold). Event thread only; empty outside that drain.
+  plezy::mpv_common::ErrorEndFileHold<flutter::EncodableValue> held_events_;
   // The playlist entry whose START_FILE event was most recently dequeued.
   // Event payloads copy this value before the plugin queues them to the
   // platform thread, so a later START_FILE cannot relabel delayed properties.

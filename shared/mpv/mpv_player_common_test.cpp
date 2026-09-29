@@ -675,6 +675,62 @@ void TestHdrHelpers() {
   assert(std::string(plezy::mpv_common::TargetColorspaceHint(false)) == "no");
 }
 
+// #2513: from an error END_FILE to the end of that drain, log lines go out at
+// once and everything else waits, the end-file first, for Release.
+void TestErrorEndFileHold() {
+  using plezy::mpv_common::ErrorEndFileHold;
+  using plezy::mpv_common::IsErrorEndFile;
+
+  mpv_event_end_file end{};
+  end.reason = MPV_END_FILE_REASON_ERROR;
+  mpv_event event{};
+  event.event_id = MPV_EVENT_END_FILE;
+  event.data = &end;
+  assert(IsErrorEndFile(&event));
+  // A file that ended cleanly has no failure lines to wait for.
+  end.reason = MPV_END_FILE_REASON_EOF;
+  assert(!IsErrorEndFile(&event));
+  end.reason = MPV_END_FILE_REASON_ERROR;
+  event.data = nullptr;
+  assert(!IsErrorEndFile(&event));
+  assert(!IsErrorEndFile(nullptr));
+
+  ErrorEndFileHold<std::string> hold;
+  assert(!hold.ShouldHold(false));
+  hold.Begin();
+  assert(!hold.ShouldHold(true));
+  assert(hold.ShouldHold(false));
+  hold.Hold("end-file");
+  hold.Hold("idle");
+  // A second failed entry in the same drain queues behind the first.
+  hold.Begin();
+  hold.Hold("end-file 2");
+  assert((hold.Release() == std::vector<std::string>{"end-file", "idle", "end-file 2"}));
+  // The hold ends with the drain.
+  assert(!hold.ShouldHold(false));
+  assert(hold.Release().empty());
+
+  // Nothing is counted outside a hold.
+  assert(!hold.CountDequeued());
+  // The events after the error end-file that a hold waits through: the
+  // overflow notice mpv reads out first when its log buffer overflowed, then
+  // every line of that full verbose buffer (10000, player/client.c). The lines
+  // explaining a failure are the newest, so none of the rest may release the
+  // hold early. A second error end-file inside the hold does not restart the
+  // count.
+  assert(hold.Begin());
+  for (int line = 0; line < 10000; ++line) {
+    if (line == 5000) assert(!hold.Begin());
+    assert(!hold.CountDequeued());
+  }
+  assert(hold.CountDequeued());
+  hold.Release();
+  // The next hold waits through all of them again.
+  assert(hold.Begin());
+  assert(!hold.CountDequeued());
+  hold.Release();
+}
+
 }  // namespace
 
 int main() {
@@ -695,5 +751,6 @@ int main() {
   TestStaleReloadCompletionCannotClearCurrentRequest();
   TestNodeConversionBounds();
   TestHdrHelpers();
+  TestErrorEndFileHold();
   return 0;
 }

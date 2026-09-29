@@ -859,7 +859,29 @@ void MpvPlayer::EventLoop() {
       break;
     }
     if (event->event_id != MPV_EVENT_NONE) {
+      // One event per wait leaves the rest pending, and the lines explaining a
+      // failed open are among the last mpv hands out, so an error END_FILE is
+      // followed here by a drain to MPV_EVENT_NONE, cut off once the hold has
+      // spanned its limit; see ErrorEndFileHold.
+      const bool error_end_file = plezy::mpv_common::IsErrorEndFile(event);
+      if (error_end_file) held_events_.Begin();
       HandleMpvEvent(event);
+      if (error_end_file) {
+        bool draining = true;
+        bool shutdown = false;
+        while (draining && running_) {
+          mpv_event* pending = mpv_wait_event(mpv_, 0);
+          if (pending->event_id == MPV_EVENT_NONE) break;
+          if (pending->event_id == MPV_EVENT_SHUTDOWN) {
+            shutdown = true;
+            break;
+          }
+          HandleMpvEvent(pending);
+          draining = !held_events_.CountDequeued();
+        }
+        ReleaseHeldEvents();
+        if (shutdown) break;
+      }
     }
     // Idle waits are bounded at 100 ms; queued events can wake us sooner.
     // Audio recovery owns its elapsed-time deadlines.
@@ -976,10 +998,7 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
     list.push_back(flutter::EncodableValue());
   }
 
-  std::lock_guard<std::mutex> lock(callback_mutex_);
-  if (event_callback_) {
-    event_callback_(flutter::EncodableValue(list));
-  }
+  DeliverEvent(flutter::EncodableValue(std::move(list)), false);
 }
 
 void MpvPlayer::SendActiveSourceEvent(const std::string& name) {
@@ -1009,9 +1028,23 @@ void MpvPlayer::SendEvent(const std::string& name, const flutter::EncodableMap& 
     event[flutter::EncodableValue("data")] = flutter::EncodableValue(data);
   }
 
+  DeliverEvent(flutter::EncodableValue(std::move(event)), name == "log-message");
+}
+
+void MpvPlayer::DeliverEvent(flutter::EncodableValue message, bool is_log_message) {
+  if (held_events_.ShouldHold(is_log_message)) {
+    held_events_.Hold(std::move(message));
+    return;
+  }
   std::lock_guard<std::mutex> lock(callback_mutex_);
   if (event_callback_) {
-    event_callback_(flutter::EncodableValue(event));
+    event_callback_(message);
+  }
+}
+
+void MpvPlayer::ReleaseHeldEvents() {
+  for (auto& message : held_events_.Release()) {
+    DeliverEvent(std::move(message), false);
   }
 }
 

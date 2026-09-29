@@ -297,6 +297,89 @@ inline mpv_node ExtractPropertyNode(const mpv_event_property* prop) {
   return node;
 }
 
+// mpv_wait_event hands a client its queued events first, then its property
+// changes, and only then the lines waiting in its separate log buffer
+// (player/client.c). A consumer that lags the core by a few milliseconds
+// therefore dequeues a failed open's END_FILE ahead of the
+// `[ffmpeg] http: HTTP error 404` and `[stream] Failed to open ...` lines mpv
+// logged before posting it, and Dart, which classifies the failure from the
+// lines it has seen when the end-file arrives, shows the generic error
+// instead of the one those lines name (#2513).
+//
+// Every line logged before the END_FILE was posted is already in that buffer
+// when the END_FILE is dequeued, so draining to MPV_EVENT_NONE reaches all of
+// them. From an error END_FILE to the end of that drain the runner sends log
+// lines at once and holds every other outgoing message, the end-file first,
+// then releases the held messages in order. Events are still handled natively
+// in mpv's order and command replies still complete as they are dequeued;
+// only what reaches the event channel moves.
+//
+// A line the next entry logs after the END_FILE can be pulled ahead too. That
+// is reachable in ordinary music playback, not only an HLS variant walk:
+// gapless playback arms the following track with `loadfile append` and
+// prefetch, so when that track fails fast in the same drain its error line can
+// reach Dart ahead of the previous track's end-file. Only diagnostic text is
+// affected; failure handling keys on the end-file's source.
+inline bool IsErrorEndFile(const mpv_event* event) {
+  if (!event || event->event_id != MPV_EVENT_END_FILE || !event->data) return false;
+  return static_cast<const mpv_event_end_file*>(event->data)->reason == MPV_END_FILE_REASON_ERROR;
+}
+
+// mpv's client log buffer at its verbose levels (10000 lines; 1000 below "v",
+// player/client.c mpv_request_log_messages).
+static constexpr int kMpvVerboseLogBufferLines = 10000;
+
+// The most events a hold waits through after the error END_FILE that began
+// it: a full verbose log buffer plus the one notice mpv adds when it
+// overflowed. A full buffer drops its oldest line for each new one
+// (common/msg.c:474-477), and the next read then returns a fatal "overflow"
+// notice ahead of the lines themselves (msg.c:1097-1106), so the newest
+// lines - the ones that explain the failure - arrive as event 10001. A core
+// that keeps producing events at least as fast as they are drained would
+// otherwise hold back every other event for as long as it does.
+static constexpr int kErrorEndFileDrainLimit = kMpvVerboseLogBufferLines + 1;
+
+// The hold described above, over one platform's outgoing message type. Begin,
+// CountDequeued, Hold and Release belong to the thread that drains mpv's
+// events. A log line never reads the hold, so one may be sent from any thread.
+template <typename Message>
+class ErrorEndFileHold {
+ public:
+  // An error END_FILE was dequeued: what the drain sends from here on,
+  // starting with that end-file, waits for Release. True when this began a
+  // hold; another error END_FILE inside the same hold joins it, counts as an
+  // event dequeued after the first, and does not restart the count.
+  bool Begin() {
+    if (holding_) return false;
+    holding_ = true;
+    dequeued_ = 0;
+    return true;
+  }
+
+  // One more event was dequeued after the END_FILE that began the hold; true
+  // once kErrorEndFileDrainLimit of them have been, when the caller is to
+  // Release it.
+  bool CountDequeued() { return holding_ && ++dequeued_ >= kErrorEndFileDrainLimit; }
+
+  bool ShouldHold(bool is_log_message) const { return !is_log_message && holding_; }
+
+  void Hold(Message message) { held_.push_back(std::move(message)); }
+
+  // The drain is over: ends the hold and hands back what it kept, in the
+  // order it was sent.
+  std::vector<Message> Release() {
+    holding_ = false;
+    std::vector<Message> released;
+    released.swap(held_);
+    return released;
+  }
+
+ private:
+  bool holding_ = false;
+  int dequeued_ = 0;
+  std::vector<Message> held_;
+};
+
 // mpv node payloads are untrusted input: a property can nest arbitrarily
 // deeply, carry a list as long as mpv claims, and hold strings that are
 // neither length-bounded nor valid UTF-8. Every runner walks the same trees
