@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show mapEquals, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../models/audio_channel_limit.dart';
@@ -59,9 +59,15 @@ class PlayerNative extends PlayerBase {
   // _armedNextUri keeps the ORIGINAL media URI (the music service matches
   // trackTransition events against it); _armedNextFd is the content-fd claim
   // when the armed URI needed fdclose:// conversion (see _toPlayableUri).
+  // _armedNextHeaders are the HTTP headers the armed entry opens with (empty
+  // for none). _prefetchHeaders are the ones a prefetch of it would send: the
+  // playing entry's own list, set by open() and taken over from the armed
+  // entry when mpv advances into it; null while unknown.
   bool _hasArmedNext = false;
   String? _armedNextUri;
   int? _armedNextFd;
+  Map<String, String> _armedNextHeaders = const {};
+  Map<String, String>? _prefetchHeaders;
 
   /// Host tests aren't Android, so the content:// → fdclose:// path would be
   /// unreachable; forces the conversion regardless of platform.
@@ -184,22 +190,25 @@ class PlayerNative extends PlayerBase {
     return 'sub-files=${_fixedLengthQuote(escapedUris.join(separator))}';
   }
 
-  /// Per-entry `http-header-fields` options for a `loadfile ... append`
-  /// options arg. Every header rides its own `-append` entry because mpv's
-  /// string-LIST parser splits a plain `http-header-fields=a,b` value on
-  /// commas with no way to escape them — a header value containing a comma
-  /// (`X-Plex-Device: Mac17,9` on Apple hardware) would be split into a
-  /// colon-less garbage line that Plex rejects with 400 "Error parsing HTTP
-  /// request". `-append` takes a single verbatim item; the fixed-length
-  /// quote shields it from the outer key=value list split. The leading
-  /// `-clr` stops the file-local list from inheriting (and duplicating) the
-  /// current track's global headers set by [open].
-  static String? _httpHeaderFieldsLoadfileOption(Map<String, String>? headers) {
-    if (headers == null || headers.isEmpty) return null;
-    final appends = headers.entries
-        .map((e) => 'http-header-fields-append=${_fixedLengthQuote('${e.key}: ${e.value}')}')
-        .join(',');
-    return 'http-header-fields-clr=,$appends';
+  /// File-local `http-header-fields` for a `loadfile` options arg, so the
+  /// entry opens with its own headers rather than the list mpv holds when it
+  /// starts, which may belong to another server. The options arg is an
+  /// mpv key/value list whose keys are unique — a repeated key replaces the
+  /// earlier pair — so all headers ride ONE list value; one `-append` pair
+  /// per header collapsed to the last header (#2511). mpv's list splitter
+  /// drops a backslash directly before a `,` and keeps every other one, so a
+  /// comma in a value (`X-Plex-Device: Mac17,9`) is sent as `\,`, and an item
+  /// ending in `\` gets a trailing space (optional whitespace HTTP strips) so
+  /// it cannot escape the separator after it. The fixed-length quote shields
+  /// the list from the outer key/value split. No headers clears the list: a
+  /// bare empty value would parse as one empty item, a blank header line.
+  static String _httpHeaderFieldsLoadfileOption(Map<String, String> headers) {
+    if (headers.isEmpty) return 'http-header-fields-clr=';
+    final items = headers.entries.map((e) {
+      final item = '${e.key}: ${e.value}'.replaceAll(',', r'\,');
+      return item.endsWith(r'\') ? '$item ' : item;
+    });
+    return 'http-header-fields=${_fixedLengthQuote(items.join(','))}';
   }
 
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
@@ -459,6 +468,9 @@ class PlayerNative extends PlayerBase {
         headerCommands.add(command(['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}']));
       }
     }
+    // A failed replacement leaves the playing entry on this rewritten list,
+    // so until the load is accepted no arm may prefetch with it (setNext).
+    if (audioOnly) _prefetchHeaders = null;
     await Future.wait(headerCommands);
 
     // 'start' must be set before loadfile. These are playback defaults, not
@@ -490,6 +502,13 @@ class PlayerNative extends PlayerBase {
     final loadfileArgs = ['loadfile', uri, 'replace'];
     final loadfileOptions = <String>[
       ?_externalSubtitlesLoadfileOption(externalSubtitles),
+      // The audio core also passes the headers file-local. After a gapless
+      // advance the playing entry's own header list is file-local, and mpv
+      // restores the list it replaced when that entry ends — after the
+      // change-list above, before this file opens — so the global list alone
+      // would open this file with an older track's headers, possibly another
+      // server's.
+      if (audioOnly) _httpHeaderFieldsLoadfileOption(media.headers ?? const {}),
       // Suppress mpv's own default subtitle selection so it cannot race the
       // server-backed TrackManager decision. File-local, never a property
       // write: writing `sid` while the outgoing file is still loaded
@@ -514,6 +533,7 @@ class PlayerNative extends PlayerBase {
     // `command` path makes the same re-check before dispatching.
     if (_nativeCoreUnavailable) return null;
     final loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
+    if (audioOnly) _prefetchHeaders = media.headers ?? const {};
     final playlistEntryId = loadfileReply?['playlistEntryId'];
     return playlistEntryId is int ? playlistEntryId : null;
   }
@@ -565,8 +585,15 @@ class PlayerNative extends PlayerBase {
     // playlist-pos still reads 0, breaking _clearArmedNext's "provably
     // never opened" proof (double close) — and local opens are instant
     // anyway. Set before the fd claim so a property failure cannot leak it.
+    // Off too for an arm whose headers differ from what a prefetch would
+    // send: mpv prefetches with the PLAYING entry's header list (the armed
+    // entry's own list applies only once it starts), which would hand one
+    // server's credentials to another even behind a shared origin. Such an
+    // arm opens at the boundary with its own headers.
+    final headers = media.headers ?? const <String, String>{};
     final networkArm = media.uri.startsWith('http://') || media.uri.startsWith('https://');
-    await setProperty('prefetch-playlist', networkArm ? 'yes' : 'no');
+    final prefetch = networkArm && mapEquals(headers, _prefetchHeaders);
+    await setProperty('prefetch-playlist', prefetch ? 'yes' : 'no');
 
     final (loadUri, fd) = await _toPlayableUri(media.uri, strict: true);
 
@@ -574,11 +601,7 @@ class PlayerNative extends PlayerBase {
     // (`loadfile <url> append -1 opt=val`), exactly like open() passes
     // sub-files. `gapless-audio=weak` splices the armed entry into the
     // running audio stream when formats match.
-    final args = ['loadfile', loadUri, 'append'];
-    final headerOption = _httpHeaderFieldsLoadfileOption(media.headers);
-    if (headerOption != null) {
-      args.addAll(['-1', headerOption]);
-    }
+    final args = ['loadfile', loadUri, 'append', '-1', _httpHeaderFieldsLoadfileOption(headers)];
     try {
       await command(args);
     } catch (e) {
@@ -589,6 +612,7 @@ class PlayerNative extends PlayerBase {
     _hasArmedNext = true;
     _armedNextUri = media.uri;
     _armedNextFd = fd;
+    _armedNextHeaders = headers;
     appLogger.d('MPV-audio: armed next ${_uriTail(media.uri)}');
   }
 
@@ -613,9 +637,11 @@ class PlayerNative extends PlayerBase {
     if (!_hasArmedNext) return;
     final uri = _armedNextUri;
     final fd = _armedNextFd;
+    final headers = _armedNextHeaders;
     _hasArmedNext = false;
     _armedNextUri = null;
     _armedNextFd = null;
+    _armedNextHeaders = const {};
 
     String? pos;
     try {
@@ -627,7 +653,7 @@ class PlayerNative extends PlayerBase {
     }
     if (pos == '1') {
       appLogger.d('MPV-audio: clear requested but armed entry already playing');
-      if (adoptIfRolledIn) _completeArmedAdvance(uri);
+      if (adoptIfRolledIn) _completeArmedAdvance(uri, headers);
       return;
     }
 
@@ -665,14 +691,17 @@ class PlayerNative extends PlayerBase {
 
   /// The armed entry became the playing one (mpv rolled into it): clear the
   /// arm — the fd (if any) was consumed by mpv — remove the spent entry so
-  /// the playing entry rebases to index 0, and surface the transition.
-  void _completeArmedAdvance(String? uri) {
+  /// the playing entry rebases to index 0, and surface the transition. Its
+  /// own header list, [headers], is now the one a prefetch would send.
+  void _completeArmedAdvance(String? uri, Map<String, String> headers) {
     // A different source is playing now, so a seek still in flight against the
     // old one must not land its target on this one's timeline (#1819).
     takeSourceOwnership();
     _hasArmedNext = false;
     _armedNextUri = null;
     _armedNextFd = null;
+    _armedNextHeaders = const {};
+    _prefetchHeaders = headers;
     appLogger.d('MPV-audio: armed entry advanced → playlist-remove 0, ${_uriTail(uri ?? '')}');
     unawaited(_removeSpentPlaylistEntry());
     if (uri != null) trackTransitionController.add(uri);
@@ -733,7 +762,7 @@ class PlayerNative extends PlayerBase {
       appLogger.d('MPV-audio: file-loaded (nothing armed, ignored)');
       return;
     }
-    _completeArmedAdvance(_armedNextUri);
+    _completeArmedAdvance(_armedNextUri, _armedNextHeaders);
   }
 
   @override
