@@ -63,6 +63,18 @@ final class RecordingLifecycleDelegate: MpvPlayerDelegate {
   }
 }
 
+final class EventOrderRecorder: MpvPlayerDelegate {
+  private(set) var events: [(name: String, data: [String: Any]?)] = []
+  var onEndFile: (() -> Void)?
+
+  func onPropertyChange(name: String, value: Any?, sourceId: Int64?) {}
+
+  func onEvent(name: String, data: [String: Any]?) {
+    events.append((name, data))
+    if name == "end-file" { onEndFile?() }
+  }
+}
+
 final class FakePictureInPictureController: MpvPictureInPictureControlling {
   var isPictureInPicturePossible = false
   private(set) var startCount = 0
@@ -414,6 +426,30 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual(completionCount, 1)
   }
 
+  func testFailedOpenDeliversItsErrorLinesBeforeEndFileWhenTheEventQueueLags() {
+    let core = MpvAudioPlayerCore()
+    let recorder = EventOrderRecorder()
+    core.delegate = recorder
+    XCTAssertTrue(core.initialize())
+    defer {
+      core.dispose()
+      core.queue.sync {}
+    }
+
+    let missingFile = FileManager.default.temporaryDirectory
+      .appendingPathComponent("plezy-missing-\(UUID().uuidString).mkv").path
+    let events = eventsOfOpenFailingBehindHeldQueue(core, recorder: recorder, url: missingFile)
+
+    guard let endFile = events.firstIndex(where: { $0.name == "end-file" }) else {
+      return XCTFail("No end-file delivered")
+    }
+    XCTAssertEqual(events[endFile].data?["reason"] as? Int, Int(MPV_END_FILE_REASON_ERROR.rawValue))
+    XCTAssertTrue(
+      events[..<endFile].contains { isLogLine($0, level: "error", containing: "Failed to open") },
+      "The line explaining the failure must reach the delegate before the end-file"
+    )
+  }
+
   func testNormalizedPlaybackDelayStringsPassThroughUnchanged() {
     let core = ControllablePropertyCore()
     let plugin = RecordingMpvPlugin(core: core)
@@ -681,6 +717,53 @@ final class MpvPlayerContractTests: XCTestCase {
       results.append($0)
     }
     return results
+  }
+
+  /// Opens `url` while `core`'s event queue is held and releases the queue
+  /// only once mpv has posted END_FILE, so the end-file and the lines logged
+  /// before it are all pending when the drain runs: the lag under which mpv
+  /// hands END_FILE out first. Returns the events delivered through the
+  /// end-file.
+  private func eventsOfOpenFailingBehindHeldQueue(
+    _ core: MpvPlayerCoreBase,
+    recorder: EventOrderRecorder,
+    url: String
+  ) -> [(name: String, data: [String: Any]?)] {
+    guard let observer = core.createClientForTesting() else {
+      XCTFail("No second mpv client")
+      return []
+    }
+    defer { mpv_destroy(observer) }
+
+    let queueHeld = expectation(description: "mpv queue held")
+    let releaseQueue = DispatchSemaphore(value: 0)
+    core.queue.async {
+      queueHeld.fulfill()
+      releaseQueue.wait()
+    }
+    wait(for: [queueHeld], timeout: 2)
+
+    let endFileDelivered = expectation(description: "end-file delivered")
+    endFileDelivered.assertForOverFulfill = false
+    recorder.onEndFile = { endFileDelivered.fulfill() }
+    core.command(["loadfile", url])
+    var endFilePosted = false
+    while !endFilePosted, let event = mpv_wait_event(observer, 5), event.pointee.event_id != MPV_EVENT_NONE {
+      endFilePosted = event.pointee.event_id == MPV_EVENT_END_FILE
+    }
+    releaseQueue.signal()
+    XCTAssertTrue(endFilePosted, "mpv never ended the file")
+    wait(for: [endFileDelivered], timeout: 5)
+    return recorder.events
+  }
+
+  private func isLogLine(
+    _ event: (name: String, data: [String: Any]?),
+    level: String,
+    containing text: String
+  ) -> Bool {
+    event.name == "log-message" && event.data?["level"] as? String == level
+      && (event.data?["text"] as? String)?.contains(text) == true
   }
 
   private func awaitProperty(

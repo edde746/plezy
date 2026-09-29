@@ -243,6 +243,27 @@ class MpvPlayerCoreBase: NSObject {
   /// runs serially on `queue`; pass this value into delegate dispatch rather
   /// than reading it later on the main queue.
   private var activeSourceId: Int64?
+  /// Delegate deliveries deferred behind a failed file's END_FILE until the
+  /// drain that dequeued it runs dry or reaches `errorEndFileDrainLimit`; nil
+  /// otherwise. See the END_FILE case of `handleEvent`. Accessed only on
+  /// `queue`, as is `eventsDequeuedWhileDeferring`.
+  private var deferredDeliveries: [DeferredDelivery]?
+  private var eventsDequeuedWhileDeferring = 0
+
+  /// The most events a deferral waits through after the error END_FILE that
+  /// began it: a full verbose client log buffer (mpv keeps 10000 lines per
+  /// client at `v` and above, 1000 below; player/client.c) plus the notice
+  /// mpv reads out ahead of them once it overflowed (common/msg.c). A full
+  /// buffer drops its oldest line for each new one, so the lines explaining
+  /// the failure are the newest. A core that keeps producing events at least
+  /// as fast as they drain would otherwise hold back every other delivery for
+  /// as long as it does.
+  private static let errorEndFileDrainLimit = 10_000 + 1
+
+  private enum DeferredDelivery {
+    case event(name: String, data: [String: Any]?)
+    case property(name: String, value: Any?, sourceId: Int64?)
+  }
 
   private enum PendingRequest {
     case void((Result<Void, Error>) -> Void)
@@ -1183,11 +1204,41 @@ class MpvPlayerCoreBase: NSObject {
           break
         }
 
+        // The END_FILE that begins a deferral is not counted; one inside it
+        // joins it and counts like any other event.
+        let deferring = self.deferredDeliveries != nil
         self.handleEvent(event.pointee)
+        if deferring {
+          self.eventsDequeuedWhileDeferring += 1
+          if self.eventsDequeuedWhileDeferring >= Self.errorEndFileDrainLimit {
+            self.postDeferredDeliveries()
+          }
+        }
+      }
+      self.postDeferredDeliveries()
+    }
+  }
+
+  /// Posts what an error END_FILE deferred: the end-file, then everything the
+  /// drain dequeued after it, in mpv order. The log lines the drain reached
+  /// were posted as they came, so they precede the end-file. Whatever the
+  /// drain dequeues after this is delivered as it comes.
+  private func postDeferredDeliveries() {
+    guard let deferred = deferredDeliveries else { return }
+    deferredDeliveries = nil
+    eventsDequeuedWhileDeferring = 0
+    for delivery in deferred {
+      switch delivery {
+      case .event(let name, let data):
+        dispatchDelegateEvent(name: name, data: data)
+      case .property(let name, let value, let sourceId):
+        dispatchDelegateProperty(name: name, value: value, sourceId: sourceId)
       }
     }
   }
 
+  /// Posts a delegate event to the main queue or, while an error END_FILE
+  /// defers deliveries, queues it behind that end-file.
   func dispatchDelegateEvent(name: String, data: [String: Any]?, sourceId: Int64? = nil) {
     var sourcedData = data
     if let sourceId {
@@ -1195,13 +1246,25 @@ class MpvPlayerCoreBase: NSObject {
       sourcedData?["sourceId"] = sourceId
     }
     let eventData = sourcedData
+    guard deferredDeliveries == nil else {
+      deferredDeliveries?.append(.event(name: name, data: eventData))
+      return
+    }
+    postDelegateEvent(name: name, data: eventData)
+  }
+
+  private func postDelegateEvent(name: String, data: [String: Any]?) {
     DispatchQueue.main.async { [weak self] in
       guard let self, self.isLifecycleActive else { return }
-      self.delegate?.onEvent(name: name, data: eventData)
+      self.delegate?.onEvent(name: name, data: data)
     }
   }
 
   func dispatchDelegateProperty(name: String, value: Any?, sourceId: Int64?) {
+    guard deferredDeliveries == nil else {
+      deferredDeliveries?.append(.property(name: name, value: value, sourceId: sourceId))
+      return
+    }
     DispatchQueue.main.async { [weak self] in
       guard let self, self.isLifecycleActive else { return }
       self.delegate?.onPropertyChange(name: name, value: value, sourceId: sourceId)
@@ -1260,6 +1323,23 @@ class MpvPlayerCoreBase: NSObject {
         if endFile.reason == MPV_END_FILE_REASON_ERROR {
           data["error"] = Int(endFile.error)
           data["message"] = safeString(mpv_error_string(endFile.error))
+          // mpv hands a client its queued events, then its pending property
+          // changes, and only then its log lines. When this queue runs behind
+          // the core, END_FILE comes out ahead of the lines explaining the
+          // failure — the HTTP status and `Failed to open` line Dart
+          // classifies it by when the end-file arrives. mpv buffers a line
+          // for this client as it is logged, so every line logged before the
+          // failure is pending now: defer every delivery but log lines until
+          // this drain runs dry or `errorEndFileDrainLimit` more events have
+          // come out, then post the end-file and what followed it in order.
+          // Side effects still run in mpv order. A line the next playlist
+          // entry logs meanwhile comes ahead too, which a diagnostic can
+          // take. Only failures defer: a stop's END_FILE precedes the
+          // replacement's START_FILE, and that file's lines pulled ahead of
+          // it would be dropped by Dart's per-file reset. Request completions
+          // post directly; Dart already takes them in either order against
+          // events, as Android completes them off its event path.
+          if deferredDeliveries == nil { deferredDeliveries = [] }
         }
         dispatchDelegateEvent(
           name: "end-file",
@@ -1325,7 +1405,7 @@ class MpvPlayerCoreBase: NSObject {
         let level = message.level.map { safeString($0) } ?? ""
         let text = message.text.map { safeString($0) } ?? ""
 
-        dispatchDelegateEvent(
+        postDelegateEvent(
           name: "log-message",
           data: ["prefix": prefix, "level": level, "text": text]
         )
@@ -1519,6 +1599,13 @@ class MpvPlayerCoreBase: NSObject {
   #if DEBUG
     func observeCachedPauseForTesting(_ paused: Bool) {
       updateCachedProperty(name: "pause", value: paused)
+    }
+
+    /// Another client of this core's mpv instance. It receives the broadcast
+    /// events on its own, so a test can wait for one while `queue` is held.
+    /// The caller owns it and releases it with `mpv_destroy`.
+    func createClientForTesting() -> OpaquePointer? {
+      withActiveMpv { mpv_create_client($0, "test") } ?? nil
     }
   #endif
 
