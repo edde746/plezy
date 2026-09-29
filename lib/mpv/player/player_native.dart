@@ -163,9 +163,12 @@ class PlayerNative extends PlayerBase {
     return path.length <= 40 ? path : '…${path.substring(path.length - 40)}';
   }
 
-  static String _escapePathListEntry(String value, String separator) {
-    return value.replaceAll(r'\', r'\\').replaceAll(separator, '\\$separator');
-  }
+  /// Escapes [separator] in one `sub-files` path-list entry. mpv's splitter
+  /// (`get_nextsep`) removes only a backslash directly before the separator
+  /// and keeps every other one, so backslashes must pass through unchanged.
+  /// A non-final entry ending in `\` cannot be expressed; no subtitle source
+  /// produces one.
+  static String _escapePathListEntry(String value, String separator) => value.replaceAll(separator, '\\$separator');
 
   static String? _externalSubtitlesLoadfileOption(List<SubtitleTrack>? externalSubtitles) {
     final separator = Platform.isWindows ? ';' : ':';
