@@ -12,7 +12,6 @@ import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
 import '../../utils/dialogs.dart';
-import '../../utils/platform_detector.dart';
 import '../../widgets/expressive_button_group.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
@@ -182,8 +181,9 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
   final _valueController = TextEditingController();
   final _valueFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerValue');
   final _saveFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerSave');
-  // tvOS apps can only be reached through their URL scheme.
-  final _urlSchemeOnly = PlatformDetector.isAppleTV();
+  // iOS and tvOS apps can only be reached through their URL scheme; there is
+  // no process to spawn and no package to target.
+  final _urlSchemeOnly = Platform.isIOS;
   late CustomPlayerType _selectedType = _urlSchemeOnly ? CustomPlayerType.urlScheme : CustomPlayerType.command;
 
   @override
