@@ -558,6 +558,18 @@ class MpvPlayerCoreBase: NSObject {
     #endif
     checkError(mpv_request_log_messages(mpv, defaultLogLevel))
 
+    #if os(macOS)
+      // Every URL Plezy opens is a media-server stream or a local file, never
+      // a site mpv's bundled ytdl_hook could resolve. On a failed open the
+      // hook spawns yt-dlp, when one is on PATH, with the full stream URL —
+      // access token included — in its argv, where other processes can read
+      // it, and its own error lines bury the one explaining the failure. mpv
+      // decides whether to load the builtin script during mpv_initialize, so
+      // it has to be an option here. The iOS and tvOS libmpv is built without
+      // Lua, so neither the hook nor this option exists there.
+      checkError(mpv_set_option_string(mpv, "ytdl", "no"))
+    #endif
+
     configure(mpv)
 
     let initResult = mpv_initialize(mpv)

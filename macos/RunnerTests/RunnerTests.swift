@@ -422,6 +422,34 @@ final class MpvPlayerContractTests: XCTestCase {
     )
   }
 
+  func testFailedStreamOpenIsExplainedByMpvWithoutRunningTheYtdlHook() {
+    let core = MpvAudioPlayerCore()
+    let recorder = EventOrderRecorder()
+    core.delegate = recorder
+    XCTAssertTrue(core.initialize())
+    defer {
+      core.dispose()
+      core.queue.sync {}
+    }
+
+    // Nothing listens on port 1, so the open fails at connect.
+    let events = eventsOfOpenFailingBehindHeldQueue(
+      core,
+      recorder: recorder,
+      url: "http://127.0.0.1:1/plezy-missing.mkv"
+    )
+
+    guard let endFile = events.firstIndex(where: { $0.name == "end-file" }) else {
+      return XCTFail("No end-file delivered")
+    }
+    XCTAssertFalse(
+      events.contains { $0.data?["prefix"] as? String == "ytdl_hook" },
+      "A failed open must not hand the stream URL to yt-dlp"
+    )
+    let lastErrorLine = events[..<endFile].last { $0.name == "log-message" && $0.data?["level"] as? String == "error" }
+    XCTAssertEqual(lastErrorLine?.data?["prefix"] as? String, "stream")
+  }
+
   func testNormalizedPlaybackDelayStringsPassThroughUnchanged() {
     let core = ControllablePropertyCore()
     let plugin = RecordingMpvPlugin(core: core)
