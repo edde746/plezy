@@ -162,6 +162,52 @@ void main() {
     expect(context.streamHeaders, isNot(contains('X-Plex-Session-Identifier')));
   });
 
+  group('plex track session', () {
+    Future<Map<String, String>?> trackStreamHeaders(String videoUrl) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final manager = MultiServerManager();
+      addTearDown(() async {
+        manager.dispose();
+        await db.close();
+      });
+      manager.debugRegisterClientForTesting(
+        _PlaybackClient(
+          result: PlaybackInitializationResult(availableVersions: const [], videoUrl: videoUrl),
+        ),
+        online: true,
+      );
+
+      final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(id: 'track-1', backend: MediaBackend.plex, kind: MediaKind.track, serverId: 'srv'),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.original,
+          sessionIdentifier: 'playback-session-id',
+        ),
+        offlineLibraryMode: false,
+      );
+      return context.streamHeaders;
+    }
+
+    test('a track that names its session in the stream URL gets no session header', () async {
+      // Gapless playback sends the playing track's headers with the next
+      // track's request; PMS refuses a music transcode start whose header
+      // names another active session with HTTP 400.
+      final headers = await trackStreamHeaders(
+        'https://example.com/music/:/transcode/universal/start.mp3'
+        '?session=transcode-id&X-Plex-Session-Identifier=playback-session-id',
+      );
+
+      expect(headers, {'X-Test': 'token'});
+    });
+
+    test('a track whose stream URL does not name its session keeps the session header', () async {
+      final headers = await trackStreamHeaders('https://example.com/library/parts/1/file.flac');
+
+      expect(headers, containsPair('X-Plex-Session-Identifier', 'playback-session-id'));
+    });
+  });
+
   group('downloaded copy under a capped quality preset (issue #2466)', () {
     late AppDatabase db;
     late MultiServerManager manager;

@@ -3804,7 +3804,7 @@ class PlexClient
 
       return PlaybackInitializationResult(
         availableVersions: data.availableVersions,
-        videoUrl: data.videoUrl,
+        videoUrl: _trackStreamUrl(data.videoUrl, options),
         mediaInfo: data.mediaInfo,
         subtitleSidecars: _buildExternalSubtitles(data.mediaInfo),
         isOffline: false,
@@ -3877,7 +3877,7 @@ class PlexClient
     appLogger.w('Transcode decision fell back to direct play: ${fallbackReason.name}');
     return PlaybackInitializationResult(
       availableVersions: data.availableVersions,
-      videoUrl: data.videoUrl,
+      videoUrl: _trackStreamUrl(data.videoUrl, options),
       mediaInfo: data.mediaInfo,
       subtitleSidecars: _buildExternalSubtitles(data.mediaInfo),
       isOffline: false,
@@ -3888,6 +3888,18 @@ class PlexClient
       playSessionId: options.sessionIdentifier,
       selectedMediaIndex: data.selectedMediaIndex,
     );
+  }
+
+  /// [url] with the playback session in its query when it streams a track,
+  /// as the music transcode start URL already carries it. Track streams do
+  /// not get the `X-Plex-Session-Identifier` header (see
+  /// PlaybackSourceResolver): gapless playback opens the next track with the
+  /// playing track's headers, so the header would name the wrong session.
+  String? _trackStreamUrl(String? url, PlaybackInitializationOptions options) {
+    final sessionIdentifier = options.sessionIdentifier;
+    if (url == null || sessionIdentifier == null || options.metadata.kind != MediaKind.track) return url;
+    final separator = url.contains('?') ? '&' : '?';
+    return '$url${separator}X-Plex-Session-Identifier=${Uri.encodeQueryComponent(sessionIdentifier)}';
   }
 
   /// Pick the audio stream ID to send to the transcoder. Preference order:
