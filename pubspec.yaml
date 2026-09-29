@@ -1,7 +1,7 @@
 name: plezy
 description: "Plezy GKUI compatibility fork"
 publish_to: "none"
-version: 1.0.0+2
+version: 1.2.2+8
 
 environment:
   sdk: ">=3.3.4 <3.4.0"

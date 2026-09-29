@@ -58,6 +58,11 @@ void main() {
     ));
     await tester.pumpAndSettle();
     expect(find.text('Device status'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('4.4.4 / API 19'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('4.4.4 / API 19'), findsOneWidget);
     controller.dispose();
   });
@@ -111,6 +116,12 @@ void main() {
     await tester.tap(find.text('Library'));
     await tester.pumpAndSettle();
     expect(find.text('Movies'), findsWidgets);
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Find movies, shows and episodes'), findsOneWidget);
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Playback settings'), findsOneWidget);
     await tester.tap(find.text('Status'));
     await tester.pumpAndSettle();
     expect(find.text('Device status'), findsOneWidget);

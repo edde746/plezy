@@ -9,7 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'gkui/diagnostics.dart';
 import 'gkui/plex_api.dart';
 
-const String buildLabel = 'Plezy GKUI 1.0 consolidated';
+const String buildLabel = 'Plezy GKUI 1.2.2 / adaptive mobile-data startup';
 const String sourceLabel = 'Plezy 1.8.1 / GKUI compatibility fork';
 const String toolchainLabel = 'Flutter 3.19.6 / ExoPlayer 2.19.1 / API 19';
 const MethodChannel nativeChannel =
@@ -61,6 +61,24 @@ enum AppPhase { starting, signedOut, signingIn, chooseServer, ready, error }
 
 enum PlaybackMode { direct, transcode720, transcode480 }
 
+PlaybackMode? playbackFallback(PlaybackMode mode, String? failureKind) {
+  if (failureKind == 'network' ||
+      failureKind == 'http' ||
+      failureKind == 'initialization') {
+    return null;
+  }
+  return switch (mode) {
+    PlaybackMode.direct => PlaybackMode.transcode720,
+    PlaybackMode.transcode720 => PlaybackMode.transcode480,
+    PlaybackMode.transcode480 => null,
+  };
+}
+
+int playbackStartupHardTimeoutMs(PlaybackMode mode) =>
+    mode == PlaybackMode.direct ? 90000 : 120000;
+
+enum LibraryView { all, unwatched, collections }
+
 class GkuiController extends ChangeNotifier {
   final RedactingLogStore logs = RedactingLogStore(capacity: 160);
   PlexApi? api;
@@ -72,9 +90,29 @@ class GkuiController extends ChangeNotifier {
   List<PlexShelf> shelves = const <PlexShelf>[];
   List<PlexSection> sections = const <PlexSection>[];
   List<PlexMedia> libraryItems = const <PlexMedia>[];
+  List<PlexMedia> searchResults = const <PlexMedia>[];
+  List<PlexHomeUser> homeUsers = const <PlexHomeUser>[];
   PlexSection? selectedSection;
+  PlexHomeUser? currentHomeUser;
+  LibraryView libraryView = LibraryView.all;
+  SearchMediaFilter searchFilter = SearchMediaFilter.all;
+  GkuiSettings settings = const GkuiSettings();
+  String searchQuery = '';
+  String? lastSelectedVersion;
+  int? lastFirstFrameMs;
+  int? lastContentLoadMs;
+  String? lastDecoder;
+  String? lastVideoFormat;
   bool loadingContent = false;
+  bool searching = false;
+  bool loadingMoreLibrary = false;
+  bool libraryHasMore = false;
+  int libraryNextStart = 0;
+  bool switchingProfile = false;
   int authGeneration = 0;
+  int contentGeneration = 0;
+  int searchGeneration = 0;
+  Timer? periodicRefresh;
   bool disposed = false;
 
   bool get clockValid => DateTime.now().year >= 2024;
@@ -89,10 +127,22 @@ class GkuiController extends ChangeNotifier {
     }
     try {
       api = await PlexApi.create(logs);
+      settings = api!.loadSettings();
       if (api!.session == null) {
         phase = AppPhase.signedOut;
       } else {
-        await refreshContent();
+        shelves = api!.loadCachedHome();
+        sections = api!.loadCachedSections();
+        selectedSection = sections.isEmpty ? null : sections.first;
+        libraryItems = selectedSection == null
+            ? const <PlexMedia>[]
+            : api!.loadCachedSection(selectedSection!.key);
+        if (shelves.isNotEmpty || sections.isNotEmpty) {
+          phase = AppPhase.ready;
+          logs.add('Showing cached Plex content while refreshing.');
+          notifySafely();
+        }
+        await refreshContent(includeLibrary: libraryItems.isEmpty);
       }
     } catch (caught) {
       fail('Startup failed', caught);
@@ -170,8 +220,11 @@ class GkuiController extends ChangeNotifier {
     await connectServer(token, server);
   }
 
-  Future<void> refreshContent() async {
+  Future<void> refreshContent({bool includeLibrary = true}) async {
     if (api?.session == null) return;
+    final started = Stopwatch()..start();
+    final generation = ++contentGeneration;
+    loadingMoreLibrary = false;
     loadingContent = true;
     error = null;
     notifySafely();
@@ -180,39 +233,273 @@ class GkuiController extends ChangeNotifier {
         api!.loadHome(),
         api!.loadSections(),
       ]);
+      if (generation != contentGeneration || disposed) return;
       shelves = results[0] as List<PlexShelf>;
       sections = results[1] as List<PlexSection>;
-      selectedSection = sections.isEmpty ? null : sections.first;
-      libraryItems = selectedSection == null
-          ? const <PlexMedia>[]
-          : await api!.loadSection(selectedSection!.key);
+      final previousKey = selectedSection?.key;
+      selectedSection = sections.cast<PlexSection?>().firstWhere(
+            (section) => section?.key == previousKey,
+            orElse: () => sections.isEmpty ? null : sections.first,
+          );
+      if (includeLibrary && selectedSection != null) {
+        final page = await api!.loadSectionPage(selectedSection!.key);
+        if (generation != contentGeneration || disposed) return;
+        libraryItems = page.items;
+        libraryNextStart = page.nextStart;
+        libraryHasMore = page.hasMore;
+        libraryView = LibraryView.all;
+      }
       phase = AppPhase.ready;
+      lastContentLoadMs = started.elapsedMilliseconds;
       logs.add('Plex content is ready.');
+      unawaited(loadHomeUsers());
+      _ensurePeriodicRefresh();
     } catch (caught) {
-      fail('Could not load Plex content', caught);
+      if (generation == contentGeneration && !disposed) {
+        fail('Could not load Plex content', caught);
+      }
     } finally {
-      loadingContent = false;
-      notifySafely();
+      if (generation == contentGeneration && !disposed) {
+        loadingContent = false;
+        notifySafely();
+      }
     }
   }
 
   Future<void> selectSection(PlexSection section) async {
+    final generation = ++contentGeneration;
+    loadingMoreLibrary = false;
     selectedSection = section;
     loadingContent = true;
     error = null;
     notifySafely();
     try {
-      libraryItems = await api!.loadSection(section.key);
+      libraryView = LibraryView.all;
+      final page = await api!.loadSectionPage(section.key);
+      if (generation != contentGeneration || disposed) return;
+      libraryItems = page.items;
+      libraryNextStart = page.nextStart;
+      libraryHasMore = page.hasMore;
     } catch (caught) {
-      error = message('Library failed to load', caught);
+      if (generation == contentGeneration && !disposed) {
+        error = message('Library failed to load', caught);
+      }
     } finally {
-      loadingContent = false;
+      if (generation == contentGeneration && !disposed) {
+        loadingContent = false;
+        notifySafely();
+      }
+    }
+  }
+
+  Future<void> selectLibraryView(LibraryView view) async {
+    final section = selectedSection;
+    if (section == null) return;
+    final generation = ++contentGeneration;
+    loadingMoreLibrary = false;
+    libraryView = view;
+    loadingContent = true;
+    error = null;
+    notifySafely();
+    try {
+      if (view == LibraryView.collections) {
+        final items = await api!.loadCollections(section.key);
+        if (generation != contentGeneration || disposed) return;
+        libraryItems = items;
+        libraryHasMore = false;
+        libraryNextStart = items.length;
+      } else {
+        final page = await api!.loadSectionPage(section.key,
+            unwatchedOnly: view == LibraryView.unwatched);
+        if (generation != contentGeneration || disposed) return;
+        libraryItems = page.items;
+        libraryNextStart = page.nextStart;
+        libraryHasMore = page.hasMore;
+      }
+    } catch (caught) {
+      if (generation == contentGeneration && !disposed) {
+        error = message('Library view failed to load', caught);
+      }
+    } finally {
+      if (generation == contentGeneration && !disposed) {
+        loadingContent = false;
+        notifySafely();
+      }
+    }
+  }
+
+  Future<void> loadMoreLibrary() async {
+    final section = selectedSection;
+    if (section == null ||
+        libraryView == LibraryView.collections ||
+        !libraryHasMore ||
+        loadingMoreLibrary) return;
+    final generation = contentGeneration;
+    loadingMoreLibrary = true;
+    notifySafely();
+    try {
+      final page = await api!.loadSectionPage(
+        section.key,
+        start: libraryNextStart,
+        unwatchedOnly: libraryView == LibraryView.unwatched,
+      );
+      if (generation != contentGeneration || disposed) return;
+      final known = libraryItems.map((item) => item.ratingKey).toSet();
+      libraryItems = <PlexMedia>[
+        ...libraryItems,
+        ...page.items.where((item) => known.add(item.ratingKey)),
+      ];
+      libraryNextStart = page.nextStart;
+      libraryHasMore = page.hasMore;
+    } catch (caught) {
+      if (generation == contentGeneration && !disposed) {
+        error = message('More library items failed to load', caught);
+      }
+    } finally {
+      if (generation == contentGeneration && !disposed) {
+        loadingMoreLibrary = false;
+        notifySafely();
+      }
+    }
+  }
+
+  Future<void> runSearch(String query) async {
+    final generation = ++searchGeneration;
+    searchQuery = query.trim();
+    if (searchQuery.length < 2) {
+      searching = false;
+      searchResults = const <PlexMedia>[];
+      notifySafely();
+      return;
+    }
+    searching = true;
+    error = null;
+    notifySafely();
+    try {
+      final results = await api!.search(searchQuery, filter: searchFilter);
+      if (generation != searchGeneration || disposed) return;
+      searchResults = results;
+    } catch (caught) {
+      if (generation == searchGeneration && !disposed) {
+        error = message('Search failed', caught);
+      }
+    } finally {
+      if (generation == searchGeneration && !disposed) {
+        searching = false;
+        notifySafely();
+      }
+    }
+  }
+
+  Future<void> setSearchFilter(SearchMediaFilter value) async {
+    searchFilter = value;
+    if (searchQuery.length >= 2) {
+      await runSearch(searchQuery);
+    } else {
       notifySafely();
     }
   }
 
+  Future<void> updateSettings(GkuiSettings value) async {
+    settings = value;
+    await api!.saveSettings(value);
+    notifySafely();
+  }
+
+  Future<void> loadHomeUsers() async {
+    try {
+      homeUsers = await api!.loadHomeUsers();
+      final saved = api!.currentHomeUserUuid;
+      currentHomeUser = homeUsers.cast<PlexHomeUser?>().firstWhere(
+            (user) => user?.uuid == saved,
+            orElse: () => homeUsers.cast<PlexHomeUser?>().firstWhere(
+                  (user) => user?.admin == true,
+                  orElse: () => homeUsers.isEmpty ? null : homeUsers.first,
+                ),
+          );
+      notifySafely();
+    } catch (caught) {
+      logs.add('Plex Home profiles unavailable: ${compact(caught)}');
+    }
+  }
+
+  Future<void> switchProfile(PlexHomeUser user, {String? pin}) async {
+    if (user.uuid == currentHomeUser?.uuid) return;
+    switchingProfile = true;
+    contentGeneration++;
+    searchGeneration++;
+    error = null;
+    notifySafely();
+    try {
+      final token = await api!.switchHomeUser(user, pin: pin);
+      final resources = await api!.fetchServers(token);
+      if (resources.isEmpty) {
+        throw StateError('This profile has no accessible Plex server.');
+      }
+      final currentServerId = api!.session?.serverId;
+      final server = resources.firstWhere(
+        (candidate) => candidate.id == currentServerId,
+        orElse: () => resources.first,
+      );
+      await api!.connect(token, server);
+      await api!.saveCurrentHomeUser(user);
+      await api!.clearContentCache();
+      currentHomeUser = user;
+      shelves = const <PlexShelf>[];
+      libraryItems = const <PlexMedia>[];
+      searchResults = const <PlexMedia>[];
+      await refreshContent();
+      logs.add('Switched Plex Home profile to ${user.displayName}.');
+    } catch (caught) {
+      error = message('Profile switch failed', caught);
+      rethrow;
+    } finally {
+      switchingProfile = false;
+      notifySafely();
+    }
+  }
+
+  Future<void> reconnectAfterResume() async {
+    if (phase != AppPhase.ready || api?.session == null || loadingContent)
+      return;
+    logs.add('App resumed; refreshing Plex connection.');
+    await refreshContent(includeLibrary: false);
+  }
+
+  void _ensurePeriodicRefresh() {
+    periodicRefresh ??=
+        Timer.periodic(const Duration(minutes: 5), (Timer timer) {
+      if (phase == AppPhase.ready && !loadingContent && !switchingProfile) {
+        unawaited(refreshHomeQuietly());
+      }
+    });
+  }
+
+  Future<void> refreshHomeQuietly() async {
+    if (api?.session == null) return;
+    final generation = contentGeneration;
+    try {
+      final updated = await api!.loadHome();
+      if (generation != contentGeneration || disposed) return;
+      shelves = updated;
+      notifySafely();
+    } catch (caught) {
+      logs.add('Background Home refresh skipped: ${compact(caught)}');
+    }
+  }
+
+  void handleMemoryPressure() {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    logs.add('Low-memory signal: released decoded artwork.');
+  }
+
   Future<void> signOut() async {
     authGeneration++;
+    contentGeneration++;
+    searchGeneration++;
+    periodicRefresh?.cancel();
+    periodicRefresh = null;
     await api?.signOut();
     shelves = const <PlexShelf>[];
     sections = const <PlexSection>[];
@@ -230,22 +517,106 @@ class GkuiController extends ChangeNotifier {
     notifySafely();
   }
 
-  Future<void> play(
-      BuildContext context, PlexMedia media, PlaybackMode mode) async {
+  Future<void> play(BuildContext context, PlexMedia media, PlaybackMode mode,
+      {int? mediaIndex,
+      String? audioTrackId,
+      String? subtitleTrackId,
+      bool allowAutoNext = true}) async {
+    String? failureKind;
+    PlaybackRequest? activeRequest;
+    var preparingVisible = false;
+    var selectedIndex = mediaIndex ?? 0;
+    var item = media;
     try {
-      var item = media;
-      if (item.directPartKey == null)
+      unawaited(showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const AlertDialog(
+          content: Row(children: <Widget>[
+            SizedBox(
+                width: 30,
+                height: 30,
+                child: CircularProgressIndicator(strokeWidth: 3)),
+            SizedBox(width: 18),
+            Expanded(
+                child:
+                    Text('Preparing video…', style: TextStyle(fontSize: 19))),
+          ]),
+        ),
+      ));
+      preparingVisible = true;
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+
+      if (item.versions.isEmpty) {
         item = await api!.loadMetadata(item.ratingKey);
+      }
+      final remembered = api!.loadPlaybackChoice(item);
+      final rememberedIndex = remembered.mediaIndex;
+      selectedIndex = mediaIndex ??
+          (rememberedIndex != null &&
+                  item.versions
+                      .any((version) => version.index == rememberedIndex)
+              ? rememberedIndex
+              : PlexMediaVersion.preferredIndex(item.versions));
+      final selectedVersion = item.versions
+          .where((version) => version.index == selectedIndex)
+          .firstOrNull;
+      lastSelectedVersion = selectedVersion?.displayLabel ?? 'Original';
+
+      PlexTrack? findTrack(List<PlexTrack> tracks, String? id) => id == null
+          ? null
+          : tracks.where((track) => track.id == id).firstOrNull;
+      final selectedAudio = findTrack(selectedVersion?.audioTracks ?? const [],
+              audioTrackId ?? remembered.audioTrackId) ??
+          (selectedVersion?.audioTracks ?? const <PlexTrack>[])
+              .where((track) => track.selected)
+              .firstOrNull;
+      final requestedSubtitleId = subtitleTrackId ?? remembered.subtitleTrackId;
+      final selectedSubtitle = requestedSubtitleId == 'off'
+          ? null
+          : findTrack(selectedVersion?.subtitleTracks ?? const [],
+                  requestedSubtitleId) ??
+              (selectedVersion?.subtitleTracks ?? const <PlexTrack>[])
+                  .where((track) => track.selected)
+                  .firstOrNull;
+      final resolvedAudioTrackId = selectedAudio?.id;
+      final resolvedSubtitleTrackId = requestedSubtitleId == 'off'
+          ? 'off'
+          : selectedSubtitle?.id ?? remembered.subtitleTrackId;
+      await api!.savePlaybackChoice(
+          item,
+          PlaybackChoice(
+            mediaIndex: selectedIndex,
+            audioTrackId: resolvedAudioTrackId,
+            subtitleTrackId: resolvedSubtitleTrackId,
+          ));
+
+      final markers = settings.skipMode != SkipMode.off
+          ? api!.cachedMarkers(item.ratingKey)
+          : const <PlexMarker>[];
+      if (settings.skipMode != SkipMode.off && markers.isEmpty) {
+        unawaited(api!
+            .loadMarkers(item.ratingKey)
+            .catchError((Object _) => const <PlexMarker>[]));
+      }
       final bitrate = mode == PlaybackMode.transcode480 ? 1500 : 3000;
       final request = api!.playback(
         item,
         transcode: mode != PlaybackMode.direct,
         bitrate: bitrate,
+        mediaIndex: selectedIndex,
+        audioTrackId: resolvedAudioTrackId,
+        subtitleTrackId:
+            resolvedSubtitleTrackId == 'off' ? null : resolvedSubtitleTrackId,
       );
+      activeRequest = request;
       logs.add(
-          'Opening ${request.transcoding ? '${bitrate}kbps HLS' : 'direct'} playback: ${item.title}.');
-      await api!.reportProgress(item, item.viewOffsetMs, 'playing');
-      final raw = await nativeChannel
+          'Opening ${request.transcoding ? '${bitrate}kbps HLS' : 'direct'} playback (${lastSelectedVersion!}): ${item.title}.');
+      if (preparingVisible && context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        preparingVisible = false;
+      }
+      final playerFuture = nativeChannel
           .invokeMapMethod<String, dynamic>('playVideo', <String, dynamic>{
         'url': request.url,
         'headers': request.headers,
@@ -254,23 +625,75 @@ class GkuiController extends ChangeNotifier {
         'ratingKey': item.ratingKey,
         'durationMs': item.durationMs,
         'timelineUrl': '${api!.session!.baseUrl}/:/timeline',
+        'sessionId': request.sessionId,
+        'audioLanguage': selectedAudio?.languageCode ?? settings.audioLanguage,
+        'subtitleLanguage': resolvedSubtitleTrackId == 'off'
+            ? 'off'
+            : selectedSubtitle?.languageCode ?? settings.subtitleLanguage,
+        'audioTrackId': resolvedAudioTrackId ?? '',
+        'subtitleTrackId': resolvedSubtitleTrackId ?? '',
+        'seekBackMs': settings.seekBackSeconds * 1000,
+        'seekForwardMs': settings.seekForwardSeconds * 1000,
+        'skipMode': settings.skipMode.name,
+        'startupHardTimeoutMs': playbackStartupHardTimeoutMs(mode),
+        'markers': markers
+            .map((marker) => <String, dynamic>{
+                  'type': marker.type,
+                  'startMs': marker.startMs,
+                  'endMs': marker.endMs,
+                })
+            .toList(),
       });
+      // Telemetry must never delay the native player opening.
+      unawaited(api!.reportProgress(item, item.viewOffsetMs, 'playing',
+          sessionId: request.sessionId));
+      final raw = await playerFuture;
+      for (final line in (raw?['diagnostics'] as List<dynamic>? ?? const [])) {
+        logs.add(line.toString());
+      }
+      failureKind = raw?['failureKind']?.toString();
       final position =
           (raw?['positionMs'] as num?)?.toInt() ?? item.viewOffsetMs;
-      await api!.reportProgress(
-          item, position, raw?['ended'] == true ? 'stopped' : 'paused');
+      lastFirstFrameMs = (raw?['firstFrameMs'] as num?)?.toInt();
+      lastDecoder = raw?['decoder']?.toString();
+      lastVideoFormat = raw?['videoFormat']?.toString();
+      _updateLocalProgress(item.ratingKey, position);
+      notifySafely();
+      if (raw?['renderedFrame'] == true) {
+        await api!.reportProgress(
+            item, position, raw?['ended'] == true ? 'stopped' : 'paused',
+            sessionId: request.sessionId);
+      }
+      await api!.stopPlaybackSession(request);
+      activeRequest = null;
       final playerError = raw?['error']?.toString();
       if (playerError != null && playerError.isNotEmpty)
         throw StateError(playerError);
-      await refreshContent();
+      if (raw?['ended'] == true && settings.autoPlayNext && allowAutoNext) {
+        final next = await api!.loadNextEpisode(item);
+        if (next != null && context.mounted) {
+          final proceed = await _showPlayNextCountdown(context, next);
+          if (proceed && context.mounted) {
+            logs.add('Autoplaying next episode: ${next.title}.');
+            await play(context, next, PlaybackMode.direct, allowAutoNext: true);
+          }
+        }
+      }
+      unawaited(refreshHomeQuietly());
     } catch (caught) {
+      if (preparingVisible && context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        preparingVisible = false;
+      }
       logs.add('Playback failed: ${compact(caught)}');
       if (context.mounted) {
-        final fallback = mode == PlaybackMode.direct
-            ? PlaybackMode.transcode720
-            : mode == PlaybackMode.transcode720
-                ? PlaybackMode.transcode480
-                : null;
+        // A no-frame timeout often means the source codec/container cannot be
+        // rendered by this API-19 head unit. Let it use the normal 720p then
+        // 480p compatibility ladder instead of treating it as a dead server.
+        final connectionFailed = failureKind == 'network' ||
+            failureKind == 'http' ||
+            failureKind == 'initialization';
+        final fallback = playbackFallback(mode, failureKind);
         if (fallback != null) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(mode == PlaybackMode.direct
@@ -278,14 +701,98 @@ class GkuiController extends ChangeNotifier {
                 : '720p failed; retrying 480p safe mode…'),
           ));
           await Future<void>.delayed(const Duration(milliseconds: 500));
-          if (context.mounted) await play(context, media, fallback);
+          if (context.mounted) {
+            await play(context, item, fallback,
+                mediaIndex: selectedIndex,
+                audioTrackId: audioTrackId,
+                subtitleTrackId: subtitleTrackId);
+          }
           return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Playback failed: ${compact(caught)}'),
-        ));
+        final retry = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+                  title: Text(connectionFailed
+                      ? 'Player connection failed'
+                      : failureKind == 'startup_timeout'
+                          ? 'Video could not start'
+                          : 'Playback failed'),
+                  content: SingleChildScrollView(
+                      child: Text(
+                          '${compact(caught)}\n\nThe Status screen contains the connection details.')),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Close')),
+                    ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context, true),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'))
+                  ],
+                ));
+        if (retry == true && context.mounted) {
+          await play(context, item, mode,
+              mediaIndex: selectedIndex,
+              audioTrackId: audioTrackId,
+              subtitleTrackId: subtitleTrackId);
+        }
+      }
+    } finally {
+      if (activeRequest != null) {
+        unawaited(api!.stopPlaybackSession(activeRequest));
       }
     }
+  }
+
+  Future<bool> _showPlayNextCountdown(
+      BuildContext context, PlexMedia next) async {
+    final seconds = settings.playNextCountdownSeconds;
+    if (seconds <= 0) return true;
+    var remaining = seconds;
+    Timer? timer;
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) {
+          timer ??= Timer.periodic(const Duration(seconds: 1), (value) {
+            remaining--;
+            if (remaining <= 0) {
+              value.cancel();
+              if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+            } else if (dialogContext.mounted) {
+              setState(() {});
+            }
+          });
+          return AlertDialog(
+            title: const Text('Playing next episode'),
+            content: Text('${next.title}\n\nStarting in $remaining seconds.'),
+            actions: <Widget>[
+              TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel')),
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Play now')),
+            ],
+          );
+        },
+      ),
+    );
+    timer?.cancel();
+    return result == true;
+  }
+
+  void _updateLocalProgress(String ratingKey, int position) {
+    PlexMedia update(PlexMedia item) => item.ratingKey == ratingKey
+        ? item.copyWith(viewOffsetMs: position)
+        : item;
+    shelves = shelves
+        .map((shelf) => PlexShelf(
+            title: shelf.title, items: shelf.items.map(update).toList()))
+        .toList();
+    libraryItems = libraryItems.map(update).toList();
+    searchResults = searchResults.map(update).toList();
   }
 
   void fail(String prefix, Object value) {
@@ -316,6 +823,9 @@ class GkuiController extends ChangeNotifier {
   void dispose() {
     disposed = true;
     authGeneration++;
+    contentGeneration++;
+    searchGeneration++;
+    periodicRefresh?.cancel();
     logs.dispose();
     super.dispose();
   }
@@ -327,16 +837,30 @@ class GkuiRoot extends StatefulWidget {
   State<GkuiRoot> createState() => _GkuiRootState();
 }
 
-class _GkuiRootState extends State<GkuiRoot> {
+class _GkuiRootState extends State<GkuiRoot> with WidgetsBindingObserver {
   final GkuiController controller = GkuiController();
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     controller.initialize();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(controller.reconnectAfterResume());
+    }
+  }
+
+  @override
+  void didHaveMemoryPressure() {
+    controller.handleMemoryPressure();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     controller.dispose();
     super.dispose();
   }
@@ -592,6 +1116,8 @@ class _GkuiShellState extends State<GkuiShell> {
     final pages = <Widget>[
       HomePane(controller: widget.controller),
       LibraryPane(controller: widget.controller),
+      SearchPane(controller: widget.controller),
+      SettingsPane(controller: widget.controller),
       DiagnosticsPane(
           logs: widget.controller.logs, controller: widget.controller),
     ];
@@ -599,13 +1125,13 @@ class _GkuiShellState extends State<GkuiShell> {
         body: SafeArea(
             child: Row(children: <Widget>[
       Container(
-          width: 104,
+          width: 96,
           color: const Color(0xFF121212),
           child: NavigationRail(
             backgroundColor: Colors.transparent,
             selectedIndex: selected,
             labelType: NavigationRailLabelType.all,
-            minWidth: 100,
+            minWidth: 92,
             onDestinationSelected: (value) => setState(() => selected = value),
             leading: Padding(
                 padding: const EdgeInsets.only(top: 8, bottom: 8),
@@ -619,6 +1145,14 @@ class _GkuiShellState extends State<GkuiShell> {
                   icon: Icon(Icons.video_library_outlined, size: 29),
                   selectedIcon: Icon(Icons.video_library, size: 31),
                   label: Text('Library')),
+              NavigationRailDestination(
+                  icon: Icon(Icons.search, size: 29),
+                  selectedIcon: Icon(Icons.manage_search, size: 31),
+                  label: Text('Search')),
+              NavigationRailDestination(
+                  icon: Icon(Icons.tune, size: 29),
+                  selectedIcon: Icon(Icons.tune, size: 31),
+                  label: Text('Settings')),
               NavigationRailDestination(
                   icon: Icon(Icons.monitor_heart_outlined, size: 29),
                   selectedIcon: Icon(Icons.monitor_heart, size: 31),
@@ -640,13 +1174,23 @@ class HomePane extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     return RefreshIndicator(
-      onRefresh: controller.refreshContent,
+      onRefresh: () => controller.refreshContent(includeLibrary: false),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 18, 24, 30),
         children: <Widget>[
-          PageHeading(
-              title: controller.api!.session!.serverName,
-              subtitle: 'Secure Plex connection • pull down to refresh'),
+          Row(children: <Widget>[
+            Expanded(
+                child: PageHeading(
+                    title: controller.api!.session!.serverName,
+                    subtitle:
+                        '${controller.currentHomeUser?.displayName ?? controller.api!.currentHomeUserName ?? 'Plex Home'} • pull down to refresh')),
+            ElevatedButton.icon(
+                onPressed: controller.switchingProfile
+                    ? null
+                    : () => _showProfiles(context),
+                icon: const Icon(Icons.switch_account),
+                label: const Text('Profiles')),
+          ]),
           if (controller.error != null) ErrorBanner(controller.error!),
           const SizedBox(height: 18),
           if (controller.shelves.isEmpty)
@@ -663,6 +1207,85 @@ class HomePane extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _showProfiles(BuildContext context) async {
+    await controller.loadHomeUsers();
+    if (!context.mounted) return;
+    if (controller.homeUsers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No Plex Home profiles returned.')));
+      return;
+    }
+    final user = await showDialog<PlexHomeUser>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Switch Plex Home profile'),
+        content: SizedBox(
+          width: 520,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: controller.homeUsers.length,
+            itemBuilder: (_, index) {
+              final item = controller.homeUsers[index];
+              final current = item.uuid == controller.currentHomeUser?.uuid;
+              return ListTile(
+                leading: Icon(item.guest ? Icons.person_outline : Icons.person),
+                title: Text(item.displayName),
+                subtitle: Text(item.admin
+                    ? 'Home owner'
+                    : item.guest
+                        ? 'Guest'
+                        : 'Managed user'),
+                trailing: current
+                    ? const Icon(Icons.check, color: Color(0xFFE5A00D))
+                    : item.protected
+                        ? const Icon(Icons.lock_outline)
+                        : null,
+                onTap: current ? null : () => Navigator.pop(context, item),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    if (user == null || !context.mounted) return;
+    String? pin;
+    if (user.protected) {
+      final field = TextEditingController();
+      pin = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('PIN for ${user.displayName}'),
+          content: TextField(
+            controller: field,
+            autofocus: true,
+            obscureText: true,
+            keyboardType: TextInputType.number,
+            maxLength: 4,
+            decoration: const InputDecoration(labelText: 'Plex Home PIN'),
+          ),
+          actions: <Widget>[
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel')),
+            ElevatedButton(
+                onPressed: () => Navigator.pop(context, field.text),
+                child: const Text('Switch')),
+          ],
+        ),
+      );
+      field.dispose();
+      if (pin == null) return;
+    }
+    try {
+      await controller.switchProfile(user, pin: pin);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(controller.error ?? 'Profile switch failed.')));
+      }
+    }
   }
 }
 
@@ -695,25 +1318,358 @@ class LibraryPane extends StatelessWidget {
                 );
               },
             )),
+        SizedBox(
+            height: 48,
+            child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                children: <Widget>[
+                  ChoiceChip(
+                      label: const Text('All'),
+                      selected: controller.libraryView == LibraryView.all,
+                      onSelected: (_) =>
+                          controller.selectLibraryView(LibraryView.all)),
+                  const SizedBox(width: 10),
+                  ChoiceChip(
+                      label: const Text('Unwatched'),
+                      selected: controller.libraryView == LibraryView.unwatched,
+                      onSelected: (_) =>
+                          controller.selectLibraryView(LibraryView.unwatched)),
+                  const SizedBox(width: 10),
+                  ChoiceChip(
+                      label: const Text('Collections'),
+                      selected:
+                          controller.libraryView == LibraryView.collections,
+                      onSelected: (_) => controller
+                          .selectLibraryView(LibraryView.collections)),
+                ])),
         if (controller.error != null) ErrorBanner(controller.error!),
         Expanded(
             child: controller.loadingContent
                 ? const Center(child: CircularProgressIndicator())
-                : GridView.builder(
-                    padding: const EdgeInsets.all(24),
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 170,
-                      childAspectRatio: 0.66,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 20,
+                : NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (notification.metrics.extentAfter < 500) {
+                        unawaited(controller.loadMoreLibrary());
+                      }
+                      return false;
+                    },
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(24),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 170,
+                        childAspectRatio: 0.66,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 20,
+                      ),
+                      itemCount: controller.libraryItems.length +
+                          (controller.loadingMoreLibrary ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= controller.libraryItems.length) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                        return MediaCard(
+                            media: controller.libraryItems[index],
+                            controller: controller);
+                      },
                     ),
-                    itemCount: controller.libraryItems.length,
-                    itemBuilder: (context, index) => MediaCard(
-                        media: controller.libraryItems[index],
-                        controller: controller),
                   )),
       ]);
+}
+
+class SearchPane extends StatefulWidget {
+  const SearchPane({required this.controller, super.key});
+  final GkuiController controller;
+
+  @override
+  State<SearchPane> createState() => _SearchPaneState();
+}
+
+class _SearchPaneState extends State<SearchPane> {
+  late final TextEditingController field =
+      TextEditingController(text: widget.controller.searchQuery);
+
+  @override
+  void dispose() {
+    field.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(24, 18, 24, 12),
+            child: PageHeading(
+                title: 'Search', subtitle: 'Find movies, shows and episodes'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(children: <Widget>[
+              Expanded(
+                child: TextField(
+                  controller: field,
+                  textInputAction: TextInputAction.search,
+                  style: const TextStyle(fontSize: 19),
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search),
+                    hintText: 'Search this Plex server',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: widget.controller.runSearch,
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: widget.controller.searching
+                    ? null
+                    : () => widget.controller.runSearch(field.text),
+                icon: const Icon(Icons.search),
+                label: const Text('Search'),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 44,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              scrollDirection: Axis.horizontal,
+              children: SearchMediaFilter.values
+                  .map((filter) => Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: ChoiceChip(
+                          label: Text(switch (filter) {
+                            SearchMediaFilter.all => 'All',
+                            SearchMediaFilter.movie => 'Movies',
+                            SearchMediaFilter.show => 'Shows',
+                            SearchMediaFilter.episode => 'Episodes',
+                          }),
+                          selected: widget.controller.searchFilter == filter,
+                          onSelected: (_) =>
+                              widget.controller.setSearchFilter(filter),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ),
+          if (widget.controller.error != null)
+            ErrorBanner(widget.controller.error!),
+          Expanded(
+            child: widget.controller.searching
+                ? const Center(child: CircularProgressIndicator())
+                : widget.controller.searchResults.isEmpty
+                    ? Center(
+                        child: Text(
+                          widget.controller.searchQuery.isEmpty
+                              ? 'Enter at least two characters.'
+                              : 'No matching Plex items.',
+                          style: const TextStyle(
+                              fontSize: 18, color: Colors.white70),
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(24),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 170,
+                          childAspectRatio: 0.66,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 20,
+                        ),
+                        itemCount: widget.controller.searchResults.length,
+                        itemBuilder: (context, index) => MediaCard(
+                          media: widget.controller.searchResults[index],
+                          controller: widget.controller,
+                        ),
+                      ),
+          ),
+        ],
+      );
+}
+
+class SettingsPane extends StatelessWidget {
+  const SettingsPane({required this.controller, super.key});
+  final GkuiController controller;
+
+  static const languages = <String, String>{
+    '': 'Automatic',
+    'en': 'English',
+    'ja': 'Japanese',
+    'zh': 'Chinese',
+    'ms': 'Malay',
+  };
+
+  static const subtitleLanguages = <String, String>{
+    '': 'Automatic',
+    'off': 'Off',
+    'en': 'English',
+    'ja': 'Japanese',
+    'zh': 'Chinese',
+    'ms': 'Malay',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final value = controller.settings;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 30),
+      children: <Widget>[
+        const PageHeading(
+            title: 'Playback settings',
+            subtitle: 'Remembered for this head unit'),
+        const SizedBox(height: 18),
+        _SettingCard(
+          title: 'Preferred audio',
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: value.audioLanguage,
+            items: languages.entries
+                .map((entry) => DropdownMenuItem<String>(
+                    value: entry.key, child: Text(entry.value)))
+                .toList(),
+            onChanged: (choice) => controller
+                .updateSettings(value.copyWith(audioLanguage: choice ?? '')),
+          ),
+        ),
+        _SettingCard(
+          title: 'Preferred subtitles',
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: value.subtitleLanguage,
+            items: subtitleLanguages.entries
+                .map((entry) => DropdownMenuItem<String>(
+                    value: entry.key, child: Text(entry.value)))
+                .toList(),
+            onChanged: (choice) => controller
+                .updateSettings(value.copyWith(subtitleLanguage: choice ?? '')),
+          ),
+        ),
+        _SettingCard(
+          title: 'Seek buttons',
+          child: Wrap(spacing: 18, runSpacing: 8, children: <Widget>[
+            _SecondsPicker(
+              label: 'Back',
+              value: value.seekBackSeconds,
+              onChanged: (seconds) => controller
+                  .updateSettings(value.copyWith(seekBackSeconds: seconds)),
+            ),
+            _SecondsPicker(
+              label: 'Forward',
+              value: value.seekForwardSeconds,
+              onChanged: (seconds) => controller
+                  .updateSettings(value.copyWith(seekForwardSeconds: seconds)),
+            ),
+          ]),
+        ),
+        SwitchListTile(
+          title: const Text('Autoplay next episode',
+              style: TextStyle(fontSize: 18)),
+          subtitle: const Text('Continue automatically after an episode ends'),
+          value: value.autoPlayNext,
+          onChanged: (enabled) =>
+              controller.updateSettings(value.copyWith(autoPlayNext: enabled)),
+        ),
+        _SettingCard(
+          title: 'Skip intro / credits',
+          child: DropdownButton<SkipMode>(
+            isExpanded: true,
+            value: value.skipMode,
+            items: const <DropdownMenuItem<SkipMode>>[
+              DropdownMenuItem(value: SkipMode.off, child: Text('Off')),
+              DropdownMenuItem(
+                  value: SkipMode.button, child: Text('Show a skip button')),
+              DropdownMenuItem(
+                  value: SkipMode.automatic, child: Text('Skip automatically')),
+            ],
+            onChanged: (choice) {
+              if (choice != null) {
+                controller.updateSettings(value.copyWith(skipMode: choice));
+              }
+            },
+          ),
+        ),
+        _SettingCard(
+          title: 'Play Next countdown',
+          child: DropdownButton<int>(
+            isExpanded: true,
+            value: value.playNextCountdownSeconds,
+            items: const <int>[0, 5, 10, 15, 30]
+                .map((seconds) => DropdownMenuItem<int>(
+                      value: seconds,
+                      child: Text(
+                          seconds == 0 ? 'Immediately' : '$seconds seconds'),
+                    ))
+                .toList(),
+            onChanged: (seconds) {
+              if (seconds != null) {
+                controller.updateSettings(
+                    value.copyWith(playNextCountdownSeconds: seconds));
+              }
+            },
+          ),
+        ),
+        SwitchListTile(
+          title: const Text('Show watched indicators',
+              style: TextStyle(fontSize: 18)),
+          subtitle: const Text('Display a check mark on watched titles'),
+          value: value.showWatchedIndicators,
+          onChanged: (enabled) => controller
+              .updateSettings(value.copyWith(showWatchedIndicators: enabled)),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingCard extends StatelessWidget {
+  const _SettingCard({required this.title, required this.child});
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          child: Row(children: <Widget>[
+            SizedBox(
+                width: 190,
+                child: Text(title, style: const TextStyle(fontSize: 18))),
+            Expanded(child: child),
+          ]),
+        ),
+      );
+}
+
+class _SecondsPicker extends StatelessWidget {
+  const _SecondsPicker(
+      {required this.label, required this.value, required this.onChanged});
+  final String label;
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text('$label:', style: const TextStyle(fontSize: 17)),
+          const SizedBox(width: 8),
+          DropdownButton<int>(
+            value: value,
+            items: const <int>[5, 10, 15, 30, 60]
+                .map((seconds) => DropdownMenuItem<int>(
+                    value: seconds, child: Text('$seconds sec')))
+                .toList(),
+            onChanged: (seconds) {
+              if (seconds != null) onChanged(seconds);
+            },
+          ),
+        ],
+      );
 }
 
 class MediaShelf extends StatelessWidget {
@@ -754,30 +1710,49 @@ class MediaCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
-                child: ClipRRect(
-              borderRadius: BorderRadius.circular(7),
-              child: Container(
-                color: const Color(0xFF272727),
-                width: double.infinity,
-                child: image == null
-                    ? const Icon(Icons.movie_outlined,
-                        size: 48, color: Colors.white38)
-                    : CachedNetworkImage(
-                        imageUrl: image,
-                        httpHeaders: controller.api!.imageHeaders,
-                        fit: BoxFit.cover,
-                        memCacheWidth: 260,
-                        maxWidthDiskCache: 320,
-                        fadeInDuration: Duration.zero,
-                        placeholder: (_, __) => const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2)),
-                        errorWidget: (_, __, ___) => const Icon(
-                            Icons.broken_image_outlined,
-                            size: 44,
-                            color: Colors.white38),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Stack(fit: StackFit.expand, children: <Widget>[
+                  Container(
+                    color: const Color(0xFF272727),
+                    width: double.infinity,
+                    child: image == null
+                        ? const Icon(Icons.movie_outlined,
+                            size: 48, color: Colors.white38)
+                        : CachedNetworkImage(
+                            imageUrl: image,
+                            httpHeaders: controller.api!.imageHeaders,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 260,
+                            maxWidthDiskCache: 320,
+                            fadeInDuration: Duration.zero,
+                            placeholder: (_, __) => const Center(
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2)),
+                            errorWidget: (_, __, ___) => const Icon(
+                                Icons.broken_image_outlined,
+                                size: 44,
+                                color: Colors.white38),
+                          ),
+                  ),
+                  if (controller.settings.showWatchedIndicators &&
+                      media.watched)
+                    const Positioned(
+                      top: 7,
+                      right: 7,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                            color: Color(0xFFE5A00D), shape: BoxShape.circle),
+                        child: Padding(
+                          padding: EdgeInsets.all(4),
+                          child:
+                              Icon(Icons.check, size: 18, color: Colors.black),
+                        ),
                       ),
+                    ),
+                ]),
               ),
-            )),
+            ),
             const SizedBox(height: 6),
             Text(media.title,
                 maxLines: 1,
@@ -804,12 +1779,37 @@ class DetailsScreen extends StatefulWidget {
 
 class _DetailsScreenState extends State<DetailsScreen> {
   Future<List<PlexMedia>>? children;
+  Future<PlexMedia>? details;
+  int? selectedMediaIndex;
+  String? selectedAudioTrackId;
+  String? selectedSubtitleTrackId;
+
   @override
   void initState() {
     super.initState();
     children = widget.media.children
         ? widget.controller.api!.loadChildren(widget.media)
         : null;
+    if (children == null) {
+      details = widget.controller.api!
+          .loadMetadata(widget.media.ratingKey)
+          .then((item) {
+        final remembered = widget.controller.api!.loadPlaybackChoice(item);
+        selectedMediaIndex ??= remembered.mediaIndex != null &&
+                item.versions
+                    .any((version) => version.index == remembered.mediaIndex)
+            ? remembered.mediaIndex
+            : PlexMediaVersion.preferredIndex(item.versions);
+        selectedAudioTrackId ??= remembered.audioTrackId;
+        selectedSubtitleTrackId ??= remembered.subtitleTrackId;
+        if (widget.controller.settings.skipMode != SkipMode.off) {
+          unawaited(widget.controller.api!
+              .loadMarkers(item.ratingKey)
+              .catchError((Object _) => const <PlexMarker>[]));
+        }
+        return item;
+      });
+    }
   }
 
   @override
@@ -833,7 +1833,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
         Padding(
             padding: const EdgeInsets.all(26),
             child: children == null
-                ? playableDetails(media)
+                ? FutureBuilder<PlexMedia>(
+                    future: details,
+                    initialData: media,
+                    builder: (context, snapshot) =>
+                        playableDetails(snapshot.data ?? media),
+                  )
                 : childrenList(media)),
       ]),
     );
@@ -861,27 +1866,194 @@ class _DetailsScreenState extends State<DetailsScreen> {
           Text(media.summary ?? 'No summary available.',
               style: const TextStyle(fontSize: 17, height: 1.4)),
           const SizedBox(height: 22),
+          if (media.versions.length > 1) ...<Widget>[
+            OutlinedButton.icon(
+              onPressed: () => chooseVersion(media),
+              icon: const Icon(Icons.video_settings),
+              label: Text('Version: ${selectedVersionLabel(media)}'),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (currentVersion(media) case final version?) ...<Widget>[
+            Text('Selected media: ${version.displayLabel}',
+                style: const TextStyle(fontSize: 16, color: Colors.white70)),
+            const SizedBox(height: 10),
+            Wrap(spacing: 12, runSpacing: 10, children: <Widget>[
+              if (version.audioTracks.isNotEmpty)
+                OutlinedButton.icon(
+                  onPressed: () => chooseAudioTrack(media),
+                  icon: const Icon(Icons.audiotrack),
+                  label: Text('Audio: ${selectedAudioLabel(media)}'),
+                ),
+              if (version.subtitleTracks.isNotEmpty)
+                OutlinedButton.icon(
+                  onPressed: () => chooseSubtitleTrack(media),
+                  icon: const Icon(Icons.subtitles),
+                  label: Text('Subtitles: ${selectedSubtitleLabel(media)}'),
+                ),
+            ]),
+            const SizedBox(height: 14),
+          ],
           Wrap(spacing: 12, runSpacing: 12, children: <Widget>[
             ElevatedButton.icon(
-              onPressed: () =>
-                  widget.controller.play(context, media, PlaybackMode.direct),
+              onPressed: () => widget.controller.play(
+                  context, media, PlaybackMode.direct,
+                  mediaIndex: requestedMediaIndex(media),
+                  audioTrackId: selectedAudioTrackId,
+                  subtitleTrackId: selectedSubtitleTrackId),
               icon: const Icon(Icons.play_arrow),
-              label: Text(
-                  media.viewOffsetMs > 0 ? 'Resume direct' : 'Play direct'),
+              label: Text(media.viewOffsetMs > 0 ? 'Resume' : 'Play'),
             ),
             OutlinedButton(
-              onPressed: () => widget.controller
-                  .play(context, media, PlaybackMode.transcode720),
+              onPressed: () => widget.controller.play(
+                  context, media, PlaybackMode.transcode720,
+                  mediaIndex: requestedMediaIndex(media),
+                  audioTrackId: selectedAudioTrackId,
+                  subtitleTrackId: selectedSubtitleTrackId),
               child: const Text('720p compatible'),
             ),
             OutlinedButton(
-              onPressed: () => widget.controller
-                  .play(context, media, PlaybackMode.transcode480),
+              onPressed: () => widget.controller.play(
+                  context, media, PlaybackMode.transcode480,
+                  mediaIndex: requestedMediaIndex(media),
+                  audioTrackId: selectedAudioTrackId,
+                  subtitleTrackId: selectedSubtitleTrackId),
               child: const Text('480p safe mode'),
             ),
           ]),
         ])),
       ]);
+
+  int selectedIndex(PlexMedia media) =>
+      selectedMediaIndex ?? PlexMediaVersion.preferredIndex(media.versions);
+
+  int? requestedMediaIndex(PlexMedia media) =>
+      media.versions.isEmpty ? null : selectedIndex(media);
+
+  String selectedVersionLabel(PlexMedia media) {
+    final index = selectedIndex(media);
+    for (final version in media.versions) {
+      if (version.index == index) return version.displayLabel;
+    }
+    return 'Original';
+  }
+
+  PlexMediaVersion? currentVersion(PlexMedia media) {
+    final index = selectedIndex(media);
+    for (final version in media.versions) {
+      if (version.index == index) return version;
+    }
+    return null;
+  }
+
+  String selectedAudioLabel(PlexMedia media) {
+    final tracks = currentVersion(media)?.audioTracks ?? const <PlexTrack>[];
+    final selected =
+        tracks.where((track) => track.id == selectedAudioTrackId).firstOrNull;
+    return selected?.displayLabel ??
+        tracks.where((track) => track.selected).firstOrNull?.displayLabel ??
+        'Automatic';
+  }
+
+  String selectedSubtitleLabel(PlexMedia media) {
+    if (selectedSubtitleTrackId == 'off') return 'Off';
+    final tracks = currentVersion(media)?.subtitleTracks ?? const <PlexTrack>[];
+    final selected = tracks
+        .where((track) => track.id == selectedSubtitleTrackId)
+        .firstOrNull;
+    return selected?.displayLabel ??
+        tracks.where((track) => track.selected).firstOrNull?.displayLabel ??
+        'Automatic';
+  }
+
+  Future<void> chooseVersion(PlexMedia media) async {
+    final choice = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Choose video version'),
+        children: media.versions
+            .map((version) => RadioListTile<int>(
+                  value: version.index,
+                  groupValue: selectedIndex(media),
+                  title: Text(version.displayLabel,
+                      style: const TextStyle(fontSize: 18)),
+                  subtitle: version.index ==
+                          PlexMediaVersion.preferredIndex(media.versions)
+                      ? const Text('Recommended for this head unit')
+                      : null,
+                  onChanged: (value) => Navigator.pop(context, value),
+                ))
+            .toList(),
+      ),
+    );
+    if (choice != null && mounted) {
+      setState(() {
+        selectedMediaIndex = choice;
+        selectedAudioTrackId = null;
+        selectedSubtitleTrackId = null;
+      });
+    }
+  }
+
+  Future<void> chooseAudioTrack(PlexMedia media) async {
+    final tracks = currentVersion(media)?.audioTracks ?? const <PlexTrack>[];
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Choose audio track'),
+        children: <Widget>[
+          RadioListTile<String>(
+            value: '',
+            groupValue: selectedAudioTrackId ?? '',
+            title: const Text('Automatic'),
+            onChanged: (value) => Navigator.pop(context, value),
+          ),
+          ...tracks.map((track) => RadioListTile<String>(
+                value: track.id,
+                groupValue: selectedAudioTrackId ?? '',
+                title: Text(track.displayLabel),
+                onChanged: (value) => Navigator.pop(context, value),
+              )),
+        ],
+      ),
+    );
+    if (choice != null && mounted) {
+      setState(() => selectedAudioTrackId = choice.isEmpty ? null : choice);
+    }
+  }
+
+  Future<void> chooseSubtitleTrack(PlexMedia media) async {
+    final tracks = currentVersion(media)?.subtitleTracks ?? const <PlexTrack>[];
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Choose subtitles'),
+        children: <Widget>[
+          RadioListTile<String>(
+            value: '',
+            groupValue: selectedSubtitleTrackId ?? '',
+            title: const Text('Automatic'),
+            onChanged: (value) => Navigator.pop(context, value),
+          ),
+          RadioListTile<String>(
+            value: 'off',
+            groupValue: selectedSubtitleTrackId ?? '',
+            title: const Text('Off'),
+            onChanged: (value) => Navigator.pop(context, value),
+          ),
+          ...tracks.map((track) => RadioListTile<String>(
+                value: track.id,
+                groupValue: selectedSubtitleTrackId ?? '',
+                title: Text(track.displayLabel),
+                onChanged: (value) => Navigator.pop(context, value),
+              )),
+        ],
+      ),
+    );
+    if (choice != null && mounted) {
+      setState(() => selectedSubtitleTrackId = choice.isEmpty ? null : choice);
+    }
+  }
 
   Widget childrenList(PlexMedia media) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
@@ -1019,6 +2191,33 @@ class _DiagnosticsPaneState extends State<DiagnosticsPane> {
                           widget.controller.api?.session?.serverName ??
                               'not connected'),
                       ...snapshot.data!.values.entries,
+                      MapEntry<String, String>(
+                          'endpoint',
+                          widget.controller.api?.safeEndpoint ??
+                              'not connected'),
+                      MapEntry<String, String>(
+                          'profile',
+                          widget.controller.currentHomeUser?.displayName ??
+                              widget.controller.api?.currentHomeUserName ??
+                              'Plex account'),
+                      MapEntry<String, String>(
+                          'media version',
+                          widget.controller.lastSelectedVersion ??
+                              'not played yet'),
+                      MapEntry<String, String>(
+                          'content startup',
+                          widget.controller.lastContentLoadMs == null
+                              ? 'not measured'
+                              : '${widget.controller.lastContentLoadMs} ms'),
+                      MapEntry<String, String>(
+                          'first frame',
+                          widget.controller.lastFirstFrameMs == null
+                              ? 'not measured'
+                              : '${widget.controller.lastFirstFrameMs} ms'),
+                      MapEntry<String, String>('decoder',
+                          widget.controller.lastDecoder ?? 'not reported'),
+                      MapEntry<String, String>('video format',
+                          widget.controller.lastVideoFormat ?? 'not reported'),
                     ];
                     return ListView.separated(
                       padding: const EdgeInsets.all(14),

@@ -33,6 +33,16 @@ class MainActivity : FlutterActivity() {
                     }
                     @Suppress("UNCHECKED_CAST")
                     val headers = arguments["headers"] as? Map<String, String> ?: emptyMap()
+                    val markers = arguments["markers"] as? List<*> ?: emptyList<Any>()
+                    val markerTypes = arrayListOf<String>()
+                    val markerStarts = arrayListOf<Long>()
+                    val markerEnds = arrayListOf<Long>()
+                    for (raw in markers) {
+                        val marker = raw as? Map<*, *> ?: continue
+                        markerTypes.add(marker["type"] as? String ?: "marker")
+                        markerStarts.add((marker["startMs"] as? Number)?.toLong() ?: 0L)
+                        markerEnds.add((marker["endMs"] as? Number)?.toLong() ?: 0L)
+                    }
                     val intent = Intent(this, PlayerActivity::class.java).apply {
                         putExtra(PlayerActivity.EXTRA_URL, url)
                         putExtra(PlayerActivity.EXTRA_TITLE, arguments["title"] as? String ?: "Plezy")
@@ -40,8 +50,20 @@ class MainActivity : FlutterActivity() {
                         putExtra(PlayerActivity.EXTRA_RATING_KEY, arguments["ratingKey"] as? String ?: "")
                         putExtra(PlayerActivity.EXTRA_DURATION_MS, (arguments["durationMs"] as? Number)?.toLong() ?: 0L)
                         putExtra(PlayerActivity.EXTRA_TIMELINE_URL, arguments["timelineUrl"] as? String ?: "")
+                        putExtra(PlayerActivity.EXTRA_SESSION_ID, arguments["sessionId"] as? String ?: "")
                         putExtra(PlayerActivity.EXTRA_HEADERS_KEYS, headers.keys.toTypedArray())
                         putExtra(PlayerActivity.EXTRA_HEADERS_VALUES, headers.values.toTypedArray())
+                        putExtra(PlayerActivity.EXTRA_AUDIO_LANGUAGE, arguments["audioLanguage"] as? String ?: "")
+                        putExtra(PlayerActivity.EXTRA_SUBTITLE_LANGUAGE, arguments["subtitleLanguage"] as? String ?: "")
+                        putExtra(PlayerActivity.EXTRA_AUDIO_TRACK_ID, arguments["audioTrackId"] as? String ?: "")
+                        putExtra(PlayerActivity.EXTRA_SUBTITLE_TRACK_ID, arguments["subtitleTrackId"] as? String ?: "")
+                        putExtra(PlayerActivity.EXTRA_SKIP_MODE, arguments["skipMode"] as? String ?: "button")
+                        putExtra(PlayerActivity.EXTRA_STARTUP_HARD_TIMEOUT_MS, (arguments["startupHardTimeoutMs"] as? Number)?.toLong() ?: 120_000L)
+                        putExtra(PlayerActivity.EXTRA_SEEK_BACK_MS, (arguments["seekBackMs"] as? Number)?.toLong() ?: 10_000L)
+                        putExtra(PlayerActivity.EXTRA_SEEK_FORWARD_MS, (arguments["seekForwardMs"] as? Number)?.toLong() ?: 30_000L)
+                        putStringArrayListExtra(PlayerActivity.EXTRA_MARKER_TYPES, markerTypes)
+                        putExtra(PlayerActivity.EXTRA_MARKER_STARTS, markerStarts.toLongArray())
+                        putExtra(PlayerActivity.EXTRA_MARKER_ENDS, markerEnds.toLongArray())
                     }
                     pendingPlaybackResult = result
                     startActivityForResult(intent, PLAYER_REQUEST)
@@ -60,6 +82,12 @@ class MainActivity : FlutterActivity() {
             "durationMs" to (data?.getLongExtra(PlayerActivity.RESULT_DURATION_MS, 0L) ?: 0L),
             "ended" to (data?.getBooleanExtra(PlayerActivity.RESULT_ENDED, false) ?: false),
             "error" to data?.getStringExtra(PlayerActivity.RESULT_ERROR),
+            "failureKind" to data?.getStringExtra(PlayerActivity.RESULT_FAILURE_KIND),
+            "renderedFrame" to (data?.getBooleanExtra(PlayerActivity.RESULT_RENDERED_FRAME, false) ?: false),
+            "firstFrameMs" to (data?.getLongExtra(PlayerActivity.RESULT_FIRST_FRAME_MS, -1L)?.takeIf { it >= 0L }),
+            "decoder" to data?.getStringExtra(PlayerActivity.RESULT_DECODER),
+            "videoFormat" to data?.getStringExtra(PlayerActivity.RESULT_VIDEO_FORMAT),
+            "diagnostics" to (data?.getStringArrayListExtra(PlayerActivity.RESULT_DIAGNOSTICS) ?: arrayListOf<String>()),
         )
         pendingPlaybackResult?.success(payload)
         pendingPlaybackResult = null

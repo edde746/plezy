@@ -33,6 +33,7 @@ android {
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
+        test.resources.srcDirs += '../../assets'
     }
 
     defaultConfig {
@@ -88,6 +89,7 @@ flutter {
 }
 
 dependencies {
+    testImplementation 'junit:junit:4.13.2'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.exoplayer:exoplayer-core:2.19.1'
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.19.1'
