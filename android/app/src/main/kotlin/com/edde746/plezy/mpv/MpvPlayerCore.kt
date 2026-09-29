@@ -1103,7 +1103,6 @@ class MpvPlayerCore private constructor(
           // Start collecting events/properties/logs
           collectEvents(p)
           collectPropertyChanges(p)
-          collectLogMessages(p)
           if (!audioOnly) collectMediaFrameRate(p)
           if (usesMediaCodecVo) {
             collectVideoDimensions(p)
@@ -1196,6 +1195,7 @@ class MpvPlayerCore private constructor(
               lifecycleData(event.sourceId, event.positionSeconds)
             )
           }
+          is MpvEvent.LogMessage -> onMpvLog(event)
         }
       }
     }
@@ -1286,25 +1286,21 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  private fun collectLogMessages(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.logFlow.collect { msg ->
-        endFileDiagnostics.onLogMessage(msg)
-        // A chain-init failure is the one runtime signal that frames cannot
-        // reach the video plane at all (exotic pixel formats, gralloc
-        // refusal). mpv is pinned in the fork, so the log line is a stable
-        // contract.
-        if (usesMediaCodecVo &&
-          activeGpuVoTarget == null &&
-          msg.prefix.startsWith("cplayer") &&
-          msg.text.contains("Could not initialize video chain")
-        ) {
-          Log.w(TAG, "Video chain init failed under vo=mediacodec; leaving the video plane")
-          setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, true)
-        }
-        emitLog(msg.level.name.lowercase(), msg.prefix, msg.text)
-      }
+  private fun onMpvLog(msg: MpvEvent.LogMessage) {
+    endFileDiagnostics.onLogMessage(msg)
+    // A chain-init failure is the one runtime signal that frames cannot
+    // reach the video plane at all (exotic pixel formats, gralloc
+    // refusal). mpv is pinned in the fork, so the log line is a stable
+    // contract.
+    if (usesMediaCodecVo &&
+      activeGpuVoTarget == null &&
+      msg.prefix.startsWith("cplayer") &&
+      msg.text.contains("Could not initialize video chain")
+    ) {
+      Log.w(TAG, "Video chain init failed under vo=mediacodec; leaving the video plane")
+      setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, true)
     }
+    emitLog(msg.level.name.lowercase(), msg.prefix, msg.text)
   }
 
   // Audio Focus

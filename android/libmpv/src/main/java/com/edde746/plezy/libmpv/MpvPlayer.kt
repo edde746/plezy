@@ -149,7 +149,7 @@ class MpvPlayer private constructor(
     @JvmStatic
     fun onLogMessage(session: Long, prefix: String, level: Int, text: String) {
       val logLevel = LogLevel.fromNative(level) ?: return
-      target(session)?.rawLogMessages?.trySend(LogMessage(prefix, logLevel, text.trimEnd()))
+      target(session)?.rawEvents?.trySend(MpvEvent.LogMessage(prefix, logLevel, text.trimEnd()))
     }
 
     @JvmStatic
@@ -234,14 +234,16 @@ class MpvPlayer private constructor(
   // The previous design tryEmit-ed straight into the 64-slot SharedFlow
   // buffer, which silently dropped whatever arrived during a burst; losing
   // e.g. the one cplayer log line that signals a failed video chain.
+  //
+  // Log lines share the event channel rather than having their own: event.cpp
+  // forwards the lines explaining a failure before its end-file, and separate
+  // channels, pumps and collectors could still deliver the end-file first.
   private val rawEvents = Channel<MpvEvent>(Channel.UNLIMITED)
   private val rawHooks = Channel<Hook>(Channel.UNLIMITED)
   private val rawPropertyChanges = Channel<PropertyChange>(Channel.UNLIMITED)
-  private val rawLogMessages = Channel<LogMessage>(Channel.UNLIMITED)
 
   private val events = MutableSharedFlow<MpvEvent>(extraBufferCapacity = 64)
   private val propertyChanges = MutableSharedFlow<PropertyChange>(extraBufferCapacity = 64)
-  private val logMessages = MutableSharedFlow<LogMessage>(extraBufferCapacity = 64)
 
   private val pumpScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -276,12 +278,10 @@ class MpvPlayer private constructor(
       }
     }
     pumpScope.launch { for (c in rawPropertyChanges) propertyChanges.emit(c) }
-    pumpScope.launch { for (m in rawLogMessages) logMessages.emit(m) }
   }
 
   val eventFlow: SharedFlow<MpvEvent> = events.asSharedFlow()
   val propertyFlow: SharedFlow<PropertyChange> = propertyChanges.asSharedFlow()
-  val logFlow: SharedFlow<LogMessage> = logMessages.asSharedFlow()
 
   // Commands
 
@@ -408,7 +408,7 @@ class MpvPlayer private constructor(
     }
     // Closed before the native call, not after: nativeDestroy blocks through
     // decoder teardown and on a wedged decoder never returns, which would
-    // leave the four pumps parked in `for (x in channel)` for the life of the
+    // leave the three pumps parked in `for (x in channel)` for the life of the
     // process, holding this wrapper and its SharedFlows. The event thread
     // joined inside nativeDestroy is the only producer, a trySend on a closed
     // channel simply fails, and a hook already queued still answers through
@@ -416,7 +416,6 @@ class MpvPlayer private constructor(
     rawEvents.close()
     rawHooks.close()
     rawPropertyChanges.close()
-    rawLogMessages.close()
     nativeDestroy(session)
   }
 

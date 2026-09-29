@@ -18,8 +18,21 @@ sealed interface MpvEvent {
     val positionSeconds: Double?
   ) : MpvEvent
 
+  /**
+   * One mpv log line. It travels in the same ordered stream as the lifecycle
+   * events, so a line never reaches a collector after the end-file it
+   * explains. mpv attributes log lines to no playlist entry.
+   */
+  data class LogMessage(
+    val prefix: String,
+    val level: LogLevel,
+    val text: String
+  ) : MpvEvent {
+    override val sourceId: Long? get() = null
+  }
+
   companion object {
-    // Mirrors the ids event.cpp forwards; END_FILE arrives via its own JNI path.
+    // Mirrors the ids event.cpp forwards; END_FILE and LOG_MESSAGE arrive via their own JNI paths.
     internal fun fromId(
       id: Int,
       sourceId: Long?,

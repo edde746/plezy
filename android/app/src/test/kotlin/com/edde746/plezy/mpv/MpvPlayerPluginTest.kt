@@ -18,7 +18,6 @@ import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import com.edde746.plezy.libmpv.EndFileReason
 import com.edde746.plezy.libmpv.LogLevel
-import com.edde746.plezy.libmpv.LogMessage
 import com.edde746.plezy.libmpv.MpvEvent
 import com.edde746.plezy.libmpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
@@ -1090,7 +1089,7 @@ class MpvPlayerPluginTest {
   fun endFileDiagnosticsPreserveReasonIdAndExposeDependencyErrorLog() {
     val diagnostics = MpvEndFileDiagnostics()
     diagnostics.onStartFile()
-    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
+    diagnostics.onLogMessage(MpvEvent.LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
 
     assertEquals(
       mapOf(
@@ -1105,7 +1104,7 @@ class MpvPlayerPluginTest {
   @Test
   fun endFileDiagnosticsDoNotAttachStaleOrInventedDetails() {
     val diagnostics = MpvEndFileDiagnostics()
-    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "old failure"))
+    diagnostics.onLogMessage(MpvEvent.LogMessage("ffmpeg", LogLevel.Error, "old failure"))
     diagnostics.onStartFile()
 
     assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof, null)))

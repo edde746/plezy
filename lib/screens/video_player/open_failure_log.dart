@@ -60,7 +60,7 @@ const List<String> _streamInitFailedLines = [
 ///
 /// [isAndroid]: the Android core consumes "Could not initialize video chain."
 /// under vo=mediacodec to fall back to the GL vo and re-select the video
-/// track (MpvPlayerCore.kt `collectLogMessages`), so Dart must not pre-empt
+/// track (MpvPlayerCore.kt `onMpvLog`), so Dart must not pre-empt
 /// it there.
 String? openFailureCauseFromLog({
   required PlayerLogLevel level,

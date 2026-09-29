@@ -32,3 +32,13 @@ target_link_libraries(mpv_lifecycle_test PRIVATE Threads::Threads)
 
 add_test(NAME mpv_lifecycle_test COMMAND mpv_lifecycle_test)
 set_tests_properties(mpv_lifecycle_test PROPERTIES TIMEOUT 30)
+
+add_executable(mpv_event_order_test
+  mpv_event_order_test.cpp
+  ../../../../libmpv/src/main/cpp/session.cpp)
+target_compile_features(mpv_event_order_test PRIVATE cxx_std_17)
+target_include_directories(mpv_event_order_test PRIVATE fakes ../../../../libmpv/src/main/cpp/include)
+target_link_libraries(mpv_event_order_test PRIVATE Threads::Threads)
+
+add_test(NAME mpv_event_order_test COMMAND mpv_event_order_test)
+set_tests_properties(mpv_event_order_test PROPERTIES TIMEOUT 30)
