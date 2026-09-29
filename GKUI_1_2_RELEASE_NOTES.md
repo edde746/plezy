@@ -32,7 +32,7 @@ This is the consolidated API 19 / ARMv7 release for the ECARX XE1115H head unit.
 ## Verified off-car
 
 - Flutter static analysis: clean.
-- Flutter tests: 13 passed at 800×480 and 1280×720 coverage.
+- Flutter tests: 17 passed, including 800×480 and 1280×720 coverage.
 - Android unit tests: passed.
 - Native Kotlin/ExoPlayer compilation: passed.
 - APK manifest: version 1.2.2 (8), minimum API 19, target API 34.
