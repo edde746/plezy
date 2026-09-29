@@ -1410,9 +1410,14 @@ class MpvPlayerCoreBase: NSObject {
       )
 
     case MPV_EVENT_LOG_MESSAGE:
-      if isLifecycleBackgrounded { break }
       if let messagePointer = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
         let message = messagePointer.pointee
+        // Backgrounded, only warnings and errors reach Dart: they are rare,
+        // and they carry the HTTP status, open failure and transport faults
+        // its failure handling reads — dropped, a failure while hidden loses
+        // its explanation. Chattier levels would keep waking the main thread
+        // of a hidden or paused player for nothing.
+        if message.log_level.rawValue > MPV_LOG_LEVEL_WARN.rawValue, isLifecycleBackgrounded { break }
         let prefix = message.prefix.map { safeString($0) } ?? ""
         let level = message.level.map { safeString($0) } ?? ""
         let text = message.text.map { safeString($0) } ?? ""

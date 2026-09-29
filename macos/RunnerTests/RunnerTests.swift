@@ -422,6 +422,35 @@ final class MpvPlayerContractTests: XCTestCase {
     )
   }
 
+  func testBackgroundedCoreStillDeliversAFailedOpensWarningsAndErrorsOnly() {
+    let core = MpvAudioPlayerCore()
+    let recorder = EventOrderRecorder()
+    core.delegate = recorder
+    core.setBackgrounded(true)
+    XCTAssertTrue(core.initialize())
+    defer {
+      core.dispose()
+      core.queue.sync {}
+    }
+
+    let missingFile = FileManager.default.temporaryDirectory
+      .appendingPathComponent("plezy-missing-\(UUID().uuidString).mkv").path
+    let events = eventsOfOpenFailingBehindHeldQueue(core, recorder: recorder, url: missingFile)
+
+    guard let endFile = events.firstIndex(where: { $0.name == "end-file" }) else {
+      return XCTFail("No end-file delivered")
+    }
+    XCTAssertTrue(
+      events[..<endFile].contains { isLogLine($0, level: "error", containing: "Failed to open") },
+      "A failure while backgrounded must keep its explanation"
+    )
+    let levels = Set(events.compactMap { $0.name == "log-message" ? $0.data?["level"] as? String : nil })
+    XCTAssertTrue(
+      levels.isSubset(of: ["fatal", "error", "warn"]),
+      "Backgrounded, chattier lines stay native: \(levels)"
+    )
+  }
+
   func testFailedStreamOpenIsExplainedByMpvWithoutRunningTheYtdlHook() {
     let core = MpvAudioPlayerCore()
     let recorder = EventOrderRecorder()
