@@ -68,7 +68,7 @@ class MusicHardwareTransportHandler {
 
   bool _handleKeyEvent(KeyEvent event) {
     if (!_hasActiveSession()) return false;
-    final action = _actionFor(event.logicalKey);
+    final action = _actionFor(event.logicalKey, event.physicalKey);
     if (action == null) return false;
     // Act on the initial press only; consume the whole down/repeat/up burst so
     // none of it reaches the platform's fallback media-button dispatch.
@@ -79,8 +79,8 @@ class MusicHardwareTransportHandler {
   /// The session action a transport key maps to, or null for keys this
   /// handler does not own. Mirrors what `MediaControlRouter` accepts from the
   /// MediaSession so foreground and background presses behave identically.
-  VoidCallback? _actionFor(LogicalKeyboardKey key) {
-    final transport = classifyTransportKey(key);
+  VoidCallback? _actionFor(LogicalKeyboardKey key, PhysicalKeyboardKey physical) {
+    final transport = classifyTransportKey(key, physical);
     if (transport != null) {
       return switch (transport) {
         TransportCommand.play => _onPlay,

@@ -46,6 +46,8 @@ void main() {
       (LogicalKeyboardKey.mediaPlay, null, 'play'),
       (LogicalKeyboardKey.mediaPause, null, 'pause'),
       (LogicalKeyboardKey.mediaPlayPause, null, 'toggle'),
+      // Linux: XKB reports the Play/Pause key as XF86AudioPlay (mediaPlay).
+      (LogicalKeyboardKey.mediaPlay, PhysicalKeyboardKey.mediaPlayPause, 'toggle'),
       (LogicalKeyboardKey.mediaTrackNext, null, 'next'),
       (LogicalKeyboardKey.mediaTrackPrevious, null, 'previous'),
       (LogicalKeyboardKey.mediaStop, null, 'stop'),
