@@ -60,11 +60,13 @@ dependencies:
   # Fork 54a34a0 fixes upstream #649's missing desktop temp parent; 7ee4588
   # survives a host with no documents directory (Linux without xdg-user-dirs);
   # 7f500a1 reads real macOS volume capacity and skips unknown capacity on
-  # desktop. Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
+  # desktop; 06e385c counts each Android byte once, so progress and the resume
+  # offset match the file. Keep the same-filesystem move/resume cleanup; no
+  # per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 7f500a1ed64fdef0173e1a69548e898b0d23c581
+      ref: 06e385cb8d69893a8c5c9ceaa369ebdd22ce88a3
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
