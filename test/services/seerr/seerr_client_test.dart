@@ -89,7 +89,7 @@ void main() {
               'other=1; Path=/, ${SeerrConstants.sessionCookieName}=s%3Aabc.def; Path=/; HttpOnly; SameSite=Lax',
         },
       );
-      expect(client.captureSessionCookie(response), isTrue);
+      expect(client.captureCookies(response), isTrue);
       expect(client.cookie, 's%3Aabc.def');
     });
 
@@ -106,6 +106,93 @@ void main() {
       await client.send('GET', '/auth/me');
       await client.send('GET', '/settings/public', authenticated: false);
       expect(cookies, ['${SeerrConstants.sessionCookieName}=abc', null]);
+    });
+  });
+
+  group('CSRF protection', () {
+    test('a write repeats itself with the token and the secret behind it', () async {
+      final seen = <({String method, String? header, String? cookie})>[];
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          seen.add((
+            method: request.method,
+            header: request.headers[SeerrConstants.csrfHeaderName],
+            cookie: request.headers['Cookie'],
+          ));
+          // Two GETs now: the csurf token fetch, and the /auth/me read the
+          // sign-in ends with.
+          if (request.method == 'GET' && request.url.path.endsWith('/auth/me')) {
+            return _json(_user());
+          }
+          if (request.method == 'GET') {
+            return _json(
+              {'initialized': true},
+              // What csurf actually issues: the secret in its own cookie, and a
+              // readable token derived from it. Verification needs both, and
+              // the date inside the first must not read as a cookie of its own.
+              headers: {
+                'set-cookie':
+                    '_csrf=s3cr3t; Path=/; Expires=Wed, 21 Oct 2099 07:28:00 GMT; HttpOnly,'
+                    ' ${SeerrConstants.csrfCookieName}=tok-1; Path=/',
+              },
+            );
+          }
+          final cookie = request.headers['Cookie'] ?? '';
+          if (request.headers[SeerrConstants.csrfHeaderName] != 'tok-1' || !cookie.contains('_csrf=s3cr3t')) {
+            return _json({'message': 'invalid csrf token'}, status: 403);
+          }
+          return _json(_user(), headers: {'set-cookie': 'connect.sid=s3ss10n; Path=/'});
+        }),
+      );
+
+      final session = await auth.signInWithLocal(baseUrl: 'https://seerr.example.com', email: 'a@b.c', password: 'x');
+
+      expect(session.cookie, 's3ss10n');
+      expect(seen.map((r) => r.method), [
+        'POST',
+        'GET',
+        'POST',
+        'GET',
+      ], reason: 'refused, token fetched, repeated, then the user read');
+      final repeated = seen[2];
+      expect(repeated.header, 'tok-1');
+      expect(repeated.cookie, contains('_csrf=s3cr3t'), reason: 'the secret is what the token is checked against');
+      expect(
+        repeated.cookie,
+        isNot(contains('Expires')),
+        reason: 'a date inside a Set-Cookie must not be mistaken for a cookie',
+      );
+    });
+
+    test('an instance without CSRF protection is left alone', () async {
+      var requests = 0;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          requests++;
+          expect(request.headers.containsKey(SeerrConstants.csrfHeaderName), isFalse);
+          return _json(_user(), headers: {'set-cookie': 'connect.sid=s3ss10n; Path=/'});
+        }),
+      );
+
+      await auth.signInWithLocal(baseUrl: 'https://seerr.example.com', email: 'a@b.c', password: 'x');
+
+      expect(requests, 2, reason: 'the sign-in and the user read — no token fetch, no repeat');
+    });
+
+    test('a rejection that is not about CSRF is not retried', () async {
+      var posts = 0;
+      final auth = SeerrAuthService(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.method == 'POST') posts++;
+          return _json({'message': 'Password is incorrect'}, status: 403);
+        }),
+      );
+
+      await expectLater(
+        () => auth.signInWithLocal(baseUrl: 'https://seerr.example.com', email: 'a@b.c', password: 'x'),
+        throwsA(isA<SeerrAuthException>()),
+      );
+      expect(posts, 1);
     });
   });
 

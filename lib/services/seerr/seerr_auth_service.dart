@@ -415,7 +415,7 @@ class SeerrAuthService {
         );
       }
       SeerrHttpClient.throwForStatus(res, path: path);
-      if (!client.captureSessionCookie(res.response)) {
+      if (!client.captureCookies(res.response)) {
         throw SeerrAuthException('Seerr did not issue a session cookie', display: t.seerr.noSessionCookie);
       }
       final user = await _fetchUser(client);

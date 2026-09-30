@@ -6,6 +6,12 @@ abstract final class SeerrConstants {
   /// Express session cookie issued by the auth endpoints.
   static const String sessionCookieName = 'connect.sid';
 
+  /// Cookie Seerr's CSRF middleware issues when "Enable CSRF Protection" is
+  /// on. Its value has to come back in [csrfHeaderName] on every write, the
+  /// way the web front end does it.
+  static const String csrfCookieName = 'XSRF-TOKEN';
+  static const String csrfHeaderName = 'X-XSRF-TOKEN';
+
   /// Default port of a Seerr install, tried for schemeless input that names no
   /// port of its own.
   static const int defaultPort = 5055;
