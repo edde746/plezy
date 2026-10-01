@@ -35,10 +35,13 @@ internal object GpuVoPolicy {
   /** `MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt`: single-layer profile 8. */
   const val DV_PROFILE_DVHE_ST = 0x100
 
+  /** `MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtb`: dual-layer profile 7. */
+  const val DV_PROFILE_DVHE_DTB = 0x80
+
   /**
    * The decoder the bundled FFmpeg's `hevc_mediacodec` will open for a
    * single-layer stream of [dvProfile] (5 or 8; null for any other profile,
-   * which FFmpeg never re-routes), or null when it opens none — in which case
+   * including dual-layer P7, whose probes [dvRoute] makes), or null when it opens none — in which case
    * the base layer decodes as plain HEVC. Mirrors
    * `ff_AMediaCodecList_getCodecNameByType` exactly, because the previous
    * probe counted decoders FFmpeg never asks for and the two disagreed on
@@ -56,12 +59,92 @@ internal object GpuVoPolicy {
       8L -> DV_PROFILE_DVHE_ST
       else -> return null
     }
-    return candidates.firstOrNull { candidate ->
-      !candidate.isSoftwareOnly &&
-        !isFfmpegSoftwareDecoderName(candidate.name) &&
-        candidate.mime.equals(DV_MIME, ignoreCase = true) &&
-        profileBit in candidate.profiles
-    }?.name
+    return dvDecoderFor(candidates, profileBit)
+  }
+
+  /** FFmpeg's `dv_probe_profile`: the first hardware [DV_MIME] decoder advertising exactly [profileBit]. */
+  private fun dvDecoderFor(candidates: List<DvDecoderCandidate>, profileBit: Int): String? = candidates.firstOrNull { candidate ->
+    !candidate.isSoftwareOnly &&
+      !isFfmpegSoftwareDecoderName(candidate.name) &&
+      candidate.mime.equals(DV_MIME, ignoreCase = true) &&
+      profileBit in candidate.profiles
+  }?.name
+
+  /** What decodes a Dolby Vision file, as the performance overlay reports it (#2534). */
+  enum class DvRoute(val id: String) {
+    /** The [DV_MIME] decoder takes the stream as it is. */
+    DV_DECODER("dv-decoder"),
+
+    /** Profile 7's RPU is rewritten to 8.1 and the enhancement layer dropped, for a P8 [DV_MIME] decoder. */
+    DV_DECODER_P81("dv-decoder-p81"),
+
+    /** No DV decoder: the base layer decodes on its own and the RPU goes unused. */
+    BASE_LAYER("base-layer"),
+
+    /** Software decode on gpu-next, which applies the RPU itself (#1902). */
+    RESHAPED("reshaped")
+  }
+
+  /**
+   * The route the current file's video actually takes, for the overlay.
+   * Reports what the fork FFmpeg's `dolby_vision_override` does with the
+   * effective [decoderOptions] (mpv's `vd-lavc-o`, where a user's duplicate
+   * key wins as it does in FFmpeg), rather than what the routing policy
+   * asked for: [dvDecoderOptions] only says whether the DV decoder *may*
+   * open. [hwdecCurrent] is the outcome check: a predicted DV decoder that
+   * fails to open makes mpv fall back to software decode, which reads as
+   * base layer or [DvRoute.RESHAPED] by [currentVo], never as the DV
+   * decoder. MediaCodec output carries no RPU metadata, so only software
+   * frames can be reshaped.
+   *
+   * Null when the track has no DOVI record ([dvProfile]) or no decoder is
+   * open yet. P7 is predicted as dual-layer and every DV file as carrying
+   * an RPU, because mpv exports neither `el_present_flag` nor
+   * `rpu_present_flag`; FFmpeg uses the base layer when either assumption
+   * is false.
+   */
+  fun dvRoute(
+    dvProfile: Long?,
+    decoderOptions: String?,
+    candidates: List<DvDecoderCandidate>,
+    hwdecCurrent: String?,
+    currentVo: String?
+  ): DvRoute? {
+    if (dvProfile == null || hwdecCurrent.isNullOrBlank()) return null
+    if (!hwdecCurrent.startsWith("mediacodec")) {
+      return if (currentVo == "gpu-next") DvRoute.RESHAPED else DvRoute.BASE_LAYER
+    }
+    // FFmpeg's option defaults: dolby_vision=1, dv_p7_mode=auto.
+    val dolbyVision = DecoderOptions.effectiveValue(decoderOptions, "dolby_vision")?.let(::avOptionBool) ?: true
+    return when (dvProfile) {
+      5L, 8L -> if (dolbyVision && nativeDvDecoder(candidates, dvProfile) != null) DvRoute.DV_DECODER else DvRoute.BASE_LAYER
+      7L -> {
+        // dolby_vision=0 leaves profile 7 on its base layer whatever dv_p7_mode says.
+        val p7Mode = if (dolbyVision) dvP7Mode(DecoderOptions.effectiveValue(decoderOptions, "dv_p7_mode")) else "strip"
+        when {
+          p7Mode == "strip" -> DvRoute.BASE_LAYER
+          p7Mode != "convert" && dvDecoderFor(candidates, DV_PROFILE_DVHE_DTB) != null -> DvRoute.DV_DECODER
+          p7Mode != "native" && dvDecoderFor(candidates, DV_PROFILE_DVHE_ST) != null -> DvRoute.DV_DECODER_P81
+          else -> DvRoute.BASE_LAYER
+        }
+      }
+      // FFmpeg re-routes HEVC single-layer P5/P8 and dual-layer P7 only.
+      else -> DvRoute.BASE_LAYER
+    }
+  }
+
+  /** An `AV_OPT_TYPE_BOOL` value as FFmpeg parses it. */
+  private fun avOptionBool(value: String): Boolean = when (value.lowercase()) {
+    "false", "n", "no", "disable", "disabled", "off" -> false
+    else -> value.toIntOrNull()?.let { it != 0 } ?: true
+  }
+
+  /** `dv_p7_mode` by constant name or its integer value. */
+  private fun dvP7Mode(value: String?): String = when (value?.lowercase()) {
+    "native", "1" -> "native"
+    "convert", "2" -> "convert"
+    "strip", "3" -> "strip"
+    else -> "auto"
   }
 
   /** FFmpeg's `mediacodec_wrapper.c` software-decoder name blacklist, substring-matched as it does. */

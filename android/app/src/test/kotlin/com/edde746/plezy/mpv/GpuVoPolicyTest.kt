@@ -1,5 +1,6 @@
 package com.edde746.plezy.mpv
 
+import com.edde746.plezy.mpv.GpuVoPolicy.DvRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -170,7 +171,7 @@ class GpuVoPolicyTest {
     val p8Only = listOf(candidate("OMX.Nvidia.DOVI.decode", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_ST)))
     assertEquals("OMX.Nvidia.DOVI.decode", GpuVoPolicy.nativeDvDecoder(p8Only, 8L))
     assertNull(GpuVoPolicy.nativeDvDecoder(p8Only, 5L))
-    // FFmpeg re-routes single-layer P5 and P8 only; P7 and non-DV never probe.
+    // Single-layer P5 and P8 only; dual-layer P7's probes are dvRoute's.
     val both = listOf(candidate("c2.vendor.dv.decoder", profiles = listOf(0x20, 0x40, 0x100)))
     assertNull(GpuVoPolicy.nativeDvDecoder(both, 7L))
     assertNull(GpuVoPolicy.nativeDvDecoder(both, null))
@@ -210,6 +211,84 @@ class GpuVoPolicyTest {
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(8L, "auto", hwdecCurrent = "no"))
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(null, "auto", hwdecCurrent = "no"))
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "native", hwdecCurrent = "no"))
+  }
+
+  // The overlay's DV Path reports what FFmpeg's dolby_vision_override does
+  // with the options mpv holds, not what the routing policy asked for (#2534).
+
+  private val p8Decoder = candidate("c2.vendor.dv.decoder", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_ST))
+
+  private fun route(
+    profile: Long?,
+    options: String? = "ndk_codec=0,async=1,dolby_vision=1,dv_p7_mode=auto",
+    candidates: List<GpuVoPolicy.DvDecoderCandidate> = listOf(p8Decoder),
+    hwdec: String? = "mediacodec",
+    vo: String? = "mediacodec"
+  ) = GpuVoPolicy.dvRoute(profile, options, candidates, hwdec, vo)
+
+  @Test
+  fun `P8 with the DV decoder off is its base layer, not the DV decoder`() {
+    // auto on a display without DV writes dolby_vision=0: HEVC takes the
+    // HDR10 base layer even though the device has a P8 decoder.
+    assertEquals(DvRoute.BASE_LAYER, route(8L, options = "ndk_codec=0,async=1,dolby_vision=0,dv_p7_mode=strip"))
+    assertEquals(DvRoute.DV_DECODER, route(8L))
+  }
+
+  @Test
+  fun `a DV decoder FFmpeg does not open is never reported`() {
+    assertEquals(DvRoute.BASE_LAYER, route(8L, candidates = listOf(candidate("c2.vendor.dv", mime = "video/hevcdv", profiles = listOf(0x100)))))
+    // Exact profile: a P5-only decoder takes P5 and nothing else.
+    val p5Only = listOf(candidate("c2.vendor.dv"))
+    assertEquals(DvRoute.BASE_LAYER, route(8L, candidates = p5Only))
+    assertEquals(DvRoute.DV_DECODER, route(5L, candidates = p5Only))
+    assertEquals(DvRoute.BASE_LAYER, route(8L, candidates = listOf(candidate("OMX.google.dv", profiles = listOf(0x100)))))
+  }
+
+  @Test
+  fun `the last duplicate decoder option wins, as FFmpeg applies it`() {
+    // A user's custom vd-lavc-o line follows the app's keys.
+    assertEquals(DvRoute.BASE_LAYER, route(8L, options = "dolby_vision=1,dv_p7_mode=auto,dolby_vision=0"))
+    assertEquals(DvRoute.BASE_LAYER, route(8L, options = "dolby_vision=1,dolby_vision=off"))
+    assertEquals(DvRoute.DV_DECODER, route(8L, options = "dolby_vision=0,dolby_vision=true"))
+    // Unset is FFmpeg's default, dolby_vision=1.
+    assertEquals(DvRoute.DV_DECODER, route(8L, options = "ndk_codec=0"))
+    assertEquals(DvRoute.DV_DECODER, route(8L, options = null))
+  }
+
+  @Test
+  fun `software decode is never the DV decoder`() {
+    // A predicted DV decoder that failed to open falls back to software.
+    assertEquals(DvRoute.BASE_LAYER, route(8L, hwdec = "no", vo = "gpu"))
+    assertEquals(DvRoute.RESHAPED, route(5L, hwdec = "no", vo = "gpu-next"))
+    assertEquals(DvRoute.RESHAPED, route(8L, hwdec = "no", vo = "gpu-next"))
+    // Copied-back MediaCodec frames still come from the DV decoder, and carry
+    // no RPU metadata for gpu-next to reshape.
+    assertEquals(DvRoute.DV_DECODER, route(8L, hwdec = "mediacodec-copy", vo = "gpu-next"))
+  }
+
+  @Test
+  fun `P7 follows dv_p7_mode through the native, converted and stripped paths`() {
+    val p7Decoder = candidate("c2.vendor.dv.p7", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_DTB))
+    val both = listOf(p7Decoder, p8Decoder)
+    assertEquals(DvRoute.DV_DECODER, route(7L, options = "dolby_vision=1,dv_p7_mode=auto", candidates = both))
+    assertEquals(DvRoute.DV_DECODER_P81, route(7L, options = "dolby_vision=1,dv_p7_mode=auto", candidates = listOf(p8Decoder)))
+    assertEquals(DvRoute.DV_DECODER_P81, route(7L, options = "dolby_vision=1,dv_p7_mode=convert", candidates = both))
+    assertEquals(DvRoute.DV_DECODER_P81, route(7L, options = "dolby_vision=1,dv_p7_mode=2", candidates = both))
+    assertEquals(DvRoute.DV_DECODER, route(7L, options = "dolby_vision=1,dv_p7_mode=native", candidates = both))
+    assertEquals(DvRoute.BASE_LAYER, route(7L, options = "dolby_vision=1,dv_p7_mode=native", candidates = listOf(p8Decoder)))
+    assertEquals(DvRoute.BASE_LAYER, route(7L, options = "dolby_vision=1,dv_p7_mode=strip", candidates = both))
+    assertEquals(DvRoute.BASE_LAYER, route(7L, options = "dolby_vision=1,dv_p7_mode=auto", candidates = emptyList()))
+    // dolby_vision=0 keeps P7 on its base layer whatever the mode says.
+    assertEquals(DvRoute.BASE_LAYER, route(7L, options = "dolby_vision=0,dv_p7_mode=convert", candidates = both))
+  }
+
+  @Test
+  fun `no route without a DOVI record or an open decoder`() {
+    assertNull(route(null))
+    assertNull(route(8L, hwdec = null))
+    assertNull(route(8L, hwdec = ""))
+    // Profiles the HEVC override never re-routes decode their base layer.
+    assertEquals(DvRoute.BASE_LAYER, route(10L, candidates = listOf(candidate("c2.vendor.dv.av1", profiles = listOf(0x400)))))
   }
 
   @Test

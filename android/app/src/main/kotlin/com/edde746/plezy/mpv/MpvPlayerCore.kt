@@ -2904,6 +2904,20 @@ class MpvPlayerCore private constructor(
       stats["video-params/max-fall"] = readProperty("video-params/max-fall")
       stats["video-params/aspect-name"] = readProperty("video-params/aspect-name")
       stats["video-params/rotate"] = readProperty("video-params/rotate")
+      // What decodes a Dolby Vision file (#2534): the DV decoder, the bare
+      // base layer, or gpu-next reshaping. The track's profile is the
+      // bitstream's DOVI record, so a file without one reports nothing.
+      val dvProfile = readProperty("current-tracks/video/dolby-vision-profile")?.toLongOrNull()
+      if (dvProfile != null) {
+        stats["dvSourceProfile"] = dvProfile
+        stats["dvRoute"] = GpuVoPolicy.dvRoute(
+          dvProfile = dvProfile,
+          decoderOptions = readProperty("vd-lavc-o"),
+          candidates = dvDecoderCandidates,
+          hwdecCurrent = stats["hwdec-current"] as String?,
+          currentVo = readProperty("current-vo")
+        )?.id
+      }
     }
 
     return stats
