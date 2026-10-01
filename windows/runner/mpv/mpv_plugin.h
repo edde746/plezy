@@ -24,6 +24,8 @@
 // instances.
 void MpvPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
 void MpvAudioPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
+void MpvClipPreviewPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
+void MpvClipExportPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
 
 namespace mpv {
 
@@ -56,6 +58,7 @@ class MpvPlayerPlugin : public flutter::Plugin {
   flutter::PluginRegistrarWindows* registrar_;
   DWORD platform_thread_id_;
   const bool audio_only_;
+  const bool headless_;
   // Per-instance wakeup message: the first window-proc delegate that handles
   // a message consumes it, so the video and audio instances must not share
   // one message id or one instance's wakeup would strand the other's queue.

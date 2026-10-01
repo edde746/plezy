@@ -422,6 +422,17 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get downloadLocationReset => 'İndirme konumu varsayılana sıfırlandı';
 	@override String get downloadLocationInvalid => 'Seçilen klasöre yazılamıyor';
 	@override String get downloadLocationPickerUnavailable => 'Klasör seçimi bu cihazda kullanılamıyor';
+	@override String get downloadLocationSelectError => 'Klasör seçilemedi';
+	@override String get mediaCapture => 'Medya Yakalama';
+	@override String get clips => 'Klipler';
+	@override String get screenshots => 'Ekran Görüntüleri';
+	@override String captureLocationTitle({required Object title}) => '${title} Konumu';
+	@override String get clipLocationDescription => 'Kliplerin nereye kaydedileceğini seçin.';
+	@override String get screenshotLocationDescription => 'Ekran görüntülerinin nereye kaydedileceğini seçin.';
+	@override String get clipLocationChanged => 'Klip konumu değiştirildi';
+	@override String get screenshotLocationChanged => 'Ekran görüntüsü konumu değiştirildi';
+	@override String get clipLocationReset => 'Klip konumu Masaüstü olarak sıfırlandı';
+	@override String get screenshotLocationReset => 'Ekran görüntüsü konumu Masaüstü olarak sıfırlandı';
 	@override String get downloadOnWifiOnly => 'Yalnızca Wi-Fi üzerinden indir';
 	@override String get downloadOnWifiOnlyDescription => 'Hücresel verideyken indirmeleri engelle';
 	@override String get autoRemoveWatchedDownloads => 'İzlenen indirmeleri otomatik kaldır';
@@ -885,6 +896,7 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get pipActive => 'Pencere İçinde Pencere modunda oynatılıyor';
 	@override String get pipFailed => 'Pencere içinde pencere modu başlatılamadı';
 	@override String get screenshotSaved => 'Ekran görüntüsü kaydedildi';
+	@override late final _Translations$videoControls$clip$tr clip = _Translations$videoControls$clip$tr._(_root);
 	@override String zoomPercent({required Object percent}) => 'Yakınlaştırma %${percent}';
 	@override String volumePercent({required Object percent}) => 'Ses %${percent}';
 	@override late final _Translations$videoControls$pipErrors$tr pipErrors = _Translations$videoControls$pipErrors$tr._(_root);
@@ -2374,6 +2386,52 @@ class _Translations$hotkeys$actions$tr extends Translations$hotkeys$actions$en {
 	@override String get screenshot => 'Ekran Görüntüsü Al';
 }
 
+// Path: videoControls.clip
+class _Translations$videoControls$clip$tr extends Translations$videoControls$clip$en {
+	_Translations$videoControls$clip$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get fineAdjust => 'Hassas ayar';
+	@override String get title => 'Klip';
+	@override String get vodOnly => 'Klipler, isteğe bağlı video oynatımında kullanılabilir.';
+	@override String get sourceUnavailable => 'Bu oynatma oturumu için klip kaynağı kullanılamıyor.';
+	@override String get playAtLeastOneSecond => 'Klip oluşturmadan önce en az 1 saniye oynatın.';
+	@override String get startBeforeBeginning => 'Klip başlangıcı videonun başlangıcından önce olamaz.';
+	@override String get endAfterStart => 'Klip bitişi başlangıcından sonra olmalıdır.';
+	@override String get minimumDuration => 'Klipler en az 1 saniye uzunluğunda olmalıdır.';
+	@override String get endPastVideo => 'Klip bitişi videonun sonunu aşıyor.';
+	@override String get exportCanceled => 'Klip dışa aktarma iptal edildi.';
+	@override String get cacheUnavailable => 'Orijinal biçimde dışa aktarmak için seçili aralık tamamen önbelleğe alınamadı. Daha kısa bir klip deneyin veya kaydetmeden önce önizlemeyi bir kez oynatın.';
+	@override String get sourceCopyNoEncoder => 'Kaynak kopyalama ile dışa aktarma, kodlayıcı kullanmaz.';
+	@override String get encodingDesktopOnly => 'H.264 ve HEVC klip kodlama şu anda macOS ve Windows\'ta kullanılabilir.';
+	@override String get hdrRequiresSource => 'HDR dışa aktarma, doğrudan oynatılabilen HDR10 veya HLG uyumlu bir kaynak gerektirir.';
+	@override String get transcodeStartUnavailable => 'Bu klip, etkin dönüştürülmüş akıştan önce başlıyor. Daha önceki bir zamana gidip klip düzenleyicisini yeniden açın veya orijinal kaliteye geçin.';
+	@override String get previewRequired => 'Klip kaydedilmeden önce önizlemenin yüklenmesi tamamlanmalıdır.';
+	@override String get h264Failed => 'Bu kaynak H.264 SDR MP4 olarak kodlanamadı.';
+	@override String get hevcSdrFailed => 'Bu kaynak HEVC SDR MP4 olarak kodlanamadı.';
+	@override String get hevcHdrFailed => 'Bu kaynak HEVC HDR MP4 olarak kodlanamadı.';
+	@override String get gifFailed => 'Bu kaynak GIF olarak kodlanamadı.';
+	@override String get originalFailed => 'Bu kaynak mpv önbelleğinden kopyalanamadı.';
+	@override String get previewUnavailable => 'Bu sürümde klip önizlemesi oynatılamıyor.';
+	@override String get previewFailed => 'Klip önizlemesi oynatılamadı.';
+	@override String get previewLoadingScreenshot => 'Ekran görüntüsü almadan önce klip önizlemesinin yüklenmesi tamamlanmalıdır.';
+	@override String get screenshotInProgress => 'Bir ekran görüntüsü zaten kaydediliyor.';
+	@override String get saveAsDialog => 'Klibi Farklı Kaydet';
+	@override String savedTo({required Object fileName}) => '${fileName} dosyasına kaydedildi';
+	@override String get openFolder => 'Klasörü Aç';
+	@override String get saveAs => 'Farklı Kaydet';
+	@override String get cancelExport => 'Dışa Aktarmayı İptal Et';
+	@override String get saving => 'Kaydediliyor...';
+	@override String savingProgress({required Object percent}) => 'Kaydediliyor: %${percent}';
+	@override String get mutePreview => 'Önizlemenin sesini kapat';
+	@override String get unmutePreview => 'Önizlemenin sesini aç';
+	@override String get formatHevcSdr => 'HEVC SDR';
+	@override String get formatH264Sdr => 'H.264 SDR';
+	@override String get formatHevcHdr => 'HEVC HDR';
+}
+
 // Path: videoControls.pipErrors
 class _Translations$videoControls$pipErrors$tr extends Translations$videoControls$pipErrors$en {
 	_Translations$videoControls$pipErrors$tr._(TranslationsTr root) : this._root = root, super.internal(root);
@@ -3335,6 +3393,17 @@ extension on TranslationsTr {
 			'settings.downloadLocationReset' => 'İndirme konumu varsayılana sıfırlandı',
 			'settings.downloadLocationInvalid' => 'Seçilen klasöre yazılamıyor',
 			'settings.downloadLocationPickerUnavailable' => 'Klasör seçimi bu cihazda kullanılamıyor',
+			'settings.downloadLocationSelectError' => 'Klasör seçilemedi',
+			'settings.mediaCapture' => 'Medya Yakalama',
+			'settings.clips' => 'Klipler',
+			'settings.screenshots' => 'Ekran Görüntüleri',
+			'settings.captureLocationTitle' => ({required Object title}) => '${title} Konumu',
+			'settings.clipLocationDescription' => 'Kliplerin nereye kaydedileceğini seçin.',
+			'settings.screenshotLocationDescription' => 'Ekran görüntülerinin nereye kaydedileceğini seçin.',
+			'settings.clipLocationChanged' => 'Klip konumu değiştirildi',
+			'settings.screenshotLocationChanged' => 'Ekran görüntüsü konumu değiştirildi',
+			'settings.clipLocationReset' => 'Klip konumu Masaüstü olarak sıfırlandı',
+			'settings.screenshotLocationReset' => 'Ekran görüntüsü konumu Masaüstü olarak sıfırlandı',
 			'settings.downloadOnWifiOnly' => 'Yalnızca Wi-Fi üzerinden indir',
 			'settings.downloadOnWifiOnlyDescription' => 'Hücresel verideyken indirmeleri engelle',
 			'settings.autoRemoveWatchedDownloads' => 'İzlenen indirmeleri otomatik kaldır',
@@ -3537,6 +3606,8 @@ extension on TranslationsTr {
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Seviyesi',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Sürümü',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Katmanları',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.baseLayerCompatibility' => 'Temel Katman Uyumluluğu',
 			'fileInfo.avcBitstream' => 'AVC Bit Akışı',
 			'fileInfo.nalLengthSize' => 'NAL Uzunluk Boyutu',
@@ -3548,8 +3619,6 @@ extension on TranslationsTr {
 			'fileInfo.languageCode' => 'Dil Kodu',
 			'fileInfo.streamTitle' => 'Parça Başlığı',
 			'fileInfo.channels' => 'Kanallar',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.sampleRate' => 'Örnekleme Hızı',
 			'fileInfo.spatialAudio' => 'Uzamsal Ses',
 			'fileInfo.textBased' => 'Metin Tabanlı',
@@ -3734,6 +3803,43 @@ extension on TranslationsTr {
 			'videoControls.pipActive' => 'Pencere İçinde Pencere modunda oynatılıyor',
 			'videoControls.pipFailed' => 'Pencere içinde pencere modu başlatılamadı',
 			'videoControls.screenshotSaved' => 'Ekran görüntüsü kaydedildi',
+			'videoControls.clip.fineAdjust' => 'Hassas ayar',
+			'videoControls.clip.title' => 'Klip',
+			'videoControls.clip.vodOnly' => 'Klipler, isteğe bağlı video oynatımında kullanılabilir.',
+			'videoControls.clip.sourceUnavailable' => 'Bu oynatma oturumu için klip kaynağı kullanılamıyor.',
+			'videoControls.clip.playAtLeastOneSecond' => 'Klip oluşturmadan önce en az 1 saniye oynatın.',
+			'videoControls.clip.startBeforeBeginning' => 'Klip başlangıcı videonun başlangıcından önce olamaz.',
+			'videoControls.clip.endAfterStart' => 'Klip bitişi başlangıcından sonra olmalıdır.',
+			'videoControls.clip.minimumDuration' => 'Klipler en az 1 saniye uzunluğunda olmalıdır.',
+			'videoControls.clip.endPastVideo' => 'Klip bitişi videonun sonunu aşıyor.',
+			'videoControls.clip.exportCanceled' => 'Klip dışa aktarma iptal edildi.',
+			'videoControls.clip.cacheUnavailable' => 'Orijinal biçimde dışa aktarmak için seçili aralık tamamen önbelleğe alınamadı. Daha kısa bir klip deneyin veya kaydetmeden önce önizlemeyi bir kez oynatın.',
+			'videoControls.clip.sourceCopyNoEncoder' => 'Kaynak kopyalama ile dışa aktarma, kodlayıcı kullanmaz.',
+			'videoControls.clip.encodingDesktopOnly' => 'H.264 ve HEVC klip kodlama şu anda macOS ve Windows\'ta kullanılabilir.',
+			'videoControls.clip.hdrRequiresSource' => 'HDR dışa aktarma, doğrudan oynatılabilen HDR10 veya HLG uyumlu bir kaynak gerektirir.',
+			'videoControls.clip.transcodeStartUnavailable' => 'Bu klip, etkin dönüştürülmüş akıştan önce başlıyor. Daha önceki bir zamana gidip klip düzenleyicisini yeniden açın veya orijinal kaliteye geçin.',
+			'videoControls.clip.previewRequired' => 'Klip kaydedilmeden önce önizlemenin yüklenmesi tamamlanmalıdır.',
+			'videoControls.clip.h264Failed' => 'Bu kaynak H.264 SDR MP4 olarak kodlanamadı.',
+			'videoControls.clip.hevcSdrFailed' => 'Bu kaynak HEVC SDR MP4 olarak kodlanamadı.',
+			'videoControls.clip.hevcHdrFailed' => 'Bu kaynak HEVC HDR MP4 olarak kodlanamadı.',
+			'videoControls.clip.gifFailed' => 'Bu kaynak GIF olarak kodlanamadı.',
+			'videoControls.clip.originalFailed' => 'Bu kaynak mpv önbelleğinden kopyalanamadı.',
+			'videoControls.clip.previewUnavailable' => 'Bu sürümde klip önizlemesi oynatılamıyor.',
+			'videoControls.clip.previewFailed' => 'Klip önizlemesi oynatılamadı.',
+			'videoControls.clip.previewLoadingScreenshot' => 'Ekran görüntüsü almadan önce klip önizlemesinin yüklenmesi tamamlanmalıdır.',
+			'videoControls.clip.screenshotInProgress' => 'Bir ekran görüntüsü zaten kaydediliyor.',
+			'videoControls.clip.saveAsDialog' => 'Klibi Farklı Kaydet',
+			'videoControls.clip.savedTo' => ({required Object fileName}) => '${fileName} dosyasına kaydedildi',
+			'videoControls.clip.openFolder' => 'Klasörü Aç',
+			'videoControls.clip.saveAs' => 'Farklı Kaydet',
+			'videoControls.clip.cancelExport' => 'Dışa Aktarmayı İptal Et',
+			'videoControls.clip.saving' => 'Kaydediliyor...',
+			'videoControls.clip.savingProgress' => ({required Object percent}) => 'Kaydediliyor: %${percent}',
+			'videoControls.clip.mutePreview' => 'Önizlemenin sesini kapat',
+			'videoControls.clip.unmutePreview' => 'Önizlemenin sesini aç',
+			'videoControls.clip.formatHevcSdr' => 'HEVC SDR',
+			'videoControls.clip.formatH264Sdr' => 'H.264 SDR',
+			'videoControls.clip.formatHevcHdr' => 'HEVC HDR',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Yakınlaştırma %${percent}',
 			'videoControls.volumePercent' => ({required Object percent}) => 'Ses %${percent}',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 veya daha yenisini gerektirir',
@@ -4014,6 +4120,8 @@ extension on TranslationsTr {
 			'discover.continueWatchingIn' => ({required Object library}) => '${library} içinde İzlemeye Devam Et',
 			'discover.nextUp' => 'Sıradaki',
 			'discover.nextUpIn' => ({required Object library}) => '${library} içinde Sıradaki',
+			_ => null,
+		} ?? switch (path) {
 			'discover.recentlyAdded' => 'Son Eklenenler',
 			'discover.recentlyAddedIn' => ({required Object library}) => '${library} içinde Son Eklenenler',
 			'discover.latestAlbumsIn' => ({required Object library}) => '${library} içinde Son Albümler',
@@ -4062,8 +4170,6 @@ extension on TranslationsTr {
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" için çöp boşaltılıyor...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" için çöp boşaltıldı',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Çöp boşaltılamadı: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzing' => ({required Object title}) => '"${title}" analiz ediliyor...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}" için analiz başladı',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kitaplık analiz edilemedi: ${error}',
@@ -4528,6 +4634,8 @@ extension on TranslationsTr {
 			'watchTogether.makeHost' => 'Kurucu Yap',
 			'watchTogether.makeHostQuestion' => 'Kuruculuk Aktarılsın mı?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} oynatmayı kontrol edecek ve oturumu herkes için yönetecek.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.transfer' => 'Aktar',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} artık kurucu',
 			'watchTogether.youAreNowHost' => 'Artık kurucu sizsiniz',
@@ -4576,8 +4684,6 @@ extension on TranslationsTr {
 			'watchTogether.guestSwitchUnavailable' => 'Geçiş yapılamadı — eşitleme için sunucu mevcut değil',
 			'watchTogether.guestSwitchFailed' => 'Geçiş yapılamadı — içerik bu sunucuda bulunamadı',
 			'watchTogether.defaultDisplayName' => 'Kullanıcı',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => 'Aktarıcı sunucusu zamanında yanıt vermedi',
 			'watchTogether.errors.connectionLost' => 'Oturum hazır olmadan bağlantı kapandı',
 			'watchTogether.errors.invalidRelayResponse' => 'Aktarıcı sunucusu beklenmeyen bir yanıt gönderdi',
@@ -5042,6 +5148,8 @@ extension on TranslationsTr {
 			'services.deviceCode.copyCode' => 'Etkinleştirme kodunu kopyala',
 			'services.deviceCode.waitingForAuthorization' => 'Yetkilendirme bekleniyor…',
 			'services.deviceCode.codeCopied' => 'Kod kopyalandı',
+			_ => null,
+		} ?? switch (path) {
 			'services.oauthProxy.title' => ({required Object service}) => '${service} servisine giriş yapın',
 			'services.oauthProxy.body' => 'Bu QR kodunu tarayın veya URL\'yi herhangi bir cihazda açın.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Giriş yapmak için ${service} servisini açın',
@@ -5090,8 +5198,6 @@ extension on TranslationsTr {
 			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
 			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'Quick Connect sunucu tarafından reddedildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect yanıtı geçerli bir JSON değildi',
 			'addServer.quickConnectMissingFields' => 'Quick Connect yanıtında kod veya gizli anahtar eksik',
