@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
+import '../media/packed_stereo_layout.dart';
 import '../mpv/mpv.dart';
 
 import '../utils/app_logger.dart';
@@ -67,6 +69,8 @@ class VideoFilterManager {
   /// Ambient lighting service reference, disabled for PiP and restored after it.
   AmbientLightingService? ambientLightingService;
 
+  final List<StreamSubscription<void>> _mediaSubscriptions = [];
+
   /// Custom video zoom layered on top of the selected fit mode.
   double _zoomScale = 1.0;
 
@@ -89,12 +93,18 @@ class VideoFilterManager {
   /// Callback invoked when boxFitMode changes, for external persistence
   final void Function(int mode)? onBoxFitModeChanged;
 
+  /// Called when runtime metadata changes the packed stereo layout.
+  final ValueChanged<PackedStereoLayout>? onPackedStereoLayoutChanged;
+
+  PackedStereoLayout _packedStereoLayout = PackedStereoLayout.unknown;
+
   VideoFilterManager({
     required this.player,
     this.nativeVideoZoom = false,
     int initialBoxFitMode = 0,
     Size? initialPlayerSize,
     this.onBoxFitModeChanged,
+    this.onPackedStereoLayoutChanged,
   }) : _boxFitMode = initialBoxFitMode,
        _playerSize = initialPlayerSize {
     _debouncedUpdateVideoFilter = debounce(
@@ -103,10 +113,20 @@ class VideoFilterManager {
       leading: true,
       trailing: true,
     );
+    for (final stream in [player.streams.fileLoaded, player.streams.playbackRestart, player.streams.backendSwitched]) {
+      _mediaSubscriptions.add(
+        stream.listen((_) {
+          _appliedProps.remove('video-aspect-override');
+          unawaited(updateVideoFilter());
+        }),
+      );
+    }
   }
 
   /// Current BoxFit mode (0=contain, 1=cover, 2=fill)
   int get boxFitMode => _boxFitMode;
+
+  PackedStereoLayout get packedStereoLayout => _packedStereoLayout;
 
   double get zoomScale => _zoomScale;
 
@@ -126,6 +146,7 @@ class VideoFilterManager {
   }
 
   double setZoomScale(double scale) {
+    if (_packedStereoLayout.isPacked) return _zoomScale;
     final next = normalizeZoomScale(scale);
     if (_zoomScale == next) return _zoomScale;
     _zoomScale = next;
@@ -135,6 +156,7 @@ class VideoFilterManager {
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void cycleBoxFitMode() {
+    if (_packedStereoLayout.isPacked) return;
     _boxFitMode = (_boxFitMode + 1) % 3;
     onBoxFitModeChanged?.call(_boxFitMode);
     updateVideoFilter();
@@ -243,17 +265,22 @@ class VideoFilterManager {
   Future<void> _applyVideoFilter() async {
     try {
       final boxFitMode = _boxFitMode;
-      final zoomScale = _zoomScale;
+      var zoomScale = _zoomScale;
       final playerSize = _playerSize;
-      final coverMode = boxFitMode == 1;
+      final packedStereoLayout = await _readPackedStereoLayout();
+      _setPackedStereoLayout(packedStereoLayout);
+      if (packedStereoLayout.isPacked) zoomScale = _zoomScale;
+      final packedStereoAspect = packedStereoLayout.isPacked ? await _packedStereoAspect() : null;
+      final effectiveBoxFitMode = packedStereoLayout.isPacked ? 0 : boxFitMode;
+      final coverMode = effectiveBoxFitMode == 1;
 
       // ExoPlayer handles scaling via AspectRatioFrameLayout (no-op on mpv
       // backends). The MPV properties below still run — on ExoPlayer they
       // forward to setMpvProperty, which queues them for any future fallback.
-      if (_appliedBoxFitMode != boxFitMode) {
+      if (_appliedBoxFitMode != effectiveBoxFitMode) {
         _appliedBoxFitMode = null;
-        await player.setBoxFitMode(boxFitMode);
-        _appliedBoxFitMode = boxFitMode;
+        await player.setBoxFitMode(effectiveBoxFitMode);
+        _appliedBoxFitMode = effectiveBoxFitMode;
       }
       if (_appliedVideoZoom != zoomScale) {
         _appliedVideoZoom = null;
@@ -263,8 +290,8 @@ class VideoFilterManager {
 
       // Compute final target values up-front: each mpv write takes effect
       // immediately, so transient intermediate values would flash on screen.
-      var aspectOverride = 'no';
-      if (boxFitMode == 2) {
+      var aspectOverride = packedStereoAspect?.toString() ?? 'no';
+      if (effectiveBoxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
         if (playerSize != null && playerSize.width > 0 && playerSize.height > 0) {
           final playerAspect = playerSize.width / playerSize.height;
@@ -284,6 +311,31 @@ class VideoFilterManager {
     }
   }
 
+  Future<double?> _packedStereoAspect() async {
+    try {
+      final aspect = double.tryParse(await player.getProperty('video-dec-params/aspect') ?? '');
+      if (aspect == null || !aspect.isFinite || aspect <= 0) return null;
+      return aspect;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<PackedStereoLayout> _readPackedStereoLayout() async {
+    try {
+      return PackedStereoLayout.fromMpvStereoInput(await player.getProperty('video-params/stereo-in'));
+    } catch (_) {
+      return PackedStereoLayout.unknown;
+    }
+  }
+
+  void _setPackedStereoLayout(PackedStereoLayout layout) {
+    if (_packedStereoLayout == layout) return;
+    _packedStereoLayout = layout;
+    if (layout.isPacked) _zoomScale = 1.0;
+    onPackedStereoLayoutChanged?.call(layout);
+  }
+
   Future<void> _applyProperty(String name, String value) async {
     if (_appliedProps[name] == value) return;
     // Uncache while in flight so a failed write is retried on the next run.
@@ -299,5 +351,8 @@ class VideoFilterManager {
 
   void dispose() {
     _debouncedUpdateVideoFilter.cancel();
+    for (final subscription in _mediaSubscriptions) {
+      unawaited(subscription.cancel());
+    }
   }
 }

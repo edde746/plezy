@@ -60,7 +60,6 @@ class TranslationsPl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$dialog$pl dialog = _Translations$dialog$pl._(_root);
 	@override late final _Translations$profiles$pl profiles = _Translations$profiles$pl._(_root);
 	@override late final _Translations$connections$pl connections = _Translations$connections$pl._(_root);
-	@override late final _Translations$accountPreferences$pl accountPreferences = _Translations$accountPreferences$pl._(_root);
 	@override late final _Translations$discover$pl discover = _Translations$discover$pl._(_root);
 	@override late final _Translations$errors$pl errors = _Translations$errors$pl._(_root);
 	@override late final _Translations$libraries$pl libraries = _Translations$libraries$pl._(_root);
@@ -90,6 +89,7 @@ class TranslationsPl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$seerr$pl seerr = _Translations$seerr$pl._(_root);
 	@override late final _Translations$services$pl services = _Translations$services$pl._(_root);
 	@override late final _Translations$addServer$pl addServer = _Translations$addServer$pl._(_root);
+	@override late final _Translations$accountPreferences$pl accountPreferences = _Translations$accountPreferences$pl._(_root);
 }
 
 // Path: app
@@ -252,10 +252,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get displayScale => 'Skalowanie';
 	@override String get compact => 'Kompaktowy';
 	@override String get comfortable => 'Wygodny';
-	@override String get gridSpacing => 'Odstępy siatki';
-	@override String get gridSpacingTight => 'Ciasny';
-	@override String get gridSpacingNormal => 'Normalny';
-	@override String get gridSpacingSpacious => 'Przestronny';
 	@override String get tvCornerSpotlightBackdrop => 'Tło wyróżnionej pozycji w rogu';
 	@override String get tvCornerSpotlightBackdropDescription => 'Wyświetlaj grafikę wyróżnionej pozycji w prawym górnym rogu zamiast na całym ekranie';
 	@override String get viewMode => 'Tryb widoku';
@@ -278,8 +274,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get alwaysKeepSidebarOpenDescription => 'Panel boczny jest rozwinięty, a obszar treści dostosowuje się';
 	@override String get showUnwatchedCount => 'Pokaż liczbę nieobejrzanych';
 	@override String get showUnwatchedCountDescription => 'Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach';
-	@override String get showWatchedIndicators => 'Pokaż wskaźniki obejrzenia';
-	@override String get showWatchedIndicatorsDescription => 'Wyświetlaj znacznik na obejrzanych filmach, serialach i odcinkach';
 	@override String get showEpisodeNumberOnCards => 'Pokaż numer odcinka na kartach';
 	@override String get showEpisodeNumberOnCardsDescription => 'Pokazuj numer sezonu i odcinka na kartach odcinków';
 	@override String get showSeasonPostersOnTabs => 'Pokaż plakaty sezonów na zakładkach';
@@ -307,13 +301,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get playbackBufferExtraLarge => 'Bardzo duży';
 	@override String get playbackBufferDescription => 'Buforuje więcej w przypadku niestabilnych połączeń. Ograniczony również przez rozmiar bufora.';
 	@override String get defaultQualityTitle => 'Domyślna jakość';
-	@override String get cellularQualityTitle => 'Domyślna jakość w sieci komórkowej';
-	@override String get cellularQualitySameAsDefault => 'Taka sama jak domyślna jakość';
-	@override String get directPlayCoveredQuality => 'Odtwarzaj mniejsze wideo w oryginalnej jakości';
-	@override String get directPlayCoveredQualityDescription => 'Odtwarzaj bezpośrednio wideo mieszczące się już w limicie jakości zamiast je transkodować';
-	@override String get videoCodecs => 'Kodeki wideo';
-	@override String get videoCodecsDescription => 'Niezaznaczone kodeki są transkodowane przez serwer';
-	@override String get videoCodecsAlwaysAccepted => 'Zawsze akceptowany';
 	@override String get musicQualityTitle => 'Jakość muzyki';
 	@override String get subtitleStyling => 'Styl napisów';
 	@override String get subtitleStylingDescription => 'Dostosuj wygląd napisów';
@@ -325,11 +312,8 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minut';
 	@override String get rememberTrackSelections => 'Zapamiętuj wybór ścieżek dla każdego serialu i filmu';
 	@override String get rememberTrackSelectionsDescription => 'Zapamiętuj wybór ścieżki dźwiękowej i napisów dla każdego tytułu';
-	@override String get rememberTrackSelectionsBackendRule => 'Plex zapisuje każdy wybór na serwerze dla danego pliku; Jellyfin dodatkowo włącza opcję „Zapamiętaj wybory” na koncie; Emby nie jest obsługiwany';
 	@override String get followServerTrackSelections => 'Używaj wyboru ścieżek z serwera dla każdego odcinka';
 	@override String get followServerTrackSelectionsDescription => 'Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór';
-	@override String get resumeMusicOnLaunch => 'Zapamiętaj sesję muzyczną';
-	@override String get resumeMusicOnLaunchDescription => 'Przy uruchomieniu aplikacji otwieraj ostatni utwór wstrzymany w miejscu, w którym przerwano';
 	@override String get showChapterMarkersOnTimeline => 'Pokaż znaczniki rozdziałów na pasku przewijania';
 	@override String get showChapterMarkersOnTimelineDescription => 'Podziel pasek przewijania na granicach rozdziałów';
 	@override String get specialsOrdering => 'Specjale w kolejności odcinków';
@@ -383,24 +367,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Skrót jest już przypisany do ${action}';
 	@override String shortcutUpdated({required Object action}) => 'Skrót zaktualizowany dla ${action}';
 	@override String get saveFailed => 'Nie udało się zapisać zmian. Spróbuj ponownie.';
-	@override String get autoPlayAndSkip => 'Auto-odtwarzanie i pomijanie';
-	@override String get autoPlayNextEpisode => 'Automatycznie odtwarzaj następny odcinek';
-	@override String get autoPlayNextEpisodeDescription => 'Automatycznie uruchamiaj następny odcinek, gdy bieżący się skończy';
-	@override String get shuffleStartsFromBeginning => 'Odtwarzanie losowe od początku';
-	@override String get shuffleStartsFromBeginningDescription => 'Rozpoczynaj każdy odcinek od początku przy odtwarzaniu losowym zamiast wznawiać';
-	@override String get playNextCountdown => 'Odliczanie do następnego odcinka';
-	@override String get playNextCountdownImmediate => 'Odtwarzaj natychmiast';
-	@override String get skipIntroMode => 'Pomijanie czołówki';
-	@override String get skipIntroModeOffDescription => 'Odtwarzaj czołówki normalnie, bez przycisku pomijania';
-	@override String get skipIntroModeButtonDescription => 'Pokazuj przycisk pomijania, gdy zaczyna się czołówka';
-	@override String get skipIntroModeAutoDescription => 'Pomijaj czołówki automatycznie po opóźnieniu poniżej';
-	@override String get skipCreditsMode => 'Pomijanie napisów końcowych';
-	@override String get skipCreditsModeOffDescription => 'Odtwarzaj napisy końcowe normalnie, bez przycisku pomijania';
-	@override String get skipCreditsModeButtonDescription => 'Pokazuj przycisk pomijania, gdy zaczynają się napisy końcowe';
-	@override String get skipCreditsModeAutoDescription => 'Pomijaj napisy końcowe automatycznie i odtwarzaj następny odcinek';
-	@override String get skipMarkerModeOff => 'Wył.';
-	@override String get skipMarkerModeButton => 'Pokaż przycisk';
-	@override String get skipMarkerModeAuto => 'Automatycznie';
 	@override String get forceSkipMarkerFallback => 'Wymuś znaczniki awaryjne';
 	@override String get forceSkipMarkerFallbackDescription => 'Używaj wzorców tytułów rozdziałów, nawet gdy Plex ma znaczniki';
 	@override String get autoSkipDelay => 'Opóźnienie automatycznego pomijania';
@@ -437,8 +403,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Zmieniaj kolejność i ukrywaj biblioteki';
 	@override String get companionRemoteServer => 'Serwer zdalnego sterowania';
 	@override String get companionRemoteServerDescription => 'Pozwól urządzeniom mobilnym w sieci sterować tą aplikacją';
-	@override String get companionRemoteServerStartFailed => 'Nie udało się uruchomić serwera zdalnego sterowania';
-	@override String get companionRemoteServerStopFailed => 'Nie udało się zatrzymać serwera zdalnego sterowania';
 	@override String get autoPip => 'Automatyczny obraz w obrazie';
 	@override String get autoPipDescription => 'Automatycznie włączaj tryb obrazu w obrazie po opuszczeniu aplikacji podczas odtwarzania';
 	@override String get matchContentFrameRate => 'Dopasuj częstotliwość klatek do treści';
@@ -455,7 +419,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get audioPassthrough => 'Przekazywanie dźwięku';
 	@override String get audioPassthroughDescription => 'Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.';
-	@override String get audioPassthroughOverriddenByNormalization => 'Wyłączone, gdy włączona jest normalizacja głośności';
 	@override String get downmixCenterBoost => 'Wzmocnienie kanału centralnego';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Wzmocnienie (dB)';
@@ -472,16 +435,6 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Wymuś natywne DV7 i wyłącz ponowną próbę konwersji DV';
 	@override String get dvConversionDv81Description => 'Wymuś wbudowaną konwersję RPU do profilu Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'Usuń warstwy Dolby Vision RPU/EL i przedstaw zwykłe HEVC';
-	@override String get hdrSdrConversion => 'Konwersja HDR do SDR';
-	@override String get hdrSdrConversionDescription => 'Wybierz, co konwertuje wideo HDR, gdy wyświetlacz nie obsługuje HDR.';
-	@override String get hdrSdrConversionAuto => 'Automatycznie';
-	@override String get hdrSdrConversionAutoDescription => 'Urządzenie na Androidzie 9 i nowszym, odtwarzacz na starszych wersjach';
-	@override String get hdrSdrConversionDevice => 'Urządzenie';
-	@override String get hdrSdrConversionDeviceDescription => 'Konwersję wykonuje sprzęt wideo urządzenia. Najszybciej, ale kolory zależą od urządzenia';
-	@override String get hdrSdrConversionPlayer => 'Odtwarzacz';
-	@override String get hdrSdrConversionPlayerDescription => 'Konwersję wykonuje odtwarzacz. Spójne kolory, ale 4K może się zacinać na słabszych przystawkach TV';
-	@override String get deinterlace => 'Usuwanie przeplotu';
-	@override String get deinterlaceDescription => 'Usuwa artefakty grzebienia z wideo z przeplotem (tylko odtwarzacz mpv)';
 	@override String get requireProfileSelectionOnOpen => 'Pytaj o profil przy otwarciu aplikacji';
 	@override String get requireProfileSelectionOnOpenDescription => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana';
 	@override String get forceTvMode => 'Wymuś tryb TV';
@@ -499,33 +452,13 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get showExploreTabDescription => 'Wyświetlaj kartę Odkryj z treściami z Plex Discover i połączonych serwisów śledzących';
 	@override String get liveTvDefaultFavorites => 'Domyślnie ulubione kanały';
 	@override String get liveTvDefaultFavoritesDescription => 'Pokaż tylko ulubione kanały po otwarciu telewizji na żywo';
-	@override String get general => 'Ogólne';
-	@override String get generalDescription => 'Język, uruchamianie i zachowanie okna';
-	@override String get languageAndRegion => 'Język i region';
-	@override String get startup => 'Uruchamianie';
 	@override String get display => 'Ekran';
-	@override String get libraryAndCards => 'Biblioteka i karty';
 	@override String get homeScreen => 'Ekran główny';
 	@override String get navigation => 'Nawigacja';
 	@override String get window => 'Okno';
-	@override String get liveTv => 'TV na żywo';
 	@override String get player => 'Odtwarzacz';
-	@override String get videoAndDisplay => 'Wideo i ekran';
-	@override String get audio => 'Audio';
-	@override String get quality => 'Jakość';
-	@override String get subtitles => 'Napisy';
 	@override String get seekAndTiming => 'Przewijanie i czas';
 	@override String get behavior => 'Zachowanie';
-	@override String get gestures => 'Gesty';
-	@override String get gestureBrightnessSwipe => 'Zmiana jasności przesunięciem';
-	@override String get gestureBrightnessSwipeDescription => 'Przesuwaj palcem w górę lub w dół na lewej krawędzi, aby regulować jasność';
-	@override String get gestureVolumeSwipe => 'Zmiana głośności przesunięciem';
-	@override String get gestureVolumeSwipeDescription => 'Przesuwaj palcem w górę lub w dół na prawej krawędzi, aby regulować głośność';
-	@override String get gesturePinchToZoom => 'Powiększanie ściskaniem';
-	@override String get gesturePinchToZoomDescription => 'Ściśnij wideo palcami, aby powiększyć lub pomniejszyć';
-	@override String get rememberBrightnessLevel => 'Zapamiętaj poziom jasności';
-	@override String get rememberBrightnessLevelDescription => 'Rozpoczynaj odtwarzanie z jasnością ustawioną ostatnim przesunięciem';
-	@override String get controls => 'Sterowanie';
 	@override String get rememberPlayerChanges => 'Zapamiętuj zmiany odtwarzacza';
 	@override String get rememberPlayerChangesDescription => 'Miejsce zapisywania i ponownego stosowania zmian dokonanych podczas odtwarzania';
 	@override String get scopePlaybackSpeed => 'Prędkość odtwarzania';
@@ -537,6 +470,74 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get playerScopeLibrary => 'Na bibliotekę';
 	@override String get playerScopeTitle => 'Na serial lub film';
 	@override String get exportDialogTitle => 'Eksport ustawień Plezy';
+	@override String get gridSpacing => 'Odstępy siatki';
+	@override String get gridSpacingTight => 'Ciasny';
+	@override String get gridSpacingNormal => 'Normalny';
+	@override String get gridSpacingSpacious => 'Przestronny';
+	@override String get showWatchedIndicators => 'Pokaż wskaźniki obejrzenia';
+	@override String get showWatchedIndicatorsDescription => 'Wyświetlaj znacznik na obejrzanych filmach, serialach i odcinkach';
+	@override String get cellularQualityTitle => 'Domyślna jakość w sieci komórkowej';
+	@override String get cellularQualitySameAsDefault => 'Taka sama jak domyślna jakość';
+	@override String get directPlayCoveredQuality => 'Odtwarzaj mniejsze wideo w oryginalnej jakości';
+	@override String get directPlayCoveredQualityDescription => 'Odtwarzaj bezpośrednio wideo mieszczące się już w limicie jakości zamiast je transkodować';
+	@override String get videoCodecs => 'Kodeki wideo';
+	@override String get videoCodecsDescription => 'Niezaznaczone kodeki są transkodowane przez serwer';
+	@override String get videoCodecsAlwaysAccepted => 'Zawsze akceptowany';
+	@override String get rememberTrackSelectionsBackendRule => 'Plex zapisuje każdy wybór na serwerze dla danego pliku; Jellyfin dodatkowo włącza opcję „Zapamiętaj wybory” na koncie; Emby nie jest obsługiwany';
+	@override String get resumeMusicOnLaunch => 'Zapamiętaj sesję muzyczną';
+	@override String get resumeMusicOnLaunchDescription => 'Przy uruchomieniu aplikacji otwieraj ostatni utwór wstrzymany w miejscu, w którym przerwano';
+	@override String get autoPlayAndSkip => 'Auto-odtwarzanie i pomijanie';
+	@override String get autoPlayNextEpisode => 'Automatycznie odtwarzaj następny odcinek';
+	@override String get autoPlayNextEpisodeDescription => 'Automatycznie uruchamiaj następny odcinek, gdy bieżący się skończy';
+	@override String get shuffleStartsFromBeginning => 'Odtwarzanie losowe od początku';
+	@override String get shuffleStartsFromBeginningDescription => 'Rozpoczynaj każdy odcinek od początku przy odtwarzaniu losowym zamiast wznawiać';
+	@override String get playNextCountdown => 'Odliczanie do następnego odcinka';
+	@override String get playNextCountdownImmediate => 'Odtwarzaj natychmiast';
+	@override String get skipIntroMode => 'Pomijanie czołówki';
+	@override String get skipIntroModeOffDescription => 'Odtwarzaj czołówki normalnie, bez przycisku pomijania';
+	@override String get skipIntroModeButtonDescription => 'Pokazuj przycisk pomijania, gdy zaczyna się czołówka';
+	@override String get skipIntroModeAutoDescription => 'Pomijaj czołówki automatycznie po opóźnieniu poniżej';
+	@override String get skipCreditsMode => 'Pomijanie napisów końcowych';
+	@override String get skipCreditsModeOffDescription => 'Odtwarzaj napisy końcowe normalnie, bez przycisku pomijania';
+	@override String get skipCreditsModeButtonDescription => 'Pokazuj przycisk pomijania, gdy zaczynają się napisy końcowe';
+	@override String get skipCreditsModeAutoDescription => 'Pomijaj napisy końcowe automatycznie i odtwarzaj następny odcinek';
+	@override String get skipMarkerModeOff => 'Wył.';
+	@override String get skipMarkerModeButton => 'Pokaż przycisk';
+	@override String get skipMarkerModeAuto => 'Automatycznie';
+	@override String get companionRemoteServerStartFailed => 'Nie udało się uruchomić serwera zdalnego sterowania';
+	@override String get companionRemoteServerStopFailed => 'Nie udało się zatrzymać serwera zdalnego sterowania';
+	@override String get audioPassthroughOverriddenByNormalization => 'Wyłączone, gdy włączona jest normalizacja głośności';
+	@override String get hdrSdrConversion => 'Konwersja HDR do SDR';
+	@override String get hdrSdrConversionDescription => 'Wybierz, co konwertuje wideo HDR, gdy wyświetlacz nie obsługuje HDR.';
+	@override String get hdrSdrConversionAuto => 'Automatycznie';
+	@override String get hdrSdrConversionAutoDescription => 'Urządzenie na Androidzie 9 i nowszym, odtwarzacz na starszych wersjach';
+	@override String get hdrSdrConversionDevice => 'Urządzenie';
+	@override String get hdrSdrConversionDeviceDescription => 'Konwersję wykonuje sprzęt wideo urządzenia. Najszybciej, ale kolory zależą od urządzenia';
+	@override String get hdrSdrConversionPlayer => 'Odtwarzacz';
+	@override String get hdrSdrConversionPlayerDescription => 'Konwersję wykonuje odtwarzacz. Spójne kolory, ale 4K może się zacinać na słabszych przystawkach TV';
+	@override String get deinterlace => 'Usuwanie przeplotu';
+	@override String get deinterlaceDescription => 'Usuwa artefakty grzebienia z wideo z przeplotem (tylko odtwarzacz mpv)';
+	@override String get general => 'Ogólne';
+	@override String get generalDescription => 'Język, uruchamianie i zachowanie okna';
+	@override String get languageAndRegion => 'Język i region';
+	@override String get startup => 'Uruchamianie';
+	@override String get libraryAndCards => 'Biblioteka i karty';
+	@override String get liveTv => 'TV na żywo';
+	@override String get videoAndDisplay => 'Wideo i ekran';
+	@override String get audio => 'Audio';
+	@override String get quality => 'Jakość';
+	@override String get subtitles => 'Napisy';
+	@override String get gestures => 'Gesty';
+	@override String get gestureBrightnessSwipe => 'Zmiana jasności przesunięciem';
+	@override String get gestureBrightnessSwipeDescription => 'Przesuwaj palcem w górę lub w dół na lewej krawędzi, aby regulować jasność';
+	@override String get gestureVolumeSwipe => 'Zmiana głośności przesunięciem';
+	@override String get gestureVolumeSwipeDescription => 'Przesuwaj palcem w górę lub w dół na prawej krawędzi, aby regulować głośność';
+	@override String get gesturePinchToZoom => 'Powiększanie ściskaniem';
+	@override String get gesturePinchToZoomDescription => 'Ściśnij wideo palcami, aby powiększyć lub pomniejszyć';
+	@override String get rememberBrightnessLevel => 'Zapamiętaj poziom jasności';
+	@override String get rememberBrightnessLevelDescription => 'Rozpoczynaj odtwarzanie z jasnością ustawioną ostatnim przesunięciem';
+	@override String get controls => 'Sterowanie';
+	@override String get packedStereoUi => '3D Playback UI';
 }
 
 // Path: search
@@ -877,6 +878,7 @@ class _Translations$videoControls$pl extends Translations$videoControls$en {
 	@override String get subtitleUnavailableFallback => 'Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów';
 	@override String get pipButton => 'Tryb obraz w obrazie';
 	@override String get aspectRatioButton => 'Proporcje';
+	@override String get packedStereoSizingLocked => 'Cannot change while playing 3D source';
 	@override String get ambientLighting => 'Oświetlenie otoczenia';
 	@override String get fullscreenButton => 'Wejdź w pełny ekran';
 	@override String get exitFullscreenButton => 'Wyjdź z pełnego ekranu';
@@ -892,7 +894,6 @@ class _Translations$videoControls$pl extends Translations$videoControls$en {
 	@override String get pipFailed => 'Nie udało się uruchomić trybu obraz w obrazie';
 	@override String get screenshotSaved => 'Zrzut ekranu zapisany';
 	@override String zoomPercent({required Object percent}) => 'Powiększenie ${percent}%';
-	@override String volumePercent({required Object percent}) => 'Głośność ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$pl pipErrors = _Translations$videoControls$pipErrors$pl._(_root);
 	@override String get chapters => 'Rozdziały';
 	@override String get noChaptersAvailable => 'Brak dostępnych rozdziałów';
@@ -915,6 +916,7 @@ class _Translations$videoControls$pl extends Translations$videoControls$en {
 	@override String get osdSubtitlesOff => 'Napisy: wył.';
 	@override String osdSubtitles({required Object track}) => 'Napisy: ${track}';
 	@override String osdAudio({required Object track}) => 'Audio: ${track}';
+	@override String volumePercent({required Object percent}) => 'Głośność ${percent}%';
 }
 
 // Path: messages
@@ -1159,49 +1161,6 @@ class _Translations$connections$pl extends Translations$connections$en {
 	@override String get signInAgain => 'Zaloguj się ponownie';
 	@override String editMediaBrowserTitle({required Object product}) => 'Edytuj połączenie z ${product}';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. Plezy będzie używać osiągalnego adresu URL o najniższym opóźnieniu.';
-}
-
-// Path: accountPreferences
-class _Translations$accountPreferences$pl extends Translations$accountPreferences$en {
-	_Translations$accountPreferences$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get sectionTitle => 'Preferencje konta';
-	@override String hubSubtitleSingle({required Object account}) => 'Opcje audio, napisów i biblioteki zapisane na koncie ${account}';
-	@override String hubSubtitleMultiple({required Object count}) => 'Opcje audio, napisów i biblioteki zapisane na ${count} kontach';
-	@override String get pickAccount => 'Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.';
-	@override String get storedOnAccount => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.';
-	@override String get noAccounts => 'Brak kont do skonfigurowania';
-	@override String get noAccountsHint => 'Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.';
-	@override String get unavailable => 'Nie można połączyć się z tym kontem';
-	@override String get loadFailed => 'Nie udało się wczytać tych preferencji';
-	@override String get noPreference => 'Brak preferencji';
-	@override String get notSet => 'Nie ustawiono';
-	@override late final _Translations$accountPreferences$groups$pl groups = _Translations$accountPreferences$groups$pl._(_root);
-	@override String get preferredAudioLanguage => 'Preferowany język audio';
-	@override String get autoSelectAudio => 'Wybieraj audio według języka';
-	@override String get autoSelectAudioDescription => 'Ustawienie „Wył.” pozostawia ścieżkę audio, którą plik oznacza jako domyślną.';
-	@override String get preferredSubtitleLanguage => 'Preferowany język napisów';
-	@override String get subtitleMode => 'Włączanie napisów';
-	@override late final _Translations$accountPreferences$subtitleModes$pl subtitleModes = _Translations$accountPreferences$subtitleModes$pl._(_root);
-	@override String get subtitleAccessibility => 'Napisy SDH';
-	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$pl subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$pl._(_root);
-	@override String get forcedSubtitles => 'Wymuszone napisy';
-	@override late final _Translations$accountPreferences$forcedSubtitleOptions$pl forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$pl._(_root);
-	@override String get displayMissingEpisodes => 'Pokaż brakujące odcinki';
-	@override String get displayMissingEpisodesDescription => 'Wyświetlaj odcinki, które serwer zna, ale dla których nie ma pliku.';
-	@override String get hidePlayedInLatest => 'Ukrywaj obejrzane pozycje w sekcji Ostatnio dodane';
-	@override String get hidePlayedInLatestDescription => 'Pomijaj pozycje, które już obejrzałeś, w wierszach „Ostatnio dodane” serwera.';
-	@override String get displayCollectionsView => 'Pokaż widok „Kolekcje”';
-	@override String get displayCollectionsViewDescription => 'Pokazuj widok kolekcji serwera obok Twoich bibliotek.';
-	@override String get rewatchingInNextUp => 'Zachowuj ponownie oglądane seriale w sekcji „Następny odcinek”';
-	@override String get rewatchingInNextUpDescription => 'Gdy skończysz serial i zaczniesz go oglądać ponownie, sekcja „Następny odcinek” podąży za ponownym oglądaniem zamiast usuwać serial.';
-	@override String get watchedIndicator => 'Wskaźniki obejrzanych';
-	@override late final _Translations$accountPreferences$watchedIndicatorOptions$pl watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$pl._(_root);
-	@override String get mediaReviewsVisibility => 'Oceny i recenzje';
-	@override late final _Translations$accountPreferences$mediaReviewsOptions$pl mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$pl._(_root);
 }
 
 // Path: discover
@@ -2317,6 +2276,49 @@ class _Translations$addServer$pl extends Translations$addServer$en {
 	@override String redirectUnsupportedEnterFinal({required Object product}) => 'Serwer przekierował do nieobsługiwanego adresu URL. Wprowadź bezpośrednio docelowy adres URL serwera ${product}.';
 }
 
+// Path: accountPreferences
+class _Translations$accountPreferences$pl extends Translations$accountPreferences$en {
+	_Translations$accountPreferences$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Preferencje konta';
+	@override String hubSubtitleSingle({required Object account}) => 'Opcje audio, napisów i biblioteki zapisane na koncie ${account}';
+	@override String hubSubtitleMultiple({required Object count}) => 'Opcje audio, napisów i biblioteki zapisane na ${count} kontach';
+	@override String get pickAccount => 'Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.';
+	@override String get storedOnAccount => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.';
+	@override String get noAccounts => 'Brak kont do skonfigurowania';
+	@override String get noAccountsHint => 'Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.';
+	@override String get unavailable => 'Nie można połączyć się z tym kontem';
+	@override String get loadFailed => 'Nie udało się wczytać tych preferencji';
+	@override String get noPreference => 'Brak preferencji';
+	@override String get notSet => 'Nie ustawiono';
+	@override late final _Translations$accountPreferences$groups$pl groups = _Translations$accountPreferences$groups$pl._(_root);
+	@override String get preferredAudioLanguage => 'Preferowany język audio';
+	@override String get autoSelectAudio => 'Wybieraj audio według języka';
+	@override String get autoSelectAudioDescription => 'Ustawienie „Wył.” pozostawia ścieżkę audio, którą plik oznacza jako domyślną.';
+	@override String get preferredSubtitleLanguage => 'Preferowany język napisów';
+	@override String get subtitleMode => 'Włączanie napisów';
+	@override late final _Translations$accountPreferences$subtitleModes$pl subtitleModes = _Translations$accountPreferences$subtitleModes$pl._(_root);
+	@override String get subtitleAccessibility => 'Napisy SDH';
+	@override late final _Translations$accountPreferences$subtitleAccessibilityOptions$pl subtitleAccessibilityOptions = _Translations$accountPreferences$subtitleAccessibilityOptions$pl._(_root);
+	@override String get forcedSubtitles => 'Wymuszone napisy';
+	@override late final _Translations$accountPreferences$forcedSubtitleOptions$pl forcedSubtitleOptions = _Translations$accountPreferences$forcedSubtitleOptions$pl._(_root);
+	@override String get displayMissingEpisodes => 'Pokaż brakujące odcinki';
+	@override String get displayMissingEpisodesDescription => 'Wyświetlaj odcinki, które serwer zna, ale dla których nie ma pliku.';
+	@override String get hidePlayedInLatest => 'Ukrywaj obejrzane pozycje w sekcji Ostatnio dodane';
+	@override String get hidePlayedInLatestDescription => 'Pomijaj pozycje, które już obejrzałeś, w wierszach „Ostatnio dodane” serwera.';
+	@override String get displayCollectionsView => 'Pokaż widok „Kolekcje”';
+	@override String get displayCollectionsViewDescription => 'Pokazuj widok kolekcji serwera obok Twoich bibliotek.';
+	@override String get rewatchingInNextUp => 'Zachowuj ponownie oglądane seriale w sekcji „Następny odcinek”';
+	@override String get rewatchingInNextUpDescription => 'Gdy skończysz serial i zaczniesz go oglądać ponownie, sekcja „Następny odcinek” podąży za ponownym oglądaniem zamiast usuwać serial.';
+	@override String get watchedIndicator => 'Wskaźniki obejrzanych';
+	@override late final _Translations$accountPreferences$watchedIndicatorOptions$pl watchedIndicatorOptions = _Translations$accountPreferences$watchedIndicatorOptions$pl._(_root);
+	@override String get mediaReviewsVisibility => 'Oceny i recenzje';
+	@override late final _Translations$accountPreferences$mediaReviewsOptions$pl mediaReviewsOptions = _Translations$accountPreferences$mediaReviewsOptions$pl._(_root);
+}
+
 // Path: common.ratingSource
 class _Translations$common$ratingSource$pl extends Translations$common$ratingSource$en {
 	_Translations$common$ratingSource$pl._(TranslationsPl root) : this._root = root, super.internal(root);
@@ -2407,89 +2409,6 @@ class _Translations$videoControls$pipErrors$pl extends Translations$videoControl
 	@override String get failed => 'Nie udało się uruchomić trybu obraz w obrazie';
 	@override String get prepareFailed => 'Nie udało się przygotować trybu obraz w obrazie';
 	@override String unknown({required Object error}) => 'Wystąpił błąd: ${error}';
-}
-
-// Path: accountPreferences.groups
-class _Translations$accountPreferences$groups$pl extends Translations$accountPreferences$groups$en {
-	_Translations$accountPreferences$groups$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get audioAndSubtitles => 'Audio i napisy';
-	@override String get libraryDisplay => 'Biblioteka';
-	@override String get personalMedia => 'Osobiste multimedia';
-}
-
-// Path: accountPreferences.subtitleModes
-class _Translations$accountPreferences$subtitleModes$pl extends Translations$accountPreferences$subtitleModes$en {
-	_Translations$accountPreferences$subtitleModes$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Wybór ręczny';
-	@override String get noneDescription => 'Nigdy nie włączaj napisów automatycznie.';
-	@override String get defaultMode => 'Kieruj się flagami ścieżki';
-	@override String get defaultModeDescription => 'Używaj flag domyślna i wymuszona zapisanych na każdej ścieżce napisów.';
-	@override String get always => 'Zawsze włączone';
-	@override String get alwaysDescription => 'Włączaj ścieżkę napisów w preferowanym języku, gdy tylko istnieje.';
-	@override String get onlyForced => 'Tylko wymuszone napisy';
-	@override String get onlyForcedDescription => 'Wczytuj tylko ścieżki oznaczone jako wymuszone.';
-	@override String get smart => 'Wyświetlane przy dźwięku w obcym języku';
-	@override String get smartDescription => 'Włączaj napisy tylko wtedy, gdy dźwięk jest w innym języku.';
-}
-
-// Path: accountPreferences.subtitleAccessibilityOptions
-class _Translations$accountPreferences$subtitleAccessibilityOptions$pl extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
-	_Translations$accountPreferences$subtitleAccessibilityOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get preferNonSdh => 'Preferuj napisy bez SDH';
-	@override String get preferSdh => 'Preferuj napisy SDH';
-	@override String get onlySdh => 'Tylko napisy SDH';
-	@override String get onlyNonSdh => 'Tylko napisy bez SDH';
-}
-
-// Path: accountPreferences.forcedSubtitleOptions
-class _Translations$accountPreferences$forcedSubtitleOptions$pl extends Translations$accountPreferences$forcedSubtitleOptions$en {
-	_Translations$accountPreferences$forcedSubtitleOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get preferNonForced => 'Preferuj niewymuszone napisy';
-	@override String get preferForced => 'Preferuj wymuszone napisy';
-	@override String get onlyForced => 'Tylko wymuszone napisy';
-	@override String get onlyNonForced => 'Tylko niewymuszone napisy';
-}
-
-// Path: accountPreferences.watchedIndicatorOptions
-class _Translations$accountPreferences$watchedIndicatorOptions$pl extends Translations$accountPreferences$watchedIndicatorOptions$en {
-	_Translations$accountPreferences$watchedIndicatorOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get none => 'Nigdy';
-	@override String get moviesAndShows => 'Filmy i seriale TV';
-	@override String get movies => 'Tylko filmy';
-	@override String get shows => 'Tylko seriale TV';
-}
-
-// Path: accountPreferences.mediaReviewsOptions
-class _Translations$accountPreferences$mediaReviewsOptions$pl extends Translations$accountPreferences$mediaReviewsOptions$en {
-	_Translations$accountPreferences$mediaReviewsOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get usersAndCritics => 'Użytkownicy i krytycy';
-	@override String get usersOnly => 'Tylko użytkownicy';
-	@override String get criticsOnly => 'Tylko krytycy';
-	@override String get nobody => 'Ukryte';
 }
 
 // Path: libraries.tabs
@@ -3050,6 +2969,89 @@ class _Translations$services$libraryFilter$pl extends Translations$services$libr
 	@override String get noLibraries => 'Brak dostępnych bibliotek';
 }
 
+// Path: accountPreferences.groups
+class _Translations$accountPreferences$groups$pl extends Translations$accountPreferences$groups$en {
+	_Translations$accountPreferences$groups$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioAndSubtitles => 'Audio i napisy';
+	@override String get libraryDisplay => 'Biblioteka';
+	@override String get personalMedia => 'Osobiste multimedia';
+}
+
+// Path: accountPreferences.subtitleModes
+class _Translations$accountPreferences$subtitleModes$pl extends Translations$accountPreferences$subtitleModes$en {
+	_Translations$accountPreferences$subtitleModes$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Wybór ręczny';
+	@override String get noneDescription => 'Nigdy nie włączaj napisów automatycznie.';
+	@override String get defaultMode => 'Kieruj się flagami ścieżki';
+	@override String get defaultModeDescription => 'Używaj flag domyślna i wymuszona zapisanych na każdej ścieżce napisów.';
+	@override String get always => 'Zawsze włączone';
+	@override String get alwaysDescription => 'Włączaj ścieżkę napisów w preferowanym języku, gdy tylko istnieje.';
+	@override String get onlyForced => 'Tylko wymuszone napisy';
+	@override String get onlyForcedDescription => 'Wczytuj tylko ścieżki oznaczone jako wymuszone.';
+	@override String get smart => 'Wyświetlane przy dźwięku w obcym języku';
+	@override String get smartDescription => 'Włączaj napisy tylko wtedy, gdy dźwięk jest w innym języku.';
+}
+
+// Path: accountPreferences.subtitleAccessibilityOptions
+class _Translations$accountPreferences$subtitleAccessibilityOptions$pl extends Translations$accountPreferences$subtitleAccessibilityOptions$en {
+	_Translations$accountPreferences$subtitleAccessibilityOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonSdh => 'Preferuj napisy bez SDH';
+	@override String get preferSdh => 'Preferuj napisy SDH';
+	@override String get onlySdh => 'Tylko napisy SDH';
+	@override String get onlyNonSdh => 'Tylko napisy bez SDH';
+}
+
+// Path: accountPreferences.forcedSubtitleOptions
+class _Translations$accountPreferences$forcedSubtitleOptions$pl extends Translations$accountPreferences$forcedSubtitleOptions$en {
+	_Translations$accountPreferences$forcedSubtitleOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get preferNonForced => 'Preferuj niewymuszone napisy';
+	@override String get preferForced => 'Preferuj wymuszone napisy';
+	@override String get onlyForced => 'Tylko wymuszone napisy';
+	@override String get onlyNonForced => 'Tylko niewymuszone napisy';
+}
+
+// Path: accountPreferences.watchedIndicatorOptions
+class _Translations$accountPreferences$watchedIndicatorOptions$pl extends Translations$accountPreferences$watchedIndicatorOptions$en {
+	_Translations$accountPreferences$watchedIndicatorOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get none => 'Nigdy';
+	@override String get moviesAndShows => 'Filmy i seriale TV';
+	@override String get movies => 'Tylko filmy';
+	@override String get shows => 'Tylko seriale TV';
+}
+
+// Path: accountPreferences.mediaReviewsOptions
+class _Translations$accountPreferences$mediaReviewsOptions$pl extends Translations$accountPreferences$mediaReviewsOptions$en {
+	_Translations$accountPreferences$mediaReviewsOptions$pl._(TranslationsPl root) : this._root = root, super.internal(root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get usersAndCritics => 'Użytkownicy i krytycy';
+	@override String get usersOnly => 'Tylko użytkownicy';
+	@override String get criticsOnly => 'Tylko krytycy';
+	@override String get nobody => 'Ukryte';
+}
+
 /// The flat map containing all translations for locale <pl>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -3187,10 +3189,6 @@ extension on TranslationsPl {
 			'settings.displayScale' => 'Skalowanie',
 			'settings.compact' => 'Kompaktowy',
 			'settings.comfortable' => 'Wygodny',
-			'settings.gridSpacing' => 'Odstępy siatki',
-			'settings.gridSpacingTight' => 'Ciasny',
-			'settings.gridSpacingNormal' => 'Normalny',
-			'settings.gridSpacingSpacious' => 'Przestronny',
 			'settings.tvCornerSpotlightBackdrop' => 'Tło wyróżnionej pozycji w rogu',
 			'settings.tvCornerSpotlightBackdropDescription' => 'Wyświetlaj grafikę wyróżnionej pozycji w prawym górnym rogu zamiast na całym ekranie',
 			'settings.viewMode' => 'Tryb widoku',
@@ -3213,8 +3211,6 @@ extension on TranslationsPl {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Panel boczny jest rozwinięty, a obszar treści dostosowuje się',
 			'settings.showUnwatchedCount' => 'Pokaż liczbę nieobejrzanych',
 			'settings.showUnwatchedCountDescription' => 'Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach',
-			'settings.showWatchedIndicators' => 'Pokaż wskaźniki obejrzenia',
-			'settings.showWatchedIndicatorsDescription' => 'Wyświetlaj znacznik na obejrzanych filmach, serialach i odcinkach',
 			'settings.showEpisodeNumberOnCards' => 'Pokaż numer odcinka na kartach',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Pokazuj numer sezonu i odcinka na kartach odcinków',
 			'settings.showSeasonPostersOnTabs' => 'Pokaż plakaty sezonów na zakładkach',
@@ -3242,13 +3238,6 @@ extension on TranslationsPl {
 			'settings.playbackBufferExtraLarge' => 'Bardzo duży',
 			'settings.playbackBufferDescription' => 'Buforuje więcej w przypadku niestabilnych połączeń. Ograniczony również przez rozmiar bufora.',
 			'settings.defaultQualityTitle' => 'Domyślna jakość',
-			'settings.cellularQualityTitle' => 'Domyślna jakość w sieci komórkowej',
-			'settings.cellularQualitySameAsDefault' => 'Taka sama jak domyślna jakość',
-			'settings.directPlayCoveredQuality' => 'Odtwarzaj mniejsze wideo w oryginalnej jakości',
-			'settings.directPlayCoveredQualityDescription' => 'Odtwarzaj bezpośrednio wideo mieszczące się już w limicie jakości zamiast je transkodować',
-			'settings.videoCodecs' => 'Kodeki wideo',
-			'settings.videoCodecsDescription' => 'Niezaznaczone kodeki są transkodowane przez serwer',
-			'settings.videoCodecsAlwaysAccepted' => 'Zawsze akceptowany',
 			'settings.musicQualityTitle' => 'Jakość muzyki',
 			'settings.subtitleStyling' => 'Styl napisów',
 			'settings.subtitleStylingDescription' => 'Dostosuj wygląd napisów',
@@ -3260,11 +3249,8 @@ extension on TranslationsPl {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minut',
 			'settings.rememberTrackSelections' => 'Zapamiętuj wybór ścieżek dla każdego serialu i filmu',
 			'settings.rememberTrackSelectionsDescription' => 'Zapamiętuj wybór ścieżki dźwiękowej i napisów dla każdego tytułu',
-			'settings.rememberTrackSelectionsBackendRule' => 'Plex zapisuje każdy wybór na serwerze dla danego pliku; Jellyfin dodatkowo włącza opcję „Zapamiętaj wybory” na koncie; Emby nie jest obsługiwany',
 			'settings.followServerTrackSelections' => 'Używaj wyboru ścieżek z serwera dla każdego odcinka',
 			'settings.followServerTrackSelectionsDescription' => 'Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór',
-			'settings.resumeMusicOnLaunch' => 'Zapamiętaj sesję muzyczną',
-			'settings.resumeMusicOnLaunchDescription' => 'Przy uruchomieniu aplikacji otwieraj ostatni utwór wstrzymany w miejscu, w którym przerwano',
 			'settings.showChapterMarkersOnTimeline' => 'Pokaż znaczniki rozdziałów na pasku przewijania',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Podziel pasek przewijania na granicach rozdziałów',
 			'settings.specialsOrdering' => 'Specjale w kolejności odcinków',
@@ -3318,24 +3304,6 @@ extension on TranslationsPl {
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Skrót jest już przypisany do ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Skrót zaktualizowany dla ${action}',
 			'settings.saveFailed' => 'Nie udało się zapisać zmian. Spróbuj ponownie.',
-			'settings.autoPlayAndSkip' => 'Auto-odtwarzanie i pomijanie',
-			'settings.autoPlayNextEpisode' => 'Automatycznie odtwarzaj następny odcinek',
-			'settings.autoPlayNextEpisodeDescription' => 'Automatycznie uruchamiaj następny odcinek, gdy bieżący się skończy',
-			'settings.shuffleStartsFromBeginning' => 'Odtwarzanie losowe od początku',
-			'settings.shuffleStartsFromBeginningDescription' => 'Rozpoczynaj każdy odcinek od początku przy odtwarzaniu losowym zamiast wznawiać',
-			'settings.playNextCountdown' => 'Odliczanie do następnego odcinka',
-			'settings.playNextCountdownImmediate' => 'Odtwarzaj natychmiast',
-			'settings.skipIntroMode' => 'Pomijanie czołówki',
-			'settings.skipIntroModeOffDescription' => 'Odtwarzaj czołówki normalnie, bez przycisku pomijania',
-			'settings.skipIntroModeButtonDescription' => 'Pokazuj przycisk pomijania, gdy zaczyna się czołówka',
-			'settings.skipIntroModeAutoDescription' => 'Pomijaj czołówki automatycznie po opóźnieniu poniżej',
-			'settings.skipCreditsMode' => 'Pomijanie napisów końcowych',
-			'settings.skipCreditsModeOffDescription' => 'Odtwarzaj napisy końcowe normalnie, bez przycisku pomijania',
-			'settings.skipCreditsModeButtonDescription' => 'Pokazuj przycisk pomijania, gdy zaczynają się napisy końcowe',
-			'settings.skipCreditsModeAutoDescription' => 'Pomijaj napisy końcowe automatycznie i odtwarzaj następny odcinek',
-			'settings.skipMarkerModeOff' => 'Wył.',
-			'settings.skipMarkerModeButton' => 'Pokaż przycisk',
-			'settings.skipMarkerModeAuto' => 'Automatycznie',
 			'settings.forceSkipMarkerFallback' => 'Wymuś znaczniki awaryjne',
 			'settings.forceSkipMarkerFallbackDescription' => 'Używaj wzorców tytułów rozdziałów, nawet gdy Plex ma znaczniki',
 			'settings.autoSkipDelay' => 'Opóźnienie automatycznego pomijania',
@@ -3372,8 +3340,6 @@ extension on TranslationsPl {
 			'settings.manageLibrariesDescription' => 'Zmieniaj kolejność i ukrywaj biblioteki',
 			'settings.companionRemoteServer' => 'Serwer zdalnego sterowania',
 			'settings.companionRemoteServerDescription' => 'Pozwól urządzeniom mobilnym w sieci sterować tą aplikacją',
-			'settings.companionRemoteServerStartFailed' => 'Nie udało się uruchomić serwera zdalnego sterowania',
-			'settings.companionRemoteServerStopFailed' => 'Nie udało się zatrzymać serwera zdalnego sterowania',
 			'settings.autoPip' => 'Automatyczny obraz w obrazie',
 			'settings.autoPipDescription' => 'Automatycznie włączaj tryb obrazu w obrazie po opuszczeniu aplikacji podczas odtwarzania',
 			'settings.matchContentFrameRate' => 'Dopasuj częstotliwość klatek do treści',
@@ -3390,7 +3356,6 @@ extension on TranslationsPl {
 			'settings.audioPassthrough' => 'Przekazywanie dźwięku',
 			'settings.audioPassthroughDescription' => 'Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.',
-			'settings.audioPassthroughOverriddenByNormalization' => 'Wyłączone, gdy włączona jest normalizacja głośności',
 			'settings.downmixCenterBoost' => 'Wzmocnienie kanału centralnego',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Wzmocnienie (dB)',
@@ -3407,16 +3372,6 @@ extension on TranslationsPl {
 			'settings.dvConversionNativeDescription' => 'Wymuś natywne DV7 i wyłącz ponowną próbę konwersji DV',
 			'settings.dvConversionDv81Description' => 'Wymuś wbudowaną konwersję RPU do profilu Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Usuń warstwy Dolby Vision RPU/EL i przedstaw zwykłe HEVC',
-			'settings.hdrSdrConversion' => 'Konwersja HDR do SDR',
-			'settings.hdrSdrConversionDescription' => 'Wybierz, co konwertuje wideo HDR, gdy wyświetlacz nie obsługuje HDR.',
-			'settings.hdrSdrConversionAuto' => 'Automatycznie',
-			'settings.hdrSdrConversionAutoDescription' => 'Urządzenie na Androidzie 9 i nowszym, odtwarzacz na starszych wersjach',
-			'settings.hdrSdrConversionDevice' => 'Urządzenie',
-			'settings.hdrSdrConversionDeviceDescription' => 'Konwersję wykonuje sprzęt wideo urządzenia. Najszybciej, ale kolory zależą od urządzenia',
-			'settings.hdrSdrConversionPlayer' => 'Odtwarzacz',
-			'settings.hdrSdrConversionPlayerDescription' => 'Konwersję wykonuje odtwarzacz. Spójne kolory, ale 4K może się zacinać na słabszych przystawkach TV',
-			'settings.deinterlace' => 'Usuwanie przeplotu',
-			'settings.deinterlaceDescription' => 'Usuwa artefakty grzebienia z wideo z przeplotem (tylko odtwarzacz mpv)',
 			'settings.requireProfileSelectionOnOpen' => 'Pytaj o profil przy otwarciu aplikacji',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Pokaż wybór profilu za każdym razem, gdy aplikacja jest otwierana',
 			'settings.forceTvMode' => 'Wymuś tryb TV',
@@ -3434,33 +3389,13 @@ extension on TranslationsPl {
 			'settings.showExploreTabDescription' => 'Wyświetlaj kartę Odkryj z treściami z Plex Discover i połączonych serwisów śledzących',
 			'settings.liveTvDefaultFavorites' => 'Domyślnie ulubione kanały',
 			'settings.liveTvDefaultFavoritesDescription' => 'Pokaż tylko ulubione kanały po otwarciu telewizji na żywo',
-			'settings.general' => 'Ogólne',
-			'settings.generalDescription' => 'Język, uruchamianie i zachowanie okna',
-			'settings.languageAndRegion' => 'Język i region',
-			'settings.startup' => 'Uruchamianie',
 			'settings.display' => 'Ekran',
-			'settings.libraryAndCards' => 'Biblioteka i karty',
 			'settings.homeScreen' => 'Ekran główny',
 			'settings.navigation' => 'Nawigacja',
 			'settings.window' => 'Okno',
-			'settings.liveTv' => 'TV na żywo',
 			'settings.player' => 'Odtwarzacz',
-			'settings.videoAndDisplay' => 'Wideo i ekran',
-			'settings.audio' => 'Audio',
-			'settings.quality' => 'Jakość',
-			'settings.subtitles' => 'Napisy',
 			'settings.seekAndTiming' => 'Przewijanie i czas',
 			'settings.behavior' => 'Zachowanie',
-			'settings.gestures' => 'Gesty',
-			'settings.gestureBrightnessSwipe' => 'Zmiana jasności przesunięciem',
-			'settings.gestureBrightnessSwipeDescription' => 'Przesuwaj palcem w górę lub w dół na lewej krawędzi, aby regulować jasność',
-			'settings.gestureVolumeSwipe' => 'Zmiana głośności przesunięciem',
-			'settings.gestureVolumeSwipeDescription' => 'Przesuwaj palcem w górę lub w dół na prawej krawędzi, aby regulować głośność',
-			'settings.gesturePinchToZoom' => 'Powiększanie ściskaniem',
-			'settings.gesturePinchToZoomDescription' => 'Ściśnij wideo palcami, aby powiększyć lub pomniejszyć',
-			'settings.rememberBrightnessLevel' => 'Zapamiętaj poziom jasności',
-			'settings.rememberBrightnessLevelDescription' => 'Rozpoczynaj odtwarzanie z jasnością ustawioną ostatnim przesunięciem',
-			'settings.controls' => 'Sterowanie',
 			'settings.rememberPlayerChanges' => 'Zapamiętuj zmiany odtwarzacza',
 			'settings.rememberPlayerChangesDescription' => 'Miejsce zapisywania i ponownego stosowania zmian dokonanych podczas odtwarzania',
 			'settings.scopePlaybackSpeed' => 'Prędkość odtwarzania',
@@ -3472,6 +3407,74 @@ extension on TranslationsPl {
 			'settings.playerScopeLibrary' => 'Na bibliotekę',
 			'settings.playerScopeTitle' => 'Na serial lub film',
 			'settings.exportDialogTitle' => 'Eksport ustawień Plezy',
+			'settings.gridSpacing' => 'Odstępy siatki',
+			'settings.gridSpacingTight' => 'Ciasny',
+			'settings.gridSpacingNormal' => 'Normalny',
+			'settings.gridSpacingSpacious' => 'Przestronny',
+			'settings.showWatchedIndicators' => 'Pokaż wskaźniki obejrzenia',
+			'settings.showWatchedIndicatorsDescription' => 'Wyświetlaj znacznik na obejrzanych filmach, serialach i odcinkach',
+			'settings.cellularQualityTitle' => 'Domyślna jakość w sieci komórkowej',
+			'settings.cellularQualitySameAsDefault' => 'Taka sama jak domyślna jakość',
+			'settings.directPlayCoveredQuality' => 'Odtwarzaj mniejsze wideo w oryginalnej jakości',
+			'settings.directPlayCoveredQualityDescription' => 'Odtwarzaj bezpośrednio wideo mieszczące się już w limicie jakości zamiast je transkodować',
+			'settings.videoCodecs' => 'Kodeki wideo',
+			'settings.videoCodecsDescription' => 'Niezaznaczone kodeki są transkodowane przez serwer',
+			'settings.videoCodecsAlwaysAccepted' => 'Zawsze akceptowany',
+			'settings.rememberTrackSelectionsBackendRule' => 'Plex zapisuje każdy wybór na serwerze dla danego pliku; Jellyfin dodatkowo włącza opcję „Zapamiętaj wybory” na koncie; Emby nie jest obsługiwany',
+			'settings.resumeMusicOnLaunch' => 'Zapamiętaj sesję muzyczną',
+			'settings.resumeMusicOnLaunchDescription' => 'Przy uruchomieniu aplikacji otwieraj ostatni utwór wstrzymany w miejscu, w którym przerwano',
+			'settings.autoPlayAndSkip' => 'Auto-odtwarzanie i pomijanie',
+			'settings.autoPlayNextEpisode' => 'Automatycznie odtwarzaj następny odcinek',
+			'settings.autoPlayNextEpisodeDescription' => 'Automatycznie uruchamiaj następny odcinek, gdy bieżący się skończy',
+			'settings.shuffleStartsFromBeginning' => 'Odtwarzanie losowe od początku',
+			'settings.shuffleStartsFromBeginningDescription' => 'Rozpoczynaj każdy odcinek od początku przy odtwarzaniu losowym zamiast wznawiać',
+			'settings.playNextCountdown' => 'Odliczanie do następnego odcinka',
+			'settings.playNextCountdownImmediate' => 'Odtwarzaj natychmiast',
+			'settings.skipIntroMode' => 'Pomijanie czołówki',
+			'settings.skipIntroModeOffDescription' => 'Odtwarzaj czołówki normalnie, bez przycisku pomijania',
+			'settings.skipIntroModeButtonDescription' => 'Pokazuj przycisk pomijania, gdy zaczyna się czołówka',
+			'settings.skipIntroModeAutoDescription' => 'Pomijaj czołówki automatycznie po opóźnieniu poniżej',
+			'settings.skipCreditsMode' => 'Pomijanie napisów końcowych',
+			'settings.skipCreditsModeOffDescription' => 'Odtwarzaj napisy końcowe normalnie, bez przycisku pomijania',
+			'settings.skipCreditsModeButtonDescription' => 'Pokazuj przycisk pomijania, gdy zaczynają się napisy końcowe',
+			'settings.skipCreditsModeAutoDescription' => 'Pomijaj napisy końcowe automatycznie i odtwarzaj następny odcinek',
+			'settings.skipMarkerModeOff' => 'Wył.',
+			'settings.skipMarkerModeButton' => 'Pokaż przycisk',
+			'settings.skipMarkerModeAuto' => 'Automatycznie',
+			'settings.companionRemoteServerStartFailed' => 'Nie udało się uruchomić serwera zdalnego sterowania',
+			'settings.companionRemoteServerStopFailed' => 'Nie udało się zatrzymać serwera zdalnego sterowania',
+			'settings.audioPassthroughOverriddenByNormalization' => 'Wyłączone, gdy włączona jest normalizacja głośności',
+			'settings.hdrSdrConversion' => 'Konwersja HDR do SDR',
+			'settings.hdrSdrConversionDescription' => 'Wybierz, co konwertuje wideo HDR, gdy wyświetlacz nie obsługuje HDR.',
+			'settings.hdrSdrConversionAuto' => 'Automatycznie',
+			'settings.hdrSdrConversionAutoDescription' => 'Urządzenie na Androidzie 9 i nowszym, odtwarzacz na starszych wersjach',
+			'settings.hdrSdrConversionDevice' => 'Urządzenie',
+			'settings.hdrSdrConversionDeviceDescription' => 'Konwersję wykonuje sprzęt wideo urządzenia. Najszybciej, ale kolory zależą od urządzenia',
+			'settings.hdrSdrConversionPlayer' => 'Odtwarzacz',
+			'settings.hdrSdrConversionPlayerDescription' => 'Konwersję wykonuje odtwarzacz. Spójne kolory, ale 4K może się zacinać na słabszych przystawkach TV',
+			'settings.deinterlace' => 'Usuwanie przeplotu',
+			'settings.deinterlaceDescription' => 'Usuwa artefakty grzebienia z wideo z przeplotem (tylko odtwarzacz mpv)',
+			'settings.general' => 'Ogólne',
+			'settings.generalDescription' => 'Język, uruchamianie i zachowanie okna',
+			'settings.languageAndRegion' => 'Język i region',
+			'settings.startup' => 'Uruchamianie',
+			'settings.libraryAndCards' => 'Biblioteka i karty',
+			'settings.liveTv' => 'TV na żywo',
+			'settings.videoAndDisplay' => 'Wideo i ekran',
+			'settings.audio' => 'Audio',
+			'settings.quality' => 'Jakość',
+			'settings.subtitles' => 'Napisy',
+			'settings.gestures' => 'Gesty',
+			'settings.gestureBrightnessSwipe' => 'Zmiana jasności przesunięciem',
+			'settings.gestureBrightnessSwipeDescription' => 'Przesuwaj palcem w górę lub w dół na lewej krawędzi, aby regulować jasność',
+			'settings.gestureVolumeSwipe' => 'Zmiana głośności przesunięciem',
+			'settings.gestureVolumeSwipeDescription' => 'Przesuwaj palcem w górę lub w dół na prawej krawędzi, aby regulować głośność',
+			'settings.gesturePinchToZoom' => 'Powiększanie ściskaniem',
+			'settings.gesturePinchToZoomDescription' => 'Ściśnij wideo palcami, aby powiększyć lub pomniejszyć',
+			'settings.rememberBrightnessLevel' => 'Zapamiętaj poziom jasności',
+			'settings.rememberBrightnessLevelDescription' => 'Rozpoczynaj odtwarzanie z jasnością ustawioną ostatnim przesunięciem',
+			'settings.controls' => 'Sterowanie',
+			'settings.packedStereoUi' => '3D Playback UI',
 			'search.hint' => 'Szukaj filmów, seriali, muzyki...',
 			'search.tryDifferentTerm' => 'Spróbuj innego wyszukiwania',
 			'search.searchYourMedia' => 'Przeszukaj swoje media',
@@ -3569,9 +3572,9 @@ extension on TranslationsPl {
 			'fileInfo.language' => 'Język',
 			'fileInfo.languageCode' => 'Kod języka',
 			'fileInfo.streamTitle' => 'Tytuł ścieżki',
-			'fileInfo.channels' => 'Kanały',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.channels' => 'Kanały',
 			'fileInfo.sampleRate' => 'Częstotliwość próbkowania',
 			'fileInfo.spatialAudio' => 'Dźwięk przestrzenny',
 			'fileInfo.textBased' => 'Tekstowy',
@@ -3742,6 +3745,7 @@ extension on TranslationsPl {
 			'videoControls.subtitleUnavailableFallback' => 'Nie udało się wczytać wybranych napisów — odtwarzanie jest kontynuowane bez napisów',
 			'videoControls.pipButton' => 'Tryb obraz w obrazie',
 			'videoControls.aspectRatioButton' => 'Proporcje',
+			'videoControls.packedStereoSizingLocked' => 'Cannot change while playing 3D source',
 			'videoControls.ambientLighting' => 'Oświetlenie otoczenia',
 			'videoControls.fullscreenButton' => 'Wejdź w pełny ekran',
 			'videoControls.exitFullscreenButton' => 'Wyjdź z pełnego ekranu',
@@ -3757,7 +3761,6 @@ extension on TranslationsPl {
 			'videoControls.pipFailed' => 'Nie udało się uruchomić trybu obraz w obrazie',
 			'videoControls.screenshotSaved' => 'Zrzut ekranu zapisany',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Powiększenie ${percent}%',
-			'videoControls.volumePercent' => ({required Object percent}) => 'Głośność ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Wymaga Androida 8.0 lub nowszego',
 			'videoControls.pipErrors.iosVersion' => 'Wymaga iOS 15.0 lub nowszego',
 			'videoControls.pipErrors.permissionDisabled' => 'Obraz w obrazie jest wyłączony. Włącz go w ustawieniach systemu.',
@@ -3787,6 +3790,7 @@ extension on TranslationsPl {
 			'videoControls.osdSubtitlesOff' => 'Napisy: wył.',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Napisy: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Głośność ${percent}%',
 			'messages.markedAsWatched' => 'Oznaczono jako obejrzane',
 			'messages.markedAsUnwatched' => 'Oznaczono jako nieobejrzane',
 			'messages.markedAsWatchedOffline' => 'Oznaczono jako obejrzane (zsynchronizuje się po połączeniu)',
@@ -3972,63 +3976,6 @@ extension on TranslationsPl {
 			'connections.signInAgain' => 'Zaloguj się ponownie',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edytuj połączenie z ${product}',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. Plezy będzie używać osiągalnego adresu URL o najniższym opóźnieniu.',
-			'accountPreferences.sectionTitle' => 'Preferencje konta',
-			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Opcje audio, napisów i biblioteki zapisane na koncie ${account}',
-			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Opcje audio, napisów i biblioteki zapisane na ${count} kontach',
-			'accountPreferences.pickAccount' => 'Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.',
-			'accountPreferences.storedOnAccount' => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.',
-			'accountPreferences.noAccounts' => 'Brak kont do skonfigurowania',
-			'accountPreferences.noAccountsHint' => 'Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.',
-			'accountPreferences.unavailable' => 'Nie można połączyć się z tym kontem',
-			'accountPreferences.loadFailed' => 'Nie udało się wczytać tych preferencji',
-			'accountPreferences.noPreference' => 'Brak preferencji',
-			'accountPreferences.notSet' => 'Nie ustawiono',
-			'accountPreferences.groups.audioAndSubtitles' => 'Audio i napisy',
-			'accountPreferences.groups.libraryDisplay' => 'Biblioteka',
-			'accountPreferences.groups.personalMedia' => 'Osobiste multimedia',
-			'accountPreferences.preferredAudioLanguage' => 'Preferowany język audio',
-			'accountPreferences.autoSelectAudio' => 'Wybieraj audio według języka',
-			'accountPreferences.autoSelectAudioDescription' => 'Ustawienie „Wył.” pozostawia ścieżkę audio, którą plik oznacza jako domyślną.',
-			'accountPreferences.preferredSubtitleLanguage' => 'Preferowany język napisów',
-			'accountPreferences.subtitleMode' => 'Włączanie napisów',
-			'accountPreferences.subtitleModes.none' => 'Wybór ręczny',
-			'accountPreferences.subtitleModes.noneDescription' => 'Nigdy nie włączaj napisów automatycznie.',
-			'accountPreferences.subtitleModes.defaultMode' => 'Kieruj się flagami ścieżki',
-			'accountPreferences.subtitleModes.defaultModeDescription' => 'Używaj flag domyślna i wymuszona zapisanych na każdej ścieżce napisów.',
-			'accountPreferences.subtitleModes.always' => 'Zawsze włączone',
-			'accountPreferences.subtitleModes.alwaysDescription' => 'Włączaj ścieżkę napisów w preferowanym języku, gdy tylko istnieje.',
-			'accountPreferences.subtitleModes.onlyForced' => 'Tylko wymuszone napisy',
-			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Wczytuj tylko ścieżki oznaczone jako wymuszone.',
-			'accountPreferences.subtitleModes.smart' => 'Wyświetlane przy dźwięku w obcym języku',
-			'accountPreferences.subtitleModes.smartDescription' => 'Włączaj napisy tylko wtedy, gdy dźwięk jest w innym języku.',
-			'accountPreferences.subtitleAccessibility' => 'Napisy SDH',
-			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Preferuj napisy bez SDH',
-			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Preferuj napisy SDH',
-			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Tylko napisy SDH',
-			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Tylko napisy bez SDH',
-			'accountPreferences.forcedSubtitles' => 'Wymuszone napisy',
-			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Preferuj niewymuszone napisy',
-			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Preferuj wymuszone napisy',
-			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Tylko wymuszone napisy',
-			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Tylko niewymuszone napisy',
-			'accountPreferences.displayMissingEpisodes' => 'Pokaż brakujące odcinki',
-			'accountPreferences.displayMissingEpisodesDescription' => 'Wyświetlaj odcinki, które serwer zna, ale dla których nie ma pliku.',
-			'accountPreferences.hidePlayedInLatest' => 'Ukrywaj obejrzane pozycje w sekcji Ostatnio dodane',
-			'accountPreferences.hidePlayedInLatestDescription' => 'Pomijaj pozycje, które już obejrzałeś, w wierszach „Ostatnio dodane” serwera.',
-			'accountPreferences.displayCollectionsView' => 'Pokaż widok „Kolekcje”',
-			'accountPreferences.displayCollectionsViewDescription' => 'Pokazuj widok kolekcji serwera obok Twoich bibliotek.',
-			'accountPreferences.rewatchingInNextUp' => 'Zachowuj ponownie oglądane seriale w sekcji „Następny odcinek”',
-			'accountPreferences.rewatchingInNextUpDescription' => 'Gdy skończysz serial i zaczniesz go oglądać ponownie, sekcja „Następny odcinek” podąży za ponownym oglądaniem zamiast usuwać serial.',
-			'accountPreferences.watchedIndicator' => 'Wskaźniki obejrzanych',
-			'accountPreferences.watchedIndicatorOptions.none' => 'Nigdy',
-			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmy i seriale TV',
-			'accountPreferences.watchedIndicatorOptions.movies' => 'Tylko filmy',
-			'accountPreferences.watchedIndicatorOptions.shows' => 'Tylko seriale TV',
-			'accountPreferences.mediaReviewsVisibility' => 'Oceny i recenzje',
-			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Użytkownicy i krytycy',
-			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Tylko użytkownicy',
-			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Tylko krytycy',
-			'accountPreferences.mediaReviewsOptions.nobody' => 'Ukryte',
 			'discover.title' => 'Odkryj',
 			'discover.noContentAvailable' => 'Brak dostępnych treści',
 			'discover.addMediaToLibraries' => 'Dodaj multimedia do swoich bibliotek',
@@ -4084,8 +4031,6 @@ extension on TranslationsPl {
 			'libraries.emptyingTrash' => ({required Object title}) => 'Opróżnianie kosza dla "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Kosz opróżniony dla "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nie udało się opróżnić kosza: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.analyzing' => ({required Object title}) => 'Analizowanie "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analiza rozpoczęta dla "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nie udało się przeanalizować biblioteki: ${error}',
@@ -4141,6 +4086,8 @@ extension on TranslationsPl {
 			'libraries.sortLabels.dateAdded' => 'Data dodania',
 			'libraries.sortLabels.releaseDate' => 'Data premiery',
 			'libraries.sortLabels.rating' => 'Ocena',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.sortLabels.communityRating' => 'Ocena społeczności',
 			'libraries.sortLabels.criticRating' => 'Ocena krytyków',
 			'libraries.sortLabels.userRating' => 'Ocena użytkownika',
@@ -4598,8 +4545,6 @@ extension on TranslationsPl {
 			'watchTogether.guestSwitchUnavailable' => 'Nie można przełączyć — serwer niedostępny do synchronizacji',
 			'watchTogether.guestSwitchFailed' => 'Nie można przełączyć — nie znaleziono treści na tym serwerze',
 			'watchTogether.defaultDisplayName' => 'Użytkownik',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.timedOut' => 'Serwer pośredniczący nie odpowiedział w wymaganym czasie',
 			'watchTogether.errors.connectionLost' => 'Połączenie zostało zamknięte, zanim sesja była gotowa',
 			'watchTogether.errors.invalidRelayResponse' => 'Serwer pośredniczący wysłał nieoczekiwaną odpowiedź',
@@ -4655,6 +4600,8 @@ extension on TranslationsPl {
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Zachowaj ${count} nieobejrzanych',
 			'downloads.editSyncRule' => 'Edytuj regułę synchronizacji',
 			'downloads.removeSyncRule' => 'Usuń regułę synchronizacji',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Zatrzymać synchronizację "${title}"? Pobrane odcinki zostaną zachowane.',
 			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'Zatrzymać synchronizację "${title}"?',
 			'downloads.deleteSyncRuleDownloads' => 'Usuń również powiązane pobrania',
@@ -5112,8 +5059,6 @@ extension on TranslationsPl {
 			'addServer.invalidCredentials' => 'Nieprawidłowa nazwa użytkownika lub hasło',
 			'addServer.authResponseNotJson' => 'Odpowiedź uwierzytelniania ma nieprawidłowy format JSON',
 			'addServer.authResponseIncomplete' => 'Odpowiedź logowania z serwera była niekompletna',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectRejected' => 'Quick Connect został odrzucony przez serwer',
 			'addServer.quickConnectNotJson' => 'Odpowiedź Quick Connect ma nieprawidłowy format JSON',
 			'addServer.quickConnectMissingFields' => 'W odpowiedzi Quick Connect brakuje kodu lub sekretu',
@@ -5130,6 +5075,65 @@ extension on TranslationsPl {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'Serwer przekierował do innego hosta. Wprowadź bezpośrednio docelowy adres URL serwera ${product}.',
 			'addServer.redirectInsecure' => 'Serwer przekierował z HTTPS do niezabezpieczonego adresu URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'Serwer przekierował do nieobsługiwanego adresu URL. Wprowadź bezpośrednio docelowy adres URL serwera ${product}.',
+			'accountPreferences.sectionTitle' => 'Preferencje konta',
+			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Opcje audio, napisów i biblioteki zapisane na koncie ${account}',
+			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Opcje audio, napisów i biblioteki zapisane na ${count} kontach',
+			'accountPreferences.pickAccount' => 'Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.',
+			'accountPreferences.storedOnAccount' => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.',
+			'accountPreferences.noAccounts' => 'Brak kont do skonfigurowania',
+			'accountPreferences.noAccountsHint' => 'Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.',
+			'accountPreferences.unavailable' => 'Nie można połączyć się z tym kontem',
+			'accountPreferences.loadFailed' => 'Nie udało się wczytać tych preferencji',
+			'accountPreferences.noPreference' => 'Brak preferencji',
+			'accountPreferences.notSet' => 'Nie ustawiono',
+			'accountPreferences.groups.audioAndSubtitles' => 'Audio i napisy',
+			'accountPreferences.groups.libraryDisplay' => 'Biblioteka',
+			'accountPreferences.groups.personalMedia' => 'Osobiste multimedia',
+			'accountPreferences.preferredAudioLanguage' => 'Preferowany język audio',
+			'accountPreferences.autoSelectAudio' => 'Wybieraj audio według języka',
+			'accountPreferences.autoSelectAudioDescription' => 'Ustawienie „Wył.” pozostawia ścieżkę audio, którą plik oznacza jako domyślną.',
+			'accountPreferences.preferredSubtitleLanguage' => 'Preferowany język napisów',
+			'accountPreferences.subtitleMode' => 'Włączanie napisów',
+			'accountPreferences.subtitleModes.none' => 'Wybór ręczny',
+			'accountPreferences.subtitleModes.noneDescription' => 'Nigdy nie włączaj napisów automatycznie.',
+			'accountPreferences.subtitleModes.defaultMode' => 'Kieruj się flagami ścieżki',
+			'accountPreferences.subtitleModes.defaultModeDescription' => 'Używaj flag domyślna i wymuszona zapisanych na każdej ścieżce napisów.',
+			'accountPreferences.subtitleModes.always' => 'Zawsze włączone',
+			'accountPreferences.subtitleModes.alwaysDescription' => 'Włączaj ścieżkę napisów w preferowanym języku, gdy tylko istnieje.',
+			'accountPreferences.subtitleModes.onlyForced' => 'Tylko wymuszone napisy',
+			'accountPreferences.subtitleModes.onlyForcedDescription' => 'Wczytuj tylko ścieżki oznaczone jako wymuszone.',
+			'accountPreferences.subtitleModes.smart' => 'Wyświetlane przy dźwięku w obcym języku',
+			'accountPreferences.subtitleModes.smartDescription' => 'Włączaj napisy tylko wtedy, gdy dźwięk jest w innym języku.',
+			'accountPreferences.subtitleAccessibility' => 'Napisy SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Preferuj napisy bez SDH',
+			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Preferuj napisy SDH',
+			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Tylko napisy SDH',
+			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Tylko napisy bez SDH',
+			'accountPreferences.forcedSubtitles' => 'Wymuszone napisy',
+			'accountPreferences.forcedSubtitleOptions.preferNonForced' => 'Preferuj niewymuszone napisy',
+			'accountPreferences.forcedSubtitleOptions.preferForced' => 'Preferuj wymuszone napisy',
+			'accountPreferences.forcedSubtitleOptions.onlyForced' => 'Tylko wymuszone napisy',
+			'accountPreferences.forcedSubtitleOptions.onlyNonForced' => 'Tylko niewymuszone napisy',
+			_ => null,
+		} ?? switch (path) {
+			'accountPreferences.displayMissingEpisodes' => 'Pokaż brakujące odcinki',
+			'accountPreferences.displayMissingEpisodesDescription' => 'Wyświetlaj odcinki, które serwer zna, ale dla których nie ma pliku.',
+			'accountPreferences.hidePlayedInLatest' => 'Ukrywaj obejrzane pozycje w sekcji Ostatnio dodane',
+			'accountPreferences.hidePlayedInLatestDescription' => 'Pomijaj pozycje, które już obejrzałeś, w wierszach „Ostatnio dodane” serwera.',
+			'accountPreferences.displayCollectionsView' => 'Pokaż widok „Kolekcje”',
+			'accountPreferences.displayCollectionsViewDescription' => 'Pokazuj widok kolekcji serwera obok Twoich bibliotek.',
+			'accountPreferences.rewatchingInNextUp' => 'Zachowuj ponownie oglądane seriale w sekcji „Następny odcinek”',
+			'accountPreferences.rewatchingInNextUpDescription' => 'Gdy skończysz serial i zaczniesz go oglądać ponownie, sekcja „Następny odcinek” podąży za ponownym oglądaniem zamiast usuwać serial.',
+			'accountPreferences.watchedIndicator' => 'Wskaźniki obejrzanych',
+			'accountPreferences.watchedIndicatorOptions.none' => 'Nigdy',
+			'accountPreferences.watchedIndicatorOptions.moviesAndShows' => 'Filmy i seriale TV',
+			'accountPreferences.watchedIndicatorOptions.movies' => 'Tylko filmy',
+			'accountPreferences.watchedIndicatorOptions.shows' => 'Tylko seriale TV',
+			'accountPreferences.mediaReviewsVisibility' => 'Oceny i recenzje',
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Użytkownicy i krytycy',
+			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Tylko użytkownicy',
+			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Tylko krytycy',
+			'accountPreferences.mediaReviewsOptions.nobody' => 'Ukryte',
 			_ => null,
 		};
 	}

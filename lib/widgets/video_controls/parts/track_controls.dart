@@ -172,6 +172,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       sourcePartId: canSwitchSourceSubtitles ? widget.sourcePartId : null,
       sourceDurationMs: widget.metadata.durationMs,
       boxFitMode: widget.boxFitMode,
+      packedStereoLayout: widget.packedStereoLayout,
       videoZoomScale: widget.videoZoomScale,
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
@@ -179,7 +180,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       isFullscreen: FullscreenStateManager().isFullscreen,
       isAlwaysOnTop: _isAlwaysOnTop,
       onTogglePIPMode: (_isPipSupported && !PlatformDetector.isTV()) ? widget.onTogglePIPMode : null,
-      onCycleBoxFitMode: widget.onCycleBoxFitMode,
+      onCycleBoxFitMode: widget.packedStereoLayout.isPacked
+          ? () => widget.toastController.show(Symbols.fit_screen_rounded, t.videoControls.packedStereoSizingLocked)
+          : widget.onCycleBoxFitMode,
       onVideoZoomChanged: widget.onVideoZoomChanged,
       onResetVideoZoom: widget.onResetVideoZoom,
       onToggleRotationLock: _toggleRotationLock,

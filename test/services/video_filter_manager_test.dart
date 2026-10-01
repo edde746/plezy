@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/packed_stereo_layout.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/services/ambient_lighting_service.dart';
 import 'package:plezy/services/video_filter_manager.dart';
+
+class _FakeAmbientLightingService extends AmbientLightingService {
+  _FakeAmbientLightingService(super.player);
+
+  bool fakeEnabled = false;
+
+  @override
+  bool get isEnabled => fakeEnabled;
+}
 
 void main() {
   test('zoom scale snaps to whole percentages', () {
@@ -131,6 +142,45 @@ void main() {
     expect(player.zoomCalls, [1.0, 0.8]);
   });
 
+  test('packed stereo uses contain properties and decoder aspect', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'sbs2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+
+    expect(player.boxFitCalls, [0]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '0');
+    expect(player.writes.lastWhere((write) => write.key == 'sub-ass-force-margins').value, 'no');
+    expect(
+      double.parse(player.writes.lastWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+  });
+
+  test('packed stereo keeps decoder aspect when ambient lighting changes', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'ab2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final ambient = _FakeAmbientLightingService(player)..fakeEnabled = true;
+    final manager = VideoFilterManager(player: player)..ambientLightingService = ambient;
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    expect(
+      double.parse(player.writes.singleWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+    player.clearRecords();
+
+    ambient.fakeEnabled = false;
+    await manager.updateVideoFilter();
+    final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
+    expect(aspectWrites, isEmpty);
+  });
+
   test('fill mode rewrites aspect on player size change', () async {
     final player = _RecordingPlayer();
     final manager = VideoFilterManager(player: player, initialBoxFitMode: 2, initialPlayerSize: const Size(1920, 1080));
@@ -146,6 +196,76 @@ void main() {
     final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
     expect(aspectWrites, hasLength(1));
     expect(double.parse(aspectWrites.single.value), closeTo(1.0, 0.0001));
+  });
+
+  test('packed stereo locks sizing to contain and applies packed aspect', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'sbs2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final layouts = <PackedStereoLayout>[];
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1, onPackedStereoLayoutChanged: layouts.add);
+    addTearDown(manager.dispose);
+
+    manager.setZoomScale(1.5);
+    await manager.updateVideoFilter();
+
+    expect(layouts, [PackedStereoLayout.sideBySideLeftFirst]);
+    expect(manager.zoomScale, 1.0);
+    expect(manager.setZoomScale(1.5), 1.0);
+    expect(player.boxFitCalls, [0]);
+    expect(
+      double.parse(player.writes.lastWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+  });
+
+  test('packed stereo without decoder aspect still uses contain properties', () async {
+    final player = _RecordingPlayer(properties: {'video-params/stereo-in': 'sbs2l'});
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+
+    expect(manager.packedStereoLayout, PackedStereoLayout.sideBySideLeftFirst);
+    expect(player.boxFitCalls, [0]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '0');
+    expect(player.writes.lastWhere((write) => write.key == 'sub-ass-force-margins').value, 'no');
+  });
+
+  test('packed stereo keeps decoder aspect when ambient lighting changes', () async {
+    final player = _RecordingPlayer(
+      properties: {'video-params/stereo-in': 'ab2l', 'video-dec-params/aspect': '${16 / 9}'},
+    );
+    final ambient = _FakeAmbientLightingService(player)..fakeEnabled = true;
+    final manager = VideoFilterManager(player: player)..ambientLightingService = ambient;
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    expect(
+      double.parse(player.writes.singleWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+    player.clearRecords();
+
+    ambient.fakeEnabled = false;
+    await manager.updateVideoFilter();
+    final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
+    expect(aspectWrites, isEmpty);
+  });
+
+  test('ordinary video restores the selected sizing mode after packed stereo', () async {
+    final player = _RecordingPlayer(properties: {'video-params/stereo-in': 'ab2r'});
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 1);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    player.clearRecords();
+    player.properties['video-params/stereo-in'] = 'mono';
+    await manager.updateVideoFilter();
+
+    expect(manager.packedStereoLayout, PackedStereoLayout.mono);
+    expect(player.boxFitCalls, [1]);
+    expect(player.writes.lastWhere((write) => write.key == 'panscan').value, '1.0');
   });
 
   // Pinching back is the touch path to an unzoomed picture (#1505). Without a
@@ -183,9 +303,33 @@ void main() {
 }
 
 class _RecordingPlayer implements Player {
+  _RecordingPlayer({Map<String, String>? properties}) : properties = properties ?? {};
+
+  final Map<String, String> properties;
   final writes = <MapEntry<String, String>>[];
   final boxFitCalls = <int>[];
   final zoomCalls = <double>[];
+
+  static const _streams = PlayerStreams(
+    playing: Stream<bool>.empty(),
+    completed: Stream<bool>.empty(),
+    buffering: Stream<bool>.empty(),
+    position: Stream<Duration>.empty(),
+    duration: Stream<Duration>.empty(),
+    seekable: Stream<bool>.empty(),
+    buffer: Stream<Duration>.empty(),
+    volume: Stream<double>.empty(),
+    rate: Stream<double>.empty(),
+    tracks: Stream<Tracks>.empty(),
+    track: Stream<TrackSelection>.empty(),
+    log: Stream<PlayerLog>.empty(),
+    error: Stream<PlayerError>.empty(),
+    audioDevice: Stream<AudioDevice>.empty(),
+    audioDevices: Stream<List<AudioDevice>>.empty(),
+    bufferRanges: Stream<List<BufferRange>>.empty(),
+    playbackRestart: Stream<void>.empty(),
+    backendSwitched: Stream<void>.empty(),
+  );
 
   void clearRecords() {
     writes.clear();
@@ -199,6 +343,9 @@ class _RecordingPlayer implements Player {
   }
 
   @override
+  Future<String?> getProperty(String name) async => properties[name];
+
+  @override
   Future<void> setBoxFitMode(int mode) async {
     boxFitCalls.add(mode);
   }
@@ -210,6 +357,9 @@ class _RecordingPlayer implements Player {
 
   @override
   PlayerState get state => const PlayerState();
+
+  @override
+  PlayerStreams get streams => _streams;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

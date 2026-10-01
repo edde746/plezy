@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/audio_channel_limit.dart';
+import 'package:plezy/media/packed_stereo_layout.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_state.dart';
@@ -59,6 +60,22 @@ void main() {
     expect(find.text('Audio Channels'), findsOneWidget);
 
     expect(find.text('Audio Passthrough'), findsNothing);
+  });
+
+  testWidgets('shows the 3D UI toggle only for packed stereo playback', (tester) async {
+    await _pumpSheet(tester, height: 1200);
+    expect(find.text('3D Playback UI'), findsNothing);
+
+    await _pumpSheet(
+      tester,
+      height: 1200,
+      packedStereoLayout: PackedStereoLayout.sideBySideLeftFirst,
+      onVideoZoomChanged: (_) {},
+    );
+    expect(find.text('3D Playback UI'), findsOneWidget);
+    await tester.tap(find.text('Zoom'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cannot change while playing 3D source'), findsOneWidget);
   });
 
   testWidgets('localizes Off, Normal, and Active video setting values', (tester) async {
@@ -468,6 +485,8 @@ Future<void> _pumpSheet(
   // row present without dragging to it pass a taller sheet, which builds all of
   // them.
   double height = 700,
+  PackedStereoLayout packedStereoLayout = PackedStereoLayout.unknown,
+  ValueChanged<double>? onVideoZoomChanged,
 }) async {
   final sheet = SizedBox(
     width: 900,
@@ -475,7 +494,11 @@ Future<void> _pumpSheet(
     child: VideoSettingsSheet(
       player: player ?? _FakeSettingsPlayer(),
       supportsHdrControl: supportsHdrControl,
-      trackControlsState: TrackControlsState(canControl: canControl),
+      trackControlsState: TrackControlsState(
+        canControl: canControl,
+        packedStereoLayout: packedStereoLayout,
+        onVideoZoomChanged: onVideoZoomChanged,
+      ),
     ),
   );
   await tester.pumpWidget(
