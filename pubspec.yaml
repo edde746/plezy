@@ -61,12 +61,13 @@ dependencies:
   # survives a host with no documents directory (Linux without xdg-user-dirs);
   # 7f500a1 reads real macOS volume capacity and skips unknown capacity on
   # desktop; 06e385c counts each Android byte once, so progress and the resume
-  # offset match the file. Keep the same-filesystem move/resume cleanup; no
-  # per-host TLS bypass.
+  # offset match the file; 09690d6 lets Wi-Fi-only tasks run over a VPN and on
+  # Ethernet (upstream 9.6.1's Wi-Fi NetworkRequest kept NOT_VPN). Keep the
+  # same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 06e385cb8d69893a8c5c9ceaa369ebdd22ce88a3
+      ref: 09690d61b29fe81feb5495cc9a5dc4349c0caef3
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
