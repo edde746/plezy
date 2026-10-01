@@ -332,6 +332,7 @@ MediaControlsScreenController _liveController({
     manager: () => manager,
     player: () => player,
     isMounted: () => true,
+    isRouteCurrent: () => true,
     isLive: true,
     hasLiveSeekWindow: hasSeekWindow ?? () => false,
     hasNextLiveChannel: hasNextChannel ?? () => false,
