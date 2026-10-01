@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "Daxili DV7-ni məcburi et",
     "dvConversionDv81Description": "Dolby Vision profile 8.1-ə çevrilməni məcburi et",
     "dvConversionHevcStripDescription": "Dolby Vision təbəqələrini sil və sadə HEVC kimi təqdim et",
+    "disableDolbyVision": "Dolby Vision-u söndür",
+    "disableDolbyVisionDescription": "Faylda varsa, Dolby Vision əvəzinə HDR10 və ya HLG təbəqəsini oynat",
     "hdrSdrConversion": "HDR-dən SDR-ə çevirmə",
     "hdrSdrConversionDescription": "Ekran HDR göstərə bilmədikdə HDR videonu nəyin çevirəcəyini seçin.",
     "hdrSdrConversionAuto": "Avtomatik",

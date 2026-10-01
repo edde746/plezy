@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "Forcer le DV7 natif et bloquer la nouvelle tentative de conversion DV",
     "dvConversionDv81Description": "Forcer la conversion RPU intégrée vers le profil 8.1 de Dolby Vision",
     "dvConversionHevcStripDescription": "Supprimer les couches RPU/EL Dolby Vision et présenter du HEVC simple",
+    "disableDolbyVision": "Désactiver Dolby Vision",
+    "disableDolbyVisionDescription": "Lire la couche HDR10 ou HLG du fichier au lieu de Dolby Vision, si elle existe",
     "hdrSdrConversion": "Conversion HDR vers SDR",
     "hdrSdrConversionDescription": "Choisir ce qui convertit les vidéos HDR lorsque l’écran ne peut pas afficher le HDR.",
     "hdrSdrConversionAuto": "Auto",

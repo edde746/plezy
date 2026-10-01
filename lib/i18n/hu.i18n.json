@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása",
     "dvConversionDv81Description": "A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re",
     "dvConversionHevcStripDescription": "A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés",
+    "disableDolbyVision": "Dolby Vision letiltása",
+    "disableDolbyVisionDescription": "A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen",
     "hdrSdrConversion": "HDR–SDR átalakítás",
     "hdrSdrConversionDescription": "Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.",
     "hdrSdrConversionAuto": "Automatikus",

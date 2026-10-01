@@ -2004,6 +2004,40 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun disablingDolbyVisionOverridesEveryConversionMode() {
+    // `dolby-vision-output=no` (#2543) routes as auto on a display without
+    // DV whichever P7 mode the user picked, and `yes` restores that mode.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+
+    fun apply(name: String, value: String): Result<Unit> {
+      writes.clear()
+      var outcome: Result<Unit>? = null
+      core.setProperty(name, value) { outcome = it }
+      awaitCondition { outcome != null }
+      return outcome!!
+    }
+
+    assertTrue(apply("dv-conversion-mode", "dv81").isSuccess)
+    assertTrue(apply("dolby-vision-output", "no").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    // A mode chosen while Dolby Vision is disabled does not bring it back.
+    assertTrue(apply("dv-conversion-mode", "disabled").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    assertTrue(apply("dolby-vision-output", "yes").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=native"), writes.toList())
+
+    val invalid = apply("dolby-vision-output", "maybe")
+    assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
   fun displayChangeRepublishesTheRefreshRateToMpvUntilDispose() {
     // The fork vo builds its vsync grid from display-fps-override. A mode
     // switch the app did not make (the TV's own content matching, an HDR

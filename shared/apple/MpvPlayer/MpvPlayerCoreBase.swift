@@ -172,6 +172,9 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedVideoColorMatrix: String?
   private var cachedDvConversionMode = "auto"
   private var cachedDvConversionLogEnabled = false
+  /// False while the user has Dolby Vision disabled (#2543); see
+  /// `applyDisplayCriteriaFromCaches`.
+  private var cachedDolbyVisionOutputAllowed = true
   var hdrEnabled: Bool {
     cacheLock.lock()
     defer { cacheLock.unlock() }
@@ -448,6 +451,20 @@ class MpvPlayerCoreBase: NSObject {
       primaries = primaries ?? "bt2020"
       colorMatrix = colorMatrix ?? "bt2020nc"
     }
+    if profile > 0 && !cachedDolbyVisionOutputAllowed {
+      // "Disable Dolby Vision" (#2543): ask the TV for the base layer's range
+      // instead of Dolby Vision. VideoToolbox still decodes the DV stream;
+      // the display pipeline maps it to the requested range, as it does
+      // when the HDR toggle drives a DV source in SDR (#1262). P5's IPT-PQ
+      // signal carries no usable colour tags or compatibility id but is
+      // PQ/BT.2020 once reshaped, so it asks for HDR10 rather than SDR.
+      if profile == 5 {
+        gamma = "smpte2084"
+        primaries = "bt2020"
+      }
+      profile = 0
+      level = 0
+    }
     cacheLock.unlock()
 
     updateDisplayCriteria(
@@ -668,6 +685,12 @@ class MpvPlayerCoreBase: NSObject {
       return
     }
 
+    if name == "dolby-vision-output" {
+      setDolbyVisionOutputAllowed(parseBoolProperty(value))
+      completeOnMain { completion(.success(())) }
+      return
+    }
+
     if name == "dv-conversion-log" {
       setDvConversionLogEnabled(parseBoolProperty(value))
       completeOnMain { completion(.success(())) }
@@ -744,6 +767,17 @@ class MpvPlayerCoreBase: NSObject {
     cacheLock.lock()
     defer { cacheLock.unlock() }
     return cachedDvConversionLogEnabled
+  }
+
+  /// "Disable Dolby Vision" (#2543): `false` asks the TV for the base layer's
+  /// range instead of Dolby Vision; see `applyDisplayCriteriaFromCaches`.
+  func setDolbyVisionOutputAllowed(_ allowed: Bool) {
+    cacheLock.lock()
+    cachedDolbyVisionOutputAllowed = allowed
+    cacheLock.unlock()
+    #if os(tvOS)
+      scheduleDisplayCriteriaUpdate()
+    #endif
   }
 
   func setInt64PropertyAsync(

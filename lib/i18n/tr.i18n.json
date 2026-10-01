@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "Yerel DV7'yi zorla ve DV dönüştürme yeniden denemesini engelle",
     "dvConversionDv81Description": "Dolby Vision profile 8.1'e satır içi RPU dönüştürmeyi zorla",
     "dvConversionHevcStripDescription": "Dolby Vision RPU/EL katmanlarını soy ve düz HEVC olarak sun",
+    "disableDolbyVision": "Dolby Vision'ı Devre Dışı Bırak",
+    "disableDolbyVisionDescription": "Dosyada varsa Dolby Vision yerine HDR10 veya HLG katmanını oynat",
     "hdrSdrConversion": "HDR'den SDR'ye Dönüştürme",
     "hdrSdrConversionDescription": "Ekran HDR gösteremediğinde HDR videoyu neyin dönüştüreceğini seçin.",
     "hdrSdrConversionAuto": "Otomatik",

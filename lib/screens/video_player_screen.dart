@@ -1807,6 +1807,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         final hdrSdrConversion = settingsService.read(SettingsService.hdrSdrConversion);
         await currentPlayer.setProperty('hdr-sdr-conversion', hdrSdrConversion.nativeValue);
       }
+      // Also before the first file: Android mpv picks the decoder per file
+      // before it opens, and tvOS asks the TV for a mode at the first frame.
+      if ((Platform.isAndroid && !useExoPlayer) || PlatformDetector.isAppleTV()) {
+        final disableDolbyVision = settingsService.read(SettingsService.disableDolbyVision);
+        await currentPlayer.setProperty('dolby-vision-output', disableDolbyVision ? 'no' : 'yes');
+      }
       if (Platform.isIOS || Platform.isMacOS) {
         await currentPlayer.setProperty('dv-conversion-log', debugLoggingEnabled ? 'yes' : 'no');
       }

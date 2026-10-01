@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "Ichki DV7 rejimini majburlash",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 formatiga oʻtkazish",
     "dvConversionHevcStripDescription": "Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish",
+    "disableDolbyVision": "Dolby Vision'ni oʻchirish",
+    "disableDolbyVisionDescription": "Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish",
     "hdrSdrConversion": "HDR'ni SDR'ga aylantirish",
     "hdrSdrConversionDescription": "Displey HDR'ni ko‘rsata olmaganda HDR videoni nima aylantirishini tanlang.",
     "hdrSdrConversionAuto": "Avtomatik",

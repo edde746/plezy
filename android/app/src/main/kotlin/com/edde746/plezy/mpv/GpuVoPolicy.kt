@@ -205,6 +205,30 @@ internal object GpuVoPolicy {
     else -> throw IllegalArgumentException("Invalid DV conversion mode: $conversionMode")
   }
 
+  /** The conversion mode and display answer the DV routing decides with; see [dvRouting]. */
+  data class DvRouting(val conversionMode: String, val displaySupportsDv: Boolean)
+
+  /**
+   * What [dvDecoderOptions], [needsDvReshaping] and
+   * [softwareDecodeNeedsDvReshaping] are asked with, given the user's
+   * [conversionMode], whether the display reports Dolby Vision, and the
+   * user's "Disable Dolby Vision" setting ([dvOutputAllowed], #2543). With
+   * Dolby Vision disabled the session routes as `auto` on a display without
+   * Dolby Vision, whatever [conversionMode] says: single-layer P8 decodes as
+   * plain HEVC and P7 strips to its base layer, so the TV receives the HDR10
+   * (or HLG) the file carries instead of a Dolby Vision signal. P5 has no
+   * compatible base layer and keeps that same route — the DV decoder when
+   * the device has one, which still drives a Dolby Vision TV in Dolby
+   * Vision, else software decode with gpu-next reshaping. Stripping P5
+   * instead is the wrong-colour result Kodi's equivalent switch produces
+   * (xbmc#26607).
+   */
+  fun dvRouting(conversionMode: String, displaySupportsDv: Boolean, dvOutputAllowed: Boolean): DvRouting = if (dvOutputAllowed) {
+    DvRouting(conversionMode, displaySupportsDv)
+  } else {
+    DvRouting("auto", displaySupportsDv = false)
+  }
+
   /** `hdr-sdr-conversion` values: who converts HDR for a display without HDR output. */
   val HDR_SDR_CONVERSION_MODES: Set<String> = setOf("auto", "device", "player")
 

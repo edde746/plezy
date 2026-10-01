@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt",
     "dvConversionDv81Description": "Tving direkte RPU-konvertering til Dolby Vision-profil 8.1",
     "dvConversionHevcStripDescription": "Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC",
+    "disableDolbyVision": "Deaktiver Dolby Vision",
+    "disableDolbyVisionDescription": "Spill av filens HDR10- eller HLG-lag i stedet for Dolby Vision når det finnes",
     "hdrSdrConversion": "HDR til SDR-konvertering",
     "hdrSdrConversionDescription": "Velg hva som konverterer HDR-video når skjermen ikke kan vise HDR.",
     "hdrSdrConversionAuto": "Automatisk",

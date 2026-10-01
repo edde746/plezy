@@ -236,6 +236,10 @@ class AgentSettingsCommands {
         if (!Platform.isLinux) return 'HDR tone mapping selection requires the Linux native video plane.';
       case 'hdr_sdr_conversion':
         if (!Platform.isAndroid || exo) return 'HDR-to-SDR conversion selection requires the Android mpv backend.';
+      case 'disable_dolby_vision':
+        if (!(Platform.isAndroid && !exo) && !PlatformDetector.isAppleTV()) {
+          return 'Disabling Dolby Vision requires the Android mpv backend or Apple TV.';
+        }
       case 'tunneled_playback' || 'playback_buffer_tier' || 'subtitle_anchor_to_screen':
         if (!exo) return 'This setting requires the existing Android ExoPlayer backend.';
       case 'custom_shaders' || 'global_shader_preset':
@@ -327,6 +331,7 @@ class AgentSettingsCommands {
     'match_content_resolution',
     'tunneled_playback',
     'dv_conversion_mode',
+    'disable_dolby_vision',
     'hdr_sdr_conversion',
     'default_quality_preset',
     'cellular_quality_preset',

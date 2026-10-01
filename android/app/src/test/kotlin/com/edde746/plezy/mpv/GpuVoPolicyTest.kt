@@ -131,6 +131,49 @@ class GpuVoPolicyTest {
     }
   }
 
+  // "Disable Dolby Vision" (#2543): a DV TV gets the HDR10/HLG base layer the
+  // file carries, whatever the P7 conversion mode says.
+
+  private fun disabledDvOptions(mode: String, profile: Long?, p5Decoder: Boolean): GpuVoPolicy.DvDecoderOptions {
+    val routing = GpuVoPolicy.dvRouting(mode, displaySupportsDv = true, dvOutputAllowed = false)
+    return GpuVoPolicy.dvDecoderOptions(routing.conversionMode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder)
+  }
+
+  @Test
+  fun `disabling Dolby Vision decodes P7 and P8 as their base layer on a DV display in every mode`() {
+    for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
+      for (p5Decoder in listOf(false, true)) {
+        for (profile in listOf(7L, 8L)) {
+          val options = disabledDvOptions(mode, profile, p5Decoder)
+          assertEquals("$mode/P$profile/p5=$p5Decoder", GpuVoPolicy.DvDecoderOptions(dolbyVision = false, p7Mode = "strip"), options)
+          val decoderOptions = "dolby_vision=${if (options.dolbyVision) 1 else 0},dv_p7_mode=${options.p7Mode}"
+          val dvDecoders = listOf(
+            candidate("c2.vendor.dv.p7", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_DTB)),
+            candidate("c2.vendor.dv.p8", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_ST))
+          )
+          assertEquals(DvRoute.BASE_LAYER, GpuVoPolicy.dvRoute(profile, decoderOptions, dvDecoders, "mediacodec", "mediacodec"))
+        }
+      }
+    }
+    // Allowed, the same display keeps P8 on the DV decoder.
+    val allowed = GpuVoPolicy.dvRouting("auto", displaySupportsDv = true, dvOutputAllowed = true)
+    assertTrue(GpuVoPolicy.dvDecoderOptions(allowed.conversionMode, allowed.displaySupportsDv, 8L, canPlayP5Natively = false).dolbyVision)
+  }
+
+  @Test
+  fun `disabling Dolby Vision never strips P5, which has no base layer to fall back to`() {
+    for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
+      // A converting decoder keeps P5 on the DV path.
+      assertTrue(mode, disabledDvOptions(mode, 5L, p5Decoder = true).dolbyVision)
+      // Without one, software decode reshapes it, from the prediction and from
+      // a decoder that landed in software anyway.
+      val routing = GpuVoPolicy.dvRouting(mode, displaySupportsDv = true, dvOutputAllowed = false)
+      assertFalse(mode, disabledDvOptions(mode, 5L, p5Decoder = false).dolbyVision)
+      assertTrue(mode, GpuVoPolicy.needsDvReshaping(5L, routing.conversionMode, canPlayP5Natively = false))
+      assertTrue(mode, GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, routing.conversionMode, hwdecCurrent = "no"))
+    }
+  }
+
   // Native support is whether the bundled FFmpeg will open a decoder, which
   // is narrower than what the device advertises: the app once counted
   // decoders FFmpeg never asks for and sent P5 to the plane as plain HEVC.

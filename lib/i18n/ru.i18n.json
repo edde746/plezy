@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "Принудительно использовать нативный DV7 и не повторять DV-конвертацию",
     "dvConversionDv81Description": "Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1",
     "dvConversionHevcStripDescription": "Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC",
+    "disableDolbyVision": "Отключить Dolby Vision",
+    "disableDolbyVisionDescription": "Воспроизводить слой HDR10 или HLG из файла вместо Dolby Vision, если он есть",
     "hdrSdrConversion": "Преобразование HDR в SDR",
     "hdrSdrConversionDescription": "Выберите, что преобразует HDR-видео, если дисплей не поддерживает HDR.",
     "hdrSdrConversionAuto": "Авто",

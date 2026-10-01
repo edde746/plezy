@@ -326,6 +326,10 @@ class MpvPlayerCore private constructor(
    * routing policy. */
   @Volatile private var currentDvConversionMode: String = "auto"
 
+  /** `dolby-vision-output` the app last set: false when the user disabled
+   * Dolby Vision (#2543); see [GpuVoPolicy.dvRouting]. */
+  @Volatile private var dvOutputAllowed: Boolean = true
+
   /** `dolby-vision-profile` of the video track the current file selected
    * (null when the bitstream carries no DOVI record); set per file by
    * [applyDvReshapePolicy], read when `hwdec-current` reports the outcome
@@ -863,6 +867,7 @@ class MpvPlayerCore private constructor(
       videoZoomLog2 = 0f
       pendingVideoRectUpdate.set(null)
       currentDvConversionMode = "auto"
+      dvOutputAllowed = true
       pendingDvProfile = null
       hdrSurfaceDecided = false
       hdrDisplayActive = false
@@ -1534,14 +1539,15 @@ class MpvPlayerCore private constructor(
   private suspend fun applyDvReshapePolicy(p: MpvPlayer, track: org.json.JSONObject?) {
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     pendingDvProfile = profile
-    val mode = currentDvConversionMode
+    val routing = dvRouting()
+    val mode = routing.conversionMode
     val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
       conversionMode = mode,
       canPlayP5Natively = p5Decoder != null
     )
-    val options = GpuVoPolicy.dvDecoderOptions(mode, displayDvSupported, profile, canPlayP5Natively = p5Decoder != null)
+    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder != null)
     writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
@@ -1549,7 +1555,8 @@ class MpvPlayerCore private constructor(
       // `decoder` is what FFmpeg would open for this profile were the DV
       // path enabled; `dolby_vision` is whether it is.
       val fileDecoder = if (profile == 5L) p5Decoder else GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, profile)
-      val decision = "profile=$profile mode=$mode decoder=${fileDecoder ?: "none"} nativeP5Decoder=${p5Decoder ?: "none"} " +
+      val decision = "profile=$profile mode=$mode dvOutput=${if (dvOutputAllowed) "yes" else "no"} " +
+        "decoder=${fileDecoder ?: "none"} nativeP5Decoder=${p5Decoder ?: "none"} " +
         "displayDv=$displayDvSupported dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode} " +
         "path=${if (needs) "software decode + gpu-next reshaping" else "video plane"}"
       Log.i(TAG, "DV routing: $decision")
@@ -1572,6 +1579,11 @@ class MpvPlayerCore private constructor(
     writeProperty("vd-lavc-o", decoderOptions.compose())
   }
 
+  /** The session's DV routing inputs: the user's conversion mode and the
+   * display's Dolby Vision support, both overridden while the user has
+   * Dolby Vision disabled ([GpuVoPolicy.dvRouting]). */
+  private fun dvRouting(): GpuVoPolicy.DvRouting = GpuVoPolicy.dvRouting(currentDvConversionMode, displayDvSupported, dvOutputAllowed)
+
   /**
    * Software-session counterpart of [applyDvReshapePolicy]: nothing here
    * decodes P5 natively, so a P5 file under `auto` renders on gpu-next,
@@ -1582,10 +1594,11 @@ class MpvPlayerCore private constructor(
   private suspend fun applySoftwareDvReshapeOutput(track: org.json.JSONObject?) {
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     pendingDvProfile = profile
-    val needs = GpuVoPolicy.needsDvReshaping(profile, currentDvConversionMode, canPlayP5Natively = false)
+    val mode = dvRouting().conversionMode
+    val needs = GpuVoPolicy.needsDvReshaping(profile, mode, canPlayP5Natively = false)
     val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
     if (output == softwareVideoOutput) return
-    val decision = "profile=$profile mode=$currentDvConversionMode path=software decode, vo=$output"
+    val decision = "profile=$profile mode=$mode path=software decode, vo=$output"
     Log.i(TAG, "DV routing: $decision")
     emitLog("info", "dv-route", decision)
     writeProperty("vo", output)
@@ -1832,7 +1845,7 @@ class MpvPlayerCore private constructor(
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "hwdec-current" }.collect { change ->
         if (GpuVoPolicy.needsSoftwareRender(change.value)) setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, true)
-        if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, currentDvConversionMode, change.value)) {
+        if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, change.value)) {
           Log.i(TAG, "DV P5 decoded in software (hwdec-current=${change.value}): gpu-next reshaping")
           setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)
         }
@@ -2500,14 +2513,43 @@ class MpvPlayerCore private constructor(
       return
     }
     currentDvConversionMode = mode
+    reapplyDvDecoderOptions("DV conversion mode '$value'", onComplete)
+  }
+
+  /**
+   * `dolby-vision-output` is an app-level property: `no` when the user
+   * disabled Dolby Vision (#2543), so DV files play their HDR10/HLG base
+   * layer ([GpuVoPolicy.dvRouting]). Re-resolved against the loaded file
+   * like [applyDvConversionMode].
+   */
+  private fun applyDvOutput(value: String, onComplete: ((Result<Unit>) -> Unit)?) {
+    dvOutputAllowed = when (value.trim().lowercase()) {
+      "yes" -> true
+      "no" -> false
+      else -> {
+        onComplete?.invoke(Result.failure(IllegalArgumentException("Invalid Dolby Vision output: $value")))
+        return
+      }
+    }
+    reapplyDvDecoderOptions("Dolby Vision output '$value'", onComplete)
+  }
+
+  /** Writes the DV decoder options the current routing inputs give the loaded file. */
+  private fun reapplyDvDecoderOptions(change: String, onComplete: ((Result<Unit>) -> Unit)?) {
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
       val profile = pendingDvProfile
+      val routing = dvRouting()
       val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
-      val options = GpuVoPolicy.dvDecoderOptions(mode, displayDvSupported, profile, canPlayP5Natively = p5Decoder != null)
+      val options = GpuVoPolicy.dvDecoderOptions(
+        routing.conversionMode,
+        routing.displaySupportsDv,
+        profile,
+        canPlayP5Natively = p5Decoder != null
+      )
       Log.i(
         TAG,
-        "DV conversion mode '$value' (displayDV=$displayDvSupported profile=$profile p5Decoder=${p5Decoder ?: "none"}) -> " +
-          "dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode}"
+        "$change (displayDV=$displayDvSupported dvOutput=${if (dvOutputAllowed) "yes" else "no"} profile=$profile " +
+          "p5Decoder=${p5Decoder ?: "none"}) -> dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode}"
       )
       writeDvDecoderOptions(options)
     }
@@ -2607,6 +2649,11 @@ class MpvPlayerCore private constructor(
 
     if (name == "dv-conversion-mode") {
       applyDvConversionMode(value, onComplete)
+      return
+    }
+
+    if (name == "dolby-vision-output") {
+      applyDvOutput(value, onComplete)
       return
     }
 

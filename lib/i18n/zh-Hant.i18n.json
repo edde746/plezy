@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "強制使用原生 DV7 並停用 DV 轉換重試",
     "dvConversionDv81Description": "強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現",
+    "disableDolbyVision": "停用 Dolby Vision",
+    "disableDolbyVisionDescription": "檔案包含 HDR10 或 HLG 層時，改為播放該層而非 Dolby Vision",
     "hdrSdrConversion": "HDR 轉 SDR",
     "hdrSdrConversionDescription": "選擇在顯示器無法顯示 HDR 時由誰轉換 HDR 影片。",
     "hdrSdrConversionAuto": "自動",

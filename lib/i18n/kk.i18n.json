@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "Ішкі DV7 режимін мәжбүрлеу",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 форматына түрлендіру",
     "dvConversionHevcStripDescription": "Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету",
+    "disableDolbyVision": "Dolby Vision-ды өшіру",
+    "disableDolbyVisionDescription": "Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату",
     "hdrSdrConversion": "HDR-ды SDR-ға түрлендіру",
     "hdrSdrConversionDescription": "Дисплей HDR көрсете алмаған кезде HDR бейнесін не түрлендіретінін таңдаңыз.",
     "hdrSdrConversionAuto": "Автоматты",

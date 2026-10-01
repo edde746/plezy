@@ -372,6 +372,8 @@
     "dvConversionNativeDescription": "네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다",
     "dvConversionDv81Description": "Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다",
     "dvConversionHevcStripDescription": "Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다",
+    "disableDolbyVision": "Dolby Vision 끄기",
+    "disableDolbyVisionDescription": "파일에 HDR10 또는 HLG 레이어가 있으면 Dolby Vision 대신 해당 레이어를 재생합니다",
     "hdrSdrConversion": "HDR을 SDR로 변환",
     "hdrSdrConversionDescription": "디스플레이가 HDR을 표시할 수 없을 때 HDR 동영상을 무엇으로 변환할지 선택합니다.",
     "hdrSdrConversionAuto": "자동",

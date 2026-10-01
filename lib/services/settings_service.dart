@@ -662,6 +662,12 @@ class SettingsService extends BaseSharedPreferencesService {
     values: DvConversionModePreference.values,
     defaultValue: DvConversionModePreference.auto,
   );
+
+  /// Play Dolby Vision files as the HDR10/HLG base layer they carry, so a TV
+  /// that mishandles Dolby Vision never receives it (#2543). Android mpv and
+  /// Apple TV only; Profile 5 has no base layer and stays Dolby Vision on
+  /// Android.
+  static const disableDolbyVision = BoolPref('disable_dolby_vision');
   static const hdrSdrConversion = EnumPref<HdrSdrConversion>(
     'hdr_sdr_conversion',
     values: HdrSdrConversion.values,
@@ -1389,6 +1395,7 @@ class SettingsService extends BaseSharedPreferencesService {
     matchContentResolution,
     tunneledPlayback,
     dvConversionMode,
+    disableDolbyVision,
     hdrSdrConversion,
     musicVolume,
     resumeMusicOnLaunch,
