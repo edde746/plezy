@@ -1449,6 +1449,7 @@ class _Translations$explore$ja extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'ウォッチリストから削除しました';
 	@override String get watchlistUpdateFailed => 'ウォッチリストを更新できませんでした';
 	@override String get watchlistNoMatch => 'このアイテムに一致するウォッチリスト項目が見つかりませんでした';
+	@override String get openInLibrary => 'ライブラリで開く';
 	@override String get notInLibrary => 'ライブラリにありません';
 	@override String get inTheseLibraries => 'これらのライブラリにあります';
 	@override String get checkingLibrary => 'ライブラリを確認中…';
@@ -4210,6 +4211,7 @@ extension on TranslationsJa {
 			'explore.removedFromWatchlist' => 'ウォッチリストから削除しました',
 			'explore.watchlistUpdateFailed' => 'ウォッチリストを更新できませんでした',
 			'explore.watchlistNoMatch' => 'このアイテムに一致するウォッチリスト項目が見つかりませんでした',
+			'explore.openInLibrary' => 'ライブラリで開く',
 			'explore.notInLibrary' => 'ライブラリにありません',
 			'explore.inTheseLibraries' => 'これらのライブラリにあります',
 			'explore.checkingLibrary' => 'ライブラリを確認中…',
@@ -4564,9 +4566,9 @@ extension on TranslationsJa {
 			'watchTogether.removeRoom' => '削除',
 			'watchTogether.guestSwitchUnavailable' => '切り替えられません — 同期に必要なサーバーを利用できません',
 			'watchTogether.guestSwitchFailed' => '切り替えられません — このサーバーにコンテンツが見つかりません',
-			'watchTogether.defaultDisplayName' => 'ユーザー',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'ユーザー',
 			'watchTogether.errors.timedOut' => 'リレーサーバーが時間内に応答しませんでした',
 			'watchTogether.errors.connectionLost' => 'セッションの準備が整う前に接続が閉じられました',
 			'watchTogether.errors.invalidRelayResponse' => 'リレーサーバーから予期しない応答が返されました',
@@ -5078,9 +5080,9 @@ extension on TranslationsJa {
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
 			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',
 			'addServer.authResponseNotJson' => '認証レスポンスが有効なJSONではありません',
-			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',
 			'addServer.quickConnectNotJson' => 'Quick Connectのレスポンスが有効なJSONではありません',
 			'addServer.quickConnectMissingFields' => 'Quick Connectのレスポンスにコードまたはシークレットがありません',

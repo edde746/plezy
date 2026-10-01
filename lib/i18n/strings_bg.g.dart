@@ -1455,6 +1455,7 @@ class _Translations$explore$bg extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Премахнато от списъка за гледане';
 	@override String get watchlistUpdateFailed => 'Неуспешно обновяване на списъка за гледане';
 	@override String get watchlistNoMatch => 'Този елемент не можа да бъде съпоставен със списък за гледане';
+	@override String get openInLibrary => 'Отвори в библиотеката';
 	@override String get notInLibrary => 'Не е в твоята библиотека';
 	@override String get inTheseLibraries => 'В тези библиотеки';
 	@override String get checkingLibrary => 'Проверка на твоята библиотека...';
@@ -4221,6 +4222,7 @@ extension on TranslationsBg {
 			'explore.removedFromWatchlist' => 'Премахнато от списъка за гледане',
 			'explore.watchlistUpdateFailed' => 'Неуспешно обновяване на списъка за гледане',
 			'explore.watchlistNoMatch' => 'Този елемент не можа да бъде съпоставен със списък за гледане',
+			'explore.openInLibrary' => 'Отвори в библиотеката',
 			'explore.notInLibrary' => 'Не е в твоята библиотека',
 			'explore.inTheseLibraries' => 'В тези библиотеки',
 			'explore.checkingLibrary' => 'Проверка на твоята библиотека...',
@@ -4575,9 +4577,9 @@ extension on TranslationsBg {
 			'watchTogether.removeRoom' => 'Премахни',
 			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
 			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
-			'watchTogether.defaultDisplayName' => 'Потребител',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Потребител',
 			'watchTogether.errors.timedOut' => 'Релейният сървър не отговори навреме',
 			'watchTogether.errors.connectionLost' => 'Връзката се затвори, преди сесията да е готова',
 			'watchTogether.errors.invalidRelayResponse' => 'Релейният сървър изпрати неочакван отговор',
@@ -5089,9 +5091,9 @@ extension on TranslationsBg {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			'addServer.invalidCredentials' => 'Невалидно потребителско име или парола',
 			'addServer.authResponseNotJson' => 'Отговорът при удостоверяване не беше валиден JSON',
-			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',
 			'addServer.quickConnectRejected' => 'Quick Connect беше отхвърлен от сървъра',
 			'addServer.quickConnectNotJson' => 'Отговорът на Quick Connect не беше валиден JSON',
 			'addServer.quickConnectMissingFields' => 'В отговора на Quick Connect липсва код или таен ключ',

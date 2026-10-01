@@ -1455,6 +1455,7 @@ class _Translations$explore$sv extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Borttagen från bevakningslistan';
 	@override String get watchlistUpdateFailed => 'Det gick inte att uppdatera bevakningslistan';
 	@override String get watchlistNoMatch => 'Det gick inte att matcha det här objektet mot en bevakningslista';
+	@override String get openInLibrary => 'Öppna i bibliotek';
 	@override String get notInLibrary => 'Finns inte i ditt bibliotek';
 	@override String get inTheseLibraries => 'I dessa bibliotek';
 	@override String get checkingLibrary => 'Kontrollerar ditt bibliotek...';
@@ -4221,6 +4222,7 @@ extension on TranslationsSv {
 			'explore.removedFromWatchlist' => 'Borttagen från bevakningslistan',
 			'explore.watchlistUpdateFailed' => 'Det gick inte att uppdatera bevakningslistan',
 			'explore.watchlistNoMatch' => 'Det gick inte att matcha det här objektet mot en bevakningslista',
+			'explore.openInLibrary' => 'Öppna i bibliotek',
 			'explore.notInLibrary' => 'Finns inte i ditt bibliotek',
 			'explore.inTheseLibraries' => 'I dessa bibliotek',
 			'explore.checkingLibrary' => 'Kontrollerar ditt bibliotek...',
@@ -4575,9 +4577,9 @@ extension on TranslationsSv {
 			'watchTogether.removeRoom' => 'Ta bort',
 			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunde inte byta — innehåll hittades inte på denna server',
-			'watchTogether.defaultDisplayName' => 'Användare',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Användare',
 			'watchTogether.errors.timedOut' => 'Reläservern svarade inte i tid',
 			'watchTogether.errors.connectionLost' => 'Anslutningen stängdes innan sessionen var klar',
 			'watchTogether.errors.invalidRelayResponse' => 'Reläservern skickade ett oväntat svar',
@@ -5089,9 +5091,9 @@ extension on TranslationsSv {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.',
 			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',
 			'addServer.authResponseNotJson' => 'Autentiseringssvaret var inte ett giltigt JSON-svar',
-			'addServer.authResponseIncomplete' => 'Inloggningssvaret från servern var ofullständigt',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'Inloggningssvaret från servern var ofullständigt',
 			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var inte ett giltigt JSON-svar',
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret saknar en kod eller hemlig nyckel',

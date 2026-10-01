@@ -1455,6 +1455,7 @@ class _Translations$explore$pt extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Removido da lista de interesses';
 	@override String get watchlistUpdateFailed => 'Não foi possível atualizar a lista para assistir';
 	@override String get watchlistNoMatch => 'Não foi possível associar este item a uma lista de interesses';
+	@override String get openInLibrary => 'Abrir na biblioteca';
 	@override String get notInLibrary => 'Não está na sua biblioteca';
 	@override String get inTheseLibraries => 'Nestas bibliotecas';
 	@override String get checkingLibrary => 'Verificando sua biblioteca...';
@@ -4221,6 +4222,7 @@ extension on TranslationsPt {
 			'explore.removedFromWatchlist' => 'Removido da lista de interesses',
 			'explore.watchlistUpdateFailed' => 'Não foi possível atualizar a lista para assistir',
 			'explore.watchlistNoMatch' => 'Não foi possível associar este item a uma lista de interesses',
+			'explore.openInLibrary' => 'Abrir na biblioteca',
 			'explore.notInLibrary' => 'Não está na sua biblioteca',
 			'explore.inTheseLibraries' => 'Nestas bibliotecas',
 			'explore.checkingLibrary' => 'Verificando sua biblioteca...',
@@ -4575,9 +4577,9 @@ extension on TranslationsPt {
 			'watchTogether.removeRoom' => 'Remover',
 			'watchTogether.guestSwitchUnavailable' => 'Não foi possível trocar — servidor indisponível para sincronização',
 			'watchTogether.guestSwitchFailed' => 'Não foi possível trocar — conteúdo não encontrado neste servidor',
-			'watchTogether.defaultDisplayName' => 'Usuário',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Usuário',
 			'watchTogether.errors.timedOut' => 'O servidor de retransmissão não respondeu a tempo',
 			'watchTogether.errors.connectionLost' => 'A conexão foi encerrada antes de a sessão ficar pronta',
 			'watchTogether.errors.invalidRelayResponse' => 'O servidor de retransmissão enviou uma resposta inesperada',
@@ -5089,9 +5091,9 @@ extension on TranslationsPt {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutilize a conexão de outro perfil. Perfis protegidos por PIN exigem PIN.',
 			'addServer.invalidCredentials' => 'Usuário ou senha inválidos',
 			'addServer.authResponseNotJson' => 'A resposta de autenticação não era um JSON válido',
-			'addServer.authResponseIncomplete' => 'A resposta de login do servidor estava incompleta',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'A resposta de login do servidor estava incompleta',
 			'addServer.quickConnectRejected' => 'O Quick Connect foi rejeitado pelo servidor',
 			'addServer.quickConnectNotJson' => 'A resposta do Quick Connect não era um JSON válido',
 			'addServer.quickConnectMissingFields' => 'A resposta do Quick Connect não contém um código ou segredo',

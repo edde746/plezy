@@ -1455,6 +1455,7 @@ class _Translations$explore$hu extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Eltávolítva a figyelőlistáról';
 	@override String get watchlistUpdateFailed => 'Nem sikerült a Néznivalók frissítése';
 	@override String get watchlistNoMatch => 'Nem sikerült ezt az elemet figyelőlistához társítani';
+	@override String get openInLibrary => 'Megnyitás a könyvtárban';
 	@override String get notInLibrary => 'Nincs a könyvtáradban';
 	@override String get inTheseLibraries => 'Ezekben a könyvtárakban';
 	@override String get checkingLibrary => 'Könyvtár ellenőrzése...';
@@ -4221,6 +4222,7 @@ extension on TranslationsHu {
 			'explore.removedFromWatchlist' => 'Eltávolítva a figyelőlistáról',
 			'explore.watchlistUpdateFailed' => 'Nem sikerült a Néznivalók frissítése',
 			'explore.watchlistNoMatch' => 'Nem sikerült ezt az elemet figyelőlistához társítani',
+			'explore.openInLibrary' => 'Megnyitás a könyvtárban',
 			'explore.notInLibrary' => 'Nincs a könyvtáradban',
 			'explore.inTheseLibraries' => 'Ezekben a könyvtárakban',
 			'explore.checkingLibrary' => 'Könyvtár ellenőrzése...',
@@ -4575,9 +4577,9 @@ extension on TranslationsHu {
 			'watchTogether.removeRoom' => 'Eltávolítás',
 			'watchTogether.guestSwitchUnavailable' => 'Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz',
 			'watchTogether.guestSwitchFailed' => 'Nem sikerült a váltás — a tartalom nem található ezen a szerveren',
-			'watchTogether.defaultDisplayName' => 'Felhasználó',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Felhasználó',
 			'watchTogether.errors.timedOut' => 'A relészerver nem válaszolt időben',
 			'watchTogether.errors.connectionLost' => 'A kapcsolat lezárult, mielőtt a munkamenet elkészült volna',
 			'watchTogether.errors.invalidRelayResponse' => 'A relészerver váratlan választ küldött',
@@ -5089,9 +5091,9 @@ extension on TranslationsHu {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
 			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',
 			'addServer.authResponseNotJson' => 'A hitelesítési válasz nem érvényes JSON',
-			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',
 			'addServer.quickConnectNotJson' => 'A Quick Connect válasza nem érvényes JSON',
 			'addServer.quickConnectMissingFields' => 'A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs',

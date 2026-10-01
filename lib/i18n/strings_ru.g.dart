@@ -1467,6 +1467,7 @@ class _Translations$explore$ru extends Translations$explore$en {
 	@override String get removedFromWatchlist => 'Удалено из списка просмотра';
 	@override String get watchlistUpdateFailed => 'Не удалось обновить список для просмотра';
 	@override String get watchlistNoMatch => 'Не удалось сопоставить этот элемент со списком просмотра';
+	@override String get openInLibrary => 'Открыть в библиотеке';
 	@override String get notInLibrary => 'Нет в вашей библиотеке';
 	@override String get inTheseLibraries => 'В этих библиотеках';
 	@override String get checkingLibrary => 'Проверка вашей библиотеки...';
@@ -4243,6 +4244,7 @@ extension on TranslationsRu {
 			'explore.removedFromWatchlist' => 'Удалено из списка просмотра',
 			'explore.watchlistUpdateFailed' => 'Не удалось обновить список для просмотра',
 			'explore.watchlistNoMatch' => 'Не удалось сопоставить этот элемент со списком просмотра',
+			'explore.openInLibrary' => 'Открыть в библиотеке',
 			'explore.notInLibrary' => 'Нет в вашей библиотеке',
 			'explore.inTheseLibraries' => 'В этих библиотеках',
 			'explore.checkingLibrary' => 'Проверка вашей библиотеки...',
@@ -4597,9 +4599,9 @@ extension on TranslationsRu {
 			'watchTogether.removeRoom' => 'Удалить',
 			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
 			'watchTogether.guestSwitchFailed' => 'Не удалось переключиться — содержимое не найдено на этом сервере',
-			'watchTogether.defaultDisplayName' => 'Пользователь',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.defaultDisplayName' => 'Пользователь',
 			'watchTogether.errors.timedOut' => 'Сервер ретрансляции не ответил вовремя',
 			'watchTogether.errors.connectionLost' => 'Соединение закрылось до того, как сессия была готова',
 			'watchTogether.errors.invalidRelayResponse' => 'Сервер ретрансляции прислал неожиданный ответ',
@@ -5111,9 +5113,9 @@ extension on TranslationsRu {
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.',
 			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',
 			'addServer.authResponseNotJson' => 'Ответ аутентификации не является допустимым JSON',
-			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',
 			'addServer.quickConnectNotJson' => 'Ответ Quick Connect не является допустимым JSON',
 			'addServer.quickConnectMissingFields' => 'В ответе Quick Connect отсутствует код или секрет',
