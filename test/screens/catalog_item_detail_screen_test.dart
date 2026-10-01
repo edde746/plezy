@@ -243,7 +243,7 @@ class _PendingCatalogLibraryMatcher extends CatalogLibraryMatcher {
   final Completer<List<MediaItem>> completer;
 
   @override
-  Future<List<MediaItem>> match(CatalogItem item) => completer.future;
+  Future<LibraryLookupResult> match(CatalogItem item) async => libraryLookupResult(await completer.future);
 }
 
 /// Matches only items that carry an external id, the way a real lookup for a
@@ -343,22 +343,23 @@ Future<void> _pumpDetail(
     TranslationProvider(
       child: InputModeTracker(
         child: MultiProvider(
-        providers: [
-          Provider<CatalogLibraryMatcher>.value(value: matcher),
-          ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
-          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
-          if (account != null) ChangeNotifierProvider<SeerrAccountProvider>.value(value: account),
-        ],
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: pushedRoute
-              ? Builder(
-                  builder: (context) => Scaffold(
-                    body: TextButton(
-                      onPressed: () => Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute<void>(builder: (_) => CatalogItemDetailScreen(item: item))),
-                      child: const Text('Open catalog'),
+          providers: [
+            Provider<CatalogLibraryMatcher>.value(value: matcher),
+            ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+            if (account != null) ChangeNotifierProvider<SeerrAccountProvider>.value(value: account),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: pushedRoute
+                ? Builder(
+                    builder: (context) => Scaffold(
+                      body: TextButton(
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).push(MaterialPageRoute<void>(builder: (_) => CatalogItemDetailScreen(item: item))),
+                        child: const Text('Open catalog'),
+                      ),
                     ),
                   )
                 : CatalogItemDetailScreen(item: item),
@@ -1595,9 +1596,9 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
   });
 
-  testWidgets('up from the first library copy reaches the overview when the item has no action bar', (tester) async {
-    // No watchlist support, trailer, or Seerr: nothing above the copies is a
-    // button, but the overview is still a stop rather than a dead end.
+  testWidgets('up from the first library copy reaches the overview with only the library action', (tester) async {
+    // The Open in Library action is available without watchlist, trailer or
+    // Seerr, and the overview must remain a navigation stop below that action.
     final source = _FakeCatalogSource(supportsWatchlist: false);
     await _pumpDetail(
       tester,
@@ -1611,7 +1612,8 @@ void main() {
         ),
       ],
     );
-    expect(find.byType(FocusableActionBar), findsNothing);
+    expect(find.byType(FocusableActionBar), findsOneWidget);
+    expect(find.byTooltip(t.explore.openInLibrary), findsOneWidget);
 
     final tile = tester.widget<FocusableListTile>(
       find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),
