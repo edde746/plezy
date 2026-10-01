@@ -1166,6 +1166,126 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('TV detail hero adds the scores from the focused episode\'s own fetch (#2539)', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final show = testMediaItem(
+      id: 'show_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.show,
+      title: 'The Show',
+      serverId: 'server_1',
+      serverName: 'Server',
+    ).copyWith(ratings: const [MediaRatingSource(source: 'imdb', value: 8.4)]);
+    final season = testMediaItem(
+      id: 'season_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    // Rail entries as a Plex children listing sends them: the scalar TMDB
+    // pair only.
+    MediaItem episode(String id, int index, double tmdb) =>
+        testMediaItem(
+          id: id,
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Episode $index',
+          index: index,
+          parentId: season.id,
+          parentIndex: season.index,
+          grandparentId: show.id,
+          grandparentTitle: show.title,
+          serverId: show.serverId,
+          serverName: show.serverName,
+        ).copyWith(
+          ratings: [MediaRatingSource(source: 'tmdb', value: tmdb)],
+        );
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season],
+        season.id: [episode('ep1', 1, 7.7), episode('ep2', 2, 7.1)],
+      },
+      // Episode 1's own `/library/metadata/{id}` adds the `Rating[]` array;
+      // episode 2's fetch returns its listing entry unchanged.
+      rawItems: {
+        'ep1': {
+          'ratingKey': 'ep1',
+          'type': 'episode',
+          'title': 'Episode 1',
+          'parentRatingKey': season.id,
+          'grandparentRatingKey': show.id,
+          'parentIndex': 1,
+          'index': 1,
+          'audienceRating': 7.7,
+          'audienceRatingImage': 'themoviedb://image.rating',
+          'Rating': [
+            {'image': 'imdb://image.rating', 'value': 7.8, 'type': 'audience'},
+            {'image': 'themoviedb://image.rating', 'value': 7.7, 'type': 'audience'},
+          ],
+        },
+      },
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(
+              child: SizedBox(width: 1920, height: 1080, child: MediaDetailScreen(metadata: show)),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final information = find.bySemanticsIdentifier('tv_detail_information');
+    String announced() => tester.getSemantics(information).label;
+
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+    // The listing's score alone until the episode's fetch lands — never the
+    // show's IMDb standing in for the episode's.
+    expect(announced(), contains('TMDB 77%'));
+    expect(announced(), isNot(contains('IMDb')));
+
+    // Past the playback probe's debounce: the fetch it already makes carries
+    // the episode's IMDb score.
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(announced(), contains('TMDB 77%, IMDb 7.8'));
+    expect(
+      find.descendant(of: find.byKey(const ValueKey('tv_detail_information_semantics')), matching: find.text('7.8')),
+      findsOneWidget,
+    );
+
+    // The scores belong to that episode alone.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(announced(), contains('Episode 2'));
+    expect(announced(), contains('TMDB 71%'));
+    expect(announced(), isNot(contains('IMDb')));
+    semantics.dispose();
+  });
+
   testWidgets('TV detail action row ends with the tracks Play will use, off the focus path', (tester) async {
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1920, 1080);
