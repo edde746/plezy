@@ -108,13 +108,14 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Holds the chrome while any pointer is pressed on the controls, so a held
   /// slider, scrub or button can't fade out and unmount under the pointer.
-  Widget _holdChromeWhilePressed({required Widget child, HitTestBehavior behavior = HitTestBehavior.translucent}) => Listener(
-    behavior: behavior,
-    onPointerDown: (event) => widget.chromeController.recordPointerDown(event.pointer),
-    onPointerUp: (event) => widget.chromeController.recordPointerUp(event.pointer),
-    onPointerCancel: (event) => widget.chromeController.recordPointerUp(event.pointer),
-    child: child,
-  );
+  Widget _holdChromeWhilePressed({required Widget child, HitTestBehavior behavior = HitTestBehavior.translucent}) =>
+      Listener(
+        behavior: behavior,
+        onPointerDown: (event) => widget.chromeController.recordPointerDown(event.pointer),
+        onPointerUp: (event) => widget.chromeController.recordPointerUp(event.pointer),
+        onPointerCancel: (event) => widget.chromeController.recordPointerUp(event.pointer),
+        child: child,
+      );
 
   void _toggleControls() {
     widget.chromeController.toggle();
