@@ -5,22 +5,32 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_file_info.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/settings/subtitle_styling_screen.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/sheets/video_settings_sheet.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:shared_preferences_platform_interface/types.dart';
 
+import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/player_streams.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
@@ -446,6 +456,56 @@ void main() {
       expect(_tickOn('Player'), findsNothing);
     });
   });
+
+  group('File Info', () {
+    testWidgets('opens the playing item as a nested page whose back button returns to the menu', (tester) async {
+      final client = _FileInfoClient();
+      final item = testMediaItem(title: 'Inception', serverId: client.serverId.value);
+      await _pumpFileInfoSheet(tester, client, TrackControlsState(metadata: item, serverId: item.serverId));
+
+      await tester.tap(find.text(t.mediaMenu.fileInfo));
+      await tester.pump();
+      expect(client.requested, [item]);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      client.response.complete(const MediaFileInfo(versions: [MediaFileVersion(container: 'mkv')]));
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Inception'), findsOneWidget);
+      expect(find.text('MKV'), findsWidgets);
+
+      await tester.tapAt(tester.getCenter(find.byIcon(Symbols.arrow_back_rounded)));
+      await tester.pumpAndSettle();
+      expect(find.text('MKV'), findsNothing);
+      expect(find.text(t.videoSettings.performanceOverlay), findsOneWidget);
+    });
+
+    testWidgets('says so when the server has no file info for the item', (tester) async {
+      final client = _FileInfoClient();
+      final item = testMediaItem(serverId: client.serverId.value);
+      await _pumpFileInfoSheet(tester, client, TrackControlsState(metadata: item, serverId: item.serverId));
+
+      await tester.tap(find.text(t.mediaMenu.fileInfo));
+      client.response.complete(null);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text(t.messages.fileInfoNotAvailable), findsOneWidget);
+    });
+
+    testWidgets('is not offered for live TV, which has no file', (tester) async {
+      final client = _FileInfoClient();
+      final item = testMediaItem(serverId: client.serverId.value);
+      await _pumpFileInfoSheet(
+        tester,
+        client,
+        TrackControlsState(metadata: item, serverId: item.serverId, isLive: true),
+      );
+
+      expect(find.text(t.videoSettings.performanceOverlay), findsOneWidget);
+      expect(find.text(t.mediaMenu.fileInfo), findsNothing);
+    });
+  });
 }
 
 /// The tick marking the selected option in one of the sheet's picker views.
@@ -453,6 +513,69 @@ Finder _tickOn(String label) => find.descendant(
   of: find.ancestor(of: find.text(label), matching: find.byType(ListTile)).first,
   matching: find.byIcon(Symbols.check_rounded),
 );
+
+/// Opens the settings sheet through a real host, as the player does, with
+/// [client] registered for the playing item's server.
+Future<void> _pumpFileInfoSheet(WidgetTester tester, _FileInfoClient client, TrackControlsState state) async {
+  // Tall enough that the lazy menu builds every row.
+  tester.view.physicalSize = const Size(1200, 4000);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final provider = testMultiServerProvider(manager);
+  addTearDown(() {
+    provider.dispose();
+    manager.dispose();
+  });
+
+  await tester.pumpWidget(
+    ChangeNotifierProvider<MultiServerProvider>.value(
+      value: provider,
+      child: MaterialApp(
+        theme: ThemeData(extensions: const [testMonoTokensAnimated]),
+        home: OverlaySheetHost(
+          child: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => unawaited(
+                  OverlaySheetController.of(context).show<void>(
+                    builder: (_) => VideoSettingsSheet(player: _FakeSettingsPlayer(), trackControlsState: state),
+                  ),
+                ),
+                child: const Text('Open settings'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('Open settings'));
+  await tester.pumpAndSettle();
+}
+
+class _FileInfoClient implements MediaServerClient {
+  final response = Completer<MediaFileInfo?>();
+  final requested = <MediaItem>[];
+
+  @override
+  ServerId get serverId => ServerId('file-info-server');
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  Future<MediaFileInfo?> getFileInfo(MediaItem item) {
+    requested.add(item);
+    return response.future;
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 Future<void> _pumpSheet(
   WidgetTester tester, {

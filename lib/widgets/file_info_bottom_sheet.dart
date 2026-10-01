@@ -23,7 +23,11 @@ class FileInfoBottomSheet extends StatefulWidget {
   final MediaFileInfo fileInfo;
   final String title;
 
-  const FileInfoBottomSheet({super.key, required this.fileInfo, required this.title});
+  /// Header back button and Back key handler, for when this sheet is a nested
+  /// page of another sheet rather than a sheet of its own.
+  final VoidCallback? onBack;
+
+  const FileInfoBottomSheet({super.key, required this.fileInfo, required this.title, this.onBack});
 
   @override
   State<FileInfoBottomSheet> createState() => _FileInfoBottomSheetState();
@@ -51,6 +55,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
       title: t.fileInfo.title,
       icon: Symbols.info_rounded,
       closeFocusNode: _initialFocusNode,
+      onBack: widget.onBack,
       // Flat sheet: the tonal cards do the separating, so the header
       // keeps no rule under it.
       showHeaderBorder: false,
