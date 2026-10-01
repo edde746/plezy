@@ -268,7 +268,9 @@ class PlayerNative extends PlayerBase {
         if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
         if (initialOptions.isNotEmpty) 'initialOptions': initialOptions,
         if (!audioOnly && Platform.isAndroid)
-          'subtitleRenderScale': SettingsService.instance.read(SettingsService.subtitleRenderResolution).androidRenderScale,
+          'subtitleRenderScale': SettingsService.instance
+              .read(SettingsService.subtitleRenderResolution)
+              .androidRenderScale,
         if (Platform.isAndroid) 'logLevel': _requestedLogLevel,
         'instanceId': nativeInstanceId,
       });

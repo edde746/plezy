@@ -196,11 +196,14 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
       onRateRequested: widget.onRateRequested,
-      onClipRequested: shouldShowClipButton(
-        isLive: widget.isLive,
-        isDesktop: PlatformDetector.isDesktopOS(),
-        hasClipHandler: widget.onClipRequested != null,
-      ) ? widget.onClipRequested : null,
+      onClipRequested:
+          shouldShowClipButton(
+            isLive: widget.isLive,
+            isDesktop: PlatformDetector.isDesktopOS(),
+            hasClipHandler: widget.onClipRequested != null,
+          )
+          ? widget.onClipRequested
+          : null,
       onCancelAutoHide: widget.chromeController.cancelAutoHide,
       onStartAutoHide: _startHideTimer,
       serverId: widget.metadata.serverId,

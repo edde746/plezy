@@ -443,6 +443,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
     );
   }
 }
+
 class _FocusKnobThumbShape extends SliderComponentShape {
   const _FocusKnobThumbShape();
 
