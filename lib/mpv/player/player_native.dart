@@ -1198,10 +1198,12 @@ class PlayerNative extends PlayerBase {
     // audio-spdif is the authoritative transition. Publish only after mpv
     // accepts it; audio-exclusive below is an independent device-mode hint.
     _passthroughActive = enabled;
-    // audio-exclusive claims the device for bitstreaming (exclusive WASAPI on
-    // Windows); on iOS/tvOS it is set once at
-    // playback start and must not be clobbered here.
-    if (!Platform.isIOS) {
+    // audio-exclusive claims the device for bitstreaming on desktop outputs
+    // (exclusive WASAPI on Windows, hog-mode CoreAudio on macOS). On iOS/tvOS
+    // it is set once at playback start and must not be clobbered here.
+    // Android's audiotrack and opensles outputs ignore it, yet every change
+    // makes mpv reload the audio output mid-playback (#2530).
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       try {
         await setProperty('audio-exclusive', enabled ? 'yes' : 'no');
       } catch (error, stackTrace) {
