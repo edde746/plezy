@@ -232,7 +232,7 @@ void main() {
     expect(player.writes.lastWhere((write) => write.key == 'sub-ass-force-margins').value, 'no');
   });
 
-  test('ambient lighting owns aspect override for packed stereo', () async {
+  test('packed stereo keeps decoder aspect when ambient lighting changes', () async {
     final player = _RecordingPlayer(
       properties: {'video-params/stereo-in': 'ab2l', 'video-dec-params/aspect': '${16 / 9}'},
     );
@@ -241,13 +241,16 @@ void main() {
     addTearDown(manager.dispose);
 
     await manager.updateVideoFilter();
-    expect(player.writes.where((write) => write.key == 'video-aspect-override'), isEmpty);
+    expect(
+      double.parse(player.writes.singleWhere((write) => write.key == 'video-aspect-override').value),
+      closeTo(16 / 9, 0.0001),
+    );
+    player.clearRecords();
 
     ambient.fakeEnabled = false;
     await manager.updateVideoFilter();
     final aspectWrites = player.writes.where((write) => write.key == 'video-aspect-override').toList();
-    expect(aspectWrites, hasLength(1));
-    expect(double.parse(aspectWrites.single.value), closeTo(16 / 9, 0.0001));
+    expect(aspectWrites, isEmpty);
   });
 
   test('ordinary video restores the selected sizing mode after packed stereo', () async {

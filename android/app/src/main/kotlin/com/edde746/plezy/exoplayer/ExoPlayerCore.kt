@@ -760,8 +760,13 @@ class ExoPlayerCore(private val activity: Activity) :
         extractorsFactory.createExtractors().map { extractor ->
           when {
             extractor is MatroskaExtractor -> {
+              val mediaGeneration = currentMediaGeneration
               val assExtractor = ZlibMatroskaExtractor(subtitleParserFactory, handler) { mode ->
-                updateMatroskaStereoMode(mode, fromFfmpeg = false)
+                this.handler.post {
+                  if (!disposing && mediaGeneration == currentMediaGeneration) {
+                    updateMatroskaStereoMode(mode, fromFfmpeg = false)
+                  }
+                }
               }
               val inner = if (doviEnabled) {
                 DoviExtractorWrapper(assExtractor, currentDvMode) { level, prefix, message ->
