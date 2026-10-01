@@ -4,6 +4,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../i18n/app_locale_utils.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_kind.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
@@ -347,6 +349,9 @@ class PlexDiscoverClient {
       'X-Plex-Client-Identifier': session.clientIdentifier,
       'X-Plex-Product': 'Plezy',
       'X-Plex-Version': '2',
+      // Read per request so a language switch applies on the next fetch.
+      // Discover localizes titles, summaries and shelf names from this.
+      'X-Plex-Language': LocaleSettings.currentLocale.plexLanguageCode,
     };
     final request = switch (method) {
       'GET' => _http.get(uri, headers: headers),
