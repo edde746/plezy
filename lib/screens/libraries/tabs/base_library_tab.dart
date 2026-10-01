@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/library_change_event.dart';
 import '../../../media/media_library.dart';
