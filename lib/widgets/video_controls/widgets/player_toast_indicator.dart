@@ -115,12 +115,7 @@ class PlayerToastController extends ChangeNotifier {
     );
   }
 
-  void _show(
-    IconData icon,
-    String text,
-    Duration duration, {
-    required PlayerToastKind kind,
-  }) {
+  void _show(IconData icon, String text, Duration duration, {required PlayerToastKind kind}) {
     _timer?.cancel();
     // Every accepted command carries a fresh pulse. Two identical commands in a
     // row (an explicit pause while already paused, say) produce an identical
