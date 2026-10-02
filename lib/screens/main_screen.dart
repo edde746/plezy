@@ -76,6 +76,7 @@ import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import 'video_player_screen.dart';
 import 'profile/profile_teardown.dart';
+import '../services/apple_tv_remote_touch_service.dart';
 import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
 
@@ -487,6 +488,7 @@ class _MainScreenState extends State<MainScreen>
   /// reconnect (legacy main.dart used to do the launch half from SetupScreen
   /// before navigating).
   StreamSubscription<Map<String, bool>>? _serverStatusSub;
+  StreamSubscription<AppleTvRemoteButton>? _appleTvButtonSub;
 
   /// Online-server snapshot covered by the last queued-download resume. A
   /// server missing from the latest snapshot drops out of the set, so a
@@ -555,6 +557,9 @@ class _MainScreenState extends State<MainScreen>
         : null;
     _mountedTabs.add(_currentTab);
     _screens = _buildScreens(_isOffline);
+    if (PlatformDetector.isAppleTV()) {
+      _appleTvButtonSub = AppleTvRemoteTouchService.instance.buttonActions.listen(_handleAppleTvRemoteButton);
+    }
 
     // Warm the TV keyboard's text-layout caches off the first real open
     // (measured ~315ms first-open frame on low-end boxes, mostly cold font
@@ -1103,6 +1108,7 @@ class _MainScreenState extends State<MainScreen>
     }
     _activeProfileForListener?.removeListener(_onActiveProfileChanged);
     _serverStatusSub?.cancel();
+    _appleTvButtonSub?.cancel();
     _startupSettleTimeout?.cancel();
     _startupSettleTimeout = null;
     _sidebarFocusScope.dispose();
@@ -1791,6 +1797,19 @@ class _MainScreenState extends State<MainScreen>
     playbackStateProvider.clearShuffle();
 
     _fullRefreshContentTabs();
+  }
+
+  /// The remote's Guide button opens the Live TV guide from anywhere in the
+  /// browse UI. Pushed routes (detail pages, the player) keep their own
+  /// meaning for it; the live player handles Guide itself.
+  void _handleAppleTvRemoteButton(AppleTvRemoteButton button) {
+    if (button != AppleTvRemoteButton.guide) return;
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+    if (!_getVisibleTabs(_isOffline).any((t) => t.id == NavigationTabId.liveTv)) return;
+    _selectTab(NavigationTabId.liveTv);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onScreen<LiveTvGuideShowable>(NavigationTabId.liveTv, (screen) => screen.showGuide());
+    });
   }
 
   void _selectTab(NavigationTabId tab, {bool focusSearchInput = true}) {
