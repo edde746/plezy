@@ -750,7 +750,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       return;
     }
 
-    unawaited(_wakelockController.setEnabled(isPlaying));
+    // Hold the screen awake only while media advances. Parked at the end (the
+    // Play Next prompt) a play press still reports playing while nothing
+    // advances, and a lock taken there keeps a finished item lit until
+    // someone comes back.
+    unawaited(_wakelockController.setEnabled(isPlaying && !(player?.state.completed ?? false)));
 
     if (isPlaying) {
       // Force a texture refresh on resume to unstick stale frames
