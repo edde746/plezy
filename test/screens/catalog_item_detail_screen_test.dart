@@ -19,6 +19,7 @@ import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/providers/cli_debrid_account_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
@@ -322,11 +323,20 @@ Future<void> _pumpDetail(
   final serverManager = MultiServerManager();
   final multiServer = testMultiServerProvider(serverManager);
   final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
+  final cliDebrid = CliDebridAccountProvider();
+  // Settle initialLoadComplete before pumping so isConnected reflects the
+  // (disconnected) fake state on the first frame instead of after a later
+  // rebuild. runAsync: this crosses real SharedPreferences singleton state
+  // that testWidgets' FakeAsync zone cannot safely drive alongside a prior
+  // SettingsService.getInstance() call in setUp (see prefs.dart's
+  // preflight-deadlock note for the same class of hazard).
+  await tester.runAsync(() => cliDebrid.onActiveProfileChanged(null));
   addTearDown(sources.dispose);
   addTearDown(source.dispose);
   addTearDown(serverManager.dispose);
   addTearDown(multiServer.dispose);
   addTearDown(matcher.dispose);
+  addTearDown(cliDebrid.dispose);
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -334,6 +344,7 @@ Future<void> _pumpDetail(
           Provider<CatalogLibraryMatcher>.value(value: matcher),
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+          ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
           if (account != null) ChangeNotifierProvider<SeerrAccountProvider>.value(value: account),
         ],
         child: MaterialApp(

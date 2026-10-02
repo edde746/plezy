@@ -19,6 +19,7 @@ import '../providers/explore_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/cli_debrid_account_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../providers/trackers_provider.dart';
@@ -180,6 +181,17 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
                       appLogger.w('Seerr profile hydrate failed', error: e, stackTrace: s);
+                    }),
+                  );
+                  return provider;
+                },
+              ),
+              ChangeNotifierProvider(
+                create: (context) {
+                  final provider = CliDebridAccountProvider();
+                  unawaited(
+                    provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                      appLogger.w('cli_debrid profile hydrate failed', error: e, stackTrace: s);
                     }),
                   );
                   return provider;

@@ -6,6 +6,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/providers/cli_debrid_account_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/screens/catalog_search_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
@@ -226,10 +227,19 @@ Future<void> _pumpMenuSearch(WidgetTester tester, _FakeSearchSource source, {req
   final manager = MultiServerManager();
   final multiServer = testMultiServerProvider(manager);
   final matcher = _FakeCatalogLibraryMatcher(multiServer);
+  final cliDebrid = CliDebridAccountProvider();
+  // Settle initialLoadComplete before pumping: showCatalogItemMenu awaits it,
+  // and with no onActiveProfileChanged call it would otherwise never resolve
+  // within pumpAndSettle's bounded fake-time window. runAsync: this crosses
+  // real SharedPreferences/BaseSharedPreferencesService singleton state that
+  // testWidgets' FakeAsync zone cannot safely drive (see prefs.dart's
+  // preflight-deadlock note for the same class of hazard).
+  await tester.runAsync(() => cliDebrid.onActiveProfileChanged(null));
   addTearDown(manager.dispose);
   addTearDown(multiServer.dispose);
   addTearDown(matcher.dispose);
   addTearDown(sources.dispose);
+  addTearDown(cliDebrid.dispose);
 
   await tester.pumpWidget(
     TranslationProvider(
@@ -237,6 +247,7 @@ Future<void> _pumpMenuSearch(WidgetTester tester, _FakeSearchSource source, {req
         providers: [
           Provider<CatalogLibraryMatcher>.value(value: matcher),
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+          ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: platform),
