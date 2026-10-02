@@ -2435,6 +2435,31 @@
     "permissionDenied": "Seerr bu eylemi reddetti: hesabınız artık gerekli izne sahip değil",
     "permissionRevoked": "Bunu isteme izniniz artık yok"
   },
+  "cliDebrid": {
+    "title": "",
+    "connectTitle": "",
+    "serverUrl": "",
+    "serverUrlHelper": "",
+    "apiToken": "",
+    "apiTokenHelper": "",
+    "invalidToken": "",
+    "instance": "",
+    "disconnectConfirm": "",
+    "disconnectConfirmBody": "",
+    "reRequest": "",
+    "reRequestSeason": "",
+    "request": "",
+    "requestSubmitted": "",
+    "requestFailed": "",
+    "rescrapeSucceeded": "",
+    "rescrapeFailed": "",
+    "rescrapeSeasonNothingToDo": "",
+    "rescrapeSeasonSucceeded": "",
+    "rescrapeSeasonSkipped": "",
+    "rescrapeSeasonFailed": "",
+    "chooseVersion": "",
+    "versions": ""
+  },
   "services": {
     "title": "Servisler",
     "hubSubtitle": "İzleme ilerlemesini eşitleyin ve yeni başlıklar isteyin.",
@@ -2451,7 +2476,8 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
-      "mdblist": "MDBList"
+      "mdblist": "MDBList",
+      "cliDebrid": ""
     },
     "simklReconnect": {
       "title": "Simkl'i Yeniden Bağla",

@@ -2435,6 +2435,31 @@
     "permissionDenied": "Seerr bu amalni rad etdi: hisobingizda endi kerakli ruxsat yoʻq",
     "permissionRevoked": "Buni soʻrash uchun endi ruxsatingiz yoʻq"
   },
+  "cliDebrid": {
+    "title": "",
+    "connectTitle": "",
+    "serverUrl": "",
+    "serverUrlHelper": "",
+    "apiToken": "",
+    "apiTokenHelper": "",
+    "invalidToken": "",
+    "instance": "",
+    "disconnectConfirm": "",
+    "disconnectConfirmBody": "",
+    "reRequest": "",
+    "reRequestSeason": "",
+    "request": "",
+    "requestSubmitted": "",
+    "requestFailed": "",
+    "rescrapeSucceeded": "",
+    "rescrapeFailed": "",
+    "rescrapeSeasonNothingToDo": "",
+    "rescrapeSeasonSucceeded": "",
+    "rescrapeSeasonSkipped": "",
+    "rescrapeSeasonFailed": "",
+    "chooseVersion": "",
+    "versions": ""
+  },
   "services": {
     "title": "Xizmatlar",
     "hubSubtitle": "Koʻrish jarayonini sinxronlang va yangi kontent soʻrang.",
@@ -2451,7 +2476,8 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
-      "mdblist": "MDBList"
+      "mdblist": "MDBList",
+      "cliDebrid": ""
     },
     "simklReconnect": {
       "title": "Simkl-ni qayta ulash",

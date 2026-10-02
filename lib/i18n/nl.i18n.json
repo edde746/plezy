@@ -2435,6 +2435,31 @@
     "permissionDenied": "Seerr heeft deze actie geweigerd: je account heeft niet langer de vereiste machtiging",
     "permissionRevoked": "Je hebt geen toestemming meer om dit aan te vragen"
   },
+  "cliDebrid": {
+    "title": "",
+    "connectTitle": "",
+    "serverUrl": "",
+    "serverUrlHelper": "",
+    "apiToken": "",
+    "apiTokenHelper": "",
+    "invalidToken": "",
+    "instance": "",
+    "disconnectConfirm": "",
+    "disconnectConfirmBody": "",
+    "reRequest": "",
+    "reRequestSeason": "",
+    "request": "",
+    "requestSubmitted": "",
+    "requestFailed": "",
+    "rescrapeSucceeded": "",
+    "rescrapeFailed": "",
+    "rescrapeSeasonNothingToDo": "",
+    "rescrapeSeasonSucceeded": "",
+    "rescrapeSeasonSkipped": "",
+    "rescrapeSeasonFailed": "",
+    "chooseVersion": "",
+    "versions": ""
+  },
   "services": {
     "title": "Diensten",
     "hubSubtitle": "Synchroniseer kijkvoortgang en vraag nieuwe titels aan.",
@@ -2451,7 +2476,8 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
-      "mdblist": "MDBList"
+      "mdblist": "MDBList",
+      "cliDebrid": ""
     },
     "simklReconnect": {
       "title": "Simkl opnieuw verbinden",

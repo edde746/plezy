@@ -2423,6 +2423,31 @@
     "permissionDenied": "Seerr 拒絕了此操作：您的帳戶不再具備所需權限",
     "permissionRevoked": "您不再具有請求此內容的權限"
   },
+  "cliDebrid": {
+    "title": "",
+    "connectTitle": "",
+    "serverUrl": "",
+    "serverUrlHelper": "",
+    "apiToken": "",
+    "apiTokenHelper": "",
+    "invalidToken": "",
+    "instance": "",
+    "disconnectConfirm": "",
+    "disconnectConfirmBody": "",
+    "reRequest": "",
+    "reRequestSeason": "",
+    "request": "",
+    "requestSubmitted": "",
+    "requestFailed": "",
+    "rescrapeSucceeded": "",
+    "rescrapeFailed": "",
+    "rescrapeSeasonNothingToDo": "",
+    "rescrapeSeasonSucceeded": "",
+    "rescrapeSeasonSkipped": "",
+    "rescrapeSeasonFailed": "",
+    "chooseVersion": "",
+    "versions": ""
+  },
   "services": {
     "title": "外部服務",
     "hubSubtitle": "同步觀看進度並請求新內容。",
@@ -2439,7 +2464,8 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
-      "mdblist": "MDBList"
+      "mdblist": "MDBList",
+      "cliDebrid": ""
     },
     "simklReconnect": {
       "title": "重新連線 Simkl",

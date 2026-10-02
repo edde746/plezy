@@ -2435,6 +2435,31 @@
     "permissionDenied": "Seerr bu əməliyyatı rədd etdi: hesabınızda artıq tələb olunan icazə yoxdur",
     "permissionRevoked": "Bunu sorğulamaq üçün artıq icazəniz yoxdur"
   },
+  "cliDebrid": {
+    "title": "",
+    "connectTitle": "",
+    "serverUrl": "",
+    "serverUrlHelper": "",
+    "apiToken": "",
+    "apiTokenHelper": "",
+    "invalidToken": "",
+    "instance": "",
+    "disconnectConfirm": "",
+    "disconnectConfirmBody": "",
+    "reRequest": "",
+    "reRequestSeason": "",
+    "request": "",
+    "requestSubmitted": "",
+    "requestFailed": "",
+    "rescrapeSucceeded": "",
+    "rescrapeFailed": "",
+    "rescrapeSeasonNothingToDo": "",
+    "rescrapeSeasonSucceeded": "",
+    "rescrapeSeasonSkipped": "",
+    "rescrapeSeasonFailed": "",
+    "chooseVersion": "",
+    "versions": ""
+  },
   "services": {
     "title": "Xidmətlər",
     "hubSubtitle": "İzləmə tərəqqisini eyniləşdirin və yeni başlıqlar sorğulayın.",
@@ -2451,7 +2476,8 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
-      "mdblist": "MDBList"
+      "mdblist": "MDBList",
+      "cliDebrid": ""
     },
     "simklReconnect": {
       "title": "Simkl-ə yenidən qoşul",
