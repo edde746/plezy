@@ -34,6 +34,7 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/providers/cli_debrid_account_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -59,6 +60,7 @@ import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:plezy/widgets/tag_edit_dialog.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/cli_debrid_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
@@ -1020,10 +1022,12 @@ void main() {
       final manager = MultiServerManager();
       final multiServerProvider = testMultiServerProvider(manager);
       final stack = await ProfileStack.create(withStorage: false);
+      final cliDebrid = await testCliDebridAccountProvider();
       addTearDown(() async {
         await stack.dispose();
         multiServerProvider.dispose();
         manager.dispose();
+        cliDebrid.dispose();
       });
 
       final menuKey = GlobalKey<MediaContextMenuState>();
@@ -1041,6 +1045,7 @@ void main() {
             providers: [
               ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
               ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+              ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
             ],
             child: MaterialApp(
               theme: monoTheme(dark: true),
@@ -1092,12 +1097,14 @@ void main() {
       final offlineMode = OfflineModeProvider(manager);
       final stack = await ProfileStack.create(withStorage: false);
       final showCard = ValueNotifier<bool>(true);
+      final cliDebrid = await testCliDebridAccountProvider();
       addTearDown(() async {
         await stack.dispose();
         offlineMode.dispose();
         multiServerProvider.dispose();
         manager.dispose();
         showCard.dispose();
+        cliDebrid.dispose();
       });
 
       final menuKey = GlobalKey<MediaContextMenuState>();
@@ -1117,6 +1124,7 @@ void main() {
               ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
               ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
               ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
+              ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
             ],
             child: MaterialApp(
               navigatorKey: navigatorKey,
@@ -1649,10 +1657,12 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = testMultiServerProvider(manager);
   final stack = await ProfileStack.create(db: db, withStorage: false);
+  final cliDebrid = await testCliDebridAccountProvider();
   addTearDown(() async {
     await stack.dispose();
     multiServerProvider.dispose();
     manager.dispose();
+    cliDebrid.dispose();
     await db.close();
   });
 
@@ -1675,6 +1685,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
@@ -1833,11 +1844,13 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
   final multiServerProvider = testMultiServerProvider(manager);
   final offlineMode = OfflineModeProvider(manager);
   final stack = await ProfileStack.create(withStorage: false);
+  final cliDebrid = await testCliDebridAccountProvider();
   addTearDown(() async {
     await stack.dispose();
     offlineMode.dispose();
     multiServerProvider.dispose();
     manager.dispose();
+    cliDebrid.dispose();
   });
 
   final menuKey = GlobalKey<MediaContextMenuState>();
@@ -1858,6 +1871,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
           ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
+          ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
         ],
         child: MaterialApp(
           navigatorKey: navigatorKey,
@@ -2056,6 +2070,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
   final rootNavigatorKey = GlobalKey<NavigatorState>();
   final profileNavigatorKey = GlobalKey<NavigatorState>();
   final menuKey = GlobalKey<MediaContextMenuState>();
+  final cliDebrid = await testCliDebridAccountProvider();
 
   addTearDown(() async {
     downloadProvider.dispose();
@@ -2064,6 +2079,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
     music.dispose();
     multiServerProvider.dispose();
     manager.dispose();
+    cliDebrid.dispose();
     await db.close();
   });
 
@@ -2078,6 +2094,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
             ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
             ChangeNotifierProvider<MusicPlaybackService>.value(value: music),
+            ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
           ],
           child: ProfileNavigationScope(
             navigatorKey: profileNavigatorKey,
@@ -2267,12 +2284,14 @@ _pumpWatchlistMenu(WidgetTester tester, {required List<CatalogSource> sources, L
   final offlineMode = OfflineModeProvider(manager);
   final catalogSources = _WatchlistSourcesProvider(sources);
   final stack = await ProfileStack.create(db: db, withStorage: false);
+  final cliDebrid = await testCliDebridAccountProvider();
   addTearDown(() async {
     await stack.dispose();
     catalogSources.dispose();
     offlineMode.dispose();
     multiServerProvider.dispose();
     manager.dispose();
+    cliDebrid.dispose();
     await db.close();
   });
 
@@ -2286,6 +2305,7 @@ _pumpWatchlistMenu(WidgetTester tester, {required List<CatalogSource> sources, L
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
           ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
+          ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),

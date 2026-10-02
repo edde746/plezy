@@ -2227,6 +2227,32 @@
     "permissionDenied": "Seerr denied this action: your account no longer has the required permission",
     "permissionRevoked": "You no longer have permission to request this"
   },
+  "cliDebrid": {
+    "title": "cli_debrid",
+    "connectTitle": "Connect cli_debrid",
+    "serverUrl": "Server URL",
+    "serverUrlHelper": "The address of your cli_debrid instance",
+    "apiToken": "API Token",
+    "apiTokenHelper": "From cli_debrid's user management page",
+    "invalidToken": "That token was rejected by the server",
+    "instance": "Instance",
+    "disconnectConfirm": "Disconnect cli_debrid?",
+    "disconnectConfirmBody": "Plezy will forget this cli_debrid instance. Reconnect any time.",
+    "reRequest": "Re-request",
+    "reRequestSeason": "Re-request season",
+    "request": "Request",
+    "requestSubmitted": "Request submitted",
+    "requestFailed": "Request failed: ${error}",
+    "rescrapeSucceeded": "Moved back to Wanted",
+    "rescrapeFailed": "Couldn't re-request: ${error}",
+    "rescrapeSeasonNothingToDo": "No episodes could be re-requested",
+    "rescrapeSeasonSucceeded": "${count} episode(s) re-requested",
+    "rescrapeSeasonSkipped": ", ${count} skipped (multiple versions)",
+    "rescrapeSeasonFailed": ", ${count} failed",
+    "chooseVersion": "Choose a version to re-request",
+    "versions": "Versions",
+    "notConnected": "Connect cli_debrid in Settings to use this"
+  },
   "services": {
     "title": "Services",
     "hubSubtitle": "Sync watch progress and request new titles.",
@@ -2243,7 +2269,8 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
-      "mdblist": "MDBList"
+      "mdblist": "MDBList",
+      "cliDebrid": "cli_debrid"
     },
     "simklReconnect": {
       "title": "Reconnect Simkl",

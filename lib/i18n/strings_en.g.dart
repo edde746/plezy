@@ -89,6 +89,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$serverTasks$en serverTasks = Translations$serverTasks$en.internal(_root);
 	late final Translations$trakt$en trakt = Translations$trakt$en.internal(_root);
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
+	late final Translations$cliDebrid$en cliDebrid = Translations$cliDebrid$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 }
@@ -5556,6 +5557,87 @@ class Translations$seerr$en {
 	String get permissionRevoked => 'You no longer have permission to request this';
 }
 
+// Path: cliDebrid
+class Translations$cliDebrid$en {
+	Translations$cliDebrid$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'cli_debrid'
+	String get title => 'cli_debrid';
+
+	/// en: 'Connect cli_debrid'
+	String get connectTitle => 'Connect cli_debrid';
+
+	/// en: 'Server URL'
+	String get serverUrl => 'Server URL';
+
+	/// en: 'The address of your cli_debrid instance'
+	String get serverUrlHelper => 'The address of your cli_debrid instance';
+
+	/// en: 'API Token'
+	String get apiToken => 'API Token';
+
+	/// en: 'From cli_debrid's user management page'
+	String get apiTokenHelper => 'From cli_debrid\'s user management page';
+
+	/// en: 'That token was rejected by the server'
+	String get invalidToken => 'That token was rejected by the server';
+
+	/// en: 'Instance'
+	String get instance => 'Instance';
+
+	/// en: 'Disconnect cli_debrid?'
+	String get disconnectConfirm => 'Disconnect cli_debrid?';
+
+	/// en: 'Plezy will forget this cli_debrid instance. Reconnect any time.'
+	String get disconnectConfirmBody => 'Plezy will forget this cli_debrid instance. Reconnect any time.';
+
+	/// en: 'Re-request'
+	String get reRequest => 'Re-request';
+
+	/// en: 'Re-request season'
+	String get reRequestSeason => 'Re-request season';
+
+	/// en: 'Request'
+	String get request => 'Request';
+
+	/// en: 'Request submitted'
+	String get requestSubmitted => 'Request submitted';
+
+	/// en: 'Request failed: ${error}'
+	String requestFailed({required Object error}) => 'Request failed: ${error}';
+
+	/// en: 'Moved back to Wanted'
+	String get rescrapeSucceeded => 'Moved back to Wanted';
+
+	/// en: 'Couldn't re-request: ${error}'
+	String rescrapeFailed({required Object error}) => 'Couldn\'t re-request: ${error}';
+
+	/// en: 'No episodes could be re-requested'
+	String get rescrapeSeasonNothingToDo => 'No episodes could be re-requested';
+
+	/// en: '${count} episode(s) re-requested'
+	String rescrapeSeasonSucceeded({required Object count}) => '${count} episode(s) re-requested';
+
+	/// en: ', ${count} skipped (multiple versions)'
+	String rescrapeSeasonSkipped({required Object count}) => ', ${count} skipped (multiple versions)';
+
+	/// en: ', ${count} failed'
+	String rescrapeSeasonFailed({required Object count}) => ', ${count} failed';
+
+	/// en: 'Choose a version to re-request'
+	String get chooseVersion => 'Choose a version to re-request';
+
+	/// en: 'Versions'
+	String get versions => 'Versions';
+
+	/// en: 'Connect cli_debrid in Settings to use this'
+	String get notConnected => 'Connect cli_debrid in Settings to use this';
+}
+
 // Path: services
 class Translations$services$en {
 	Translations$services$en.internal(this._root);
@@ -7229,6 +7311,9 @@ class Translations$services$names$en {
 
 	/// en: 'MDBList'
 	String get mdblist => 'MDBList';
+
+	/// en: 'cli_debrid'
+	String get cliDebrid => 'cli_debrid';
 }
 
 // Path: services.simklReconnect
@@ -9393,6 +9478,32 @@ extension on Translations {
 			'seerr.sessionRejectedAfterReauth' => 'The session was rejected after signing in again',
 			'seerr.permissionDenied' => 'Seerr denied this action: your account no longer has the required permission',
 			'seerr.permissionRevoked' => 'You no longer have permission to request this',
+			'cliDebrid.title' => 'cli_debrid',
+			'cliDebrid.connectTitle' => 'Connect cli_debrid',
+			'cliDebrid.serverUrl' => 'Server URL',
+			'cliDebrid.serverUrlHelper' => 'The address of your cli_debrid instance',
+			'cliDebrid.apiToken' => 'API Token',
+			'cliDebrid.apiTokenHelper' => 'From cli_debrid\'s user management page',
+			'cliDebrid.invalidToken' => 'That token was rejected by the server',
+			'cliDebrid.instance' => 'Instance',
+			'cliDebrid.disconnectConfirm' => 'Disconnect cli_debrid?',
+			'cliDebrid.disconnectConfirmBody' => 'Plezy will forget this cli_debrid instance. Reconnect any time.',
+			'cliDebrid.reRequest' => 'Re-request',
+			'cliDebrid.reRequestSeason' => 'Re-request season',
+			'cliDebrid.request' => 'Request',
+			'cliDebrid.requestSubmitted' => 'Request submitted',
+			'cliDebrid.requestFailed' => ({required Object error}) => 'Request failed: ${error}',
+			'cliDebrid.rescrapeSucceeded' => 'Moved back to Wanted',
+			'cliDebrid.rescrapeFailed' => ({required Object error}) => 'Couldn\'t re-request: ${error}',
+			'cliDebrid.rescrapeSeasonNothingToDo' => 'No episodes could be re-requested',
+			'cliDebrid.rescrapeSeasonSucceeded' => ({required Object count}) => '${count} episode(s) re-requested',
+			'cliDebrid.rescrapeSeasonSkipped' => ({required Object count}) => ', ${count} skipped (multiple versions)',
+			_ => null,
+		} ?? switch (path) {
+			'cliDebrid.rescrapeSeasonFailed' => ({required Object count}) => ', ${count} failed',
+			'cliDebrid.chooseVersion' => 'Choose a version to re-request',
+			'cliDebrid.versions' => 'Versions',
+			'cliDebrid.notConnected' => 'Connect cli_debrid in Settings to use this',
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
@@ -9408,13 +9519,12 @@ extension on Translations {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
+			'services.names.cliDebrid' => 'cli_debrid',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
-			_ => null,
-		} ?? switch (path) {
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',

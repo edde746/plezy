@@ -4,15 +4,19 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../models/catalog/catalog_item.dart';
+import '../../providers/cli_debrid_account_provider.dart';
 import '../../providers/seerr_account_provider.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/catalog_source_logo.dart';
+import '../../widgets/cli_debrid_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_section.dart';
+import 'cli_debrid_connect_screen.dart';
+import 'cli_debrid_settings_screen.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
 import 'tracker_service_info.dart';
@@ -39,7 +43,9 @@ class ServicesSettingsScreen extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
-            SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
+            SettingsGroup(
+              children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr(), _cliDebrid()],
+            ),
             if (DiscordRPCService.isAvailable)
               SettingsGroup(
                 title: t.services.integrations,
@@ -69,6 +75,22 @@ class ServicesSettingsScreen extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => account.isConnected ? const SeerrSettingsScreen() : const SeerrConnectScreen(),
+          ),
+        );
+      },
+    ),
+  );
+
+  Widget _cliDebrid() => Consumer<CliDebridAccountProvider>(
+    builder: (context, account, _) => _ServiceHubRow(
+      leading: const CliDebridIcon(size: 24),
+      title: t.services.names.cliDebrid,
+      username: account.isConnected ? account.session!.baseUrl : null,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => account.isConnected ? const CliDebridSettingsScreen() : const CliDebridConnectScreen(),
           ),
         );
       },
