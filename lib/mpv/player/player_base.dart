@@ -1249,7 +1249,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
-  Future<void> clearVideoFrameRate() async {}
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {}
 
   @override
   // ignore: no-empty-block - base no-op, ExoPlayer styles subtitles natively

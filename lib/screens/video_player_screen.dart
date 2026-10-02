@@ -550,11 +550,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   int _playerInitializationGeneration = 0;
   Future<void>? _shutdownOperation;
   Future<void>? _routeExitOperation;
+  Future<void>? _routeExitDisplayRestore;
   Future<void>? _systemUiRestoreOperation;
 
   // Bounds navigation only. Native disposal and terminal reporting retain
   // their real futures; expiry never grants permission to reuse the core.
   static const _routeExitNavigationBudget = Duration(seconds: 1);
+  static const _routeExitDisplayRestoreBudget = Duration(seconds: 4);
 
   /// One bit, two names: the notifier below is what the UI listens to, this is
   /// the guard every async continuation reads. They were separate fields set by
@@ -2254,6 +2256,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       try {
         await navigationReady.future;
         deadline.cancel();
+        await _routeExitDisplayRestore?.timeout(
+          _routeExitDisplayRestoreBudget,
+          onTimeout: () {
+            appLogger.w('Display mode restore did not settle before leaving the player');
+          },
+        );
         _removePlayerRoute(navigator, route, navigateHome: navigateHome, onHome: onHome);
         completer.complete();
       } catch (error, stackTrace) {
@@ -2913,20 +2921,41 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // yielding. Native stop may reset them. This also retains offline writes
     // and the tracker's terminal watched-state settlement.
     final stoppedReport = _sendStoppedProgressOnce(positionOverride: currentPlayer?.state.position);
+    final outputRetired = currentPlayer == null
+        ? null
+        : (pauseForRouteExit ? _pauseAndHidePlayerForRouteExit(currentPlayer) : currentPlayer.stop());
+    if (currentPlayer != null && outputRetired != null) {
+      unawaited(_restoreDisplayModeForRouteExit(currentPlayer, outputRetired));
+    }
     unawaited(() async {
       try {
-        await Future.wait<void>([
-          stoppedReport,
-          if (currentPlayer != null)
-            pauseForRouteExit ? _pauseAndHidePlayerForRouteExit(currentPlayer) : currentPlayer.stop(),
-          ...cancellations,
-        ]);
+        await Future.wait<void>([stoppedReport, ?outputRetired, ...cancellations]);
         completer.complete();
       } catch (error, stackTrace) {
         completer.completeError(error, stackTrace);
       }
     }());
     return completer.future;
+  }
+
+  Future<void> _restoreDisplayModeForRouteExit(Player currentPlayer, Future<void> outputRetired) async {
+    if (defaultTargetPlatform != TargetPlatform.android || _isReplacingWithVideo) return;
+    try {
+      await outputRetired;
+    } on Object catch (error) {
+      appLogger.d('Player output did not retire cleanly before the display restore', error: error);
+    }
+    final restore = _awaitDisplayModeRestore(currentPlayer);
+    _routeExitDisplayRestore = restore;
+    await restore;
+  }
+
+  Future<void> _awaitDisplayModeRestore(Player currentPlayer) async {
+    try {
+      await currentPlayer.clearVideoFrameRate(awaitDisplayRestore: true);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to restore the display mode before leaving the player', error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<void> _sendStoppedProgressOnce({Duration? positionOverride}) {

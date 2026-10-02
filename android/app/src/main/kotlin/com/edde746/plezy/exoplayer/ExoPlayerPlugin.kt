@@ -251,7 +251,7 @@ class ExoPlayerPlugin :
       "setVisible" -> handleSetVisible(call, result)
       "updateFrame" -> handleUpdateFrame(result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
-      "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+      "clearVideoFrameRate" -> handleClearVideoFrameRate(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
       "isInitialized" -> result.success(
@@ -1043,9 +1043,15 @@ class ExoPlayerPlugin :
     }
   }
 
-  private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
-    Log.d(TAG, "clearVideoFrameRate")
-    activeSurfaceCore?.clearVideoFrameRate()
+  private fun handleClearVideoFrameRate(call: MethodCall, result: MethodChannel.Result) {
+    val awaitDisplayRestore = call.argument<Boolean>("awaitDisplayRestore") == true
+    Log.d(TAG, "clearVideoFrameRate(awaitDisplayRestore=$awaitDisplayRestore)")
+    val core = activeSurfaceCore
+    if (awaitDisplayRestore && core != null) {
+      core.clearVideoFrameRate { result.success(null) }
+      return
+    }
+    core?.clearVideoFrameRate()
     result.success(null)
   }
 

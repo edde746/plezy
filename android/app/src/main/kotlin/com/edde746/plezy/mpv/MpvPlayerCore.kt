@@ -3095,8 +3095,13 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  override fun clearVideoFrameRate() {
-    frameRateManager?.clearVideoFrameRate(hdrActive = hdrDisplayActive)
+  override fun clearVideoFrameRate(onRestored: (() -> Unit)?) {
+    val manager = frameRateManager
+    if (manager == null) {
+      onRestored?.invoke()
+      return
+    }
+    manager.clearVideoFrameRate(hdrActive = hdrDisplayActive, onRestored = onRestored)
   }
 
   // Cleanup

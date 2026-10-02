@@ -27,6 +27,9 @@ class FrameRateManager(
     // player's surface teardown commits the HDR exit within ~50 ms of
     // dispose, so 400 ms covers it with margin even on a busy main thread.
     private const val HDR_EXIT_SETTLE_MS = 400L
+    private const val RESTORE_SETTLE_MS = 250L
+    private const val RESTORE_WATCHDOG_MS = 3000L
+    private const val NO_MODE = -1
   }
 
   private var currentVideoFps: Float = 0f
@@ -43,6 +46,11 @@ class FrameRateManager(
   // survive player disposal or the display stays at the content rate.
   private val restoreHandler = Handler(android.os.Looper.getMainLooper())
   private var pendingRestoreRunnable: Runnable? = null
+  private var modeBeforeRequest: Int = NO_MODE
+  private var restoreListener: DisplayManager.DisplayListener? = null
+  private var restoreSettleRunnable: Runnable? = null
+  private var restoreWatchdogRunnable: Runnable? = null
+  private val restoreCompletions = mutableListOf<() -> Unit>()
 
   private fun getDisplayManager(): DisplayManager = activity.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 
@@ -72,6 +80,7 @@ class FrameRateManager(
     // A new session's switch must not be clobbered by a still-pending
     // deferred restore from the previous session's teardown.
     cancelPendingRestore()
+    completeRestore("superseded")
     currentVideoFps = fps
     currentVideoWidth = videoWidth
     currentVideoHeight = videoHeight
@@ -99,16 +108,23 @@ class FrameRateManager(
   // [hdrActive]: the session was outputting HDR. The restore is then deferred
   // by [HDR_EXIT_SETTLE_MS] so the caller's surface teardown can commit the
   // HDR exit first — see [HDR_EXIT_SETTLE_MS] for why stacking them is slow.
-  fun clearVideoFrameRate(hdrActive: Boolean = false) {
-    PlayerDebugLog.d(TAG) { "clearVideoFrameRate(hdrActive=$hdrActive)" }
+  fun clearVideoFrameRate(hdrActive: Boolean = false, onRestored: (() -> Unit)? = null) {
+    PlayerDebugLog.d(TAG) { "clearVideoFrameRate(hdrActive=$hdrActive, awaitRestore=${onRestored != null})" }
     currentVideoFps = 0f
     // Resolve any pending setVideoFrameRate future as "not switched" so
     // the Dart caller's await doesn't hang on player dispose.
     firePendingCompletion("clear", switched = false)
+    onRestored?.let { restoreCompletions += it }
     cancelPendingRestore()
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+      completeRestore("unsupported")
+      return
+    }
     // Nothing to restore when no preferred mode was ever applied.
-    if ((activity.window?.attributes?.preferredDisplayModeId ?: 0) == 0) return
+    if ((activity.window?.attributes?.preferredDisplayModeId ?: 0) == 0) {
+      if (restoreListener == null && restoreSettleRunnable == null) completeRestore("nothing to restore")
+      return
+    }
     if (hdrActive) {
       val restore = Runnable {
         pendingRestoreRunnable = null
@@ -126,8 +142,15 @@ class FrameRateManager(
 
   private fun restorePreferredDisplayMode() {
     // preferredDisplayModeId persists on the window; restore the default.
-    val window = activity.window ?: return
-    val attrs = window.attributes ?: return
+    val window = activity.window
+    val attrs = window?.attributes
+    if (attrs == null) {
+      completeRestore("window unavailable")
+      return
+    }
+    val contentModeId = currentDisplayMode()?.modeId ?: NO_MODE
+    val defaultModeId = modeBeforeRequest
+    modeBeforeRequest = NO_MODE
     // PlayerDebugLog, not [log]: reached after core dispose, when the Flutter-channel
     // logger is gone. The window attribute is what this restores; the
     // display lands on its default mode asynchronously, so the second line
@@ -139,6 +162,50 @@ class FrameRateManager(
     attrs.preferredDisplayModeId = 0
     window.attributes = attrs
     PlayerDebugLog.d(TAG) { "restorePreferredDisplayMode: applied, after currentMode=${currentModeDescription()}" }
+    awaitRestoredMode(contentModeId, defaultModeId)
+  }
+
+  private fun awaitRestoredMode(contentModeId: Int, defaultModeId: Int) {
+    if (restoreCompletions.isEmpty()) return
+    if (contentModeId == NO_MODE || contentModeId == defaultModeId || currentDisplayMode()?.modeId != contentModeId) {
+      completeRestore("no mode change expected")
+      return
+    }
+    val listener = object : DisplayManager.DisplayListener {
+      override fun onDisplayAdded(displayId: Int) = Unit
+      override fun onDisplayRemoved(displayId: Int) = Unit
+      override fun onDisplayChanged(displayId: Int) {
+        if (displayId != (currentDisplay()?.displayId ?: Display.DEFAULT_DISPLAY)) return
+        if (currentDisplayMode()?.modeId == contentModeId) return
+        PlayerDebugLog.d(TAG) { "display left the content mode, now ${currentModeDescription()}; settling" }
+        getDisplayManager().unregisterDisplayListener(this)
+        restoreListener = null
+        restoreWatchdogRunnable?.let { restoreHandler.removeCallbacks(it) }
+        restoreWatchdogRunnable = null
+        val settle = Runnable { completeRestore("display restored") }
+        restoreSettleRunnable = settle
+        restoreHandler.postDelayed(settle, RESTORE_SETTLE_MS)
+      }
+    }
+    restoreListener = listener
+    getDisplayManager().registerDisplayListener(listener, restoreHandler)
+    val watchdog = Runnable { completeRestore("watchdog") }
+    restoreWatchdogRunnable = watchdog
+    restoreHandler.postDelayed(watchdog, RESTORE_WATCHDOG_MS)
+  }
+
+  private fun completeRestore(reason: String) {
+    restoreListener?.let { getDisplayManager().unregisterDisplayListener(it) }
+    restoreListener = null
+    restoreSettleRunnable?.let { restoreHandler.removeCallbacks(it) }
+    restoreSettleRunnable = null
+    restoreWatchdogRunnable?.let { restoreHandler.removeCallbacks(it) }
+    restoreWatchdogRunnable = null
+    if (restoreCompletions.isEmpty()) return
+    val completions = restoreCompletions.toList()
+    restoreCompletions.clear()
+    PlayerDebugLog.d(TAG) { "display restore complete reason=$reason, currentMode=${currentModeDescription()}" }
+    completions.forEach { it() }
   }
 
   private fun cancelPendingRestore() {
@@ -341,6 +408,7 @@ class FrameRateManager(
       // (#2361). clearVideoFrameRate restores the default, as after a switch.
       if (window != null && window.attributes.preferredDisplayModeId != modeToUse.modeId) {
         log("current mode already matches ${fps}fps (${selection.reason}), pinning it")
+        rememberModeBeforeRequest(window, currentMode.modeId)
         window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
       } else {
         log("current mode already matches ${fps}fps (${selection.reason}), no switch needed")
@@ -356,6 +424,11 @@ class FrameRateManager(
       return
     }
     registerDisplayListener(fps, modeToUse.modeId, currentMode.modeId, extraDelayMs, onComplete)
+    rememberModeBeforeRequest(window, currentMode.modeId)
     window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
+  }
+
+  private fun rememberModeBeforeRequest(window: android.view.Window, currentModeId: Int) {
+    if (window.attributes.preferredDisplayModeId == 0) modeBeforeRequest = currentModeId
   }
 }
