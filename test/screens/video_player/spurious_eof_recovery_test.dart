@@ -50,6 +50,7 @@ void main() {
     _SourcePlayer player, {
     bool transcoding = false,
     bool faultSeen = false,
+    bool serverStopped = false,
   }) {
     final reloads = <Duration>[];
     var fault = faultSeen;
@@ -61,6 +62,7 @@ void main() {
       player: () => player,
       metadata: () => testMediaItem(durationMs: durationMs),
       transportFaultSeen: () => fault,
+      serverStoppedSession: () => serverStopped,
       reload: ({required Duration resumePosition, required String reason}) async {
         reloads.add(resumePosition);
         return MediaReloadOutcome.opened;
@@ -94,6 +96,20 @@ void main() {
     expect(await recovery.interceptEof(player), isTrue);
     expect(reloads, hasLength(SpuriousEofRecovery.maxAttempts));
     expect(recovery.parked, isTrue);
+  });
+
+  test('a stream the server ended parks without opening a new session; a viewer retry still rebuilds it', () async {
+    final player = shortEofPlayer();
+    addTearDown(player.dispose);
+    final (:recovery, :reloads, setFault: _) = build(player, faultSeen: true, serverStopped: true);
+
+    expect(await recovery.interceptEof(player), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(reloads, isEmpty);
+    expect(recovery.parked, isTrue);
+
+    await recovery.retry(reason: 'viewer play');
+    expect(reloads, [const Duration(milliseconds: positionMs)]);
   });
 
   test('a fault delivered while the source is being read still explains the EOF', () async {

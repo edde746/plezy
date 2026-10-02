@@ -843,6 +843,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     player: () => player,
     metadata: () => _currentMetadata,
     transportFaultSeen: () => _transportFaultSeen,
+    serverStoppedSession: () => _progressTracker?.stoppedByServer ?? false,
     reload: ({required Duration resumePosition, required String reason}) => _reloadMediaInPlace(
       metadata: _currentMetadata,
       resumePosition: resumePosition,

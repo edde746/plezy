@@ -97,8 +97,14 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         !_episode.completionLatch.triggered) {
       _episode.completionLatch.latch();
 
+      // The server ended this item's session (a Plex admin stop) and nobody
+      // has touched playback since: the buffered item was allowed to finish,
+      // but starting the next one on the viewer's behalf is not. The prompt
+      // waits for a person instead of counting down.
+      final serverStopped = _progressTracker?.stoppedByServer ?? false;
+
       // PiP: skip dialog (user can't interact), auto-play immediately
-      if (PipService().isPipActive.value) {
+      if (PipService().isPipActive.value && !serverStopped) {
         _logVideoCompleted('action=presentNext pip');
         unawaited(_playNext());
         return;
@@ -109,7 +115,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
       final settings = await SettingsService.getInstance();
       if (!mounted) return;
-      final autoPlayEnabled = settings.read(SettingsService.autoPlayNextEpisode);
+      final autoPlayEnabled = !serverStopped && settings.read(SettingsService.autoPlayNextEpisode);
       final countdownSeconds = settings.read(SettingsService.playNextCountdown);
 
       // A zero countdown (#1827) behaves like the PiP path above: no prompt,
@@ -120,7 +126,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         return;
       }
 
-      _logVideoCompleted('action=presentNext prompt');
+      _logVideoCompleted(serverStopped ? 'action=presentNext prompt serverStopped' : 'action=presentNext prompt');
       _setPlayerState(() {
         _episode.showPlayNextDialog = true;
         _episode.autoPlayCountdown.value = autoPlayEnabled ? countdownSeconds : -1;
