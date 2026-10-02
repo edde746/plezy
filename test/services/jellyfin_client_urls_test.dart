@@ -567,6 +567,23 @@ void main() {
       expect(capturedUri!.queryParameters['Fields']!.split(','), contains('MediaSources'));
     });
 
+    test('fetchPlayableDescendantsPage hides virtual placeholder episodes', () async {
+      Uri? capturedUri;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          return http.Response(jsonEncode({'Items': <Object>[], 'TotalRecordCount': 0}), 200);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchPlayableDescendantsPage('show-1');
+
+      // Placeholders have no file: queuing one for play-all or download fails.
+      expect(capturedUri!.queryParameters['ExcludeLocationTypes'], 'Virtual');
+    });
+
     test('reportPlaybackProgress sends media source and stream indexes', () async {
       Uri? capturedUri;
       String? capturedBody;
@@ -4757,6 +4774,11 @@ void main() {
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
+      expect(
+        captured!.queryParameters['ExcludeLocationTypes'],
+        'Virtual',
+        reason: 'placeholder episodes carry a fresh DateCreated and would lead the grid (#2551)',
+      );
       client.close();
     });
 
@@ -4822,6 +4844,7 @@ void main() {
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode,Video,MusicVideo,Photo');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
+      expect(captured!.queryParameters['ExcludeLocationTypes'], 'Virtual');
       client.close();
     });
 

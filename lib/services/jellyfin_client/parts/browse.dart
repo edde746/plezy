@@ -234,6 +234,14 @@ const _episodeOrderQueryParameters = {
   'SortOrder': 'Ascending,Ascending,Ascending',
 };
 
+/// Hides the placeholder (virtual) episodes a server synthesises for episodes
+/// that have no file — missing and not-yet-aired alike (#2551). Recursive
+/// `/Items` queries return them unless asked not to, and they carry a fresh
+/// `DateCreated`, so they float to the top of date-sorted lists. `/Items` does
+/// not accept the `IsVirtualUnaired` key the `/Shows/{id}/Episodes` calls use;
+/// this is the filter Jellyfin Web's playback queries send.
+const _excludeVirtualItemsQuery = {'ExcludeLocationTypes': 'Virtual'};
+
 bool _isJellyfinFolderDto(Map<String, dynamic> item) {
   final type = (item['Type'] as String?)?.toLowerCase();
   return type == 'folder' || type == 'collectionfolder' || (type == null && item['IsFolder'] == true);
@@ -1248,6 +1256,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
         'Fields': _episodeRowFields,
+        ..._excludeVirtualItemsQuery,
         ...jellyfinImageQueryParameters,
       },
       abort: abort,
@@ -2088,6 +2097,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
             'SortBy': 'DateCreated,SortName,ProductionYear',
             'SortOrder': 'Descending,Descending,Descending',
             'Fields': _hubRowFields,
+            ..._excludeVirtualItemsQuery,
             ...jellyfinImageQueryParameters,
           },
           offset: offset,
