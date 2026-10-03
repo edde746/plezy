@@ -254,6 +254,8 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
           await _borrowPlex(cand);
         case JellyfinConnection():
           await _borrowJellyfin(cand);
+        case PlexDirectConnection():
+          await _borrowDirectPlex(cand);
       }
     } catch (e, st) {
       // Without this, a throw from the verify/borrow steps (network, DB)
@@ -353,6 +355,21 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
         connectionId: jelly.id,
         userToken: cand.pc.hasToken ? cand.pc.userToken : jelly.accessToken,
         userIdentifier: cand.pc.userIdentifier.isNotEmpty ? cand.pc.userIdentifier : jelly.userId,
+        tokenAcquiredAt: DateTime.now(),
+      ),
+    );
+    _finishBorrow();
+  }
+
+  Future<void> _borrowDirectPlex(_BorrowCandidate cand) async {
+    final direct = cand.connection as PlexDirectConnection;
+    final pcRegistry = context.read<ProfileConnectionRegistry>();
+    await pcRegistry.upsert(
+      ProfileConnection(
+        profileId: widget.targetProfile.id,
+        connectionId: direct.id,
+        userToken: cand.pc.hasToken ? cand.pc.userToken : direct.accessToken,
+        userIdentifier: cand.pc.userIdentifier.isNotEmpty ? cand.pc.userIdentifier : direct.serverMachineId,
         tokenAcquiredAt: DateTime.now(),
       ),
     );

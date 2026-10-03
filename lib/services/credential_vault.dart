@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
+import '../connection/connection.dart';
 import '../utils/app_logger.dart';
 import 'base_shared_preferences_service.dart';
 import 'sensitive_prefs.dart';
@@ -94,10 +95,10 @@ class CredentialVault {
 
   static Future<Map<String, Object?>> protectConnectionConfig(String kind, Map<String, Object?> config) async {
     final copy = Map<String, Object?>.from(config);
-    final tokenKey = _tokenKeyForKind(kind);
+    final tokenKey = _tokenKeyForConfig(kind, copy);
     final token = tokenKey == null ? null : copy[tokenKey];
     if (token is String) copy[tokenKey!] = await protect(token);
-    if (kind == 'plex') {
+    if (kind == 'plex' && copy['servers'] != null) {
       copy['servers'] = await _protectPlexServers(copy['servers']);
     }
     return copy;
@@ -108,7 +109,7 @@ class CredentialVault {
     Map<String, dynamic> config,
   ) async {
     final copy = Map<String, dynamic>.from(config);
-    final tokenKey = _tokenKeyForKind(kind);
+    final tokenKey = _tokenKeyForConfig(kind, copy);
     var migrated = false;
     final token = tokenKey == null ? null : copy[tokenKey];
     if (token is String && token.isNotEmpty) {
@@ -118,7 +119,7 @@ class CredentialVault {
       migrated = revealed != null && !isProtected(token);
       copy[tokenKey!] = revealed ?? '';
     }
-    if (kind == 'plex') {
+    if (kind == 'plex' && copy['servers'] != null) {
       final result = await _revealPlexServers(copy['servers']);
       copy['servers'] = result.servers;
       migrated = migrated || result.migrated;
@@ -127,10 +128,9 @@ class CredentialVault {
   }
 
   /// Config key holding the long-lived credential for a `connections.kind`
-  /// value. Returning `null` means "nothing to encrypt", so every new kind MUST
-  /// be listed here — an omission silently persists the token in plaintext.
-  static String? _tokenKeyForKind(String kind) => switch (kind) {
-    'plex' => 'accountToken',
+  /// and its configuration payload. Returning `null` means "nothing to encrypt".
+  static String? _tokenKeyForConfig(String kind, Map<String, Object?> config) => switch (kind) {
+    'plex' => PlexMediaConnection.tokenKey(config),
     'jellyfin' || 'emby' => 'accessToken',
     _ => null,
   };

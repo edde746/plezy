@@ -63,11 +63,13 @@ class ProfileConnectionCleanup {
     await _clearProfileServerPrefsNoLongerReferenced(
       profileId: profileId,
       removedServerIds: removedServerIds,
-      clearEverywhereWhenUnreferenced: connection is JellyfinConnection,
+      clearEverywhereWhenUnreferenced: connection is JellyfinConnection || connection is PlexDirectConnection,
     );
 
     if (connection is JellyfinConnection) {
       await _removeUnreferencedJellyfinConnection(connection);
+    } else if (connection is PlexDirectConnection) {
+      await _removeUnreferencedDirectPlexConnection(connection);
     }
   }
 
@@ -182,6 +184,20 @@ class ProfileConnectionCleanup {
     }
   }
 
+  Future<void> _removeUnreferencedDirectPlexConnection(PlexDirectConnection connection) async {
+    if ((await profileConnections.listForConnection(connection.id)).isNotEmpty) return;
+    await _removeDirectPlexConnection(connection);
+  }
+
+  Future<void> _removeDirectPlexConnection(PlexDirectConnection connection) async {
+    await connections.remove(connection.id);
+    serverManager?.removeServer(ServerId(connection.serverMachineId));
+    final serverId = ServerId.tryParse(connection.serverMachineId);
+    if (serverId != null && !await _isServerReferenced(serverId)) {
+      await storage.clearLibraryPreferencesForServerEverywhere(serverId);
+    }
+  }
+
   Future<void> _clearProfileServerPrefsNoLongerReferenced({
     required String profileId,
     required Set<ServerId> removedServerIds,
@@ -244,6 +260,7 @@ Set<ServerId> _serverIdsForConnection(Connection connection) {
     PlexAccountConnection(:final servers) => {
       for (final server in servers) ?ServerId.tryParse(server.clientIdentifier),
     },
+    PlexDirectConnection(:final serverMachineId) => {?ServerId.tryParse(serverMachineId)},
     JellyfinConnection(:final serverMachineId) => {?ServerId.tryParse(serverMachineId)},
   };
 }

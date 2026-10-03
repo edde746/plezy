@@ -72,6 +72,7 @@ AccountPreferenceResolution resolveAccountPreferenceAccounts({
         row: row,
         connection: connection,
       ),
+      PlexDirectConnection() => null,
       null => null,
     };
     if (account == null) continue;
