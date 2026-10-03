@@ -1030,7 +1030,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         message: 'Malformed Jellyfin PlaybackInfo response',
       );
     }
-    return data;
+    // Callers that fall back to a stored source index need the item's order.
+    return jellyfinWithOrderedMediaSources(data, dialect);
   }
 
   @override

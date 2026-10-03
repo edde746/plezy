@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../media/media_browser_dialect.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
@@ -24,6 +26,47 @@ Map<String, dynamic>? jellyfinFirstVideoStream(Object? streams) {
     }
   }
   return null;
+}
+
+/// [json] with its `MediaSources` in the order Plezy presents them.
+///
+/// Emby's `MediaSources` order is not deterministic: the same merged item can
+/// list `# 2 Secondary` ahead of `# 1 Primary` on one request and behind it on
+/// the next, and the first entry is the default version (#2522). Emby sources
+/// are therefore sorted by `Name`, case-insensitively with digit runs compared
+/// numerically so `# 2` precedes `# 10`. The sort is stable, so unnamed or
+/// equally named sources keep the server's relative order.
+///
+/// Every reader of an item's source list — version pickers, the default pick,
+/// stored version indexes, cached playback metadata — must see the same order,
+/// so this runs where each of them gets the list. Jellyfin already returns a
+/// stable order and is left untouched. Returns [json] itself when nothing
+/// moves, otherwise a shallow copy; the input is never mutated.
+Map<String, dynamic> jellyfinWithOrderedMediaSources(Map<String, dynamic> json, MediaBrowserDialect dialect) {
+  if (dialect != MediaBrowserDialect.emby) return json;
+  final sources = json['MediaSources'];
+  if (sources is! List || sources.length < 2) return json;
+  final sorted = [...sources];
+  mergeSort(sorted, compare: _compareMediaSourceNames);
+  for (var i = 0; i < sorted.length; i++) {
+    if (!identical(sorted[i], sources[i])) return {...json, 'MediaSources': sorted};
+  }
+  return json;
+}
+
+int _compareMediaSourceNames(Object? a, Object? b) {
+  final nameA = _mediaSourceName(a);
+  final nameB = _mediaSourceName(b);
+  if (nameA == null || nameB == null) {
+    // Unnamed sources sink below named ones.
+    return nameA == nameB ? 0 : (nameA != null ? -1 : 1);
+  }
+  return compareAsciiLowerCaseNatural(nameA, nameB);
+}
+
+String? _mediaSourceName(Object? source) {
+  final name = source is Map<String, dynamic> ? source['Name'] : null;
+  return name is String && name.trim().isNotEmpty ? name.trim() : null;
 }
 
 MediaVersion jellyfinMediaSourceToVersion(
@@ -195,6 +238,9 @@ class JellyfinMappers {
   }) {
     final id = item['Id'] as String?;
     if (id == null || id.isEmpty) return null;
+    // Before anything reads the sources: `raw` carries this order to the
+    // playback, file-info and delete paths, which index into it.
+    item = jellyfinWithOrderedMediaSources(item, dialect);
     final type = item['Type'] as String?;
     // Untyped rows that Jellyfin still flags as folders (defensive — typed
     // Folder/CollectionFolder rows resolve via fromString) classify as
