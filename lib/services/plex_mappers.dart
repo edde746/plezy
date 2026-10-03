@@ -23,6 +23,7 @@ import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
+import '../media/media_file_info.dart' show fileNameFromPath;
 import '../media/media_part.dart';
 import '../media/media_person.dart';
 import '../media/media_playlist.dart';
@@ -1205,7 +1206,25 @@ class PlexMappers {
       bitrate: dto.bitrate,
       container: dto.container,
       parts: parts,
+      name: _versionFileName(parts),
     );
+  }
+
+  /// The version's name in the picker: the file that will play, exactly as
+  /// the file-info sheet shows it, ahead of the resolution/codec/bitrate
+  /// label ([MediaVersion.displayLabel]).
+  ///
+  /// Plex's multiple versions and editions are still in beta and their naming
+  /// is not settled, so no Plex-side name field is relied on; the file name is
+  /// data the client already has and tells versions apart today. Revisit once
+  /// Plex confirms a naming structure. Null when Plex withheld the path (it
+  /// does for some restricted users); the label then stays technical.
+  static String? _versionFileName(List<MediaPart> parts) {
+    for (final part in parts) {
+      final name = fileNameFromPath(part.file?.trim());
+      if (name != null) return name;
+    }
+    return null;
   }
 
   /// Map a Plex Media JSON entry directly into a [MediaVersion].
