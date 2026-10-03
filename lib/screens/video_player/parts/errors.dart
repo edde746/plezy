@@ -23,6 +23,10 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     // reporting again, and re-running the policy per event is what turned a
     // failed HLS open into an ANR. A new open resets the latch.
     if (_hasFatalPlaybackError) return;
+    if (_versionFallbackInFlight) {
+      _pendingVersionFallbackError = err;
+      return;
+    }
 
     // A sidecar subtitle fetch can also log a status, but it never raises the
     // end-file error this handler is wired to, so a latched status belongs to
@@ -36,6 +40,11 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       liveRetryFailed: _live.retryFailed,
     );
 
+    if (_tryVersionFallback(action, err)) return;
+    _applyPlaybackFailureAction(action, err);
+  }
+
+  void _applyPlaybackFailureAction(PlaybackFailureAction action, PlayerError err) {
     switch (action) {
       // Every dialog is unrecoverable until the server side changes, so each
       // replaces the snackbar rather than joining it.
@@ -83,6 +92,105 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
           return;
         }
         _presentPlaybackFailure(message);
+    }
+  }
+
+  /// A version failed to open. When the item has another version it has not
+  /// tried, open that one instead of raising the failure, and only surface the
+  /// error once every version has failed (#2522 follow-up). Returns false when
+  /// the fallback does not apply, leaving [action] to run as usual.
+  ///
+  /// Open failures only: a version that has shown a frame is playable, and a
+  /// later error is a playback problem rather than a reason to swap the file.
+  /// Downloads have one file, a Watch Together room plays the version the
+  /// group agreed on, and a strict launch asked for exactly one version, so
+  /// none of them fall back.
+  bool _tryVersionFallback(PlaybackFailureAction action, PlayerError err) {
+    if (widget.isLive || _isOfflinePlayback || widget.strictMediaSelection || _firstFrame.rendered) return false;
+    if (_activeWatchTogetherSession() != null) return false;
+    if (!failureAllowsVersionFallback(action: action, cause: err.cause)) return false;
+    final versionCount = _availableVersions.length;
+    if (versionCount < 2) return false;
+
+    final itemKey = _currentMetadata.globalKey;
+    if (_versionFallbackItemKey != itemKey) {
+      _versionFallbackItemKey = itemKey;
+      _versionFallbackAttempted.clear();
+    }
+    _versionFallbackAttempted.add(_effectiveSelectedMediaIndex);
+    if (nextVersionFallbackIndex(versionCount: versionCount, attempted: _versionFallbackAttempted) == null) {
+      return false;
+    }
+
+    // Halt the dead load the way a terminal error does — a failed HLS open
+    // keeps walking its playlist and erroring — without the failure UI or
+    // the launch receipt going terminal. The reload clears the latch.
+    _hasFatalPlaybackError = true;
+    _progressTracker?.stopTracking();
+    _abortCurrentOpen('player error: trying another version');
+    unawaited(_openNextFallbackVersion(action, err));
+    return true;
+  }
+
+  Future<void> _openNextFallbackVersion(PlaybackFailureAction action, PlayerError err) async {
+    _versionFallbackInFlight = true;
+    var outcome = MediaReloadOutcome.failed;
+    try {
+      try {
+        await player?.stop();
+      } catch (e, st) {
+        appLogger.w('Failed to stop the failed load before trying another version', error: e, stackTrace: st);
+      }
+      final versions = _availableVersions;
+      final failedIndex = _effectiveSelectedMediaIndex;
+      while (mounted && !_shuttingDown) {
+        final next = nextVersionFallbackIndex(versionCount: versions.length, attempted: _versionFallbackAttempted);
+        if (next == null) break;
+        _versionFallbackAttempted.add(next);
+        // Anything held so far came from a load that is already abandoned.
+        _pendingVersionFallbackError = null;
+        appLogger.w(
+          'Version ${failedIndex + 1} of ${versions.length} failed to open (${action.name}); '
+          'trying version ${next + 1}',
+        );
+        _toastController.show(
+          Symbols.swap_horiz_rounded,
+          t.videoControls.versionFallbackTrying(version: versions[next].displayLabel),
+          duration: const Duration(seconds: 3),
+        );
+        outcome = await _reloadMediaInPlace(
+          metadata: _currentMetadata,
+          selectedMediaIndex: next,
+          selectedMediaSourceId: PlaybackSession.mediaSourceIdForIndex(versions, next),
+          // Stream ids are per version; the next one picks its own tracks.
+          useCurrentAudioStreamSelection: false,
+          resumePosition: _currentOpenRequest?.resumePosition,
+          showErrorUi: false,
+          reason: 'version fallback',
+        );
+        // A version that cannot even be resolved has failed too: keep going.
+        if (outcome != MediaReloadOutcome.failed) break;
+      }
+    } finally {
+      _versionFallbackInFlight = false;
+    }
+
+    final pending = _pendingVersionFallbackError;
+    _pendingVersionFallbackError = null;
+    if (!mounted || _shuttingDown) return;
+    switch (outcome) {
+      case MediaReloadOutcome.opened:
+        // The new version's own open failed while the reload was finishing;
+        // run it through the policy now, which may try the next version.
+        if (pending != null) _onPlayerError(pending);
+      case MediaReloadOutcome.superseded:
+        // A newer open owns the screen and its outcome.
+        return;
+      case MediaReloadOutcome.failed:
+      case MediaReloadOutcome.rejected:
+        // Every remaining version failed before opening: report the failure
+        // that started the chain.
+        _applyPlaybackFailureAction(action, err);
     }
   }
 
@@ -184,6 +292,8 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   }
 
   void _retryFailedPlayback() {
+    // A deliberate retry gets a fresh pass through the item's versions.
+    _versionFallbackAttempted.clear();
     final request = _retryRequestForFailure();
     if (request == null || player == null) {
       // Nothing was ever dispatched (or the core is gone): start over.
