@@ -154,4 +154,38 @@ void main() {
     expect(resolve(statuses: {503}), PlaybackFailureAction.fatal);
     expect(resolve(cause: 'some-decoder-fault'), PlaybackFailureAction.fatal);
   });
+
+  group('version fallback', () {
+    bool allows(PlaybackFailureAction action, [String? cause]) =>
+        failureAllowsVersionFallback(action: action, cause: cause);
+
+    test('applies to failures that can belong to one file', () {
+      expect(allows(PlaybackFailureAction.mediaUnreadableDialog), isTrue);
+      expect(allows(PlaybackFailureAction.serverBusyDialog), isTrue);
+      expect(allows(PlaybackFailureAction.fatal), isTrue);
+      expect(allows(PlaybackFailureAction.fatal, PlayerError.openTimedOut), isTrue);
+      expect(allows(PlaybackFailureAction.fatal, PlayerError.streamInitFailed), isTrue);
+    });
+
+    test('never applies when every version would fail the same way', () {
+      // The account is refused, the server is at a limit, or the device is at fault.
+      expect(allows(PlaybackFailureAction.playbackNotAllowedDialog), isFalse);
+      expect(allows(PlaybackFailureAction.serverLimitDialog), isFalse);
+      expect(allows(PlaybackFailureAction.fatal, PlayerError.audioOutputFailed), isFalse);
+      expect(allows(PlaybackFailureAction.fatal, PlayerError.playerInitFailed), isFalse);
+      // Live TV has no versions and keeps its own retry ladder.
+      expect(allows(PlaybackFailureAction.liveRetry), isFalse);
+      expect(allows(PlaybackFailureAction.liveInterrupted), isFalse);
+      expect(allows(PlaybackFailureAction.ignore), isFalse);
+    });
+
+    test('tries untried versions in list order, then gives up', () {
+      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {0}), 1);
+      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {0, 1}), 2);
+      // A user who started on version 2 still gets version 1 next.
+      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {1}), 0);
+      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {0, 1, 2}), isNull);
+      expect(nextVersionFallbackIndex(versionCount: 1, attempted: {0}), isNull);
+    });
+  });
 }

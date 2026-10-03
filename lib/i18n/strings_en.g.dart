@@ -2171,6 +2171,9 @@ class Translations$videoControls$en {
 	/// en: 'Transcoding unavailable — playing original quality'
 	String get transcodeUnavailableFallback => 'Transcoding unavailable — playing original quality';
 
+	/// en: 'Couldn't play this version — trying ${version}'
+	String versionFallbackTrying({required Object version}) => 'Couldn\'t play this version — trying ${version}';
+
 	/// en: 'Selected subtitles could not be loaded — continuing without subtitles'
 	String get subtitleUnavailableFallback => 'Selected subtitles could not be loaded — continuing without subtitles';
 
@@ -8052,6 +8055,7 @@ extension on Translations {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
+			'videoControls.versionFallbackTrying' => ({required Object version}) => 'Couldn\'t play this version — trying ${version}',
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
@@ -8384,9 +8388,9 @@ extension on Translations {
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
 			'errors.reasonRefused' => 'the server refused the request',
-			'errors.reasonNotFound' => 'the item is no longer on the server',
 			_ => null,
 		} ?? switch (path) {
+			'errors.reasonNotFound' => 'the item is no longer on the server',
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -8898,9 +8902,9 @@ extension on Translations {
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
-			'watchTogether.endSession' => 'End Session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -9412,9 +9416,9 @@ extension on Translations {
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
-			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			_ => null,
 		} ?? switch (path) {
+			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',

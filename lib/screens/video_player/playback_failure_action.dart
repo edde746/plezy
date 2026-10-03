@@ -90,3 +90,31 @@ PlaybackFailureAction resolvePlaybackFailureAction({
 
   return PlaybackFailureAction.fatal;
 }
+
+/// Whether a failed on-demand open may move on to another version of the item
+/// instead of surfacing [action].
+///
+/// Only failures that can belong to one file qualify: the server could not
+/// read it (404), kept refusing its stream (503), or the open failed or timed
+/// out with no status at all. A 403 refuses the account and a 500 is a server
+/// limit, so every version would meet the same answer; an audio-output fault
+/// or a core that failed to start is the device, not the file.
+bool failureAllowsVersionFallback({required PlaybackFailureAction action, required String? cause}) {
+  return switch (action) {
+    PlaybackFailureAction.mediaUnreadableDialog || PlaybackFailureAction.serverBusyDialog => true,
+    PlaybackFailureAction.fatal => cause != PlayerError.audioOutputFailed && cause != PlayerError.playerInitFailed,
+    _ => false,
+  };
+}
+
+/// The version to try after a failed open: the first, in list order, that this
+/// item has not tried yet. Null once every version has been tried.
+///
+/// List order is the order the version picker shows, which is also the order
+/// the server ranks them in.
+int? nextVersionFallbackIndex({required int versionCount, required Set<int> attempted}) {
+  for (var i = 0; i < versionCount; i++) {
+    if (!attempted.contains(i)) return i;
+  }
+  return null;
+}
