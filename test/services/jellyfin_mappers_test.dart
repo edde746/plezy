@@ -582,6 +582,60 @@ void main() {
     });
   });
 
+  group('jellyfinWithOrderedMediaSources (#2522)', () {
+    Map<String, dynamic> source(String id, String? name) => {'Id': id, 'Name': ?name};
+    List<Object?> ids(Map<String, dynamic> json) =>
+        (json['MediaSources'] as List).map((s) => (s as Map<String, dynamic>)['Id']).toList();
+
+    test('sorts Emby sources by name, naturally and case-insensitively', () {
+      final json = {
+        'Id': 'm',
+        'MediaSources': [
+          source('c', 'Movie - # 10 Extended'),
+          source('b', 'Movie - # 2 Secondary'),
+          source('none', null),
+          source('a', 'movie - # 1 Primary'),
+        ],
+      };
+
+      final ordered = jellyfinWithOrderedMediaSources(json, MediaBrowserDialect.emby);
+
+      expect(ids(ordered), ['a', 'b', 'c', 'none']);
+      // The input is not mutated.
+      expect(ids(json), ['c', 'b', 'none', 'a']);
+    });
+
+    test('keeps the server order for equal names and leaves Jellyfin alone', () {
+      final json = {
+        'Id': 'm',
+        'MediaSources': [source('y', 'Same'), source('x', 'Same')],
+      };
+      expect(identical(jellyfinWithOrderedMediaSources(json, MediaBrowserDialect.emby), json), isTrue);
+
+      final jellyfin = {
+        'Id': 'm',
+        'MediaSources': [source('b', 'B'), source('a', 'A')],
+      };
+      expect(ids(jellyfinWithOrderedMediaSources(jellyfin, MediaBrowserDialect.jellyfin)), ['b', 'a']);
+    });
+
+    test('mediaItem orders Emby versions and raw consistently', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'm',
+          'Type': 'Movie',
+          'MediaSources': [source('b', '# 2 Secondary'), source('a', '# 1 Primary')],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+        dialect: MediaBrowserDialect.emby,
+      )!;
+
+      expect(item.mediaVersions!.map((v) => v.id), ['a', 'b']);
+      expect(ids(item.raw as Map<String, dynamic>), ['a', 'b']);
+    });
+  });
+
   group('JellyfinMappers.library', () {
     test('translates Jellyfin CollectionType to neutral MediaKind', () {
       final cases = {

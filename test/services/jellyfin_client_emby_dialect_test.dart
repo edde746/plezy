@@ -301,7 +301,8 @@ void main() {
       final parentPage = await emby.fetchChildrenPage('season-1');
 
       for (final row in [seasonPage.items.single, parentPage.items.single]) {
-        expect(row.mediaVersions!.map((version) => version.id), ['mediasource_12', 'mediasource_9']);
+        // Both versions, in name order rather than server order (#2522).
+        expect(row.mediaVersions!.map((version) => version.id), ['mediasource_9', 'mediasource_12']);
       }
     });
 

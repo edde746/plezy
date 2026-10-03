@@ -1194,6 +1194,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   final FirstFrameGate _firstFrame = FirstFrameGate();
   bool _hasFatalPlaybackError = false;
 
+  /// Version indexes that already failed to open (or are being tried) for the
+  /// item [_versionFallbackItemKey] names; see [_tryVersionFallback].
+  final Set<int> _versionFallbackAttempted = <int>{};
+  String? _versionFallbackItemKey;
+
+  /// A version fallback reload is running. Player errors that land meanwhile
+  /// are held in [_pendingVersionFallbackError] rather than handled, so a late
+  /// error from the abandoned load cannot start a second, competing fallback.
+  bool _versionFallbackInFlight = false;
+  PlayerError? _pendingVersionFallbackError;
+
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
   final PlayerChromeController _chromeController = PlayerChromeController(
     initiallyVisible: playerChromeStartsVisible(isTv: PlatformDetector.isTV()),
