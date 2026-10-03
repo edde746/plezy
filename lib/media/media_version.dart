@@ -35,10 +35,10 @@ class MediaVersion {
   @JsonKey(fromJson: _partsFromJson, toJson: _partsToJson)
   final List<MediaPart> parts;
 
-  /// Human-readable name for this version (e.g. "Director's Cut").
-  /// Plex doesn't surface a name on `Media` entries, so this is null on the
-  /// Plex path and set from `MediaSource.Name` on the Jellyfin path when the
-  /// names differ across sources.
+  /// Human-readable name for this version (e.g. "Director's Cut"): the
+  /// file that will play on the Plex path (when Plex exposes the path; see
+  /// `PlexMappers._versionFileName`), and `MediaSource.Name` on the
+  /// Jellyfin path.
   final String? name;
 
   const MediaVersion({

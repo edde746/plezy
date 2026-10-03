@@ -22,6 +22,26 @@ Map<String, dynamic> _media({
 }
 
 void main() {
+  group('Plex media version name', () {
+    test('is the file name the file-info sheet shows', () {
+      final v = PlexMappers.mediaVersionFromJson(
+        _media(partExtras: {'file': '/data/TV/Show/Season 1/Show - S01E01 - # 1 Primary.mkv'}),
+      );
+      expect(v.name, 'Show - S01E01 - # 1 Primary.mkv');
+      expect(v.displayLabel, startsWith('Show - S01E01 - # 1 Primary.mkv · '));
+    });
+
+    test('handles Windows server paths', () {
+      final v = PlexMappers.mediaVersionFromJson(_media(partExtras: {'file': r'D:\Movies\Movie (2010)\Movie.mkv'}));
+      expect(v.name, 'Movie.mkv');
+    });
+
+    test('has no name when Plex withholds the path', () {
+      expect(PlexMappers.mediaVersionFromJson(_media()).name, isNull);
+      expect(PlexMappers.mediaVersionFromJson(_media(partExtras: {'file': '  '})).name, isNull);
+    });
+  });
+
   group('Plex media version accessibility parsing', () {
     test('accessible/exists are null when Plex did not include them', () {
       final v = PlexMappers.mediaVersionFromJson(_media());
