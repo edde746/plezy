@@ -3,12 +3,14 @@ import 'dart:convert';
 import '../media/ids.dart';
 
 import '../media/media_backend.dart';
+import '../media/media_browser_dialect.dart';
 import '../media/media_source_info.dart';
 import '../utils/app_logger.dart';
 import '../utils/plex_cache_parser.dart';
 import 'api_cache.dart';
 import 'jellyfin_api_cache.dart';
 import 'jellyfin_cache_resolver.dart';
+import 'jellyfin_mappers.dart';
 import 'jellyfin_media_info_mapper.dart';
 import 'plex_mappers.dart';
 
@@ -119,7 +121,11 @@ class CachedPlaybackMetadataService {
   }) async {
     final resolved = await _jellyfinRawItem(cacheServerId, itemId, backend: backend);
     final raw = resolved.raw;
-    final sources = raw['MediaSources'];
+    // [mediaIndex] was stored against the mapped item's source order.
+    final sources = jellyfinWithOrderedMediaSources(
+      raw,
+      backend.dialect ?? MediaBrowserDialect.jellyfin,
+    )['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
     final index = mediaIndex >= 0 && mediaIndex < sources.length ? mediaIndex : 0;
     final selected = sources[index];
