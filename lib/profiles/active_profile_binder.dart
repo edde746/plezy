@@ -383,6 +383,23 @@ class ActiveProfileBinder {
         visibleServerIds.addAll(result.visibleServerIds);
         expectedServerIds.addAll(result.expectedServerIds);
       }
+      final jellyfinConnectionIds = <String>{
+        for (final pc in joinRows)
+          if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) id,
+      };
+      if (!userInitiated && _lastBoundProfileId == profile.id) {
+        final kept = _serversStillBoundForProfile(
+          profile.id,
+          expectedServerIds: expectedServerIds,
+          jellyfinConnectionIds: jellyfinConnectionIds,
+        ).difference(visibleServerIds);
+        if (kept.isNotEmpty) {
+          appLogger.i(
+            'ActiveProfileBinder: keeping ${kept.length} bound server(s) visible across a passive rebind of ${profile.displayName}',
+          );
+          visibleServerIds.addAll(kept);
+        }
+      }
 
       // Snapshot before the visibility sweep below: removeServer() clears a
       // swept server's refusal marker, and a refusing server is by definition
@@ -399,10 +416,6 @@ class ActiveProfileBinder {
       // profile. Always set the filter to the bound set (even when empty) so
       // a profile with no connections shows nothing — falling back to "all
       // visible" on empty would leak servers attached to other profiles.
-      final jellyfinConnectionIds = <String>{
-        for (final pc in joinRows)
-          if (connectionsById[pc.connectionId] case JellyfinConnection(:final id)) id,
-      };
       for (final serverId in serverManager.registeredServerIds) {
         final belongs = visibleServerIds.contains(serverId) || expectedServerIds.contains(serverId);
         if (belongs &&
@@ -449,6 +462,27 @@ class ActiveProfileBinder {
       );
     }
     return success;
+  }
+
+  Set<String> _serversStillBoundForProfile(
+    String profileId, {
+    required Set<String> expectedServerIds,
+    required Set<String> jellyfinConnectionIds,
+  }) {
+    final registered = serverManager.registeredServerIds.toSet();
+    final authRejected = serverManager.authErrorServerIds;
+    return {
+      for (final serverId in serverManager.visibleServerIds ?? const <String>{})
+        if (expectedServerIds.contains(serverId) &&
+            registered.contains(serverId) &&
+            !authRejected.contains(serverId) &&
+            !serverManager.isRegisteredForOtherProfile(
+              ServerId(serverId),
+              profileId: profileId,
+              jellyfinConnectionIds: jellyfinConnectionIds,
+            ))
+          serverId,
+    };
   }
 
   /// Server ids the profile should reach once bound: its join rows plus the
