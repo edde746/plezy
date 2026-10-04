@@ -60,7 +60,8 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   }
 
   /// Post-first-frame display matching for an Android open that no startup
-  /// gate owned: ExoPlayer without a metadata rate. mpv opens behind
+  /// gate owned: ExoPlayer without a metadata rate, VOD and Live TV alike.
+  /// mpv opens — VOD items and Live TV channels — behind
   /// [_FrameRateStartupPlan.needsFirstFrameSwitch] instead, which marks the
   /// item applied before open so this stays a no-op for it.
   Future<void> _applyFrameRateMatching() async {

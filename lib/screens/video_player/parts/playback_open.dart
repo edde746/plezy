@@ -218,6 +218,30 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     );
   }
 
+  /// The startup plan for a backend that negotiates the display from the
+  /// decoded stream at its first frame — Android mpv and Apple TV — or null
+  /// for one that does not (ExoPlayer, desktop). Shared by the VOD open and
+  /// Live TV channel opens ([_armLiveDisplayNegotiation]) so the two cannot
+  /// drift.
+  _FrameRateStartupPlan? _firstFrameStartupPlan(
+    Player currentPlayer,
+    SettingsService settingsService, {
+    required bool hasVideoUrl,
+  }) {
+    // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
+    // the two Android backends (true = the mpv core).
+    final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
+    if (!isAndroidMpv && !PlatformDetector.isAppleTV()) return null;
+    final plan = _FrameRateStartupPlan(fps: null);
+    final matchingEnabled =
+        settingsService.read(SettingsService.matchContentFrameRate) ||
+        settingsService.read(SettingsService.matchContentResolution);
+    // Apple TV matching is a system setting (AVDisplayManager); the gate
+    // only exists to keep playback from running through the HDMI blank.
+    plan.needsFirstFrameSwitch = hasVideoUrl && (!isAndroidMpv || matchingEnabled);
+    return plan;
+  }
+
   /// Decide the display strategy for an open. mpv (Android) and Apple TV
   /// open paused and negotiate from the decoded stream at the first frame;
   /// ExoPlayer switches before open from metadata (after audio focus, so
@@ -235,19 +259,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     int preKnownWidth = 0,
     int preKnownHeight = 0,
   }) async {
-    // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
-    // the two Android backends (true = the mpv core).
-    final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
-    if (isAndroidMpv || PlatformDetector.isAppleTV()) {
-      final plan = _FrameRateStartupPlan(fps: null);
-      final matchingEnabled =
-          settingsService.read(SettingsService.matchContentFrameRate) ||
-          settingsService.read(SettingsService.matchContentResolution);
-      // Apple TV matching is a system setting (AVDisplayManager); the gate
-      // only exists to keep playback from running through the HDMI blank.
-      plan.needsFirstFrameSwitch = hasVideoUrl && (!isAndroidMpv || matchingEnabled);
-      return plan;
-    }
+    final firstFramePlan = _firstFrameStartupPlan(currentPlayer, settingsService, hasVideoUrl: hasVideoUrl);
+    if (firstFramePlan != null) return firstFramePlan;
 
     // Rate-match only when the user opted in; the plan's fps drives the
     // switch calls, so a resolution-only open passes 0 to the native side.

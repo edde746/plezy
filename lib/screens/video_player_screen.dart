@@ -1290,6 +1290,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @visibleForTesting
   Future<void> debugStartPlaybackForTesting() => _startPlayback();
 
+  /// A channel zap, awaited to its end: the transports fire it and forget,
+  /// and its display negotiation outlives the zap's own transition.
+  @visibleForTesting
+  Future<void> debugSwitchLiveChannelForTesting(int delta) => _switchLiveChannel(delta);
+
   /// Adjacency otherwise arrives from the backend's queue containers, which
   /// no widget test stands up; this seeds what [_loadAdjacentEpisodes] would
   /// have committed so an EOF can take the present-next path.
