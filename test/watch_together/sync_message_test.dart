@@ -5,36 +5,48 @@ import 'package:plezy/watch_together/models/sync_message.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
 
 void main() {
-  group('join control mode wire format', () {
-    test('a host join round-trips its control mode', () {
-      final decoded = SyncMessage.fromJson(
-        SyncMessage.join(peerId: 'p1', displayName: 'Host', isHost: true, controlMode: ControlMode.anyone).toJson(),
-      );
+  test('join messages match reviewed v3 examples, including host-only zero and legacy omission', () {
+    const examples = [(true, ControlMode.anyone, 1), (true, ControlMode.hostOnly, 0), (false, null, null)];
+    for (final (isHost, mode, wireMode) in examples) {
+      final message = SyncMessage.join(peerId: 'p1', displayName: 'Participant', isHost: isHost, controlMode: mode);
+      final expected = {
+        't': 'join',
+        'ts': message.timestamp,
+        'pid': 'p1',
+        'name': 'Participant',
+        'host': isHost,
+        'v': 3,
+        'cm': ?wireMode,
+      };
+      expect(jsonDecode(message.toJson()), expected);
+
+      // Decode an independently authored peer message, not the encoder output.
+      final decoded = SyncMessage.fromJson(jsonEncode({...expected, 'ts': 1000}));
       expect(decoded.type, SyncMessageType.join);
-      expect(decoded.controlMode, ControlMode.anyone);
-      expect(decoded.version, SyncMessage.protocolVersion);
-    });
+      expect(decoded.timestamp, 1000);
+      expect(decoded.peerId, 'p1');
+      expect(decoded.displayName, 'Participant');
+      expect(decoded.isHost, isHost);
+      expect(decoded.controlMode, mode);
+      expect(decoded.version, 3);
+    }
+  });
 
-    test('hostOnly (index 0) is serialized, not dropped as falsy', () {
+  test('unknown join control ordinals from a newer peer remain unknown', () {
+    for (final ordinal in [-1, 99]) {
       final decoded = SyncMessage.fromJson(
-        SyncMessage.join(peerId: 'p1', displayName: 'Host', isHost: true, controlMode: ControlMode.hostOnly).toJson(),
+        '{"t":"join","ts":1000,"pid":"p1","name":"Host","host":true,"v":3,"cm":$ordinal}',
       );
-      expect(decoded.controlMode, ControlMode.hostOnly);
-    });
+      expect(decoded.controlMode, isNull);
+    }
+  });
 
-    test('a join without a control mode omits the key and parses to unknown', () {
-      final message = SyncMessage.join(peerId: 'p1', displayName: 'Guest', isHost: false);
-      final map = jsonDecode(message.toJson()) as Map<String, dynamic>;
-      expect(map.containsKey('cm'), isFalse, reason: 'pre-cm clients must see the exact 2.13.0 join shape');
-      expect(SyncMessage.fromJson(message.toJson()).controlMode, isNull);
-    });
-
-    test('an out-of-range control mode index from a newer peer parses to unknown', () {
-      final map =
-          jsonDecode(SyncMessage.join(peerId: 'p1', displayName: 'Host', isHost: true).toJson())
-              as Map<String, dynamic>;
-      map['cm'] = 99;
-      expect(SyncMessage.fromJson(jsonEncode(map)).controlMode, isNull);
-    });
+  test('state requests carry only the request envelope', () {
+    final message = SyncMessage.requestState(peerId: 'p1');
+    expect(jsonDecode(message.toJson()), {'t': 'requestState', 'ts': message.timestamp, 'pid': 'p1'});
+    final decoded = SyncMessage.fromJson('{"t":"requestState","ts":1000,"pid":"p1"}');
+    expect(decoded.type, SyncMessageType.requestState);
+    expect(decoded.timestamp, 1000);
+    expect(decoded.peerId, 'p1');
   });
 }

@@ -50,12 +50,4 @@ class GridSizeCalculator {
     final columns = getColumnCount(availableWidth, maxExtent);
     return getCellWidthForColumnCount(availableWidth, columns);
   }
-
-  static bool isFirstRow(int index, int columnCount) {
-    return index < columnCount;
-  }
-
-  static bool isFirstColumn(int index, int columnCount) {
-    return index % columnCount == 0;
-  }
 }

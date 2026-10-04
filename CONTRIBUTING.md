@@ -37,13 +37,45 @@ The project includes automated CI checks that run on all pull requests:
 3. **Generated Code**: Ensures generated translations and model files are current
    - Run locally: `scripts/codegen.sh --check`
 
-4. **Tests**: Runs unit and widget tests (when available)
+4. **Tests**: Always invokes the Flutter behavior suite instead of conditionally skipping test execution
    - Run locally: `scripts/run_tests.sh`
-   - This is `flutter test` with `-j` set to the core count. The default is half your cores, which
-     leaves most of the machine idle because the suite is dominated by per-file compilation.
+   - This is `flutter test` with `-j` bounded by the host's CPU/affinity and cgroup quota.
      Arguments are forwarded, so `scripts/run_tests.sh test/widgets/some_test.dart` works.
 
 All these checks must pass before your changes can be merged.
+
+### Testing boundaries
+
+Prefer observable behavior over constructor defaults, source spelling, helper calls, or duplicate inventories.
+Keep one meaningful proof for each invariant; migrate valuable unit-only behavior before deleting its existing test.
+Test fixtures are setup, not a second implementation to certify. Their consumers should assert application outcomes.
+Tests for static checkers are different: parsing source, manifests, and workflow fixtures is their public behavior.
+
+- **Unmocked E2E:** the Android Maestro journeys below run the app against disposable Jellyfin.
+- **Integration:** server tests exercise HTTP/WebSocket routes and filesystem persistence; fault tests name the
+  controlled upstream or injected failure. Flutter database and preference-repair suites exercise real SQLite/files.
+  Widget suites exercise the Flutter renderer but may replace media servers, preferences, or native channels;
+  they are not device E2E.
+- **Goldens:** Watch Together's compact JSON examples are hand-reviewed protocol inputs/outputs, not
+  `decode(encode(value))` comparisons. Preserve enum ordinals, peer identity, optional-field omission, and
+  unknown-versus-zero distinctions. Review expected-output changes rather than regenerating them wholesale.
+- **Website:** metadata fault coverage uses a local HTTP App Store fixture, an injected transport fault,
+  and a controlled Google Play loader. Content cases use independent expected store selection and prices;
+  neither suite claims live-store E2E.
+- **Scripts:** translation cleanup runs its command entrypoint against temporary locale files and compares
+  independently expected Polish/Japanese plural JSON. Check mode must report pending changes without writing.
+
+Additional local gates:
+
+```bash
+bash scripts/ci_guard_checks.sh
+bun test scripts/agent.test.mjs
+(cd server && go test -race ./...)
+(cd website && bun install --frozen-lockfile && bun test && bun run check)
+```
+
+Keep static analysis, generation-drift checks, native suites, and security/resource-integrity guards.
+For UI changes, also inspect the running surface; readiness or a passing helper test is not runtime evidence.
 
 ### Maestro end-to-end tests
 

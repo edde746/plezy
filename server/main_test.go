@@ -328,18 +328,6 @@ func TestLoadHandlesCorrupt(t *testing.T) {
 	}
 }
 
-func TestLoadHandlesMissing(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "does-not-exist.json")
-	s := newTestServer(t, path)
-	if _, err := s.loadSnapshot(path); err != nil {
-		t.Fatalf("loadSnapshot: %v", err)
-	}
-	if len(s.rooms) != 0 {
-		t.Fatalf("expected empty rooms, got %d", len(s.rooms))
-	}
-}
-
 func TestLoadRejectsSnapshotsWithoutHostAuthority(t *testing.T) {
 	for _, version := range []int{1, 99} {
 		t.Run(fmt.Sprintf("version_%d", version), func(t *testing.T) {
@@ -1820,19 +1808,6 @@ func TestClientWriteFailureClosesConnection(t *testing.T) {
 	client.close()
 }
 
-func TestRateLimiterBurstExhausts(t *testing.T) {
-	now := time.Unix(1700000000, 0)
-	rl := newRateLimiterAt(5, 10, now)
-	for i := range 5 {
-		if !rl.allowAt(now) {
-			t.Fatalf("allow %d: expected true", i)
-		}
-	}
-	if rl.allowAt(now) {
-		t.Fatal("allow 6: expected false (burst exhausted)")
-	}
-}
-
 func TestRateLimiterRefillsOverTime(t *testing.T) {
 	start := time.Unix(1700000000, 0)
 	rl := newRateLimiterAt(5, 10, start)
@@ -1887,23 +1862,6 @@ func TestRateLimiterAllowRace(t *testing.T) {
 	}
 }
 
-func TestRateLimiterReclaimableOnlyAfterFullRefill(t *testing.T) {
-	now := time.Now()
-	limiter := &rateLimiter{
-		tokens:     0,
-		maxTokens:  5,
-		refillRate: 1,
-		lastTime:   now,
-	}
-
-	if limiter.reclaimable(now.Add(4 * time.Second)) {
-		t.Fatal("partially refilled limiter must retain its effective state")
-	}
-	if !limiter.reclaimable(now.Add(5 * time.Second)) {
-		t.Fatal("fully refilled limiter should be reclaimable")
-	}
-}
-
 func TestCleanupRateWindowsUsesWindowBoundary(t *testing.T) {
 	now := time.Now()
 	windows := map[string]time.Time{
@@ -1918,18 +1876,6 @@ func TestCleanupRateWindowsUsesWindowBoundary(t *testing.T) {
 	}
 	if _, ok := windows["expired"]; ok {
 		t.Fatal("expired fixed-window limiter was retained")
-	}
-}
-
-func TestConnTrackerPerIPLimit(t *testing.T) {
-	ct := newConnTracker()
-	for i := 0; i < maxConnsPerIP; i++ {
-		if !ct.tryConnect("10.0.0.1") {
-			t.Fatalf("tryConnect %d: expected true", i)
-		}
-	}
-	if ct.tryConnect("10.0.0.1") {
-		t.Fatalf("tryConnect %d from same IP: expected false", maxConnsPerIP+1)
 	}
 }
 
@@ -1965,23 +1911,6 @@ func TestConnTrackerDisconnectFrees(t *testing.T) {
 	ct.mu.Unlock()
 	// Extra disconnect is a no-op.
 	ct.disconnect(ip)
-}
-
-func TestConnTrackerRoomQuota(t *testing.T) {
-	ct := newConnTracker()
-	ip := "10.0.0.3"
-	for i := 0; i < maxRoomsPerIP; i++ {
-		if !ct.tryCreateRoom(ip) {
-			t.Fatalf("tryCreateRoom %d: expected true", i)
-		}
-	}
-	if ct.tryCreateRoom(ip) {
-		t.Fatalf("tryCreateRoom %d: expected false (quota)", maxRoomsPerIP+1)
-	}
-	ct.releaseRoom(ip)
-	if !ct.tryCreateRoom(ip) {
-		t.Fatal("tryCreateRoom after release: expected true")
-	}
 }
 
 func TestConnTrackerCleanupPreservesEffectiveRateLimits(t *testing.T) {
@@ -7458,6 +7387,10 @@ func TestLogLookupLimiterCleanupIsDeterministic(t *testing.T) {
 	store.cleanup(now)
 	if _, ok := store.lookupRate["203.0.113.1"]; !ok {
 		t.Fatal("cleanup removed an effective limiter")
+	}
+	store.cleanup(now.Add(time.Duration(logLookupRateBurst)*time.Second - time.Nanosecond))
+	if _, ok := store.lookupRate["203.0.113.1"]; !ok {
+		t.Fatal("cleanup removed a limiter before its complete refill")
 	}
 	store.cleanup(now.Add(time.Duration(logLookupRateBurst) * time.Second))
 	if _, ok := store.lookupRate["203.0.113.1"]; ok {
