@@ -123,7 +123,12 @@ void main() {
     await mal.setEnabled(false);
     await anilist.setEnabled(false);
     await simkl.setEnabled(true);
-    simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recorder.client);
+    simkl.rebindSession(
+      _session(),
+      onSessionInvalidated: () {},
+      httpClient: recorder.client,
+      writeSpacing: Duration.zero,
+    );
   });
 
   tearDown(() async {
@@ -230,7 +235,12 @@ void main() {
       // disconnect/reconnect or profile switch, neither of which the queued
       // fallback may follow.
       final replacement = _SimklRecorder();
-      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: replacement.client);
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: replacement.client,
+        writeSpacing: Duration.zero,
+      );
       recorder.gate!.complete();
       await stopped;
       await pumpEventQueue();
@@ -258,7 +268,12 @@ void main() {
       // used. Reading it at execution time would post this item to whichever
       // account is bound by then.
       final replacement = _SimklRecorder();
-      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: replacement.client);
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: replacement.client,
+        writeSpacing: Duration.zero,
+      );
       recorder.gate!.complete();
       await paused;
       await stopped;
@@ -279,7 +294,12 @@ void main() {
       // between the start and the stop, so a target resolved at stop time would
       // look perfectly valid — and would post this item to the wrong account.
       final replacement = _SimklRecorder();
-      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: replacement.client);
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: replacement.client,
+        writeSpacing: Duration.zero,
+      );
 
       settleThrottles();
       await coordinator.pausePlayback();

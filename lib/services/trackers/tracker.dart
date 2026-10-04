@@ -58,9 +58,16 @@ abstract interface class TrackerRatingSource {
   Future<void> clearRating(TrackerRatingContext ctx);
 }
 
+/// One item of a batched history write. [watchedAt] carries the moment the
+/// watch actually happened and is set only when replaying a queued watched
+/// write, exactly as for [Tracker.markWatched].
+typedef TrackerHistoryEntry = ({TrackerContext ctx, DateTime? watchedAt});
+
 /// A tracker whose history is a per-item record: every movie and episode is
-/// added or removed on its own (Simkl, Trakt). The coordinator can therefore
-/// hand it one item at a time, including a single episode of a container.
+/// added or removed on its own row (Simkl, Trakt, MDBList). Its history
+/// endpoint takes arrays, so a container's episodes go out together through
+/// [writeHistory] instead of one request each — Simkl and Trakt allow one write
+/// per second, and one request per episode of a long show is a request storm.
 abstract interface class EpisodeHistoryTracker implements Tracker {
   /// A stable identifier for the remote row this tracker's history writes target,
   /// or null when it cannot name one — in which case no write could apply either.
@@ -71,6 +78,11 @@ abstract interface class EpisodeHistoryTracker implements Tracker {
   /// id as soon as some other tracker's mapping is downloaded, leaving rows
   /// already queued unmatchable). Prefer [trackerExternalRowIdentity].
   String? historyRowIdentity(TrackerContext ctx);
+
+  /// Add ([watched]) or remove every entry in one request. Entries the service
+  /// cannot address are skipped; nothing is sent when none remain. Removal
+  /// ignores [TrackerHistoryEntry.watchedAt].
+  Future<void> writeHistory(List<TrackerHistoryEntry> entries, {required bool watched});
 }
 
 /// A tracker that keeps one progress counter per series instead of per-episode

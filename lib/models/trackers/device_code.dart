@@ -16,8 +16,9 @@ sealed class DeviceCode with _$DeviceCode {
     required int expiresIn,
     required int interval,
 
-    /// URL with the code pre-filled (e.g. `https://trakt.tv/activate/ABC12345`)
-    /// when the provider supports it. Nullable — Simkl doesn't.
+    /// URL with the code pre-filled (e.g. `https://simkl.com/pin?user_code=BDWP-HQPK`)
+    /// when the provider supports it. Null when the provider sends none and
+    /// none can be built, leaving the user to enter the code by hand.
     String? verificationUrlComplete,
   }) = _DeviceCode;
 }

@@ -2245,6 +2245,10 @@
       "seerr": "Seerr",
       "mdblist": "MDBList"
     },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
+    },
     "deviceCode": {
       "title": "Plezy aktiválása a következőn: ${service}",
       "instructions": "Olvasd be a QR-kódot, vagy nyisd meg az alábbi címet, és írd be ezt a kódot:",

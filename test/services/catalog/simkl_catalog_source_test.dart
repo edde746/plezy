@@ -179,6 +179,7 @@ void main() {
       client = SimklClient(
         _session(),
         onSessionInvalidated: () => invalidations++,
+        writeSpacing: Duration.zero,
         httpClient: MockClient((request) async {
           requests.add(request);
           return responder(request);
@@ -202,11 +203,12 @@ void main() {
       final request = requests.single;
       expect(request.url.host, 'data.simkl.in');
       expect(request.url.path, '/discover/trending/movies/week_100.json');
-      expect(request.url.queryParameters['client_id'], SimklConstants.clientId);
+      final appVersion = await SimklConstants.appVersion();
+      expect(request.url.queryParameters['client_id'], SimklConstants.legacyClientId);
       expect(request.url.queryParameters['app-name'], SimklConstants.appName);
-      expect(request.url.queryParameters['app-version'], SimklConstants.appVersion);
+      expect(request.url.queryParameters['app-version'], appVersion);
       expect(request.headers, isNot(contains('authorization')));
-      expect(request.headers['user-agent'], '${SimklConstants.appName}/${SimklConstants.appVersion}');
+      expect(request.headers['user-agent'], '${SimklConstants.appName}/$appVersion');
 
       expect(first.hasMore, isTrue);
       expect(first.items.single.ids.simkl, 1);

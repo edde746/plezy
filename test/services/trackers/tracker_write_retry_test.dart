@@ -38,11 +38,12 @@ class _FakeMediaServerClient implements MediaServerClient {
   String? get serverName => null;
 
   final Map<String, ExternalIds> externalIdsByItem;
+  final List<MediaItem> descendants;
 
   @override
   final double watchedThreshold;
 
-  _FakeMediaServerClient({required this.externalIdsByItem, this.watchedThreshold = 0.9})
+  _FakeMediaServerClient({required this.externalIdsByItem, this.descendants = const [], this.watchedThreshold = 0.9})
     : serverId = ServerId('server-1');
 
   @override
@@ -55,7 +56,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   Future<List<MediaItem>> fetchChildren(String parentId) async => const [];
 
   @override
-  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => const [];
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => descendants;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -295,6 +296,87 @@ void main() {
     });
   });
 
+  group('a failed container write', () {
+    MediaItem show() => testMediaItem(
+      id: 'show-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.show,
+      title: 'Show 1',
+      serverId: ServerId('server-1'),
+      libraryId: 'lib-1',
+    );
+
+    _FakeMediaServerClient containerClient(int episodes) => _FakeMediaServerClient(
+      externalIdsByItem: const {'show-1': ExternalIds(tvdb: 12345)},
+      descendants: [for (var number = 1; number <= episodes; number++) _episodeItem(number)],
+    );
+
+    setUp(() async {
+      await mal.setEnabled(false);
+      await simkl.setEnabled(true);
+    });
+
+    tearDown(() => simkl.setEnabled(false));
+
+    test('queues every episode and replays them as one request', () async {
+      final recorder = _Recorder()..status = 500;
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: recorder.client,
+        writeSpacing: Duration.zero,
+      );
+
+      await coordinator.markWatched(show(), containerClient(30));
+      expect(recorder.paths, ['/sync/history'], reason: 'the live write is one request for the whole show');
+
+      recorder
+        ..status = 201
+        ..paths.clear()
+        ..bodies.clear();
+      await coordinator.flushWriteQueue();
+
+      expect(recorder.paths, ['/sync/history'], reason: 'the queued episodes replay together');
+      final seasons = (recorder.bodies.single['shows'] as List).single['seasons'] as List;
+      expect(((seasons.single as Map)['episodes'] as List), hasLength(30));
+
+      recorder.paths.clear();
+      await coordinator.flushWriteQueue();
+      expect(recorder.paths, isEmpty, reason: 'every queued episode was cleared by the replay');
+    });
+
+    test('a rate-limited replay asks once and keeps every episode', () async {
+      final recorder = _Recorder()..status = 500;
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: recorder.client,
+        writeSpacing: Duration.zero,
+      );
+      await coordinator.markWatched(show(), containerClient(TrackerConstants.historyBatchSize + 1));
+
+      final limited = _Recorder()..status = 429;
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: limited.client,
+        writeSpacing: Duration.zero,
+      );
+      await coordinator.flushWriteQueue();
+      expect(limited.paths, ['/sync/history'], reason: 'one refusal stops the drain for Simkl');
+
+      final recovered = _Recorder()..status = 201;
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: recovered.client,
+        writeSpacing: Duration.zero,
+      );
+      await coordinator.flushWriteQueue();
+      expect(recovered.paths, ['/sync/history', '/sync/history'], reason: 'nothing was dropped or charged an attempt');
+    });
+  });
+
   group('a failure racing a newer write is not persisted', () {
     test('an older history failure never replaces a newer one', () async {
       await mal.setEnabled(false);
@@ -400,7 +482,7 @@ void main() {
       expect(
         isTrackerFailureTransient(const TrackerApiException(service: TrackerService.mal, statusCode: 429)),
         isTrue,
-        reason: 'MAL and Simkl surface a 429 untyped',
+        reason: 'MAL surfaces a 429 untyped',
       );
 
       // The service broke on its own side.
@@ -641,7 +723,12 @@ void main() {
       await mal.setEnabled(false);
       await simkl.setEnabled(true);
       final recorder = _Recorder();
-      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recorder.client);
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: recorder.client,
+        writeSpacing: Duration.zero,
+      );
 
       final client = _client();
       await coordinator.startPlayback(_movieItem(durationMs: 100000), client);
@@ -666,7 +753,12 @@ void main() {
       await mal.setEnabled(false);
       await simkl.setEnabled(true);
       final recorder = _Recorder();
-      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recorder.client);
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: recorder.client,
+        writeSpacing: Duration.zero,
+      );
 
       final client = _client();
       await coordinator.startPlayback(_movieItem(durationMs: 100000), client);
@@ -709,7 +801,12 @@ void main() {
       await mal.setEnabled(false);
       await simkl.setEnabled(true);
       final recorder = _Recorder();
-      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recorder.client);
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: recorder.client,
+        writeSpacing: Duration.zero,
+      );
 
       // Watched by the server's rule but below Simkl's own 80% completion rule,
       // so a confirmed stop leaves the watch to reconciliation's history write.
@@ -742,7 +839,12 @@ void main() {
       await pumpEventQueue();
 
       final recovered = _Recorder();
-      simkl.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: recovered.client);
+      simkl.rebindSession(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: recovered.client,
+        writeSpacing: Duration.zero,
+      );
       await coordinator.flushWriteQueue();
 
       expect(recovered.paths, isEmpty, reason: "account A's late failure must not replay through B");

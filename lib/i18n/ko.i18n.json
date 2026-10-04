@@ -2234,6 +2234,10 @@
       "seerr": "Seerr",
       "mdblist": "MDBList"
     },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
+    },
     "deviceCode": {
       "title": "${service}에서 Plezy 활성화",
       "instructions": "QR 코드를 스캔하거나 아래 주소로 이동하여 이 코드를 입력하세요:",

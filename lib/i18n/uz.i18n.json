@@ -2245,6 +2245,10 @@
       "seerr": "Seerr",
       "mdblist": "MDBList"
     },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
+    },
     "deviceCode": {
       "title": "Plezy-ni ${service} xizmatida faollashtiring",
       "instructions": "QR-kodni skanerlang yoki quyidagi manzilga oʻtib, bu kodni kiriting:",

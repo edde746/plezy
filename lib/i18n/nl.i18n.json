@@ -2245,6 +2245,10 @@
       "seerr": "Seerr",
       "mdblist": "MDBList"
     },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
+    },
     "deviceCode": {
       "title": "Plezy activeren op ${service}",
       "instructions": "Scan de QR-code of ga naar het onderstaande adres en voer deze code in:",

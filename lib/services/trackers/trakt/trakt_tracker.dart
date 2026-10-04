@@ -8,6 +8,7 @@ import '../../../utils/json_utils.dart';
 import '../../settings_service.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
+import '../tracker_history_body.dart';
 import '../tracker_id_resolver.dart';
 import '../tracker_rating_match.dart';
 import '../tracker_session.dart';
@@ -99,25 +100,25 @@ class TraktTracker extends TrackerBase
   String? historyRowIdentity(TrackerContext ctx) => trackerExternalRowIdentity(ctx.external);
 
   @override
-  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
-    final client = this.client;
-    if (client == null || !canWriteWatched) return;
-    final body = _requestFor(ctx);
-    if (body == null) return;
-
-    await client.addToHistory(body, watchedAt: watchedAt?.toUtc().toIso8601String());
-    appLogger.d('Trakt: marked watched (${ctx.ratingKey}, isMovie=${ctx.isMovie})');
-  }
+  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) =>
+      writeHistory([(ctx: ctx, watchedAt: watchedAt)], watched: true);
 
   @override
-  Future<void> markUnwatched(TrackerContext ctx) async {
+  Future<void> markUnwatched(TrackerContext ctx) => writeHistory([(ctx: ctx, watchedAt: null)], watched: false);
+
+  @override
+  Future<void> writeHistory(List<TrackerHistoryEntry> entries, {required bool watched}) async {
     final client = this.client;
     if (client == null || !canWriteWatched) return;
-    final body = _requestFor(ctx);
+    final body = trackerHistoryBody(
+      entries,
+      idsFor: (ctx) => TraktIds.fromExternal(ctx.external).toJson(),
+      includeWatchedAt: watched,
+    );
     if (body == null) return;
 
-    await client.removeFromHistory(body);
-    appLogger.d('Trakt: marked unwatched (${ctx.ratingKey}, isMovie=${ctx.isMovie})');
+    await (watched ? client.addToHistory(body) : client.removeFromHistory(body));
+    appLogger.d('Trakt: marked ${entries.length} item(s) ${watched ? 'watched' : 'unwatched'}');
   }
 
   @override
