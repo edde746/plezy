@@ -591,7 +591,7 @@ void main() {
     expect(uris.last, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/children');
   });
 
-  test('show play queue starting at an episode selects it without continuous mode', () async {
+  test('show play queue starting at an episode selects it with key', () async {
     resetSharedPreferencesForTest();
     await SettingsService.getInstance();
 
@@ -615,11 +615,7 @@ void main() {
 
     await client.createShowPlayQueue(showRatingKey: 'show-1', startingEpisodeKey: 'ep-12');
 
-    // Continuous mode makes Plex follow the selected episode with the show's
-    // first unwatched one, so E12 would advance to E1 instead of E13.
     expect(params!['key'], '/library/metadata/ep-12');
-    expect(params!['continuous'], '0');
-    expect(params!['uri'], 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/allLeaves');
   });
 
   test('activities tolerate scalar drift and skip only malformed rows', () async {

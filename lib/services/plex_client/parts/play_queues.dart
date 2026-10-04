@@ -124,10 +124,6 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
       // the client-side choice in [sortEpisodesByWatchOrder].
       final leaf = effectiveSpecialsOrdering() == SpecialsOrdering.specialsLast ? 'children' : 'allLeaves';
       final uri = '${await buildMetadataUri(showRatingKey)}/$leaf';
-      // `key` only selects the starting episode within the full series list.
-      // `continuous` must stay off: with it, Plex continues from the show's
-      // first unwatched episode after the selected one, so finishing E12
-      // with E1 unwatched advanced to E1 instead of E13.
       return await createPlayQueue(
         uri: uri,
         type: 'video',
