@@ -105,13 +105,18 @@ enum TrackerWriteDisposition {
   skipped,
 }
 
+/// Sends one unit of a drain — a single row, or a batch of one service's history
+/// rows in one direction — and answers one [TrackerWriteDisposition] per row, in
+/// order.
+typedef TrackerWriteSender = Future<List<TrackerWriteDisposition>> Function(List<TrackerWriteQueueItem> rows);
+
 /// Per-profile persisted retry queue for failed tracker watched writes, shared
 /// by every service.
 ///
 /// Ordering here is intent-based, not temporal, because a tracker write is not
 /// an increment:
 ///
-/// * A per-item history write (Simkl, Trakt) states "this item is watched" or
+/// * A per-item history write (Simkl, Trakt, MDBList) states "this item is watched" or
 ///   "is not". The newest statement about an item replaces any queued one, so a
 ///   failed watched write can never replay on top of a later successful
 ///   un-watch.
@@ -136,9 +141,20 @@ class TrackerWriteQueue {
 
   static const int maxAttempts = 5;
 
-  /// Inter-request delay during a drain, to stay under Trakt's
-  /// 1000 requests / 5 minutes budget.
-  static const Duration _requestSpacing = Duration(milliseconds: 50);
+  /// Pause after each request during a drain. Trakt takes one authenticated
+  /// POST/PUT/DELETE per second and answers a faster one with a 429, which
+  /// defers the rest of its rows to the next drain. Simkl has the same limit but
+  /// its client spaces every write itself; the other services only need a drain
+  /// not to burst.
+  static Duration _requestSpacing(TrackerService service) => switch (service) {
+    TrackerService.trakt => const Duration(seconds: 1),
+    _ => const Duration(milliseconds: 50),
+  };
+
+  final Future<void> Function(Duration) _pause;
+
+  /// [pause] replaces the real wait between drained requests (tests).
+  TrackerWriteQueue({Future<void> Function(Duration)? pause}) : _pause = pause ?? Future<void>.delayed;
 
   /// Bound for items whose disk write threw (disk full, revoked SAF
   /// permission). Keyed by profile so a profile switch cannot replay one user's
@@ -206,60 +222,76 @@ class TrackerWriteQueue {
     }
   }
 
-  /// Persist [item] as the surviving intent for its coalesce key; fall back to a
-  /// bounded in-memory buffer when the disk write throws. Buffered items are
-  /// retried at the start of the next [flush].
+  /// Persist [item] as the surviving intent for its coalesce key. See
+  /// [enqueueAll].
+  Future<void> enqueue(String userUuid, TrackerWriteQueueItem item) => enqueueAll(userUuid, [item]);
+
+  /// Persist each of [items] as the surviving intent for its coalesce key in
+  /// one read-modify-write, so a failed container write queues its rows without
+  /// rewriting the queue once per episode. Falls back to a bounded in-memory
+  /// buffer when the disk write throws; buffered items are retried at the start
+  /// of the next [flush].
   ///
   /// The fallback add runs inside the queue lock so it is ordered against
   /// [removeService]: a purge whose slot is claimed after this enqueue's is
   /// guaranteed to also sweep a row that could only be buffered, not persisted.
-  Future<void> enqueue(String userUuid, TrackerWriteQueueItem item) {
+  Future<void> enqueueAll(String userUuid, List<TrackerWriteQueueItem> items) {
+    if (items.isEmpty) return Future.value();
     return _locked(() async {
       try {
-        final items = await load(userUuid);
-        final claim = item.progressClaim;
-        if (claim != null &&
-            items.any((queued) => queued.coalesceKey == item.coalesceKey && (queued.progressClaim ?? -1) > claim)) {
-          // A higher claim for the same entry is already waiting; this one would
-          // only walk it backwards.
-          return;
+        final queued = await load(userUuid);
+        for (final item in items) {
+          final claim = item.progressClaim;
+          if (claim != null &&
+              queued.any((row) => row.coalesceKey == item.coalesceKey && (row.progressClaim ?? -1) > claim)) {
+            // A higher claim for the same entry is already waiting; this one
+            // would only walk it backwards.
+            continue;
+          }
+          queued.removeWhere((row) => row.coalesceKey == item.coalesceKey);
+          queued.add(item);
         }
-        items.removeWhere((queued) => queued.coalesceKey == item.coalesceKey);
-        items.add(item);
-        await _save(userUuid, items);
+        await _save(userUuid, queued);
       } catch (e, st) {
         appLogger.e(
-          'Tracker write queue: persist failed for ${item.service.name} ${item.ctx.ratingKey}, buffering in memory',
+          'Tracker write queue: persist failed for ${items.length} ${items.first.service.name} row(s), '
+          'buffering in memory',
           error: e,
           stackTrace: st,
         );
         final fallback = _inMemoryFallbackByUser.putIfAbsent(userUuid, Queue<TrackerWriteQueueItem>.new);
-        if (fallback.length >= _maxInMemoryFallback) {
-          final dropped = fallback.removeFirst();
-          appLogger.w('Tracker write queue: in-memory buffer full, dropping ${dropped.service.name}');
+        for (final item in items) {
+          if (fallback.length >= _maxInMemoryFallback) {
+            final dropped = fallback.removeFirst();
+            appLogger.w('Tracker write queue: in-memory buffer full, dropping ${dropped.service.name}');
+          }
+          fallback.addLast(item);
         }
-        fallback.addLast(item);
       }
     });
   }
 
-  /// Drop queued writes a completed direct write has superseded.
+  /// Drop queued writes that completed direct writes have superseded, keyed by
+  /// coalesce key, in one read-modify-write.
   ///
-  /// [appliedProgress] null means the write superseded the key outright (a
+  /// A null applied progress means the write superseded the key outright (a
   /// history add/remove, or a reset series entry). Otherwise only claims at or
   /// below the applied progress are covered; a queued higher claim is still a
   /// pending advance and survives.
-  Future<void> invalidate(String userUuid, String coalesceKey, {int? appliedProgress}) async {
+  Future<void> invalidate(String userUuid, Map<String, int?> appliedProgressByKey) async {
     // A profile whose queue has never been loaded is not assumed empty.
-    if (_pendingKeysByUser[userUuid]?.contains(coalesceKey) == false) return;
+    final pending = _pendingKeysByUser[userUuid];
+    if (pending != null && !appliedProgressByKey.keys.any(pending.contains)) return;
     await _locked(() async {
       final items = await load(userUuid);
       final before = items.length;
       items.removeWhere(
-        (queued) => queued.coalesceKey == coalesceKey && covers(appliedProgress: appliedProgress, item: queued),
+        (queued) =>
+            appliedProgressByKey.containsKey(queued.coalesceKey) &&
+            covers(appliedProgress: appliedProgressByKey[queued.coalesceKey], item: queued),
       );
       if (items.length == before) return;
-      appLogger.d('Tracker write queue: dropped superseded $coalesceKey');
+      appLogger.d('Tracker write queue: dropped ${before - items.length} superseded row(s)');
       await _save(userUuid, items);
     });
   }
@@ -335,29 +367,36 @@ class TrackerWriteQueue {
 
   /// Drain [userUuid]'s queue through [send].
   ///
+  /// Rows of a service for which [batches] answers true go to [send] together —
+  /// grouped by service and direction, at most [TrackerConstants.historyBatchSize]
+  /// per call — so a backlog of history rows costs a few requests instead of one
+  /// per row. Every other row is sent alone. [send] answers one disposition per
+  /// row, in order.
+  ///
   /// Concurrent calls for the same profile coalesce: a flush requested while one
   /// runs re-runs the loop once instead of interleaving two drains over the same
   /// items. A call for a different profile waits its turn instead, so two
   /// profiles' drains never merge.
-  Future<void> flush(String userUuid, {required Future<TrackerWriteDisposition> Function(TrackerWriteQueueItem) send}) {
+  Future<void> flush(
+    String userUuid, {
+    required bool Function(TrackerService) batches,
+    required TrackerWriteSender send,
+  }) {
     final active = _flushFuture;
     if (active != null) {
       if (_flushUserUuid == userUuid) {
         _flushRequested = true;
         return active;
       }
-      return active.then((_) => flush(userUuid, send: send));
+      return active.then((_) => flush(userUuid, batches: batches, send: send));
     }
-    final future = _runFlushLoop(userUuid, send);
+    final future = _runFlushLoop(userUuid, batches, send);
     _flushFuture = future;
     _flushUserUuid = userUuid;
     return future;
   }
 
-  Future<void> _runFlushLoop(
-    String userUuid,
-    Future<TrackerWriteDisposition> Function(TrackerWriteQueueItem) send,
-  ) async {
+  Future<void> _runFlushLoop(String userUuid, bool Function(TrackerService) batches, TrackerWriteSender send) async {
     // Spans every pass of this loop, not just one: a flush requested while the
     // first pass ran re-enters immediately, and a service that just asked us to
     // back off must not be asked again in that same burst.
@@ -365,7 +404,7 @@ class TrackerWriteQueue {
     try {
       do {
         _flushRequested = false;
-        await _flushOnce(userUuid, send, deferredServices);
+        await _flushOnce(userUuid, batches, send, deferredServices);
       } while (_flushRequested);
     } finally {
       _flushFuture = null;
@@ -373,7 +412,7 @@ class TrackerWriteQueue {
       if (_flushRequested) {
         scheduleMicrotask(() {
           unawaited(
-            flush(userUuid, send: send).catchError((Object e, StackTrace st) {
+            flush(userUuid, batches: batches, send: send).catchError((Object e, StackTrace st) {
               appLogger.w('Tracker write queue: follow-up flush failed', error: e, stackTrace: st);
             }),
           );
@@ -383,8 +422,9 @@ class TrackerWriteQueue {
   }
 
   /// Holds the write lock for the whole cycle so concurrent enqueues wait until
-  /// the drain has saved its remainder (no lost items). Items are attempted in
-  /// insertion order, which is the order the surviving intents were expressed.
+  /// the drain has saved its remainder (no lost items). Batches are attempted in
+  /// the order their first row was queued, which is the order the surviving
+  /// intents were expressed; the queue keeps that order for the rows that stay.
   ///
   /// Once a service answers [TrackerWriteDisposition.deferredService], the rest of
   /// its rows are left untouched without a request. A queue holding many rows for
@@ -398,14 +438,15 @@ class TrackerWriteQueue {
   /// persisted instead.
   Future<void> _flushOnce(
     String userUuid,
-    Future<TrackerWriteDisposition> Function(TrackerWriteQueueItem) send,
+    bool Function(TrackerService) batches,
+    TrackerWriteSender send,
     Set<TrackerService> deferredServices,
   ) async {
     await _recoverInMemoryFallback(userUuid);
     await _locked(() async {
       final items = await load(userUuid);
       if (items.isEmpty) return;
-      final remaining = <TrackerWriteQueueItem>[];
+      final live = <TrackerWriteQueueItem>[];
       for (final item in items) {
         if (item.attempts >= maxAttempts) {
           appLogger.w(
@@ -413,26 +454,68 @@ class TrackerWriteQueue {
           );
           continue;
         }
-        if (deferredServices.contains(item.service)) {
-          remaining.add(item);
-          continue;
-        }
-        final disposition = await send(item);
-        switch (disposition) {
-          case TrackerWriteDisposition.done:
-            await Future<void>.delayed(_requestSpacing);
-          case TrackerWriteDisposition.failed:
-            remaining.add(item.incrementAttempts());
-            await Future<void>.delayed(_requestSpacing);
-          case TrackerWriteDisposition.deferredService:
-            deferredServices.add(item.service);
-            remaining.add(item);
-          case TrackerWriteDisposition.skipped:
-            remaining.add(item);
-        }
+        live.add(item);
       }
-      await _save(userUuid, remaining);
+
+      // Rows absent from this map were never sent and stay as they are.
+      final outcome = <TrackerWriteQueueItem, TrackerWriteDisposition>{};
+      for (final batch in _batch(live, batches)) {
+        final service = batch.first.service;
+        if (deferredServices.contains(service)) continue;
+        final dispositions = await send(batch);
+        if (dispositions.length != batch.length) {
+          throw StateError('Tracker write queue: ${dispositions.length} dispositions for ${batch.length} rows');
+        }
+        var attempted = false;
+        for (var i = 0; i < batch.length; i++) {
+          outcome[batch[i]] = dispositions[i];
+          switch (dispositions[i]) {
+            case TrackerWriteDisposition.done || TrackerWriteDisposition.failed:
+              attempted = true;
+            case TrackerWriteDisposition.deferredService:
+              deferredServices.add(service);
+            case TrackerWriteDisposition.skipped:
+              break;
+          }
+        }
+        if (attempted) await _pause(_requestSpacing(service));
+      }
+
+      await _save(userUuid, [
+        for (final item in live)
+          ?switch (outcome[item]) {
+            TrackerWriteDisposition.done => null,
+            TrackerWriteDisposition.failed => item.incrementAttempts(),
+            _ => item,
+          },
+      ]);
     });
+  }
+
+  /// Splits [items] into send units: rows of a batching service grouped by
+  /// service and direction up to [TrackerConstants.historyBatchSize], every
+  /// other row alone. Units are ordered by their first row.
+  static List<List<TrackerWriteQueueItem>> _batch(
+    List<TrackerWriteQueueItem> items,
+    bool Function(TrackerService) batches,
+  ) {
+    final units = <List<TrackerWriteQueueItem>>[];
+    final open = <(TrackerService, bool), List<TrackerWriteQueueItem>>{};
+    for (final item in items) {
+      if (!batches(item.service)) {
+        units.add([item]);
+        continue;
+      }
+      final key = (item.service, item.watched);
+      var unit = open[key];
+      if (unit == null || unit.length >= TrackerConstants.historyBatchSize) {
+        unit = [];
+        open[key] = unit;
+        units.add(unit);
+      }
+      unit.add(item);
+    }
+    return units;
   }
 
   /// Move items buffered because a prior disk write failed back onto the
@@ -444,9 +527,7 @@ class TrackerWriteQueue {
     final snapshot = List<TrackerWriteQueueItem>.from(fallback);
     fallback.clear();
     _inMemoryFallbackByUser.remove(userUuid);
-    for (final item in snapshot) {
-      await enqueue(userUuid, item);
-    }
+    await enqueueAll(userUuid, snapshot);
   }
 
   /// Convert the pre-consolidation Trakt-only queue into shared items.

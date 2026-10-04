@@ -138,14 +138,23 @@ private val MPV_SPDIF_CODECS: List<MpvSpdifCodec> = listOf(
  * probe answers by downgrading (DTS-HD to the DTS core, E-AC3 JOC to E-AC3) and rejects
  * channel counts above the route's PCM maximum, neither of which describes what a
  * passthrough track carries.
+ *
+ * [sinkDecodes] vetoes a codec the HDMI sink itself does not decode, whatever the platform
+ * advertises. A platform encoding can be backed by the HAL's own decoder rather than by the
+ * sink: an Amlogic Mi Box S (Android 14) in front of a Samsung TV lists `ENCODING_DTS` and
+ * `ENCODING_DTS_HD`, drains the 192kHz carrier into silence, and decodes a raw DTS track to
+ * stereo only (`dtsx_sink_support_multich_pcm=0`). With the codec left out, mpv decodes DTS-HD
+ * MA itself to the multichannel PCM that sink takes.
  */
 internal fun mpvSpdifCodecs(
   supportsEncoding: (Int) -> Boolean,
   supportsShape: (MpvIecShape) -> Boolean,
-  supportsRawTrack: (Int) -> Boolean = { false }
+  supportsRawTrack: (Int) -> Boolean = { false },
+  sinkDecodes: (Int) -> Boolean = { true }
 ): String {
   val carried = MPV_SPDIF_CODECS.filter {
     supportsEncoding(it.encoding) &&
+      sinkDecodes(it.encoding) &&
       when (it.order) {
         MpvTransportOrder.RAW_THEN_CARRIER -> supportsRawTrack(it.encoding) || supportsShape(it.shape)
         MpvTransportOrder.CARRIER_THEN_RAW -> supportsShape(it.shape) || supportsRawTrack(it.encoding)
@@ -158,20 +167,26 @@ internal fun mpvSpdifCodecs(
 /**
  * [mpvSpdifCodecs] resolved against the audio route [context] is currently routed to.
  *
- * Two conditions per codec, both required:
+ * Three conditions per codec, all required:
  * - The route must accept a track shape the AO's ladder actually opens. For AC3, E-AC3 and the
  *   DTS core that is the raw bitstream track probed by [supportsMpvRawTrack], with the IEC
  *   stereo shapes ([supportsMpvIecShape], [supportsMpvHighRateIecShape]) as the AO's fallback
  *   transport; TrueHD and DTS-HD MA take the 192kHz/7.1 carrier ([supportsIecCarrier]) or, without
  *   it, the raw track the AO opens instead: 192kHz/7.1 `ENCODING_DOLBY_TRUEHD`, 48kHz/7.1
  *   `ENCODING_DTS_HD`.
- *   Advertising the raw encoding only says the receiver decodes it, not that the HAL takes the
- *   track: #1991's Shield strands playback on every mpv IEC attempt while bitstreaming AC3 raw.
+ *   A route that takes one transport need not take the other: #1991's Shield strands playback
+ *   on every mpv IEC attempt while bitstreaming AC3 raw.
  *   The probes are independent, so none of them may veto the whole list: a route that takes the
  *   192kHz carrier but no raw track still bitstreams TrueHD and DTS-HD MA.
- * - The receiver must decode the codec itself — the raw encoding on the current
- *   [AudioCapabilities] — because passthrough is transport, not transcoding. (On a raw track
- *   the platform may additionally transcode, which is exactly why the AO prefers it.)
+ * - The platform must accept the codec's raw encoding on the current [AudioCapabilities].
+ *   This says the playback path takes the codec, not that the receiver decodes it: the
+ *   platform may transcode a raw track, or decode it in the HAL.
+ * - For the DTS family, the HDMI sink must advertise DTS itself ([hdmiSinkDecodesDts]). An
+ *   Amlogic HAL advertises `ENCODING_DTS_HD` because it can decode DTS, then either drains the
+ *   IEC carrier into silence or decodes a raw track to stereo on a sink with no DTS
+ *   descriptor. Passthrough is transport, not transcoding, so such a sink gets DTS decoded by
+ *   mpv instead. Dolby codecs are not gated this way: the same HAL carries TrueHD as MAT to a
+ *   sink whose profiles do not list it.
  */
 // Deprecated only in favour of an overload that also takes spatializer channel masks, which
 // do not affect bitstream routing. Same probe ExoPlayerCore's TrueHD decision uses.
@@ -188,10 +203,12 @@ internal fun supportedMpvSpdifCodecs(context: Context): String {
   // Every probe costs real route calls and may be shared by more than one codec, so probe once.
   val shapeProbed = HashMap<MpvIecShape, Boolean>(3)
   val rawProbed = HashMap<Int, Boolean>(3)
+  val sinkDecodesDts by lazy { hdmiSinkDecodesDts(context) }
   val codecs = mpvSpdifCodecs(
     capabilities::supportsEncoding,
     { shape -> shapeProbed.getOrPut(shape) { routeTakesIecShape(context, shape) } },
-    { encoding -> rawProbed.getOrPut(encoding) { supportsMpvRawTrack(context, encoding) } }
+    { encoding -> rawProbed.getOrPut(encoding) { supportsMpvRawTrack(context, encoding) } },
+    { encoding -> !isDtsEncoding(encoding) || sinkDecodesDts }
   )
   if (codecs.isEmpty()) {
     Log.i(TAG, "Route takes no passthrough track mpv can fill; mpv will decode instead of bitstreaming")
@@ -359,20 +376,139 @@ internal fun supportsIecCarrier(context: Context): Boolean = iecRouteSupported(
 )
 
 /**
- * Whether the route carries the IEC 61937 tuple *and* advertises DTS-HD. TrueHD rides the same
- * tuple, so carrying it says nothing about whether the receiver decodes DTS-HD.
+ * Whether the route carries the IEC 61937 tuple, the platform advertises DTS-HD, *and* the HDMI
+ * sink itself advertises DTS. TrueHD rides the same tuple, so carrying it says nothing about
+ * whether the receiver decodes DTS-HD. The platform encoding alone is not enough either: an
+ * Amlogic HAL advertises `ENCODING_DTS_HD` because it can decode DTS itself, and the carrier
+ * bypasses that decoder ([sinkAdvertisesDts]).
  */
 internal fun dtsHdCarrierUsable(
   supportsEncoding: (Int) -> Boolean,
-  supportsCarrier: () -> Boolean
-): Boolean = supportsEncoding(C.ENCODING_DTS_HD) && supportsCarrier()
+  supportsCarrier: () -> Boolean,
+  sinkDecodesDts: () -> Boolean = { true }
+): Boolean = supportsEncoding(C.ENCODING_DTS_HD) && sinkDecodesDts() && supportsCarrier()
 
 /** [dtsHdCarrierUsable] resolved against the audio route [context] is currently routed to. */
 internal fun supportsDtsHdIecCarrier(context: Context): Boolean = dtsHdCarrierUsable(
   // Encoding first: it skips the carrier tiering's several route calls.
   supportsEncoding = { encoding -> routeSupportsEncoding(context, encoding) },
-  supportsCarrier = { supportsIecCarrier(context) }
+  supportsCarrier = { supportsIecCarrier(context) },
+  sinkDecodesDts = { hdmiSinkDecodesDts(context) }
 )
+
+/** The mpv spdif table's DTS entries: the codecs [hdmiSinkDecodesDts] gates. */
+internal fun isDtsEncoding(encoding: Int): Boolean = encoding == C.ENCODING_DTS || encoding == C.ENCODING_DTS_HD
+
+private const val ENCODING_DTS_UHD_P1 = 27
+private const val ENCODING_DTS_HD_MA = 29
+private const val ENCODING_DTS_UHD_P2 = 30
+
+/**
+ * Any DTS-family encoding an HDMI sink can list for a DTS short audio descriptor. The API 34
+ * `AudioFormat` constants are repeated as literals so the check also reads them on older
+ * platforms, where they can still appear in a HAL's profile list.
+ */
+private fun isDtsSinkEncoding(encoding: Int): Boolean = when (encoding) {
+  AudioFormat.ENCODING_DTS,
+  AudioFormat.ENCODING_DTS_HD,
+  ENCODING_DTS_UHD_P1,
+  ENCODING_DTS_HD_MA,
+  ENCODING_DTS_UHD_P2 -> true
+  else -> false
+}
+
+/**
+ * Whether the HDMI sinks in [hdmiSinkEncodings] (each an `AudioDeviceInfo.getEncodings()`
+ * array) advertise DTS themselves.
+ *
+ * A sink counts as described only when it lists a compressed codec. PCM is not one, and
+ * neither is `ENCODING_IEC61937`, which is a transport. #1458's Dynalink (Amlogic, Android TV
+ * 14) reports `pcm16|iec61937` alone for a sink that does decode E-AC3. If no sink is given,
+ * or any of them is undescribed, the route probes keep the verdict (returns true): the
+ * undescribed one may be the sink in use, and a HAL that reports no codecs never loses DTS
+ * bitstreaming.
+ *
+ * Otherwise a sink without a DTS entry does not decode DTS. On a Mi Box S (Android 14) in front
+ * of a Samsung QE55S95F with an HW-Q930F, the output lists
+ * `pcm16|e-ac3-joc|ac3|e-ac3|iec61937`, the HAL logs `get_sink_dts_capability: PCM_16_BIT`, and
+ * the DTS-HD carrier plays silent although the platform advertises `ENCODING_DTS_HD`.
+ */
+internal fun sinkAdvertisesDts(hdmiSinkEncodings: List<IntArray>): Boolean {
+  val undescribed = { encodings: IntArray -> encodings.none { !isPcmEncoding(it) && it != AudioFormat.ENCODING_IEC61937 } }
+  if (hdmiSinkEncodings.isEmpty() || hdmiSinkEncodings.any(undescribed)) return true
+  return hdmiSinkEncodings.any { encodings -> encodings.any(::isDtsSinkEncoding) }
+}
+
+/** An audio output as `AudioDeviceInfo` or `AudioDeviceAttributes` describes it. */
+internal class AudioOutputRef(val type: Int, val address: String, val encodings: IntArray = IntArray(0))
+
+/**
+ * The encodings of the HDMI sinks a movie would play through, from every output [outputs] and
+ * the active movie route [activeRoute] (`getAudioDevicesForAttributes`, API 33+; null below).
+ *
+ * - No active route known (below API 33, or the lookup returned nothing): every HDMI output.
+ * - An active route with no HDMI device (optical, USB, Bluetooth): none. There is no HDMI sink
+ *   to judge, so [sinkAdvertisesDts] leaves the verdict to the route probes.
+ * - Otherwise the active HDMI outputs, matched by type and address, or every HDMI output
+ *   when none matches.
+ */
+internal fun movieSinkEncodings(
+  outputs: List<AudioOutputRef>,
+  activeRoute: List<AudioOutputRef>?,
+  isHdmiOutput: (Int) -> Boolean = ::isHdmiOutputType
+): List<IntArray> {
+  val hdmiOutputs = outputs.filter { isHdmiOutput(it.type) }
+  if (activeRoute.isNullOrEmpty()) return hdmiOutputs.map { it.encodings }
+  val activeHdmi = activeRoute.filter { isHdmiOutput(it.type) }
+  if (activeHdmi.isEmpty()) return emptyList()
+  return hdmiOutputs
+    .filter { device -> activeHdmi.any { it.type == device.type && it.address == device.address } }
+    .ifEmpty { hdmiOutputs }
+    .map { it.encodings }
+}
+
+private fun isHdmiOutputType(type: Int): Boolean = type == AudioDeviceInfo.TYPE_HDMI ||
+  type == AudioDeviceInfo.TYPE_HDMI_ARC ||
+  (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && type == AudioDeviceInfo.TYPE_HDMI_EARC)
+
+private fun movieHdmiSinkEncodings(manager: AudioManager): List<IntArray> {
+  val outputs = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).map { device ->
+    val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) device.address else ""
+    AudioOutputRef(device.type, address, device.encodings)
+  }
+  val activeRoute = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    manager.getAudioDevicesForAttributes(movieAudioAttributes()).map { AudioOutputRef(it.type, it.address) }
+  } else {
+    null
+  }
+  return movieSinkEncodings(outputs, activeRoute)
+}
+
+@Volatile private var lastLoggedSinkVerdict: String? = null
+
+/**
+ * [sinkAdvertisesDts] resolved against the HDMI outputs a movie would play through. When the
+ * sink advertises no DTS, [mpvSpdifCodecs] names no DTS codec (mpv decodes DTS-HD MA to the
+ * multichannel PCM the sink takes, where the Mi Box HAL would decode a raw DTS track to stereo
+ * only) and [dtsHdCarrierUsable] keeps DTS-HD off the carrier. Logs only when the verdict or
+ * the encodings change, since ExoPlayer asks on every format-support query.
+ */
+private fun hdmiSinkDecodesDts(context: Context): Boolean = try {
+  val manager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+  val hdmiSinkEncodings = movieHdmiSinkEncodings(manager)
+  sinkAdvertisesDts(hdmiSinkEncodings).also { decodes ->
+    val verdict = "$decodes ${hdmiSinkEncodings.joinToString { it.contentToString() }}"
+    if (verdict != lastLoggedSinkVerdict) {
+      lastLoggedSinkVerdict = verdict
+      if (!decodes) {
+        Log.i(TAG, "HDMI sink advertises no DTS (${hdmiSinkEncodings.joinToString { it.contentToString() }}); DTS will not be bitstreamed")
+      }
+    }
+  }
+} catch (error: Exception) {
+  Log.w(TAG, "HDMI sink inspection failed; keeping the DTS carrier decision to the route probes", error)
+  true
+}
 
 @Suppress("DEPRECATION")
 @OptIn(UnstableApi::class)

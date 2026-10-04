@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../focus/dpad_navigator.dart';
 import 'text_input_diagnostics.dart';
 
 String _describeSimulatedKey(KeyEvent event) {
@@ -151,15 +152,17 @@ class KeyEventSimulatorController {
   void _dispatchKeyUp(LogicalKeyboardKey logicalKey) {
     final heldFocusNode = _heldFocusNodes.remove(logicalKey);
     final focusNode = heldFocusNode ?? FocusManager.instance.primaryFocus;
-    if (focusNode == null) return;
-    if (heldFocusNode != null && heldFocusNode.context == null) {
-      if (TextInputDiagnostics.enabled) {
+    final event = _keyUpEvent(logicalKey, _physicalKeyFor(logicalKey));
+    if (focusNode == null || (heldFocusNode != null && heldFocusNode.context == null)) {
+      if (heldFocusNode != null && TextInputDiagnostics.enabled) {
         _log('simulateKeyUp dropped detached held focus logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
       }
+      // Undelivered, but the release still happened.
+      observeSimulatedKeyEvent(event);
       return;
     }
 
-    _dispatchKeyEvent(focusNode, _keyUpEvent(logicalKey, _physicalKeyFor(logicalKey)));
+    _dispatchKeyEvent(focusNode, event);
   }
 
   KeyDownEvent _keyDownEvent(LogicalKeyboardKey logicalKey, PhysicalKeyboardKey physicalKey) {
@@ -184,6 +187,9 @@ class KeyEventSimulatorController {
     if (TextInputDiagnostics.enabled) {
       _log('dispatch start focus=${focusNode.debugLabel} key=(${_describeSimulatedKey(event)})');
     }
+    // The HardwareKeyboard phase this dispatch bypasses: suppressors end an
+    // armed press on its release there.
+    observeSimulatedKeyEvent(event);
     FocusNode? node = focusNode;
     while (node != null) {
       if (node.onKeyEvent != null) {

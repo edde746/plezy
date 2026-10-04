@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Dit bestand is geen geldige Plezy-export",
     "importSettingsNoUser": "Meld je aan voordat je instellingen importeert",
     "shortcutsReset": "Sneltoetsen gereset naar standaard",
+    "resetShortcutsConfirm": "",
     "about": "Over",
     "aboutDescription": "App-informatie en licenties",
     "updates": "Updates",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.",
     "audioPassthroughDescriptionAppleTv": "Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.",
     "audioPassthroughOverriddenByNormalization": "Uit zolang volumenormalisatie aan staat",
-    "audioDownmix": "Downmixen naar stereo",
-    "audioDownmixDescription": "Mix surroundgeluid terug naar twee kanalen voor stereoluidsprekers of een koptelefoon",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Versterking middenkanaal",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Versterking (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie",
     "dvConversionDv81Description": "Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af",
     "dvConversionHevcStripDescription": "Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan",
+    "disableDolbyVision": "Dolby Vision uitschakelen",
+    "disableDolbyVisionDescription": "Speel de HDR10- of HLG-laag van het bestand af in plaats van Dolby Vision, indien aanwezig",
     "hdrSdrConversion": "HDR-naar-SDR-conversie",
     "hdrSdrConversionDescription": "Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.",
     "hdrSdrConversionAuto": "Automatisch",
@@ -435,7 +444,8 @@
     "hint": "Zoek films, series, muziek...",
     "tryDifferentTerm": "Probeer een andere zoekterm",
     "searchYourMedia": "Zoek in je media",
-    "enterTitleActorOrKeyword": "Voer een titel, acteur of trefwoord in"
+    "enterTitleActorOrKeyword": "Voer een titel, acteur of trefwoord in",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Stel sneltoets in voor ${actionName}",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "De server heeft dit item gevonden maar kon het bestand niet lezen (HTTP 404). Het bestand is waarschijnlijk verplaatst of verwijderd, of de opslag is offline. Vraag de serverbeheerder om het bestand te controleren en de bibliotheek opnieuw te scannen.",
     "serverBusyTitle": "Stream niet beschikbaar",
     "serverBusyBody": "De server bleef weigeren dit bestand te streamen (HTTP 503). Mogelijk wordt de server opnieuw opgestart, is deze bezet of is de opslag van het bestand offline. Probeer het over een moment opnieuw — als dit blijft gebeuren, vraag dan de servereigenaar om de server en de opslag van het bestand te controleren.",
+    "playbackNotAllowedTitle": "Afspelen niet toegestaan",
+    "playbackNotAllowedBody": "De server weigerde dit item te streamen (HTTP 403). Je account heeft mogelijk geen toestemming om het af te spelen, of de server staat afspelen alleen toe op het eigen lokale netwerk.",
     "logsUploaded": "Logbestanden geüpload",
     "logsUploadFailed": "Uploaden van logbestanden mislukt",
     "logId": "Logboek-ID",
@@ -907,6 +919,8 @@
     "signOut": "Afmelden",
     "signOutPlexTitle": "Afmelden bij Plex?",
     "signOutPlexMessage": "${displayName} en alle Plex Home-gebruikers verwijderen? Je kunt altijd opnieuw inloggen.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Afgemeld bij Plex.",
     "signOutFailed": "Afmelden mislukt.",
     "sectionTitle": "Profielen",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "Toevoegen aan ${displayName}: Plex, Jellyfin, Emby of een andere profielverbinding",
     "sessionExpiredOne": "Sessie verlopen voor ${name}",
     "sessionExpiredMany": "Sessie verlopen voor ${count} servers",
+    "accessDeniedOne": "${name} weigerde toegang voor dit account",
+    "accessDeniedMany": "${count} servers weigerden toegang voor dit account",
     "signInAgain": "Opnieuw aanmelden",
     "editMediaBrowserTitle": "${product}-verbinding bewerken",
     "editMediaBrowserIntro": "Voeg URL's toe aan ${serverName} of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Anders"
     },
     "creditRole": {
+      "actor": "",
       "director": "Regisseur",
       "writer": "Schrijver",
       "producer": "Producent",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Beschikbaar",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Inloggen vereist",
+    "syncRuleAccessDenied": "Toegang geweigerd",
     "syncRuleNotAvailableForProfile": "Niet beschikbaar voor huidig profiel",
     "syncRuleUnknownServer": "Onbekende server",
     "syncRuleListCreated": "Synchronisatieregel aangemaakt",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Bestand niet gevonden (404)",
+    "errorDownloadNotAllowed": "Downloaden niet toegestaan door de server (403)",
     "errorDownloadFailed": "Download mislukt",
-    "errorPostProcessing": "Nabewerking mislukt: ${error}",
+    "errorDownloadFailedWithReason": "Download mislukt: ${reason}",
+    "errorHttpStatus": "Download mislukt (HTTP ${status})",
+    "errorPostProcessing": "Nabewerking mislukt: ${reason}",
+    "reasonFileNotSaved": "het bestand kon niet op dit apparaat worden opgeslagen",
+    "reasonCannotResume": "de gedeeltelijke download kon niet worden hervat",
+    "reasonDeviceStorageFull": "dit apparaat heeft geen opslagruimte meer",
     "notificationDownloading": "Downloaden...",
     "notificationComplete": "Download voltooid",
     "notificationPaused": "Download gepauzeerd"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Volume normaliseren",
     "audioNormalizationDisablesPassthrough": "Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat",
-    "audioNormalizationStereoMix": "Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat",
-    "audioDownmix": "Downmixen naar stereo"
+    "audioNormalizationStereoMix": "Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat"
   },
   "performanceOverlay": {
     "color": "Kleur",
@@ -2002,6 +2025,13 @@
     "rotation": "Rotatie",
     "dvSource": "DV-bron",
     "dvPath": "DV-pad",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7-conv.",
     "sampleRate": "Samplefrequentie",
     "pixelFormat": "Pixelformaat",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Plezy activeren op ${service}",

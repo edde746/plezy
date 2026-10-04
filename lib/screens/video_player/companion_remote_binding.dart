@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../models/companion_remote/remote_command.dart';
 import '../../mpv/mpv.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/companion_remote/companion_remote_receiver.dart';
@@ -96,7 +95,7 @@ class CompanionRemoteBinding {
     // Store provider reference for use in dispose and notify remote
     try {
       _provider = _readProvider();
-      _provider!.sendCommand(RemoteCommandType.syncState, data: {'playerActive': true});
+      _provider!.setHostPlayerActive(true);
     } catch (e) {
       appLogger.d('CompanionRemote provider unavailable', error: e);
     }
@@ -157,7 +156,7 @@ class CompanionRemoteBinding {
     _savedOnHome = null;
 
     // Notify only when the active player owner exits.
-    _provider?.sendCommand(RemoteCommandType.syncState, data: {'playerActive': false});
+    _provider?.setHostPlayerActive(false);
     _provider = null;
   }
 }

@@ -77,13 +77,16 @@ void main() {
       final mal = _FakeWatchlistSource(CatalogSourceId.mal); // resolves null: not in domain
       final simkl = _FakeWatchlistSource(CatalogSourceId.simkl, resolveError: StateError('down'));
 
+      final failed = <CatalogSource>[];
       final candidates = await resolveWatchlistCandidates(
         client: _ExternalIdsClient(const ExternalIds(imdb: 'tt1')),
         item: item,
         sources: [trakt, mal, simkl],
+        onSourceFailed: failed.add,
       );
 
       expect(candidates.map((c) => c.source.id), [CatalogSourceId.trakt]);
+      expect(failed, [simkl], reason: 'out-of-domain is an answer; only the failure is reported');
       expect(candidates.single.ids.imdb, 'tt1');
       expect(mal.resolveCalls, 1);
       expect(simkl.resolveCalls, 1);

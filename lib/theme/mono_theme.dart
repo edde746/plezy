@@ -50,12 +50,19 @@ ThemeData _buildMonoTheme({required bool dark, required bool oled, required Targ
     (states) => states.contains(WidgetState.disabled) ? MouseCursor.defer : SystemMouseCursors.click,
   );
 
+  // Disabled buttons use the Material disabled opacities over the text colour;
+  // a flat colour for every state made them look pressable.
   final buttonStyle = ButtonStyle(
     mouseCursor: clickableCursor,
     padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
     elevation: const WidgetStatePropertyAll(0),
-    backgroundColor: WidgetStatePropertyAll(c.text),
-    foregroundColor: WidgetStatePropertyAll(isDark ? c.bg : Colors.white),
+    backgroundColor: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.disabled) ? c.text.withValues(alpha: 0.12) : c.text,
+    ),
+    foregroundColor: WidgetStateProperty.resolveWith(
+      (states) =>
+          states.contains(WidgetState.disabled) ? c.text.withValues(alpha: 0.38) : (isDark ? c.bg : Colors.white),
+    ),
     shape: const WidgetStatePropertyAll(StadiumBorder()),
   );
 

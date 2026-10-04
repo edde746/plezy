@@ -457,8 +457,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get audioPassthroughDescription => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。';
 	@override String get audioPassthroughDescriptionAppleTv => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。';
 	@override String get audioPassthroughOverriddenByNormalization => '音量標準化開啟時停用';
-	@override String get audioDownmix => '下混為立體聲';
-	@override String get audioDownmixDescription => '將環繞音效混合為雙聲道，適用於立體聲喇叭或耳機';
 	@override String get downmixCenterBoost => '中置聲道增強';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => '增強（dB）';
@@ -475,6 +473,8 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get dvConversionNativeDescription => '強制使用原生 DV7 並停用 DV 轉換重試';
 	@override String get dvConversionDv81Description => '強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => '移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現';
+	@override String get disableDolbyVision => '停用 Dolby Vision';
+	@override String get disableDolbyVisionDescription => '檔案包含 HDR10 或 HLG 層時，改為播放該層而非 Dolby Vision';
 	@override String get hdrSdrConversion => 'HDR 轉 SDR';
 	@override String get hdrSdrConversionDescription => '選擇在顯示器無法顯示 HDR 時由誰轉換 HDR 影片。';
 	@override String get hdrSdrConversionAuto => '自動';
@@ -974,6 +974,8 @@ class _Translations$messages$zh_Hant extends Translations$messages$zh {
 	@override String get mediaUnreadableBody => '伺服器找到了此項目，但無法讀取其檔案（HTTP 404）。檔案可能已移動、刪除，或其儲存空間離線。請聯絡伺服器擁有者檢查檔案並重新掃描媒體庫。';
 	@override String get serverBusyTitle => '串流無法使用';
 	@override String get serverBusyBody => '伺服器持續拒絕串流此檔案（HTTP 503）。伺服器可能正在重新啟動、忙碌中，或檔案所在的儲存裝置可能已離線。請稍後再試；若問題持續發生，請要求伺服器擁有者檢查伺服器及檔案所在的儲存裝置。';
+	@override String get playbackNotAllowedTitle => '不允許播放';
+	@override String get playbackNotAllowedBody => '伺服器拒絕串流此項目（HTTP 403）。此帳戶可能沒有播放權限，或伺服器可能只允許在其區域網路內播放。';
 	@override String get logsUploaded => '日誌已上傳';
 	@override String get logsUploadFailed => '上傳日誌失敗';
 	@override String get logId => '日誌 ID';
@@ -1143,6 +1145,8 @@ class _Translations$connections$zh_Hant extends Translations$connections$zh {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線';
 	@override String sessionExpiredOne({required Object name}) => '${name} 的工作階段已過期';
 	@override String sessionExpiredMany({required Object count}) => '${count} 個伺服器的工作階段已過期';
+	@override String accessDeniedOne({required Object name}) => '${name} 拒絕此帳戶存取';
+	@override String accessDeniedMany({required Object count}) => '${count} 台伺服器拒絕此帳戶存取';
 	@override String get signInAgain => '重新登入';
 	@override String editMediaBrowserTitle({required Object product}) => '編輯 ${product} 連線';
 	@override String editMediaBrowserIntro({required Object serverName}) => '為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。';
@@ -1834,6 +1838,7 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get syncRuleAvailable => '可用';
 	@override String get syncRuleOffline => '離線';
 	@override String get syncRuleSignInRequired => '需要登入';
+	@override String get syncRuleAccessDenied => '存取遭拒';
 	@override String get syncRuleNotAvailableForProfile => '目前使用者設定檔無法使用';
 	@override String get syncRuleUnknownServer => '未知伺服器';
 	@override String get syncRuleListCreated => '同步規則已建立';
@@ -1846,8 +1851,14 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get unknownAlbum => '未知專輯';
 	@override String completedOfTotal({required Object completed, required Object total}) => '已完成 ${completed}/${total}';
 	@override String get errorFileNotFound => '找不到檔案（404）';
+	@override String get errorDownloadNotAllowed => '伺服器不允許下載（403）';
 	@override String get errorDownloadFailed => '下載失敗';
-	@override String errorPostProcessing({required Object error}) => '後續處理失敗：${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => '下載失敗：${reason}';
+	@override String errorHttpStatus({required Object status}) => '下載失敗（HTTP ${status}）';
+	@override String errorPostProcessing({required Object reason}) => '後續處理失敗：${reason}';
+	@override String get reasonFileNotSaved => '無法將檔案儲存到此裝置';
+	@override String get reasonCannotResume => '無法繼續未完成的下載';
+	@override String get reasonDeviceStorageFull => '此裝置的儲存空間已滿';
 	@override String get notificationDownloading => '正在下載…';
 	@override String get notificationComplete => '下載完成';
 	@override String get notificationPaused => '下載已暫停';
@@ -1926,7 +1937,6 @@ class _Translations$videoSettings$zh_Hant extends Translations$videoSettings$zh 
 	@override String get audioNormalization => '音量標準化';
 	@override String get audioNormalizationDisablesPassthrough => '將音訊解碼為 PCM；開啟時直通關閉';
 	@override String get audioNormalizationStereoMix => '將音訊解碼為立體聲混音；開啟時直通關閉';
-	@override String get audioDownmix => '下混為立體聲';
 }
 
 // Path: performanceOverlay
@@ -3351,8 +3361,6 @@ extension on TranslationsZhHant {
 			'settings.audioPassthroughDescription' => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。',
 			'settings.audioPassthroughDescriptionAppleTv' => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。',
 			'settings.audioPassthroughOverriddenByNormalization' => '音量標準化開啟時停用',
-			'settings.audioDownmix' => '下混為立體聲',
-			'settings.audioDownmixDescription' => '將環繞音效混合為雙聲道，適用於立體聲喇叭或耳機',
 			'settings.downmixCenterBoost' => '中置聲道增強',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => '增強（dB）',
@@ -3369,6 +3377,8 @@ extension on TranslationsZhHant {
 			'settings.dvConversionNativeDescription' => '強制使用原生 DV7 並停用 DV 轉換重試',
 			'settings.dvConversionDv81Description' => '強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => '移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現',
+			'settings.disableDolbyVision' => '停用 Dolby Vision',
+			'settings.disableDolbyVisionDescription' => '檔案包含 HDR10 或 HLG 層時，改為播放該層而非 Dolby Vision',
 			'settings.hdrSdrConversion' => 'HDR 轉 SDR',
 			'settings.hdrSdrConversionDescription' => '選擇在顯示器無法顯示 HDR 時由誰轉換 HDR 影片。',
 			'settings.hdrSdrConversionAuto' => '自動',
@@ -3803,6 +3813,8 @@ extension on TranslationsZhHant {
 			'messages.mediaUnreadableBody' => '伺服器找到了此項目，但無法讀取其檔案（HTTP 404）。檔案可能已移動、刪除，或其儲存空間離線。請聯絡伺服器擁有者檢查檔案並重新掃描媒體庫。',
 			'messages.serverBusyTitle' => '串流無法使用',
 			'messages.serverBusyBody' => '伺服器持續拒絕串流此檔案（HTTP 503）。伺服器可能正在重新啟動、忙碌中，或檔案所在的儲存裝置可能已離線。請稍後再試；若問題持續發生，請要求伺服器擁有者檢查伺服器及檔案所在的儲存裝置。',
+			'messages.playbackNotAllowedTitle' => '不允許播放',
+			'messages.playbackNotAllowedBody' => '伺服器拒絕串流此項目（HTTP 403）。此帳戶可能沒有播放權限，或伺服器可能只允許在其區域網路內播放。',
 			'messages.logsUploaded' => '日誌已上傳',
 			'messages.logsUploadFailed' => '上傳日誌失敗',
 			'messages.logId' => '日誌 ID',
@@ -3927,6 +3939,8 @@ extension on TranslationsZhHant {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 個伺服器的工作階段已過期',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} 拒絕此帳戶存取',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} 台伺服器拒絕此帳戶存取',
 			'connections.signInAgain' => '重新登入',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '編輯 ${product} 連線',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。',
@@ -4040,12 +4054,12 @@ extension on TranslationsZhHant {
 			'libraries.refreshMetadata' => '重新整理中繼資料',
 			'libraries.emptyTrash' => '清空垃圾桶',
 			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '已清空「${title}」的垃圾桶',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '無法清空垃圾桶：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
 			'libraries.analysisStarted' => ({required Object title}) => '已開始分析「${title}」',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => '無法分析媒體庫：${error}',
 			'libraries.noLibrariesFound' => '找不到媒體庫',
 			'libraries.allLibrariesHidden' => '所有媒體庫都已隱藏',
@@ -4554,12 +4568,12 @@ extension on TranslationsZhHant {
 			'watchTogether.renameRoom' => '重新命名房間',
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => '無法切換 — 在此伺服器上找不到內容',
 			'watchTogether.defaultDisplayName' => '使用者',
 			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
 			'watchTogether.errors.connectionLost' => '工作階段就緒前連線已中斷',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => '中繼伺服器傳回了非預期的回應',
 			'watchTogether.errors.sessionEnded' => '主持人已結束工作階段',
 			'watchTogether.errors.sessionUnavailable' => '無法恢復此工作階段。請加入或建立房間以繼續。',
@@ -4635,6 +4649,7 @@ extension on TranslationsZhHant {
 			'downloads.syncRuleAvailable' => '可用',
 			'downloads.syncRuleOffline' => '離線',
 			'downloads.syncRuleSignInRequired' => '需要登入',
+			'downloads.syncRuleAccessDenied' => '存取遭拒',
 			'downloads.syncRuleNotAvailableForProfile' => '目前使用者設定檔無法使用',
 			'downloads.syncRuleUnknownServer' => '未知伺服器',
 			'downloads.syncRuleListCreated' => '同步規則已建立',
@@ -4672,8 +4687,14 @@ extension on TranslationsZhHant {
 			'downloads.unknownAlbum' => '未知專輯',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '已完成 ${completed}/${total}',
 			'downloads.errorFileNotFound' => '找不到檔案（404）',
+			'downloads.errorDownloadNotAllowed' => '伺服器不允許下載（403）',
 			'downloads.errorDownloadFailed' => '下載失敗',
-			'downloads.errorPostProcessing' => ({required Object error}) => '後續處理失敗：${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => '下載失敗：${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => '下載失敗（HTTP ${status}）',
+			'downloads.errorPostProcessing' => ({required Object reason}) => '後續處理失敗：${reason}',
+			'downloads.reasonFileNotSaved' => '無法將檔案儲存到此裝置',
+			'downloads.reasonCannotResume' => '無法繼續未完成的下載',
+			'downloads.reasonDeviceStorageFull' => '此裝置的儲存空間已滿',
 			'downloads.notificationDownloading' => '正在下載…',
 			'downloads.notificationComplete' => '下載完成',
 			'downloads.notificationPaused' => '下載已暫停',
@@ -4783,7 +4804,6 @@ extension on TranslationsZhHant {
 			'videoSettings.audioNormalization' => '音量標準化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '將音訊解碼為 PCM；開啟時直通關閉',
 			'videoSettings.audioNormalizationStereoMix' => '將音訊解碼為立體聲混音；開啟時直通關閉',
-			'videoSettings.audioDownmix' => '下混為立體聲',
 			'performanceOverlay.color' => '色彩',
 			'performanceOverlay.performance' => '效能',
 			'performanceOverlay.buffer' => '緩衝',
@@ -5062,6 +5082,8 @@ extension on TranslationsZhHant {
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',
@@ -5072,8 +5094,6 @@ extension on TranslationsZhHant {
 			'addServer.responseNotJson' => '伺服器回應不是有效的 JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => '回應缺少 ID 或伺服器名稱——這是 ${product} 伺服器嗎？',
 			'addServer.probeFailed' => ({required Object error}) => '無法連線至伺服器：${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '請輸入至少一個 ${product} 伺服器 URL',
 			'addServer.noReachableServer' => ({required Object product}) => '找不到可連線的 ${product} 伺服器',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => '這些 URL 指向不同的 ${product} 伺服器',

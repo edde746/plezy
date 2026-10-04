@@ -491,6 +491,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       }
 
+      revealFirstItem();
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
       return;
@@ -507,6 +508,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
       }
 
+      revealFirstItem();
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
     }
@@ -855,6 +857,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final contentEpoch = epoch ?? snapshotLibraryContentEpoch();
     setState(() {
       isLoading = true;
+      // A failed earlier load must not outlive this one: the state slivers
+      // rank the error above the empty state.
+      errorMessage = null;
       items = [];
       resetPaginationState();
       // Increment content version when loading fresh content
@@ -1663,7 +1668,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         if (_shouldShowAlphaJumpBar)
           Positioned(
             top: overlayTopPadding,
-            right: 0,
+            right: _alphaJumpBarEdgeInset,
             bottom: 0,
             // Select the derived letter rather than listening to the raw
             // index: the index changes every scrolled row, but the bar only
@@ -1773,7 +1778,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // The wrapper stays mounted when the bar toggles so the scroll view, and
     // its position, survive.
     scrollView = NestedTabScrollbar(
-      rightInset: _shouldShowAlphaJumpBar && !_isPhone(context) ? _alphaJumpBarWidth : 0,
+      rightInset: _shouldShowAlphaJumpBar && !_isPhone(context) ? _alphaJumpBarLaneWidth : 0,
       child: scrollView,
     );
     scrollView = SafeArea(top: false, bottom: false, child: scrollView);
@@ -2016,6 +2021,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// Width of the alpha jump bar widget
   static const double _alphaJumpBarWidth = 20.0;
 
+  /// Room between the grid and the alpha jump bar for the focused card's scale
+  /// and outside border, which otherwise paint under the bar (#2218).
+  static const double _alphaJumpBarFocusGap = 8.0;
+
+  /// The alpha jump bar's distance from the right edge. TVs overscan the frame
+  /// edge and Android TV reports no inset for it, so a bar flush with the edge
+  /// loses half of every letter (#2053).
+  static double get _alphaJumpBarEdgeInset => PlatformDetector.isTV() ? 24.0 : 0.0;
+
+  /// Right-edge lane the alpha jump bar occupies, edge inset included.
+  static double get _alphaJumpBarLaneWidth => _alphaJumpBarEdgeInset + _alphaJumpBarWidth;
+
   void _setListScrollMetrics({required int density, required bool usesWideAspectRatio, CardShape? shape}) {
     if (_listMetricsDensity != density ||
         _listMetricsUsesWideRatio != usesWideAspectRatio ||
@@ -2073,7 +2090,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final isPhone = _isPhone(context);
     final topPadding = isPhone ? _gridTopPaddingPhone : _gridTopPadding;
     _effectiveTopPadding = topPadding;
-    final rightPadding = _shouldShowAlphaJumpBar && !isPhone ? _alphaJumpBarWidth : 8.0;
+    final rightPadding = _shouldShowAlphaJumpBar && !isPhone ? _alphaJumpBarLaneWidth + _alphaJumpBarFocusGap : 8.0;
 
     final useWideRatio = _selectedGrouping == 'episodes' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
     // Music groupings are homogeneous, so the whole grid shares the square

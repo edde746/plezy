@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/file_picker_service.dart';
@@ -213,6 +214,39 @@ void main() {
         'value': ['srv-1:lib-a', 'srv-1:lib-b'],
       });
       expect(exported, isNot(contains('tracker_library_filter_ids_simkl')));
+    });
+  });
+
+  group('audio downmix backup compatibility', () {
+    test('restores a stereo downmix backup as the stereo channel limit', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': 1,
+          'appVersion': '2.21.0',
+          'prefs': {
+            'audio_downmix': {'type': 'bool', 'value': true},
+          },
+        },
+        prefs,
+        currentUserUuid: 'target-user',
+      );
+
+      expect(result.keysImported, 1);
+      expect(result.keysSkipped, 0);
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.audioChannelLimit), AudioChannelLimit.stereo);
+    });
+
+    test('exports an unread stereo downmix toggle as the stereo channel limit', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'audio_downmix': true});
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      expect(SettingsExportService.buildExportMap(prefs)['prefs'], {
+        'audio_channel_limit': {'type': 'string', 'value': 'stereo'},
+      });
     });
   });
 
@@ -764,6 +798,35 @@ void main() {
       expect(prefs.getBool('enable_hardware_decoding'), isTrue);
       expect(prefs.getBool('enable_hdr'), isNull);
       expect(prefs.getInt('seek_time_small'), isNull);
+    });
+
+    test('skips values that the settings screens would reject', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': SettingsExportService.formatVersion,
+          'prefs': {
+            'view_mode': {'type': 'string', 'value': 'carousel'},
+            'seek_time_small': {'type': 'int', 'value': 5000},
+            'subtitle_text_color': {'type': 'string', 'value': 'red'},
+            'keyboard_hotkeys': {'type': 'string', 'value': 'not json'},
+            'seek_time_large': {'type': 'int', 'value': 45},
+            'subtitle_border_color': {'type': 'string', 'value': '#102030'},
+          },
+        },
+        prefs,
+        currentUserUuid: 'alice',
+      );
+
+      expect(result.keysImported, 2);
+      expect(result.keysSkipped, 4);
+      expect(prefs.getString('view_mode'), isNull);
+      expect(prefs.getInt('seek_time_small'), isNull);
+      expect(prefs.getString('subtitle_text_color'), isNull);
+      expect(prefs.getString('keyboard_hotkeys'), isNull);
+      expect(prefs.getInt('seek_time_large'), 45);
+      expect(prefs.getString('subtitle_border_color'), '#102030');
     });
 
     test('rolls every mutation back when a later preference write fails', () async {

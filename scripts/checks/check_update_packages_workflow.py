@@ -57,6 +57,21 @@ for name, block in (
 ):
     require("needs: resolve-release" in block, f"{name} must depend on the resolver")
 
+for name, block in (
+    ("resolve-release", resolver),
+    ("update-homebrew", homebrew),
+    ("update-winget", winget),
+    ("update-appcast-branch", appcast),
+):
+    require(
+        re.search(r"(?m)^    permissions:", block) is not None,
+        f"{name} must declare its GITHUB_TOKEN permissions",
+    )
+require(
+    re.search(r"(?m)^    permissions: \{\}$", winget) is not None,
+    "WinGet authenticates with WINGET_TOKEN and must not receive GITHUB_TOKEN scopes",
+)
+
 resolved_output = "${{ needs.resolve-release.outputs.tag }}"
 require(f"RELEASE_TAG: {resolved_output}" in homebrew, "Homebrew must use the resolved tag")
 require(f"release-tag: {resolved_output}" in winget, "WinGet must use the resolved tag")

@@ -18,7 +18,6 @@ import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import com.edde746.plezy.libmpv.EndFileReason
 import com.edde746.plezy.libmpv.LogLevel
-import com.edde746.plezy.libmpv.LogMessage
 import com.edde746.plezy.libmpv.MpvEvent
 import com.edde746.plezy.libmpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
@@ -1090,7 +1089,7 @@ class MpvPlayerPluginTest {
   fun endFileDiagnosticsPreserveReasonIdAndExposeDependencyErrorLog() {
     val diagnostics = MpvEndFileDiagnostics()
     diagnostics.onStartFile()
-    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
+    diagnostics.onLogMessage(MpvEvent.LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
 
     assertEquals(
       mapOf(
@@ -1105,7 +1104,7 @@ class MpvPlayerPluginTest {
   @Test
   fun endFileDiagnosticsDoNotAttachStaleOrInventedDetails() {
     val diagnostics = MpvEndFileDiagnostics()
-    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "old failure"))
+    diagnostics.onLogMessage(MpvEvent.LogMessage("ffmpeg", LogLevel.Error, "old failure"))
     diagnostics.onStartFile()
 
     assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof, null)))
@@ -2000,6 +1999,40 @@ class MpvPlayerPluginTest {
     assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=strip"), writes.toList())
 
     val invalid = apply("bogus")
+    assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun disablingDolbyVisionOverridesEveryConversionMode() {
+    // `dolby-vision-output=no` (#2543) routes as auto on a display without
+    // DV whichever P7 mode the user picked, and `yes` restores that mode.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+
+    fun apply(name: String, value: String): Result<Unit> {
+      writes.clear()
+      var outcome: Result<Unit>? = null
+      core.setProperty(name, value) { outcome = it }
+      awaitCondition { outcome != null }
+      return outcome!!
+    }
+
+    assertTrue(apply("dv-conversion-mode", "dv81").isSuccess)
+    assertTrue(apply("dolby-vision-output", "no").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    // A mode chosen while Dolby Vision is disabled does not bring it back.
+    assertTrue(apply("dv-conversion-mode", "disabled").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    assertTrue(apply("dolby-vision-output", "yes").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=native"), writes.toList())
+
+    val invalid = apply("dolby-vision-output", "maybe")
     assertTrue(invalid.isFailure)
     assertTrue(writes.isEmpty())
   }

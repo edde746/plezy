@@ -36,6 +36,7 @@ import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_source_info.dart';
+import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/paged_media_list_state.dart';
 import '../widgets/media_card.dart';
@@ -92,7 +93,7 @@ import '../utils/library_content_notifier.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/fitting_title_text.dart';
-import 'actor_media_screen.dart';
+import '../utils/media_navigation_helper.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/loading_indicator_box.dart';
@@ -148,11 +149,27 @@ class _SeasonEpisodePager {
 
   bool hasState(String seasonId) => _states.containsKey(seasonId);
 
+  /// Bumped by [resetSeason], so a page load (first or continuation) started
+  /// before a reset can tell that its result no longer belongs to the season.
+  final Map<String, int> _epochs = {};
+
+  int epochOf(String seasonId) => _epochs[seasonId] ?? 0;
+
   bool beginFirstPageLoad(String seasonId) => _firstPageLoadsInFlight.add(seasonId);
-  void endFirstPageLoad(String seasonId) => _firstPageLoadsInFlight.remove(seasonId);
+
+  /// Ends a first-page load started at [epoch]. A load that [resetSeason]
+  /// superseded leaves the in-flight mark to the load that replaced it.
+  void endFirstPageLoad(String seasonId, {required int epoch}) {
+    if (epoch == epochOf(seasonId)) _firstPageLoadsInFlight.remove(seasonId);
+  }
 
   bool beginMoreLoad(String seasonId) => _moreLoadsInFlight.add(seasonId);
-  void endMoreLoad(String seasonId) => _moreLoadsInFlight.remove(seasonId);
+
+  /// Ends a continuation load started at [epoch]; like [endFirstPageLoad], a
+  /// superseded load leaves the in-flight mark to its replacement.
+  void endMoreLoad(String seasonId, {required int epoch}) {
+    if (epoch == epochOf(seasonId)) _moreLoadsInFlight.remove(seasonId);
+  }
 
   void markFirstPageLoading(String seasonId) {
     _states[seasonId] = stateFor(seasonId).startInitialLoad();
@@ -189,6 +206,7 @@ class _SeasonEpisodePager {
     _states.remove(seasonId);
     _firstPageLoadsInFlight.remove(seasonId);
     _moreLoadsInFlight.remove(seasonId);
+    _epochs[seasonId] = epochOf(seasonId) + 1;
   }
 
   /// Drops cached episode pages for seasons outside [keepSeasonIds].
@@ -377,6 +395,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final ValueNotifier<int> _playbackStatusRevision = ValueNotifier(0);
   String? _playbackStatusTarget;
   Timer? _playbackProbeTimer;
+
+  // Scores from the full record a probe fetched, by global key. Plex children
+  // listings carry only the scalar TMDB pair; the item's own fetch adds the
+  // `Rating[]` array (IMDb), so the TV hero shows that for the focused episode
+  // at no extra request (#2539). Outlives probe refreshes: a score does not
+  // move with watch state, and clearing it would blank the badge until the
+  // re-probe lands.
+  final Map<String, List<MediaRatingSource>> _probedRatings = {};
+  final ValueNotifier<int> _focusedEpisodeRatingsRevision = ValueNotifier(0);
+  late final Listenable _tvDetailForegroundListenable = Listenable.merge([
+    _tvDetailFocusedEpisode,
+    _focusedEpisodeRatingsRevision,
+  ]);
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids
   // resolve once via the owning server, then per capable source; membership
@@ -676,15 +707,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // If we have a season that matches the rating key exactly, then remove it from our list
     final seasonIndex = _seasons.indexWhere((s) => s.id == event.itemId);
     if (seasonIndex != -1) {
-      setState(() {
-        _seasons.removeAt(seasonIndex);
-      });
+      late final bool selectionMoved;
+      setState(() => selectionMoved = _removeSeasonAt(seasonIndex));
 
       // If the show has no more seasons, navigate back up to the library
       if (_seasons.isEmpty && mounted) {
         _markDetailDeleted();
         return;
       }
+      if (selectionMoved) unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex));
       _refreshWatchState();
       return;
     }
@@ -699,15 +730,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final newLeafCount = (season.leafCount ?? 1) - 1;
         if (newLeafCount <= 0) {
           // Season is now empty, remove it
-          setState(() {
-            _seasons.removeAt(idx);
-          });
+          late final bool selectionMoved;
+          setState(() => selectionMoved = _removeSeasonAt(idx));
 
           // Otherwise we have no more seasons, so navigate up
           if (_seasons.isEmpty && mounted) {
             _markDetailDeleted();
             return;
           }
+          if (selectionMoved) unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex));
         } else {
           setState(() {
             // Otherwise just update the counts
@@ -718,6 +749,31 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return;
       }
     }
+  }
+
+  /// Removes the season at [index] while keeping the selection on the same
+  /// season: indexes after it shift down, and when the selected season itself
+  /// is removed the selection moves to its neighbour, whose rows replace the
+  /// removed season's. Returns whether the selection moved to another season,
+  /// whose episodes the caller then loads. Call inside setState.
+  bool _removeSeasonAt(int index) {
+    final removed = _seasons.removeAt(index);
+    _seasonEpisodePager.resetSeason(removed.id);
+    // A flattened list has no season selection to keep.
+    if (_isFlattenEpisodeList) return false;
+    if (_seasons.isEmpty) {
+      _selectedSeasonIndex = 0;
+      _episodes = const <MediaItem>[];
+      return false;
+    }
+    if (index < _selectedSeasonIndex) {
+      _selectedSeasonIndex--;
+      return false;
+    }
+    if (index > _selectedSeasonIndex) return false;
+    _selectedSeasonIndex = index.clamp(0, _seasons.length - 1);
+    _syncSelectedSeasonEpisodes(_selectedSeasonIndex, _seasons[_selectedSeasonIndex].id);
+    return true;
   }
 
   void _markDetailDeleted() {
@@ -996,6 +1052,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollController.dispose();
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
+    _focusedEpisodeRatingsRevision.dispose();
     _playbackProbeTimer?.cancel();
     _playbackStatusRevision.dispose();
     _extrasScrollController.dispose();
@@ -1438,18 +1495,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final personId = actor.id;
     if (personId == null || _metadata.serverId == null) return;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ActorMediaScreen(
-          actorName: actor.tag,
-          personId: personId,
-          actorThumb: actor.thumbPath,
-          characterName: actor.role,
-          serverId: _metadata.serverId!,
-          serverName: _metadata.serverName,
-          backend: _metadata.backend,
-        ),
+    unawaited(
+      navigateToPersonMedia(
+        context,
+        personId: personId,
+        name: actor.tag,
+        thumbPath: actor.thumbPath,
+        characterName: actor.role,
+        serverId: _metadata.serverId!,
+        serverName: _metadata.serverName,
+        backend: _metadata.backend,
       ),
     );
   }
@@ -1901,7 +1956,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
     if (!ownsLoad) return;
 
-    final generation = ++_episodesLoadGeneration;
+    // Loads for different seasons never compete: each result lands in its own
+    // season's cache. Only a detail-wide reset (the generation) or a refresh of
+    // this season (the epoch) retires it. Retiring it on every season switch
+    // instead left a season that was left and revisited mid-load spinning, as
+    // the revisit found this load in flight and waited on it.
+    final generation = _episodesLoadGeneration;
+    final epoch = _seasonEpisodePager.epochOf(seasonId);
+    bool isCurrent() =>
+        mounted && generation == _episodesLoadGeneration && epoch == _seasonEpisodePager.epochOf(seasonId);
 
     try {
       if (widget.isOffline) {
@@ -1930,7 +1993,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           return;
         }
         final page = await _fetchSeasonPage(mediaClient, season, start: 0);
-        if (!mounted || generation != _episodesLoadGeneration) return;
+        if (!isCurrent()) return;
         _completeSeasonEpisodesLoad(
           seasonIndex: seasonIndex,
           seasonId: seasonId,
@@ -1941,13 +2004,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       }
     } catch (e, st) {
       appLogger.w('Season episodes load failed', error: e, stackTrace: st);
-      if (mounted && generation == _episodesLoadGeneration && _isSelectedSeason(seasonIndex, seasonId)) {
+      if (isCurrent() && _isSelectedSeason(seasonIndex, seasonId)) {
         setStateIfMounted(() {
           _seasonEpisodePager.failFirstPage(seasonId);
         });
       }
     } finally {
-      _seasonEpisodePager.endFirstPageLoad(seasonId);
+      _seasonEpisodePager.endFirstPageLoad(seasonId, epoch: epoch);
     }
   }
 
@@ -1969,6 +2032,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final seasonId = season.id;
     if (_seasonEpisodePager.hasState(seasonId)) return;
     if (!_seasonEpisodePager.beginFirstPageLoad(seasonId)) return;
+    final epoch = _seasonEpisodePager.epochOf(seasonId);
 
     try {
       final mediaClient = _getMediaClientForMetadata(context);
@@ -1976,6 +2040,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final page = await _fetchSeasonPage(mediaClient, season, start: 0);
       if (!_canUseDetail ||
           _showEpisodesDirectly ||
+          epoch != _seasonEpisodePager.epochOf(seasonId) ||
           seasonIndex >= _seasons.length ||
           _seasons[seasonIndex].id != seasonId) {
         return;
@@ -1989,13 +2054,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (_isSelectedSeason(seasonIndex, seasonId)) unawaited(_prefetchAdjacentSeasonEpisodePages(seasonIndex));
     } catch (e, st) {
       appLogger.d('TV adjacent season episode prefetch failed', error: e, stackTrace: st);
-      if (_canUseDetail && _isSelectedSeason(seasonIndex, seasonId)) {
+      if (_canUseDetail && epoch == _seasonEpisodePager.epochOf(seasonId) && _isSelectedSeason(seasonIndex, seasonId)) {
         setStateIfMounted(() {
           _seasonEpisodePager.failFirstPage(seasonId);
         });
       }
     } finally {
-      _seasonEpisodePager.endFirstPageLoad(seasonId);
+      _seasonEpisodePager.endFirstPageLoad(seasonId, epoch: epoch);
     }
   }
 
@@ -2011,7 +2076,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final loaded = state.items.length;
     if (!state.hasMore) return;
     if (!_seasonEpisodePager.beginMoreLoad(seasonId)) return;
+    // A refresh of this season (the epoch) retires the page as surely as a
+    // detail-wide reset (the generation): appending it to the refreshed first
+    // page would duplicate or skip rows.
     final generation = _episodesLoadGeneration;
+    final epoch = _seasonEpisodePager.epochOf(seasonId);
+    bool isCurrent() =>
+        mounted && generation == _episodesLoadGeneration && epoch == _seasonEpisodePager.epochOf(seasonId);
 
     setStateIfMounted(() {
       if (_isSelectedSeason(seasonIndex, seasonId)) {
@@ -2023,14 +2094,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final mediaClient = _getMediaClientForMetadata(context);
       if (mediaClient == null) {
         setStateIfMounted(() {
-          if (_isSelectedSeason(seasonIndex, seasonId)) {
+          if (isCurrent() && _isSelectedSeason(seasonIndex, seasonId)) {
             _seasonEpisodePager.completeMoreLoad(seasonId, expectedOffset: loaded, episodes: const [], total: loaded);
           }
         });
         return;
       }
       final page = await _fetchSeasonPage(mediaClient, season, start: loaded);
-      if (!mounted || generation != _episodesLoadGeneration) return;
+      if (!isCurrent()) return;
       setStateIfMounted(() {
         _seasonEpisodePager.completeMoreLoad(
           seasonId,
@@ -2042,13 +2113,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
     } catch (e, st) {
       appLogger.w('Season episodes page load failed', error: e, stackTrace: st);
-      if (mounted && generation == _episodesLoadGeneration && _isSelectedSeason(seasonIndex, seasonId)) {
+      if (isCurrent() && _isSelectedSeason(seasonIndex, seasonId)) {
         setStateIfMounted(() {
           _seasonEpisodePager.failMoreLoad(seasonId);
         });
       }
     } finally {
-      _seasonEpisodePager.endMoreLoad(seasonId);
+      _seasonEpisodePager.endMoreLoad(seasonId, epoch: epoch);
     }
   }
 
@@ -2067,6 +2138,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// One page of [season]'s episodes, sized for the detail lists.
   Future<LibraryPage<MediaItem>> _fetchSeasonPage(MediaServerClient client, MediaItem season, {required int start}) {
     return fetchSeasonEpisodePage(client, show: _metadata, season: season, start: start, size: _episodesPageSize);
+  }
+
+  /// Selects the season tab at [seasonIndex] and loads its episodes. The list
+  /// switches to that season's own rows straight away (none, before its first
+  /// page arrives), so a slow or failed load shows its spinner or error rather
+  /// than the previous season's episodes.
+  void _selectSeason(int seasonIndex) {
+    if (seasonIndex < 0 || seasonIndex >= _seasons.length) return;
+    setState(() {
+      _selectedSeasonIndex = seasonIndex;
+      _syncSelectedSeasonEpisodes(seasonIndex, _seasons[seasonIndex].id);
+    });
+    unawaited(_fetchSeasonEpisodes(seasonIndex));
   }
 
   /// Mirror the pager's items for [seasonId] into the visible episode list when
@@ -2511,25 +2595,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
                     onSelect: () {
                       if (index == _selectedSeasonIndex) return;
-                      setState(() => _selectedSeasonIndex = index);
-                      _fetchSeasonEpisodes(index);
+                      _selectSeason(index);
                     },
                     onNavigateLeft: index > 0
                         ? () {
                             final newIndex = index - 1;
-                            setState(() => _selectedSeasonIndex = newIndex);
+                            _selectSeason(newIndex);
                             _seasonTabFocusNodes[newIndex].requestFocus();
                             _scrollSeasonTabIntoView(newIndex);
-                            _fetchSeasonEpisodes(newIndex);
                           }
                         : null,
                     onNavigateRight: index < _seasons.length - 1
                         ? () {
                             final newIndex = index + 1;
-                            setState(() => _selectedSeasonIndex = newIndex);
+                            _selectSeason(newIndex);
                             _seasonTabFocusNodes[newIndex].requestFocus();
                             _scrollSeasonTabIntoView(newIndex);
-                            _fetchSeasonEpisodes(newIndex);
                           }
                         : null,
                     onNavigateDown: () {
@@ -3603,9 +3684,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           right: size.width * 0.40,
           top: spotlightTop,
           bottom: foregroundBottom,
-          child: ValueListenableBuilder<MediaItem?>(
-            valueListenable: _tvDetailFocusedEpisode,
-            builder: (context, _, _) =>
+          child: ListenableBuilder(
+            listenable: _tvDetailForegroundListenable,
+            builder: (context, _) =>
                 _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
           ),
         ),
@@ -3910,7 +3991,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// fields, the quality labels and every rating badge the fitted line may
   /// have shed, the genres, plus the untruncated description (#2042).
   void _openTvDetailsSheet(BuildContext context, MediaItem metadata, {required bool hideSpoilers}) {
-    final item = _tvDetailFocusedEpisode.value ?? metadata;
+    final focusedEpisode = _tvDetailFocusedEpisode.value;
+    final item = focusedEpisode == null ? metadata : _withProbedRatings(focusedEpisode);
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
     final genres = metadata.genres ?? const <String>[];
     unawaited(
@@ -3927,7 +4009,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// labels stay off the hero line: they describe the file, not the title,
   /// and remain on the rail cards and in the details sheet (#2217).
   List<MetadataLinePart> _tvDetailMetadataParts(MediaItem metadata) {
-    final lineMetadata = _tvDetailFocusedEpisode.value ?? metadata;
+    final focusedEpisode = _tvDetailFocusedEpisode.value;
+    final lineMetadata = focusedEpisode ?? metadata;
     final parts = <MetadataLinePart>[];
 
     final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
@@ -3943,10 +4026,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (lineMetadata.durationMs != null) {
       parts.add(MetadataLineText(formatDurationTextual(lineMetadata.durationMs!), dropPriority: 1));
     }
-    final ratings = mediaRatingsFor(lineMetadata, fallbackItem: metadata);
+    final ratings = focusedEpisode == null
+        ? mediaRatingsFor(metadata)
+        : mediaRatingsFor(_withProbedRatings(focusedEpisode), fallbackItem: metadata);
     if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
 
     return parts;
+  }
+
+  /// [episode] carrying the scores of its full record once a probe fetched
+  /// it. Only the scores are taken: the rail's snapshot stays the source of
+  /// every other field.
+  MediaItem _withProbedRatings(MediaItem episode) {
+    final ratings = _probedRatings[episode.globalKey];
+    return ratings == null ? episode : episode.copyWith(ratings: ratings);
   }
 
   String _tvDetailInformationSemanticLabel(

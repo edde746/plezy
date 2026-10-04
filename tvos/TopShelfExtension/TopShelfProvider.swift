@@ -107,6 +107,10 @@ final class TopShelfProvider: TVTopShelfContentProvider {
     if let sources = ShelfSourceStore.load(),
       let items = await ShelfFetcher.fetchContinueWatching(sources: sources)
     {
+      // The app may have switched profile or signed out during the fetch. The
+      // result then belongs to a stale owner: writing it would replace the
+      // new owner's cache with the previous profile's items.
+      guard ShelfSourceStore.currentOwnerId() == sources.ownerId else { return buildContent() }
       let sectionTitle =
         sources.sectionTitle.flatMap { $0.isEmpty ? nil : $0 } ?? TopShelfShared.fallbackSectionTitle
       persistLiveSnapshot(items, ownerId: sources.ownerId, sectionTitle: sectionTitle)

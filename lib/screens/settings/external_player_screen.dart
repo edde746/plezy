@@ -55,12 +55,13 @@ class ExternalPlayerScreen extends StatelessWidget {
                   builder: (context, snapshot) {
                     final detected = snapshot.data;
                     if (detected == null) return const SizedBox.shrink();
+                    final players = _withSelected(detected, selected.id);
+                    // Apple TV has no System Default, so with no known player
+                    // installed only the custom group remains.
+                    if (players.isEmpty) return const SizedBox.shrink();
                     return SettingsGroup(
                       title: t.externalPlayer.selectPlayer,
-                      children: [
-                        for (final p in _withSelected(detected, selected.id))
-                          _PlayerTile(player: p, selectedId: selected.id),
-                      ],
+                      children: [for (final p in players) _PlayerTile(player: p, selectedId: selected.id)],
                     );
                   },
                 ),
@@ -180,7 +181,10 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
   final _valueController = TextEditingController();
   final _valueFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerValue');
   final _saveFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerSave');
-  CustomPlayerType _selectedType = CustomPlayerType.command;
+  // iOS and tvOS apps can only be reached through their URL scheme; there is
+  // no process to spawn and no package to target.
+  final _urlSchemeOnly = Platform.isIOS;
+  late CustomPlayerType _selectedType = _urlSchemeOnly ? CustomPlayerType.urlScheme : CustomPlayerType.command;
 
   @override
   void dispose() {
@@ -228,18 +232,20 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _valueFocusNode.requestFocus(),
             ),
-            const SizedBox(height: 16),
-            ExpressiveButtonGroup<CustomPlayerType>(
-              segments: [
-                ButtonSegment(
-                  value: CustomPlayerType.command,
-                  label: Text(Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand),
-                ),
-                ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
-              ],
-              selected: _selectedType,
-              onChanged: (value) => setState(() => _selectedType = value),
-            ),
+            if (!_urlSchemeOnly) ...[
+              const SizedBox(height: 16),
+              ExpressiveButtonGroup<CustomPlayerType>(
+                segments: [
+                  ButtonSegment(
+                    value: CustomPlayerType.command,
+                    label: Text(Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand),
+                  ),
+                  ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
+                ],
+                selected: _selectedType,
+                onChanged: (value) => setState(() => _selectedType = value),
+              ),
+            ],
             const SizedBox(height: 16),
             FocusableTextField(
               controller: _valueController,

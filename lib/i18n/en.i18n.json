@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "This file isn't a valid Plezy settings export",
     "importSettingsNoUser": "Sign in before importing settings",
     "shortcutsReset": "Shortcuts reset to defaults",
+    "resetShortcutsConfirm": "This will replace your custom shortcuts with the defaults. Continue?",
     "about": "About",
     "aboutDescription": "App information and licenses",
     "updates": "Updates",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
     "audioPassthroughDescriptionAppleTv": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
     "audioPassthroughOverriddenByNormalization": "Off while loudness normalization is on",
-    "audioDownmix": "Downmix to Stereo",
-    "audioDownmixDescription": "Mix surround audio down to two channels for stereo speakers or headphones",
+    "audioChannelLimit": "Audio Channels",
+    "audioChannelLimitDescription": "Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel",
+    "audioChannelLimitOriginal": "Original",
+    "audioChannelLimitOriginalDescription": "Play every channel in the track",
+    "audioChannelLimitSurround51": "Up to 5.1",
+    "audioChannelLimitSurround51Description": "Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.",
+    "audioChannelLimitStereo": "Stereo",
+    "audioChannelLimitStereoDescription": "Mix down to two channels for stereo speakers or headphones. Turns passthrough off.",
     "downmixCenterBoost": "Center Channel Boost",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Boost (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Force native DV7 and suppress DV conversion retry",
     "dvConversionDv81Description": "Force inline RPU conversion to Dolby Vision profile 8.1",
     "dvConversionHevcStripDescription": "Strip Dolby Vision RPU/EL layers and present plain HEVC",
+    "disableDolbyVision": "Disable Dolby Vision",
+    "disableDolbyVisionDescription": "Play the file's HDR10 or HLG layer instead of Dolby Vision, when it has one",
     "hdrSdrConversion": "HDR to SDR Conversion",
     "hdrSdrConversionDescription": "Choose what converts HDR video when the display can't show HDR.",
     "hdrSdrConversionAuto": "Auto",
@@ -435,7 +444,8 @@
     "hint": "Search movies, shows, music...",
     "tryDifferentTerm": "Try a different search term",
     "searchYourMedia": "Search your media",
-    "enterTitleActorOrKeyword": "Enter a title, actor, or keyword"
+    "enterTitleActorOrKeyword": "Enter a title, actor, or keyword",
+    "people": "People"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.",
     "serverBusyTitle": "Stream unavailable",
     "serverBusyBody": "The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.",
+    "playbackNotAllowedTitle": "Playback not allowed",
+    "playbackNotAllowedBody": "The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
     "logId": "Log ID",
@@ -907,6 +919,8 @@
     "signOut": "Sign out",
     "signOutPlexTitle": "Sign out of Plex?",
     "signOutPlexMessage": "Remove ${displayName} and all Plex Home users? Sign back in anytime.",
+    "signOutPlexDeleteDownloads": "Also delete downloads",
+    "signOutPlexDeleteDownloadsDescription": "Otherwise they stay on this device and come back when you sign back in to this account.",
     "signedOutPlex": "Signed out of Plex.",
     "signOutFailed": "Sign out failed.",
     "sectionTitle": "Profiles",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection",
     "sessionExpiredOne": "Session expired for ${name}",
     "sessionExpiredMany": "Session expired for ${count} servers",
+    "accessDeniedOne": "${name} refused access for this account",
+    "accessDeniedMany": "${count} servers refused access for this account",
     "signInAgain": "Sign in again",
     "editMediaBrowserTitle": "Edit ${product} connection",
     "editMediaBrowserIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Other"
     },
     "creditRole": {
+      "actor": "Actor",
       "director": "Director",
       "writer": "Writer",
       "producer": "Producer",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Available",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Sign in required",
+    "syncRuleAccessDenied": "Access denied",
     "syncRuleNotAvailableForProfile": "Not available for current profile",
     "syncRuleUnknownServer": "Unknown server",
     "syncRuleListCreated": "Sync rule created",
@@ -1862,8 +1880,14 @@
       "other": "${n} albums"
     },
     "errorFileNotFound": "File not found (404)",
+    "errorDownloadNotAllowed": "Download not allowed by the server (403)",
     "errorDownloadFailed": "Download failed",
-    "errorPostProcessing": "Post-processing failed: ${error}",
+    "errorDownloadFailedWithReason": "Download failed: ${reason}",
+    "errorHttpStatus": "Download failed (HTTP ${status})",
+    "errorPostProcessing": "Post-processing failed: ${reason}",
+    "reasonFileNotSaved": "the file could not be saved on this device",
+    "reasonCannotResume": "the partial download could not be resumed",
+    "reasonDeviceStorageFull": "this device is out of storage",
     "notificationDownloading": "Downloading...",
     "notificationComplete": "Download complete",
     "notificationPaused": "Download paused"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalize Loudness",
     "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on",
-    "audioNormalizationStereoMix": "Decodes audio to a stereo mix; passthrough is off while this is on",
-    "audioDownmix": "Downmix to Stereo"
+    "audioNormalizationStereoMix": "Decodes audio to a stereo mix; passthrough is off while this is on"
   },
   "performanceOverlay": {
     "color": "Color",
@@ -2002,6 +2025,13 @@
     "rotation": "Rotation",
     "dvSource": "DV Source",
     "dvPath": "DV Path",
+    "dvRouteDecoder": "Dolby Vision decoder",
+    "dvRouteDecoderP81": "Dolby Vision decoder (P7→8.1)",
+    "dvRouteBaseLayer": "Base layer",
+    "dvRouteBaseLayerHdr10": "HDR10 base layer",
+    "dvRouteBaseLayerHlg": "HLG base layer",
+    "dvRouteBaseLayerSdr": "SDR base layer",
+    "dvRouteReshaped": "RPU reshaped (gpu-next)",
     "p7Conversion": "P7 Conv",
     "sampleRate": "Sample Rate",
     "pixelFormat": "Pixel Fmt",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "Reconnect Simkl",
+      "subtitle": "Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl."
     },
     "deviceCode": {
       "title": "Activate Plezy on ${service}",

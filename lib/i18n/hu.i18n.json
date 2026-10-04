@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Ez a fájl nem érvényes Plezy-beállításexport",
     "importSettingsNoUser": "Jelentkezz be a beállítások importálása előtt",
     "shortcutsReset": "A billentyűparancsok visszaálltak az alapértelmezettekre",
+    "resetShortcutsConfirm": "",
     "about": "Névjegy",
     "aboutDescription": "Alkalmazásadatok és licencek",
     "updates": "Frissítések",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.",
     "audioPassthroughDescriptionAppleTv": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.",
     "audioPassthroughOverriddenByNormalization": "Ki, amíg a hangerőnormalizálás be van kapcsolva",
-    "audioDownmix": "Lekeverés sztereóra",
-    "audioDownmixDescription": "A térhangzás lekeverése két csatornára sztereó hangszórókhoz vagy fejhallgatókhoz",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Középső csatorna kiemelése",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Kiemelés (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása",
     "dvConversionDv81Description": "A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re",
     "dvConversionHevcStripDescription": "A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés",
+    "disableDolbyVision": "Dolby Vision letiltása",
+    "disableDolbyVisionDescription": "A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen",
     "hdrSdrConversion": "HDR–SDR átalakítás",
     "hdrSdrConversionDescription": "Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.",
     "hdrSdrConversionAuto": "Automatikus",
@@ -435,7 +444,8 @@
     "hint": "Keresés filmek, sorozatok és zenék között...",
     "tryDifferentTerm": "Próbálj másik keresési kifejezést",
     "searchYourMedia": "Keresés a saját médiatartalmak között",
-    "enterTitleActorOrKeyword": "Adj meg egy címet, színészt vagy kulcsszót"
+    "enterTitleActorOrKeyword": "Adj meg egy címet, színészt vagy kulcsszót",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Billentyűparancs beállítása ehhez: ${actionName}",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "A szerver megtalálta ezt az elemet, de nem tudta beolvasni a fájlját (HTTP 404). A fájl valószínűleg áthelyezésre vagy törlésre került, vagy a tárhelye offline. Kérje meg a szerver tulajdonosát, hogy ellenőrizze a fájlt, és vizsgálja újra a könyvtárat.",
     "serverBusyTitle": "A stream nem érhető el",
     "serverBusyBody": "A szerver ismételten megtagadta ennek a fájlnak a streamelését (HTTP 503). Lehet, hogy újraindul, túlterhelt, vagy a fájl tárhelye nem érhető el. Próbáld újra egy kis idő múlva – ha a probléma továbbra is fennáll, kérd meg a szerver tulajdonosát, hogy ellenőrizze a szervert és a fájl tárhelyét.",
+    "playbackNotAllowedTitle": "A lejátszás nem engedélyezett",
+    "playbackNotAllowedBody": "A szerver megtagadta ennek az elemnek a streamelését (HTTP 403). Lehet, hogy a fiókodnak nincs engedélye a lejátszására, vagy a szerver csak a helyi hálózatán engedélyezi a lejátszást.",
     "logsUploaded": "Naplók feltöltve",
     "logsUploadFailed": "Nem sikerült a naplók feltöltése",
     "logId": "Naplóazonosító",
@@ -907,6 +919,8 @@
     "signOut": "Kijelentkezés",
     "signOutPlexTitle": "Kijelentkezel a Plexből?",
     "signOutPlexMessage": "Eltávolítod a(z) ${displayName} profilt és az összes Plex Home-felhasználót? Bármikor visszajelentkezhetsz.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Kijelentkezve a Plexből.",
     "signOutFailed": "A kijelentkezés nem sikerült.",
     "sectionTitle": "Profilok",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat",
     "sessionExpiredOne": "A(z) ${name} munkamenete lejárt",
     "sessionExpiredMany": "${count} szerver munkamenete lejárt",
+    "accessDeniedOne": "A(z) ${name} megtagadta a hozzáférést ettől a fióktól",
+    "accessDeniedMany": "${count} szerver megtagadta a hozzáférést ettől a fióktól",
     "signInAgain": "Bejelentkezés újra",
     "editMediaBrowserTitle": "A(z) ${product} kapcsolat szerkesztése",
     "editMediaBrowserIntro": "Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Egyéb"
     },
     "creditRole": {
+      "actor": "",
       "director": "Rendező",
       "writer": "Író",
       "producer": "Producer",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Elérhető",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Bejelentkezés szükséges",
+    "syncRuleAccessDenied": "Hozzáférés megtagadva",
     "syncRuleNotAvailableForProfile": "Nem érhető el a jelenlegi profilhoz",
     "syncRuleUnknownServer": "Ismeretlen szerver",
     "syncRuleListCreated": "Szinkronizálási szabály létrehozva",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "A fájl nem található (404)",
+    "errorDownloadNotAllowed": "A szerver nem engedélyezi a letöltést (403)",
     "errorDownloadFailed": "A letöltés nem sikerült",
-    "errorPostProcessing": "Az utófeldolgozás nem sikerült: ${error}",
+    "errorDownloadFailedWithReason": "A letöltés nem sikerült: ${reason}",
+    "errorHttpStatus": "A letöltés nem sikerült (HTTP ${status})",
+    "errorPostProcessing": "Az utófeldolgozás nem sikerült: ${reason}",
+    "reasonFileNotSaved": "a fájlt nem sikerült menteni erre az eszközre",
+    "reasonCannotResume": "a részleges letöltést nem sikerült folytatni",
+    "reasonDeviceStorageFull": "az eszközön elfogyott a tárhely",
     "notificationDownloading": "Letöltés...",
     "notificationComplete": "Letöltés kész",
     "notificationPaused": "Letöltés szüneteltetve"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Sztereó",
     "audioNormalization": "Hangerő normalizálása",
     "audioNormalizationDisablesPassthrough": "PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva",
-    "audioNormalizationStereoMix": "Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva",
-    "audioDownmix": "Lekeverés sztereóra"
+    "audioNormalizationStereoMix": "Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva"
   },
   "performanceOverlay": {
     "color": "Szín",
@@ -2002,6 +2025,13 @@
     "rotation": "Forgatás",
     "dvSource": "DV-forrás",
     "dvPath": "DV-útvonal",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7-átalakítás",
     "sampleRate": "Mintavételezési frekvencia",
     "pixelFormat": "Képpontformátum",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Plezy aktiválása a következőn: ${service}",

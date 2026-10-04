@@ -115,9 +115,21 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
     final index = items.indexWhere((item) => item.globalKey == sourceGlobalKey);
     if (index != -1) {
-      items[index] = updatedItem;
+      items[index] = _keepPlaylistEntry(items[index], updatedItem);
     }
   }
+
+  /// A refreshed row comes from the item's own metadata, which knows nothing
+  /// of the playlist it sits in. Carry the playlist entry id across so the
+  /// next remove or move still addresses this entry.
+  static MediaItem _keepPlaylistEntry(MediaItem previous, MediaItem updated) => switch ((previous, updated)) {
+    (PlexMediaItem(:final playlistItemId?), final PlexMediaItem refreshed) when refreshed.playlistItemId == null =>
+      refreshed.copyWith(playlistItemId: playlistItemId),
+    (JellyfinMediaItem(:final playlistItemId?), final JellyfinMediaItem refreshed)
+        when refreshed.playlistItemId == null =>
+      refreshed.copyWith(playlistItemId: playlistItemId),
+    _ => updated,
+  };
 
   @override
   void refresh() {

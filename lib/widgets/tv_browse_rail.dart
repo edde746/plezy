@@ -322,7 +322,12 @@ class TvBrowseRail extends StatefulWidget {
   final VoidCallback? onRemoveFromContinueWatching;
   final bool Function(MediaHub hub)? isContinueWatchingHub;
   final bool Function(MediaHub hub)? usesContinueWatchingAction;
-  final Future<List<MediaItem>> Function(MediaHub hub)? loadMoreItems;
+
+  /// The full-list loader a hub's View All screen uses instead of paging the
+  /// hub from its server, or null — for the whole rail or for one hub — to let
+  /// that screen page it itself. Only hubs the server cannot list in full
+  /// (Continue Watching, catalog rows) need one.
+  final Future<List<MediaItem>> Function()? Function(MediaHub hub)? loadMoreItems;
 
   /// Optional per-hub trailing-slot state (loading/error/viewAll). When null the
   /// rail keeps the legacy "[MediaHub.more] → View All" behavior.
@@ -1109,7 +1114,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       MaterialPageRoute(
         builder: (context) => HubDetailScreen(
           hub: hub,
-          loadItems: widget.loadMoreItems == null ? null : () => widget.loadMoreItems!(hub),
+          loadItems: widget.loadMoreItems?.call(hub),
           isInContinueWatching: _isContinueWatchingHub(hub),
           usesContinueWatchingAction: _usesContinueWatchingAction(hub),
           onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,

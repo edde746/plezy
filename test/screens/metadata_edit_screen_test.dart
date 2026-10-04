@@ -522,8 +522,34 @@ class _PlexMetadataRequests {
     _preferenceResponses.add(Future.value(response));
   }
 
+  /// Server-side titles by rating key; the editor loads the full item first.
+  final serverTitles = <String, String>{'show-1': 'First show', 'show-2': 'Second show'};
+
   Future<http.Response> handle(http.Request request) async {
     final path = request.url.path;
+    if (request.method == 'GET' &&
+        path.startsWith('/library/metadata/') &&
+        !request.url.queryParameters.containsKey('includePreferences')) {
+      final id = path.split('/').last;
+      final title = serverTitles[id];
+      if (title == null) return _response(404);
+      return jsonResponse({
+        'MediaContainer': {
+          'Metadata': [
+            {
+              'ratingKey': id,
+              'type': 'show',
+              'title': title,
+              'originalTitle': 'Original $title',
+              'summary': 'Summary',
+              'librarySectionID': 1,
+              'thumb': '',
+            },
+          ],
+        },
+      });
+    }
+
     if (request.method == 'GET' &&
         path.startsWith('/library/metadata/') &&
         request.url.queryParameters['includePreferences'] == '1') {

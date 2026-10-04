@@ -456,8 +456,6 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Fra, mens lydstyrkenormalisering er slået til';
-	@override String get audioDownmix => 'Downmix til stereo';
-	@override String get audioDownmixDescription => 'Mix surroundlyd ned til to kanaler til stereohøjttalere eller hovedtelefoner';
 	@override String get downmixCenterBoost => 'Forstærkning af centerkanal';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Forstærkning (dB)';
@@ -474,6 +472,8 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Gennemtving indbygget DV7-understøttelse, og undlad at forsøge DV-konvertering igen';
 	@override String get dvConversionDv81Description => 'Tving inline RPU-konvertering til Dolby Vision profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Fjern Dolby Vision RPU/EL-lag og brug almindelig HEVC';
+	@override String get disableDolbyVision => 'Deaktiver Dolby Vision';
+	@override String get disableDolbyVisionDescription => 'Afspil filens HDR10- eller HLG-lag i stedet for Dolby Vision, når det findes';
 	@override String get hdrSdrConversion => 'HDR til SDR-konvertering';
 	@override String get hdrSdrConversionDescription => 'Vælg, hvad der konverterer HDR-video, når skærmen ikke kan vise HDR.';
 	@override String get hdrSdrConversionAuto => 'Automatisk';
@@ -977,6 +977,8 @@ class _Translations$messages$da extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'Serveren fandt dette emne, men kunne ikke læse filen (HTTP 404). Filen er sandsynligvis flyttet, slettet, eller dens lager er offline. Bed serverejeren om at kontrollere filen og scanne biblioteket igen.';
 	@override String get serverBusyTitle => 'Stream er ikke tilgængelig';
 	@override String get serverBusyBody => 'Serveren blev ved med at afvise at streame denne fil (HTTP 503). Den er muligvis ved at genstarte eller optaget, eller filens lager er muligvis offline. Prøv igen om et øjeblik – hvis det bliver ved med at ske, skal du bede serverejeren om at kontrollere serveren og filens lager.';
+	@override String get playbackNotAllowedTitle => 'Afspilning er ikke tilladt';
+	@override String get playbackNotAllowedBody => 'Serveren afviste at streame dette emne (HTTP 403). Din konto har muligvis ikke tilladelse til at afspille det, eller serveren tillader muligvis kun afspilning på sit lokale netværk.';
 	@override String get logsUploaded => 'Logfilerne blev uploadet';
 	@override String get logsUploadFailed => 'Logfilerne kunne ikke uploades';
 	@override String get logId => 'Log-ID';
@@ -1146,6 +1148,8 @@ class _Translations$connections$da extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin, Emby eller en anden profilforbindelse';
 	@override String sessionExpiredOne({required Object name}) => 'Sessionen er udløbet for ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sessionerne er udløbet for ${count} servere';
+	@override String accessDeniedOne({required Object name}) => '${name} nægtede adgang for denne konto';
+	@override String accessDeniedMany({required Object count}) => '${count} servere nægtede adgang for denne konto';
 	@override String get signInAgain => 'Log ind igen';
 	@override String editMediaBrowserTitle({required Object product}) => 'Rediger ${product}-forbindelse';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Tilføj eller fjern URL\'er for ${serverName}. Plezy bruger den tilgængelige URL med laveste latenstid.';
@@ -1842,6 +1846,7 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Tilgængelig';
 	@override String get syncRuleOffline => 'Offline';
 	@override String get syncRuleSignInRequired => 'Login påkrævet';
+	@override String get syncRuleAccessDenied => 'Adgang nægtet';
 	@override String get syncRuleNotAvailableForProfile => 'Ikke tilgængelig for nuværende profil';
 	@override String get syncRuleUnknownServer => 'Ukendt server';
 	@override String get syncRuleListCreated => 'Synkroniseringsregel oprettet';
@@ -1854,8 +1859,14 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Ukendt album';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} fuldført';
 	@override String get errorFileNotFound => 'Filen blev ikke fundet (404)';
+	@override String get errorDownloadNotAllowed => 'Serveren tillader ikke download (403)';
 	@override String get errorDownloadFailed => 'Download mislykkedes';
-	@override String errorPostProcessing({required Object error}) => 'Efterbehandling mislykkedes: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Download mislykkedes: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Download mislykkedes (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Efterbehandling mislykkedes: ${reason}';
+	@override String get reasonFileNotSaved => 'filen kunne ikke gemmes på denne enhed';
+	@override String get reasonCannotResume => 'den delvise download kunne ikke genoptages';
+	@override String get reasonDeviceStorageFull => 'der er ikke mere lagerplads på denne enhed';
 	@override String get notificationDownloading => 'Downloader...';
 	@override String get notificationComplete => 'Download fuldført';
 	@override String get notificationPaused => 'Download sat på pause';
@@ -1934,7 +1945,6 @@ class _Translations$videoSettings$da extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Normalisér lydstyrke';
 	@override String get audioNormalizationDisablesPassthrough => 'Dekoder lyd til PCM; passthrough er fra, mens dette er slået til';
 	@override String get audioNormalizationStereoMix => 'Dekoder lyd til en stereomix; passthrough er fra, mens dette er slået til';
-	@override String get audioDownmix => 'Downmix til stereo';
 }
 
 // Path: performanceOverlay
@@ -3361,8 +3371,6 @@ extension on TranslationsDa {
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Fra, mens lydstyrkenormalisering er slået til',
-			'settings.audioDownmix' => 'Downmix til stereo',
-			'settings.audioDownmixDescription' => 'Mix surroundlyd ned til to kanaler til stereohøjttalere eller hovedtelefoner',
 			'settings.downmixCenterBoost' => 'Forstærkning af centerkanal',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Forstærkning (dB)',
@@ -3379,6 +3387,8 @@ extension on TranslationsDa {
 			'settings.dvConversionNativeDescription' => 'Gennemtving indbygget DV7-understøttelse, og undlad at forsøge DV-konvertering igen',
 			'settings.dvConversionDv81Description' => 'Tving inline RPU-konvertering til Dolby Vision profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Fjern Dolby Vision RPU/EL-lag og brug almindelig HEVC',
+			'settings.disableDolbyVision' => 'Deaktiver Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Afspil filens HDR10- eller HLG-lag i stedet for Dolby Vision, når det findes',
 			'settings.hdrSdrConversion' => 'HDR til SDR-konvertering',
 			'settings.hdrSdrConversionDescription' => 'Vælg, hvad der konverterer HDR-video, når skærmen ikke kan vise HDR.',
 			'settings.hdrSdrConversionAuto' => 'Automatisk',
@@ -3813,6 +3823,8 @@ extension on TranslationsDa {
 			'messages.mediaUnreadableBody' => 'Serveren fandt dette emne, men kunne ikke læse filen (HTTP 404). Filen er sandsynligvis flyttet, slettet, eller dens lager er offline. Bed serverejeren om at kontrollere filen og scanne biblioteket igen.',
 			'messages.serverBusyTitle' => 'Stream er ikke tilgængelig',
 			'messages.serverBusyBody' => 'Serveren blev ved med at afvise at streame denne fil (HTTP 503). Den er muligvis ved at genstarte eller optaget, eller filens lager er muligvis offline. Prøv igen om et øjeblik – hvis det bliver ved med at ske, skal du bede serverejeren om at kontrollere serveren og filens lager.',
+			'messages.playbackNotAllowedTitle' => 'Afspilning er ikke tilladt',
+			'messages.playbackNotAllowedBody' => 'Serveren afviste at streame dette emne (HTTP 403). Din konto har muligvis ikke tilladelse til at afspille det, eller serveren tillader muligvis kun afspilning på sit lokale netværk.',
 			'messages.logsUploaded' => 'Logfilerne blev uploadet',
 			'messages.logsUploadFailed' => 'Logfilerne kunne ikke uploades',
 			'messages.logId' => 'Log-ID',
@@ -3937,6 +3949,8 @@ extension on TranslationsDa {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Føj til ${displayName}: Plex, Jellyfin, Emby eller en anden profilforbindelse',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen er udløbet for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessionerne er udløbet for ${count} servere',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} nægtede adgang for denne konto',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} servere nægtede adgang for denne konto',
 			'connections.signInAgain' => 'Log ind igen',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Rediger ${product}-forbindelse',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Tilføj eller fjern URL\'er for ${serverName}. Plezy bruger den tilgængelige URL med laveste latenstid.',
@@ -4050,12 +4064,12 @@ extension on TranslationsDa {
 			'libraries.refreshMetadata' => 'Opdater metadata',
 			'libraries.emptyTrash' => 'Tøm papirkurv',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Tømmer papirkurv for "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papirkurv tømt for "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Ingen biblioteker fundet',
 			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
@@ -4564,12 +4578,12 @@ extension on TranslationsDa {
 			'watchTogether.renameRoom' => 'Omdøb rum',
 			'watchTogether.removeRoom' => 'Fjern',
 			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke skifte — server ikke tilgængelig for synkronisering',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke skifte — indhold blev ikke fundet på denne server',
 			'watchTogether.defaultDisplayName' => 'Bruger',
 			'watchTogether.errors.timedOut' => 'Relayserveren svarede ikke i tide',
 			'watchTogether.errors.connectionLost' => 'Forbindelsen blev lukket, før sessionen var klar',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'Relayserveren sendte et uventet svar',
 			'watchTogether.errors.sessionEnded' => 'Værten afsluttede sessionen',
 			'watchTogether.errors.sessionUnavailable' => 'Kan ikke genoptage denne session. Deltag i eller opret et rum for at fortsætte.',
@@ -4645,6 +4659,7 @@ extension on TranslationsDa {
 			'downloads.syncRuleAvailable' => 'Tilgængelig',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Login påkrævet',
+			'downloads.syncRuleAccessDenied' => 'Adgang nægtet',
 			'downloads.syncRuleNotAvailableForProfile' => 'Ikke tilgængelig for nuværende profil',
 			'downloads.syncRuleUnknownServer' => 'Ukendt server',
 			'downloads.syncRuleListCreated' => 'Synkroniseringsregel oprettet',
@@ -4682,8 +4697,14 @@ extension on TranslationsDa {
 			'downloads.unknownAlbum' => 'Ukendt album',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} fuldført',
 			'downloads.errorFileNotFound' => 'Filen blev ikke fundet (404)',
+			'downloads.errorDownloadNotAllowed' => 'Serveren tillader ikke download (403)',
 			'downloads.errorDownloadFailed' => 'Download mislykkedes',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Efterbehandling mislykkedes: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download mislykkedes: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download mislykkedes (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Efterbehandling mislykkedes: ${reason}',
+			'downloads.reasonFileNotSaved' => 'filen kunne ikke gemmes på denne enhed',
+			'downloads.reasonCannotResume' => 'den delvise download kunne ikke genoptages',
+			'downloads.reasonDeviceStorageFull' => 'der er ikke mere lagerplads på denne enhed',
 			'downloads.notificationDownloading' => 'Downloader...',
 			'downloads.notificationComplete' => 'Download fuldført',
 			'downloads.notificationPaused' => 'Download sat på pause',
@@ -4793,7 +4814,6 @@ extension on TranslationsDa {
 			'videoSettings.audioNormalization' => 'Normalisér lydstyrke',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Dekoder lyd til PCM; passthrough er fra, mens dette er slået til',
 			'videoSettings.audioNormalizationStereoMix' => 'Dekoder lyd til en stereomix; passthrough er fra, mens dette er slået til',
-			'videoSettings.audioDownmix' => 'Downmix til stereo',
 			'performanceOverlay.color' => 'Farve',
 			'performanceOverlay.performance' => 'Ydeevne',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -5072,6 +5092,8 @@ extension on TranslationsDa {
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en anden profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.',
 			'addServer.invalidCredentials' => 'Ugyldigt brugernavn eller ugyldig adgangskode',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Godkendelsessvaret var ikke gyldig JSON',
 			'addServer.authResponseIncomplete' => 'Loginsvaret fra serveren var ufuldstændigt',
 			'addServer.quickConnectRejected' => 'Quick Connect blev afvist af serveren',
@@ -5082,8 +5104,6 @@ extension on TranslationsDa {
 			'addServer.responseNotJson' => 'Serversvaret var ikke gyldig JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret mangler et ID eller servernavn – er dette en ${product}-server?',
 			'addServer.probeFailed' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Indtast mindst én URL til en ${product}-server',
 			'addServer.noReachableServer' => ({required Object product}) => 'Der blev ikke fundet nogen ${product}-server, som kunne nås',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Disse URL\'er peger på forskellige ${product}-servere',

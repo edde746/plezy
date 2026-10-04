@@ -209,6 +209,14 @@ class MpvPlayer {
   using PropertyReadForTesting = std::function<void(const std::string& name, GetPropertyCallback callback)>;
   void ConfigurePropertyReadsForTesting(PropertyReadForTesting reader);
 
+  /// The event side of the same substitution: what ProcessEvents dequeues in
+  /// place of `mpv_wait_event(mpv, 0)`, so a pass over a scripted sequence can
+  /// be observed at the point each message is handed to the event channel.
+  /// The script ends a pass by returning MPV_EVENT_NONE. Consulted ahead of the
+  /// same "no handle" short-circuit as the writer.
+  using EventWaitForTesting = std::function<mpv_event*()>;
+  void ConfigureEventWaitsForTesting(EventWaitForTesting wait);
+
   /// The output colour space mpv last accepted in full — the rollback target,
   /// and what a caller's committed surface description is measured against.
   struct AppliedOutputColourSpace {
@@ -365,6 +373,11 @@ class MpvPlayer {
 
   /// Sends an event notification.
   void SendEvent(const std::string& name, ::_FlValue* data = nullptr);
+  /// Hands one message to the event channel, or to held_events_ while an
+  /// error end-file's drain is holding everything but log lines.
+  void DeliverEvent(::_FlValue* message, bool is_log_message);
+  /// Ends the hold and delivers what it kept, in order.
+  void ReleaseHeldEvents();
   void MaybeRunAudioRecovery();
   void TryAudioReload(const char* reason, int attempt, uint64_t request_generation);
   void EnsureAudioRecoveryTimer();
@@ -461,11 +474,13 @@ class MpvPlayer {
   bool hdr_sequence_in_flight_ = false;
   std::deque<HdrOutputRequest> hdr_queue_;
 #ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
-  // The substituted property-write and property-read primitives; empty in every
-  // build that has a real core to talk to. See ConfigurePropertyWritesForTesting
-  // and ConfigurePropertyReadsForTesting.
+  // The substituted property-write, property-read and event-wait primitives;
+  // empty in every build that has a real core to talk to. See
+  // ConfigurePropertyWritesForTesting, ConfigurePropertyReadsForTesting and
+  // ConfigureEventWaitsForTesting.
   PropertyWriteForTesting test_property_write_;
   PropertyReadForTesting test_property_read_;
+  EventWaitForTesting test_event_wait_;
 #endif
   // The playback-restart position is read from the core asynchronously — a
   // synchronous read here would park the GTK main thread on the playloop, which
@@ -503,6 +518,11 @@ class MpvPlayer {
   bool audio_output_failed_ = false;
   plezy::mpv_common::AsyncRequestRegistry pending_requests_;
   plezy::mpv_common::PropertyObservationRegistry observed_properties_;
+  // What an error END_FILE's pass holds back until the pass is over, so the log
+  // lines explaining the failure reach Dart first (see ErrorEndFileHold). Each
+  // entry owns a reference. GLib main context only, like ProcessEvents, and
+  // empty between passes.
+  plezy::mpv_common::ErrorEndFileHold<::_FlValue*> held_events_;
   // The playlist entry whose START_FILE event was most recently dequeued.
   // Payload construction consumes this value synchronously, before any
   // EventChannel fanout can outlive the corresponding mpv event.

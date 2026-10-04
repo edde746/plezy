@@ -9,6 +9,7 @@ import '../media/media_server_client.dart';
 import '../mixins/paginated_item_loader.dart';
 import '../mixins/standard_paginated_view.dart';
 import '../utils/app_logger.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -81,6 +82,11 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
 
   MediaServerClient get _mediaClient => context.getMediaClientForServer(ServerId(widget.serverId));
 
+  /// The server may be offline (a cast tap from an offline detail): the header
+  /// then shows the fallback avatar and the load reports the failure, instead
+  /// of the lookup throwing during build.
+  MediaServerClient? get _mediaClientOrNull => context.tryGetMediaClientForServer(ServerId(widget.serverId));
+
   @override
   Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) {
     return _mediaClient.fetchPersonMediaPage(widget.personId, start: start, size: size, abort: abort);
@@ -90,10 +96,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   Future<void> loadItems() {
     return loadStandardPaginatedItems(
       pageSize: _pageSize,
-      errorMessageFor: (error, stackTrace) {
-        appLogger.e('Failed to load actor media', error: error, stackTrace: stackTrace);
-        return t.messages.errorLoading(error: error.toString());
-      },
+      errorMessageFor: (error, stackTrace) => localizedLoadErrorMessage(error, stackTrace, context: widget.actorName),
       onLoaded: (loadedCount, totalCount) {
         appLogger.d('Loaded $loadedCount of $totalCount items for actor: ${widget.actorName}');
         autoFocusFirstItemAfterLoad();
@@ -116,7 +119,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
             ClipRRect(
               borderRadius: BorderRadius.circular(40),
               child: OptimizedMediaImage(
-                client: _mediaClient,
+                client: _mediaClientOrNull,
                 imagePath: widget.actorThumb,
                 width: 80,
                 height: 80,

@@ -1,8 +1,18 @@
+import 'dart:convert';
+
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/utils/active_client_scope.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -248,6 +258,117 @@ void main() {
         expect(onlineCalls.last, {'srv-1', 'srv-2'});
 
         p.dispose();
+      });
+    });
+
+    group('Live TV re-probe failures', () {
+      http.Response? failure;
+      Future<void> Function()? duringProbe;
+      late PlexClient client;
+
+      setUp(() {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        PlexApiCache.initialize(db);
+        failure = null;
+        duringProbe = null;
+      });
+
+      /// Switch [client] in place to profile B, as
+      /// `MultiServerManager.refreshTokensForProfile` does for an online client.
+      Future<void> switchClientToProfileB() async {
+        final applied = await client.applyProfileUpdate(
+          newToken: 'token-b',
+          newProfileScopeId: buildPlexProfileScopeId(serverId: ServerId('srv-1'), profileId: 'profile-b'),
+        );
+        expect(applied, isTrue);
+      }
+
+      PlexClient dvrClient() => client = testPlexClient(
+        serverId: ServerId('srv-1'),
+        handler: (request) async {
+          if (request.url.path == '/') {
+            return http.Response(
+              jsonEncode({
+                'MediaContainer': {'machineIdentifier': 'srv-1'},
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path != '/livetv/dvrs') return http.Response('{}', 404);
+          final hook = duringProbe;
+          duringProbe = null;
+          await hook?.call();
+          return failure ??
+              http.Response(
+                jsonEncode({
+                  'MediaContainer': {
+                    'Dvr': [
+                      {'key': 'dvr-1', 'uuid': 'dvr-1'},
+                    ],
+                  },
+                }),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+        },
+      );
+
+      Future<MultiServerProvider> providerWithFoundDvr() async {
+        manager.debugRegisterClientForTesting(dvrClient());
+        final p = MultiServerProvider(manager, aggregation);
+        addTearDown(p.dispose);
+        await p.checkLiveTvAvailability();
+        expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+        return p;
+      }
+
+      test('a transient failure keeps the DVR the last check found', () async {
+        final p = await providerWithFoundDvr();
+        failure = http.Response('', 503);
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isTrue);
+        expect(p.liveTvServers.map((s) => s.dvrKey), ['dvr-1']);
+      });
+
+      test('an authorization failure drops the DVR', () async {
+        final p = await providerWithFoundDvr();
+        failure = http.Response('', 403);
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+      });
+
+      test('a transient failure on a replaced client drops the DVR', () async {
+        final p = await providerWithFoundDvr();
+        failure = http.Response('', 503);
+        manager.debugRegisterClientForTesting(dvrClient());
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+      });
+
+      test('a transient failure after an in-place profile switch drops the DVR', () async {
+        final p = await providerWithFoundDvr();
+        await switchClientToProfileB();
+        failure = http.Response('', 503);
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+      });
+
+      test('a probe answered across an in-place profile switch is discarded', () async {
+        final p = await providerWithFoundDvr();
+        duringProbe = switchClientToProfileB;
+        await p.checkLiveTvAvailability();
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+
+        // Profile B's own failed probe cannot resurrect profile A's DVR.
+        failure = http.Response('', 503);
+        await p.checkLiveTvAvailability();
+        expect(p.liveTvServers, isEmpty);
       });
     });
 

@@ -116,10 +116,18 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   Future<void> setHotkey(String action, HotKey? hotkey) {
     return _serializeShortcutMutation(() async {
+      if (ShortcutAction.fromId(action) == null) throw const FormatException('Unknown shortcut action');
       final conflict = hotkey == null ? null : getActionForHotkey(hotkey);
       if (conflict != null && conflict != action) throw HotkeyConflictException(conflict);
-      final next = <String, HotKey?>{..._hotkeys, action: hotkey};
-      validateHotkeys(next);
+      // Only the edited binding is validated. The saved map can already hold
+      // a duplicate (a default added later that matches a custom binding) or
+      // an action a later build retired, and neither may block every edit.
+      // Retired actions bind nothing, so they are dropped here.
+      final next = <String, HotKey?>{
+        for (final MapEntry(:key, :value) in _hotkeys.entries)
+          if (ShortcutAction.fromId(key) != null) key: value,
+        action: hotkey,
+      };
       await _settingsService.write(SettingsService.keyboardHotkeys, next);
     });
   }
@@ -411,6 +419,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
 
   String? getActionForHotkey(HotKey hotkey) {
     for (final entry in _hotkeys.entries) {
+      if (ShortcutAction.fromId(entry.key) == null) continue;
       final assignedHotkey = entry.value;
       if (assignedHotkey != null && _hotkeyEquals(assignedHotkey, hotkey)) {
         return entry.key;

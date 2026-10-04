@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
 import 'package:plezy/media/library_change_event.dart';
@@ -23,6 +24,7 @@ import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/libraries/alpha_jump_bar.dart';
 import 'package:plezy/screens/libraries/alpha_scroll_handle.dart';
 import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
@@ -171,6 +173,36 @@ void main() {
     await _pumpUntil(tester, () => harness.clientA.pageRequestCount > requestsBefore);
     final sort = harness.clientA.pageQueries.last.sort;
     expect(sort?.field, 'year');
+
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('a sort change after a failed load clears the stale error', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+
+    const sorts = [MediaSort(key: 'title', title: 'Title'), MediaSort(key: 'year', title: 'Year')];
+    final client = _BrowseClient('server-a', 'Library A', sortResponse: Future.value(sorts));
+    final harness = _BrowseHarness(clientA: client);
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    await _pumpUntil(tester, () => client.pageRequestCount >= 1);
+
+    client.pageResponses.add(() => Future<LibraryPage<MediaItem>>.error(StateError('temporary browse failure')));
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Year').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(ErrorStateWidget), findsOneWidget);
+
+    client.pageResponses.add(() => Future.value(const LibraryPage<MediaItem>(items: [], totalCount: 0)));
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Title').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ErrorStateWidget), findsNothing);
+    expect(find.byType(EmptyStateWidget), findsOneWidget);
 
     debugDefaultTargetPlatformOverride = null;
   });
@@ -333,6 +365,42 @@ void main() {
     expect(handleRight, size.width - trailingInset);
     expect(cardRights, isNotEmpty);
     expect(cardRights, everyElement(lessThanOrEqualTo(size.width - trailingInset)));
+  });
+
+  testWidgets('TV keeps the alpha bar off the screen edge and clear of a focused last-column card', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
+    const size = Size(1280, 720);
+
+    final harness = _PlexBrowseHarness();
+    addTearDown(harness.dispose);
+
+    await pumpLibraryTab(
+      tester,
+      provider: harness.provider,
+      size: size,
+      tab: LibraryBrowseTab(library: harness.library, canGroupByFolders: true, isActive: true),
+    );
+    await _pumpUntil(tester, () => harness.pageRequestCount >= 1 && harness.firstCharacterRequestCount >= 1);
+    await pumpRequestFrames(tester);
+
+    final bar = tester.getRect(find.byType(AlphaJumpBar));
+    final cards = [
+      for (final card in find.byType(FocusableMediaCard).evaluate()) tester.getRect(find.byWidget(card.widget)),
+    ];
+    expect(cards, isNotEmpty);
+
+    // TVs crop the frame edge (#2053): the letters need a margin from it.
+    expect(bar.right, lessThanOrEqualTo(size.width - 16));
+    // A focused full card grows around its centre and strokes its border
+    // outside; all of that must stay left of the bar (#2218).
+    final lastColumn = cards.reduce((a, b) => a.right >= b.right ? a : b);
+    final focusedRight =
+        lastColumn.right +
+        lastColumn.width * (FocusTheme.fullCardFocusScale - 1) / 2 +
+        FocusTheme.focusBorderWidth * FocusTheme.fullCardFocusScale;
+    expect(focusedRight, lessThanOrEqualTo(bar.left));
   });
 
   testWidgets('folder grouping loads only the tree and reports its own readiness', (tester) async {

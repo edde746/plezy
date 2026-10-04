@@ -41,16 +41,20 @@ const (
 	pingInterval                   = 30 * time.Second
 	maxLogSize                     = 1 * 1024 * 1024
 	logMaxAge                      = 3 * 24 * time.Hour
-	logIDLength                    = 5
+	logIDLength                    = 6
+	legacyLogIDLength              = 10 // pre-logIDChars; served until expiry
+	legacyShortLogIDLength         = 5  // pre-logIDChars; served until expiry
 	logRateInterval                = 1 * time.Minute
 	logLookupRateBurst             = 10
 	logLookupRateSustained         = 1
 	maxLogEntries                  = 500
-	maxFailedLogLookupSources      = 4096
+	maxLogEntriesPerSource         = 10
+	maxLogLookupSources            = 4096
 	maxConcurrentLogLookups        = 32
 	maxHTTPHeaderBytes             = 64 * 1024
 	maxPosterSize                  = 5 * 1024 * 1024
 	maxPosterStoreSize             = int64(1 * 1024 * 1024 * 1024)
+	maxPosterBytesPerSource        = int64(32 * 1024 * 1024)
 	posterMaxAge                   = 3 * time.Hour
 	posterIDLength                 = 16
 	posterPerIPRateBurst           = 3
@@ -75,6 +79,8 @@ const (
 	maxRetainedRooms                = 2000
 	connRateBurst                   = 5
 	connRateSustained               = 1
+	roomLookupRateBurst             = 20
+	roomLookupRateSustained         = 1
 	snapshotFormatVersion           = 4
 	snapshotDebounce                = 100 * time.Millisecond
 	snapshotFlushTimeout            = 5 * time.Second
@@ -341,6 +347,20 @@ func pruneExpiredPeerReservationsLocked(room *Room, now time.Time) bool {
 	return changed
 }
 
+// provesRetainedIdentityLocked reports whether an admission presents the
+// reconnect token of an identity the room already holds, which guessing room
+// codes cannot produce. The caller holds r.mu.
+func (r *Room) provesRetainedIdentityLocked(peerID string, presented reconnectVerifier, tokenValid bool) bool {
+	if !tokenValid {
+		return false
+	}
+	if peerID == r.HostPeerID {
+		return reconnectVerifierMatches(r.hostVerifier, presented)
+	}
+	reservation, reserved := r.peerReservations[peerID]
+	return reserved && reconnectVerifierMatches(reservation.verifier, presented)
+}
+
 func (r *Room) peerIDs() []string {
 	ids := make([]string, 0, len(r.Peers))
 	for id := range r.Peers {
@@ -495,13 +515,16 @@ func (r *Room) sendFrom(senderID string, sender *Client, targetID string, msg se
 
 const logFileExt = ".log"
 
-var errLogStoreFull = errors.New("log store full")
+var (
+	errLogStoreFull   = errors.New("log store full")
+	errLogSourceQuota = errors.New("log source quota exhausted")
+)
 
 // logStore rejects uploads when its artifact-count quota is full.
 type logStore struct {
 	artifactStore
-	rateLimit        map[string]time.Time // IP -> last upload time
-	failedLookupRate map[string]*rateLimiter
+	rateLimit  map[string]time.Time // IP -> last upload time
+	lookupRate map[string]*rateLimiter
 }
 
 func newLogStore(dir string) *logStore {
@@ -525,62 +548,111 @@ func newLogStoreWithRemover(dir string, removeFile func(string) error) *logStore
 			acceptLoaded: func(_ string, size int64) (string, bool) {
 				return "", size > 0 && size <= maxLogSize
 			},
-			limit:       maxLogEntries,
-			cost:        func(int64) int64 { return 1 },
-			pendingCost: func(pendingRemoval) int64 { return 1 },
-			errFull:     errLogStoreFull,
+			limit:        maxLogEntries,
+			cost:         func(int64) int64 { return 1 },
+			pendingCost:  func(pendingRemoval) int64 { return 1 },
+			errFull:      errLogStoreFull,
+			ownerLimit:   maxLogEntriesPerSource,
+			errOwnerFull: errLogSourceQuota,
 		},
-		rateLimit:        make(map[string]time.Time),
-		failedLookupRate: make(map[string]*rateLimiter),
+		rateLimit:  make(map[string]time.Time),
+		lookupRate: make(map[string]*rateLimiter),
 	}
 	ls.startupErr = ls.loadExisting(time.Now())
 	return ls
 }
 
-func (ls *logStore) filePath(id string) string {
-	return ls.artifactStore.filePath(id + logFileExt)
-}
+// logIDChars is Crockford's base32 alphabet in lowercase. It has no i, l, o,
+// or u, so an ID copied by hand from a TV screen has only one reading.
+const logIDChars = "0123456789abcdefghjkmnpqrstvwxyz"
 
 func generateLogID() string {
-	return generateID(logIDLength)
+	return generateID(logIDChars, logIDLength)
 }
 
+// canonicalLogID resolves a Log ID as typed to its stored spelling. Current
+// IDs are short enough to transcribe, so they match case-insensitively with
+// i/l read as 1 and o as 0. They are still bearer capabilities for uploads
+// that can hold account identifiers, and only the per-source lookup budget
+// (allowLookup) slows guessing. Legacy IDs match exactly.
+func canonicalLogID(id string) (string, bool) {
+	if len(id) != logIDLength {
+		if validID(id, legacyLogIDLength) || validID(id, legacyShortLogIDLength) {
+			return id, true
+		}
+		return "", false
+	}
+	var canonical [logIDLength]byte
+	changed := false
+	for i := range logIDLength {
+		c := id[i]
+		switch c {
+		case 'I', 'i', 'L', 'l':
+			c = '1'
+		case 'O', 'o':
+			c = '0'
+		default:
+			if 'A' <= c && c <= 'Z' {
+				c += 'a' - 'A'
+			}
+		}
+		if strings.IndexByte(logIDChars, c) < 0 {
+			return "", false
+		}
+		changed = changed || c != id[i]
+		canonical[i] = c
+	}
+	if !changed {
+		return id, true
+	}
+	return string(canonical[:]), true
+}
+
+// logIDFromFilename accepts only stored spellings; lookups resolve
+// look-alikes to them.
 func logIDFromFilename(filename string) (string, bool) {
 	if filepath.Ext(filename) != logFileExt {
 		return "", false
 	}
 	id := strings.TrimSuffix(filename, logFileExt)
-	return id, validID(id, logIDLength)
+	canonical, ok := canonicalLogID(id)
+	return id, ok && canonical == id
 }
 
-func (ls *logStore) store(data []byte, now time.Time) (string, artifactEntry, error) {
+// store saves a log charged to source; an empty source is charged only to
+// the store quota.
+func (ls *logStore) store(source string, data []byte, now time.Time) (string, artifactEntry, error) {
 	if len(data) == 0 {
 		return "", artifactEntry{}, errors.New("empty log")
 	}
 	if len(data) > maxLogSize {
 		return "", artifactEntry{}, errors.New("log too large")
 	}
-	return ls.put(data, logFileExt, "", now)
+	return ls.put(source, data, logFileExt, "", now)
 }
 
 func (ls *logStore) lookup(id string, now time.Time) (artifactEntry, bool, error) {
-	if !validID(id, logIDLength) {
+	id, ok := canonicalLogID(id)
+	if !ok {
 		return artifactEntry{}, false, nil
 	}
 	return ls.lookupEntry(id, now, nil)
 }
 
-func (ls *logStore) allowFailedLookup(source string, now time.Time) bool {
+// allowLookup charges one lookup to source. Every lookup is charged, hits
+// included, before the ID is resolved: a source that could still tell a hit
+// from a miss once its budget ran out could keep guessing at full speed.
+func (ls *logStore) allowLookup(source string, now time.Time) bool {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
-	limiter := ls.failedLookupRate[source]
+	limiter := ls.lookupRate[source]
 	if limiter == nil {
-		cleanupRateLimiters(ls.failedLookupRate, now, nil)
-		if len(ls.failedLookupRate) >= maxFailedLogLookupSources {
+		cleanupRateLimiters(ls.lookupRate, now, nil)
+		if len(ls.lookupRate) >= maxLogLookupSources {
 			return false
 		}
 		limiter = newRateLimiterAt(logLookupRateBurst, logLookupRateSustained, now)
-		ls.failedLookupRate[source] = limiter
+		ls.lookupRate[source] = limiter
 	}
 	return limiter.allowAt(now)
 }
@@ -590,7 +662,7 @@ func (ls *logStore) cleanup(now time.Time) error {
 	defer ls.mu.Unlock()
 	removalErr := ls.cleanupLocked(now)
 	cleanupRateWindows(ls.rateLimit, now, logRateInterval)
-	cleanupRateLimiters(ls.failedLookupRate, now, nil)
+	cleanupRateLimiters(ls.lookupRate, now, nil)
 	return removalErr
 }
 
@@ -640,13 +712,14 @@ func newPosterStoreWithRemover(
 		evictToFit:          true,
 		retryKnownDebtOnPut: true,
 		errFull:             errPosterStoreFull,
+		ownerLimit:          maxPosterBytesPerSource,
 	}}
 	ps.startupErr = ps.loadExisting(time.Now())
 	return ps
 }
 
 func generatePosterID() string {
-	return generateID(posterIDLength)
+	return generateID(idChars, posterIDLength)
 }
 
 func posterExtForContentType(contentType string) (string, bool) {
@@ -694,7 +767,10 @@ func posterIDFromFilename(filename string) (string, bool) {
 	return id, true
 }
 
-func (ps *posterStore) store(data []byte, contentType string, now time.Time) (string, artifactEntry, error) {
+// store saves a poster charged to source, recycling that source's oldest
+// posters once it holds its share; an empty source is charged only to the
+// store quota.
+func (ps *posterStore) store(source string, data []byte, contentType string, now time.Time) (string, artifactEntry, error) {
 	entrySize := int64(len(data))
 	if entrySize <= 0 {
 		return "", artifactEntry{}, errors.New("empty poster")
@@ -706,7 +782,7 @@ func (ps *posterStore) store(data []byte, contentType string, now time.Time) (st
 	if !ok {
 		return "", artifactEntry{}, errors.New("unsupported poster type")
 	}
-	return ps.put(data, ext, strings.ToLower(strings.SplitN(contentType, ";", 2)[0]), now)
+	return ps.put(source, data, ext, strings.ToLower(strings.SplitN(contentType, ";", 2)[0]), now)
 }
 
 func (ps *posterStore) lookup(filename string, now time.Time) (artifactEntry, bool, error) {
@@ -1263,6 +1339,14 @@ func (s *Server) captureSnapshot(captureSequence func() uint64) (stateSnapshot, 
 				}
 			}
 		}
+		// A room with connected peers is active when captured. Relayed
+		// messages keep it active without dirtying the snapshot, so its own
+		// LastActivityAt may be long past; a restart would then discard the
+		// room its peers are about to resume into.
+		lastActivityAt := room.LastActivityAt
+		if len(room.Peers) != 0 && snapshot.SavedAt.After(lastActivityAt) {
+			lastActivityAt = snapshot.SavedAt
+		}
 		snapshot.Rooms = append(snapshot.Rooms, roomSnapshot{
 			SessionID:             room.SessionID,
 			HostPeerID:            room.HostPeerID,
@@ -1270,7 +1354,7 @@ func (s *Server) captureSnapshot(captureSequence func() uint64) (stateSnapshot, 
 			HostReconnectVerifier: encodeReconnectVerifier(room.hostVerifier),
 			PeerReservations:      reservations,
 			CreatedAt:             room.CreatedAt,
-			LastActivityAt:        room.LastActivityAt,
+			LastActivityAt:        lastActivityAt,
 		})
 	}
 
@@ -1424,6 +1508,22 @@ func (s *Server) loadSnapshot(path string) (bool, error) {
 	return rewriteReservations, nil
 }
 
+// recordOccupiedRoomActivity queues a snapshot when any room has connected
+// peers, refreshing the activity that a restart judges those rooms by.
+func (s *Server) recordOccupiedRoomActivity() {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, room := range s.rooms {
+		room.mu.RLock()
+		occupied := len(room.Peers) != 0
+		room.mu.RUnlock()
+		if occupied {
+			s.snap.recordMutation()
+			return
+		}
+	}
+}
+
 func (s *Server) cleanupLoop() {
 	ticker := time.NewTicker(cleanupInterval)
 	defer ticker.Stop()
@@ -1462,6 +1562,7 @@ func (s *Server) runCleanupStep(now time.Time) {
 	}
 	roomCount := len(s.rooms)
 	s.mu.Unlock()
+	s.recordOccupiedRoomActivity()
 
 	for _, client := range expiredClients {
 		client.close()
@@ -1519,10 +1620,14 @@ func (s *Server) handlePostLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, entry, err := s.logs.store(body, time.Now())
+	id, entry, err := s.logs.store(ip, body, time.Now())
 	if err != nil {
 		if errors.Is(err, errLogStoreFull) {
 			http.Error(w, "Log store full", http.StatusServiceUnavailable)
+			return
+		}
+		if errors.Is(err, errLogSourceQuota) {
+			http.Error(w, "Too many stored logs from this address", http.StatusTooManyRequests)
 			return
 		}
 		var removalErr *artifactRemovalError
@@ -1572,8 +1677,13 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 				message: "Invalid client address",
 			}
 		}
-		id := strings.TrimPrefix(r.URL.Path, "/logs/")
-		entry, ok, err := s.logs.lookup(id, time.Now())
+		if !s.logs.allowLookup(source, time.Now()) {
+			return lookupResult{
+				status:  http.StatusTooManyRequests,
+				message: "Too many lookups",
+			}
+		}
+		entry, ok, err := s.logs.lookup(strings.TrimPrefix(r.URL.Path, "/logs/"), time.Now())
 		if err != nil {
 			s.logRemovalError("logs", "lookup", err)
 			return lookupResult{
@@ -1582,16 +1692,11 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if !ok {
-			if !s.logs.allowFailedLookup(source, time.Now()) {
-				return lookupResult{
-					status:  http.StatusTooManyRequests,
-					message: "Too many failed lookups",
-				}
-			}
 			return lookupResult{status: http.StatusNotFound, message: "Not found"}
 		}
 
-		data, err := os.ReadFile(s.logs.filePath(id))
+		// Read the entry's own file: the request may use a look-alike spelling.
+		data, err := os.ReadFile(s.logs.artifactStore.filePath(entry.Filename))
 		if err != nil {
 			return lookupResult{status: http.StatusNotFound, message: "Not found"}
 		}
@@ -1682,7 +1787,7 @@ func (s *Server) handlePostPosters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, entry, err := s.posters.store(body, contentType, time.Now())
+	id, entry, err := s.posters.store(ip, body, contentType, time.Now())
 	if err != nil {
 		var removalErr *artifactRemovalError
 		if errors.As(err, &removalErr) {
@@ -1950,6 +2055,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			} else if len(s.rooms) >= maxRetainedRooms {
 				rejection = &serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many retained rooms"}
 			}
+			// Whether a code is taken is a room lookup like any join: only
+			// the proven host above skips the source's lookup budget.
+			if !s.conns.allowRoomLookup(quotaOwnerKey, time.Now()) {
+				rejection = &serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many room lookups"}
+			}
 			if rejection == nil {
 				var reserved bool
 				if existing == nil {
@@ -2034,25 +2144,31 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			presentedVerifier, tokenValid := reconnectVerifierFromToken(msg.ReconnectToken)
 
 			s.mu.RLock()
-			room, exists := s.rooms[msg.SessionID]
-			if !exists {
-				s.mu.RUnlock()
-				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomNotFound, Message: "Room does not exist"})
-				continue
-			}
-			if s.beforeJoinRoomLock != nil {
-				s.beforeJoinRoomLock()
-			}
-			room.mu.Lock()
-			if s.rooms[msg.SessionID] != room {
-				room.mu.Unlock()
-				s.mu.RUnlock()
-				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomNotFound, Message: "Room does not exist"})
-				continue
+			room := s.rooms[msg.SessionID]
+			if room != nil {
+				if s.beforeJoinRoomLock != nil {
+					s.beforeJoinRoomLock()
+				}
+				room.mu.Lock()
+				if s.rooms[msg.SessionID] != room || room.closing {
+					room.mu.Unlock()
+					room = nil
+				}
 			}
 			s.mu.RUnlock()
-			if room.closing {
-				room.mu.Unlock()
+			// Every answer below tells a guessing client whether the code names
+			// a live room, so an admission that does not prove an identity the
+			// room already holds is charged to its source first, and an
+			// exhausted source gets the same answer for every code.
+			if (room == nil || !room.provesRetainedIdentityLocked(msg.PeerID, presentedVerifier, tokenValid)) &&
+				!s.conns.allowRoomLookup(quotaOwnerKey, time.Now()) {
+				if room != nil {
+					room.mu.Unlock()
+				}
+				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRateLimited, Message: "Too many room lookups"})
+				continue
+			}
+			if room == nil {
 				client.sendJSON(serverMsg{Type: relayTypeError, Code: relayErrorRoomNotFound, Message: "Room does not exist"})
 				continue
 			}
@@ -2573,6 +2689,9 @@ func main() {
 	case s := <-sig:
 		log.Printf("shutdown signal received (%s), draining...", s)
 	}
+	// Relay sockets outlive HTTP shutdown, so rooms are still occupied here.
+	// Queue their activity now; the final flush below makes it durable.
+	srv.recordOccupiedRoomActivity()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

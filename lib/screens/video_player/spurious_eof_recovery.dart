@@ -17,7 +17,9 @@ import 'wakelock_controller.dart';
 /// refills it, and the parked latch playback sits on once the budget is
 /// spent. Exits from a park: user play/seek (always allowed, never consume
 /// the budget) or the server-status monitor seeing the server come back
-/// online. Plain State-owned helper in the established player pattern.
+/// online. A stream the server ended itself ([_serverStoppedSession]) parks
+/// at once: rebuilding it would open a new session behind the admin's stop.
+/// Plain State-owned helper in the established player pattern.
 class SpuriousEofRecovery {
   SpuriousEofRecovery({
     required this.isLive,
@@ -27,6 +29,7 @@ class SpuriousEofRecovery {
     required this._player,
     required this._metadata,
     required this._transportFaultSeen,
+    required this._serverStoppedSession,
     required this._reload,
     required this._wakelock,
   });
@@ -55,6 +58,10 @@ class SpuriousEofRecovery {
   /// going for minutes after the demuxer hit the dead socket, so the fault
   /// that explains an EOF may be many minutes older than the EOF.
   final bool Function() _transportFaultSeen;
+
+  /// The server ended the current item's session and no viewer action has
+  /// resumed it since (the progress tracker's `stoppedByServer`).
+  final bool Function() _serverStoppedSession;
   final Future<MediaReloadOutcome> Function({required Duration resumePosition, required String reason}) _reload;
   final WakelockController _wakelock;
 
@@ -153,6 +160,16 @@ class SpuriousEofRecovery {
         '${source.format} source: the container ends here; treating as complete',
       );
       return false;
+    }
+
+    // A server stop (a Plex admin stop) ends the transfer too, so the buffer
+    // running dry is that stop taking effect, not a network fault to heal:
+    // an automatic rebuild would open a new session nobody asked for. Park;
+    // a viewer play/seek still retries.
+    if (_serverStoppedSession()) {
+      appLogger.i('EOF at ${positionMs}ms after the server ended the session: parked without automatic recovery');
+      _park();
+      return true;
     }
 
     appLogger.w(

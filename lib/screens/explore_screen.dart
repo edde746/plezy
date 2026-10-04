@@ -55,7 +55,12 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class ExploreScreenState extends State<ExploreScreen>
-    with ManualRefreshable, FullRefreshable, TabVisibilityAware, FocusableTab, DebouncedMediaSearch {
+    with
+        ManualRefreshable,
+        FullRefreshable,
+        TabVisibilityAware,
+        FocusableTab,
+        DebouncedMediaSearch<ExploreScreen, MediaItem> {
   late ExploreProvider _explore;
   late CatalogSourcesProvider _sources;
   CatalogSourceId? _activeSourceId;
@@ -529,7 +534,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 onFocusedItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {
                   final rowHub = _rowForHub(hub);
-                  return rowHub == null ? Future.value(hub.items) : _explore.loadAllForHub(rowHub);
+                  return rowHub == null ? () => Future.value(hub.items) : () => _explore.loadAllForHub(rowHub);
                 },
                 onNavigateUp: _actionBarKey.currentState?.requestFocusOnFirst,
                 onNavigateToSidebar: _navigateToSidebar,

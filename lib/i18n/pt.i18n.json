@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Este arquivo não é uma exportação válida do Plezy",
     "importSettingsNoUser": "Entre na conta antes de importar as configurações",
     "shortcutsReset": "Atalhos redefinidos para o padrão",
+    "resetShortcutsConfirm": "",
     "about": "Sobre",
     "aboutDescription": "Informações do app e licenças",
     "updates": "Atualizações",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.",
     "audioPassthroughDescriptionAppleTv": "Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.",
     "audioPassthroughOverriddenByNormalization": "Desativada enquanto a normalização de intensidade sonora estiver ativa",
-    "audioDownmix": "Conversão para estéreo",
-    "audioDownmixDescription": "Converter o áudio surround em dois canais para alto-falantes estéreo ou fones de ouvido",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Reforço do canal central",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Reforço (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Forçar DV7 nativo e impedir uma nova tentativa de conversão de DV",
     "dvConversionDv81Description": "Forçar a conversão RPU integrada para Dolby Vision perfil 8.1",
     "dvConversionHevcStripDescription": "Remover as camadas RPU/EL do Dolby Vision e apresentar HEVC sem Dolby Vision",
+    "disableDolbyVision": "Desativar Dolby Vision",
+    "disableDolbyVisionDescription": "Reproduzir a camada HDR10 ou HLG do arquivo em vez de Dolby Vision, quando houver",
     "hdrSdrConversion": "Conversão de HDR para SDR",
     "hdrSdrConversionDescription": "Escolha o que converte vídeos HDR quando a tela não consegue exibir HDR.",
     "hdrSdrConversionAuto": "Automático",
@@ -435,7 +444,8 @@
     "hint": "Buscar filmes, séries, músicas...",
     "tryDifferentTerm": "Tente um termo de busca diferente",
     "searchYourMedia": "Buscar suas mídias",
-    "enterTitleActorOrKeyword": "Insira um título, ator ou palavra-chave"
+    "enterTitleActorOrKeyword": "Insira um título, ator ou palavra-chave",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Definir Atalho para ${actionName}",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "O servidor encontrou este item, mas não conseguiu ler o arquivo (HTTP 404). O arquivo provavelmente foi movido, excluído ou o armazenamento está offline. Peça ao responsável pelo servidor para verificar o arquivo e reexaminar a biblioteca.",
     "serverBusyTitle": "Transmissão indisponível",
     "serverBusyBody": "O servidor continuou se recusando a transmitir este arquivo (HTTP 503). Ele pode estar reiniciando ou ocupado, ou o armazenamento do arquivo pode estar offline. Tente novamente em instantes — se isso continuar acontecendo, peça ao proprietário do servidor para verificar o servidor e o armazenamento do arquivo.",
+    "playbackNotAllowedTitle": "Reprodução não permitida",
+    "playbackNotAllowedBody": "O servidor se recusou a transmitir este item (HTTP 403). Sua conta pode não ter permissão para reproduzi-lo, ou o servidor pode permitir a reprodução apenas na própria rede local.",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
     "logId": "ID do log",
@@ -907,6 +919,8 @@
     "signOut": "Sair",
     "signOutPlexTitle": "Sair do Plex?",
     "signOutPlexMessage": "Remover ${displayName} e todos os usuários do Plex Home? Você pode entrar novamente quando quiser.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Saiu do Plex.",
     "signOutFailed": "Falha ao sair.",
     "sectionTitle": "Perfis",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "Adicionar a ${displayName}: Plex, Jellyfin, Emby ou outra conexão de perfil",
     "sessionExpiredOne": "Sessão de ${name} expirada",
     "sessionExpiredMany": "Sessões expiradas em ${count} servidores",
+    "accessDeniedOne": "${name} negou acesso a esta conta",
+    "accessDeniedMany": "${count} servidores negaram acesso a esta conta",
     "signInAgain": "Entrar novamente",
     "editMediaBrowserTitle": "Editar conexão do ${product}",
     "editMediaBrowserIntro": "Adicione ou remova URLs para ${serverName}. O Plezy usará a URL acessível com menor latência."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Outro"
     },
     "creditRole": {
+      "actor": "",
       "director": "Diretor",
       "writer": "Roteirista",
       "producer": "Produtor",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Disponível",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "É necessário entrar",
+    "syncRuleAccessDenied": "Acesso negado",
     "syncRuleNotAvailableForProfile": "Indisponível para o perfil atual",
     "syncRuleUnknownServer": "Servidor desconhecido",
     "syncRuleListCreated": "Regra de sincronização criada",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Arquivo não encontrado (404)",
+    "errorDownloadNotAllowed": "Download não permitido pelo servidor (403)",
     "errorDownloadFailed": "Falha no download",
-    "errorPostProcessing": "Falha no pós-processamento: ${error}",
+    "errorDownloadFailedWithReason": "Falha no download: ${reason}",
+    "errorHttpStatus": "Falha no download (HTTP ${status})",
+    "errorPostProcessing": "Falha no pós-processamento: ${reason}",
+    "reasonFileNotSaved": "não foi possível salvar o arquivo neste dispositivo",
+    "reasonCannotResume": "não foi possível retomar o download parcial",
+    "reasonDeviceStorageFull": "este dispositivo está sem espaço de armazenamento",
     "notificationDownloading": "Baixando...",
     "notificationComplete": "Download concluído",
     "notificationPaused": "Download pausado"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Estéreo",
     "audioNormalization": "Normalizar intensidade sonora",
     "audioNormalizationDisablesPassthrough": "Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa",
-    "audioNormalizationStereoMix": "Decodifica o áudio para uma mixagem estéreo; a passagem direta fica desativada enquanto esta opção estiver ativa",
-    "audioDownmix": "Conversão para estéreo"
+    "audioNormalizationStereoMix": "Decodifica o áudio para uma mixagem estéreo; a passagem direta fica desativada enquanto esta opção estiver ativa"
   },
   "performanceOverlay": {
     "color": "Cor",
@@ -2002,6 +2025,13 @@
     "rotation": "Rotação",
     "dvSource": "Fonte DV",
     "dvPath": "Caminho DV",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "Conv. P7",
     "sampleRate": "Taxa de amostragem",
     "pixelFormat": "Formato de pixel",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Ativar o Plezy no ${service}",

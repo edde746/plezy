@@ -75,6 +75,14 @@ class KeyboardShortcutsScreen extends StatelessWidget {
   }
 
   Future<void> _resetShortcuts(BuildContext context) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.settings.resetToDefault,
+      message: t.settings.resetShortcutsConfirm,
+      confirmText: t.common.reset,
+      isDestructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
     await keyboardService.resetToDefaults();
     if (context.mounted) showSuccessSnackBar(context, t.settings.shortcutsReset);
   }

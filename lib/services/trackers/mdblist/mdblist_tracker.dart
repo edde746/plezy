@@ -6,6 +6,7 @@ import '../../../utils/external_ids.dart';
 import '../../../utils/json_utils.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
+import '../tracker_history_body.dart';
 import '../tracker_id_resolver.dart';
 import '../tracker_rating_match.dart';
 import '../tracker_session.dart';
@@ -79,25 +80,23 @@ class MdblistTracker extends TrackerBase
   String? historyRowIdentity(TrackerContext ctx) => trackerExternalRowIdentity(ctx.external);
 
   @override
-  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
-    final client = this.client;
-    if (client == null || !canWriteWatched) return;
-    final body = _watchedBody(ctx, watchedAt: watchedAt);
-    if (body == null) return;
-
-    await client.addToWatched(body);
-    appLogger.d('MDBList: marked watched (${ctx.ratingKey}, isMovie=${ctx.isMovie})');
-  }
+  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) =>
+      writeHistory([(ctx: ctx, watchedAt: watchedAt)], watched: true);
 
   @override
-  Future<void> markUnwatched(TrackerContext ctx) async {
+  Future<void> markUnwatched(TrackerContext ctx) => writeHistory([(ctx: ctx, watchedAt: null)], watched: false);
+
+  /// `/sync/watched` and its `/remove` sibling share one shape; the remove
+  /// variant simply carries no timestamps.
+  @override
+  Future<void> writeHistory(List<TrackerHistoryEntry> entries, {required bool watched}) async {
     final client = this.client;
     if (client == null || !canWriteWatched) return;
-    final body = _watchedBody(ctx);
+    final body = trackerHistoryBody(entries, idsFor: (ctx) => _ids(ctx.external), includeWatchedAt: watched);
     if (body == null) return;
 
-    await client.removeFromWatched(body);
-    appLogger.d('MDBList: marked unwatched (${ctx.ratingKey}, isMovie=${ctx.isMovie})');
+    await (watched ? client.addToWatched(body) : client.removeFromWatched(body));
+    appLogger.d('MDBList: marked ${entries.length} item(s) ${watched ? 'watched' : 'unwatched'}');
   }
 
   @override
@@ -127,41 +126,6 @@ class MdblistTracker extends TrackerBase
     if (progressPercent >= _scrobbleWatchedPercent) return;
     appLogger.d('MDBList: stop below ${_scrobbleWatchedPercent.toStringAsFixed(0)}% — recording watch explicitly');
     await markWatched(ctx);
-  }
-
-  /// `/sync/watched` and its `/remove` sibling share one shape; the remove
-  /// variant simply carries no timestamps.
-  Map<String, dynamic>? _watchedBody(TrackerContext ctx, {DateTime? watchedAt}) {
-    final ids = _ids(ctx.external);
-    if (ids.isEmpty) return null;
-    final stamp = watchedAt?.toUtc().toIso8601String();
-
-    if (ctx.isMovie) {
-      return {
-        'movies': [
-          {'ids': ids, 'watched_at': ?stamp},
-        ],
-      };
-    }
-
-    final season = ctx.season;
-    final number = ctx.episodeNumber;
-    if (season == null || number == null) return null;
-    return {
-      'shows': [
-        {
-          'ids': ids,
-          'seasons': [
-            {
-              'number': season,
-              'episodes': [
-                {'number': number, 'watched_at': ?stamp},
-              ],
-            },
-          ],
-        },
-      ],
-    };
   }
 
   /// Scrobble nests the episode inside the show as `show.season.episode`,

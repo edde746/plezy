@@ -1166,6 +1166,57 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('Mark as Watched reports a failure when the item server has no client', (tester) async {
+      final requests = <Uri>[];
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        requests: requests,
+        handler: (_) async => http.Response('{}', 200),
+        item: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Movie',
+          serverId: 'missing-server',
+        ),
+      );
+      await _openMenu(tester, menuKey);
+      requests.clear();
+
+      await tester.tap(find.text(t.mediaMenu.markAsWatched));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.messages.markedAsWatched), findsNothing);
+      expect(find.text(t.messages.errorLoading(error: t.errors.reasonUnreachable)), findsOneWidget);
+      expect(requests, isEmpty);
+    });
+
+    testWidgets('an item whose server has no client is never sent to another server', (tester) async {
+      final requests = <Uri>[];
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        requests: requests,
+        handler: (_) async => http.Response('{}', 200),
+        item: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Movie',
+          serverId: 'missing-server',
+        ),
+      );
+      await _openMenu(tester, menuKey);
+      requests.clear();
+
+      await tester.tap(find.text(t.mediaMenu.fileInfo));
+      await tester.pumpAndSettle();
+
+      expect(requests, isEmpty, reason: 'the registered srv-1 must not be asked about another server item');
+      expect(find.byType(SnackBar), findsOneWidget);
+    });
+
     testWidgets('playlist picker filters playlists by title', (tester) async {
       final playlists = [
         for (var i = 0; i < 10; i++) (id: '$i', title: 'Alpha $i'),

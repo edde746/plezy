@@ -8,6 +8,12 @@ class TrackerConstants {
   /// [TrackerCoordinator]); this constant just seeds the field before playback.
   static const double watchedThresholdPercent = 80.0;
 
+  /// Most items one batched history write carries. Simkl and Trakt take one
+  /// write per second and accept arrays, so a container goes out as a handful
+  /// of requests; the cap keeps one body small enough to finish within
+  /// [requestTimeout] on a service that processes it item by item.
+  static const int historyBatchSize = 100;
+
   static const Duration requestTimeout = Duration(seconds: 20);
   static const Duration authRequestTimeout = Duration(seconds: 15);
   static const Duration refreshTimeout = Duration(seconds: 15);

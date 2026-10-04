@@ -91,7 +91,7 @@ void main() {
 
   Offset neutralZoneOf(WidgetTester tester) => tester.getRect(find.byType(PlexVideoControls)).center;
 
-  Future<void> pumpControls(WidgetTester tester) async {
+  Future<void> pumpControls(WidgetTester tester, {bool isLive = false}) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -112,6 +112,7 @@ void main() {
                 toastController: toast,
                 chromeController: chrome,
                 canNavigateMediaItems: false,
+                isLive: isLive,
               ),
             ),
           ),
@@ -159,6 +160,17 @@ void main() {
     expect(player.seeks, [const Duration(minutes: 10, seconds: 10)]);
     expect(find.text('10s'), findsOneWidget);
     expect(chrome.controlsVisible, isFalse, reason: 'skipping must not raise the chrome');
+
+    await settleFeedback(tester);
+  });
+
+  testWidgets('a live stream without a capture buffer is not seeked by a double tap', (tester) async {
+    await pumpControls(tester, isLive: true);
+
+    await doubleTap(tester, forwardZoneOf(tester));
+    await doubleTap(tester, backwardZoneOf(tester));
+
+    expect(player.seeks, isEmpty, reason: 'there is no seekable window behind the live edge');
 
     await settleFeedback(tester);
   });

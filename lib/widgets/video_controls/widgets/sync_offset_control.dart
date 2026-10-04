@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../focus/focusable_slider.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../mpv/mpv.dart';
+import '../../../services/player_sync_offsets.dart';
 import '../../../services/scoped_player_prefs.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
@@ -109,6 +110,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // native write can never complete after a newer one.
           final offsetSeconds = offsetMs / 1000.0;
           await targetPlayer.setProperty(propertyName, offsetSeconds.toString());
+          PlayerSyncOffsets.of(targetPlayer).recordApplied(propertyName, offsetMs.round());
           await persistOffset(offsetMs.round());
           if (mounted &&
               bindingGeneration == _bindingGeneration &&

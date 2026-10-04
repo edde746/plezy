@@ -437,9 +437,15 @@ void main() {
 
       expect(result, isA<PlayQueueSuccess>());
       expect(navigated.single.viewOffsetMs, 0);
-      // Queue items keep their server offsets — only the launched copy is
-      // stripped; the in-player override covers later queue items.
-      expect(playback.loadedItems.every((m) => m.viewOffsetMs == 120_000), isTrue);
+      // The launched copy is the queue's own entry: membership is by identity,
+      // and the player drops a queue that does not hold the item it opened.
+      expect(playback.isItemInActiveQueue(navigated.single), isTrue);
+      // The other queue items keep their server offsets; the in-player
+      // override covers them.
+      expect(
+        playback.loadedItems.where((m) => !identical(m, navigated.single)).every((m) => m.viewOffsetMs == 120_000),
+        isTrue,
+      );
     });
 
     testWidgets('shuffled launch keeps the resume offset when the pref is off', (tester) async {

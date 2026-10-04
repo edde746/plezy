@@ -49,6 +49,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/live_seek_accumulator.dart';
 import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
+import '../../services/player_sync_offsets.dart';
 import '../../services/scoped_player_prefs.dart';
 import '../../services/settings_service.dart';
 import '../../services/video_volume_controller.dart';
@@ -773,11 +774,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   SettingsService get _settings => SettingsService.instance;
   int get _seekTimeSmall => _settings.read(SettingsService.seekTimeSmall);
   int get _rewindOnResume => _settings.read(SettingsService.rewindOnResume);
-  // Resolved through the configured sync-offset scope so the sheet rows, the
-  // tune indicator, and the sync-slider seed agree with the value the player
-  // actually applies (video_player_screen resolves the same way).
-  int get _audioSyncOffset => ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, widget.metadata);
-  int get _subtitleSyncOffset => ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, widget.metadata);
+  // What the player applies, not the stored prefs: a "Don't save" change is
+  // never stored (#2069), and an item change resets to the new item's
+  // resolved value. The sheet rows, the tune indicator, and the sync-slider
+  // seed all read these.
+  int get _audioSyncOffset => PlayerSyncOffsets.of(widget.player).audioMs;
+  int get _subtitleSyncOffset => PlayerSyncOffsets.of(widget.player).subtitleMs;
   bool get _isRotationLocked => _settings.read(SettingsService.rotationLocked);
   bool _isScreenLocked = false; // Touch lock during playback
   bool _showLockIcon = false; // Whether to show the lock overlay icon
@@ -881,6 +883,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   /// Releases the [PlayerChromeController] binding; rebound in
   /// [didUpdateWidget] when the screen swaps controllers.
   late VoidCallback _releaseChromeListener;
+
+  /// Releases the [PlayerSyncOffsets] binding; rebound in [didUpdateWidget]
+  /// when the screen swaps players.
+  late VoidCallback _releaseSyncOffsetsListener;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
@@ -942,12 +948,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     bindRebuild([
       SettingsService.seekTimeSmall,
       SettingsService.rewindOnResume,
-      SettingsService.audioSyncOffset,
-      SettingsService.subtitleSyncOffset,
-      // The sync-offset getters resolve through ScopedPlayerPrefs, so scoped
-      // writes and scope changes must rebuild too.
-      SettingsService.scopedPlayerPrefValues,
-      SettingsService.syncOffsetScope,
       SettingsService.rotationLocked,
       SettingsService.skipIntroMode,
       SettingsService.skipCreditsMode,
@@ -963,6 +963,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     bindEffect(SettingsService.skipIntroMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     bindEffect(SettingsService.skipCreditsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     _releaseChromeListener = bindListenable(widget.chromeController, _onChromeChanged);
+    _releaseSyncOffsetsListener = bindListenable(PlayerSyncOffsets.of(widget.player), _onSyncOffsetsChanged);
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
@@ -1024,6 +1025,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _setControlsState(VoidCallback fn) => setStateIfMounted(fn);
 
+  void _onSyncOffsetsChanged() => _setControlsState(() {});
+
   void _configureChromeController() {
     widget.chromeController.configure(
       hideDelay: _hideDelay,
@@ -1040,6 +1043,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       // Otherwise the accumulator keeps listening to the retired player and
       // never hears the new one move.
       _hiddenSeek.attachPlayheadJumps(widget.player.streams.playheadJump);
+      _releaseSyncOffsetsListener();
+      _releaseSyncOffsetsListener = bindListenable(PlayerSyncOffsets.of(widget.player), _onSyncOffsetsChanged);
     }
     if (oldWidget.chromeController != widget.chromeController) {
       _releaseChromeListener();

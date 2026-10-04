@@ -1083,7 +1083,8 @@ class _FakeMediaServerClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => continueWatching;
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
+      continueWatching;
 
   @override
   Future<List<MediaHub>> fetchGlobalHubs({
@@ -1124,7 +1125,8 @@ class _GatedHubsFakeClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => const [];
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
+      const [];
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async => const [];

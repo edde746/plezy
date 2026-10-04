@@ -41,8 +41,18 @@ class MusicSessionStore {
   /// rest is upcoming tracks, which matter more to a resumed session.
   static const int _historyWindow = maxPersistedTracks ~/ 4;
 
+  /// The last [save]d snapshot (unwindowed) and where its persisted window
+  /// starts in playback order. An oversized queue persists a window-relative
+  /// cursor, so [updateProgress] maps the live cursor through these instead
+  /// of writing it raw.
+  MusicSessionSnapshot? _lastSaved;
+  int _windowStart = 0;
+
   Future<void> save(MusicSessionSnapshot snapshot) async {
-    final queue = _windowed(snapshot.queue);
+    final start = _windowStartFor(snapshot.queue);
+    _lastSaved = snapshot;
+    _windowStart = start;
+    final queue = _windowed(snapshot.queue, start);
     await _database.upsertMusicSession(
       MusicSessionRow(
         profileId: _profileId,
@@ -60,6 +70,29 @@ class MusicSessionStore {
   }
 
   Future<void> updateProgress({required int cursor, required Duration position}) {
+    final saved = _lastSaved;
+    if (saved != null && saved.queue.items.length > maxPersistedTracks) {
+      final windowed = cursor - _windowStart;
+      if (windowed < 0 || windowed >= maxPersistedTracks) {
+        // The cursor left the persisted window: re-window around it. Only the
+        // cursor moved since the last save — shape changes save in full.
+        final queue = saved.queue;
+        return save(
+          MusicSessionSnapshot(
+            queue: MusicQueueState(
+              items: queue.items,
+              order: queue.order,
+              cursor: cursor,
+              shuffled: queue.shuffled,
+              repeatMode: queue.repeatMode,
+            ),
+            playContext: saved.playContext,
+            position: position,
+          ),
+        );
+      }
+      cursor = windowed;
+    }
     return _database.updateMusicSessionProgress(
       profileId: _profileId,
       cursor: cursor,
@@ -97,14 +130,24 @@ class MusicSessionStore {
     }
   }
 
-  Future<void> clear() => _database.deleteMusicSessionForProfile(_profileId);
+  Future<void> clear() {
+    _lastSaved = null;
+    _windowStart = 0;
+    return _database.deleteMusicSessionForProfile(_profileId);
+  }
 
-  /// Materialize an oversized queue down to a [maxPersistedTracks]-long window
-  /// of the playback order around the cursor (identity permutation).
-  MusicQueueState _windowed(MusicQueueState state) {
+  /// Playback-order index where an oversized queue's persisted window starts
+  /// (0 when the whole queue fits).
+  static int _windowStartFor(MusicQueueState state) {
+    if (state.items.length <= maxPersistedTracks) return 0;
+    return (state.cursor - _historyWindow).clamp(0, state.items.length - maxPersistedTracks);
+  }
+
+  /// Materialize an oversized queue down to the [maxPersistedTracks]-long
+  /// window of the playback order starting at [start] (identity permutation).
+  MusicQueueState _windowed(MusicQueueState state, int start) {
     if (state.items.length <= maxPersistedTracks) return state;
     final queue = [for (final index in state.order) state.items[index]];
-    final start = (state.cursor - _historyWindow).clamp(0, queue.length - maxPersistedTracks);
     return MusicQueueState(
       items: queue.sublist(start, start + maxPersistedTracks),
       order: [for (var i = 0; i < maxPersistedTracks; i++) i],

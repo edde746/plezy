@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "此檔案不是有效的 Plezy 設定匯出檔",
     "importSettingsNoUser": "匯入設定前請先登入",
     "shortcutsReset": "快速鍵已重設為預設值",
+    "resetShortcutsConfirm": "",
     "about": "關於",
     "aboutDescription": "應用程式資訊與授權條款",
     "updates": "更新",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。",
     "audioPassthroughDescriptionAppleTv": "使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。",
     "audioPassthroughOverriddenByNormalization": "音量標準化開啟時停用",
-    "audioDownmix": "下混為立體聲",
-    "audioDownmixDescription": "將環繞音效混合為雙聲道，適用於立體聲喇叭或耳機",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "中置聲道增強",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "增強（dB）",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "強制使用原生 DV7 並停用 DV 轉換重試",
     "dvConversionDv81Description": "強制將內嵌的 RPU 轉換為 Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "移除 Dolby Vision RPU/EL 層，並以一般 HEVC 呈現",
+    "disableDolbyVision": "停用 Dolby Vision",
+    "disableDolbyVisionDescription": "檔案包含 HDR10 或 HLG 層時，改為播放該層而非 Dolby Vision",
     "hdrSdrConversion": "HDR 轉 SDR",
     "hdrSdrConversionDescription": "選擇在顯示器無法顯示 HDR 時由誰轉換 HDR 影片。",
     "hdrSdrConversionAuto": "自動",
@@ -435,7 +444,8 @@
     "hint": "搜尋電影、影集、音樂…",
     "tryDifferentTerm": "嘗試不同的關鍵字",
     "searchYourMedia": "搜尋媒體庫",
-    "enterTitleActorOrKeyword": "輸入標題、演員或關鍵字"
+    "enterTitleActorOrKeyword": "輸入標題、演員或關鍵字",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "為 ${actionName} 設定快速鍵",
@@ -830,6 +840,8 @@
     "mediaUnreadableBody": "伺服器找到了此項目，但無法讀取其檔案（HTTP 404）。檔案可能已移動、刪除，或其儲存空間離線。請聯絡伺服器擁有者檢查檔案並重新掃描媒體庫。",
     "serverBusyTitle": "串流無法使用",
     "serverBusyBody": "伺服器持續拒絕串流此檔案（HTTP 503）。伺服器可能正在重新啟動、忙碌中，或檔案所在的儲存裝置可能已離線。請稍後再試；若問題持續發生，請要求伺服器擁有者檢查伺服器及檔案所在的儲存裝置。",
+    "playbackNotAllowedTitle": "不允許播放",
+    "playbackNotAllowedBody": "伺服器拒絕串流此項目（HTTP 403）。此帳戶可能沒有播放權限，或伺服器可能只允許在其區域網路內播放。",
     "logsUploaded": "日誌已上傳",
     "logsUploadFailed": "上傳日誌失敗",
     "logId": "日誌 ID",
@@ -903,6 +915,8 @@
     "signOut": "登出",
     "signOutPlexTitle": "登出 Plex？",
     "signOutPlexMessage": "確定要移除 ${displayName} 與所有 Plex Home 使用者嗎？您可以隨時重新登入。",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "已登出 Plex。",
     "signOutFailed": "登出失敗。",
     "sectionTitle": "使用者設定檔",
@@ -964,6 +978,8 @@
     "addConnectionSubtitleScoped": "新增至 ${displayName}：Plex、Jellyfin、Emby 或其他設定檔連線",
     "sessionExpiredOne": "${name} 的工作階段已過期",
     "sessionExpiredMany": "${count} 個伺服器的工作階段已過期",
+    "accessDeniedOne": "${name} 拒絕此帳戶存取",
+    "accessDeniedMany": "${count} 台伺服器拒絕此帳戶存取",
     "signInAgain": "重新登入",
     "editMediaBrowserTitle": "編輯 ${product} 連線",
     "editMediaBrowserIntro": "為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。"
@@ -1400,6 +1416,7 @@
       "otherMedia": "其他"
     },
     "creditRole": {
+      "actor": "",
       "director": "導演",
       "writer": "編劇",
       "producer": "製作人",
@@ -1793,6 +1810,7 @@
     "syncRuleAvailable": "可用",
     "syncRuleOffline": "離線",
     "syncRuleSignInRequired": "需要登入",
+    "syncRuleAccessDenied": "存取遭拒",
     "syncRuleNotAvailableForProfile": "目前使用者設定檔無法使用",
     "syncRuleUnknownServer": "未知伺服器",
     "syncRuleListCreated": "同步規則已建立",
@@ -1847,8 +1865,14 @@
       "other": ""
     },
     "errorFileNotFound": "找不到檔案（404）",
+    "errorDownloadNotAllowed": "伺服器不允許下載（403）",
     "errorDownloadFailed": "下載失敗",
-    "errorPostProcessing": "後續處理失敗：${error}",
+    "errorDownloadFailedWithReason": "下載失敗：${reason}",
+    "errorHttpStatus": "下載失敗（HTTP ${status}）",
+    "errorPostProcessing": "後續處理失敗：${reason}",
+    "reasonFileNotSaved": "無法將檔案儲存到此裝置",
+    "reasonCannotResume": "無法繼續未完成的下載",
+    "reasonDeviceStorageFull": "此裝置的儲存空間已滿",
     "notificationDownloading": "正在下載…",
     "notificationComplete": "下載完成",
     "notificationPaused": "下載已暫停"
@@ -1971,8 +1995,7 @@
     "audioOutputStereo": "立體聲",
     "audioNormalization": "音量標準化",
     "audioNormalizationDisablesPassthrough": "將音訊解碼為 PCM；開啟時直通關閉",
-    "audioNormalizationStereoMix": "將音訊解碼為立體聲混音；開啟時直通關閉",
-    "audioDownmix": "下混為立體聲"
+    "audioNormalizationStereoMix": "將音訊解碼為立體聲混音；開啟時直通關閉"
   },
   "performanceOverlay": {
     "color": "色彩",
@@ -1987,6 +2010,13 @@
     "rotation": "旋轉角度",
     "dvSource": "DV 來源",
     "dvPath": "DV 路徑",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7 轉換",
     "sampleRate": "取樣率",
     "pixelFormat": "像素格式",
@@ -2216,6 +2246,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "在 ${service} 啟用 Plezy",

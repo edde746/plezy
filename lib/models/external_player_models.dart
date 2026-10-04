@@ -32,7 +32,7 @@ class PlayerInstallProbe {
     return await channel.invokeMethod<bool>('isApplicationInstalled', {'bundleId': bundleId}) ?? false;
   }
 
-  Future<bool> schemeHasHandler(String scheme) => canLaunchUrl(Uri.parse(scheme));
+  Future<bool> schemeHasHandler(String scheme) => _canOpenAppUrl(Uri.parse(scheme));
 }
 
 class ExternalPlayer {
@@ -100,6 +100,17 @@ class ExternalPlayer {
   int get hashCode => id.hashCode;
 }
 
+const _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
+
+/// The tvOS Runner has no url_launcher implementation; it answers the two
+/// handoff questions itself on this channel (Android's `openVideo` shares it).
+const _tvosHandoffChannel = MethodChannel('com.plezy/external_player');
+
+Future<bool> _canOpenAppUrl(Uri uri) async {
+  if (!_tvosBuild) return canLaunchUrl(uri);
+  return await _tvosHandoffChannel.invokeMethod<bool>('canOpenUrl', {'url': uri.toString()}) ?? false;
+}
+
 Future<bool> _launchWithUrl(String url) {
   return launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 }
@@ -129,6 +140,12 @@ Future<bool> _launchAndroidIntentCandidates(String url, Iterable<String> package
 Future<bool> _launchUrlScheme(String scheme, String url) async {
   final playerUrl = scheme.contains('url=') ? '$scheme${Uri.encodeComponent(url)}' : '$scheme$url';
   final uri = Uri.parse(playerUrl);
+  if (_tvosBuild) {
+    // No canOpenURL gate: it answers false for any scheme missing from
+    // LSApplicationQueriesSchemes, which is every custom player. The open
+    // call reports a missing handler itself.
+    return await _tvosHandoffChannel.invokeMethod<bool>('openUrl', {'url': uri.toString()}) ?? false;
+  }
   if (await canLaunchUrl(uri)) {
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
@@ -218,7 +235,14 @@ Future<bool> _launchCustom(String value, String url, CustomPlayerType type) asyn
 }
 
 class KnownPlayers {
-  static final systemDefault = ExternalPlayer(id: 'system_default', name: 'System Default', launch: _launchWithUrl);
+  /// Hands the stream URL to whatever the OS opens it with. tvOS has no
+  /// browser or default handler for http(s), so there is nothing to hand to.
+  static final systemDefault = ExternalPlayer(
+    id: 'system_default',
+    name: 'System Default',
+    isAvailable: !_tvosBuild,
+    launch: _launchWithUrl,
+  );
 
   static const _androidPackageMap = <String, List<String>>{
     'vlc': ['org.videolan.vlc'],
@@ -363,9 +387,9 @@ class KnownPlayers {
         detectors['mpv'] = () => _windowsCommandExists('mpv');
         detectors['potplayer'] = _windowsPotPlayerExists;
       case 'ios':
-        // Same predicate _launchUrlScheme gates on, so detection can never
-        // hide a player the handoff would have reached. Both schemes are
-        // declared in LSApplicationQueriesSchemes.
+        // iOS and tvOS. Both schemes are declared in the Runners'
+        // LSApplicationQueriesSchemes, so the handler check is truthful and
+        // detection can never hide a player the handoff would have reached.
         detectors['vlc'] = () => probe.schemeHasHandler('vlc://');
         detectors['infuse'] = () => probe.schemeHasHandler('infuse://');
     }

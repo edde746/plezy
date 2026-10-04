@@ -456,8 +456,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Ki, amíg a hangerőnormalizálás be van kapcsolva';
-	@override String get audioDownmix => 'Lekeverés sztereóra';
-	@override String get audioDownmixDescription => 'A térhangzás lekeverése két csatornára sztereó hangszórókhoz vagy fejhallgatókhoz';
 	@override String get downmixCenterBoost => 'Középső csatorna kiemelése';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Kiemelés (dB)';
@@ -474,6 +472,8 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása';
 	@override String get dvConversionDv81Description => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re';
 	@override String get dvConversionHevcStripDescription => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés';
+	@override String get disableDolbyVision => 'Dolby Vision letiltása';
+	@override String get disableDolbyVisionDescription => 'A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen';
 	@override String get hdrSdrConversion => 'HDR–SDR átalakítás';
 	@override String get hdrSdrConversionDescription => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.';
 	@override String get hdrSdrConversionAuto => 'Automatikus';
@@ -977,6 +977,8 @@ class _Translations$messages$hu extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'A szerver megtalálta ezt az elemet, de nem tudta beolvasni a fájlját (HTTP 404). A fájl valószínűleg áthelyezésre vagy törlésre került, vagy a tárhelye offline. Kérje meg a szerver tulajdonosát, hogy ellenőrizze a fájlt, és vizsgálja újra a könyvtárat.';
 	@override String get serverBusyTitle => 'A stream nem érhető el';
 	@override String get serverBusyBody => 'A szerver ismételten megtagadta ennek a fájlnak a streamelését (HTTP 503). Lehet, hogy újraindul, túlterhelt, vagy a fájl tárhelye nem érhető el. Próbáld újra egy kis idő múlva – ha a probléma továbbra is fennáll, kérd meg a szerver tulajdonosát, hogy ellenőrizze a szervert és a fájl tárhelyét.';
+	@override String get playbackNotAllowedTitle => 'A lejátszás nem engedélyezett';
+	@override String get playbackNotAllowedBody => 'A szerver megtagadta ennek az elemnek a streamelését (HTTP 403). Lehet, hogy a fiókodnak nincs engedélye a lejátszására, vagy a szerver csak a helyi hálózatán engedélyezi a lejátszást.';
 	@override String get logsUploaded => 'Naplók feltöltve';
 	@override String get logsUploadFailed => 'Nem sikerült a naplók feltöltése';
 	@override String get logId => 'Naplóazonosító';
@@ -1146,6 +1148,8 @@ class _Translations$connections$hu extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat';
 	@override String sessionExpiredOne({required Object name}) => 'A(z) ${name} munkamenete lejárt';
 	@override String sessionExpiredMany({required Object count}) => '${count} szerver munkamenete lejárt';
+	@override String accessDeniedOne({required Object name}) => 'A(z) ${name} megtagadta a hozzáférést ettől a fióktól';
+	@override String accessDeniedMany({required Object count}) => '${count} szerver megtagadta a hozzáférést ettől a fióktól';
 	@override String get signInAgain => 'Bejelentkezés újra';
 	@override String editMediaBrowserTitle({required Object product}) => 'A(z) ${product} kapcsolat szerkesztése';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni.';
@@ -1842,6 +1846,7 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Elérhető';
 	@override String get syncRuleOffline => 'Offline';
 	@override String get syncRuleSignInRequired => 'Bejelentkezés szükséges';
+	@override String get syncRuleAccessDenied => 'Hozzáférés megtagadva';
 	@override String get syncRuleNotAvailableForProfile => 'Nem érhető el a jelenlegi profilhoz';
 	@override String get syncRuleUnknownServer => 'Ismeretlen szerver';
 	@override String get syncRuleListCreated => 'Szinkronizálási szabály létrehozva';
@@ -1854,8 +1859,14 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Ismeretlen album';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} kész';
 	@override String get errorFileNotFound => 'A fájl nem található (404)';
+	@override String get errorDownloadNotAllowed => 'A szerver nem engedélyezi a letöltést (403)';
 	@override String get errorDownloadFailed => 'A letöltés nem sikerült';
-	@override String errorPostProcessing({required Object error}) => 'Az utófeldolgozás nem sikerült: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'A letöltés nem sikerült: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'A letöltés nem sikerült (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Az utófeldolgozás nem sikerült: ${reason}';
+	@override String get reasonFileNotSaved => 'a fájlt nem sikerült menteni erre az eszközre';
+	@override String get reasonCannotResume => 'a részleges letöltést nem sikerült folytatni';
+	@override String get reasonDeviceStorageFull => 'az eszközön elfogyott a tárhely';
 	@override String get notificationDownloading => 'Letöltés...';
 	@override String get notificationComplete => 'Letöltés kész';
 	@override String get notificationPaused => 'Letöltés szüneteltetve';
@@ -1934,7 +1945,6 @@ class _Translations$videoSettings$hu extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Hangerő normalizálása';
 	@override String get audioNormalizationDisablesPassthrough => 'PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva';
 	@override String get audioNormalizationStereoMix => 'Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva';
-	@override String get audioDownmix => 'Lekeverés sztereóra';
 }
 
 // Path: performanceOverlay
@@ -3361,8 +3371,6 @@ extension on TranslationsHu {
 			'settings.audioPassthroughDescription' => 'Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ki, amíg a hangerőnormalizálás be van kapcsolva',
-			'settings.audioDownmix' => 'Lekeverés sztereóra',
-			'settings.audioDownmixDescription' => 'A térhangzás lekeverése két csatornára sztereó hangszórókhoz vagy fejhallgatókhoz',
 			'settings.downmixCenterBoost' => 'Középső csatorna kiemelése',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Kiemelés (dB)',
@@ -3379,6 +3387,8 @@ extension on TranslationsHu {
 			'settings.dvConversionNativeDescription' => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása',
 			'settings.dvConversionDv81Description' => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re',
 			'settings.dvConversionHevcStripDescription' => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés',
+			'settings.disableDolbyVision' => 'Dolby Vision letiltása',
+			'settings.disableDolbyVisionDescription' => 'A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen',
 			'settings.hdrSdrConversion' => 'HDR–SDR átalakítás',
 			'settings.hdrSdrConversionDescription' => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.',
 			'settings.hdrSdrConversionAuto' => 'Automatikus',
@@ -3813,6 +3823,8 @@ extension on TranslationsHu {
 			'messages.mediaUnreadableBody' => 'A szerver megtalálta ezt az elemet, de nem tudta beolvasni a fájlját (HTTP 404). A fájl valószínűleg áthelyezésre vagy törlésre került, vagy a tárhelye offline. Kérje meg a szerver tulajdonosát, hogy ellenőrizze a fájlt, és vizsgálja újra a könyvtárat.',
 			'messages.serverBusyTitle' => 'A stream nem érhető el',
 			'messages.serverBusyBody' => 'A szerver ismételten megtagadta ennek a fájlnak a streamelését (HTTP 503). Lehet, hogy újraindul, túlterhelt, vagy a fájl tárhelye nem érhető el. Próbáld újra egy kis idő múlva – ha a probléma továbbra is fennáll, kérd meg a szerver tulajdonosát, hogy ellenőrizze a szervert és a fájl tárhelyét.',
+			'messages.playbackNotAllowedTitle' => 'A lejátszás nem engedélyezett',
+			'messages.playbackNotAllowedBody' => 'A szerver megtagadta ennek az elemnek a streamelését (HTTP 403). Lehet, hogy a fiókodnak nincs engedélye a lejátszására, vagy a szerver csak a helyi hálózatán engedélyezi a lejátszást.',
 			'messages.logsUploaded' => 'Naplók feltöltve',
 			'messages.logsUploadFailed' => 'Nem sikerült a naplók feltöltése',
 			'messages.logId' => 'Naplóazonosító',
@@ -3937,6 +3949,8 @@ extension on TranslationsHu {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Hozzáadás a következőhöz (${displayName}): Plex, Jellyfin, Emby vagy más profilkapcsolat',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} szerver munkamenete lejárt',
+			'connections.accessDeniedOne' => ({required Object name}) => 'A(z) ${name} megtagadta a hozzáférést ettől a fióktól',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} szerver megtagadta a hozzáférést ettől a fióktól',
 			'connections.signInAgain' => 'Bejelentkezés újra',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'A(z) ${product} kapcsolat szerkesztése',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni.',
@@ -4050,12 +4064,12 @@ extension on TranslationsHu {
 			'libraries.refreshMetadata' => 'Metaadatok frissítése',
 			'libraries.emptyTrash' => 'Lomtár ürítése',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Lomtár ürítése a következőhöz: "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Lomtár kiürítve a következőhöz: "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nem sikerült a lomtár ürítése: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" elemzése...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Elemzés elindítva a következőhöz: "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nem sikerült a könyvtár elemzése: ${error}',
 			'libraries.noLibrariesFound' => 'Nem találhatók könyvtárak',
 			'libraries.allLibrariesHidden' => 'Minden könyvtár el van rejtve',
@@ -4564,12 +4578,12 @@ extension on TranslationsHu {
 			'watchTogether.renameRoom' => 'Szoba átnevezése',
 			'watchTogether.removeRoom' => 'Eltávolítás',
 			'watchTogether.guestSwitchUnavailable' => 'Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Nem sikerült a váltás — a tartalom nem található ezen a szerveren',
 			'watchTogether.defaultDisplayName' => 'Felhasználó',
 			'watchTogether.errors.timedOut' => 'A relészerver nem válaszolt időben',
 			'watchTogether.errors.connectionLost' => 'A kapcsolat lezárult, mielőtt a munkamenet elkészült volna',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'A relészerver váratlan választ küldött',
 			'watchTogether.errors.sessionEnded' => 'A házigazda befejezte a munkamenetet',
 			'watchTogether.errors.sessionUnavailable' => 'Ez a munkamenet nem folytatható. A folytatáshoz csatlakozz egy szobához vagy hozz létre egyet.',
@@ -4645,6 +4659,7 @@ extension on TranslationsHu {
 			'downloads.syncRuleAvailable' => 'Elérhető',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Bejelentkezés szükséges',
+			'downloads.syncRuleAccessDenied' => 'Hozzáférés megtagadva',
 			'downloads.syncRuleNotAvailableForProfile' => 'Nem érhető el a jelenlegi profilhoz',
 			'downloads.syncRuleUnknownServer' => 'Ismeretlen szerver',
 			'downloads.syncRuleListCreated' => 'Szinkronizálási szabály létrehozva',
@@ -4682,8 +4697,14 @@ extension on TranslationsHu {
 			'downloads.unknownAlbum' => 'Ismeretlen album',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} kész',
 			'downloads.errorFileNotFound' => 'A fájl nem található (404)',
+			'downloads.errorDownloadNotAllowed' => 'A szerver nem engedélyezi a letöltést (403)',
 			'downloads.errorDownloadFailed' => 'A letöltés nem sikerült',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Az utófeldolgozás nem sikerült: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'A letöltés nem sikerült: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'A letöltés nem sikerült (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Az utófeldolgozás nem sikerült: ${reason}',
+			'downloads.reasonFileNotSaved' => 'a fájlt nem sikerült menteni erre az eszközre',
+			'downloads.reasonCannotResume' => 'a részleges letöltést nem sikerült folytatni',
+			'downloads.reasonDeviceStorageFull' => 'az eszközön elfogyott a tárhely',
 			'downloads.notificationDownloading' => 'Letöltés...',
 			'downloads.notificationComplete' => 'Letöltés kész',
 			'downloads.notificationPaused' => 'Letöltés szüneteltetve',
@@ -4793,7 +4814,6 @@ extension on TranslationsHu {
 			'videoSettings.audioNormalization' => 'Hangerő normalizálása',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva',
 			'videoSettings.audioNormalizationStereoMix' => 'Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva',
-			'videoSettings.audioDownmix' => 'Lekeverés sztereóra',
 			'performanceOverlay.color' => 'Szín',
 			'performanceOverlay.performance' => 'Teljesítmény',
 			'performanceOverlay.buffer' => 'Puffer',
@@ -5072,6 +5092,8 @@ extension on TranslationsHu {
 			'addServer.borrowFromAnotherProfile' => 'Kapcsolat használata másik profilból',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
 			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'A hitelesítési válasz nem érvényes JSON',
 			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',
@@ -5082,8 +5104,6 @@ extension on TranslationsHu {
 			'addServer.responseNotJson' => 'A szerver válasza nem érvényes JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'A válaszból hiányzik az azonosító vagy a szerver neve – ez valóban ${product}-szerver?',
 			'addServer.probeFailed' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Adj meg legalább egy ${product}-szerverhez tartozó URL-t',
 			'addServer.noReachableServer' => ({required Object product}) => 'Nem található elérhető ${product}-szerver',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Ezek az URL-ek különböző ${product}-szerverekre mutatnak',

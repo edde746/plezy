@@ -67,6 +67,22 @@ class MalClient implements DisposableTrackerClient {
     await _request('DELETE', '/anime/$animeId/my_list_status');
   }
 
+  /// The viewer's list status for an anime — `plan_to_watch`, `watching`,
+  /// `completed`, `on_hold` or `dropped` — or null when it is not on their list.
+  Future<String?> getMyListStatusName(int animeId) async {
+    try {
+      final res = await _request('GET', '/anime/$animeId?fields=my_list_status');
+      if (res is! Map) return null;
+      final myListStatus = res['my_list_status'];
+      if (myListStatus is! Map) return null;
+      final status = myListStatus['status'];
+      return status is String ? status : null;
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
   Future<int?> getMyListScore(int animeId) async {
     try {
       final res = await _request('GET', '/anime/$animeId?fields=my_list_status');

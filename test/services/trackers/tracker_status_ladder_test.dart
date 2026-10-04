@@ -7,6 +7,7 @@ import 'package:plezy/models/trakt/trakt_ids.dart';
 import 'package:plezy/models/trakt/trakt_scrobble_request.dart';
 import 'package:plezy/services/trackers/simkl/simkl_client.dart';
 import 'package:plezy/services/trackers/simkl/simkl_constants.dart';
+import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trackers/trakt/trakt_client.dart';
@@ -84,7 +85,7 @@ void main() {
       expect(invalidated, 1);
     });
 
-    test('surfaces 429 as a plain API failure', () async {
+    test('surfaces 429 as a typed rate limit carrying Retry-After', () async {
       final client = SimklClient(
         _session(),
         onSessionInvalidated: () => fail('429 should not invalidate the session'),
@@ -95,10 +96,9 @@ void main() {
       await expectLater(
         client.getUserSettings(),
         throwsA(
-          allOf(
-            isA<TrackerApiException>().having((e) => e.statusCode, 'statusCode', 429),
-            isNot(isA<TrackerRateLimitException>()),
-          ),
+          isA<TrackerRateLimitException>()
+              .having((e) => e.service, 'service', TrackerService.simkl)
+              .having((e) => e.retryAfterSeconds, 'retryAfterSeconds', 23),
         ),
       );
     });
@@ -110,6 +110,7 @@ void main() {
       final client = SimklClient(
         _session(),
         onSessionInvalidated: () => fail('409 should not invalidate the session'),
+        writeSpacing: Duration.zero,
         httpClient: MockClient((_) async => http.Response('{"watched_at":"2026-07-30T10:30:00.000Z"}', 409)),
       );
       addTearDown(client.dispose);

@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
@@ -9,6 +11,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/dialogs.dart';
 import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
+import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:plezy/widgets/tag_edit_dialog.dart';
 
 import '../test_helpers/prefs.dart';
@@ -107,6 +110,31 @@ void main() {
 
     expect(_saveHasFocus(tester), isTrue, reason: 'D-pad must reach Save past the chip row');
   });
+
+  // #2453: the tag list scrolls past ~7 tags, leaving the last visible tile cut
+  // off by the viewport. Its hover highlight used to paint on the dialog's
+  // Material, past the list edge, over a strip that clicks fall through — the
+  // tag looked clickable where it was not.
+  testWidgets('a partly scrolled-out tag keeps its hover highlight inside the list', (tester) async {
+    await _pumpDialog(tester, initialTags: [for (var i = 0; i < 12; i++) 'tag$i']);
+
+    final listRect = tester.getRect(find.byType(ListView));
+    final tileRect = tester.getRect(find.byType(FocusableListTile).last);
+    expect(tileRect.bottom, greaterThan(listRect.bottom), reason: 'precondition: the last built tile is cut off');
+
+    final insideTile = Offset(tileRect.center.dx, tileRect.top + 2);
+    final pastListEdge = Offset(tileRect.center.dx, (listRect.bottom + tileRect.bottom) / 2);
+    final idleInside = await _pixel(tester, insideTile);
+    final idlePastEdge = await _pixel(tester, pastListEdge);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    await mouse.addPointer(location: Offset(tileRect.center.dx, tileRect.top + 10));
+    await tester.pumpAndSettle();
+
+    expect(await _pixel(tester, insideTile), isNot(idleInside), reason: 'hovering highlights the visible tile');
+    expect(await _pixel(tester, pastListEdge), idlePastEdge, reason: 'the highlight must not leak past the list');
+  });
 }
 
 class _DialogResult {
@@ -172,4 +200,27 @@ bool _saveHasFocus(WidgetTester tester) {
     return !inside;
   });
   return inside;
+}
+
+/// ARGB of the dialog route's painted frame at the global [position].
+Future<int> _pixel(WidgetTester tester, Offset position) async {
+  final boundary = tester.renderObject<RenderRepaintBoundary>(
+    find.ancestor(of: find.byType(TagEditDialog), matching: find.byType(RepaintBoundary)).first,
+  );
+  final local = boundary.globalToLocal(position);
+  late int width;
+  late ByteData bytes;
+  await tester.runAsync(() async {
+    final image = await boundary.toImage();
+    width = image.width;
+    bytes = (await image.toByteData())!;
+    image.dispose();
+  });
+  final i = (local.dy.floor() * width + local.dx.floor()) * 4;
+  return Color.fromARGB(
+    bytes.getUint8(i + 3),
+    bytes.getUint8(i),
+    bytes.getUint8(i + 1),
+    bytes.getUint8(i + 2),
+  ).toARGB32();
 }

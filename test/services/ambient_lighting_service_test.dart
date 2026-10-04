@@ -25,78 +25,48 @@ void main() {
     temporaryRoot.deleteSync(recursive: true);
   });
 
-  test('resize property failure is contained while ambient lighting remains enabled', () async {
+  test('enable hands mpv the picture aspect for subtitle placement before stretching the frame', () async {
     final player = _AmbientPlayer();
     final service = AmbientLightingService(player);
 
-    await service.enable(16 / 9, 4 / 3);
-    expect(service.isEnabled, isTrue);
-
-    player.setPropertyError = StateError('rejected');
-    service.updateOutputAspect(2);
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
-
-    expect(service.isEnabled, isTrue);
-    expect(player.propertyWrites.last, ('video-aspect-override', '2.0'));
-  });
-
-  test('valid resize property write is applied once', () async {
-    final player = _AmbientPlayer();
-    final service = AmbientLightingService(player);
-
-    await service.enable(16 / 9, 4 / 3);
-    final writesBeforeResize = player.propertyWrites.length;
-
-    service.updateOutputAspect(2);
-    await Future<void>.delayed(Duration.zero);
-
-    expect(player.propertyWrites, hasLength(writesBeforeResize + 1));
-    expect(player.propertyWrites.last, ('video-aspect-override', '2.0'));
-  });
-
-  test('enable hands mpv the picture aspect for subtitle placement before overriding the frame', () async {
-    final player = _AmbientPlayer();
-    final service = AmbientLightingService(player);
-
-    await service.enable(16 / 9, 20 / 9);
+    await service.enable(16 / 9);
 
     final subRect = player.propertyWrites.indexWhere((write) => write.$1 == 'sub-video-rect-aspect');
-    final override = player.propertyWrites.indexWhere((write) => write.$1 == 'video-aspect-override');
+    final fill = player.propertyWrites.indexOf(('keepaspect', 'no'));
     expect(subRect, isNot(-1));
-    expect(override, isNot(-1));
-    expect(subRect, lessThan(override));
+    expect(fill, isNot(-1));
+    expect(subRect, lessThan(fill));
     expect(double.parse(player.propertyWrites[subRect].$2), closeTo(16 / 9, 0.0001));
-    expect(double.parse(player.propertyWrites[override].$2), closeTo(20 / 9, 0.0001));
   });
 
-  test('disable restores subtitle placement to the displayed video rect', () async {
+  test('disable restores the letterbox and subtitle placement to the displayed video rect', () async {
     final player = _AmbientPlayer();
     final service = AmbientLightingService(player);
 
-    await service.enable(16 / 9, 20 / 9);
+    await service.enable(16 / 9);
     player.propertyWrites.clear();
     await service.disable();
 
     expect(service.isEnabled, isFalse);
-    expect(player.propertyWrites, containsAll([('video-aspect-override', 'no'), ('sub-video-rect-aspect', 'no')]));
+    expect(player.propertyWrites, containsAll([('keepaspect', 'yes'), ('sub-video-rect-aspect', 'no')]));
   });
 
-  test('a rejected subtitle rect write leaves the frame aspect untouched', () async {
+  test('a rejected subtitle rect write leaves the frame untouched', () async {
     final player = _AmbientPlayer()..setPropertyError = StateError('unknown property');
     final service = AmbientLightingService(player);
 
-    await service.enable(16 / 9, 20 / 9);
+    await service.enable(16 / 9);
 
     expect(service.isEnabled, isFalse);
-    expect(player.propertyWrites.map((write) => write.$1), isNot(contains('video-aspect-override')));
+    expect(player.propertyWrites.map((write) => write.$1), isNot(contains('keepaspect')));
+    expect(player.commands, isEmpty);
   });
 
-  test('a swapped picture re-points subtitle placement without touching the frame override', () async {
+  test('a swapped picture re-points subtitle placement without touching the frame fill', () async {
     final player = _AmbientPlayer();
     final service = AmbientLightingService(player);
 
-    await service.enable(16 / 9, 20 / 9);
+    await service.enable(16 / 9);
     player.propertyWrites.clear();
     await service.updateVideoAspect(2.39);
 
@@ -115,6 +85,7 @@ void main() {
 
 class _AmbientPlayer implements Player {
   final List<(String, String)> propertyWrites = [];
+  final List<List<String>> commands = [];
   Object? setPropertyError;
 
   @override
@@ -124,7 +95,7 @@ class _AmbientPlayer implements Player {
   String get playerType => 'mpv';
 
   @override
-  Future<void> command(List<String> command) async {}
+  Future<void> command(List<String> command) async => commands.add(command);
 
   @override
   Future<void> setProperty(String name, String value) {

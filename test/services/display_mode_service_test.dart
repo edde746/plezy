@@ -153,6 +153,28 @@ void main() {
     expect(service.anyChangeApplied, isTrue);
   });
 
+  group('findBestRefreshRate', () {
+    List<Map> modes(List<int> rates) => [
+      for (final rate in rates) {'width': 3840, 'height': 2160, 'refreshRate': rate},
+    ];
+    int best(double fps, List<int> rates) => DisplayModeService.findBestRefreshRate(fps, modes(rates), 3840, 2160);
+
+    test('reads Windows 23/29/59 Hz modes as their 1000/1001 rates', () {
+      expect(best(23.976, [23, 24, 60]), 23);
+      expect(best(29.97, [29, 30, 59, 60]), 29);
+      expect(best(59.94, [59, 60]), 59);
+      // Film-rate content on a panel with only NTSC-family modes.
+      expect(best(23.976, [59, 119]), 119);
+    });
+
+    test('whole-number content keeps its whole-number modes', () {
+      expect(best(24, [23, 24, 60]), 24);
+      expect(best(30, [29, 30, 60]), 30);
+      expect(best(25, [50, 59, 60]), 50);
+      expect(best(60, [59, 60, 120]), 60);
+    });
+  });
+
   test('non-Windows override performs no native work', () async {
     service = DisplayModeService.forTesting(
       SettingsService.instance,

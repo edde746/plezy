@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
@@ -100,6 +101,36 @@ void main() {
       expect(item.ids.imdb, 'tt1375666');
       expect(item.ids.tmdb, 27205);
       expect(item.genres, ['Science Fiction']);
+    });
+
+    test('sends the current app language so Discover localizes metadata', () async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
+      final languages = <String?>[];
+      final source = PlexCatalogSource(
+        PlexDiscoverClient(
+          _session,
+          httpClient: MockClient((request) async {
+            languages.add(request.headers['X-Plex-Language']);
+            return jsonResponse({
+              'MediaContainer': {
+                'offset': 0,
+                'size': 1,
+                'totalSize': 1,
+                'Metadata': [_metadata()],
+              },
+            });
+          }),
+        ),
+      );
+      addTearDown(source.dispose);
+
+      await source.fetchRow(CatalogRowId.watchlist, page: 1, limit: 25);
+      // A language switch reaches the already-built client on its next request.
+      await LocaleSettings.setLocale(AppLocale.zhHant);
+      await source.fetchRow(CatalogRowId.watchlist, page: 1, limit: 25);
+
+      expect(languages, ['en', 'zh-TW']);
     });
 
     test('maps every attributed score and leaves absent optional metadata null', () async {

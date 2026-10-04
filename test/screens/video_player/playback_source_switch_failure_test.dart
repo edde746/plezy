@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,10 +12,12 @@ import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/models/download_models.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/account_preferences_controller.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/download_storage_service.dart';
@@ -22,6 +25,7 @@ import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
+import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
@@ -33,6 +37,7 @@ import '../../test_helpers/mock_player_channels.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/playback_report_fakes.dart';
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/saf_fakes.dart';
 import '../../test_helpers/stub_music_playback_service.dart';
 import '../../test_helpers/watch_together_fakes.dart';
 
@@ -136,16 +141,90 @@ void main() {
       },
     );
   });
+
+  group('a downloaded copy of the playing item (issue #2466)', () {
+    const localCopy = 'content://sdcard/switch.mkv';
+
+    setUp(() async {
+      SafStorageService.setOpsForTesting(FakeSafStorage());
+      await db
+          .into(db.downloadedMedia)
+          .insert(
+            DownloadedMediaCompanion.insert(
+              serverId: ServerId('srv-1'),
+              ratingKey: 'switch',
+              globalKey: 'srv-1:switch',
+              type: 'movie',
+              status: DownloadStatus.completed.index,
+              videoFilePath: const Value(localCopy),
+            ),
+          );
+    });
+
+    tearDown(() => SafStorageService.setOpsForTesting(null));
+
+    testWidgets('outranks the saved default quality when the source reloads', (tester) async {
+      await SettingsService.instance.write(SettingsService.defaultQualityPreset, TranscodeQualityPreset.p720_2mbps);
+      final fakePlayer = _SwitchPlayer();
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final key = await _pushScreen(tester, db: db, fakePlayer: fakePlayer, selectedQualityPreset: null);
+
+          expect(await switchSource(tester, key, newAudioStreamId: 2), PlaybackSourceChangeOutcome.applied);
+          expect(fakePlayer.openedUrls, [localCopy]);
+
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+        },
+      );
+    });
+
+    testWidgets('yields to a quality picked in the player for the rest of the session', (tester) async {
+      final fakePlayer = _SwitchPlayer();
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        testBody: () async {
+          final key = await _pushScreen(tester, db: db, fakePlayer: fakePlayer, selectedQualityPreset: null);
+
+          expect(
+            await switchSource(tester, key, newPreset: TranscodeQualityPreset.p720_2mbps),
+            PlaybackSourceChangeOutcome.applied,
+          );
+          // A later reload carries the picked quality and must not fall back
+          // to the download.
+          expect(await switchSource(tester, key, newAudioStreamId: 2), PlaybackSourceChangeOutcome.applied);
+          // Picking Original plays the download again.
+          expect(
+            await switchSource(tester, key, newPreset: TranscodeQualityPreset.original),
+            PlaybackSourceChangeOutcome.applied,
+          );
+          expect(fakePlayer.openedUrls, [
+            'https://example.invalid/switch/p720_2mbps/audio-1',
+            'https://example.invalid/switch/p720_2mbps/audio-2',
+            localCopy,
+          ]);
+
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+        },
+      );
+    });
+  });
 }
 
 Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
   WidgetTester tester, {
   required AppDatabase db,
   required _SwitchPlayer fakePlayer,
+  TranscodeQualityPreset? selectedQualityPreset = TranscodeQualityPreset.original,
 }) async {
   final client = _SwitchClient();
   final multi = testMultiServer(clients: [client]);
   final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
+  final offlineMode = OfflineModeProvider(multi.manager, multiServerProvider: multi.provider);
   final accountPreferences = AccountPreferencesController();
   final initializationHold = Completer<void>();
   Future<void> holdInitialization() => initializationHold.future;
@@ -156,6 +235,7 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
     initializationHold.complete();
     await tester.pump();
     offlineWatch.dispose();
+    offlineMode.dispose();
     accountPreferences.dispose();
     await fakePlayer.dispose();
   });
@@ -167,6 +247,7 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
         ChangeNotifierProvider(create: (_) => PlaybackStateProvider()),
         ChangeNotifierProvider<MultiServerProvider>.value(value: multi.provider),
         ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+        ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
         ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
         Provider<AppDatabase>.value(value: db),
@@ -182,7 +263,7 @@ Future<GlobalKey<VideoPlayerScreenState>> _pushScreen(
       builder: (_) => VideoPlayerScreen(
         key: key,
         metadata: testMediaItem(id: 'switch', serverId: 'srv-1', backend: MediaBackend.jellyfin),
-        selectedQualityPreset: TranscodeQualityPreset.original,
+        selectedQualityPreset: selectedQualityPreset,
         selectedAudioStreamId: 1,
       ),
     ).push(navigator.currentState!),

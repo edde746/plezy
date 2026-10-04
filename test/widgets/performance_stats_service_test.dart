@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/widgets/video_controls/widgets/performance_overlay/performance_stats.dart';
 import 'package:plezy/widgets/video_controls/widgets/performance_overlay/performance_stats_service.dart';
@@ -290,6 +291,48 @@ void main() {
       final stats = await _firstStats(_PropertyPlayer({'frame-drop-count': '3'}));
 
       expect(stats.droppedFramesFormatted, '3');
+    });
+  });
+
+  group('PerformanceStatsService Dolby Vision route (#2534)', () {
+    Future<PerformanceStats> mpvStats(Map<String, dynamic> stats) =>
+        _firstStats(_NativeStatsPlayer({'playerType': 'mpv', ...stats}));
+
+    test('a base layer is named by the transfer it decodes to, so a P8.1 fallback reads as HDR10', () async {
+      final cases = <String?, String>{
+        'pq': t.performanceOverlay.dvRouteBaseLayerHdr10,
+        'hlg': t.performanceOverlay.dvRouteBaseLayerHlg,
+        'bt.1886': t.performanceOverlay.dvRouteBaseLayerSdr,
+        'auto': t.performanceOverlay.dvRouteBaseLayer,
+        null: t.performanceOverlay.dvRouteBaseLayer,
+      };
+      for (final MapEntry(key: gamma, value: label) in cases.entries) {
+        final stats = await mpvStats({'dvSourceProfile': 8, 'dvRoute': 'base-layer', 'video-params/gamma': ?gamma});
+
+        expect(stats.dvSourceProfileFormatted, 'P8');
+        expect(stats.hasDvPlaybackPath, isTrue, reason: 'gamma=$gamma');
+        expect(stats.dvPlaybackPathFormatted, label, reason: 'gamma=$gamma');
+      }
+    });
+
+    test('the DV decoder is not named by the transfer', () async {
+      final stats = await mpvStats({'dvSourceProfile': 8, 'dvRoute': 'dv-decoder', 'video-params/gamma': 'pq'});
+
+      expect(stats.dvPlaybackPathFormatted, t.performanceOverlay.dvRouteDecoder);
+    });
+
+    test('a file without a DOVI record shows no DV rows', () async {
+      final stats = await mpvStats({'video-params/gamma': 'pq'});
+
+      expect(stats.dvSourceProfile, isNull);
+      expect(stats.hasDvPlaybackPath, isFalse);
+    });
+
+    test('an unknown route id hides the row rather than guessing', () async {
+      final stats = await mpvStats({'dvSourceProfile': 8, 'dvRoute': 'teleported'});
+
+      expect(stats.dvSourceProfile, 8);
+      expect(stats.hasDvPlaybackPath, isFalse);
     });
   });
 }

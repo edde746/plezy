@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
@@ -231,6 +232,31 @@ void main() {
     });
   });
 
+  group('SettingsService audio channel limit', () {
+    for (final (downmix, limit) in [(true, AudioChannelLimit.stereo), (false, AudioChannelLimit.original)]) {
+      test('migrates the legacy downmix toggle=$downmix to ${limit.name} (#2442)', () async {
+        resetSharedPreferencesForTest(initialAsync: {'audio_downmix': downmix});
+        final settings = await SettingsService.getInstance();
+
+        expect(settings.read(SettingsService.audioChannelLimit), limit);
+        expect(settings.prefs.containsKey('audio_downmix'), isFalse, reason: 'migrated once, then forgotten');
+      });
+    }
+
+    test('reset clears an unread legacy stereo downmix instead of restoring it', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'audio_downmix': true});
+      var settings = await SettingsService.getInstance();
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.audioChannelLimit), AudioChannelLimit.original);
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.audioChannelLimit), AudioChannelLimit.original);
+    });
+  });
+
   group('SettingsService music quality', () {
     test('defaults to original and persists changes by enum name', () async {
       var settings = await SettingsService.getInstance();
@@ -341,15 +367,6 @@ void main() {
 
       await settings.write(SettingsService.audioPassthrough, false);
       expect(settings.read(SettingsService.audioPassthrough), isFalse);
-    });
-
-    test('forces external player off on Apple TV even when stored enabled', () async {
-      final settings = await SettingsService.getInstance();
-      await settings.write(SettingsService.useExternalPlayer, true);
-
-      TvDetectionService.debugSetAppleTVOverride(true);
-
-      expect(settings.read(SettingsService.useExternalPlayer), isFalse);
     });
 
     test('forces auto PiP off on Apple TV even when stored enabled', () async {

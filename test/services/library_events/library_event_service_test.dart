@@ -306,6 +306,28 @@ void main() {
     expect(client.channels.last.starts, 1);
   });
 
+  test('only servers visible to the active profile get a channel', () async {
+    final visible = _FakeClient('server_1');
+    final hidden = _FakeClient('server_2');
+    manager.debugRegisterClientForTesting(visible);
+    manager.debugRegisterClientForTesting(hidden);
+    manager.setVisibleServerIds({'server_1'});
+    service = LibraryEventService(manager);
+    manager.debugEmitStatusForTesting();
+    await pumpEventQueue();
+
+    expect(service.activeServerIds, {'server_1'});
+    expect(hidden.channels, isEmpty);
+
+    // A visibility change alone (an expected server promoted, a profile
+    // switch narrowing the set) reconciles without a status emission.
+    manager.setVisibleServerIds({'server_2'});
+    await pumpEventQueue();
+    expect(service.activeServerIds, {'server_2'});
+    expect(visible.channels.single.disposed, isTrue);
+    expect(hidden.channels.single.starts, 1);
+  });
+
   test('a replaced client tears down the old channel and starts a fresh one', () async {
     final original = _FakeClient('server_1');
     manager.debugRegisterClientForTesting(original);

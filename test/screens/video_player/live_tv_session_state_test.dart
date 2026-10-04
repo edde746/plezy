@@ -11,6 +11,60 @@ MediaSubtitleTrack _track({required int id, int? index, String? languageCode}) =
     MediaSubtitleTrack(id: id, index: index, languageCode: languageCode, selected: false, forced: false);
 
 void main() {
+  group('LiveTvSessionState replacement failure deferral', () {
+    test('a failure of the stream being replaced is not deferred', () {
+      final state = LiveTvSessionState(null);
+      final token = state.beginReplacement();
+      // The zap is still tuning: the old stream is the one failing.
+      expect(state.deferReplacementFailure(), isFalse);
+      state.streamGeneration++;
+      expect(state.endReplacement(token, committed: true), isFalse);
+    });
+
+    test('a replacement-stream failure runs once the replacement commits', () {
+      final state = LiveTvSessionState(null);
+      final token = state.beginReplacement();
+      state.streamGeneration++; // the replacement opened its stream
+      expect(state.deferReplacementFailure(), isTrue);
+      expect(state.endReplacement(token, committed: true), isTrue);
+      // Consumed: a second end does not replay it.
+      expect(state.endReplacement(token, committed: true), isFalse);
+    });
+
+    test('an uncommitted replacement drops its parked failure', () {
+      final state = LiveTvSessionState(null);
+      final token = state.beginReplacement();
+      state.streamGeneration++;
+      expect(state.deferReplacementFailure(), isTrue);
+      expect(state.endReplacement(token, committed: false), isFalse);
+    });
+
+    test('a failure is dropped when a newer stream replaced the failed one', () {
+      final state = LiveTvSessionState(null);
+      final token = state.beginReplacement();
+      state.streamGeneration++;
+      expect(state.deferReplacementFailure(), isTrue);
+      state.streamGeneration++;
+      expect(state.endReplacement(token, committed: true), isFalse);
+    });
+
+    test('a superseded replacement cannot end the newer one', () {
+      final state = LiveTvSessionState(null);
+      final stale = state.beginReplacement();
+      final current = state.beginReplacement();
+      state.streamGeneration++;
+      expect(state.deferReplacementFailure(), isTrue);
+      expect(state.endReplacement(stale, committed: true), isFalse);
+      expect(state.endReplacement(current, committed: true), isTrue);
+    });
+
+    test('nothing is deferred outside a replacement', () {
+      final state = LiveTvSessionState(null);
+      state.streamGeneration++;
+      expect(state.deferReplacementFailure(), isFalse);
+    });
+  });
+
   group('LiveTvSessionState.remapSubtitleSelection', () {
     test('null previous selection stays off', () {
       expect(LiveTvSessionState.remapSubtitleSelection([_track(id: 1)], null), isNull);

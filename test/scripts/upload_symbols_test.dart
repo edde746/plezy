@@ -304,7 +304,7 @@ void main() {
   });
 
   test('non-obfuscated iOS does not invent a map and cannot consume Android map', () async {
-    put('build/ios/iphoneos/Runner.app/Frameworks/App.framework/App', elf(1));
+    put('build/ios/iphoneos/Plezy.app/Frameworks/App.framework/App', elf(1));
     put('build/ios/Release-iphoneos/App.framework.dSYM/Contents/Resources/DWARF/App', elf(1));
     put('debug-info/ios/app.ios-arm64.symbols', elf(1));
     put('debug-info/android-aab/obfuscation.map.json', utf8.encode('["Wrong","a"]'));

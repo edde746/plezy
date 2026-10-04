@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../models/audio_channel_limit.dart';
 import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
+import '../../utils/audio_channel_limit_labels.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/settings_service.dart';
 import '../../services/video_decode_capabilities.dart';
@@ -38,18 +40,28 @@ class PlaybackSettingsScreen extends StatelessWidget {
         SettingsService.matchDynamicRange,
         SettingsService.matchContentFrameRate,
         SettingsService.matchContentResolution,
-        SettingsService.audioDownmix,
+        SettingsService.audioChannelLimit,
+        SettingsService.disableDolbyVision,
       ],
       builder: (context) {
         final svc = SettingsService.instance;
         final exoActive = Platform.isAndroid && svc.read(SettingsService.useExoPlayer);
-        final downmixOn = svc.read(SettingsService.audioDownmix);
+        // ExoPlayer only has the stereo fold, so a 5.1 limit set on mpv plays
+        // (and shows) as Original there.
+        final storedChannelLimit = svc.read(SettingsService.audioChannelLimit);
+        final channelLimit = exoActive ? storedChannelLimit.onExoPlayer : storedChannelLimit;
         final showDisplaySwitchDelay =
             PlatformDetector.isAppleTV() ||
             (Platform.isWindows &&
                 (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
             (Platform.isAndroid &&
                 (svc.read(SettingsService.matchContentFrameRate) || svc.read(SettingsService.matchContentResolution)));
+        // Android mpv and Apple TV only: ExoPlayer is not taking new features, and
+        // elsewhere no Dolby Vision signal ever reaches the display.
+        final showDisableDolbyVision = (Platform.isAndroid && !exoActive) || PlatformDetector.isAppleTV();
+        // With Dolby Vision disabled mpv strips every Profile 7 file, so the
+        // conversion choices would change nothing.
+        final showDvConversionMode = Platform.isAndroid && (exoActive || !svc.read(SettingsService.disableDolbyVision));
 
         return SettingsPage(
           title: Text(t.settings.videoPlayback),
@@ -75,7 +87,8 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 if (Platform.isWindows) _matchRefreshRateTile(),
                 if (Platform.isWindows) _matchDynamicRangeTile(),
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
-                if (Platform.isAndroid) _dvConversionModeTile(),
+                if (showDisableDolbyVision) _disableDolbyVisionTile(),
+                if (showDvConversionMode) _dvConversionModeTile(),
                 // mpv-only: ExoPlayer always leaves the conversion to the device.
                 if (Platform.isAndroid && !exoActive) _hdrSdrConversionTile(),
                 // mpv-only (#2149): ExoPlayer has no filter chain, so the
@@ -90,9 +103,10 @@ class PlaybackSettingsScreen extends StatelessWidget {
               title: t.settings.audio,
               children: [
                 if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
-                _audioDownmixTile(),
-                if (downmixOn) _downmixCenterBoostTile(),
-                if (downmixOn) _downmixNormalizeTile(),
+                _audioChannelLimitTile(exoActive: exoActive),
+                // Only a stereo fold mixes the center away; any fold can clip.
+                if (channelLimit == AudioChannelLimit.stereo) _downmixCenterBoostTile(),
+                if (channelLimit != AudioChannelLimit.original) _downmixNormalizeTile(),
                 _maxVolumeTile(),
               ],
             ),
@@ -423,9 +437,11 @@ class PlaybackSettingsScreen extends StatelessWidget {
       return SettingNavigationTile(
         icon: Symbols.open_in_new_rounded,
         title: t.externalPlayer.title,
-        subtitle: useExt
-            ? (player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name)
-            : t.externalPlayer.off,
+        subtitle: !useExt
+            ? t.externalPlayer.off
+            : !player.isAvailable
+            ? t.externalPlayer.selectPlayer
+            : (player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name),
         destinationBuilder: (_) => const ExternalPlayerScreen(),
       );
     },
@@ -504,11 +520,16 @@ class PlaybackSettingsScreen extends StatelessWidget {
     },
   );
 
-  Widget _audioDownmixTile() => SettingSwitchTile(
-    pref: SettingsService.audioDownmix,
-    icon: Symbols.headphones_rounded,
-    title: t.settings.audioDownmix,
-    subtitle: t.settings.audioDownmixDescription,
+  Widget _audioChannelLimitTile({required bool exoActive}) => SettingSelectionTile<AudioChannelLimit>(
+    pref: SettingsService.audioChannelLimit,
+    icon: Symbols.speaker_group_rounded,
+    title: t.settings.audioChannelLimit,
+    subtitleBuilder: (limit) =>
+        '${audioChannelLimitLabel(exoActive ? limit.onExoPlayer : limit)} · ${t.settings.audioChannelLimitDescription}',
+    options: [
+      for (final limit in AudioChannelLimit.available(exoPlayer: exoActive))
+        DialogOption(value: limit, title: audioChannelLimitLabel(limit), subtitle: audioChannelLimitDescription(limit)),
+    ],
   );
 
   Widget _downmixCenterBoostTile() => SettingNumberTile(
@@ -552,6 +573,13 @@ class PlaybackSettingsScreen extends StatelessWidget {
     icon: Symbols.tv_options_input_settings_rounded,
     title: t.settings.tunneledPlayback,
     subtitle: t.settings.tunneledPlaybackDescription,
+  );
+
+  Widget _disableDolbyVisionTile() => SettingSwitchTile(
+    pref: SettingsService.disableDolbyVision,
+    icon: Symbols.hdr_off_rounded,
+    title: t.settings.disableDolbyVision,
+    subtitle: t.settings.disableDolbyVisionDescription,
   );
 
   Widget _dvConversionModeTile() => SettingSelectionTile<DvConversionModePreference>(

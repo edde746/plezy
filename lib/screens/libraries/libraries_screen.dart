@@ -67,11 +67,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _collectionsTabKey = GlobalKey();
   final _playlistsTabKey = GlobalKey();
 
-  String? _errorMessage;
   String? _selectedLibraryGlobalKey;
 
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
   bool _isRestoringTab = false;
+
+  /// Whether a post-frame [_initializeWithLibraries] is already queued.
+  bool _initializeScheduled = false;
 
   /// Track which tabs have loaded data (used to trigger focus after tab restore)
   final Set<int> _loadedTabs = {};
@@ -127,7 +129,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     super.initState();
     initTabNavigation();
 
+    _scheduleInitializeWithLibraries();
+  }
+
+  /// Run [_initializeWithLibraries] after the current frame, at most once per
+  /// frame. Besides the mount, the build schedules it whenever libraries are
+  /// on hand but none is selected: a first load that found none returns early,
+  /// and nothing else selects one when they arrive later — on phones the
+  /// library dropdown only renders once a library is selected, so the body
+  /// would stay blank.
+  void _scheduleInitializeWithLibraries() {
+    if (_initializeScheduled) return;
+    _initializeScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeScheduled = false;
       if (!mounted) return;
       _initializeWithLibraries();
     });
@@ -186,8 +201,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void onTabChanged() {
     if (_selectedLibraryGlobalKey != null && !tabController.indexIsChanging) {
       if (!_isRestoringTab) {
+        // Resolve both now: by the time storage resolves, a library switch may
+        // have replaced the selection.
+        final libraryGlobalKey = _selectedLibraryGlobalKey!;
+        final tabName = _visibleTabs[tabController.index].name;
         StorageService.getInstance().then((storage) {
-          storage.saveLibraryTab(_selectedLibraryGlobalKey!, _visibleTabs[tabController.index].name);
+          storage.saveLibraryTab(libraryGlobalKey, tabName);
         });
 
         if (!suppressAutoFocus) {
@@ -201,7 +220,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Focus the first item in the currently active tab.
   /// Used for initial load and tab switching - focuses the grid content directly.
-  void _focusCurrentTab() {
+  ///
+  /// With [awaitLoad], a tab that is still loading only parks focus on its tab
+  /// chip (see [_focusTabContent]) so its load completion focuses the content.
+  void _focusCurrentTab({bool awaitLoad = false}) {
     // Don't focus during tab animations - wait for animation to complete
     // This prevents race conditions during focus restoration
     if (tabController.indexIsChanging) {
@@ -224,23 +246,36 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
       final tabState = _getTabState(tabController.index);
       if (tabState != null) {
-        (tabState as dynamic).focusContentOrChrome();
+        _focusTabContent(tabState, awaitLoad: awaitLoad);
       } else {
         // State not available yet, retry after another frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          _focusCurrentTabImmediate();
+          _focusCurrentTabImmediate(awaitLoad: awaitLoad);
         });
       }
     });
   }
 
   /// Focus without additional frame delay (used for retry)
-  void _focusCurrentTabImmediate() {
+  void _focusCurrentTabImmediate({bool awaitLoad = false}) {
     final tabState = _getTabState(tabController.index);
     if (tabState != null) {
-      (tabState as dynamic).focusContentOrChrome();
+      _focusTabContent(tabState, awaitLoad: awaitLoad);
     }
+  }
+
+  void _focusTabContent(State tabState, {required bool awaitLoad}) {
+    // A loading tab has no content yet, so focusContentOrChrome would fall
+    // back to focusTabBar, which sets suppressAutoFocus — and the load's
+    // onDataLoaded then leaves focus stranded on the tab bar. Hold focus on
+    // the tab chip without suppressing, so that completion moves it on.
+    if (awaitLoad && tabState is BaseLibraryTabState && tabState.isLoading) {
+      _resetOuterScroll();
+      getTabChipFocusNode(tabController.index).requestFocus();
+      return;
+    }
+    (tabState as dynamic).focusContentOrChrome();
   }
 
   /// Focus tab content when navigating DOWN from the tab bar.
@@ -318,11 +353,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Called by parent when the Libraries screen becomes visible.
   /// If the active tab has already loaded data (often the case after preloading
   /// while on another main tab), re-request focus so the first item is focused
-  /// once the screen is actually shown.
+  /// once the screen is actually shown. A tab still loading gets its content
+  /// focused when the load lands instead.
   @override
   void focusActiveTabIfReady() {
     if (_selectedLibraryGlobalKey == null) return;
-    _focusCurrentTab();
+    _focusCurrentTab(awaitLoad: true);
   }
 
   @override
@@ -357,7 +393,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     final newIndex = currentTabType != null ? newTabs.indexOf(currentTabType) : -1;
     if (newIndex > 0) {
+      // Carrying the tab type over is not a user pick: it must neither focus
+      // nor save — the save would overwrite the destination library's saved
+      // tab before [_loadLibraryContent] restores it.
+      _isRestoringTab = true;
       tabController.index = newIndex;
+      _isRestoringTab = false;
     }
   }
 
@@ -443,7 +484,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
-      _errorMessage = null;
       _loadedTabs.clear();
     });
     widget.onLibrarySelected?.call(libraryGlobalKey);
@@ -518,8 +558,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // ignore: no-empty-block - visibility mixin contract; nothing to pause.
   void onTabHidden() {}
 
+  /// The toolbar refresh. Without a selected library the screen is showing the
+  /// provider's empty or error state, and there are no tabs to refetch: reload
+  /// the library list itself (the build selects one once they arrive).
   @override
-  void manualRefresh() => _refreshSelectedLibraryTabs();
+  void manualRefresh() {
+    if (_selectedLibraryGlobalKey == null) {
+      unawaited(context.read<LibrariesProvider>().refresh());
+      return;
+    }
+    _refreshSelectedLibraryTabs();
+  }
 
   void _refreshSelectedLibraryTabs() {
     for (var i = 0; i < _visibleTabs.length; i++) {
@@ -536,7 +585,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     appLogger.d('LibrariesScreen.fullRefresh() called - reloading all content');
     setState(() {
       _selectedLibraryGlobalKey = null;
-      _errorMessage = null;
     });
 
     // Reinitialize with current libraries from provider
@@ -717,6 +765,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final librariesProvider = context.watch<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
     final isLoadingLibraries = librariesProvider.isLoading;
+    final librariesErrorMessage = librariesProvider.errorMessage;
 
     // Watch for hidden libraries changes to trigger rebuild
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
@@ -844,15 +893,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     Widget body;
     if (isLoadingLibraries) {
       body = buildSimpleScroll(body: const Center(child: CircularProgressIndicator()));
-    } else if (_errorMessage != null && visibleLibraries.isEmpty && selectedLibrary == null) {
+    } else if (librariesErrorMessage != null && visibleLibraries.isEmpty && selectedLibrary == null) {
       body = buildSimpleScroll(
         body: ErrorStateWidget(
-          message: _errorMessage!,
+          message: librariesErrorMessage,
           icon: Symbols.error_outline_rounded,
-          onRetry: () {
-            final librariesProvider = context.read<LibrariesProvider>();
-            librariesProvider.refresh();
-          },
+          onRetry: manualRefresh,
         ),
       );
     } else if (visibleLibraries.isEmpty && selectedLibrary == null) {
@@ -876,80 +922,80 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           isActive: tabController.index == index,
           tabIndex: index,
         );
-        if (useTvRecommendedBackdrop) return tabContent;
-
-        return ClipRect(child: tabContent);
+        // Clip each tab so horizontal overflow (e.g. hub rows with Clip.none)
+        // doesn't bleed into adjacent tabs during swipe transitions — except
+        // the TV Recommended backdrop, which draws full-bleed. Toggling the
+        // clip rather than the wrapper keeps the page's widget type stable.
+        return ClipRect(clipBehavior: useTvRecommendedBackdrop ? Clip.none : Clip.hardEdge, child: tabContent);
       }
 
-      Widget buildTabs({bool activeOnly = false}) {
-        if (activeOnly) return buildTab(currentTabIndex);
+      final tabs = TabBarView(
+        key: ValueKey(_selectedLibraryGlobalKey),
+        controller: tabController,
+        // Disable swipe on desktop/TV - trackpad and d-pad scroll actions can trigger accidental tab switches.
+        // See: https://github.com/flutter/flutter/issues/11132
+        physics: useSideNavigation ? const NeverScrollableScrollPhysics() : null,
+        children: [for (int i = 0; i < _visibleTabs.length; i++) buildTab(i)],
+      );
 
-        final children = [for (int i = 0; i < _visibleTabs.length; i++) buildTab(i)];
-
-        return TabBarView(
-          key: ValueKey(_selectedLibraryGlobalKey),
-          controller: tabController,
-          // Disable swipe on desktop/TV - trackpad and d-pad scroll actions can trigger accidental tab switches.
-          // See: https://github.com/flutter/flutter/issues/11132
-          physics: useSideNavigation ? const NeverScrollableScrollPhysics() : null,
-          // Wrap each tab in ClipRect so horizontal overflow (e.g. hub rows
-          // with Clip.none) doesn't bleed into adjacent tabs during swipe transitions.
-          children: children,
-        );
-      }
-
-      if (useTvRecommendedBackdrop) {
-        body = Focus(
-          canRequestFocus: false,
-          skipTraversal: true,
-          onKeyEvent: (_, event) => event.logicalKey.isDpadDirection ? KeyEventResult.handled : KeyEventResult.ignored,
-          child: Stack(
-            fit: StackFit.expand,
-            clipBehavior: Clip.none,
-            children: [
-              buildTabs(activeOnly: true),
-              Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),
-            ],
-          ),
-        );
-      } else {
-        body = NestedScrollView(
-          controller: _outerScrollController,
-          floatHeaderSlivers: true,
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: appBar(floating: true),
-            ),
-            if (showMobileTabsRow)
-              SliverToBoxAdapter(
-                child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        for (int i = 0; i < _visibleTabs.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 8),
-                          buildTabChip(
-                            _getTabLabel(_visibleTabs[i]),
-                            i,
-                            onSelectWhenActive: _focusCurrentTab,
-                            onNavigateDown: _focusCurrentTabFromTabBar,
-                            onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
-                          ),
-                        ],
-                      ],
+      // One tree shape for both layouts: the TV Recommended backdrop only
+      // drops the header slivers and overlays a transparent top bar. Swapping
+      // in a different body there unmounted the TabBarView and with it every
+      // kept-alive sibling tab, so each switch in or out of Recommended
+      // reloaded them from scratch and lost their scroll and filter state.
+      body = Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: useTvRecommendedBackdrop
+            ? (_, event) => event.logicalKey.isDpadDirection ? KeyEventResult.handled : KeyEventResult.ignored
+            : null,
+        child: Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: [
+            NestedScrollView(
+              controller: _outerScrollController,
+              floatHeaderSlivers: true,
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                if (!useTvRecommendedBackdrop)
+                  SliverOverlapAbsorber(
+                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                    sliver: appBar(floating: true),
+                  ),
+                if (showMobileTabsRow && !useTvRecommendedBackdrop)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (int i = 0; i < _visibleTabs.length; i++) ...[
+                              if (i > 0) const SizedBox(width: 8),
+                              buildTabChip(
+                                _getTabLabel(_visibleTabs[i]),
+                                i,
+                                onSelectWhenActive: _focusCurrentTab,
+                                onNavigateDown: _focusCurrentTabFromTabBar,
+                                onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+              ],
+              body: tabs,
+            ),
+            if (useTvRecommendedBackdrop)
+              Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),
           ],
-          body: buildTabs(),
-        );
-      }
+        ),
+      );
     } else {
+      if (_selectedLibraryGlobalKey == null) _scheduleInitializeWithLibraries();
       body = buildSimpleScroll(body: const SizedBox.shrink());
     }
 

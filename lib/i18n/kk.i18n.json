@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Бұл файл дұрыс Plezy баптаулар файлы емес",
     "importSettingsNoUser": "Баптауларды импорттау алдында жүйеге кіріңіз",
     "shortcutsReset": "Пернелер тіркесі әдепкі күйге қайтарылды",
+    "resetShortcutsConfirm": "",
     "about": "Қолданба туралы",
     "aboutDescription": "Қолданба туралы ақпарат пен лицензиялар",
     "updates": "Жаңартулар",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.",
     "audioPassthroughOverriddenByNormalization": "Дыбыс деңгейін нормалау қосулы кезде өшірулі",
-    "audioDownmix": "Стереоға түрлендіру (Downmix)",
-    "audioDownmixDescription": "Көп арналы дыбысты стерео динамиктер үшін екі арнаға төмендету",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Орталық арнаны күшейту",
     "downmixCenterBoostValue": "${db} дБ",
     "downmixCenterBoostLabel": "Күшейту (дБ)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Ішкі DV7 режимін мәжбүрлеу",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 форматына түрлендіру",
     "dvConversionHevcStripDescription": "Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету",
+    "disableDolbyVision": "Dolby Vision-ды өшіру",
+    "disableDolbyVisionDescription": "Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату",
     "hdrSdrConversion": "HDR-ды SDR-ға түрлендіру",
     "hdrSdrConversionDescription": "Дисплей HDR көрсете алмаған кезде HDR бейнесін не түрлендіретінін таңдаңыз.",
     "hdrSdrConversionAuto": "Автоматты",
@@ -435,7 +444,8 @@
     "hint": "Фильмдер, сериалдар, музыка іздеу...",
     "tryDifferentTerm": "Басқа іздеу сөзін байқап көріңіз",
     "searchYourMedia": "Медиафайлдардан іздеу",
-    "enterTitleActorOrKeyword": "Атауын, актерді немесе кілт сөзді енгізіңіз"
+    "enterTitleActorOrKeyword": "Атауын, актерді немесе кілт сөзді енгізіңіз",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} үшін пернелер тіркесін орнату",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "Сервер бұл элементті тапты, бірақ оның файлын оқи алмады (HTTP 404). Файл жылжытылған, өшірілген немесе оның сақтау орны қолжетімсіз болуы мүмкін. Сервер иесінен файлды тексеріп, кітапхананы қайта сканерлеуді сұраңыз.",
     "serverBusyTitle": "Ағын қолжетімсіз",
     "serverBusyBody": "Сервер бұл файлды ағынмен жіберуден қайта-қайта бас тартты (HTTP 503). Ол қайта іске қосылып, бос емес болуы немесе файл сақталған қойма офлайн болуы мүмкін. Сәлден соң қайталап көріңіз — бұл жалғаса берсе, сервер иесінен серверді және файл қоймасын тексеруін сұраңыз.",
+    "playbackNotAllowedTitle": "Ойнатуға рұқсат жоқ",
+    "playbackNotAllowedBody": "Сервер бұл элементті ағынмен жіберуден бас тартты (HTTP 403). Тіркелгіңізде оны ойнатуға рұқсат болмауы мүмкін немесе сервер ойнатуға тек өзінің жергілікті желісінде рұқсат беруі мүмкін.",
     "logsUploaded": "Журналдар жүктелді",
     "logsUploadFailed": "Журналдарды жүктеу мүмкін болмады",
     "logId": "Журнал ID-сі",
@@ -907,6 +919,8 @@
     "signOut": "Шығу",
     "signOutPlexTitle": "Plex-тен шығу?",
     "signOutPlexMessage": "${displayName} мен барлық Plex Home пайдаланушылары өшірілсін бе? Кез келген уақытта қайта кіре аласыз.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex-тен шықтыңыз.",
     "signOutFailed": "Шығу мүмкін болмады.",
     "sectionTitle": "Профильдер",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым",
     "sessionExpiredOne": "${name} үшін сеанс мерзімі өтті",
     "sessionExpiredMany": "${count} сервер үшін сеанс мерзімі өтті",
+    "accessDeniedOne": "${name} бұл тіркелгіге кіруден бас тартты",
+    "accessDeniedMany": "${count} сервер бұл тіркелгіге кіруден бас тартты",
     "signInAgain": "Қайтадан кіру",
     "editMediaBrowserTitle": "${product} қосылымын өңдеу",
     "editMediaBrowserIntro": "${serverName} үшін URL мекенжайларды қосыңыз немесе өшіріңіз. Plezy ең төмен кідірісі бар қолжетімді URL мекенжайды пайдаланады."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Басқа"
     },
     "creditRole": {
+      "actor": "",
       "director": "Режиссер",
       "writer": "Сценарист",
       "producer": "Продюсер",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Қолжетімді",
     "syncRuleOffline": "Офлайн",
     "syncRuleSignInRequired": "Кіру қажет",
+    "syncRuleAccessDenied": "Кіруге тыйым салынды",
     "syncRuleNotAvailableForProfile": "Ағымдағы профиль үшін қолжетімсіз",
     "syncRuleUnknownServer": "Белгісіз сервер",
     "syncRuleListCreated": "Синхрондау ережесі жасалды",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Файл табылмады (404)",
+    "errorDownloadNotAllowed": "Сервер жүктеп алуға рұқсат бермейді (403)",
     "errorDownloadFailed": "Жүктеу сәтсіз аяқталды",
-    "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${error}",
+    "errorDownloadFailedWithReason": "Жүктеу сәтсіз аяқталды: ${reason}",
+    "errorHttpStatus": "Жүктеу сәтсіз аяқталды (HTTP ${status})",
+    "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${reason}",
+    "reasonFileNotSaved": "файлды осы құрылғыда сақтау мүмкін болмады",
+    "reasonCannotResume": "ішінара жүктеуді жалғастыру мүмкін болмады",
+    "reasonDeviceStorageFull": "бұл құрылғыда бос орын қалмады",
     "notificationDownloading": "Жүктелуде...",
     "notificationComplete": "Жүктеу аяқталды",
     "notificationPaused": "Жүктеу кідіртілді"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Дыбыс деңгейін нормалау",
     "audioNormalizationDisablesPassthrough": "Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі",
-    "audioNormalizationStereoMix": "Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі",
-    "audioDownmix": "Стереоға түрлендіру"
+    "audioNormalizationStereoMix": "Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі"
   },
   "performanceOverlay": {
     "color": "Түс",
@@ -2002,6 +2025,13 @@
     "rotation": "Бұрылыс",
     "dvSource": "DV дереккөзі",
     "dvPath": "DV жолы",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7 түрлендіруі",
     "sampleRate": "Дискретизация жиілігі",
     "pixelFormat": "Пиксель форматы",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Plezy-ді ${service} қызметінде белсендіру",

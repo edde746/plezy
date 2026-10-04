@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/models/hotkey_model.dart';
 import 'package:plezy/screens/settings/keyboard_shortcuts_screen.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/keyboard_shortcuts_service.dart';
@@ -95,6 +96,29 @@ void main() {
       find.text(t.settings.shortcutAlreadyAssigned(action: service.getActionDisplayName('volume_up'))),
       findsOneWidget,
     );
+  });
+
+  testWidgets('reset asks for confirmation before restoring the defaults', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    await service.setHotkey('play_pause', const HotKey(key: PhysicalKeyboardKey.keyK));
+    await _pumpScreen(tester, service);
+
+    Finder dialogButton(String label) => find.descendant(of: find.byType(AlertDialog), matching: find.text(label));
+
+    await tester.tap(find.widgetWithText(TextButton, t.common.reset));
+    await tester.pumpAndSettle();
+    expect(find.text(t.settings.resetShortcutsConfirm), findsOneWidget);
+    await tester.tap(dialogButton(t.common.cancel));
+    await tester.pumpAndSettle();
+    expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.keyK);
+
+    await tester.tap(find.widgetWithText(TextButton, t.common.reset));
+    await tester.pumpAndSettle();
+    await tester.tap(dialogButton(t.common.reset));
+    await tester.pumpAndSettle();
+    expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.space);
+    expect(find.text(t.settings.shortcutsReset), findsOneWidget);
   });
 
   testWidgets('persistence failure keeps the dialog retryable and the row unchanged', (tester) async {

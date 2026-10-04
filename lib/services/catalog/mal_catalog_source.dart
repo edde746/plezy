@@ -223,7 +223,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
         anilist: row?.anilistId,
         simkl: row?.simklId,
         imdb: row?.imdbIds?.firstOrNull,
-        tmdb: row?.tmdbIds?.firstOrNull,
+        tmdb: row?.tmdbIdFor(movie: anime.isMovie),
         tvdb: row?.tvdbId,
       ),
       // Which season of the parent series this entry maps to, for the reverse
@@ -371,6 +371,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (!external.hasAny) return null;
     final rows = await _fribb.lookup(
+      movie: kind == MediaKind.movie,
       anidbId: external.anidb,
       tvdbId: external.tvdb,
       tmdbId: external.tmdb,
@@ -428,11 +429,20 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
   Future<void> performWatchlistMutation(MediaKind kind, CatalogItemIds ids, {required bool add}) async {
     final malId = ids.mal!;
     if (add) {
-      await _client.updateMyListStatus(malId, const {'status': 'plan_to_watch'});
-    } else {
-      await _deleteEntry(malId);
+      await _client.updateMyListStatus(malId, const {'status': _planToWatch});
+      return;
     }
+    // MAL can only delete the whole list entry — progress, score, dates and
+    // rewatches with it — so remove it only while it is still Plan to Watch.
+    // One that has moved on is already off the watchlist; leave it be.
+    if (await _client.getMyListStatusName(malId) != _planToWatch) {
+      reloadWatchlistSnapshot();
+      return;
+    }
+    await _deleteEntry(malId);
   }
+
+  static const String _planToWatch = 'plan_to_watch';
 
   /// Removing an entry that is already gone is success, not failure.
   Future<void> _deleteEntry(int malId) async {

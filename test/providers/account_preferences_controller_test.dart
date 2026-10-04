@@ -271,6 +271,22 @@ void main() {
       });
     }
 
+    test('a non-default Jellyfin account still reads its Next Up rewatching switch', () async {
+      final fixture = await _Fixture.local();
+      addTearDown(fixture.dispose);
+      await fixture.controller.ensureActiveLoaded();
+      final other = testJellyfinConnection();
+      fixture.registerBorrowedClient(other, rewatchingInNextUp: true);
+      await fixture.bindBorrowed(other, isDefault: false);
+      await pumpEventQueue();
+      await fixture.controller.ensureActiveLoaded();
+      await pumpEventQueue();
+
+      // Playback defaults still come from the default Plex account.
+      expect(fixture.controller.activePreferences?.defaultAudioLanguage, 'fra');
+      expect(fixture.serverManager.getJellyfinClientByCompoundId(other.id)?.sendNextUpRewatching, isTrue);
+    });
+
     test('a borrowed default before Home token mint never supplies playback preferences', () async {
       final fixture = await _Fixture.plexHome();
       addTearDown(fixture.dispose);
@@ -378,7 +394,7 @@ class _Fixture {
   Future<void>? responseGate;
   Completer<void>? requestStarted;
 
-  Future<void> bindBorrowed(JellyfinConnection connection) async {
+  Future<void> bindBorrowed(JellyfinConnection connection, {bool isDefault = true}) async {
     await stack.connections.upsert(connection);
     await stack.profileConnections.upsert(
       ProfileConnection(
@@ -386,9 +402,9 @@ class _Fixture {
         connectionId: connection.id,
         userIdentifier: connection.userId,
         userToken: connection.accessToken,
-        isDefault: true,
+        isDefault: isDefault,
       ),
-      makeDefault: true,
+      makeDefault: isDefault,
     );
   }
 
@@ -399,6 +415,7 @@ class _Fixture {
     JellyfinConnection connection, {
     String? language,
     Map<String, dynamic> configuration = const {},
+    bool rewatchingInNextUp = false,
     void Function(http.Request request)? onPost,
     void Function()? onRequest,
   }) {
@@ -418,7 +435,13 @@ class _Fixture {
             }
             return http.Response('', 204);
           }
-          return jsonResponse(isDisplayPreferences ? {'CustomPrefs': <String, dynamic>{}} : {'Configuration': served});
+          return jsonResponse(
+            isDisplayPreferences
+                ? {
+                    'CustomPrefs': <String, dynamic>{if (rewatchingInNextUp) 'enableRewatchingInNextUp': 'true'},
+                  }
+                : {'Configuration': served},
+          );
         },
       ),
     );

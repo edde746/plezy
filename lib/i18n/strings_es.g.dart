@@ -456,8 +456,6 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívala si no tienes sonido.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Usa el decodificador Dolby nativo de Apple para Dolby Digital Plus, incluido Atmos. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Desactívalo si no tienes sonido.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Desactivada mientras la normalización de volumen esté activada';
-	@override String get audioDownmix => 'Mezclar a estéreo';
-	@override String get audioDownmixDescription => 'Mezcla el sonido envolvente a dos canales para altavoces estéreo o auriculares';
 	@override String get downmixCenterBoost => 'Realce del canal central';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Realce (dB)';
@@ -474,6 +472,8 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Forzar DV7 nativo y suprimir el reintento de conversión DV';
 	@override String get dvConversionDv81Description => 'Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision';
 	@override String get dvConversionHevcStripDescription => 'Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional';
+	@override String get disableDolbyVision => 'Desactivar Dolby Vision';
+	@override String get disableDolbyVisionDescription => 'Reproducir la capa HDR10 o HLG del archivo en lugar de Dolby Vision, si la tiene';
 	@override String get hdrSdrConversion => 'Conversión de HDR a SDR';
 	@override String get hdrSdrConversionDescription => 'Elige qué convierte el vídeo HDR cuando la pantalla no puede mostrar HDR.';
 	@override String get hdrSdrConversionAuto => 'Automático';
@@ -977,6 +977,8 @@ class _Translations$messages$es extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'El servidor encontró este elemento pero no pudo leer su archivo (HTTP 404). Es probable que el archivo se haya movido o eliminado, o que su almacenamiento esté sin conexión. Pide al propietario del servidor que revise el archivo y vuelva a escanear la biblioteca.';
 	@override String get serverBusyTitle => 'Reproducción no disponible';
 	@override String get serverBusyBody => 'El servidor siguió rechazando la reproducción de este archivo (HTTP 503). Puede que se esté reiniciando, esté ocupado o que el almacenamiento del archivo no esté disponible. Inténtalo de nuevo dentro de un momento; si sigue ocurriendo, pide al propietario del servidor que revise el servidor y el almacenamiento del archivo.';
+	@override String get playbackNotAllowedTitle => 'Reproducción no permitida';
+	@override String get playbackNotAllowedBody => 'El servidor se negó a transmitir este elemento (HTTP 403). Es posible que tu cuenta no tenga permiso para reproducirlo o que el servidor solo permita la reproducción en su red local.';
 	@override String get logsUploaded => 'Registros subidos';
 	@override String get logsUploadFailed => 'Error al subir registros';
 	@override String get logId => 'ID de registro';
@@ -1146,6 +1148,8 @@ class _Translations$connections$es extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Añadir a ${displayName}: Plex, Jellyfin, Emby u otra conexión de perfil';
 	@override String sessionExpiredOne({required Object name}) => 'Sesión caducada para ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sesión caducada para ${count} servidores';
+	@override String accessDeniedOne({required Object name}) => '${name} denegó el acceso a esta cuenta';
+	@override String accessDeniedMany({required Object count}) => '${count} servidores denegaron el acceso a esta cuenta';
 	@override String get signInAgain => 'Iniciar sesión de nuevo';
 	@override String editMediaBrowserTitle({required Object product}) => 'Editar conexión de ${product}';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Añade o elimina URL para ${serverName}. Plezy usará la URL accesible con menor latencia.';
@@ -1842,6 +1846,7 @@ class _Translations$downloads$es extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Disponible';
 	@override String get syncRuleOffline => 'Sin conexión';
 	@override String get syncRuleSignInRequired => 'Se requiere iniciar sesión';
+	@override String get syncRuleAccessDenied => 'Acceso denegado';
 	@override String get syncRuleNotAvailableForProfile => 'No disponible para el perfil actual';
 	@override String get syncRuleUnknownServer => 'Servidor desconocido';
 	@override String get syncRuleListCreated => 'Regla de sincronización creada';
@@ -1854,8 +1859,14 @@ class _Translations$downloads$es extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Álbum desconocido';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} completadas';
 	@override String get errorFileNotFound => 'Archivo no encontrado (404)';
+	@override String get errorDownloadNotAllowed => 'El servidor no permite la descarga (403)';
 	@override String get errorDownloadFailed => 'Error en la descarga';
-	@override String errorPostProcessing({required Object error}) => 'Error en el posprocesamiento: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Error en la descarga: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Error en la descarga (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Error en el posprocesamiento: ${reason}';
+	@override String get reasonFileNotSaved => 'no se pudo guardar el archivo en este dispositivo';
+	@override String get reasonCannotResume => 'no se pudo reanudar la descarga parcial';
+	@override String get reasonDeviceStorageFull => 'este dispositivo no tiene espacio de almacenamiento';
 	@override String get notificationDownloading => 'Descargando...';
 	@override String get notificationComplete => 'Descarga completada';
 	@override String get notificationPaused => 'Descarga pausada';
@@ -1934,7 +1945,6 @@ class _Translations$videoSettings$es extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Normalizar volumen';
 	@override String get audioNormalizationDisablesPassthrough => 'Decodifica el audio a PCM; la transferencia directa está desactivada mientras esta opción esté activa';
 	@override String get audioNormalizationStereoMix => 'Decodifica el audio a una mezcla estéreo; la transferencia directa está desactivada mientras esta opción esté activa';
-	@override String get audioDownmix => 'Mezclar a estéreo';
 }
 
 // Path: performanceOverlay
@@ -3361,8 +3371,6 @@ extension on TranslationsEs {
 			'settings.audioPassthroughDescription' => 'Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívala si no tienes sonido.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Usa el decodificador Dolby nativo de Apple para Dolby Digital Plus, incluido Atmos. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Desactívalo si no tienes sonido.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Desactivada mientras la normalización de volumen esté activada',
-			'settings.audioDownmix' => 'Mezclar a estéreo',
-			'settings.audioDownmixDescription' => 'Mezcla el sonido envolvente a dos canales para altavoces estéreo o auriculares',
 			'settings.downmixCenterBoost' => 'Realce del canal central',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Realce (dB)',
@@ -3379,6 +3387,8 @@ extension on TranslationsEs {
 			'settings.dvConversionNativeDescription' => 'Forzar DV7 nativo y suprimir el reintento de conversión DV',
 			'settings.dvConversionDv81Description' => 'Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision',
 			'settings.dvConversionHevcStripDescription' => 'Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional',
+			'settings.disableDolbyVision' => 'Desactivar Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Reproducir la capa HDR10 o HLG del archivo en lugar de Dolby Vision, si la tiene',
 			'settings.hdrSdrConversion' => 'Conversión de HDR a SDR',
 			'settings.hdrSdrConversionDescription' => 'Elige qué convierte el vídeo HDR cuando la pantalla no puede mostrar HDR.',
 			'settings.hdrSdrConversionAuto' => 'Automático',
@@ -3813,6 +3823,8 @@ extension on TranslationsEs {
 			'messages.mediaUnreadableBody' => 'El servidor encontró este elemento pero no pudo leer su archivo (HTTP 404). Es probable que el archivo se haya movido o eliminado, o que su almacenamiento esté sin conexión. Pide al propietario del servidor que revise el archivo y vuelva a escanear la biblioteca.',
 			'messages.serverBusyTitle' => 'Reproducción no disponible',
 			'messages.serverBusyBody' => 'El servidor siguió rechazando la reproducción de este archivo (HTTP 503). Puede que se esté reiniciando, esté ocupado o que el almacenamiento del archivo no esté disponible. Inténtalo de nuevo dentro de un momento; si sigue ocurriendo, pide al propietario del servidor que revise el servidor y el almacenamiento del archivo.',
+			'messages.playbackNotAllowedTitle' => 'Reproducción no permitida',
+			'messages.playbackNotAllowedBody' => 'El servidor se negó a transmitir este elemento (HTTP 403). Es posible que tu cuenta no tenga permiso para reproducirlo o que el servidor solo permita la reproducción en su red local.',
 			'messages.logsUploaded' => 'Registros subidos',
 			'messages.logsUploadFailed' => 'Error al subir registros',
 			'messages.logId' => 'ID de registro',
@@ -3937,6 +3949,8 @@ extension on TranslationsEs {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Añadir a ${displayName}: Plex, Jellyfin, Emby u otra conexión de perfil',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesión caducada para ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sesión caducada para ${count} servidores',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} denegó el acceso a esta cuenta',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} servidores denegaron el acceso a esta cuenta',
 			'connections.signInAgain' => 'Iniciar sesión de nuevo',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Editar conexión de ${product}',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Añade o elimina URL para ${serverName}. Plezy usará la URL accesible con menor latencia.',
@@ -4050,12 +4064,12 @@ extension on TranslationsEs {
 			'libraries.refreshMetadata' => 'Actualizar metadatos',
 			'libraries.emptyTrash' => 'Vaciar papelera',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Vaciando papelera de "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papelera vaciada para "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Error al vaciar papelera: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analizando "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Análisis iniciado para "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Error al analizar la biblioteca: ${error}',
 			'libraries.noLibrariesFound' => 'No se encontraron bibliotecas',
 			'libraries.allLibrariesHidden' => 'Todas las bibliotecas están ocultas',
@@ -4564,12 +4578,12 @@ extension on TranslationsEs {
 			'watchTogether.renameRoom' => 'Renombrar sala',
 			'watchTogether.removeRoom' => 'Eliminar',
 			'watchTogether.guestSwitchUnavailable' => 'No se pudo cambiar — servidor no disponible para sincronización',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'No se pudo cambiar — contenido no encontrado en este servidor',
 			'watchTogether.defaultDisplayName' => 'Usuario',
 			'watchTogether.errors.timedOut' => 'El servidor de retransmisión no respondió a tiempo',
 			'watchTogether.errors.connectionLost' => 'La conexión se cerró antes de que la sesión estuviera lista',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'El servidor de retransmisión envió una respuesta inesperada',
 			'watchTogether.errors.sessionEnded' => 'El anfitrión finalizó la sesión',
 			'watchTogether.errors.sessionUnavailable' => 'No se puede reanudar esta sesión. Únete a una sala o crea una para continuar.',
@@ -4645,6 +4659,7 @@ extension on TranslationsEs {
 			'downloads.syncRuleAvailable' => 'Disponible',
 			'downloads.syncRuleOffline' => 'Sin conexión',
 			'downloads.syncRuleSignInRequired' => 'Se requiere iniciar sesión',
+			'downloads.syncRuleAccessDenied' => 'Acceso denegado',
 			'downloads.syncRuleNotAvailableForProfile' => 'No disponible para el perfil actual',
 			'downloads.syncRuleUnknownServer' => 'Servidor desconocido',
 			'downloads.syncRuleListCreated' => 'Regla de sincronización creada',
@@ -4682,8 +4697,14 @@ extension on TranslationsEs {
 			'downloads.unknownAlbum' => 'Álbum desconocido',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} completadas',
 			'downloads.errorFileNotFound' => 'Archivo no encontrado (404)',
+			'downloads.errorDownloadNotAllowed' => 'El servidor no permite la descarga (403)',
 			'downloads.errorDownloadFailed' => 'Error en la descarga',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Error en el posprocesamiento: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Error en la descarga: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Error en la descarga (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Error en el posprocesamiento: ${reason}',
+			'downloads.reasonFileNotSaved' => 'no se pudo guardar el archivo en este dispositivo',
+			'downloads.reasonCannotResume' => 'no se pudo reanudar la descarga parcial',
+			'downloads.reasonDeviceStorageFull' => 'este dispositivo no tiene espacio de almacenamiento',
 			'downloads.notificationDownloading' => 'Descargando...',
 			'downloads.notificationComplete' => 'Descarga completada',
 			'downloads.notificationPaused' => 'Descarga pausada',
@@ -4793,7 +4814,6 @@ extension on TranslationsEs {
 			'videoSettings.audioNormalization' => 'Normalizar volumen',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodifica el audio a PCM; la transferencia directa está desactivada mientras esta opción esté activa',
 			'videoSettings.audioNormalizationStereoMix' => 'Decodifica el audio a una mezcla estéreo; la transferencia directa está desactivada mientras esta opción esté activa',
-			'videoSettings.audioDownmix' => 'Mezclar a estéreo',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Rendimiento',
 			'performanceOverlay.buffer' => 'Búfer',
@@ -5072,6 +5092,8 @@ extension on TranslationsEs {
 			'addServer.borrowFromAnotherProfile' => 'Tomar prestado de otro perfil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutiliza la conexión de otro perfil. Los perfiles protegidos con PIN requieren un PIN.',
 			'addServer.invalidCredentials' => 'Usuario o contraseña no válidos',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'La respuesta de autenticación no era un JSON válido',
 			'addServer.authResponseIncomplete' => 'La respuesta de inicio de sesión del servidor estaba incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect fue rechazado por el servidor',
@@ -5082,8 +5104,6 @@ extension on TranslationsEs {
 			'addServer.responseNotJson' => 'La respuesta del servidor no era un JSON válido',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'A la respuesta le falta un ID o el nombre del servidor. ¿Es este un servidor ${product}?',
 			'addServer.probeFailed' => ({required Object error}) => 'No se pudo conectar con el servidor: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Introduce al menos una URL de servidor ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'No se encontró ningún servidor ${product} accesible',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Estas URL apuntan a servidores ${product} distintos',

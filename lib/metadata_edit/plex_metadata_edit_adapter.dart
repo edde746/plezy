@@ -23,9 +23,13 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
 
   @override
   Future<MetadataEditDraft> load(MediaItem item) async {
-    MediaItem fullItem = item;
-    if (item.summary == null || item.libraryId == null) {
-      fullItem = await client.fetchItem(item.id) ?? item;
+    // Always start from the item's own metadata: a list or hub row can carry
+    // a summary and library id yet omit genres, labels, credits and other
+    // fields, and save() diffs tag edits against these loaded originals, so a
+    // partial row would drop the tags it never showed.
+    final fullItem = await client.fetchEditableItem(item.id);
+    if (fullItem == null) {
+      throw StateError('Editable Plex metadata item is unavailable');
     }
 
     late final Map<String, String> preferences;

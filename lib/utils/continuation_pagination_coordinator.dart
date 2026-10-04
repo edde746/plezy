@@ -66,6 +66,22 @@ class ContinuationPaginationCoordinator<T> {
     onStateChanged?.call();
   }
 
+  /// Accounts for [count] already-loaded records the caller removed on the
+  /// backend, so [totalCount] and the cursor keep describing the server's list
+  /// instead of the one seeded before the removal.
+  void noteLoadedItemsRemoved([int count = 1]) {
+    final total = _totalCount;
+    if (_disposed || total == null || count <= 0) return;
+    final remaining = (total - count).clamp(0, total);
+    _totalCount = remaining;
+    final next = _nextStartIndex;
+    if (next != null) {
+      final shifted = (next - count).clamp(0, next);
+      _nextStartIndex = shifted < remaining ? shifted : null;
+    }
+    onStateChanged?.call();
+  }
+
   /// Loads all remaining pages. Calls made while this generation is loading
   /// share the same operation and do not issue duplicate backend requests.
   Future<ContinuationLoadStatus> loadRemaining() {

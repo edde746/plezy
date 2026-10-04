@@ -148,6 +148,34 @@ void main() {
       expect(playPauseCalls, 1);
     });
 
+    test('edits still save when the saved map has a duplicate or a retired action', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {
+          'keyboard_hotkeys': json.encode({
+            // Collides with volume_up's default (a default added after the
+            // custom binding was saved), and an action a later build retired.
+            'play_pause': {'key': '00070052', 'modifiers': <String>[]},
+            'retired_action': {'key': '00070014', 'modifiers': <String>[]},
+          }),
+        },
+      );
+      SettingsService.resetForTesting();
+      final service = await KeyboardShortcutsService.getInstance();
+      addTearDown(service.dispose);
+
+      await service.setHotkey('volume_down', const HotKey(key: PhysicalKeyboardKey.keyT));
+
+      expect(service.getHotkey('volume_down')?.key, PhysicalKeyboardKey.keyT);
+      expect(service.getHotkey('play_pause')?.key, PhysicalKeyboardKey.arrowUp);
+      final stored =
+          json.decode(SettingsService.instance.prefs.getString(SettingsService.keyboardHotkeys.key)!)
+              as Map<String, dynamic>;
+      expect(stored.containsKey('retired_action'), isFalse);
+      // The retired action's key is free to assign.
+      await service.setHotkey('volume_up', const HotKey(key: PhysicalKeyboardKey.keyQ));
+      expect(service.getHotkey('volume_up')?.key, PhysicalKeyboardKey.keyQ);
+    });
+
     test('serialized writes preserve rapid edits and recover after a failure', () async {
       final preferences = _HotkeyPreferences(const {});
       SharedPreferencesAsyncPlatform.instance = preferences;

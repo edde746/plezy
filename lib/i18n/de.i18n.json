@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Diese Datei ist kein gültiger Plezy-Einstellungsexport",
     "importSettingsNoUser": "Vor dem Import bitte anmelden",
     "shortcutsReset": "Tastenkürzel auf Standard zurückgesetzt",
+    "resetShortcutsConfirm": "",
     "about": "Über",
     "aboutDescription": "App-Informationen und Lizenzen",
     "updates": "Updates",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Dolby/DTS-Audio ohne Neukodierung an deinen Receiver oder Fernseher senden und Surround-Sound erhalten. Deaktivieren, wenn kein Ton zu hören ist.",
     "audioPassthroughDescriptionAppleTv": "Apples nativen Dolby-Decoder für Dolby Digital Plus einschließlich Atmos verwenden. DTS und TrueHD werden weiterhin als Mehrkanal-PCM wiedergegeben. Deaktivieren, wenn kein Ton zu hören ist.",
     "audioPassthroughOverriddenByNormalization": "Aus, solange die Lautstärkenormalisierung aktiv ist",
-    "audioDownmix": "Auf Stereo heruntermischen",
-    "audioDownmixDescription": "Surround-Ton für Stereolautsprecher oder Kopfhörer auf zwei Kanäle heruntermischen",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Verstärkung des Center-Kanals",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Verstärkung (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Natives DV7 erzwingen und einen erneuten DV-Konvertierungsversuch unterdrücken",
     "dvConversionDv81Description": "Inline-RPU-Konvertierung in Dolby-Vision-Profil 8.1 erzwingen",
     "dvConversionHevcStripDescription": "Dolby-Vision-RPU/EL-Schichten entfernen und reines HEVC ausgeben",
+    "disableDolbyVision": "Dolby Vision deaktivieren",
+    "disableDolbyVisionDescription": "Statt Dolby Vision die HDR10- oder HLG-Ebene der Datei abspielen, sofern vorhanden",
     "hdrSdrConversion": "HDR-zu-SDR-Konvertierung",
     "hdrSdrConversionDescription": "Wähle, was HDR-Videos umwandelt, wenn das Display kein HDR darstellen kann.",
     "hdrSdrConversionAuto": "Automatisch",
@@ -435,7 +444,8 @@
     "hint": "Filme, Serien und Musik suchen …",
     "tryDifferentTerm": "Anderen Suchbegriff versuchen",
     "searchYourMedia": "In den eigenen Medien suchen",
-    "enterTitleActorOrKeyword": "Titel, Schauspieler oder Stichwort eingeben"
+    "enterTitleActorOrKeyword": "Titel, Schauspieler oder Stichwort eingeben",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Tastenkürzel festlegen für ${actionName}",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "Der Server hat dieses Element gefunden, konnte seine Datei aber nicht lesen (HTTP 404). Die Datei wurde wahrscheinlich verschoben oder gelöscht, oder ihr Speicher ist offline. Bitte den Serverbesitzer, die Datei zu prüfen und die Mediathek neu zu scannen.",
     "serverBusyTitle": "Stream nicht verfügbar",
     "serverBusyBody": "Der Server hat das Streamen dieser Datei wiederholt abgelehnt (HTTP 503). Möglicherweise wird er neu gestartet, ist ausgelastet oder der Speicherort der Datei ist offline. Versuche es gleich noch einmal. Falls das Problem weiterhin auftritt, bitte den Serverbetreiber, den Server und den Speicherort der Datei zu überprüfen.",
+    "playbackNotAllowedTitle": "Wiedergabe nicht erlaubt",
+    "playbackNotAllowedBody": "Der Server hat das Streamen dieses Elements abgelehnt (HTTP 403). Dein Konto hat möglicherweise keine Berechtigung, es abzuspielen, oder der Server erlaubt die Wiedergabe nur in seinem lokalen Netzwerk.",
     "logsUploaded": "Protokolle hochgeladen",
     "logsUploadFailed": "Protokolle konnten nicht hochgeladen werden",
     "logId": "Protokoll-ID",
@@ -907,6 +919,8 @@
     "signOut": "Abmelden",
     "signOutPlexTitle": "Von Plex abmelden?",
     "signOutPlexMessage": "${displayName} und alle Plex Home-Benutzer entfernen? Du kannst dich jederzeit wieder anmelden.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Von Plex abgemeldet.",
     "signOutFailed": "Abmeldung fehlgeschlagen.",
     "sectionTitle": "Profile",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "Zu ${displayName} hinzufügen: Plex, Jellyfin, Emby oder eine andere Profilverbindung",
     "sessionExpiredOne": "Sitzung für ${name} abgelaufen",
     "sessionExpiredMany": "Sitzungen für ${count} Server abgelaufen",
+    "accessDeniedOne": "${name} verweigert diesem Konto den Zugriff",
+    "accessDeniedMany": "${count} Server verweigern diesem Konto den Zugriff",
     "signInAgain": "Erneut anmelden",
     "editMediaBrowserTitle": "Verbindung zu ${product} bearbeiten",
     "editMediaBrowserIntro": "URLs für ${serverName} hinzufügen oder entfernen. Plezy verwendet die erreichbare URL mit der geringsten Latenz."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Sonstiges"
     },
     "creditRole": {
+      "actor": "",
       "director": "Regisseur",
       "writer": "Autor",
       "producer": "Produzent",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Verfügbar",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Anmeldung erforderlich",
+    "syncRuleAccessDenied": "Zugriff verweigert",
     "syncRuleNotAvailableForProfile": "Für das aktuelle Profil nicht verfügbar",
     "syncRuleUnknownServer": "Unbekannter Server",
     "syncRuleListCreated": "Synchronisierungsregel erstellt",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Datei nicht gefunden (404)",
+    "errorDownloadNotAllowed": "Download vom Server nicht erlaubt (403)",
     "errorDownloadFailed": "Download fehlgeschlagen",
-    "errorPostProcessing": "Nachbearbeitung fehlgeschlagen: ${error}",
+    "errorDownloadFailedWithReason": "Download fehlgeschlagen: ${reason}",
+    "errorHttpStatus": "Download fehlgeschlagen (HTTP ${status})",
+    "errorPostProcessing": "Nachbearbeitung fehlgeschlagen: ${reason}",
+    "reasonFileNotSaved": "die Datei konnte auf diesem Gerät nicht gespeichert werden",
+    "reasonCannotResume": "der unvollständige Download konnte nicht fortgesetzt werden",
+    "reasonDeviceStorageFull": "auf diesem Gerät ist kein Speicherplatz mehr frei",
     "notificationDownloading": "Wird heruntergeladen …",
     "notificationComplete": "Download abgeschlossen",
     "notificationPaused": "Download pausiert"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Lautstärke normalisieren",
     "audioNormalizationDisablesPassthrough": "Dekodiert Audio zu PCM; Durchleitung ist aus, solange dies aktiv ist",
-    "audioNormalizationStereoMix": "Dekodiert Audio zu einem Stereomix; Durchleitung ist aus, solange dies aktiv ist",
-    "audioDownmix": "Downmix auf Stereo"
+    "audioNormalizationStereoMix": "Dekodiert Audio zu einem Stereomix; Durchleitung ist aus, solange dies aktiv ist"
   },
   "performanceOverlay": {
     "color": "Farbe",
@@ -2002,6 +2025,13 @@
     "rotation": "Drehung",
     "dvSource": "DV-Quelle",
     "dvPath": "DV-Pfad",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7-Konv.",
     "sampleRate": "Abtastrate",
     "pixelFormat": "Pixelformat",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Plezy auf ${service} aktivieren",

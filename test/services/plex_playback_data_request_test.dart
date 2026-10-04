@@ -595,6 +595,77 @@ void main() {
     expect(result.subtitleSidecars.map((sidecar) => sidecar.preload), everyElement(isTrue));
   });
 
+  test('external players get every sidecar file with the selected one enabled (#2464)', () async {
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/metadata/42') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {
+                  'ratingKey': '42',
+                  'type': 'movie',
+                  'title': 'Movie',
+                  'Media': [
+                    {
+                      'id': 7,
+                      'container': 'mkv',
+                      'Part': [
+                        {
+                          'id': 99,
+                          'key': '/library/parts/99/file.mkv',
+                          'Stream': [
+                            {'streamType': 1, 'id': 300, 'codec': 'h264'},
+                            {'streamType': 3, 'id': 400, 'index': 2, 'codec': 'ass', 'languageCode': 'jpn'},
+                            {
+                              'streamType': 3,
+                              'id': 401,
+                              'codec': 'srt',
+                              'languageCode': 'deu',
+                              'key': '/library/streams/401',
+                              'external': true,
+                            },
+                            {
+                              'streamType': 3,
+                              'id': 402,
+                              'codec': 'ass',
+                              'languageCode': 'eng',
+                              'key': '/library/streams/402',
+                              'external': true,
+                              'selected': true,
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('unexpected request', 500);
+    });
+    addTearDown(client.close);
+
+    final target = await client.resolveExternalPlayback(
+      testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
+    );
+
+    expect(target!.url, contains('/library/parts/99/file.mkv'));
+    final uris = [for (final subtitle in target.subtitles) Uri.parse(subtitle.uri!)];
+    expect(uris.map((uri) => uri.path), ['/library/streams/401.srt', '/library/streams/402.ass']);
+    expect(
+      uris.map((uri) => uri.queryParameters['X-Plex-Token']),
+      everyElement(isNotEmpty),
+      reason: 'an external player cannot send the auth header',
+    );
+    expect(target.subtitles.map((subtitle) => subtitle.isDefault), [false, true]);
+  });
+
   test('playback uses metadata availability flags without probing part URLs', () async {
     final requests = <http.Request>[];
     final client = makeClient((request) async {
@@ -2059,7 +2130,7 @@ void main() {
       addTearDown(client.close);
       final item = testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id');
 
-      await expectLater(client.resolveExternalPlaybackUrl(item), throwsA(isA<MediaServerHttpException>()));
+      await expectLater(client.resolveExternalPlayback(item), throwsA(isA<MediaServerHttpException>()));
       await expectLater(client.resolveDownload(item), throwsA(isA<MediaServerHttpException>()));
     });
   });

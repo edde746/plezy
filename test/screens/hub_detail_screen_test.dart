@@ -11,6 +11,7 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/hub_detail_screen.dart';
@@ -265,6 +266,55 @@ void main() {
     });
   });
 
+  testWidgets('Plex section sorts order by their own field and unsupported ones are not offered', (tester) async {
+    MediaItem played(String id, String title, int plays) => testMediaItem(
+      id: id,
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: title,
+      viewCount: plays,
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final items = [played('a', 'Alpha', 1), played('b', 'Bravo', 3), played('c', 'Charlie', 2)];
+    final harness = await _createHarness(items, backend: MediaBackend.plex);
+    harness.client.sortOptions = const [
+      MediaSort(key: 'titleSort', descKey: 'titleSort:desc', title: 'Title', defaultDirection: 'asc'),
+      MediaSort(key: 'viewCount', descKey: 'viewCount:desc', title: 'Plays', defaultDirection: 'desc'),
+      MediaSort(key: 'mediaHeight', descKey: 'mediaHeight:desc', title: 'Resolution', defaultDirection: 'desc'),
+    ];
+    await tester.pumpWidget(
+      harness.wrap(
+        HubDetailScreen(
+          hub: MediaHub(
+            id: '/hubs/sections/1/recentlyAdded',
+            title: 'Hub',
+            type: 'movie',
+            items: items,
+            size: items.length,
+            serverId: 'server_1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip(t.libraries.sort));
+    await tester.pumpAndSettle();
+    // A sort the loaded items cannot honor would silently order by title.
+    expect(find.text('Resolution'), findsNothing);
+    await tester.tap(find.text('Plays'));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    final titles = tester
+        .widgetList<FocusableMediaCard>(find.byType(FocusableMediaCard))
+        .map((card) => (card.item as MediaItem).title)
+        .toList();
+    expect(titles, ['Bravo', 'Charlie', 'Alpha']);
+  });
+
   group('default sort fallback logging', () {
     // Sort options are fetched per Plex library section. Aggregated rows
     // (Continue Watching spans servers) and MediaBrowser hubs name no section,
@@ -387,6 +437,7 @@ class _PagedHubClient implements MediaServerClient {
   final List<int?> requestedStarts = [];
   final List<int?> requestedSizes = [];
   int fullHubRequests = 0;
+  List<MediaSort> sortOptions = const [];
 
   @override
   final MediaBackend backend;
@@ -412,6 +463,9 @@ class _PagedHubClient implements MediaServerClient {
     requestedSizes.add(size);
     return fakeLibraryPage(items, start: start, size: size);
   }
+
+  @override
+  Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async => sortOptions;
 
   @override
   Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit}) async {

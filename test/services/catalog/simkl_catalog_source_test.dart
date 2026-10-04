@@ -179,6 +179,7 @@ void main() {
       client = SimklClient(
         _session(),
         onSessionInvalidated: () => invalidations++,
+        writeSpacing: Duration.zero,
         httpClient: MockClient((request) async {
           requests.add(request);
           return responder(request);
@@ -202,11 +203,12 @@ void main() {
       final request = requests.single;
       expect(request.url.host, 'data.simkl.in');
       expect(request.url.path, '/discover/trending/movies/week_100.json');
-      expect(request.url.queryParameters['client_id'], SimklConstants.clientId);
+      final appVersion = await SimklConstants.appVersion();
+      expect(request.url.queryParameters['client_id'], SimklConstants.legacyClientId);
       expect(request.url.queryParameters['app-name'], SimklConstants.appName);
-      expect(request.url.queryParameters['app-version'], SimklConstants.appVersion);
+      expect(request.url.queryParameters['app-version'], appVersion);
       expect(request.headers, isNot(contains('authorization')));
-      expect(request.headers['user-agent'], '${SimklConstants.appName}/${SimklConstants.appVersion}');
+      expect(request.headers['user-agent'], '${SimklConstants.appName}/$appVersion');
 
       expect(first.hasMore, isTrue);
       expect(first.items.single.ids.simkl, 1);
@@ -359,6 +361,7 @@ void main() {
     test('add uses per-item plantowatch and remove uses history/remove with bare ids', () async {
       final bodies = <Map<String, dynamic>>[];
       responder = (request) {
+        if (request.url.path == '/sync/all-items/all/plantowatch') return _json(_allItemsBody());
         bodies.add(json.decode(request.body) as Map<String, dynamic>);
         return _json({
           'added': <String, dynamic>{},
@@ -370,7 +373,12 @@ void main() {
       await source.addToWatchlist(MediaKind.movie, ids);
       await source.removeFromWatchlist(MediaKind.movie, ids);
 
-      expect(requests.map((request) => request.url.path), ['/sync/add-to-list', '/sync/history/remove']);
+      expect(requests.map((request) => request.url.path), [
+        '/sync/add-to-list',
+        // The removal re-reads Plan to Watch before touching history.
+        '/sync/all-items/all/plantowatch',
+        '/sync/history/remove',
+      ]);
       final added = (bodies.first['movies'] as List).single as Map<String, dynamic>;
       expect(added['to'], 'plantowatch');
       expect(added['ids'], {'simkl': 1, 'imdb': 'tt1375666', 'tmdb': 27205});
@@ -395,16 +403,33 @@ void main() {
       expect(allItemsRequests, 2);
     });
 
-    test('failed mutation restores optimistic membership', () async {
-      var loadingSnapshot = true;
+    test('remove leaves a title that moved past Plan to Watch in history', () async {
+      var planned = _allItemsBody();
       responder = (request) {
-        if (loadingSnapshot) return _json(_allItemsBody());
+        if (request.url.path == '/sync/all-items/all/plantowatch') return _json(planned);
+        fail('nothing may be removed: ${request.url.path}');
+      };
+      await source.ensureWatchlistLoaded();
+      expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(simkl: 1)), isTrue);
+
+      // Watched since the snapshot loaded: history/remove would wipe that watch.
+      planned = {...planned, 'movies': const <Object?>[]};
+      await source.removeFromWatchlist(MediaKind.movie, const CatalogItemIds(simkl: 1));
+      await source.ensureWatchlistLoaded();
+
+      expect(requests.map((request) => request.url.path), everyElement('/sync/all-items/all/plantowatch'));
+      expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(simkl: 1)), isFalse);
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(simkl: 2)), isTrue);
+    });
+
+    test('failed mutation restores optimistic membership', () async {
+      responder = (request) {
+        if (request.url.path == '/sync/all-items/all/plantowatch') return _json(_allItemsBody());
         return http.Response('failed', 500);
       };
       await source.ensureWatchlistLoaded();
       expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(simkl: 1)), isTrue);
 
-      loadingSnapshot = false;
       await expectLater(
         source.removeFromWatchlist(MediaKind.movie, const CatalogItemIds(simkl: 1)),
         throwsA(isA<TrackerApiException>()),

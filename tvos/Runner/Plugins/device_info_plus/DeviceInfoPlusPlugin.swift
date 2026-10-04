@@ -1,6 +1,8 @@
 // Pure-Swift tvOS port of fluttercommunity.plus/device_info. Mirrors the
-// Objective-C FPPDeviceInfoPlusPlugin on iOS so the Dart IosDeviceInfo
-// parser finds all the keys it expects.
+// Objective-C FPPDeviceInfoPlusPlugin on iOS (device_info_plus 12.4.0) so the
+// Dart IosDeviceInfo parser finds all the keys it expects. The parser casts
+// non-nullable fields straight from the map, so a key a newer version adds
+// makes `iosInfo` throw on tvOS: diff against upstream on every upgrade.
 
 import Foundation
 import UIKit
@@ -76,6 +78,8 @@ import UIKit
         "totalDiskSize": totalDisk,
         "isPhysicalDevice": isPhysicalDevice,
         "isiOSAppOnMac": isiOSAppOnMac,
+        // tvOS apps never run on visionOS; upstream reports NO below iOS 26.1.
+        "isiOSAppOnVision": false,
         "physicalRamSize": physicalRam,
         "availableRamSize": Self.availableMemoryMB(),
         "utsname": [

@@ -56,6 +56,14 @@ class MediaServerTimeouts {
   /// sum of phases.
   static const perServerConnect = Duration(milliseconds: 6500);
 
+  /// How long the startup splash waits for the initial bind when the OS
+  /// reports no network. The bind still runs — `none` leaves loopback and
+  /// LAN-without-WAN servers reachable (#2505) — but an airplane-mode launch
+  /// must not sit through [perServerConnect]. Past the cap the offline shell
+  /// opens and the bind keeps going, so a server that connects later still
+  /// brings the app online.
+  static const noNetworkStartupBind = Duration(seconds: 2);
+
   /// How long a caller waits for a Plex tune or a MediaBrowser Live TV
   /// PlaybackInfo that opens a source. Matches Plex web's value: a cold
   /// tuner can take longer than the default 10s to return response headers.

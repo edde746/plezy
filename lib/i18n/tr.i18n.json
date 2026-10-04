@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Bu dosya geçerli bir Plezy ayar dosyası değil",
     "importSettingsNoUser": "Ayarları içe aktarmadan önce giriş yapın",
     "shortcutsReset": "Kısayollar varsayılana sıfırlandı",
+    "resetShortcutsConfirm": "",
     "about": "Hakkında",
     "aboutDescription": "Uygulama bilgileri ve lisanslar",
     "updates": "Güncellemeler",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.",
     "audioPassthroughDescriptionAppleTv": "Atmos dahil Dolby Digital Plus için Apple'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.",
     "audioPassthroughOverriddenByNormalization": "Ses normalleştirme açıkken kapalıdır",
-    "audioDownmix": "Stereo'ya Dönüştür (Downmix)",
-    "audioDownmixDescription": "Çevreleyen sesi stereo hoparlörler veya kulaklıklar için iki kanala dönüştürür",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Merkez Kanal Yükseltme",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Yükseltme (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Yerel DV7'yi zorla ve DV dönüştürme yeniden denemesini engelle",
     "dvConversionDv81Description": "Dolby Vision profile 8.1'e satır içi RPU dönüştürmeyi zorla",
     "dvConversionHevcStripDescription": "Dolby Vision RPU/EL katmanlarını soy ve düz HEVC olarak sun",
+    "disableDolbyVision": "Dolby Vision'ı Devre Dışı Bırak",
+    "disableDolbyVisionDescription": "Dosyada varsa Dolby Vision yerine HDR10 veya HLG katmanını oynat",
     "hdrSdrConversion": "HDR'den SDR'ye Dönüştürme",
     "hdrSdrConversionDescription": "Ekran HDR gösteremediğinde HDR videoyu neyin dönüştüreceğini seçin.",
     "hdrSdrConversionAuto": "Otomatik",
@@ -435,7 +444,8 @@
     "hint": "Film, dizi, müzik ara...",
     "tryDifferentTerm": "Farklı bir arama terimi deneyin",
     "searchYourMedia": "Medyanızda arayın",
-    "enterTitleActorOrKeyword": "Başlık, oyuncu veya anahtar kelime girin"
+    "enterTitleActorOrKeyword": "Başlık, oyuncu veya anahtar kelime girin",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} için Kısayol Ayarla",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "Sunucu bu ögeyi buldu ancak dosyasını okuyamadı (HTTP 404). Dosya büyük olasılıkla taşındı, silindi veya depolama alanı çevrimdışı. Sunucu sahibinden dosyayı kontrol edip kitaplığı yeniden taramasını isteyin.",
     "serverBusyTitle": "Akış kullanılamıyor",
     "serverBusyBody": "Sunucu bu dosyayı yayınlamayı sürekli reddetti (HTTP 503). Sunucu yeniden başlatılıyor veya meşgul olabilir ya da dosyanın bulunduğu depolama birimi çevrim dışı olabilir. Kısa süre sonra tekrar deneyin — sorun devam ederse sunucu sahibinden sunucuyu ve dosyanın bulunduğu depolama birimini kontrol etmesini isteyin.",
+    "playbackNotAllowedTitle": "Oynatmaya izin verilmiyor",
+    "playbackNotAllowedBody": "Sunucu bu ögeyi yayınlamayı reddetti (HTTP 403). Hesabınızın bunu oynatma izni olmayabilir veya sunucu oynatmaya yalnızca kendi yerel ağında izin veriyor olabilir.",
     "logsUploaded": "Günlükler yüklendi",
     "logsUploadFailed": "Günlükler yüklenemedi",
     "logId": "Günlük Kimliği (ID)",
@@ -907,6 +919,8 @@
     "signOut": "Çıkış Yap",
     "signOutPlexTitle": "Plex'ten çıkış yapılsın mı?",
     "signOutPlexMessage": "${displayName} ve tüm Plex Ev kullanıcıları kaldırılsın mı? İstediğiniz zaman tekrar giriş yapabilirsiniz.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex'ten çıkış yapıldı.",
     "signOutFailed": "Çıkış yapılamadı.",
     "sectionTitle": "Profiller",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı",
     "sessionExpiredOne": "${name} için oturum süresi doldu",
     "sessionExpiredMany": "${count} sunucu için oturum süresi doldu",
+    "accessDeniedOne": "${name} bu hesabın erişimini reddetti",
+    "accessDeniedMany": "${count} sunucu bu hesabın erişimini reddetti",
     "signInAgain": "Tekrar giriş yap",
     "editMediaBrowserTitle": "${product} bağlantısını düzenle",
     "editMediaBrowserIntro": "${serverName} için URL ekleyin veya kaldırın. Plezy, erişilebilir olan en düşük gecikmeli URL'yi kullanacak."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Diğer"
     },
     "creditRole": {
+      "actor": "",
       "director": "Yönetmen",
       "writer": "Senarist",
       "producer": "Yapımcı",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Kullanılabilir",
     "syncRuleOffline": "Çevrimdışı",
     "syncRuleSignInRequired": "Giriş gerekli",
+    "syncRuleAccessDenied": "Erişim reddedildi",
     "syncRuleNotAvailableForProfile": "Mevcut profil için kullanılamaz",
     "syncRuleUnknownServer": "Bilinmeyen sunucu",
     "syncRuleListCreated": "Eşitleme kuralı oluşturuldu",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Dosya bulunamadı (404)",
+    "errorDownloadNotAllowed": "Sunucu indirmeye izin vermiyor (403)",
     "errorDownloadFailed": "İndirme başarısız oldu",
-    "errorPostProcessing": "Son işleme başarısız oldu: ${error}",
+    "errorDownloadFailedWithReason": "İndirme başarısız oldu: ${reason}",
+    "errorHttpStatus": "İndirme başarısız oldu (HTTP ${status})",
+    "errorPostProcessing": "Son işleme başarısız oldu: ${reason}",
+    "reasonFileNotSaved": "dosya bu cihaza kaydedilemedi",
+    "reasonCannotResume": "yarım kalan indirme sürdürülemedi",
+    "reasonDeviceStorageFull": "bu cihazda depolama alanı kalmadı",
     "notificationDownloading": "İndiriliyor...",
     "notificationComplete": "İndirme tamamlandı",
     "notificationPaused": "İndirme duraklatıldı"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ses Yüksekliğini Normalleştir",
     "audioNormalizationDisablesPassthrough": "Sesi PCM'e çözer; bu açıkken doğrudan geçiş kapalıdır",
-    "audioNormalizationStereoMix": "Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır",
-    "audioDownmix": "Stereo'ya Dönüştür"
+    "audioNormalizationStereoMix": "Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır"
   },
   "performanceOverlay": {
     "color": "Renk",
@@ -2002,6 +2025,13 @@
     "rotation": "Döndürme",
     "dvSource": "DV Kaynağı",
     "dvPath": "DV Yolu",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7 Dönüştürme",
     "sampleRate": "Örnekleme Hızı",
     "pixelFormat": "Piksel Biçimi",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Plezy'yi ${service} üzerinde etkinleştirin",

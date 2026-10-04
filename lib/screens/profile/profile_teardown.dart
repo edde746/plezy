@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
 import '../../database/app_database.dart';
+import '../../database/download_operations.dart';
 import '../../i18n/strings.g.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -26,6 +27,7 @@ import '../../services/storage_service.dart';
 import '../../services/system_shelf_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/global_key_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../auth_screen.dart';
 
@@ -229,42 +231,78 @@ Future<T> withEndedProfileSession<T>(SessionTeardownScope scope, String? endedOw
 
 /// Sign out of a Plex account after confirmation: the account connection,
 /// its virtual Plex Home profiles, and their borrowed connections are all
-/// removed (#1423); surviving borrower profiles release the account's
-/// server downloads. Plex exposes no reliable single-session revoke
+/// removed (#1423). Plex exposes no reliable single-session revoke
 /// endpoint, so the server side is untouched — the user can revoke the
 /// device via plex.tv.
+///
+/// Downloads the account's profiles own are kept unless the user opts in to
+/// deleting them. Kept downloads retain their ownership rows: Plex Home
+/// profile ids derive from the account and home-user identities, so those
+/// owners become valid again when the same account signs back in, and the
+/// rows' profile-scoped Plex namespace keeps other profiles from adopting
+/// them meanwhile.
 ///
 /// Returns true when the sign-out ran, false when cancelled or the account
 /// no longer exists.
 Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String accountConnectionId}) async {
   final account = await context.read<ConnectionRegistry>().getPlexAccount(accountConnectionId);
   if (account == null || !context.mounted) return false;
+  final accountServerIds = {for (final server in account.servers) server.clientIdentifier};
 
-  final confirmed = await showDeleteConfirmation(
-    context,
-    title: t.profiles.signOutPlexTitle,
-    message: t.profiles.signOutPlexMessage(displayName: account.displayLabel),
-    confirmText: t.profiles.signOut,
+  final database = context.read<AppDatabase>();
+  final plannedForPrompt = await planPlexAccountConnectionRemoval(
+    account: account,
+    profileConnections: context.read<ProfileConnectionRegistry>(),
   );
-  if (!confirmed || !context.mounted) return false;
+  final hasDownloads = await _plexAccountRemovalOwnsDownloads(database, plannedForPrompt, accountServerIds);
+  if (!context.mounted) return false;
+
+  final title = t.profiles.signOutPlexTitle;
+  final message = t.profiles.signOutPlexMessage(displayName: account.displayLabel);
+  final bool deleteDownloads;
+  if (hasDownloads) {
+    final choice = await showConfirmWithSwitchDialog(
+      context,
+      title: title,
+      message: message,
+      confirmText: t.profiles.signOut,
+      switchTitle: t.profiles.signOutPlexDeleteDownloads,
+      switchSubtitle: t.profiles.signOutPlexDeleteDownloadsDescription,
+      isDestructive: true,
+    );
+    if (choice == null) return false;
+    deleteDownloads = choice;
+  } else {
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: title,
+      message: message,
+      confirmText: t.profiles.signOut,
+    );
+    if (!confirmed) return false;
+    deleteDownloads = false;
+  }
+  if (!context.mounted) return false;
 
   final scope = SessionTeardownScope.of(context);
   try {
+    // Re-plan: Plex Home refreshes can add join rows while the dialog is open.
     final removal = await planPlexAccountConnectionRemoval(
       account: account,
       profileConnections: scope.profileConnections,
     );
     final endedOwner = await _activeProfileUsingConnection(scope, accountConnectionId);
     final navigatedAway = await withEndedProfileSession(scope, endedOwner, () async {
-      // Physical download cleanup can fail. Finish it while the account and
-      // every ownership join still exist so a retry can resolve the same plan
-      // instead of stranding files without an owner.
-      for (final profileId in removal.removedVirtualProfileIds) {
-        await scope.downloads.deleteDownloadsForProfile(profileId);
-      }
-      final accountServerIds = {for (final server in account.servers) server.clientIdentifier};
-      for (final profileId in removal.borrowerProfileIds) {
-        await scope.downloads.releaseDownloadsForProfileServers(profileId, accountServerIds);
+      if (deleteDownloads) {
+        // Physical download cleanup can fail. Finish it while the account and
+        // every ownership join still exist so a retry can resolve the same
+        // plan instead of stranding files without an owner.
+        for (final profileId in removal.removedVirtualProfileIds) {
+          await scope.downloads.deleteDownloadsForProfile(profileId);
+        }
+        for (final profileId in removal.borrowerProfileIds) {
+          await scope.downloads.releaseDownloadsForProfileServers(profileId, accountServerIds);
+        }
       }
 
       await scope.cleanup.removePlexAccountConnection(account, plannedRemoval: removal);
@@ -287,6 +325,26 @@ Future<bool> confirmAndSignOutPlexAccount(BuildContext context, {required String
     }
     return false;
   }
+}
+
+/// Whether a sign-out following [removal] could release any download:
+/// everything the account's Plex Home profiles own, plus borrowers'
+/// downloads from the account's servers.
+Future<bool> _plexAccountRemovalOwnsDownloads(
+  AppDatabase database,
+  PlexAccountRemoval removal,
+  Set<String> accountServerIds,
+) async {
+  for (final profileId in removal.removedVirtualProfileIds) {
+    if ((await database.getDownloadOwnerKeysForProfile(profileId)).isNotEmpty) return true;
+  }
+  for (final profileId in removal.borrowerProfileIds) {
+    for (final globalKey in await database.getDownloadOwnerKeysForProfile(profileId)) {
+      final parsed = parseGlobalKey(globalKey);
+      if (parsed != null && accountServerIds.contains(parsed.serverId)) return true;
+    }
+  }
+  return false;
 }
 
 /// Full logout: clear every profile, connection, credential, cached API

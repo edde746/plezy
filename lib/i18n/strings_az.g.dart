@@ -456,8 +456,6 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Səsin gurluğunu normallaşdırma aktivkən söndürülüb';
-	@override String get audioDownmix => 'Stereo-ya çevir (Downmix)';
-	@override String get audioDownmixDescription => 'Çoxkanallı səsi stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endirir';
 	@override String get downmixCenterBoost => 'Mərkəz kanal gücləndirilməsi';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Gücləndirmə (dB)';
@@ -474,6 +472,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Daxili DV7-ni məcburi et';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1-ə çevrilməni məcburi et';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision təbəqələrini sil və sadə HEVC kimi təqdim et';
+	@override String get disableDolbyVision => 'Dolby Vision-u söndür';
+	@override String get disableDolbyVisionDescription => 'Faylda varsa, Dolby Vision əvəzinə HDR10 və ya HLG təbəqəsini oynat';
 	@override String get hdrSdrConversion => 'HDR-dən SDR-ə çevirmə';
 	@override String get hdrSdrConversionDescription => 'Ekran HDR göstərə bilmədikdə HDR videonu nəyin çevirəcəyini seçin.';
 	@override String get hdrSdrConversionAuto => 'Avtomatik';
@@ -977,6 +977,8 @@ class _Translations$messages$az extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'Server bu elementi tapdı, lakin onun faylını oxuya bilmədi (HTTP 404). Fayl yəqin ki, köçürülüb, silinib və ya onun saxlanma yeri oflayndır. Server sahibindən faylı yoxlamasını və kitabxananı yenidən skan etməsini xahiş edin.';
 	@override String get serverBusyTitle => 'Yayım əlçatan deyil';
 	@override String get serverBusyBody => 'Server bu faylı yayımlamaqdan dəfələrlə imtina etdi (HTTP 503). Server yenidən başladılır və ya məşğul ola bilər, yaxud faylın yerləşdiyi yaddaş oflayn ola bilər. Bir az sonra təzədən cəhd edin — problem davam edərsə, server sahibindən serveri və faylın yerləşdiyi yaddaşı yoxlamasını istəyin.';
+	@override String get playbackNotAllowedTitle => 'Oynatmaya icazə verilmir';
+	@override String get playbackNotAllowedBody => 'Server bu elementi yayımlamaqdan imtina etdi (HTTP 403). Hesabınızın onu oynatmaq icazəsi olmaya bilər, yaxud server oynatmaya yalnız öz yerli şəbəkəsində icazə verə bilər.';
 	@override String get logsUploaded => 'Jurnallar yükləndi';
 	@override String get logsUploadFailed => 'Jurnallar yüklənə bilmədi';
 	@override String get logId => 'Jurnal ID-si';
@@ -1146,6 +1148,8 @@ class _Translations$connections$az extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması';
 	@override String sessionExpiredOne({required Object name}) => '${name} üçün seansın vaxtı bitdi';
 	@override String sessionExpiredMany({required Object count}) => '${count} server üçün seansın vaxtı bitdi';
+	@override String accessDeniedOne({required Object name}) => '${name} bu hesaba girişi rədd etdi';
+	@override String accessDeniedMany({required Object count}) => '${count} server bu hesaba girişi rədd etdi';
 	@override String get signInAgain => 'Yenidən daxil ol';
 	@override String editMediaBrowserTitle({required Object product}) => '${product} qoşulmasını düzəliş et';
 	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName} üçün URL-lər əlavə edin və ya silin. Plezy əlçatan olan ən aşağı gecikməli URL-i istifadə edəcək.';
@@ -1842,6 +1846,7 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Əlçatandır';
 	@override String get syncRuleOffline => 'Oflayn';
 	@override String get syncRuleSignInRequired => 'Daxil olmaq tələb olunur';
+	@override String get syncRuleAccessDenied => 'Giriş rədd edildi';
 	@override String get syncRuleNotAvailableForProfile => 'Cari profil üçün əlçatan deyil';
 	@override String get syncRuleUnknownServer => 'Bilinməyən server';
 	@override String get syncRuleListCreated => 'Eyniləşdirmə qaydası yaradıldı';
@@ -1854,8 +1859,14 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Məlum olmayan albom';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} tamamlandı';
 	@override String get errorFileNotFound => 'Fayl tapılmadı (404)';
+	@override String get errorDownloadNotAllowed => 'Server yükləməyə icazə vermir (403)';
 	@override String get errorDownloadFailed => 'Yükləmə uğursuz oldu';
-	@override String errorPostProcessing({required Object error}) => 'Sonrakı emal uğursuz oldu: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Yükləmə uğursuz oldu: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Yükləmə uğursuz oldu (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Sonrakı emal uğursuz oldu: ${reason}';
+	@override String get reasonFileNotSaved => 'fayl bu cihazda saxlanıla bilmədi';
+	@override String get reasonCannotResume => 'yarımçıq yükləməni davam etdirmək mümkün olmadı';
+	@override String get reasonDeviceStorageFull => 'bu cihazda yer qalmayıb';
 	@override String get notificationDownloading => 'Yüklənir...';
 	@override String get notificationComplete => 'Yükləmə tamamlandı';
 	@override String get notificationPaused => 'Yükləmə dayandırıldı';
@@ -1934,7 +1945,6 @@ class _Translations$videoSettings$az extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Səsin gurluğunu normallaşdır';
 	@override String get audioNormalizationDisablesPassthrough => 'Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür';
 	@override String get audioNormalizationStereoMix => 'Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür';
-	@override String get audioDownmix => 'Stereo-ya çevir';
 }
 
 // Path: performanceOverlay
@@ -3361,8 +3371,6 @@ extension on TranslationsAz {
 			'settings.audioPassthroughDescription' => 'Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Səsin gurluğunu normallaşdırma aktivkən söndürülüb',
-			'settings.audioDownmix' => 'Stereo-ya çevir (Downmix)',
-			'settings.audioDownmixDescription' => 'Çoxkanallı səsi stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endirir',
 			'settings.downmixCenterBoost' => 'Mərkəz kanal gücləndirilməsi',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Gücləndirmə (dB)',
@@ -3379,6 +3387,8 @@ extension on TranslationsAz {
 			'settings.dvConversionNativeDescription' => 'Daxili DV7-ni məcburi et',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1-ə çevrilməni məcburi et',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision təbəqələrini sil və sadə HEVC kimi təqdim et',
+			'settings.disableDolbyVision' => 'Dolby Vision-u söndür',
+			'settings.disableDolbyVisionDescription' => 'Faylda varsa, Dolby Vision əvəzinə HDR10 və ya HLG təbəqəsini oynat',
 			'settings.hdrSdrConversion' => 'HDR-dən SDR-ə çevirmə',
 			'settings.hdrSdrConversionDescription' => 'Ekran HDR göstərə bilmədikdə HDR videonu nəyin çevirəcəyini seçin.',
 			'settings.hdrSdrConversionAuto' => 'Avtomatik',
@@ -3813,6 +3823,8 @@ extension on TranslationsAz {
 			'messages.mediaUnreadableBody' => 'Server bu elementi tapdı, lakin onun faylını oxuya bilmədi (HTTP 404). Fayl yəqin ki, köçürülüb, silinib və ya onun saxlanma yeri oflayndır. Server sahibindən faylı yoxlamasını və kitabxananı yenidən skan etməsini xahiş edin.',
 			'messages.serverBusyTitle' => 'Yayım əlçatan deyil',
 			'messages.serverBusyBody' => 'Server bu faylı yayımlamaqdan dəfələrlə imtina etdi (HTTP 503). Server yenidən başladılır və ya məşğul ola bilər, yaxud faylın yerləşdiyi yaddaş oflayn ola bilər. Bir az sonra təzədən cəhd edin — problem davam edərsə, server sahibindən serveri və faylın yerləşdiyi yaddaşı yoxlamasını istəyin.',
+			'messages.playbackNotAllowedTitle' => 'Oynatmaya icazə verilmir',
+			'messages.playbackNotAllowedBody' => 'Server bu elementi yayımlamaqdan imtina etdi (HTTP 403). Hesabınızın onu oynatmaq icazəsi olmaya bilər, yaxud server oynatmaya yalnız öz yerli şəbəkəsində icazə verə bilər.',
 			'messages.logsUploaded' => 'Jurnallar yükləndi',
 			'messages.logsUploadFailed' => 'Jurnallar yüklənə bilmədi',
 			'messages.logId' => 'Jurnal ID-si',
@@ -3937,6 +3949,8 @@ extension on TranslationsAz {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} üçün seansın vaxtı bitdi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server üçün seansın vaxtı bitdi',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} bu hesaba girişi rədd etdi',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} server bu hesaba girişi rədd etdi',
 			'connections.signInAgain' => 'Yenidən daxil ol',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product} qoşulmasını düzəliş et',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName} üçün URL-lər əlavə edin və ya silin. Plezy əlçatan olan ən aşağı gecikməli URL-i istifadə edəcək.',
@@ -4050,12 +4064,12 @@ extension on TranslationsAz {
 			'libraries.refreshMetadata' => 'Meta-məlumatları yenilə',
 			'libraries.emptyTrash' => 'Zibil qutusunu təmizlə',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizlənir...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizləndi',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Zibil qutusu təmizlənə bilmədi: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" analiz edilir...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}" üçün analiz başladı',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kitabxana analiz edilə bilmədi: ${error}',
 			'libraries.noLibrariesFound' => 'Kitabxana tapılmadı',
 			'libraries.allLibrariesHidden' => 'Bütün kitabxanalar gizlədilib',
@@ -4564,12 +4578,12 @@ extension on TranslationsAz {
 			'watchTogether.renameRoom' => 'Otağın adını dəyişdir',
 			'watchTogether.removeRoom' => 'Sil',
 			'watchTogether.guestSwitchUnavailable' => 'Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Keçid etmək olmadı — məzmun bu serverdə tapılmadı',
 			'watchTogether.defaultDisplayName' => 'İstifadəçi',
 			'watchTogether.errors.timedOut' => 'Rele serveri vaxtında cavab vermədi',
 			'watchTogether.errors.connectionLost' => 'Bağlantı seans hazır olmamış kəsildi',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'Rele serveri gözlənilməz cavab göndərdi',
 			'watchTogether.errors.sessionEnded' => 'Təşkilatçı seansı bitirdi',
 			'watchTogether.errors.sessionUnavailable' => 'Bu seansı davam etdirmək olmur. Davam etmək üçün otağa qoşulun və ya otaq yaradın.',
@@ -4645,6 +4659,7 @@ extension on TranslationsAz {
 			'downloads.syncRuleAvailable' => 'Əlçatandır',
 			'downloads.syncRuleOffline' => 'Oflayn',
 			'downloads.syncRuleSignInRequired' => 'Daxil olmaq tələb olunur',
+			'downloads.syncRuleAccessDenied' => 'Giriş rədd edildi',
 			'downloads.syncRuleNotAvailableForProfile' => 'Cari profil üçün əlçatan deyil',
 			'downloads.syncRuleUnknownServer' => 'Bilinməyən server',
 			'downloads.syncRuleListCreated' => 'Eyniləşdirmə qaydası yaradıldı',
@@ -4682,8 +4697,14 @@ extension on TranslationsAz {
 			'downloads.unknownAlbum' => 'Məlum olmayan albom',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} tamamlandı',
 			'downloads.errorFileNotFound' => 'Fayl tapılmadı (404)',
+			'downloads.errorDownloadNotAllowed' => 'Server yükləməyə icazə vermir (403)',
 			'downloads.errorDownloadFailed' => 'Yükləmə uğursuz oldu',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Sonrakı emal uğursuz oldu: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Yükləmə uğursuz oldu: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Yükləmə uğursuz oldu (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Sonrakı emal uğursuz oldu: ${reason}',
+			'downloads.reasonFileNotSaved' => 'fayl bu cihazda saxlanıla bilmədi',
+			'downloads.reasonCannotResume' => 'yarımçıq yükləməni davam etdirmək mümkün olmadı',
+			'downloads.reasonDeviceStorageFull' => 'bu cihazda yer qalmayıb',
 			'downloads.notificationDownloading' => 'Yüklənir...',
 			'downloads.notificationComplete' => 'Yükləmə tamamlandı',
 			'downloads.notificationPaused' => 'Yükləmə dayandırıldı',
@@ -4793,7 +4814,6 @@ extension on TranslationsAz {
 			'videoSettings.audioNormalization' => 'Səsin gurluğunu normallaşdır',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür',
 			'videoSettings.audioNormalizationStereoMix' => 'Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür',
-			'videoSettings.audioDownmix' => 'Stereo-ya çevir',
 			'performanceOverlay.color' => 'Rəng',
 			'performanceOverlay.performance' => 'Məhsuldarlıq',
 			'performanceOverlay.buffer' => 'Bufer',
@@ -5072,6 +5092,8 @@ extension on TranslationsAz {
 			'addServer.borrowFromAnotherProfile' => 'Başqa profildən götür',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başqa profilin qoşulmasını yenidən istifadə edin. PIN ilə qorunan profillər PIN tələb edir.',
 			'addServer.invalidCredentials' => 'İstifadəçi adı və ya şifrə yanlışdır',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Autentifikasiya cavabı etibarlı JSON deyildi',
 			'addServer.authResponseIncomplete' => 'Serverin giriş cavabı natamam idi',
 			'addServer.quickConnectRejected' => 'Quick Connect server tərəfindən rədd edildi',
@@ -5082,8 +5104,6 @@ extension on TranslationsAz {
 			'addServer.responseNotJson' => 'Server cavabı etibarlı JSON deyildi',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Cavabda ID və ya server adı yoxdur — bu, ${product} serveridir?',
 			'addServer.probeFailed' => ({required Object error}) => 'Serverə çatmaq olmadı: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Ən azı bir ${product} server URL-i daxil edin',
 			'addServer.noReachableServer' => ({required Object product}) => 'Əlçatan ${product} serveri tapılmadı',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Bu URL-lər fərqli ${product} serverlərinə aiddir',

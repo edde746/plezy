@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.21.0+151
+version: 2.22.0+152
 
 environment:
   # Dart floor stays 3.12: freezed 3.x emits `final` constructor parameters,
@@ -55,15 +55,22 @@ dependencies:
   saf_stream: ^3.1.0
   material_symbols_icons: ^4.2951.0
   web_socket_channel: ^3.0.1
-  dart_discord_presence: ^1.2.0
+  # 1.2.1: Windows IPC no longer blocks the UI isolate while Discord stalls (#2518).
+  dart_discord_presence: ^1.2.1
   flutter_svg: ^2.2.3
   # Fork 54a34a0 fixes upstream #649's missing desktop temp parent; 7ee4588
-  # survives a host with no documents directory (Linux without xdg-user-dirs).
-  # Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
+  # survives a host with no documents directory (Linux without xdg-user-dirs);
+  # 7f500a1 reads real macOS volume capacity and skips unknown capacity on
+  # desktop; 06e385c counts each Android byte once, so progress and the resume
+  # offset match the file; 09690d6 lets Wi-Fi-only tasks run over a VPN and on
+  # Ethernet (upstream 9.6.1's Wi-Fi NetworkRequest kept NOT_VPN); 5d45882 makes
+  # a resumed SAF download reuse its own partial document and deletes SAF
+  # partials through the provider. Keep the same-filesystem move/resume cleanup;
+  # no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 1bcc9978e9b5e503dd08176cc423cfabee703761
+      ref: 5d45882265ead82e570cd067599e193070e3b4a2
   sentry_flutter: ^9.30.0
   auto_updater:
     git:

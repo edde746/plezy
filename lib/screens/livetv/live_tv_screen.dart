@@ -61,9 +61,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   /// filter empties the guide; lets D-pad users reach the action from the tab bar.
   final _guideEmptyStateActionFocusNode = FocusNode(debugLabel: 'guide_empty_state_action');
 
-  /// Visible tabs in the current session. Recordings tab is included only
-  /// when at least one Live TV server has `liveTvDvr` capability.
-  List<LiveTvTab> _visibleTabs = [LiveTvTab.guide, LiveTvTab.whatsOn];
+  /// Visible tabs in the current session. What's On is included only when a
+  /// Live TV server is Plex (the only backend with Live TV hubs), Recordings
+  /// only when at least one Live TV server has `liveTvDvr` capability.
+  List<LiveTvTab> _visibleTabs = [LiveTvTab.guide];
 
   /// Whether any connected DVR supports Plex-style rule re-evaluation;
   /// gates the recordings tab's bolt action.
@@ -145,6 +146,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     super.initState();
     suppressAutoFocus = true;
     _showFavoritesOnly = context.settingsRead(SettingsService.liveTvDefaultFavorites);
+    final initialTabs = _tabStateFor(context.read<MultiServerProvider>());
+    _visibleTabs = initialTabs.tabs;
+    _canProcessRules = initialTabs.canProcessRules;
     initTabNavigation();
     _loadChannels();
   }
@@ -264,22 +268,34 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     await _recordingsTabKey.currentState?.reload();
   }
 
-  /// Recompute visible tabs from the current MultiServerProvider state.
-  /// Re-inits the tab controller when the visible set changes (matches the
-  /// libraries-screen pattern at libraries_screen.dart:365).
-  void _refreshVisibleTabs(MultiServerProvider multiServer) {
+  ({List<LiveTvTab> tabs, bool canProcessRules}) _tabStateFor(MultiServerProvider multiServer) {
+    var hasPlexServer = false;
     var hasDvr = false;
     var canProcessRules = false;
     for (final s in multiServer.liveTvServers) {
-      final dvr = multiServer.getClientForServer(ServerId(s.serverId))?.liveTvDvr;
+      final serverId = ServerId(s.serverId);
+      // What's On lists Plex's Live TV hubs; Jellyfin and Emby have none, so
+      // the tab would only ever be empty for them.
+      hasPlexServer = hasPlexServer || multiServer.getPlexClientForServer(serverId) != null;
+      final dvr = multiServer.getClientForServer(serverId)?.liveTvDvr;
       if (dvr == null) continue;
       hasDvr = true;
       canProcessRules = canProcessRules || dvr.supportsRuleProcessing;
     }
+    return (
+      tabs: [LiveTvTab.guide, if (hasPlexServer) LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings],
+      canProcessRules: canProcessRules,
+    );
+  }
+
+  /// Recompute visible tabs from the current MultiServerProvider state.
+  /// Re-inits the tab controller when the visible set changes (matches the
+  /// libraries-screen pattern at libraries_screen.dart:365).
+  void _refreshVisibleTabs(MultiServerProvider multiServer) {
+    final (tabs: newTabs, :canProcessRules) = _tabStateFor(multiServer);
     if (canProcessRules != _canProcessRules) {
       setState(() => _canProcessRules = canProcessRules);
     }
-    final newTabs = [LiveTvTab.guide, LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings];
     if (listEquals(_visibleTabs, newTabs)) return;
     final currentTab = tabController.index < _visibleTabs.length ? _visibleTabs[tabController.index] : null;
     disposeTabNavigation();
@@ -370,12 +386,17 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         }
       }
 
+      var serversTried = 0;
+      var serversFailed = 0;
+      Object? firstFailure;
+
       // One liveTvServers entry per DVR: visit them all; channels dedupe below.
       await forEachLiveTvServer(
         multiServer,
         resolveClient: multiServer.getClientForServer,
         dedupeByServerId: false,
         body: (genericClient, serverInfo) async {
+          serversTried++;
           final liveTv = genericClient.liveTv;
           final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
           final sourceTitle = _sourceTitleForServerInfo(serverInfo);
@@ -411,9 +432,27 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           }
         },
         onError: (client, serverInfo, error, stackTrace) {
+          serversFailed++;
+          firstFailure ??= error;
           appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: error);
         },
       );
+
+      final failure = firstFailure;
+      if (failure != null && serversFailed == serversTried) {
+        if (!mounted) return;
+        // Every server failed, so there is nothing to replace the loaded
+        // channels with: keep them and report the failure, or show the error
+        // state when there were none (not an empty "no channels" guide).
+        final message = localizedLoadErrorText(failure, context: t.liveTv.title);
+        final keepChannels = _channels.isNotEmpty;
+        setState(() {
+          _isLoading = false;
+          if (!keepChannels) _error = message;
+        });
+        if (keepChannels) showErrorSnackBar(context, message);
+        return;
+      }
 
       allChannels.sort((a, b) {
         final aNum = double.tryParse(a.number ?? '') ?? 999999;

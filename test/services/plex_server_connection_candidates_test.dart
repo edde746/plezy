@@ -56,7 +56,7 @@ Future<int> _closedPort() async {
 
 void main() {
   group('PlexServer connection candidates', () {
-    test('adds HTTP fallback for custom native Plex hostname on port 32400', () {
+    test('does not add HTTP fallback for a custom remote Plex hostname on port 32400', () {
       final server = PlexServer.fromJson(
         _serverJson(
           _connectionJson(
@@ -70,16 +70,11 @@ void main() {
 
       final urls = server.prioritizedEndpointUrls();
 
-      expect(server.connections.map((c) => c.uri), contains('http://whereyaat.duckdns.org:32400'));
-      expect(urls, contains('https://whereyaat.duckdns.org:32400'));
-      expect(urls, contains('http://whereyaat.duckdns.org:32400'));
-      expect(
-        urls.indexOf('https://whereyaat.duckdns.org:32400'),
-        lessThan(urls.indexOf('http://whereyaat.duckdns.org:32400')),
-      );
+      expect(server.connections.map((c) => c.uri), ['https://whereyaat.duckdns.org:32400']);
+      expect(urls, ['https://whereyaat.duckdns.org:32400']);
     });
 
-    test('recognizes cached HTTP fallback for custom native Plex hostname', () {
+    test('ignores a cached HTTP fallback for a custom remote Plex hostname', () {
       final server = PlexServer.fromJson(
         _serverJson(
           _connectionJson(
@@ -93,9 +88,112 @@ void main() {
 
       final urls = server.prioritizedEndpointUrls(preferredFirst: 'http://whereyaat.duckdns.org:32400');
 
-      expect(server.networkClassForUrl('http://whereyaat.duckdns.org:32400'), PlexNetworkClass.remote);
-      expect(urls.first, 'http://whereyaat.duckdns.org:32400');
-      expect(urls.where((u) => u == 'http://whereyaat.duckdns.org:32400'), hasLength(1));
+      expect(server.networkClassForUrl('http://whereyaat.duckdns.org:32400'), PlexNetworkClass.unknown);
+      expect(urls, ['https://whereyaat.duckdns.org:32400']);
+    });
+
+    test('adds HTTP fallbacks only for local, non-relay connections on private addresses', () {
+      const localPlexDirect = 'https://192-168-1-50.abc.plex.direct:32400';
+      const remotePlexDirect = 'https://203-0-113-10.abc.plex.direct:32400';
+      const relayPlexDirect = 'https://198-51-100-7.abc.plex.direct:8443';
+      const publicLocalPlexDirect = 'https://198-51-100-20.abc.plex.direct:32400';
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'https', address: '192.168.1.50', port: 32400, uri: localPlexDirect, local: true),
+          _connectionJson(protocol: 'https', address: '203.0.113.10', port: 32400, uri: remotePlexDirect),
+          _connectionJson(protocol: 'https', address: '198.51.100.7', port: 8443, uri: relayPlexDirect, relay: true),
+          // A server with a public interface: plex.tv flags it local, but the
+          // address is reachable across the internet.
+          _connectionJson(
+            protocol: 'https',
+            address: '198.51.100.20',
+            port: 32400,
+            uri: publicLocalPlexDirect,
+            local: true,
+          ),
+        ]),
+      );
+
+      final urls = server.prioritizedEndpointUrls();
+
+      expect(urls, [
+        localPlexDirect,
+        publicLocalPlexDirect,
+        remotePlexDirect,
+        relayPlexDirect,
+        'http://192.168.1.50:32400',
+        'http://192-168-1-50.abc.plex.direct:32400',
+      ]);
+      expect(server.connections.where((c) => c.protocol == 'http').map((c) => c.uri), [
+        'http://192-168-1-50.abc.plex.direct:32400',
+      ]);
+      for (final url in [
+        'http://203.0.113.10:32400',
+        'http://198.51.100.7:8443',
+        'http://198.51.100.20:32400',
+        'http://203-0-113-10.abc.plex.direct:32400',
+      ]) {
+        expect(server.networkClassForUrl(url), PlexNetworkClass.unknown, reason: url);
+        expect(server.prioritizedEndpointUrls(preferredFirst: url), isNot(contains(url)), reason: url);
+      }
+    });
+
+    test('drops cleartext remote and relay fallbacks persisted by older builds', () {
+      const remotePlexDirect = 'https://203-0-113-10.abc.plex.direct:32400';
+      const relayPlexDirect = 'https://198-51-100-7.abc.plex.direct:8443';
+      // What toJson wrote when every HTTPS connection got a synthetic twin.
+      final server = PlexServer.fromJson(
+        _serverJsonWithConnections([
+          _connectionJson(protocol: 'https', address: '203.0.113.10', port: 32400, uri: remotePlexDirect),
+          _connectionJson(
+            protocol: 'http',
+            address: '203.0.113.10',
+            port: 32400,
+            uri: 'http://203-0-113-10.abc.plex.direct:32400',
+          ),
+          _connectionJson(protocol: 'https', address: '198.51.100.7', port: 8443, uri: relayPlexDirect, relay: true),
+          _connectionJson(
+            protocol: 'http',
+            address: '198.51.100.7',
+            port: 8443,
+            uri: 'http://198-51-100-7.abc.plex.direct:8443',
+            relay: true,
+          ),
+          _connectionJson(
+            protocol: 'https',
+            address: 'whereyaat.duckdns.org',
+            port: 32400,
+            uri: 'https://whereyaat.duckdns.org:32400',
+          ),
+          _connectionJson(
+            protocol: 'http',
+            address: 'whereyaat.duckdns.org',
+            port: 32400,
+            uri: 'http://whereyaat.duckdns.org:32400',
+          ),
+        ]),
+      );
+
+      const expected = [remotePlexDirect, relayPlexDirect, 'https://whereyaat.duckdns.org:32400'];
+      expect(server.connections.map((c) => c.uri), expected);
+      expect(server.prioritizedEndpointUrls(), [
+        remotePlexDirect,
+        'https://whereyaat.duckdns.org:32400',
+        relayPlexDirect,
+      ]);
+      expect(PlexServer.fromJson(server.toJson()).connections.map((c) => c.uri), expected);
+    });
+
+    test('keeps a server-published cleartext remote connection', () {
+      // A server with secure connections disabled only publishes http.
+      final server = PlexServer.fromJson(
+        _serverJson(
+          _connectionJson(protocol: 'http', address: '203.0.113.10', port: 32400, uri: 'http://203.0.113.10:32400'),
+        ),
+      );
+
+      expect(server.prioritizedEndpointUrls(), ['http://203.0.113.10:32400']);
+      expect(server.networkClassForUrl('http://203.0.113.10:32400'), PlexNetworkClass.remote);
     });
 
     test('does not add HTTP fallback for standard HTTPS reverse proxy hostname', () {

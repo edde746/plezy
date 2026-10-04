@@ -456,8 +456,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Изключено, докато е включено нормализирането на силата на звука';
-	@override String get audioDownmix => 'Смесване до стерео';
-	@override String get audioDownmixDescription => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки';
 	@override String get downmixCenterBoost => 'Усилване на централния канал';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
 	@override String get downmixCenterBoostLabel => 'Усилване (дБ)';
@@ -474,6 +472,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване';
 	@override String get dvConversionDv81Description => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток';
+	@override String get disableDolbyVision => 'Изключване на Dolby Vision';
+	@override String get disableDolbyVisionDescription => 'Възпроизвежда слоя HDR10 или HLG на файла вместо Dolby Vision, когато има такъв';
 	@override String get hdrSdrConversion => 'Преобразуване от HDR към SDR';
 	@override String get hdrSdrConversionDescription => 'Изберете какво да преобразува HDR видеото, когато дисплеят не поддържа HDR.';
 	@override String get hdrSdrConversionAuto => 'Автоматично';
@@ -977,6 +977,8 @@ class _Translations$messages$bg extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'Сървърът намери този елемент, но не можа да прочете файла му (HTTP 404). Файлът вероятно е бил преместен, изтрит или хранилището му е офлайн. Помолете собственика на сървъра да провери файла и да сканира отново библиотеката.';
 	@override String get serverBusyTitle => 'Потокът не е наличен';
 	@override String get serverBusyBody => 'Сървърът многократно отказа да предава този файл поточно (HTTP 503). Възможно е да се рестартира, да е зает или хранилището на файла да е офлайн. Опитайте отново след малко — ако проблемът продължи, помолете собственика на сървъра да провери сървъра и хранилището на файла.';
+	@override String get playbackNotAllowedTitle => 'Възпроизвеждането не е разрешено';
+	@override String get playbackNotAllowedBody => 'Сървърът отказа да предава този елемент поточно (HTTP 403). Възможно е профилът ви да няма разрешение да го възпроизвежда или сървърът да позволява възпроизвеждане само в локалната си мрежа.';
 	@override String get logsUploaded => 'Логовете са качени';
 	@override String get logsUploadFailed => 'Неуспешно качване на логовете';
 	@override String get logId => 'ID на лога';
@@ -1146,6 +1148,8 @@ class _Translations$connections$bg extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил';
 	@override String sessionExpiredOne({required Object name}) => 'Сесията за ${name} е изтекла';
 	@override String sessionExpiredMany({required Object count}) => 'Сесиите за ${count} сървъра са изтекли';
+	@override String accessDeniedOne({required Object name}) => '${name} отказа достъп за този профил';
+	@override String accessDeniedMany({required Object count}) => '${count} сървъра отказаха достъп за този профил';
 	@override String get signInAgain => 'Влез отново';
 	@override String editMediaBrowserTitle({required Object product}) => 'Редактирай връзката с ${product}';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Добавете или премахнете URL адреси за ${serverName}. Plezy ще използва достъпния URL адрес с най-ниска латентност.';
@@ -1842,6 +1846,7 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Налично';
 	@override String get syncRuleOffline => 'Офлайн';
 	@override String get syncRuleSignInRequired => 'Изисква се вход';
+	@override String get syncRuleAccessDenied => 'Достъпът е отказан';
 	@override String get syncRuleNotAvailableForProfile => 'Не е налично за текущия профил';
 	@override String get syncRuleUnknownServer => 'Неизвестен сървър';
 	@override String get syncRuleListCreated => 'Правилото за синхронизация е създадено';
@@ -1854,8 +1859,14 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Неизвестен албум';
 	@override String completedOfTotal({required Object completed, required Object total}) => 'Завършени: ${completed}/${total}';
 	@override String get errorFileNotFound => 'Файлът не е намерен (404)';
+	@override String get errorDownloadNotAllowed => 'Сървърът не разрешава изтеглянето (403)';
 	@override String get errorDownloadFailed => 'Изтеглянето е неуспешно';
-	@override String errorPostProcessing({required Object error}) => 'Последващата обработка е неуспешна: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Изтеглянето е неуспешно: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Изтеглянето е неуспешно (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Последващата обработка е неуспешна: ${reason}';
+	@override String get reasonFileNotSaved => 'файлът не можа да бъде запазен на това устройство';
+	@override String get reasonCannotResume => 'частичното изтегляне не можа да бъде продължено';
+	@override String get reasonDeviceStorageFull => 'на това устройство няма свободно място';
 	@override String get notificationDownloading => 'Изтегляне...';
 	@override String get notificationComplete => 'Изтеглянето завърши';
 	@override String get notificationPaused => 'Изтеглянето е на пауза';
@@ -1934,7 +1945,6 @@ class _Translations$videoSettings$bg extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Нормализиране на силата на звука';
 	@override String get audioNormalizationDisablesPassthrough => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено';
 	@override String get audioNormalizationStereoMix => 'Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено';
-	@override String get audioDownmix => 'Смесване до стерео';
 }
 
 // Path: performanceOverlay
@@ -3361,8 +3371,6 @@ extension on TranslationsBg {
 			'settings.audioPassthroughDescription' => 'Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Изключено, докато е включено нормализирането на силата на звука',
-			'settings.audioDownmix' => 'Смесване до стерео',
-			'settings.audioDownmixDescription' => 'Смесва съраунд звука до два канала за стерео тонколони или слушалки',
 			'settings.downmixCenterBoost' => 'Усилване на централния канал',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',
 			'settings.downmixCenterBoostLabel' => 'Усилване (дБ)',
@@ -3379,6 +3387,8 @@ extension on TranslationsBg {
 			'settings.dvConversionNativeDescription' => 'Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване',
 			'settings.dvConversionDv81Description' => 'Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток',
+			'settings.disableDolbyVision' => 'Изключване на Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Възпроизвежда слоя HDR10 или HLG на файла вместо Dolby Vision, когато има такъв',
 			'settings.hdrSdrConversion' => 'Преобразуване от HDR към SDR',
 			'settings.hdrSdrConversionDescription' => 'Изберете какво да преобразува HDR видеото, когато дисплеят не поддържа HDR.',
 			'settings.hdrSdrConversionAuto' => 'Автоматично',
@@ -3813,6 +3823,8 @@ extension on TranslationsBg {
 			'messages.mediaUnreadableBody' => 'Сървърът намери този елемент, но не можа да прочете файла му (HTTP 404). Файлът вероятно е бил преместен, изтрит или хранилището му е офлайн. Помолете собственика на сървъра да провери файла и да сканира отново библиотеката.',
 			'messages.serverBusyTitle' => 'Потокът не е наличен',
 			'messages.serverBusyBody' => 'Сървърът многократно отказа да предава този файл поточно (HTTP 503). Възможно е да се рестартира, да е зает или хранилището на файла да е офлайн. Опитайте отново след малко — ако проблемът продължи, помолете собственика на сървъра да провери сървъра и хранилището на файла.',
+			'messages.playbackNotAllowedTitle' => 'Възпроизвеждането не е разрешено',
+			'messages.playbackNotAllowedBody' => 'Сървърът отказа да предава този елемент поточно (HTTP 403). Възможно е профилът ви да няма разрешение да го възпроизвежда или сървърът да позволява възпроизвеждане само в локалната си мрежа.',
 			'messages.logsUploaded' => 'Логовете са качени',
 			'messages.logsUploadFailed' => 'Неуспешно качване на логовете',
 			'messages.logId' => 'ID на лога',
@@ -3937,6 +3949,8 @@ extension on TranslationsBg {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добави към ${displayName}: Plex, Jellyfin, Emby или връзка от друг профил',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сесията за ${name} е изтекла',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сесиите за ${count} сървъра са изтекли',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} отказа достъп за този профил',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} сървъра отказаха достъп за този профил',
 			'connections.signInAgain' => 'Влез отново',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Редактирай връзката с ${product}',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Добавете или премахнете URL адреси за ${serverName}. Plezy ще използва достъпния URL адрес с най-ниска латентност.',
@@ -4050,12 +4064,12 @@ extension on TranslationsBg {
 			'libraries.refreshMetadata' => 'Опресни метаданни',
 			'libraries.emptyTrash' => 'Изпразни кошчето',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Изпразване на кошчето за "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Кошчето е изпразнено за "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Неуспешно изпразване на кошчето: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализиране на "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Анализът е стартиран за "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Неуспешен анализ на библиотеката: ${error}',
 			'libraries.noLibrariesFound' => 'Не са намерени библиотеки',
 			'libraries.allLibrariesHidden' => 'Всички библиотеки са скрити',
@@ -4564,12 +4578,12 @@ extension on TranslationsBg {
 			'watchTogether.renameRoom' => 'Преименувай стая',
 			'watchTogether.removeRoom' => 'Премахни',
 			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
 			'watchTogether.defaultDisplayName' => 'Потребител',
 			'watchTogether.errors.timedOut' => 'Релейният сървър не отговори навреме',
 			'watchTogether.errors.connectionLost' => 'Връзката се затвори, преди сесията да е готова',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'Релейният сървър изпрати неочакван отговор',
 			'watchTogether.errors.sessionEnded' => 'Организаторът прекрати сесията',
 			'watchTogether.errors.sessionUnavailable' => 'Тази сесия не може да бъде възобновена. Присъединете се към стая или създайте нова, за да продължите.',
@@ -4645,6 +4659,7 @@ extension on TranslationsBg {
 			'downloads.syncRuleAvailable' => 'Налично',
 			'downloads.syncRuleOffline' => 'Офлайн',
 			'downloads.syncRuleSignInRequired' => 'Изисква се вход',
+			'downloads.syncRuleAccessDenied' => 'Достъпът е отказан',
 			'downloads.syncRuleNotAvailableForProfile' => 'Не е налично за текущия профил',
 			'downloads.syncRuleUnknownServer' => 'Неизвестен сървър',
 			'downloads.syncRuleListCreated' => 'Правилото за синхронизация е създадено',
@@ -4682,8 +4697,14 @@ extension on TranslationsBg {
 			'downloads.unknownAlbum' => 'Неизвестен албум',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => 'Завършени: ${completed}/${total}',
 			'downloads.errorFileNotFound' => 'Файлът не е намерен (404)',
+			'downloads.errorDownloadNotAllowed' => 'Сървърът не разрешава изтеглянето (403)',
 			'downloads.errorDownloadFailed' => 'Изтеглянето е неуспешно',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Последващата обработка е неуспешна: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Изтеглянето е неуспешно: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Изтеглянето е неуспешно (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Последващата обработка е неуспешна: ${reason}',
+			'downloads.reasonFileNotSaved' => 'файлът не можа да бъде запазен на това устройство',
+			'downloads.reasonCannotResume' => 'частичното изтегляне не можа да бъде продължено',
+			'downloads.reasonDeviceStorageFull' => 'на това устройство няма свободно място',
 			'downloads.notificationDownloading' => 'Изтегляне...',
 			'downloads.notificationComplete' => 'Изтеглянето завърши',
 			'downloads.notificationPaused' => 'Изтеглянето е на пауза',
@@ -4793,7 +4814,6 @@ extension on TranslationsBg {
 			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Декодира аудиото до PCM; директното предаване е изключено, докато това е включено',
 			'videoSettings.audioNormalizationStereoMix' => 'Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено',
-			'videoSettings.audioDownmix' => 'Смесване до стерео',
 			'performanceOverlay.color' => 'Цвят',
 			'performanceOverlay.performance' => 'Производителност',
 			'performanceOverlay.buffer' => 'Буфер',
@@ -5072,6 +5092,8 @@ extension on TranslationsBg {
 			'addServer.borrowFromAnotherProfile' => 'Използвай от друг профил',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			'addServer.invalidCredentials' => 'Невалидно потребителско име или парола',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Отговорът при удостоверяване не беше валиден JSON',
 			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',
 			'addServer.quickConnectRejected' => 'Quick Connect беше отхвърлен от сървъра',
@@ -5082,8 +5104,6 @@ extension on TranslationsBg {
 			'addServer.responseNotJson' => 'Отговорът на сървъра не беше валиден JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'В отговора липсва ID или име на сървъра — това сървър на ${product} ли е?',
 			'addServer.probeFailed' => ({required Object error}) => 'Сървърът не може да бъде достигнат: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Въведете поне един URL на сървър на ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Не беше намерен достъпен сървър на ${product}',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Тези URL адреси сочат към различни сървъри на ${product}',

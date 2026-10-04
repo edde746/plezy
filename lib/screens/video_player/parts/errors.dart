@@ -37,8 +37,11 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     );
 
     switch (action) {
-      // Both dialogs are unrecoverable until the server side changes, so they
-      // replace the snackbar rather than joining it.
+      // Every dialog is unrecoverable until the server side changes, so each
+      // replaces the snackbar rather than joining it.
+      case PlaybackFailureAction.playbackNotAllowedDialog:
+        _latchFatalPlaybackError(action);
+        unawaited(_showPlaybackNotAllowedDialog());
       case PlaybackFailureAction.serverLimitDialog:
         _latchFatalPlaybackError(action);
         unawaited(_showServerLimitDialog());
@@ -113,6 +116,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       widget.launchObserver?.mark(
         'failed',
         failure: switch (action) {
+          PlaybackFailureAction.playbackNotAllowedDialog => 'playbackNotAllowed',
           PlaybackFailureAction.serverLimitDialog => 'serverLimit',
           PlaybackFailureAction.mediaUnreadableDialog => 'mediaUnreadable',
           PlaybackFailureAction.serverBusyDialog => 'serverBusy',
@@ -132,6 +136,10 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   void _presentPlaybackFailure(String message) {
     if (!mounted || _shuttingDown) return;
     _firstFrame.forceUiReadyOnFailure();
+    // Nothing plays behind the view, so it must not hold the screen awake
+    // while it waits; the playing-state handler takes the wakelock again once
+    // a retried open plays.
+    unawaited(_wakelockController.setEnabled(false));
     _setPlayerState(() {
       _playbackFailureMessage = message;
       _playbackFailureRetry = _retryFailedPlayback;
@@ -269,6 +277,12 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   }
 
   String _redactPlayerError(String message) => LogRedactionManager.redact(message);
+
+  Future<void> _showPlaybackNotAllowedDialog() async {
+    if (!mounted) return;
+    await showPlaybackNotAllowedDialog(context);
+    if (mounted) unawaited(_handleBackButton());
+  }
 
   Future<void> _showServerLimitDialog() async {
     if (!mounted) return;

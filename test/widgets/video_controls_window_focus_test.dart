@@ -175,6 +175,58 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
+    testWidgets('a prompt holding focus keeps the arrows from the shortcut fallback', (tester) async {
+      // Play Next / Still Watching sit outside the controls; with focus on
+      // their buttons the controls' node does not have focus, which the
+      // global fallback used to read as drift and answer arrows with a seek.
+      final first = FocusNode(debugLabel: 'PromptFirst');
+      final second = FocusNode(debugLabel: 'PromptSecond');
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+      await tester.pumpWidget(
+        shell(
+          Stack(
+            children: [
+              PlexVideoControls(
+                player: player,
+                volumeController: volume,
+                metadata: testMediaItem(id: 'prompt-focus'),
+                toastController: toast,
+                chromeController: chrome,
+                hasFirstFrame: hasFirstFrame,
+                canNavigateMediaItems: false,
+              ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(focusNode: first, onPressed: () {}, child: const Text('Cancel')),
+                    TextButton(focusNode: second, onPressed: () {}, child: const Text('Play')),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      first.requestFocus();
+      await tester.pumpAndSettle();
+      final positionBefore = player.state.position;
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      expect(player.state.position, positionBefore, reason: 'the arrow belongs to the prompt, not to a seek');
+      expect(first.hasPrimaryFocus, isFalse, reason: 'the arrow moved focus on from the prompt button');
+
+      chrome.cancelAutoHide();
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
     testWidgets('a control the viewer focused on purpose keeps the remote', (tester) async {
       await pumpControlsUnderScreenFocus(tester);
 

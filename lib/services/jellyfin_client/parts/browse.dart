@@ -117,6 +117,17 @@ const _baseEpisodeRowFields = '$_baseBrowseFields,MediaSources';
 /// find a single episode by name.
 const _searchItemTypes = 'Movie,Series,Episode,MusicAlbum,Audio';
 
+/// Title types a person's filmography lists. People search checks each
+/// candidate against the same set, so a person it returns never opens an empty
+/// [MediaServerClient.fetchPersonMediaPage].
+const _personMediaItemTypes = 'Movie,Series';
+
+/// `/Persons` candidates fetched per people search. The server orders them by
+/// name, not relevance, so asking for only the caller's limit can cut off the
+/// best match behind alphabetically earlier partial matches; ranking runs
+/// client-side over this pool instead.
+const _peopleSearchCandidateLimit = 100;
+
 /// Folder-tree field set for MEDIA children. The tree renders
 /// title/thumb/watch state plus default dto fields (year, runtime, ratings);
 /// it deliberately skips `RecursiveItemCount`/`ChildCount` — per-item COUNT
@@ -222,6 +233,14 @@ const _episodeOrderQueryParameters = {
   'SortBy': 'ParentIndexNumber,IndexNumber,SortName',
   'SortOrder': 'Ascending,Ascending,Ascending',
 };
+
+/// Hides the placeholder (virtual) episodes a server synthesises for episodes
+/// that have no file — missing and not-yet-aired alike (#2551). Recursive
+/// `/Items` queries return them unless asked not to, and they carry a fresh
+/// `DateCreated`, so they float to the top of date-sorted lists. `/Items` does
+/// not accept the `IsVirtualUnaired` key the `/Shows/{id}/Episodes` calls use;
+/// this is the filter Jellyfin Web's playback queries send.
+const _excludeVirtualItemsQuery = {'ExcludeLocationTypes': 'Virtual'};
 
 bool _isJellyfinFolderDto(Map<String, dynamic> item) {
   final type = (item['Type'] as String?)?.toLowerCase();
@@ -1237,6 +1256,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
         'Fields': _episodeRowFields,
+        ..._excludeVirtualItemsQuery,
         ...jellyfinImageQueryParameters,
       },
       abort: abort,
@@ -1315,14 +1335,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // CollectionFolder. Searching one scoped request per visible library is
     // therefore the only way a hit ever learns which library it came from
     // (#1970) — and the only way a hidden library can be excluded at all.
-    var libraries = _loadedLibraryViews;
-    if (libraries == null) {
-      libraries = await _fetchLibraries(abort: abort);
-      // `??=`, not `=`: an explicit library load that started later can finish
-      // first, and this older response must not clobber its newer views.
-      _loadedLibraryViews ??= libraries;
-    }
-    abort?.throwIfAborted();
+    final libraries = await _searchLibraryViews(abort: abort);
     final visible = [
       for (final library in libraries)
         if (!excludedLibraryIds.contains(library.id)) library,
@@ -1428,6 +1441,125 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       for (final item in _mapItems([for (final result in results) ...result]))
         item.copyWith(libraryId: library.id, libraryTitle: library.title),
     ];
+  }
+
+  /// Library views a scoped search pass works from: the last load's when warm
+  /// (see [_loadedLibraryViews]), otherwise fetched under [abort].
+  Future<List<MediaLibrary>> _searchLibraryViews({AbortController? abort}) async {
+    var libraries = _loadedLibraryViews;
+    if (libraries == null) {
+      libraries = await _fetchLibraries(abort: abort);
+      // `??=`, not `=`: an explicit library load that started later can finish
+      // first, and this older response must not clobber its newer views.
+      _loadedLibraryViews ??= libraries;
+    }
+    abort?.throwIfAborted();
+    return libraries;
+  }
+
+  /// `/Persons` lists people with no title this user can see and ignores
+  /// `parentId`, so every candidate is confirmed against the same `/Items`
+  /// query [fetchPersonMediaPage] runs. Hidden libraries can only be honoured
+  /// there: the check is scoped to each library that stays visible.
+  @override
+  Future<List<MediaPerson>> searchPeople(
+    String query, {
+    int limit = defaultPeopleSearchLimit,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
+    // Null = one unscoped check per person, which is exact whenever no
+    // library that can hold a filmography title is hidden.
+    List<MediaLibrary>? checkedLibraries;
+    if (excludedLibraryIds.isNotEmpty) {
+      final titleLibraries = [
+        for (final library in await _searchLibraryViews(abort: abort))
+          // Music and photo libraries never hold a Movie or Series.
+          if (library.kind != MediaKind.artist && library.kind != MediaKind.photo) library,
+      ];
+      final visible = [
+        for (final library in titleLibraries)
+          if (!excludedLibraryIds.contains(library.id)) library,
+      ];
+      if (visible.isEmpty) return const [];
+      if (visible.length < titleLibraries.length) checkedLibraries = visible;
+    }
+
+    final rows = await _fetchItemsArray('/Persons', {
+      'userId': connection.userId,
+      'SearchTerm': query,
+      'PersonTypes': 'Actor,Director',
+      'Limit': '$_peopleSearchCandidateLimit',
+      'EnableImageTypes': 'Primary',
+      'ImageTypeLimit': '1',
+      'EnableUserData': 'false',
+      'EnableTotalRecordCount': 'false',
+    }, abort: abort);
+    final ranked = rankPeopleSearchResults([for (final row in rows) ?_personFromJson(row)], query, limit: limit);
+
+    const concurrency = 3;
+    final found = <MediaPerson>[];
+    for (var start = 0; start < ranked.length; start += concurrency) {
+      abort?.throwIfAborted();
+      final batch = ranked.skip(start).take(concurrency).toList(growable: false);
+      final hasMedia = await Future.wait([
+        for (final person in batch) _personHasVisibleMedia(person.id, libraries: checkedLibraries, abort: abort),
+      ]);
+      for (var index = 0; index < batch.length; index++) {
+        if (hasMedia[index]) found.add(batch[index]);
+      }
+    }
+    return found;
+  }
+
+  MediaPerson? _personFromJson(Map<String, dynamic> json) {
+    final id = json['Id'];
+    final name = json['Name'];
+    if (id is! String || id.isEmpty || name is! String || name.trim().isEmpty) return null;
+    final imageTags = json['ImageTags'];
+    final primaryTag = imageTags is Map<String, dynamic> ? imageTags['Primary'] : null;
+    return MediaPerson(
+      id: id,
+      name: name,
+      // No tagless fallback: a person without a primary image 404s there.
+      thumbPath: primaryTag is String && primaryTag.isNotEmpty
+          ? _absolutizeImagePath('/Items/${_segment(id)}/Images/Primary?tag=${Uri.encodeComponent(primaryTag)}')
+          : null,
+      backend: backend,
+      serverId: serverId,
+      serverName: serverName,
+    );
+  }
+
+  /// Whether [personId] has a filmography title in any of [libraries], or
+  /// anywhere this user can see when [libraries] is null. Libraries are asked
+  /// in turn and the first hit ends the walk.
+  Future<bool> _personHasVisibleMedia(
+    String personId, {
+    required List<MediaLibrary>? libraries,
+    AbortController? abort,
+  }) async {
+    if (libraries == null) return _personHasMedia(personId, abort: abort);
+    for (final library in libraries) {
+      if (await _personHasMedia(personId, parentId: library.id, abort: abort)) return true;
+    }
+    return false;
+  }
+
+  Future<bool> _personHasMedia(String personId, {String? parentId, AbortController? abort}) async {
+    final items = await _fetchItemsArray('/Items', {
+      'userId': connection.userId,
+      'PersonIds': personId,
+      'IncludeItemTypes': _personMediaItemTypes,
+      'Recursive': 'true',
+      'ParentId': ?parentId,
+      'Limit': '1',
+      'CollapseBoxSetItems': 'false',
+      'EnableTotalRecordCount': 'false',
+      'EnableImages': 'false',
+      'EnableUserData': 'false',
+    }, abort: abort);
+    return items.isNotEmpty;
   }
 
   /// Jellyfin removed `anyProviderIdEquals` (silently ignored on 10.11.10, so
@@ -1575,7 +1707,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       queryParameters: {
         'userId': connection.userId,
         'PersonIds': personId,
-        'IncludeItemTypes': 'Movie,Series',
+        'IncludeItemTypes': _personMediaItemTypes,
         'Recursive': 'true',
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
@@ -1592,31 +1724,87 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
+    if (excludedLibraryIds.isEmpty) {
+      final rows = await _continueWatchingRows(count: count);
+      return _mergeContinueWatchingAndNextUp(resume: rows.resume, nextUp: rows.nextUp, limit: count);
+    }
+
+    // Resume and Next Up rows name no library, so the caller cannot drop a
+    // hidden library's rows. As in [searchItems] (#1970), asking each visible
+    // library on its own is the only way to leave one out, and it stamps every
+    // row with the library it came from. Music is skipped: both queries are
+    // video-only there.
+    var libraries = _loadedLibraryViews;
+    if (libraries == null) {
+      libraries = await _fetchLibraries();
+      _loadedLibraryViews ??= libraries;
+    }
+    final visible = [
+      for (final library in libraries)
+        if (!excludedLibraryIds.contains(library.id) && library.kind != MediaKind.artist) library,
+    ];
+    const concurrency = 3;
+    final resume = <MediaItem>[];
+    final nextUp = <MediaItem>[];
+    for (var start = 0; start < visible.length; start += concurrency) {
+      final batch = await Future.wait([
+        for (final library in visible.skip(start).take(concurrency))
+          _continueWatchingRows(count: count, library: library),
+      ]);
+      for (final rows in batch) {
+        resume.addAll(rows.resume);
+        nextUp.addAll(rows.nextUp);
+      }
+    }
+    return _mergeContinueWatchingAndNextUp(resume: resume, nextUp: nextUp, limit: count);
+  }
+
+  /// The two Continue Watching halves, server-wide or scoped to [library]
+  /// (whose rows are then stamped with it).
+  Future<({List<MediaItem> resume, List<MediaItem> nextUp})> _continueWatchingRows({
+    int? count,
+    MediaLibrary? library,
+  }) async {
+    final parentId = library?.id;
+    List<MediaItem> stamped(List<MediaItem> items) => library == null
+        ? items
+        : [for (final item in items) item.copyWith(libraryId: library.id, libraryTitle: library.title)];
+
     if (!dialect.resumeReturnsOnlyStartedItems) {
       // Emby: both shelf halves ride the one hide-aware window request — see
       // [_embyResumeWindowQuery].
       final split = _splitEmbyResumeRows(
-        await _fetchItemsArray(paths.resumeItems, _embyResumeWindowQuery(), retry: _continueWatchingRetry),
+        await _fetchItemsArray(
+          paths.resumeItems,
+          _embyResumeWindowQuery(parentId: parentId),
+          retry: _continueWatchingRetry,
+        ),
       );
-      return _mergeContinueWatchingAndNextUp(
-        resume: _mapItems(split.resume),
-        nextUp: _mapItems(await _stampEmbyNextUpRows(split.nextUp)),
-        limit: count,
+      return (
+        resume: stamped(_mapItems(split.resume)),
+        nextUp: stamped(_mapItems(await _stampEmbyNextUpRows(split.nextUp, parentId: parentId))),
       );
     }
 
     final results = await Future.wait([
-      _fetchItemsArray(paths.resumeItems, _resumeItemsQuery(limit: count), retry: _continueWatchingRetry),
-      _safeFetchItemsArray('/Shows/NextUp', _nextUpQuery(limit: count), retry: _continueWatchingRetry),
+      _fetchItemsArray(
+        paths.resumeItems,
+        _resumeItemsQuery(limit: count, parentId: parentId),
+        retry: _continueWatchingRetry,
+      ),
+      _safeFetchItemsArray(
+        '/Shows/NextUp',
+        _nextUpQuery(limit: count, parentId: parentId),
+        retry: _continueWatchingRetry,
+      ),
     ]);
 
-    return _mergeContinueWatchingAndNextUp(
-      resume: _mapItems(results.first),
+    return (
+      resume: stamped(_mapItems(results.first)),
       // `/Shows/NextUp` rows carry no series play date, so stamp them with one
       // before the recency merge.
-      nextUp: await _attachSeriesLastPlayed(_mapItems(results[1])),
-      limit: count,
+      nextUp: stamped(await _attachSeriesLastPlayed(_mapItems(results[1]))),
     );
   }
 
@@ -1909,6 +2097,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
             'SortBy': 'DateCreated,SortName,ProductionYear',
             'SortOrder': 'Descending,Descending,Descending',
             'Fields': _hubRowFields,
+            ..._excludeVirtualItemsQuery,
             ...jellyfinImageQueryParameters,
           },
           offset: offset,

@@ -11,6 +11,7 @@ import '../widgets/app_icon.dart';
 import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_filter_chip.dart';
 import '../widgets/focusable_list_tile.dart';
+import '../widgets/scroll_ink_boundary.dart';
 
 class TagEditDialog extends StatefulWidget {
   final String title;
@@ -169,13 +170,15 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
               const SizedBox(height: 12),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 300),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _tags.length,
-                  itemBuilder: (context, index) => FocusableListTile(
-                    title: Text(_tags[index]),
-                    trailing: const AppIcon(Symbols.close_rounded),
-                    onTap: () => _removeTag(index),
+                child: ScrollInkBoundary(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _tags.length,
+                    itemBuilder: (context, index) => FocusableListTile(
+                      title: Text(_tags[index]),
+                      trailing: const AppIcon(Symbols.close_rounded),
+                      onTap: () => _removeTag(index),
+                    ),
                   ),
                 ),
               ),

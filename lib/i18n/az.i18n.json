@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Bu fayl düzgün Plezy tənzimləmələr faylı deyil",
     "importSettingsNoUser": "Tənzimləmələri idxal etməzdən əvvəl daxil olun",
     "shortcutsReset": "Qısayollar defolt vəziyyətə sıfırlandı",
+    "resetShortcutsConfirm": "",
     "about": "Haqqında",
     "aboutDescription": "Tətbiq məlumatı və lisenziyalar",
     "updates": "Yenilənmələr",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.",
     "audioPassthroughDescriptionAppleTv": "Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.",
     "audioPassthroughOverriddenByNormalization": "Səsin gurluğunu normallaşdırma aktivkən söndürülüb",
-    "audioDownmix": "Stereo-ya çevir (Downmix)",
-    "audioDownmixDescription": "Çoxkanallı səsi stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endirir",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Mərkəz kanal gücləndirilməsi",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Gücləndirmə (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Daxili DV7-ni məcburi et",
     "dvConversionDv81Description": "Dolby Vision profile 8.1-ə çevrilməni məcburi et",
     "dvConversionHevcStripDescription": "Dolby Vision təbəqələrini sil və sadə HEVC kimi təqdim et",
+    "disableDolbyVision": "Dolby Vision-u söndür",
+    "disableDolbyVisionDescription": "Faylda varsa, Dolby Vision əvəzinə HDR10 və ya HLG təbəqəsini oynat",
     "hdrSdrConversion": "HDR-dən SDR-ə çevirmə",
     "hdrSdrConversionDescription": "Ekran HDR göstərə bilmədikdə HDR videonu nəyin çevirəcəyini seçin.",
     "hdrSdrConversionAuto": "Avtomatik",
@@ -435,7 +444,8 @@
     "hint": "Kino, serial, musiqi axtar...",
     "tryDifferentTerm": "Fərqli axtarış sözü cəhd edin",
     "searchYourMedia": "Mediyanızda axtarın",
-    "enterTitleActorOrKeyword": "Ad, aktyor və ya açar söz daxil edin"
+    "enterTitleActorOrKeyword": "Ad, aktyor və ya açar söz daxil edin",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} üçün qısayol təyin et",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "Server bu elementi tapdı, lakin onun faylını oxuya bilmədi (HTTP 404). Fayl yəqin ki, köçürülüb, silinib və ya onun saxlanma yeri oflayndır. Server sahibindən faylı yoxlamasını və kitabxananı yenidən skan etməsini xahiş edin.",
     "serverBusyTitle": "Yayım əlçatan deyil",
     "serverBusyBody": "Server bu faylı yayımlamaqdan dəfələrlə imtina etdi (HTTP 503). Server yenidən başladılır və ya məşğul ola bilər, yaxud faylın yerləşdiyi yaddaş oflayn ola bilər. Bir az sonra təzədən cəhd edin — problem davam edərsə, server sahibindən serveri və faylın yerləşdiyi yaddaşı yoxlamasını istəyin.",
+    "playbackNotAllowedTitle": "Oynatmaya icazə verilmir",
+    "playbackNotAllowedBody": "Server bu elementi yayımlamaqdan imtina etdi (HTTP 403). Hesabınızın onu oynatmaq icazəsi olmaya bilər, yaxud server oynatmaya yalnız öz yerli şəbəkəsində icazə verə bilər.",
     "logsUploaded": "Jurnallar yükləndi",
     "logsUploadFailed": "Jurnallar yüklənə bilmədi",
     "logId": "Jurnal ID-si",
@@ -907,6 +919,8 @@
     "signOut": "Çıxış et",
     "signOutPlexTitle": "Plex-dən çıxılsın?",
     "signOutPlexMessage": "${displayName} və bütün Plex Home istifadəçiləri silinsin? İstənilən vaxt yenidən daxil ola bilərsiniz.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex-dən çıxıldı.",
     "signOutFailed": "Çıxış uğursuz oldu.",
     "sectionTitle": "Profillər",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması",
     "sessionExpiredOne": "${name} üçün seansın vaxtı bitdi",
     "sessionExpiredMany": "${count} server üçün seansın vaxtı bitdi",
+    "accessDeniedOne": "${name} bu hesaba girişi rədd etdi",
+    "accessDeniedMany": "${count} server bu hesaba girişi rədd etdi",
     "signInAgain": "Yenidən daxil ol",
     "editMediaBrowserTitle": "${product} qoşulmasını düzəliş et",
     "editMediaBrowserIntro": "${serverName} üçün URL-lər əlavə edin və ya silin. Plezy əlçatan olan ən aşağı gecikməli URL-i istifadə edəcək."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Digər"
     },
     "creditRole": {
+      "actor": "",
       "director": "Rejissor",
       "writer": "Ssenarist",
       "producer": "Prodüser",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Əlçatandır",
     "syncRuleOffline": "Oflayn",
     "syncRuleSignInRequired": "Daxil olmaq tələb olunur",
+    "syncRuleAccessDenied": "Giriş rədd edildi",
     "syncRuleNotAvailableForProfile": "Cari profil üçün əlçatan deyil",
     "syncRuleUnknownServer": "Bilinməyən server",
     "syncRuleListCreated": "Eyniləşdirmə qaydası yaradıldı",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Fayl tapılmadı (404)",
+    "errorDownloadNotAllowed": "Server yükləməyə icazə vermir (403)",
     "errorDownloadFailed": "Yükləmə uğursuz oldu",
-    "errorPostProcessing": "Sonrakı emal uğursuz oldu: ${error}",
+    "errorDownloadFailedWithReason": "Yükləmə uğursuz oldu: ${reason}",
+    "errorHttpStatus": "Yükləmə uğursuz oldu (HTTP ${status})",
+    "errorPostProcessing": "Sonrakı emal uğursuz oldu: ${reason}",
+    "reasonFileNotSaved": "fayl bu cihazda saxlanıla bilmədi",
+    "reasonCannotResume": "yarımçıq yükləməni davam etdirmək mümkün olmadı",
+    "reasonDeviceStorageFull": "bu cihazda yer qalmayıb",
     "notificationDownloading": "Yüklənir...",
     "notificationComplete": "Yükləmə tamamlandı",
     "notificationPaused": "Yükləmə dayandırıldı"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Səsin gurluğunu normallaşdır",
     "audioNormalizationDisablesPassthrough": "Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür",
-    "audioNormalizationStereoMix": "Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür",
-    "audioDownmix": "Stereo-ya çevir"
+    "audioNormalizationStereoMix": "Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür"
   },
   "performanceOverlay": {
     "color": "Rəng",
@@ -2002,6 +2025,13 @@
     "rotation": "Dönmə",
     "dvSource": "DV mənbəyi",
     "dvPath": "DV yolu",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7 çevrilməsi",
     "sampleRate": "Diskretləşdirmə tezliyi",
     "pixelFormat": "Piksel formatı",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Plezy-ni ${service} üzərində aktivləşdirin",

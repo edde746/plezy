@@ -395,20 +395,24 @@ void TestNullFallbackRecoverySchedule() {
   assert(state.CompleteReload(action.request_generation));
   assert(state.HasPendingWork());
 
-  action = state.NextReload(start + std::chrono::milliseconds(8100));
+  // The completed reload has the same backoff as every earlier one to bring a
+  // real AO back before the give-up.
+  assert(state.NextReload(start + std::chrono::milliseconds(8100)).reason == AudioReloadReason::kNone);
+  assert(state.HasPendingWork());
+  action = state.NextReload(start + std::chrono::milliseconds(16000));
   assert(action.reason == AudioReloadReason::kGiveUp);
   assert(action.attempt == 5);
   assert(!state.HasPendingWork());
   assert(state.NextReload(start + std::chrono::hours(1)).reason == AudioReloadReason::kNone);
 
-  assert(state.OnAudioDeviceListChanged(start + std::chrono::milliseconds(9000)));
-  action = state.NextReload(start + std::chrono::milliseconds(9250));
+  assert(state.OnAudioDeviceListChanged(start + std::chrono::milliseconds(17000)));
+  action = state.NextReload(start + std::chrono::milliseconds(17250));
   assert(action.reason == AudioReloadReason::kNullFallback);
   assert(action.attempt == 1);
   assert(state.CompleteReload(action.request_generation));
 
   assert(
-      state.SetCurrentAudioOutputNull(false, start + std::chrono::milliseconds(9300)) ==
+      state.SetCurrentAudioOutputNull(false, start + std::chrono::milliseconds(17300)) ==
       AudioOutputTransition::kRecovered);
   assert(!state.HasPendingWork());
 }
@@ -456,7 +460,8 @@ void TestTransientUnavailableAoDoesNotResetBudget() {
   }
 
   assert(state.HasPendingWork());
-  const auto give_up = state.NextReload(start + std::chrono::milliseconds(8100));
+  assert(state.NextReload(start + std::chrono::milliseconds(8100)).reason == AudioReloadReason::kNone);
+  const auto give_up = state.NextReload(start + std::chrono::milliseconds(16000));
   assert(give_up.reason == AudioReloadReason::kGiveUp);
   assert(give_up.attempt == 5);
   assert(!state.HasPendingWork());
@@ -511,26 +516,27 @@ void TestGiveUpFiresOnceAndRearms() {
       assert(action.reason == AudioReloadReason::kNullFallback && action.attempt == attempt);
       assert(state.CompleteReload(action.request_generation));
     }
-    const auto give_up = state.NextReload(from + std::chrono::milliseconds(8100));
+    assert(state.NextReload(from + std::chrono::milliseconds(15999)).reason == AudioReloadReason::kNone);
+    const auto give_up = state.NextReload(from + std::chrono::milliseconds(16000));
     assert(give_up.reason == AudioReloadReason::kGiveUp);
-    assert(state.NextReload(from + std::chrono::milliseconds(8200)).reason == AudioReloadReason::kNone);
+    assert(state.NextReload(from + std::chrono::milliseconds(16100)).reason == AudioReloadReason::kNone);
     assert(!state.HasPendingWork());
   };
   exhaust(start);
 
   // The device list moving is the one thing worth a second episode without a
   // file boundary, and it owes its own give-up in turn.
-  assert(state.OnAudioDeviceListChanged(start + std::chrono::seconds(9)));
+  assert(state.OnAudioDeviceListChanged(start + std::chrono::seconds(17)));
   assert(state.HasPendingWork());
-  exhaust(start + std::chrono::milliseconds(8750));
+  exhaust(start + std::chrono::milliseconds(16750));
 
   // The file the give-up ended is gone; the next one gets a fresh budget even
   // though the AO never left null.
-  state.SetFileLoaded(false, start + std::chrono::seconds(18));
+  state.SetFileLoaded(false, start + std::chrono::seconds(34));
   assert(!state.HasPendingWork());
-  state.SetFileLoaded(true, start + std::chrono::seconds(19));
+  state.SetFileLoaded(true, start + std::chrono::seconds(35));
   assert(state.HasPendingWork());
-  const auto retry = state.NextReload(start + std::chrono::milliseconds(19500));
+  const auto retry = state.NextReload(start + std::chrono::milliseconds(35500));
   assert(retry.reason == AudioReloadReason::kNullFallback);
   assert(retry.attempt == 1);
 }
@@ -669,6 +675,62 @@ void TestHdrHelpers() {
   assert(std::string(plezy::mpv_common::TargetColorspaceHint(false)) == "no");
 }
 
+// #2513: from an error END_FILE to the end of that drain, log lines go out at
+// once and everything else waits, the end-file first, for Release.
+void TestErrorEndFileHold() {
+  using plezy::mpv_common::ErrorEndFileHold;
+  using plezy::mpv_common::IsErrorEndFile;
+
+  mpv_event_end_file end{};
+  end.reason = MPV_END_FILE_REASON_ERROR;
+  mpv_event event{};
+  event.event_id = MPV_EVENT_END_FILE;
+  event.data = &end;
+  assert(IsErrorEndFile(&event));
+  // A file that ended cleanly has no failure lines to wait for.
+  end.reason = MPV_END_FILE_REASON_EOF;
+  assert(!IsErrorEndFile(&event));
+  end.reason = MPV_END_FILE_REASON_ERROR;
+  event.data = nullptr;
+  assert(!IsErrorEndFile(&event));
+  assert(!IsErrorEndFile(nullptr));
+
+  ErrorEndFileHold<std::string> hold;
+  assert(!hold.ShouldHold(false));
+  hold.Begin();
+  assert(!hold.ShouldHold(true));
+  assert(hold.ShouldHold(false));
+  hold.Hold("end-file");
+  hold.Hold("idle");
+  // A second failed entry in the same drain queues behind the first.
+  hold.Begin();
+  hold.Hold("end-file 2");
+  assert((hold.Release() == std::vector<std::string>{"end-file", "idle", "end-file 2"}));
+  // The hold ends with the drain.
+  assert(!hold.ShouldHold(false));
+  assert(hold.Release().empty());
+
+  // Nothing is counted outside a hold.
+  assert(!hold.CountDequeued());
+  // The events after the error end-file that a hold waits through: the
+  // overflow notice mpv reads out first when its log buffer overflowed, then
+  // every line of that full verbose buffer (10000, player/client.c). The lines
+  // explaining a failure are the newest, so none of the rest may release the
+  // hold early. A second error end-file inside the hold does not restart the
+  // count.
+  assert(hold.Begin());
+  for (int line = 0; line < 10000; ++line) {
+    if (line == 5000) assert(!hold.Begin());
+    assert(!hold.CountDequeued());
+  }
+  assert(hold.CountDequeued());
+  hold.Release();
+  // The next hold waits through all of them again.
+  assert(hold.Begin());
+  assert(!hold.CountDequeued());
+  hold.Release();
+}
+
 }  // namespace
 
 int main() {
@@ -689,5 +751,6 @@ int main() {
   TestStaleReloadCompletionCannotClearCurrentRequest();
   TestNodeConversionBounds();
   TestHdrHelpers();
+  TestErrorEndFileHold();
   return 0;
 }

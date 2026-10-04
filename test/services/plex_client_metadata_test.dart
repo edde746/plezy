@@ -81,7 +81,11 @@ void main() {
   });
 
   test('metadata preference request failures preserve the editable basic fields', () async {
-    final client = testPlexClient(handler: (_) async => http.Response('{}', 503));
+    final client = testPlexClient(
+      handler: (request) async => request.url.queryParameters.containsKey('includePreferences')
+          ? http.Response('{}', 503)
+          : _metadataResponse(const []),
+    );
     addTearDown(client.close);
 
     final draft = await PlexMetadataEditAdapter(client).load(_show());
@@ -89,6 +93,26 @@ void main() {
     expect(draft.value<String>('title'), 'Show');
     expect(draft.value<String>('originalTitle'), 'Original show title');
     expect(draft.value<String>('pref:episodeSort'), isNull);
+  });
+
+  test('the editor loads full metadata even for a row that has a summary and library id', () async {
+    final client = testPlexClient(handler: (_) async => _metadataResponse(const []));
+    addTearDown(client.close);
+
+    // A list row: summary and library id present, genres absent.
+    final draft = await PlexMetadataEditAdapter(client).load(_show());
+
+    // save() diffs tag edits against these originals, so they must be the
+    // server's, not the row's empty list.
+    expect(draft.value<List<String>>('genre'), ['Drama', 'Science Fiction']);
+    expect(draft.originalValues['genre'], ['Drama', 'Science Fiction']);
+  });
+
+  test('the editor refuses to start from a partial row when the item cannot be fetched', () async {
+    final client = testPlexClient(handler: (_) async => http.Response('not found', 404));
+    addTearDown(client.close);
+
+    await expectLater(PlexMetadataEditAdapter(client).load(_show()), throwsStateError);
   });
 
   test('removed tags are emitted single-encoded because the transport encodes exactly once', () async {
@@ -160,7 +184,19 @@ http.Response _metadataResponse(List<Object?> settings) {
     jsonEncode({
       'MediaContainer': {
         'Metadata': [
-          {'ratingKey': 'show-1', 'Setting': settings},
+          {
+            'ratingKey': 'show-1',
+            'type': 'show',
+            'title': 'Show',
+            'originalTitle': 'Original show title',
+            'summary': 'Summary',
+            'librarySectionID': 1,
+            'Genre': [
+              {'tag': 'Drama'},
+              {'tag': 'Science Fiction'},
+            ],
+            'Setting': settings,
+          },
         ],
       },
     }),

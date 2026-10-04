@@ -92,6 +92,21 @@ class PlaybackSubtitleSidecar {
   const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track, this.preload = false});
 }
 
+/// What an OS-level external player is handed: a stream URL it can fetch
+/// without custom headers (token in the query string), plus the external
+/// subtitle files it can load alongside that stream.
+///
+/// [subtitles] are real sidecar files only — the player reads embedded tracks
+/// from the container itself. Their URIs are equally self-contained, and
+/// [SubtitleTrack.isDefault] marks the track the server selected for this
+/// user, which is the one the player should switch on.
+class ExternalPlaybackTarget {
+  final String url;
+  final List<SubtitleTrack> subtitles;
+
+  const ExternalPlaybackTarget({required this.url, this.subtitles = const []});
+}
+
 /// Reason the transcode branch fell back to direct play.
 enum TranscodeFallbackReason {
   /// Plex decision said only direct-play is available.
@@ -174,6 +189,11 @@ class PlaybackInitializationResult {
 /// response body, or authentication metadata.
 enum PlaybackFailureReason {
   authenticationRequired,
+
+  /// The server answered HTTP 403: it knows this account and refuses it this
+  /// item or this connection (a Jellyfin user denied remote access, Plex's
+  /// remote-playback rules). Signing in again changes nothing.
+  playbackNotAllowed,
   serverUnavailable,
   cancelled,
   invalidPlaybackData,
@@ -198,8 +218,10 @@ class PlaybackException implements Exception {
 /// Backend-neutral on purpose: Plex and Jellyfin both throw the same
 /// [MediaServerException] hierarchy, so both clients classify identically.
 PlaybackException classifyPlaybackFailure(Object error) {
-  if (error is MediaServerAuthException ||
-      error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
+  if (error is MediaServerHttpException && error.statusCode == 403) {
+    return PlaybackException(t.messages.playbackNotAllowedBody, reason: PlaybackFailureReason.playbackNotAllowed);
+  }
+  if (error is MediaServerAuthException || error is MediaServerHttpException && error.statusCode == 401) {
     return PlaybackException(
       t.messages.playbackAuthenticationRequired,
       reason: PlaybackFailureReason.authenticationRequired,

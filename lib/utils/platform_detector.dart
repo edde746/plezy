@@ -306,7 +306,6 @@ class PlatformDetector {
   }
 
   static bool supportsExternalPlayers() {
-    if (isAppleTV()) return false;
     return Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isLinux || Platform.isWindows;
   }
 

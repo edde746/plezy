@@ -456,8 +456,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。';
 	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。';
 	@override String get audioPassthroughOverriddenByNormalization => 'ラウドネス正規化がオンの間はオフ';
-	@override String get audioDownmix => 'ステレオにダウンミックス';
-	@override String get audioDownmixDescription => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします';
 	@override String get downmixCenterBoost => 'センターチャンネルブースト';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'ブースト (dB)';
@@ -474,6 +472,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'ネイティブ DV7 を強制し、DV 変換の再試行を抑制します';
 	@override String get dvConversionDv81Description => 'Dolby Vision プロファイル 8.1 へのインライン RPU 変換を強制します';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision の RPU/EL レイヤーを削除し、通常の HEVC として扱います';
+	@override String get disableDolbyVision => 'Dolby Vision を無効にする';
+	@override String get disableDolbyVisionDescription => 'ファイルに HDR10 または HLG レイヤーがある場合は、Dolby Vision の代わりにそれを再生します';
 	@override String get hdrSdrConversion => 'HDRからSDRへの変換';
 	@override String get hdrSdrConversionDescription => 'ディスプレイがHDRを表示できないときに、HDR映像を何で変換するかを選択します。';
 	@override String get hdrSdrConversionAuto => '自動';
@@ -973,6 +973,8 @@ class _Translations$messages$ja extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'サーバーはこのアイテムを見つけましたが、そのファイルを読み取れませんでした（HTTP 404）。ファイルが移動・削除されたか、ストレージがオフラインの可能性があります。サーバーの管理者にファイルの確認とライブラリの再スキャンを依頼してください。';
 	@override String get serverBusyTitle => 'ストリームを利用できません';
 	@override String get serverBusyBody => 'サーバーがこのファイルのストリーミングを繰り返し拒否しました（HTTP 503）。サーバーが再起動中またはビジー状態か、ファイルのストレージがオフラインの可能性があります。しばらくしてからもう一度お試しください。問題が続く場合は、サーバーの所有者にサーバーとファイルのストレージを確認するよう依頼してください。';
+	@override String get playbackNotAllowedTitle => '再生が許可されていません';
+	@override String get playbackNotAllowedBody => 'サーバーがこのアイテムのストリーミングを拒否しました（HTTP 403）。お使いのアカウントに再生の権限がないか、サーバーがローカルネットワーク内での再生のみを許可している可能性があります。';
 	@override String get logsUploaded => 'ログをアップロードしました';
 	@override String get logsUploadFailed => 'ログのアップロードに失敗しました';
 	@override String get logId => 'ログID';
@@ -1142,6 +1144,8 @@ class _Translations$connections$ja extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続';
 	@override String sessionExpiredOne({required Object name}) => '${name} のセッションの有効期限が切れました';
 	@override String sessionExpiredMany({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました';
+	@override String accessDeniedOne({required Object name}) => '${name} がこのアカウントへのアクセスを拒否しました';
+	@override String accessDeniedMany({required Object count}) => '${count} 台のサーバーがこのアカウントへのアクセスを拒否しました';
 	@override String get signInAgain => '再度サインイン';
 	@override String editMediaBrowserTitle({required Object product}) => '${product}接続を編集';
 	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName}のURLを追加または削除します。Plezyは到達可能なURLのうち、レイテンシーが最も低いものを使用します。';
@@ -1833,6 +1837,7 @@ class _Translations$downloads$ja extends Translations$downloads$en {
 	@override String get syncRuleAvailable => '利用可能';
 	@override String get syncRuleOffline => 'オフライン';
 	@override String get syncRuleSignInRequired => 'サインインが必要';
+	@override String get syncRuleAccessDenied => 'アクセスが拒否されました';
 	@override String get syncRuleNotAvailableForProfile => '現在のプロフィールでは利用できません';
 	@override String get syncRuleUnknownServer => '不明なサーバー';
 	@override String get syncRuleListCreated => '同期ルールを作成しました';
@@ -1845,8 +1850,14 @@ class _Translations$downloads$ja extends Translations$downloads$en {
 	@override String get unknownAlbum => '不明なアルバム';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total}完了';
 	@override String get errorFileNotFound => 'ファイルが見つかりません（404）';
+	@override String get errorDownloadNotAllowed => 'サーバーがダウンロードを許可していません（403）';
 	@override String get errorDownloadFailed => 'ダウンロードに失敗しました';
-	@override String errorPostProcessing({required Object error}) => '後処理に失敗しました: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'ダウンロードに失敗しました: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'ダウンロードに失敗しました（HTTP ${status}）';
+	@override String errorPostProcessing({required Object reason}) => '後処理に失敗しました: ${reason}';
+	@override String get reasonFileNotSaved => 'このデバイスにファイルを保存できませんでした';
+	@override String get reasonCannotResume => '途中までのダウンロードを再開できませんでした';
+	@override String get reasonDeviceStorageFull => 'このデバイスのストレージが不足しています';
 	@override String get notificationDownloading => 'ダウンロード中…';
 	@override String get notificationComplete => 'ダウンロードが完了しました';
 	@override String get notificationPaused => 'ダウンロードを一時停止しました';
@@ -1925,7 +1936,6 @@ class _Translations$videoSettings$ja extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'ラウドネス正規化';
 	@override String get audioNormalizationDisablesPassthrough => '音声をPCMにデコードします。オンの間はパススルーがオフになります';
 	@override String get audioNormalizationStereoMix => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります';
-	@override String get audioDownmix => 'ステレオにダウンミックス';
 }
 
 // Path: performanceOverlay
@@ -3350,8 +3360,6 @@ extension on TranslationsJa {
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughOverriddenByNormalization' => 'ラウドネス正規化がオンの間はオフ',
-			'settings.audioDownmix' => 'ステレオにダウンミックス',
-			'settings.audioDownmixDescription' => 'サラウンド音声をステレオスピーカーやヘッドホン用に2チャンネルへミックスします',
 			'settings.downmixCenterBoost' => 'センターチャンネルブースト',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'ブースト (dB)',
@@ -3368,6 +3376,8 @@ extension on TranslationsJa {
 			'settings.dvConversionNativeDescription' => 'ネイティブ DV7 を強制し、DV 変換の再試行を抑制します',
 			'settings.dvConversionDv81Description' => 'Dolby Vision プロファイル 8.1 へのインライン RPU 変換を強制します',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision の RPU/EL レイヤーを削除し、通常の HEVC として扱います',
+			'settings.disableDolbyVision' => 'Dolby Vision を無効にする',
+			'settings.disableDolbyVisionDescription' => 'ファイルに HDR10 または HLG レイヤーがある場合は、Dolby Vision の代わりにそれを再生します',
 			'settings.hdrSdrConversion' => 'HDRからSDRへの変換',
 			'settings.hdrSdrConversionDescription' => 'ディスプレイがHDRを表示できないときに、HDR映像を何で変換するかを選択します。',
 			'settings.hdrSdrConversionAuto' => '自動',
@@ -3802,6 +3812,8 @@ extension on TranslationsJa {
 			'messages.mediaUnreadableBody' => 'サーバーはこのアイテムを見つけましたが、そのファイルを読み取れませんでした（HTTP 404）。ファイルが移動・削除されたか、ストレージがオフラインの可能性があります。サーバーの管理者にファイルの確認とライブラリの再スキャンを依頼してください。',
 			'messages.serverBusyTitle' => 'ストリームを利用できません',
 			'messages.serverBusyBody' => 'サーバーがこのファイルのストリーミングを繰り返し拒否しました（HTTP 503）。サーバーが再起動中またはビジー状態か、ファイルのストレージがオフラインの可能性があります。しばらくしてからもう一度お試しください。問題が続く場合は、サーバーの所有者にサーバーとファイルのストレージを確認するよう依頼してください。',
+			'messages.playbackNotAllowedTitle' => '再生が許可されていません',
+			'messages.playbackNotAllowedBody' => 'サーバーがこのアイテムのストリーミングを拒否しました（HTTP 403）。お使いのアカウントに再生の権限がないか、サーバーがローカルネットワーク内での再生のみを許可している可能性があります。',
 			'messages.logsUploaded' => 'ログをアップロードしました',
 			'messages.logsUploadFailed' => 'ログのアップロードに失敗しました',
 			'messages.logId' => 'ログID',
@@ -3926,6 +3938,8 @@ extension on TranslationsJa {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} がこのアカウントへのアクセスを拒否しました',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} 台のサーバーがこのアカウントへのアクセスを拒否しました',
 			'connections.signInAgain' => '再度サインイン',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product}接続を編集',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName}のURLを追加または削除します。Plezyは到達可能なURLのうち、レイテンシーが最も低いものを使用します。',
@@ -4039,12 +4053,12 @@ extension on TranslationsJa {
 			'libraries.refreshMetadata' => 'メタデータを更新',
 			'libraries.emptyTrash' => 'ゴミ箱を空にする',
 			'libraries.emptyingTrash' => ({required Object title}) => '「${title}」のゴミ箱を空にしています…',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '「${title}」のゴミ箱を空にしました',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'ゴミ箱を空にできませんでした: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '「${title}」を解析中…',
 			'libraries.analysisStarted' => ({required Object title}) => '「${title}」の解析を開始しました',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'ライブラリの解析に失敗しました: ${error}',
 			'libraries.noLibrariesFound' => 'ライブラリが見つかりません',
 			'libraries.allLibrariesHidden' => 'すべてのライブラリが非表示です',
@@ -4553,12 +4567,12 @@ extension on TranslationsJa {
 			'watchTogether.renameRoom' => 'ルーム名を変更',
 			'watchTogether.removeRoom' => '削除',
 			'watchTogether.guestSwitchUnavailable' => '切り替えられません — 同期に必要なサーバーを利用できません',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => '切り替えられません — このサーバーにコンテンツが見つかりません',
 			'watchTogether.defaultDisplayName' => 'ユーザー',
 			'watchTogether.errors.timedOut' => 'リレーサーバーが時間内に応答しませんでした',
 			'watchTogether.errors.connectionLost' => 'セッションの準備が整う前に接続が閉じられました',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'リレーサーバーから予期しない応答が返されました',
 			'watchTogether.errors.sessionEnded' => 'ホストがセッションを終了しました',
 			'watchTogether.errors.sessionUnavailable' => 'このセッションを再開できません。ルームに参加するか作成して続行してください。',
@@ -4634,6 +4648,7 @@ extension on TranslationsJa {
 			'downloads.syncRuleAvailable' => '利用可能',
 			'downloads.syncRuleOffline' => 'オフライン',
 			'downloads.syncRuleSignInRequired' => 'サインインが必要',
+			'downloads.syncRuleAccessDenied' => 'アクセスが拒否されました',
 			'downloads.syncRuleNotAvailableForProfile' => '現在のプロフィールでは利用できません',
 			'downloads.syncRuleUnknownServer' => '不明なサーバー',
 			'downloads.syncRuleListCreated' => '同期ルールを作成しました',
@@ -4671,8 +4686,14 @@ extension on TranslationsJa {
 			'downloads.unknownAlbum' => '不明なアルバム',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total}完了',
 			'downloads.errorFileNotFound' => 'ファイルが見つかりません（404）',
+			'downloads.errorDownloadNotAllowed' => 'サーバーがダウンロードを許可していません（403）',
 			'downloads.errorDownloadFailed' => 'ダウンロードに失敗しました',
-			'downloads.errorPostProcessing' => ({required Object error}) => '後処理に失敗しました: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'ダウンロードに失敗しました: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'ダウンロードに失敗しました（HTTP ${status}）',
+			'downloads.errorPostProcessing' => ({required Object reason}) => '後処理に失敗しました: ${reason}',
+			'downloads.reasonFileNotSaved' => 'このデバイスにファイルを保存できませんでした',
+			'downloads.reasonCannotResume' => '途中までのダウンロードを再開できませんでした',
+			'downloads.reasonDeviceStorageFull' => 'このデバイスのストレージが不足しています',
 			'downloads.notificationDownloading' => 'ダウンロード中…',
 			'downloads.notificationComplete' => 'ダウンロードが完了しました',
 			'downloads.notificationPaused' => 'ダウンロードを一時停止しました',
@@ -4782,7 +4803,6 @@ extension on TranslationsJa {
 			'videoSettings.audioNormalization' => 'ラウドネス正規化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '音声をPCMにデコードします。オンの間はパススルーがオフになります',
 			'videoSettings.audioNormalizationStereoMix' => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります',
-			'videoSettings.audioDownmix' => 'ステレオにダウンミックス',
 			'performanceOverlay.color' => '色',
 			'performanceOverlay.performance' => 'パフォーマンス',
 			'performanceOverlay.buffer' => 'バッファ',
@@ -5061,6 +5081,8 @@ extension on TranslationsJa {
 			'addServer.borrowFromAnotherProfile' => '別のプロフィールの接続を利用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
 			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => '認証レスポンスが有効なJSONではありません',
 			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',
@@ -5071,8 +5093,6 @@ extension on TranslationsJa {
 			'addServer.responseNotJson' => 'サーバーのレスポンスが有効なJSONではありません',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'レスポンスにIDまたはサーバー名がありません。これは${product}サーバーですか？',
 			'addServer.probeFailed' => ({required Object error}) => 'サーバーに接続できませんでした: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => '${product}サーバーのURLを1つ以上入力してください',
 			'addServer.noReachableServer' => ({required Object product}) => '接続可能な${product}サーバーが見つかりませんでした',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'これらのURLは異なる${product}サーバーを指しています',

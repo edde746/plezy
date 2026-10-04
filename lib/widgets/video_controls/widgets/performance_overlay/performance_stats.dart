@@ -1,6 +1,34 @@
 import '../../../../i18n/strings.g.dart';
 import '../../../../utils/codec_utils.dart';
 
+/// What decodes a Dolby Vision file on Android mpv. Wire ids match the
+/// Kotlin `GpuVoPolicy.DvRoute`.
+enum DvRoute {
+  /// The Dolby Vision MediaCodec decoder takes the stream as it is.
+  dvDecoder('dv-decoder'),
+
+  /// Profile 7 converted to 8.1 for a profile 8 Dolby Vision decoder.
+  dvDecoderP81('dv-decoder-p81'),
+
+  /// No Dolby Vision decoder: the base layer decodes on its own.
+  baseLayer('base-layer'),
+
+  /// Software decode on gpu-next, which applies the RPU itself.
+  reshaped('reshaped');
+
+  const DvRoute(this.id);
+
+  final String id;
+
+  /// Null for an absent or unknown id, which hides the row.
+  static DvRoute? fromId(String? id) {
+    for (final route in values) {
+      if (route.id == id) return route;
+    }
+    return null;
+  }
+}
+
 /// Data model for video player performance statistics.
 ///
 /// Contains metrics queried from the video player (MPV or ExoPlayer)
@@ -64,6 +92,9 @@ class PerformanceStats {
   final int? dvSourceProfile;
   final String? dvPlaybackPath;
 
+  /// Android mpv's Dolby Vision route; ExoPlayer reports [dvPlaybackPath] instead.
+  final DvRoute? dvRoute;
+
   final int? appMemoryBytes;
   final double? uiFps;
 
@@ -114,6 +145,7 @@ class PerformanceStats {
     this.dvAvgSampleProcessingUs,
     this.dvSourceProfile,
     this.dvPlaybackPath,
+    this.dvRoute,
     this.appMemoryBytes,
     this.uiFps,
   });
@@ -278,8 +310,22 @@ class PerformanceStats {
 
   String get dvSourceProfileFormatted => dvSourceProfile == null ? t.common.notAvailable : 'P$dvSourceProfile';
 
-  /// Format Dolby Vision playback path.
-  String get dvPlaybackPathFormatted => dvPlaybackPath ?? t.common.notAvailable;
+  /// Format Dolby Vision playback path. mpv's base layer is named by the
+  /// transfer it decodes to, so a P8.1 fallback reads as HDR10 (#2534).
+  String get dvPlaybackPathFormatted => switch (dvRoute) {
+    DvRoute.dvDecoder => t.performanceOverlay.dvRouteDecoder,
+    DvRoute.dvDecoderP81 => t.performanceOverlay.dvRouteDecoderP81,
+    DvRoute.reshaped => t.performanceOverlay.dvRouteReshaped,
+    DvRoute.baseLayer => switch (gamma) {
+      'pq' => t.performanceOverlay.dvRouteBaseLayerHdr10,
+      'hlg' => t.performanceOverlay.dvRouteBaseLayerHlg,
+      null || '' || 'auto' => t.performanceOverlay.dvRouteBaseLayer,
+      _ => t.performanceOverlay.dvRouteBaseLayerSdr,
+    },
+    null => dvPlaybackPath ?? t.common.notAvailable,
+  };
+
+  bool get hasDvPlaybackPath => dvRoute != null || dvPlaybackPath != null;
 
   String get dvRpuCountFormatted {
     final converted = dvConvertedRpus ?? 0;

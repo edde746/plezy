@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:background_downloader/background_downloader.dart' show RequireWiFi;
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -369,6 +370,51 @@ void main() {
     expect(SettingsService.instance.read(SettingsService.customDownloadPath), selectedDirectory.path);
   });
 
+  testWidgets('toggling Wi-Fi only re-evaluates downloads that are already queued', (tester) async {
+    final requirements = <RequireWiFi>[];
+    final harness = await _pumpSettingsScreen(
+      tester,
+      requireWiFiOverride: (requirement) async {
+        requirements.add(requirement);
+        return true;
+      },
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.downloadOnWifiOnly));
+    await _pumpUi(tester);
+    expect(SettingsService.instance.read(SettingsService.downloadOnWifiOnly), isTrue);
+
+    await tester.tap(find.text(t.settings.downloadOnWifiOnly));
+    await _pumpUi(tester);
+
+    expect(requirements, [RequireWiFi.forAllTasks, RequireWiFi.forNoTasks]);
+  });
+
+  testWidgets('importing Wi-Fi only applies it to downloads that are already queued', (tester) async {
+    final requirements = <RequireWiFi>[];
+    final harness = await _pumpSettingsScreen(
+      tester,
+      requireWiFiOverride: (requirement) async {
+        requirements.add(requirement);
+        return true;
+      },
+      settingsImporter: () async {
+        await SettingsService.instance.write(SettingsService.downloadOnWifiOnly, true);
+        return const ImportResult(keysImported: 1, keysSkipped: 0);
+      },
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.importSettings));
+    await _pumpUi(tester);
+    await tester.tap(find.widgetWithText(DialogActionButton, t.settings.importSettings));
+    await _pumpUi(tester);
+
+    expect(SettingsService.instance.read(SettingsService.downloadOnWifiOnly), isTrue);
+    expect(requirements, [RequireWiFi.forAllTasks]);
+  });
+
   testWidgets('download location reset uses the provider coordinator', (tester) async {
     await SettingsService.instance.write(
       SettingsService.customDownloadPath,
@@ -631,6 +677,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService,
   bool pushSettingsRoute = false,
   List<MediaLibrary> initialLibraries = const [],
+  Future<bool> Function(RequireWiFi requirement)? requireWiFiOverride,
 }) async {
   tester.view.physicalSize = const Size(1800, 3200);
   tester.view.devicePixelRatio = 1;
@@ -677,7 +724,8 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     database: database,
     storageService: _WritableDownloadStorage(),
     clientResolver: (_, {clientScopeId}) => null,
-    downloadsSupportedOverride: false,
+    downloadsSupportedOverride: requireWiFiOverride != null,
+    requireWiFiOverride: requireWiFiOverride,
     downloadLocationReader: () => (
       path: settingsService.read(SettingsService.customDownloadPath),
       type: settingsService.read(SettingsService.customDownloadPathType),

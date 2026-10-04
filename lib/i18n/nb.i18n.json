@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Denne filen er ikke en gyldig Plezy-innstillingseksport",
     "importSettingsNoUser": "Logg inn før import av innstillinger",
     "shortcutsReset": "Snarveier tilbakestilt til standard",
+    "resetShortcutsConfirm": "",
     "about": "Om",
     "aboutDescription": "Appinformasjon og lisenser",
     "updates": "Oppdateringer",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.",
     "audioPassthroughDescriptionAppleTv": "Bruk Apples innebygde Dolby-dekoder for Dolby Digital Plus, inkludert Atmos. DTS og TrueHD spilles fortsatt av som flerkanals PCM. Slå av hvis du ikke har lyd.",
     "audioPassthroughOverriddenByNormalization": "Av mens lydstyrkenormalisering er på",
-    "audioDownmix": "Nedmiks til stereo",
-    "audioDownmixDescription": "Miks surroundlyd ned til to kanaler for stereohøyttalere eller hodetelefoner",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Forsterkning av senterkanal",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Forsterkning (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt",
     "dvConversionDv81Description": "Tving direkte RPU-konvertering til Dolby Vision-profil 8.1",
     "dvConversionHevcStripDescription": "Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC",
+    "disableDolbyVision": "Deaktiver Dolby Vision",
+    "disableDolbyVisionDescription": "Spill av filens HDR10- eller HLG-lag i stedet for Dolby Vision når det finnes",
     "hdrSdrConversion": "HDR til SDR-konvertering",
     "hdrSdrConversionDescription": "Velg hva som konverterer HDR-video når skjermen ikke kan vise HDR.",
     "hdrSdrConversionAuto": "Automatisk",
@@ -435,7 +444,8 @@
     "hint": "Søk i filmer, serier, musikk...",
     "tryDifferentTerm": "Prøv et annet søkeord",
     "searchYourMedia": "Søk i mediene dine",
-    "enterTitleActorOrKeyword": "Skriv inn tittel, skuespiller eller nøkkelord"
+    "enterTitleActorOrKeyword": "Skriv inn tittel, skuespiller eller nøkkelord",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Angi snarvei for ${actionName}",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "Serveren fant dette elementet, men kunne ikke lese filen (HTTP 404). Filen er sannsynligvis flyttet, slettet, eller lagringen er frakoblet. Be serverens eier om å sjekke filen og skanne biblioteket på nytt.",
     "serverBusyTitle": "Strømmen er utilgjengelig",
     "serverBusyBody": "Serveren fortsatte å nekte å strømme denne filen (HTTP 503). Den kan være i ferd med å starte på nytt eller være opptatt, eller lagringsstedet til filen kan være frakoblet. Prøv igjen om litt – hvis det fortsetter å skje, kan du be eieren av serveren om å kontrollere serveren og lagringsstedet til filen.",
+    "playbackNotAllowedTitle": "Avspilling er ikke tillatt",
+    "playbackNotAllowedBody": "Serveren nektet å strømme dette elementet (HTTP 403). Kontoen din har kanskje ikke tillatelse til å spille det av, eller serveren tillater kanskje bare avspilling på sitt lokale nettverk.",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
     "logId": "Logg-ID",
@@ -907,6 +919,8 @@
     "signOut": "Logg ut",
     "signOutPlexTitle": "Logge ut av Plex?",
     "signOutPlexMessage": "Fjerne ${displayName} og alle Plex Home-brukere? Du kan logge inn igjen når som helst.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Logget ut av Plex.",
     "signOutFailed": "Utlogging mislyktes.",
     "sectionTitle": "Profiler",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "Legg til for ${displayName}: Plex, Jellyfin, Emby eller en annen profiltilkobling",
     "sessionExpiredOne": "Økten er utløpt for ${name}",
     "sessionExpiredMany": "Økten er utløpt for ${count} servere",
+    "accessDeniedOne": "${name} nektet tilgang for denne kontoen",
+    "accessDeniedMany": "${count} servere nektet tilgang for denne kontoen",
     "signInAgain": "Logg inn igjen",
     "editMediaBrowserTitle": "Rediger ${product}-tilkobling",
     "editMediaBrowserIntro": "Legg til eller fjern URL-er for ${serverName}. Plezy vil bruke den nåbare URL-en med lavest ventetid."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Annet"
     },
     "creditRole": {
+      "actor": "",
       "director": "Regissør",
       "writer": "Forfatter",
       "producer": "Produsent",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Tilgjengelig",
     "syncRuleOffline": "Frakoblet",
     "syncRuleSignInRequired": "Innlogging kreves",
+    "syncRuleAccessDenied": "Tilgang nektet",
     "syncRuleNotAvailableForProfile": "Ikke tilgjengelig for gjeldende profil",
     "syncRuleUnknownServer": "Ukjent server",
     "syncRuleListCreated": "Synkroniseringsregel opprettet",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Filen ble ikke funnet (404)",
+    "errorDownloadNotAllowed": "Serveren tillater ikke nedlasting (403)",
     "errorDownloadFailed": "Nedlastingen mislyktes",
-    "errorPostProcessing": "Etterbehandlingen mislyktes: ${error}",
+    "errorDownloadFailedWithReason": "Nedlastingen mislyktes: ${reason}",
+    "errorHttpStatus": "Nedlastingen mislyktes (HTTP ${status})",
+    "errorPostProcessing": "Etterbehandlingen mislyktes: ${reason}",
+    "reasonFileNotSaved": "filen kunne ikke lagres på denne enheten",
+    "reasonCannotResume": "den delvise nedlastingen kunne ikke gjenopptas",
+    "reasonDeviceStorageFull": "denne enheten er tom for lagringsplass",
     "notificationDownloading": "Laster ned...",
     "notificationComplete": "Nedlastingen er fullført",
     "notificationPaused": "Nedlastingen er satt på pause"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normaliser lydstyrke",
     "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; direkte lydutgang er av mens dette er på",
-    "audioNormalizationStereoMix": "Dekoder lyd til en stereomiks; direkte lydutgang er av mens dette er på",
-    "audioDownmix": "Nedmiks til stereo"
+    "audioNormalizationStereoMix": "Dekoder lyd til en stereomiks; direkte lydutgang er av mens dette er på"
   },
   "performanceOverlay": {
     "color": "Farge",
@@ -2002,6 +2025,13 @@
     "rotation": "Rotasjon",
     "dvSource": "DV-kilde",
     "dvPath": "DV-sti",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7-konv.",
     "sampleRate": "Samplingsrate",
     "pixelFormat": "Pikselformat",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Aktiver Plezy på ${service}",

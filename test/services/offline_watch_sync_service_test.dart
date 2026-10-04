@@ -46,6 +46,10 @@ class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource
     notifyListeners();
   }
 
+  /// A connectivity-only change: the real provider notifies without moving
+  /// [isOffline] when the network drops while a server stays reachable.
+  void notifyConnectivityChanged() => notifyListeners();
+
   // ChangeNotifier.hasListeners is `@protected` — re-export for tests.
   @override
   // ignore: unnecessary_overrides
@@ -1193,6 +1197,105 @@ void main() {
 
       expect(paths, isEmpty);
     });
+
+    test('watch-state pull stops when the active profile changes mid-pull', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+
+      final requestedItems = <String>[];
+      final userB = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-b'),
+        httpClient: MockClient((request) async {
+          final itemId = RegExp(r'^/Users/user-b/Items/(item-\d)$').firstMatch(request.url.path)?.group(1);
+          if (request.method != 'GET' || itemId == null) return http.Response('not found', 404);
+          requestedItems.add(itemId);
+          // The user switches profile while the first item is in flight; the
+          // same server id now belongs to another user's session.
+          svc.setActiveProfileId('profile-c');
+          return http.Response(
+            '{"Id":"$itemId","Type":"Movie","Name":"Movie","UserData":{"PlayCount":1,"Played":true}}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(userB.close);
+      final events = <WatchStateEvent>[];
+      final sub = WatchStateNotifier().stream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      for (final itemId in ['item-1', 'item-2']) {
+        await db.insertDownload(
+          serverId: ServerId('jf-machine'),
+          clientScopeId: 'jf-machine/user-b',
+          ratingKey: itemId,
+          globalKey: 'jf-machine:$itemId',
+          type: 'movie',
+          status: 3,
+        );
+        await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:$itemId');
+      }
+      svc.setActiveProfileId('profile-b');
+
+      mgr.debugRegisterJellyfinClientForTesting(userB);
+      await svc.syncWatchStatesFromServer();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(requestedItems, hasLength(1));
+      expect(events, isEmpty, reason: 'the previous profile must not announce the new user\'s watch state');
+    });
+
+    test('servers connecting after a profile switch sync the new profile', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+
+      var itemRequests = 0;
+      final userA = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((request) async {
+          if (request.method == 'GET' && request.url.path == '/Users/user-a/Items/item-1') {
+            itemRequests++;
+            return http.Response(
+              '{"Id":"item-1","Type":"Movie","Name":"Movie","UserData":{"PlayCount":0,"Played":false}}',
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(userA.close);
+
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'item-1',
+        globalKey: 'jf-machine:item-1',
+        type: 'movie',
+        status: 3,
+      );
+      for (final profileId in ['profile-a', 'profile-b']) {
+        await db.addDownloadOwner(profileId: profileId, globalKey: 'jf-machine:item-1');
+      }
+      mgr.debugRegisterJellyfinClientForTesting(userA);
+
+      Future<void> waitForRequests(int count) async {
+        for (var i = 0; i < 200 && itemRequests < count; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+        // Let the rest of the pass settle before the next step.
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+
+      svc.setActiveProfileId('profile-a');
+      svc.onServersConnected();
+      await waitForRequests(1);
+      expect(itemRequests, 1);
+
+      svc.setActiveProfileId('profile-b');
+      svc.onServersConnected();
+      await waitForRequests(2);
+
+      expect(itemRequests, 2);
+    });
   });
 
   group('clearAll', () {
@@ -1248,6 +1351,28 @@ void main() {
       // First's listener was removed; second now has one.
       expect(first.hasListeners, isFalse);
       expect(second.hasListeners, isTrue);
+    });
+
+    test('syncs when the source comes online, not on connectivity-only notifications', () async {
+      final (svc: svc, db: _, mgr: mgr) = _makeService();
+      svc.setActiveProfileId('profile-a');
+      final client = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-a');
+      mgr.debugRegisterClientForTesting(client);
+      final source = _FakeOfflineModeSource(initial: true);
+      svc.startConnectivityMonitoring(source);
+
+      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
+      source.setOffline(false);
+      await pumpEventQueue();
+      expect(client.watched, ['item-1']);
+
+      // The network drops while the server stays reachable: the source
+      // notifies but is still online, so no pass (and no retry attempt) runs.
+      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-2');
+      source.notifyConnectivityChanged();
+      await pumpEventQueue();
+      expect(client.watched, ['item-1']);
+      expect(await svc.getPendingSyncCount(), 1);
     });
 
     test('dispose() before startConnectivityMonitoring is safe', () async {

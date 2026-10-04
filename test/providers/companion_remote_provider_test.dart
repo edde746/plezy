@@ -66,6 +66,91 @@ void main() {
     });
   });
 
+  group('CompanionRemoteProvider — live host identity refresh', () {
+    test('a refresh still rebuilding when the provider is disposed does not restart the host', () async {
+      final stack = await ProfileStack.create();
+      addTearDown(stack.dispose);
+      final first = _localProfile('profile-a');
+      final second = _localProfile('profile-b');
+      for (final (profile, connection) in [(first, _jellyfinConnection('a')), (second, _jellyfinConnection('b'))]) {
+        await stack.connections.upsert(connection);
+        await stack.profiles.upsert(profile);
+        await stack.profileConnections.upsert(
+          ProfileConnection(profileId: profile.id, connectionId: connection.id, userIdentifier: connection.userId),
+          makeDefault: true,
+        );
+      }
+      await stack.storage.setActiveProfileId(first.id);
+      await stack.active.initialize();
+
+      final disconnectGate = Completer<void>();
+      final host = _FakeCompanionRemotePeerService(disconnectGate: disconnectGate);
+      final peers = _FakePeerFactory([host, _FakeCompanionRemotePeerService()]);
+      final provider = CompanionRemoteProvider.forTesting(
+        peerServiceFactory: peers.call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(() {
+        if (!disconnectGate.isCompleted) disconnectGate.complete();
+        if (!provider.isDisposed) provider.dispose();
+      });
+      expect(
+        await provider.ensureCryptoReady(
+          null,
+          connections: stack.connections,
+          activeProfile: stack.active,
+          profileConnections: stack.profileConnections,
+        ),
+        isTrue,
+      );
+      await provider.startHostServer();
+      provider.bindProfileServices(
+        connections: stack.connections,
+        activeProfile: stack.active,
+        profileConnections: stack.profileConnections,
+        plexHome: stack.plexHome,
+      );
+      // Let the watchers' initial emissions refresh an unchanged identity.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(provider.isHostServerRunning, isTrue);
+
+      // A profile switch changes the identity: the refresh tears the host
+      // down to rebuild, and the provider is disposed while it does.
+      expect(await stack.active.activate(second), isTrue);
+      await host.disconnectStarted.future;
+      provider.dispose();
+      disconnectGate.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(peers.created, 1);
+      expect(provider.isHostServerRunning, isFalse);
+    });
+  });
+
+  group('CompanionRemoteProvider — host player state', () {
+    test('a remote that pairs while the player is up is told it is active', () async {
+      final host = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(
+        _FakePeerFactory([host]).call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(harness.close);
+      await harness.provider.startHostServer();
+      harness.provider.setHostPlayerActive(true);
+      host.sentCommands.clear();
+
+      host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
+
+      expect(host.sentCommands.single.type, RemoteCommandType.syncState);
+      expect(host.sentCommands.single.data, {'playerActive': true});
+
+      harness.provider.setHostPlayerActive(false);
+      host.sentCommands.clear();
+      host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
+      expect(host.sentCommands.single.data, {'playerActive': false});
+    });
+  });
+
   group('CompanionRemoteProvider — dispose hygiene', () {
     test('cancelReconnect on a fresh provider does not throw', () {
       final p = CompanionRemoteProvider();
@@ -969,6 +1054,10 @@ class _FakeCompanionRemotePeerService extends CompanionRemotePeerService {
   @override
   void sendPing() {
     pingsSent++;
+  }
+
+  void emitDeviceConnected(RemoteDevice device) {
+    if (!_streamsClosed) _connected.add(device);
   }
 
   void emitDeviceDisconnected() {

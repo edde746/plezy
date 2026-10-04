@@ -8,11 +8,14 @@ import '../focus/dpad_reorder_mixin.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
+import '../media/ids.dart';
 import '../media/media_backend.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
+import '../providers/multi_server_provider.dart';
+import '../profiles/active_profile_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
 import '../utils/dialogs.dart';
@@ -22,6 +25,7 @@ import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'app_menu.dart';
 import 'bottom_sheet_page_scaffold.dart';
+import 'media_context_menu.dart' show isAdminActionAllowedForMediaItem;
 import 'overlay_sheet.dart';
 
 class ContextMenuItem {
@@ -52,14 +56,34 @@ class ContextMenuItem {
 /// [LibrariesProvider] (the libraries screen uses it to poke MainScreen's
 /// side nav). [onToggleVisibility] overrides the default plain hide/unhide
 /// (the libraries screen adds "re-select first visible library" logic).
+///
+/// A library's admin actions (scan, refresh metadata, ...) are offered only
+/// to an owner or administrator of its server; [canAdministerLibrary]
+/// replaces that check in tests.
 Future<void> showLibraryManagementSheet(
   BuildContext context, {
   VoidCallback? onOrderChanged,
   Future<void> Function(MediaLibrary library)? onToggleVisibility,
+  @visibleForTesting bool Function(MediaLibrary library)? canAdministerLibrary,
 }) {
   final librariesProvider = context.read<LibrariesProvider>();
   final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-  final allLibraries = librariesProvider.libraries;
+  final serverManager = Provider.of<MultiServerProvider?>(context, listen: false)?.serverManager;
+  final activeProfile = Provider.of<ActiveProfileProvider?>(context, listen: false)?.active;
+
+  // Same gate as the media context menu's admin entries: the server's owner or
+  // administrator flag, narrowed by a non-admin Plex Home profile.
+  bool defaultCanAdministerLibrary(MediaLibrary library) {
+    final serverId = serverIdOrNull(library.serverId);
+    return serverId != null &&
+        isAdminActionAllowedForMediaItem(
+          isOwnerOrAdmin: serverManager?.isOwnerOrAdmin(serverId) ?? false,
+          itemBackend: library.backend,
+          activeProfile: activeProfile,
+        );
+  }
+
+  final canAdminister = canAdministerLibrary ?? defaultCanAdministerLibrary;
 
   Future<void> defaultToggleVisibility(MediaLibrary library) async {
     final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.globalKey);
@@ -72,14 +96,14 @@ Future<void> showLibraryManagementSheet(
 
   Widget buildSheet({required bool isDialog}) => _LibraryManagementSheet(
     isDialog: isDialog,
-    allLibraries: List.from(allLibraries),
+    librariesProvider: librariesProvider,
     hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
     onReorder: (reorderedLibraries) {
-      librariesProvider.updateLibraryOrder(reorderedLibraries);
+      librariesProvider.updateLibraryOrder(reconcileLibraryOrder(reorderedLibraries, librariesProvider.libraries));
       onOrderChanged?.call();
     },
     onToggleVisibility: onToggleVisibility ?? defaultToggleVisibility,
-    getLibraryMenuItems: _getLibraryMenuItems,
+    getLibraryMenuItems: (library) => canAdminister(library) ? _getLibraryMenuItems(library) : const [],
     onLibraryMenuAction: (action, library) => _handleLibraryMenuAction(context, action, library),
   );
 
@@ -95,6 +119,17 @@ Future<void> showLibraryManagementSheet(
     isScrollControlled: true,
     builder: (context) => buildSheet(isDialog: false),
   );
+}
+
+/// [sheetOrder] as the sheet shows it, applied to the provider's [current]
+/// libraries: rows keep the sheet's order, libraries loaded since the sheet
+/// last synced follow in their current order, and libraries that have gone
+/// are dropped. A reorder therefore never saves a stale snapshot, which would
+/// drop newly loaded libraries or bring back removed ones.
+@visibleForTesting
+List<MediaLibrary> reconcileLibraryOrder(List<MediaLibrary> sheetOrder, List<MediaLibrary> current) {
+  final remaining = {for (final library in current) library.globalKey: library};
+  return [for (final library in sheetOrder) ?remaining.remove(library.globalKey), ...remaining.values];
 }
 
 List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
@@ -259,7 +294,7 @@ Future<void> _analyzeLibrary(BuildContext context, MediaLibrary library) {
 
 class _LibraryManagementSheet extends StatefulWidget {
   final bool isDialog;
-  final List<MediaLibrary> allLibraries;
+  final LibrariesProvider librariesProvider;
   final Set<String> hiddenLibraryKeys;
   final Function(List<MediaLibrary>) onReorder;
   final Function(MediaLibrary) onToggleVisibility;
@@ -268,7 +303,7 @@ class _LibraryManagementSheet extends StatefulWidget {
 
   const _LibraryManagementSheet({
     this.isDialog = false,
-    required this.allLibraries,
+    required this.librariesProvider,
     required this.hiddenLibraryKeys,
     required this.onReorder,
     required this.onToggleVisibility,
@@ -294,8 +329,12 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   @override
   set reorderItems(List<MediaLibrary> value) => _tempLibraries = value;
 
+  /// Column 2 (the options button) exists only on rows with admin actions.
   @override
-  int get lastReorderColumn => 2;
+  int get lastReorderColumn =>
+      focusedIndex < _tempLibraries.length && _hasLibraryMenu(_tempLibraries[focusedIndex]) ? 2 : 1;
+
+  bool _hasLibraryMenu(MediaLibrary library) => widget.getLibraryMenuItems(library).isNotEmpty;
 
   /// Both layouts scroll the focused row into view: the TV dialog is the D-pad
   /// surface, and the sheet still shows the same cursor to a keyboard user.
@@ -310,7 +349,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     final library = _tempLibraries[index];
     if (column == 1) {
       widget.onToggleVisibility(library);
-    } else if (column == 2) {
+    } else if (column == 2 && _hasLibraryMenu(library)) {
       _showLibraryMenuBottomSheet(context, library);
     }
   }
@@ -318,11 +357,27 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   @override
   void initState() {
     super.initState();
-    _tempLibraries = List.from(widget.allLibraries);
+    _tempLibraries = List.of(widget.librariesProvider.libraries);
+    widget.librariesProvider.addListener(_onLibrariesChanged);
+  }
+
+  /// Follows library loads and changes made while the sheet is open, keeping
+  /// the order shown. A move in progress keeps its rows; its confirm is
+  /// reconciled against the provider when it is saved.
+  void _onLibrariesChanged() {
+    if (!mounted || movingIndex != null) return;
+    setState(() {
+      _tempLibraries = reconcileLibraryOrder(_tempLibraries, widget.librariesProvider.libraries);
+      if (focusedIndex >= _tempLibraries.length) {
+        focusedIndex = _tempLibraries.isEmpty ? 0 : _tempLibraries.length - 1;
+        focusedColumn = 0;
+      }
+    });
   }
 
   @override
   void dispose() {
+    widget.librariesProvider.removeListener(_onLibrariesChanged);
     _listFocusNode.dispose();
     _dialogScrollController.dispose();
     _sheetScrollController.dispose();
@@ -513,14 +568,15 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
                 onPressed: () => widget.onToggleVisibility(library),
               ),
             ),
-            Container(
-              decoration: FocusTheme.focusBackgroundDecoration(isFocused: isOptionsButtonFocused, borderRadius: 20),
-              child: IconButton(
-                icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                tooltip: t.libraries.libraryOptions,
-                onPressed: () => _showLibraryMenuBottomSheet(context, library),
+            if (_hasLibraryMenu(library))
+              Container(
+                decoration: FocusTheme.focusBackgroundDecoration(isFocused: isOptionsButtonFocused, borderRadius: 20),
+                child: IconButton(
+                  icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                  tooltip: t.libraries.libraryOptions,
+                  onPressed: () => _showLibraryMenuBottomSheet(context, library),
+                ),
               ),
-            ),
           ],
         ),
       ),

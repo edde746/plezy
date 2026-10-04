@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/livetv_channel.dart';
 import 'base_shared_preferences_service.dart';
+import 'prefs_recovery.dart';
 
 /// Persistence boundary for the per-connection favorite-channel list shown
 /// in the Live TV picker. Pulled out of `_JellyfinLiveTvSupport` so the
@@ -52,12 +53,27 @@ class SharedPreferencesFavoriteChannelsRepository implements FavoriteChannelsRep
       // read inherits a bare-machineId value; the rest start empty
       // (favorites were always user-scoped semantically — the legacy key
       // just couldn't express it).
-      final legacyStore = await SharedPreferences.getInstance();
       final sources = <(String?, Future<void> Function())>[
         (readTolerantString(prefs, legacyKey), () => prefs.remove(legacyKey)),
-        (legacyStore.getString(key), () => _removeLegacy(legacyStore, key)),
-        (legacyStore.getString(legacyKey), () => _removeLegacy(legacyStore, legacyKey)),
       ];
+      if (PrefsRecovery.isSupportedPlatform) {
+        // Windows and Linux keep the legacy store in the same JSON file as the
+        // shared cache, under the `flutter.` prefix. The legacy plugin writes
+        // that whole file back from the copy it parsed at launch, so removing
+        // through it would drop every setting saved since then — the list
+        // just migrated included. The shared cache holds the current file, so
+        // read and clear the prefixed entries through it instead.
+        for (final slot in [key, legacyKey]) {
+          final prefixed = '$legacyKeyPrefix$slot';
+          sources.add((readTolerantString(prefs, prefixed), () => prefs.remove(prefixed)));
+        }
+      } else {
+        final legacyStore = await SharedPreferences.getInstance();
+        sources.addAll([
+          (legacyStore.getString(key), () => _removeLegacy(legacyStore, key)),
+          (legacyStore.getString(legacyKey), () => _removeLegacy(legacyStore, legacyKey)),
+        ]);
+      }
       for (final (value, clear) in sources) {
         if (value == null) continue;
         if (migrate) {

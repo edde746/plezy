@@ -6,7 +6,9 @@ import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
+import '../media/media_person.dart';
 import '../media/media_server_client.dart';
+import '../media/search_hit.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
@@ -50,13 +52,15 @@ typedef LibraryAggregationResult = ({
   Set<String> failedServerIds,
 });
 
-/// `items` is the ranked list trimmed to the caller's limit; `candidates` is
-/// the full post-hidden-filter, pre-rank pool behind it, so a caller can
-/// re-rank a subset (e.g. one media kind) without a kind ranked out of
-/// `items` disappearing from its own filter.
+/// `hits` is the ranked list of titles and people trimmed to the caller's
+/// limit; `candidates` (titles) and `people` are the full post-hidden-filter,
+/// pre-rank pools behind it, so a caller can re-rank a subset (one media kind,
+/// or only people) without a kind ranked out of `hits` disappearing from its
+/// own filter.
 typedef SearchAggregationResult = ({
-  List<MediaItem> items,
+  List<SearchHit> hits,
   List<MediaItem> candidates,
+  List<MediaPerson> people,
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
@@ -135,11 +139,14 @@ class DataAggregationService {
 
   DataAggregationService(this._serverManager);
 
-  /// Online clients, optionally restricted to [serverIds] — delta refreshes
-  /// fan out to newly-online servers only.
+  /// Online clients visible to the active profile, or the online clients in
+  /// [serverIds]. A supplied set is already profile-scoped: delta refreshes
+  /// fan out to newly-online visible servers, and catalog lookups to the
+  /// profile's expected servers, which can come online a status emission
+  /// before the visibility filter promotes them.
   Map<String, MediaServerClient> _clientsFor(Set<String>? serverIds) {
+    if (serverIds == null) return _serverManager.visibleOnlineClients;
     final clients = _serverManager.onlineClients;
-    if (serverIds == null) return clients;
     return {
       for (final entry in clients.entries)
         if (serverIds.contains(entry.key)) entry.key: entry.value,
@@ -252,8 +259,11 @@ class DataAggregationService {
     final fetched = await _fanOut<MediaItem>(
       clients,
       failureMessage: (serverId) => 'Failed on-deck fetch from $serverId',
-      fetch: (_, client) async {
-        final rows = await client.fetchContinueWatching(count: limit);
+      fetch: (serverId, client) async {
+        final rows = await client.fetchContinueWatching(
+          count: limit,
+          excludedLibraryIds: _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys),
+        );
         // Capture the scope here: after the fan-out flattens and dedup runs,
         // there is no way back to the client that produced a row.
         final scope = client.cacheServerId;
@@ -727,80 +737,130 @@ class DataAggregationService {
     return filtered;
   }
 
-  /// Search across all online servers (Plex + Jellyfin). Per-server outcomes
-  /// distinguish authoritative empty results from failed or cancelled legs.
+  /// Search across all online servers (Plex + Jellyfin) for titles and
+  /// people. Per-server outcomes distinguish authoritative empty results from
+  /// failed or cancelled legs; they describe the title search only. The
+  /// people search on each server is best-effort, like Plex's supplemental
+  /// category legs: a failure there costs that server's people, never its
+  /// titles or its place in `succeededServerIds`.
   ///
   /// [hiddenLibraryKeys] excludes results the user has hidden, matching every
   /// other aggregated surface. Backends whose search rows carry no library id
   /// cannot be filtered here; they must scope the search server-side instead.
+  /// People always span libraries, so each backend drops hidden-only people
+  /// itself.
   Future<SearchAggregationResult> searchAcrossServers(
     String query, {
     int? limit,
     Set<String>? hiddenLibraryKeys,
     AbortController? abort,
   }) async {
-    if (query.trim().isEmpty) {
-      return (
-        items: const <MediaItem>[],
-        candidates: const <MediaItem>[],
-        succeededServerIds: const <String>{},
-        cancelledServerIds: const <String>{},
-        failedServerIds: const <String>{},
-      );
-    }
+    if (query.trim().isEmpty) return _emptySearchResult;
 
     abort?.throwIfAborted();
-    final clients = _serverManager.onlineClients;
-    if (clients.isEmpty) {
-      return (
-        items: const <MediaItem>[],
-        candidates: const <MediaItem>[],
-        succeededServerIds: const <String>{},
-        cancelledServerIds: const <String>{},
-        failedServerIds: const <String>{},
-      );
-    }
+    final clients = _serverManager.visibleOnlineClients;
+    if (clients.isEmpty) return _emptySearchResult;
 
     final resultLimit = limit ?? defaultMediaSearchLimit;
     final fetchLimit = resultLimit < defaultMediaSearchLimit ? defaultMediaSearchLimit : resultLimit;
 
-    final fetched = await _fanOut<MediaItem>(
+    final fetched = await _fanOut<SearchHit>(
       clients,
       failureMessage: (serverId) => 'Search failed on $serverId',
       fetch: (serverId, client) async {
         final stopwatch = Stopwatch()..start();
+        final excludedLibraryIds = _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys);
+        // Started first so both legs overlap. It never throws, so a failing
+        // title leg can leave it behind without an unhandled error.
+        final peopleFuture = _searchPeopleBestEffort(
+          serverId,
+          client,
+          query,
+          abort: abort,
+          excludedLibraryIds: excludedLibraryIds,
+        );
         final items = await client.searchItems(
           query,
           limit: fetchLimit,
           abort: abort,
-          excludedLibraryIds: _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys),
+          excludedLibraryIds: excludedLibraryIds,
         );
+        final people = await peopleFuture;
         appLogger.i(
           'Search completed on $serverId in ${stopwatch.elapsedMilliseconds}ms: '
-          '${items.length} results ${_searchKindCounts(items)}',
+          '${items.length} results ${_searchKindCounts(items)}, ${people.length} people',
         );
-        return items;
+        return [for (final item in items) MediaSearchHit(item), for (final person in people) PersonSearchHit(person)];
       },
     );
     abort?.throwIfAborted();
+
+    final titles = <MediaItem>[];
+    final people = <MediaPerson>[];
+    for (final hit in fetched.items) {
+      switch (hit) {
+        case MediaSearchHit(:final item):
+          titles.add(item);
+        case PersonSearchHit(:final person):
+          people.add(person);
+      }
+    }
     // Before ranking, so hidden results cannot spend the `resultLimit` budget
     // and silently shrink what the user sees.
-    final visible = _withoutHiddenLibraries(fetched.items, hiddenLibraryKeys);
-    final items = rankMediaSearchResults(visible, query, limit: resultLimit);
+    final visible = _withoutHiddenLibraries(titles, hiddenLibraryKeys);
+    // Titles first: equal scores keep input order, so a tie goes to the title.
+    final hits = rankSearchHits(
+      [for (final item in visible) MediaSearchHit(item), for (final person in people) PersonSearchHit(person)],
+      query,
+      limit: resultLimit,
+    );
 
     appLogger.i(
-      'Search aggregation completed: ${items.length} results '
+      'Search aggregation completed: ${hits.length} results '
       '(${fetched.succeededServerIds.length} succeeded, ${fetched.cancelledServerIds.length} cancelled, '
-      '${fetched.failedServerIds.length} failed) ${_searchKindCounts(items)}',
+      '${fetched.failedServerIds.length} failed) ${_searchKindCounts(visible)}, ${people.length} people',
     );
 
     return (
-      items: items,
+      hits: hits,
       candidates: visible,
+      people: people,
       succeededServerIds: fetched.succeededServerIds,
       cancelledServerIds: fetched.cancelledServerIds,
       failedServerIds: fetched.failedServerIds,
     );
+  }
+
+  static const SearchAggregationResult _emptySearchResult = (
+    hits: <SearchHit>[],
+    candidates: <MediaItem>[],
+    people: <MediaPerson>[],
+    succeededServerIds: <String>{},
+    cancelledServerIds: <String>{},
+    failedServerIds: <String>{},
+  );
+
+  /// One server's people for [query], or none when that request fails or is
+  /// cancelled. Never throws: the title leg alone decides the server's
+  /// outcome, and a user abort still surfaces through the caller's
+  /// `throwIfAborted`.
+  Future<List<MediaPerson>> _searchPeopleBestEffort(
+    String serverId,
+    MediaServerClient client,
+    String query, {
+    AbortController? abort,
+    required Set<String> excludedLibraryIds,
+  }) async {
+    try {
+      return await client.searchPeople(query, abort: abort, excludedLibraryIds: excludedLibraryIds);
+    } catch (e, stackTrace) {
+      if (_isCancellation(e)) {
+        appLogger.d('People search cancelled on $serverId');
+      } else {
+        appLogger.w('People search failed on $serverId; keeping title results', error: e, stackTrace: stackTrace);
+      }
+      return const [];
+    }
   }
 
   /// Reverse external-id lookup within the explicit active-profile [serverIds]

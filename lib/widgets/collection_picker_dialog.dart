@@ -15,6 +15,7 @@ import 'app_icon.dart';
 import 'dialog_action_button.dart';
 import 'focusable_list_tile.dart';
 import 'pill_input_decoration.dart';
+import 'scroll_ink_boundary.dart';
 
 typedef _PickerPageLoader<T> = Future<LibraryPage<T>> Function(int start, int size, AbortController abort);
 
@@ -167,47 +168,49 @@ class _PickerDialogScaffoldState<T> extends State<_PickerDialogScaffold<T>> {
                 const SizedBox(height: 8),
               ],
               Flexible(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  shrinkWrap: true,
-                  itemCount: _filteredItems.length + 1 + (showStatus ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return FocusableListTile(
-                        focusNode: _firstItemFocusNode,
-                        leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                        title: Text(t.common.createNew),
-                        onTap: () => Navigator.pop(context, '_create_new'),
-                      );
-                    }
-
-                    if (index <= _filteredItems.length) {
-                      return widget.itemBuilder(context, _filteredItems[index - 1]);
-                    }
-
-                    if (_errorMessage != null) {
-                      return FocusableListTile(
-                        leading: const AppIcon(Symbols.error_rounded, fill: 1),
-                        title: Text(t.messages.errorLoading(error: _errorMessage!)),
-                        onTap: _loadNextPage,
-                      );
-                    }
-                    if (_hasMore || _isLoading) {
-                      if (_hasMore && !_isLoading) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) unawaited(_loadNextPage());
-                        });
+                child: ScrollInkBoundary(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    shrinkWrap: true,
+                    itemCount: _filteredItems.length + 1 + (showStatus ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return FocusableListTile(
+                          focusNode: _firstItemFocusNode,
+                          leading: const AppIcon(Symbols.add_rounded, fill: 1),
+                          title: Text(t.common.createNew),
+                          onTap: () => Navigator.pop(context, '_create_new'),
+                        );
                       }
-                      return const Padding(
-                        padding: .all(16),
-                        child: Center(child: CircularProgressIndicator()),
+
+                      if (index <= _filteredItems.length) {
+                        return widget.itemBuilder(context, _filteredItems[index - 1]);
+                      }
+
+                      if (_errorMessage != null) {
+                        return FocusableListTile(
+                          leading: const AppIcon(Symbols.error_rounded, fill: 1),
+                          title: Text(t.messages.errorLoading(error: _errorMessage!)),
+                          onTap: _loadNextPage,
+                        );
+                      }
+                      if (_hasMore || _isLoading) {
+                        if (_hasMore && !_isLoading) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) unawaited(_loadNextPage());
+                          });
+                        }
+                        return const Padding(
+                          padding: .all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      return Padding(
+                        padding: const .all(16),
+                        child: Text(widget.emptyMessage, textAlign: TextAlign.center),
                       );
-                    }
-                    return Padding(
-                      padding: const .all(16),
-                      child: Text(widget.emptyMessage, textAlign: TextAlign.center),
-                    );
-                  },
+                    },
+                  ),
                 ),
               ),
             ],

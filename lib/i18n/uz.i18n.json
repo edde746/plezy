@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Ushbu fayl toʻgʻri Plezy sozlamalar fayli emas",
     "importSettingsNoUser": "Sozlamalarni import qilishdan oldin tizimga kiring",
     "shortcutsReset": "Tugmalar birlashmasi standart holatga qaytarildi",
+    "resetShortcutsConfirm": "",
     "about": "Dastur haqida",
     "aboutDescription": "Ilova haqida maʼlumot va litsenziyalar",
     "updates": "Yangilanishlar",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.",
     "audioPassthroughOverriddenByNormalization": "Ovoz balandligini meʼyorlashtirish yoqilganda oʻchirilgan",
-    "audioDownmix": "Stereoga oʻtkazish (Downmix)",
-    "audioDownmixDescription": "Koʻp kanalli ovozni stereo dinamiklar uchun ikki kanalga tushirish",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Markaziy kanalni kuchaytirish",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Kuchaytirish (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Ichki DV7 rejimini majburlash",
     "dvConversionDv81Description": "Dolby Vision profile 8.1 formatiga oʻtkazish",
     "dvConversionHevcStripDescription": "Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish",
+    "disableDolbyVision": "Dolby Vision'ni oʻchirish",
+    "disableDolbyVisionDescription": "Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish",
     "hdrSdrConversion": "HDR'ni SDR'ga aylantirish",
     "hdrSdrConversionDescription": "Displey HDR'ni ko‘rsata olmaganda HDR videoni nima aylantirishini tanlang.",
     "hdrSdrConversionAuto": "Avtomatik",
@@ -435,7 +444,8 @@
     "hint": "Filmlar, seriallar, musiqa qidirish...",
     "tryDifferentTerm": "Boshqa qidiruv soʻzini kiriting",
     "searchYourMedia": "Medialaringizdan qidiring",
-    "enterTitleActorOrKeyword": "Nomini, aktyorni yoki kalit soʻzni kiriting"
+    "enterTitleActorOrKeyword": "Nomini, aktyorni yoki kalit soʻzni kiriting",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} uchun tugmalar birlashmasini oʻrnatish",
@@ -834,6 +844,8 @@
     "mediaUnreadableBody": "Server bu elementni topdi, lekin uning faylini oʻqiy olmadi (HTTP 404). Fayl koʻchirilgan, oʻchirilgan yoki uning saqlash joyi oflayn boʻlishi mumkin. Server egasidan faylni tekshirishni va kutubxonani qayta skanerlashni soʻrang.",
     "serverBusyTitle": "Oqim mavjud emas",
     "serverBusyBody": "Server bu faylni uzatishni qayta-qayta rad etdi (HTTP 503). U qayta ishga tushayotgan yoki band boʻlishi, yoxud fayl saqlanadigan xotira oflayn boʻlishi mumkin. Birozdan keyin qaytadan urinib koʻring. Muammo davom etsa, server egasidan server va fayl xotirasini tekshirishni soʻrang.",
+    "playbackNotAllowedTitle": "Ijro etishga ruxsat berilmagan",
+    "playbackNotAllowedBody": "Server bu elementni uzatishni rad etdi (HTTP 403). Hisobingizda uni ijro etishga ruxsat boʻlmasligi yoki server ijroga faqat oʻzining mahalliy tarmogʻida ruxsat berishi mumkin.",
     "logsUploaded": "Jurnallar yuklandi",
     "logsUploadFailed": "Jurnallarni yuklab boʻlmadi",
     "logId": "Jurnal ID-si",
@@ -907,6 +919,8 @@
     "signOut": "Chiqish",
     "signOutPlexTitle": "Plex-dan chiqilsinmi?",
     "signOutPlexMessage": "${displayName} va barcha Plex Home foydalanuvchilari oʻchirilsinmi? Istalgan vaqtda qayta kirishingiz mumkin.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex-dan chiqdingiz.",
     "signOutFailed": "Chiqish amalga oshmadi.",
     "sectionTitle": "Profillar",
@@ -968,6 +982,8 @@
     "addConnectionSubtitleScoped": "${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish",
     "sessionExpiredOne": "${name} uchun seans vaqti tugadi",
     "sessionExpiredMany": "${count} server uchun seans vaqti tugadi",
+    "accessDeniedOne": "${name} ushbu hisobga kirishni rad etdi",
+    "accessDeniedMany": "${count} ta server ushbu hisobga kirishni rad etdi",
     "signInAgain": "Qaytadan kirish",
     "editMediaBrowserTitle": "${product} ulanishini tahrirlash",
     "editMediaBrowserIntro": "${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi."
@@ -1408,6 +1424,7 @@
       "otherMedia": "Boshqa"
     },
     "creditRole": {
+      "actor": "",
       "director": "Rejissyor",
       "writer": "Ssenarist",
       "producer": "Prodyuser",
@@ -1804,6 +1821,7 @@
     "syncRuleAvailable": "Mavjud",
     "syncRuleOffline": "Oflayn",
     "syncRuleSignInRequired": "Kirish talab etiladi",
+    "syncRuleAccessDenied": "Kirish rad etildi",
     "syncRuleNotAvailableForProfile": "Joriy profil uchun mavjud emas",
     "syncRuleUnknownServer": "Nomaʼlum server",
     "syncRuleListCreated": "Sinxronlash qoidasi yaratildi",
@@ -1862,8 +1880,14 @@
       "other": ""
     },
     "errorFileNotFound": "Fayl topilmadi (404)",
+    "errorDownloadNotAllowed": "Server yuklab olishga ruxsat bermaydi (403)",
     "errorDownloadFailed": "Yuklab boʻlmadi",
-    "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${error}",
+    "errorDownloadFailedWithReason": "Yuklab boʻlmadi: ${reason}",
+    "errorHttpStatus": "Yuklab boʻlmadi (HTTP ${status})",
+    "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${reason}",
+    "reasonFileNotSaved": "faylni ushbu qurilmada saqlab boʻlmadi",
+    "reasonCannotResume": "qisman yuklab olishni davom ettirib boʻlmadi",
+    "reasonDeviceStorageFull": "ushbu qurilmada xotira qolmadi",
     "notificationDownloading": "Yuklanmoqda...",
     "notificationComplete": "Yuklash tugallandi",
     "notificationPaused": "Yuklash toʻxtatib turildi"
@@ -1986,8 +2010,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ovoz balandligini meʼyorlashtirish",
     "audioNormalizationDisablesPassthrough": "Ovozni PCM-ga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi",
-    "audioNormalizationStereoMix": "Ovozni stereo miksga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi",
-    "audioDownmix": "Stereoga oʻtkazish"
+    "audioNormalizationStereoMix": "Ovozni stereo miksga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi"
   },
   "performanceOverlay": {
     "color": "Rang",
@@ -2002,6 +2025,13 @@
     "rotation": "Aylanish",
     "dvSource": "DV manbasi",
     "dvPath": "DV yoʻli",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7 oʻtkazmasi",
     "sampleRate": "Diskretlash chastotasi",
     "pixelFormat": "Piksel formati",
@@ -2231,6 +2261,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Plezy-ni ${service} xizmatida faollashtiring",

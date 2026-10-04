@@ -7,6 +7,7 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../media/media_backend.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_library.dart';
 import '../../media/media_server_client.dart';
@@ -132,9 +133,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
   };
 
   /// Sections eligible as recording targets for the selected entry.
+  ///
+  /// Only Plex records into a library section. MediaBrowser servers record
+  /// into their own configured folder, and Emby's numeric library ids must not
+  /// be mistaken for Plex section ids.
   List<MediaLibrary> get _eligibleLibraries {
     final kind = _entryLibraryKind;
-    if (kind == null) return const [];
+    if (kind == null || widget.client.backend != MediaBackend.plex) return const [];
     return [
       for (final library in _libraries)
         if (library.kind == kind && !library.isShared && int.tryParse(library.id) != null) library,

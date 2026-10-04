@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Ten plik nie jest prawidłowym eksportem Plezy",
     "importSettingsNoUser": "Zaloguj się przed importem ustawień",
     "shortcutsReset": "Skróty przywrócone do domyślnych",
+    "resetShortcutsConfirm": "",
     "about": "O aplikacji",
     "aboutDescription": "Informacje o aplikacji i licencje",
     "updates": "Aktualizacje",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Przesyłaj dźwięk Dolby/DTS do amplitunera lub telewizora bez ponownego kodowania, zachowując dźwięk przestrzenny. Wyłącz tę opcję, jeśli nie słychać dźwięku.",
     "audioPassthroughDescriptionAppleTv": "Używaj natywnego dekodera Dolby firmy Apple dla Dolby Digital Plus, w tym Atmos. DTS i TrueHD nadal będą odtwarzane jako wielokanałowy dźwięk PCM. Wyłącz tę opcję, jeśli nie słychać dźwięku.",
     "audioPassthroughOverriddenByNormalization": "Wyłączone, gdy włączona jest normalizacja głośności",
-    "audioDownmix": "Miksowanie do stereo",
-    "audioDownmixDescription": "Miksuje dźwięk przestrzenny do dwóch kanałów dla głośników stereo lub słuchawek",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Wzmocnienie kanału centralnego",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Wzmocnienie (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Wymuś natywne DV7 i wyłącz ponowną próbę konwersji DV",
     "dvConversionDv81Description": "Wymuś wbudowaną konwersję RPU do profilu Dolby Vision 8.1",
     "dvConversionHevcStripDescription": "Usuń warstwy Dolby Vision RPU/EL i przedstaw zwykłe HEVC",
+    "disableDolbyVision": "Wyłącz Dolby Vision",
+    "disableDolbyVisionDescription": "Odtwarzaj warstwę HDR10 lub HLG pliku zamiast Dolby Vision, jeśli jest dostępna",
     "hdrSdrConversion": "Konwersja HDR do SDR",
     "hdrSdrConversionDescription": "Wybierz, co konwertuje wideo HDR, gdy wyświetlacz nie obsługuje HDR.",
     "hdrSdrConversionAuto": "Automatycznie",
@@ -435,7 +444,8 @@
     "hint": "Szukaj filmów, seriali, muzyki...",
     "tryDifferentTerm": "Spróbuj innego wyszukiwania",
     "searchYourMedia": "Przeszukaj swoje media",
-    "enterTitleActorOrKeyword": "Wprowadź tytuł, aktora lub słowo kluczowe"
+    "enterTitleActorOrKeyword": "Wprowadź tytuł, aktora lub słowo kluczowe",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Ustaw skrót dla ${actionName}",
@@ -842,6 +852,8 @@
     "mediaUnreadableBody": "Serwer znalazł ten element, ale nie mógł odczytać jego pliku (HTTP 404). Plik został prawdopodobnie przeniesiony, usunięty albo jego pamięć masowa jest niedostępna. Poproś właściciela serwera o sprawdzenie pliku i ponowne przeskanowanie biblioteki.",
     "serverBusyTitle": "Strumień niedostępny",
     "serverBusyBody": "Serwer wielokrotnie odmawiał strumieniowania tego pliku (HTTP 503). Być może jest ponownie uruchamiany lub zajęty albo magazyn danych zawierający plik jest offline. Spróbuj ponownie za chwilę — jeśli problem będzie się powtarzać, poproś właściciela serwera o sprawdzenie serwera i magazynu danych zawierającego plik.",
+    "playbackNotAllowedTitle": "Odtwarzanie niedozwolone",
+    "playbackNotAllowedBody": "Serwer odmówił strumieniowania tego elementu (HTTP 403). Twoje konto może nie mieć uprawnień do jego odtwarzania albo serwer może zezwalać na odtwarzanie tylko w swojej sieci lokalnej.",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
     "logId": "ID logu",
@@ -915,6 +927,8 @@
     "signOut": "Wyloguj się",
     "signOutPlexTitle": "Wylogować się z Plex?",
     "signOutPlexMessage": "Usunąć ${displayName} i wszystkich użytkowników Plex Home? Możesz zalogować się ponownie w każdej chwili.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Wylogowano z Plex.",
     "signOutFailed": "Wylogowanie nie powiodło się.",
     "sectionTitle": "Profile",
@@ -976,6 +990,8 @@
     "addConnectionSubtitleScoped": "Dodaj do ${displayName}: Plex, Jellyfin, Emby lub połączenie innego profilu",
     "sessionExpiredOne": "Sesja wygasła dla ${name}",
     "sessionExpiredMany": "Sesja wygasła dla ${count} serwerów",
+    "accessDeniedOne": "${name} odmówił dostępu temu kontu",
+    "accessDeniedMany": "Odmowa dostępu dla tego konta na ${count} serwerach",
     "signInAgain": "Zaloguj się ponownie",
     "editMediaBrowserTitle": "Edytuj połączenie z ${product}",
     "editMediaBrowserIntro": "Dodaj lub usuń adresy URL dla ${serverName}. Plezy będzie używać osiągalnego adresu URL o najniższym opóźnieniu."
@@ -1424,6 +1440,7 @@
       "otherMedia": "Inne"
     },
     "creditRole": {
+      "actor": "",
       "director": "Reżyser",
       "writer": "Scenarzysta",
       "producer": "Producent",
@@ -1826,6 +1843,7 @@
     "syncRuleAvailable": "Dostępne",
     "syncRuleOffline": "Brak połączenia",
     "syncRuleSignInRequired": "Wymagane logowanie",
+    "syncRuleAccessDenied": "Odmowa dostępu",
     "syncRuleNotAvailableForProfile": "Niedostępne dla bieżącego profilu",
     "syncRuleUnknownServer": "Nieznany serwer",
     "syncRuleListCreated": "Utworzono regułę synchronizacji",
@@ -1892,8 +1910,14 @@
       "other": ""
     },
     "errorFileNotFound": "Nie znaleziono pliku (404)",
+    "errorDownloadNotAllowed": "Serwer nie zezwala na pobieranie (403)",
     "errorDownloadFailed": "Pobieranie nie powiodło się",
-    "errorPostProcessing": "Przetwarzanie końcowe nie powiodło się: ${error}",
+    "errorDownloadFailedWithReason": "Pobieranie nie powiodło się: ${reason}",
+    "errorHttpStatus": "Pobieranie nie powiodło się (HTTP ${status})",
+    "errorPostProcessing": "Przetwarzanie końcowe nie powiodło się: ${reason}",
+    "reasonFileNotSaved": "nie udało się zapisać pliku na tym urządzeniu",
+    "reasonCannotResume": "nie udało się wznowić częściowego pobierania",
+    "reasonDeviceStorageFull": "na tym urządzeniu zabrakło miejsca",
     "notificationDownloading": "Pobieranie...",
     "notificationComplete": "Pobieranie zakończone",
     "notificationPaused": "Pobieranie wstrzymane"
@@ -2016,8 +2040,7 @@
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalizacja głośności",
     "audioNormalizationDisablesPassthrough": "Dekoduje dźwięk do PCM; przekazywanie jest wyłączone, gdy ta opcja jest włączona",
-    "audioNormalizationStereoMix": "Dekoduje dźwięk do miksu stereo; przekazywanie jest wyłączone, gdy ta opcja jest włączona",
-    "audioDownmix": "Miksowanie do stereo"
+    "audioNormalizationStereoMix": "Dekoduje dźwięk do miksu stereo; przekazywanie jest wyłączone, gdy ta opcja jest włączona"
   },
   "performanceOverlay": {
     "color": "Kolor",
@@ -2032,6 +2055,13 @@
     "rotation": "Obrót",
     "dvSource": "Źródło DV",
     "dvPath": "Ścieżka DV",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "Konw. P7",
     "sampleRate": "Częstotliwość próbkowania",
     "pixelFormat": "Format pikseli",
@@ -2261,6 +2291,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Aktywuj Plezy w ${service}",

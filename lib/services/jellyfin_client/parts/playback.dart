@@ -216,6 +216,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
+    // A server-supplied absolute URL can point at another host (a remote
+    // subtitle provider, a tuner); the token only ever goes to the server's
+    // own origin.
+    final base = Uri.tryParse(connection.baseUrl);
+    if (base == null || uri.scheme != base.scheme || uri.host != base.host || uri.port != base.port) {
+      return uri.toString();
+    }
     final params = Map<String, String>.from(uri.queryParameters)
       ..[connection.dialect.tokenQueryParam] = connection.accessToken;
     return uri.replace(queryParameters: params).toString();
@@ -237,12 +244,25 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     final metadata = options.metadata;
-    final bundle = await fetchPlaybackBundle(
-      metadata.id,
-      sourceIndex: options.selectedMediaIndex,
-      sourceId: options.selectedMediaSourceId,
-      preferredSignature: options.preferredVersionSignature,
-    );
+    final JellyfinPlaybackBundle? bundle;
+    try {
+      // An immediate connection error is asked again (see
+      // [retryTransientMediaServerCall]); the deadline only backstops the
+      // HTTP layer's own connect + receive budgets, so it never cuts a slow
+      // but working server short.
+      bundle = await retryTransientMediaServerCall(
+        operation: 'Jellyfin playback item',
+        deadline: MediaServerTimeouts.connect + MediaServerTimeouts.receive,
+        call: (_, _) => fetchPlaybackBundle(
+          metadata.id,
+          sourceIndex: options.selectedMediaIndex,
+          sourceId: options.selectedMediaSourceId,
+          preferredSignature: options.preferredVersionSignature,
+        ),
+      );
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
+    }
     if (bundle == null) {
       throw PlaybackException(t.messages.playbackNoMediaSources, reason: PlaybackFailureReason.noPlayableSource);
     }
@@ -371,7 +391,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
-      } else if (!wantsOriginal) {
+      } else if (!wantsOriginal && chosenSource['SupportsDirectPlay'] != true) {
+        // No transcode is only a refusal when the server also declined direct
+        // play. A file that already fits the cap direct-plays with no
+        // `TranscodingUrl`, which is the capped request succeeding.
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
     }
@@ -423,6 +446,53 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       playSessionId: playSessionId,
       playMethod: playMethod,
       selectedMediaIndex: bundle.selectedSourceIndex,
+    );
+  }
+
+  @override
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(
+    MediaItem item, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+  }) async {
+    // Tracks stream from /Audio/{id}/stream; the URL contract (Static=true,
+    // api_key in the query string) is otherwise identical to the video one.
+    final isTrack = item.kind == MediaKind.track;
+    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
+    if (bundle == null) {
+      return ExternalPlaybackTarget(
+        url: isTrack
+            ? buildAudioDirectStreamUrl(item.id, containerExtension: true)
+            : buildDirectStreamUrl(item.id, containerExtension: true),
+      );
+    }
+    final container = bundle.container;
+    final pinnedSourceId = bundle.pinnedSourceId;
+    // External players get `stream.{container}`: the extension is the only
+    // hint they get about the payload, and disc images (ISO) are unplayable
+    // for players that can't tell an ISO stream from a plain video file.
+    if (isTrack) {
+      return ExternalPlaybackTarget(
+        url: buildAudioDirectStreamUrl(
+          item.id,
+          container: container,
+          mediaSourceId: pinnedSourceId,
+          containerExtension: true,
+        ),
+      );
+    }
+    // A direct play, so only real external files: the player reads embedded
+    // rows out of the container itself. `DefaultSubtitleStreamIndex` marks
+    // the one to switch on.
+    final mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
+      bundle.selectedSource,
+      mediaIndex: bundle.selectedSourceIndex,
+    );
+    return ExternalPlaybackTarget(
+      url: buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId, containerExtension: true),
+      subtitles: [
+        for (final sidecar in _buildExternalSubtitles(item.id, bundle.selectedSourceId, mediaInfo)) sidecar.track,
+      ],
     );
   }
 

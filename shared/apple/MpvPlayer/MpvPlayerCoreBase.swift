@@ -172,6 +172,9 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedVideoColorMatrix: String?
   private var cachedDvConversionMode = "auto"
   private var cachedDvConversionLogEnabled = false
+  /// False while the user has Dolby Vision disabled (#2543); see
+  /// `applyDisplayCriteriaFromCaches`.
+  private var cachedDolbyVisionOutputAllowed = true
   var hdrEnabled: Bool {
     cacheLock.lock()
     defer { cacheLock.unlock() }
@@ -199,9 +202,20 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   /// Properties that must still flow to Dart while backgrounded (state-critical).
+  /// The track properties change about once per file, and Dart's track
+  /// selection for an episode that auto-advances in PiP or background playback
+  /// waits on them; dropped, that episode loses its audio/subtitle choice.
   private static let criticalProperties: Set<String> = [
     "pause", "eof-reached", "paused-for-cache", "time-pos", "duration", "seekable",
+    "track-list", "aid", "sid", "secondary-sid",
   ]
+
+  /// Latest value of each other property dropped while backgrounded, replayed
+  /// when the core leaves the background: mpv reports a property again only
+  /// when it changes, so a dropped update would otherwise stay lost (e.g. the
+  /// initial audio-device-list of a macOS core that starts hidden). Accessed
+  /// only on `queue`.
+  private var backgroundedPropertyChanges: [String: (value: Any?, sourceId: Int64?)] = [:]
 
   private static let internalSigPeakObserverId: UInt64 = UInt64.max - 1
   private static let internalWidthObserverId: UInt64 = UInt64.max - 2
@@ -232,6 +246,27 @@ class MpvPlayerCoreBase: NSObject {
   /// runs serially on `queue`; pass this value into delegate dispatch rather
   /// than reading it later on the main queue.
   private var activeSourceId: Int64?
+  /// Delegate deliveries deferred behind a failed file's END_FILE until the
+  /// drain that dequeued it runs dry or reaches `errorEndFileDrainLimit`; nil
+  /// otherwise. See the END_FILE case of `handleEvent`. Accessed only on
+  /// `queue`, as is `eventsDequeuedWhileDeferring`.
+  private var deferredDeliveries: [DeferredDelivery]?
+  private var eventsDequeuedWhileDeferring = 0
+
+  /// The most events a deferral waits through after the error END_FILE that
+  /// began it: a full verbose client log buffer (mpv keeps 10000 lines per
+  /// client at `v` and above, 1000 below; player/client.c) plus the notice
+  /// mpv reads out ahead of them once it overflowed (common/msg.c). A full
+  /// buffer drops its oldest line for each new one, so the lines explaining
+  /// the failure are the newest. A core that keeps producing events at least
+  /// as fast as they drain would otherwise hold back every other delivery for
+  /// as long as it does.
+  private static let errorEndFileDrainLimit = 10_000 + 1
+
+  private enum DeferredDelivery {
+    case event(name: String, data: [String: Any]?)
+    case property(name: String, value: Any?, sourceId: Int64?)
+  }
 
   private enum PendingRequest {
     case void((Result<Void, Error>) -> Void)
@@ -288,6 +323,21 @@ class MpvPlayerCoreBase: NSObject {
     lifecycleLock.lock()
     lifecycleState.isBackgrounded = backgrounded
     lifecycleLock.unlock()
+    guard !backgrounded else { return }
+    queue.async { [weak self] in
+      self?.replayBackgroundedPropertyChanges()
+    }
+  }
+
+  /// Runs on `queue` after property events that saw the core foregrounded, so
+  /// a live delivery has already removed its stale entry here.
+  private func replayBackgroundedPropertyChanges() {
+    guard !isLifecycleBackgrounded, !backgroundedPropertyChanges.isEmpty else { return }
+    let changes = backgroundedPropertyChanges
+    backgroundedPropertyChanges.removeAll()
+    for (name, change) in changes {
+      dispatchDelegateProperty(name: name, value: change.value, sourceId: change.sourceId)
+    }
   }
 
   var hasActiveMpv: Bool {
@@ -401,6 +451,20 @@ class MpvPlayerCoreBase: NSObject {
       primaries = primaries ?? "bt2020"
       colorMatrix = colorMatrix ?? "bt2020nc"
     }
+    if profile > 0 && !cachedDolbyVisionOutputAllowed {
+      // "Disable Dolby Vision" (#2543): ask the TV for the base layer's range
+      // instead of Dolby Vision. VideoToolbox still decodes the DV stream;
+      // the display pipeline maps it to the requested range, as it does
+      // when the HDR toggle drives a DV source in SDR (#1262). P5's IPT-PQ
+      // signal carries no usable colour tags or compatibility id but is
+      // PQ/BT.2020 once reshaped, so it asks for HDR10 rather than SDR.
+      if profile == 5 {
+        gamma = "smpte2084"
+        primaries = "bt2020"
+      }
+      profile = 0
+      level = 0
+    }
     cacheLock.unlock()
 
     updateDisplayCriteria(
@@ -511,6 +575,18 @@ class MpvPlayerCoreBase: NSObject {
     #endif
     checkError(mpv_request_log_messages(mpv, defaultLogLevel))
 
+    #if os(macOS)
+      // Every URL Plezy opens is a media-server stream or a local file, never
+      // a site mpv's bundled ytdl_hook could resolve. On a failed open the
+      // hook spawns yt-dlp, when one is on PATH, with the full stream URL —
+      // access token included — in its argv, where other processes can read
+      // it, and its own error lines bury the one explaining the failure. mpv
+      // decides whether to load the builtin script during mpv_initialize, so
+      // it has to be an option here. The iOS and tvOS libmpv is built without
+      // Lua, so neither the hook nor this option exists there.
+      checkError(mpv_set_option_string(mpv, "ytdl", "no"))
+    #endif
+
     configure(mpv)
 
     let initResult = mpv_initialize(mpv)
@@ -609,6 +685,12 @@ class MpvPlayerCoreBase: NSObject {
       return
     }
 
+    if name == "dolby-vision-output" {
+      setDolbyVisionOutputAllowed(parseBoolProperty(value))
+      completeOnMain { completion(.success(())) }
+      return
+    }
+
     if name == "dv-conversion-log" {
       setDvConversionLogEnabled(parseBoolProperty(value))
       completeOnMain { completion(.success(())) }
@@ -685,6 +767,17 @@ class MpvPlayerCoreBase: NSObject {
     cacheLock.lock()
     defer { cacheLock.unlock() }
     return cachedDvConversionLogEnabled
+  }
+
+  /// "Disable Dolby Vision" (#2543): `false` asks the TV for the base layer's
+  /// range instead of Dolby Vision; see `applyDisplayCriteriaFromCaches`.
+  func setDolbyVisionOutputAllowed(_ allowed: Bool) {
+    cacheLock.lock()
+    cachedDolbyVisionOutputAllowed = allowed
+    cacheLock.unlock()
+    #if os(tvOS)
+      scheduleDisplayCriteriaUpdate()
+    #endif
   }
 
   func setInt64PropertyAsync(
@@ -1157,11 +1250,41 @@ class MpvPlayerCoreBase: NSObject {
           break
         }
 
+        // The END_FILE that begins a deferral is not counted; one inside it
+        // joins it and counts like any other event.
+        let deferring = self.deferredDeliveries != nil
         self.handleEvent(event.pointee)
+        if deferring {
+          self.eventsDequeuedWhileDeferring += 1
+          if self.eventsDequeuedWhileDeferring >= Self.errorEndFileDrainLimit {
+            self.postDeferredDeliveries()
+          }
+        }
+      }
+      self.postDeferredDeliveries()
+    }
+  }
+
+  /// Posts what an error END_FILE deferred: the end-file, then everything the
+  /// drain dequeued after it, in mpv order. The log lines the drain reached
+  /// were posted as they came, so they precede the end-file. Whatever the
+  /// drain dequeues after this is delivered as it comes.
+  private func postDeferredDeliveries() {
+    guard let deferred = deferredDeliveries else { return }
+    deferredDeliveries = nil
+    eventsDequeuedWhileDeferring = 0
+    for delivery in deferred {
+      switch delivery {
+      case .event(let name, let data):
+        dispatchDelegateEvent(name: name, data: data)
+      case .property(let name, let value, let sourceId):
+        dispatchDelegateProperty(name: name, value: value, sourceId: sourceId)
       }
     }
   }
 
+  /// Posts a delegate event to the main queue or, while an error END_FILE
+  /// defers deliveries, queues it behind that end-file.
   func dispatchDelegateEvent(name: String, data: [String: Any]?, sourceId: Int64? = nil) {
     var sourcedData = data
     if let sourceId {
@@ -1169,13 +1292,25 @@ class MpvPlayerCoreBase: NSObject {
       sourcedData?["sourceId"] = sourceId
     }
     let eventData = sourcedData
+    guard deferredDeliveries == nil else {
+      deferredDeliveries?.append(.event(name: name, data: eventData))
+      return
+    }
+    postDelegateEvent(name: name, data: eventData)
+  }
+
+  private func postDelegateEvent(name: String, data: [String: Any]?) {
     DispatchQueue.main.async { [weak self] in
       guard let self, self.isLifecycleActive else { return }
-      self.delegate?.onEvent(name: name, data: eventData)
+      self.delegate?.onEvent(name: name, data: data)
     }
   }
 
   func dispatchDelegateProperty(name: String, value: Any?, sourceId: Int64?) {
+    guard deferredDeliveries == nil else {
+      deferredDeliveries?.append(.property(name: name, value: value, sourceId: sourceId))
+      return
+    }
     DispatchQueue.main.async { [weak self] in
       guard let self, self.isLifecycleActive else { return }
       self.delegate?.onPropertyChange(name: name, value: value, sourceId: sourceId)
@@ -1234,6 +1369,23 @@ class MpvPlayerCoreBase: NSObject {
         if endFile.reason == MPV_END_FILE_REASON_ERROR {
           data["error"] = Int(endFile.error)
           data["message"] = safeString(mpv_error_string(endFile.error))
+          // mpv hands a client its queued events, then its pending property
+          // changes, and only then its log lines. When this queue runs behind
+          // the core, END_FILE comes out ahead of the lines explaining the
+          // failure — the HTTP status and `Failed to open` line Dart
+          // classifies it by when the end-file arrives. mpv buffers a line
+          // for this client as it is logged, so every line logged before the
+          // failure is pending now: defer every delivery but log lines until
+          // this drain runs dry or `errorEndFileDrainLimit` more events have
+          // come out, then post the end-file and what followed it in order.
+          // Side effects still run in mpv order. A line the next playlist
+          // entry logs meanwhile comes ahead too, which a diagnostic can
+          // take. Only failures defer: a stop's END_FILE precedes the
+          // replacement's START_FILE, and that file's lines pulled ahead of
+          // it would be dropped by Dart's per-file reset. Request completions
+          // post directly; Dart already takes them in either order against
+          // events, as Android completes them off its event path.
+          if deferredDeliveries == nil { deferredDeliveries = [] }
         }
         dispatchDelegateEvent(
           name: "end-file",
@@ -1292,14 +1444,19 @@ class MpvPlayerCoreBase: NSObject {
       )
 
     case MPV_EVENT_LOG_MESSAGE:
-      if isLifecycleBackgrounded { break }
       if let messagePointer = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
         let message = messagePointer.pointee
+        // Backgrounded, only warnings and errors reach Dart: they are rare,
+        // and they carry the HTTP status, open failure and transport faults
+        // its failure handling reads — dropped, a failure while hidden loses
+        // its explanation. Chattier levels would keep waking the main thread
+        // of a hidden or paused player for nothing.
+        if message.log_level.rawValue > MPV_LOG_LEVEL_WARN.rawValue, isLifecycleBackgrounded { break }
         let prefix = message.prefix.map { safeString($0) } ?? ""
         let level = message.level.map { safeString($0) } ?? ""
         let text = message.text.map { safeString($0) } ?? ""
 
-        dispatchDelegateEvent(
+        postDelegateEvent(
           name: "log-message",
           data: ["prefix": prefix, "level": level, "text": text]
         )
@@ -1457,8 +1614,12 @@ class MpvPlayerCoreBase: NSObject {
     }
 
     if Self.internalObserverIds.contains(replyUserdata) { return }
-    if isLifecycleBackgrounded && !Self.criticalProperties.contains(name) { return }
+    if isLifecycleBackgrounded && !Self.criticalProperties.contains(name) {
+      backgroundedPropertyChanges[name] = (value: value, sourceId: sourceId)
+      return
+    }
 
+    backgroundedPropertyChanges.removeValue(forKey: name)
     dispatchDelegateProperty(name: name, value: value, sourceId: sourceId)
   }
 
@@ -1489,6 +1650,13 @@ class MpvPlayerCoreBase: NSObject {
   #if DEBUG
     func observeCachedPauseForTesting(_ paused: Bool) {
       updateCachedProperty(name: "pause", value: paused)
+    }
+
+    /// Another client of this core's mpv instance. It receives the broadcast
+    /// events on its own, so a test can wait for one while `queue` is held.
+    /// The caller owns it and releases it with `mpv_destroy`.
+    func createClientForTesting() -> OpaquePointer? {
+      withActiveMpv { mpv_create_client($0, "test") } ?? nil
     }
   #endif
 

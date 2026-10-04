@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/gamepad_service.dart';
 import '../screens/main_screen.dart';
+import '../widgets/overlay_sheet.dart';
 import '../widgets/focusable_tab_chip.dart';
 
 /// Mixin that provides common tab navigation infrastructure.
@@ -38,8 +39,17 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
       this,
       previous: goToPreviousTab,
       next: goToNextTab,
-      isActive: () => mounted && TickerMode.getValuesNotifier(context).value.enabled,
+      isActive: _acceptsTabNavigation,
     );
+  }
+
+  /// Bumpers switch tabs only while this screen is the visible one and owns
+  /// the input: a dialog route or an overlay sheet on top keeps TickerMode
+  /// enabled for the screen underneath, which must not change tab behind it.
+  bool _acceptsTabNavigation() {
+    if (!mounted || !TickerMode.getValuesNotifier(context).value.enabled) return false;
+    if (!(ModalRoute.isCurrentOf(context) ?? true)) return false;
+    return OverlaySheetController.openSheetCount.value == 0;
   }
 
   /// Dispose the [TabController] and remove only this screen's callbacks.

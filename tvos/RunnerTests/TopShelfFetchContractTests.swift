@@ -351,6 +351,24 @@ final class TopShelfFetchContractTests: XCTestCase {
     }
   }
 
+  func testEmbyResumeRequestUsesUserScopedRoute() throws {
+    let resume = try XCTUnwrap(
+      ShelfFetcher.mediaBrowserResumeRequest(
+        baseUrl: baseUrl,
+        token: token,
+        userId: "user-1",
+        maxItems: 20,
+        userScopedRoute: true
+      )
+    )
+    XCTAssertEqual(
+      resume.url?.absoluteString,
+      "\(baseUrl)/Users/user-1/Items/Resume?userId=user-1&Limit=20&MediaTypes=Video"
+        + "&Recursive=true&EnableTotalRecordCount=false"
+    )
+    XCTAssertEqual(resume.allHTTPHeaderFields?["X-Emby-Token"], token)
+  }
+
   func testPosterUrlsCarryTokenAsQueryParameterExactlyOnce() throws {
     let plex = try XCTUnwrap(
       ShelfItemMapper.plexPosterUrl(path: "/library/metadata/55/thumb/1", baseUrl: baseUrl, token: token)

@@ -28,7 +28,8 @@ class CatalogSearchScreen extends StatefulWidget {
   State<CatalogSearchScreen> createState() => _CatalogSearchScreenState();
 }
 
-class _CatalogSearchScreenState extends State<CatalogSearchScreen> with DebouncedMediaSearch {
+class _CatalogSearchScreenState extends State<CatalogSearchScreen>
+    with DebouncedMediaSearch<CatalogSearchScreen, MediaItem> {
   @override
   String get searchDebugLabel => 'CatalogSearch';
 

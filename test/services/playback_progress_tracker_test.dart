@@ -80,6 +80,10 @@ class _FakePlayer implements Player {
     _state = _state.copyWith(completed: value);
   }
 
+  set track(TrackSelection value) {
+    _state = _state.copyWith(track: value);
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -689,6 +693,96 @@ void main() {
       expect(progressSelection.mediaSourceId, 'source-1');
       expect(progressSelection.audioStreamIndex, 2);
       expect(progressSelection.subtitleStreamIndex, -1);
+    });
+
+    test('Jellyfin progress reports the selected subtitle by identity, not catalog position', () async {
+      final client = _FakePlexClient();
+      const audio = AudioTrack(id: '1', language: 'jpn');
+      // The engine lists the embedded track first and the sidecar after it;
+      // Jellyfin lists its external file first.
+      const embeddedJpn = SubtitleTrack(id: '1', language: 'jpn', codec: 'ass');
+      const sidecarEng = SubtitleTrack(
+        id: '2',
+        language: 'eng',
+        codec: 'subrip',
+        isExternal: true,
+        uri: 'https://jf.example/Videos/42/source-1/Subtitles/3/0/Stream.srt',
+      );
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(audio: [audio], subtitle: [embeddedJpn, sidecarEng]),
+        track: const TrackSelection(audio: audio, subtitle: embeddedJpn),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'jpn', selected: true)],
+        subtitleTracks: [
+          MediaSubtitleTrack(
+            id: 3,
+            languageCode: 'eng',
+            codec: 'srt',
+            selected: false,
+            forced: false,
+            external: true,
+            key: '/Videos/42/source-1/Subtitles/3/0/Stream.srt',
+          ),
+          MediaSubtitleTrack(id: 2, languageCode: 'jpn', codec: 'ass', selected: false, forced: false),
+        ],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      // Position would have reported the external row (3) for the embedded pick.
+      expect(client.playbackStreamSelections.single.subtitleStreamIndex, 2);
+
+      player.track = const TrackSelection(audio: audio, subtitle: sidecarEng);
+      await tracker.sendProgress('stopped');
+      expect(client.playbackStreamSelections.last.subtitleStreamIndex, 3);
+    });
+
+    test('a burned-in subtitle is reported as its source stream, not as off', () async {
+      final client = _FakePlexClient();
+      const audio = AudioTrack(id: '1', language: 'jpn');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(audio: [audio]),
+        // The transcode paints the subtitle into the picture: no engine track.
+        track: const TrackSelection(audio: audio, subtitle: SubtitleTrack.off),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 1, languageCode: 'jpn', selected: true)],
+        subtitleTracks: [
+          MediaSubtitleTrack(id: 3, languageCode: 'eng', codec: 'pgssub', selected: true, forced: false),
+        ],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+        burnedSubtitleStreamIndex: () => 3,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+
+      expect(client.playbackStreamSelections.single.subtitleStreamIndex, 3);
     });
 
     test('Jellyfin progress reports selected source audio when player exposes a single output track', () async {
@@ -1939,6 +2033,82 @@ void main() {
 
         tracker.dispose();
       });
+    });
+
+    test('terminated while playing: buffered playback keeps the session closed until the viewer resumes', () {
+      fakeAsync((async) {
+        final client = _TerminatingProgressClient();
+        final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+        );
+
+        tracker.startTracking();
+        async.flushMicrotasks();
+
+        // An admin stop lands on a playing heartbeat.
+        client.terminateNextProgress = true;
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(tracker.stoppedByServer, isTrue);
+
+        // Buffered playback carries on; its heartbeats must not re-open the
+        // session the admin just ended.
+        player.position = const Duration(seconds: 30);
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+        expect(client.reportKinds, [
+          PlaybackReportKind.started,
+          PlaybackReportKind.progress, // the terminated attempt
+          PlaybackReportKind.stopped,
+        ]);
+        expect(tracker.stoppedByServer, isTrue);
+
+        // A pause and resume is a person at the screen: a fresh session opens.
+        player.playing = false;
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        player.playing = true;
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.reportKinds.last, PlaybackReportKind.started);
+        expect(tracker.stoppedByServer, isFalse);
+
+        tracker.dispose();
+      });
+    });
+
+    test('the terminal report after a termination records where playback ended and marks the item watched', () async {
+      final client = _TerminatingProgressClient();
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      client.terminateNextProgress = true;
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+
+      // Buffered playback runs to the end with nobody touching it.
+      player.position = const Duration(seconds: 100);
+      await tracker.sendProgress('playing');
+      await tracker.sendStoppedProgressOnce(positionOverride: const Duration(seconds: 100));
+      await pumpEventQueue();
+
+      expect(client.updateProgressCalls.map((call) => (call.state, call.time)), [
+        ('playing', 50000),
+        ('stopped', 50000),
+        ('stopped', 100000),
+      ]);
+      expect(client.markWatchedCalls, ['42']);
+      // Finishing the item is not a viewer action: the next item still waits
+      // for a person.
+      expect(tracker.stoppedByServer, isTrue);
     });
 
     test('termination is not a report failure: nothing is queued for offline replay', () async {

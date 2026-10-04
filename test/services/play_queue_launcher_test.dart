@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -22,9 +24,13 @@ import '../test_helpers/prefs.dart';
 // jellyfin_sequential_launcher_test.dart.
 
 class _StubPlexClient implements PlexClient {
-  _StubPlexClient({this.response});
+  _StubPlexClient({this.response, this.gate});
 
   final PlayQueueResponse? response;
+
+  /// Holds [createPlayQueue] open until completed, so a test can act while the
+  /// launch's loading dialog is up.
+  final Completer<void>? gate;
 
   @override
   Future<PlayQueueResponse> createPlayQueue({
@@ -38,6 +44,7 @@ class _StubPlexClient implements PlexClient {
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
+    await gate?.future;
     return response!;
   }
 
@@ -159,6 +166,37 @@ void main() {
       expect(result, isA<PlayQueueSuccess>());
       expect(navigated, hasLength(1));
       expect(navigated.single, same(item));
+    });
+
+    testWidgets('Back on the loading dialog cancels the launch before it publishes or navigates', (tester) async {
+      final context = await _pumpContext(tester);
+      final item = const MediaItem.plex(id: 'movie-1', kind: MediaKind.movie, playQueueItemId: 41);
+      final gate = Completer<void>();
+      final playbackState = PlaybackStateProvider();
+      var didNavigate = false;
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: _StubPlexClient(response: _queueWith(item), gate: gate),
+        playbackStateForTesting: playbackState,
+        navigateForTesting: (_) async => didNavigate = true,
+      );
+      const playlist = MediaPlaylist(id: '12', backend: MediaBackend.plex, title: 'Playlist', playlistType: 'video');
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(item: playlist, shuffle: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(AlertDialog), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      gate.complete();
+
+      expect(await resultFuture, isA<PlayQueueCancelled>());
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(playbackState.isQueueActive, isFalse);
+      expect(didNavigate, isFalse);
+      expect(find.byType(SnackBar), findsNothing);
     });
 
     testWidgets('navigation failure is returned as PlayQueueError, not success', (tester) async {

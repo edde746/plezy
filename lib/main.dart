@@ -83,6 +83,7 @@ import 'utils/app_logger.dart';
 import 'utils/certificate_trust.dart';
 import 'utils/managed_http_client.dart';
 import 'utils/media_server_http_client.dart';
+import 'utils/media_server_timeouts.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
 import 'i18n/app_locale_utils.dart';
@@ -1229,6 +1230,17 @@ bool shouldEnterOfflineModeAfterStartupBind({required bool bindingSucceeded, req
   return !bindingSucceeded && !hasOnlineServers;
 }
 
+/// The splash's wait for the initial bind. With no OS network the wait is
+/// capped at [MediaServerTimeouts.noNetworkStartupBind] and a timeout reads
+/// as a failed bind: the bind keeps running, and
+/// [shouldEnterOfflineModeAfterStartupBind] still keeps the launch online
+/// when a server already connected.
+@visibleForTesting
+Future<bool> awaitStartupBindSettle(Future<bool> settle, {required bool hasNetwork}) {
+  if (hasNetwork) return settle;
+  return settle.timeout(MediaServerTimeouts.noNetworkStartupBind, onTimeout: () => false);
+}
+
 /// Top-level PIN prompt used by [ActiveProfileBinder] when it runs above the
 /// profile-scoped widget tree. Routes through the app-global
 /// [rootNavigatorKey] so the dialog survives profile-session remounts. Returns
@@ -1682,9 +1694,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // refresh + Jellyfin client creation. Hoisted out of MainScreen so
         // the splash can await its first settle — without this, MainScreen
         // mounts (and discover/libraries query) before any client exists.
-        // It is intentionally not auto-started here: SetupScreen first checks
-        // whether startup should go straight offline, otherwise the binder's
-        // microtask can begin network work before the offline decision lands.
+        // It is intentionally not auto-started here: SetupScreen starts it
+        // once the active profile is hydrated and the OS connectivity check
+        // has chosen the initial bind's PIN policy.
         Provider<ActiveProfileBinder>(
           lazy: false,
           create: (context) {
@@ -2094,7 +2106,10 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       }
     }
 
-    // Check network connectivity early to fast-path airplane mode.
+    // OS connectivity only bounds how long the splash waits for the bind
+    // below. It never skips connecting: `none` means "no internet-capable
+    // adapter", and a loopback or LAN-without-WAN server is still reachable
+    // (#2505).
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Checking network connectivity', category: 'setup')));
     final hasNetwork = !(await ConnectivityProbe.check()).contains(ConnectivityResult.none);
 
@@ -2136,12 +2151,6 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
     if (!mounted) return;
 
-    // No network — skip connection attempts and go straight to offline mode
-    if (!hasNetwork) {
-      await _enterOfflineMode();
-      return;
-    }
-
     if (mounted) {
       setState(() {
         for (final conn in allConnections) {
@@ -2171,7 +2180,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Snapshot Provider refs before further awaits.
     final activeProfile = context.read<ActiveProfileProvider>();
     // The Provider is `lazy: false` so the binder is constructed already, but
-    // SetupScreen starts it only after the offline fast path has been ruled out.
+    // SetupScreen starts it only after the active profile has been hydrated.
     final binder = context.read<ActiveProfileBinder>();
     final downloadProvider = context.read<DownloadProvider>();
 
@@ -2192,11 +2201,11 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // checkmarks fill in even while the user is choosing a profile.
     _bindServerStatusListener();
 
-    // Start only after network/offline startup has been decided and the
-    // active profile snapshot is hydrated. This prevents an eager binder
-    // microtask from racing the no-network/manual-offline fast path.
+    // Start only after the active profile snapshot is hydrated. Without a
+    // network the initial bind stays PIN-free: plex.tv cannot verify a PIN,
+    // and the capped wait below would navigate out from under the dialog.
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.bindingStarted);
-    binder.start();
+    binder.start(allowInitialPinPrompt: hasNetwork);
 
     // If "prompt for profile on launch" is on (or no profile is selected
     // yet), surface the picker BEFORE waiting for the previously-active
@@ -2221,8 +2230,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       // race: per-server status flips on the splash list as each client comes
       // online, and we don't push MainScreen until they're all done (success
       // or fail). Eliminates the "Failed to load discover content: No servers
-      // available" race the old eager-navigate flow caused.
-      bindingSucceeded = await activeProfile.awaitBindingSettle();
+      // available" race the old eager-navigate flow caused. Without a network
+      // the wait is capped so airplane mode reaches the offline shell fast.
+      bindingSucceeded = await awaitStartupBindSettle(activeProfile.awaitBindingSettle(), hasNetwork: hasNetwork);
       if (!mounted) return;
     }
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.bindingSettled);

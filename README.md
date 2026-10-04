@@ -100,7 +100,7 @@ sudo moss it plezy
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists — video and audio
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
-- Cross-server search across every connected Plex, Jellyfin, and Emby server
+- Cross-server search across every connected Plex, Jellyfin, and Emby server, including actors and directors
 - Filtering, sorting, and alphabetical jump navigation
 - Folder browsing and folder playback — home-video libraries open in folder view
 - Resolution, HDR/Dolby Vision, and audio-format badges on cards and detail pages
@@ -127,7 +127,7 @@ sudo moss it plezy
 - Chapter navigation with thumbnail scrub previews
 - Playback speed from 0.25x to 8x, audio sync offset, sleep timer (fixed durations or end of video)
 - Video zoom 50-200% with pinch, presets, and hotkeys
-- Audio passthrough[^pass], stereo downmix with center-channel boost, and loudness normalization
+- Audio passthrough[^pass], output channel limit (5.1 or stereo, with center-channel boost), and loudness normalization
 - File Info sheet — every version, file, and stream the server reports
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]

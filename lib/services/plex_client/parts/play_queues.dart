@@ -129,7 +129,6 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
         type: 'video',
         shuffle: shuffle,
         key: startingEpisodeKey == null ? null : '/library/metadata/$startingEpisodeKey',
-        continuous: startingEpisodeKey != null && shuffle == 0 ? 1 : 0,
         librarySectionID: librarySectionID,
         librarySectionTitle: librarySectionTitle,
       );

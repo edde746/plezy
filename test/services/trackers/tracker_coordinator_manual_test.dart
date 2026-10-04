@@ -17,6 +17,7 @@ import 'package:plezy/services/trackers/fribb_mapping_store.dart';
 import 'package:plezy/services/trackers/mal/mal_tracker.dart';
 import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
 import 'package:plezy/services/trackers/tracker_coordinator.dart';
+import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/utils/external_ids.dart';
 import '../../test_helpers/media_items.dart';
@@ -29,6 +30,7 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   final Map<String, ExternalIds> externalIdsByItem;
   final Map<String, List<MediaItem>> descendantsByParent;
+  final Map<String, List<MediaItem>> childrenByParent;
   final List<String> externalIdCalls = [];
   final List<String> descendantCalls = [];
 
@@ -43,6 +45,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     ServerId? serverId,
     required this.externalIdsByItem,
     required this.descendantsByParent,
+    this.childrenByParent = const {},
     this.externalIdsError,
     this.watchedThreshold = 0.9,
   }) : serverId = serverId ?? ServerId('server-1');
@@ -64,6 +67,9 @@ class _FakeMediaServerClient implements MediaServerClient {
   }
 
   @override
+  Future<List<MediaItem>> fetchChildren(String parentId) async => childrenByParent[parentId] ?? const [];
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -73,7 +79,13 @@ class _FakeFribbLookup implements FribbMappingLookup {
   const _FakeFribbLookup(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => rows;
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async => rows;
 
   @override
   Future<FribbMappingRow?> lookupByMal(int malId) async => rows.where((row) => row.malId == malId).firstOrNull;
@@ -200,7 +212,7 @@ void main() {
       await simkl.setEnabled(false);
     });
 
-    test('expands a manually watched season and fills missing episode show context', () async {
+    test('writes a manually watched season to Simkl as one request and fills missing show context', () async {
       final bodies = <Map<String, dynamic>>[];
       final httpClient = MockClient((request) async {
         expect(request.method, 'POST');
@@ -221,33 +233,59 @@ void main() {
 
       expect(client.descendantCalls, ['season-1']);
       expect(client.externalIdCalls, ['show-1']);
-      expect(bodies, hasLength(2));
-      expect(bodies[0]['shows'], [
+      expect(bodies, [
         {
-          'ids': {'tvdb': 12345},
-          'seasons': [
+          'shows': [
             {
-              'number': 1,
-              'episodes': [
-                {'number': 1},
+              'ids': {'tvdb': 12345},
+              'seasons': [
+                {
+                  'number': 1,
+                  'episodes': [
+                    {'number': 1},
+                    {'number': 2},
+                  ],
+                },
               ],
             },
           ],
         },
       ]);
-      expect(bodies[1]['shows'], [
-        {
-          'ids': {'tvdb': 12345},
-          'seasons': [
-            {
-              'number': 1,
-              'episodes': [
-                {'number': 2},
-              ],
-            },
+    });
+
+    test('a long show goes to Simkl in capped batches, never one request per episode', () async {
+      final episodeCounts = <int>[];
+      final httpClient = MockClient((request) async {
+        final body = json.decode(request.body) as Map<String, dynamic>;
+        var count = 0;
+        for (final show in body['shows'] as List) {
+          for (final season in (show as Map)['seasons'] as List) {
+            count += ((season as Map)['episodes'] as List).length;
+          }
+        }
+        episodeCounts.add(count);
+        return http.Response('{}', 201);
+      });
+      simkl.rebindSession(
+        _simklSession(),
+        onSessionInvalidated: () {},
+        httpClient: httpClient,
+        writeSpacing: Duration.zero,
+      );
+      const episodeCount = TrackerConstants.historyBatchSize * 2 + 5;
+      final client = _FakeMediaServerClient(
+        externalIdsByItem: {'show-1': const ExternalIds(tvdb: 12345)},
+        descendantsByParent: {
+          'show-1': [
+            for (var number = 1; number <= episodeCount; number++)
+              _episodeOfShow(number, season: (number - 1) ~/ 25 + 1),
           ],
         },
-      ]);
+      );
+
+      await coordinator.markWatched(_show(), client);
+
+      expect(episodeCounts, [TrackerConstants.historyBatchSize, TrackerConstants.historyBatchSize, 5]);
     });
 
     test('groups manually watched split seasons into separate anime entries', () async {
@@ -386,6 +424,50 @@ void main() {
       ]);
     });
 
+    test('a manually watched episode is not counted on top of the server rollup', () async {
+      await simkl.setEnabled(false);
+      await mal.setEnabled(true);
+      coordinator.debugUseResolverDependencies(
+        store: const _FakeFribbLookup([FribbMappingRow(tvdbId: 12345, malId: 21, type: 'TV')]),
+        animeLists: const _FakeAnimeListsLookup(),
+      );
+
+      final malUpdates = <int, Map<String, String>>{};
+      final malHttp = MockClient((request) async {
+        final malId = int.parse(request.url.pathSegments[2]);
+        if (request.method == 'GET') return http.Response(json.encode({'num_episodes': 12}), 200);
+        malUpdates[malId] = Uri.splitQueryString(request.body);
+        return http.Response('{}', 200);
+      });
+      mal.rebindSession(_malSession(), onSessionInvalidated: () {}, httpClient: malHttp);
+
+      // The server already counts episode 4 (the mark reached it first), while
+      // the item handed over still carries its pre-mark view count.
+      final client = _FakeMediaServerClient(
+        externalIdsByItem: {'show-1': const ExternalIds(tvdb: 12345)},
+        descendantsByParent: const {},
+        childrenByParent: {
+          'show-1': [
+            testMediaItem(
+              id: 'season-1',
+              backend: MediaBackend.plex,
+              kind: MediaKind.season,
+              title: 'Season 1',
+              index: 1,
+              leafCount: 12,
+              viewedLeafCount: 4,
+            ),
+          ],
+        },
+      );
+
+      await coordinator.markWatched(_episodeOfShow(4), client);
+
+      expect(malUpdates, {
+        21: {'status': 'watching', 'num_watched_episodes': '4'},
+      });
+    });
+
     test('groups manually watched same-season split cours by Anime-Lists ranges', () async {
       await simkl.setEnabled(false);
       await mal.setEnabled(true);
@@ -463,7 +545,7 @@ void main() {
       expect(anilistSaves, contains(equals({'mediaId': 202, 'progress': 2, 'status': 'COMPLETED'})));
     });
 
-    test('removes manually unwatched season episodes from Simkl history', () async {
+    test('removes a manually unwatched season from Simkl history in one request', () async {
       final bodies = <Map<String, dynamic>>[];
       final httpClient = MockClient((request) async {
         expect(request.method, 'POST');
@@ -483,15 +565,19 @@ void main() {
       await coordinator.markUnwatched(_season(), client);
 
       expect(client.descendantCalls, ['season-1']);
-      expect(bodies, hasLength(2));
-      expect(bodies.first['shows'], [
+      expect(bodies, [
         {
-          'ids': {'tvdb': 12345},
-          'seasons': [
+          'shows': [
             {
-              'number': 1,
-              'episodes': [
-                {'number': 1},
+              'ids': {'tvdb': 12345},
+              'seasons': [
+                {
+                  'number': 1,
+                  'episodes': [
+                    {'number': 1},
+                    {'number': 2},
+                  ],
+                },
               ],
             },
           ],
@@ -596,6 +682,7 @@ void main() {
         _simklSession(),
         onSessionInvalidated: () {},
         httpClient: MockClient((_) async => http.Response('{}', 200)),
+        writeSpacing: Duration.zero,
       );
 
       final firstClient = _FakeMediaServerClient(

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
+import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
+import '../screens/actor_media_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/media_detail_screen.dart';
@@ -292,4 +294,34 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
     onRefresh?.call(mi);
   }
   return MediaNavigationResult.navigated;
+}
+
+/// Opens [ActorMediaScreen] — the filmography of the person [personId] on
+/// [serverId]. [personId] is the id `MediaServerClient.fetchPersonMediaPage`
+/// takes; [characterName] is the role shown under the name when the person was
+/// reached from a title's cast.
+Future<void> navigateToPersonMedia(
+  BuildContext context, {
+  required String personId,
+  required String name,
+  String? thumbPath,
+  String? characterName,
+  required String serverId,
+  String? serverName,
+  required MediaBackend backend,
+}) async {
+  await Navigator.push<void>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ActorMediaScreen(
+        actorName: name,
+        personId: personId,
+        actorThumb: thumbPath,
+        characterName: characterName,
+        serverId: serverId,
+        serverName: serverName,
+        backend: backend,
+      ),
+    ),
+  );
 }

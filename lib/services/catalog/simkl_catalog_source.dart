@@ -569,24 +569,21 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       external.hasCatalogIds ? CatalogItemIds.fromExternal(external) : null;
 
   @override
-  Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit) async {
-    final response = await _getWatchlistItems();
-    return (
-      groups: [
-        for (final entry in response.movies)
-          if (entry.media case final media?) membershipKeysFor(MediaKind.movie, media.ids.toCatalogItemIds()),
-        for (final entry in response.shows)
-          if (entry.media case final media?) membershipKeysFor(MediaKind.show, media.ids.toCatalogItemIds()),
-        for (final entry in response.anime)
-          if (entry.media case final media?)
-            [
-              ...membershipKeysFor(MediaKind.movie, media.ids.toCatalogItemIds()),
-              ...membershipKeysFor(MediaKind.show, media.ids.toCatalogItemIds()),
-            ],
-      ],
-      hasMore: false,
-    );
-  }
+  Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit) async =>
+      (groups: _watchlistKeyGroups(await _getWatchlistItems()), hasMore: false);
+
+  List<List<String>> _watchlistKeyGroups(SimklAllItems response) => [
+    for (final entry in response.movies)
+      if (entry.media case final media?) membershipKeysFor(MediaKind.movie, media.ids.toCatalogItemIds()),
+    for (final entry in response.shows)
+      if (entry.media case final media?) membershipKeysFor(MediaKind.show, media.ids.toCatalogItemIds()),
+    for (final entry in response.anime)
+      if (entry.media case final media?)
+        [
+          ...membershipKeysFor(MediaKind.movie, media.ids.toCatalogItemIds()),
+          ...membershipKeysFor(MediaKind.show, media.ids.toCatalogItemIds()),
+        ],
+  ];
 
   @override
   Future<void> performWatchlistMutation(MediaKind kind, CatalogItemIds ids, {required bool add}) async {
@@ -600,8 +597,18 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       });
     } else {
       // Simkl has no remove-from-list endpoint. A bare-IDs history removal drops
-      // the title from the user's library entirely; for a Plan to Watch entry,
-      // that is the documented and intended removal behavior.
+      // the title from the user's library entirely, watch history included; for
+      // a Plan to Watch entry, that is the documented and intended removal
+      // behavior. So re-read Plan to Watch first: a title that has moved on to
+      // watching or completed since the snapshot loaded is already off it, and
+      // the removal would wipe its history.
+      _invalidateWatchlistCache();
+      final keys = membershipKeysFor(kind, ids).toSet();
+      final planned = _watchlistKeyGroups(await _getWatchlistItems());
+      if (!planned.any((group) => group.any(keys.contains))) {
+        reloadWatchlistSnapshot();
+        return;
+      }
       await _client.removeFromHistory({
         bucket: [
           {'ids': mutationIds},

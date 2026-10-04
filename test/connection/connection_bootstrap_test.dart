@@ -212,6 +212,40 @@ void main() {
       expect(users.map((u) => (u as Map<String, dynamic>)['uuid']), containsAll(['managed-user', 'admin-user']));
     });
 
+    test('run does not select a profile when a prefs repair lost only the migration flag', () async {
+      // The database kept the migrated account; the repaired preference store
+      // lost the flag and the active profile but holds no legacy state.
+      await registry.upsert(
+        PlexAccountConnection(
+          id: 'plex.client-owner',
+          accountToken: 'account-token',
+          clientIdentifier: 'client-owner',
+          accountLabel: 'Owner',
+          createdAt: DateTime(2026, 1, 1),
+        ),
+      );
+      fetchedHomeUsers = [
+        PlexHomeUser(
+          id: 1,
+          uuid: 'admin-user',
+          title: 'Owner',
+          thumb: '',
+          hasPassword: true,
+          restricted: false,
+          updatedAt: null,
+          admin: true,
+          guest: false,
+          protected: true,
+        ),
+      ];
+
+      await bootstrap.run();
+
+      expect(storage.getActiveProfileId(), isNull);
+      expect(storage.prefs.getBool('profile_migration_v1_done'), isTrue);
+      expect(await registry.list(), hasLength(1));
+    });
+
     test('run clears leftover legacy servers_list when migration was already marked done', () async {
       await storage.prefs.setBool('profile_migration_v1_done', true);
       await storage.prefs.setString(

@@ -678,6 +678,20 @@ extension DownloadDatabaseOperations on AppDatabase {
     return (select(downloadedMedia)..where((t) => t.serverId.equals(serverId))).get();
   }
 
+  /// Whether a download row other than [excludingGlobalKey] records
+  /// [videoFilePath] as its video.
+  Future<bool> isVideoFilePathRecordedByOtherDownload(
+    String videoFilePath, {
+    required String excludingGlobalKey,
+  }) async {
+    final rows =
+        await (select(downloadedMedia)
+              ..where((t) => t.videoFilePath.equals(videoFilePath) & t.globalKey.equals(excludingGlobalKey).not())
+              ..limit(1))
+            .get();
+    return rows.isNotEmpty;
+  }
+
   Expression<bool> _optionalServerPredicate(GeneratedColumn<String> column, ServerId? serverId) {
     return serverId == null ? const Constant(true) : column.equals(serverId);
   }

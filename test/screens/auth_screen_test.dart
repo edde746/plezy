@@ -62,6 +62,57 @@ void main() {
     expect(profile.displayName, 'Home User');
   });
 
+  test('a PIN-protected single Plex Home user is left for the picker', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final connections = ConnectionRegistry(db);
+    final profileConnections = ProfileConnectionRegistry(db);
+    final storage = await StorageService.getInstance();
+    final plexHome = PlexHomeService(
+      connections: connections,
+      profileConnections: profileConnections,
+      storage: storage,
+      plexHomeUserFetcher: (_) async => [
+        PlexHomeUser(
+          id: 1,
+          uuid: 'home-user-a',
+          title: 'Home User',
+          thumb: '',
+          hasPassword: true,
+          restricted: false,
+          updatedAt: null,
+          admin: true,
+          guest: false,
+          protected: true,
+        ),
+      ],
+    );
+    addTearDown(() async {
+      await plexHome.dispose();
+      await db.close();
+    });
+
+    final account = PlexAccountConnection(
+      id: 'plex-account-a',
+      accountToken: 'account-token',
+      clientIdentifier: 'client-a',
+      accountLabel: 'Plex',
+      createdAt: DateTime(2026, 1, 1),
+    );
+    await connections.upsert(account);
+    await plexHome.refresh(account);
+
+    expect(initialPlexHomeProfileFromCache(plexHome, account), isNull);
+    expect(
+      shouldPromptForInitialProfileSelection(
+        activeProfile: null,
+        hasProfiles: false,
+        accountHasHomeUsers: plexHome.current[account.id]?.isNotEmpty == true,
+        requireProfileSelectionOnOpen: false,
+      ),
+      isTrue,
+    );
+  });
+
   test('initial profile selection is required when home users exist but no profile is active', () {
     expect(
       shouldPromptForInitialProfileSelection(

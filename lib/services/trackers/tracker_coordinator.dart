@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import '../../exceptions/media_server_exceptions.dart';
 import '../../media/media_item.dart';
@@ -34,8 +35,9 @@ import 'trakt/trakt_tracker.dart';
 ///   crosses the watched threshold, with a safety-net fire on stop if the
 ///   crossing was missed (e.g. the user stopped between ticks).
 /// * Manual, container, offline-replay, external-player and server-observed
-///   marks bypass playback entirely and go straight to [Tracker.markWatched] on
-///   every tracker that can write.
+///   marks bypass playback entirely and go to every tracker that can write. A
+///   container's episodes reach each history tracker as batched
+///   [EpisodeHistoryTracker.writeHistory] requests, never one per episode.
 ///
 /// A failed per-item history write is persisted in [TrackerWriteQueue] and
 /// replayed by [flushWriteQueue], so a transient error does not silently drop a
@@ -68,7 +70,7 @@ class TrackerCoordinator {
   int _profileGeneration = 0;
 
   /// In-flight write chains, one per remote row per profile (see
-  /// [_sequencedByKey]). Entries are removed as soon as nothing is queued behind
+  /// [_sequencedByKeys]). Entries are removed as soon as nothing is queued behind
   /// them, so this never grows past the writes currently in flight.
   final Map<String, Completer<void>> _writeChains = {};
 
@@ -77,9 +79,12 @@ class TrackerCoordinator {
   final Map<String, _RowIntents> _rowIntents = {};
 
   /// Resolver persists across episode swaps so back-to-back episodes of the
-  /// same show reuse the cached IDs. Cleared only on profile switch.
+  /// same show reuse the cached IDs. Rebuilt whenever playback arrives with a
+  /// different client object — a reconnect replaces the client under the same
+  /// server id and closes the old one, whose every request then fails as
+  /// cancelled — and dropped on profile switch.
   TrackerIdResolver? _resolver;
-  String? _resolverClientKey;
+  MediaServerClient? _resolverClient;
   String? _activeLibraryGlobalKey;
   FribbMappingLookup? _debugFribbStore;
   AnimeListsMappingLookup? _debugAnimeListsStore;
@@ -146,7 +151,11 @@ class TrackerCoordinator {
   Future<void> flushWriteQueue() async {
     final scope = _currentScope;
     try {
-      await _writeQueue.flush(scope.userUuid, send: (item) => _replayQueuedWrite(item, scope));
+      await _writeQueue.flush(
+        scope.userUuid,
+        batches: (service) => _trackerFor(service) is EpisodeHistoryTracker,
+        send: (rows) => _replayQueuedWrites(rows, scope),
+      );
     } catch (e, st) {
       appLogger.w('Trackers: write queue flush failed', error: e, stackTrace: st);
     }
@@ -186,11 +195,10 @@ class TrackerCoordinator {
     }
 
     _activeLibraryGlobalKey = libraryGlobalKey;
-    final clientKey = client.cacheServerId;
-    if (_resolver == null || _resolverClientKey != clientKey) {
+    if (_resolver == null || !identical(_resolverClient, client)) {
       _resolver?.clearCache();
       _resolver = _newResolver(client, needsFribb: _anyTrackerNeedsFribb);
-      _resolverClientKey = clientKey;
+      _resolverClient = client;
     }
     final TrackerContext? ctx;
     try {
@@ -314,23 +322,23 @@ class TrackerCoordinator {
     TrackerIdResolver resolver,
     _WriteScope scope,
   ) async {
+    final contexts = <TrackerContext>[];
     final seriesGroups = <String, _ManualSeriesProgress>{};
-    var resolved = 0;
 
     for (final episode in episodes) {
       final ctx = await _buildContext(episode, resolver, includeAnimeProgress: false);
       if (!_isCurrent(scope)) return;
       if (ctx == null) continue;
-      resolved++;
-
-      await _dispatch(_episodeHistoryTrackers, ctx, scope, watched: true);
+      contexts.add(ctx);
 
       final key = _seriesGroupKey(ctx);
       if (key == null) continue;
       (seriesGroups[key] ??= _ManualSeriesProgress(ctx, fallbackToCount: true)).add(ctx);
     }
 
-    appLogger.d('Trackers: manual container resolved $resolved/${episodes.length} episodes');
+    appLogger.d('Trackers: manual container resolved ${contexts.length}/${episodes.length} episodes');
+
+    await _dispatchHistory(contexts, scope, watched: true);
 
     for (final group in seriesGroups.values) {
       final ctx = group.context;
@@ -344,10 +352,10 @@ class TrackerCoordinator {
     TrackerIdResolver resolver,
     _WriteScope scope,
   ) async {
+    final contexts = <TrackerContext>[];
     // One context per series entry: a show maps to a single list entry, so all
     // of its episodes collapse into one reset.
     final seriesEntries = <String, TrackerContext>{};
-    var resolved = 0;
 
     for (final episode in episodes) {
       final ctx = await _buildContext(
@@ -358,15 +366,15 @@ class TrackerCoordinator {
       );
       if (!_isCurrent(scope)) return;
       if (ctx == null) continue;
-      resolved++;
-
-      await _dispatch(_episodeHistoryTrackers, ctx, scope, watched: false);
+      contexts.add(ctx);
 
       final key = _seriesGroupKey(ctx);
       if (key != null) seriesEntries.putIfAbsent(key, () => ctx);
     }
 
-    appLogger.d('Trackers: manual container unwatched resolved $resolved/${episodes.length} episodes');
+    appLogger.d('Trackers: manual container unwatched resolved ${contexts.length}/${episodes.length} episodes');
+
+    await _dispatchHistory(contexts, scope, watched: false);
 
     for (final ctx in seriesEntries.values) {
       await _dispatch(_seriesProgressTrackers, ctx, scope, watched: false);
@@ -389,7 +397,11 @@ class TrackerCoordinator {
   }
 
   Future<void> _markSingleWatched(MediaItem item, TrackerIdResolver resolver, _WriteScope scope) async {
-    final ctx = await _buildContext(item, resolver);
+    // Every caller reaches here after the server recorded the watch, so the
+    // watched counts the progress rollup reads already include this episode,
+    // while [item] may still carry its unwatched view count. Adding it on top,
+    // as playback start must, would count it twice.
+    final ctx = await _buildContext(item, resolver, includeCurrentEpisode: false);
     if (ctx == null) {
       appLogger.d('Trackers: no external IDs for manually watched ${item.id}');
       return;
@@ -496,7 +508,7 @@ class TrackerCoordinator {
     _reset();
     _resolver?.clearCache();
     _resolver = null;
-    _resolverClientKey = null;
+    _resolverClient = null;
   }
 
   /// Drop the resolver's ID cache without touching in-flight playback state.
@@ -564,61 +576,115 @@ class TrackerCoordinator {
         if (_canWrite(tracker, ctx.libraryGlobalKey)) tracker,
     ];
     if (active.isEmpty) return;
-    await Future.wait(active.map((tracker) => _applyWrite(tracker, ctx, scope, watched: watched)));
+    await Future.wait(active.map((tracker) => _applyWrite(tracker, [ctx], scope, watched: watched)));
   }
 
-  /// One watched/unwatched write plus the bookkeeping that keeps it consistent
-  /// with everything else targeting the same remote row.
+  /// A container's episodes as batched history writes. Trackers run side by
+  /// side, as single writes do.
+  Future<void> _dispatchHistory(List<TrackerContext> contexts, _WriteScope scope, {required bool watched}) async {
+    if (!_isCurrent(scope)) return;
+    await Future.wait([
+      for (final tracker in _episodeHistoryTrackers) _applyHistoryChunks(tracker, contexts, scope, watched: watched),
+    ]);
+  }
+
+  /// The episodes [tracker]'s library filter admits, written in chunks of
+  /// [TrackerConstants.historyBatchSize] one after another.
+  Future<void> _applyHistoryChunks(
+    EpisodeHistoryTracker tracker,
+    List<TrackerContext> contexts,
+    _WriteScope scope, {
+    required bool watched,
+  }) async {
+    final admitted = [
+      for (final ctx in contexts)
+        if (_canWrite(tracker, ctx.libraryGlobalKey)) ctx,
+    ];
+    for (var start = 0; start < admitted.length; start += TrackerConstants.historyBatchSize) {
+      if (!_isCurrent(scope)) return;
+      final end = min(start + TrackerConstants.historyBatchSize, admitted.length);
+      await _applyWrite(tracker, admitted.sublist(start, end), scope, watched: watched);
+    }
+  }
+
+  /// One watched/unwatched write — a single item, or a batch of history rows —
+  /// plus the bookkeeping that keeps it consistent with everything else
+  /// targeting the same remote rows.
   ///
-  /// The write is serialised against other writes for that row, and carries an
-  /// intent number claimed inside the row's channel — so writes are numbered in
-  /// the order they actually go out. A failure only becomes a queued retry if no
-  /// later intent for the row has succeeded meanwhile: without that check, a slow
-  /// failure could persist stale state moments after a newer write cleaned the
-  /// queue and moved the service on.
-  Future<void> _applyWrite(Tracker tracker, TrackerContext ctx, _WriteScope scope, {required bool watched}) async {
-    final key = _coalesceKeyFor(tracker, ctx);
-    final appliedProgress = watched ? _progressClaim(tracker, ctx) : null;
+  /// The write is serialised against other writes for each of its rows, and
+  /// carries an intent number per row claimed inside the rows' channel — so
+  /// writes are numbered in the order they actually go out. A failed row only
+  /// becomes a queued retry if no later intent for it has succeeded meanwhile:
+  /// without that check, a slow failure could persist stale state moments after
+  /// a newer write cleaned the queue and moved the service on.
+  Future<void> _applyWrite(
+    Tracker tracker,
+    List<TrackerContext> contexts,
+    _WriteScope scope, {
+    required bool watched,
+  }) async {
+    // Row → the progress this write claims on it; null for a history row.
+    final claims = <String, int?>{
+      for (final ctx in contexts) ?_coalesceKeyFor(tracker, ctx): watched ? _progressClaim(tracker, ctx) : null,
+    };
     // Captured before the first await: a failure that completes after a rebind
-    // must not requeue this row under whichever account replaced the binding.
+    // must not requeue these rows under whichever account replaced the binding.
     final binding = tracker.accountBinding;
-    int? marker;
-    var intent = 0;
+    final intents = <String, int>{};
+    final markers = <String, int>{};
     try {
-      await _sequencedByKey(scope, key, () async {
-        if (key != null) intent = _beginIntent(scope, key);
-        await (watched ? tracker.markWatched(ctx) : tracker.markUnwatched(ctx));
-        if (key != null) {
-          _intentSucceeded(scope, key, intent, appliedProgress: appliedProgress);
-          // Marked inside the row's channel, so a replay waiting behind this
+      await _sequencedByKeys(scope, claims.keys, () async {
+        for (final key in claims.keys) {
+          intents[key] = _beginIntent(scope, key);
+        }
+        await _write(tracker, [for (final ctx in contexts) (ctx: ctx, watchedAt: null)], watched: watched);
+        for (final MapEntry(:key, value: claim) in claims.entries) {
+          _intentSucceeded(scope, key, intents[key]!, appliedProgress: claim);
+          // Marked inside the rows' channel, so a replay waiting behind this
           // write sees it before deciding whether it is still needed.
-          marker = _writeQueue.noteDirectWrite(scope.userUuid, key, appliedProgress: appliedProgress);
+          markers[key] = _writeQueue.noteDirectWrite(scope.userUuid, key, appliedProgress: claim);
         }
       });
-      await _settleQueueAfterWrite(key, marker, scope, appliedProgress: appliedProgress);
+      await _settleQueueAfterWrite(claims, markers, scope);
     } catch (e) {
       final operation = watched ? 'markWatched' : 'markUnwatched';
-      if (key != null && _shouldDropFailedWrite(scope, key, intent, progressClaim: appliedProgress)) {
-        appLogger.d('${tracker.name}: $operation failed, superseded by a newer write', error: e);
+      final retry = [
+        for (final ctx in contexts)
+          if (_coalesceKeyFor(tracker, ctx) case final key?)
+            if (!_shouldDropFailedWrite(scope, key, intents[key] ?? 0, progressClaim: claims[key])) ctx,
+      ];
+      if (retry.isEmpty) {
+        final reason = claims.isEmpty ? 'no row it can retry' : 'superseded by a newer write';
+        appLogger.d('${tracker.name}: $operation failed, $reason', error: e);
         return;
       }
       if (!identical(tracker.accountBinding, binding)) {
         // The account this write belonged to was disconnected (or the profile
         // rebound): its queue purge has already run or is ordered behind the
-        // queue mutex, so re-queueing would replay the row through the next
+        // queue mutex, so re-queueing would replay the rows through the next
         // account. Invariant: TrackerWriteQueue's _locked claims its slot
         // synchronously and this check sits in the same synchronous segment as
-        // the enqueue call below, so a row that passes the check is always
-        // queued ahead of the disconnect purge's removeService and is
+        // the enqueue call below, so rows that pass the check are always
+        // queued ahead of the disconnect purge's removeService and are
         // therefore still removed by it.
         appLogger.d('${tracker.name}: $operation failed, dropped — account rebound mid-write', error: e);
         return;
       }
-      appLogger.d('${tracker.name}: $operation failed, queued for retry', error: e);
-      await _enqueueWrite(tracker, ctx, scope, watched: watched);
+      appLogger.d('${tracker.name}: $operation failed, queued ${retry.length} row(s) for retry', error: e);
+      await _enqueueWrites(tracker, retry, scope, watched: watched);
     } finally {
-      if (key != null && intent != 0) _endIntent(scope, key);
+      for (final key in intents.keys) {
+        _endIntent(scope, key);
+      }
     }
+  }
+
+  /// Sends [entries] to [tracker]: one batched request for a history tracker,
+  /// the single item otherwise — only history trackers take batches.
+  Future<void> _write(Tracker tracker, List<TrackerHistoryEntry> entries, {required bool watched}) {
+    if (tracker is EpisodeHistoryTracker) return tracker.writeHistory(entries, watched: watched);
+    final (:ctx, :watchedAt) = entries.single;
+    return watched ? tracker.markWatched(ctx, watchedAt: watchedAt) : tracker.markUnwatched(ctx);
   }
 
   String _rowKey(_WriteScope scope, String key) => '${scope.userUuid}|$key';
@@ -663,26 +729,31 @@ class TrackerCoordinator {
     if (--state.pending <= 0) _rowIntents.remove(stateKey);
   }
 
-  /// Drop the queued rows a landed write covers, and hold its marker until that
+  /// Drop the queued rows a landed write covers, and hold its markers until that
   /// is done: a drain may already be holding one of those rows, and its sender
   /// runs whether or not the row is still on disk.
   ///
   /// Best-effort by construction. The write already landed, so a failure here
   /// must never surface as a failed write — that would queue a retry and
   /// duplicate it.
-  Future<void> _settleQueueAfterWrite(String? key, int? marker, _WriteScope scope, {int? appliedProgress}) async {
-    if (key == null) return;
+  Future<void> _settleQueueAfterWrite(Map<String, int?> claims, Map<String, int> markers, _WriteScope scope) async {
+    if (claims.isEmpty) return;
     try {
-      await _writeQueue.invalidate(scope.userUuid, key, appliedProgress: appliedProgress);
+      await _writeQueue.invalidate(scope.userUuid, claims);
     } catch (e) {
-      appLogger.d('Trackers: write queue cleanup failed for $key', error: e);
+      appLogger.d('Trackers: write queue cleanup failed for ${claims.length} row(s)', error: e);
     } finally {
-      if (marker != null) _writeQueue.clearDirectWrite(scope.userUuid, key, marker);
+      for (final MapEntry(:key, value: marker) in markers.entries) {
+        _writeQueue.clearDirectWrite(scope.userUuid, key, marker);
+      }
     }
   }
 
   /// Serialises every write that targets the same remote row of the same profile
-  /// — live writes and queued replays alike.
+  /// — live writes and queued replays alike. A batched write holds all of its
+  /// rows at once: it waits for every earlier write on any of them, and every
+  /// later write on any of them waits for it. Links are registered for all rows
+  /// synchronously, so writes only ever wait on earlier ones and cannot deadlock.
   ///
   /// Coalescing the queue is not enough on its own: a stale replay that is
   /// already on the wire cannot be recalled, so it could land after a newer
@@ -692,22 +763,27 @@ class TrackerCoordinator {
   ///
   /// Scoped per profile: two profiles write to two accounts, so one must never
   /// wait on — or be mistaken for — the other.
-  Future<T> _sequencedByKey<T>(_WriteScope scope, String? key, Future<T> Function() write) {
-    if (key == null) return write();
-    final chainKey = _rowKey(scope, key);
-    final previous = _writeChains[chainKey];
+  Future<T> _sequencedByKeys<T>(_WriteScope scope, Iterable<String> keys, Future<T> Function() write) {
+    final chainKeys = {for (final key in keys) _rowKey(scope, key)};
+    if (chainKeys.isEmpty) return write();
+    final previous = {for (final chainKey in chainKeys) ?_writeChains[chainKey]};
     final link = Completer<void>();
-    _writeChains[chainKey] = link;
+    for (final chainKey in chainKeys) {
+      _writeChains[chainKey] = link;
+    }
     Future<T> run() async {
       try {
         return await write();
       } finally {
         link.complete();
-        if (identical(_writeChains[chainKey], link)) _writeChains.remove(chainKey);
+        for (final chainKey in chainKeys) {
+          if (identical(_writeChains[chainKey], link)) _writeChains.remove(chainKey);
+        }
       }
     }
 
-    return previous == null ? run() : previous.future.then((_) => run());
+    if (previous.isEmpty) return run();
+    return Future.wait([for (final earlier in previous) earlier.future]).then((_) => run());
   }
 
   /// Identity a queued write coalesces on. A per-item history tracker keys on the
@@ -733,61 +809,91 @@ class TrackerCoordinator {
   int? _progressClaim(Tracker tracker, TrackerContext ctx) =>
       tracker is SeriesProgressTracker ? tracker.seriesProgress(ctx) : null;
 
-  Future<void> _enqueueWrite(Tracker tracker, TrackerContext ctx, _WriteScope scope, {required bool watched}) async {
-    final key = _coalesceKeyFor(tracker, ctx);
-    if (key == null) return;
-    await _writeQueue.enqueue(
-      scope.userUuid,
-      TrackerWriteQueueItem(
-        service: tracker.service,
-        watched: watched,
-        ctx: ctx,
-        coalesceKey: key,
-        progressClaim: watched ? _progressClaim(tracker, ctx) : null,
-        watchedAtIso: _clock().toUtc().toIso8601String(),
-      ),
-    );
+  Future<void> _enqueueWrites(
+    Tracker tracker,
+    List<TrackerContext> contexts,
+    _WriteScope scope, {
+    required bool watched,
+  }) async {
+    final watchedAtIso = _clock().toUtc().toIso8601String();
+    await _writeQueue.enqueueAll(scope.userUuid, [
+      for (final ctx in contexts)
+        if (_coalesceKeyFor(tracker, ctx) case final key?)
+          TrackerWriteQueueItem(
+            service: tracker.service,
+            watched: watched,
+            ctx: ctx,
+            coalesceKey: key,
+            progressClaim: watched ? _progressClaim(tracker, ctx) : null,
+            watchedAtIso: watchedAtIso,
+          ),
+    ]);
   }
 
-  Future<TrackerWriteDisposition> _replayQueuedWrite(TrackerWriteQueueItem item, _WriteScope scope) async {
+  /// Replays one drain unit: a single queued row, or a batch of one history
+  /// tracker's rows in one direction (see [TrackerWriteQueue.flush]). Answers one
+  /// disposition per row.
+  Future<List<TrackerWriteDisposition>> _replayQueuedWrites(List<TrackerWriteQueueItem> rows, _WriteScope scope) async {
+    List<TrackerWriteDisposition> all(TrackerWriteDisposition disposition) => List.filled(rows.length, disposition);
     // The trackers now hold another profile's sessions; leave the rest of this
     // profile's rows for its own flush rather than writing them to that account.
-    if (!_isCurrent(scope)) return TrackerWriteDisposition.skipped;
-    final tracker = _trackerFor(item.service);
-    if (tracker == null) return TrackerWriteDisposition.done;
-    if (!tracker.canWriteWatched) return TrackerWriteDisposition.skipped;
-    if (!tracker.shouldScrobbleForLibrary(item.ctx.libraryGlobalKey)) {
-      appLogger.d('${tracker.name}: queued write dropped — library filtered out');
-      return TrackerWriteDisposition.done;
+    if (!_isCurrent(scope)) return all(TrackerWriteDisposition.skipped);
+    final tracker = _trackerFor(rows.first.service);
+    if (tracker == null) return all(TrackerWriteDisposition.done);
+    if (!tracker.canWriteWatched) return all(TrackerWriteDisposition.skipped);
+    final watched = rows.first.watched;
+    if (rows.any((row) => row.service != tracker.service || row.watched != watched)) {
+      throw StateError('Trackers: a replay unit mixes services or directions');
     }
+
+    final dispositions = all(TrackerWriteDisposition.done);
+    final writable = [
+      for (var i = 0; i < rows.length; i++)
+        if (tracker.shouldScrobbleForLibrary(rows[i].ctx.libraryGlobalKey)) i,
+    ];
+    if (writable.length < rows.length) {
+      appLogger.d('${tracker.name}: ${rows.length - writable.length} queued write(s) dropped — library filtered out');
+    }
+    if (writable.isEmpty) return dispositions;
+
     try {
-      // Inside the row's channel: a direct write for the same row may have landed
-      // while this replay waited its turn, in which case replaying would undo it.
-      final replayed = await _sequencedByKey(scope, item.coalesceKey, () async {
-        if (_writeQueue.isSuperseded(scope.userUuid, item)) return false;
-        await (item.watched
-            ? tracker.markWatched(item.ctx, watchedAt: item.watchedAt)
-            : tracker.markUnwatched(item.ctx));
-        return true;
+      // Inside the rows' channel: a direct write for one of these rows may have
+      // landed while this replay waited its turn, in which case replaying that
+      // row would undo it.
+      final replayed = await _sequencedByKeys(scope, [for (final i in writable) rows[i].coalesceKey], () async {
+        final live = [
+          for (final i in writable)
+            if (!_writeQueue.isSuperseded(scope.userUuid, rows[i])) rows[i],
+        ];
+        if (live.isEmpty) return 0;
+        await _write(tracker, [
+          for (final row in live) (ctx: row.ctx, watchedAt: watched ? row.watchedAt : null),
+        ], watched: watched);
+        return live.length;
       });
       appLogger.d(
-        replayed
-            ? '${tracker.name}: replayed queued write for ${item.ctx.ratingKey}'
-            : '${tracker.name}: queued write for ${item.ctx.ratingKey} already covered by a newer write',
+        '${tracker.name}: replayed $replayed queued write(s); '
+        '${writable.length - replayed} already covered by a newer write',
       );
-      return TrackerWriteDisposition.done;
+      return dispositions;
     } catch (e) {
       // Only an answer about this write may spend an attempt. A link that came
       // back without reaching the endpoint, a rate limit, or the service failing
       // on its own side are all reasons to ask again later — counting them would
       // let a bad hour, or a few connectivity flaps, drop the watch for good. The
       // drain also stops asking this service for the rest of the pass.
+      final TrackerWriteDisposition failure;
       if (isTrackerFailureTransient(e)) {
         appLogger.d('${tracker.name}: queued write deferred, service not taking writes', error: e);
-        return TrackerWriteDisposition.deferredService;
+        failure = TrackerWriteDisposition.deferredService;
+      } else {
+        appLogger.d('${tracker.name}: queued write failed, will retry', error: e);
+        failure = TrackerWriteDisposition.failed;
       }
-      appLogger.d('${tracker.name}: queued write failed, will retry', error: e);
-      return TrackerWriteDisposition.failed;
+      for (final i in writable) {
+        dispositions[i] = failure;
+      }
+      return dispositions;
     }
   }
 
@@ -868,7 +974,7 @@ class TrackerCoordinator {
           // pinned to, otherwise the row would replay through its replacement.
           if (!_bindingIntact(target, 'watched reconciliation retry')) return;
           appLogger.d('${target.tracker.name}: reconcileWatchedAfterStop failed, queued for retry', error: e);
-          await _enqueueWrite(target.tracker, ctx, scope, watched: true);
+          await _enqueueWrites(target.tracker, [ctx], scope, watched: true);
         }
       }),
     );

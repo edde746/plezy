@@ -28,7 +28,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     final generation = _transitionGate.generation;
     final bindingLease = watchTogether.capturePlaybackLease()!;
     _watchTogetherLease = bindingLease;
-    watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+    watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
     _watchTogetherBinding = watchTogether.bindPlayer(
       currentPlayer,
       ratingKey: metadata.id,
@@ -64,7 +64,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       // The room can adopt media before this route has opened any output.
       watchTogether.endMedia();
     }
-    if (watchTogether.onPlayerMediaSwitched == _handlePlayerMediaSwitch) {
+    if (identical(watchTogether.onPlayerMediaSwitched, _watchTogetherMediaSwitchHandler)) {
       watchTogether.onPlayerMediaSwitched = null;
     }
   }

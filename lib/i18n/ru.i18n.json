@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "Этот файл не является действительным экспортом настроек Plezy",
     "importSettingsNoUser": "Войдите в систему перед импортом настроек",
     "shortcutsReset": "Горячие клавиши сброшены по умолчанию",
+    "resetShortcutsConfirm": "",
     "about": "О приложении",
     "aboutDescription": "Информация о приложении и лицензии",
     "updates": "Обновления",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.",
     "audioPassthroughDescriptionAppleTv": "Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.",
     "audioPassthroughOverriddenByNormalization": "Отключено при включённой нормализации громкости",
-    "audioDownmix": "Микширование в стерео",
-    "audioDownmixDescription": "Микширует объёмный звук в два канала для стереодинамиков или наушников",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "Усиление центрального канала",
     "downmixCenterBoostValue": "${db} дБ",
     "downmixCenterBoostLabel": "Усиление (дБ)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "Принудительно использовать нативный DV7 и не повторять DV-конвертацию",
     "dvConversionDv81Description": "Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1",
     "dvConversionHevcStripDescription": "Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC",
+    "disableDolbyVision": "Отключить Dolby Vision",
+    "disableDolbyVisionDescription": "Воспроизводить слой HDR10 или HLG из файла вместо Dolby Vision, если он есть",
     "hdrSdrConversion": "Преобразование HDR в SDR",
     "hdrSdrConversionDescription": "Выберите, что преобразует HDR-видео, если дисплей не поддерживает HDR.",
     "hdrSdrConversionAuto": "Авто",
@@ -435,7 +444,8 @@
     "hint": "Поиск фильмов, сериалов, музыки...",
     "tryDifferentTerm": "Попробуйте другой запрос",
     "searchYourMedia": "Поиск в вашей медиатеке",
-    "enterTitleActorOrKeyword": "Введите название, актёра или ключевое слово"
+    "enterTitleActorOrKeyword": "Введите название, актёра или ключевое слово",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "Назначить клавишу для ${actionName}",
@@ -842,6 +852,8 @@
     "mediaUnreadableBody": "Сервер нашёл этот элемент, но не смог прочитать его файл (HTTP 404). Вероятно, файл был перемещён, удалён или его хранилище недоступно. Попросите владельца сервера проверить файл и пересканировать библиотеку.",
     "serverBusyTitle": "Поток недоступен",
     "serverBusyBody": "Сервер продолжает отклонять запросы на потоковую передачу этого файла (HTTP 503). Возможно, он перезапускается, перегружен или хранилище с файлом недоступно. Повторите попытку через некоторое время. Если это продолжает происходить, попросите владельца сервера проверить сервер и хранилище с файлом.",
+    "playbackNotAllowedTitle": "Воспроизведение запрещено",
+    "playbackNotAllowedBody": "Сервер отказал в потоковой передаче этого элемента (HTTP 403). Возможно, у вашей учётной записи нет разрешения на его воспроизведение или сервер разрешает воспроизведение только в своей локальной сети.",
     "logsUploaded": "Логи загружены",
     "logsUploadFailed": "Не удалось загрузить логи",
     "logId": "ID лога",
@@ -915,6 +927,8 @@
     "signOut": "Выйти",
     "signOutPlexTitle": "Выйти из Plex?",
     "signOutPlexMessage": "Удалить ${displayName} и всех пользователей Plex Home? Вы сможете войти снова в любое время.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Вы вышли из Plex.",
     "signOutFailed": "Не удалось выйти.",
     "sectionTitle": "Профили",
@@ -976,6 +990,8 @@
     "addConnectionSubtitleScoped": "Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля",
     "sessionExpiredOne": "Сессия истекла для ${name}",
     "sessionExpiredMany": "Сессия истекла для ${count} серверов",
+    "accessDeniedOne": "${name} отказал в доступе этой учётной записи",
+    "accessDeniedMany": "Доступ для этой учётной записи запрещён на ${count} серверах",
     "signInAgain": "Войти снова",
     "editMediaBrowserTitle": "Изменить подключение ${product}",
     "editMediaBrowserIntro": "Добавьте или удалите URL-адреса для ${serverName}. Plezy будет использовать доступный URL с наименьшей задержкой."
@@ -1424,6 +1440,7 @@
       "otherMedia": "Другое"
     },
     "creditRole": {
+      "actor": "",
       "director": "Режиссёр",
       "writer": "Сценарист",
       "producer": "Продюсер",
@@ -1826,6 +1843,7 @@
     "syncRuleAvailable": "Доступен",
     "syncRuleOffline": "Офлайн",
     "syncRuleSignInRequired": "Требуется вход",
+    "syncRuleAccessDenied": "Доступ запрещён",
     "syncRuleNotAvailableForProfile": "Недоступно для текущего профиля",
     "syncRuleUnknownServer": "Неизвестный сервер",
     "syncRuleListCreated": "Правило синхронизации создано",
@@ -1892,8 +1910,14 @@
       "other": ""
     },
     "errorFileNotFound": "Файл не найден (404)",
+    "errorDownloadNotAllowed": "Сервер не разрешает загрузку (403)",
     "errorDownloadFailed": "Не удалось выполнить загрузку",
-    "errorPostProcessing": "Не удалось выполнить постобработку: ${error}",
+    "errorDownloadFailedWithReason": "Не удалось выполнить загрузку: ${reason}",
+    "errorHttpStatus": "Не удалось выполнить загрузку (HTTP ${status})",
+    "errorPostProcessing": "Не удалось выполнить постобработку: ${reason}",
+    "reasonFileNotSaved": "не удалось сохранить файл на этом устройстве",
+    "reasonCannotResume": "не удалось возобновить частичную загрузку",
+    "reasonDeviceStorageFull": "на этом устройстве закончилось место",
     "notificationDownloading": "Загрузка...",
     "notificationComplete": "Загрузка завершена",
     "notificationPaused": "Загрузка приостановлена"
@@ -2016,8 +2040,7 @@
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализация громкости",
     "audioNormalizationDisablesPassthrough": "Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена",
-    "audioNormalizationStereoMix": "Декодирует аудио в стереомикс; сквозной вывод отключён, пока эта опция включена",
-    "audioDownmix": "Микширование в стерео"
+    "audioNormalizationStereoMix": "Декодирует аудио в стереомикс; сквозной вывод отключён, пока эта опция включена"
   },
   "performanceOverlay": {
     "color": "Цвет",
@@ -2032,6 +2055,13 @@
     "rotation": "Поворот",
     "dvSource": "Источник DV",
     "dvPath": "Путь DV",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "Конв. P7",
     "sampleRate": "Частота дискр.",
     "pixelFormat": "Формат пикселей",
@@ -2261,6 +2291,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "Активируйте Plezy в ${service}",

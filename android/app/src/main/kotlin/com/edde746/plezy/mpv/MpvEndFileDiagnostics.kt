@@ -2,11 +2,14 @@ package com.edde746.plezy.mpv
 
 import com.edde746.plezy.libmpv.EndFileReason
 import com.edde746.plezy.libmpv.LogLevel
-import com.edde746.plezy.libmpv.LogMessage
 import com.edde746.plezy.libmpv.MpvError
 import com.edde746.plezy.libmpv.MpvEvent
 
-/** Adds the native diagnostic that libmpv-android exposes separately via logFlow. */
+/**
+ * Adds the native diagnostic to an end-file: the last error line mpv logged for
+ * the file. It relies on log lines and events arriving in one ordered stream,
+ * with a failure's lines ahead of its end-file (event.cpp, MpvPlayer).
+ */
 internal class MpvEndFileDiagnostics {
   private var errorMessage: String? = null
 
@@ -23,7 +26,7 @@ internal class MpvEndFileDiagnostics {
     errorMessage = null
   }
 
-  fun onLogMessage(message: LogMessage) {
+  fun onLogMessage(message: MpvEvent.LogMessage) {
     if (message.level == LogLevel.Fatal || message.level == LogLevel.Error) {
       errorMessage = message.text.takeIf { it.isNotBlank() }
     }

@@ -179,18 +179,20 @@ func (pl *posterUploadLimiter) cleanup(now time.Time) {
 
 
 type connTracker struct {
-	mu          sync.Mutex
-	perIP       map[string]int
-	ipRate      map[string]*rateLimiter
-	roomsPerIP  map[string]int
-	globalCount int
+	mu             sync.Mutex
+	perIP          map[string]int
+	ipRate         map[string]*rateLimiter
+	roomLookupRate map[string]*rateLimiter
+	roomsPerIP     map[string]int
+	globalCount    int
 }
 
 func newConnTracker() *connTracker {
 	return &connTracker{
-		perIP:      make(map[string]int),
-		ipRate:     make(map[string]*rateLimiter),
-		roomsPerIP: make(map[string]int),
+		perIP:          make(map[string]int),
+		ipRate:         make(map[string]*rateLimiter),
+		roomLookupRate: make(map[string]*rateLimiter),
+		roomsPerIP:     make(map[string]int),
 	}
 }
 
@@ -231,6 +233,19 @@ func (ct *connTracker) disconnect(ip string) {
 	if ct.perIP[ip] == 0 {
 		delete(ct.perIP, ip)
 	}
+}
+
+// allowRoomLookup charges one room-code lookup to ip. Lookups only come from
+// admitted connections, so tryConnect already bounds the limiter map.
+func (ct *connTracker) allowRoomLookup(ip string, now time.Time) bool {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+	limiter := ct.roomLookupRate[ip]
+	if limiter == nil {
+		limiter = newRateLimiterAt(roomLookupRateBurst, roomLookupRateSustained, now)
+		ct.roomLookupRate[ip] = limiter
+	}
+	return limiter.allowAt(now)
 }
 
 // tryCreateRoom reserves capacity until the retained room is removed.
@@ -277,4 +292,5 @@ func (ct *connTracker) cleanup(now time.Time) {
 	cleanupRateLimiters(ct.ipRate, now, func(ip string) bool {
 		return ct.perIP[ip] > 0
 	})
+	cleanupRateLimiters(ct.roomLookupRate, now, nil)
 }

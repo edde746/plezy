@@ -16,8 +16,6 @@ import '../services/playlist_items_loader.dart';
 import '../services/settings_service.dart';
 import '../services/sync_rule_executor.dart';
 import '../widgets/background_download_warning_banner.dart';
-import '../widgets/dialog_action_button.dart';
-import '../widgets/focusable_list_tile.dart';
 import 'app_logger.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
@@ -482,7 +480,15 @@ Future<SyncRuleRemovalResult?> confirmAndRemoveSyncRule(
 
   final bool deleteDownloads;
   if (rule.isListRule) {
-    final choice = await _showListSyncRuleRemovalDialog(context, displayTitle);
+    final choice = await showConfirmWithSwitchDialog(
+      context,
+      title: t.downloads.removeSyncRule,
+      message: t.downloads.removeListSyncRuleConfirm(title: displayTitle),
+      confirmText: t.downloads.removeSyncRule,
+      switchTitle: t.downloads.deleteSyncRuleDownloads,
+      switchSubtitle: t.downloads.deleteSyncRuleDownloadsDescription,
+      switchKey: const ValueKey('delete_sync_rule_downloads'),
+    );
     if (choice == null || !context.mounted) return null;
     deleteDownloads = choice;
   } else {
@@ -517,54 +523,6 @@ Future<SyncRuleRemovalResult?> confirmAndRemoveSyncRule(
     }
     return null;
   }
-}
-
-Future<bool?> _showListSyncRuleRemovalDialog(BuildContext context, String displayTitle) {
-  var deleteDownloads = false;
-  return showScopedDialog<bool>(
-    context: context,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          final colorScheme = Theme.of(context).colorScheme;
-          return AlertDialog(
-            title: Text(t.downloads.removeSyncRule),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(t.downloads.removeListSyncRuleConfirm(title: displayTitle)),
-                const SizedBox(height: 12),
-                FocusableSwitchListTile(
-                  key: const ValueKey('delete_sync_rule_downloads'),
-                  value: deleteDownloads,
-                  onChanged: (value) => setState(() => deleteDownloads = value),
-                  title: Text(t.downloads.deleteSyncRuleDownloads),
-                  subtitle: Text(t.downloads.deleteSyncRuleDownloadsDescription),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ],
-            ),
-            actions: [
-              DialogActionButton(
-                autofocus: true,
-                onPressed: () => Navigator.pop(dialogContext),
-                label: t.common.cancel,
-              ),
-              DialogActionButton(
-                onPressed: () => Navigator.pop(dialogContext, deleteDownloads),
-                label: t.downloads.removeSyncRule,
-                isPrimary: true,
-                style: deleteDownloads
-                    ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
-                    : null,
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
 }
 
 /// Whether this rule targets a collection or playlist (as opposed to a

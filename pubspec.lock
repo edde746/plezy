@@ -105,8 +105,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "1bcc9978e9b5e503dd08176cc423cfabee703761"
-      resolved-ref: "1bcc9978e9b5e503dd08176cc423cfabee703761"
+      ref: "5d45882265ead82e570cd067599e193070e3b4a2"
+      resolved-ref: "5d45882265ead82e570cd067599e193070e3b4a2"
       url: "https://github.com/edde746/background_downloader"
     source: git
     version: "9.6.2"
@@ -315,10 +315,10 @@ packages:
     dependency: "direct main"
     description:
       name: dart_discord_presence
-      sha256: "6860826f809517d354e2af14e504e46809afde11c43ff3685c7438073d226211"
+      sha256: "8b1c4b4a75e14e090292a2cb53bc5c205d5f03d6cf43d8386a49ed704f7a99bb"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "1.2.1"
   dart_style:
     dependency: transitive
     description:

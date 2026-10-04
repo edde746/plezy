@@ -22,12 +22,16 @@ import '../services/scrub_preview_source.dart';
 import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_library.dart';
+import 'media_person.dart';
 import 'media_playlist.dart';
 import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
 
 /// Default number of items requested for horizontal hub previews.
 const int defaultHubPreviewLimit = 20;
+
+/// Default number of people [MediaServerClient.searchPeople] returns.
+const int defaultPeopleSearchLimit = 20;
 
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
 ///
@@ -62,10 +66,12 @@ const int defaultHubPreviewLimit = 20;
 /// can't be parsed; auth/server errors throw rather than silently dropping
 /// to `null`.
 
-/// Outcome of a health probe. Distinguishes "session expired" (token was
-/// rejected) from a generic transport failure, so the manager can route the
-/// two states to different UI ("Sign in again" vs "Server offline").
-enum HealthStatus { online, offline, authError }
+/// Outcome of a health probe. Distinguishes the two refusals a reachable
+/// server can answer with from a generic transport failure, so the manager can
+/// route each to its own UI: [authError] (HTTP 401 — the token was rejected;
+/// "Sign in again"), [accessDenied] (HTTP 403 — the server knows the account
+/// and refuses it; a new sign-in changes nothing), and [offline].
+enum HealthStatus { online, offline, authError, accessDenied }
 
 abstract interface class GracefullyCloseable {
   Future<void> closeGracefully({Duration drainTimeout});
@@ -129,9 +135,10 @@ abstract class MediaServerClient {
   LibraryEventChannel? createLibraryEventChannel() => null;
 
   /// Probe the server with a lightweight auth-required round-trip and
-  /// classify the outcome. Implementations must surface 401/403 as
-  /// [HealthStatus.authError] so the manager can flag a revoked token
-  /// distinctly from a generic network failure.
+  /// classify the outcome. Implementations must surface 401 as
+  /// [HealthStatus.authError] and 403 as [HealthStatus.accessDenied] so the
+  /// manager can flag a revoked token and a refused account distinctly from a
+  /// generic network failure.
   Future<HealthStatus> checkHealth();
 
   /// Server-reported unique identifier (Plex `machineIdentifier`,
@@ -348,9 +355,34 @@ abstract class MediaServerClient {
     Set<String> excludedLibraryIds = const {},
   });
 
+  /// People (actors and directors) whose name matches [query], best match
+  /// first, at most [limit]. Every person returned opens a non-empty
+  /// [fetchPersonMediaPage]; a backend whose person index also lists people
+  /// without any title the user can see MUST drop them.
+  ///
+  /// [excludedLibraryIds] names server-local libraries the user has hidden.
+  /// A person whose only titles sit in those libraries MUST be left out; one
+  /// with a title in any other library stays. [abort] cancels every request
+  /// owned by this call.
+  ///
+  /// Plex: `/library/search?searchTypes=people`. Jellyfin/Emby: `/Persons`,
+  /// with each candidate checked against `/Items?PersonIds=`. Every backend
+  /// supports it, so no [ServerCapabilities] flag gates it.
+  Future<List<MediaPerson>> searchPeople(
+    String query, {
+    int limit = defaultPeopleSearchLimit,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  });
+
   /// Items the user has started but not finished. Plex calls this "On Deck"
   /// internally; the neutral name matches the Continue Watching UI surface.
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20});
+  ///
+  /// [excludedLibraryIds] names server-local libraries the user has hidden,
+  /// with the same contract as in [searchItems]: a backend whose rows carry a
+  /// library id may ignore it, and one whose rows cannot be attributed to a
+  /// library MUST leave those libraries out itself.
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}});
 
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` plus optional `Resume` + `NextUp`).
@@ -821,9 +853,10 @@ abstract class MediaServerClient {
   /// storage service hashes to deduplicate across items that share blobs.
   List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item);
 
-  /// Resolve a fully-qualified URL the OS-level external player (VLC, Infuse,
-  /// MX Player, etc.) can fetch directly. Plex builds this from the chosen
-  /// media version's part path; Jellyfin returns its
+  /// Resolve what an OS-level external player (VLC, Infuse, MX Player, etc.)
+  /// is handed: a fully-qualified URL it can fetch directly, plus the item's
+  /// external subtitle files. Plex builds the URL from the chosen media
+  /// version's part path; Jellyfin returns its
   /// `/Videos/{id}/stream.{container}` endpoint with `Static=true` so
   /// transcoding is bypassed and the player gets a container extension hint
   /// (required for disc images such as ISO). Returns null only when a
@@ -832,12 +865,12 @@ abstract class MediaServerClient {
   ///
   /// Deliberately separate from the in-app playback funnel
   /// (`PlaybackSourceResolver`): external players can't send custom headers,
-  /// so the URL must be self-contained (token in the query string), and
+  /// so every URL must be self-contained (token in the query string), and
   /// there's no session/transcode negotiation to carry. Likewise their
   /// progress reporting is a one-shot started/stopped pair in
   /// `ExternalPlayerService` — an external app exposes no live position
   /// stream for the in-player tracker to follow.
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 }
 
 /// Optional interface for backends whose public server id is not specific

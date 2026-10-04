@@ -12,6 +12,10 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 
 import '../../../models/shader_preset.dart';
+import '../../../media/ids.dart';
+import '../../../media/media_file_info.dart';
+import '../../../media/media_item.dart';
+import '../../../media/media_server_client.dart';
 import '../../../media/playback_rate.dart';
 import '../../../mpv/mpv.dart';
 import '../../../mpv/player/player_native.dart';
@@ -24,12 +28,17 @@ import '../../../services/video_filter_manager.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/dialogs.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/error_message_utils.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../utils/audio_channel_limit_labels.dart';
 import '../../../utils/quality_preset_labels.dart';
 import '../../../utils/latest_async_write.dart';
+import '../../../utils/provider_extensions.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../theme/mono_tokens.dart';
+import '../../../widgets/bottom_sheet_page_scaffold.dart';
+import '../../../widgets/file_info_bottom_sheet.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
@@ -40,7 +49,18 @@ import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 import 'version_quality_sheet.dart';
 
-enum _SettingsView { menu, speed, zoom, versionQuality, sleep, audioDevice, shader, dvConversion, hdrToneMapping }
+enum _SettingsView {
+  menu,
+  speed,
+  zoom,
+  versionQuality,
+  sleep,
+  audioDevice,
+  shader,
+  dvConversion,
+  hdrToneMapping,
+  audioChannelLimit,
+}
 
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
@@ -86,7 +106,7 @@ class _SettingsMenuItem extends StatelessWidget {
 
 /// Ordering for the sheet's asynchronous pref writes, keyed on the pref key.
 ///
-/// Shared by the toggle rows and the tone-mapping picker rather than owned by
+/// Shared by the toggle rows and the tone-mapping and audio-channel pickers rather than owned by
 /// either. A pick closes the sheet, so anything scoped to a widget cannot rank
 /// a write against one started by a *later* sheet - which is exactly the race
 /// here, since reopening and picking again is one tap. Keys are distinct per
@@ -356,6 +376,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   // hidden. Only the plane sees that, so it says so.
   StreamSubscription<void>? _hdrOutputChanged;
   late HdrToneMapping _hdrToneMapping;
+  late AudioChannelLimit _audioChannelLimit;
 
   TrackControlsState get _state => widget.trackControlsState;
 
@@ -385,6 +406,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _subtitleSyncOffset = _state.subtitleSyncOffset;
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
     _hdrToneMapping = SettingsService.instance.read(SettingsService.hdrToneMapping);
+    _audioChannelLimit = SettingsService.instance.read(SettingsService.audioChannelLimit);
     _loadDebugDvConversionMode();
     if (_probesHdrSupport) {
       _hdrSupportLifecycle = AppLifecycleListener(onResume: _refreshLinuxHdrSupport, onShow: _refreshLinuxHdrSupport);
@@ -491,6 +513,44 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     }());
   }
 
+  /// ExoPlayer only has the stereo fold; see [AudioChannelLimit.onExoPlayer].
+  bool get _isExoPlayer => Platform.isAndroid && widget.player.playerType == 'exoplayer';
+
+  AudioChannelLimit get _displayedAudioChannelLimit =>
+      _isExoPlayer ? _audioChannelLimit.onExoPlayer : _audioChannelLimit;
+
+  // Same ordering and undo contract as the tone-mapping picker above: the
+  // player takes the limit first, and a refused store write puts both back.
+  void _setAudioChannelLimit(AudioChannelLimit limit) {
+    final targetPlayer = widget.player;
+    final key = SettingsService.audioChannelLimit.key;
+    final writeToken = _prefWrites.begin(key);
+    unawaited(() async {
+      try {
+        final committed = await _prefWrites.commitIfLatest(
+          key,
+          writeToken,
+          () => _applyThenPersist(
+            SettingsService.audioChannelLimit,
+            limit,
+            (value) => targetPlayer.setAudioChannelLimit(
+              value,
+              centerBoostDb: SettingsService.instance.read(SettingsService.downmixCenterBoost),
+              normalize: SettingsService.instance.read(SettingsService.audioDownmixNormalize),
+            ),
+          ),
+        );
+        if (!committed || !mounted || targetPlayer != widget.player) return;
+        setState(() {
+          _audioChannelLimit = limit;
+        });
+        OverlaySheetController.of(context).close();
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to set the audio channel limit', error: error, stackTrace: stackTrace);
+      }
+    }());
+  }
+
   void _setDebugDvConversionMode(String mode) {
     final targetPlayer = widget.player;
     final generation = ++_dvConversionWriteGeneration;
@@ -591,6 +651,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.settings.dvConversionMode;
       case _SettingsView.hdrToneMapping:
         return t.videoSettings.hdrToneMapping;
+      case _SettingsView.audioChannelLimit:
+        return t.settings.audioChannelLimit;
     }
   }
 
@@ -614,6 +676,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.hdr_strong_rounded;
       case _SettingsView.hdrToneMapping:
         return Symbols.tonality_rounded;
+      case _SettingsView.audioChannelLimit:
+        return Symbols.speaker_group_rounded;
     }
   }
 
@@ -711,6 +775,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       return _state.availableVersions[index].displayLabel;
     }
     return t.videoControls.versionColumnHeader;
+  }
+
+  /// Client that can describe the playing item's files, or null when there is
+  /// nothing to describe: live TV, a kind with no files, or no client for the
+  /// server. Mirrors the library File Info entry's gate.
+  MediaServerClient? _fileInfoClient() {
+    final item = _state.metadata;
+    if (_state.isLive || item == null || !item.kind.hasFileInfo) return null;
+    return context.tryGetMediaClientForServer(serverIdOrNull(_state.serverId));
   }
 
   Widget _buildMenuView() {
@@ -855,15 +928,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 
-        _SettingsToggleItem(
-          pref: SettingsService.audioDownmix,
-          icon: Symbols.headphones_rounded,
-          title: t.videoSettings.audioDownmix,
-          onAfterWrite: (enabled) => widget.player.setAudioDownmix(
-            enabled: enabled,
-            centerBoostDb: SettingsService.instance.read(SettingsService.downmixCenterBoost),
-            normalize: SettingsService.instance.read(SettingsService.audioDownmixNormalize),
-          ),
+        _SettingsMenuItem(
+          icon: Symbols.speaker_group_rounded,
+          title: t.settings.audioChannelLimit,
+          valueText: audioChannelLimitLabel(_displayedAudioChannelLimit),
+          isHighlighted: _displayedAudioChannelLimit != AudioChannelLimit.original,
+          onTap: () => _navigateTo(_SettingsView.audioChannelLimit),
         ),
 
         // Shader Preset (MPV only)
@@ -906,6 +976,20 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           title: t.videoSettings.performanceOverlay,
         ),
 
+        // File Info for the playing item (#2229), the same breakdown as the
+        // library's File Info entry. Read-only, so Watch Together guests get it.
+        if (_fileInfoClient() case final client?)
+          _SettingsMenuItem(
+            icon: Symbols.info_rounded,
+            title: t.mediaMenu.fileInfo,
+            valueText: '',
+            onTap: () => unawaited(
+              OverlaySheetController.of(context).push<void>(
+                builder: (_) => _FileInfoPage(client: client, item: _state.metadata!),
+              ),
+            ),
+          ),
+
         if (_showDebugDvConversionMode)
           _SettingsMenuItem(
             icon: Symbols.hdr_strong_rounded,
@@ -927,7 +1011,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         if (kDebugMode)
-          for (final status in const [500, 404, 503])
+          for (final status in const [403, 500, 404, 503])
             FocusableListTile(
               leading: AppIcon(Symbols.bug_report_rounded, fill: 1, color: tokens(context).textMuted),
               title: Text('Simulate HTTP $status from server'),
@@ -988,6 +1072,26 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             subtitle: Text(mode.subtitle, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
             trailing: _hdrToneMapping == mode.value ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
             onTap: () => _setHdrToneMapping(mode.value),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAudioChannelLimitView() {
+    final primary = Theme.of(context).colorScheme.primary;
+    final selected = _displayedAudioChannelLimit;
+
+    return ListView(
+      children: [
+        for (final limit in AudioChannelLimit.available(exoPlayer: _isExoPlayer))
+          FocusableListTile(
+            title: Text(audioChannelLimitLabel(limit), style: TextStyle(color: selected == limit ? primary : null)),
+            subtitle: Text(
+              audioChannelLimitDescription(limit),
+              style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+            ),
+            trailing: selected == limit ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+            onTap: () => _setAudioChannelLimit(limit),
           ),
       ],
     );
@@ -1425,8 +1529,83 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildDvConversionView();
           case _SettingsView.hdrToneMapping:
             return _buildHdrToneMappingView();
+          case _SettingsView.audioChannelLimit:
+            return _buildAudioChannelLimitView();
         }
       }(),
+    );
+  }
+}
+
+/// The playing item's file info as a nested page of the settings sheet. Holds
+/// a fixed-height spinner while the server answers, then shows the library's
+/// [FileInfoBottomSheet] or why there is nothing to show.
+class _FileInfoPage extends StatefulWidget {
+  final MediaServerClient client;
+  final MediaItem item;
+
+  const _FileInfoPage({required this.client, required this.item});
+
+  @override
+  State<_FileInfoPage> createState() => _FileInfoPageState();
+}
+
+class _FileInfoPageState extends State<_FileInfoPage> {
+  MediaFileInfo? _fileInfo;
+  String? _failure;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    MediaFileInfo? fileInfo;
+    String? failure;
+    try {
+      fileInfo = await widget.client.getFileInfo(widget.item);
+      if (fileInfo == null) failure = t.messages.fileInfoNotAvailable;
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to load file info in the player', error: error, stackTrace: stackTrace);
+      failure = t.messages.errorLoadingFileInfo(error: localizedErrorReason(error));
+    }
+    // Popped while loading: the page is gone, and the sheet's focus belongs to
+    // whatever is on top now.
+    if (!mounted) return;
+    setState(() {
+      _fileInfo = fileInfo;
+      _failure = failure;
+    });
+    // The loaded page replaces the spinner's focus tree.
+    OverlaySheetController.maybeOf(context)?.refocus();
+  }
+
+  void _back() => OverlaySheetController.of(context).pop();
+
+  @override
+  Widget build(BuildContext context) {
+    final fileInfo = _fileInfo;
+    if (fileInfo != null) {
+      return FileInfoBottomSheet(fileInfo: fileInfo, title: widget.item.displayTitle, onBack: _back);
+    }
+    final failure = _failure;
+    return BottomSheetPageScaffold(
+      title: t.fileInfo.title,
+      onBack: _back,
+      // Matches the loaded sheet's header so only the body changes.
+      showHeaderBorder: false,
+      child: SizedBox(
+        height: 160,
+        child: Center(
+          child: failure == null
+              ? const CircularProgressIndicator()
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(failure, textAlign: TextAlign.center),
+                ),
+        ),
+      ),
     );
   }
 }

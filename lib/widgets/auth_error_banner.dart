@@ -9,62 +9,67 @@ import '../screens/settings/add_connection_screen.dart';
 import '../focus/focusable_button.dart';
 import 'app_icon.dart';
 
-/// Top-of-app banner shown when one or more servers' tokens have been
-/// rejected (HTTP 401/403 on the health probe). Distinct from "server
-/// offline" — taps the user toward re-auth instead of leaving them
-/// puzzled by empty hubs.
+/// Top-of-app banner for servers that answered and refused this account.
+/// Distinct from "server offline" — the server is reachable, so empty hubs
+/// need an explanation.
 ///
-/// Tracks [MultiServerProvider.hasAuthErrorServers] and collapses to
-/// `SizedBox.shrink()` when no servers are in the auth-error state. The
-/// CTA opens [AddConnectionScreen]; the user picks the right backend and
-/// the resulting token replaces the stale row in the registry, which
-/// clears the auth-error state on the next health sweep.
+/// Two refusals, two rows. A rejected token (HTTP 401,
+/// [MultiServerProvider.authErrorServers]) gets a CTA that opens
+/// [AddConnectionScreen]; the user picks the right backend and the resulting
+/// token replaces the stale row in the registry, which clears the auth-error
+/// state on the next health sweep. A refused account (HTTP 403,
+/// [MultiServerProvider.accessDeniedServers]) gets no CTA: a new sign-in gets
+/// the same refusal, and only the server owner or the network the device is on
+/// can change it.
+///
+/// Collapses to `SizedBox.shrink()` when no visible server refuses.
 class AuthErrorBanner extends StatelessWidget {
   const AuthErrorBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final entries = context.select<MultiServerProvider, List<({ServerId serverId, String displayName})>>(
+    final signInEntries = context.select<MultiServerProvider, List<({ServerId serverId, String displayName})>>(
       (p) => p.authErrorServers,
     );
-    if (entries.isEmpty) return const SizedBox.shrink();
+    final deniedEntries = context.select<MultiServerProvider, List<({ServerId serverId, String displayName})>>(
+      (p) => p.accessDeniedServers,
+    );
+    if (signInEntries.isEmpty && deniedEntries.isEmpty) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final label = entries.length == 1
-        ? t.connections.sessionExpiredOne(name: entries.first.displayName)
-        : t.connections.sessionExpiredMany(count: entries.length);
-
+    final scheme = Theme.of(context).colorScheme;
     return Material(
       color: scheme.errorContainer,
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-          child: Row(
-            children: [
-              AppIcon(Symbols.lock_rounded, fill: 1, color: scheme.onErrorContainer),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onErrorContainer, fontWeight: .w500),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FocusableButton(
-                onPressed: () => _openReauth(context),
-                child: FilledButton.tonal(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: scheme.onErrorContainer,
-                    foregroundColor: scheme.errorContainer,
-                  ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (signInEntries.isNotEmpty)
+              _BannerRow(
+                icon: Symbols.lock_rounded,
+                label: signInEntries.length == 1
+                    ? t.connections.sessionExpiredOne(name: signInEntries.first.displayName)
+                    : t.connections.sessionExpiredMany(count: signInEntries.length),
+                action: FocusableButton(
                   onPressed: () => _openReauth(context),
-                  child: Text(t.connections.signInAgain),
+                  child: FilledButton.tonal(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: scheme.onErrorContainer,
+                      foregroundColor: scheme.errorContainer,
+                    ),
+                    onPressed: () => _openReauth(context),
+                    child: Text(t.connections.signInAgain),
+                  ),
                 ),
               ),
-            ],
-          ),
+            if (deniedEntries.isNotEmpty)
+              _BannerRow(
+                icon: Symbols.block_rounded,
+                label: deniedEntries.length == 1
+                    ? t.connections.accessDeniedOne(name: deniedEntries.first.displayName)
+                    : t.connections.accessDeniedMany(count: deniedEntries.length),
+              ),
+          ],
         ),
       ),
     );
@@ -72,5 +77,36 @@ class AuthErrorBanner extends StatelessWidget {
 
   Future<void> _openReauth(BuildContext context) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddConnectionScreen()));
+  }
+}
+
+class _BannerRow extends StatelessWidget {
+  const _BannerRow({required this.icon, required this.label, this.action});
+
+  final IconData icon;
+  final String label;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final action = this.action;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 8, action == null ? 16 : 8, 8),
+      child: Row(
+        children: [
+          AppIcon(icon, fill: 1, color: scheme.onErrorContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onErrorContainer, fontWeight: .w500),
+            ),
+          ),
+          if (action != null) ...[const SizedBox(width: 8), action],
+        ],
+      ),
+    );
   }
 }

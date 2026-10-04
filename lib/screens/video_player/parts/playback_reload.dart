@@ -196,6 +196,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 
+      // A quality picked here outranks a downloaded copy from now on — for
+      // this switch, a retry of it, and later episodes (issue #2466).
+      if (isPresetChange) _qualityPresetExplicit = true;
+
       final outcome = await _reloadMediaInPlace(
         metadata: _currentMetadata.copyWith(viewOffsetMs: currentPlayer.state.position.inMilliseconds),
         selectedMediaIndex: effectiveMediaIndex,
@@ -477,6 +481,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
       final targetQualityPreset = qualityPreset ?? _selectedQualityPreset;
+      final downloadOutranksQuality = _downloadOutranksQuality;
       final targetAudioStreamId = useCurrentAudioStreamSelection
           ? selectedAudioStreamId ?? _selectedAudioStreamId
           : selectedAudioStreamId;
@@ -563,6 +568,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             transcodeSessionId: _playbackTranscodeSessionId,
           ),
           offlineLibraryMode: _offlineLibraryMode,
+          downloadOutranksQuality: downloadOutranksQuality,
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final result = playbackContext.result;
@@ -721,6 +727,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           playMethod: _playbackPlayMethod,
           mediaInfo: _currentMediaInfo,
         );
+        // The first open failed before the service layer came up; this
+        // recovery is the first playback it can describe.
+        if (_playbackServicesDeferred) unawaited(_initializeServices(perItemServicesWired: true));
 
         if (isItemChange) {
           unawaited(_reapplyScopedPlayerPrefsForItemChange(previousMetadata: previousMetadata, metadata: metadata));
@@ -857,16 +866,18 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Re-push scope-persisted player values whose resolution changed with the
-  /// item swapped in by [_reloadMediaInPlace].
+  /// Re-push scope-persisted player values for the item swapped in by
+  /// [_reloadMediaInPlace].
   ///
   /// Shader, box-fit, and sync offsets are applied once per screen/player and
-  /// otherwise survive an in-place reload as latent native state — correct as
-  /// long as both items resolve to the same value, wrong the moment a Watch
-  /// Together swap or a next-episode hop crosses a library/title boundary.
-  /// Only changed resolutions are pushed so a session-local tweak keeps
-  /// carrying over exactly as it does today. Playback speed needs no handling
-  /// here: TrackManager re-resolves it on every open.
+  /// otherwise survive an in-place reload as latent native state. Sync offsets
+  /// are file timing, so every item starts from its own resolved offset and a
+  /// session-only tweak stays with the item it was made on (#2449). Shader and
+  /// box-fit are picture preferences: only changed resolutions are pushed, so
+  /// a session-local tweak keeps carrying over, and a Watch Together swap or a
+  /// next-episode hop across a library/title boundary still switches them.
+  /// Playback speed needs no handling here: TrackManager re-resolves it on
+  /// every open.
   Future<void> _reapplyScopedPlayerPrefsForItemChange({
     required MediaItem previousMetadata,
     required MediaItem metadata,
@@ -874,17 +885,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
     try {
-      final previousAudioOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, previousMetadata);
-      final audioOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, metadata);
-      if (audioOffset != previousAudioOffset) {
-        await currentPlayer.setProperty('audio-delay', (audioOffset / 1000.0).toString());
-      }
-
-      final previousSubtitleOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, previousMetadata);
-      final subtitleOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, metadata);
-      if (subtitleOffset != previousSubtitleOffset) {
-        await currentPlayer.setProperty('sub-delay', (subtitleOffset / 1000.0).toString());
-      }
+      await PlayerSyncOffsets.of(currentPlayer).applyFor(metadata);
 
       final previousBoxFit = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, previousMetadata);
       final boxFit = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, metadata);

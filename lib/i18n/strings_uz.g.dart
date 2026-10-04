@@ -456,8 +456,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Ovoz balandligini meʼyorlashtirish yoqilganda oʻchirilgan';
-	@override String get audioDownmix => 'Stereoga oʻtkazish (Downmix)';
-	@override String get audioDownmixDescription => 'Koʻp kanalli ovozni stereo dinamiklar uchun ikki kanalga tushirish';
 	@override String get downmixCenterBoost => 'Markaziy kanalni kuchaytirish';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Kuchaytirish (dB)';
@@ -474,6 +472,8 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ichki DV7 rejimini majburlash';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 formatiga oʻtkazish';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish';
+	@override String get disableDolbyVision => 'Dolby Vision\'ni oʻchirish';
+	@override String get disableDolbyVisionDescription => 'Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish';
 	@override String get hdrSdrConversion => 'HDR\'ni SDR\'ga aylantirish';
 	@override String get hdrSdrConversionDescription => 'Displey HDR\'ni ko‘rsata olmaganda HDR videoni nima aylantirishini tanlang.';
 	@override String get hdrSdrConversionAuto => 'Avtomatik';
@@ -977,6 +977,8 @@ class _Translations$messages$uz extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'Server bu elementni topdi, lekin uning faylini oʻqiy olmadi (HTTP 404). Fayl koʻchirilgan, oʻchirilgan yoki uning saqlash joyi oflayn boʻlishi mumkin. Server egasidan faylni tekshirishni va kutubxonani qayta skanerlashni soʻrang.';
 	@override String get serverBusyTitle => 'Oqim mavjud emas';
 	@override String get serverBusyBody => 'Server bu faylni uzatishni qayta-qayta rad etdi (HTTP 503). U qayta ishga tushayotgan yoki band boʻlishi, yoxud fayl saqlanadigan xotira oflayn boʻlishi mumkin. Birozdan keyin qaytadan urinib koʻring. Muammo davom etsa, server egasidan server va fayl xotirasini tekshirishni soʻrang.';
+	@override String get playbackNotAllowedTitle => 'Ijro etishga ruxsat berilmagan';
+	@override String get playbackNotAllowedBody => 'Server bu elementni uzatishni rad etdi (HTTP 403). Hisobingizda uni ijro etishga ruxsat boʻlmasligi yoki server ijroga faqat oʻzining mahalliy tarmogʻida ruxsat berishi mumkin.';
 	@override String get logsUploaded => 'Jurnallar yuklandi';
 	@override String get logsUploadFailed => 'Jurnallarni yuklab boʻlmadi';
 	@override String get logId => 'Jurnal ID-si';
@@ -1146,6 +1148,8 @@ class _Translations$connections$uz extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish';
 	@override String sessionExpiredOne({required Object name}) => '${name} uchun seans vaqti tugadi';
 	@override String sessionExpiredMany({required Object count}) => '${count} server uchun seans vaqti tugadi';
+	@override String accessDeniedOne({required Object name}) => '${name} ushbu hisobga kirishni rad etdi';
+	@override String accessDeniedMany({required Object count}) => '${count} ta server ushbu hisobga kirishni rad etdi';
 	@override String get signInAgain => 'Qaytadan kirish';
 	@override String editMediaBrowserTitle({required Object product}) => '${product} ulanishini tahrirlash';
 	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi.';
@@ -1842,6 +1846,7 @@ class _Translations$downloads$uz extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Mavjud';
 	@override String get syncRuleOffline => 'Oflayn';
 	@override String get syncRuleSignInRequired => 'Kirish talab etiladi';
+	@override String get syncRuleAccessDenied => 'Kirish rad etildi';
 	@override String get syncRuleNotAvailableForProfile => 'Joriy profil uchun mavjud emas';
 	@override String get syncRuleUnknownServer => 'Nomaʼlum server';
 	@override String get syncRuleListCreated => 'Sinxronlash qoidasi yaratildi';
@@ -1854,8 +1859,14 @@ class _Translations$downloads$uz extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Nomaʼlum albom';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} ta yakunlandi';
 	@override String get errorFileNotFound => 'Fayl topilmadi (404)';
+	@override String get errorDownloadNotAllowed => 'Server yuklab olishga ruxsat bermaydi (403)';
 	@override String get errorDownloadFailed => 'Yuklab boʻlmadi';
-	@override String errorPostProcessing({required Object error}) => 'Keyingi ishlov berishda xatolik: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Yuklab boʻlmadi: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Yuklab boʻlmadi (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Keyingi ishlov berishda xatolik: ${reason}';
+	@override String get reasonFileNotSaved => 'faylni ushbu qurilmada saqlab boʻlmadi';
+	@override String get reasonCannotResume => 'qisman yuklab olishni davom ettirib boʻlmadi';
+	@override String get reasonDeviceStorageFull => 'ushbu qurilmada xotira qolmadi';
 	@override String get notificationDownloading => 'Yuklanmoqda...';
 	@override String get notificationComplete => 'Yuklash tugallandi';
 	@override String get notificationPaused => 'Yuklash toʻxtatib turildi';
@@ -1934,7 +1945,6 @@ class _Translations$videoSettings$uz extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Ovoz balandligini meʼyorlashtirish';
 	@override String get audioNormalizationDisablesPassthrough => 'Ovozni PCM-ga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi';
 	@override String get audioNormalizationStereoMix => 'Ovozni stereo miksga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi';
-	@override String get audioDownmix => 'Stereoga oʻtkazish';
 }
 
 // Path: performanceOverlay
@@ -3361,8 +3371,6 @@ extension on TranslationsUz {
 			'settings.audioPassthroughDescription' => 'Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ovoz balandligini meʼyorlashtirish yoqilganda oʻchirilgan',
-			'settings.audioDownmix' => 'Stereoga oʻtkazish (Downmix)',
-			'settings.audioDownmixDescription' => 'Koʻp kanalli ovozni stereo dinamiklar uchun ikki kanalga tushirish',
 			'settings.downmixCenterBoost' => 'Markaziy kanalni kuchaytirish',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Kuchaytirish (dB)',
@@ -3379,6 +3387,8 @@ extension on TranslationsUz {
 			'settings.dvConversionNativeDescription' => 'Ichki DV7 rejimini majburlash',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 formatiga oʻtkazish',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish',
+			'settings.disableDolbyVision' => 'Dolby Vision\'ni oʻchirish',
+			'settings.disableDolbyVisionDescription' => 'Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish',
 			'settings.hdrSdrConversion' => 'HDR\'ni SDR\'ga aylantirish',
 			'settings.hdrSdrConversionDescription' => 'Displey HDR\'ni ko‘rsata olmaganda HDR videoni nima aylantirishini tanlang.',
 			'settings.hdrSdrConversionAuto' => 'Avtomatik',
@@ -3813,6 +3823,8 @@ extension on TranslationsUz {
 			'messages.mediaUnreadableBody' => 'Server bu elementni topdi, lekin uning faylini oʻqiy olmadi (HTTP 404). Fayl koʻchirilgan, oʻchirilgan yoki uning saqlash joyi oflayn boʻlishi mumkin. Server egasidan faylni tekshirishni va kutubxonani qayta skanerlashni soʻrang.',
 			'messages.serverBusyTitle' => 'Oqim mavjud emas',
 			'messages.serverBusyBody' => 'Server bu faylni uzatishni qayta-qayta rad etdi (HTTP 503). U qayta ishga tushayotgan yoki band boʻlishi, yoxud fayl saqlanadigan xotira oflayn boʻlishi mumkin. Birozdan keyin qaytadan urinib koʻring. Muammo davom etsa, server egasidan server va fayl xotirasini tekshirishni soʻrang.',
+			'messages.playbackNotAllowedTitle' => 'Ijro etishga ruxsat berilmagan',
+			'messages.playbackNotAllowedBody' => 'Server bu elementni uzatishni rad etdi (HTTP 403). Hisobingizda uni ijro etishga ruxsat boʻlmasligi yoki server ijroga faqat oʻzining mahalliy tarmogʻida ruxsat berishi mumkin.',
 			'messages.logsUploaded' => 'Jurnallar yuklandi',
 			'messages.logsUploadFailed' => 'Jurnallarni yuklab boʻlmadi',
 			'messages.logId' => 'Jurnal ID-si',
@@ -3937,6 +3949,8 @@ extension on TranslationsUz {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiliga qoʻshish: Plex, Jellyfin, Emby yoki boshqa ulanish',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} uchun seans vaqti tugadi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server uchun seans vaqti tugadi',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} ushbu hisobga kirishni rad etdi',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} ta server ushbu hisobga kirishni rad etdi',
 			'connections.signInAgain' => 'Qaytadan kirish',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product} ulanishini tahrirlash',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi.',
@@ -4050,12 +4064,12 @@ extension on TranslationsUz {
 			'libraries.refreshMetadata' => 'Metamaʼlumotlarni yangilash',
 			'libraries.emptyTrash' => 'Savatni tozalash',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" savati tozalanmoqda...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" savati tozalandi',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Savatni tozalab boʻlmadi: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" tahlil qilinmoqda...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}" uchun tahlil boshlandi',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Tahlil qilib boʻlmadi: ${error}',
 			'libraries.noLibrariesFound' => 'Kutubxonalar topilmadi',
 			'libraries.allLibrariesHidden' => 'Barcha kutubxonalar yashirilgan',
@@ -4564,12 +4578,12 @@ extension on TranslationsUz {
 			'watchTogether.renameRoom' => 'Xona nomini oʻzgartirish',
 			'watchTogether.removeRoom' => 'Oʻchirish',
 			'watchTogether.guestSwitchUnavailable' => 'Oʻtib boʻlmadi — server sinxronlash uchun mavjud emas',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Oʻtib boʻlmadi — kontent topilmadi',
 			'watchTogether.defaultDisplayName' => 'Foydalanuvchi',
 			'watchTogether.errors.timedOut' => 'Rele serveri oʻz vaqtida javob bermadi',
 			'watchTogether.errors.connectionLost' => 'Seans tayyor boʻlmasidan ulanish uzildi',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'Rele serveri kutilmagan javob yubordi',
 			'watchTogether.errors.sessionEnded' => 'Tashkilotchi seansni tugatdi',
 			'watchTogether.errors.sessionUnavailable' => 'Bu seansni davom ettirib boʻlmaydi. Davom etish uchun xonaga qoʻshiling yoki xona yarating.',
@@ -4645,6 +4659,7 @@ extension on TranslationsUz {
 			'downloads.syncRuleAvailable' => 'Mavjud',
 			'downloads.syncRuleOffline' => 'Oflayn',
 			'downloads.syncRuleSignInRequired' => 'Kirish talab etiladi',
+			'downloads.syncRuleAccessDenied' => 'Kirish rad etildi',
 			'downloads.syncRuleNotAvailableForProfile' => 'Joriy profil uchun mavjud emas',
 			'downloads.syncRuleUnknownServer' => 'Nomaʼlum server',
 			'downloads.syncRuleListCreated' => 'Sinxronlash qoidasi yaratildi',
@@ -4682,8 +4697,14 @@ extension on TranslationsUz {
 			'downloads.unknownAlbum' => 'Nomaʼlum albom',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} ta yakunlandi',
 			'downloads.errorFileNotFound' => 'Fayl topilmadi (404)',
+			'downloads.errorDownloadNotAllowed' => 'Server yuklab olishga ruxsat bermaydi (403)',
 			'downloads.errorDownloadFailed' => 'Yuklab boʻlmadi',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Keyingi ishlov berishda xatolik: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Yuklab boʻlmadi: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Yuklab boʻlmadi (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Keyingi ishlov berishda xatolik: ${reason}',
+			'downloads.reasonFileNotSaved' => 'faylni ushbu qurilmada saqlab boʻlmadi',
+			'downloads.reasonCannotResume' => 'qisman yuklab olishni davom ettirib boʻlmadi',
+			'downloads.reasonDeviceStorageFull' => 'ushbu qurilmada xotira qolmadi',
 			'downloads.notificationDownloading' => 'Yuklanmoqda...',
 			'downloads.notificationComplete' => 'Yuklash tugallandi',
 			'downloads.notificationPaused' => 'Yuklash toʻxtatib turildi',
@@ -4793,7 +4814,6 @@ extension on TranslationsUz {
 			'videoSettings.audioNormalization' => 'Ovoz balandligini meʼyorlashtirish',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Ovozni PCM-ga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi',
 			'videoSettings.audioNormalizationStereoMix' => 'Ovozni stereo miksga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi',
-			'videoSettings.audioDownmix' => 'Stereoga oʻtkazish',
 			'performanceOverlay.color' => 'Rang',
 			'performanceOverlay.performance' => 'Unumdorlik',
 			'performanceOverlay.buffer' => 'Bufer',
@@ -5072,6 +5092,8 @@ extension on TranslationsUz {
 			'addServer.borrowFromAnotherProfile' => 'Boshqa profildan olish',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
 			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Autentifikatsiya javobi yaroqli JSON emas',
 			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',
@@ -5082,8 +5104,6 @@ extension on TranslationsUz {
 			'addServer.responseNotJson' => 'Server javobi yaroqli JSON emas',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'Javobda ID yoki server nomi yoʻq — bu ${product} serverimi?',
 			'addServer.probeFailed' => ({required Object error}) => 'Serverga ulanib boʻlmadi: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Kamida bitta ${product} server URL-ini kiriting',
 			'addServer.noReachableServer' => ({required Object product}) => 'Ulanish mumkin boʻlgan ${product} serveri topilmadi',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Bu URL-lar turli ${product} serverlariga olib boradi',

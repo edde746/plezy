@@ -1093,7 +1093,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   List<MediaServerClient> _onlineShelfSourceClients() =>
-      _multiServer.serverManager.onlineClients.values.toList(growable: false);
+      _multiServer.serverManager.visibleOnlineClients.values.toList(growable: false);
 
   @override
   void dispose() {

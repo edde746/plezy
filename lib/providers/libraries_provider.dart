@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/library_change_event.dart';
 import '../media/media_library.dart';
@@ -9,6 +10,7 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/library_content_notifier.dart';
 import '../utils/coalesced_load_coordinator.dart';
@@ -75,7 +77,8 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   @visibleForTesting
   LibrariesLoadState get loadState => _loadState;
 
-  /// Error message if loading failed
+  /// Localized, user-safe message for a failed load, shown by the Libraries
+  /// screen in place of the library list.
   String? get errorMessage => _errorMessage;
 
   /// Whether libraries are available
@@ -372,7 +375,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       // emission re-drives the sync.
       if (reloadInPlace) return;
       _loadState = LibrariesLoadState.error;
-      _errorMessage = e.toString();
+      _errorMessage = localizedLoadErrorText(e, context: t.libraries.title);
       safeNotifyListeners();
     }
   }

@@ -17,6 +17,8 @@ typedef _PlexTuneResult = ({
 mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport, LiveTvDvrSupport {
   PlexConfig get config;
 
+  String? get plexAccountId;
+
   List<PlexEpgProvider> get _providerEpg;
 
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json);
@@ -852,7 +854,13 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   /// Get favorite channels from the Plex cloud.
   @override
   Future<List<FavoriteChannel>> fetchFavoriteChannels({bool migrate = true, void Function()? checkCurrent}) async {
-    final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
+    // A plex.tv failure says nothing about this media server's endpoints, so
+    // it must not walk (or exhaust) the server's failover list.
+    final response = await _http.get(
+      _favoriteChannelsUrl,
+      headers: _providerVersionHeader,
+      allowEndpointFailover: false,
+    );
     _throwIfFailed(response);
     final container = _getMediaContainer(response);
     if (container == null) {
@@ -920,8 +928,12 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     );
   }
 
+  /// The favorites list lives on plex.tv, one per account, while
+  /// X-Plex-Client-Identifier is shared by every account on the install.
+  /// Keying by it merged accounts: only one account's list was read, and
+  /// every account's favorites were written into it.
   @override
-  String get favoriteStoreKey => 'plex:${config.clientIdentifier}';
+  String get favoriteStoreKey => 'plex:${plexAccountId ?? config.clientIdentifier}';
 
   @override
   FavoriteChannelPersistenceMode get favoritePersistenceMode => FavoriteChannelPersistenceMode.sharedFullList;

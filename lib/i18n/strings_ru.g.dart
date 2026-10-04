@@ -456,8 +456,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get audioPassthroughDescription => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.';
 	@override String get audioPassthroughDescriptionAppleTv => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Отключено при включённой нормализации громкости';
-	@override String get audioDownmix => 'Микширование в стерео';
-	@override String get audioDownmixDescription => 'Микширует объёмный звук в два канала для стереодинамиков или наушников';
 	@override String get downmixCenterBoost => 'Усиление центрального канала';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
 	@override String get downmixCenterBoostLabel => 'Усиление (дБ)';
@@ -474,6 +472,8 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию';
 	@override String get dvConversionDv81Description => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1';
 	@override String get dvConversionHevcStripDescription => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC';
+	@override String get disableDolbyVision => 'Отключить Dolby Vision';
+	@override String get disableDolbyVisionDescription => 'Воспроизводить слой HDR10 или HLG из файла вместо Dolby Vision, если он есть';
 	@override String get hdrSdrConversion => 'Преобразование HDR в SDR';
 	@override String get hdrSdrConversionDescription => 'Выберите, что преобразует HDR-видео, если дисплей не поддерживает HDR.';
 	@override String get hdrSdrConversionAuto => 'Авто';
@@ -985,6 +985,8 @@ class _Translations$messages$ru extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'Сервер нашёл этот элемент, но не смог прочитать его файл (HTTP 404). Вероятно, файл был перемещён, удалён или его хранилище недоступно. Попросите владельца сервера проверить файл и пересканировать библиотеку.';
 	@override String get serverBusyTitle => 'Поток недоступен';
 	@override String get serverBusyBody => 'Сервер продолжает отклонять запросы на потоковую передачу этого файла (HTTP 503). Возможно, он перезапускается, перегружен или хранилище с файлом недоступно. Повторите попытку через некоторое время. Если это продолжает происходить, попросите владельца сервера проверить сервер и хранилище с файлом.';
+	@override String get playbackNotAllowedTitle => 'Воспроизведение запрещено';
+	@override String get playbackNotAllowedBody => 'Сервер отказал в потоковой передаче этого элемента (HTTP 403). Возможно, у вашей учётной записи нет разрешения на его воспроизведение или сервер разрешает воспроизведение только в своей локальной сети.';
 	@override String get logsUploaded => 'Логи загружены';
 	@override String get logsUploadFailed => 'Не удалось загрузить логи';
 	@override String get logId => 'ID лога';
@@ -1154,6 +1156,8 @@ class _Translations$connections$ru extends Translations$connections$en {
 	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля';
 	@override String sessionExpiredOne({required Object name}) => 'Сессия истекла для ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Сессия истекла для ${count} серверов';
+	@override String accessDeniedOne({required Object name}) => '${name} отказал в доступе этой учётной записи';
+	@override String accessDeniedMany({required Object count}) => 'Доступ для этой учётной записи запрещён на ${count} серверах';
 	@override String get signInAgain => 'Войти снова';
 	@override String editMediaBrowserTitle({required Object product}) => 'Изменить подключение ${product}';
 	@override String editMediaBrowserIntro({required Object serverName}) => 'Добавьте или удалите URL-адреса для ${serverName}. Plezy будет использовать доступный URL с наименьшей задержкой.';
@@ -1860,6 +1864,7 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Доступен';
 	@override String get syncRuleOffline => 'Офлайн';
 	@override String get syncRuleSignInRequired => 'Требуется вход';
+	@override String get syncRuleAccessDenied => 'Доступ запрещён';
 	@override String get syncRuleNotAvailableForProfile => 'Недоступно для текущего профиля';
 	@override String get syncRuleUnknownServer => 'Неизвестный сервер';
 	@override String get syncRuleListCreated => 'Правило синхронизации создано';
@@ -1872,8 +1877,14 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get unknownAlbum => 'Неизвестный альбом';
 	@override String completedOfTotal({required Object completed, required Object total}) => 'Завершено: ${completed}/${total}';
 	@override String get errorFileNotFound => 'Файл не найден (404)';
+	@override String get errorDownloadNotAllowed => 'Сервер не разрешает загрузку (403)';
 	@override String get errorDownloadFailed => 'Не удалось выполнить загрузку';
-	@override String errorPostProcessing({required Object error}) => 'Не удалось выполнить постобработку: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'Не удалось выполнить загрузку: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'Не удалось выполнить загрузку (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Не удалось выполнить постобработку: ${reason}';
+	@override String get reasonFileNotSaved => 'не удалось сохранить файл на этом устройстве';
+	@override String get reasonCannotResume => 'не удалось возобновить частичную загрузку';
+	@override String get reasonDeviceStorageFull => 'на этом устройстве закончилось место';
 	@override String get notificationDownloading => 'Загрузка...';
 	@override String get notificationComplete => 'Загрузка завершена';
 	@override String get notificationPaused => 'Загрузка приостановлена';
@@ -1952,7 +1963,6 @@ class _Translations$videoSettings$ru extends Translations$videoSettings$en {
 	@override String get audioNormalization => 'Нормализация громкости';
 	@override String get audioNormalizationDisablesPassthrough => 'Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена';
 	@override String get audioNormalizationStereoMix => 'Декодирует аудио в стереомикс; сквозной вывод отключён, пока эта опция включена';
-	@override String get audioDownmix => 'Микширование в стерео';
 }
 
 // Path: performanceOverlay
@@ -3383,8 +3393,6 @@ extension on TranslationsRu {
 			'settings.audioPassthroughDescription' => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Отключено при включённой нормализации громкости',
-			'settings.audioDownmix' => 'Микширование в стерео',
-			'settings.audioDownmixDescription' => 'Микширует объёмный звук в два канала для стереодинамиков или наушников',
 			'settings.downmixCenterBoost' => 'Усиление центрального канала',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',
 			'settings.downmixCenterBoostLabel' => 'Усиление (дБ)',
@@ -3401,6 +3409,8 @@ extension on TranslationsRu {
 			'settings.dvConversionNativeDescription' => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию',
 			'settings.dvConversionDv81Description' => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC',
+			'settings.disableDolbyVision' => 'Отключить Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Воспроизводить слой HDR10 или HLG из файла вместо Dolby Vision, если он есть',
 			'settings.hdrSdrConversion' => 'Преобразование HDR в SDR',
 			'settings.hdrSdrConversionDescription' => 'Выберите, что преобразует HDR-видео, если дисплей не поддерживает HDR.',
 			'settings.hdrSdrConversionAuto' => 'Авто',
@@ -3835,6 +3845,8 @@ extension on TranslationsRu {
 			'messages.mediaUnreadableBody' => 'Сервер нашёл этот элемент, но не смог прочитать его файл (HTTP 404). Вероятно, файл был перемещён, удалён или его хранилище недоступно. Попросите владельца сервера проверить файл и пересканировать библиотеку.',
 			'messages.serverBusyTitle' => 'Поток недоступен',
 			'messages.serverBusyBody' => 'Сервер продолжает отклонять запросы на потоковую передачу этого файла (HTTP 503). Возможно, он перезапускается, перегружен или хранилище с файлом недоступно. Повторите попытку через некоторое время. Если это продолжает происходить, попросите владельца сервера проверить сервер и хранилище с файлом.',
+			'messages.playbackNotAllowedTitle' => 'Воспроизведение запрещено',
+			'messages.playbackNotAllowedBody' => 'Сервер отказал в потоковой передаче этого элемента (HTTP 403). Возможно, у вашей учётной записи нет разрешения на его воспроизведение или сервер разрешает воспроизведение только в своей локальной сети.',
 			'messages.logsUploaded' => 'Логи загружены',
 			'messages.logsUploadFailed' => 'Не удалось загрузить логи',
 			'messages.logId' => 'ID лога',
@@ -3959,6 +3971,8 @@ extension on TranslationsRu {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Добавить к ${displayName}: Plex, Jellyfin, Emby или подключение другого профиля',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сессия истекла для ${count} серверов',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} отказал в доступе этой учётной записи',
+			'connections.accessDeniedMany' => ({required Object count}) => 'Доступ для этой учётной записи запрещён на ${count} серверах',
 			'connections.signInAgain' => 'Войти снова',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Изменить подключение ${product}',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Добавьте или удалите URL-адреса для ${serverName}. Plezy будет использовать доступный URL с наименьшей задержкой.',
@@ -4072,12 +4086,12 @@ extension on TranslationsRu {
 			'libraries.refreshMetadata' => 'Обновить метаданные',
 			'libraries.emptyTrash' => 'Очистить корзину',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Очистка корзины для "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Корзина очищена для "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Не удалось очистить корзину: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализ "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Анализ начат для "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Не удалось проанализировать библиотеку: ${error}',
 			'libraries.noLibrariesFound' => 'Библиотеки не найдены',
 			'libraries.allLibrariesHidden' => 'Все библиотеки скрыты',
@@ -4586,12 +4600,12 @@ extension on TranslationsRu {
 			'watchTogether.renameRoom' => 'Переименовать комнату',
 			'watchTogether.removeRoom' => 'Удалить',
 			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Не удалось переключиться — содержимое не найдено на этом сервере',
 			'watchTogether.defaultDisplayName' => 'Пользователь',
 			'watchTogether.errors.timedOut' => 'Сервер ретрансляции не ответил вовремя',
 			'watchTogether.errors.connectionLost' => 'Соединение закрылось до того, как сессия была готова',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.errors.invalidRelayResponse' => 'Сервер ретрансляции прислал неожиданный ответ',
 			'watchTogether.errors.sessionEnded' => 'Организатор завершил сессию',
 			'watchTogether.errors.sessionUnavailable' => 'Не удалось возобновить эту сессию. Присоединитесь к комнате или создайте её, чтобы продолжить.',
@@ -4667,6 +4681,7 @@ extension on TranslationsRu {
 			'downloads.syncRuleAvailable' => 'Доступен',
 			'downloads.syncRuleOffline' => 'Офлайн',
 			'downloads.syncRuleSignInRequired' => 'Требуется вход',
+			'downloads.syncRuleAccessDenied' => 'Доступ запрещён',
 			'downloads.syncRuleNotAvailableForProfile' => 'Недоступно для текущего профиля',
 			'downloads.syncRuleUnknownServer' => 'Неизвестный сервер',
 			'downloads.syncRuleListCreated' => 'Правило синхронизации создано',
@@ -4704,8 +4719,14 @@ extension on TranslationsRu {
 			'downloads.unknownAlbum' => 'Неизвестный альбом',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => 'Завершено: ${completed}/${total}',
 			'downloads.errorFileNotFound' => 'Файл не найден (404)',
+			'downloads.errorDownloadNotAllowed' => 'Сервер не разрешает загрузку (403)',
 			'downloads.errorDownloadFailed' => 'Не удалось выполнить загрузку',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Не удалось выполнить постобработку: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Не удалось выполнить загрузку: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Не удалось выполнить загрузку (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Не удалось выполнить постобработку: ${reason}',
+			'downloads.reasonFileNotSaved' => 'не удалось сохранить файл на этом устройстве',
+			'downloads.reasonCannotResume' => 'не удалось возобновить частичную загрузку',
+			'downloads.reasonDeviceStorageFull' => 'на этом устройстве закончилось место',
 			'downloads.notificationDownloading' => 'Загрузка...',
 			'downloads.notificationComplete' => 'Загрузка завершена',
 			'downloads.notificationPaused' => 'Загрузка приостановлена',
@@ -4815,7 +4836,6 @@ extension on TranslationsRu {
 			'videoSettings.audioNormalization' => 'Нормализация громкости',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена',
 			'videoSettings.audioNormalizationStereoMix' => 'Декодирует аудио в стереомикс; сквозной вывод отключён, пока эта опция включена',
-			'videoSettings.audioDownmix' => 'Микширование в стерео',
 			'performanceOverlay.color' => 'Цвет',
 			'performanceOverlay.performance' => 'Производительность',
 			'performanceOverlay.buffer' => 'Буфер',
@@ -5094,6 +5114,8 @@ extension on TranslationsRu {
 			'addServer.borrowFromAnotherProfile' => 'Использовать подключение другого профиля',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.',
 			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Ответ аутентификации не является допустимым JSON',
 			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',
@@ -5104,8 +5126,6 @@ extension on TranslationsRu {
 			'addServer.responseNotJson' => 'Ответ сервера не является допустимым JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'В ответе отсутствует идентификатор или имя сервера. Это точно сервер ${product}?',
 			'addServer.probeFailed' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Введите хотя бы один URL сервера ${product}',
 			'addServer.noReachableServer' => ({required Object product}) => 'Не найдено ни одного доступного сервера ${product}',
 			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Эти URL указывают на разные серверы ${product}',

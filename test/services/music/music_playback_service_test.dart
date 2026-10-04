@@ -14,6 +14,8 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/mpv/models.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
+import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
@@ -24,6 +26,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/agent_control_protocol.dart';
 import 'package:plezy/services/agent_playback_commands.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/companion_remote/companion_remote_receiver.dart';
 import 'package:plezy/services/discord_rpc_service.dart';
 import 'package:plezy/services/media_controls_manager.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -377,7 +380,11 @@ class FakePlayer implements Player {
   Future<void> setAudioNormalization(bool enabled) async {}
 
   @override
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {}
+  Future<void> setAudioChannelLimit(
+    AudioChannelLimit limit, {
+    required int centerBoostDb,
+    required bool normalize,
+  }) async {}
 
   @override
   Future<bool> setVisible(bool visible, {bool restoreOnWindowVisible = false}) async => true;
@@ -1828,6 +1835,26 @@ void main() {
       await pumpEventQueue();
       expect(await simulateKeyDownEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
       expect(await simulateKeyUpEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
+    });
+  });
+
+  group('companion remote transport', () {
+    test('remote transport buttons drive the live session until it stops', () async {
+      final receiver = CompanionRemoteReceiver.instance;
+      addTearDown(() => receiver.musicTransport = null);
+      await h.playTracks([t1, t2]);
+
+      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.nextTrack), null);
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, 't2');
+
+      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.pause), null);
+      await pumpEventQueue();
+      expect(h.player.pauseCalls, 1);
+
+      await h.service.stop();
+      await pumpEventQueue();
+      expect(receiver.musicTransport, isNull);
     });
   });
 

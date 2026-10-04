@@ -37,4 +37,9 @@ internal class DecoderOptions {
     val own = app.entries.joinToString(",") { "${it.key}=${it.value}" }
     return listOfNotNull(own.takeIf { it.isNotEmpty() }, user).joinToString(",")
   }
+
+  companion object {
+    /** [key]'s value in a composed list such as mpv's `vd-lavc-o`: the last duplicate, as FFmpeg applies it. */
+    fun effectiveValue(options: String?, key: String): String? = options?.split(',')?.lastOrNull { it.substringBefore('=') == key }?.substringAfter('=', "")
+  }
 }

@@ -29,6 +29,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
+import '../media/media_person.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
@@ -56,6 +57,7 @@ import '../utils/log_redaction_manager.dart';
 import '../utils/external_ids.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/resolution_label.dart';
+import '../utils/search_relevance.dart';
 import '../utils/track_label_builder.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
@@ -209,12 +211,32 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     'UserDataLastPlayedDate',
   ];
 
+  /// Emby's companion to `MediaSources` on list rows.
+  ///
+  /// Emby list routes answer `Fields=MediaSources` with the row item's own
+  /// file only, dropping every version merged with it; the single-item route
+  /// returns them all. Measured on Emby 4.10.0.40 with two merged episode
+  /// versions: `/Shows/{id}/Episodes` and `/Users/{id}/Items?ParentId=` gave
+  /// one source to admin and non-admin users alike, and two — in the detail
+  /// route's order — once this token was named. Emby staff recommend it for
+  /// exactly this (community topic 148258). A one-entry list on a merged item
+  /// breaks the [MediaItem.mediaVersions] completeness contract: pickers,
+  /// saved-version resolution and delete impact all trust it (#2474).
+  ///
+  /// Only added where `MediaSources` is already requested: the server resolves
+  /// alternates per row, a cost the lighter row sets have no use for.
+  static const _embyAlternateMediaSourcesField = 'AlternateMediaSources';
+
   /// Append the fields this dialect withholds, skipping any the set already
   /// names so Jellyfin's request strings stay byte-identical.
   String _withDialectRowFields(String fields) {
     if (dialect != MediaBrowserDialect.emby) return fields;
     final present = fields.split(',').map((field) => field.trim()).toSet();
-    final missing = _embyWithheldRowFields.where((field) => !present.contains(field));
+    final missing = [
+      ..._embyWithheldRowFields.where((field) => !present.contains(field)),
+      if (present.contains('MediaSources') && !present.contains(_embyAlternateMediaSourcesField))
+        _embyAlternateMediaSourcesField,
+    ];
     return missing.isEmpty ? fields : '$fields,${missing.join(',')}';
   }
 
@@ -525,8 +547,10 @@ class JellyfinClient
   /// profile avatars catch server-side changes without requiring re-auth
   /// (see [onConnectionUpdated]).
   ///
-  /// 401/403 surfaces as [HealthStatus.authError] so the manager can
-  /// distinguish a revoked token from a generic transport failure.
+  /// 401 surfaces as [HealthStatus.authError] and 403 as
+  /// [HealthStatus.accessDenied] (a user denied remote access or outside their
+  /// parental schedule) so the manager can tell a revoked token and a refused
+  /// account from a generic transport failure.
   @override
   Future<HealthStatus> checkHealth() async {
     try {
@@ -560,17 +584,19 @@ class JellyfinClient
         }
         return HealthStatus.online;
       }
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        return HealthStatus.authError;
-      }
-      return HealthStatus.offline;
+      return _refusalHealth(response.statusCode) ?? HealthStatus.offline;
     } on MediaServerHttpException catch (e) {
-      if (e.statusCode == 401 || e.statusCode == 403) return HealthStatus.authError;
-      return HealthStatus.offline;
+      return _refusalHealth(e.statusCode) ?? HealthStatus.offline;
     } catch (_) {
       return HealthStatus.offline;
     }
   }
+
+  static HealthStatus? _refusalHealth(int? statusCode) => switch (statusCode) {
+    401 => HealthStatus.authError,
+    403 => HealthStatus.accessDenied,
+    _ => null,
+  };
 
   @override
   Future<String?> getMachineIdentifier() async {

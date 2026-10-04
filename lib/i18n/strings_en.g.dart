@@ -825,6 +825,9 @@ class Translations$settings$en {
 	/// en: 'Shortcuts reset to defaults'
 	String get shortcutsReset => 'Shortcuts reset to defaults';
 
+	/// en: 'This will replace your custom shortcuts with the defaults. Continue?'
+	String get resetShortcutsConfirm => 'This will replace your custom shortcuts with the defaults. Continue?';
+
 	/// en: 'About'
 	String get about => 'About';
 
@@ -1080,11 +1083,29 @@ class Translations$settings$en {
 	/// en: 'Off while loudness normalization is on'
 	String get audioPassthroughOverriddenByNormalization => 'Off while loudness normalization is on';
 
-	/// en: 'Downmix to Stereo'
-	String get audioDownmix => 'Downmix to Stereo';
+	/// en: 'Audio Channels'
+	String get audioChannelLimit => 'Audio Channels';
 
-	/// en: 'Mix surround audio down to two channels for stereo speakers or headphones'
-	String get audioDownmixDescription => 'Mix surround audio down to two channels for stereo speakers or headphones';
+	/// en: 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel'
+	String get audioChannelLimitDescription => 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel';
+
+	/// en: 'Original'
+	String get audioChannelLimitOriginal => 'Original';
+
+	/// en: 'Play every channel in the track'
+	String get audioChannelLimitOriginalDescription => 'Play every channel in the track';
+
+	/// en: 'Up to 5.1'
+	String get audioChannelLimitSurround51 => 'Up to 5.1';
+
+	/// en: 'Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.'
+	String get audioChannelLimitSurround51Description => 'Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.';
+
+	/// en: 'Stereo'
+	String get audioChannelLimitStereo => 'Stereo';
+
+	/// en: 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.'
+	String get audioChannelLimitStereoDescription => 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.';
 
 	/// en: 'Center Channel Boost'
 	String get downmixCenterBoost => 'Center Channel Boost';
@@ -1133,6 +1154,12 @@ class Translations$settings$en {
 
 	/// en: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'
 	String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL layers and present plain HEVC';
+
+	/// en: 'Disable Dolby Vision'
+	String get disableDolbyVision => 'Disable Dolby Vision';
+
+	/// en: 'Play the file's HDR10 or HLG layer instead of Dolby Vision, when it has one'
+	String get disableDolbyVisionDescription => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one';
 
 	/// en: 'HDR to SDR Conversion'
 	String get hdrSdrConversion => 'HDR to SDR Conversion';
@@ -1349,6 +1376,9 @@ class Translations$search$en {
 
 	/// en: 'Enter a title, actor, or keyword'
 	String get enterTitleActorOrKeyword => 'Enter a title, actor, or keyword';
+
+	/// en: 'People'
+	String get people => 'People';
 }
 
 // Path: hotkeys
@@ -2437,6 +2467,12 @@ class Translations$messages$en {
 	/// en: 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.'
 	String get serverBusyBody => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.';
 
+	/// en: 'Playback not allowed'
+	String get playbackNotAllowedTitle => 'Playback not allowed';
+
+	/// en: 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.'
+	String get playbackNotAllowedBody => 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.';
+
 	/// en: 'Logs uploaded'
 	String get logsUploaded => 'Logs uploaded';
 
@@ -2668,6 +2704,12 @@ class Translations$profiles$en {
 	/// en: 'Remove ${displayName} and all Plex Home users? Sign back in anytime.'
 	String signOutPlexMessage({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.';
 
+	/// en: 'Also delete downloads'
+	String get signOutPlexDeleteDownloads => 'Also delete downloads';
+
+	/// en: 'Otherwise they stay on this device and come back when you sign back in to this account.'
+	String get signOutPlexDeleteDownloadsDescription => 'Otherwise they stay on this device and come back when you sign back in to this account.';
+
 	/// en: 'Signed out of Plex.'
 	String get signedOutPlex => 'Signed out of Plex.';
 
@@ -2853,6 +2895,12 @@ class Translations$connections$en {
 
 	/// en: 'Session expired for ${count} servers'
 	String sessionExpiredMany({required Object count}) => 'Session expired for ${count} servers';
+
+	/// en: '${name} refused access for this account'
+	String accessDeniedOne({required Object name}) => '${name} refused access for this account';
+
+	/// en: '${count} servers refused access for this account'
+	String accessDeniedMany({required Object count}) => '${count} servers refused access for this account';
 
 	/// en: 'Sign in again'
 	String get signInAgain => 'Sign in again';
@@ -4556,6 +4604,9 @@ class Translations$downloads$en {
 	/// en: 'Sign in required'
 	String get syncRuleSignInRequired => 'Sign in required';
 
+	/// en: 'Access denied'
+	String get syncRuleAccessDenied => 'Access denied';
+
 	/// en: 'Not available for current profile'
 	String get syncRuleNotAvailableForProfile => 'Not available for current profile';
 
@@ -4617,11 +4668,29 @@ class Translations$downloads$en {
 	/// en: 'File not found (404)'
 	String get errorFileNotFound => 'File not found (404)';
 
+	/// en: 'Download not allowed by the server (403)'
+	String get errorDownloadNotAllowed => 'Download not allowed by the server (403)';
+
 	/// en: 'Download failed'
 	String get errorDownloadFailed => 'Download failed';
 
-	/// en: 'Post-processing failed: ${error}'
-	String errorPostProcessing({required Object error}) => 'Post-processing failed: ${error}';
+	/// en: 'Download failed: ${reason}'
+	String errorDownloadFailedWithReason({required Object reason}) => 'Download failed: ${reason}';
+
+	/// en: 'Download failed (HTTP ${status})'
+	String errorHttpStatus({required Object status}) => 'Download failed (HTTP ${status})';
+
+	/// en: 'Post-processing failed: ${reason}'
+	String errorPostProcessing({required Object reason}) => 'Post-processing failed: ${reason}';
+
+	/// en: 'the file could not be saved on this device'
+	String get reasonFileNotSaved => 'the file could not be saved on this device';
+
+	/// en: 'the partial download could not be resumed'
+	String get reasonCannotResume => 'the partial download could not be resumed';
+
+	/// en: 'this device is out of storage'
+	String get reasonDeviceStorageFull => 'this device is out of storage';
 
 	/// en: 'Downloading...'
 	String get notificationDownloading => 'Downloading...';
@@ -4795,9 +4864,6 @@ class Translations$videoSettings$en {
 
 	/// en: 'Decodes audio to a stereo mix; passthrough is off while this is on'
 	String get audioNormalizationStereoMix => 'Decodes audio to a stereo mix; passthrough is off while this is on';
-
-	/// en: 'Downmix to Stereo'
-	String get audioDownmix => 'Downmix to Stereo';
 }
 
 // Path: performanceOverlay
@@ -4843,6 +4909,27 @@ class Translations$performanceOverlay$en {
 
 	/// en: 'DV Path'
 	String get dvPath => 'DV Path';
+
+	/// en: 'Dolby Vision decoder'
+	String get dvRouteDecoder => 'Dolby Vision decoder';
+
+	/// en: 'Dolby Vision decoder (P7→8.1)'
+	String get dvRouteDecoderP81 => 'Dolby Vision decoder (P7→8.1)';
+
+	/// en: 'Base layer'
+	String get dvRouteBaseLayer => 'Base layer';
+
+	/// en: 'HDR10 base layer'
+	String get dvRouteBaseLayerHdr10 => 'HDR10 base layer';
+
+	/// en: 'HLG base layer'
+	String get dvRouteBaseLayerHlg => 'HLG base layer';
+
+	/// en: 'SDR base layer'
+	String get dvRouteBaseLayerSdr => 'SDR base layer';
+
+	/// en: 'RPU reshaped (gpu-next)'
+	String get dvRouteReshaped => 'RPU reshaped (gpu-next)';
 
 	/// en: 'P7 Conv'
 	String get p7Conversion => 'P7 Conv';
@@ -5535,6 +5622,7 @@ class Translations$services$en {
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
+	late final Translations$services$simklReconnect$en simklReconnect = Translations$services$simklReconnect$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
 	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
 	late final Translations$services$pendingAuth$en pendingAuth = Translations$services$pendingAuth$en.internal(_root);
@@ -6596,6 +6684,9 @@ class Translations$explore$creditRole$en {
 
 	// Translations
 
+	/// en: 'Actor'
+	String get actor => 'Actor';
+
 	/// en: 'Director'
 	String get director => 'Director';
 
@@ -7167,6 +7258,21 @@ class Translations$services$names$en {
 	String get mdblist => 'MDBList';
 }
 
+// Path: services.simklReconnect
+class Translations$services$simklReconnect$en {
+	Translations$services$simklReconnect$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Reconnect Simkl'
+	String get title => 'Reconnect Simkl';
+
+	/// en: 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.'
+	String get subtitle => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.';
+}
+
 // Path: services.deviceCode
 class Translations$services$deviceCode$en {
 	Translations$services$deviceCode$en.internal(this._root);
@@ -7528,6 +7634,7 @@ extension on Translations {
 			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
+			'settings.resetShortcutsConfirm' => 'This will replace your custom shortcuts with the defaults. Continue?',
 			'settings.about' => 'About',
 			'settings.aboutDescription' => 'App information and licenses',
 			'settings.updates' => 'Updates',
@@ -7613,8 +7720,14 @@ extension on Translations {
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Off while loudness normalization is on',
-			'settings.audioDownmix' => 'Downmix to Stereo',
-			'settings.audioDownmixDescription' => 'Mix surround audio down to two channels for stereo speakers or headphones',
+			'settings.audioChannelLimit' => 'Audio Channels',
+			'settings.audioChannelLimitDescription' => 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel',
+			'settings.audioChannelLimitOriginal' => 'Original',
+			'settings.audioChannelLimitOriginalDescription' => 'Play every channel in the track',
+			'settings.audioChannelLimitSurround51' => 'Up to 5.1',
+			'settings.audioChannelLimitSurround51Description' => 'Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.',
+			'settings.audioChannelLimitStereo' => 'Stereo',
+			'settings.audioChannelLimitStereoDescription' => 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.',
 			'settings.downmixCenterBoost' => 'Center Channel Boost',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Boost (dB)',
@@ -7631,6 +7744,8 @@ extension on Translations {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 and suppress DV conversion retry',
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
+			'settings.disableDolbyVision' => 'Disable Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
@@ -7700,6 +7815,7 @@ extension on Translations {
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
+			'search.people' => 'People',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
 			'hotkeys.noShortcutSet' => 'No shortcut set',
@@ -7782,6 +7898,8 @@ extension on Translations {
 			'fileInfo.dolbyVision' => 'Dolby Vision',
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
 			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
 			'fileInfo.avcBitstream' => 'AVC Bitstream',
@@ -7792,8 +7910,6 @@ extension on Translations {
 			'fileInfo.streamId' => 'Stream ID',
 			'fileInfo.language' => 'Language',
 			'fileInfo.languageCode' => 'Language Code',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.streamTitle' => 'Track Title',
 			'fileInfo.channels' => 'Channels',
 			'fileInfo.sampleRate' => 'Sample Rate',
@@ -8065,6 +8181,8 @@ extension on Translations {
 			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
 			'messages.serverBusyTitle' => 'Stream unavailable',
 			'messages.serverBusyBody' => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.',
+			'messages.playbackNotAllowedTitle' => 'Playback not allowed',
+			'messages.playbackNotAllowedBody' => 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -8130,6 +8248,8 @@ extension on Translations {
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
+			'profiles.signOutPlexDeleteDownloads' => 'Also delete downloads',
+			'profiles.signOutPlexDeleteDownloadsDescription' => 'Otherwise they stay on this device and come back when you sign back in to this account.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
@@ -8189,6 +8309,8 @@ extension on Translations {
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers refused access for this account',
 			'connections.signInAgain' => 'Sign in again',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edit ${product} connection',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.',
@@ -8290,6 +8412,8 @@ extension on Translations {
 			'errors.reasonUnreachable' => 'the server could not be reached',
 			'errors.reasonRefused' => 'the server refused the request',
 			'errors.reasonNotFound' => 'the item is no longer on the server',
+			_ => null,
+		} ?? switch (path) {
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -8306,8 +8430,6 @@ extension on Translations {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Failed to empty trash: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyzing "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analysis started for "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
 			'libraries.noLibrariesFound' => 'No libraries found',
 			'libraries.allLibrariesHidden' => 'All libraries are hidden',
@@ -8558,6 +8680,7 @@ extension on Translations {
 			'explore.sourceMaterial.webComic' => 'Web comic',
 			'explore.sourceMaterial.musicRelease' => 'Music',
 			'explore.sourceMaterial.otherMedia' => 'Other',
+			'explore.creditRole.actor' => 'Actor',
 			'explore.creditRole.director' => 'Director',
 			'explore.creditRole.writer' => 'Writer',
 			'explore.creditRole.producer' => 'Producer',
@@ -8803,6 +8926,8 @@ extension on Translations {
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -8820,8 +8945,6 @@ extension on Translations {
 			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
 			'watchTogether.joinInstructions' => 'Enter the host\'s session code to join.',
 			'watchTogether.failedToCreate' => 'Failed to create session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Failed to join session',
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
 			'watchTogether.relayUnreachable' => 'Relay server unreachable. ISP blocking may prevent Watch Together.',
@@ -8924,6 +9047,7 @@ extension on Translations {
 			'downloads.syncRuleAvailable' => 'Available',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Sign in required',
+			'downloads.syncRuleAccessDenied' => 'Access denied',
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',
@@ -8966,8 +9090,14 @@ extension on Translations {
 			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} movie', other: '${n} movies', ), 
 			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} album', other: '${n} albums', ), 
 			'downloads.errorFileNotFound' => 'File not found (404)',
+			'downloads.errorDownloadNotAllowed' => 'Download not allowed by the server (403)',
 			'downloads.errorDownloadFailed' => 'Download failed',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Post-processing failed: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download failed: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download failed (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Post-processing failed: ${reason}',
+			'downloads.reasonFileNotSaved' => 'the file could not be saved on this device',
+			'downloads.reasonCannotResume' => 'the partial download could not be resumed',
+			'downloads.reasonDeviceStorageFull' => 'this device is out of storage',
 			'downloads.notificationDownloading' => 'Downloading...',
 			'downloads.notificationComplete' => 'Download complete',
 			'downloads.notificationPaused' => 'Download paused',
@@ -9077,7 +9207,6 @@ extension on Translations {
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
 			'videoSettings.audioNormalizationStereoMix' => 'Decodes audio to a stereo mix; passthrough is off while this is on',
-			'videoSettings.audioDownmix' => 'Downmix to Stereo',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -9090,6 +9219,13 @@ extension on Translations {
 			'performanceOverlay.rotation' => 'Rotation',
 			'performanceOverlay.dvSource' => 'DV Source',
 			'performanceOverlay.dvPath' => 'DV Path',
+			'performanceOverlay.dvRouteDecoder' => 'Dolby Vision decoder',
+			'performanceOverlay.dvRouteDecoderP81' => 'Dolby Vision decoder (P7→8.1)',
+			'performanceOverlay.dvRouteBaseLayer' => 'Base layer',
+			'performanceOverlay.dvRouteBaseLayerHdr10' => 'HDR10 base layer',
+			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
+			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
+			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
@@ -9304,6 +9440,10 @@ extension on Translations {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
+			_ => null,
+		} ?? switch (path) {
+			'services.simklReconnect.title' => 'Reconnect Simkl',
+			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
@@ -9334,8 +9474,6 @@ extension on Translations {
 			'addServer.searchingLocalMediaBrowserServers' => ({required Object product}) => 'Looking for local ${product} servers...',
 			'addServer.localMediaBrowserServers' => ({required Object product}) => 'Local ${product} servers',
 			'addServer.username' => 'Username',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',
 			'addServer.change' => 'Change',

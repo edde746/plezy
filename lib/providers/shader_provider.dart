@@ -136,7 +136,12 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
     }
     final service = _settingsBinding.settings ?? await SettingsService.getInstance();
     checkCurrent?.call();
-    if (_currentPreset.id == preset.id || _savedPreset.id == preset.id) {
+    // Only a global default that names the shader is reset. A scoped
+    // selection (current but not saved) leaves the global default alone and
+    // falls back to none, as the player does once the shader is gone.
+    final deletesSaved = _savedPreset.id == preset.id;
+    final deletesCurrentOnly = !deletesSaved && _currentPreset.id == preset.id;
+    if (deletesSaved) {
       await setPreset(ShaderPreset.none, checkCurrent: checkCurrent);
     }
     checkCurrent?.call();
@@ -150,6 +155,8 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
     }
     checkCurrent?.call();
     if (_settingsBinding.settings == null) _syncFromSettings(service);
+    // The settings writes above re-seed current from the saved preset.
+    if (deletesCurrentOnly) setCurrentPreset(ShaderPreset.none);
   }
 
   void _refreshAllPresets() {

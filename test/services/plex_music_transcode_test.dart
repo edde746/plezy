@@ -1,13 +1,20 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   late AppDatabase db;
@@ -118,5 +125,60 @@ void main() {
       ),
     );
     expect(startPath, isNot(contains('X-Plex-Token')));
+  });
+
+  test('a direct-play track names its playback session in the stream URL', () async {
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/metadata/9669') return http.Response('unexpected request', 500);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': '9669',
+                'type': 'track',
+                'title': 'Track',
+                'Media': [
+                  {
+                    'id': 7,
+                    'container': 'flac',
+                    'Part': [
+                      {
+                        'id': 99,
+                        'key': '/library/parts/99/1700000000/file.flac',
+                        'Stream': [
+                          {'streamType': 2, 'id': 301, 'codec': 'flac', 'selected': true},
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final result = await client.getPlaybackInitialization(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(id: '9669', backend: MediaBackend.plex, kind: MediaKind.track, serverId: 'server-id'),
+        selectedMediaIndex: 0,
+        qualityPreset: TranscodeQualityPreset.original,
+        audioQualityPreset: AudioQualityPreset.original,
+        sessionIdentifier: 'session-id',
+        transcodeSessionId: 'transcode-id',
+      ),
+    );
+
+    // Gapless playback reuses the playing track's headers for the next
+    // track's request, so each track's session must ride its own URL.
+    final url = Uri.parse(result.videoUrl!);
+    expect(url.path, '/library/parts/99/1700000000/file.flac');
+    expect(url.queryParameters['X-Plex-Session-Identifier'], 'session-id');
+    expect(url.queryParameters['X-Plex-Token'], 'token');
   });
 }

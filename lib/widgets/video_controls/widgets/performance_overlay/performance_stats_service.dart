@@ -192,6 +192,9 @@ class PerformanceStatsService {
         // Other
         aspectName: statsMap['video-params/aspect-name'] as String?,
         rotate: _parseInt(statsMap['video-params/rotate'] as String?),
+        // Dolby Vision: the bitstream's profile and what decodes it
+        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
+        dvRoute: DvRoute.fromId(statsMap['dvRoute'] as String?),
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
       );

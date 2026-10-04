@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "此文件不是有效的 Plezy 设置导出",
     "importSettingsNoUser": "导入设置前请先登录",
     "shortcutsReset": "快捷键已重置为默认值",
+    "resetShortcutsConfirm": "",
     "about": "关于",
     "aboutDescription": "应用程序信息和许可证",
     "updates": "更新",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。",
     "audioPassthroughDescriptionAppleTv": "对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。",
     "audioPassthroughOverriddenByNormalization": "响度标准化开启时停用",
-    "audioDownmix": "下混为立体声",
-    "audioDownmixDescription": "将环绕声混合为双声道，适用于立体声音箱或耳机",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "中置声道增强",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "增强（dB）",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "强制原生 DV7 并禁止重试 DV 转换",
     "dvConversionDv81Description": "强制内联 RPU 转换为 Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "移除 Dolby Vision RPU/EL 层并呈现普通 HEVC",
+    "disableDolbyVision": "禁用 Dolby Vision",
+    "disableDolbyVisionDescription": "文件包含 HDR10 或 HLG 层时，改为播放该层而非 Dolby Vision",
     "hdrSdrConversion": "HDR 转 SDR",
     "hdrSdrConversionDescription": "选择在显示器无法显示 HDR 时由谁转换 HDR 视频。",
     "hdrSdrConversionAuto": "自动",
@@ -435,7 +444,8 @@
     "hint": "搜索电影、剧集、音乐…",
     "tryDifferentTerm": "尝试不同的搜索词",
     "searchYourMedia": "搜索媒体",
-    "enterTitleActorOrKeyword": "输入标题、演员或关键词"
+    "enterTitleActorOrKeyword": "输入标题、演员或关键词",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "为 ${actionName} 设置快捷键",
@@ -830,6 +840,8 @@
     "mediaUnreadableBody": "服务器找到了此项目，但无法读取其文件（HTTP 404）。文件可能已被移动、删除，或其存储已离线。请联系服务器管理员检查文件并重新扫描媒体库。",
     "serverBusyTitle": "视频流不可用",
     "serverBusyBody": "服务器持续拒绝传输此文件（HTTP 503）。服务器可能正在重启或正忙，也可能是文件所在的存储设备已离线。请稍后重试；如果问题持续出现，请联系服务器所有者检查服务器和文件存储设备。",
+    "playbackNotAllowedTitle": "不允许播放",
+    "playbackNotAllowedBody": "服务器拒绝传输此项目（HTTP 403）。此账户可能没有播放权限，或服务器可能仅允许在其局域网内播放。",
     "logsUploaded": "日志已上传",
     "logsUploadFailed": "上传日志失败",
     "logId": "日志 ID",
@@ -903,6 +915,8 @@
     "signOut": "退出登录",
     "signOutPlexTitle": "退出 Plex 登录？",
     "signOutPlexMessage": "要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "已退出 Plex 登录。",
     "signOutFailed": "退出登录失败。",
     "sectionTitle": "用户资料",
@@ -964,6 +978,8 @@
     "addConnectionSubtitleScoped": "添加到 ${displayName}：Plex、Jellyfin、Emby，或其他用户资料的连接",
     "sessionExpiredOne": "${name} 的会话已过期",
     "sessionExpiredMany": "${count} 个服务器的会话已过期",
+    "accessDeniedOne": "${name} 拒绝此账户访问",
+    "accessDeniedMany": "${count} 台服务器拒绝此账户访问",
     "signInAgain": "重新登录",
     "editMediaBrowserTitle": "编辑 ${product} 连接",
     "editMediaBrowserIntro": "为 ${serverName} 添加或移除 URL。Plezy 会使用延迟最低且可访问的 URL。"
@@ -1400,6 +1416,7 @@
       "otherMedia": "其他"
     },
     "creditRole": {
+      "actor": "",
       "director": "导演",
       "writer": "编剧",
       "producer": "制片人",
@@ -1793,6 +1810,7 @@
     "syncRuleAvailable": "可用",
     "syncRuleOffline": "离线",
     "syncRuleSignInRequired": "需要登录",
+    "syncRuleAccessDenied": "访问被拒绝",
     "syncRuleNotAvailableForProfile": "当前用户资料不可用",
     "syncRuleUnknownServer": "未知服务器",
     "syncRuleListCreated": "同步规则已创建",
@@ -1847,8 +1865,14 @@
       "other": ""
     },
     "errorFileNotFound": "未找到文件（404）",
+    "errorDownloadNotAllowed": "服务器不允许下载（403）",
     "errorDownloadFailed": "下载失败",
-    "errorPostProcessing": "后处理失败：${error}",
+    "errorDownloadFailedWithReason": "下载失败：${reason}",
+    "errorHttpStatus": "下载失败（HTTP ${status}）",
+    "errorPostProcessing": "后处理失败：${reason}",
+    "reasonFileNotSaved": "无法将文件保存到此设备",
+    "reasonCannotResume": "无法继续未完成的下载",
+    "reasonDeviceStorageFull": "此设备的存储空间已满",
     "notificationDownloading": "正在下载…",
     "notificationComplete": "下载完成",
     "notificationPaused": "下载已暂停"
@@ -1971,8 +1995,7 @@
     "audioOutputStereo": "立体声",
     "audioNormalization": "响度标准化",
     "audioNormalizationDisablesPassthrough": "将音频解码为 PCM；开启时直通关闭",
-    "audioNormalizationStereoMix": "将音频解码为立体声混音；开启时直通关闭",
-    "audioDownmix": "下混为立体声"
+    "audioNormalizationStereoMix": "将音频解码为立体声混音；开启时直通关闭"
   },
   "performanceOverlay": {
     "color": "颜色",
@@ -1987,6 +2010,13 @@
     "rotation": "旋转",
     "dvSource": "DV 来源",
     "dvPath": "DV 路径",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7 转换",
     "sampleRate": "采样率",
     "pixelFormat": "像素格式",
@@ -2216,6 +2246,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "在 ${service} 上激活 Plezy",

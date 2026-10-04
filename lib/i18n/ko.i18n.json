@@ -262,6 +262,7 @@
     "importSettingsInvalidFile": "유효한 Plezy 설정 내보내기 파일이 아닙니다",
     "importSettingsNoUser": "설정을 가져오기 전에 로그인하세요",
     "shortcutsReset": "단축키가 기본값으로 재설정되었습니다",
+    "resetShortcutsConfirm": "",
     "about": "정보",
     "aboutDescription": "앱 정보 및 라이선스",
     "updates": "업데이트",
@@ -347,8 +348,14 @@
     "audioPassthroughDescription": "Dolby/DTS 오디오를 재인코딩 없이 리시버나 TV로 전송하여 서라운드 사운드를 유지합니다. 소리가 나지 않으면 비활성화하세요.",
     "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus(Atmos 포함)에 Apple의 기본 Dolby 디코더를 사용합니다. DTS와 TrueHD는 계속 멀티채널 PCM으로 재생됩니다. 소리가 나지 않으면 비활성화하세요.",
     "audioPassthroughOverriddenByNormalization": "음량 정규화가 켜져 있는 동안 꺼짐",
-    "audioDownmix": "스테레오로 다운믹스",
-    "audioDownmixDescription": "서라운드 오디오를 스테레오 스피커나 헤드폰용 2채널로 믹스합니다",
+    "audioChannelLimit": "",
+    "audioChannelLimitDescription": "",
+    "audioChannelLimitOriginal": "",
+    "audioChannelLimitOriginalDescription": "",
+    "audioChannelLimitSurround51": "",
+    "audioChannelLimitSurround51Description": "",
+    "audioChannelLimitStereo": "",
+    "audioChannelLimitStereoDescription": "",
     "downmixCenterBoost": "센터 채널 부스트",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "부스트 (dB)",
@@ -365,6 +372,8 @@
     "dvConversionNativeDescription": "네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다",
     "dvConversionDv81Description": "Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다",
     "dvConversionHevcStripDescription": "Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다",
+    "disableDolbyVision": "Dolby Vision 끄기",
+    "disableDolbyVisionDescription": "파일에 HDR10 또는 HLG 레이어가 있으면 Dolby Vision 대신 해당 레이어를 재생합니다",
     "hdrSdrConversion": "HDR을 SDR로 변환",
     "hdrSdrConversionDescription": "디스플레이가 HDR을 표시할 수 없을 때 HDR 동영상을 무엇으로 변환할지 선택합니다.",
     "hdrSdrConversionAuto": "자동",
@@ -435,7 +444,8 @@
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",
     "tryDifferentTerm": "다른 검색어를 시도해 보세요",
     "searchYourMedia": "미디어 검색",
-    "enterTitleActorOrKeyword": "제목, 배우 또는 키워드를 입력하세요"
+    "enterTitleActorOrKeyword": "제목, 배우 또는 키워드를 입력하세요",
+    "people": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}에 대한 단축키 설정",
@@ -830,6 +840,8 @@
     "mediaUnreadableBody": "서버에서 이 항목을 찾았지만 파일을 읽을 수 없습니다(HTTP 404). 파일이 이동되거나 삭제되었거나 저장소가 오프라인 상태일 수 있습니다. 서버 관리자에게 파일 확인과 라이브러리 재스캔을 요청하세요.",
     "serverBusyTitle": "스트림을 사용할 수 없음",
     "serverBusyBody": "서버에서 이 파일의 스트리밍을 계속 거부했습니다(HTTP 503). 서버가 다시 시작 중이거나 사용량이 많을 수 있으며, 파일이 저장된 저장소가 오프라인일 수도 있습니다. 잠시 후 다시 시도하세요. 문제가 계속되면 서버 소유자에게 서버와 파일 저장소를 확인해 달라고 요청하세요.",
+    "playbackNotAllowedTitle": "재생이 허용되지 않음",
+    "playbackNotAllowedBody": "서버에서 이 항목의 스트리밍을 거부했습니다(HTTP 403). 계정에 재생 권한이 없거나 서버가 로컬 네트워크에서만 재생을 허용할 수 있습니다.",
     "logsUploaded": "로그 업로드 완료",
     "logsUploadFailed": "로그 업로드 실패",
     "logId": "로그 ID",
@@ -903,6 +915,8 @@
     "signOut": "로그아웃",
     "signOutPlexTitle": "Plex에서 로그아웃하시겠습니까?",
     "signOutPlexMessage": "${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.",
+    "signOutPlexDeleteDownloads": "",
+    "signOutPlexDeleteDownloadsDescription": "",
     "signedOutPlex": "Plex에서 로그아웃되었습니다.",
     "signOutFailed": "로그아웃에 실패했습니다.",
     "sectionTitle": "프로필",
@@ -964,6 +978,8 @@
     "addConnectionSubtitleScoped": "${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결",
     "sessionExpiredOne": "${name}의 세션이 만료되었습니다",
     "sessionExpiredMany": "${count}개 서버의 세션이 만료되었습니다",
+    "accessDeniedOne": "${name}에서 이 계정의 접근을 거부했습니다",
+    "accessDeniedMany": "${count}개 서버에서 이 계정의 접근을 거부했습니다",
     "signInAgain": "다시 로그인",
     "editMediaBrowserTitle": "${product} 연결 편집",
     "editMediaBrowserIntro": "${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다."
@@ -1400,6 +1416,7 @@
       "otherMedia": "기타"
     },
     "creditRole": {
+      "actor": "",
       "director": "감독",
       "writer": "각본",
       "producer": "프로듀서",
@@ -1793,6 +1810,7 @@
     "syncRuleAvailable": "사용 가능",
     "syncRuleOffline": "오프라인",
     "syncRuleSignInRequired": "로그인 필요",
+    "syncRuleAccessDenied": "접근 거부됨",
     "syncRuleNotAvailableForProfile": "현재 프로필에서 사용할 수 없음",
     "syncRuleUnknownServer": "알 수 없는 서버",
     "syncRuleListCreated": "동기화 규칙이 생성되었습니다",
@@ -1847,8 +1865,14 @@
       "other": ""
     },
     "errorFileNotFound": "파일을 찾을 수 없음(404)",
+    "errorDownloadNotAllowed": "서버에서 다운로드를 허용하지 않음(403)",
     "errorDownloadFailed": "다운로드 실패",
-    "errorPostProcessing": "후처리 실패: ${error}",
+    "errorDownloadFailedWithReason": "다운로드 실패: ${reason}",
+    "errorHttpStatus": "다운로드 실패(HTTP ${status})",
+    "errorPostProcessing": "후처리 실패: ${reason}",
+    "reasonFileNotSaved": "이 기기에 파일을 저장할 수 없습니다",
+    "reasonCannotResume": "일부만 받은 다운로드를 이어서 받을 수 없습니다",
+    "reasonDeviceStorageFull": "이 기기의 저장 공간이 부족합니다",
     "notificationDownloading": "다운로드 중...",
     "notificationComplete": "다운로드 완료",
     "notificationPaused": "다운로드 일시 중지"
@@ -1971,8 +1995,7 @@
     "audioOutputStereo": "스테레오",
     "audioNormalization": "음량 정규화",
     "audioNormalizationDisablesPassthrough": "오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다",
-    "audioNormalizationStereoMix": "오디오를 스테레오 믹스로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다",
-    "audioDownmix": "스테레오로 다운믹스"
+    "audioNormalizationStereoMix": "오디오를 스테레오 믹스로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다"
   },
   "performanceOverlay": {
     "color": "색상",
@@ -1987,6 +2010,13 @@
     "rotation": "회전",
     "dvSource": "DV 소스",
     "dvPath": "DV 경로",
+    "dvRouteDecoder": "",
+    "dvRouteDecoderP81": "",
+    "dvRouteBaseLayer": "",
+    "dvRouteBaseLayerHdr10": "",
+    "dvRouteBaseLayerHlg": "",
+    "dvRouteBaseLayerSdr": "",
+    "dvRouteReshaped": "",
     "p7Conversion": "P7 변환",
     "sampleRate": "샘플 레이트",
     "pixelFormat": "픽셀 형식",
@@ -2216,6 +2246,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "",
+      "subtitle": ""
     },
     "deviceCode": {
       "title": "${service}에서 Plezy 활성화",

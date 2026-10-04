@@ -11,6 +11,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
 import '../../../services/settings_service.dart';
+import '../../../utils/error_message_utils.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -123,7 +124,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     } catch (e) {
       if (!mounted || generation != _searchGeneration) return;
       setState(() {
-        _error = e.toString();
+        _error = t.errors.searchFailed(error: localizedErrorReason(e));
         _isSearching = false;
       });
     }

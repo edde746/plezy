@@ -16,6 +16,11 @@ class LogRedactionManager {
   static final RegExp _ipv4Pattern = RegExp(r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b');
   static final RegExp _ipv4HostPattern = RegExp(r'^\d{1,3}([.-]\d{1,3}){3}$');
 
+  /// The per-server certificate hash in `<address>.<hash>.plex.direct` hosts,
+  /// which identifies the server even when the address label is masked and
+  /// the URL (another connection of the server) was never registered.
+  static final RegExp _plexDirectServerHashPattern = RegExp(r'\.[0-9a-f]{32}\.plex\.direct', caseSensitive: false);
+
   /// Pattern-based catch-all for the `Authorization: MediaBrowser ... Token="..."`
   /// header that Jellyfin's SDK and Findroid both send.
   static final RegExp _mediaBrowserTokenHeader = RegExp(r'Token="[^"]+"', caseSensitive: false);
@@ -125,14 +130,11 @@ class LogRedactionManager {
 
   /// Redact sensitive fields and known sensitive values from a log string.
   static String redact(String message) {
-    var redacted = message.replaceAllMapped(
-      _ipv4Pattern,
-      (match) => _maskIpv4(match.group(1)!, match.group(2)!, match.group(5)!),
-    );
+    var redacted = message;
 
-    redacted = redacted.replaceAll(_mediaBrowserTokenHeader, 'Token="[REDACTED]"');
-    redacted = _redactSensitiveFields(redacted);
-
+    // Registered literals go first: IPv4 masking rewrites the dashed address
+    // label of a `*.plex.direct` server URL, after which the registered URL no
+    // longer matches and its host would leak.
     if (_combinedPattern != null) {
       redacted = redacted.replaceAllMapped(_combinedPattern!, (match) {
         final value = match.group(0)!;
@@ -141,6 +143,15 @@ class LogRedactionManager {
         return '[REDACTED]';
       });
     }
+
+    redacted = redacted.replaceAllMapped(
+      _ipv4Pattern,
+      (match) => _maskIpv4(match.group(1)!, match.group(2)!, match.group(5)!),
+    );
+    redacted = redacted.replaceAll(_plexDirectServerHashPattern, '.[REDACTED].plex.direct');
+
+    redacted = redacted.replaceAll(_mediaBrowserTokenHeader, 'Token="[REDACTED]"');
+    redacted = _redactSensitiveFields(redacted);
 
     return redacted.replaceAllMapped(_urlUserInfoPattern, (match) => '${match.group(1)}[REDACTED]@');
   }

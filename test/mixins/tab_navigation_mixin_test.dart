@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mixins/tab_navigation_mixin.dart';
 import 'package:plezy/services/gamepad_service.dart';
+import 'package:plezy/widgets/overlay_sheet.dart';
 
 /// Probe widget that mounts the mixin against a real BuildContext + Ticker.
 ///
@@ -81,6 +84,36 @@ void main() {
     testWidgets('initTabNavigation registers owner-scoped bumper navigation', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(tabCount: 3, onState: (s) => state = s));
+
+      GamepadService.debugDispatchTabNavigation(previous: false);
+      await tester.pump();
+      expect(state.tabController.index, 1);
+    });
+
+    testWidgets('bumpers leave the tab alone while a dialog or sheet covers the screen', (tester) async {
+      late _ProbeState state;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: OverlaySheetHost(child: _Probe(tabCount: 3, onState: (s) => state = s)),
+        ),
+      );
+
+      unawaited(showDialog<void>(context: state.context, builder: (_) => const Text('dialog')));
+      await tester.pumpAndSettle();
+      GamepadService.debugDispatchTabNavigation(previous: false);
+      await tester.pump();
+      expect(state.tabController.index, 0);
+      Navigator.of(state.context).pop();
+      await tester.pumpAndSettle();
+
+      final sheets = OverlaySheetController.of(state.context);
+      unawaited(sheets.show<void>(builder: (_) => const SizedBox(height: 50, child: Text('sheet'))));
+      await tester.pumpAndSettle();
+      GamepadService.debugDispatchTabNavigation(previous: false);
+      await tester.pump();
+      expect(state.tabController.index, 0);
+      sheets.close();
+      await tester.pumpAndSettle();
 
       GamepadService.debugDispatchTabNavigation(previous: false);
       await tester.pump();

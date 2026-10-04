@@ -95,6 +95,12 @@ class PlaybackProgressTracker {
   /// (#1785). Callers default to deliberate.
   final bool Function()? subtitleOffIsDeliberate;
 
+  /// The source subtitle stream the server is burning into the picture, if
+  /// any. A burned subtitle is pixels, not an engine track, so the engine
+  /// reads as off while the viewer watches with subtitles on; reporting that
+  /// as `-1` would make Jellyfin remember "off" for the item.
+  final int? Function()? burnedSubtitleStreamIndex;
+
   /// Timer for periodic progress updates
   Timer? _progressTimer;
 
@@ -174,11 +180,24 @@ class PlaybackProgressTracker {
   /// Whether the final stopped progress event was already emitted locally.
   bool _stopProgressNotified = false;
 
-  /// The server explicitly terminated this playback session (#1916). While
-  /// set, paused heartbeats stay closed (the report session is terminal) and
-  /// the paused transcode keepalive is suppressed; the next playing report
-  /// clears it and legitimately opens a fresh server session.
+  /// The server explicitly terminated this playback session (#1916) and no
+  /// viewer action has resumed it since. While set, heartbeats stay closed
+  /// (the report session is terminal) and the paused transcode keepalive is
+  /// suppressed. Buffered playback carrying on is not a resume: a playing
+  /// heartbeat re-opening the session would undo the admin's stop. Only a
+  /// viewer unpause (a playing report after a paused one) or the caller's
+  /// [resumeAfterStoppedReport] opens a fresh server session.
   bool _serverTerminatedSession = false;
+
+  /// A paused report was issued after [_serverTerminatedSession] latched, so
+  /// the next playing report is the viewer resuming, not buffered playback
+  /// carrying on.
+  bool _pausedSinceServerTermination = false;
+
+  /// The stopped report that closed the terminated session. Kept apart from
+  /// [_stoppedProgressFuture]: it records where the stop landed, not where
+  /// playback ends, so the item's own terminal report still goes out.
+  Future<void>? _serverTerminationStop;
 
   Future<void>? _stoppedProgressFuture;
 
@@ -205,6 +224,7 @@ class PlaybackProgressTracker {
     this.canReportPlayback,
     this.hasRenderedPlayback,
     this.subtitleOffIsDeliberate,
+    this.burnedSubtitleStreamIndex,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
        assert(isOffline || client != null, 'client is required when isOffline is false') {
@@ -294,7 +314,9 @@ class PlaybackProgressTracker {
   Future<void> sendStoppedProgressOnce({Duration? positionOverride}) {
     final existing = _stoppedProgressFuture;
     if (existing != null) return existing;
-    final future = sendProgress('stopped', positionOverride: positionOverride);
+    final future = _serverTerminatedSession
+        ? _sendStoppedAfterServerTermination(positionOverride)
+        : sendProgress('stopped', positionOverride: positionOverride);
     _stoppedProgressFuture = future;
     return future;
   }
@@ -308,12 +330,25 @@ class PlaybackProgressTracker {
   /// Offline trackers have no backend session and report `true`.
   bool get stoppedReportDelivered => _reportSession?.isStopped ?? true;
 
+  /// The server ended this item's session and no viewer action has resumed
+  /// it since. Playback may still be draining its buffer; callers must not
+  /// start anything on the viewer's behalf from here — no auto-advance to the
+  /// next item, no automatic rebuild of a stream the stop cut off.
+  bool get stoppedByServer => _serverTerminatedSession;
+
   void resumeAfterStoppedReport() {
     _stoppedProgressFuture = null;
-    _reportSession?.resetAfterStop();
     // A server-side termination latched against the old session does not
     // apply to the new one (and its fresh transcode needs its keepalive).
     _serverTerminatedSession = false;
+    _pausedSinceServerTermination = false;
+    _serverTerminationStop = null;
+    _resetReportSession();
+  }
+
+  /// Let the backend reporting session open again after a stopped report.
+  void _resetReportSession() {
+    _reportSession?.resetAfterStop();
     // A re-armed session is a new server-side session: backends only act on a
     // threshold crossing observed within one, so it must earn its own
     // below-threshold report before we can rely on it again.
@@ -329,9 +364,10 @@ class PlaybackProgressTracker {
   /// (Plex admin stop, paused-too-long auto-termination). Continuing the
   /// heartbeat loop would re-register the session on PMS as a zombie row the
   /// admin can no longer clear (#1916), so the local reporting session is
-  /// closed with one final stopped report at the current playhead — verified
+  /// closed with one stopped report at the current playhead — verified
   /// against PMS 1.43 to remove the session row. No user-facing message and
-  /// no forced player stop: buffered playback drains on its own and its
+  /// no forced player stop: buffered playback drains on its own, the session
+  /// stays closed until the viewer resumes ([stoppedByServer]), and the
   /// eventual stall or exit rides the existing error/teardown paths.
   ///
   /// Deliberately not a failure: no backoff and no offline-queue write —
@@ -339,20 +375,45 @@ class PlaybackProgressTracker {
   void _handleServerTermination(PlaybackSessionTerminatedException e) {
     if (_serverTerminatedSession) return;
     _serverTerminatedSession = true;
+    // Terminated while paused (the paused-too-long case): the viewer
+    // unpausing is the resume.
+    _pausedSinceServerTermination = !player.state.isActive;
     appLogger.w('Closing reporting session for ${metadata.id}: terminated server-side', error: e);
-    unawaited(sendStoppedProgressOnce());
+    _serverTerminationStop = sendProgress('stopped');
+  }
+
+  /// The item's terminal report after a server-side termination. The
+  /// termination's own stop recorded where the stop landed; buffered playback
+  /// may have run on since, so the backend still learns where playback really
+  /// ended — as a lone stopped report, which records the position (and, at
+  /// the end, the watch) without re-opening a live session.
+  Future<void> _sendStoppedAfterServerTermination(Duration? positionOverride) async {
+    await _serverTerminationStop;
+    if (_serverTerminatedSession) {
+      _resetReportSession();
+      // The termination's stop settled the local progress event at the stop's
+      // position; this is the item's real end, so its event is still owed.
+      _stopProgressNotified = false;
+    }
+    await sendProgress('stopped', positionOverride: positionOverride);
   }
 
   Future<void> _sendProgress(String state, {Duration? positionOverride, Duration? durationOverride}) async {
     Duration? attemptedPosition;
     Duration? attemptedDuration;
     try {
-      // A playing report after a server-side termination is real consumption
-      // again (unpause, or playback still draining its buffer): re-arm so it
-      // opens a fresh, honest server session. Paused heartbeats never re-arm —
-      // that is exactly what created the zombie.
-      if (state == 'playing' && _serverTerminatedSession) {
-        resumeAfterStoppedReport();
+      // After a server-side termination the session stays closed through
+      // buffered playback: a playing heartbeat re-opening it would undo the
+      // admin's stop. Only a viewer resume — a playing report after a paused
+      // one, before the item's terminal report — is real consumption again and
+      // opens a fresh, honest session. Paused heartbeats never re-arm: that is
+      // exactly what created the zombie (#1916).
+      if (_serverTerminatedSession) {
+        if (state == 'paused') {
+          _pausedSinceServerTermination = true;
+        } else if (state == 'playing' && _pausedSinceServerTermination && _stoppedProgressFuture == null) {
+          resumeAfterStoppedReport();
+        }
       }
       final canReport = canReportPlayback?.call() ?? true;
       final hasRenderedOutput = hasRenderedPlayback?.call() ?? canReport;
@@ -761,6 +822,8 @@ class PlaybackProgressTracker {
   int? _currentSubtitleStreamIndex(MediaSourceInfo info) {
     final track = player.state.track.subtitle;
     if (track == null || track.id == 'no') {
+      final burned = burnedSubtitleStreamIndex?.call();
+      if (burned != null) return burned;
       // An off that merely fell out of a declined carry is withheld rather
       // than persisted as an explicit -1 (see [subtitleOffIsDeliberate]).
       return (subtitleOffIsDeliberate?.call() ?? true) ? -1 : null;
@@ -775,16 +838,12 @@ class PlaybackProgressTracker {
       }
     }
 
-    final ordinal = player.state.tracks.subtitle.where((t) => t.id != 'auto' && t.id != 'no').toList().indexOf(track);
-    if (ordinal >= 0 && ordinal < info.subtitleTracks.length) return info.subtitleTracks[ordinal].id;
-
-    final matched = findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle);
-    if (matched != null) return matched.id;
-
-    final parsedId = int.tryParse(track.id);
-    if (parsedId != null && info.subtitleTracks.any((t) => t.id == parsedId)) return parsedId;
-
-    return null;
+    // Identity, never position: the two catalogs are ordered independently
+    // (Jellyfin lists external files first, the engine its embedded tracks),
+    // and a native track id is the engine's own ordinal, so neither the n-th
+    // row nor the row whose stream index happens to equal the native id is
+    // this track. An unmatched track is withheld rather than guessed.
+    return findPlexTrackForMpvSubtitle(track, info.subtitleTracks, allMpvTracks: player.state.tracks.subtitle)?.id;
   }
 
   /// Queue progress update locally (offline mode)
