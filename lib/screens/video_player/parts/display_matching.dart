@@ -115,14 +115,33 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Restart the MediaCodec decoder against the reconfigured surface: a seek
-  /// to [targetPosition] (default: in place) for VOD, a buffer flush for live.
-  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({required String reason, Duration? targetPosition}) async {
+  /// Restart the MediaCodec decoder against the reconfigured surface with a
+  /// seek to [targetPosition] (default: in place). The seek runs the same
+  /// decoder reset `drop-buffers` does but keeps the demuxer cache, and on a
+  /// live stream mpv calls unseekable it is an in-cache seek. `drop-buffers`
+  /// empties that cache, so playback would resume wherever the read-ahead had
+  /// reached — up to a minute past the requested position on a time-shifted
+  /// stream the server delivers faster than real time (#2568).
+  ///
+  /// Live falls back to `drop-buffers` only when the cache no longer holds
+  /// [targetPosition]: mpv fails such a seek before resetting anything.
+  /// [dropIfUncached] is false for a rewind no display switch requires,
+  /// which is skipped instead of jumping playback forward.
+  Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({
+    required String reason,
+    Duration? targetPosition,
+    bool dropIfUncached = true,
+  }) async {
     final p = player;
     if (!mounted || p == null || !p.needsDecoderRefreshAfterDisplaySwitch) return;
 
-    final isLive = widget.isLive;
-    targetPosition ??= p.state.position;
+    final target = targetPosition ?? p.state.position;
+    final seekable =
+        !widget.isLive || p.state.bufferRanges.any((range) => range.start <= target && target <= range.end);
+    if (!seekable && !dropIfUncached) {
+      appLogger.d('Frame rate matching: skipping $reason; the live cache no longer holds ${target.inMilliseconds}ms');
+      return;
+    }
 
     // Subscribe before refreshing so the broadcast event isn't dropped when
     // the restart fires synchronously fast.
@@ -135,21 +154,21 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     );
     final sw = Stopwatch()..start();
     try {
-      if (isLive) {
-        appLogger.d('Frame rate matching: flushing Android MPV live buffers ($reason, command=drop-buffers)');
-        await p.command(['drop-buffers']);
+      if (seekable) {
+        appLogger.d('Frame rate matching: refreshing Android MPV decoder ($reason, target=${target.inMilliseconds}ms)');
+        await p.seek(target);
       } else {
         appLogger.d(
-          'Frame rate matching: refreshing Android MPV decoder '
-          '($reason, target=${targetPosition.inMilliseconds}ms)',
+          'Frame rate matching: flushing Android MPV live buffers '
+          '($reason, ${target.inMilliseconds}ms no longer cached, command=drop-buffers)',
         );
-        await p.seek(targetPosition);
+        await p.command(['drop-buffers']);
       }
       await restartFuture;
       appLogger.d(
         'Frame rate matching: refreshed Android MPV decoder '
-        '($reason, target=${isLive ? 'live' : '${targetPosition.inMilliseconds}ms'}, waited=${sw.elapsedMilliseconds}ms, '
-        'gate=${timedOut ? 'timeout' : 'playback-restart'})',
+        '($reason, target=${seekable ? '${target.inMilliseconds}ms' : 'cache end'}, '
+        'waited=${sw.elapsedMilliseconds}ms, gate=${timedOut ? 'timeout' : 'playback-restart'})',
       );
     } catch (e) {
       appLogger.w('Failed to refresh Android MPV decoder after frame rate switch ($reason)', error: e);
