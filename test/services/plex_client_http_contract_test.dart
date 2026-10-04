@@ -591,6 +591,33 @@ void main() {
     expect(uris.last, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/children');
   });
 
+  test('show play queue starting at an episode selects it with key', () async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+
+    Map<String, String>? params;
+    final client = testPlexClient(
+      serverId: publicServerId,
+      profileScopeId: defaultProfileScopeId,
+      config: testPlexConfig(machineIdentifier: 'machine-1'),
+      handler: (request) async {
+        params = request.url.queryParameters;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {'playQueueID': '42', 'playQueueVersion': '5', 'Metadata': <dynamic>[]},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      },
+    );
+    addTearDown(client.close);
+
+    await client.createShowPlayQueue(showRatingKey: 'show-1', startingEpisodeKey: 'ep-12');
+
+    expect(params!['key'], '/library/metadata/ep-12');
+  });
+
   test('activities tolerate scalar drift and skip only malformed rows', () async {
     final client = makeClient(
       (_) async => http.Response(
