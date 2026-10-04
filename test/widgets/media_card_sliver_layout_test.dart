@@ -17,12 +17,7 @@ void main() {
     await SettingsService.getInstance();
   });
 
-  Widget host({
-    required ViewMode viewMode,
-    required List<MediaCardSliverPosition> positions,
-    Object? listEpoch,
-    Object? gridEpoch,
-  }) {
+  Widget host({required ViewMode viewMode, required List<MediaCardSliverPosition> positions, Object? listEpoch}) {
     return MaterialApp(
       home: CustomScrollView(
         slivers: [
@@ -32,7 +27,6 @@ void main() {
             density: 100,
             padding: EdgeInsets.zero,
             listEpoch: listEpoch,
-            gridEpochBuilder: gridEpoch == null ? null : (_) => gridEpoch,
             itemBuilder: (context, position) {
               positions.add(position);
               return SizedBox(key: ValueKey(position.index), height: 40, child: Text('${position.index}'));
@@ -62,22 +56,57 @@ void main() {
     expect(positions.first.layoutEpoch, same(epoch));
   });
 
-  testWidgets('grid mode exposes geometry-derived card positions', (tester) async {
-    final positions = <MediaCardSliverPosition>[];
-    final epoch = Object();
+  testWidgets('responsive grids render the expected rows at screen breakpoints with a narrower content viewport', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+    // Independently reviewed default-density layouts. The content viewport is
+    // narrower than the screen, as it is beside a sidebar; using it for the
+    // screen breakpoint would put tablet/desktop cards in the wrong rows.
+    for (final (screenWidth, contentWidth, columns) in [
+      (599.9, 500.0, 4),
+      (600.0, 500.0, 3),
+      (1199.9, 1000.0, 6),
+      (1200.0, 1000.0, 5),
+      (5000.0, 1000.0, 5),
+    ]) {
+      tester.view.physicalSize = Size(screenWidth, 800);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: contentWidth,
+              child: CustomScrollView(
+                slivers: [
+                  MediaCardSliverLayout(
+                    viewMode: ViewMode.grid,
+                    itemCount: 12,
+                    density: 3,
+                    padding: EdgeInsets.zero,
+                    itemBuilder: (context, position) =>
+                        SizedBox(key: ValueKey(position.index), child: Text('Card ${position.index}')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 
-    await tester.pumpWidget(host(viewMode: ViewMode.grid, positions: positions, gridEpoch: epoch));
-
-    expect(find.byType(SliverGrid), findsOneWidget);
-    expect(find.byType(SliverList), findsNothing);
-    expect(positions, isNotEmpty);
-    final first = positions.first;
-    expect(first.columnCount, greaterThan(1));
-    expect(first.isGrid, isTrue);
-    expect(first.isFirstRow, isTrue);
-    expect(first.isFirstColumn, isTrue);
-    expect(first.disableScale, isFalse);
-    expect(first.layoutEpoch, same(epoch));
+      final first = tester.getRect(find.byKey(const ValueKey(0)));
+      final lastInRow = tester.getRect(find.byKey(ValueKey(columns - 1)));
+      final nextRow = tester.getRect(find.byKey(ValueKey(columns)));
+      expect(first.width, closeTo(contentWidth / columns, 0.001), reason: 'screen width $screenWidth');
+      expect(lastInRow.top, first.top);
+      expect(lastInRow.right, closeTo(contentWidth, 0.001));
+      expect(nextRow.left, first.left);
+      expect(nextRow.top, closeTo(first.bottom, 0.001));
+    }
   });
 
   group('grid spacing setting', () {

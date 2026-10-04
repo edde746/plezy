@@ -10,16 +10,7 @@ class ScreenBreakpoints {
 
   static const double desktop = 1200;
 
-  static const double largeDesktop = 1600;
-
-  // Legacy alias for backward compatibility
-  static const double tablet = mobile;
-
-  static bool isMobile(double width) => width < mobile;
-
   static bool isTablet(double width) => width >= mobile && width < desktop;
-
-  static bool isDesktop(double width) => width >= desktop && width < largeDesktop;
 
   static bool isDesktopOrLarger(double width) => width >= desktop;
 

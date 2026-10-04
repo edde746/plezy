@@ -1,4 +1,4 @@
-export const watchTogetherFaqAnswer =
+const watchTogetherFaqAnswer =
   "Watch Together requires every participant to have access to the same media on the same server. It uses a WebSocket relay to exchange room and participant details, server and media identifiers, an optional media title, and playback timing/control state. It does not relay the media stream or your media-server credentials. Plezy’s relay is the default; if you choose a custom relay, that relay’s operator controls its security, logging, retention, and location.";
 
 export type Faq = {
