@@ -3039,6 +3039,61 @@ void main() {
       expect(await db.getDownloadedMedia(itemA.globalKey), isNull);
       expect(await db.getDownloadedMedia(itemB.globalKey), isNull);
     });
+
+    test('auto-delete keeps watched downloads that still have a resume point', () async {
+      // Sync rules and "unwatched only" downloads select watched-but-resumable
+      // items, so deleting one here re-queues it on the next rule pass (#2585).
+      await _insertProfile(db, 'profile-a');
+      final finished = testMediaItem(
+        id: 'finished',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Finished',
+        serverId: 'srv',
+        viewCount: 1,
+        durationMs: 2700000,
+      );
+      final resumable = testMediaItem(
+        id: 'resumable',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Resumable',
+        serverId: 'srv',
+        viewCount: 1,
+        viewOffsetMs: 2100000,
+        durationMs: 2700000,
+      );
+      for (final item in [finished, resumable]) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: item.id,
+          globalKey: item.globalKey,
+          type: 'episode',
+          status: DownloadStatus.completed.index,
+        );
+        await db.addDownloadOwner(profileId: 'profile-a', globalKey: item.globalKey);
+      }
+      final provider = DownloadProvider.forTesting(
+        downloadManager: downloadManager,
+        database: db,
+        activeProfileId: 'profile-a',
+      );
+      addTearDown(provider.dispose);
+      await provider.ensureInitialized();
+      provider.debugSeedState(
+        downloads: {
+          for (final item in [finished, resumable])
+            item.globalKey: DownloadProgress(globalKey: item.globalKey, status: DownloadStatus.completed),
+        },
+        metadata: {finished.globalKey: finished, resumable.globalKey: resumable},
+        ownedDownloadKeys: {finished.globalKey, resumable.globalKey},
+      );
+
+      expect(await provider.autoDeleteWatchedDownloads(), ['Finished']);
+      expect(provider.downloads.keys, [resumable.globalKey]);
+      expect(await db.getDownloadedMedia(resumable.globalKey), isNotNull);
+      expect(await db.getDownloadedMedia(finished.globalKey), isNull);
+    });
   });
 
   group('DownloadProvider — getMetadata', () {

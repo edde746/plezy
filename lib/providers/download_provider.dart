@@ -2118,7 +2118,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return meta.title ?? t.common.unknown;
   }
 
-  /// Auto-delete downloaded episodes/movies that are now marked as watched.
+  /// Auto-delete downloaded episodes/movies that are now watched and have no
+  /// resume point.
+  ///
+  /// Watched-but-resumable items (a rewatch in progress, or a server that
+  /// marked the item played but kept its resume point) are kept: sync rules
+  /// and "unwatched only" downloads still select them via
+  /// [MediaItem.isUnwatchedOrInProgress], so deleting them here would just
+  /// re-queue them on the next rule pass.
   ///
   /// Only deletes individual episodes and movies, never show/season containers.
   /// [activeGlobalKey] is excluded from deletion to protect the currently playing item.
@@ -2137,7 +2144,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (profileGeneration != _profileGeneration) break;
       final meta = _resolvedMetadata(globalKey);
       if (meta == null) continue;
-      if (!meta.isWatched) continue;
+      if (meta.isUnwatchedOrInProgress) continue;
 
       // Don't delete the episode that's currently playing
       if (activeGlobalKey != null && meta.globalKey == activeGlobalKey) continue;
