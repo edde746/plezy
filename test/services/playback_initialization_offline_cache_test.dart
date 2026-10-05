@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 import 'dart:io';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -86,6 +86,49 @@ void main() {
     expect(result.isOffline, isTrue);
     expect(result.videoUrl, 'content://offline/movie-1');
     expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
+  });
+
+  test('converted Plex copy uses local tracks while keeping subtitle sidecars', () async {
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1.mp4',
+      mediaIndex: 1,
+      mediaSourceId: 'source-b',
+      downloadQuality: 'p720_2mbps',
+    );
+    await PlexApiCache.instance.put(
+      ServerId('srv-1'),
+      '/library/metadata/movie-1',
+      _plexMetadataEnvelope(includeSecondVersion: true),
+    );
+    final subtitlePath = await DownloadStorageService.instance.getSubtitlePath(ServerId('srv-1'), 'movie-1', 2, 'srt');
+    final subtitleFile = File(subtitlePath);
+    await subtitleFile.parent.create(recursive: true);
+    await subtitleFile.writeAsString('1\n00:00:00,000 --> 00:00:01,000\nHello');
+
+    final result = await PlaybackInitializationService(database: db).getPlaybackData(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv-1'),
+        ),
+        selectedMediaIndex: 1,
+        selectedMediaSourceId: 'source-b',
+      ),
+      preferOffline: true,
+    );
+
+    expect(result.isOffline, isTrue);
+    expect(result.videoUrl, 'content://offline/movie-1.mp4');
+    expect(result.mediaInfo, isNull, reason: 'original track IDs and codecs cannot describe the converted file');
+    expect(result.selectedMediaIndex, 1);
+    expect(result.selectedMediaSourceId, 'source-b');
+    expect(result.subtitleSidecars.single.track.uri, Uri.file(subtitlePath).toString());
+    expect(result.subtitleSidecars.single.preload, isTrue);
   });
 
   test('downloaded track resolves to its local file through the offline path', () async {
@@ -528,6 +571,7 @@ Future<void> _insertDownloaded(
   String type = 'movie',
   int mediaIndex = 0,
   String? mediaSourceId,
+  String? downloadQuality,
 }) async {
   await db
       .into(db.downloadedMedia)
@@ -542,6 +586,7 @@ Future<void> _insertDownloaded(
           videoFilePath: Value(videoFilePath),
           mediaIndex: Value(mediaIndex),
           mediaSourceId: Value(mediaSourceId),
+          downloadQuality: Value(downloadQuality),
         ),
       );
 }

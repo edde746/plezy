@@ -24,6 +24,12 @@ enum TranscodeQualityPreset {
 
   bool get isOriginal => this == TranscodeQualityPreset.original;
 
+  /// Persisted download quality; existing rows without a value use Original.
+  String? get storageValue => isOriginal ? null : name;
+
+  /// Reject unknown saved values instead of silently downloading the original.
+  static TranscodeQualityPreset fromName(String? name) => name == null ? original : values.byName(name);
+
   /// Resolution height (e.g. 720, 1080) parsed from [videoResolution]. Null for original.
   int? get resolutionHeight {
     final r = videoResolution;

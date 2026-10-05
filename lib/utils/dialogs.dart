@@ -550,6 +550,7 @@ typedef OptionPickerToggle = ({String label, IconData? icon, bool value, ValueCh
 Future<T?> showOptionPickerDialog<T>(
   BuildContext context, {
   required String title,
+  String? description,
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
   OptionPickerToggle? toggle,
@@ -559,6 +560,7 @@ Future<T?> showOptionPickerDialog<T>(
     context: context,
     builder: (context) => _OptionPickerDialog<T>(
       title: title,
+      description: description,
       options: options,
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
@@ -569,6 +571,7 @@ Future<T?> showOptionPickerDialog<T>(
 
 class _OptionPickerDialog<T> extends StatefulWidget {
   final String title;
+  final String? description;
   final List<({IconData? icon, String label, T value})> options;
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
@@ -576,6 +579,7 @@ class _OptionPickerDialog<T> extends StatefulWidget {
 
   const _OptionPickerDialog({
     required this.title,
+    this.description,
     required this.options,
     this.focusFirstItem = false,
     this.onBeforeClose,
@@ -623,6 +627,11 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
       constraints: const BoxConstraints(minWidth: 304),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       children: [
+        if (widget.description != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+            child: Text(widget.description!, style: Theme.of(context).textTheme.bodyMedium),
+          ),
         // SimpleDialog owns the scroll view, so the ink boundary goes inside it.
         ScrollInkBoundary(
           child: Column(

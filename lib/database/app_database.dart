@@ -366,7 +366,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration {
@@ -749,6 +749,24 @@ class AppDatabase extends _$AppDatabase {
           await _ignoreAlreadyExists(
             'DownloadedMedia.libraryTitle column',
             () => m.addColumn(downloadedMedia, downloadedMedia.libraryTitle),
+          );
+        }
+        if (from < 24) {
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.downloadQuality column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.downloadQuality),
+          );
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.plexDownloadQueueId column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.plexDownloadQueueId),
+          );
+          await _ignoreAlreadyExists(
+            'DownloadedMedia.plexDownloadQueueItemId column',
+            () => m.addColumn(downloadedMedia, downloadedMedia.plexDownloadQueueItemId),
+          );
+          await _ignoreAlreadyExists(
+            'SyncRules.downloadQuality column',
+            () => m.addColumn(syncRules, syncRules.downloadQuality),
           );
         }
       },
@@ -1235,6 +1253,7 @@ class AppDatabase extends _$AppDatabase {
     required String targetType,
     required int episodeCount,
     int mediaIndex = 0,
+    String? downloadQuality,
     String downloadFilter = 'unwatched',
     bool includeSpecials = true,
   }) async {
@@ -1253,6 +1272,7 @@ class AppDatabase extends _$AppDatabase {
         episodeCount: episodeCount,
         createdAt: DateTime.now().millisecondsSinceEpoch,
         mediaIndex: Value(mediaIndex),
+        downloadQuality: Value(downloadQuality),
         downloadFilter: Value(downloadFilter),
         includeSpecials: Value(includeSpecials),
       ),
@@ -1264,6 +1284,7 @@ class AppDatabase extends _$AppDatabase {
           targetType: Value(targetType),
           episodeCount: Value(episodeCount),
           mediaIndex: Value(mediaIndex),
+          downloadQuality: Value(downloadQuality),
           downloadFilter: Value(downloadFilter),
           includeSpecials: Value(includeSpecials),
         ),
@@ -1309,6 +1330,7 @@ class AppDatabase extends _$AppDatabase {
     bool? enabled,
     bool? includeSpecials,
     int? mediaIndex,
+    Value<String?> downloadQuality = const Value.absent(),
     required void Function() checkCurrent,
   }) => transaction(() async {
     checkCurrent();
@@ -1324,6 +1346,7 @@ class AppDatabase extends _$AppDatabase {
         enabled: enabled == null ? const Value.absent() : Value(enabled),
         includeSpecials: includeSpecials == null ? const Value.absent() : Value(includeSpecials),
         mediaIndex: mediaIndex == null ? const Value.absent() : Value(mediaIndex),
+        downloadQuality: downloadQuality,
       ),
     );
     checkCurrent();

@@ -4502,6 +4502,21 @@ class Translations$downloads$en {
 	/// en: 'Select Version'
 	String get selectVersion => 'Select Version';
 
+	/// en: 'Download Quality'
+	String get selectQuality => 'Download Quality';
+
+	/// en: 'For a lower-quality copy, keep Plezy open while the server prepares the video. Once ready, downloading can continue in the background.'
+	String get preparationBackgroundHint => 'For a lower-quality copy, keep Plezy open while the server prepares the video. Once ready, downloading can continue in the background.';
+
+	/// en: 'Preparing video…'
+	String get preparingVideo => 'Preparing video…';
+
+	/// en: 'Preparing video… ${percent}%'
+	String preparingVideoProgress({required Object percent}) => 'Preparing video… ${percent}%';
+
+	/// en: 'Plex could not prepare this video. Check that your server supports converted downloads, or choose Original.'
+	String get plexPreparationFailed => 'Plex could not prepare this video. Check that your server supports converted downloads, or choose Original.';
+
 	/// en: 'All episodes'
 	String get allEpisodes => 'All episodes';
 
@@ -8986,6 +9001,11 @@ extension on Translations {
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
+			'downloads.selectQuality' => 'Download Quality',
+			'downloads.preparationBackgroundHint' => 'For a lower-quality copy, keep Plezy open while the server prepares the video. Once ready, downloading can continue in the background.',
+			'downloads.preparingVideo' => 'Preparing video…',
+			'downloads.preparingVideoProgress' => ({required Object percent}) => 'Preparing video… ${percent}%',
+			'downloads.plexPreparationFailed' => 'Plex could not prepare this video. Check that your server supports converted downloads, or choose Original.',
 			'downloads.allEpisodes' => 'All episodes',
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
@@ -9408,13 +9428,13 @@ extension on Translations {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
+			_ => null,
+		} ?? switch (path) {
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
-			_ => null,
-		} ?? switch (path) {
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',

@@ -584,7 +584,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final client = _getMediaClientForMetadata(context);
     if (client == null) return;
 
-    final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+    final quality = await downloadProvider.downloadQualityFor(globalKey);
+    if (!_canUseDetail || !mounted) return;
+    final versionConfig = await _resolveDownloadVersion(context, metadata, client, quality: quality);
     if (versionConfig == null || !_canUseDetail) return;
 
     await downloadProvider.deleteDownload(globalKey);
@@ -654,7 +656,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       final client = _getMediaClientForMetadata(context);
       if (client == null) return;
 
-      final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+      final quality = await downloadProvider.downloadedChildQuality(metadata);
+      if (!_canUseDetail || !context.mounted) return;
+      final versionConfig = await _resolveDownloadVersion(context, metadata, client, quality: quality);
       if (versionConfig == null || !_canUseDetail || !context.mounted) return;
 
       final count = await downloadProvider.queueMissingEpisodes(metadata, client, versionConfig: versionConfig);
@@ -754,7 +758,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     }
 
     // Queued (waiting to download)
-    if (progress?.status == DownloadStatus.queued) {
+    if (progress?.status == DownloadStatus.queued && currentFile != 'preparing') {
       return _DownloadButtonSpec(
         icon: const AppIcon(Symbols.schedule_rounded, fill: 1),
         tooltip: currentFile != null && currentFile.contains('episodes')
@@ -766,10 +770,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     // Downloading (active download); the tooltip carries the episode count
     // for shows/seasons.
-    if (progress?.status == DownloadStatus.downloading) {
+    if (progress?.status == DownloadStatus.downloading || currentFile == 'preparing') {
+      final isPreparing = currentFile == 'preparing';
       return _DownloadButtonSpec(
-        icon: _buildRadialProgress(progress?.progressPercent),
-        tooltip: currentFile != null && currentFile.contains('episodes')
+        icon: _buildRadialProgress(isPreparing && progress!.progress == 0 ? null : progress?.progressPercent),
+        tooltip: isPreparing
+            ? progress!.progress > 0
+                  ? t.downloads.preparingVideoProgress(percent: progress.progress)
+                  : t.downloads.preparingVideo
+            : currentFile != null && currentFile.contains('episodes')
             ? t.downloads.downloadingFilesTooltip(files: currentFile)
             : t.downloads.downloadingTooltip,
         interactive: false,

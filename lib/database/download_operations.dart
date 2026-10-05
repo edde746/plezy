@@ -140,9 +140,24 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   Future<void> updateDownloadedMediaClientScope(String globalKey, String? clientScopeId) {
-    return (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
-      DownloadedMediaCompanion(clientScopeId: Value(clientScopeId)),
-    );
+    // Queue items belong to their creating Plex account. A surviving co-owner
+    // must prepare a new item when an incomplete shared row changes scope.
+    return customUpdate(
+      """
+      UPDATE downloaded_media SET
+        plex_download_queue_id = CASE WHEN client_scope_id IS NOT ? THEN NULL ELSE plex_download_queue_id END,
+        plex_download_queue_item_id = CASE WHEN client_scope_id IS NOT ? THEN NULL ELSE plex_download_queue_item_id END,
+        client_scope_id = ?
+      WHERE global_key = ?
+      """,
+      variables: [
+        Variable<String>(clientScopeId),
+        Variable<String>(clientScopeId),
+        Variable<String>(clientScopeId),
+        Variable<String>(globalKey),
+      ],
+      updates: {downloadedMedia},
+    ).then((_) {});
   }
 
   @visibleForTesting
@@ -332,6 +347,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     String? libraryTitle,
     int mediaIndex = 0,
     String? mediaSourceId,
+    String? downloadQuality,
     int priority = 0,
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
@@ -351,8 +367,9 @@ extension DownloadDatabaseOperations on AppDatabase {
           library_title,
           status,
           media_index,
-          media_source_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          media_source_id,
+          download_quality
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(global_key) DO UPDATE SET
           server_id = excluded.server_id,
           client_scope_id = excluded.client_scope_id,
@@ -372,7 +389,10 @@ extension DownloadDatabaseOperations on AppDatabase {
           retry_count = 0,
           bg_task_id = NULL,
           media_index = excluded.media_index,
-          media_source_id = excluded.media_source_id
+          media_source_id = excluded.media_source_id,
+          download_quality = excluded.download_quality,
+          plex_download_queue_id = NULL,
+          plex_download_queue_item_id = NULL
         WHERE downloaded_media.status IN (?, ?, ?)
         ''',
         variables: [
@@ -388,6 +408,7 @@ extension DownloadDatabaseOperations on AppDatabase {
           Variable<int>(DownloadStatus.queued.index),
           Variable<int>(mediaIndex),
           Variable<String>(mediaSourceId),
+          Variable<String>(downloadQuality),
           Variable<int>(DownloadStatus.failed.index),
           Variable<int>(DownloadStatus.cancelled.index),
           Variable<int>(DownloadStatus.partial.index),
@@ -508,6 +529,14 @@ extension DownloadDatabaseOperations on AppDatabase {
     await (update(
       downloadedMedia,
     )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(status: Value(status)));
+  }
+
+  /// Persist the server-side conversion identity independently of queue policy.
+  Future<void> updatePlexDownloadQueue(String globalKey, String? queueId, String? itemId, {int? expectedId}) async {
+    await (update(downloadedMedia)..where(
+          (t) => t.globalKey.equals(globalKey) & (expectedId == null ? const Constant(true) : t.id.equals(expectedId)),
+        ))
+        .write(DownloadedMediaCompanion(plexDownloadQueueId: Value(queueId), plexDownloadQueueItemId: Value(itemId)));
   }
 
   Future<void> updateDownloadMediaSource(String globalKey, String? mediaSourceId) async {

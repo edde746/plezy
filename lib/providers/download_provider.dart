@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:drift/drift.dart' show Value;
 import '../media/ids.dart';
 import 'package:flutter/foundation.dart';
 import '../i18n/strings.g.dart';
@@ -10,6 +11,7 @@ import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_version.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../database/app_database.dart';
 import '../database/download_operations.dart';
@@ -1348,6 +1350,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           client,
           ownership: ownership,
           mediaIndex: config.mediaIndex,
+          versionConfig: config,
         );
         return queued ? 1 : 0;
       } else if (metadata.kind == MediaKind.album || metadata.kind == MediaKind.artist) {
@@ -1490,6 +1493,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required _QueueOwnership ownership,
     int mediaIndex = 0,
     DownloadVersionConfig? versionConfig,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
     _RelatedMetadataDownloadContext? relatedContext,
   }) async {
     if (!_downloadManager.downloadsSupported) return false;
@@ -1552,7 +1556,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (!_isQueueOwnershipCurrent(ownership)) return false;
 
     // Smart version matching for series/season downloads
-    var resolvedIndex = mediaIndex;
+    var resolvedIndex = versionConfig?.mediaIndex ?? mediaIndex;
     if (versionConfig != null && versionConfig.acceptedSignatures.isNotEmpty) {
       final versions = metadataToStore.mediaVersions;
       if (versions != null && versions.isNotEmpty) {
@@ -1597,6 +1601,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       metadata: metadataToStore,
       client: client,
       mediaIndex: resolvedIndex,
+      quality: versionConfig?.quality ?? quality,
     );
     // The manager may have stamped library identity during the enqueue; keep
     // the hydrated item and the row-derived map in sync with what was stored.
@@ -1754,11 +1759,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       throw Exception('queueMissingEpisodes only supports shows/seasons');
     }
     final ownership = _captureQueueOwnership();
+    final config = versionConfig ?? DownloadVersionConfig(quality: await downloadedChildQuality(metadata));
+    if (!_isQueueOwnershipCurrent(ownership)) return 0;
     final queued = await _expandAndQueue(
       container: metadata,
       client: client,
       ownership: ownership,
-      versionConfig: versionConfig,
+      versionConfig: config,
       filter: DownloadFilter.all,
       maxCount: null,
       skipExisting: true,
@@ -1767,6 +1774,34 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       appLogger.i('Queued $queued missing episodes for show ${metadata.title}');
     }
     return queued;
+  }
+
+  /// Quality saved with an owned download. Manual retries read this before
+  /// replacing their row so they retain the user's original choice.
+  Future<TranscodeQualityPreset> downloadQualityFor(String globalKey) async {
+    final ownership = _captureQueueOwnership();
+    if (!_ownsDownloadKey(globalKey)) return TranscodeQualityPreset.original;
+    final row = await _database.getDownloadedMedia(globalKey);
+    if (!_isQueueOwnershipCurrent(ownership)) throw StateError('Download profile changed');
+    return TranscodeQualityPreset.fromName(row?.downloadQuality);
+  }
+
+  /// A container has no physical row, so a partial resume uses a downloaded
+  /// child's quality. Ignore matching IDs on other servers or profiles.
+  Future<TranscodeQualityPreset> downloadedChildQuality(MediaItem container) async {
+    final ownership = _captureQueueOwnership();
+    for (final globalKey in _downloads.keys.toList()) {
+      final item = _metadata[globalKey];
+      if (item == null || !item.isEpisode || item.serverId != container.serverId || !_ownsDownloadKey(globalKey)) {
+        continue;
+      }
+      final belongs = container.isShow ? item.grandparentId == container.id : item.parentId == container.id;
+      if (!belongs) continue;
+      final quality = await downloadQualityFor(globalKey);
+      if (!_isQueueOwnershipCurrent(ownership)) throw StateError('Download profile changed');
+      if (!quality.isOriginal) return quality;
+    }
+    return TranscodeQualityPreset.original;
   }
 
   /// Shared expansion: fetch all episodes under [container] (show or season),
@@ -2219,6 +2254,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required _QueueOwnership ownership,
     required _RelatedMetadataDownloadContext relatedContext,
     int mediaIndex = 0,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
   }) async {
     if (!_isQueueOwnershipCurrent(ownership)) return false;
     return _queueSingleDownload(
@@ -2226,6 +2262,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       client,
       ownership: ownership,
       mediaIndex: mediaIndex,
+      quality: quality,
       relatedContext: relatedContext,
     );
   }
@@ -2250,6 +2287,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required String targetType,
     required int episodeCount,
     int mediaIndex = 0,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
     String downloadFilter = SyncRuleFilter.unwatched,
     bool includeSpecials = true,
     MediaItem? targetMetadata,
@@ -2267,6 +2305,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       mediaIndex: mediaIndex,
       downloadFilter: downloadFilter,
       includeSpecials: includeSpecials,
+      downloadQuality: quality.storageValue,
     );
 
     if (targetMetadata != null) {
@@ -2322,6 +2361,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     bool? enabled,
     bool? includeSpecials,
     int? mediaIndex,
+    TranscodeQualityPreset? quality,
     void Function()? checkCurrent,
   }) async {
     final profileId = _requireActiveProfileId();
@@ -2355,6 +2395,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       enabled: enabled,
       includeSpecials: includeSpecials,
       mediaIndex: mediaIndex,
+      downloadQuality: quality == null ? const Value.absent() : Value(quality.storageValue),
       checkCurrent: guard,
     );
     guard(requireIdle: false);
@@ -2526,18 +2567,20 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       downloads: downloads,
       metadata: Map.unmodifiable(_metadata),
       associateDownload: (rule, downloadGlobalKey) => _associateSyncRuleDownload(rule, downloadGlobalKey, ownership),
-      queueSingleDownload: (episode, client, {int mediaIndex = 0}) {
-        // A profile switch mid-pass must not keep queueing the old profile's
-        // rules; whatever does get queued is claimed for the rule's owner,
-        // never the new active profile.
-        return _queueSyncRuleDownload(
-          episode,
-          client,
-          ownership: ownership,
-          relatedContext: relatedContext,
-          mediaIndex: mediaIndex,
-        );
-      },
+      queueSingleDownload:
+          (episode, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) {
+            // A profile switch mid-pass must not keep queueing the old profile's
+            // rules; whatever does get queued is claimed for the rule's owner,
+            // never the new active profile.
+            return _queueSyncRuleDownload(
+              episode,
+              client,
+              ownership: ownership,
+              relatedContext: relatedContext,
+              mediaIndex: mediaIndex,
+              quality: quality,
+            );
+          },
       isOffline: _offlineSource?.isOffline ?? false,
       force: force,
     );
@@ -2567,13 +2610,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       downloads: downloads,
       metadata: Map.unmodifiable(_metadata),
       associateDownload: (rule, downloadGlobalKey) => _associateSyncRuleDownload(rule, downloadGlobalKey, ownership),
-      queueSingleDownload: (episode, client, {int mediaIndex = 0}) => _queueSyncRuleDownload(
-        episode,
-        client,
-        ownership: ownership,
-        relatedContext: relatedContext,
-        mediaIndex: mediaIndex,
-      ),
+      queueSingleDownload:
+          (episode, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) =>
+              _queueSyncRuleDownload(
+                episode,
+                client,
+                ownership: ownership,
+                relatedContext: relatedContext,
+                mediaIndex: mediaIndex,
+                quality: quality,
+              ),
       isOffline: _offlineSource?.isOffline ?? false,
     );
   }

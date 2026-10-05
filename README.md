@@ -151,6 +151,7 @@ sudo moss it plezy
 
 ### <img src="assets/readme_icons/downloads.svg" height="20" alt="" align="center" /> Downloads & Offline
 - Download movies, shows, and music for offline playback[^dl]
+- Plex video download quality presets, with Original as the default (Plex Media Server 1.41.9+ for conversion)
 - Background queue with pause / resume
 - Sync rules for automatic downloads, with per-show "Include Specials"
 - Offline browsing with watch state sync-back on reconnect

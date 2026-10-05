@@ -552,9 +552,12 @@ class _DownloadTreeItem extends StatefulWidget {
 }
 
 class _DownloadTreeItemState extends State<_DownloadTreeItem> {
+  bool get _isPreparing => widget.node.downloadProgress?.currentFile == 'preparing';
+
   /// Treat downloading items with no progress/speed as effectively queued
   /// (they're waiting in background_downloader's HoldingQueue).
   DownloadStatus get _effectiveStatus {
+    if (_isPreparing) return DownloadStatus.downloading;
     if (widget.node.status == DownloadStatus.downloading &&
         widget.node.progress == 0 &&
         (widget.node.downloadProgress?.speed ?? 0) == 0) {
@@ -702,13 +705,17 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               if (_effectiveStatus == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
-                  value: widget.node.progress,
+                  value: _isPreparing && widget.node.progress == 0 ? null : widget.node.progress,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
                 if (widget.node.downloadProgress != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                    _isPreparing
+                        ? widget.node.progress > 0
+                              ? t.downloads.preparingVideoProgress(percent: (widget.node.progress * 100).round())
+                              : t.downloads.preparingVideo
+                        : '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),

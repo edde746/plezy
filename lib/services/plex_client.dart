@@ -76,6 +76,7 @@ import '../mpv/mpv.dart';
 import 'api_cache.dart';
 import 'plex_api_cache.dart';
 import 'plex_constants.dart';
+import 'plex_download_queue_service.dart';
 import 'plex_lyrics_parser.dart';
 import 'plex_mappers.dart';
 import 'plex_playback_mapper.dart';
@@ -4955,6 +4956,10 @@ class PlexClient
   );
 
   // ── Downloads ────────────────────────────────────────────────────
+
+  /// Capture this profile's credentials for the lifetime of a queued
+  /// download, even if the active Plex Home profile changes while preparing.
+  PlexDownloadQueueService get downloadQueue => PlexDownloadQueueService(_http, config: config);
 
   @override
   Future<ExternalPlaybackTarget?> resolveExternalPlayback(
