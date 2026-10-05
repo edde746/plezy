@@ -2289,7 +2289,9 @@ class DownloadManagerService {
       }
 
       if (!quality.isOriginal) await _transitionStatus(globalKey, DownloadStatus.downloading);
-      final ext = quality.isOriginal ? downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4' : 'mp4';
+      final ext = quality.isOriginal
+          ? downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4'
+          : PlexDownloadQueueService.outputContainer;
 
       final showYear = metadata.isEpisode
           ? await _fetchShowYear(serverId, metadata.grandparentId, clientScopeId: existing.clientScopeId)
@@ -2969,7 +2971,9 @@ class DownloadManagerService {
             if (metadata == null) {
               throw Exception('No metadata for SAF recovery of $globalKey');
             }
-            final ext = downloadExtensionFromUrl(task.url) ?? 'mp4';
+            final ext = existing?.downloadQuality != null
+                ? PlexDownloadQueueService.outputContainer
+                : downloadExtensionFromUrl(task.url) ?? 'mp4';
             storedPath =
                 await _resolveSafStoredPathForRecovery(
                   metadata,

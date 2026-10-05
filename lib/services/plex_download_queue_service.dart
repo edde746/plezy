@@ -40,10 +40,14 @@ class PlexDownloadDecision {
 /// Requests reuse the Plex client's transport, including endpoint failover.
 /// See https://developer.plex.tv/pms/#tag/Download-Queue.
 class PlexDownloadQueueService {
+  static const outputContainer = 'mkv';
   static const _apiVersion = '1.0.0';
+  // Download conversions are offline jobs, which PMS matches only against
+  // static targets. A streaming target is ignored and the item fails with
+  // transcodeDecisionCode 4005 ("No conversion profile found for protocol http").
   static const _profile =
-      'add-transcode-target(type=videoProfile&context=streaming'
-      '&protocol=http&container=mp4&videoCodec=h264&audioCodec=aac&replace=true)';
+      'add-transcode-target(type=videoProfile&context=static'
+      '&protocol=http&container=$outputContainer&videoCodec=h264&audioCodec=aac&replace=true)';
 
   final MediaServerHttpClient _http;
   final Map<String, String> _headers;
@@ -54,7 +58,11 @@ class PlexDownloadQueueService {
         // Override any later change in the shared transport's profile headers.
         'X-Plex-Token': config.token ?? '',
         'X-Plex-Pms-Api-Version': _apiVersion,
-        'X-Plex-Client-Profile-Name': 'generic',
+        // Carry the conversion target through queue creation, preparation and
+        // decision requests, using the same identity as playback transcoding.
+        'X-Plex-Platform': 'Generic',
+        'X-Plex-Client-Profile-Name': 'Generic',
+        'X-Plex-Client-Profile-Extra': _profile,
       });
 
   Future<String> create() async {
@@ -131,7 +139,7 @@ class PlexDownloadQueueService {
   }
 
   /// Refuse a playlist, unsupported container, or unconverted original before
-  /// the download manager assigns an MP4 filename to the prepared file.
+  /// the download manager assigns a filename to the prepared file.
   Future<PlexDownloadDecision> getDecision(String queueId, String itemId) async {
     final response = await _http.get('${_itemPath(queueId, itemId)}/decision', headers: _headers);
     final metadata = _elements(response, 'Metadata');
@@ -150,8 +158,8 @@ class PlexDownloadQueueService {
     final container = part['container'] ?? media['container'];
     final videoCodec = video.length == 1 ? video.single['codec'] : media['videoCodec'];
     final audioCodec = audio.length == 1 ? audio.single['codec'] : media['audioCodec'];
-    if (container != 'mp4' ||
-        (media['container'] != null && media['container'] != 'mp4') ||
+    if (container != outputContainer ||
+        (media['container'] != null && media['container'] != outputContainer) ||
         videoCodec != 'h264' ||
         audioCodec != 'aac' ||
         (media['videoCodec'] != null && media['videoCodec'] != 'h264') ||
@@ -161,9 +169,9 @@ class PlexDownloadQueueService {
         (media['protocol'] != null && media['protocol'] != 'http') ||
         (part['protocol'] != null && part['protocol'] != 'http') ||
         part['decision'] != 'transcode') {
-      throw const FormatException('Plex could not prepare an MP4 download with H.264 video and AAC audio');
+      throw const FormatException('Plex could not prepare an MKV download with H.264 video and AAC audio');
     }
-    return const PlexDownloadDecision(container: 'mp4', videoCodec: 'h264', audioCodec: 'aac');
+    return const PlexDownloadDecision(container: outputContainer, videoCodec: 'h264', audioCodec: 'aac');
   }
 
   Future<void> remove(String queueId, String itemId) async {

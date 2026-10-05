@@ -351,7 +351,7 @@ void main() {
       expect(await manager.debugPrepareAndEnqueueDownload(row.globalKey, clientFor(fixture)), isTrue);
       final task = handedOff! as DownloadTask;
       expect(task.url, queue.preparedUrl);
-      expect(task.filename, endsWith('.mp4'));
+      expect(task.filename, endsWith('.mkv'));
       expect(task.allowPause, isTrue);
       expect(task.retries, 5);
       expect(task.group, 'video_downloads');
@@ -4493,7 +4493,11 @@ class _FakePlexDownloadQueue implements PlexDownloadQueueService {
   @override
   Future<PlexDownloadDecision> getDecision(String queueId, String itemId) async {
     decisionCalls++;
-    return const PlexDownloadDecision(container: 'mp4', videoCodec: 'h264', audioCodec: 'aac');
+    return const PlexDownloadDecision(
+      container: PlexDownloadQueueService.outputContainer,
+      videoCodec: 'h264',
+      audioCodec: 'aac',
+    );
   }
 
   @override

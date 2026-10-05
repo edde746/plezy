@@ -27,7 +27,7 @@ Map<String, dynamic> _item({String status = 'processing', Object? progress = 37.
 };
 
 Map<String, dynamic> _decisionMedia({
-  String container = 'mp4',
+  String container = 'mkv',
   String videoCodec = 'h264',
   String audioCodec = 'aac',
   String protocol = 'http',
@@ -91,6 +91,13 @@ void main() {
       expect(request.headers['X-Plex-Client-Identifier'], 'test-client');
       expect(request.headers['X-Plex-Token'], 'token');
       expect(request.headers['Accept'], 'application/json');
+      expect(request.headers['X-Plex-Platform'], 'Generic');
+      expect(request.headers['X-Plex-Client-Profile-Name'], 'Generic');
+      expect(
+        request.headers['X-Plex-Client-Profile-Extra'],
+        'add-transcode-target(type=videoProfile&context=static&protocol=http'
+        '&container=mkv&videoCodec=h264&audioCodec=aac&replace=true)',
+      );
     }
     final query = requests.last.url.queryParameters;
     expect(query['keys'], '/library/metadata/42');
@@ -105,8 +112,8 @@ void main() {
     expect(query['subtitles'], 'none');
     expect(
       query['X-Plex-Client-Profile-Extra'],
-      'add-transcode-target(type=videoProfile&context=streaming&protocol=http'
-      '&container=mp4&videoCodec=h264&audioCodec=aac&replace=true)',
+      'add-transcode-target(type=videoProfile&context=static&protocol=http'
+      '&container=mkv&videoCodec=h264&audioCodec=aac&replace=true)',
     );
   });
 
@@ -332,7 +339,7 @@ void main() {
     });
   }
 
-  test('validates MP4/H.264/AAC decision using the singular item path', () async {
+  test('validates MKV/H.264/AAC decision using the singular item path', () async {
     final queue = service((request) async {
       expect(request.url.path, '/downloadQueue/7/item/23/decision');
       return _response('Metadata', [
@@ -342,20 +349,20 @@ void main() {
       ]);
     });
     final decision = await queue.getDecision('7', '23');
-    expect(decision.container, 'mp4');
+    expect(decision.container, 'mkv');
     expect(decision.videoCodec, 'h264');
     expect(decision.audioCodec, 'aac');
   });
 
   final unsupportedDecisions = {
     'a playlist': _decisionMedia(protocol: 'hls'),
-    'a different container': _decisionMedia(container: 'mkv'),
+    'a different container': _decisionMedia(container: 'mp4'),
     'a different video codec': _decisionMedia(videoCodec: 'hevc'),
     'a different audio codec': _decisionMedia(audioCodec: 'ac3'),
     'an unconverted original': _decisionMedia(decision: 'directplay'),
   };
   for (final entry in unsupportedDecisions.entries) {
-    test('rejects ${entry.key} before giving it an MP4 filename', () async {
+    test('rejects ${entry.key} before giving it an MKV filename', () async {
       final queue = service(
         (_) async => _response('Metadata', [
           {
@@ -372,7 +379,7 @@ void main() {
       (_) async => _response('Metadata', [
         {
           'Media': [
-            {'container': 'mp4', 'videoCodec': 'h264', 'audioCodec': 'aac'},
+            {'container': 'mkv', 'videoCodec': 'h264', 'audioCodec': 'aac'},
           ],
         },
       ]),
@@ -417,7 +424,7 @@ void main() {
     expect(url.queryParameters['X-Plex-Token'], 'token+with&symbols');
     expect(url.queryParameters['X-Plex-Client-Identifier'], 'download-client');
     expect(url.queryParameters['X-Plex-Pms-Api-Version'], '1.0.0');
-    expect(url.queryParameters['X-Plex-Client-Profile-Extra'], contains('container=mp4'));
+    expect(url.queryParameters['X-Plex-Client-Profile-Extra'], contains('container=mkv'));
   });
 
   test('rejects malformed server queue IDs before constructing a media URL', () async {
