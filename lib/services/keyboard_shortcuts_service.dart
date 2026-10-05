@@ -248,6 +248,23 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return modifiers.isEmpty ? keyName : '${modifiers.join(' + ')} + $keyName';
   }
 
+  /// Whether [event] presses the key bound to [action] with exactly the
+  /// binding's modifiers held.
+  bool isBoundTo(KeyEvent event, ShortcutAction action) {
+    final hotkey = _hotkeys[action.id];
+    return hotkey != null && _eventMatchesHotkey(event, hotkey);
+  }
+
+  static bool _eventMatchesHotkey(KeyEvent event, HotKey hotkey) {
+    if (event.physicalKey != hotkey.key) return false;
+    final keyboard = HardwareKeyboard.instance;
+    final required = hotkey.modifiers ?? const <HotKeyModifier>[];
+    return keyboard.isShiftPressed == required.contains(HotKeyModifier.shift) &&
+        keyboard.isControlPressed == required.contains(HotKeyModifier.control) &&
+        keyboard.isAltPressed == required.contains(HotKeyModifier.alt) &&
+        keyboard.isMetaPressed == required.contains(HotKeyModifier.meta);
+  }
+
   KeyEventResult handleVideoPlayerKeyEvent(
     KeyEvent event,
     Player player,
@@ -292,34 +309,13 @@ class KeyboardShortcutsService extends ChangeNotifier {
     final isRepeat = event is KeyRepeatEvent;
     if (event is! KeyDownEvent && !isRepeat) return KeyEventResult.ignored;
 
-    final physicalKey = event.physicalKey;
-    final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
-    final isControlPressed = HardwareKeyboard.instance.isControlPressed;
-    final isAltPressed = HardwareKeyboard.instance.isAltPressed;
-    final isMetaPressed = HardwareKeyboard.instance.isMetaPressed;
-
     for (final entry in _hotkeys.entries) {
       final hotkey = entry.value;
-      if (hotkey == null) continue;
-
-      if (physicalKey != hotkey.key) continue;
+      if (hotkey == null || !_eventMatchesHotkey(event, hotkey)) continue;
 
       // Null for an id this build does not know: the event is still consumed so
       // a stale binding never leaks through to another handler.
       final action = ShortcutAction.fromId(entry.key);
-
-      final requiredModifiers = hotkey.modifiers ?? [];
-      final hasShift = requiredModifiers.contains(HotKeyModifier.shift);
-      final hasControl = requiredModifiers.contains(HotKeyModifier.control);
-      final hasAlt = requiredModifiers.contains(HotKeyModifier.alt);
-      final hasMeta = requiredModifiers.contains(HotKeyModifier.meta);
-
-      if (isShiftPressed != hasShift ||
-          isControlPressed != hasControl ||
-          isAltPressed != hasAlt ||
-          isMetaPressed != hasMeta) {
-        continue;
-      }
 
       if (isRepeat && !(action?.repeatable ?? false)) {
         return KeyEventResult.handled;

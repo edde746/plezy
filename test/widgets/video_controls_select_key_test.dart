@@ -13,7 +13,10 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/models/hotkey_model.dart';
+import 'package:plezy/services/keyboard_shortcuts_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/shortcut_action.dart';
 import 'package:plezy/services/video_volume_controller.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
@@ -69,6 +72,10 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     settings = await SettingsService.getInstance();
+    // The shortcuts singleton binds to whichever SettingsService exists when it
+    // is first created; a fresh one per test makes binding writes reach it.
+    final shortcuts = await KeyboardShortcutsService.getInstance();
+    addTearDown(shortcuts.dispose);
 
     // Desktop with a pointer: the configuration the report came from.
     TvDetectionService.debugSetAppleTVOverride(false);
@@ -565,6 +572,74 @@ void main() {
 
       expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'the prompt does not own a phone Back');
       expect(screenBackDispositions, [PlayerBackDisposition.exitPlayer], reason: '#1938: mobile Back exits, always');
+    });
+  });
+
+  // Enter is the default skip binding and also the surface's Select key, whose
+  // own skip rule only holds while the chrome is down. Moving the mouse raises
+  // the chrome on desktop, so Select used to swallow the binding and toggle
+  // playback under a prompt the viewer could see (#2577).
+  group('the desktop skip binding', () {
+    final introMarker = MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000);
+
+    Future<void> showPromptUnderChrome(WidgetTester tester) async {
+      player.emitPosition(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      chrome.show();
+      await tester.pumpAndSettle();
+      expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'precondition: the prompt is up');
+      expect(focusLabel(), 'PlayerSurface', reason: 'precondition: nothing in the chrome owns focus');
+    }
+
+    playerTest('Enter skips a prompt with the chrome up', markers: [introMarker], (tester) async {
+      await showPromptUnderChrome(tester);
+
+      await press(tester, LogicalKeyboardKey.enter);
+
+      expect(player.state.position, const Duration(seconds: 45));
+      expect(toggles, 0, reason: 'the binding outranks the Select toggle');
+    });
+
+    playerTest('rebinding the skip gives Enter back to play/pause', markers: [introMarker], (tester) async {
+      await settings.write(SettingsService.keyboardHotkeys, {
+        ...settings.read(SettingsService.keyboardHotkeys),
+        ShortcutAction.skipMarker.id: const HotKey(key: PhysicalKeyboardKey.digit9),
+      });
+      await showPromptUnderChrome(tester);
+
+      await press(tester, LogicalKeyboardKey.enter);
+      expect(toggles, 1);
+      expect(player.state.position, const Duration(seconds: 15), reason: 'Enter is no longer the binding');
+
+      await press(tester, LogicalKeyboardKey.digit9);
+      expect(player.state.position, const Duration(seconds: 45));
+    });
+
+    // Focus drifts off the surface on route opening, window reactivation and
+    // the like; the global fallback used to consume the binding as a no-op.
+    playerTest('the binding skips while focus has drifted off the surface', markers: [introMarker], (tester) async {
+      player.emitPosition(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      screenFocusNode.requestFocus();
+      await tester.pump();
+      expect(focusLabel(), 'VideoPlayerScreen', reason: 'precondition: focus has drifted');
+
+      await press(tester, LogicalKeyboardKey.enter);
+
+      expect(player.state.position, const Duration(seconds: 45));
+    });
+
+    playerTest('a drifted Enter does not skip a prompt that already went away', markers: [introMarker], (tester) async {
+      player.emitPosition(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 8));
+      expect(find.byType(SkipMarkerButton), findsNothing, reason: 'precondition: the prompt auto-dismissed');
+      screenFocusNode.requestFocus();
+      await tester.pump();
+
+      await press(tester, LogicalKeyboardKey.enter);
+
+      expect(player.state.position, const Duration(seconds: 15), reason: 'an unseen marker must not be skipped');
     });
   });
 
