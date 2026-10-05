@@ -36,6 +36,58 @@ void main() {
       expect(v.name, 'Movie.mkv');
     });
 
+    test('names versions by their label when the files follow the convention', () {
+      final versions = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 1, partExtras: {'file': '/data/TV/Show/Season 1/Show - S01E01 - # 1 Primary.mkv'}),
+        ),
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 2, partExtras: {'file': '/data/TV/Show/Season 1/Show - S01E01 - # 2 Secondary.mkv'}),
+        ),
+      ]);
+      expect(versions.map((v) => v.name), ['# 1 Primary', '# 2 Secondary']);
+      expect(versions.first.displayLabel, startsWith('# 1 Primary · '));
+      expect(versions.first.id, '1');
+      expect(versions.first.parts.single.id, '101');
+    });
+
+    test('labels edition files by the part after the edition', () {
+      final versions = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 1, partExtras: {'file': '/Movies/Blade Runner (1982) {edition-Directors Cut} - 1080p.mkv'}),
+        ),
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 2, partExtras: {'file': '/Movies/Blade Runner (1982) {edition-Directors Cut} - 4K.mkv'}),
+        ),
+      ]);
+      expect(versions.map((v) => v.name), ['1080p', '4K']);
+    });
+
+    test('keeps whole file names when labels are missing or collide', () {
+      final single = [
+        PlexMappers.mediaVersionFromJson(_media(partExtras: {'file': '/TV/Show - S01E01 - Pilot.mkv'})),
+      ];
+      expect(PlexMappers.labelVersions(single).single.name, 'Show - S01E01 - Pilot.mkv');
+
+      final unlabelled = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': '/Movies/Movie - 1080p.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2, partExtras: {'file': '/Movies/Movie.mkv'})),
+      ]);
+      expect(unlabelled.map((v) => v.name), ['Movie - 1080p.mkv', 'Movie.mkv']);
+
+      final colliding = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': '/a/Movie - 1080p.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2, partExtras: {'file': '/b/Movie - 1080P.mkv'})),
+      ]);
+      expect(colliding.map((v) => v.name), ['Movie - 1080p.mkv', 'Movie - 1080P.mkv']);
+
+      final withheld = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': '/Movies/Movie - 1080p.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2)),
+      ]);
+      expect(withheld.map((v) => v.name), ['Movie - 1080p.mkv', isNull]);
+    });
+
     test('has no name when Plex withholds the path', () {
       expect(PlexMappers.mediaVersionFromJson(_media()).name, isNull);
       expect(PlexMappers.mediaVersionFromJson(_media(partExtras: {'file': '  '})).name, isNull);

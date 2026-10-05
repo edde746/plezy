@@ -1132,7 +1132,7 @@ class PlexMappers {
       styles: dto.style,
       moods: dto.mood,
       roles: dto.role?.map(role).toList(),
-      mediaVersions: dto.mediaVersions?.map(mediaVersion).toList(),
+      mediaVersions: dto.mediaVersions == null ? null : labelVersions(dto.mediaVersions!.map(mediaVersion).toList()),
       libraryId: dto.librarySectionID?.toString(),
       libraryTitle: dto.librarySectionTitle,
       trailerKey: dto.primaryExtraKey,
@@ -1212,7 +1212,8 @@ class PlexMappers {
 
   /// The version's name in the picker: the file that will play, exactly as
   /// the file-info sheet shows it, ahead of the resolution/codec/bitrate
-  /// label ([MediaVersion.displayLabel]).
+  /// label ([MediaVersion.displayLabel]). [labelVersions] shortens it to the
+  /// version label when the item's files follow the naming convention.
   ///
   /// Plex's multiple versions and editions are still in beta and their naming
   /// is not settled, so no Plex-side name field is relied on; the file name is
@@ -1225,6 +1226,51 @@ class PlexMappers {
       if (name != null) return name;
     }
     return null;
+  }
+
+  /// Name an item's versions by their version label rather than the whole
+  /// file name, when every file follows the multiple-versions convention
+  /// `<name> - <label>.<ext>` and the labels tell the versions apart:
+  /// `Show - S01E01 - # 1 Primary.mkv` / `… - # 2 Secondary.mkv` read as
+  /// `# 1 Primary` / `# 2 Secondary`. Editions (`{edition-…}`) are split into
+  /// their own items by the server, so they never need to appear here.
+  ///
+  /// The label is the same on every episode, so a saved version preference
+  /// can match it across a series. Anything else (a single version, a file
+  /// without the separator, a withheld path, or two versions with the same
+  /// label) keeps the full file names, so no version loses its name.
+  static List<MediaVersion> labelVersions(List<MediaVersion> versions) {
+    if (versions.length < 2) return versions;
+    final labels = [for (final version in versions) _versionLabel(version.name)];
+    if (labels.any((label) => label == null)) return versions;
+    if (labels.map((label) => label!.toLowerCase()).toSet().length != labels.length) return versions;
+    return [
+      for (var i = 0; i < versions.length; i++)
+        MediaVersion(
+          id: versions[i].id,
+          width: versions[i].width,
+          height: versions[i].height,
+          videoResolution: versions[i].videoResolution,
+          videoCodec: versions[i].videoCodec,
+          bitrate: versions[i].bitrate,
+          container: versions[i].container,
+          parts: versions[i].parts,
+          name: labels[i],
+        ),
+    ];
+  }
+
+  /// `# 1 Primary` from `Show - S01E01 - # 1 Primary.mkv`: the text after the
+  /// last ` - ` of the file name, without its extension. Null when there is
+  /// no separator or nothing follows it.
+  static String? _versionLabel(String? fileName) {
+    if (fileName == null) return null;
+    final dot = fileName.lastIndexOf('.');
+    final stem = dot > 0 ? fileName.substring(0, dot) : fileName;
+    final separator = stem.lastIndexOf(' - ');
+    if (separator < 0) return null;
+    final label = stem.substring(separator + 3).trim();
+    return label.isEmpty ? null : label;
   }
 
   /// Map a Plex Media JSON entry directly into a [MediaVersion].
@@ -1338,7 +1384,9 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
       if (value is Map) value,
   ];
   if (media.isEmpty) return null;
-  final versions = [for (final value in media) PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(value))];
+  final versions = PlexMappers.labelVersions([
+    for (final value in media) PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(value)),
+  ]);
   final requestedId = mediaSourceId?.trim();
   final byId = requestedId == null || requestedId.isEmpty ? -1 : versions.indexWhere((v) => v.id == requestedId);
   if (byId >= 0) {
