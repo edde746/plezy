@@ -620,33 +620,37 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 const Spacer(),
                 // When content strip is visible, hide the normal controls (like mobile)
                 if (!_contentStripVisible)
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _buildBottomControlsContent(context, hasFrame: true),
-                      // Down arrow hint when strip content is available
-                      if (widget.useDpadNavigation && _hasStripContent)
-                        const ContentStripHint(Symbols.keyboard_arrow_down_rounded),
-                    ],
+                  _absorbMissedClicks(
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        _buildBottomControlsContent(context, hasFrame: true),
+                        // Down arrow hint when strip content is available
+                        if (widget.useDpadNavigation && _hasStripContent)
+                          const ContentStripHint(Symbols.keyboard_arrow_down_rounded),
+                      ],
+                    ),
                   ),
                 // Content strip (TV/dpad only) — replaces normal controls
                 if (_contentStripVisible && widget.useDpadNavigation)
-                  ContentStripPanel(
-                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
-                    chevron: Symbols.keyboard_arrow_up_rounded,
-                    child: ContentStrip(
-                      key: _contentStripKey,
-                      player: widget.player,
-                      chapters: widget.chapters,
-                      serverId: widget.serverId,
-                      canControl: _canControl,
-                      showQueueTab: widget.showQueueTab,
-                      onQueueItemSelected: widget.onQueueItemSelected,
-                      onSeekRequested: widget.onSeekRequested,
-                      onSeekCompleted: widget.onSeekCompleted,
-                      useFocusNavigation: true,
-                      onNavigateUp: _onContentStripNavigateUp,
-                      onFocusActivity: widget.onFocusActivity,
+                  _absorbMissedClicks(
+                    ContentStripPanel(
+                      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
+                      chevron: Symbols.keyboard_arrow_up_rounded,
+                      child: ContentStrip(
+                        key: _contentStripKey,
+                        player: widget.player,
+                        chapters: widget.chapters,
+                        serverId: widget.serverId,
+                        canControl: _canControl,
+                        showQueueTab: widget.showQueueTab,
+                        onQueueItemSelected: widget.onQueueItemSelected,
+                        onSeekRequested: widget.onSeekRequested,
+                        onSeekCompleted: widget.onSeekCompleted,
+                        useFocusNavigation: true,
+                        onNavigateUp: _onContentStripNavigateUp,
+                        onFocusActivity: widget.onFocusActivity,
+                      ),
                     ),
                   ),
               ],
@@ -656,6 +660,20 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       ],
     );
   }
+
+  /// A bar is chrome, not video. The controls overlay behind it treats every
+  /// tap no control claims as a click on the video — play/pause, fullscreen on
+  /// a double click, or hiding the chrome — so a click that misses a button or
+  /// the seek bar by a few pixels would act on playback (#2578). This claims
+  /// those taps without acting on them; the bar's own controls sit deeper in
+  /// the hit-test path and still win the gesture arena.
+  Widget _absorbMissedClicks(Widget bar) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    excludeFromSemantics: true,
+    // ignore: no-empty-block - claims taps that miss every control in the bar
+    onTap: () {},
+    child: bar,
+  );
 
   Widget _buildTopBar(BuildContext _) {
     // Use global fullscreen state for padding
@@ -699,7 +717,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       ),
     );
 
-    return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
+    return DesktopAppBarHelper.wrapWithGestureDetector(_absorbMissedClicks(topBar), opaque: true);
   }
 
   Widget _buildBottomControlsContent(BuildContext _, {required bool hasFrame}) {
