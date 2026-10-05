@@ -106,6 +106,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     int mediaIndex = 0,
     String? mediaSourceId,
     String? preferredVersionSignature,
+    String? preferredVersionName,
   }) async {
     final item = await cache.getMetadata(ServerId(cacheServerId), itemId);
     final raw = item?.raw;
@@ -115,6 +116,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       sourceIndex: mediaIndex,
       sourceId: mediaSourceId,
       preferredSignature: preferredVersionSignature,
+      preferredName: preferredVersionName,
     );
     if (bundle == null) return null;
     return jellyfinMediaSourceToMediaSourceInfo(
@@ -258,6 +260,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           sourceIndex: options.selectedMediaIndex,
           sourceId: options.selectedMediaSourceId,
           preferredSignature: options.preferredVersionSignature,
+          preferredName: options.preferredVersionName,
         ),
       );
     } catch (error, stackTrace) {
@@ -700,6 +703,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     int sourceIndex = 0,
     String? sourceId,
     String? preferredSignature,
+    String? preferredName,
   }) async {
     final item = await fetchItemFreshCacheFirst(itemId);
     final raw = item?.raw;
@@ -709,6 +713,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       sourceIndex: sourceIndex,
       sourceId: sourceId,
       preferredSignature: preferredSignature,
+      preferredName: preferredName,
     );
   }
 
@@ -717,6 +722,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     int sourceIndex = 0,
     String? sourceId,
     String? preferredSignature,
+    String? preferredName,
   }) {
     final sources = raw['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
@@ -731,10 +737,16 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         resolvedBySourceId = true;
       }
     }
-    // Saved-preference signature: only meaningful when the id didn't pin a
-    // source (Resume rows omit MediaSources, so launch passes a signature and
-    // a stored index that may not fit this item's source ordering).
-    if (!resolvedBySourceId && preferredSignature != null && preferredSignature.isNotEmpty) {
+    // Saved-preference name, then signature: only meaningful when the id
+    // didn't pin a source (Resume rows omit MediaSources, so launch passes a
+    // name, a signature and a stored index that may not fit this item's
+    // source ordering). The name comes first because same-quality versions
+    // ("# 1 Primary" / "# 2 Secondary") share a signature, and Emby does not
+    // keep sources in a stable order across episodes.
+    final byName = resolvedBySourceId ? null : MediaVersion.findNamedIndex(availableVersions, preferredName);
+    if (byName != null) {
+      index = byName;
+    } else if (!resolvedBySourceId && preferredSignature != null && preferredSignature.isNotEmpty) {
       final bySignature = MediaVersion.findMatchingIndex(availableVersions, {preferredSignature});
       if (bySignature != null) index = bySignature;
     }
