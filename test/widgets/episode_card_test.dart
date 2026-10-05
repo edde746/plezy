@@ -10,6 +10,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/models/download_models.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
@@ -39,6 +40,30 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+  });
+
+  testWidgets('queued server preparation has a preparation tooltip', (tester) async {
+    final episode = testMediaItem(
+      id: 'preparing_episode',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      serverId: 'plex',
+      title: 'Preparing Episode',
+      index: 1,
+    );
+    await _pumpEpisodeCard(
+      tester,
+      episode,
+      progress: DownloadProgress(
+        globalKey: episode.globalKey,
+        status: DownloadStatus.queued,
+        currentFile: 'preparing',
+        progress: 35,
+      ),
+    );
+    expect(find.byTooltip(t.downloads.preparingVideoProgress(percent: 35)), findsOneWidget);
+    final indicators = tester.widgetList<CircularProgressIndicator>(find.byType(CircularProgressIndicator));
+    expect(indicators.any((indicator) => indicator.value == 0.35), isTrue);
   });
 
   testWidgets('overflowing summary stays in card semantics without an Expand label', (tester) async {
@@ -129,7 +154,7 @@ void main() {
   });
 }
 
-Future<void> _pumpEpisodeCard(WidgetTester tester, MediaItem episode) async {
+Future<void> _pumpEpisodeCard(WidgetTester tester, MediaItem episode, {DownloadProgress? progress}) async {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
   JellyfinApiCache.initialize(db);
@@ -141,6 +166,9 @@ Future<void> _pumpEpisodeCard(WidgetTester tester, MediaItem episode) async {
   downloadManager.recoveryFuture = Future<void>.value();
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
   await downloadProvider.ensureInitialized();
+  if (progress != null) {
+    downloadProvider.debugSeedState(downloads: {episode.globalKey: progress}, ownedDownloadKeys: {episode.globalKey});
+  }
   addTearDown(() async {
     downloadProvider.dispose();
     downloadManager.dispose();
@@ -156,7 +184,7 @@ Future<void> _pumpEpisodeCard(WidgetTester tester, MediaItem episode) async {
           home: Scaffold(
             body: SizedBox(
               width: 360,
-              child: EpisodeCard(episode: episode, isOffline: true, onTap: () {}),
+              child: EpisodeCard(episode: episode, isOffline: progress == null, onTap: () {}),
             ),
           ),
         ),

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
+import '../models/transcode_quality_preset.dart';
 
 import '../navigation/profile_navigation_scope.dart';
 import '../services/device_performance.dart';
@@ -1513,10 +1514,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Future<DownloadVersionConfig?> _resolveDownloadVersion(
     BuildContext context,
     MediaItem metadata,
-    MediaServerClient client,
-  ) {
+    MediaServerClient client, {
+    TranscodeQualityPreset? quality,
+  }) {
     final fallback = _fullMetadata?.mediaVersions;
-    return resolveDownloadVersion(context, metadata, client, fallbackVersions: fallback);
+    return resolveDownloadVersion(context, metadata, client, fallbackVersions: fallback, quality: quality);
   }
 
   /// Shows actions for a synced item: edit count, remove rule, delete downloads.

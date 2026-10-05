@@ -15,6 +15,7 @@ import 'package:plezy/media/media_item_types.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -26,6 +27,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/offline_mode_source.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
+import 'package:plezy/utils/download_version_utils.dart';
 import 'package:plezy/utils/notification_permission.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/active_client_scope.dart';
@@ -60,6 +62,9 @@ class _MusicExpansionClient implements MediaServerClient {
   final Future<void>? gate;
   final Completer<void>? started;
   final fetchPlayableDescendantsCalls = <String>[];
+
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) => const [];
 
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
@@ -520,7 +525,135 @@ void main() {
     });
   });
 
+  group('DownloadProvider — quality selection', () {
+    test('show downloads and partial resumes carry the quality to every episode', () async {
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        queueProcessorOverride: (_) async {},
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+      final p = DownloadProvider.forTesting(downloadManager: manager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      final show = testMediaItem(
+        id: 'show',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        serverId: ServerId('srv'),
+      );
+      final episodes = List.generate(
+        3,
+        (index) => testMediaItem(
+          id: 'ep-$index',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          serverId: ServerId('srv'),
+          grandparentId: 'show',
+          parentId: 'season',
+          parentIndex: 1,
+          index: index + 1,
+        ),
+      );
+      expect(
+        await p.queueDownload(
+          show,
+          _MusicExpansionClient(episodes.take(2).toList()),
+          versionConfig: DownloadVersionConfig(quality: TranscodeQualityPreset.p720_2mbps),
+        ),
+        2,
+      );
+      expect(await p.queueMissingEpisodes(show, _MusicExpansionClient(episodes)), 1);
+      for (final episode in episodes) {
+        expect((await db.getDownloadedMedia(episode.globalKey))?.downloadQuality, 'p720_2mbps');
+      }
+    });
+
+    test('movie queue persists the chosen bitrate for retries', () async {
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        queueProcessorOverride: (_) async {},
+      )..recoveryFuture = Future<void>.value();
+      addTearDown(manager.dispose);
+      final p = DownloadProvider.forTesting(downloadManager: manager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+
+      final count = await p.queueDownload(
+        testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: ServerId('srv')),
+        _ThrowingClient(),
+        versionConfig: DownloadVersionConfig(quality: TranscodeQualityPreset.p720_2mbps),
+      );
+      expect(count, 1);
+      expect((await db.getDownloadedMedia('srv:1'))?.downloadQuality, 'p720_2mbps');
+      expect(await p.downloadQualityFor('srv:1'), TranscodeQualityPreset.p720_2mbps);
+    });
+
+    test('partial show quality ignores other servers and profile owners', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      final metadata = <String, MediaItem>{};
+      final downloads = <String, DownloadProgress>{};
+      for (final entry in [
+        (server: 'other', id: '1', quality: TranscodeQualityPreset.p1080_8mbps),
+        (server: 'srv', id: '2', quality: TranscodeQualityPreset.p1080_12mbps),
+        (server: 'srv', id: '3', quality: TranscodeQualityPreset.p720_2mbps),
+      ]) {
+        final key = '${entry.server}:${entry.id}';
+        await db.insertQueuedDownload(
+          serverId: ServerId(entry.server),
+          ratingKey: entry.id,
+          globalKey: key,
+          type: 'episode',
+          downloadQuality: entry.quality.storageValue,
+        );
+        metadata[key] = testMediaItem(
+          id: entry.id,
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          serverId: ServerId(entry.server),
+          grandparentId: 'show',
+          parentId: 'season',
+        );
+        downloads[key] = DownloadProgress(globalKey: key, status: DownloadStatus.completed);
+      }
+      p.debugSeedState(downloads: downloads, metadata: metadata, ownedDownloadKeys: {'other:1', 'srv:3'});
+      final show = testMediaItem(
+        id: 'show',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        serverId: ServerId('srv'),
+      );
+      expect(await p.downloadedChildQuality(show), TranscodeQualityPreset.p720_2mbps);
+      expect(await p.downloadQualityFor('srv:2'), TranscodeQualityPreset.original);
+    });
+  });
+
   group('DownloadProvider — sync rule CRUD', () {
+    test('quality persists through edits and can be reset to Original', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      addTearDown(p.dispose);
+      await p.ensureInitialized();
+      await p.createSyncRule(
+        serverId: ServerId('srv'),
+        ratingKey: '10',
+        targetType: 'show',
+        episodeCount: 5,
+        quality: TranscodeQualityPreset.p720_2mbps,
+      );
+      final key = p.syncRuleKeyFor(ServerId('srv'), '10');
+      await p.updateSyncRuleOptions(key, episodeCount: 3);
+      expect(p.getSyncRule(key)?.downloadQuality, 'p720_2mbps');
+      expect((await db.getSyncRule(key))?.downloadQuality, 'p720_2mbps');
+      await p.updateSyncRuleOptions(key, quality: TranscodeQualityPreset.original);
+      expect(p.getSyncRule(key)?.downloadQuality, isNull);
+      expect((await db.getSyncRule(key))?.downloadQuality, isNull);
+    });
+
     test('createSyncRule inserts into the database and updates the in-memory map', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();

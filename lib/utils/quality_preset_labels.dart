@@ -82,6 +82,7 @@ String? qualityPresetSizeEstimate({
 Future<TranscodeQualityPreset?> showQualityPickerDialog(
   BuildContext context, {
   String? title,
+  String? description,
   int? sourceBitrateKbps,
   int? sourceDurationMs,
   int? sourceSizeBytes,
@@ -100,6 +101,7 @@ Future<TranscodeQualityPreset?> showQualityPickerDialog(
   return showOptionPickerDialog<TranscodeQualityPreset>(
     context,
     title: title ?? t.videoControls.qualityColumnHeader,
+    description: description,
     options: TranscodeQualityPreset.displayOrder.map((p) => (icon: null, label: labelFor(p), value: p)).toList(),
   );
 }

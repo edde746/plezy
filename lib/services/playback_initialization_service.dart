@@ -141,6 +141,7 @@ class PlaybackInitializationService {
         offlineVideoPath: offlineSource.path,
         selectedMediaIndex: offlineSource.mediaIndex,
         selectedMediaSourceId: offlineSource.mediaSourceId,
+        isConverted: offlineSource.isConverted,
       );
     }
     if (requireOffline) {
@@ -171,6 +172,7 @@ class PlaybackInitializationService {
     required String offlineVideoPath,
     required int selectedMediaIndex,
     String? selectedMediaSourceId,
+    bool isConverted = false,
   }) async {
     final mediaInfo = await _cachedMediaInfo(metadata, selectedMediaIndex);
     final subtitleSidecars = await _discoverSidecarSubtitles(
@@ -182,7 +184,10 @@ class PlaybackInitializationService {
     return PlaybackInitializationResult(
       availableVersions: const [],
       videoUrl: _formatVideoUrl(offlineVideoPath),
-      mediaInfo: mediaInfo,
+      // The original's stream IDs, codecs and track indexes do not describe
+      // a converted copy. Let the player discover its embedded tracks from
+      // the local file; the cached original still labels sidecars above.
+      mediaInfo: isConverted ? null : mediaInfo,
       subtitleSidecars: subtitleSidecars,
       isOffline: true,
       playMethod: 'DirectPlay',

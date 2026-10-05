@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import '../i18n/strings.g.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/focus_theme.dart';
@@ -240,14 +241,27 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                 if (slice.isQueueing) {
                                   downloadStatusIcon = DownloadQueueingSpinner(size: 12, color: mutedBase);
                                 } else if (status != null) {
-                                  final iconSize = status == DownloadStatus.downloading ? 14.0 : 12.0;
+                                  final iconSize = status == DownloadStatus.downloading || slice.isPreparing
+                                      ? 14.0
+                                      : 12.0;
                                   downloadStatusIcon = DownloadStatusIcon(
-                                    status: status,
+                                    status: slice.isPreparing ? DownloadStatus.downloading : status,
                                     size: iconSize,
                                     variant: DownloadStatusIconVariant.muted,
                                     mutedBase: mutedBase,
                                     progress: slice.progressPercent,
                                   );
+                                  if (slice.isPreparing) {
+                                    final percent = ((slice.progressPercent ?? 0) * 100).round();
+                                    downloadStatusIcon = Tooltip(
+                                      message: percent > 0
+                                          ? t.downloads.preparingVideoProgress(percent: percent)
+                                          : t.downloads.preparingVideo,
+                                      child: percent > 0
+                                          ? downloadStatusIcon
+                                          : DownloadQueueingSpinner(size: iconSize, color: mutedBase),
+                                    );
+                                  }
                                 }
                                 // Note: No icon shown if not downloaded (null)
                               }
@@ -341,11 +355,21 @@ class _DownloadSlice {
   final DownloadStatus? status;
   final double? progressPercent;
   final bool isQueueing;
+  final bool isPreparing;
 
-  const _DownloadSlice({required this.status, required this.progressPercent, required this.isQueueing});
+  const _DownloadSlice({
+    required this.status,
+    required this.progressPercent,
+    required this.isQueueing,
+    required this.isPreparing,
+  });
 
-  factory _DownloadSlice.from(DownloadProgress? p, bool isQueueing) =>
-      _DownloadSlice(status: p?.status, progressPercent: p?.progressPercent, isQueueing: isQueueing);
+  factory _DownloadSlice.from(DownloadProgress? p, bool isQueueing) => _DownloadSlice(
+    status: p?.status,
+    progressPercent: p?.progressPercent,
+    isQueueing: isQueueing,
+    isPreparing: p?.currentFile == 'preparing',
+  );
 
   @override
   bool operator ==(Object other) {
@@ -353,9 +377,10 @@ class _DownloadSlice {
     return other is _DownloadSlice &&
         other.status == status &&
         other.progressPercent == progressPercent &&
+        other.isPreparing == isPreparing &&
         other.isQueueing == isQueueing;
   }
 
   @override
-  int get hashCode => Object.hash(status, progressPercent, isQueueing);
+  int get hashCode => Object.hash(status, progressPercent, isQueueing, isPreparing);
 }

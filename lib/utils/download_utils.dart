@@ -186,6 +186,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
       mediaIndex: versionConfig.mediaIndex,
+      quality: versionConfig.quality,
       includeSpecials: includeSpecials,
       targetMetadata: metadata,
     );

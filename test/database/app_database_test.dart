@@ -1031,6 +1031,61 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
+      test('v24 migration preserves original downloads and adds Plex preparation state', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v24_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.insertDownload(
+            serverId: ServerId('srv'),
+            ratingKey: 'movie-1',
+            globalKey: 'srv:movie-1',
+            type: 'movie',
+            status: DownloadStatus.completed.index,
+          );
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN download_quality');
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN plex_download_queue_id');
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN plex_download_queue_item_id');
+          await seeded.customStatement('ALTER TABLE sync_rules DROP COLUMN download_quality');
+          await seeded.customStatement('PRAGMA user_version = 23');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final old = await reopened.getDownloadedMedia('srv:movie-1');
+          expect(old?.status, DownloadStatus.completed.index);
+          expect(old?.downloadQuality, isNull);
+          expect(old?.plexDownloadQueueId, isNull);
+          expect(old?.plexDownloadQueueItemId, isNull);
+          final ruleColumns = (await reopened.customSelect("PRAGMA table_info('sync_rules')").get()).map(
+            (row) => row.read<String>('name'),
+          );
+          expect(ruleColumns, contains('download_quality'));
+
+          await reopened.insertQueuedDownload(
+            serverId: ServerId('srv'),
+            ratingKey: 'movie-2',
+            globalKey: 'srv:movie-2',
+            type: 'movie',
+            downloadQuality: 'p720_2mbps',
+          );
+          await reopened.updatePlexDownloadQueue('srv:movie-2', '12', '34');
+          final converted = await reopened.getDownloadedMedia('srv:movie-2');
+          expect(converted?.downloadQuality, 'p720_2mbps');
+          expect(converted?.plexDownloadQueueId, '12');
+          expect(converted?.plexDownloadQueueItemId, '34');
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+
       test('v23 migration adds library identity columns and leaves existing rows unstamped', () async {
         await db.close();
         final tempDir = await Directory.systemTemp.createTemp('plezy_db_v23_migration_test_');

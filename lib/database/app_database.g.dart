@@ -243,6 +243,39 @@ class $DownloadedMediaTable extends DownloadedMedia
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _downloadQualityMeta = const VerificationMeta(
+    'downloadQuality',
+  );
+  @override
+  late final GeneratedColumn<String> downloadQuality = GeneratedColumn<String>(
+    'download_quality',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _plexDownloadQueueIdMeta =
+      const VerificationMeta('plexDownloadQueueId');
+  @override
+  late final GeneratedColumn<String> plexDownloadQueueId =
+      GeneratedColumn<String>(
+        'plex_download_queue_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _plexDownloadQueueItemIdMeta =
+      const VerificationMeta('plexDownloadQueueItemId');
+  @override
+  late final GeneratedColumn<String> plexDownloadQueueItemId =
+      GeneratedColumn<String>(
+        'plex_download_queue_item_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _libraryIdMeta = const VerificationMeta(
     'libraryId',
   );
@@ -288,6 +321,9 @@ class $DownloadedMediaTable extends DownloadedMedia
     bgTaskId,
     mediaIndex,
     mediaSourceId,
+    downloadQuality,
+    plexDownloadQueueId,
+    plexDownloadQueueItemId,
     libraryId,
     libraryTitle,
   ];
@@ -463,6 +499,33 @@ class $DownloadedMediaTable extends DownloadedMedia
         ),
       );
     }
+    if (data.containsKey('download_quality')) {
+      context.handle(
+        _downloadQualityMeta,
+        downloadQuality.isAcceptableOrUnknown(
+          data['download_quality']!,
+          _downloadQualityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plex_download_queue_id')) {
+      context.handle(
+        _plexDownloadQueueIdMeta,
+        plexDownloadQueueId.isAcceptableOrUnknown(
+          data['plex_download_queue_id']!,
+          _plexDownloadQueueIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plex_download_queue_item_id')) {
+      context.handle(
+        _plexDownloadQueueItemIdMeta,
+        plexDownloadQueueItemId.isAcceptableOrUnknown(
+          data['plex_download_queue_item_id']!,
+          _plexDownloadQueueItemIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('library_id')) {
       context.handle(
         _libraryIdMeta,
@@ -571,6 +634,18 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.string,
         data['${effectivePrefix}media_source_id'],
       ),
+      downloadQuality: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}download_quality'],
+      ),
+      plexDownloadQueueId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plex_download_queue_id'],
+      ),
+      plexDownloadQueueItemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plex_download_queue_item_id'],
+      ),
       libraryId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}library_id'],
@@ -612,6 +687,11 @@ class DownloadedMediaItem extends DataClass
   final int mediaIndex;
   final String? mediaSourceId;
 
+  /// Null keeps the original file; other values are TranscodeQualityPreset names.
+  final String? downloadQuality;
+  final String? plexDownloadQueueId;
+  final String? plexDownloadQueueItemId;
+
   /// Owning library identity, stamped at enqueue time so downloads can be
   /// grouped/filtered by library while offline. Plex items carry
   /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
@@ -640,6 +720,9 @@ class DownloadedMediaItem extends DataClass
     this.bgTaskId,
     required this.mediaIndex,
     this.mediaSourceId,
+    this.downloadQuality,
+    this.plexDownloadQueueId,
+    this.plexDownloadQueueItemId,
     this.libraryId,
     this.libraryTitle,
   });
@@ -688,6 +771,17 @@ class DownloadedMediaItem extends DataClass
     map['media_index'] = Variable<int>(mediaIndex);
     if (!nullToAbsent || mediaSourceId != null) {
       map['media_source_id'] = Variable<String>(mediaSourceId);
+    }
+    if (!nullToAbsent || downloadQuality != null) {
+      map['download_quality'] = Variable<String>(downloadQuality);
+    }
+    if (!nullToAbsent || plexDownloadQueueId != null) {
+      map['plex_download_queue_id'] = Variable<String>(plexDownloadQueueId);
+    }
+    if (!nullToAbsent || plexDownloadQueueItemId != null) {
+      map['plex_download_queue_item_id'] = Variable<String>(
+        plexDownloadQueueItemId,
+      );
     }
     if (!nullToAbsent || libraryId != null) {
       map['library_id'] = Variable<String>(libraryId);
@@ -743,6 +837,15 @@ class DownloadedMediaItem extends DataClass
       mediaSourceId: mediaSourceId == null && nullToAbsent
           ? const Value.absent()
           : Value(mediaSourceId),
+      downloadQuality: downloadQuality == null && nullToAbsent
+          ? const Value.absent()
+          : Value(downloadQuality),
+      plexDownloadQueueId: plexDownloadQueueId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plexDownloadQueueId),
+      plexDownloadQueueItemId: plexDownloadQueueItemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plexDownloadQueueItemId),
       libraryId: libraryId == null && nullToAbsent
           ? const Value.absent()
           : Value(libraryId),
@@ -781,6 +884,13 @@ class DownloadedMediaItem extends DataClass
       bgTaskId: serializer.fromJson<String?>(json['bgTaskId']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
       mediaSourceId: serializer.fromJson<String?>(json['mediaSourceId']),
+      downloadQuality: serializer.fromJson<String?>(json['downloadQuality']),
+      plexDownloadQueueId: serializer.fromJson<String?>(
+        json['plexDownloadQueueId'],
+      ),
+      plexDownloadQueueItemId: serializer.fromJson<String?>(
+        json['plexDownloadQueueItemId'],
+      ),
       libraryId: serializer.fromJson<String?>(json['libraryId']),
       libraryTitle: serializer.fromJson<String?>(json['libraryTitle']),
     );
@@ -810,6 +920,11 @@ class DownloadedMediaItem extends DataClass
       'bgTaskId': serializer.toJson<String?>(bgTaskId),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
       'mediaSourceId': serializer.toJson<String?>(mediaSourceId),
+      'downloadQuality': serializer.toJson<String?>(downloadQuality),
+      'plexDownloadQueueId': serializer.toJson<String?>(plexDownloadQueueId),
+      'plexDownloadQueueItemId': serializer.toJson<String?>(
+        plexDownloadQueueItemId,
+      ),
       'libraryId': serializer.toJson<String?>(libraryId),
       'libraryTitle': serializer.toJson<String?>(libraryTitle),
     };
@@ -837,6 +952,9 @@ class DownloadedMediaItem extends DataClass
     Value<String?> bgTaskId = const Value.absent(),
     int? mediaIndex,
     Value<String?> mediaSourceId = const Value.absent(),
+    Value<String?> downloadQuality = const Value.absent(),
+    Value<String?> plexDownloadQueueId = const Value.absent(),
+    Value<String?> plexDownloadQueueItemId = const Value.absent(),
     Value<String?> libraryId = const Value.absent(),
     Value<String?> libraryTitle = const Value.absent(),
   }) => DownloadedMediaItem(
@@ -871,6 +989,15 @@ class DownloadedMediaItem extends DataClass
     mediaSourceId: mediaSourceId.present
         ? mediaSourceId.value
         : this.mediaSourceId,
+    downloadQuality: downloadQuality.present
+        ? downloadQuality.value
+        : this.downloadQuality,
+    plexDownloadQueueId: plexDownloadQueueId.present
+        ? plexDownloadQueueId.value
+        : this.plexDownloadQueueId,
+    plexDownloadQueueItemId: plexDownloadQueueItemId.present
+        ? plexDownloadQueueItemId.value
+        : this.plexDownloadQueueItemId,
     libraryId: libraryId.present ? libraryId.value : this.libraryId,
     libraryTitle: libraryTitle.present ? libraryTitle.value : this.libraryTitle,
   );
@@ -921,6 +1048,15 @@ class DownloadedMediaItem extends DataClass
       mediaSourceId: data.mediaSourceId.present
           ? data.mediaSourceId.value
           : this.mediaSourceId,
+      downloadQuality: data.downloadQuality.present
+          ? data.downloadQuality.value
+          : this.downloadQuality,
+      plexDownloadQueueId: data.plexDownloadQueueId.present
+          ? data.plexDownloadQueueId.value
+          : this.plexDownloadQueueId,
+      plexDownloadQueueItemId: data.plexDownloadQueueItemId.present
+          ? data.plexDownloadQueueItemId.value
+          : this.plexDownloadQueueItemId,
       libraryId: data.libraryId.present ? data.libraryId.value : this.libraryId,
       libraryTitle: data.libraryTitle.present
           ? data.libraryTitle.value
@@ -952,6 +1088,9 @@ class DownloadedMediaItem extends DataClass
           ..write('bgTaskId: $bgTaskId, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('mediaSourceId: $mediaSourceId, ')
+          ..write('downloadQuality: $downloadQuality, ')
+          ..write('plexDownloadQueueId: $plexDownloadQueueId, ')
+          ..write('plexDownloadQueueItemId: $plexDownloadQueueItemId, ')
           ..write('libraryId: $libraryId, ')
           ..write('libraryTitle: $libraryTitle')
           ..write(')'))
@@ -981,6 +1120,9 @@ class DownloadedMediaItem extends DataClass
     bgTaskId,
     mediaIndex,
     mediaSourceId,
+    downloadQuality,
+    plexDownloadQueueId,
+    plexDownloadQueueItemId,
     libraryId,
     libraryTitle,
   ]);
@@ -1009,6 +1151,9 @@ class DownloadedMediaItem extends DataClass
           other.bgTaskId == this.bgTaskId &&
           other.mediaIndex == this.mediaIndex &&
           other.mediaSourceId == this.mediaSourceId &&
+          other.downloadQuality == this.downloadQuality &&
+          other.plexDownloadQueueId == this.plexDownloadQueueId &&
+          other.plexDownloadQueueItemId == this.plexDownloadQueueItemId &&
           other.libraryId == this.libraryId &&
           other.libraryTitle == this.libraryTitle);
 }
@@ -1035,6 +1180,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<String?> bgTaskId;
   final Value<int> mediaIndex;
   final Value<String?> mediaSourceId;
+  final Value<String?> downloadQuality;
+  final Value<String?> plexDownloadQueueId;
+  final Value<String?> plexDownloadQueueItemId;
   final Value<String?> libraryId;
   final Value<String?> libraryTitle;
   const DownloadedMediaCompanion({
@@ -1059,6 +1207,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.mediaSourceId = const Value.absent(),
+    this.downloadQuality = const Value.absent(),
+    this.plexDownloadQueueId = const Value.absent(),
+    this.plexDownloadQueueItemId = const Value.absent(),
     this.libraryId = const Value.absent(),
     this.libraryTitle = const Value.absent(),
   });
@@ -1084,6 +1235,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.mediaSourceId = const Value.absent(),
+    this.downloadQuality = const Value.absent(),
+    this.plexDownloadQueueId = const Value.absent(),
+    this.plexDownloadQueueItemId = const Value.absent(),
     this.libraryId = const Value.absent(),
     this.libraryTitle = const Value.absent(),
   }) : serverId = Value(serverId),
@@ -1113,6 +1267,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<String>? bgTaskId,
     Expression<int>? mediaIndex,
     Expression<String>? mediaSourceId,
+    Expression<String>? downloadQuality,
+    Expression<String>? plexDownloadQueueId,
+    Expression<String>? plexDownloadQueueItemId,
     Expression<String>? libraryId,
     Expression<String>? libraryTitle,
   }) {
@@ -1139,6 +1296,11 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (bgTaskId != null) 'bg_task_id': bgTaskId,
       if (mediaIndex != null) 'media_index': mediaIndex,
       if (mediaSourceId != null) 'media_source_id': mediaSourceId,
+      if (downloadQuality != null) 'download_quality': downloadQuality,
+      if (plexDownloadQueueId != null)
+        'plex_download_queue_id': plexDownloadQueueId,
+      if (plexDownloadQueueItemId != null)
+        'plex_download_queue_item_id': plexDownloadQueueItemId,
       if (libraryId != null) 'library_id': libraryId,
       if (libraryTitle != null) 'library_title': libraryTitle,
     });
@@ -1166,6 +1328,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<String?>? bgTaskId,
     Value<int>? mediaIndex,
     Value<String?>? mediaSourceId,
+    Value<String?>? downloadQuality,
+    Value<String?>? plexDownloadQueueId,
+    Value<String?>? plexDownloadQueueItemId,
     Value<String?>? libraryId,
     Value<String?>? libraryTitle,
   }) {
@@ -1191,6 +1356,10 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       bgTaskId: bgTaskId ?? this.bgTaskId,
       mediaIndex: mediaIndex ?? this.mediaIndex,
       mediaSourceId: mediaSourceId ?? this.mediaSourceId,
+      downloadQuality: downloadQuality ?? this.downloadQuality,
+      plexDownloadQueueId: plexDownloadQueueId ?? this.plexDownloadQueueId,
+      plexDownloadQueueItemId:
+          plexDownloadQueueItemId ?? this.plexDownloadQueueItemId,
       libraryId: libraryId ?? this.libraryId,
       libraryTitle: libraryTitle ?? this.libraryTitle,
     );
@@ -1264,6 +1433,19 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (mediaSourceId.present) {
       map['media_source_id'] = Variable<String>(mediaSourceId.value);
     }
+    if (downloadQuality.present) {
+      map['download_quality'] = Variable<String>(downloadQuality.value);
+    }
+    if (plexDownloadQueueId.present) {
+      map['plex_download_queue_id'] = Variable<String>(
+        plexDownloadQueueId.value,
+      );
+    }
+    if (plexDownloadQueueItemId.present) {
+      map['plex_download_queue_item_id'] = Variable<String>(
+        plexDownloadQueueItemId.value,
+      );
+    }
     if (libraryId.present) {
       map['library_id'] = Variable<String>(libraryId.value);
     }
@@ -1297,6 +1479,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('bgTaskId: $bgTaskId, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('mediaSourceId: $mediaSourceId, ')
+          ..write('downloadQuality: $downloadQuality, ')
+          ..write('plexDownloadQueueId: $plexDownloadQueueId, ')
+          ..write('plexDownloadQueueItemId: $plexDownloadQueueItemId, ')
           ..write('libraryId: $libraryId, ')
           ..write('libraryTitle: $libraryTitle')
           ..write(')'))
@@ -3410,6 +3595,17 @@ class $SyncRulesTable extends SyncRules
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _downloadQualityMeta = const VerificationMeta(
+    'downloadQuality',
+  );
+  @override
+  late final GeneratedColumn<String> downloadQuality = GeneratedColumn<String>(
+    'download_quality',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _downloadFilterMeta = const VerificationMeta(
     'downloadFilter',
   );
@@ -3465,6 +3661,7 @@ class $SyncRulesTable extends SyncRules
     createdAt,
     lastExecutedAt,
     mediaIndex,
+    downloadQuality,
     downloadFilter,
     includeSpecials,
     downloadLinksInitialized,
@@ -3562,6 +3759,15 @@ class $SyncRulesTable extends SyncRules
         mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta),
       );
     }
+    if (data.containsKey('download_quality')) {
+      context.handle(
+        _downloadQualityMeta,
+        downloadQuality.isAcceptableOrUnknown(
+          data['download_quality']!,
+          _downloadQualityMeta,
+        ),
+      );
+    }
     if (data.containsKey('download_filter')) {
       context.handle(
         _downloadFilterMeta,
@@ -3642,6 +3848,10 @@ class $SyncRulesTable extends SyncRules
         DriftSqlType.int,
         data['${effectivePrefix}media_index'],
       )!,
+      downloadQuality: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}download_quality'],
+      ),
       downloadFilter: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}download_filter'],
@@ -3675,6 +3885,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final int createdAt;
   final int? lastExecutedAt;
   final int mediaIndex;
+  final String? downloadQuality;
   final String downloadFilter;
   final bool includeSpecials;
 
@@ -3694,6 +3905,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     required this.createdAt,
     this.lastExecutedAt,
     required this.mediaIndex,
+    this.downloadQuality,
     required this.downloadFilter,
     required this.includeSpecials,
     required this.downloadLinksInitialized,
@@ -3714,6 +3926,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       map['last_executed_at'] = Variable<int>(lastExecutedAt);
     }
     map['media_index'] = Variable<int>(mediaIndex);
+    if (!nullToAbsent || downloadQuality != null) {
+      map['download_quality'] = Variable<String>(downloadQuality);
+    }
     map['download_filter'] = Variable<String>(downloadFilter);
     map['include_specials'] = Variable<bool>(includeSpecials);
     map['download_links_initialized'] = Variable<bool>(
@@ -3737,6 +3952,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ? const Value.absent()
           : Value(lastExecutedAt),
       mediaIndex: Value(mediaIndex),
+      downloadQuality: downloadQuality == null && nullToAbsent
+          ? const Value.absent()
+          : Value(downloadQuality),
       downloadFilter: Value(downloadFilter),
       includeSpecials: Value(includeSpecials),
       downloadLinksInitialized: Value(downloadLinksInitialized),
@@ -3760,6 +3978,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       createdAt: serializer.fromJson<int>(json['createdAt']),
       lastExecutedAt: serializer.fromJson<int?>(json['lastExecutedAt']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
+      downloadQuality: serializer.fromJson<String?>(json['downloadQuality']),
       downloadFilter: serializer.fromJson<String>(json['downloadFilter']),
       includeSpecials: serializer.fromJson<bool>(json['includeSpecials']),
       downloadLinksInitialized: serializer.fromJson<bool>(
@@ -3782,6 +4001,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       'createdAt': serializer.toJson<int>(createdAt),
       'lastExecutedAt': serializer.toJson<int?>(lastExecutedAt),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
+      'downloadQuality': serializer.toJson<String?>(downloadQuality),
       'downloadFilter': serializer.toJson<String>(downloadFilter),
       'includeSpecials': serializer.toJson<bool>(includeSpecials),
       'downloadLinksInitialized': serializer.toJson<bool>(
@@ -3802,6 +4022,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     int? createdAt,
     Value<int?> lastExecutedAt = const Value.absent(),
     int? mediaIndex,
+    Value<String?> downloadQuality = const Value.absent(),
     String? downloadFilter,
     bool? includeSpecials,
     bool? downloadLinksInitialized,
@@ -3819,6 +4040,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
         ? lastExecutedAt.value
         : this.lastExecutedAt,
     mediaIndex: mediaIndex ?? this.mediaIndex,
+    downloadQuality: downloadQuality.present
+        ? downloadQuality.value
+        : this.downloadQuality,
     downloadFilter: downloadFilter ?? this.downloadFilter,
     includeSpecials: includeSpecials ?? this.includeSpecials,
     downloadLinksInitialized:
@@ -3845,6 +4069,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       mediaIndex: data.mediaIndex.present
           ? data.mediaIndex.value
           : this.mediaIndex,
+      downloadQuality: data.downloadQuality.present
+          ? data.downloadQuality.value
+          : this.downloadQuality,
       downloadFilter: data.downloadFilter.present
           ? data.downloadFilter.value
           : this.downloadFilter,
@@ -3871,6 +4098,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
+          ..write('downloadQuality: $downloadQuality, ')
           ..write('downloadFilter: $downloadFilter, ')
           ..write('includeSpecials: $includeSpecials, ')
           ..write('downloadLinksInitialized: $downloadLinksInitialized')
@@ -3891,6 +4119,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     createdAt,
     lastExecutedAt,
     mediaIndex,
+    downloadQuality,
     downloadFilter,
     includeSpecials,
     downloadLinksInitialized,
@@ -3910,6 +4139,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           other.createdAt == this.createdAt &&
           other.lastExecutedAt == this.lastExecutedAt &&
           other.mediaIndex == this.mediaIndex &&
+          other.downloadQuality == this.downloadQuality &&
           other.downloadFilter == this.downloadFilter &&
           other.includeSpecials == this.includeSpecials &&
           other.downloadLinksInitialized == this.downloadLinksInitialized);
@@ -3927,6 +4157,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<int> createdAt;
   final Value<int?> lastExecutedAt;
   final Value<int> mediaIndex;
+  final Value<String?> downloadQuality;
   final Value<String> downloadFilter;
   final Value<bool> includeSpecials;
   final Value<bool> downloadLinksInitialized;
@@ -3942,6 +4173,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.createdAt = const Value.absent(),
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.downloadQuality = const Value.absent(),
     this.downloadFilter = const Value.absent(),
     this.includeSpecials = const Value.absent(),
     this.downloadLinksInitialized = const Value.absent(),
@@ -3958,6 +4190,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     required int createdAt,
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.downloadQuality = const Value.absent(),
     this.downloadFilter = const Value.absent(),
     this.includeSpecials = const Value.absent(),
     this.downloadLinksInitialized = const Value.absent(),
@@ -3979,6 +4212,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Expression<int>? createdAt,
     Expression<int>? lastExecutedAt,
     Expression<int>? mediaIndex,
+    Expression<String>? downloadQuality,
     Expression<String>? downloadFilter,
     Expression<bool>? includeSpecials,
     Expression<bool>? downloadLinksInitialized,
@@ -3995,6 +4229,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       if (createdAt != null) 'created_at': createdAt,
       if (lastExecutedAt != null) 'last_executed_at': lastExecutedAt,
       if (mediaIndex != null) 'media_index': mediaIndex,
+      if (downloadQuality != null) 'download_quality': downloadQuality,
       if (downloadFilter != null) 'download_filter': downloadFilter,
       if (includeSpecials != null) 'include_specials': includeSpecials,
       if (downloadLinksInitialized != null)
@@ -4014,6 +4249,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Value<int>? createdAt,
     Value<int?>? lastExecutedAt,
     Value<int>? mediaIndex,
+    Value<String?>? downloadQuality,
     Value<String>? downloadFilter,
     Value<bool>? includeSpecials,
     Value<bool>? downloadLinksInitialized,
@@ -4030,6 +4266,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       createdAt: createdAt ?? this.createdAt,
       lastExecutedAt: lastExecutedAt ?? this.lastExecutedAt,
       mediaIndex: mediaIndex ?? this.mediaIndex,
+      downloadQuality: downloadQuality ?? this.downloadQuality,
       downloadFilter: downloadFilter ?? this.downloadFilter,
       includeSpecials: includeSpecials ?? this.includeSpecials,
       downloadLinksInitialized:
@@ -4073,6 +4310,9 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     if (mediaIndex.present) {
       map['media_index'] = Variable<int>(mediaIndex.value);
     }
+    if (downloadQuality.present) {
+      map['download_quality'] = Variable<String>(downloadQuality.value);
+    }
     if (downloadFilter.present) {
       map['download_filter'] = Variable<String>(downloadFilter.value);
     }
@@ -4101,6 +4341,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
+          ..write('downloadQuality: $downloadQuality, ')
           ..write('downloadFilter: $downloadFilter, ')
           ..write('includeSpecials: $includeSpecials, ')
           ..write('downloadLinksInitialized: $downloadLinksInitialized')
@@ -6666,6 +6907,9 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
       Value<String?> mediaSourceId,
+      Value<String?> downloadQuality,
+      Value<String?> plexDownloadQueueId,
+      Value<String?> plexDownloadQueueItemId,
       Value<String?> libraryId,
       Value<String?> libraryTitle,
     });
@@ -6692,6 +6936,9 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
       Value<String?> mediaSourceId,
+      Value<String?> downloadQuality,
+      Value<String?> plexDownloadQueueId,
+      Value<String?> plexDownloadQueueItemId,
       Value<String?> libraryId,
       Value<String?> libraryTitle,
     });
@@ -6807,6 +7054,21 @@ class $$DownloadedMediaTableFilterComposer
 
   ColumnFilters<String> get mediaSourceId => $composableBuilder(
     column: $table.mediaSourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get plexDownloadQueueId => $composableBuilder(
+    column: $table.plexDownloadQueueId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get plexDownloadQueueItemId => $composableBuilder(
+    column: $table.plexDownloadQueueItemId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6935,6 +7197,21 @@ class $$DownloadedMediaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get plexDownloadQueueId => $composableBuilder(
+    column: $table.plexDownloadQueueId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get plexDownloadQueueItemId => $composableBuilder(
+    column: $table.plexDownloadQueueItemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get libraryId => $composableBuilder(
     column: $table.libraryId,
     builder: (column) => ColumnOrderings(column),
@@ -7042,6 +7319,21 @@ class $$DownloadedMediaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get plexDownloadQueueId => $composableBuilder(
+    column: $table.plexDownloadQueueId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get plexDownloadQueueItemId => $composableBuilder(
+    column: $table.plexDownloadQueueItemId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get libraryId =>
       $composableBuilder(column: $table.libraryId, builder: (column) => column);
 
@@ -7109,6 +7401,9 @@ class $$DownloadedMediaTableTableManager
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String?> mediaSourceId = const Value.absent(),
+                Value<String?> downloadQuality = const Value.absent(),
+                Value<String?> plexDownloadQueueId = const Value.absent(),
+                Value<String?> plexDownloadQueueItemId = const Value.absent(),
                 Value<String?> libraryId = const Value.absent(),
                 Value<String?> libraryTitle = const Value.absent(),
               }) => DownloadedMediaCompanion(
@@ -7133,6 +7428,9 @@ class $$DownloadedMediaTableTableManager
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
                 mediaSourceId: mediaSourceId,
+                downloadQuality: downloadQuality,
+                plexDownloadQueueId: plexDownloadQueueId,
+                plexDownloadQueueItemId: plexDownloadQueueItemId,
                 libraryId: libraryId,
                 libraryTitle: libraryTitle,
               ),
@@ -7159,6 +7457,9 @@ class $$DownloadedMediaTableTableManager
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String?> mediaSourceId = const Value.absent(),
+                Value<String?> downloadQuality = const Value.absent(),
+                Value<String?> plexDownloadQueueId = const Value.absent(),
+                Value<String?> plexDownloadQueueItemId = const Value.absent(),
                 Value<String?> libraryId = const Value.absent(),
                 Value<String?> libraryTitle = const Value.absent(),
               }) => DownloadedMediaCompanion.insert(
@@ -7183,6 +7484,9 @@ class $$DownloadedMediaTableTableManager
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
                 mediaSourceId: mediaSourceId,
+                downloadQuality: downloadQuality,
+                plexDownloadQueueId: plexDownloadQueueId,
+                plexDownloadQueueItemId: plexDownloadQueueItemId,
                 libraryId: libraryId,
                 libraryTitle: libraryTitle,
               ),
@@ -8231,6 +8535,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
       required int createdAt,
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
+      Value<String?> downloadQuality,
       Value<String> downloadFilter,
       Value<bool> includeSpecials,
       Value<bool> downloadLinksInitialized,
@@ -8248,6 +8553,7 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<int> createdAt,
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
+      Value<String?> downloadQuality,
       Value<String> downloadFilter,
       Value<bool> includeSpecials,
       Value<bool> downloadLinksInitialized,
@@ -8343,6 +8649,11 @@ class $$SyncRulesTableFilterComposer
 
   ColumnFilters<int> get mediaIndex => $composableBuilder(
     column: $table.mediaIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8451,6 +8762,11 @@ class $$SyncRulesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get downloadFilter => $composableBuilder(
     column: $table.downloadFilter,
     builder: (column) => ColumnOrderings(column),
@@ -8514,6 +8830,11 @@ class $$SyncRulesTableAnnotationComposer
 
   GeneratedColumn<int> get mediaIndex => $composableBuilder(
     column: $table.mediaIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
     builder: (column) => column,
   );
 
@@ -8598,6 +8919,7 @@ class $$SyncRulesTableTableManager
                 Value<int> createdAt = const Value.absent(),
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String?> downloadQuality = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
                 Value<bool> downloadLinksInitialized = const Value.absent(),
@@ -8613,6 +8935,7 @@ class $$SyncRulesTableTableManager
                 createdAt: createdAt,
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
+                downloadQuality: downloadQuality,
                 downloadFilter: downloadFilter,
                 includeSpecials: includeSpecials,
                 downloadLinksInitialized: downloadLinksInitialized,
@@ -8630,6 +8953,7 @@ class $$SyncRulesTableTableManager
                 required int createdAt,
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String?> downloadQuality = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
                 Value<bool> downloadLinksInitialized = const Value.absent(),
@@ -8645,6 +8969,7 @@ class $$SyncRulesTableTableManager
                 createdAt: createdAt,
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
+                downloadQuality: downloadQuality,
                 downloadFilter: downloadFilter,
                 includeSpecials: includeSpecials,
                 downloadLinksInitialized: downloadLinksInitialized,

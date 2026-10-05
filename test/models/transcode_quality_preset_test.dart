@@ -2,6 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 
 void main() {
+  test('saved download qualities round trip and legacy rows use Original', () {
+    for (final quality in TranscodeQualityPreset.values) {
+      expect(TranscodeQualityPreset.fromName(quality.storageValue), quality);
+    }
+    expect(TranscodeQualityPreset.fromName(null), TranscodeQualityPreset.original);
+    expect(() => TranscodeQualityPreset.fromName('unknown-preset'), throwsArgumentError);
+  });
+
   group('TranscodeQualityPreset.resolveStartupDefault', () {
     test('a backend without transcoding starts at original regardless of saved defaults', () {
       final preset = TranscodeQualityPreset.resolveStartupDefault(

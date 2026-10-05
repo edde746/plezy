@@ -39,11 +39,13 @@ void main() {
           grandparentRatingKey: 'show-1',
           mediaIndex: 3,
           mediaSourceId: 'source-3',
+          downloadQuality: 'p720_2mbps',
           priority: 7,
           downloadSubtitles: false,
           downloadArtwork: true,
         );
         expect(outcome, QueueDownloadOutcome.admitted);
+        await db.updatePlexDownloadQueue('srv:episode-1', '10', '20');
         await db.close();
         db = AppDatabase.forTesting(NativeDatabase(databaseFile));
 
@@ -57,6 +59,9 @@ void main() {
         expect(media.status, DownloadStatus.queued.index);
         expect(media.mediaIndex, 3);
         expect(media.mediaSourceId, 'source-3');
+        expect(media.downloadQuality, 'p720_2mbps');
+        expect(media.plexDownloadQueueId, '10');
+        expect(media.plexDownloadQueueItemId, '20');
         expect(queued.mediaGlobalKey, media.globalKey);
         expect(queued.priority, 7);
         expect(queued.downloadSubtitles, isFalse);
@@ -96,6 +101,9 @@ void main() {
           errorMessage: Value('network error'),
           retryCount: Value(3),
           bgTaskId: Value('stale-task'),
+          downloadQuality: Value('p1080_8mbps'),
+          plexDownloadQueueId: Value('10'),
+          plexDownloadQueueItemId: Value('20'),
         ),
       );
 
@@ -109,6 +117,7 @@ void main() {
         grandparentRatingKey: 'show-new',
         mediaIndex: 9,
         mediaSourceId: 'source-new',
+        downloadQuality: 'p720_2mbps',
         priority: 4,
         downloadSubtitles: false,
         downloadArtwork: false,
@@ -125,6 +134,9 @@ void main() {
       expect(requeued.grandparentRatingKey, 'show-new');
       expect(requeued.mediaIndex, 9);
       expect(requeued.mediaSourceId, 'source-new');
+      expect(requeued.downloadQuality, 'p720_2mbps');
+      expect(requeued.plexDownloadQueueId, isNull);
+      expect(requeued.plexDownloadQueueItemId, isNull);
       expect(requeued.status, DownloadStatus.queued.index);
       expect(requeued.progress, 0);
       expect(requeued.downloadedBytes, 0);
@@ -242,6 +254,7 @@ void main() {
           await db.insertQueuedDownload(
             serverId: ServerId('other'),
             ratingKey: 'replacement',
+            downloadQuality: 'p720_2mbps',
             globalKey: key,
             type: 'episode',
             priority: 9,
@@ -268,6 +281,7 @@ void main() {
       final outcome = await db.insertQueuedDownload(
         serverId: ServerId('other'),
         ratingKey: 'replacement',
+        downloadQuality: 'p720_2mbps',
         globalKey: 'srv:queued',
         type: 'episode',
         priority: 8,
@@ -281,6 +295,61 @@ void main() {
       expect(queue.priority, 8);
       expect(queue.downloadSubtitles, isFalse);
       expect(queue.downloadArtwork, isFalse);
+    });
+
+    test('rebuilding queue policy keeps the selected conversion and server identity', () async {
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie',
+        globalKey: 'srv:movie',
+        type: 'movie',
+        downloadQuality: 'p720_2mbps',
+      );
+      await db.updatePlexDownloadQueue('srv:movie', '10', '20');
+      await db.removeFromQueue('srv:movie');
+      await db.addToQueue(mediaGlobalKey: 'srv:movie');
+      final row = (await db.getDownloadedMedia('srv:movie'))!;
+      expect(row.downloadQuality, 'p720_2mbps');
+      expect(row.plexDownloadQueueId, '10');
+      expect(row.plexDownloadQueueItemId, '20');
+    });
+
+    test('changing owner scope invalidates account-bound conversion IDs', () async {
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie',
+        globalKey: 'srv:movie',
+        type: 'movie',
+        clientScopeId: 'scope-a',
+        downloadQuality: 'p720_2mbps',
+      );
+      await db.updatePlexDownloadQueue('srv:movie', '10', '20');
+      await db.updateDownloadedMediaClientScope('srv:movie', 'scope-a');
+      expect((await db.getDownloadedMedia('srv:movie'))!.plexDownloadQueueItemId, '20');
+      await db.updateDownloadedMediaClientScope('srv:movie', 'scope-b');
+      final row = (await db.getDownloadedMedia('srv:movie'))!;
+      expect(row.plexDownloadQueueId, isNull);
+      expect(row.plexDownloadQueueItemId, isNull);
+      expect(row.downloadQuality, 'p720_2mbps');
+    });
+
+    test('queue identity writes cannot affect a recreated row', () async {
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie',
+        globalKey: 'srv:movie',
+        type: 'movie',
+      );
+      final previous = (await db.getDownloadedMedia('srv:movie'))!;
+      await (db.delete(db.downloadedMedia)..where((row) => row.globalKey.equals('srv:movie'))).go();
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie',
+        globalKey: 'srv:movie',
+        type: 'movie',
+      );
+      await db.updatePlexDownloadQueue('srv:movie', '10', '20', expectedId: previous.id);
+      expect((await db.getDownloadedMedia('srv:movie'))!.plexDownloadQueueItemId, isNull);
     });
 
     test('a state advance during retry admission wins over the stale requeue', () async {

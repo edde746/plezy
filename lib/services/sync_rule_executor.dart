@@ -5,6 +5,7 @@ import '../database/app_database.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
 import '../utils/connectivity_link_type.dart';
@@ -23,7 +24,8 @@ class SyncRuleFilter {
 }
 
 typedef AssociateSyncRuleDownload = Future<void> Function(SyncRuleItem rule, String downloadGlobalKey);
-typedef QueueSyncRuleDownload = Future<bool> Function(MediaItem item, MediaServerClient client, {int mediaIndex});
+typedef QueueSyncRuleDownload =
+    Future<bool> Function(MediaItem item, MediaServerClient client, {int mediaIndex, TranscodeQualityPreset quality});
 
 /// Result of executing a single sync rule.
 class SyncRuleResult {
@@ -359,7 +361,12 @@ class SyncRuleExecutor {
       if (_isActiveDownload(downloads[gk])) continue;
 
       final episodeWithServer = ep.serverId != null ? ep : ep.copyWith(serverId: rule.serverId);
-      final ok = await queueSingleDownload(episodeWithServer, client, mediaIndex: rule.mediaIndex);
+      final ok = await queueSingleDownload(
+        episodeWithServer,
+        client,
+        mediaIndex: rule.mediaIndex,
+        quality: TranscodeQualityPreset.fromName(rule.downloadQuality),
+      );
       await associateDownload(rule, gk);
       if (ok) {
         queued++;

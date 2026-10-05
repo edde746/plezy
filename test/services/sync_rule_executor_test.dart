@@ -13,6 +13,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -108,10 +109,11 @@ void main() {
       downloads: const {},
       metadata: const {},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add((item: item, client: client));
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add((item: item, client: client));
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -180,10 +182,11 @@ void main() {
       downloads: const {},
       metadata: const {},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -229,7 +232,13 @@ void main() {
       downloads: const {},
       metadata: const {},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async => true,
+      queueSingleDownload:
+          (
+            item,
+            client, {
+            int mediaIndex = 0,
+            TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+          }) async => true,
       isOffline: false,
       force: true,
     );
@@ -292,10 +301,11 @@ void main() {
       },
       metadata: const {},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -307,7 +317,7 @@ void main() {
     expect((await db.getSyncRule('profile-b|jf-machine:show-1'))!.downloadLinksInitialized, isTrue);
   });
 
-  test('show sync rule respects includeSpecials=false when expanding episodes', () async {
+  test('show sync rule preserves saved quality and respects includeSpecials=false', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final manager = MultiServerManager();
     addTearDown(() async {
@@ -332,9 +342,11 @@ void main() {
       targetType: 'show',
       episodeCount: 0,
       includeSpecials: false,
+      downloadQuality: TranscodeQualityPreset.p720_2mbps.storageValue,
     );
 
     final queued = <MediaItem>[];
+    final queuedQualities = <TranscodeQualityPreset>[];
     final executor = SyncRuleExecutor(database: db);
     final results = await executor.executeSyncRules(
       profileId: 'profile-a',
@@ -342,16 +354,19 @@ void main() {
       downloads: const {},
       metadata: {ruleKey: show},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            queuedQualities.add(quality);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
 
     expect(results.single.queuedCount, 2);
     expect(queued.map((item) => item.id), ['s1e1', 's1e2']);
+    expect(queuedQualities, [TranscodeQualityPreset.p720_2mbps, TranscodeQualityPreset.p720_2mbps]);
     expect(client.fetchPlayableDescendantsCalls, ['show-1']);
   });
 
@@ -385,9 +400,10 @@ void main() {
       },
       metadata: const {},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (_, _, {int mediaIndex = 0}) async {
-        fail('an already-downloaded playlist member must not be queued');
-      },
+      queueSingleDownload:
+          (_, _, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            fail('an already-downloaded playlist member must not be queued');
+          },
       isOffline: false,
       force: true,
     );
@@ -437,10 +453,11 @@ void main() {
       downloads: const {},
       metadata: {ruleKey: collection},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );
@@ -495,10 +512,11 @@ void main() {
       },
       metadata: {ruleKey: collection},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
-        queued.add(item);
-        return true;
-      },
+      queueSingleDownload:
+          (item, client, {int mediaIndex = 0, TranscodeQualityPreset quality = TranscodeQualityPreset.original}) async {
+            queued.add(item);
+            return true;
+          },
       isOffline: false,
       force: true,
     );

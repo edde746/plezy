@@ -64,6 +64,11 @@ class DownloadedMedia extends Table {
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get mediaSourceId => text().nullable()();
 
+  /// Null keeps the original file; other values are TranscodeQualityPreset names.
+  TextColumn get downloadQuality => text().nullable()();
+  TextColumn get plexDownloadQueueId => text().nullable()();
+  TextColumn get plexDownloadQueueItemId => text().nullable()();
+
   /// Owning library identity, stamped at enqueue time so downloads can be
   /// grouped/filtered by library while offline. Plex items carry
   /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
@@ -112,6 +117,7 @@ class SyncRules extends Table {
   IntColumn get createdAt => integer()();
   IntColumn get lastExecutedAt => integer().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
+  TextColumn get downloadQuality => text().nullable()();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
 

@@ -28,6 +28,9 @@ import 'settings_service.dart';
 import 'saf_storage_service.dart';
 import 'package:saf_util/saf_util_platform_interface.dart' show SafDocumentFile;
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
+import 'plex_client.dart';
+import 'plex_download_queue_service.dart';
 import '../services/offline_mode_source.dart';
 import '../services/download_storage_service.dart';
 import '../i18n/strings.g.dart';
@@ -147,6 +150,8 @@ class DownloadManagerService {
   final Future<void> Function()? _fileDownloaderInitializerOverride;
   final NativeDownloaderOps? _nativeOpsOverride;
   final Future<bool> Function(RequireWiFi requirement)? _requireWiFiOverride;
+  final PlexDownloadQueueService Function(MediaServerClient)? _plexDownloadQueueOverride;
+  final Future<bool> Function(Task)? _enqueueTaskOverride;
 
   final DownloadLocationSnapshot Function()? _downloadLocationReader;
   final Future<void> Function(String?) _writeDownloadPath;
@@ -211,6 +216,9 @@ class DownloadManagerService {
   // App-level auto-retry timers for downloads that exhausted native retries.
   // Keyed by globalKey; each timer fires a fresh re-enqueue after a delay.
   final Map<String, Timer> _autoRetryTimers = {};
+  final Map<String, Timer> _preparationTimers = {};
+  final Map<String, int> _preparationGenerations = {};
+  static const _preparationPollDelay = Duration(seconds: 5);
   final Duration _autoRetryDelay;
 
   // Circuit breaker: consecutive instant failures in _processQueue.
@@ -276,7 +284,11 @@ class DownloadManagerService {
     @visibleForTesting Future<void> Function(String?)? downloadPathTypeWriter,
     @visibleForTesting Future<void> Function()? downloadStorageRefresher,
     @visibleForTesting Duration autoRetryDelay = _defaultAutoRetryDelay,
-  }) : _queueProcessorOverride = queueProcessorOverride,
+    @visibleForTesting PlexDownloadQueueService Function(MediaServerClient)? plexDownloadQueueOverride,
+    @visibleForTesting Future<bool> Function(Task)? enqueueTaskOverride,
+  }) : _enqueueTaskOverride = enqueueTaskOverride,
+       _plexDownloadQueueOverride = plexDownloadQueueOverride,
+       _queueProcessorOverride = queueProcessorOverride,
        _autoRetryDelay = autoRetryDelay,
        _nativeRecoveryOverride = nativeRecoveryOverride,
        _database = database,
@@ -510,6 +522,11 @@ class DownloadManagerService {
     final record = await _database.getDownloadedMedia(globalKey);
     final rowScopeId = record?.clientScopeId;
     final client = _getClient(parsed.serverId, clientScopeId: rowScopeId);
+    // Converted files belong to the account that created this queue item.
+    // A co-owner can fetch an original file, but cannot operate that queue.
+    if (record?.downloadQuality != null) {
+      return client != null && _plexQueueClientMatches(record!, client) ? client : null;
+    }
     if (client != null || rowScopeId == null) return client;
 
     // A shared row keeps the user scope of the profile that queued it first.
@@ -524,6 +541,15 @@ class DownloadManagerService {
     }
     return null;
   }
+
+  bool _plexQueueClientMatches(DownloadedMediaItem row, MediaServerClient client) {
+    return client.backend == MediaBackend.plex &&
+        client.serverId == row.serverId &&
+        client.cacheServerId == (row.clientScopeId ?? row.serverId);
+  }
+
+  @visibleForTesting
+  Future<MediaServerClient?> debugClientForDownload(String globalKey) => _getClientForDownloadKey(globalKey);
 
   String? activeClientScopeIdForServer(ServerId serverId) {
     final client = _getClient(serverId);
@@ -1614,6 +1640,7 @@ class DownloadManagerService {
   void _cancelDownloadTimers(String key) {
     _progressDebounceTimers.remove(key)?.cancel();
     _autoRetryTimers.remove(key)?.cancel();
+    _preparationTimers.remove(key)?.cancel();
   }
 
   /// Delete a file if it exists and log the deletion
@@ -1734,11 +1761,24 @@ class DownloadManagerService {
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
     int mediaIndex = 0,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return metadata;
+    if (!quality.isOriginal && (client.backend != MediaBackend.plex || !metadata.isMovie && !metadata.isEpisode)) {
+      throw UnsupportedError('Download conversion is only supported for Plex videos');
+    }
     _rearmQueueForUserAction('new download');
 
     final globalKey = metadata.globalKey;
+    final previous = await _database.getDownloadedMedia(globalKey);
+    if (previous != null &&
+        [
+          DownloadStatus.failed.index,
+          DownloadStatus.cancelled.index,
+          DownloadStatus.partial.index,
+        ].contains(previous.status)) {
+      await _removePlexDownloadQueueItem(globalKey);
+    }
 
     // Stamp library identity onto the durable row so downloads can be
     // grouped/filtered by library offline. Skipped when the item already
@@ -1765,6 +1805,7 @@ class DownloadManagerService {
       libraryTitle: storedMetadata.libraryTitle,
       mediaIndex: mediaIndex,
       mediaSourceId: _mediaSourceIdForIndex(metadata, mediaIndex),
+      downloadQuality: quality.storageValue,
       priority: priority,
       downloadSubtitles: downloadSubtitles,
       downloadArtwork: downloadArtwork,
@@ -1775,6 +1816,7 @@ class DownloadManagerService {
     }
 
     if (outcome == QueueDownloadOutcome.admitted) {
+      _preparationGenerations.update(globalKey, (value) => value + 1, ifAbsent: () => 1);
       // Metadata pinning is useful for offline preparation, but the durable
       // download request must remain executable if cache persistence fails.
       try {
@@ -1799,7 +1841,7 @@ class DownloadManagerService {
   /// Process the download queue — prepares and enqueues items with background_downloader.
   /// Non-blocking: returns after all queued items are enqueued (downloads run natively).
   Future<void> _processQueue(MediaServerClient client) async {
-    if (_skipDownloadsUnsupported('download queue processing') || _queueBlockedByStorageFailure) return;
+    if (_disposed || _skipDownloadsUnsupported('download queue processing') || _queueBlockedByStorageFailure) return;
     final queueProcessorOverride = _queueProcessorOverride;
     if (queueProcessorOverride != null) {
       _fallbackClient = client;
@@ -1824,13 +1866,15 @@ class DownloadManagerService {
         // Heads whose client could not be resolved this cycle: excluded from the
         // next lookup so the drain advances instead of re-reading the same row.
         final skippedGlobalKeys = <String>{};
-        while (!_queueBlockedByStorageFailure) {
+        while (!_disposed && !_queueBlockedByStorageFailure) {
           if (_consecutiveQueueFailures >= _maxConsecutiveFailures) {
             appLogger.w('Circuit breaker: $_consecutiveQueueFailures consecutive failures, pausing queue');
             break;
           }
 
-          final nextItem = await _database.getNextQueueItem(excludedGlobalKeys: skippedGlobalKeys);
+          final nextItem = await _database.getNextQueueItem(
+            excludedGlobalKeys: {...skippedGlobalKeys, ..._preparationTimers.keys},
+          );
           if (nextItem == null) break;
 
           // Resolve the correct client for the item's server/scope — skip if unavailable.
@@ -1849,7 +1893,8 @@ class DownloadManagerService {
         }
         // A fresh pass gets a fresh skip set: a rerun request means server
         // availability may have changed under the pass that just finished.
-      } while (_queueRerunRequested &&
+      } while (!_disposed &&
+          _queueRerunRequested &&
           !_queueBlockedByStorageFailure &&
           _consecutiveQueueFailures < _maxConsecutiveFailures);
     } finally {
@@ -1894,7 +1939,7 @@ class DownloadManagerService {
     if (!_fileDownloaderInitialized && taskIds.isEmpty) return;
 
     try {
-      final nativeTasks = await FileDownloader().allTasks(group: _downloadGroup);
+      final nativeTasks = await _nativeOps.allTasks();
       for (final task in nativeTasks) {
         if (task.metaData == globalKey && task.taskId != exceptTaskId) taskIds.add(task.taskId);
       }
@@ -1932,42 +1977,220 @@ class DownloadManagerService {
   }
 
   Future<bool> _isInactiveForEnqueue(String globalKey) async {
-    if (_cancellingKeys.contains(globalKey)) return true;
+    if (_disposed || _pausingKeys.contains(globalKey) || _cancellingKeys.contains(globalKey)) return true;
     final existing = await _database.getDownloadedMedia(globalKey);
     return existing == null ||
-        existing.status == DownloadStatus.completed.index ||
-        existing.status == DownloadStatus.cancelled.index;
+        existing.status != DownloadStatus.queued.index && existing.status != DownloadStatus.downloading.index;
   }
 
-  Future<bool> _isCancelledOrDeleted(String globalKey) async {
-    if (_cancellingKeys.contains(globalKey)) return true;
-    final existing = await _database.getDownloadedMedia(globalKey);
-    return existing == null || existing.status == DownloadStatus.cancelled.index;
-  }
+  bool _isPreparationGenerationCurrent(String globalKey, int generation) =>
+      !_disposed &&
+      !_pausingKeys.contains(globalKey) &&
+      !_cancellingKeys.contains(globalKey) &&
+      (_preparationGenerations[globalKey] ?? 0) == generation;
 
-  Future<bool> _cancelEnqueuedTaskIfInactive(String globalKey, String taskId) async {
-    if (!await _isCancelledOrDeleted(globalKey)) return false;
-    if (downloadsSupported) {
-      await FileDownloader().cancelTaskWithId(taskId);
+  Future<bool> _cancelEnqueuedTaskIfInactive(String globalKey, String taskId, int generation) async {
+    final row = await _database.getDownloadedMedia(globalKey);
+    final stale = !_isPreparationGenerationCurrent(globalKey, generation);
+    final inactive =
+        row == null || row.status == DownloadStatus.paused.index || row.status == DownloadStatus.cancelled.index;
+    if (!stale && !inactive) return false;
+    await _cancelNativeTask(globalKey, taskId, reason: 'download changed during native enqueue');
+    final current = await _database.getDownloadedMedia(globalKey);
+    if (current?.bgTaskId == taskId) await _database.updateBgTaskId(globalKey, null);
+    // A successor request owns its own queue and context. Never remove it.
+    if (!stale) {
+      await _database.removeFromQueue(globalKey);
+      _pendingDownloadContext.remove(globalKey);
     }
-    await _database.updateBgTaskId(globalKey, null);
-    await _database.removeFromQueue(globalKey);
-    _pendingDownloadContext.remove(globalKey);
     return true;
   }
 
-  /// Hand a prepared task to the native downloader, recording its id first so a
-  /// concurrent cancel can find it. Returns true if the download went inactive
-  /// while enqueueing and the task was dropped again.
-  Future<bool> _enqueuePreparedTask(String globalKey, Task task, String kind) async {
+  /// Record the task before handing it to the native downloader, then verify
+  /// that a cancel/requeue during the handoff did not replace this request.
+  Future<bool> _enqueuePreparedTask(String globalKey, Task task, String kind, int generation) async {
+    if (await _isInactiveForEnqueue(globalKey) || !_isPreparationGenerationCurrent(globalKey, generation)) return true;
     await _database.updateBgTaskId(globalKey, task.taskId);
-    final success = await FileDownloader().enqueue(task);
-    if (!success) throw Exception('Failed to enqueue $kind task');
-    if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId)) {
+    if (!_isPreparationGenerationCurrent(globalKey, generation)) {
+      final current = await _database.getDownloadedMedia(globalKey);
+      if (current?.bgTaskId == task.taskId) await _database.updateBgTaskId(globalKey, null);
       return true;
     }
+    final success = await (_enqueueTaskOverride?.call(task) ?? FileDownloader().enqueue(task));
+    if (!success) throw Exception('Failed to enqueue $kind task');
+    if (await _cancelEnqueuedTaskIfInactive(globalKey, task.taskId, generation)) return true;
     appLogger.i('Enqueued $kind task ${task.taskId} for $globalKey');
     return false;
+  }
+
+  PlexDownloadQueueService _plexDownloadQueue(MediaServerClient client) {
+    final override = _plexDownloadQueueOverride;
+    if (override != null) return override(client);
+    if (client is! PlexClient) throw UnsupportedError('Download conversion requires Plex');
+    return client.downloadQueue;
+  }
+
+  Future<bool> _isPreparationCurrent(DownloadedMediaItem expected, int generation) async {
+    if (_disposed ||
+        _pausingKeys.contains(expected.globalKey) ||
+        _cancellingKeys.contains(expected.globalKey) ||
+        (_preparationGenerations[expected.globalKey] ?? 0) != generation) {
+      return false;
+    }
+    final row = await _database.getDownloadedMedia(expected.globalKey);
+    return !_disposed &&
+        !_pausingKeys.contains(expected.globalKey) &&
+        !_cancellingKeys.contains(expected.globalKey) &&
+        (_preparationGenerations[expected.globalKey] ?? 0) == generation &&
+        row?.id == expected.id &&
+        row?.downloadQuality == expected.downloadQuality &&
+        row?.clientScopeId == expected.clientScopeId &&
+        row?.status == DownloadStatus.queued.index;
+  }
+
+  /// One preparation poll per queue pass. Native transfers and later queue
+  /// entries can proceed while the server prepares this file. IDs survive
+  /// process restarts, and only this item's conversion is ever removed.
+  Future<String?> _preparePlexDownload(
+    DownloadedMediaItem row,
+    MediaServerClient client,
+    TranscodeQualityPreset quality,
+    int generation,
+  ) async {
+    if (quality.isOriginal || !_plexQueueClientMatches(row, client)) return null;
+    // Capture credentials synchronously with scope validation: the live Plex
+    // client can be updated in place while a database read is awaiting.
+    final service = _plexDownloadQueue(client);
+    if (!await _isPreparationCurrent(row, generation)) return null;
+    var queueId = row.plexDownloadQueueId;
+    var itemId = row.plexDownloadQueueItemId;
+    if (queueId == null) {
+      queueId = await service.create();
+      if (!await _isPreparationCurrent(row, generation)) return null;
+      await _database.updatePlexDownloadQueue(row.globalKey, queueId, null, expectedId: row.id);
+    }
+    if (itemId == null) {
+      if (!await _isPreparationCurrent(row, generation)) return null;
+      var mediaIndex = row.mediaIndex;
+      final sourceId = row.mediaSourceId;
+      if (sourceId != null && sourceId.isNotEmpty) {
+        // Plex's mediaIndex is positional. Versions may have been reordered
+        // since enqueue, so bind conversion to the stored stable source ID.
+        final currentMetadata = client is PlexClient
+            ? await client.fetchEditableItem(row.ratingKey)
+            : await client.fetchItem(row.ratingKey);
+        final versions = currentMetadata?.mediaVersions;
+        mediaIndex = versions?.indexWhere((version) => version.id == sourceId) ?? -1;
+        if (mediaIndex < 0) throw StateError('Requested Plex download source is no longer available');
+      }
+      if (!await _isPreparationCurrent(row, generation)) return null;
+      itemId = await service.add(queueId, ratingKey: row.ratingKey, mediaIndex: mediaIndex, quality: quality);
+      // A cancellation can finish while add is in flight. The returned item
+      // must be removed even when its local row has already been deleted.
+      if (!await _isPreparationCurrent(row, generation)) {
+        await _removePlexItemBestEffort(service, queueId, itemId);
+        return null;
+      }
+      await _database.updatePlexDownloadQueue(row.globalKey, queueId, itemId, expectedId: row.id);
+      if (!await _isPreparationCurrent(row, generation)) {
+        // Cover cancellation racing the durable write, after the earlier
+        // check. A disposed manager leaves persisted work for recovery.
+        if (!_disposed) {
+          await _removePlexItemBestEffort(service, queueId, itemId);
+          final current = await _database.getDownloadedMedia(row.globalKey);
+          if (current?.id == row.id && current?.plexDownloadQueueItemId == itemId) {
+            await _database.updatePlexDownloadQueue(row.globalKey, null, null, expectedId: row.id);
+          }
+        }
+        return null;
+      }
+    }
+    if (!await _isPreparationCurrent(row, generation)) return null;
+
+    PlexDownloadQueueItem item;
+    try {
+      item = await service.getItem(queueId, itemId);
+    } on MediaServerHttpException catch (error) {
+      if (error.statusCode != 404 && error.statusCode != 410) rethrow;
+      if (!await _isPreparationCurrent(row, generation)) return null;
+      await _database.updatePlexDownloadQueue(row.globalKey, null, null, expectedId: row.id);
+      throw const _PlexDownloadExpiredException();
+    }
+    if (!await _isPreparationCurrent(row, generation)) return null;
+    if (item.key != '/library/metadata/${Uri.encodeComponent(row.ratingKey)}') {
+      throw const FormatException('Plex prepared a different video');
+    }
+    switch (item.status) {
+      case PlexDownloadQueueStatus.expired:
+        await _removePlexItemBestEffort(service, queueId, itemId);
+        await _database.updatePlexDownloadQueue(row.globalKey, null, null, expectedId: row.id);
+        throw const _PlexDownloadExpiredException();
+      case PlexDownloadQueueStatus.error:
+        await _removePlexItemBestEffort(service, queueId, itemId);
+        await _database.updatePlexDownloadQueue(row.globalKey, null, null, expectedId: row.id);
+        throw StateError(item.error ?? 'Plex could not prepare the download');
+      case PlexDownloadQueueStatus.available:
+        await service.getDecision(queueId, itemId);
+        if (!await _isPreparationCurrent(row, generation)) return null;
+        return service.mediaUrl(queueId, itemId);
+      case PlexDownloadQueueStatus.deciding:
+      case PlexDownloadQueueStatus.waiting:
+      case PlexDownloadQueueStatus.processing:
+        final progress = ((item.progress ?? 0).clamp(0.0, 1.0) * 100).round();
+        await _database.updateDownloadProgress(row.globalKey, progress, 0, 0);
+        if (!await _isPreparationCurrent(row, generation)) return null;
+        _emitProgress(row.globalKey, DownloadStatus.queued, progress, currentFile: 'preparing');
+        _preparationTimers.remove(row.globalKey)?.cancel();
+        _preparationTimers[row.globalKey] = Timer(_preparationPollDelay, () {
+          _preparationTimers.remove(row.globalKey);
+          if (!_disposed) unawaited(_processQueue(client));
+        });
+        return null;
+    }
+  }
+
+  @visibleForTesting
+  Future<String?> debugPreparePlexDownload(DownloadedMediaItem row, MediaServerClient client) {
+    return _preparePlexDownload(
+      row,
+      client,
+      TranscodeQualityPreset.fromName(row.downloadQuality),
+      _preparationGenerations[row.globalKey] ?? 0,
+    );
+  }
+
+  Future<bool> _removePlexItemBestEffort(PlexDownloadQueueService service, String queueId, String itemId) async {
+    try {
+      await service.remove(queueId, itemId);
+      return true;
+    } catch (error) {
+      appLogger.w('Could not remove prepared Plex download', error: error);
+      return false;
+    }
+  }
+
+  Future<void> _removePlexDownloadQueueItem(String globalKey, {MediaServerClient? client}) async {
+    final row = await _database.getDownloadedMedia(globalKey);
+    if (row == null) return;
+    final queueId = row.plexDownloadQueueId;
+    final itemId = row.plexDownloadQueueItemId;
+    if (queueId == null) return;
+    if (itemId == null) {
+      await _database.updatePlexDownloadQueue(globalKey, null, null, expectedId: row.id);
+      return;
+    }
+    try {
+      if (client == null || !_plexQueueClientMatches(row, client)) client = await _getClientForDownloadKey(globalKey);
+      if (client == null || !_plexQueueClientMatches(row, client)) return;
+      if (await _removePlexItemBestEffort(_plexDownloadQueue(client), queueId, itemId)) {
+        final current = await _database.getDownloadedMedia(globalKey);
+        if (current?.id == row.id && current?.plexDownloadQueueItemId == itemId) {
+          await _database.updatePlexDownloadQueue(globalKey, null, null, expectedId: row.id);
+        }
+      }
+    } catch (error) {
+      appLogger.w('Could not clean up prepared Plex download', error: error);
+    }
   }
 
   /// Resolve metadata, video URL, and file path, then enqueue a background download task.
@@ -1977,13 +2200,15 @@ class DownloadManagerService {
     MediaServerClient client,
     DownloadQueueItem queueItem,
   ) async {
-    if (_skipDownloadsUnsupported('download enqueue')) return false;
+    if (_disposed || _skipDownloadsUnsupported('download enqueue')) return false;
     if (_cancellingKeys.contains(globalKey)) return true;
     if (_queueBlockedByStorageFailure) return true;
 
+    final generation = _preparationGenerations[globalKey] ?? 0;
     try {
       // Guard: don't re-enqueue an item that's already completed or was deleted
       final existing = await _database.getDownloadedMedia(globalKey);
+      if (!_isPreparationGenerationCurrent(globalKey, generation)) return true;
       if (_cancellingKeys.contains(globalKey) ||
           existing == null ||
           existing.status == DownloadStatus.completed.index ||
@@ -1995,13 +2220,15 @@ class DownloadManagerService {
 
       appLogger.i('Preparing download for $globalKey');
       await _cleanupStaleDownload(globalKey);
+      if (!_isPreparationGenerationCurrent(globalKey, generation)) return true;
       if (await _isInactiveForEnqueue(globalKey)) {
         appLogger.d('Skipping enqueue for $globalKey: inactive before transition');
         await _database.removeFromQueue(globalKey);
         return true;
       }
-      if (_queueBlockedByStorageFailure) return true;
-      await _transitionStatus(globalKey, DownloadStatus.downloading);
+      if (_queueBlockedByStorageFailure || !_isPreparationGenerationCurrent(globalKey, generation)) return true;
+      final quality = TranscodeQualityPreset.fromName(existing.downloadQuality);
+      if (quality.isOriginal) await _transitionStatus(globalKey, DownloadStatus.downloading);
 
       final parsed = parseGlobalKey(globalKey);
       if (parsed == null) throw Exception('Invalid globalKey: $globalKey');
@@ -2045,14 +2272,26 @@ class DownloadManagerService {
         await _database.updateDownloadMediaSource(globalKey, resolution.mediaSourceId);
       }
 
-      if (await _isCancelledOrDeleted(globalKey)) {
-        appLogger.d('Skipping enqueue for $globalKey: cancelled during preparation');
-        await _database.removeFromQueue(globalKey);
-        _pendingDownloadContext.remove(globalKey);
+      if (!quality.isOriginal) {
+        final convertedUrl = await _preparePlexDownload(existing, client, quality, generation);
+        if (convertedUrl == null) return true;
+        resolution = DownloadResolution(
+          videoUrl: convertedUrl,
+          mediaSourceId: resolution.mediaSourceId,
+          externalSubtitles: resolution.externalSubtitles,
+          externalSubtitlesResolved: resolution.externalSubtitlesResolved,
+        );
+      }
+
+      if (await _isInactiveForEnqueue(globalKey) || generation != (_preparationGenerations[globalKey] ?? 0)) {
+        appLogger.d('Skipping enqueue for $globalKey: inactive during preparation');
         return true;
       }
 
-      final ext = downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
+      if (!quality.isOriginal) await _transitionStatus(globalKey, DownloadStatus.downloading);
+      final ext = quality.isOriginal
+          ? downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4'
+          : PlexDownloadQueueService.outputContainer;
 
       final showYear = metadata.isEpisode
           ? await _fetchShowYear(serverId, metadata.grandparentId, clientScopeId: existing.clientScopeId)
@@ -2169,21 +2408,22 @@ class DownloadManagerService {
           subtitles: resolution.externalSubtitlesResolved ? resolution.externalSubtitles : null,
         );
 
-        return _enqueuePreparedTask(globalKey, task, safRootUri != null ? 'SAF download' : 'download');
+        return _enqueuePreparedTask(globalKey, task, safRootUri != null ? 'SAF download' : 'download', generation);
       });
       return true;
     } catch (e, st) {
-      if (await _isCancelledOrDeleted(globalKey)) {
+      if (await _isInactiveForEnqueue(globalKey) || generation != (_preparationGenerations[globalKey] ?? 0)) {
         appLogger.d('Ignoring enqueue failure for inactive download $globalKey', error: e);
-        await _database.removeFromQueue(globalKey);
-        _pendingDownloadContext.remove(globalKey);
         return true;
       }
       appLogger.e('Failed to prepare download for $globalKey', error: e, stackTrace: st);
       // `toString()` carries the runtime type, request host and path; the row
       // gets the localized reason and the log keeps the detail.
-      final errorMessage = t.downloads.errorDownloadFailedWithReason(reason: localizedErrorReason(e));
       final existing = await _database.getDownloadedMedia(globalKey);
+      final isPermissionError = e is MediaServerHttpException && (e.statusCode == 401 || e.statusCode == 403);
+      final errorMessage = existing?.downloadQuality != null && !_isRetryablePrepareFailure(e) && !isPermissionError
+          ? t.downloads.plexPreparationFailed
+          : t.downloads.errorDownloadFailedWithReason(reason: localizedErrorReason(e));
       if (_isRetryablePrepareFailure(e) &&
           existing != null &&
           existing.retryCount < _maxAppRetries &&
@@ -2203,6 +2443,14 @@ class DownloadManagerService {
       _pendingDownloadContext.remove(globalKey);
       return false;
     }
+  }
+
+  @visibleForTesting
+  Future<bool> debugPrepareAndEnqueueDownload(String globalKey, MediaServerClient client) async {
+    final queueItem = await (_database.select(
+      _database.downloadQueue,
+    )..where((row) => row.mediaGlobalKey.equals(globalKey))).getSingle();
+    return _prepareAndEnqueueDownload(globalKey, client, queueItem);
   }
 
   /// Callback: background_downloader progress update
@@ -2314,7 +2562,7 @@ class DownloadManagerService {
         case TaskStatus.failed:
           await _onDownloadFailed(globalKey, update.task.taskId, update.exception);
         case TaskStatus.notFound:
-          await _onDownloadPermanentlyFailed(globalKey, update.task.taskId, t.downloads.errorFileNotFound);
+          await _onDownloadNotFound(globalKey, update.task.taskId);
         case TaskStatus.canceled:
           if (_pausingKeys.contains(globalKey) || _cancellingKeys.contains(globalKey)) break;
           await _onDownloadCanceled(globalKey, update.task.taskId);
@@ -2422,6 +2670,7 @@ class DownloadManagerService {
   }
 
   bool _isRetryablePrepareFailure(Object error) {
+    if (error is _PlexDownloadExpiredException) return true;
     if (error is! MediaServerHttpException || error.isCancellation) return false;
     final status = error.statusCode;
     if (status == 401 || status == 403) return false;
@@ -2472,6 +2721,10 @@ class DownloadManagerService {
     if (existing == null) return;
     final description = exception?.description;
     final httpStatus = exception is TaskHttpException ? exception.httpResponseCode : null;
+    if (existing.downloadQuality != null && (httpStatus == 404 || httpStatus == 410)) {
+      await _onDownloadNotFound(globalKey, taskId);
+      return;
+    }
     if (exception != null) {
       final detail = exception.description;
       appLogger.w(
@@ -2563,6 +2816,39 @@ class DownloadManagerService {
     if (exception is TaskResumeException) return t.downloads.reasonCannotResume;
     if (exception is TaskFileSystemException) return t.downloads.reasonFileNotSaved;
     return t.errors.reasonUnexpected;
+  }
+
+  Future<void> _onDownloadNotFound(String globalKey, String taskId) async {
+    final row = await _claimTerminalEvent(globalKey, taskId, event: 'missing download');
+    if (row == null) return;
+    if (row.downloadQuality != null && row.retryCount < _maxAppRetries) {
+      final generation = _preparationGenerations[globalKey] ?? 0;
+      await _removePlexDownloadQueueItem(globalKey);
+      if (!_isPreparationGenerationCurrent(globalKey, generation) ||
+          await _downloadForCurrentTaskSession(
+                globalKey,
+                taskId,
+                event: 'expired conversion cleanup',
+                requiredStatus: DownloadStatus.downloading,
+              ) ==
+              null) {
+        return;
+      }
+      await _database.updatePlexDownloadQueue(globalKey, null, null, expectedId: row.id);
+      final client = await _getClientForDownloadKey(globalKey);
+      if (!_isPreparationGenerationCurrent(globalKey, generation)) return;
+      if (client != null) {
+        await _scheduleDownloadRetry(
+          globalKey,
+          client,
+          row.retryCount,
+          t.downloads.errorFileNotFound,
+          processQueueAfterProgress: true,
+        );
+        return;
+      }
+    }
+    await _onDownloadPermanentlyFailed(globalKey, taskId, t.downloads.errorFileNotFound);
   }
 
   /// Handle a non-retryable failure (e.g. 404) — fail immediately without auto-retry.
@@ -2685,7 +2971,9 @@ class DownloadManagerService {
             if (metadata == null) {
               throw Exception('No metadata for SAF recovery of $globalKey');
             }
-            final ext = downloadExtensionFromUrl(task.url) ?? 'mp4';
+            final ext = existing?.downloadQuality != null
+                ? PlexDownloadQueueService.outputContainer
+                : downloadExtensionFromUrl(task.url) ?? 'mp4';
             storedPath =
                 await _resolveSafStoredPathForRecovery(
                   metadata,
@@ -2746,6 +3034,7 @@ class DownloadManagerService {
 
       // The primary video is terminal independently of supplementary outcome.
       await _transitionStatus(globalKey, DownloadStatus.completed);
+      await _removePlexDownloadQueueItem(globalKey, client: ctx?.client);
       try {
         if (artworkSettled && subtitlesSettled) {
           await _database.removeFromQueue(globalKey);
@@ -3104,6 +3393,7 @@ class DownloadManagerService {
     // Mark as pausing synchronously so callbacks from holding-queue promotions
     // can detect and cancel promoted tasks before any await yields.
     _pausingKeys.add(globalKey);
+    _preparationGenerations.update(globalKey, (value) => value + 1, ifAbsent: () => 1);
 
     try {
       _cancelDownloadTimers(globalKey);
@@ -3210,12 +3500,14 @@ class DownloadManagerService {
     required Future<void> Function() body,
   }) async {
     _cancellingKeys.add(globalKey);
+    _preparationGenerations.update(globalKey, (value) => value + 1, ifAbsent: () => 1);
     try {
       _cancelDownloadTimers(globalKey);
       final bgTaskId = await _database.getBgTaskId(globalKey);
       await _database.updateBgTaskId(globalKey, null);
       await _cancelNativeTasksForGlobalKey(globalKey, includeTaskId: bgTaskId, reason: reason);
       _pendingDownloadContext.remove(globalKey);
+      await _removePlexDownloadQueueItem(globalKey);
       await body();
     } finally {
       _cancellingKeys.remove(globalKey);
@@ -4041,6 +4333,10 @@ class DownloadManagerService {
       timer.cancel();
     }
     _autoRetryTimers.clear();
+    for (final timer in _preparationTimers.values) {
+      timer.cancel();
+    }
+    _preparationTimers.clear();
     _pendingDownloadContext.clear();
     _completingKeys.clear();
     _pausingKeys.clear();
@@ -4070,4 +4366,9 @@ String? _safeDownloadExtension(String raw) {
   final ext = raw.split(RegExp(r'[,|]')).first.trim().replaceFirst(RegExp(r'^\.+'), '').toLowerCase();
   if (ext.isEmpty || !RegExp(r'^[a-z0-9][a-z0-9._-]{0,39}$').hasMatch(ext)) return null;
   return ext;
+}
+
+/// An expired server copy can be regenerated, bounded by the normal retry limit.
+class _PlexDownloadExpiredException implements Exception {
+  const _PlexDownloadExpiredException();
 }

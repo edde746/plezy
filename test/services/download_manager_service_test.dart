@@ -22,6 +22,9 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
+import 'package:plezy/media/media_version.dart';
+import 'package:plezy/services/plex_download_queue_service.dart';
 import 'package:plezy/services/download_artwork_helpers.dart';
 import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -40,6 +43,323 @@ import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
 void main() {
+  group('Plex download preparation', () {
+    Future<DownloadedMediaItem> seed(_SupplementaryFixture fixture, {String? sourceId, bool original = false}) async {
+      await fixture.db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: fixture.metadata.id,
+        globalKey: fixture.metadata.globalKey,
+        type: 'movie',
+        mediaSourceId: sourceId,
+        downloadQuality: original ? null : TranscodeQualityPreset.p720_2mbps.name,
+      );
+      return (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))!;
+    }
+
+    DownloadManagerService managerFor(
+      _SupplementaryFixture fixture,
+      _FakePlexDownloadQueue queue, {
+      MediaItem? metadata,
+      Future<bool> Function(Task)? enqueue,
+      List<String>? cancelled,
+    }) {
+      final client = _SupplementaryClient(
+        metadata: metadata ?? fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/original.mkv'),
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        plexDownloadQueueOverride: (_) => queue,
+        enqueueTaskOverride: enqueue,
+        queueProcessorOverride: (_) async {},
+        nativeOpsOverride: (
+          allTasks: () async => <Task>[],
+          allRecords: () async => <TaskRecord>[],
+          deleteRecord: (_) async {},
+          cancelTaskIds: (ids) async {
+            cancelled?.addAll(ids);
+            return true;
+          },
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async => (<Task>[], <Task>[]),
+        ),
+        downloadsSupportedOverride: true,
+      );
+      addTearDown(manager.dispose);
+      return manager;
+    }
+
+    MediaServerClient clientFor(_SupplementaryFixture fixture, {MediaItem? metadata}) => _SupplementaryClient(
+      metadata: metadata ?? fixture.metadata,
+      resolution: () => const DownloadResolution(videoUrl: 'https://example.test/original.mkv'),
+    );
+
+    test('Original does not create a conversion queue', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture, original: true);
+      final queue = _FakePlexDownloadQueue();
+      final manager = managerFor(fixture, queue);
+      expect(await manager.debugPreparePlexDownload(row, clientFor(fixture)), isNull);
+      expect(queue.createCalls, 0);
+      expect(queue.addCalls, 0);
+    });
+
+    test('preparation persists IDs and progress without transfer bytes', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      final queue = _FakePlexDownloadQueue();
+      final manager = managerFor(fixture, queue);
+      final events = <DownloadProgress>[];
+      final subscription = manager.progressStream.listen(events.add);
+      addTearDown(subscription.cancel);
+      expect(await manager.debugPreparePlexDownload(row, clientFor(fixture)), isNull);
+      await Future<void>.delayed(Duration.zero);
+      final saved = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(saved.plexDownloadQueueId, '10');
+      expect(saved.plexDownloadQueueItemId, '20');
+      expect(saved.downloadQuality, TranscodeQualityPreset.p720_2mbps.name);
+      expect(saved.status, DownloadStatus.queued.index);
+      expect(saved.progress, 40);
+      expect(saved.downloadedBytes, 0);
+      expect(events.single.currentFile, 'preparing');
+    });
+
+    test('resumed preparation reuses durable IDs and validates ready media', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      await fixture.db.updatePlexDownloadQueue(row.globalKey, '10', '20');
+      final queue = _FakePlexDownloadQueue()..status = PlexDownloadQueueStatus.available;
+      final manager = managerFor(fixture, queue);
+      final saved = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(await manager.debugPreparePlexDownload(saved, clientFor(fixture)), queue.preparedUrl);
+      expect(queue.createCalls, 0);
+      expect(queue.addCalls, 0);
+      expect(queue.decisionCalls, 1);
+    });
+
+    test('cancelling while add is in flight removes the returned item', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      final queue = _FakePlexDownloadQueue()..addGate = Completer<void>();
+      final manager = managerFor(fixture, queue);
+      final preparation = manager.debugPreparePlexDownload(row, clientFor(fixture));
+      await queue.addStarted.future;
+      await manager.cancelDownload(row.globalKey);
+      queue.addGate!.complete();
+      expect(await preparation, isNull);
+      expect(queue.removed, [('10', '20')]);
+      final saved = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(saved.status, DownloadStatus.cancelled.index);
+      expect(saved.plexDownloadQueueItemId, isNull);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), isEmpty);
+    });
+
+    test('pause during polling leaves the durable conversion available for resume', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      final queue = _FakePlexDownloadQueue()..pollGate = Completer<void>();
+      final manager = managerFor(fixture, queue);
+      final preparation = manager.debugPreparePlexDownload(row, clientFor(fixture));
+      await queue.pollStarted.future;
+      await manager.pauseDownload(row.globalKey);
+      queue.pollGate!.complete();
+      expect(await preparation, isNull);
+      final saved = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(saved.status, DownloadStatus.paused.index);
+      expect(saved.plexDownloadQueueItemId, '20');
+      expect(queue.removed, isEmpty);
+    });
+
+    test('version reorder resolves the selected source ID before conversion', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture, sourceId: 'selected');
+      final metadata = fixture.metadata.copyWith(
+        mediaVersions: const [
+          MediaVersion(id: 'other'),
+          MediaVersion(id: 'selected'),
+        ],
+      );
+      final queue = _FakePlexDownloadQueue();
+      final manager = managerFor(fixture, queue, metadata: metadata);
+      await manager.debugPreparePlexDownload(row, clientFor(fixture, metadata: metadata));
+      expect(queue.mediaIndexes, [1]);
+      expect((await fixture.db.getDownloadedMedia(row.globalKey))!.mediaSourceId, 'selected');
+    });
+
+    test('missing selected source fails without queuing a different edition', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture, sourceId: 'missing');
+      final queue = _FakePlexDownloadQueue();
+      final manager = managerFor(fixture, queue);
+      await expectLater(manager.debugPreparePlexDownload(row, clientFor(fixture)), throwsStateError);
+      expect(queue.addCalls, 0);
+    });
+
+    test('expired conversion clears its identity but preserves requested quality', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      await fixture.db.updatePlexDownloadQueue(row.globalKey, '10', '20');
+      final queue = _FakePlexDownloadQueue()..status = PlexDownloadQueueStatus.expired;
+      final manager = managerFor(fixture, queue);
+      final saved = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      await expectLater(manager.debugPreparePlexDownload(saved, clientFor(fixture)), throwsA(isA<Exception>()));
+      final expired = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(expired.plexDownloadQueueItemId, isNull);
+      expect(expired.downloadQuality, TranscodeQualityPreset.p720_2mbps.name);
+      expect(queue.removed, [('10', '20')]);
+    });
+
+    test('converted queue identity cannot use a different profile client', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      await fixture.db.updateDownloadedMediaClientScope(row.globalKey, 'scope-a');
+      await fixture.db.updatePlexDownloadQueue(row.globalKey, '10', '20');
+      final wrongClient = _DirectCachePlexClient(
+        serverId: ServerId('srv'),
+        scopedServerId: 'scope-b',
+        metadata: fixture.metadata,
+      );
+      final queue = _FakePlexDownloadQueue();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => wrongClient,
+        plexDownloadQueueOverride: (_) => queue,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+      expect(await manager.debugClientForDownload(row.globalKey), isNull);
+      final saved = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(await manager.debugPreparePlexDownload(saved, wrongClient), isNull);
+      await manager.cancelDownload(row.globalKey);
+      expect(queue.removed, isEmpty);
+      expect(queue.createCalls, 0);
+    });
+
+    test('changing scope during a preparation poll cannot hand off the old account URL', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      final queue = _FakePlexDownloadQueue()
+        ..status = PlexDownloadQueueStatus.available
+        ..pollGate = Completer<void>();
+      final manager = managerFor(fixture, queue);
+      final preparation = manager.debugPreparePlexDownload(row, clientFor(fixture));
+      await queue.pollStarted.future;
+      await fixture.db.updateDownloadedMediaClientScope(row.globalKey, 'scope-b');
+      queue.pollGate!.complete();
+      expect(await preparation, isNull);
+      expect(queue.decisionCalls, 0);
+      expect((await fixture.db.getDownloadedMedia(row.globalKey))!.plexDownloadQueueItemId, isNull);
+    });
+
+    test('native expired conversion receives bounded regeneration retries', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      final queue = _FakePlexDownloadQueue();
+      final manager = managerFor(fixture, queue);
+      for (var attempt = 0; attempt < 4; attempt++) {
+        await fixture.db.updateDownloadStatus(row.globalKey, DownloadStatus.downloading.index);
+        await fixture.db.updateBgTaskId(row.globalKey, 'native-$attempt');
+        await fixture.db.updatePlexDownloadQueue(row.globalKey, '10', '20');
+        await manager.debugHandleTaskStatus(
+          TaskStatusUpdate(_downloadTask('native-$attempt', row.globalKey), TaskStatus.notFound),
+        );
+        final failed = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+        expect(failed.status, DownloadStatus.failed.index);
+        expect(failed.retryCount, attempt + 1);
+        expect(failed.downloadQuality, TranscodeQualityPreset.p720_2mbps.name);
+        if (attempt < 3) expect(failed.plexDownloadQueueItemId, isNull);
+      }
+      expect(queue.removed, hasLength(3));
+    });
+
+    test('cancel and replace during expired-item cleanup cannot fail the successor', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      await fixture.db.updateDownloadStatus(row.globalKey, DownloadStatus.downloading.index);
+      await fixture.db.updateBgTaskId(row.globalKey, 'expired-task');
+      await fixture.db.updatePlexDownloadQueue(row.globalKey, '10', '20');
+      final queue = _FakePlexDownloadQueue()..removeGate = Completer<void>();
+      final manager = managerFor(fixture, queue);
+      final expiry = manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('expired-task', row.globalKey), TaskStatus.notFound),
+      );
+      await queue.removeStarted.future;
+      await manager.cancelDownload(row.globalKey);
+      await fixture.db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: row.ratingKey,
+        globalKey: row.globalKey,
+        type: 'movie',
+        downloadQuality: TranscodeQualityPreset.p1080_8mbps.name,
+      );
+      queue.removeGate!.complete();
+      await expiry;
+      final successor = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(successor.status, DownloadStatus.queued.index);
+      expect(successor.downloadQuality, TranscodeQualityPreset.p1080_8mbps.name);
+      expect(successor.retryCount, 0);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), hasLength(1));
+    });
+
+    test('cancel and replace during native handoff preserves the successor queue', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      final queue = _FakePlexDownloadQueue()..status = PlexDownloadQueueStatus.available;
+      final cancelled = <String>[];
+      late DownloadManagerService manager;
+      manager = managerFor(
+        fixture,
+        queue,
+        cancelled: cancelled,
+        enqueue: (task) async {
+          await manager.cancelDownload(row.globalKey);
+          await fixture.db.insertQueuedDownload(
+            serverId: ServerId('srv'),
+            ratingKey: row.ratingKey,
+            globalKey: row.globalKey,
+            type: 'movie',
+            downloadQuality: TranscodeQualityPreset.p1080_8mbps.name,
+          );
+          return true;
+        },
+      );
+      expect(await manager.debugPrepareAndEnqueueDownload(row.globalKey, clientFor(fixture)), isTrue);
+      final successor = (await fixture.db.getDownloadedMedia(row.globalKey))!;
+      expect(successor.downloadQuality, TranscodeQualityPreset.p1080_8mbps.name);
+      expect(successor.status, DownloadStatus.queued.index);
+      expect(successor.bgTaskId, isNull);
+      expect(await fixture.db.select(fixture.db.downloadQueue).get(), hasLength(1));
+      expect(cancelled, isNotEmpty);
+    });
+
+    test('prepared transfer retains native background retry and pause configuration', () async {
+      final fixture = await _createSupplementaryFixture();
+      final row = await seed(fixture);
+      final queue = _FakePlexDownloadQueue()..status = PlexDownloadQueueStatus.available;
+      Task? handedOff;
+      final manager = managerFor(
+        fixture,
+        queue,
+        enqueue: (task) async {
+          handedOff = task;
+          return true;
+        },
+      );
+      expect(await manager.debugPrepareAndEnqueueDownload(row.globalKey, clientFor(fixture)), isTrue);
+      final task = handedOff! as DownloadTask;
+      expect(task.url, queue.preparedUrl);
+      expect(task.filename, endsWith('.mkv'));
+      expect(task.allowPause, isTrue);
+      expect(task.retries, 5);
+      expect(task.group, 'video_downloads');
+      expect(task.metaData, row.globalKey);
+      expect((await fixture.db.getDownloadedMedia(row.globalKey))!.bgTaskId, task.taskId);
+    });
+  });
+
   group('downloadExtensionFromUrl', () {
     test('uses path extension when present', () {
       expect(downloadExtensionFromUrl('https://example.com/movie.mkv?Container=mp4'), 'mkv');
@@ -4120,4 +4440,75 @@ class _DirectCachePlexClient implements MediaServerClient, ScopedMediaServerClie
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakePlexDownloadQueue implements PlexDownloadQueueService {
+  PlexDownloadQueueStatus status = PlexDownloadQueueStatus.processing;
+  int createCalls = 0;
+  int addCalls = 0;
+  int decisionCalls = 0;
+  final List<int> mediaIndexes = [];
+  final List<(String, String)> removed = [];
+  final addStarted = Completer<void>();
+  final pollStarted = Completer<void>();
+  final removeStarted = Completer<void>();
+  Completer<void>? addGate;
+  Completer<void>? pollGate;
+  Completer<void>? removeGate;
+  final preparedUrl = 'https://example.test/downloadQueue/10/item/20/media?X-Plex-Client-Identifier=plezy';
+
+  @override
+  Future<String> create() async {
+    createCalls++;
+    return '10';
+  }
+
+  @override
+  Future<String> add(
+    String queueId, {
+    required String ratingKey,
+    required int mediaIndex,
+    required TranscodeQualityPreset quality,
+  }) async {
+    addCalls++;
+    mediaIndexes.add(mediaIndex);
+    if (!addStarted.isCompleted) addStarted.complete();
+    await addGate?.future;
+    return '20';
+  }
+
+  @override
+  Future<PlexDownloadQueueItem> getItem(String queueId, String itemId) async {
+    if (!pollStarted.isCompleted) pollStarted.complete();
+    await pollGate?.future;
+    return PlexDownloadQueueItem(
+      id: itemId,
+      queueId: queueId,
+      key: '/library/metadata/item-1',
+      status: status,
+      progress: .4,
+    );
+  }
+
+  @override
+  Future<PlexDownloadDecision> getDecision(String queueId, String itemId) async {
+    decisionCalls++;
+    return const PlexDownloadDecision(
+      container: PlexDownloadQueueService.outputContainer,
+      videoCodec: 'h264',
+      audioCodec: 'aac',
+    );
+  }
+
+  @override
+  String mediaUrl(String queueId, String itemId) => preparedUrl;
+
+  @override
+  Future<void> remove(String queueId, String itemId) async {
+    removed.add((queueId, itemId));
+    if (!removeStarted.isCompleted) {
+      removeStarted.complete();
+      await removeGate?.future;
+    }
+  }
 }

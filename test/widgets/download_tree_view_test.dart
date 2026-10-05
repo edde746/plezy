@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -46,6 +48,41 @@ MediaItem _episodeMeta({
 );
 
 void main() {
+  for (final percent in [0, 35]) {
+    testWidgets('server preparation at $percent percent is distinct from transfer progress', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DownloadTreeView(
+              downloads: {
+                'plex:1': DownloadProgress(
+                  globalKey: 'plex:1',
+                  status: DownloadStatus.queued,
+                  currentFile: 'preparing',
+                  progress: percent,
+                ),
+              },
+              metadata: {
+                'plex:1': testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie'),
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(
+        find.text(percent == 0 ? t.downloads.preparingVideo : t.downloads.preparingVideoProgress(percent: percent)),
+        findsOneWidget,
+      );
+      expect(find.text(t.downloads.downloadQueued), findsNothing);
+      expect(find.textContaining('B/s'), findsNothing);
+      final indicator = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+      expect(indicator.value, percent == 0 ? isNull : percent / 100);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+
   group('resolveDownloadContainerGlobalKey', () {
     test('show node: builds globalKey from leaf serverId + grandparentId', () {
       final ep = _episodeNode('plex1:ep100');
