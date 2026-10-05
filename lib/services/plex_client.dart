@@ -1914,6 +1914,7 @@ class PlexClient
     int mediaIndex = 0,
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
+    String? preferredVersionName,
   }) {
     return parsePlexVideoPlaybackDataFromJson(
       metadataJson,
@@ -1922,6 +1923,7 @@ class PlexClient
       mediaIndex: mediaIndex,
       selectedMediaSourceId: selectedMediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
+      preferredVersionName: preferredVersionName,
       onVersionFallback: (requested, fallback) {
         appLogger.w('Version $requested inaccessible/missing — falling back to version $fallback');
       },
@@ -1972,6 +1974,7 @@ class PlexClient
     int mediaIndex = 0,
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
+    String? preferredVersionName,
     bool forceRefresh = false,
   }) async {
     // Fresh-cache-first: the detail screen writes a strict superset of this
@@ -1997,6 +2000,7 @@ class PlexClient
               mediaIndex: mediaIndex,
               selectedMediaSourceId: selectedMediaSourceId,
               preferredVersionSignature: preferredVersionSignature,
+              preferredVersionName: preferredVersionName,
             );
           }
         } on FormatException {
@@ -2021,6 +2025,7 @@ class PlexClient
       mediaIndex: mediaIndex,
       selectedMediaSourceId: selectedMediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
+      preferredVersionName: preferredVersionName,
     );
   }
 
@@ -3711,6 +3716,7 @@ class PlexClient
         mediaIndex: options.selectedMediaIndex,
         selectedMediaSourceId: options.selectedMediaSourceId,
         preferredVersionSignature: options.preferredVersionSignature,
+        preferredVersionName: options.preferredVersionName,
       );
 
       if (!data.hasValidVideoUrl) {
@@ -4294,7 +4300,6 @@ class PlexClient
     int mediaIndex = 0,
     String? mediaSourceId,
     String? preferredVersionSignature,
-    // Plex versions carry no name; the signature does the sibling matching.
     String? preferredVersionName,
   }) async {
     final cached = await cache.get(profileScopeId.cacheServerId, '/library/metadata/$itemId');
@@ -4306,6 +4311,7 @@ class PlexClient
       mediaIndex: mediaIndex,
       mediaSourceId: mediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
+      preferredVersionName: preferredVersionName,
     );
   }
 

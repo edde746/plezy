@@ -1368,7 +1368,8 @@ class PlexMappers {
 }
 
 /// Authoritative version and playable-part selection shared by cache previews
-/// and playback. A stable id wins over a sibling-version signature and index.
+/// and playback. A stable id wins over a sibling-version name, then its
+/// signature, then the index.
 typedef PlexPlaybackSelection = ({List<Map> media, List<MediaVersion> versions, int mediaIndex, int partIndex});
 
 PlexPlaybackSelection? resolvePlexPlaybackSelection(
@@ -1376,6 +1377,7 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
   int mediaIndex = 0,
   String? mediaSourceId,
   String? preferredVersionSignature,
+  String? preferredVersionName,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
   bool preferPlayable = true,
 }) {
@@ -1389,8 +1391,13 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
   ]);
   final requestedId = mediaSourceId?.trim();
   final byId = requestedId == null || requestedId.isEmpty ? -1 : versions.indexWhere((v) => v.id == requestedId);
+  // Same-quality versions share a signature, so the version label
+  // ([PlexMappers.labelVersions]) is what tells them apart on a sibling.
+  final byName = byId >= 0 ? null : MediaVersion.findNamedIndex(versions, preferredVersionName);
   if (byId >= 0) {
     mediaIndex = byId;
+  } else if (byName != null) {
+    mediaIndex = byName;
   } else if (preferredVersionSignature != null && preferredVersionSignature.isNotEmpty) {
     mediaIndex = MediaVersion.findMatchingIndex(versions, {preferredVersionSignature}) ?? mediaIndex;
   }
@@ -1443,12 +1450,14 @@ MediaSourceInfo? plexMediaSourceInfoFromCacheJson(
   int mediaIndex = 0,
   String? mediaSourceId,
   String? preferredVersionSignature,
+  String? preferredVersionName,
 }) {
   final selection = resolvePlexPlaybackSelection(
     metadata,
     mediaIndex: mediaIndex,
     mediaSourceId: mediaSourceId,
     preferredVersionSignature: preferredVersionSignature,
+    preferredVersionName: preferredVersionName,
   );
   return selection == null ? null : plexMediaSourceInfoForSelection(metadata, selection);
 }

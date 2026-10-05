@@ -88,6 +88,25 @@ void main() {
       expect(withheld.map((v) => v.name), ['Movie - 1080p.mkv', isNull]);
     });
 
+    test('playback selection picks the saved version label over the signature', () {
+      Map<String, dynamic> media(int id, String label) =>
+          _media(id: id, partExtras: {'file': '/TV/Show/Season 01/Show - S01E02 - $label.mkv'});
+      final metadata = <String, dynamic>{
+        'Media': [media(1, '# 2 Secondary'), media(2, '# 3 Third'), media(3, '# 1 Primary')],
+      };
+      final selection = resolvePlexPlaybackSelection(
+        metadata,
+        preferredVersionSignature: '1080:h264:mkv',
+        preferredVersionName: '# 1 Primary',
+      )!;
+      expect(selection.mediaIndex, 2);
+      expect(selection.versions[selection.mediaIndex].name, '# 1 Primary');
+
+      // A stable id still wins over the name.
+      final pinned = resolvePlexPlaybackSelection(metadata, mediaSourceId: '2', preferredVersionName: '# 1 Primary')!;
+      expect(pinned.mediaIndex, 1);
+    });
+
     test('has no name when Plex withholds the path', () {
       expect(PlexMappers.mediaVersionFromJson(_media()).name, isNull);
       expect(PlexMappers.mediaVersionFromJson(_media(partExtras: {'file': '  '})).name, isNull);

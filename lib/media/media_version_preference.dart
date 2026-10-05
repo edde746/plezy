@@ -12,9 +12,9 @@ class MediaVersionPreference {
   final String? versionId;
 
   /// [MediaVersion.name] of the chosen version (Jellyfin/Emby `MediaSource.Name`,
-  /// e.g. "# 1 Primary"). Matches the same-named version on sibling episodes,
-  /// where the server's source order can differ and same-quality versions
-  /// share a [signature]. Null on Plex, which has no version names.
+  /// or the Plex version label from the file name, e.g. "# 1 Primary").
+  /// Matches the same-named version on sibling episodes, where the server's
+  /// version order can differ and same-quality versions share a [signature].
   final String? versionName;
 
   /// [MediaVersion.signature] ("res:codec:container") of the chosen version,
