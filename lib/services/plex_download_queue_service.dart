@@ -120,18 +120,13 @@ class PlexDownloadQueueService {
       }
       progress = percentage / 100;
     }
-    final decision = item['DecisionResult'];
     return PlexDownloadQueueItem(
       id: _id(item['id']),
       queueId: _id(item['queueId']),
       key: key,
       status: status,
       progress: status == PlexDownloadQueueStatus.available ? 1 : progress,
-      error: item['error'] is String
-          ? item['error'] as String
-          : status == PlexDownloadQueueStatus.error && decision is Map
-          ? (decision['transcodeDecisionText'] ?? decision['generalDecisionText']) as String?
-          : null,
+      error: _preparationError(item, status),
     );
   }
 
@@ -200,6 +195,33 @@ class PlexDownloadQueueService {
   }
 
   static bool _selected(Object? value) => value == true || value == 1 || value == '1';
+
+  static String? _preparationError(Map<String, dynamic> item, PlexDownloadQueueStatus status) {
+    final decision = item['DecisionResult'];
+    if (status == PlexDownloadQueueStatus.error && decision is Map) {
+      // A generic error such as "decisionError" otherwise hides Plex's reason.
+      // Read only the documented scalar fields, never stringify the response.
+      for (final kind in ['transcode', 'general']) {
+        final rawCode = decision['${kind}DecisionCode'];
+        final code = rawCode is int
+            ? rawCode
+            : rawCode is String
+            ? int.tryParse(rawCode)
+            : null;
+        // An earlier successful decision can remain after transcoding fails.
+        if (code == 1000 || code == 1001) continue;
+        final text = _nonEmptyString(decision['${kind}DecisionText']);
+        if (text != null) return code == null ? text : '$text (${kind}DecisionCode: $code)';
+      }
+    }
+    return _nonEmptyString(item['error']);
+  }
+
+  static String? _nonEmptyString(Object? value) {
+    if (value is! String) return null;
+    final text = value.trim();
+    return text.isEmpty ? null : text;
+  }
 
   static List<Map<String, dynamic>> _elements(MediaServerResponse response, String name) {
     throwIfHttpError(response);

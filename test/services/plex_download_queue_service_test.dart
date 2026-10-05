@@ -200,6 +200,128 @@ void main() {
     expect((await queue.getItem('7', '23')).error, 'Transcoding is disabled');
   });
 
+  test('prefers the specific transcode decision over a generic item error', () async {
+    final queue = service(
+      (_) async => _response('DownloadQueueItem', [
+        {
+          ..._item(status: 'error'),
+          'error': 'decisionError',
+          'DecisionResult': {
+            'transcodeDecisionText': '  Transcoding is disabled  ',
+            'transcodeDecisionCode': 4005,
+            'generalDecisionText': 'Cannot play this item',
+            'generalDecisionCode': 4000,
+          },
+        },
+      ]),
+    );
+    expect((await queue.getItem('7', '23')).error, 'Transcoding is disabled (transcodeDecisionCode: 4005)');
+  });
+
+  for (final transcodeText in [
+    null,
+    '',
+    '  ',
+    123,
+    <String, dynamic>{'unexpected': 'value'},
+  ]) {
+    test('uses the general decision when transcode text is missing or malformed: $transcodeText', () async {
+      final queue = service(
+        (_) async => _response('DownloadQueueItem', [
+          {
+            ..._item(status: 'error'),
+            'error': 'decisionError',
+            'DecisionResult': {
+              'transcodeDecisionText': transcodeText,
+              'generalDecisionText': '  This media cannot be converted  ',
+              'generalDecisionCode': '4000',
+            },
+          },
+        ]),
+      );
+      expect((await queue.getItem('7', '23')).error, 'This media cannot be converted (generalDecisionCode: 4000)');
+    });
+  }
+
+  test('ignores malformed decision codes without losing the reason', () async {
+    final queue = service(
+      (_) async => _response('DownloadQueueItem', [
+        {
+          ..._item(status: 'error'),
+          'error': 'decisionError',
+          'DecisionResult': {
+            'transcodeDecisionText': 'Transcoding is disabled',
+            'transcodeDecisionCode': {'unexpected': 'value'},
+          },
+        },
+      ]),
+    );
+    expect((await queue.getItem('7', '23')).error, 'Transcoding is disabled');
+  });
+
+  for (final decision in [
+    null,
+    'unexpected',
+    <Object?>[],
+    {'transcodeDecisionText': 1, 'generalDecisionText': ''},
+  ]) {
+    test('retains the generic item error when no usable decision exists: $decision', () async {
+      final queue = service(
+        (_) async => _response('DownloadQueueItem', [
+          {..._item(status: 'error'), 'error': '  decisionError  ', 'DecisionResult': decision},
+        ]),
+      );
+      expect((await queue.getItem('7', '23')).error, 'decisionError');
+    });
+  }
+
+  test('does not replace a transcode failure with a successful earlier decision', () async {
+    final queue = service(
+      (_) async => _response('DownloadQueueItem', [
+        {
+          ..._item(status: 'error'),
+          'error': 'transcodeError',
+          'DecisionResult': {
+            'transcodeDecisionText': 'Conversion OK',
+            'transcodeDecisionCode': 1001,
+            'generalDecisionText': 'Direct play OK',
+            'generalDecisionCode': 1000,
+          },
+        },
+      ]),
+    );
+    expect((await queue.getItem('7', '23')).error, 'transcodeError');
+  });
+
+  test('does not expose successful preparation decision text as an error', () async {
+    final queue = service(
+      (_) async => _response('DownloadQueueItem', [
+        {
+          ..._item(status: 'available'),
+          'DecisionResult': {'transcodeDecisionText': 'Conversion OK'},
+        },
+      ]),
+    );
+    expect((await queue.getItem('7', '23')).error, isNull);
+  });
+
+  for (final error in [
+    null,
+    '',
+    '  ',
+    123,
+    <String, dynamic>{'unexpected': 'value'},
+  ]) {
+    test('missing or malformed error text stays null: $error', () async {
+      final queue = service(
+        (_) async => _response('DownloadQueueItem', [
+          {..._item(status: 'error'), 'error': error},
+        ]),
+      );
+      expect((await queue.getItem('7', '23')).error, isNull);
+    });
+  }
+
   for (final status in [401, 403, 404, 410, 500]) {
     test('preserves HTTP $status so the caller can handle permissions and expiry', () async {
       final queue = service((_) async => http.Response('error', status));
