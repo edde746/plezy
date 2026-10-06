@@ -360,6 +360,12 @@ mixin _PlexClientInternals on MediaServerCacheMixin {
 
   Map<String, dynamic> _buildPaginationParams(int? start, int? size);
 
+  PlexMetadataDto _createTaggedMetadataWithLibrary(
+    Map<String, dynamic> json, {
+    int? librarySectionID,
+    String? librarySectionTitle,
+  });
+
   Future<_LibraryContentResult> _fetchPaginatedList(
     String path, {
     int? start,

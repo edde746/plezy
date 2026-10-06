@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} episoder i nedlastingskø",
     "downloadDeleted": "Nedlasting slettet",
     "deleteConfirm": "Slette \"${title}\" fra denne enheten?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Avbrutt nedlasting",
     "cancelledDownloadMessage": "Denne nedlastingen ble avbrutt. Hva vil du gjøre?",
     "allEpisodesAlreadyDownloaded": "Alle episoder er allerede lastet ned",
@@ -1855,7 +1858,8 @@
     },
     "options": "Valg for nedlastinger",
     "groupings": {
-      "library": "Bibliotek"
+      "library": "Bibliotek",
+      "collections": ""
     },
     "unknownLibrary": "Ukjent bibliotek",
     "unknownShow": "Ukjent serie",

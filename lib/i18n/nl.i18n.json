@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} afleveringen in wachtrij voor download",
     "downloadDeleted": "Download verwijderd",
     "deleteConfirm": "\"${title}\" van dit apparaat verwijderen?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Geannuleerde download",
     "cancelledDownloadMessage": "Deze download is geannuleerd. Wat wil je doen?",
     "allEpisodesAlreadyDownloaded": "Alle afleveringen zijn al gedownload",
@@ -1855,7 +1858,8 @@
     },
     "options": "Downloadopties",
     "groupings": {
-      "library": "Bibliotheek"
+      "library": "Bibliotheek",
+      "collections": ""
     },
     "unknownLibrary": "Onbekende bibliotheek",
     "unknownShow": "Onbekende serie",

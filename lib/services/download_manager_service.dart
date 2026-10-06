@@ -4461,6 +4461,19 @@ class DownloadManagerService {
     await _pinMetadataForOffline(client, metadata);
   }
 
+  /// Fetch, pin and download the artwork of [collectionId] so the downloads
+  /// screen can draw its folder offline. Returns the fetched collection, or
+  /// null when the server no longer has it. Unlike [saveMetadata] this skips
+  /// the playback-extras fetch: a collection is not playable.
+  Future<MediaItem?> pinCollectionForOffline(String collectionId, MediaServerClient client) async {
+    final fetched = await client.fetchItem(collectionId);
+    if (fetched == null) return null;
+    final collection = fetched.serverId == null ? fetched.copyWith(serverId: client.serverId.value) : fetched;
+    await ApiCache.forBackend(client.backend).pinForOffline(ServerId(client.cacheServerId), collectionId);
+    await downloadArtworkForMetadata(collection, client);
+    return collection;
+  }
+
   void dispose() {
     _disposed = true;
     for (final timer in _progressDebounceTimers.values) {

@@ -1790,6 +1790,9 @@
     "episodesQueued": "${count} odcinków w kolejce pobierania",
     "downloadDeleted": "Pobranie usunięte",
     "deleteConfirm": "Usunąć \"${title}\" z tego urządzenia?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Anulowane pobieranie",
     "cancelledDownloadMessage": "To pobieranie zostało anulowane. Co chcesz zrobić?",
     "allEpisodesAlreadyDownloaded": "Wszystkie odcinki są już pobrane",
@@ -1877,7 +1880,8 @@
     },
     "options": "Opcje pobrań",
     "groupings": {
-      "library": "Biblioteka"
+      "library": "Biblioteka",
+      "collections": ""
     },
     "unknownLibrary": "Nieznana biblioteka",
     "unknownShow": "Nieznany serial",

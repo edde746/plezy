@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} епизода са добавени в опашката за изтегляне",
     "downloadDeleted": "Изтеглянето е изтрито",
     "deleteConfirm": "Да се изтрие ли \"${title}\" от това устройство?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Отменено изтегляне",
     "cancelledDownloadMessage": "Това изтегляне беше отменено. Какво искате да направите?",
     "allEpisodesAlreadyDownloaded": "Всички епизоди вече са изтеглени",
@@ -1855,7 +1858,8 @@
     },
     "options": "Опции за изтеглянията",
     "groupings": {
-      "library": "Библиотека"
+      "library": "Библиотека",
+      "collections": ""
     },
     "unknownLibrary": "Неизвестна библиотека",
     "unknownShow": "Неизвестен сериал",

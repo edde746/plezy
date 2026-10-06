@@ -4,9 +4,11 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../media/ids.dart';
 import '../focus/focusable_action_bar.dart';
 import '../media/library_query.dart';
 import '../media/media_item.dart';
+import '../mixins/deletion_aware.dart';
 import '../mixins/paginated_item_loader.dart';
 import '../mixins/standard_paginated_view.dart';
 import '../services/device_performance.dart';
@@ -14,9 +16,11 @@ import '../providers/download_provider.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
+import '../utils/deletion_notifier.dart';
 import '../utils/dialogs.dart';
 import '../utils/error_message_utils.dart';
 import '../utils/download_utils.dart';
+import '../utils/downloads_folder_actions.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
@@ -43,7 +47,12 @@ import '../services/playlist_items_loader.dart';
 class CollectionDetailScreen extends StatefulWidget {
   final MediaItem collection;
 
-  const CollectionDetailScreen({super.key, required this.collection});
+  /// Offline mode: the downloads folder of [collection]. Lists its downloaded
+  /// titles from [DownloadProvider] and offers marking and deleting those
+  /// downloads in place of the server collection's actions.
+  final bool isOffline;
+
+  const CollectionDetailScreen({super.key, required this.collection, this.isOffline = false});
 
   @override
   State<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
@@ -55,7 +64,8 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         FocusableDetailScreenMixin<CollectionDetailScreen>,
         PaginatedItemLoader<MediaItem, CollectionDetailScreen>,
         PaginatedItemUpdatable<CollectionDetailScreen>,
-        StandardPaginatedView<MediaItem, CollectionDetailScreen> {
+        StandardPaginatedView<MediaItem, CollectionDetailScreen>,
+        DeletionAware<CollectionDetailScreen> {
   static const int _pageSize = 200;
 
   /// Scroll offset where the pinned title starts fading in, and the distance
@@ -82,6 +92,18 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     return loaded.isNotEmpty && loaded.every((item) => item.kind.isMusic);
   }
 
+  /// Offline, follow deletions of the listed titles (a member card's own
+  /// "Delete download", say) so the grid never offers a vanished download.
+  @override
+  Set<String>? get deletionGlobalKeys =>
+      widget.isOffline ? {for (final item in loadedItems.values) item.globalKey} : null;
+
+  @override
+  Set<String>? get deletionIds => widget.isOffline ? null : const {};
+
+  @override
+  void onDeletionEvent(DeletionEvent event) => loadItems();
+
   @override
   void dispose() {
     disposePagination();
@@ -91,7 +113,11 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   }
 
   @override
-  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) {
+  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
+    if (widget.isOffline) {
+      final items = context.read<DownloadProvider>().downloadedCollectionItems(widget.collection.globalKey);
+      return LibraryPage(items: items.skip(start).take(size).toList(), totalCount: items.length, offset: start);
+    }
     return mediaClient.fetchCollectionPage(
       widget.collection.id,
       start: start,
@@ -117,6 +143,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   List<FocusableAction> getAppBarActions() {
+    if (widget.isOffline) return _downloadsFolderActions();
     final ruleKey = syncRuleKey;
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the action row.
@@ -144,6 +171,41 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         iconColor: Colors.red,
       ),
     ];
+  }
+
+  /// The offline header actions: mark the downloaded titles watched or
+  /// unwatched, and delete them.
+  List<FocusableAction> _downloadsFolderActions() {
+    final folderKey = widget.collection.globalKey;
+    final allWatched = context.select<DownloadProvider, bool>(
+      (provider) => provider.downloadedCollectionItems(folderKey).every((item) => item.isWatched),
+    );
+    return [
+      if (hasItems)
+        FocusableAction(
+          icon: allWatched ? Symbols.remove_circle_outline_rounded : Symbols.check_circle_outline_rounded,
+          tooltip: allWatched ? t.mediaMenu.markAsUnwatched : t.mediaMenu.markAsWatched,
+          onPressed: () => setDownloadsFolderWatched(context, widget.collection, watched: !allWatched),
+        ),
+      FocusableAction(
+        icon: Symbols.delete_rounded,
+        tooltip: t.downloads.deleteCollectionDownloads,
+        onPressed: _deleteDownloads,
+        iconColor: Colors.red,
+      ),
+    ];
+  }
+
+  Future<void> _deleteDownloads() async {
+    final deleted = await deleteDownloadsFolder(context, widget.collection);
+    if (deleted && mounted) Navigator.pop(context);
+  }
+
+  /// The downloaded copy of [artworkPath] in offline mode, else null.
+  String? _offlineArtworkPath(String? artworkPath) {
+    final serverId = serverIdOrNull(widget.collection.serverId);
+    if (!widget.isOffline || serverId == null) return null;
+    return context.read<DownloadProvider>().getArtworkLocalPath(serverId, artworkPath);
   }
 
   Future<void> _downloadCollection() async {
@@ -222,8 +284,9 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: OptimizedMediaImage(
-        client: mediaClient,
+        client: widget.isOffline ? null : mediaClient,
         imagePath: widget.collection.thumbPath,
+        localFilePath: _offlineArtworkPath(widget.collection.thumbPath),
         imageType: square ? ImageType.square : ImageType.poster,
         width: square ? height : height * 2 / 3,
         height: height,
@@ -343,7 +406,9 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
             mediaKey: widget.collection.globalKey,
             imagePaths: usePoster ? paths : widget.collection.heroRotationPaths(containerAspectRatio: containerAspect),
             fallbackImagePaths: paths,
-            client: mediaClient,
+            client: widget.isOffline ? null : mediaClient,
+            localArtworkPathResolver: widget.isOffline ? _offlineArtworkPath : null,
+            allowNetwork: !widget.isOffline,
             width: size.width,
             height: height,
             fallbackColor: theme.colorScheme.surfaceContainerHighest,
@@ -466,8 +531,9 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
               itemAt: (index) => loadedItems[index],
               onRefresh: updateItem,
               onSkeletonVisible: (index) => ensureIndexLoaded(index, pageSize: _pageSize),
-              collectionId: widget.collection.id,
+              collectionId: widget.isOffline ? null : widget.collection.id,
               onListRefresh: loadItems,
+              isOffline: widget.isOffline,
               shape: _isMusic ? CardShape.square : null,
             ),
           ),

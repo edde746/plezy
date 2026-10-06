@@ -55,6 +55,8 @@ final class AppDatabaseBootstrap {
     OfflineWatchProgress,
     SyncRules,
     SyncRuleDownloads,
+    DownloadCollections,
+    DownloadCollectionSyncs,
     Connections,
     Profiles,
     ProfileConnections,
@@ -366,7 +368,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration {
@@ -757,6 +759,11 @@ class AppDatabase extends _$AppDatabase {
             'DownloadedMedia.additionalPartPaths column',
             () => m.addColumn(downloadedMedia, downloadedMedia.additionalPartPaths),
           );
+        }
+        if (from < 25) {
+          appLogger.i('Adding download collection membership tables (v25 migration)');
+          await _ignoreAlreadyExists('DownloadCollections table', () => m.createTable(downloadCollections));
+          await _ignoreAlreadyExists('DownloadCollectionSyncs table', () => m.createTable(downloadCollectionSyncs));
         }
       },
     );

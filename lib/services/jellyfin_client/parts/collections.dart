@@ -2,6 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinCollectionMethods on _JellyfinClientInternals {
   static const int _collectionsPageSize = 36;
+  static const int _membershipBoxSetPageSize = 200;
 
   /// BoxSets live in a single server-wide collections folder, not under each
   /// library. Both dialects discard `ParentId` for a BoxSet-only query —
@@ -64,6 +65,40 @@ mixin _JellyfinCollectionMethods on _JellyfinClientInternals {
     );
     throwIfHttpError(response);
     return _pagedItems(response.data, offset: s, requestedSize: size, map: _mapItems);
+  }
+
+  /// Neither dialect has an item → BoxSet lookup before Jellyfin 12.0, so
+  /// every BoxSet's children are read, ids only, in the order
+  /// [fetchCollectionPage] shows them.
+  @override
+  Future<List<CollectionMembership>> fetchCollectionMemberships(Set<String> itemIds, {AbortController? abort}) async {
+    if (itemIds.isEmpty) return const [];
+    final boxSets = await drainPages(
+      (start, size) => fetchCollectionsPage('', start: start, size: size, abort: abort),
+      pageSize: _membershipBoxSetPageSize,
+      abort: abort,
+    );
+    final memberships = <CollectionMembership>[];
+    for (final boxSet in boxSets) {
+      final response = await _http.get(
+        '/Items',
+        queryParameters: {
+          'userId': connection.userId,
+          'ParentId': boxSet.id,
+          'EnableImages': 'false',
+          'EnableUserData': 'false',
+          'EnableTotalRecordCount': 'false',
+        },
+        abort: abort,
+      );
+      throwIfHttpError(response);
+      final memberIds = [
+        for (final child in _itemsArray(response.data))
+          if (child['Id'] case final String id when itemIds.contains(id)) id,
+      ];
+      if (memberIds.isNotEmpty) memberships.add((collection: boxSet, memberIds: memberIds));
+    }
+    return memberships;
   }
 
   @override

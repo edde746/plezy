@@ -740,6 +740,8 @@ class _MainScreenState extends State<MainScreen>
   /// means a disconnected server drops out and its reconnect counts as newly
   /// online again. No-op while nothing new is online or no client resolves;
   /// per-item client resolution inside the drain picks the right server.
+  /// The newly online servers also refresh their downloads' collection
+  /// membership.
   void _resumeQueuedDownloadsForServers(Set<String> onlineServerIds, MediaServerClient? onlineClient) {
     final newlyOnline = onlineServerIds.difference(_resumeCoveredServerIds);
     if (!mounted || newlyOnline.isEmpty || onlineClient == null) {
@@ -753,10 +755,12 @@ class _MainScreenState extends State<MainScreen>
       ..clear()
       ..addAll(onlineServerIds);
     final downloadProvider = context.read<DownloadProvider>();
+    final serverManager = context.read<MultiServerProvider>().serverManager;
     unawaited(
       downloadProvider.ensureInitialized().then((_) {
         if (!mounted) return;
         downloadProvider.resumeQueuedDownloads(onlineClient);
+        unawaited(downloadProvider.syncDownloadCollections(serverManager, newlyOnline));
       }),
     );
   }

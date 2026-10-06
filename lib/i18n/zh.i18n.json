@@ -1757,6 +1757,9 @@
     "episodesQueued": "${count} 集已加入下载队列",
     "downloadDeleted": "下载已删除",
     "deleteConfirm": "要从此设备删除“${title}”吗？",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "已取消的下载",
     "cancelledDownloadMessage": "此下载已取消。你想怎么做？",
     "allEpisodesAlreadyDownloaded": "所有剧集均已下载",
@@ -1844,7 +1847,8 @@
     },
     "options": "下载选项",
     "groupings": {
-      "library": "媒体库"
+      "library": "媒体库",
+      "collections": ""
     },
     "unknownLibrary": "未知媒体库",
     "unknownShow": "未知节目",

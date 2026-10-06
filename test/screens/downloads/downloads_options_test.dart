@@ -16,6 +16,7 @@ import 'package:plezy/navigation/main_screen_scope.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/downloads/downloads_options.dart';
+import 'package:plezy/screens/collection_detail_screen.dart';
 import 'package:plezy/screens/downloads/downloads_screen.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
@@ -359,5 +360,65 @@ void main() {
     expect(cards(tester), hasLength(2));
     final storage = await StorageService.getInstance();
     expect(storage.getLibraryFilters(sectionId: 'downloads:movies'), isEmpty);
+  });
+
+  MediaItem collection(String id, {required String title}) =>
+      testMediaItem(id: id, kind: MediaKind.collection, title: title, serverId: 'srv');
+
+  testWidgets('collections grouping folds a collection into a folder that opens its downloads', (tester) async {
+    seed([movie('dune-2', title: 'Dune: Part Two'), movie('other', title: 'Other'), movie('dune-1', title: 'Dune')]);
+    downloadProvider.debugSeedState(
+      collections: [
+        (collection: collection('dune', title: 'Dune Collection'), memberIds: ['dune-1', 'dune-2']),
+      ],
+    );
+    final screenKey = GlobalKey<DownloadsScreenState>();
+    await pumpScreen(tester, screenKey: screenKey);
+    screenKey.currentState!.tabController.index = 2;
+    await tester.pumpAndSettle();
+
+    await openOptionsRow(tester, 'Grouping');
+    await tester.tap(find.text('Collections'));
+    await tester.pumpAndSettle();
+
+    expect(cards(tester).map((card) => (card.item as MediaItem).id), ['dune', 'other']);
+    final storage = await StorageService.getInstance();
+    expect(storage.getLibraryGrouping('downloads:movies'), 'collections');
+
+    await tester.tap(find.text('Dune Collection'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CollectionDetailScreen), findsOneWidget);
+    expect(cards(tester).map((card) => (card.item as MediaItem).id), ['dune-1', 'dune-2']);
+    expect(cards(tester).every((card) => card.isOffline), isTrue);
+  });
+
+  testWidgets('a downloads folder menu offers deleting its downloads, never the server collection', (tester) async {
+    seed([movie('dune-1', title: 'Dune'), movie('dune-2', title: 'Dune: Part Two')]);
+    downloadProvider.debugSeedState(
+      collections: [
+        (collection: collection('dune', title: 'Dune Collection'), memberIds: ['dune-1', 'dune-2']),
+      ],
+    );
+    await (await StorageService.getInstance()).saveLibraryGrouping('downloads:movies', 'collections');
+    final screenKey = GlobalKey<DownloadsScreenState>();
+    await pumpScreen(tester, screenKey: screenKey);
+    screenKey.currentState!.tabController.index = 2;
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('Dune Collection'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mark as Watched'), findsOneWidget);
+    expect(find.text('Play'), findsNothing);
+    expect(find.text('Delete'), findsNothing);
+
+    await tester.tap(find.text('Delete downloads'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete every download in "Dune Collection" from this device?'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(downloadProvider.downloadedMovies, hasLength(2));
   });
 }

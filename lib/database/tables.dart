@@ -144,6 +144,38 @@ class SyncRuleDownloads extends Table {
   Set<Column> get primaryKey => {syncRuleId, downloadGlobalKey};
 }
 
+/// Which collections hold a profile's downloaded movies and shows, so the
+/// downloads screen can group them while offline.
+///
+/// One row per collection that holds at least one downloaded title.
+/// [memberIds] is a JSON array of those titles' ids (movie or show) in the
+/// collection's own order. The collection's display metadata and artwork are
+/// pinned in [ApiCache] the way a downloaded episode's show is.
+@DataClassName('DownloadCollectionItem')
+class DownloadCollections extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get serverId => text()();
+  TextColumn get collectionId => text()();
+  TextColumn get memberIds => text()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, serverId, collectionId};
+}
+
+/// The last successful [DownloadCollections] refresh per profile and server.
+/// [checkedIds] is a JSON array of the downloaded title ids it looked up, so
+/// a title downloaded since triggers a refresh before [syncedAt] goes stale.
+@DataClassName('DownloadCollectionSyncItem')
+class DownloadCollectionSyncs extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get serverId => text()();
+  IntColumn get syncedAt => integer()();
+  TextColumn get checkedIds => text()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, serverId};
+}
+
 /// Persisted media-server connections.
 ///
 /// One row per "connection" the user has added — a Plex account (with its

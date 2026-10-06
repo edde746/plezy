@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} avsnitt köade för nedladdning",
     "downloadDeleted": "Nedladdning borttagen",
     "deleteConfirm": "Ta bort \"${title}\" från den här enheten?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Avbruten nedladdning",
     "cancelledDownloadMessage": "Den här nedladdningen avbröts. Vad vill du göra?",
     "allEpisodesAlreadyDownloaded": "Alla avsnitt är redan nedladdade",
@@ -1855,7 +1858,8 @@
     },
     "options": "Alternativ för nedladdningar",
     "groupings": {
-      "library": "Bibliotek"
+      "library": "Bibliotek",
+      "collections": ""
     },
     "unknownLibrary": "Okänt bibliotek",
     "unknownShow": "Okänd serie",

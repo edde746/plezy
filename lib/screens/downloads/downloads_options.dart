@@ -163,6 +163,15 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
     return filtered;
   }
 
+  /// [items] after [applyDownloadsOptions] with collections folded into
+  /// folders. A folder keeps its first member's place, except under the
+  /// title sort, which files it by its own title.
+  List<MediaItem> groupDownloadsByCollection(DownloadProvider provider, List<MediaItem> items) {
+    final grouped = provider.groupDownloadsByCollection(items);
+    if (_sort?.key != mediaSortKeyTitle || identical(grouped, items)) return grouped;
+    return grouped..sort(mediaItemSortComparator(mediaSortKeyTitle, descending: _sortDescending));
+  }
+
   String _groupingLabel(String grouping) {
     return switch (grouping) {
       browseGroupingMovies => t.libraries.groupings.movies,
@@ -171,6 +180,7 @@ mixin DownloadsTabOptionsMixin<T extends StatefulWidget> on State<T> implements 
       browseGroupingEpisodes => t.libraries.groupings.episodes,
       browseGroupingAlbums => t.libraries.groupings.albums,
       browseGroupingTracks => t.libraries.groupings.tracks,
+      browseGroupingCollections => t.downloads.groupings.collections,
       browseGroupingLibrary => t.downloads.groupings.library,
       _ => t.libraries.groupings.all,
     };

@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} episodes queued for download",
     "downloadDeleted": "Download deleted",
     "deleteConfirm": "Delete \"${title}\" from this device?",
+    "deleteCollectionDownloads": "Delete downloads",
+    "deleteCollectionDownloadsConfirm": "Delete every download in \"${title}\" from this device?",
+    "collectionDownloadsDeleted": "Downloads deleted",
     "cancelledDownloadTitle": "Canceled Download",
     "cancelledDownloadMessage": "This download was canceled. What would you like to do?",
     "allEpisodesAlreadyDownloaded": "All episodes already downloaded",
@@ -1855,7 +1858,8 @@
     },
     "options": "Downloads options",
     "groupings": {
-      "library": "Library"
+      "library": "Library",
+      "collections": "Collections"
     },
     "unknownLibrary": "Unknown library",
     "unknownShow": "Unknown Show",

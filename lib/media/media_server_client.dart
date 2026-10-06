@@ -33,6 +33,11 @@ const int defaultHubPreviewLimit = 20;
 /// Default number of people [MediaServerClient.searchPeople] returns.
 const int defaultPeopleSearchLimit = 20;
 
+/// One collection holding some of the items asked about in
+/// [MediaServerClient.fetchCollectionMemberships], with those items' ids in
+/// the collection's own order.
+typedef CollectionMembership = ({MediaItem collection, List<String> memberIds});
+
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
 ///
 /// Each implementation wraps the per-backend HTTP layer and exposes the same
@@ -549,6 +554,17 @@ abstract class MediaServerClient {
     String? libraryId,
     String? libraryTitle,
   });
+
+  /// The collections holding any of [itemIds] (movies and shows), each with
+  /// the subset of [itemIds] it holds in the collection's own order — the
+  /// source for grouping downloads by collection offline.
+  ///
+  /// Plex reads every item's collection tags, so smart collections (a live
+  /// filter with no per-item record) never appear, and skips collections set
+  /// to "Hide collection". Jellyfin and Emby have no reverse lookup and walk
+  /// every BoxSet. Request failures throw: a partial answer must not replace
+  /// a complete one.
+  Future<List<CollectionMembership>> fetchCollectionMemberships(Set<String> itemIds, {AbortController? abort});
 
   /// Create a new collection in [libraryId] seeded with [items]. Returns the
   /// created collection id when it can be recovered from an accepted response,

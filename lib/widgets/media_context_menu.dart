@@ -41,6 +41,7 @@ import '../utils/music_navigation.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
+import '../utils/downloads_folder_actions.dart';
 import '../services/external_player_service.dart';
 import 'collection_picker_dialog.dart';
 import '../screens/plex_match_screen.dart';
@@ -88,6 +89,9 @@ class _MenuContext {
   final bool watchlistRemoveOffered;
   final bool canDeleteFromServer;
 
+  /// A downloads folder (see [MediaContextMenu.isOffline]).
+  final bool isDownloadsFolder;
+
   const _MenuContext({
     required this.mediaItem,
     required this.playlist,
@@ -101,7 +105,23 @@ class _MenuContext {
     required this.showWatchlistEntry,
     required this.watchlistRemoveOffered,
     required this.canDeleteFromServer,
-  });
+  }) : isDownloadsFolder = false;
+
+  /// A downloads folder's entries act on local downloads, so none of the
+  /// server-side gates apply.
+  const _MenuContext.downloadsFolder(MediaItem this.mediaItem)
+    : playlist = null,
+      mediaClient = null,
+      catalogSources = null,
+      isAdmin = false,
+      canTranscode = false,
+      itemServerOnline = false,
+      canRemoveFromContinueWatching = false,
+      canEditMetadata = false,
+      showWatchlistEntry = false,
+      watchlistRemoveOffered = false,
+      canDeleteFromServer = false,
+      isDownloadsFolder = true;
 
   bool get isPlaylist => playlist != null;
   MediaKind? get mediaKind => mediaItem?.kind;
@@ -220,6 +240,11 @@ class MediaContextMenu extends StatefulWidget {
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
 
+  /// Downloaded content shown without its server, as on the downloads
+  /// screen. A collection there is a downloads folder: its menu marks and
+  /// deletes the downloaded titles inside, never the server's collection.
+  final bool isOffline;
+
   /// Extra entries appended after the standard actions.
   final List<MediaMenuExtraEntry> extraEntries;
 
@@ -233,6 +258,7 @@ class MediaContextMenu extends StatefulWidget {
     required this.child,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.isOffline = false,
     this.extraEntries = const [],
   });
 
@@ -376,7 +402,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       return;
     }
 
-    final menuActions = menu.isCollection || menu.isPlaylist
+    final menuActions = menu.isDownloadsFolder
+        ? _buildDownloadsFolderMenuActions(menu.mediaItem!)
+        : menu.isCollection || menu.isPlaylist
         ? _buildListMenuActions(context, menu)
         : _buildItemMenuActions(context, menu);
     for (var i = 0; i < widget.extraEntries.length; i++) {
@@ -441,6 +469,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final playlist = _playlist;
     final mediaKind = mediaItem?.kind;
     final itemBackend = mediaItem?.backend ?? playlist?.backend;
+    if (widget.isOffline && mediaItem != null && mediaKind == MediaKind.collection) {
+      return _MenuContext.downloadsFolder(mediaItem);
+    }
 
     // Check if user has admin privileges. Backend-neutral: Plex uses the
     // server-owned flag (folded with the active Plex Home profile's admin
@@ -534,6 +565,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       watchlistRemoveOffered: watchlistRemoveOffered,
       canDeleteFromServer: canDeleteFromServer,
     );
+  }
+
+  /// Entries for a downloads folder (see [MediaContextMenu.isOffline]).
+  List<_MenuAction> _buildDownloadsFolderMenuActions(MediaItem folder) {
+    return [
+      if (!folder.isWatched)
+        _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
+      if (folder.isWatched || folder.isPartiallyWatched)
+        _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
+      _MenuAction(
+        value: 'delete_folder_downloads',
+        icon: Symbols.delete_rounded,
+        label: t.downloads.deleteCollectionDownloads,
+        destructive: true,
+      ),
+    ];
   }
 
   /// Entries for a playlist or collection.
@@ -773,7 +820,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
       return;
     }
-    if (menu.isCollection || menu.isPlaylist) {
+    if (menu.isDownloadsFolder) {
+      await _dispatchDownloadsFolderSelection(context, selected, menu.mediaItem!);
+    } else if (menu.isCollection || menu.isPlaylist) {
       await _dispatchListSelection(context, selected, menu);
     } else {
       await _dispatchItemSelection(
@@ -807,6 +856,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       case 'delete':
         await _handleDelete(context, menu.isCollection, menu.isPlaylist);
         break;
+    }
+  }
+
+  Future<void> _dispatchDownloadsFolderSelection(BuildContext context, String? selected, MediaItem folder) async {
+    switch (selected) {
+      case 'watch' || 'unwatch':
+        await setDownloadsFolderWatched(context, folder, watched: selected == 'watch');
+      case 'delete_folder_downloads':
+        await deleteDownloadsFolder(context, folder);
     }
   }
 

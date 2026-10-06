@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} бөлім жүктеу кезегіне қосылды",
     "downloadDeleted": "Жүктеу өшірілді",
     "deleteConfirm": "\"${title}\" осы құрылғыдан өшірілсін бе?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Тоқтатылған жүктеу",
     "cancelledDownloadMessage": "Бұл жүктеу тоқтатылды. Не істегіңіз келеді?",
     "allEpisodesAlreadyDownloaded": "Барлық бөлімдер бұрыннан жүктелген",
@@ -1855,7 +1858,8 @@
     },
     "options": "Жүктеулер параметрлері",
     "groupings": {
-      "library": "Кітапхана"
+      "library": "Кітапхана",
+      "collections": ""
     },
     "unknownLibrary": "Белгісіз кітапхана",
     "unknownShow": "Белгісіз телешоу",

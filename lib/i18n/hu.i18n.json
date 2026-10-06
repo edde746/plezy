@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} epizód letöltésre sorba állítva",
     "downloadDeleted": "Letöltés törölve",
     "deleteConfirm": "Törlöd a következőt: \"${title}\" erről az eszközről?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Megszakított letöltés",
     "cancelledDownloadMessage": "Ez a letöltés meg lett szakítva. Mit szeretnél tenni?",
     "allEpisodesAlreadyDownloaded": "Minden epizód le van töltve",
@@ -1855,7 +1858,8 @@
     },
     "options": "Letöltések lehetőségei",
     "groupings": {
-      "library": "Könyvtár"
+      "library": "Könyvtár",
+      "collections": ""
     },
     "unknownLibrary": "Ismeretlen könyvtár",
     "unknownShow": "Ismeretlen sorozat",

@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} qism yuklash navbatiga qoʻshildi",
     "downloadDeleted": "Yuklama oʻchirildi",
     "deleteConfirm": "\"${title}\" ushbu qurilmadan oʻchirilsinmi?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Toʻxtatilgan yuklama",
     "cancelledDownloadMessage": "Ushbu yuklash bekor qilindi. Nima qilmoqchisiz?",
     "allEpisodesAlreadyDownloaded": "Barcha qismlar avvaldan yuklab olingan",
@@ -1855,7 +1858,8 @@
     },
     "options": "Yuklamalar parametrlari",
     "groupings": {
-      "library": "Kutubxona"
+      "library": "Kutubxona",
+      "collections": ""
     },
     "unknownLibrary": "Nomaʼlum kutubxona",
     "unknownShow": "Nomaʼlum serial",

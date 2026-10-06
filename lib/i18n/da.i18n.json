@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} episoder i downloadkø",
     "downloadDeleted": "Download slettet",
     "deleteConfirm": "Slet \"${title}\" fra denne enhed?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Annulleret download",
     "cancelledDownloadMessage": "Denne download blev annulleret. Hvad vil du gøre?",
     "allEpisodesAlreadyDownloaded": "Alle episoder er allerede downloadet",
@@ -1855,7 +1858,8 @@
     },
     "options": "Valgmuligheder for downloads",
     "groupings": {
-      "library": "Bibliotek"
+      "library": "Bibliotek",
+      "collections": ""
     },
     "unknownLibrary": "Ukendt bibliotek",
     "unknownShow": "Ukendt serie",

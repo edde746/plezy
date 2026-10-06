@@ -1757,6 +1757,9 @@
     "episodesQueued": "已將 ${count} 集影片加入下載佇列",
     "downloadDeleted": "下載內容已刪除",
     "deleteConfirm": "確定要從此裝置刪除「${title}」嗎？",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "已取消的下載",
     "cancelledDownloadMessage": "此下載已取消。您想要如何處理？",
     "allEpisodesAlreadyDownloaded": "所有單集都已下載完成",
@@ -1844,7 +1847,8 @@
     },
     "options": "下載選項",
     "groupings": {
-      "library": "媒體庫"
+      "library": "媒體庫",
+      "collections": ""
     },
     "unknownLibrary": "未知媒體庫",
     "unknownShow": "未知節目",

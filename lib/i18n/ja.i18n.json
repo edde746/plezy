@@ -1757,6 +1757,9 @@
     "episodesQueued": "${count}エピソードをダウンロードキューに追加しました",
     "downloadDeleted": "ダウンロードを削除しました",
     "deleteConfirm": "このデバイスから「${title}」を削除しますか？",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "キャンセル済みのダウンロード",
     "cancelledDownloadMessage": "このダウンロードはキャンセルされました。どうしますか？",
     "allEpisodesAlreadyDownloaded": "すべてのエピソードはすでにダウンロード済みです",
@@ -1844,7 +1847,8 @@
     },
     "options": "ダウンロードのオプション",
     "groupings": {
-      "library": "ライブラリ"
+      "library": "ライブラリ",
+      "collections": ""
     },
     "unknownLibrary": "不明なライブラリ",
     "unknownShow": "不明な番組",

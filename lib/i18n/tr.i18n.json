@@ -1768,6 +1768,9 @@
     "episodesQueued": "İndirmek için ${count} bölüm kuyruğa alındı",
     "downloadDeleted": "İndirme silindi",
     "deleteConfirm": "\"${title}\" bu cihazdan silinsin mi?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "İptal Edilen İndirme",
     "cancelledDownloadMessage": "Bu indirme iptal edildi. Ne yapmak istersiniz?",
     "allEpisodesAlreadyDownloaded": "Tüm bölümler zaten indirildi",
@@ -1855,7 +1858,8 @@
     },
     "options": "İndirme seçenekleri",
     "groupings": {
-      "library": "Kitaplık"
+      "library": "Kitaplık",
+      "collections": ""
     },
     "unknownLibrary": "Bilinmeyen kitaplık",
     "unknownShow": "Bilinmeyen Dizi",
