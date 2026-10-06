@@ -184,6 +184,15 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return rateEligible || resolutionEligible;
   }
 
+  /// A shuffled queue opts out of resume when the user asked for it (#2303):
+  /// every item opens at 0:00, including episodes reached through
+  /// auto-advance and Plex server-side window refetches. Explicit requests
+  /// still win, so callers only ask when no request is in play.
+  bool _opensShuffledFromBeginning(SettingsService settings) =>
+      mounted &&
+      context.read<PlaybackStateProvider>().isShuffleActive &&
+      settings.read(SettingsService.shuffleStartsFromBeginning);
+
   /// Resolve where a fresh open should start: explicit request → shuffle
   /// override → locally tracked offline progress → server view offset.
   Future<Duration?> _resolveOpenResumePosition({
@@ -192,15 +201,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required OfflineWatchSyncService offlineWatchService,
     Duration? requested,
   }) async {
-    // A shuffled queue opts out of resume when the user asked for it (#2303):
-    // every item opens at 0:00, including episodes reached through
-    // auto-advance and Plex server-side window refetches. Explicit requests
-    // still win, so the flag is only read when no request is in play.
     final shuffleFromBeginning =
-        requested == null &&
-        mounted &&
-        context.read<PlaybackStateProvider>().isShuffleActive &&
-        (await SettingsService.getInstance()).read(SettingsService.shuffleStartsFromBeginning);
+        requested == null && mounted && _opensShuffledFromBeginning(await SettingsService.getInstance());
     int? offlineOffsetMs;
     // In offline mode, prefer locally tracked progress over the cached server
     // value since the user may have watched further since downloading.
@@ -546,9 +548,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }
 
   Future<({({Duration start, Duration end})? frames, bool stalled})> _runFrameStepWindow(Player currentPlayer) async {
+    // mpv's `time-pos` is the open file's own clock; the seek that follows
+    // the window speaks timeline time (a stacked item's later files start
+    // past zero).
     Future<Duration?> videoTime() async {
       final seconds = double.tryParse(await currentPlayer.getProperty('time-pos') ?? '');
-      return seconds == null ? null : Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round());
+      return seconds == null
+          ? null
+          : Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round()) + currentPlayer.timelineOffset;
     }
 
     var unpaused = false;
@@ -879,6 +886,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         play: shouldPlay && automotivePlaybackAllowedNow(),
         externalSubtitles: externalSubtitles,
         timelineDuration: timing.timelineDuration,
+        timelineOffset: timing.timelineOffset,
       );
     }
 
@@ -1080,6 +1088,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         isTranscoding: result.isTranscoding,
         resumePosition: resumePosition(),
         durationMs: metadata.durationMs,
+        partTimeline: result.mediaInfo?.partTimeline,
       );
       if (!isCurrent()) return false;
       final openResult = await _openMediaOnPlayer(

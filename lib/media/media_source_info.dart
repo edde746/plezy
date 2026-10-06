@@ -1,6 +1,7 @@
 import '../i18n/strings.g.dart';
 import '../utils/track_label_builder.dart' show TrackLabel, TrackLabelBuilder;
 import 'media_display_criteria.dart';
+import 'media_part_timeline.dart';
 
 class MediaSourceInfo {
   final String videoUrl;
@@ -18,6 +19,10 @@ class MediaSourceInfo {
   /// Effective version/part positions after backend selection and fallback.
   final int? mediaIndex;
   final int? partIndex;
+
+  /// Non-null when the selected version is stacked across several files:
+  /// where the open file ([partIndex]) sits on the item's timeline.
+  final MediaPartTimeline? partTimeline;
 
   /// Jellyfin default stream indexes for this source. A subtitle index of -1
   /// is an explicit server/user decision to start with subtitles off.
@@ -42,6 +47,7 @@ class MediaSourceInfo {
     this.mediaSourceId,
     this.mediaIndex,
     this.partIndex,
+    this.partTimeline,
     this.defaultAudioStreamIndex,
     this.defaultSubtitleStreamIndex,
     this.trickplayByWidth,
@@ -62,6 +68,7 @@ class MediaSourceInfo {
       mediaSourceId: mediaSourceId,
       mediaIndex: mediaIndex,
       partIndex: partIndex,
+      partTimeline: partTimeline,
       defaultAudioStreamIndex: defaultAudioStreamIndex,
       defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
       trickplayByWidth: trickplayByWidth,

@@ -55,6 +55,13 @@ class DownloadedMedia extends Table {
   IntColumn get totalBytes => integer().nullable()();
   IntColumn get downloadedBytes => integer().withDefault(const Constant(0))();
   TextColumn get videoFilePath => text().nullable()();
+
+  /// Stored paths of the files after the first when the downloaded version is
+  /// stacked across several files (Plex `Part 2`, `Part 3`), as a JSON array in
+  /// playback order. Each entry has the same stored form as [videoFilePath]
+  /// (relative path or SAF `content://` URI), or is null while that file is
+  /// not stored yet. Null for single-file downloads and rows from before v24.
+  TextColumn get additionalPartPaths => text().nullable()();
   TextColumn get safRootUri => text().nullable()();
   TextColumn get thumbPath => text().nullable()();
   IntColumn get downloadedAt => integer().nullable()();

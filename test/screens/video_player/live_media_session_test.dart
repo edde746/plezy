@@ -511,6 +511,9 @@ class _LiveMediaSessionPlayer implements Player {
   PlayerStreams get streams => emptyPlayerStreams();
 
   @override
+  Duration get timelineOffset => Duration.zero;
+
+  @override
   bool get needsDecoderRefreshAfterDisplaySwitch => false;
 
   @override
@@ -545,6 +548,7 @@ class _FailingOpenLivePlayer extends _LiveMediaSessionPlayer {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     opened++;
     if (opened == 1) errors.add(const PlayerError('stream failed'));
@@ -696,6 +700,7 @@ class _CadenceLivePlayer extends _LiveMediaSessionPlayer {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     events.add(play ? 'open playing' : 'open paused');
     _cadence = cadences[Uri.parse(media.uri).pathSegments.last.split('.').first];

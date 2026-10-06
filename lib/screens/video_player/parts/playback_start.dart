@@ -182,6 +182,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
         );
+        // The resume the open will land on, so a stacked download opens the
+        // file holding it.
+        final startPosition = await _resolveOpenResumePosition(
+          metadata: _currentMetadata,
+          isOffline: true,
+          offlineWatchService: offlineWatchService,
+          requested: widget.initialPosition,
+        );
+        if (!attempt.isCurrent) return;
         playbackContext = await playbackResolver.resolve(
           PlaybackInitializationOptions(
             metadata: _currentMetadata,
@@ -193,6 +202,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            startPosition: startPosition,
           ),
           offlineLibraryMode: true,
         );

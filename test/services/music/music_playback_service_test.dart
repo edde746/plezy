@@ -245,6 +245,9 @@ class FakePlayer implements Player {
   Duration? outgoingSourcePosition;
 
   @override
+  Duration get timelineOffset => Duration.zero;
+
+  @override
   bool get audioPassthroughActive => false;
 
   // Audio only; there is no video output to carry HDR.
@@ -261,6 +264,7 @@ class FakePlayer implements Player {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     final gate = _openGates.isEmpty ? null : _openGates.removeAt(0);
     if (gate != null) await gate.block();

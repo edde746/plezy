@@ -26,6 +26,7 @@ import 'package:plezy/services/download_artwork_helpers.dart';
 import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
+import 'package:plezy/services/downloaded_video_source.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/saf_storage_service.dart';
@@ -325,6 +326,39 @@ void main() {
       // record has to be gone before either.
       expect(callOrder, ['allRecords', 'deleteRecord:task-a', 'cancel:task-a', 'initialize', 'reschedule']);
       expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:item-1');
+    });
+
+    test('startup normalizes stacked paths and completes only fully stored downloads', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final base = p.join(tmpRoot.path, 'support');
+      Future<void> seedStacked(String ratingKey) => db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: ratingKey,
+        globalKey: 'srv:$ratingKey',
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      // Every file stored, post-processing interrupted; paths recorded absolute.
+      await seedStacked('item-1');
+      await db.resetDownloadParts('srv:item-1', additionalPartCount: 1);
+      await db.updateVideoFilePath('srv:item-1', p.join(base, 'downloads/Movies/M/M.mkv'), stampDownloadedAt: false);
+      await db.updateAdditionalPartPath('srv:item-1', 1, p.join(base, 'downloads/Movies/M/M - part2.mkv'));
+      // Its second file never arrived and no native task is left for it.
+      await seedStacked('item-2');
+      await db.resetDownloadParts('srv:item-2', additionalPartCount: 1);
+      await db.updateVideoFilePath('srv:item-2', 'downloads/Movies/N/N.mkv', stampDownloadedAt: false);
+      final manager = await managerFor(db);
+
+      await manager.recoverInterruptedDownloads();
+
+      final complete = await db.getDownloadedMedia('srv:item-1');
+      expect(complete?.status, DownloadStatus.completed.index);
+      expect(complete?.storedPartPaths, ['downloads/Movies/M/M.mkv', 'downloads/Movies/M/M - part2.mkv']);
+      final incomplete = await db.getDownloadedMedia('srv:item-2');
+      expect(incomplete?.status, DownloadStatus.queued.index, reason: 'not completed while a file is missing');
+      expect(incomplete?.nextMissingPartIndex, 1, reason: 'the stored first file is kept for the resume');
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:item-2');
     });
   });
 
@@ -3052,17 +3086,373 @@ void main() {
       expect(saf.persistedRoots, contains('content://root-b'));
     });
   });
+
+  group('stacked downloads', () {
+    const subtitleBase = 'https://example.test/subtitle';
+    DownloadResolution stackedResolution() => const DownloadResolution(
+      videoUrl: 'https://example.test/library/parts/1/file.mkv',
+      externalSubtitles: [DownloadSubtitleSpec(id: 1, url: '$subtitleBase/1', codec: 'srt')],
+      additionalParts: [
+        DownloadPartResolution(
+          url: 'https://example.test/library/parts/2/file.mkv',
+          externalSubtitles: [DownloadSubtitleSpec(id: 2, url: '$subtitleBase/2', codec: 'srt')],
+        ),
+        DownloadPartResolution(
+          url: 'https://example.test/library/parts/3/file.mp4',
+          externalSubtitles: [DownloadSubtitleSpec(id: 3, url: '$subtitleBase/3', codec: 'srt')],
+        ),
+      ],
+    );
+
+    /// A manager whose native enqueues land in the returned iterator.
+    ({DownloadManagerService manager, StreamIterator<Task> tasks}) startManager(
+      _SupplementaryFixture fixture,
+      MediaServerClient client, {
+      http.BaseClient? httpClient,
+      SafStorageOperations? safStorage,
+    }) {
+      final enqueued = StreamController<Task>();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        safStorage: safStorage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        http: httpClient == null ? null : MediaServerHttpClient(client: httpClient),
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+        enqueueTaskOverride: (task) async {
+          enqueued.add(task);
+          return true;
+        },
+      );
+      addTearDown(() {
+        manager.dispose();
+        unawaited(enqueued.close());
+      });
+      return (manager: manager, tasks: StreamIterator(enqueued.stream));
+    }
+
+    Future<Task> nextTask(StreamIterator<Task> tasks) async {
+      expect(await tasks.moveNext().timeout(const Duration(seconds: 10)), isTrue);
+      return tasks.current;
+    }
+
+    /// Where [task], enqueued into app storage, writes its file. Not
+    /// `Task.filePath()`: the downloader caches base directories per process,
+    /// so across tests it would point into an earlier test's storage.
+    Future<String> landingPath(_SupplementaryFixture fixture, Task task) async =>
+        p.join(await fixture.storage.baseAppDirectoryPath(), task.directory, task.filename);
+
+    /// Lands [content] at [task]'s file and reports [reported] (default: the
+    /// task itself) complete. Returns the file's path.
+    Future<String> complete(
+      _SupplementaryFixture fixture,
+      DownloadManagerService manager,
+      Task task,
+      String content, {
+      Task? reported,
+    }) async {
+      final file = File(await landingPath(fixture, task));
+      await file.parent.create(recursive: true);
+      await file.writeAsString(content);
+      await manager.debugHandleTaskStatus(TaskStatusUpdate(reported ?? task, TaskStatus.complete));
+      return file.path;
+    }
+
+    test('fetches every file in order, then plays and deletes them all', () async {
+      final fixture = await _createSupplementaryFixture();
+      final httpClient = _ScriptedSubtitleClient();
+      final client = _SupplementaryClient(metadata: fixture.metadata, resolution: stackedResolution);
+      final (:manager, :tasks) = startManager(fixture, client, httpClient: httpClient);
+      final progress = <DownloadProgress>[];
+      final subscription = manager.progressStream.listen(progress.add);
+      addTearDown(subscription.cancel);
+      final globalKey = fixture.metadata.globalKey;
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+
+      final first = await nextTask(tasks);
+      expect(first.url, endsWith('/parts/1/file.mkv'));
+      progress.clear();
+      final firstPath = await complete(fixture, manager, first, 'first');
+      expect(
+        (await fixture.db.getDownloadedMedia(globalKey))?.status,
+        DownloadStatus.downloading.index,
+        reason: 'the item is not downloaded until every file is',
+      );
+
+      final second = await nextTask(tasks);
+      final firstBaseName = p.basenameWithoutExtension(firstPath);
+      expect(second.url, endsWith('/parts/2/file.mkv'));
+      expect(second.filename, '$firstBaseName - part2.mkv');
+      expect(p.dirname(await landingPath(fixture, second)), p.dirname(firstPath));
+      await Future<void>.delayed(Duration.zero);
+      expect(progress.where((event) => event.progress < 33), isEmpty, reason: 'no fall back to 0% between files');
+
+      // Progress covers the whole item: the stored first file plus half of the second.
+      await manager.debugHandleTaskProgress(TaskProgressUpdate(second, 0.5, 1000));
+      await Future<void>.delayed(Duration.zero);
+      expect(progress.last.progress, 50);
+      expect(progress.last.downloadedBytes, 'first'.length + 500);
+      expect(progress.last.totalBytes, 'first'.length + 1000);
+      final secondPath = await complete(fixture, manager, second, 'second');
+
+      final third = await nextTask(tasks);
+      expect(third.url, endsWith('/parts/3/file.mp4'));
+      expect(third.filename, '$firstBaseName - part3.mp4');
+      final thirdPath = await complete(fixture, manager, third, 'third');
+      final files = [firstPath, secondPath, thirdPath];
+
+      final row = (await fixture.db.getDownloadedMedia(globalKey))!;
+      expect(row.status, DownloadStatus.completed.index);
+      expect(row.partCount, 3);
+      expect(row.downloadedAt, isNotNull);
+      expect([for (final stored in row.storedPartPaths) await fixture.storage.ensureAbsolutePath(stored)], files);
+      expect(await fixture.db.getPendingSupplementaryQueueItems(), isEmpty);
+
+      // Each file's subtitles sit next to that file, where playback looks.
+      expect(httpClient.trackRequests, unorderedEquals([1, 2, 3]));
+      for (final (index, file) in files.indexed) {
+        final sidecar = p.join(fixture.storage.sidecarSubtitlesDirectoryPath(file), '${index + 1}.srt');
+        expect(File(sidecar).existsSync(), isTrue, reason: sidecar);
+      }
+
+      for (final (index, file) in files.indexed) {
+        expect((await resolveDownloadedVideoSource(row, partIndex: index))?.path, file, reason: 'part $index');
+      }
+      expect(await resolveDownloadedVideoSource(row, partIndex: 3), isNull);
+
+      final deleter = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(deleter.dispose);
+      await deleter.deleteDownload(globalKey);
+
+      expect(await fixture.db.getDownloadedMedia(globalKey), isNull);
+      for (final file in files) {
+        expect(File(file).existsSync(), isFalse, reason: file);
+        expect(Directory(fixture.storage.sidecarSubtitlesDirectoryPath(file)).existsSync(), isFalse, reason: file);
+      }
+    });
+
+    test('a restart between files resumes at the next file instead of starting over', () async {
+      final fixture = await _createSupplementaryFixture();
+      final client = _SupplementaryClient(metadata: fixture.metadata, resolution: stackedResolution);
+      final before = startManager(fixture, client);
+      await before.manager.queueDownload(metadata: fixture.metadata, client: client);
+      final first = await nextTask(before.tasks);
+      // The app is killed while the first file downloads; its context is gone.
+      before.manager.dispose();
+
+      final after = startManager(fixture, client);
+      final progress = <DownloadProgress>[];
+      final subscription = after.manager.progressStream.listen(progress.add);
+      addTearDown(subscription.cancel);
+      // The downloader reports the finished task on its own after the restart;
+      // a root-anchored copy resolves its file without the per-process cache.
+      final firstPath = await complete(
+        fixture,
+        after.manager,
+        first,
+        'first',
+        reported: (first as DownloadTask).copyWith(
+          baseDirectory: BaseDirectory.root,
+          directory: p.dirname(await landingPath(fixture, first)),
+        ),
+      );
+
+      final second = await nextTask(after.tasks);
+      expect(second.filename, '${p.basenameWithoutExtension(firstPath)} - part2.mkv');
+      expect(File(firstPath).existsSync(), isTrue, reason: 'the stored file is kept');
+      final row = (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))!;
+      expect(row.status, DownloadStatus.downloading.index);
+      expect(row.bgTaskId, second.taskId);
+      expect(p.isAbsolute(row.videoFilePath!), isFalse, reason: 'stored like any app-storage path');
+      expect(await fixture.storage.ensureAbsolutePath(row.videoFilePath!), firstPath);
+      expect(row.nextMissingPartIndex, 1);
+      await Future<void>.delayed(Duration.zero);
+      expect(progress, isNotEmpty);
+      expect(progress.map((event) => event.progress), everyElement(33), reason: 'resumes at a third, not 0%');
+    });
+
+    test('a file that cannot be fetched fails the whole download', () async {
+      final fixture = await _createSupplementaryFixture();
+      final client = _SupplementaryClient(metadata: fixture.metadata, resolution: stackedResolution);
+      final (:manager, :tasks) = startManager(fixture, client);
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      await complete(fixture, manager, await nextTask(tasks), 'first');
+
+      final second = await nextTask(tasks);
+      await manager.debugHandleTaskStatus(TaskStatusUpdate(second, TaskStatus.notFound));
+
+      final row = (await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))!;
+      expect(row.status, DownloadStatus.failed.index);
+      expect(row.nextMissingPartIndex, 1);
+      expect(await resolveDownloadedVideoSource(row), isNull);
+    });
+
+    test('a replayed completion of a finished file records nothing', () async {
+      final fixture = await _createSupplementaryFixture(saf: true);
+      final globalKey = fixture.metadata.globalKey;
+      // Holds the download between files — the first file recorded, the next
+      // not yet enqueued — at its next SAF root lookup once armed.
+      var holdArmed = false;
+      final held = Completer<void>();
+      final release = Completer<void>();
+      final safStorage = _FakeSafStorage(
+        resolveOverride: (uri) async {
+          if (holdArmed) {
+            holdArmed = false;
+            held.complete();
+            await release.future;
+          }
+          return 'content://downloads';
+        },
+      );
+      safStorage.addMovieDir(fixture.storage, fixture.metadata);
+      final client = _SupplementaryClient(metadata: fixture.metadata, resolution: stackedResolution);
+      final (:manager, :tasks) = startManager(fixture, client, safStorage: safStorage);
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      final first = await nextTask(tasks);
+      final firstUri = safStorage.addMovieFile(fixture.storage, fixture.metadata, first.filename);
+
+      holdArmed = true;
+      final completion = manager.debugHandleTaskStatus(TaskStatusUpdate(first, TaskStatus.complete));
+      await held.future;
+      // The downloader replays the same completion while the next file waits.
+      await manager.debugHandleTaskStatus(TaskStatusUpdate(first, TaskStatus.complete));
+
+      var row = (await fixture.db.getDownloadedMedia(globalKey))!;
+      expect(row.status, DownloadStatus.downloading.index);
+      expect(row.storedPartPaths, [firstUri], reason: 'the replay must not record the file as the next part');
+      expect(row.bgTaskId, isNull);
+
+      release.complete();
+      await completion;
+      final second = await nextTask(tasks);
+      expect(second.filename, fixture.storage.partFilePath(first.filename, 1, 'mkv'));
+      row = (await fixture.db.getDownloadedMedia(globalKey))!;
+      expect(row.status, DownloadStatus.downloading.index);
+      expect(row.storedPartPaths, [firstUri]);
+      expect(row.bgTaskId, second.taskId);
+    });
+
+    test('requesting a failed stacked download again deletes what it stored and starts over', () async {
+      final fixture = await _createSupplementaryFixture();
+      final globalKey = fixture.metadata.globalKey;
+      final client = _SupplementaryClient(metadata: fixture.metadata, resolution: stackedResolution);
+      final (:manager, :tasks) = startManager(fixture, client);
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      final firstPath = await complete(fixture, manager, await nextTask(tasks), 'first');
+      final secondPath = await complete(fixture, manager, await nextTask(tasks), 'second');
+      await manager.debugHandleTaskStatus(TaskStatusUpdate(await nextTask(tasks), TaskStatus.notFound));
+      expect((await fixture.db.getDownloadedMedia(globalKey))?.status, DownloadStatus.failed.index);
+
+      // A new request may pick another version: nothing stored earlier is reused.
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+
+      final restarted = await nextTask(tasks);
+      expect(restarted.url, endsWith('/parts/1/file.mkv'));
+      expect(File(secondPath).existsSync(), isFalse, reason: 'an earlier file must not be orphaned');
+      expect(File(firstPath).existsSync(), isFalse);
+      final row = (await fixture.db.getDownloadedMedia(globalKey))!;
+      expect(row.status, DownloadStatus.downloading.index);
+      expect(row.videoFilePath, isNull);
+      expect(row.additionalPartPathList, [null, null]);
+    });
+
+    test('SAF deletion removes every stored document and each later file\'s subtitle folder', () async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      DownloadStorageService.resetForTesting();
+      final tmpRoot = await Directory.systemTemp.createTemp('download_manager_stacked_saf_test_');
+      final previousPathProvider = PathProviderPlatform.instance;
+      PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+      final storage = DownloadStorageService.forTestingSaf('content://downloads');
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(() async {
+        await db.close();
+        DownloadStorageService.resetForTesting();
+        SettingsService.resetForTesting();
+        PathProviderPlatform.instance = previousPathProvider;
+        if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+      });
+
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: ServerId('srv'),
+        title: 'Movie',
+        year: 2000,
+      );
+      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/movie-1', {
+        'MediaContainer': {
+          'Metadata': [
+            {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie', 'year': 2000},
+          ],
+        },
+      });
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'movie-1',
+        globalKey: movie.globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+      );
+      final safStorage = _FakeSafStorage();
+      final firstName = storage.getMovieSafFileName(movie, 'mkv');
+      final uris = [
+        safStorage.addMovieFile(storage, movie, firstName),
+        safStorage.addMovieFile(storage, movie, storage.partFilePath(firstName, 1, 'mkv')),
+        safStorage.addMovieFile(storage, movie, storage.partFilePath(firstName, 2, 'mp4')),
+      ];
+      await db.updateVideoFilePath(movie.globalKey, uris.first);
+      await db.updateAdditionalPartPaths(movie.globalKey, uris.sublist(1));
+      final partSubtitles = [
+        for (final partIndex in [1, 2]) await storage.getPartSubtitlesDirectory(ServerId('srv'), 'movie-1', partIndex),
+      ];
+      for (final directory in partSubtitles) {
+        await directory.create(recursive: true);
+        await File(p.join(directory.path, '9.srt')).writeAsString('subtitle');
+      }
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: storage,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        safStorage: safStorage,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.deleteDownload(movie.globalKey);
+
+      expect(await db.getDownloadedMedia(movie.globalKey), isNull);
+      for (final uri in uris) {
+        expect(safStorage.existsSync(uri), isFalse, reason: uri);
+      }
+      for (final directory in partSubtitles) {
+        expect(directory.existsSync(), isFalse, reason: directory.path);
+      }
+    });
+  });
 }
 
-Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath}) async {
+Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath, bool saf = false}) async {
   resetSharedPreferencesForTest();
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
   final tempDir = await Directory.systemTemp.createTemp('download_manager_supplementary_test_');
   final previousPathProvider = PathProviderPlatform.instance;
   PathProviderPlatform.instance = FakePathProvider(tempDir);
-  final storage = DownloadStorageService.instance;
-  await storage.initialize(await SettingsService.getInstance());
+  final storage = saf ? DownloadStorageService.forTestingSaf('content://downloads') : DownloadStorageService.instance;
+  if (!saf) await storage.initialize(await SettingsService.getInstance());
   final databaseFile = File(p.join(tempDir.path, 'downloads.sqlite'));
   final fixture = _SupplementaryFixture(
     tempDir: tempDir,
@@ -3938,17 +4328,27 @@ class _FakeSafStorage implements SafStorageOperations {
     }
   }
 
-  /// Adds [fileName] to [movie]'s shared title folder and returns its URI.
-  String addMovieFile(DownloadStorageService storage, MediaItem movie, String fileName) {
+  /// Adds [movie]'s shared title folder and returns its URI.
+  String addMovieDir(DownloadStorageService storage, MediaItem movie) {
     const rootUri = 'content://downloads';
     const movieDirUri = 'content://movie-dir';
     final pathKey = _pathKey(rootUri, storage.getMovieSafPathComponents(movie));
     _childrenByPath[pathKey] ??= _document(movieDirUri, 'Movie (2000)', isDir: true);
     _childrenByUri[rootUri] = [_childrenByPath[pathKey]!];
+    _childrenByUri.putIfAbsent(movieDirUri, () => []);
+    _existing.addAll([rootUri, movieDirUri]);
+    return movieDirUri;
+  }
+
+  /// Adds [fileName] to [movie]'s shared title folder and returns its URI.
+  String addMovieFile(DownloadStorageService storage, MediaItem movie, String fileName) {
+    final movieDirUri = addMovieDir(storage, movie);
     final uri = 'content://movie-file/$fileName';
-    final siblings = _childrenByUri.putIfAbsent(movieDirUri, () => []);
-    if (!siblings.any((child) => child.uri == uri)) siblings.add(_document(uri, fileName, isDir: false));
-    _existing.addAll([rootUri, movieDirUri, uri]);
+    final document = _document(uri, fileName, isDir: false);
+    final siblings = _childrenByUri[movieDirUri]!;
+    if (!siblings.any((child) => child.uri == uri)) siblings.add(document);
+    _childrenByPath[_pathKey(movieDirUri, [fileName])] = document;
+    _existing.add(uri);
     return uri;
   }
 

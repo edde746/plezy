@@ -27,6 +27,20 @@ Future<bool> deferTranscodeSubtitleSelection({
   return true;
 }
 
+/// Whether a reload's [next] source keeps the outgoing one's subtitle stream
+/// ids, so a carried selection may match by identity. The same version is
+/// not enough when the item is stacked across several files: each file has
+/// streams of its own.
+bool _sameSubtitleSource({
+  required String? previousMediaSourceId,
+  required int? previousPartId,
+  required MediaSourceInfo next,
+}) {
+  if (previousPartId != null && previousPartId == next.partId) return true;
+  final samePart = previousPartId == null || next.partId == null;
+  return samePart && previousMediaSourceId != null && previousMediaSourceId == next.mediaSourceId;
+}
+
 /// The screen's in-place media transition engine: source/quality/audio/
 /// subtitle switches and full item reloads that reuse the live player
 /// instead of pushing a new route. Shared by episode navigation, lifecycle
@@ -410,8 +424,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // and the first-frame flag.
       final previousMetadata = _playbackSession?.metadata ?? _currentMetadata;
       final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
-      final previousPartId = _currentMediaInfo?.partId;
-      final previousMediaSourceId = _currentMediaInfo?.mediaSourceId;
+      final previousMediaInfo = _currentMediaInfo;
+      final previousPartId = previousMediaInfo?.partId;
+      final previousMediaSourceId = previousMediaInfo?.mediaSourceId;
       final previousFirstFrame = _firstFrame.snapshot();
       final previousHasFatalPlaybackError = _hasFatalPlaybackError;
       final previousOpenRequest = _currentOpenRequest;
@@ -419,6 +434,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       _hasFatalPlaybackError = false;
       _dismissPlaybackFailure();
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
+      // Another file of the same stacked item: its streams carry their own
+      // ids, so selections cross by meaning, exactly like a source change.
+      final previousPartTimeline = previousMediaInfo?.partTimeline;
+      final crossesPart =
+          !isItemChange &&
+          previousPartTimeline != null &&
+          resumePosition != null &&
+          !previousPartTimeline.covers(resumePosition);
 
       final currentAudioTrack = preserveCurrentTrackSelection
           ? preservedAudioTrack ?? currentPlayer.state.track.audio
@@ -482,7 +505,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
       final targetQualityPreset = qualityPreset ?? _selectedQualityPreset;
       final downloadOutranksQuality = _downloadOutranksQuality;
-      final targetAudioStreamId = useCurrentAudioStreamSelection
+      final targetAudioStreamId = crossesPart
+          ? null
+          : useCurrentAudioStreamSelection
           ? selectedAudioStreamId ?? _selectedAudioStreamId
           : selectedAudioStreamId;
       final targetLaunchIdentity = VideoPlayerLaunchIdentity(
@@ -503,6 +528,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       );
       final preservesRequestedSubtitleSource =
           !isItemChange &&
+          !crossesPart &&
           targetMediaIndex == _effectiveSelectedMediaIndex &&
           (selectedMediaSourceId == null || selectedMediaSourceId == previousMediaSourceId);
       final initializationSubtitleTrack = preservesRequestedSubtitleSource
@@ -566,6 +592,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             preferredSubtitleTrack: initializationSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            startPosition: openResumePosition,
           ),
           offlineLibraryMode: _offlineLibraryMode,
           downloadOutranksQuality: downloadOutranksQuality,
@@ -597,8 +624,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
           preserveSubtitleSourceIdentity:
               result.mediaInfo != null &&
-              ((previousMediaSourceId != null && previousMediaSourceId == result.mediaInfo!.mediaSourceId) ||
-                  (previousPartId != null && previousPartId == result.mediaInfo!.partId)),
+              _sameSubtitleSource(
+                previousMediaSourceId: previousMediaSourceId,
+                previousPartId: previousPartId,
+                next: result.mediaInfo!,
+              ),
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
@@ -682,13 +712,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
             // Versions/mediaInfo come from the committed session; rebuild so
             // the controls pick them up. Same-part switches
-            // (quality/audio/subtitle) keep the scrub-preview source —
-            // BIF/trickplay is per part, so a reset would re-download
-            // identical bytes.
+            // (quality/audio/subtitle) and moves between the files of one
+            // stacked version keep the scrub-preview source — BIF/trickplay
+            // is per part (a stacked preview spans them all), so a reset
+            // would re-download identical bytes.
             final reusesScrubPreview =
                 previousMetadata.globalKey == metadata.globalKey &&
-                previousPartId != null &&
-                previousPartId == result.mediaInfo?.partId;
+                previousMediaInfo != null &&
+                scrubPreviewServes(previousMediaInfo, result.mediaInfo);
             if (reusesScrubPreview) {
               _setPlayerState(() {});
             } else {

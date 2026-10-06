@@ -319,7 +319,9 @@ extension DownloadDatabaseOperations on AppDatabase {
   ///
   /// Existing active, paused, and completed media rows are never rewritten.
   /// Failed, cancelled, and partial attempts keep their stable row identity
-  /// and physical-file fields while their request and attempt state is refreshed.
+  /// and physical-file fields — the video and any later files of a stacked
+  /// version — while their request and attempt state is refreshed. The caller
+  /// owns the files an earlier attempt stored.
   Future<QueueDownloadOutcome> insertQueuedDownload({
     required ServerId serverId,
     String? clientScopeId,
@@ -538,6 +540,51 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
+  /// Start a download stacked across `1 + additionalPartCount` files over:
+  /// no file stored yet. A zero count marks the download single-file.
+  Future<void> resetDownloadParts(String globalKey, {required int additionalPartCount}) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(
+        videoFilePath: const Value(null),
+        additionalPartPaths: Value(
+          encodeAdditionalPartPaths(additionalPartCount == 0 ? null : List<String?>.filled(additionalPartCount, null)),
+        ),
+      ),
+    );
+  }
+
+  /// Record the stored path of file [partIndex] (> 0) of a stacked download.
+  /// [stampDownloadedAt] marks the row's completion time, for the last file.
+  Future<void> updateAdditionalPartPath(
+    String globalKey,
+    int partIndex,
+    String filePath, {
+    bool stampDownloadedAt = true,
+  }) {
+    return transaction(() async {
+      final row = await getDownloadedMedia(globalKey);
+      final paths = row?.additionalPartPathList;
+      if (row == null || paths == null || partIndex < 1 || partIndex > paths.length) {
+        throw StateError('Download $globalKey has no file ${partIndex + 1} to record');
+      }
+      paths[partIndex - 1] = filePath;
+      await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+        DownloadedMediaCompanion(
+          additionalPartPaths: Value(encodeAdditionalPartPaths(paths)),
+          downloadedAt: stampDownloadedAt ? Value(DateTime.now().millisecondsSinceEpoch) : const Value.absent(),
+        ),
+      );
+    });
+  }
+
+  /// Rewrite the stored paths of the files after the first, e.g. after path
+  /// normalization. Must keep the row's file count.
+  Future<void> updateAdditionalPartPaths(String globalKey, List<String?> paths) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(additionalPartPaths: Value(encodeAdditionalPartPaths(paths))),
+    );
+  }
+
   Future<void> updateDownloadSafRoot(String globalKey, String? safRootUri) async {
     await (update(
       downloadedMedia,
@@ -679,17 +726,19 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   /// Whether a download row other than [excludingGlobalKey] records
-  /// [videoFilePath] as its video.
+  /// [videoFilePath] as one of its files (its video or a stacked part).
   Future<bool> isVideoFilePathRecordedByOtherDownload(
     String videoFilePath, {
     required String excludingGlobalKey,
   }) async {
     final rows =
-        await (select(downloadedMedia)
-              ..where((t) => t.videoFilePath.equals(videoFilePath) & t.globalKey.equals(excludingGlobalKey).not())
-              ..limit(1))
+        await (select(downloadedMedia)..where(
+              (t) =>
+                  (t.videoFilePath.equals(videoFilePath) | t.additionalPartPaths.isNotNull()) &
+                  t.globalKey.equals(excludingGlobalKey).not(),
+            ))
             .get();
-    return rows.isNotEmpty;
+    return rows.any((row) => row.storedPartPaths.contains(videoFilePath));
   }
 
   Expression<bool> _optionalServerPredicate(GeneratedColumn<String> column, ServerId? serverId) {
@@ -721,6 +770,53 @@ extension DownloadDatabaseOperations on AppDatabase {
     return item?.bgTaskId;
   }
 }
+
+/// The files of a downloaded row, for versions stacked across several files.
+/// Part 0 is [DownloadedMediaItem.videoFilePath]; the rest live in
+/// [DownloadedMediaItem.additionalPartPaths].
+extension DownloadedMediaParts on DownloadedMediaItem {
+  /// Stored path of each file after the first, null while that file is not
+  /// stored yet. Null for a single-file download.
+  List<String?>? get additionalPartPathList => decodeAdditionalPartPaths(additionalPartPaths);
+
+  /// Number of files the downloaded version is stacked across.
+  int get partCount => 1 + (additionalPartPathList?.length ?? 0);
+
+  /// Stored path of file [partIndex] (0-based), or null when that file is not
+  /// stored or the download has no such file.
+  String? storedPartPath(int partIndex) {
+    if (partIndex == 0) return videoFilePath;
+    final paths = additionalPartPathList;
+    if (partIndex < 0 || paths == null || partIndex > paths.length) return null;
+    return paths[partIndex - 1];
+  }
+
+  /// Every stored file, in playback order.
+  List<String> get storedPartPaths => [?videoFilePath, ...?additionalPartPathList?.nonNulls];
+
+  /// The first file not stored yet — the one the download fetches next — or
+  /// null once every file is stored. Files are fetched in playback order.
+  int? get nextMissingPartIndex {
+    if (videoFilePath == null) return 0;
+    final missing = additionalPartPathList?.indexOf(null) ?? -1;
+    return missing < 0 ? null : missing + 1;
+  }
+}
+
+/// Decodes the persisted JSON array of [DownloadedMediaItem.additionalPartPaths].
+/// A value that is not such an array reads as single-file.
+List<String?>? decodeAdditionalPartPaths(String? json) {
+  if (json == null) return null;
+  try {
+    final decoded = jsonDecode(json);
+    if (decoded is! List || decoded.isEmpty) return null;
+    return [for (final entry in decoded) entry is String && entry.isNotEmpty ? entry : null];
+  } on FormatException {
+    return null;
+  }
+}
+
+String? encodeAdditionalPartPaths(List<String?>? paths) => paths == null || paths.isEmpty ? null : jsonEncode(paths);
 
 bool _isValidDownloadOwner(
   DownloadOwnerItem owner, {

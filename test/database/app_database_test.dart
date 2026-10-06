@@ -1085,6 +1085,59 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
+      test('v24 migration adds stacked file paths and leaves existing rows single-file', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v24_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          // Build a v23-shaped database: current schema minus the column this
+          // migration adds, with a completed download that predates it.
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.insertDownload(
+            serverId: ServerId('srv'),
+            ratingKey: 'movie-1',
+            globalKey: 'srv:movie-1',
+            type: 'movie',
+            status: DownloadStatus.completed.index,
+          );
+          await seeded.updateVideoFilePath('srv:movie-1', 'downloads/Movies/Movie/Movie.mkv');
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN additional_part_paths');
+          await seeded.customStatement('PRAGMA user_version = 23');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final columns = (await reopened.customSelect("PRAGMA table_info('downloaded_media')").get())
+              .map((row) => row.read<String>('name'))
+              .toSet();
+          expect(columns, contains('additional_part_paths'));
+
+          final legacy = await reopened.getDownloadedMedia('srv:movie-1');
+          expect(legacy?.videoFilePath, 'downloads/Movies/Movie/Movie.mkv');
+          expect(legacy?.additionalPartPathList, isNull);
+          expect(legacy?.storedPartPath(1), isNull);
+
+          // Stacked paths round-trip through the new column.
+          await reopened.updateAdditionalPartPaths('srv:movie-1', [
+            'downloads/Movies/Movie/Movie - part2.mkv',
+            'content://tree/doc/Movie - part3.mp4',
+          ]);
+          final stacked = await reopened.getDownloadedMedia('srv:movie-1');
+          expect(stacked?.storedPartPaths, [
+            'downloads/Movies/Movie/Movie.mkv',
+            'downloads/Movies/Movie/Movie - part2.mkv',
+            'content://tree/doc/Movie - part3.mp4',
+          ]);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
     });
 
     _registerLegacyDesktopMigrationTests();

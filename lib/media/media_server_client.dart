@@ -863,6 +863,10 @@ abstract class MediaServerClient {
   /// successful response has no playable URL for the item. Request,
   /// cancellation, and malformed-payload failures throw.
   ///
+  /// An item stacked across several files (Plex) hands over only the file
+  /// holding [position] (item time; the first file when null); the target's
+  /// `partTimeline` says where that file sits on the item.
+  ///
   /// Deliberately separate from the in-app playback funnel
   /// (`PlaybackSourceResolver`): external players can't send custom headers,
   /// so every URL must be self-contained (token in the query string), and
@@ -870,7 +874,12 @@ abstract class MediaServerClient {
   /// progress reporting is a one-shot started/stopped pair in
   /// `ExternalPlayerService` — an external app exposes no live position
   /// stream for the in-player tracker to follow.
-  Future<ExternalPlaybackTarget?> resolveExternalPlayback(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(
+    MediaItem item, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    Duration? position,
+  });
 }
 
 /// Optional interface for backends whose public server id is not specific

@@ -117,7 +117,13 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
           // forceRefresh: playback start left a fresh /library/metadata row in
           // the cache (and each network poll would re-stamp it), so a
           // cache-eligible read here would never observe the new stream.
-          final data = await client.getVideoPlaybackData(ratingKey, forceRefresh: true);
+          // The position keeps a stacked item on the file that is playing,
+          // whose streams [existingSourceIds] came from.
+          final data = await client.getVideoPlaybackData(
+            ratingKey,
+            position: widget.player.state.position,
+            forceRefresh: true,
+          );
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
           if (data.mediaInfo == null) continue;
 

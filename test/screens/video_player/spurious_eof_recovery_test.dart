@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_part_timeline.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/screens/video_player/media_reload_outcome.dart';
 import 'package:plezy/screens/video_player/playback_transition_gate.dart';
@@ -51,6 +53,8 @@ void main() {
     bool transcoding = false,
     bool faultSeen = false,
     bool serverStopped = false,
+    MediaPartTimeline? partTimeline,
+    int metadataDurationMs = durationMs,
   }) {
     final reloads = <Duration>[];
     var fault = faultSeen;
@@ -60,7 +64,8 @@ void main() {
       isTranscoding: () => transcoding,
       transitionGate: PlaybackTransitionGate(),
       player: () => player,
-      metadata: () => testMediaItem(durationMs: durationMs),
+      metadata: () => testMediaItem(durationMs: metadataDurationMs),
+      partTimeline: () => partTimeline,
       transportFaultSeen: () => fault,
       serverStoppedSession: () => serverStopped,
       reload: ({required Duration resumePosition, required String reason}) async {
@@ -183,6 +188,50 @@ void main() {
       expect(SpuriousEofRecovery.isTransportFaultLog(log('ffmpeg/demuxer', PlayerLogLevel.error)), isFalse);
       expect(SpuriousEofRecovery.isTransportFaultLog(log('ffmpeg', PlayerLogLevel.info)), isFalse);
       expect(SpuriousEofRecovery.isTransportFaultLog(log('cplayer', PlayerLogLevel.error)), isFalse);
+    });
+  });
+
+  group('stacked item', () {
+    // Part 1 of a 50 + 40 minute item, transcoded: the duration rule decides.
+    final partOne = MediaPartTimeline.fromParts(const [
+      MediaPart(id: '1', durationMs: 3000000),
+      MediaPart(id: '2', durationMs: 2400000),
+    ])!;
+    const itemMs = 5400000;
+
+    _SourcePlayer partPlayer(Duration position) => _SourcePlayer(
+      position: position,
+      duration: const Duration(milliseconds: itemMs),
+      fileSize: null,
+    );
+
+    test('the open file ending at its own span is the real end of that file', () async {
+      final player = partPlayer(const Duration(minutes: 50));
+      addTearDown(player.dispose);
+      final (:recovery, :reloads, setFault: _) = build(
+        player,
+        transcoding: true,
+        partTimeline: partOne,
+        metadataDurationMs: itemMs,
+      );
+
+      expect(await recovery.interceptEof(player), isFalse);
+      expect(reloads, isEmpty);
+    });
+
+    test('a stream dying inside the open file still recovers there', () async {
+      final player = partPlayer(const Duration(minutes: 30));
+      addTearDown(player.dispose);
+      final (:recovery, :reloads, setFault: _) = build(
+        player,
+        transcoding: true,
+        partTimeline: partOne,
+        metadataDurationMs: itemMs,
+      );
+
+      expect(await recovery.interceptEof(player), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(reloads, [const Duration(minutes: 30)]);
     });
   });
 }

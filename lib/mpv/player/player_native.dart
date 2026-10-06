@@ -372,6 +372,7 @@ class PlayerNative extends PlayerBase {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
     bool startLivePlaylistFromBeginning = false,
   }) async {
     if (_nativeCoreUnavailable) return null;
@@ -381,15 +382,16 @@ class PlayerNative extends PlayerBase {
     // gapless entry armed via setNext — settle its content-fd claim first.
     // No transition is surfaced: the caller is replacing playback anyway.
     await _clearArmedNext(adoptIfRolledIn: false);
-    final startPosition = media.start ?? Duration.zero;
+    final startPosition = media.start ?? timelineOffset;
     // Everything below tears down the outgoing file's state before the load
     // is dispatched. A rejected load leaves that file playing, so the
     // teardown has to be undone — see the catch.
     final previousState = state;
     final previousPosition = currentPosition;
     final previousTimelineDuration = configuredTimelineDuration;
+    final previousTimelineOffset = this.timelineOffset;
     final previousExternalSubtitleMetadata = snapshotExternalSubtitleMetadata();
-    configureTimeline(duration: timelineDuration);
+    configureTimeline(duration: timelineDuration, offset: timelineOffset);
     clearTracks();
     deferTrackListUntilLoadStarts();
     setExternalSubtitleMetadata(externalSubtitles);
@@ -403,7 +405,7 @@ class PlayerNative extends PlayerBase {
       // after — see the unpause below.
       playlistEntryId = await _loadReplacement(
         media,
-        startPosition: startPosition,
+        startPosition: sourcePositionFor(startPosition),
         play: play,
         isLive: isLive,
         externalSubtitles: externalSubtitles,
@@ -416,7 +418,7 @@ class PlayerNative extends PlayerBase {
       // `hasRenderedFrame` for readiness — must see that file, not the
       // replacement that never arrived.
       if (!_nativeCoreUnavailable) {
-        configureTimeline(duration: previousTimelineDuration);
+        configureTimeline(duration: previousTimelineDuration, offset: previousTimelineOffset);
         restorePlaybackProgress(previousState, position: previousPosition);
         restoreTracks(previousState);
         restoreExternalSubtitleMetadata(previousExternalSubtitleMetadata);
@@ -564,7 +566,10 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> seek(Duration position) async {
     if (_nativeCoreUnavailable) return;
-    await runSeek(position, () => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
+    await runSeek(
+      position,
+      () => command(['seek', (sourcePositionFor(position).inMilliseconds / 1000.0).toString(), 'absolute']),
+    );
   }
 
   @override
@@ -952,7 +957,7 @@ class PlayerNative extends PlayerBase {
     // and the backend's next tick supplies the real position.
     final seconds = double.tryParse(await invoke<String>('getProperty', {'name': 'time-pos'}) ?? '');
     if (seconds != null && seconds.isFinite && !seconds.isNegative) {
-      publishPlayheadRelocation(Duration(milliseconds: (seconds * 1000).round()), token: token);
+      publishPlayheadRelocation(Duration(milliseconds: (seconds * 1000).round()) + timelineOffset, token: token);
     }
   }
 

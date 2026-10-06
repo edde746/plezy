@@ -60,6 +60,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   String? selectedMediaSourceId,
   String? preferredVersionSignature,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
+  Duration? position,
 }) {
   String? videoUrl;
   MediaSourceInfo? mediaInfo;
@@ -74,6 +75,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
       mediaSourceId: selectedMediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
       onVersionFallback: onVersionFallback,
+      position: position,
     );
     if (selection != null) {
       availableVersions = selection.versions;

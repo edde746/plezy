@@ -242,6 +242,35 @@ class DownloadStorageService {
     return path.join(subtitlesDir.path, '$trackId.$extension');
   }
 
+  /// App-managed subtitle directory of file [partIndex] (0-based, > 0) of an
+  /// item stacked across several files, used when that file is a SAF
+  /// document: a `part{N}` subdirectory of [getSubtitlesDirectory], so one
+  /// file's sidecars are never offered while another file plays. Not created
+  /// here; the subtitle download creates it.
+  Future<Directory> getPartSubtitlesDirectory(ServerId serverId, String ratingKey, int partIndex) async {
+    final baseDir = await getDownloadsDirectory();
+    return Directory(path.join(baseDir.path, serverId, ratingKey, 'subtitles', 'part${partIndex + 1}'));
+  }
+
+  /// Path (or bare file name) of file [partIndex] (0-based, > 0) of an item
+  /// stacked across several files, beside [firstFilePath], the item's first
+  /// file: `{first file without extension} - part{N}.{extension}`. The first
+  /// file's name already identifies the item, so the result cannot collide
+  /// with another download.
+  String partFilePath(String firstFilePath, int partIndex, String extension) {
+    assert(partIndex > 0, 'part 0 is the first file itself');
+    return '${path.withoutExtension(firstFilePath)} - part${partIndex + 1}.$extension';
+  }
+
+  /// Whether [fileBaseName] (no extension) names a later file of the stacked
+  /// item whose first file is [firstFileBaseName] (no extension).
+  bool isPartFileBaseName(String firstFileBaseName, String fileBaseName) {
+    final prefix = '$firstFileBaseName - part';
+    if (!fileBaseName.startsWith(prefix)) return false;
+    final number = int.tryParse(fileBaseName.substring(prefix.length));
+    return number != null && number > 1 && fileBaseName == '$prefix$number';
+  }
+
   /// Sanitize a filename by removing invalid filesystem characters
   String _sanitizeFileName(String name) {
     // Remove invalid filesystem characters: < > : " / \ | ? *

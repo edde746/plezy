@@ -153,6 +153,17 @@ class $DownloadedMediaTable extends DownloadedMedia
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _additionalPartPathsMeta =
+      const VerificationMeta('additionalPartPaths');
+  @override
+  late final GeneratedColumn<String> additionalPartPaths =
+      GeneratedColumn<String>(
+        'additional_part_paths',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _safRootUriMeta = const VerificationMeta(
     'safRootUri',
   );
@@ -280,6 +291,7 @@ class $DownloadedMediaTable extends DownloadedMedia
     totalBytes,
     downloadedBytes,
     videoFilePath,
+    additionalPartPaths,
     safRootUri,
     thumbPath,
     downloadedAt,
@@ -400,6 +412,15 @@ class $DownloadedMediaTable extends DownloadedMedia
         videoFilePath.isAcceptableOrUnknown(
           data['video_file_path']!,
           _videoFilePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('additional_part_paths')) {
+      context.handle(
+        _additionalPartPathsMeta,
+        additionalPartPaths.isAcceptableOrUnknown(
+          data['additional_part_paths']!,
+          _additionalPartPathsMeta,
         ),
       );
     }
@@ -539,6 +560,10 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.string,
         data['${effectivePrefix}video_file_path'],
       ),
+      additionalPartPaths: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}additional_part_paths'],
+      ),
       safRootUri: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}saf_root_uri'],
@@ -603,6 +628,13 @@ class DownloadedMediaItem extends DataClass
   final int? totalBytes;
   final int downloadedBytes;
   final String? videoFilePath;
+
+  /// Stored paths of the files after the first when the downloaded version is
+  /// stacked across several files (Plex `Part 2`, `Part 3`), as a JSON array in
+  /// playback order. Each entry has the same stored form as [videoFilePath]
+  /// (relative path or SAF `content://` URI), or is null while that file is
+  /// not stored yet. Null for single-file downloads and rows from before v24.
+  final String? additionalPartPaths;
   final String? safRootUri;
   final String? thumbPath;
   final int? downloadedAt;
@@ -632,6 +664,7 @@ class DownloadedMediaItem extends DataClass
     this.totalBytes,
     required this.downloadedBytes,
     this.videoFilePath,
+    this.additionalPartPaths,
     this.safRootUri,
     this.thumbPath,
     this.downloadedAt,
@@ -668,6 +701,9 @@ class DownloadedMediaItem extends DataClass
     map['downloaded_bytes'] = Variable<int>(downloadedBytes);
     if (!nullToAbsent || videoFilePath != null) {
       map['video_file_path'] = Variable<String>(videoFilePath);
+    }
+    if (!nullToAbsent || additionalPartPaths != null) {
+      map['additional_part_paths'] = Variable<String>(additionalPartPaths);
     }
     if (!nullToAbsent || safRootUri != null) {
       map['saf_root_uri'] = Variable<String>(safRootUri);
@@ -723,6 +759,9 @@ class DownloadedMediaItem extends DataClass
       videoFilePath: videoFilePath == null && nullToAbsent
           ? const Value.absent()
           : Value(videoFilePath),
+      additionalPartPaths: additionalPartPaths == null && nullToAbsent
+          ? const Value.absent()
+          : Value(additionalPartPaths),
       safRootUri: safRootUri == null && nullToAbsent
           ? const Value.absent()
           : Value(safRootUri),
@@ -773,6 +812,9 @@ class DownloadedMediaItem extends DataClass
       totalBytes: serializer.fromJson<int?>(json['totalBytes']),
       downloadedBytes: serializer.fromJson<int>(json['downloadedBytes']),
       videoFilePath: serializer.fromJson<String?>(json['videoFilePath']),
+      additionalPartPaths: serializer.fromJson<String?>(
+        json['additionalPartPaths'],
+      ),
       safRootUri: serializer.fromJson<String?>(json['safRootUri']),
       thumbPath: serializer.fromJson<String?>(json['thumbPath']),
       downloadedAt: serializer.fromJson<int?>(json['downloadedAt']),
@@ -802,6 +844,7 @@ class DownloadedMediaItem extends DataClass
       'totalBytes': serializer.toJson<int?>(totalBytes),
       'downloadedBytes': serializer.toJson<int>(downloadedBytes),
       'videoFilePath': serializer.toJson<String?>(videoFilePath),
+      'additionalPartPaths': serializer.toJson<String?>(additionalPartPaths),
       'safRootUri': serializer.toJson<String?>(safRootUri),
       'thumbPath': serializer.toJson<String?>(thumbPath),
       'downloadedAt': serializer.toJson<int?>(downloadedAt),
@@ -829,6 +872,7 @@ class DownloadedMediaItem extends DataClass
     Value<int?> totalBytes = const Value.absent(),
     int? downloadedBytes,
     Value<String?> videoFilePath = const Value.absent(),
+    Value<String?> additionalPartPaths = const Value.absent(),
     Value<String?> safRootUri = const Value.absent(),
     Value<String?> thumbPath = const Value.absent(),
     Value<int?> downloadedAt = const Value.absent(),
@@ -861,6 +905,9 @@ class DownloadedMediaItem extends DataClass
     videoFilePath: videoFilePath.present
         ? videoFilePath.value
         : this.videoFilePath,
+    additionalPartPaths: additionalPartPaths.present
+        ? additionalPartPaths.value
+        : this.additionalPartPaths,
     safRootUri: safRootUri.present ? safRootUri.value : this.safRootUri,
     thumbPath: thumbPath.present ? thumbPath.value : this.thumbPath,
     downloadedAt: downloadedAt.present ? downloadedAt.value : this.downloadedAt,
@@ -901,6 +948,9 @@ class DownloadedMediaItem extends DataClass
       videoFilePath: data.videoFilePath.present
           ? data.videoFilePath.value
           : this.videoFilePath,
+      additionalPartPaths: data.additionalPartPaths.present
+          ? data.additionalPartPaths.value
+          : this.additionalPartPaths,
       safRootUri: data.safRootUri.present
           ? data.safRootUri.value
           : this.safRootUri,
@@ -944,6 +994,7 @@ class DownloadedMediaItem extends DataClass
           ..write('totalBytes: $totalBytes, ')
           ..write('downloadedBytes: $downloadedBytes, ')
           ..write('videoFilePath: $videoFilePath, ')
+          ..write('additionalPartPaths: $additionalPartPaths, ')
           ..write('safRootUri: $safRootUri, ')
           ..write('thumbPath: $thumbPath, ')
           ..write('downloadedAt: $downloadedAt, ')
@@ -973,6 +1024,7 @@ class DownloadedMediaItem extends DataClass
     totalBytes,
     downloadedBytes,
     videoFilePath,
+    additionalPartPaths,
     safRootUri,
     thumbPath,
     downloadedAt,
@@ -1001,6 +1053,7 @@ class DownloadedMediaItem extends DataClass
           other.totalBytes == this.totalBytes &&
           other.downloadedBytes == this.downloadedBytes &&
           other.videoFilePath == this.videoFilePath &&
+          other.additionalPartPaths == this.additionalPartPaths &&
           other.safRootUri == this.safRootUri &&
           other.thumbPath == this.thumbPath &&
           other.downloadedAt == this.downloadedAt &&
@@ -1027,6 +1080,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<int?> totalBytes;
   final Value<int> downloadedBytes;
   final Value<String?> videoFilePath;
+  final Value<String?> additionalPartPaths;
   final Value<String?> safRootUri;
   final Value<String?> thumbPath;
   final Value<int?> downloadedAt;
@@ -1051,6 +1105,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.totalBytes = const Value.absent(),
     this.downloadedBytes = const Value.absent(),
     this.videoFilePath = const Value.absent(),
+    this.additionalPartPaths = const Value.absent(),
     this.safRootUri = const Value.absent(),
     this.thumbPath = const Value.absent(),
     this.downloadedAt = const Value.absent(),
@@ -1076,6 +1131,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.totalBytes = const Value.absent(),
     this.downloadedBytes = const Value.absent(),
     this.videoFilePath = const Value.absent(),
+    this.additionalPartPaths = const Value.absent(),
     this.safRootUri = const Value.absent(),
     this.thumbPath = const Value.absent(),
     this.downloadedAt = const Value.absent(),
@@ -1105,6 +1161,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<int>? totalBytes,
     Expression<int>? downloadedBytes,
     Expression<String>? videoFilePath,
+    Expression<String>? additionalPartPaths,
     Expression<String>? safRootUri,
     Expression<String>? thumbPath,
     Expression<int>? downloadedAt,
@@ -1131,6 +1188,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (totalBytes != null) 'total_bytes': totalBytes,
       if (downloadedBytes != null) 'downloaded_bytes': downloadedBytes,
       if (videoFilePath != null) 'video_file_path': videoFilePath,
+      if (additionalPartPaths != null)
+        'additional_part_paths': additionalPartPaths,
       if (safRootUri != null) 'saf_root_uri': safRootUri,
       if (thumbPath != null) 'thumb_path': thumbPath,
       if (downloadedAt != null) 'downloaded_at': downloadedAt,
@@ -1158,6 +1217,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<int?>? totalBytes,
     Value<int>? downloadedBytes,
     Value<String?>? videoFilePath,
+    Value<String?>? additionalPartPaths,
     Value<String?>? safRootUri,
     Value<String?>? thumbPath,
     Value<int?>? downloadedAt,
@@ -1183,6 +1243,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       totalBytes: totalBytes ?? this.totalBytes,
       downloadedBytes: downloadedBytes ?? this.downloadedBytes,
       videoFilePath: videoFilePath ?? this.videoFilePath,
+      additionalPartPaths: additionalPartPaths ?? this.additionalPartPaths,
       safRootUri: safRootUri ?? this.safRootUri,
       thumbPath: thumbPath ?? this.thumbPath,
       downloadedAt: downloadedAt ?? this.downloadedAt,
@@ -1240,6 +1301,11 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (videoFilePath.present) {
       map['video_file_path'] = Variable<String>(videoFilePath.value);
     }
+    if (additionalPartPaths.present) {
+      map['additional_part_paths'] = Variable<String>(
+        additionalPartPaths.value,
+      );
+    }
     if (safRootUri.present) {
       map['saf_root_uri'] = Variable<String>(safRootUri.value);
     }
@@ -1289,6 +1355,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('totalBytes: $totalBytes, ')
           ..write('downloadedBytes: $downloadedBytes, ')
           ..write('videoFilePath: $videoFilePath, ')
+          ..write('additionalPartPaths: $additionalPartPaths, ')
           ..write('safRootUri: $safRootUri, ')
           ..write('thumbPath: $thumbPath, ')
           ..write('downloadedAt: $downloadedAt, ')
@@ -6658,6 +6725,7 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<int?> totalBytes,
       Value<int> downloadedBytes,
       Value<String?> videoFilePath,
+      Value<String?> additionalPartPaths,
       Value<String?> safRootUri,
       Value<String?> thumbPath,
       Value<int?> downloadedAt,
@@ -6684,6 +6752,7 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<int?> totalBytes,
       Value<int> downloadedBytes,
       Value<String?> videoFilePath,
+      Value<String?> additionalPartPaths,
       Value<String?> safRootUri,
       Value<String?> thumbPath,
       Value<int?> downloadedAt,
@@ -6767,6 +6836,11 @@ class $$DownloadedMediaTableFilterComposer
 
   ColumnFilters<String> get videoFilePath => $composableBuilder(
     column: $table.videoFilePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get additionalPartPaths => $composableBuilder(
+    column: $table.additionalPartPaths,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6895,6 +6969,11 @@ class $$DownloadedMediaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get additionalPartPaths => $composableBuilder(
+    column: $table.additionalPartPaths,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get safRootUri => $composableBuilder(
     column: $table.safRootUri,
     builder: (column) => ColumnOrderings(column),
@@ -7006,6 +7085,11 @@ class $$DownloadedMediaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get additionalPartPaths => $composableBuilder(
+    column: $table.additionalPartPaths,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get safRootUri => $composableBuilder(
     column: $table.safRootUri,
     builder: (column) => column,
@@ -7101,6 +7185,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int?> totalBytes = const Value.absent(),
                 Value<int> downloadedBytes = const Value.absent(),
                 Value<String?> videoFilePath = const Value.absent(),
+                Value<String?> additionalPartPaths = const Value.absent(),
                 Value<String?> safRootUri = const Value.absent(),
                 Value<String?> thumbPath = const Value.absent(),
                 Value<int?> downloadedAt = const Value.absent(),
@@ -7125,6 +7210,7 @@ class $$DownloadedMediaTableTableManager
                 totalBytes: totalBytes,
                 downloadedBytes: downloadedBytes,
                 videoFilePath: videoFilePath,
+                additionalPartPaths: additionalPartPaths,
                 safRootUri: safRootUri,
                 thumbPath: thumbPath,
                 downloadedAt: downloadedAt,
@@ -7151,6 +7237,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int?> totalBytes = const Value.absent(),
                 Value<int> downloadedBytes = const Value.absent(),
                 Value<String?> videoFilePath = const Value.absent(),
+                Value<String?> additionalPartPaths = const Value.absent(),
                 Value<String?> safRootUri = const Value.absent(),
                 Value<String?> thumbPath = const Value.absent(),
                 Value<int?> downloadedAt = const Value.absent(),
@@ -7175,6 +7262,7 @@ class $$DownloadedMediaTableTableManager
                 totalBytes: totalBytes,
                 downloadedBytes: downloadedBytes,
                 videoFilePath: videoFilePath,
+                additionalPartPaths: additionalPartPaths,
                 safRootUri: safRootUri,
                 thumbPath: thumbPath,
                 downloadedAt: downloadedAt,

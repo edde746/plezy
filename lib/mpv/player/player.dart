@@ -60,6 +60,12 @@ abstract class Player {
   /// reporting, scrobbling — must read its last position from here.
   Duration? get outgoingSourcePosition => null;
 
+  /// Where the open source begins on the playback timeline. Every position
+  /// this player reports or accepts is timeline time; a raw backend read
+  /// such as mpv's `time-pos` is source time, which is this much earlier.
+  /// Zero unless [open] laid the source at an offset.
+  Duration get timelineOffset;
+
   /// Whether audio passthrough (bitstream output) is currently active.
   ///
   /// [setRate] with a non-1.0 rate tears passthrough down, so callers that
@@ -72,8 +78,13 @@ abstract class Player {
 
   /// Open a media source for playback.
   ///
-  /// [media] - The media source to open.
+  /// [media] - The media source to open. Its [Media.start] is timeline time.
   /// [play] - Whether to start playback immediately (default: true).
+  /// [timelineDuration] - Overrides the backend's duration (a transcode's
+  /// grows as it encodes; a stacked item spans several files).
+  /// [timelineOffset] - Where this source begins on the timeline, for an
+  /// item stacked across several files: positions are reported shifted by
+  /// it and seeks are shifted back, so consumers see one item timeline.
   ///
   /// Backends that can identify the source they started resolve with its id
   /// (mpv: the playlist entry id carried by that source's stream events, see
@@ -84,6 +95,7 @@ abstract class Player {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   });
 
   /// Start or resume playback.
