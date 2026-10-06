@@ -189,6 +189,12 @@ class PlaybackSettingsScreen extends StatelessWidget {
         labelText: t.settings.minutesLabel,
         suffixText: t.settings.minutesShort,
       ),
+      SettingSwitchTile(
+        pref: SettingsService.remoteSeekButtonsSkipChapters,
+        icon: Symbols.skip_next_rounded,
+        title: t.settings.remoteSeekButtonsSkipChapters,
+        subtitle: t.settings.remoteSeekButtonsSkipChaptersDescription,
+      ),
     ],
   );
 

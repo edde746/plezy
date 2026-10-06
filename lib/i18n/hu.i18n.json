@@ -209,6 +209,8 @@
     "subtitleStyling": "Feliratok stílusa",
     "subtitleStylingDescription": "Feliratok megjelenésének testreszabása",
     "smallSkipDuration": "Kis ugrás időtartama",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Nagy ugrás időtartama",
     "rewindOnResume": "Visszatekerés folytatáskor",
     "secondsUnit": "${seconds} másodperc",

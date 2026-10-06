@@ -773,6 +773,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // [bindRebuild] in [initState]; side effects (rotation, sync) via [bindEffect].
   SettingsService get _settings => SettingsService.instance;
   int get _seekTimeSmall => _settings.read(SettingsService.seekTimeSmall);
+  bool get _remoteSeekButtonsSkipChapters => _settings.read(SettingsService.remoteSeekButtonsSkipChapters);
   int get _rewindOnResume => _settings.read(SettingsService.rewindOnResume);
   // What the player applies, not the stored prefs: a "Don't save" change is
   // never stored (#2069), and an item change resets to the new item's
@@ -947,6 +948,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // logic, perf overlay visibility, click-toggles, etc.).
     bindRebuild([
       SettingsService.seekTimeSmall,
+      SettingsService.remoteSeekButtonsSkipChapters,
       SettingsService.rewindOnResume,
       SettingsService.rotationLocked,
       SettingsService.skipIntroMode,

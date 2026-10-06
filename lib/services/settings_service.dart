@@ -570,6 +570,10 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const viewMode = EnumPref<ViewMode>('view_mode', values: ViewMode.values, defaultValue: ViewMode.grid);
   static const seekTimeSmall = IntPref('seek_time_small', defaultValue: 10);
+
+  /// Foreground hardware media seek/track keys use chapters when available.
+  /// Off uses [seekTimeSmall]; explicit chapter navigation stays independent.
+  static const remoteSeekButtonsSkipChapters = BoolPref('remote_seek_buttons_skip_chapters', defaultValue: true);
   static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
@@ -1368,6 +1372,7 @@ class SettingsService extends BaseSharedPreferencesService {
     hdrToneMapping,
     viewMode,
     seekTimeSmall,
+    remoteSeekButtonsSkipChapters,
     seekTimeLarge,
     showHeroSection,
     sleepTimerDuration,

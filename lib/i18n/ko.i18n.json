@@ -209,6 +209,8 @@
     "subtitleStyling": "자막 스타일",
     "subtitleStylingDescription": "자막 모양을 사용자 지정합니다",
     "smallSkipDuration": "짧은 건너뛰기 시간",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "긴 건너뛰기 시간",
     "rewindOnResume": "재개 시 되감기",
     "secondsUnit": "${seconds}초",

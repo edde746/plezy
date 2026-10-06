@@ -209,6 +209,8 @@
     "subtitleStyling": "Style des sous-titres",
     "subtitleStylingDescription": "Personnaliser l’apparence des sous-titres",
     "smallSkipDuration": "Durée du saut court",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Durée du saut long",
     "rewindOnResume": "Rembobiner à la reprise",
     "secondsUnit": "${seconds} secondes",

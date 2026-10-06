@@ -209,6 +209,8 @@
     "subtitleStyling": "字幕スタイル",
     "subtitleStylingDescription": "字幕の外観をカスタマイズ",
     "smallSkipDuration": "短いスキップ時間",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "長いスキップ時間",
     "rewindOnResume": "再開時に巻き戻し",
     "secondsUnit": "${seconds}秒",

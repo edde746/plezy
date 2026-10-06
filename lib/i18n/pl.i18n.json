@@ -209,6 +209,8 @@
     "subtitleStyling": "Styl napisów",
     "subtitleStylingDescription": "Dostosuj wygląd napisów",
     "smallSkipDuration": "Krótki skok",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Długi skok",
     "rewindOnResume": "Przewiń przy wznowieniu",
     "secondsUnit": "${seconds} sekund",

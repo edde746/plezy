@@ -209,6 +209,8 @@
     "subtitleStyling": "字幕樣式",
     "subtitleStylingDescription": "調整字幕外觀",
     "smallSkipDuration": "短跳過時間",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "長跳過時間",
     "rewindOnResume": "繼續播放時稍微倒轉",
     "secondsUnit": "${seconds} 秒",

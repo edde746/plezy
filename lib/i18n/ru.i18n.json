@@ -209,6 +209,8 @@
     "subtitleStyling": "Стиль субтитров",
     "subtitleStylingDescription": "Настроить внешний вид субтитров",
     "smallSkipDuration": "Малая перемотка",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Большая перемотка",
     "rewindOnResume": "Перемотка при возобновлении",
     "secondsUnit": "${seconds} с",

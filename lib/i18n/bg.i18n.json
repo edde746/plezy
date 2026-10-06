@@ -209,6 +209,8 @@
     "subtitleStyling": "Стил на субтитрите",
     "subtitleStylingDescription": "Настройване на вида на субтитрите",
     "smallSkipDuration": "Малко прескачане",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Голямо прескачане",
     "rewindOnResume": "Връщане назад при продължаване",
     "secondsUnit": "${seconds} секунди",

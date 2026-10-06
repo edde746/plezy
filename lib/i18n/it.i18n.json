@@ -209,6 +209,8 @@
     "subtitleStyling": "Stile sottotitoli",
     "subtitleStylingDescription": "Personalizza l'aspetto dei sottotitoli",
     "smallSkipDuration": "Salto breve",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Salto lungo",
     "rewindOnResume": "Riavvolgimento alla ripresa",
     "secondsUnit": "${seconds} secondi",

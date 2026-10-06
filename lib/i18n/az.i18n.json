@@ -209,6 +209,8 @@
     "subtitleStyling": "Altyazı tənzimləmələri",
     "subtitleStylingDescription": "Altyazı görünüşünü özünüləşdirin",
     "smallSkipDuration": "Kiçik ötürmə müddəti",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Böyük ötürmə müddəti",
     "rewindOnResume": "Davam edərkən geri sar",
     "secondsUnit": "${seconds} saniyə",

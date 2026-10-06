@@ -86,6 +86,7 @@ void main() {
       WidgetTester tester, {
       List<MediaChapter>? chapters,
       bool wireTransportCallback = false,
+      bool canControl = true,
       bool isLive = false,
       LiveSeekBy? onLiveSeekBy,
       String itemId = 'transient-feedback',
@@ -112,6 +113,7 @@ void main() {
                   chromeController: chrome,
                   initialChapters: chapters,
                   canNavigateMediaItems: false,
+                  canControl: canControl,
                   isLive: isLive,
                   onLiveSeekBy: onLiveSeekBy,
                   onPlayPauseRequested: wireTransportCallback
@@ -303,6 +305,150 @@ void main() {
 
       expect(chrome.controlsVisible, isTrue);
 
+      await settleFeedback(tester);
+    });
+
+    final remoteKeys = <LogicalKeyboardKey, bool>{
+      LogicalKeyboardKey.mediaFastForward: true,
+      LogicalKeyboardKey.mediaSkipForward: true,
+      LogicalKeyboardKey.mediaTrackNext: true,
+      LogicalKeyboardKey.mediaRewind: false,
+      LogicalKeyboardKey.mediaSkipBackward: false,
+      LogicalKeyboardKey.mediaTrackPrevious: false,
+    };
+    final remoteChapters = [
+      MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 900000, title: 'Cold Open'),
+      MediaChapter(id: 2, startTimeOffset: 900000, endTimeOffset: 2700000, title: 'The Heist'),
+    ];
+
+    for (final entry in remoteKeys.entries) {
+      for (final skipChapters in [true, false]) {
+        for (final hasChapters in [true, false]) {
+          testWidgets('${entry.key} chapters=$hasChapters remote chapters=$skipChapters', (tester) async {
+            final settings = SettingsService.instance;
+            await settings.write(SettingsService.remoteSeekButtonsSkipChapters, skipChapters);
+            await settings.write(SettingsService.seekTimeSmall, 7);
+            await pumpControls(tester, chapters: hasChapters ? remoteChapters : null);
+
+            await _holdMediaKey(tester, entry.key);
+
+            final chapterSeek = skipChapters && hasChapters;
+            final target = chapterSeek
+                ? (entry.value ? const Duration(minutes: 15) : Duration.zero)
+                : const Duration(minutes: 10) + Duration(seconds: entry.value ? 7 : -7);
+            expect(player.seeks, [target], reason: 'one held press is one action; the configured step is 7s');
+            expect(chrome.controlsVisible, isFalse);
+            expect(find.byType(DoubleTapFeedback), chapterSeek ? findsNothing : findsOneWidget);
+            if (!chapterSeek) expect(find.text('7s'), findsOneWidget);
+            await settleFeedback(tester);
+          });
+        }
+      }
+
+      testWidgets('${entry.key} opt-out burst stacks with a lagging backend', (tester) async {
+        await SettingsService.instance.write(SettingsService.remoteSeekButtonsSkipChapters, false);
+        await SettingsService.instance.write(SettingsService.seekTimeSmall, 7);
+        player.freezePositionOnSeek = true;
+        await pumpControls(tester, chapters: remoteChapters);
+
+        for (var i = 0; i < 3; i++) {
+          await _holdMediaKey(tester, entry.key);
+        }
+
+        expect(player.seeks, [
+          for (var i = 1; i <= 3; i++) const Duration(minutes: 10) + Duration(seconds: (entry.value ? 7 : -7) * i),
+        ]);
+        expect(find.text('21s'), findsOneWidget);
+        await settleFeedback(tester);
+      });
+
+      for (final skipChapters in [true, false]) {
+        testWidgets('${entry.key} authority denial remote chapters=$skipChapters', (tester) async {
+          await SettingsService.instance.write(SettingsService.remoteSeekButtonsSkipChapters, skipChapters);
+          await pumpControls(tester, chapters: remoteChapters, canControl: false);
+          await _holdMediaKey(tester, entry.key);
+          expect(player.seeks, isEmpty);
+          expect(find.byType(DoubleTapFeedback), findsNothing);
+          expect(find.byType(PlayerToastIndicator), findsNothing);
+          await settleFeedback(tester);
+        });
+      }
+    }
+
+    testWidgets('remote chapter preference and small duration change live without remounting', (tester) async {
+      await pumpControls(tester, chapters: remoteChapters);
+      final state = tester.state(find.byType(PlexVideoControls));
+      await _holdMediaKey(tester, LogicalKeyboardKey.mediaFastForward);
+      expect(player.seeks.last, const Duration(minutes: 15));
+
+      await SettingsService.instance.write(SettingsService.remoteSeekButtonsSkipChapters, false);
+      await SettingsService.instance.write(SettingsService.seekTimeSmall, 7);
+      await tester.pump();
+      await _holdMediaKey(tester, LogicalKeyboardKey.mediaFastForward);
+      expect(player.seeks.last, const Duration(minutes: 15, seconds: 7));
+      expect(tester.state(find.byType(PlexVideoControls)), same(state));
+
+      await SettingsService.instance.resetAllSettings();
+      player.reopenAt(const Duration(minutes: 10));
+      await tester.pump();
+      await _holdMediaKey(tester, LogicalKeyboardKey.mediaFastForward);
+      expect(player.seeks.last, const Duration(minutes: 15));
+      await settleFeedback(tester);
+    });
+
+    testWidgets('opt-out clamps and resets the timed remote burst after an external jump', (tester) async {
+      await SettingsService.instance.write(SettingsService.remoteSeekButtonsSkipChapters, false);
+      await SettingsService.instance.write(SettingsService.seekTimeSmall, 7);
+      player.setPosition(const Duration(seconds: 10));
+      await pumpControls(tester, chapters: remoteChapters);
+      for (var i = 0; i < 3; i++) {
+        await _holdMediaKey(tester, LogicalKeyboardKey.mediaRewind);
+      }
+      expect(player.seeks, [const Duration(seconds: 3), Duration.zero]);
+      expect(find.text('10s'), findsOneWidget);
+      player.reopenAt(const Duration(minutes: 44, seconds: 57));
+      await tester.pump();
+      expect(find.byType(DoubleTapFeedback), findsNothing);
+      await _holdMediaKey(tester, LogicalKeyboardKey.mediaFastForward);
+      expect(player.seeks.last, const Duration(minutes: 45));
+      expect(find.text('3s'), findsOneWidget);
+      await settleFeedback(tester);
+    });
+
+    testWidgets('explicit chapter controls remain chapter-aware with remote chapters off', (tester) async {
+      await SettingsService.instance.write(SettingsService.remoteSeekButtonsSkipChapters, false);
+      await pumpControls(tester, chapters: remoteChapters);
+      chrome.show();
+      await tester.pump();
+      final controls = tester.widget<DesktopVideoControls>(find.byType(DesktopVideoControls));
+      controls.onSeekToNextChapter();
+      await tester.pump();
+      expect(player.seeks.last, const Duration(minutes: 15));
+      controls.onSeekToPreviousChapter();
+      await tester.pump();
+      expect(player.seeks.last, Duration.zero);
+      await settleFeedback(tester);
+    });
+
+    testWidgets('chapter keyboard shortcuts and DPAD stay independent of remote opt-out', (tester) async {
+      await SettingsService.instance.write(SettingsService.remoteSeekButtonsSkipChapters, false);
+      await SettingsService.instance.write(SettingsService.seekTimeSmall, 7);
+      await pumpControls(tester, chapters: remoteChapters);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyN, physicalKey: PhysicalKeyboardKey.keyN);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyN, physicalKey: PhysicalKeyboardKey.keyN);
+      await tester.pump();
+      expect(player.seeks.last, const Duration(minutes: 15));
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyP, physicalKey: PhysicalKeyboardKey.keyP);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyP, physicalKey: PhysicalKeyboardKey.keyP);
+      await tester.pump();
+      expect(player.seeks.last, Duration.zero);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(player.seeks.last, const Duration(seconds: 7));
       await settleFeedback(tester);
     });
 
@@ -1266,13 +1412,19 @@ void main() {
 /// platform's own MediaSession, which answers with its own fixed skip and
 /// makes the displacement a function of hold length rather than presses.
 Future<void> _holdMediaKey(WidgetTester tester, LogicalKeyboardKey key) async {
-  expect(await tester.sendKeyDownEvent(key), isTrue, reason: '$key down');
+  // Android's SKIP aliases have logical keys but no unique USB HID physical
+  // key in Flutter's simulator. Supply the matching seek physical key while
+  // preserving the exact logical key the foreground classifier receives.
+  final physical = classifyPlayerSkipKey(key) == MediaSeekDirection.forward
+      ? PhysicalKeyboardKey.mediaFastForward
+      : PhysicalKeyboardKey.mediaRewind;
+  expect(await tester.sendKeyDownEvent(key, physicalKey: physical), isTrue, reason: '$key down');
   await tester.pump();
   for (var i = 0; i < 4; i++) {
-    expect(await tester.sendKeyRepeatEvent(key), isTrue, reason: '$key repeat $i');
+    expect(await tester.sendKeyRepeatEvent(key, physicalKey: physical), isTrue, reason: '$key repeat $i');
     await tester.pump();
   }
-  expect(await tester.sendKeyUpEvent(key), isTrue, reason: '$key up');
+  expect(await tester.sendKeyUpEvent(key, physicalKey: physical), isTrue, reason: '$key up');
   await tester.pump();
 }
 

@@ -209,6 +209,8 @@
     "subtitleStyling": "Untertitel-Stil",
     "subtitleStylingDescription": "Aussehen von Untertiteln anpassen",
     "smallSkipDuration": "Kleines Sprungintervall",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Großes Sprungintervall",
     "rewindOnResume": "Zurückspulen bei Fortsetzung",
     "secondsUnit": "${seconds} Sekunden",
