@@ -162,14 +162,6 @@ String formatRelativeDayLabel(DateTime date, {DateTime? now}) {
   };
 }
 
-/// Formats the clock time at which media will finish playing, given the remaining duration.
-/// Returns a localized time string like "6:12 PM" or "18:12" depending on system setting.
-String formatFinishTime(Duration remaining, {double rate = 1.0, required bool is24Hour}) {
-  final adjustedRemaining = remaining * (1.0 / rate);
-  final finishTime = DateTime.now().add(adjustedRemaining);
-  return formatClockTime(finishTime, is24Hour: is24Hour);
-}
-
 String toBulletedString(List<String> parts) {
   return parts.join(' · ');
 }

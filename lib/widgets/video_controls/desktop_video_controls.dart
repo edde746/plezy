@@ -25,6 +25,7 @@ import 'widgets/content_strip.dart';
 import 'widgets/content_strip_panel.dart';
 import 'widgets/live_timeline_bar.dart';
 import 'widgets/first_frame_guard.dart';
+import 'widgets/finish_time_builder.dart';
 import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
@@ -888,48 +889,19 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   const Spacer()
                 else
                   Expanded(
-                    child: StreamBuilder<Duration>(
-                      stream: widget.player.streams.duration,
-                      initialData: widget.player.state.duration,
-                      builder: (context, durationSnapshot) {
-                        final duration = durationSnapshot.data ?? Duration.zero;
-                        return StreamBuilder<double>(
-                          stream: widget.player.streams.rate,
-                          initialData: widget.player.state.rate,
-                          builder: (context, rateSnapshot) {
-                            final rate = rateSnapshot.data ?? 1.0;
-                            final initialRemaining = duration - widget.player.state.position;
-                            return StreamBuilder<Duration>(
-                              stream: widget.player.streams.position.map((position) => duration - position).distinct((
-                                previous,
-                                next,
-                              ) {
-                                final previousHasRemaining = previous.inSeconds > 0;
-                                final nextHasRemaining = next.inSeconds > 0;
-                                return previousHasRemaining == nextHasRemaining &&
-                                    (!previousHasRemaining || previous.inMinutes == next.inMinutes);
-                              }),
-                              initialData: initialRemaining,
-                              builder: (context, remainingSnapshot) {
-                                final remaining = remainingSnapshot.data ?? Duration.zero;
-                                if (remaining.inSeconds <= 0) return const SizedBox.shrink();
+                    child: FinishTimeBuilder(
+                      player: widget.player,
+                      builder: (context, finishTime) {
+                        if (finishTime == null) return const SizedBox.shrink();
 
-                                final text = t.videoControls.endsAt(
-                                  time: formatFinishTime(
-                                    remaining,
-                                    rate: rate,
-                                    is24Hour: MediaQuery.alwaysUse24HourFormatOf(context),
-                                  ),
-                                );
-                                const style = TextStyle(color: Colors.white70, fontSize: 13);
+                        final text = t.videoControls.endsAt(
+                          time: formatClockTime(finishTime, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context)),
+                        );
+                        const style = TextStyle(color: Colors.white70, fontSize: 13);
 
-                                return Padding(
-                                  padding: const EdgeInsets.only(left: 8),
-                                  child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
-                                );
-                              },
-                            );
-                          },
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
                         );
                       },
                     ),
