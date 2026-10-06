@@ -10,6 +10,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     final useDpad = playerDirectionalNavigationEnabled();
 
     return _holdChromeWhilePressed(
+      behavior: HitTestBehavior.deferToChild,
       child: DesktopVideoControls(
         key: _desktopControlsKey,
         player: widget.player,

@@ -699,12 +699,15 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       ),
     );
 
-    return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      child: DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true),
+    );
   }
 
   Widget _buildBottomControlsContent(BuildContext _, {required bool hasFrame}) {
     final canInteract = _canControl && hasFrame;
-    return Padding(
+    final bottomControls = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
@@ -955,6 +958,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
         ],
       ),
     );
+    return Listener(behavior: HitTestBehavior.opaque, child: bottomControls);
   }
 
   /// Returns the label of the next chapter the user would seek to, or null.
