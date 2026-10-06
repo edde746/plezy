@@ -20,6 +20,7 @@ import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
+import '../media/media_kind.dart';
 import '../media/media_rating.dart';
 import '../media/media_version.dart';
 import '../models/catalog/catalog_cast_member.dart';
@@ -27,11 +28,13 @@ import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../providers/cli_debrid_account_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
+import '../services/cli_debrid/cli_debrid_client.dart';
 import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/catalog_navigation_helper.dart';
@@ -52,6 +55,8 @@ import '../widgets/collapsible_text.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/optimized_media_image.dart';
+import '../widgets/cli_debrid_icon.dart';
+import '../widgets/cli_debrid_request_sheet.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/seerr_request_sheet.dart';
 import '../widgets/settings_section.dart';
@@ -95,6 +100,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final Map<String, FocusNode> _libraryMatchNodesByKey = {};
   List<FocusNode> _libraryMatchFocusNodes = const [];
   CatalogSource? _watchlistSource;
+  CliDebridAccountProvider? _cliDebridAccount;
   bool _mutatingWatchlist = false;
 
   CatalogItem? _detailItem;
@@ -129,6 +135,22 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     unawaited(_loadDetail());
     final sources = context.read<CatalogSourcesProvider>();
     _watchlistSource = sources.watchlistSourceFor(widget.item);
+    // Availability (connected, tmdb id present) is re-checked live via
+    // _showCliDebridRequest/_cliDebridRequestId — not cached here. The row
+    // form of a Plex Discover item carries only its Plex rating key; the
+    // detail body (_loadDetail, below) is what brings the external ids.
+    _cliDebridAccount = context.read<CliDebridAccountProvider>();
+    // isConnected reads false until the provider's one-time disk-read +
+    // credential decrypt finishes (right after app launch/profile switch) —
+    // rebuild once that settles so a connected user doesn't have to leave
+    // and re-enter this screen to see the cli_debrid action appear. A no-op
+    // await on every later screen open, once the hydrate has already
+    // completed.
+    unawaited(
+      _cliDebridAccount!.initialLoadComplete.then((_) {
+        if (mounted) setState(() {});
+      }),
+    );
     final source = _watchlistSource;
     if (source != null) {
       source.watchlistChanges.addListener(_onWatchlistChanged);
@@ -339,7 +361,24 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// with the detail fetch (issue #1959).
   bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
 
-  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
+  /// The connected cli_debrid client, when this item is a kind it tracks —
+  /// re-read live (not cached in initState) since a Plex Discover row only
+  /// carries its Plex rating key; _loadDetail's enrichment is what brings the
+  /// tmdb id onto _item, arriving after initState via a later setState.
+  CliDebridClient? get _cliDebridRequestClient {
+    final account = _cliDebridAccount;
+    if (account == null || !account.isConnected) return null;
+    if (_item.kind != MediaKind.movie && _item.kind != MediaKind.show) return null;
+    return account.client;
+  }
+
+  /// Only offered once library matching has resolved and come back empty —
+  /// a title already in a connected library should be re-requested from its
+  /// own detail screen (MediaContextMenu's "Re-request"), not requested anew.
+  bool get _showCliDebridRequest =>
+      _cliDebridRequestClient != null && _item.ids.tmdb != null && (_matches?.isEmpty ?? false);
+
+  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer || _showCliDebridRequest;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 
@@ -1455,6 +1494,38 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                       kind: item.kind,
                                                       tmdbId: tmdbId,
                                                       title: item.title,
+                                                    ),
+                                                  ),
+                                                ),
+                                              if (_showCliDebridRequest && tmdbId != null)
+                                                FocusableAction(
+                                                  tooltip: t.cliDebrid.request,
+                                                  onPressed: () => unawaited(
+                                                    showCliDebridRequestSheet(
+                                                      hostContext,
+                                                      client: _cliDebridRequestClient!,
+                                                      kind: item.kind,
+                                                      tmdbId: tmdbId,
+                                                      title: item.title,
+                                                      year: item.year,
+                                                    ),
+                                                  ),
+                                                  // child (not builder): builder fully replaces the
+                                                  // row's rendering, including the focus-highlight
+                                                  // decoration every other action gets for free — child
+                                                  // still gets wrapped in that same Container/decoration.
+                                                  child: IconButton(
+                                                    icon: const CliDebridIcon(),
+                                                    tooltip: t.cliDebrid.request,
+                                                    onPressed: () => unawaited(
+                                                      showCliDebridRequestSheet(
+                                                        hostContext,
+                                                        client: _cliDebridRequestClient!,
+                                                        kind: item.kind,
+                                                        tmdbId: tmdbId,
+                                                        title: item.title,
+                                                        year: item.year,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),

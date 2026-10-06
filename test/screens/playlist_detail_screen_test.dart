@@ -18,6 +18,7 @@ import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
+import 'package:plezy/providers/cli_debrid_account_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -43,6 +44,7 @@ import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/utils/media_image_helper.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/cli_debrid_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
@@ -822,6 +824,7 @@ Future<_PlaylistHarness> _createHarness(
   final playbackState = PlaybackStateProvider();
   // The item context menu resolves admin gating through the active profile.
   final profiles = await ProfileStack.create(db: db, withStorage: false);
+  final cliDebrid = await testCliDebridAccountProvider();
 
   addTearDown(() async {
     await profiles.dispose();
@@ -829,6 +832,7 @@ Future<_PlaylistHarness> _createHarness(
     downloadManager.dispose();
     multiServerProvider.dispose();
     playbackState.dispose();
+    cliDebrid.dispose();
     await db.close();
   });
 
@@ -838,6 +842,7 @@ Future<_PlaylistHarness> _createHarness(
     downloadProvider: downloadProvider,
     playbackState: playbackState,
     activeProfile: profiles.active,
+    cliDebrid: cliDebrid,
   );
 }
 
@@ -847,6 +852,7 @@ class _PlaylistHarness {
   final DownloadProvider downloadProvider;
   final PlaybackStateProvider playbackState;
   final ActiveProfileProvider activeProfile;
+  final CliDebridAccountProvider cliDebrid;
 
   const _PlaylistHarness({
     required this.client,
@@ -854,6 +860,7 @@ class _PlaylistHarness {
     required this.downloadProvider,
     required this.playbackState,
     required this.activeProfile,
+    required this.cliDebrid,
   });
 
   Widget wrap(Widget child, {TargetPlatform platform = TargetPlatform.android}) {
@@ -864,6 +871,7 @@ class _PlaylistHarness {
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
           ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+          ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: platform),

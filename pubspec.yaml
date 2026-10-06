@@ -155,6 +155,7 @@ flutter:
     - assets/simkl_mark.svg
     - assets/seerr_mark.svg
     - assets/mdblist_mark.svg
+    - assets/cli_debrid_icon.png
     - assets/go-noto-current-regular.ttf
     - assets/go-noto-kurrent-hangul.ttf
     - assets/shaders/nvscaler/
