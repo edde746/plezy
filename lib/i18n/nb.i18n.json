@@ -209,6 +209,8 @@
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpass utseendet på undertekster",
     "smallSkipDuration": "Kort hoppvarighet",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Lang hoppvarighet",
     "rewindOnResume": "Spol tilbake ved gjenopptakelse",
     "secondsUnit": "${seconds} sekunder",

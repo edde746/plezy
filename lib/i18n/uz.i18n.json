@@ -209,6 +209,8 @@
     "subtitleStyling": "Subtitr sozlamalari",
     "subtitleStylingDescription": "Subtitrlar koʻrinishini moslashtiring",
     "smallSkipDuration": "Kichik oʻtkazish vaqti",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Katta oʻtkazish vaqti",
     "rewindOnResume": "Davom ettirganda orqaga qaytarish",
     "secondsUnit": "${seconds} soniya",

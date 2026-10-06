@@ -209,6 +209,8 @@
     "subtitleStyling": "Субтитр баптаулары",
     "subtitleStylingDescription": "Субтитрлердің сыртқы келбетін теңшеу",
     "smallSkipDuration": "Шағын өткізіп жіберу уақыты",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Үлкен өткізіп жіберу уақыты",
     "rewindOnResume": "Жалғастырғанда артқа айналдыру",
     "secondsUnit": "${seconds} секунд",

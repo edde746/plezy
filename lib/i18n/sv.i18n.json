@@ -209,6 +209,8 @@
     "subtitleStyling": "Utseende för undertexter",
     "subtitleStylingDescription": "Anpassa undertexternas utseende",
     "smallSkipDuration": "Litet hoppsteg",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Stort hoppsteg",
     "rewindOnResume": "Spola tillbaka vid återupptagning",
     "secondsUnit": "${seconds} sekunder",

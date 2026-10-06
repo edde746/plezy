@@ -209,6 +209,8 @@
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpas underteksters udseende",
     "smallSkipDuration": "Kort spring",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Langt spring",
     "rewindOnResume": "Spol tilbage ved genoptagelse",
     "secondsUnit": "${seconds} sekunder",

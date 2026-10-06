@@ -209,6 +209,8 @@
     "subtitleStyling": "Ondertitelopmaak",
     "subtitleStylingDescription": "Pas de weergave van ondertitels aan",
     "smallSkipDuration": "Korte sprong",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Lange sprong",
     "rewindOnResume": "Terugspoelen bij hervatten",
     "secondsUnit": "${seconds} seconden",

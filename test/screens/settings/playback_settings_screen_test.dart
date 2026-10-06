@@ -8,6 +8,8 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/models/player_setting_scope.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/setting_tile.dart';
+import 'package:plezy/widgets/settings_section.dart';
 
 import '../../test_helpers/prefs.dart';
 
@@ -17,6 +19,38 @@ void main() {
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
     LocaleSettings.setLocaleSync(AppLocale.en);
+  });
+
+  testWidgets('remote chapter switch is last after default sleep timer and persists live changes', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+    final title = find.text('Remote seek buttons skip chapters');
+    await tester.scrollUntilVisible(title, 400, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    final tile = find.widgetWithText(SwitchListTile, 'Remote seek buttons skip chapters');
+    expect(tester.widget<SwitchListTile>(tile).value, isTrue);
+    expect(tester.getTopLeft(find.text('Default Sleep Timer')).dy, lessThan(tester.getTopLeft(title).dy));
+    final seekGroup = tester.widget<SettingsGroup>(
+      find.byWidgetPredicate((widget) => widget is SettingsGroup && widget.title == t.settings.seekAndTiming),
+    );
+    expect(seekGroup.children.last, isA<SettingSwitchTile>());
+    expect((seekGroup.children.last as SettingSwitchTile).pref, SettingsService.remoteSeekButtonsSkipChapters);
+
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    final settings = SettingsService.instance;
+    expect(settings.readNullableBool('remote_seek_buttons_skip_chapters'), isFalse);
+    expect(tester.widget<SwitchListTile>(tile).value, isFalse);
+
+    await settings.write(SettingsService.remoteSeekButtonsSkipChapters, true);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(tile).value, isTrue);
   });
 
   testWidgets('shows and changes the persisted music quality', (tester) async {

@@ -253,10 +253,15 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       if (_showControls && event.isActionable) {
         _restartHideTimerForCurrentPlaybackState();
       }
-      // Uses chapter navigation when the item has chapters, otherwise a
-      // coalesced skip by the configured time.
+      // Only these foreground media keys honor the chapter opt-out. Explicit
+      // chapter controls/shortcuts and platform MediaSession semantics do not.
       if (event is KeyDownEvent && widget.canControl) {
-        _seekToChapterWithFeedback(forward: seekDirection == MediaSeekDirection.forward);
+        final forward = seekDirection == MediaSeekDirection.forward;
+        if (_remoteSeekButtonsSkipChapters) {
+          _seekToChapterWithFeedback(forward: forward);
+        } else {
+          _seekByWithFeedback(Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall));
+        }
       }
       return KeyEventResult.handled;
     }

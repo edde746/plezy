@@ -209,6 +209,8 @@
     "subtitleStyling": "Estilo de Legendas",
     "subtitleStylingDescription": "Personalizar aparência das legendas",
     "smallSkipDuration": "Duração do Avanço Curto",
+    "remoteSeekButtonsSkipChapters": "",
+    "remoteSeekButtonsSkipChaptersDescription": "",
     "largeSkipDuration": "Duração do Avanço Longo",
     "rewindOnResume": "Rebobinar ao retomar",
     "secondsUnit": "${seconds} segundos",
