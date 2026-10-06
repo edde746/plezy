@@ -245,6 +245,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       metadata: metadata,
       selectedMediaIndex: savedVersion?.index ?? 0,
       selectedMediaSourceId: savedVersion?.sourceId,
+      preferredVersionName: savedVersion?.name,
       preferredVersionSignature: savedVersion?.signature,
       qualityPreset: _selectedQualityPreset,
       preserveCurrentTrackSelection: false,

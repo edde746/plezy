@@ -238,27 +238,42 @@ Map<String, MediaVersionPreference> _pruneMediaVersionPreferences(Map<String, Me
 }
 
 /// A saved preference resolved for launch: the index to request plus the
-/// id/signature evidence for re-resolving it against the authoritative
+/// id/name/signature evidence for re-resolving it against the authoritative
 /// version list during playback initialization.
-typedef ResolvedMediaVersionPreference = ({int index, String? sourceId, String? signature});
+typedef ResolvedMediaVersionPreference = ({int index, String? sourceId, String? name, String? signature});
 
 /// Resolve the saved preference for [metadata] against its version list.
 ///
 /// When [MediaItem.mediaVersions] is populated (Plex hub/detail fetches) the
-/// index is verified and the matched version's real id is returned. When it
-/// isn't (Jellyfin resume rows omit `MediaSources`), the stored index and
-/// signature pass through with a null sourceId — an unverified id from a
+/// index is verified and the matched version's real id is returned, unless
+/// a saved name can't be checked because no launch version is named. When it
+/// isn't (Jellyfin resume rows omit `MediaSources`), the stored index, name
+/// and signature pass through with a null sourceId — an unverified id from a
 /// sibling episode would be meaningless downstream, while a signature is
 /// safely re-matched there.
 Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem metadata) async {
   final pref = await savedMediaVersionPreferenceFor(metadata);
   if (pref == null) return null;
   final versions = metadata.mediaVersions ?? const <MediaVersion>[];
-  if (versions.isEmpty) return (index: pref.index, sourceId: null, signature: pref.signature);
+  if (versions.isEmpty) {
+    return (index: pref.index, sourceId: null, name: pref.versionName, signature: pref.signature);
+  }
   final index = pref.resolveIndex(versions);
   if (index == null) return null;
   final version = versions[index];
-  return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
+  // Launch rows can lack the file data names come from, so a stored name
+  // can't be checked here. Pinning a signature match's id would skip the name
+  // check against the authoritative list, so pass the name through instead.
+  final savedName = pref.versionName;
+  if (savedName != null && version.id != pref.versionId && versions.every((v) => v.name == null)) {
+    return (index: index, sourceId: null, name: savedName, signature: version.signature);
+  }
+  return (
+    index: index,
+    sourceId: version.id.isEmpty ? null : version.id,
+    name: version.name,
+    signature: version.signature,
+  );
 }
 
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
@@ -472,6 +487,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
         selectedMediaIndex: mediaIndex,
         selectedMediaSourceId: mediaSourceId,
+        preferredVersionName: savedVersion?.name,
         preferredVersionSignature: savedVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,

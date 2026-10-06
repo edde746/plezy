@@ -286,6 +286,57 @@ void main() {
       expect(resolved.signature, '4k:hevc:mkv');
     });
 
+    test('resolveSavedMediaVersionFor passes the stored name through without versions', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {
+          'media_version_preferences': jsonEncode({
+            'srv-1:show-1': {'id': 'src-primary', 'name': '# 1 Primary', 'sig': '1080:h264:mkv', 'idx': 0},
+          }),
+        },
+      );
+      SettingsService.resetForTesting();
+
+      final bare = testMediaItem(
+        id: 'ep-3',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        title: 'Episode 3',
+        serverId: 'srv-1',
+        grandparentId: 'show-1',
+      );
+      final resolved = await resolveSavedMediaVersionFor(bare);
+      expect(resolved!.name, '# 1 Primary');
+      expect(resolved.signature, '1080:h264:mkv');
+    });
+
+    test('resolveSavedMediaVersionFor keeps a saved name the launch versions cannot check', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {
+          'media_version_preferences': jsonEncode({
+            'srv-1:show-1': {'id': 'ep1-b', 'name': '# 1 Primary', 'sig': '1080:h264:mkv', 'idx': 1},
+          }),
+        },
+      );
+      SettingsService.resetForTesting();
+
+      final unnamed = testMediaItem(
+        id: 'ep-4',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode 4',
+        serverId: 'srv-1',
+        grandparentId: 'show-1',
+        mediaVersions: const [
+          MediaVersion(id: '201', videoResolution: '1080', videoCodec: 'h264', container: 'mkv'),
+          MediaVersion(id: '202', videoResolution: '1080', videoCodec: 'h264', container: 'mkv'),
+        ],
+      );
+      final resolved = await resolveSavedMediaVersionFor(unnamed);
+      expect(resolved!.sourceId, isNull, reason: 'a signature match must not pin an id ahead of the name');
+      expect(resolved.name, '# 1 Primary');
+      expect(resolved.signature, '1080:h264:mkv');
+    });
+
     test('resolveSavedMediaVersionFor returns null when nothing is stored', () async {
       expect(await resolveSavedMediaVersionFor(episode), isNull);
     });

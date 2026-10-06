@@ -28,6 +28,11 @@ class PlaybackInitializationOptions {
   /// sourceId > signature > index > backend fallback.
   final String? preferredVersionSignature;
 
+  /// Version name ([MediaVersion.name]: Jellyfin/Emby `MediaSource.Name`, or
+  /// the Plex version label) of the same saved preference. Re-matched before [preferredVersionSignature], since
+  /// same-quality versions share a signature but not a name.
+  final String? preferredVersionName;
+
   /// Transcode preset. `original` means direct-play; anything else asks the
   /// server to transcode when supported.
   final TranscodeQualityPreset qualityPreset;
@@ -66,6 +71,7 @@ class PlaybackInitializationOptions {
     required this.selectedMediaIndex,
     this.selectedMediaSourceId,
     this.preferredVersionSignature,
+    this.preferredVersionName,
     this.qualityPreset = TranscodeQualityPreset.original,
     this.audioQualityPreset,
     this.selectedAudioStreamId,

@@ -14,22 +14,46 @@ import '../i18n/strings.g.dart';
 class DownloadVersionConfig {
   final int mediaIndex;
   final Set<String> acceptedSignatures;
+
+  /// Version names ([MediaVersion.name]) picked for the series, matched before
+  /// [acceptedSignatures] since same-quality versions share a signature.
+  final Set<String> acceptedNames;
   final Future<int?> Function(MediaItem episode, List<MediaVersion> versions)? onVersionMismatch;
 
-  DownloadVersionConfig({this.mediaIndex = 0, Set<String>? acceptedSignatures, this.onVersionMismatch})
-    : acceptedSignatures = acceptedSignatures ?? {};
+  DownloadVersionConfig({
+    this.mediaIndex = 0,
+    Set<String>? acceptedSignatures,
+    Set<String>? acceptedNames,
+    this.onVersionMismatch,
+  }) : acceptedSignatures = acceptedSignatures ?? {},
+       acceptedNames = acceptedNames ?? {};
 
-  /// Create from a selected version's signature.
-  factory DownloadVersionConfig.fromSignature(
-    String signature, {
+  /// Create from a selected version's name and signature.
+  factory DownloadVersionConfig.fromVersion(
+    MediaVersion version, {
     int mediaIndex = 0,
     Future<int?> Function(MediaItem, List<MediaVersion>)? onVersionMismatch,
   }) {
-    return DownloadVersionConfig(
-      mediaIndex: mediaIndex,
-      acceptedSignatures: {signature},
-      onVersionMismatch: onVersionMismatch,
-    );
+    final config = DownloadVersionConfig(mediaIndex: mediaIndex, onVersionMismatch: onVersionMismatch);
+    config.accept(version);
+    return config;
+  }
+
+  /// Accept [version] for later episodes.
+  void accept(MediaVersion version) {
+    acceptedSignatures.add(version.signature);
+    final name = version.name;
+    if (name != null && name.isNotEmpty) acceptedNames.add(name);
+  }
+
+  /// Index of the accepted version in [versions]: by name first, then by
+  /// signature. Null when none matches.
+  int? findAcceptedIndex(List<MediaVersion> versions) {
+    for (final name in acceptedNames) {
+      final index = MediaVersion.findNamedIndex(versions, name);
+      if (index != null) return index;
+    }
+    return MediaVersion.findMatchingIndex(versions, acceptedSignatures);
   }
 }
 
@@ -60,8 +84,8 @@ Future<DownloadVersionConfig?> resolveDownloadVersion(
       if (!context.mounted) return null;
       final selectedIndex = await showVersionPickerDialog(context, versions, t.downloads.selectVersion);
       if (selectedIndex == null || !context.mounted) return null;
-      return DownloadVersionConfig.fromSignature(
-        versions[selectedIndex].signature,
+      return DownloadVersionConfig.fromVersion(
+        versions[selectedIndex],
         mediaIndex: selectedIndex,
         onVersionMismatch: (episode, episodeVersions) async {
           if (!context.mounted) return null;

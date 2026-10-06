@@ -35,10 +35,11 @@ class MediaVersion {
   @JsonKey(fromJson: _partsFromJson, toJson: _partsToJson)
   final List<MediaPart> parts;
 
-  /// Human-readable name for this version (e.g. "Director's Cut").
-  /// Plex doesn't surface a name on `Media` entries, so this is null on the
-  /// Plex path and set from `MediaSource.Name` on the Jellyfin path when the
-  /// names differ across sources.
+  /// Human-readable name for this version (e.g. "Director's Cut"), set only
+  /// when an item has several versions and the names tell them apart: on the
+  /// Plex path the version label or file name (see
+  /// `PlexMappers.labelVersions`), on the Jellyfin path `MediaSource.Name`
+  /// (see `jellyfinSourcesToVersions`).
   final String? name;
 
   const MediaVersion({
@@ -52,6 +53,18 @@ class MediaVersion {
     this.parts = const [],
     this.name,
   });
+
+  MediaVersion copyWith({String? name}) => MediaVersion(
+    id: id,
+    width: width,
+    height: height,
+    videoResolution: videoResolution,
+    videoCodec: videoCodec,
+    bitrate: bitrate,
+    container: container,
+    parts: parts,
+    name: name ?? this.name,
+  );
 
   factory MediaVersion.fromJson(Map<String, dynamic> json) => _$MediaVersionFromJson(json);
 
@@ -124,6 +137,23 @@ class MediaVersion {
 
   String get _resolutionPart => (videoResolution ?? '').toLowerCase();
   String get _codecPart => (videoCodec ?? '').toLowerCase();
+
+  /// Index of the version named [name] (trimmed, case-insensitive), or null
+  /// when [name] is empty or no version or more than one version carries it.
+  /// Names only exist where they tell versions apart (see
+  /// `jellyfinSourcesToVersions` and `PlexMappers.labelVersions`), so a
+  /// unique match is the same version.
+  static int? findNamedIndex(List<MediaVersion> versions, String? name) {
+    final target = name?.trim().toLowerCase();
+    if (target == null || target.isEmpty) return null;
+    int? match;
+    for (var i = 0; i < versions.length; i++) {
+      if (versions[i].name?.trim().toLowerCase() != target) continue;
+      if (match != null) return null;
+      match = i;
+    }
+    return match;
+  }
 
   /// Find the best matching version index from a set of accepted signatures.
   ///

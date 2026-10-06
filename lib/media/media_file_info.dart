@@ -174,6 +174,16 @@ class MediaFileVersion {
   }
 }
 
+/// Trailing segment of a server file path (`/` or `\` separated), or null
+/// when there is no path. Shared by the file-info sheet and the version
+/// picker so both name a file the same way.
+String? fileNameFromPath(String? path) {
+  if (path == null || path.isEmpty) return null;
+  final separator = path.contains('\\') ? '\\' : '/';
+  final segments = path.split(separator).where((segment) => segment.isNotEmpty);
+  return segments.isEmpty ? path : segments.last;
+}
+
 /// One file backing a version: Plex `Part`, or the Jellyfin source's own file.
 class MediaFilePart {
   final String? id;
@@ -234,13 +244,7 @@ class MediaFilePart {
   String? get durationFormatted => formatMediaDuration(durationMs);
 
   /// Trailing path segment — the filename the user recognises.
-  String? get fileName {
-    final path = filePath;
-    if (path == null || path.isEmpty) return null;
-    final separator = path.contains('\\') ? '\\' : '/';
-    final segments = path.split(separator).where((segment) => segment.isNotEmpty);
-    return segments.isEmpty ? path : segments.last;
-  }
+  String? get fileName => fileNameFromPath(filePath);
 
   Iterable<MediaStreamDetails> streamsOfKind(MediaStreamKind kind) => streams.where((s) => s.kind == kind);
 }
