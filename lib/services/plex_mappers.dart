@@ -1206,20 +1206,12 @@ class PlexMappers {
       bitrate: dto.bitrate,
       container: dto.container,
       parts: parts,
-      name: _versionFileName(parts),
     );
   }
 
-  /// The version's name in the picker: the file that will play, exactly as
-  /// the file-info sheet shows it, ahead of the resolution/codec/bitrate
-  /// label ([MediaVersion.displayLabel]). [labelVersions] shortens it to the
-  /// version label when the item's files follow the naming convention.
-  ///
-  /// Plex's multiple versions and editions are still in beta and their naming
-  /// is not settled, so no Plex-side name field is relied on; the file name is
-  /// data the client already has and tells versions apart today. Revisit once
-  /// Plex confirms a naming structure. Null when Plex withheld the path (it
-  /// does for some restricted users); the label then stays technical.
+  /// The file a version plays, as the file-info sheet shows it. The file name
+  /// is the only data Plex gives that tells same-quality versions apart. Null
+  /// when Plex withheld the path (it does for some restricted users).
   static String? _versionFileName(List<MediaPart> parts) {
     for (final part in parts) {
       final name = fileNameFromPath(part.file?.trim());
@@ -1228,36 +1220,36 @@ class PlexMappers {
     return null;
   }
 
-  /// Name an item's versions by their version label rather than the whole
-  /// file name, when every file follows the multiple-versions convention
-  /// `<name> - <label>.<ext>` and the labels tell the versions apart:
-  /// `Show - S01E01 - # 1 Primary.mkv` / `… - # 2 Secondary.mkv` read as
-  /// `# 1 Primary` / `# 2 Secondary`. Editions (`{edition-…}`) are split into
-  /// their own items by the server, so they never need to appear here.
+  /// Name an item's versions so the picker and the saved version preference
+  /// can tell them apart, as Jellyfin names versions only when the names
+  /// differ (`jellyfinSourcesToVersions`).
   ///
-  /// The label is the same on every episode, so a saved version preference
-  /// can match it across a series. Anything else (a single version, a file
-  /// without the separator, a withheld path, or two versions with the same
-  /// label) keeps the full file names, so no version loses its name.
+  /// When every file follows the multiple-versions convention
+  /// `<name> - <label>.<ext>` and the labels differ, each version is named by
+  /// its label: `Show - S01E01 - # 1 Primary.mkv` / `… - # 2 Secondary.mkv`
+  /// read as `# 1 Primary` / `# 2 Secondary`. The label is the same on every
+  /// episode, so a saved preference matches it across a series. Editions
+  /// (`{edition-…}`) are split into their own items by the server, so they
+  /// never need to appear here. Otherwise the versions are named by their
+  /// whole file names when those differ.
+  ///
+  /// A single version, a withheld path, or file names that don't tell the
+  /// versions apart (the same file name in two folders) leave every version
+  /// unnamed, so its label stays technical.
   static List<MediaVersion> labelVersions(List<MediaVersion> versions) {
     if (versions.length < 2) return versions;
-    final labels = [for (final version in versions) _versionLabel(version.name)];
-    if (labels.any((label) => label == null)) return versions;
-    if (labels.map((label) => label!.toLowerCase()).toSet().length != labels.length) return versions;
-    return [
-      for (var i = 0; i < versions.length; i++)
-        MediaVersion(
-          id: versions[i].id,
-          width: versions[i].width,
-          height: versions[i].height,
-          videoResolution: versions[i].videoResolution,
-          videoCodec: versions[i].videoCodec,
-          bitrate: versions[i].bitrate,
-          container: versions[i].container,
-          parts: versions[i].parts,
-          name: labels[i],
-        ),
-    ];
+    final fileNames = [for (final version in versions) _versionFileName(version.parts)];
+    final labels = [for (final fileName in fileNames) _versionLabel(fileName)];
+    final names = _distinctNames(labels) ?? _distinctNames(fileNames);
+    if (names == null) return versions;
+    return [for (var i = 0; i < versions.length; i++) versions[i].copyWith(name: names[i])];
+  }
+
+  /// [names] when every entry is set and no two are equal ignoring case.
+  static List<String>? _distinctNames(List<String?> names) {
+    if (names.any((name) => name == null)) return null;
+    if (names.map((name) => name!.toLowerCase()).toSet().length != names.length) return null;
+    return names.cast<String>();
   }
 
   /// `# 1 Primary` from `Show - S01E01 - # 1 Primary.mkv`: the text after the

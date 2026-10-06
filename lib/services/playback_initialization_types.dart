@@ -28,8 +28,8 @@ class PlaybackInitializationOptions {
   /// sourceId > signature > index > backend fallback.
   final String? preferredVersionSignature;
 
-  /// Version name (Jellyfin/Emby `MediaSource.Name`) of the same saved
-  /// preference. Re-matched before [preferredVersionSignature], since
+  /// Version name ([MediaVersion.name]: Jellyfin/Emby `MediaSource.Name`, or
+  /// the Plex version label) of the same saved preference. Re-matched before [preferredVersionSignature], since
   /// same-quality versions share a signature but not a name.
   final String? preferredVersionName;
 

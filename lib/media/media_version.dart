@@ -35,11 +35,11 @@ class MediaVersion {
   @JsonKey(fromJson: _partsFromJson, toJson: _partsToJson)
   final List<MediaPart> parts;
 
-  /// Human-readable name for this version (e.g. "Director's Cut"): on the
-  /// Plex path the version label from the file name, or the whole file name
-  /// when there is no usable label (see `PlexMappers.labelVersions`; null
-  /// when Plex withholds the path), and `MediaSource.Name` on the Jellyfin
-  /// path.
+  /// Human-readable name for this version (e.g. "Director's Cut"), set only
+  /// when an item has several versions and the names tell them apart: on the
+  /// Plex path the version label or file name (see
+  /// `PlexMappers.labelVersions`), on the Jellyfin path `MediaSource.Name`
+  /// (see `jellyfinSourcesToVersions`).
   final String? name;
 
   const MediaVersion({
@@ -53,6 +53,18 @@ class MediaVersion {
     this.parts = const [],
     this.name,
   });
+
+  MediaVersion copyWith({String? name}) => MediaVersion(
+    id: id,
+    width: width,
+    height: height,
+    videoResolution: videoResolution,
+    videoCodec: videoCodec,
+    bitrate: bitrate,
+    container: container,
+    parts: parts,
+    name: name ?? this.name,
+  );
 
   factory MediaVersion.fromJson(Map<String, dynamic> json) => _$MediaVersionFromJson(json);
 
@@ -129,7 +141,8 @@ class MediaVersion {
   /// Index of the version named [name] (trimmed, case-insensitive), or null
   /// when [name] is empty or no version or more than one version carries it.
   /// Names only exist where they tell versions apart (see
-  /// `jellyfinSourcesToVersions`), so a unique match is the same version.
+  /// `jellyfinSourcesToVersions` and `PlexMappers.labelVersions`), so a
+  /// unique match is the same version.
   static int? findNamedIndex(List<MediaVersion> versions, String? name) {
     final target = name?.trim().toLowerCase();
     if (target == null || target.isEmpty) return null;
