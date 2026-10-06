@@ -122,6 +122,24 @@ class AppearanceSettingsScreen extends StatelessWidget {
           ],
         ),
 
+        // Rebuilt as a whole so the volume row can be a plain `if` (a
+        // SizedBox.shrink() child would corrupt the SettingsGroup corner shapes).
+        SettingValueBuilder<bool>(
+          pref: SettingsService.themeSongsEnabled,
+          builder: (context, themeSongsEnabled, _) => SettingsGroup(
+            title: t.settings.detailPage,
+            children: [
+              SettingSwitchTile(
+                pref: SettingsService.themeSongsEnabled,
+                icon: Symbols.music_note_rounded,
+                title: t.settings.themeSongsEnabled,
+                subtitle: t.settings.themeSongsEnabledDescription,
+              ),
+              if (themeSongsEnabled) _themeSongVolumeSelector(),
+            ],
+          ),
+        ),
+
         SettingsGroup(
           title: t.settings.navigation,
           children: [
@@ -260,6 +278,39 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 max: AutomotiveUiScale.max,
                 divisions: 20,
                 onChanged: (value) => SettingsService.instance.write(SettingsService.automotiveUiScale, value),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _themeSongVolumeSelector() {
+    return SettingValueBuilder<double>(
+      pref: SettingsService.themeSongVolume,
+      builder: (context, volume, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: .start,
+            children: [
+              Row(
+                children: [
+                  const AppIcon(Symbols.volume_up_rounded, fill: 1),
+                  const SizedBox(width: 16),
+                  Text(t.settings.themeSongVolume, style: settingsOptionTitleStyle(context)),
+                  const Spacer(),
+                  Text('${volume.round()}%', style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FocusableSlider(
+                value: volume,
+                min: 0,
+                max: 100,
+                divisions: 100,
+                onChanged: (value) => SettingsService.instance.write(SettingsService.themeSongVolume, value),
               ),
             ],
           ),

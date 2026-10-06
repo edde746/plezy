@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../utils/app_logger.dart';
 
 /// Stops a playing music session before the video player builds its core.
@@ -17,12 +19,32 @@ class PlaybackCoordinator {
   static final PlaybackCoordinator instance = PlaybackCoordinator._();
 
   Future<void> Function()? _stopMusicSession;
+  Future<void> Function()? _stopThemeSession;
+
+  /// Theme songs share the music channel, so both claims stop them first.
+  void registerThemeSession(Future<void> Function() stop) => _stopThemeSession = stop;
+
+  Future<void> _stopTheme() async {
+    try {
+      await _stopThemeSession?.call();
+    } catch (e, st) {
+      appLogger.w('PlaybackCoordinator: theme song teardown failed', error: e, stackTrace: st);
+    }
+  }
 
   Future<void> Function()? _shutdownVideoSession;
   Future<bool> Function()? _exitVideoSession;
   final Set<Future<void>> _videoRetirements = {};
 
   bool get hasVideoSession => _shutdownVideoSession != null || _videoRetirements.isNotEmpty;
+
+  final _videoSessionActive = ValueNotifier<bool>(false);
+
+  /// Follows [hasVideoSession], including the retirement that outlives the
+  /// video route, so screens waiting on it can resume once it settles.
+  ValueListenable<bool> get videoSessionActive => _videoSessionActive;
+
+  void _publishVideoSession() => _videoSessionActive.value = hasVideoSession;
 
   /// Explicit user/agent stop, unlike shutdown, also leaves the player route.
   /// False means the owner requires a confirmation or cannot leave its route.
@@ -42,6 +64,7 @@ class PlaybackCoordinator {
   void registerVideoSession({required Future<void> Function() shutdown, Future<bool> Function()? stopAndExit}) {
     _shutdownVideoSession = shutdown;
     _exitVideoSession = stopAndExit;
+    _publishVideoSession();
   }
 
   /// A replaced screen must not release its successor's registration.
@@ -51,18 +74,22 @@ class PlaybackCoordinator {
       _shutdownVideoSession = null;
       _exitVideoSession = null;
     }
-    if (retirement == null || !_videoRetirements.add(retirement)) return;
-    unawaited(
-      retirement.then<void>(
-        (_) {
-          _videoRetirements.remove(retirement);
-        },
-        onError: (Object error, StackTrace stackTrace) {
-          _videoRetirements.remove(retirement);
-          appLogger.w('PlaybackCoordinator: video retirement failed', error: error, stackTrace: stackTrace);
-        },
-      ),
-    );
+    if (retirement != null && _videoRetirements.add(retirement)) {
+      unawaited(
+        retirement.then<void>(
+          (_) {
+            _videoRetirements.remove(retirement);
+            _publishVideoSession();
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            _videoRetirements.remove(retirement);
+            _publishVideoSession();
+            appLogger.w('PlaybackCoordinator: video retirement failed', error: error, stackTrace: stackTrace);
+          },
+        ),
+      );
+    }
+    _publishVideoSession();
   }
 
   /// Quiesce video and await its native stop, final report and pending retirements.
@@ -92,6 +119,7 @@ class PlaybackCoordinator {
   /// Video playback is about to construct its native core: stop and dispose
   /// any live music session first. Completes once the audio core is gone.
   Future<void> claimVideo() async {
+    await _stopTheme();
     final stop = _stopMusicSession;
     if (stop == null) return;
     try {
@@ -103,8 +131,8 @@ class PlaybackCoordinator {
     }
   }
 
-  /// Music playback is about to construct its audio core. Nothing to do, and
-  /// deliberately so rather than for lack of a mechanism.
+  /// Music playback is about to construct its audio core. Stops a detail-page
+  /// theme song, which uses the same channel; video is deliberately not awaited.
   ///
   /// Bounded route exit can expose music UI while video cleanup is still
   /// retiring, but the two share nothing that has to be serialized: they are
@@ -119,7 +147,5 @@ class PlaybackCoordinator {
   /// — the one case where retirement outlives the route by more than a frame —
   /// the power to stop music from starting at all, which is the bricking the
   /// per-session native rework exists to prevent.
-  ///
-  /// Kept as a seam so a future reverse teardown has one place to live.
-  Future<void> claimMusic() async {}
+  Future<void> claimMusic() => _stopTheme();
 }

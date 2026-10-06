@@ -35,13 +35,14 @@ class PlayerNative extends PlayerBase {
   PlayerNative({this._hardwareDecoding = true})
     : methodChannel = const MethodChannel('com.plezy/mpv_player'),
       eventChannel = const EventChannel('com.plezy/mpv_player/events'),
-      audioOnly = false;
+      audioOnly = false,
+      _exclusiveAudio = true;
 
   /// Audio-only player on the dedicated music channels/core (see
   /// [Player.audio]). Skips every video concern: no render layer
   /// ([setVisible] no-ops via [audioOnly]), no subtitle plumbing, no
   /// display-mode handling.
-  PlayerNative.audio()
+  PlayerNative.audio({this._exclusiveAudio = true})
     : methodChannel = const MethodChannel('com.plezy/mpv_audio_player'),
       eventChannel = const EventChannel('com.plezy/mpv_audio_player/events'),
       audioOnly = true,
@@ -50,6 +51,9 @@ class PlayerNative extends PlayerBase {
   /// Whether this session intends to hardware-decode; carried on
   /// `initialize` for the Android core's vo decision.
   final bool _hardwareDecoding;
+
+  // Themes use a mixable Apple audio session and have no Now Playing entry.
+  final bool _exclusiveAudio;
 
   String _dvConversionMode = 'auto';
   String _dvConversionLog = 'no';
@@ -292,7 +296,7 @@ class PlayerNative extends PlayerBase {
         // setProperty() would await _ensureInitialized and deadlock on the
         // memoized future of this very _doInitialize call.
         if (Platform.isIOS) {
-          await invoke('setProperty', {'name': 'audio-exclusive', 'value': 'yes'});
+          await invoke('setProperty', {'name': 'audio-exclusive', 'value': _exclusiveAudio ? 'yes' : 'no'});
         }
       } else {
         await observeCoreProperties(trackListFormat: _nodeFormat);

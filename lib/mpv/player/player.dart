@@ -431,9 +431,9 @@ abstract class Player {
   /// this instance when video playback claims the session (see
   /// `PlaybackCoordinator`), and the video core only exists while the video
   /// player screen is open.
-  factory Player.audio() {
+  factory Player.audio({bool exclusiveAudio = true}) {
     if (Platform.isAndroid || Platform.isMacOS || Platform.isIOS || Platform.isWindows || Platform.isLinux) {
-      return PlayerNative.audio();
+      return PlayerNative.audio(exclusiveAudio: exclusiveAudio);
     }
     throw UnsupportedError('Player is not supported on this platform');
   }

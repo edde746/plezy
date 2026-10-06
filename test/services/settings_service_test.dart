@@ -24,6 +24,22 @@ void main() {
     TvDetectionService.debugSetAutomotiveOverride(null);
   });
 
+  group('SettingsService theme songs', () {
+    test('are off by default at 30% volume', () async {
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.themeSongsEnabled), isFalse);
+      expect(settings.read(SettingsService.themeSongVolume), 30.0);
+    });
+
+    test('volume is clamped to 0-100 and falls back to the default when not finite', () async {
+      final settings = await SettingsService.getInstance();
+      for (final (stored, read) in [(150.0, 100.0), (-5.0, 0.0), (double.nan, 30.0)]) {
+        await settings.prefs.setDouble(SettingsService.themeSongVolume.key, stored);
+        expect(settings.read(SettingsService.themeSongVolume), read);
+      }
+    });
+  });
+
   group('SettingsService.parseMpvConfigText', () {
     test('parses plain key=value lines', () {
       final out = SettingsService.parseMpvConfigText('hwdec=auto\nvolume=100');

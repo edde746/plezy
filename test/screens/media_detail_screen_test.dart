@@ -30,6 +30,11 @@ import 'package:plezy/screens/media_detail_screen.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
 import 'package:plezy/services/plex_mappers.dart';
+import 'package:plezy/mpv/models.dart';
+import 'package:plezy/mpv/player/player.dart';
+import 'package:plezy/services/music/music_playback_service.dart';
+import 'package:plezy/services/playback_coordinator.dart';
+import 'package:plezy/services/theme_song_controller.dart';
 
 import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
@@ -3283,6 +3288,92 @@ void main() {
       expectUnavailable();
     });
   });
+
+  group('theme songs', () {
+    final themePlayers = <_FakeThemePlayer>[];
+    final movie = MediaItem.plex(id: 'movie_1', serverId: ServerId('server_1'), kind: MediaKind.movie, title: 'Movie');
+
+    Future<void> pumpDetail(WidgetTester tester, {MusicPlaybackService? music}) async {
+      // Built inside the test so its operation chain runs in the fake-async zone.
+      themePlayers.clear();
+      final original = ThemeSongController.instance;
+      ThemeSongController.debugSetInstance(
+        ThemeSongController(
+          playerFactory: () {
+            final player = _FakeThemePlayer();
+            themePlayers.add(player);
+            return player;
+          },
+          fadeIn: Duration.zero,
+          fadeOut: Duration.zero,
+        ),
+      );
+      addTearDown(() => ThemeSongController.debugSetInstance(original));
+
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.themeSongsEnabled, true);
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: {})..themeSongUrl = 'theme-url';
+      Widget child = ChangeNotifierProvider<MultiServerProvider>.value(
+        value: testMultiServer(clients: [client]).provider,
+        child: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+      );
+      if (music != null) child = ChangeNotifierProvider<MusicPlaybackService>.value(value: music, child: child);
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MaterialApp(theme: monoTheme(dark: true), home: child),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    }
+
+    List<String> opened() => [for (final player in themePlayers) ...player.opened];
+
+    // Disposing the page leaves the theme's release grace timer to run out.
+    Future<void> unmount(WidgetTester tester) async {
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    testWidgets('starts once a video session and its retirement have ended', (tester) async {
+      final coordinator = PlaybackCoordinator.instance;
+      Future<void> shutdown() async {}
+      coordinator.registerVideoSession(shutdown: shutdown);
+      final retirement = Completer<void>();
+      addTearDown(() {
+        coordinator.unregisterVideoSession(shutdown);
+        if (!retirement.isCompleted) retirement.complete();
+      });
+
+      await pumpDetail(tester);
+      expect(opened(), isEmpty);
+
+      // The route is back on top before the video screen disposes and retires.
+      coordinator.unregisterVideoSession(shutdown, retirement: retirement.future);
+      await tester.pump();
+      expect(opened(), isEmpty);
+
+      retirement.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(opened(), ['theme-url']);
+      await unmount(tester);
+    });
+
+    testWidgets('starts once music playback is stopped', (tester) async {
+      final music = _FakeMusicPlayback()..currentTrack = movie;
+      await pumpDetail(tester, music: music);
+      expect(opened(), isEmpty);
+
+      music
+        ..currentTrack = null
+        ..notifyListeners();
+      await tester.pump();
+      await tester.pump();
+      expect(opened(), ['theme-url']);
+      await unmount(tester);
+    });
+  });
 }
 
 Map<String, dynamic> _previewItem(
@@ -3345,6 +3436,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, MediaSourceInfo> mediaSourcesById;
   final Map<String, Map<String, dynamic>> rawItems;
   Completer<void>? sourceGate;
+  String? themeSongUrl;
   int itemReads = 0;
   int sourceReads = 0;
   final childrenPageCalls = <({String parentId, int? start, int? size})>[];
@@ -3492,7 +3584,44 @@ class _FakeMediaServerClient implements MediaServerClient {
   }
 
   @override
+  Future<String?> getThemeSongUrl(MediaItem item) async => themeSongUrl;
+
+  @override
   void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeThemePlayer implements Player {
+  final opened = <String>[];
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> open(
+    Media media, {
+    bool play = true,
+    bool isLive = false,
+    List<SubtitleTrack>? externalSubtitles,
+    Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
+  }) async => opened.add(media.uri);
+
+  @override
+  Future<void> play() async {}
+
+  @override
+  Future<void> dispose({bool preserveDisplayMode = false}) async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeMusicPlayback extends ChangeNotifier implements MusicPlaybackService {
+  @override
+  MediaItem? currentTrack;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

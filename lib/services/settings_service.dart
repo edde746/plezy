@@ -572,6 +572,12 @@ class SettingsService extends BaseSharedPreferencesService {
   static const seekTimeSmall = IntPref('seek_time_small', defaultValue: 10);
   static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
   static const rewindOnResume = IntPref('rewind_on_resume');
+  static const themeSongsEnabled = BoolPref('theme_songs_enabled');
+  static final themeSongVolume = DoublePref(
+    'theme_song_volume',
+    defaultValue: 30.0,
+    transform: (value) => value.isFinite ? value.clamp(0.0, 100.0).toDouble() : 30.0,
+  );
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
@@ -1370,6 +1376,8 @@ class SettingsService extends BaseSharedPreferencesService {
     seekTimeSmall,
     seekTimeLarge,
     showHeroSection,
+    themeSongsEnabled,
+    themeSongVolume,
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
@@ -1548,7 +1556,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'subtitle_font_size' => (10, 80),
     'subtitle_border_size' => (0, 5),
     'subtitle_position' => (0, 150),
-    'subtitle_background_opacity' || 'music_volume' => (0, 100),
+    'subtitle_background_opacity' || 'music_volume' || 'theme_song_volume' => (0, 100),
     'volume' => (0, 300),
     'max_volume' => (100, 300),
     'downmix_center_boost' => (0, 12),
