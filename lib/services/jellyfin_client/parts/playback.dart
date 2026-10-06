@@ -51,6 +51,20 @@ String _jellyfinTranscodeVideoCodecsTs() => [
     if (codec != RankedVideoCodec.av1) codec.id,
 ].join(',');
 
+/// Audio codecs the fMP4 transcode profile offers for stream copy. ExoPlayer
+/// loses `truehd`: Media3 reads fMP4 HLS with its fragmented-MP4 extractor,
+/// which, unlike its MP4 and Matroska ones, has no TrueHD handling, so a
+/// copied track played silent from 0:00 and failed with a loader
+/// NullPointerException when started anywhere else (#2587). ExoPlayer is the
+/// backend on the same condition the player screen builds it on, Android with
+/// [SettingsService.useExoPlayer] set; a caller with no settings instance gets
+/// the mpv list.
+String _jellyfinTranscodeAudioCodecs() {
+  final exoPlayer =
+      PlatformDetector.isAndroid() && (SettingsService.instanceOrNull?.read(SettingsService.useExoPlayer) ?? false);
+  return ['aac', 'mp3', 'ac3', 'eac3', 'flac', 'opus', 'dts', if (!exoPlayer) 'truehd'].join(',');
+}
+
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
   // _JellyfinImageDownloadMethods' redeclarations).
@@ -921,18 +935,19 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
                 'Container': 'mp4',
                 'Protocol': 'hls',
                 'VideoCodec': _jellyfinTranscodeVideoCodecs(dialect),
-                // Every audio codec Jellyfin can put in an fMP4 segment, so a
-                // transcode forced by the video stream can still copy the audio
-                // instead of re-encoding it; AAC leads because it is the only
-                // entry the server can reliably encode to. Two silent traps:
-                // the server validates this against `^[a-zA-Z0-9\-\._,|]{0,40}$`
-                // when it echoes the list into the transcode URL, so `alac` does
-                // not fit and `*` is not a wildcard; and omitting the key is not
-                // "accept everything" the way it is for a direct-play profile —
-                // the server substitutes the source codec, filters it against
-                // the same fMP4 set, and ships no audio at all for a source it
-                // cannot carry.
-                'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,dts,truehd',
+                // What a transcode forced by the video stream may copy instead
+                // of re-encoding: every audio codec Jellyfin can put in an fMP4
+                // segment, minus `truehd` on ExoPlayer, which cannot read a
+                // copied TrueHD track back out of one (#2587). AAC leads
+                // because it is the only entry the server can reliably encode
+                // to. Two silent traps: the server validates this against
+                // `^[a-zA-Z0-9\-\._,|]{0,40}$` when it echoes the list into the
+                // transcode URL, so `alac` does not fit and `*` is not a
+                // wildcard; and omitting the key is not "accept everything" the
+                // way it is for a direct-play profile — the server substitutes
+                // the source codec, filters it against the same fMP4 set, and
+                // ships no audio at all for a source it cannot carry.
+                'AudioCodec': _jellyfinTranscodeAudioCodecs(),
               },
             // MPEG-TS is the only Emby Live TV target (#2273); otherwise it
             // stays second as Jellyfin's fallback (#2198). Jellyfin drops every
