@@ -21,6 +21,7 @@ import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/providers/shader_provider.dart';
+import 'package:plezy/screens/video_player/playback_failure_action.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
@@ -116,7 +117,8 @@ void main() {
         final args = (call.arguments as Map?)?['args'];
         if (args is! List || args.isEmpty || args.first != 'loadfile') return null;
         loadfileUrls.add(args[1] as String);
-        if (loadfileUrls.length == 1) {
+        // The first open and each automatic retry of it throw.
+        if (loadfileUrls.length <= 1 + maxOpenAutoRetries) {
           throw PlatformException(code: 'COMMAND_FAILED', message: 'loadfile failed');
         }
         final player = key.currentState!.player! as PlayerBase;
@@ -173,6 +175,8 @@ void main() {
           reason: 'the thrown error is the detail of localized copy, not shown bare',
         );
 
+        expect(loadfileUrls, hasLength(1 + maxOpenAutoRetries), reason: 'the throwing open is retried first');
+        expect(find.text(t.videoControls.openRetriesFailed(count: 1 + maxOpenAutoRetries)), findsOneWidget);
         expect(find.byType(CircularProgressIndicator), findsNothing, reason: 'the spinner must not cover the view');
         expect(find.byType(SnackBar), findsNothing);
         expect(find.text('Browse'), findsNothing, reason: 'the route must stay so the viewer can act on the failure');
@@ -190,8 +194,12 @@ void main() {
         expect(observer.ownsPlayback, isTrue, reason: 'the screen still owns the player; only the receipt is terminal');
 
         await tester.tap(retry);
-        await pumpUntil(tester, () => loadfileUrls.length == 2, describe: () => 'loadfiles=$loadfileUrls');
-        expect(loadfileUrls[1], loadfileUrls[0], reason: 'Retry re-runs the same open');
+        await pumpUntil(
+          tester,
+          () => loadfileUrls.length == 2 + maxOpenAutoRetries,
+          describe: () => 'loadfiles=$loadfileUrls',
+        );
+        expect(loadfileUrls.last, loadfileUrls.first, reason: 'Retry re-runs the same open');
         await pumpUntil(
           tester,
           () => find.textContaining('loadfile failed').evaluate().isEmpty,

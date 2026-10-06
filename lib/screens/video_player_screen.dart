@@ -532,6 +532,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   String? _playbackFailureMessage;
   VoidCallback? _playbackFailureRetry;
 
+  /// How many times the open on the failure view was tried, counting
+  /// automatic retries; see [_tryOpenAutoRetry].
+  int _playbackFailureAttempts = 1;
+
+  /// The failure view's Switch Version is checking the server, or found it
+  /// unreachable; see [_switchVersionAfterFailure].
+  bool _switchVersionChecking = false;
+  bool _switchVersionUnreachable = false;
+  static const Duration _switchVersionReachabilityTimeout = Duration(seconds: 10);
+
   /// The open the screen last dispatched (initial start or in-place reload)
   /// and the last one that reached a first frame. Retry re-runs the former;
   /// a failed in-place source switch restores the latter.
@@ -631,7 +641,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
     final state = current?.state;
     final ready = _firstFrame.rendered;
-    final failed = _hasFatalPlaybackError || _playerInitializationError != null;
+    final failed = (_hasFatalPlaybackError && !_openAutoRetryPending) || _playerInitializationError != null;
     final blocker = !automotivePlaybackAllowedNow()
         ? 'automotiveRestricted'
         : (_showStillWatchingPrompt || _episode.showPlayNextDialog)
@@ -1195,16 +1205,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   final FirstFrameGate _firstFrame = FirstFrameGate();
   bool _hasFatalPlaybackError = false;
 
-  /// Version indexes that already failed to open (or are being tried) for the
-  /// item [_versionFallbackItemKey] names; see [_tryVersionFallback].
-  final Set<int> _versionFallbackAttempted = <int>{};
-  String? _versionFallbackItemKey;
+  /// Whether the failure behind [_hasFatalPlaybackError] may be retried
+  /// automatically; set wherever the latch is.
+  bool _latchedFailureAllowsRetry = false;
 
-  /// A version fallback reload is running. Player errors that land meanwhile
-  /// are held in [_pendingVersionFallbackError] rather than handled, so a late
-  /// error from the abandoned load cannot start a second, competing fallback.
-  bool _versionFallbackInFlight = false;
-  PlayerError? _pendingVersionFallbackError;
+  /// Automatic retries spent on the failing source [_openAutoRetrySource]
+  /// before the failure view goes up; see [_tryOpenAutoRetry]. A first frame
+  /// or a user Retry resets the count.
+  int _openAutoRetries = 0;
+  _PlaybackOpenRequest? _openAutoRetrySource;
+
+  /// An automatic retry is scheduled and waiting for the failed open to
+  /// unwind; the launch receipt reads it as still opening.
+  bool _openAutoRetryPending = false;
+
+  /// The running [_startPlayback], which an automatic retry waits out.
+  Future<void>? _startPlaybackRun;
 
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
   final PlayerChromeController _chromeController = PlayerChromeController(
@@ -3065,7 +3081,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           builder: (sheetContext) {
             final playbackFailure = _playbackFailureMessage;
             if (playbackFailure != null) {
-              return _buildPlaybackFailure(playbackFailure, onRetry: _playbackFailureRetry!);
+              return _buildPlaybackFailure(
+                playbackFailure,
+                onRetry: _playbackFailureRetry!,
+                attempts: _playbackFailureAttempts,
+                onSwitchVersion: _canSwitchVersionAfterFailure ? () => unawaited(_switchVersionAfterFailure()) : null,
+                switchVersionBusy: _switchVersionChecking,
+              );
             }
             if (_isPlayerInitialized && player != null) return _buildVideoPlayer(sheetContext);
             final initializationError = _playerInitializationError;

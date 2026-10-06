@@ -155,37 +155,20 @@ void main() {
     expect(resolve(cause: 'some-decoder-fault'), PlaybackFailureAction.fatal);
   });
 
-  group('version fallback', () {
-    bool allows(PlaybackFailureAction action, [String? cause]) =>
-        failureAllowsVersionFallback(action: action, cause: cause);
-
-    test('applies to failures that can belong to one file', () {
-      expect(allows(PlaybackFailureAction.mediaUnreadableDialog), isTrue);
-      expect(allows(PlaybackFailureAction.serverBusyDialog), isTrue);
-      expect(allows(PlaybackFailureAction.fatal), isTrue);
-      expect(allows(PlaybackFailureAction.fatal, PlayerError.openTimedOut), isTrue);
-      expect(allows(PlaybackFailureAction.fatal, PlayerError.streamInitFailed), isTrue);
+  group('automatic open retry', () {
+    test('retries a plain open failure, a timeout and a failure with no cause', () {
+      expect(causeAllowsOpenAutoRetry(null), isTrue);
+      expect(causeAllowsOpenAutoRetry(PlayerError.openTimedOut), isTrue);
+      expect(causeAllowsOpenAutoRetry('some-decoder-fault'), isTrue);
     });
 
-    test('never applies when every version would fail the same way', () {
-      // The account is refused, the server is at a limit, or the device is at fault.
-      expect(allows(PlaybackFailureAction.playbackNotAllowedDialog), isFalse);
-      expect(allows(PlaybackFailureAction.serverLimitDialog), isFalse);
-      expect(allows(PlaybackFailureAction.fatal, PlayerError.audioOutputFailed), isFalse);
-      expect(allows(PlaybackFailureAction.fatal, PlayerError.playerInitFailed), isFalse);
-      // Live TV has no versions and keeps its own retry ladder.
-      expect(allows(PlaybackFailureAction.liveRetry), isFalse);
-      expect(allows(PlaybackFailureAction.liveInterrupted), isFalse);
-      expect(allows(PlaybackFailureAction.ignore), isFalse);
+    test('does not retry a device fault, which fails the same way every time', () {
+      expect(causeAllowsOpenAutoRetry(PlayerError.audioOutputFailed), isFalse);
+      expect(causeAllowsOpenAutoRetry(PlayerError.playerInitFailed), isFalse);
     });
 
-    test('tries untried versions in list order, then gives up', () {
-      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {0}), 1);
-      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {0, 1}), 2);
-      // A user who started on version 2 still gets version 1 next.
-      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {1}), 0);
-      expect(nextVersionFallbackIndex(versionCount: 3, attempted: {0, 1, 2}), isNull);
-      expect(nextVersionFallbackIndex(versionCount: 1, attempted: {0}), isNull);
+    test('allows three retries', () {
+      expect(maxOpenAutoRetries, 3);
     });
   });
 }

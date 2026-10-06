@@ -2171,8 +2171,17 @@ class Translations$videoControls$en {
 	/// en: 'Transcoding unavailable — playing original quality'
 	String get transcodeUnavailableFallback => 'Transcoding unavailable — playing original quality';
 
-	/// en: 'Couldn't play this version — trying ${version}'
-	String versionFallbackTrying({required Object version}) => 'Couldn\'t play this version — trying ${version}';
+	/// en: 'Couldn't start playback — retrying (${attempt}/${max})'
+	String openRetrying({required Object attempt, required Object max}) => 'Couldn\'t start playback — retrying (${attempt}/${max})';
+
+	/// en: 'Tried ${count} times'
+	String openRetriesFailed({required Object count}) => 'Tried ${count} times';
+
+	/// en: 'Switch Version'
+	String get switchVersion => 'Switch Version';
+
+	/// en: 'Can't switch versions — the server could not be reached'
+	String get switchVersionUnreachable => 'Can\'t switch versions — the server could not be reached';
 
 	/// en: 'Selected subtitles could not be loaded — continuing without subtitles'
 	String get subtitleUnavailableFallback => 'Selected subtitles could not be loaded — continuing without subtitles';
@@ -8055,7 +8064,10 @@ extension on Translations {
 			'videoControls.qualityOriginal' => 'Original',
 			'videoControls.qualityPresetLabel' => ({required Object resolution, required Object bitrate}) => '${resolution}p ${bitrate} Mbps',
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
-			'videoControls.versionFallbackTrying' => ({required Object version}) => 'Couldn\'t play this version — trying ${version}',
+			'videoControls.openRetrying' => ({required Object attempt, required Object max}) => 'Couldn\'t start playback — retrying (${attempt}/${max})',
+			'videoControls.openRetriesFailed' => ({required Object count}) => 'Tried ${count} times',
+			'videoControls.switchVersion' => 'Switch Version',
+			'videoControls.switchVersionUnreachable' => 'Can\'t switch versions — the server could not be reached',
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
@@ -8385,11 +8397,11 @@ extension on Translations {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
+			_ => null,
+		} ?? switch (path) {
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
 			'errors.reasonRefused' => 'the server refused the request',
-			_ => null,
-		} ?? switch (path) {
 			'errors.reasonNotFound' => 'the item is no longer on the server',
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
@@ -8899,11 +8911,11 @@ extension on Translations {
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
@@ -9413,11 +9425,11 @@ extension on Translations {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
+			_ => null,
+		} ?? switch (path) {
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
-			_ => null,
-		} ?? switch (path) {
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',

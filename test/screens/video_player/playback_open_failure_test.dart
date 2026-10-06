@@ -21,6 +21,7 @@ import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/providers/shader_provider.dart';
+import 'package:plezy/screens/video_player/playback_failure_action.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
@@ -131,14 +132,15 @@ void main() {
         loadfileUrls.add(args[1] as String);
         final player = key.currentState!.player! as PlayerBase;
         player.handlePlayerEvent('start-file', {'sourceId': loadfileUrls.length});
-        if (loadfileUrls.length == 1) {
+        // The first open and each automatic retry of it fail.
+        if (loadfileUrls.length <= 1 + maxOpenAutoRetries) {
           // The load was accepted; the demuxer refuses the URL afterwards -
           // and keeps refusing: a failed HLS open falls back to mpv's
           // playlist parser, which walks the manifest's entries and fails
           // each in turn, so the same dead load reports more than once.
           for (var i = 0; i < 3; i++) {
             player.handlePlayerEvent('end-file', {
-              'sourceId': 1,
+              'sourceId': loadfileUrls.length,
               'reason': 4,
               'message': 'Failed to open https://example.invalid/open-failure',
             });
@@ -194,6 +196,17 @@ void main() {
           describe: () => 'loadfiles=$loadfileUrls, no failure view',
         );
 
+        expect(
+          loadfileUrls,
+          List.filled(1 + maxOpenAutoRetries, loadfileUrls.first),
+          reason: 'the failed open is retried automatically, on the same source, before the view goes up',
+        );
+        expect(find.text(t.videoControls.openRetriesFailed(count: 1 + maxOpenAutoRetries)), findsOneWidget);
+        expect(
+          find.text(t.videoControls.switchVersion),
+          findsNothing,
+          reason: 'an item with one version has nothing to switch to',
+        );
         expect(find.byType(CircularProgressIndicator), findsNothing, reason: 'the spinner must not cover the view');
         expect(find.byType(SnackBar), findsNothing);
         expect(find.text('Browse'), findsNothing, reason: 'the route must stay so the viewer can act on the failure');
@@ -211,9 +224,9 @@ void main() {
         expect(observer.ownsPlayback, isTrue, reason: 'the screen still owns the player; only the receipt is terminal');
         expect(
           stops,
-          1,
+          1 + maxOpenAutoRetries,
           reason:
-              'the failed load is stopped exactly once: a stop halts the playlist walk, and the '
+              'each failed load is stopped exactly once: a stop halts the playlist walk, and the '
               'repeated errors from the same dead load must not re-run the failure policy',
         );
 
@@ -229,8 +242,12 @@ void main() {
         );
 
         await tester.tap(retry);
-        await pumpUntil(tester, () => loadfileUrls.length == 2, describe: () => 'loadfiles=$loadfileUrls');
-        expect(loadfileUrls[1], loadfileUrls[0], reason: 'Retry re-runs the same open');
+        await pumpUntil(
+          tester,
+          () => loadfileUrls.length == 2 + maxOpenAutoRetries,
+          describe: () => 'loadfiles=$loadfileUrls',
+        );
+        expect(loadfileUrls.last, loadfileUrls.first, reason: 'Retry re-runs the same open');
         await pumpUntil(
           tester,
           () => find.text(failureMessage).evaluate().isEmpty,
