@@ -23,6 +23,11 @@ class FocusableMediaCard extends StatefulWidget {
   final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+
+  /// Null for normal browsing; otherwise the card is a selection checkbox.
+  final bool? selected;
 
   /// Pins the inner [MediaCard] to grid or list layout; null follows the
   /// user's view-mode setting.
@@ -90,6 +95,9 @@ class FocusableMediaCard extends StatefulWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
+    this.onTap,
+    this.onLongPress,
+    this.selected,
     this.viewModeOverride,
     this.isInContinueWatching = false,
     bool? usesContinueWatchingAction,
@@ -149,6 +157,9 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         onRefresh: widget.onRefresh,
         onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
         onListRefresh: widget.onListRefresh,
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        selected: widget.selected,
         viewModeOverride: widget.viewModeOverride,
         isInContinueWatching: widget.isInContinueWatching,
         usesContinueWatchingAction: widget.usesContinueWatchingAction,
