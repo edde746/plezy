@@ -371,6 +371,74 @@ void main() {
     expect(movies.queryParameters['Fields'], contains('ChildCount'));
   });
 
+  test('each library is searched only for the types its kind can hold (#2581)', () async {
+    final captured = <Uri>[];
+    final client = makeClient(
+      captured,
+      views: const [
+        {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies', 'Type': 'CollectionFolder'},
+        {'Id': 'lib-shows', 'Name': 'Shows', 'CollectionType': 'tvshows', 'Type': 'CollectionFolder'},
+        {'Id': 'lib-home', 'Name': 'Home Videos', 'CollectionType': 'homevideos', 'Type': 'CollectionFolder'},
+        {'Id': 'lib-mvids', 'Name': 'Music Videos', 'CollectionType': 'musicvideos', 'Type': 'CollectionFolder'},
+        {'Id': 'lib-mixed', 'Name': 'Mixed', 'Type': 'CollectionFolder'},
+      ],
+    );
+    addTearDown(client.close);
+
+    await client.searchItems('the');
+
+    // Emby takes 11–12 s on a large TV library when music types ride along on
+    // the scoped query, against ~70 ms for the types a TV library holds.
+    final typesByLibrary = {
+      for (final uri in captured.where((uri) => uri.path == '/Items'))
+        uri.queryParameters['ParentId']: uri.queryParameters['IncludeItemTypes']!.split(',').toSet(),
+    };
+    expect(typesByLibrary, {
+      'lib-movies': {'Movie'},
+      'lib-shows': {'Series', 'Episode'},
+      'lib-home': {'Video', 'MusicVideo'},
+      'lib-mvids': {'Video', 'MusicVideo'},
+      'lib-mixed': {'Movie', 'Series', 'Episode', 'MusicAlbum', 'Audio'},
+    });
+  });
+
+  test('home and music video libraries surface their videos', () async {
+    final captured = <Uri>[];
+    final client = makeClient(
+      captured,
+      views: const [
+        {'Id': 'lib-home', 'Name': 'Home Videos', 'CollectionType': 'homevideos', 'Type': 'CollectionFolder'},
+        {'Id': 'lib-mvids', 'Name': 'Music Videos', 'CollectionType': 'musicvideos', 'Type': 'CollectionFolder'},
+      ],
+      itemsByParent: {
+        'lib-home': [_hit('video-1', 'Video', 'The Birthday')],
+        'lib-mvids': [_hit('mv-1', 'MusicVideo', 'The Song')],
+      },
+    );
+    addTearDown(client.close);
+
+    final results = await client.searchItems('the');
+
+    expect(results.map((item) => item.id), ['video-1', 'mv-1']);
+    expect(results.map((item) => item.libraryId), ['lib-home', 'lib-mvids']);
+  });
+
+  test('a photo library is not searched', () async {
+    final captured = <Uri>[];
+    final client = makeClient(
+      captured,
+      views: const [
+        {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies', 'Type': 'CollectionFolder'},
+        {'Id': 'lib-photos', 'Name': 'Photos', 'CollectionType': 'photos', 'Type': 'CollectionFolder'},
+      ],
+    );
+    addTearDown(client.close);
+
+    await client.searchItems('the');
+
+    expect(captured.where((uri) => uri.path == '/Items').map((uri) => uri.queryParameters['ParentId']), ['lib-movies']);
+  });
+
   test('excluded ids owned by another server do not shrink the fan-out', () async {
     final captured = <Uri>[];
     final client = makeClient(
