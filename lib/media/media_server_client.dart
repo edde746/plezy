@@ -33,6 +33,11 @@ const int defaultHubPreviewLimit = 20;
 /// Default number of people [MediaServerClient.searchPeople] returns.
 const int defaultPeopleSearchLimit = 20;
 
+/// One collection holding some of the items asked about in
+/// [MediaServerClient.fetchCollectionMemberships], with those items' ids in
+/// the collection's own order.
+typedef CollectionMembership = ({MediaItem collection, List<String> memberIds});
+
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
 ///
 /// Each implementation wraps the per-backend HTTP layer and exposes the same
@@ -550,6 +555,17 @@ abstract class MediaServerClient {
     String? libraryTitle,
   });
 
+  /// The collections holding any of [itemIds] (movies and shows), each with
+  /// the subset of [itemIds] it holds in the collection's own order — the
+  /// source for grouping downloads by collection offline.
+  ///
+  /// Plex reads every item's collection tags, so smart collections (a live
+  /// filter with no per-item record) never appear, and skips collections set
+  /// to "Hide collection". Jellyfin and Emby have no reverse lookup and walk
+  /// every BoxSet. Request failures throw: a partial answer must not replace
+  /// a complete one.
+  Future<List<CollectionMembership>> fetchCollectionMemberships(Set<String> itemIds, {AbortController? abort});
+
   /// Create a new collection in [libraryId] seeded with [items]. Returns the
   /// created collection id when it can be recovered from an accepted response,
   /// or `null` when that response contains no usable id. Request failures
@@ -863,6 +879,10 @@ abstract class MediaServerClient {
   /// successful response has no playable URL for the item. Request,
   /// cancellation, and malformed-payload failures throw.
   ///
+  /// An item stacked across several files (Plex) hands over only the file
+  /// holding [position] (item time; the first file when null); the target's
+  /// `partTimeline` says where that file sits on the item.
+  ///
   /// Deliberately separate from the in-app playback funnel
   /// (`PlaybackSourceResolver`): external players can't send custom headers,
   /// so every URL must be self-contained (token in the query string), and
@@ -870,7 +890,12 @@ abstract class MediaServerClient {
   /// progress reporting is a one-shot started/stopped pair in
   /// `ExternalPlayerService` — an external app exposes no live position
   /// stream for the in-player tracker to follow.
-  Future<ExternalPlaybackTarget?> resolveExternalPlayback(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(
+    MediaItem item, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    Duration? position,
+  });
 }
 
 /// Optional interface for backends whose public server id is not specific

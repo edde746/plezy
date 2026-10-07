@@ -352,8 +352,9 @@ class _DownloadStorageSummary extends StatelessWidget {
 /// Grid content for the TV Shows and Movies tabs. [type] selects the
 /// persistence section and grouping list; the active grouping picks which
 /// provider collection renders — shows, seasons, or a flat episode grid for
-/// TV, movies for Movies, or library-bucketed sections of the tab's default
-/// item kind under the `library` grouping.
+/// TV, movies for Movies, the tab's default item kind with collections folded
+/// into folders under the `collections` grouping, or library-bucketed
+/// sections of that kind under the `library` grouping.
 class _DownloadsGridContent extends StatefulWidget {
   final DownloadType type;
   final VoidCallback? onBack;
@@ -382,9 +383,10 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
       browseGroupingShows,
       browseGroupingSeasons,
       browseGroupingEpisodes,
+      browseGroupingCollections,
       browseGroupingLibrary,
     ],
-    DownloadType.movies => const [browseGroupingMovies, browseGroupingLibrary],
+    DownloadType.movies => const [browseGroupingMovies, browseGroupingCollections, browseGroupingLibrary],
   };
 
   @override
@@ -406,7 +408,8 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
   void navigateToSidebar() => MainScreenFocusScope.focusSidebarOf(context);
 
   /// Items for the active grouping with filters and sort applied. The
-  /// `library` grouping buckets the tab's default item kind (shows/movies).
+  /// `collections` and `library` groupings work on the tab's default item
+  /// kind (shows/movies).
   List<MediaItem> _items(DownloadProvider provider) {
     final raw = switch (widget.type) {
       DownloadType.tvShows => switch (selectedGrouping) {
@@ -416,7 +419,8 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
       },
       DownloadType.movies => provider.downloadedMovies,
     };
-    return applyDownloadsOptions(provider, raw);
+    final items = applyDownloadsOptions(provider, raw);
+    return selectedGrouping == browseGroupingCollections ? groupDownloadsByCollection(provider, items) : items;
   }
 
   @override

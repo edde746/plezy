@@ -386,7 +386,9 @@ sealed class MediaItem with _$MediaItem {
   /// Whether this item still counts toward an "unwatched only" selection:
   /// not fully watched, or watched-but-resumable (has active progress). The
   /// shared predicate behind every `unwatchedOnly` filter (downloads, sync
-  /// rules, the unwatched-episode lookups in episode_collection.dart).
+  /// rules, the unwatched-episode lookups in episode_collection.dart) and its
+  /// inverse, the auto-remove-watched-downloads sweep, so a sweep never
+  /// deletes what a rule would immediately re-queue.
   bool get isUnwatchedOrInProgress => !isWatched || hasActiveProgress;
 
   /// Positive leaf total used for aggregate watch state, or null when this

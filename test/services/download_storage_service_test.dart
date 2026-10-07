@@ -705,6 +705,54 @@ void main() {
     });
   });
 
+  group('stacked files', () {
+    test('later files are named after the first, beside it, with their own extension', () async {
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final movie = _movie(title: 'Big Movie', year: 2020);
+      final first = await dss.getMovieVideoPath(movie, 'mkv');
+      final second = dss.partFilePath(first, 1, 'mkv');
+      final third = dss.partFilePath(first, 2, 'mp4');
+
+      expect(p.dirname(second), p.dirname(first));
+      expect(p.basename(second), 'Big Movie (2020) ${_tag(movie)} - part2.mkv');
+      expect(p.basename(third), 'Big Movie (2020) ${_tag(movie)} - part3.mp4');
+      expect(dss.partFilePath(p.basename(first), 1, 'avi'), 'Big Movie (2020) ${_tag(movie)} - part2.avi');
+      // Sidecars follow each file's own name, where playback looks for them.
+      expect(
+        dss.sidecarSubtitlesDirectoryPath(second),
+        p.join(p.dirname(first), 'Big Movie (2020) ${_tag(movie)} - part2_subs'),
+      );
+    });
+
+    test('recognizes only later files of the same first file', () {
+      final dss = DownloadStorageService.instance;
+      const first = 'Movie (2020) [abcd1234]';
+
+      expect(dss.isPartFileBaseName(first, '$first - part2'), isTrue);
+      expect(dss.isPartFileBaseName(first, '$first - part12'), isTrue);
+      expect(dss.isPartFileBaseName(first, first), isFalse);
+      expect(dss.isPartFileBaseName(first, '$first - part1'), isFalse, reason: 'part 1 is the first file itself');
+      expect(dss.isPartFileBaseName(first, '$first - part02'), isFalse);
+      expect(dss.isPartFileBaseName(first, '$first - partX'), isFalse);
+      expect(dss.isPartFileBaseName(first, 'Movie (2020) [ffff0000] - part2'), isFalse);
+    });
+
+    test('SAF sidecars of a later file get their own app-managed folder, created on demand', () async {
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final dir = await dss.getPartSubtitlesDirectory(ServerId('srv-1'), '42', 1);
+      final itemSubtitles = await dss.getSubtitlesDirectory(ServerId('srv-1'), '42');
+
+      expect(dir.path, p.join(itemSubtitles.path, 'part2'));
+      expect(dir.existsSync(), isFalse);
+    });
+  });
+
   group('DownloadStorageException', () {
     test('toString embeds message, path, and cause', () {
       final ex = DownloadStorageException('boom', '/tmp/x', StateError('inner'));

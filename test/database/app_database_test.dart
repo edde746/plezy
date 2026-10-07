@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/io_client.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/database/download_collection_operations.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/database/tvos_database_recovery_store.dart';
 import 'package:plezy/media/ids.dart';
@@ -1078,6 +1079,115 @@ class _AppDatabaseTestSuite {
           final stamped = await reopened.getDownloadedMedia('srv:movie-2');
           expect(stamped?.libraryId, 'lib-7');
           expect(stamped?.libraryTitle, 'Movies');
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test('v24 migration adds stacked file paths and leaves existing rows single-file', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v24_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          // Build a v23-shaped database: current schema minus the column this
+          // migration adds, with a completed download that predates it.
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.insertDownload(
+            serverId: ServerId('srv'),
+            ratingKey: 'movie-1',
+            globalKey: 'srv:movie-1',
+            type: 'movie',
+            status: DownloadStatus.completed.index,
+          );
+          await seeded.updateVideoFilePath('srv:movie-1', 'downloads/Movies/Movie/Movie.mkv');
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN additional_part_paths');
+          await seeded.customStatement('PRAGMA user_version = 23');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final columns = (await reopened.customSelect("PRAGMA table_info('downloaded_media')").get())
+              .map((row) => row.read<String>('name'))
+              .toSet();
+          expect(columns, contains('additional_part_paths'));
+
+          final legacy = await reopened.getDownloadedMedia('srv:movie-1');
+          expect(legacy?.videoFilePath, 'downloads/Movies/Movie/Movie.mkv');
+          expect(legacy?.additionalPartPathList, isNull);
+          expect(legacy?.storedPartPath(1), isNull);
+
+          // Stacked paths round-trip through the new column.
+          await reopened.updateAdditionalPartPaths('srv:movie-1', [
+            'downloads/Movies/Movie/Movie - part2.mkv',
+            'content://tree/doc/Movie - part3.mp4',
+          ]);
+          final stacked = await reopened.getDownloadedMedia('srv:movie-1');
+          expect(stacked?.storedPartPaths, [
+            'downloads/Movies/Movie/Movie.mkv',
+            'downloads/Movies/Movie/Movie - part2.mkv',
+            'content://tree/doc/Movie - part3.mp4',
+          ]);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test('v25 migration adds profile-scoped download collection membership', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v25_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          // Build a v24-shaped database: current schema minus the tables this
+          // migration adds.
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.connections).get();
+          await seeded.customStatement('DROP TABLE download_collections');
+          await seeded.customStatement('DROP TABLE download_collection_syncs');
+          await seeded.customStatement('PRAGMA user_version = 24');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          for (final profileId in ['p1', 'p2']) {
+            await reopened.replaceDownloadCollections(
+              profileId: profileId,
+              serverId: 'srv',
+              membersByCollection: {
+                'dune': ['dune-1', 'dune-2'],
+              },
+              checkedIds: {'dune-2', 'dune-1', 'other'},
+              syncedAt: 42,
+            );
+          }
+          final stored = await reopened.getDownloadCollections('p1');
+          expect(stored.single.collectionId, 'dune');
+          expect(stored.single.memberIds, ['dune-1', 'dune-2']);
+          final sync = await reopened.getDownloadCollectionSync(profileId: 'p1', serverId: 'srv');
+          expect(sync?.syncedAt, 42);
+          expect(sync?.checkedIds, {'dune-1', 'dune-2', 'other'});
+
+          // A refresh replaces the server's rows; a removed profile's go.
+          await reopened.replaceDownloadCollections(
+            profileId: 'p1',
+            serverId: 'srv',
+            membersByCollection: const {},
+            checkedIds: {'other'},
+            syncedAt: 43,
+          );
+          expect(await reopened.getDownloadCollections('p1'), isEmpty);
+          await reopened.deleteDownloadCollectionsForProfile('p2');
+          expect(await reopened.getDownloadCollections('p2'), isEmpty);
+          expect(await reopened.getDownloadCollectionSync(profileId: 'p2', serverId: 'srv'), isNull);
         } finally {
           await reopened?.close();
           await seeded?.close();

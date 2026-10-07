@@ -115,4 +115,43 @@ void main() {
       expect(source?.path, video.path);
     });
   });
+
+  group('stacked files', () {
+    Future<List<File>> writeFiles(List<String> names) async {
+      return [
+        for (final name in names) await File('${tmpRoot.path}/$name').writeAsBytes(const <int>[0]),
+      ];
+    }
+
+    test('each file of a stacked download resolves by its part index', () async {
+      final files = await writeFiles(['movie-1.mkv', 'movie-1 - part2.mkv', 'movie-1 - part3.mp4']);
+      var row = await completedRow(files[0].path);
+      await db.updateAdditionalPartPaths(row.globalKey, [files[1].path, files[2].path]);
+      row = (await db.getDownloadedMedia(row.globalKey))!;
+
+      for (var partIndex = 0; partIndex < files.length; partIndex++) {
+        final source = await resolveDownloadedVideoSource(row, requestedMediaIndex: 0, partIndex: partIndex);
+        expect(source?.path, files[partIndex].path, reason: 'part $partIndex');
+        expect(source?.mediaSourceId, 'source-a');
+      }
+      expect(await resolveDownloadedVideoSource(row, requestedMediaIndex: 0, partIndex: 3), isNull);
+    });
+
+    test('a download from before stacked files were fetched has no later file', () async {
+      final files = await writeFiles(['movie-1.mkv']);
+      final row = await completedRow(files[0].path);
+
+      expect((await resolveDownloadedVideoSource(row, requestedMediaIndex: 0))?.path, files[0].path);
+      expect(await resolveDownloadedVideoSource(row, requestedMediaIndex: 0, partIndex: 1), isNull);
+    });
+
+    test('an unreachable later file yields no source rather than another file', () async {
+      final files = await writeFiles(['movie-1.mkv']);
+      var row = await completedRow(files[0].path);
+      await db.updateAdditionalPartPaths(row.globalKey, ['${tmpRoot.path}/movie-1 - part2.mkv']);
+      row = (await db.getDownloadedMedia(row.globalKey))!;
+
+      expect(await resolveDownloadedVideoSource(row, requestedMediaIndex: 0, partIndex: 1), isNull);
+    });
+  });
 }

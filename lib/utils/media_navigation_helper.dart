@@ -211,7 +211,9 @@ Future<MediaNavigationResult> navigateToMediaItem(
     case MediaKind.collection:
       final result = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(builder: (context) => CollectionDetailScreen(collection: mi)),
+        MaterialPageRoute(
+          builder: (context) => CollectionDetailScreen(collection: mi, isOffline: isOffline),
+        ),
       );
       // If collection was deleted, signal that list refresh is needed
       if (result == true) {

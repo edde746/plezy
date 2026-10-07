@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_part_timeline.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/external_player_service.dart';
@@ -190,5 +192,55 @@ void main() {
     // …so the explicit markWatched is skipped — issuing it would double-scrobble
     // through the Jellyfin Trakt plugin.
     expect(client.watched, isEmpty);
+  });
+
+  group('a stacked item (50 + 40 minute files)', () {
+    const fileOneMs = 3000000;
+    const itemMs = 5400000;
+    MediaPartTimeline timeline({required int currentIndex}) => MediaPartTimeline.fromParts(const [
+      MediaPart(id: '11', durationMs: fileOneMs),
+      MediaPart(id: '12', durationMs: 2400000),
+    ], currentIndex: currentIndex)!;
+
+    test('playing out the first file leaves the item at the second, not watched', () async {
+      final client = _RecordingClient();
+
+      await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+        positionMs: null,
+        durationMs: fileOneMs,
+        playbackCompleted: true,
+        metadata: _item(durationMs: itemMs),
+        client: client,
+        partTimeline: timeline(currentIndex: 0),
+      );
+
+      expect(client.stopped, [(positionMs: fileOneMs, durationMs: itemMs)]);
+      expect(client.watched, isEmpty);
+    });
+
+    test('the second file reports on the item clock and finishing it finishes the item', () async {
+      final client = _RecordingClient();
+
+      await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+        positionMs: 600000,
+        durationMs: 2400000,
+        metadata: _item(durationMs: itemMs),
+        client: client,
+        partTimeline: timeline(currentIndex: 1),
+      );
+      expect(client.stopped.last, (positionMs: fileOneMs + 600000, durationMs: itemMs));
+      expect(client.watched, isEmpty);
+
+      await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+        positionMs: null,
+        durationMs: 2400000,
+        playbackCompleted: true,
+        metadata: _item(durationMs: itemMs),
+        client: client,
+        partTimeline: timeline(currentIndex: 1),
+      );
+      expect(client.stopped.last, (positionMs: itemMs, durationMs: itemMs));
+      expect(client.watched, ['item-1']);
+    });
   });
 }

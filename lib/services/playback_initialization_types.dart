@@ -1,6 +1,7 @@
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
+import '../media/media_part_timeline.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
 import '../models/audio_quality_preset.dart';
@@ -61,6 +62,11 @@ class PlaybackInitializationOptions {
   /// for Plex transcode.
   final String? transcodeSessionId;
 
+  /// Where playback is about to start, in item time. An item stacked across
+  /// several files (Plex `Part 1`, `Part 2`) opens the file holding it; see
+  /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
+  final Duration? startPosition;
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -73,6 +79,7 @@ class PlaybackInitializationOptions {
     this.preferredSubtitleTrack,
     this.sessionIdentifier,
     this.transcodeSessionId,
+    this.startPosition,
   });
 }
 
@@ -104,7 +111,11 @@ class ExternalPlaybackTarget {
   final String url;
   final List<SubtitleTrack> subtitles;
 
-  const ExternalPlaybackTarget({required this.url, this.subtitles = const []});
+  /// Where [url] sits on its item when the item is stacked across several
+  /// files: the external player gets that one file, on that file's clock.
+  final MediaPartTimeline? partTimeline;
+
+  const ExternalPlaybackTarget({required this.url, this.subtitles = const [], this.partTimeline});
 }
 
 /// Reason the transcode branch fell back to direct play.

@@ -55,6 +55,13 @@ class DownloadedMedia extends Table {
   IntColumn get totalBytes => integer().nullable()();
   IntColumn get downloadedBytes => integer().withDefault(const Constant(0))();
   TextColumn get videoFilePath => text().nullable()();
+
+  /// Stored paths of the files after the first when the downloaded version is
+  /// stacked across several files (Plex `Part 2`, `Part 3`), as a JSON array in
+  /// playback order. Each entry has the same stored form as [videoFilePath]
+  /// (relative path or SAF `content://` URI), or is null while that file is
+  /// not stored yet. Null for single-file downloads and rows from before v24.
+  TextColumn get additionalPartPaths => text().nullable()();
   TextColumn get safRootUri => text().nullable()();
   TextColumn get thumbPath => text().nullable()();
   IntColumn get downloadedAt => integer().nullable()();
@@ -135,6 +142,38 @@ class SyncRuleDownloads extends Table {
 
   @override
   Set<Column> get primaryKey => {syncRuleId, downloadGlobalKey};
+}
+
+/// Which collections hold a profile's downloaded movies and shows, so the
+/// downloads screen can group them while offline.
+///
+/// One row per collection that holds at least one downloaded title.
+/// [memberIds] is a JSON array of those titles' ids (movie or show) in the
+/// collection's own order. The collection's display metadata and artwork are
+/// pinned in [ApiCache] the way a downloaded episode's show is.
+@DataClassName('DownloadCollectionItem')
+class DownloadCollections extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get serverId => text()();
+  TextColumn get collectionId => text()();
+  TextColumn get memberIds => text()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, serverId, collectionId};
+}
+
+/// The last successful [DownloadCollections] refresh per profile and server.
+/// [checkedIds] is a JSON array of the downloaded title ids it looked up, so
+/// a title downloaded since triggers a refresh before [syncedAt] goes stale.
+@DataClassName('DownloadCollectionSyncItem')
+class DownloadCollectionSyncs extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get serverId => text()();
+  IntColumn get syncedAt => integer()();
+  TextColumn get checkedIds => text()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, serverId};
 }
 
 /// Persisted media-server connections.

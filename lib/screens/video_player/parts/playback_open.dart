@@ -184,6 +184,15 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return rateEligible || resolutionEligible;
   }
 
+  /// A shuffled queue opts out of resume when the user asked for it (#2303):
+  /// every item opens at 0:00, including episodes reached through
+  /// auto-advance and Plex server-side window refetches. Explicit requests
+  /// still win, so callers only ask when no request is in play.
+  bool _opensShuffledFromBeginning(SettingsService settings) =>
+      mounted &&
+      context.read<PlaybackStateProvider>().isShuffleActive &&
+      settings.read(SettingsService.shuffleStartsFromBeginning);
+
   /// Resolve where a fresh open should start: explicit request → shuffle
   /// override → locally tracked offline progress → server view offset.
   Future<Duration?> _resolveOpenResumePosition({
@@ -192,15 +201,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required OfflineWatchSyncService offlineWatchService,
     Duration? requested,
   }) async {
-    // A shuffled queue opts out of resume when the user asked for it (#2303):
-    // every item opens at 0:00, including episodes reached through
-    // auto-advance and Plex server-side window refetches. Explicit requests
-    // still win, so the flag is only read when no request is in play.
     final shuffleFromBeginning =
-        requested == null &&
-        mounted &&
-        context.read<PlaybackStateProvider>().isShuffleActive &&
-        (await SettingsService.getInstance()).read(SettingsService.shuffleStartsFromBeginning);
+        requested == null && mounted && _opensShuffledFromBeginning(await SettingsService.getInstance());
     int? offlineOffsetMs;
     // In offline mode, prefer locally tracked progress over the cached server
     // value since the user may have watched further since downloading.
@@ -216,6 +218,30 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       offlineOffsetMs: offlineOffsetMs,
       viewOffsetMs: metadata.viewOffsetMs,
     );
+  }
+
+  /// The startup plan for a backend that negotiates the display from the
+  /// decoded stream at its first frame — Android mpv and Apple TV — or null
+  /// for one that does not (ExoPlayer, desktop). Shared by the VOD open and
+  /// Live TV channel opens ([_armLiveDisplayNegotiation]) so the two cannot
+  /// drift.
+  _FrameRateStartupPlan? _firstFrameStartupPlan(
+    Player currentPlayer,
+    SettingsService settingsService, {
+    required bool hasVideoUrl,
+  }) {
+    // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
+    // the two Android backends (true = the mpv core).
+    final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
+    if (!isAndroidMpv && !PlatformDetector.isAppleTV()) return null;
+    final plan = _FrameRateStartupPlan(fps: null);
+    final matchingEnabled =
+        settingsService.read(SettingsService.matchContentFrameRate) ||
+        settingsService.read(SettingsService.matchContentResolution);
+    // Apple TV matching is a system setting (AVDisplayManager); the gate
+    // only exists to keep playback from running through the HDMI blank.
+    plan.needsFirstFrameSwitch = hasVideoUrl && (!isAndroidMpv || matchingEnabled);
+    return plan;
   }
 
   /// Decide the display strategy for an open. mpv (Android) and Apple TV
@@ -235,19 +261,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     int preKnownWidth = 0,
     int preKnownHeight = 0,
   }) async {
-    // needsDecoderRefreshAfterDisplaySwitch is how this file distinguishes
-    // the two Android backends (true = the mpv core).
-    final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
-    if (isAndroidMpv || PlatformDetector.isAppleTV()) {
-      final plan = _FrameRateStartupPlan(fps: null);
-      final matchingEnabled =
-          settingsService.read(SettingsService.matchContentFrameRate) ||
-          settingsService.read(SettingsService.matchContentResolution);
-      // Apple TV matching is a system setting (AVDisplayManager); the gate
-      // only exists to keep playback from running through the HDMI blank.
-      plan.needsFirstFrameSwitch = hasVideoUrl && (!isAndroidMpv || matchingEnabled);
-      return plan;
-    }
+    final firstFramePlan = _firstFrameStartupPlan(currentPlayer, settingsService, hasVideoUrl: hasVideoUrl);
+    if (firstFramePlan != null) return firstFramePlan;
 
     // Rate-match only when the user opted in; the plan's fps drives the
     // switch calls, so a resolution-only open passes 0 to the native side.
@@ -431,10 +446,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           }
           // The switch's decoder refresh seeks back to the window start; with
           // no switch, playback would otherwise begin the stepped frames in.
-          if (!switched && measurement.windowStart != null && !widget.isLive && isCurrent()) {
+          // Live rewinds only within its cache: nothing here needs the flush.
+          if (!switched && measurement.windowStart != null && isCurrent()) {
             await _refreshAndroidMpvDecoderAfterFrameRateSwitch(
               reason: 'measurement window rewind',
               targetPosition: measurement.windowStart,
+              dropIfUncached: false,
             );
           }
         }
@@ -531,9 +548,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   }
 
   Future<({({Duration start, Duration end})? frames, bool stalled})> _runFrameStepWindow(Player currentPlayer) async {
+    // mpv's `time-pos` is the open file's own clock; the seek that follows
+    // the window speaks timeline time (a stacked item's later files start
+    // past zero).
     Future<Duration?> videoTime() async {
       final seconds = double.tryParse(await currentPlayer.getProperty('time-pos') ?? '');
-      return seconds == null ? null : Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round());
+      return seconds == null
+          ? null
+          : Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round()) + currentPlayer.timelineOffset;
     }
 
     var unpaused = false;
@@ -864,6 +886,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         play: shouldPlay && automotivePlaybackAllowedNow(),
         externalSubtitles: externalSubtitles,
         timelineDuration: timing.timelineDuration,
+        timelineOffset: timing.timelineOffset,
       );
     }
 
@@ -1065,6 +1088,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         isTranscoding: result.isTranscoding,
         resumePosition: resumePosition(),
         durationMs: metadata.durationMs,
+        partTimeline: result.mediaInfo?.partTimeline,
       );
       if (!isCurrent()) return false;
       final openResult = await _openMediaOnPlayer(

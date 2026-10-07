@@ -179,16 +179,19 @@ class PlayerAndroid extends PlayerBase {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     if (disposed) return;
     await _ensureInitialized();
-    final startPosition = media.start ?? Duration.zero;
-    final hasStartPosition = media.start != null && startPosition > Duration.zero;
+    final startPosition = media.start ?? timelineOffset;
     final previousState = state;
     final previousPosition = currentPosition;
     final previousTimelineDuration = configuredTimelineDuration;
+    final previousTimelineOffset = this.timelineOffset;
     final previousExternalSubtitleMetadata = snapshotExternalSubtitleMetadata();
-    configureTimeline(duration: timelineDuration);
+    configureTimeline(duration: timelineDuration, offset: timelineOffset);
+    final sourceStart = sourcePositionFor(startPosition);
+    final hasStartPosition = media.start != null && sourceStart > Duration.zero;
     clearTracks();
     setExternalSubtitleMetadata(externalSubtitles);
     resetPlaybackProgress(startPosition);
@@ -201,7 +204,7 @@ class PlayerAndroid extends PlayerBase {
       await invoke('open', {
         'uri': media.uri,
         'headers': media.headers,
-        'startPositionMs': startPosition.inMilliseconds,
+        'startPositionMs': sourceStart.inMilliseconds,
         'hasStartPosition': hasStartPosition,
         'autoPlay': play,
         'isLive': isLive,
@@ -224,7 +227,7 @@ class PlayerAndroid extends PlayerBase {
       });
     } catch (_) {
       if (!disposed) {
-        configureTimeline(duration: previousTimelineDuration);
+        configureTimeline(duration: previousTimelineDuration, offset: previousTimelineOffset);
         restorePlaybackProgress(previousState, position: previousPosition);
         restoreTracks(previousState);
         restoreExternalSubtitleMetadata(previousExternalSubtitleMetadata);
@@ -253,7 +256,7 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    await runSeek(position, () => invoke('seek', {'positionMs': position.inMilliseconds}));
+    await runSeek(position, () => invoke('seek', {'positionMs': sourcePositionFor(position).inMilliseconds}));
   }
 
   @override

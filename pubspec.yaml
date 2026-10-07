@@ -65,12 +65,13 @@ dependencies:
   # offset match the file; 09690d6 lets Wi-Fi-only tasks run over a VPN and on
   # Ethernet (upstream 9.6.1's Wi-Fi NetworkRequest kept NOT_VPN); 5d45882 makes
   # a resumed SAF download reuse its own partial document and deletes SAF
-  # partials through the provider. Keep the same-filesystem move/resume cleanup;
-  # no per-host TLS bypass.
+  # partials through the provider; ebdf69a resumes a download the system stops
+  # (job quota, lost network) instead of reporting it canceled and deleting the
+  # partial. Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 5d45882265ead82e570cd067599e193070e3b4a2
+      ref: ebdf69a7bdd03d410bfdfc700add08eed0de161d
   sentry_flutter: ^9.30.0
   auto_updater:
     git:

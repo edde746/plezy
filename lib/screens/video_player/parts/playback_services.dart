@@ -15,12 +15,13 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           .createScrubPreviewSource(item: metadataAtStart, mediaSource: mediaInfoAtStart)
           .then((service) {
             if (service == null) return;
-            // Keyed on item + part rather than session identity: the preview
-            // is per part, so a load that outlives a same-part source switch
-            // (quality/audio) still applies.
+            // Keyed on item + what the preview covers rather than session
+            // identity: the preview is per part (per stacked version), so a
+            // load that outlives a same-part source switch (quality/audio)
+            // still applies.
             if (mounted &&
                 _currentMetadata.globalKey == metadataAtStart.globalKey &&
-                _currentMediaInfo?.partId == mediaInfoAtStart.partId) {
+                scrubPreviewServes(mediaInfoAtStart, _currentMediaInfo)) {
               _setPlayerState(() => _scrubPreviewSource = service);
             } else {
               service.dispose();
@@ -148,6 +149,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
               .interceptEof(currentPlayer)
               .then((intercepted) {
                 if (intercepted || !mounted || _shuttingDown || player != currentPlayer) return;
+                // A stacked item's file ended with another to follow: the
+                // item goes on in the next file instead of completing.
+                if (_advanceStackedPart()) return;
                 _onVideoCompleted(true);
               })
               .catchError((Object error, StackTrace stackTrace) {

@@ -2189,7 +2189,9 @@ void main() {
       // drop by usefulness — rating badges from the end first, then the
       // quality label, certification, and runtime — never by wrapping onto a
       // second run the height clip would hide. The interactive Rate chip and
-      // the year go last and first, respectively.
+      // the year go last and first, respectively. Phone widths take the
+      // scores off the strip onto a row of their own, where the strip's
+      // shedding can no longer hide every one of them (#2569).
       final movie =
           testMediaItem(
             id: 'chip_movie',
@@ -2251,14 +2253,28 @@ void main() {
       await resizeTo(660);
       expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', rate], absent: ['7.4', '6.4']);
 
-      // Then the whole pill, the quality label, and the certification go —
-      // never the runtime, year, or Rate.
+      void expectScoresRow(List<String> scores) {
+        final rateDy = tester.getCenter(find.text(rate)).dy;
+        final rowDy = tester.getCenter(find.text(scores.first)).dy;
+        expect(rowDy, greaterThan(rateDy + 20), reason: 'the scores row sits beneath the strip');
+        for (final score in scores) {
+          expect(find.text(score), findsOneWidget, reason: '"$score" should be on the scores row');
+          expect(tester.getCenter(find.text(score)).dy, moreOrLessEquals(rowDy, epsilon: 4));
+        }
+      }
+
+      // Phone width: every score moves to its own row, and the strip sheds
+      // the quality label and the certification — never the runtime, year,
+      // or Rate.
       await resizeTo(420);
       expectChips(present: ['2017', '1h 46min', rate], absent: ['9.2', '7.4', '6.4', '1080p', 'PG-13']);
+      expectScoresRow(['9.2', '7.4', '6.4']);
 
-      // Down to the bone: the year and the interactive Rate chip survive.
+      // Down to the bone: the strip keeps the year and the interactive Rate
+      // chip, and the scores row still has room for all three.
       await resizeTo(320);
       expectChips(present: ['2017', rate], absent: ['1h 46min', '1080p', 'PG-13', '9.2']);
+      expectScoresRow(['9.2', '7.4', '6.4']);
     });
 
     testWidgets('phone-width hero centres the title, chip rows and actions; wider heroes stay left', (tester) async {

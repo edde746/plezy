@@ -1768,6 +1768,9 @@
     "episodesQueued": "Yükləmə üçün ${count} seriya növbəyə alındı",
     "downloadDeleted": "Yükləmə silindi",
     "deleteConfirm": "\"${title}\" bu cihazdan silinsin?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Ləğv edilmiş yükləmə",
     "cancelledDownloadMessage": "Bu yükləmə ləğv edildi. Nə etmək istərdiniz?",
     "allEpisodesAlreadyDownloaded": "Bütün seriyalar artıq yüklənib",
@@ -1855,7 +1858,8 @@
     },
     "options": "Yükləmə seçimləri",
     "groupings": {
-      "library": "Kitabxana"
+      "library": "Kitabxana",
+      "collections": ""
     },
     "unknownLibrary": "Məlum olmayan kitabxana",
     "unknownShow": "Məlum olmayan serial",

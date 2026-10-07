@@ -52,6 +52,7 @@ import '../../services/scrub_preview_source.dart';
 import '../../services/player_sync_offsets.dart';
 import '../../services/scoped_player_prefs.dart';
 import '../../services/settings_service.dart';
+import '../../services/shortcut_action.dart';
 import '../../services/video_volume_controller.dart';
 import '../../utils/codec_utils.dart';
 import '../../utils/formatters.dart';

@@ -24,6 +24,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
+import '../media/media_part_timeline.dart';
 import '../media/media_person.dart';
 import '../media/media_playlist.dart';
 import '../media/media_rating.dart';
@@ -1304,6 +1305,9 @@ class PlexMappers {
 
 /// Authoritative version and playable-part selection shared by cache previews
 /// and playback. A stable id wins over a sibling-version signature and index.
+///
+/// A version stacked across several files opens the file holding [position]
+/// (item time); see [MediaPartTimeline].
 typedef PlexPlaybackSelection = ({List<Map> media, List<MediaVersion> versions, int mediaIndex, int partIndex});
 
 PlexPlaybackSelection? resolvePlexPlaybackSelection(
@@ -1313,6 +1317,7 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
   String? preferredVersionSignature,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
   bool preferPlayable = true,
+  Duration? position,
 }) {
   final media = [
     for (final value in flexibleList(metadata['Media']) ?? const [])
@@ -1335,8 +1340,28 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
       mediaIndex = fallback;
     }
   }
-  final playablePart = preferPlayable ? versions[mediaIndex].parts.indexWhere((part) => part.isPlayable) : 0;
-  return (media: media, versions: versions, mediaIndex: mediaIndex, partIndex: playablePart < 0 ? 0 : playablePart);
+  return (
+    media: media,
+    versions: versions,
+    mediaIndex: mediaIndex,
+    partIndex: _plexPartIndex(versions[mediaIndex].parts, position: position, preferPlayable: preferPlayable),
+  );
+}
+
+int _plexPartIndex(List<MediaPart> parts, {required Duration? position, required bool preferPlayable}) {
+  final timeline = MediaPartTimeline.fromParts(parts);
+  if (timeline == null) {
+    final playablePart = preferPlayable ? parts.indexWhere((part) => part.isPlayable) : 0;
+    return playablePart < 0 ? 0 : playablePart;
+  }
+  final held = timeline.indexAt(position ?? Duration.zero);
+  if (!preferPlayable || parts[held].isPlayable) return held;
+  // The file holding the position is gone: play on from the next file that
+  // is still there, else the first that is.
+  final later = parts.indexWhere((part) => part.isPlayable, held + 1);
+  if (later >= 0) return later;
+  final any = parts.indexWhere((part) => part.isPlayable);
+  return any >= 0 ? any : held;
 }
 
 MediaSourceInfo? plexMediaSourceInfoForSelection(
@@ -1365,6 +1390,10 @@ MediaSourceInfo? plexMediaSourceInfoForSelection(
     mediaSourceId: selection.versions[selection.mediaIndex].id,
     mediaIndex: selection.mediaIndex,
     partIndex: selection.partIndex,
+    partTimeline: MediaPartTimeline.fromParts(
+      selection.versions[selection.mediaIndex].parts,
+      currentIndex: selection.partIndex,
+    ),
     displayCriteria: PlexMappers.displayCriteriaFromJson(Map<String, dynamic>.from(media), streams.videoStream),
     videoAspectRatio: flexibleDouble(media['aspectRatio']),
   );

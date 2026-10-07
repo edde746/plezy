@@ -119,12 +119,19 @@ const double _maxHeroArtViewportFraction = 0.86;
 const double _heroChromeHeight = 58;
 
 /// Full-size logo/title slot in the non-TV hero, the gap under it, the action
-/// row height and the hero's bottom inset. Shared by the hero's height floor
-/// and its content budget so the two cannot disagree.
+/// row height, the hero's bottom inset and its side insets. Shared by the
+/// hero's height floor and its content budget so the two cannot disagree.
 const double _heroLogoHeight = 120;
 const double _heroLogoGap = 12;
 const double _heroActionHeight = 48;
 const double _heroBottomInset = 16;
+const double _heroSideInset = 16;
+
+/// Whether a non-TV hero whose content is [contentWidth] wide uses the phone
+/// layout: everything on the centre line, and the scores on a chip row of
+/// their own, since the one-run metadata strip has no room left for them
+/// beside the year, certification, runtime and quality labels (#2569).
+bool _isCompactHero(double contentWidth) => contentWidth < ScreenBreakpoints.mobile;
 
 const double _tvDetailTallPosterScale = 0.72;
 const double _tvDetailEpisodeThumbnailScale = 0.72;
@@ -1184,10 +1191,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// tappable user-rating chip is the strip's only interactive element and is
   /// never dropped.
   ///
+  /// [ratings] fill the scores pill; the compact hero passes none and builds
+  /// its own scores row with [scoresOnly], which keeps just the pill and fits
+  /// it to the run the same way.
+  ///
   /// Only the mobile/desktop hero calls this (TV renders
   /// [_buildTvDetailMetadataLine] instead), so the non-TV metrics from
   /// [_buildMetadataChip] apply throughout.
-  List<Widget> _buildFittedHeroChips(BuildContext context, MediaItem metadata, double maxWidth) {
+  List<Widget> _buildFittedHeroChips(
+    BuildContext context,
+    MediaItem metadata,
+    double maxWidth, {
+    required List<MediaRatingSource> ratings,
+    bool scoresOnly = false,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textScaler = MediaQuery.textScalerOf(context);
     final textDirection = Directionality.of(context);
@@ -1215,7 +1232,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // One slot per chip; a slot's units are its droppable atoms — one per
     // rating badge for the scores pill, the whole chip for everything else.
-    final ratings = mediaRatingsFor(metadata);
     final slots = <({int dropPriority, List<double> unitWidths, Widget Function(int kept) build})>[];
 
     void addTextChip(String text, int dropPriority) {
@@ -1226,12 +1242,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ));
     }
 
-    if (metadata.year != null) addTextChip('${metadata.year}', 0);
-    if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
-    if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
-    if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
-    for (final label in buildMediaQualityLabels(metadata)) {
-      addTextChip(label, 4);
+    if (!scoresOnly) {
+      if (metadata.year != null) addTextChip('${metadata.year}', 0);
+      if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
+      if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
+      if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
+      for (final label in buildMediaQualityLabels(metadata)) {
+        addTextChip(label, 4);
+      }
     }
     if (ratings.isNotEmpty) {
       // Every attributed score shares one pill rather than taking a chip
@@ -1278,7 +1296,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // against the budget so dropping other chips actually makes room for it.
     Widget? userRatingChip;
     var userRatingChipWidth = 0.0;
-    if (!widget.isOffline) {
+    if (!scoresOnly && !widget.isOffline) {
       userRatingChip = _buildUserRatingChip(metadata);
       userRatingChipWidth =
           chipPadding +
@@ -3390,18 +3408,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // Determine header height based on screen size. The hero is 60% of the
     // viewport but never shorter than a full hero needs — status bar and
-    // back-button strip, the full-size logo, both chip rows and the action
-    // row. Portrait phones and tablets clear that floor easily; a phone in
-    // landscape does not, and without it the budget shrinks the logo away.
+    // back-button strip, the full-size logo, both chip rows (three where the
+    // compact hero gives the scores their own) and the action row. Portrait
+    // phones and tablets clear that floor easily; a phone in landscape does
+    // not, and without it the budget shrinks the logo away.
     final size = MediaQuery.sizeOf(context);
+    final viewPadding = MediaQuery.paddingOf(context);
+    final heroChipRows =
+        _isCompactHero(size.width - viewPadding.horizontal - _heroSideInset * 2) && mediaRatingsFor(metadata).isNotEmpty
+        ? 3
+        : 2;
     final heroFloor = isTv
         ? 0.0
-        : MediaQuery.paddingOf(context).top +
+        : viewPadding.top +
               _heroChromeHeight +
               _heroLogoHeight +
               _heroLogoGap +
-              _HeroChips.height * 2 +
-              _HeroChips.spacing +
+              _HeroChips.height * heroChipRows +
+              _HeroChips.spacing * (heroChipRows - 1) +
               _HeroChips.actionGap +
               _heroActionHeight +
               _heroBottomInset;
@@ -4667,7 +4691,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       top: false,
       bottom: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + _heroChromeHeight, 16, _heroBottomInset),
+        padding: EdgeInsets.fromLTRB(
+          _heroSideInset,
+          MediaQuery.paddingOf(context).top + _heroChromeHeight,
+          _heroSideInset,
+          _heroBottomInset,
+        ),
         child: _buildHeroHeaderContent(context, metadata),
       ),
     );
@@ -4682,29 +4711,52 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         const desiredLogoHeight = _heroLogoHeight;
         const desiredLogoWidth = 400.0;
         const actionHeight = _heroActionHeight;
-        // Fitted to a single run: chips shed by usefulness instead of
-        // wrapping onto a second run the height clip below would hide.
-        final chips = _buildFittedHeroChips(context, metadata, constraints.maxWidth);
-        // Genres render on their own line below the metadata chips.
-        final genreChips = [for (final genre in metadata.genres ?? const <String>[]) _buildMetadataChip(genre)];
+        const chipHeight = _HeroChips.height;
+        const rowGap = _HeroChips.spacing;
+        // Phone widths stack the logo, chips and actions on the centre line —
+        // the collection page's compact header. Wider heroes keep the
+        // bottom-left column: a 400px logo centred in a tablet-wide hero
+        // floats, and the wide collection header is left-aligned too.
+        final centered = _isCompactHero(constraints.maxWidth);
+        final blockAlignment = centered ? Alignment.bottomCenter : Alignment.bottomLeft;
+        final wrapAlignment = centered ? WrapAlignment.center : WrapAlignment.start;
 
         final showActions = availableHeight >= actionHeight;
         final remainingAfterActions = availableHeight - (showActions ? actionHeight : 0);
-        final showChips = chips.isNotEmpty && remainingAfterActions >= 88;
-        const chipHeight = _HeroChips.height;
-        final chipBlockHeight = showChips ? chipHeight : 0.0;
-        final chipActionGap = showChips && showActions
+        final chipsFit = remainingAfterActions >= 88;
+        final gapAboveActions = showActions
             ? (availableHeight < 180 ? _HeroChips.shortActionGap : _HeroChips.actionGap)
             : 0.0;
-        // Reserve a dedicated genre row, but only when the logo still keeps room
-        // afterwards so the title isn't crowded out on short heroes.
-        const genreRowHeight = _HeroChips.height;
-        const genreGap = _HeroChips.spacing;
-        final showGenres =
-            showChips &&
-            genreChips.isNotEmpty &&
-            remainingAfterActions - chipBlockHeight - chipActionGap - (genreRowHeight + genreGap) >= 52;
-        final genreBlockHeight = showGenres ? genreRowHeight + genreGap : 0.0;
+        // A chip row past the first is shown only while the logo keeps 52px,
+        // so the title isn't crowded out on short heroes.
+        bool roomForRow(double rowsAbove) =>
+            remainingAfterActions - rowsAbove - gapAboveActions - (chipHeight + rowGap) >= 52;
+
+        // The compact hero moves the scores onto a row of their own (#2569);
+        // a hero too short for it keeps them in the strip's pill instead.
+        final ratings = mediaRatingsFor(metadata);
+        final scoresRow = centered && ratings.isNotEmpty && chipsFit && roomForRow(chipHeight);
+        // Fitted to a single run each: chips shed by usefulness instead of
+        // wrapping onto a second run the height clip below would hide.
+        final strip = _buildFittedHeroChips(
+          context,
+          metadata,
+          constraints.maxWidth,
+          ratings: scoresRow ? const [] : ratings,
+        );
+        final chipRows = [
+          if (strip.isNotEmpty) strip,
+          if (scoresRow)
+            _buildFittedHeroChips(context, metadata, constraints.maxWidth, ratings: ratings, scoresOnly: true),
+        ];
+        // Genres render on their own line below the metadata chips.
+        final genreChips = [for (final genre in metadata.genres ?? const <String>[]) _buildMetadataChip(genre)];
+
+        final showChips = chipsFit && chipRows.isNotEmpty;
+        final chipBlockHeight = showChips ? chipRows.length * (chipHeight + rowGap) - rowGap : 0.0;
+        final chipActionGap = showChips ? gapAboveActions : 0.0;
+        final showGenres = showChips && genreChips.isNotEmpty && roomForRow(chipBlockHeight);
+        final genreBlockHeight = showGenres ? chipHeight + rowGap : 0.0;
         final remainingForLogo = remainingAfterActions - chipBlockHeight - chipActionGap - genreBlockHeight;
         final logoGap = remainingForLogo >= 52 && (showChips || showActions)
             ? (availableHeight < 180 ? 8.0 : _heroLogoGap)
@@ -4720,13 +4772,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             genreBlockHeight +
             chipActionGap +
             (showActions ? actionHeight : 0.0);
-        // Phone widths stack the logo, chips and actions on the centre line —
-        // the collection page's compact header. Wider heroes keep the
-        // bottom-left column: a 400px logo centred in a tablet-wide hero
-        // floats, and the wide collection header is left-aligned too.
-        final centered = constraints.maxWidth < ScreenBreakpoints.mobile;
-        final blockAlignment = centered ? Alignment.bottomCenter : Alignment.bottomLeft;
-        final wrapAlignment = centered ? WrapAlignment.center : WrapAlignment.start;
+
+        Widget chipRow(List<Widget> chips) => ClipRect(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: chipHeight),
+            child: Align(
+              alignment: blockAlignment,
+              heightFactor: 1,
+              child: Wrap(spacing: rowGap, runSpacing: rowGap, alignment: wrapAlignment, children: chips),
+            ),
+          ),
+        );
 
         return ClipRect(
           child: SizedBox(
@@ -4761,39 +4817,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         if (effectiveLogoGap > 0) SizedBox(height: effectiveLogoGap),
                       ],
                       if (showChips)
-                        ClipRect(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: chipHeight),
-                            child: Align(
-                              alignment: blockAlignment,
-                              heightFactor: 1,
-                              child: Wrap(
-                                spacing: _HeroChips.spacing,
-                                runSpacing: _HeroChips.spacing,
-                                alignment: wrapAlignment,
-                                children: chips,
-                              ),
-                            ),
-                          ),
-                        ),
-                      if (showGenres) ...[
-                        const SizedBox(height: genreGap),
-                        ClipRect(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: genreRowHeight),
-                            child: Align(
-                              alignment: blockAlignment,
-                              heightFactor: 1,
-                              child: Wrap(
-                                spacing: _HeroChips.spacing,
-                                runSpacing: _HeroChips.spacing,
-                                alignment: wrapAlignment,
-                                children: genreChips,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                        for (final (index, chips) in chipRows.indexed) ...[
+                          if (index > 0) const SizedBox(height: rowGap),
+                          chipRow(chips),
+                        ],
+                      if (showGenres) ...[const SizedBox(height: rowGap), chipRow(genreChips)],
                       if (chipActionGap > 0) SizedBox(height: chipActionGap),
                       if (showActions) SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
                     ],

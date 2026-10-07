@@ -1080,6 +1080,7 @@ class _ReloadPlayer extends FakeSyncPlayer {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     openCalls++;
     final gate = openGate;

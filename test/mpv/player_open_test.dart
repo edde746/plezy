@@ -1556,6 +1556,67 @@ void main() {
       );
     });
 
+    test('MPV lays one file of a stacked item onto the item timeline', () async {
+      final calls = <MethodCall>[];
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          return call.method == 'initialize' ? Future.value(true) : Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            // Part 2 of a 50 + 40 minute item, resumed five minutes into it.
+            const partStart = Duration(minutes: 50);
+            await player.open(
+              Media('https://example.test/part2.mkv', start: const Duration(minutes: 55)),
+              timelineDuration: const Duration(minutes: 90),
+              timelineOffset: partStart,
+            );
+
+            // The file starts on its own clock; everything reported is item time.
+            expect(_setPropertyValue(calls[_setPropertyCallIndex(calls, 'start')]), '300.0');
+            expect(player.state.position, const Duration(minutes: 55));
+            expect(player.state.duration, const Duration(minutes: 90));
+
+            player.handlePlayerEvent('start-file', {'sourceId': 1});
+            player.handlePropertyChange('duration', 2400.0);
+            player.handlePropertyChange('time-pos', 310.0, sourceId: 1);
+            expect(player.currentPosition, const Duration(minutes: 55, seconds: 10));
+            expect(player.state.duration, const Duration(minutes: 90));
+
+            player.handlePropertyChange('demuxer-cache-state', {
+              'cache-end': 400.0,
+              'seekable-ranges': [
+                {'start': 300.0, 'end': 400.0},
+              ],
+            });
+            expect(player.state.buffer, const Duration(minutes: 56, seconds: 40));
+            expect(player.state.bufferRanges, [
+              const BufferRange(start: Duration(minutes: 55), end: Duration(minutes: 56, seconds: 40)),
+            ]);
+
+            await player.seek(const Duration(minutes: 60));
+            final seekCall = calls.lastWhere((call) => call.method == 'command');
+            final args = Map<Object?, Object?>.from(seekCall.arguments as Map)['args'] as List;
+            expect(args, ['seek', '600.0', 'absolute']);
+            expect(player.state.position, const Duration(minutes: 60));
+
+            // The next single-file open is back on its own clock.
+            await player.open(Media('https://example.test/other.mkv', start: const Duration(minutes: 2)));
+            player.handlePlayerEvent('start-file', {'sourceId': 2});
+            player.handlePropertyChange('time-pos', 121.0, sourceId: 2);
+            expect(player.currentPosition, const Duration(minutes: 2, seconds: 1));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV forwards preserve display mode flag on dispose', () async {
       final calls = <MethodCall>[];
 

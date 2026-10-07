@@ -239,6 +239,98 @@ void main() {
     );
   });
 
+  group('live display matching (#2568)', () {
+    // 1080i25 broadcast through a decoder that deinterlaces by itself
+    // presents a frame per field: ten stepped frames advance 200 ms while the
+    // container still declares 25 fps.
+    const fieldRate = (containerFps: '25.000', tenFrames: Duration(milliseconds: 200));
+    const film = (containerFps: '23.976', tenFrames: Duration(milliseconds: 417));
+    final channels = [
+      LiveTvChannel(key: 'ch-1', title: 'Channel 4', serverId: 'srv-1'),
+      LiveTvChannel(key: 'ch-2', title: 'Film4', serverId: 'srv-1'),
+    ];
+
+    // The negotiation awaits subscription cancels that complete on the root
+    // zone, so the flows run on real async rather than the test's fake clock.
+    Future<void> onLiveScreen(
+      WidgetTester tester,
+      _CadenceLivePlayer player,
+      Future<void> Function(VideoPlayerScreenState state) body,
+    ) async {
+      await SettingsService.instance.write(SettingsService.matchContentFrameRate, true);
+      addTearDown(player.close);
+      final shell = _LiveShell(client: _LiveMediaServerClient(_ChannelLiveTvSupport()));
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) async => call.method == 'initialize' ? false : null,
+        testBody: () async {
+          final key = GlobalKey<VideoPlayerScreenState>();
+          await tester.pumpWidget(shell.screen(key: key, channel: channels.first, channels: channels));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
+          await body(key.currentState!..player = player);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
+
+    testWidgets('a channel opens paused and resumes where it stopped once the display matched', (tester) async {
+      final player = _CadenceLivePlayer({'ch-1': fieldRate});
+      await onLiveScreen(tester, player, (state) async {
+        await tester.runAsync(state.debugStartPlaybackForTesting);
+
+        // Matched from the container rate this was a 25 Hz mode that drops
+        // every other field and lets video fall behind audio. The decoder
+        // refresh seeks back into the cache: dropping it resumed wherever the
+        // read-ahead had reached, a minute into a Watch from Start.
+        expect(player.events, ['open paused', 'frame-step', 'display 50.0', 'seek 1185', 'play']);
+      });
+    });
+
+    testWidgets('a zap negotiates the display again for the new channel', (tester) async {
+      final player = _CadenceLivePlayer({'ch-1': fieldRate, 'ch-2': film});
+      await onLiveScreen(tester, player, (state) async {
+        await tester.runAsync(state.debugStartPlaybackForTesting);
+        player.events.clear();
+
+        await tester.runAsync(() => state.debugSwitchLiveChannelForTesting(1));
+
+        // The first channel's 50 Hz must not carry over to a film channel.
+        expect(player.events, ['open paused', 'frame-step', 'display 23.976', 'seek 1185', 'play']);
+      });
+    });
+
+    for (final (:description, :cached, :switches, :refresh) in [
+      (
+        description: 'with no switch, the stepped frames are replayed from the cache',
+        cached: true,
+        switches: false,
+        refresh: ['seek 1185'],
+      ),
+      (
+        description: 'a switch with the window no longer cached still restarts the decoder',
+        cached: false,
+        switches: true,
+        refresh: ['drop-buffers'],
+      ),
+      (
+        description: 'with no switch and the window no longer cached, nothing jumps playback ahead',
+        cached: false,
+        switches: false,
+        refresh: <String>[],
+      ),
+    ]) {
+      testWidgets(description, (tester) async {
+        final player = _CadenceLivePlayer({'ch-1': fieldRate}, cached: cached, switches: switches);
+        await onLiveScreen(tester, player, (state) async {
+          await tester.runAsync(state.debugStartPlaybackForTesting);
+          expect(player.events, ['open paused', 'frame-step', 'display 50.0', ...refresh, 'play']);
+        });
+      });
+    }
+  });
+
   test('live skip follows the capture buffer and never rewinds on resume', () async {
     final previousPlatformOverride = debugDefaultTargetPlatformOverride;
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -419,6 +511,12 @@ class _LiveMediaSessionPlayer implements Player {
   PlayerStreams get streams => emptyPlayerStreams();
 
   @override
+  Duration get timelineOffset => Duration.zero;
+
+  @override
+  bool get needsDecoderRefreshAfterDisplaySwitch => false;
+
+  @override
   Future<void> seek(Duration position) async => seekTargets.add(position);
 
   @override
@@ -450,6 +548,7 @@ class _FailingOpenLivePlayer extends _LiveMediaSessionPlayer {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     opened++;
     if (opened == 1) errors.add(const PlayerError('stream failed'));
@@ -545,4 +644,151 @@ class _RecordingLiveTvSupport implements LiveTvSupport {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// An Android mpv core playing live channels whose presented cadence only a
+/// frame step reveals: [cadences] maps a channel key to the rate its
+/// container declares and the media time ten stepped frames advance. Each
+/// stream's first frame sits at [_firstFramePosition], as a live HLS stream's
+/// does; the demuxer cache holds the minute after it unless [cached] is
+/// false, and the display switches only while [switches]. Records the open
+/// mode, the display-matching commands and the resume, in order.
+class _CadenceLivePlayer extends _LiveMediaSessionPlayer {
+  _CadenceLivePlayer(this.cadences, {this.cached = true, this.switches = true});
+
+  static const _firstFramePosition = Duration(milliseconds: 1185);
+
+  final Map<String, ({String containerFps, Duration tenFrames})> cadences;
+  final bool cached;
+  final bool switches;
+  final List<String> events = [];
+  final StreamController<void> _fileStarted = StreamController<void>.broadcast();
+  final StreamController<void> _playbackRestart = StreamController<void>.broadcast();
+  final StreamController<bool> _playing = StreamController<bool>.broadcast();
+  // Load signals this player never raises. They stay open: the open outcome
+  // reads a closed stream as a player that went away.
+  final StreamController<void> _silent = StreamController<void>.broadcast();
+  ({String containerFps, Duration tenFrames})? _cadence;
+  Duration _timePos = _firstFramePosition;
+
+  @override
+  PlayerState get state => PlayerState(
+    position: _timePos,
+    bufferRanges: [if (cached) const BufferRange(start: _firstFramePosition, end: Duration(seconds: 61))],
+  );
+
+  @override
+  late final PlayerStreams streams = emptyPlayerStreams(
+    fileStarted: _fileStarted.stream,
+    playbackRestart: _playbackRestart.stream,
+    playing: _playing.stream,
+    primaryMediaReady: _silent.stream,
+    fileLoaded: _silent.stream,
+    fileLoadFailed: _silent.stream,
+  );
+
+  @override
+  bool get needsDecoderRefreshAfterDisplaySwitch => true;
+
+  @override
+  bool get disposed => false;
+
+  @override
+  Future<void> open(
+    Media media, {
+    bool play = true,
+    bool isLive = false,
+    List<SubtitleTrack>? externalSubtitles,
+    Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
+  }) async {
+    events.add(play ? 'open playing' : 'open paused');
+    _cadence = cadences[Uri.parse(media.uri).pathSegments.last.split('.').first];
+    _timePos = _firstFramePosition;
+    _fileStarted.add(null);
+    _playbackRestart.add(null);
+  }
+
+  @override
+  Future<String?> getProperty(String name) async => switch (name) {
+    'video-dec-params/w' || 'width' => '1920',
+    'height' => '1080',
+    'container-fps' => _cadence?.containerFps,
+    'deinterlace-active' => 'no',
+    'time-pos' => '${_timePos.inMicroseconds / Duration.microsecondsPerSecond}',
+    'pause' => 'yes',
+    'mute' => 'no',
+    _ => null,
+  };
+
+  @override
+  Future<void> command(List<String> args) async {
+    switch (args.first) {
+      case 'frame-step':
+        events.add('frame-step');
+        _timePos += _cadence!.tenFrames;
+        _playing
+          ..add(true)
+          ..add(false);
+      case 'drop-buffers':
+        events.add('drop-buffers');
+        _playbackRestart.add(null);
+    }
+  }
+
+  @override
+  Future<bool> setVideoFrameRate(
+    double fps,
+    int durationMs, {
+    int extraDelayMs = 0,
+    int videoWidth = 0,
+    int videoHeight = 0,
+    bool matchResolution = false,
+  }) async {
+    events.add('display $fps');
+    return switches;
+  }
+
+  @override
+  Future<void> seek(Duration position) async {
+    events.add('seek ${position.inMilliseconds}');
+    _timePos = position;
+    _playbackRestart.add(null);
+  }
+
+  @override
+  Future<void> play() async => events.add('play');
+
+  @override
+  Future<void> pause() async => events.add('pause');
+
+  Future<void> close() async {
+    await _fileStarted.close();
+    await _playbackRestart.close();
+    await _playing.close();
+    await _silent.close();
+  }
+}
+
+/// Tunes every channel; each session streams `<channel key>.ts`.
+class _ChannelLiveTvSupport implements LiveTvSupport {
+  @override
+  Future<LiveTvPlaybackSession?> startPlayback(
+    String channelKey, {
+    String? dvrKey,
+    TranscodeQualityPreset quality = TranscodeQualityPreset.original,
+  }) async => _ChannelLiveSession(channelKey);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ChannelLiveSession extends _RecoveringLiveSession {
+  _ChannelLiveSession(this.channelKey);
+
+  final String channelKey;
+
+  @override
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack}) =>
+      Future.value('http://example.invalid/$channelKey.ts');
 }

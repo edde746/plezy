@@ -342,6 +342,7 @@ class _SwitchPlayer extends FakeSyncPlayer {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     openedUrls.add(media.uri);
     setPosition(media.start ?? Duration.zero);

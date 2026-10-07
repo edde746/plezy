@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} episodios en cola para descargar",
     "downloadDeleted": "Descarga eliminada",
     "deleteConfirm": "¿Eliminar \"${title}\" de este dispositivo?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Descarga cancelada",
     "cancelledDownloadMessage": "Esta descarga se canceló. ¿Qué quieres hacer?",
     "allEpisodesAlreadyDownloaded": "Todos los episodios ya están descargados",
@@ -1855,7 +1858,8 @@
     },
     "options": "Opciones de descargas",
     "groupings": {
-      "library": "Biblioteca"
+      "library": "Biblioteca",
+      "collections": ""
     },
     "unknownLibrary": "Biblioteca desconocida",
     "unknownShow": "Serie desconocida",

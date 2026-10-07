@@ -1790,6 +1790,9 @@
     "episodesQueued": "${count} эпизодов поставлено в очередь загрузки",
     "downloadDeleted": "Загрузка удалена",
     "deleteConfirm": "Удалить \"${title}\" с этого устройства?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Загрузка отменена",
     "cancelledDownloadMessage": "Эта загрузка была отменена. Что вы хотите сделать?",
     "allEpisodesAlreadyDownloaded": "Все эпизоды уже загружены",
@@ -1877,7 +1880,8 @@
     },
     "options": "Параметры загрузок",
     "groupings": {
-      "library": "Библиотека"
+      "library": "Библиотека",
+      "collections": ""
     },
     "unknownLibrary": "Неизвестная библиотека",
     "unknownShow": "Неизвестный сериал",

@@ -1,12 +1,6 @@
 part of '../../plex_client.dart';
 
 mixin _PlexPlayQueueMethods on _PlexClientInternals {
-  PlexMetadataDto _createTaggedMetadataWithLibrary(
-    Map<String, dynamic> json, {
-    int? librarySectionID,
-    String? librarySectionTitle,
-  });
-
   PlayQueueResponse _parsePlayQueueResponse(dynamic data, {int? librarySectionID, String? librarySectionTitle}) {
     final container = data is Map && data['MediaContainer'] is Map
         ? data['MediaContainer'] as Map<String, dynamic>

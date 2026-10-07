@@ -6,8 +6,15 @@ import 'media_stream.dart';
 part 'media_part.g.dart';
 
 /// One physical file part of a [MediaVersion]. A movie typically has a single
-/// part; some Plex multi-part files (CD1/CD2) and DVD/BluRay rips can have
-/// several. Jellyfin items always map to a single part per media source.
+/// part; Plex stacks split files (CD1/CD2, `Part 1`/`Part 2`) and some
+/// DVD/BluRay rips as several parts of one version, which play as one item
+/// timeline (`MediaPartTimeline`).
+///
+/// Jellyfin and Emby items always map to a single part per media source.
+/// Those servers model a split file as separate hidden items (`PartCount`,
+/// `/Videos/{id}/AdditionalParts`) that each keep their own progress and
+/// watched state; the app does not follow them, so only the first file
+/// plays there.
 @JsonSerializable(includeIfNull: false)
 class MediaPart {
   /// Backend-opaque part identifier.

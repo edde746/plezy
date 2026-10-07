@@ -22,6 +22,7 @@ import '../media/lyrics.dart';
 import '../media/media_backend.dart';
 import '../media/media_browser_dialect.dart';
 import '../media/library_change_event.dart';
+import 'library_events/library_event_socket.dart';
 import 'library_events/media_browser_library_event_socket.dart';
 import '../media/media_file_info.dart';
 import '../media/media_hub.dart';
@@ -487,14 +488,24 @@ class JellyfinClient
   /// reconnect; Emby only routes `LibraryChanged` to sessions that registered
   /// capabilities, so that dialect registers before each connect.
   /// [LibraryEventService] owns the returned channel's lifecycle.
+  ///
+  /// The upgrade carries the same `Authorization: MediaBrowser …` header as
+  /// HTTP requests. With only the query token, the server falls back to the
+  /// client name stored when the token was issued; sessions are keyed by
+  /// client + device + user, so a token from before the client name changed
+  /// splits the device into two sessions and the dashboard loses "now playing".
   @override
   LibraryEventChannel? createLibraryEventChannel() {
+    final authorization = _http.defaultHeaders['Authorization'];
     return MediaBrowserLibraryEventSocket(
       serverId: serverId,
       dialect: dialect,
       baseUrl: () => _http.baseUrl,
       accessToken: connection.accessToken,
       deviceId: connection.deviceId,
+      channelFactory: authorization == null
+          ? null
+          : libraryEventChannelFactory(headers: {'Authorization': authorization}),
       registerCapabilities: dialect.requiresSessionCapabilitiesForLibraryEvents
           ? _registerSessionCapabilitiesForEvents
           : null,

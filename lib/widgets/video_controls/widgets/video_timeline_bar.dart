@@ -4,6 +4,7 @@ import '../../../mpv/mpv.dart';
 import '../../../media/media_source_info.dart';
 import '../../../services/scrub_preview_source.dart';
 import '../../../utils/formatters.dart';
+import 'finish_time_builder.dart';
 import 'timeline_slider.dart';
 
 /// Encapsulates the StreamBuilder stack for video timeline with timestamps.
@@ -157,17 +158,13 @@ class VideoTimelineBar extends StatelessWidget {
   }
 
   Widget _buildRemainingTimestamp(Duration remaining) {
-    if (!showFinishTime || remaining.inSeconds >= 0) {
-      return _buildTimestamp(remaining);
-    }
-    return StreamBuilder<double>(
-      stream: player.streams.rate,
-      initialData: player.state.rate,
-      builder: (context, rateSnap) {
-        final rate = rateSnap.data ?? 1.0;
-        final text =
-            '${formatDurationTimestamp(remaining)} · ${formatFinishTime(remaining.abs(), rate: rate, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))}';
-        return Text(text, style: _timestampStyle);
+    if (!showFinishTime) return _buildTimestamp(remaining);
+    return FinishTimeBuilder(
+      player: player,
+      builder: (context, finishTime) {
+        if (finishTime == null) return _buildTimestamp(remaining);
+        final clock = formatClockTime(finishTime, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context));
+        return Text('${formatDurationTimestamp(remaining)} · $clock', style: _timestampStyle);
       },
     );
   }

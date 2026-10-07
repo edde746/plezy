@@ -449,11 +449,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     );
   }
 
+  /// [position] is ignored: a MediaBrowser item is never stacked across
+  /// files (see [MediaPart]).
   @override
   Future<ExternalPlaybackTarget?> resolveExternalPlayback(
     MediaItem item, {
     int mediaIndex = 0,
     String? mediaSourceId,
+    Duration? position,
   }) async {
     // Tracks stream from /Audio/{id}/stream; the URL contract (Static=true,
     // api_key in the query string) is otherwise identical to the video one.

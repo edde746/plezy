@@ -1768,6 +1768,9 @@
     "episodesQueued": "${count} Episoden zum Download hinzugefügt",
     "downloadDeleted": "Download gelöscht",
     "deleteConfirm": "\"${title}\" von diesem Gerät löschen?",
+    "deleteCollectionDownloads": "",
+    "deleteCollectionDownloadsConfirm": "",
+    "collectionDownloadsDeleted": "",
     "cancelledDownloadTitle": "Abgebrochener Download",
     "cancelledDownloadMessage": "Dieser Download wurde abgebrochen. Was möchtest du tun?",
     "allEpisodesAlreadyDownloaded": "Alle Episoden sind bereits heruntergeladen",
@@ -1855,7 +1858,8 @@
     },
     "options": "Download-Optionen",
     "groupings": {
-      "library": "Mediathek"
+      "library": "Mediathek",
+      "collections": ""
     },
     "unknownLibrary": "Unbekannte Mediathek",
     "unknownShow": "Unbekannte Serie",

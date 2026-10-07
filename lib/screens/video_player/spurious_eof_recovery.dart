@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../i18n/strings.g.dart';
 import '../../media/media_item.dart';
+import '../../media/media_part_timeline.dart';
 import '../../mpv/mpv.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
@@ -32,6 +33,7 @@ class SpuriousEofRecovery {
     required this._serverStoppedSession,
     required this._reload,
     required this._wakelock,
+    this._partTimeline,
   });
 
   static const int maxAttempts = 2;
@@ -50,6 +52,10 @@ class SpuriousEofRecovery {
   final PlaybackTransitionGate _transitionGate;
   final Player? Function() _player;
   final MediaItem Function() _metadata;
+
+  /// The open source's place in a stacked item, when it is one file of
+  /// several: that file ends at its own span, not at the item's end.
+  final MediaPartTimeline? Function()? _partTimeline;
 
   /// Whether the transport layer has logged a warning or error (see
   /// [isTransportFaultLog]) since the current file opened. A latch, not a
@@ -130,8 +136,11 @@ class SpuriousEofRecovery {
     if (_parked) return true;
 
     final positionMs = currentPlayer.state.position.inMilliseconds;
-    final playerDurationMs = currentPlayer.state.duration.inMilliseconds;
-    final metadataDurationMs = _metadata().durationMs;
+    // One file of a stacked item ends where its span does; the player's
+    // duration is the whole item's.
+    final part = _partTimeline?.call()?.current;
+    final playerDurationMs = part == null ? currentPlayer.state.duration.inMilliseconds : 0;
+    final metadataDurationMs = part == null ? _metadata().durationMs : part.end.inMilliseconds;
     final signal = classifyEofSignal(
       positionMs: positionMs,
       playerDurationMs: playerDurationMs,
