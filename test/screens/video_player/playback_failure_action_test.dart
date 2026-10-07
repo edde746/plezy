@@ -154,4 +154,21 @@ void main() {
     expect(resolve(statuses: {503}), PlaybackFailureAction.fatal);
     expect(resolve(cause: 'some-decoder-fault'), PlaybackFailureAction.fatal);
   });
+
+  group('automatic open retry', () {
+    test('retries a plain open failure, a timeout and a failure with no cause', () {
+      expect(causeAllowsOpenAutoRetry(null), isTrue);
+      expect(causeAllowsOpenAutoRetry(PlayerError.openTimedOut), isTrue);
+      expect(causeAllowsOpenAutoRetry('some-decoder-fault'), isTrue);
+    });
+
+    test('does not retry a device fault, which fails the same way every time', () {
+      expect(causeAllowsOpenAutoRetry(PlayerError.audioOutputFailed), isFalse);
+      expect(causeAllowsOpenAutoRetry(PlayerError.playerInitFailed), isFalse);
+    });
+
+    test('allows three retries', () {
+      expect(maxOpenAutoRetries, 3);
+    });
+  });
 }

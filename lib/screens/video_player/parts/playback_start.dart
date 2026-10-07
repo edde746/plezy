@@ -1,7 +1,9 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
-  Future<void> _startPlayback() async {
+  Future<void> _startPlayback() => _startPlaybackRun = _runStartPlayback();
+
+  Future<void> _runStartPlayback() async {
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
@@ -405,6 +407,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
               ? t.messages.playbackFailed
               : t.messages.playbackFailedDetail(error: _redactPlayerError(e.toString())),
           primaryMediaOpened: primaryMediaOpened,
+          // A core that failed to start fails the same way on every retry.
+          allowAutoRetry: e is! PlayerInitializationException,
         );
       }
     } finally {
@@ -424,12 +428,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
   /// services) the picture may well be playing, so the error is only
   /// reported. A backend verdict that already raised the view keeps its
   /// more specific message.
-  void _reportStartFailure(String message, {required bool primaryMediaOpened}) {
+  void _reportStartFailure(String message, {required bool primaryMediaOpened, bool allowAutoRetry = true}) {
     if (primaryMediaOpened) {
       _firstFrame.forceUiReadyOnFailure();
       showErrorSnackBar(context, message);
       return;
     }
+    // A backend verdict that latched first (a server dialog, say) decides
+    // whether the open may be retried.
+    if (!_hasFatalPlaybackError) _latchedFailureAllowsRetry = allowAutoRetry;
     _hasFatalPlaybackError = true;
     if (_playbackFailureMessage == null) _presentPlaybackFailure(message);
   }

@@ -256,17 +256,27 @@ Future<void> showServerLimitDialog(BuildContext context) async {
 
 /// Shows the server-side 404 modal: the item exists but the server cannot read
 /// the file behind it, so nothing client-side can recover the playback.
-Future<void> showMediaUnreadableDialog(BuildContext context) async {
-  await showScopedDialog<void>(
+///
+/// With [offerSwitchVersion] (the item has other versions, whose files may
+/// still be readable) it also offers Switch Version, and returns true when
+/// that was chosen.
+Future<bool> showMediaUnreadableDialog(BuildContext context, {bool offerSwitchVersion = false}) async {
+  final switchVersion = await showScopedDialog<bool>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
       title: Text(t.messages.mediaUnreadableTitle),
       content: Text(t.messages.mediaUnreadableBody),
       actions: [
+        if (offerSwitchVersion)
+          DialogActionButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            label: t.videoControls.switchVersion,
+            style: OutlinedButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+          ),
         DialogActionButton(
           autofocus: true,
-          onPressed: () => Navigator.of(ctx).pop(),
+          onPressed: () => Navigator.of(ctx).pop(false),
           label: t.common.close,
           isPrimary: true,
           style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
@@ -274,6 +284,7 @@ Future<void> showMediaUnreadableDialog(BuildContext context) async {
       ],
     ),
   );
+  return switchVersion ?? false;
 }
 
 /// Shows the server-side 503 modal: the server kept refusing to serve the

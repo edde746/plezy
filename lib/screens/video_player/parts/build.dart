@@ -102,7 +102,13 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   /// the screen-level [Focus] claims the scope while the loading spinner is
   /// up and Flutter drops a later autofocus request once the scope already
   /// has a focused child. See [VideoPlayerScreenState._initializationErrorFocusNode].
-  Widget _buildPlaybackFailure(String message, {required VoidCallback onRetry}) {
+  Widget _buildPlaybackFailure(
+    String message, {
+    required VoidCallback onRetry,
+    int attempts = 1,
+    VoidCallback? onSwitchVersion,
+    bool switchVersionBusy = false,
+  }) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
@@ -120,6 +126,14 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
+                if (attempts > 1) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    t.videoControls.openRetriesFailed(count: attempts),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: .center,
@@ -129,6 +143,18 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                       onPressed: onRetry,
                       child: FilledButton(onPressed: onRetry, child: Text(t.common.retry)),
                     ),
+                    if (onSwitchVersion != null) ...[
+                      const SizedBox(width: 12),
+                      FocusableButton(
+                        onPressed: switchVersionBusy ? null : onSwitchVersion,
+                        child: OutlinedButton(
+                          onPressed: switchVersionBusy ? null : onSwitchVersion,
+                          child: switchVersionBusy
+                              ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Text(t.videoControls.switchVersion),
+                        ),
+                      ),
+                    ],
                     const SizedBox(width: 12),
                     FocusableButton(
                       onPressed: () => unawaited(_handleBackButton()),

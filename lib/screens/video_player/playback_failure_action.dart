@@ -90,3 +90,13 @@ PlaybackFailureAction resolvePlaybackFailureAction({
 
   return PlaybackFailureAction.fatal;
 }
+
+/// How many times a failed on-demand open is re-run before the failure view
+/// goes up.
+const int maxOpenAutoRetries = 3;
+
+/// Whether an open that failed with [cause] is worth re-running. An
+/// audio-output fault or a core that failed to start is the device, which
+/// fails the same way every time.
+bool causeAllowsOpenAutoRetry(String? cause) =>
+    cause != PlayerError.audioOutputFailed && cause != PlayerError.playerInitFailed;

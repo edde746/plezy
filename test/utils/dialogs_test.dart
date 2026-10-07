@@ -386,6 +386,23 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
   });
 
+  testWidgets('media-unreadable dialog offers another version only when asked, and reports the choice', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    final plain = showMediaUnreadableDialog(hostContext);
+    await tester.pumpAndSettle();
+    expect(find.text(t.videoControls.switchVersion), findsNothing);
+    await tester.tap(find.text(t.common.close));
+    await tester.pumpAndSettle();
+    await expectLater(plain, completion(isFalse));
+
+    final offered = showMediaUnreadableDialog(hostContext, offerSwitchVersion: true);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.videoControls.switchVersion));
+    await tester.pumpAndSettle();
+    await expectLater(offered, completion(isTrue));
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
   testWidgets('server-limit dialog stays distinct from the media-unreadable one', (tester) async {
     final hostContext = await _pumpHost(tester);
     final result = showServerLimitDialog(hostContext);

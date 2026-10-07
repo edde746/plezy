@@ -174,6 +174,8 @@ void main() {
           reason: 'the failed start owes the user the error it failed on',
         );
         expect(find.widgetWithText(FilledButton, t.common.retry), findsOneWidget);
+        await tester.pump(const Duration(seconds: 1));
+        expect(loadfileCalls, 1, reason: 'a server verdict is not retried: every retry would meet the same answer');
 
         var shutdownDone = false;
         final shutdown = PlaybackCoordinator.instance.shutdownVideo().whenComplete(() => shutdownDone = true);

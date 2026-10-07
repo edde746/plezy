@@ -102,6 +102,9 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   /// user stop.
   void _latchFatalPlaybackError(PlaybackFailureAction action, {String? cause}) {
     _hasFatalPlaybackError = true;
+    // Every dialog is a server verdict and a device fault repeats, so only a
+    // plain open failure may be retried (see [_tryOpenAutoRetry]).
+    _latchedFailureAllowsRetry = action == PlaybackFailureAction.fatal && causeAllowsOpenAutoRetry(cause);
     _progressTracker?.stopTracking();
     _abortCurrentOpen('player error: ${action.name}');
     final currentPlayer = player;
@@ -133,8 +136,13 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   /// the view has built (see [_initializationErrorFocusNode]). The backend's
   /// end-file verdict always lands; a thrown open only fills an empty view,
   /// since the verdict that preceded it is the more specific of the two.
+  ///
+  /// An open that never showed a frame is first re-run up to
+  /// [maxOpenAutoRetries] times (see [_tryOpenAutoRetry]); the view only goes
+  /// up once those are spent.
   void _presentPlaybackFailure(String message) {
     if (!mounted || _shuttingDown) return;
+    if (_tryOpenAutoRetry(message)) return;
     _firstFrame.forceUiReadyOnFailure();
     // Nothing plays behind the view, so it must not hold the screen awake
     // while it waits; the playing-state handler takes the wakelock again once
@@ -143,6 +151,9 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     _setPlayerState(() {
       _playbackFailureMessage = message;
       _playbackFailureRetry = _retryFailedPlayback;
+      // Retries spent on this open, so the view can say it was tried more
+      // than once.
+      _playbackFailureAttempts = _openAutoRetries + 1;
     });
     _focusFailureActionAfterBuild();
   }
@@ -152,6 +163,9 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     _setPlayerState(() {
       _playbackFailureMessage = null;
       _playbackFailureRetry = null;
+      _playbackFailureAttempts = 1;
+      _switchVersionChecking = false;
+      _switchVersionUnreachable = false;
     });
   }
 
@@ -184,6 +198,8 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   }
 
   void _retryFailedPlayback() {
+    // A deliberate retry gets a fresh set of automatic retries.
+    _openAutoRetries = 0;
     final request = _retryRequestForFailure();
     if (request == null || player == null) {
       // Nothing was ever dispatched (or the core is gone): start over.
@@ -210,6 +226,190 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     );
     if (outcome == MediaReloadOutcome.failed && mounted && _playbackFailureMessage == null) {
       _presentPlaybackFailure(t.messages.playbackFailed);
+    }
+  }
+
+  /// The open on screen failed before its first frame. A slow backing store
+  /// (a cloud-mounted library whose first read of an uncached file stalls or
+  /// times out) often opens on a second try, so re-run the same request in
+  /// place, with a toast, before the failure view goes up. Same version, same
+  /// position, and the viewer's track picks. Bounded per source: a first frame,
+  /// a user Retry or another source starts a fresh count. Returns false when
+  /// the failure should be shown instead.
+  bool _tryOpenAutoRetry(String message) {
+    if (widget.isLive || _isOfflinePlayback || _firstFrame.rendered || player == null) return false;
+    // The open ended on a verdict a retry would only meet again.
+    if (_hasFatalPlaybackError && !_latchedFailureAllowsRetry) return false;
+    final request = _currentOpenRequest;
+    if (request == null) return false;
+    // A switch away from a stream that was playing (another version, quality
+    // or audio track) goes straight to the view: Retry there restores the
+    // stream that worked, rather than holding the viewer on the new pick.
+    final working = _workingOpenRequest;
+    if (working != null && working.metadata.globalKey == request.metadata.globalKey && !working.sameSourceAs(request)) {
+      return false;
+    }
+    final retried = _openAutoRetrySource;
+    if (retried == null || !retried.sameSourceAs(request)) {
+      _openAutoRetrySource = request;
+      _openAutoRetries = 0;
+    }
+    if (_openAutoRetries >= maxOpenAutoRetries) return false;
+    final attempt = ++_openAutoRetries;
+    // The open is not over yet: an agent polling the launch receipt must not
+    // read the failure this retry may still recover from.
+    _openAutoRetryPending = true;
+    final observer = widget.launchObserver;
+    if (observer != null && observer.isTerminal && _ownsLaunchPlayback()) observer.mark('opening');
+    appLogger.w('Playback open failed ($message); automatic retry $attempt of $maxOpenAutoRetries');
+    unawaited(_runOpenAutoRetry(request, message, attempt));
+    return true;
+  }
+
+  Future<void> _runOpenAutoRetry(_PlaybackOpenRequest request, String message, int attempt) async {
+    // Let the failed open finish unwinding first: a start that is still
+    // setting up (filters, PiP, shaders) would see the retry's new generation
+    // and skip that setup, and a reload still holding the transition gate
+    // would reject the retry.
+    try {
+      await _startPlaybackRun;
+    } catch (_) {}
+    await _transitionGate.waitForIdle(() => mounted && !_shuttingDown);
+    _openAutoRetryPending = false;
+    // Back, another item or a version pick took over meanwhile.
+    if (!mounted || _shuttingDown || !identical(_currentOpenRequest, request)) return;
+    _toastController.show(
+      Symbols.refresh_rounded,
+      t.videoControls.openRetrying(attempt: attempt, max: maxOpenAutoRetries),
+      duration: const Duration(seconds: 3),
+    );
+    final outcome = await _reopenWithViewerTracks(request, reason: 'automatic retry $attempt after open failure');
+    if (!mounted || _playbackFailureMessage != null) return;
+    switch (outcome) {
+      case MediaReloadOutcome.failed:
+        _presentPlaybackFailure(message);
+      case MediaReloadOutcome.rejected:
+        // Nothing replaced the failed open, so it still needs its verdict.
+        if (identical(_currentOpenRequest, request)) _presentPlaybackFailure(message);
+      case MediaReloadOutcome.opened:
+      case MediaReloadOutcome.superseded:
+        // An open that fails after dispatch reports through _onPlayerError.
+        return;
+    }
+  }
+
+  /// Re-open [request] in place, on its own source unless [mediaIndex] picks
+  /// another, keeping the viewer's explicit track picks: this screen's choices
+  /// first, then the launch's. Stream ids are per version, so [request]'s
+  /// audio id only rides along on its own source.
+  Future<MediaReloadOutcome> _reopenWithViewerTracks(
+    _PlaybackOpenRequest request, {
+    int? mediaIndex,
+    String? mediaSourceId,
+    required String reason,
+  }) {
+    final sameSource = mediaIndex == null;
+    return _reloadMediaInPlace(
+      metadata: request.metadata,
+      selectedMediaIndex: sameSource ? request.mediaIndex : mediaIndex,
+      selectedMediaSourceId: sameSource ? request.mediaSourceId : mediaSourceId,
+      qualityPreset: request.qualityPreset,
+      selectedAudioStreamId: sameSource ? request.audioStreamId : null,
+      useCurrentAudioStreamSelection: false,
+      resumePosition: request.resumePosition,
+      preserveCurrentTrackSelection: true,
+      preservedAudioTrack: _sessionAudioPreference ?? _preferredAudioTrack,
+      preservedSubtitleTrack: _sessionSubtitlePreference ?? _preferredSubtitleTrack,
+      preservedSecondarySubtitleTrack: _sessionSecondarySubtitlePreference ?? _preferredSecondarySubtitleTrack,
+      showErrorUi: false,
+      reason: reason,
+    );
+  }
+
+  /// Whether the failure view offers another version: an on-demand item with
+  /// more than one, outside a launch that asked for exactly one. Every
+  /// version is on the same server, so none is offered while that server is
+  /// known to be unreachable.
+  bool get _canSwitchVersionAfterFailure =>
+      !widget.isLive &&
+      !_isOfflinePlayback &&
+      !widget.strictMediaSelection &&
+      !_switchVersionUnreachable &&
+      _currentOpenRequest != null &&
+      _availableVersions.length > 1 &&
+      _isServerKnownOnline(_currentMetadata.serverId);
+
+  bool _isServerKnownOnline(String? serverId) {
+    if (serverId == null) return false;
+    try {
+      return context.read<MultiServerProvider>().serverManager.isServerOnline(ServerId(serverId));
+    } catch (_) {
+      // No server registry in this context: let the reachability check decide.
+      return true;
+    }
+  }
+
+  /// The failure view's Switch Version: pick another version of the item and
+  /// open it from where the failed open would have started. A deliberate pick,
+  /// so it is saved like one made in the player's version picker.
+  ///
+  /// The server's health status can lag, so the server is asked for the item
+  /// first: when it does not answer, the button goes away instead of offering
+  /// versions that cannot open either.
+  Future<void> _switchVersionAfterFailure() async {
+    final request = _currentOpenRequest;
+    final versions = _availableVersions;
+    if (request == null || versions.length < 2 || _switchVersionChecking) return;
+    _setPlayerState(() => _switchVersionChecking = true);
+    final reachable = await _isServerReachableFor(request.metadata);
+    if (!mounted || _shuttingDown || !identical(_currentOpenRequest, request)) return;
+    _setPlayerState(() {
+      _switchVersionChecking = false;
+      _switchVersionUnreachable = !reachable;
+    });
+    if (!reachable) {
+      showErrorSnackBar(context, t.videoControls.switchVersionUnreachable);
+      _focusFailureActionAfterBuild();
+      return;
+    }
+    final current = _effectiveSelectedMediaIndex;
+    final index = await showOptionPickerDialog<int>(
+      context,
+      title: t.videoControls.switchVersion,
+      options: [
+        for (var i = 0; i < versions.length; i++)
+          (
+            icon: i == current ? Symbols.error_rounded : Symbols.video_file_rounded,
+            label: versions[i].displayLabel,
+            value: i,
+          ),
+      ],
+    );
+    if (index == null || !mounted || _shuttingDown || !identical(_currentOpenRequest, request)) return;
+    await saveMediaVersionPreferenceFor(request.metadata, index: index, versions: versions);
+    if (!mounted || _shuttingDown || !identical(_currentOpenRequest, request)) return;
+    _openAutoRetries = 0;
+    final outcome = await _reopenWithViewerTracks(
+      request,
+      mediaIndex: index,
+      mediaSourceId: PlaybackSession.mediaSourceIdForIndex(versions, index),
+      reason: 'version switch after playback failure',
+    );
+    if (outcome == MediaReloadOutcome.failed && mounted && _playbackFailureMessage == null) {
+      _presentPlaybackFailure(t.messages.playbackFailed);
+    }
+  }
+
+  /// Whether [metadata]'s server answers a request for it now.
+  Future<bool> _isServerReachableFor(MediaItem metadata) async {
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(metadata.serverId));
+    if (client == null) return false;
+    try {
+      await client.fetchItem(metadata.id).timeout(VideoPlayerScreenState._switchVersionReachabilityTimeout);
+      return true;
+    } catch (e) {
+      appLogger.w('Server did not answer before switching versions', error: e);
+      return false;
     }
   }
 
@@ -292,8 +492,17 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
 
   Future<void> _showMediaUnreadableDialog() async {
     if (!mounted) return;
-    await showMediaUnreadableDialog(context);
-    if (mounted) unawaited(_handleBackButton());
+    // One version's file being gone says nothing about the others'.
+    final switchVersion = await showMediaUnreadableDialog(context, offerSwitchVersion: _canSwitchVersionAfterFailure);
+    if (!mounted) return;
+    if (switchVersion) {
+      // Stay on the item: the failure view keeps Retry and Back in reach if
+      // the pick is cancelled. A missing file is not retried automatically.
+      _presentPlaybackFailure(t.messages.mediaUnreadableTitle);
+      unawaited(_switchVersionAfterFailure());
+      return;
+    }
+    unawaited(_handleBackButton());
   }
 
   Future<void> _showServerBusyDialog() async {
