@@ -44,6 +44,21 @@ class MediaServerTimeouts {
   /// client through its stale LAN candidates (#2098).
   static const libraryLookup = Duration(seconds: 20);
 
+  /// Per-server deadline for one leg of a global search
+  /// (`DataAggregationService.searchAcrossServers`): a server's titles, and
+  /// separately its people. Every server's results are shown together, so a
+  /// server that accepted the connection and stopped answering would
+  /// otherwise hold back all of them for the full [response] budget. Same
+  /// budget as [libraryLookup], which searches the same libraries.
+  static const searchServerDeadline = Duration(seconds: 20);
+
+  /// Per-server deadline for one server's library list
+  /// (`DataAggregationService.getMediaLibrariesFromAllServers`). A server
+  /// that misses it counts as failed and is retried on the next pass instead
+  /// of holding back the libraries, and the home hubs built from them, of
+  /// every other server. Same budget as [homeHubDeadline].
+  static const libraryListServerDeadline = Duration(seconds: 15);
+
   /// Timeout for probing a cached/preferred endpoint (used in
   /// [PlexServer.findBestWorkingConnection]).
   static const preferredEndpointProbe = Duration(milliseconds: 1500);

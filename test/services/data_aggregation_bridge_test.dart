@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -29,6 +30,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/media_server_timeouts.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
@@ -44,6 +46,8 @@ JellyfinConnection _conn() => testJellyfinConnection(
 http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
 
 /// Minimal client with independently configurable library and search outcomes.
+/// A `hang*` leg never answers until its abort fires, like a server that
+/// accepted the connection and stopped responding.
 class _LibrariesClient implements MediaServerClient {
   _LibrariesClient(
     this.serverId, {
@@ -53,6 +57,9 @@ class _LibrariesClient implements MediaServerClient {
     this.searchResults = const [],
     this.peopleError,
     this.peopleResults = const [],
+    this.hangLibraries = false,
+    this.hangSearch = false,
+    this.hangPeople = false,
   });
 
   @override
@@ -67,11 +74,22 @@ class _LibrariesClient implements MediaServerClient {
   final List<MediaItem> searchResults;
   final Object? peopleError;
   final List<MediaPerson> peopleResults;
+  final bool hangLibraries;
+  final bool hangSearch;
+  final bool hangPeople;
   Set<String>? lastExcludedLibraryIds;
   Set<String>? lastPeopleExcludedLibraryIds;
+  AbortController? lastSearchAbort;
+  AbortController? lastPeopleAbort;
+
+  static Future<void> _hangUntilAborted(AbortController? abort) async {
+    await (abort?.trigger ?? Completer<void>().future);
+    abort!.throwIfAborted();
+  }
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async {
+    if (hangLibraries) await Completer<void>().future;
     if (error != null) throw error!;
     return libraries;
   }
@@ -84,6 +102,8 @@ class _LibrariesClient implements MediaServerClient {
     Set<String> excludedLibraryIds = const {},
   }) async {
     lastExcludedLibraryIds = excludedLibraryIds;
+    lastSearchAbort = abort;
+    if (hangSearch) await _hangUntilAborted(abort);
     abort?.throwIfAborted();
     if (searchError != null) throw searchError!;
     return searchResults;
@@ -97,6 +117,8 @@ class _LibrariesClient implements MediaServerClient {
     Set<String> excludedLibraryIds = const {},
   }) async {
     lastPeopleExcludedLibraryIds = excludedLibraryIds;
+    lastPeopleAbort = abort;
+    if (hangPeople) await _hangUntilAborted(abort);
     abort?.throwIfAborted();
     if (peopleError != null) throw peopleError!;
     return peopleResults;
@@ -591,6 +613,105 @@ void main() {
       expect(result.succeededServerIds, {'ok'});
       expect(result.cancelledServerIds, {'cancelled'});
       expect(result.failedServerIds, {'failed'});
+    });
+
+    test('a server that stops answering fails search on its own at the per-server deadline', () {
+      fakeAsync((async) {
+        final item = testMediaItem(
+          id: 'show-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.show,
+          title: 'Target',
+          serverId: 'ok',
+        );
+        manager.debugRegisterClientForTesting(_LibrariesClient(ServerId('ok'), searchResults: [item]));
+        final hung = _LibrariesClient(ServerId('hung'), hangSearch: true, hangPeople: true);
+        manager.debugRegisterClientForTesting(hung);
+
+        SearchAggregationResult? result;
+        service.searchAcrossServers('Target').then((r) => result = r);
+        async.elapse(MediaServerTimeouts.searchServerDeadline - const Duration(seconds: 1));
+        expect(result, isNull, reason: 'a slow server is still waited for inside its deadline');
+
+        async.elapse(const Duration(seconds: 1));
+        expect(_hitIds(result!), ['show-1']);
+        expect(result!.succeededServerIds, {'ok'});
+        expect(result!.failedServerIds, {'hung'}, reason: 'a missed deadline is a failure, not a cancellation');
+        expect(result!.cancelledServerIds, isEmpty);
+        expect(hung.lastSearchAbort?.isAborted, isTrue, reason: 'the abandoned request is torn down');
+        expect(hung.lastPeopleAbort?.isAborted, isTrue);
+      });
+    });
+
+    test('a stalled people search costs the server its people, never its titles', () {
+      fakeAsync((async) {
+        final item = testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Target',
+          serverId: 'plex',
+        );
+        manager.debugRegisterClientForTesting(
+          _LibrariesClient(ServerId('plex'), searchResults: [item], hangPeople: true),
+        );
+
+        SearchAggregationResult? result;
+        service.searchAcrossServers('Target').then((r) => result = r);
+        async.elapse(MediaServerTimeouts.searchServerDeadline);
+
+        expect(_hitIds(result!), ['movie-1']);
+        expect(result!.people, isEmpty);
+        expect(result!.succeededServerIds, {'plex'});
+      });
+    });
+
+    test('a superseded search still cancels a server inside its deadline', () {
+      fakeAsync((async) {
+        final hung = _LibrariesClient(ServerId('hung'), hangSearch: true);
+        manager.debugRegisterClientForTesting(hung);
+        final abort = AbortController();
+
+        Object? error;
+        SearchAggregationResult? result;
+        service
+            .searchAcrossServers('Target', abort: abort)
+            .then<void>(
+              (r) => result = r,
+              onError: (Object e) {
+                error = e;
+              },
+            );
+        async.flushMicrotasks();
+        abort.abort();
+        async.flushMicrotasks();
+
+        expect(hung.lastSearchAbort?.isAborted, isTrue);
+        expect(result, isNull);
+        expect(error, isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue));
+      });
+    });
+
+    test('a server that stops answering its library list fails on its own at the per-server deadline', () {
+      fakeAsync((async) {
+        manager.debugRegisterClientForTesting(
+          _LibrariesClient(
+            ServerId('ok'),
+            libraries: [MediaLibrary(id: '1', backend: MediaBackend.plex, title: 'Movies', serverId: ServerId('ok'))],
+          ),
+        );
+        manager.debugRegisterClientForTesting(_LibrariesClient(ServerId('hung'), hangLibraries: true));
+
+        LibraryAggregationResult? result;
+        service.getMediaLibrariesFromAllServers().then((r) => result = r);
+        async.elapse(MediaServerTimeouts.libraryListServerDeadline - const Duration(seconds: 1));
+        expect(result, isNull);
+
+        async.elapse(const Duration(seconds: 1));
+        expect(result!.libraries.map((l) => l.title), ['Movies']);
+        expect(result!.succeededServerIds, {'ok'});
+        expect(result!.failedServerIds, {'hung'});
+      });
     });
 
     test('searchAcrossServers drops hidden-library results and keeps unattributed ones', () async {
