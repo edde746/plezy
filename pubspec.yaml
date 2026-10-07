@@ -78,7 +78,7 @@ dependencies:
       url: https://github.com/edde746/auto_updater
       path: packages/auto_updater
       ref: 9e150f7
-  win_http: ^0.2.2
+  win_http: ^0.2.3
   collection: ^1.18.0
   freezed_annotation: ^3.1.0
   xml: ^7.0.1
