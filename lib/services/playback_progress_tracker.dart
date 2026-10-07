@@ -115,6 +115,9 @@ class PlaybackProgressTracker {
   /// Timer ticks to skip before retrying after failures (exponential backoff).
   int _ticksToSkip = 0;
 
+  /// A paused keepalive is in flight; see [_sendPausedKeepalive].
+  bool _pausedKeepaliveInFlight = false;
+
   /// Whether this playback session considers the item watched locally. Latched
   /// on the first observed threshold crossing, delivered to the server or not.
   bool _scrobbled = false;
@@ -285,14 +288,22 @@ class PlaybackProgressTracker {
         // pause (#1520). Not after the server terminated the session:
         // pinging the reaped transcoder would only produce doomed requests.
         _sendProgress('paused');
-        if (!_serverTerminatedSession) {
-          final keepalive = onPausedKeepalive;
-          if (keepalive != null) unawaited(keepalive());
-        }
+        if (!_serverTerminatedSession) _sendPausedKeepalive();
       }
     });
 
     appLogger.d('Started progress tracking (interval: ${updateInterval.inSeconds}s, offline: $isOffline)');
+  }
+
+  /// One paused keepalive at a time. Reports already go one at a time through
+  /// [PlaybackReportSession]; the keepalive does not, so a server that stopped
+  /// answering would otherwise collect a new ping every tick until each one
+  /// timed out.
+  void _sendPausedKeepalive() {
+    final keepalive = onPausedKeepalive;
+    if (keepalive == null || _pausedKeepaliveInFlight) return;
+    _pausedKeepaliveInFlight = true;
+    unawaited(keepalive().whenComplete(() => _pausedKeepaliveInFlight = false));
   }
 
   void stopTracking() {

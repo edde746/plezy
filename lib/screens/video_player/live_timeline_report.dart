@@ -32,6 +32,11 @@ Future<void> runLiveTimelineReport({
 /// Orders reports for one tuned session. Closing the queue synchronously
 /// rejects new heartbeats, while the terminal report waits for older HTTP
 /// requests so a late playing report cannot resurrect the backend session.
+///
+/// A heartbeat that arrives while an earlier report is still pending is
+/// skipped rather than queued: the next tick carries a fresher position, and
+/// queueing every tick behind a server that stopped answering would build a
+/// backlog of stale positions to replay once it recovers.
 class LiveTimelineReportQueue {
   Future<void>? _pending;
   Future<void>? _stopped;
@@ -40,6 +45,7 @@ class LiveTimelineReportQueue {
     final terminal = _stopped;
     if (terminal != null) return terminal;
     final previous = _pending;
+    if (!stopped && previous != null) return Future<void>.value();
     final completer = Completer<void>();
     final operation = completer.future;
     _pending = operation;
@@ -52,11 +58,6 @@ class LiveTimelineReportQueue {
           } catch (_) {
             // A failed heartbeat must not prevent the final stop attempt.
           }
-        }
-        // Drop heartbeats queued before the stop but not yet dispatched.
-        if (!stopped && _stopped != null) {
-          completer.complete();
-          return;
         }
         await report();
         completer.complete();
