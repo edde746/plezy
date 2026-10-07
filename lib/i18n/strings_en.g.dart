@@ -3306,6 +3306,7 @@ class Translations$libraries$en {
 	late final Translations$libraries$filterCategories$en filterCategories = Translations$libraries$filterCategories$en.internal(_root);
 	late final Translations$libraries$sortLabels$en sortLabels = Translations$libraries$sortLabels$en.internal(_root);
 	late final Translations$libraries$advancedFilters$en advancedFilters = Translations$libraries$advancedFilters$en.internal(_root);
+	late final Translations$libraries$selection$en selection = Translations$libraries$selection$en.internal(_root);
 }
 
 // Path: about
@@ -6355,6 +6356,39 @@ class Translations$libraries$advancedFilters$en {
 	String get dateOlderThanYear => 'Older than a year';
 }
 
+// Path: libraries.selection
+class Translations$libraries$selection$en {
+	Translations$libraries$selection$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Select items'
+	String get selectItems => 'Select items';
+
+	/// en: '${count} selected'
+	String selectedCount({required Object count}) => '${count} selected';
+
+	/// en: 'Selection actions'
+	String get actions => 'Selection actions';
+
+	/// en: 'This changes all episodes in the selected shows and seasons.'
+	String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+
+	/// en: 'This also clears playback progress for the selected items.'
+	String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+
+	/// en: 'Selected items: ${count}.'
+	String confirmCount({required Object count}) => 'Selected items: ${count}.';
+
+	/// en: 'Items updated: ${count}.'
+	String completed({required Object count}) => 'Items updated: ${count}.';
+
+	/// en: 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.'
+	String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
+}
+
 // Path: explore.rows
 class Translations$explore$rows$en {
 	Translations$explore$rows$en.internal(this._root);
@@ -8502,6 +8536,14 @@ extension on Translations {
 			'libraries.advancedFilters.dateLastYear' => 'Past year',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => 'Older than ${count} days',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Older than a year',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -8891,6 +8933,8 @@ extension on Translations {
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
 			'watchTogether.makeHost' => 'Make host',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.makeHostQuestion' => 'Transfer host?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
@@ -8899,8 +8943,6 @@ extension on Translations {
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -9405,6 +9447,8 @@ extension on Translations {
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
+			_ => null,
+		} ?? switch (path) {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
@@ -9413,8 +9457,6 @@ extension on Translations {
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
-			_ => null,
-		} ?? switch (path) {
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',

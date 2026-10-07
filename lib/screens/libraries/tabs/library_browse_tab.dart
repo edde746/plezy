@@ -1,4 +1,13 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
+import '../../../media/media_server_client.dart';
+import '../../../media/media_item_types.dart';
+import '../../../services/watch_actions.dart';
+import '../../../services/bulk_watch_actions.dart';
+import '../../../utils/dialogs.dart';
+import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/library_selection_bar.dart';
+import '../library_selection.dart';
 import '../../../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
@@ -110,6 +119,113 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         PaginatedItemLoader<MediaItem, LibraryBrowseTab>,
         PaginatedItemUpdatable<LibraryBrowseTab>,
         SkeletonUpgradeScheduler {
+  final _selection = LibrarySelection();
+  bool _selecting = false;
+  bool _marking = false;
+  int _selectionGeneration = 0;
+  MediaServerClient? _selectionClient;
+  Object? _selectionAuthentication;
+
+  bool get _selectionSessionCurrent {
+    if (!mounted || !_selecting) return false;
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
+    return client != null &&
+        identical(client, _selectionClient) &&
+        identical(client.authenticationSessionId, _selectionAuthentication);
+  }
+
+  void _clearSelection() {
+    _selectionGeneration++;
+    _selection.clear();
+    _selecting = false;
+    _marking = false;
+    _selectionClient = null;
+    _selectionAuthentication = null;
+    _cardMemo.clear();
+  }
+
+  void _startSelection() {
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
+    if (client == null) return;
+    setState(() {
+      _selecting = true;
+      _selectionClient = client;
+      _selectionAuthentication = client.authenticationSessionId;
+      _cardMemo.clear();
+    });
+  }
+
+  void _endSelection() {
+    setState(_clearSelection);
+    focusContentOrChrome();
+  }
+
+  void _toggleSelection(int index) {
+    if (_marking || !_selectionSessionCurrent) return;
+    setState(() {
+      _selection.toggle(index, loadedItems, range: HardwareKeyboard.instance.isShiftPressed);
+      _cardMemo.clear();
+    });
+  }
+
+  Future<void> _markSelection(bool watched) async {
+    if (_marking || !_selectionSessionCurrent || _selection.count == 0) return;
+    final generation = _selectionGeneration;
+    bool isCurrent() => _selectionSessionCurrent && generation == _selectionGeneration;
+    final selected = _selection.items;
+    // Lock selection before opening the dialog to prevent duplicate dispatch.
+    setState(() => _marking = true);
+    final action = watched ? t.mediaMenu.markAsWatched : t.mediaMenu.markAsUnwatched;
+    final affectsDescendants = selected.any((item) => item.kind == MediaKind.show || item.kind == MediaKind.season);
+    if (affectsDescendants || !watched) {
+      final confirmed = await showConfirmDialog(
+        context,
+        title: action,
+        message: [
+          t.libraries.selection.confirmCount(count: selected.length),
+          if (affectsDescendants) t.libraries.selection.confirmDescendants,
+          if (!watched) t.libraries.selection.confirmUnwatched,
+        ].join('\n\n'),
+        confirmText: action,
+      );
+      if (!mounted || !isCurrent()) return;
+      if (!confirmed) {
+        setState(() => _marking = false);
+        return;
+      }
+    }
+    final result = await markBulkWatched(
+      selected,
+      mark: (item) => WatchActions.setWatched(context, item, watched: watched, offline: false),
+      isCurrent: isCurrent,
+      onSuccess: (item, _) {
+        setState(() {
+          _selection.remove(item);
+          _cardMemo.clear();
+        });
+      },
+    );
+    if (!mounted) return;
+    if (!_selectionSessionCurrent) {
+      setState(_clearSelection);
+      return;
+    }
+    if (!isCurrent() || result.cancelled) return;
+    setState(() => _marking = false);
+    if (result.failed.isEmpty) {
+      showSuccessSnackBar(context, t.libraries.selection.completed(count: result.succeeded));
+      _endSelection();
+      // Reapply the current query: watched/unwatched filters may have changed
+      // membership. Keep partial failures visible and selected instead.
+      unawaited(_loadItems());
+    } else {
+      showErrorSnackBar(
+        context,
+        t.libraries.selection.partialFailure(succeeded: result.succeeded, failed: result.failed.length),
+      );
+    }
+  }
+
   String _toGlobalKey(String ratingKey, {required ServerId serverId}) => buildGlobalKey(serverId, ratingKey);
 
   // DeletionMirrorsWatchState points the deletion filters at these three: the
@@ -161,6 +277,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final matchEntry = loadedItems.entries.where((e) => e.value.id == event.itemId).firstOrNull;
     if (matchEntry != null) {
       setState(() {
+        _selection.remove(matchEntry.value);
+        _cardMemo.clear();
         removeLoadedItemAndShift(matchEntry.key);
         reconcileGridFocusNodes({for (final entry in loadedItems.entries) entry.value.id: entry.key});
       });
@@ -365,10 +483,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         oldWidget.library.backend != widget.library.backend ||
         oldWidget.library.serverId != widget.library.serverId ||
         oldWidget.library.isShared != widget.library.isShared) {
+      _clearSelection();
       _alphaStrategy = _createAlphaStrategy();
       cleanupGridFocusNodes(0);
       _cardMemo.clear();
     }
+    if (oldWidget.isActive && !widget.isActive) _clearSelection();
     super.didUpdateWidget(oldWidget);
     if (oldWidget.canGroupByFolders != widget.canGroupByFolders) {
       final normalized = _normalizeGrouping(_selectedGrouping);
@@ -593,6 +713,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     if (!mounted) return;
     final library = widget.library;
     final libraryGlobalKey = library.globalKey;
+    _clearSelection();
     final (:generation, :epoch) = beginLibraryLoad();
     final firstCharactersGeneration = ++_firstCharactersRequestId;
 
@@ -856,6 +977,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     if (!isCurrentLibraryLoad(generation, acceptedLibraryGlobalKey)) return;
     final contentEpoch = epoch ?? snapshotLibraryContentEpoch();
     setState(() {
+      _clearSelection();
       isLoading = true;
       // A failed earlier load must not outlive this one: the state slivers
       // rank the error above the empty state.
@@ -1662,7 +1784,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // build phase and triggers a setState-in-build assertion.
     final overlayTopPadding = MediaQuery.paddingOf(context).top + kToolbarHeight;
 
-    return Stack(
+    context.watch<MultiServerProvider>();
+    if (_selecting && !_selectionSessionCurrent) {
+      final generation = _selectionGeneration;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && generation == _selectionGeneration) setState(_clearSelection);
+      });
+    }
+    final canSelect = _selectedGrouping != 'folders' && loadedItems.values.any((item) => item.isVideoContent);
+    final content = Stack(
       children: [
         Positioned.fill(child: _buildScrollableContent()),
         if (_shouldShowAlphaJumpBar)
@@ -1711,6 +1841,26 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             ),
           ),
       ],
+    );
+    if (!canSelect && !_selecting) return content;
+    return PopScope(
+      canPop: !_selecting,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _selecting && !_marking) _endSelection();
+      },
+      child: Column(
+        children: [
+          Expanded(child: content),
+          LibrarySelectionBar(
+            selecting: _selecting,
+            busy: _marking,
+            count: _selection.count,
+            onStart: _startSelection,
+            onCancel: _endSelection,
+            onMarkWatched: _markSelection,
+          ),
+        ],
+      ),
     );
   }
 
@@ -2261,7 +2411,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       onNavigateDown: navigateDown,
       onNavigateLeft: navigateLeft,
       onNavigateRight: navigateRight,
-      onBack: widget.onBack,
+      onBack: _selecting
+          ? () {
+              if (!_marking) _endSelection();
+            }
+          : widget.onBack,
+      onTap: _selecting ? () => _toggleSelection(index) : null,
+      onLongPress: _selecting ? () => _toggleSelection(index) : null,
+      selected: _selecting ? _selection.contains(item) : null,
       onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
       onListRefresh: _loadItems,
       fullBleedImage: fullBleedImage,
