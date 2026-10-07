@@ -201,16 +201,20 @@ void main() {
         serverId: ServerId('server-id'),
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
-        // The candidate must validate for the cascade to reach the
-        // authenticated retry whose failure this test pins.
+        // The dead primary must fail its own probe (an endpoint that answers
+        // only timed out, and keeps the request), and the candidate must
+        // validate for the cascade to reach the authenticated retry whose
+        // failure this test pins.
         endpointProbeHttpClientFactory: () => MockClient(
-          (_) async => http.Response(
-            jsonEncode({
-              'MediaContainer': {'machineIdentifier': 'server-id'},
-            }),
-            200,
-            headers: {'content-type': 'application/json'},
-          ),
+          (request) async => request.url.origin == primary
+              ? throw TimeoutException('primary down')
+              : http.Response(
+                  jsonEncode({
+                    'MediaContainer': {'machineIdentifier': 'server-id'},
+                  }),
+                  200,
+                  headers: {'content-type': 'application/json'},
+                ),
         ),
       );
       addTearDown(client.close);

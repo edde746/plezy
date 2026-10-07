@@ -20,7 +20,11 @@ import '../exceptions/media_server_exceptions.dart';
 ///   returned as a response. 4xx answers never trigger failover. A
 ///   connection error first re-probes the *current* endpoint through
 ///   [validateCandidate] and retries in place when it answers: a dead pooled
-///   socket after a process suspend is not a dead endpoint (#2056).
+///   socket after a process suspend is not a dead endpoint (#2056). A timeout
+///   re-probes it too, and when it answers surfaces the timeout as-is: the
+///   transport bounds the connect well inside the request deadline, so an
+///   endpoint that still answers was slow, not dead. Switching would replay
+///   the same expensive query on another route to the same server (#2581).
 /// - **One authenticated retry per cascade.** Candidate validation may skip
 ///   rejected endpoints before that retry. A failed retry (transport error or
 ///   error status) resets the list to the preferred endpoint and fires
@@ -32,9 +36,9 @@ import '../exceptions/media_server_exceptions.dart';
 ///   winner (`persist: true`).
 /// - **Retry interplay:** [retryTransientMediaServerCall] is for
 ///   *slow-but-working* endpoints (per-surface timeout budgets); surfaces
-///   that wrap it pass `allowEndpointFailover: false` so a slow row doesn't
-///   move the whole client off an otherwise working endpoint. Failover is for
-///   *dead* endpoints.
+///   that wrap it pass `allowEndpointFailover: false` so a row that misses
+///   its budget never starts a cascade inside it. Failover is for *dead*
+///   endpoints.
 ///
 /// Endpoint orchestration diagnostics never contain raw endpoint literals.
 /// Backends still register configured endpoints before construction to protect
@@ -49,6 +53,7 @@ class FailoverHttpClient extends MediaServerHttpClient {
     required super.baseUrl,
     required super.defaultHeaders,
     super.connectTimeout,
+    super.responseTimeout,
     super.receiveTimeout,
     required this.logLabel,
     required List<String> prioritizedEndpoints,
@@ -144,12 +149,7 @@ class FailoverHttpClient extends MediaServerHttpClient {
       if (!allowEndpointFailover || !_shouldAttemptFailover(exception: e) || !_canFailover(generation)) {
         rethrow;
       }
-      final retried = await _failoverOnce(
-        verb: verb,
-        send: send,
-        abort: abort,
-        retryInPlace: e.type == MediaServerHttpErrorType.connectionError,
-      );
+      final retried = await _failoverOnce(verb: verb, send: send, abort: abort, failure: e.type);
       if (retried == null) rethrow;
       return retried;
     }
@@ -177,30 +177,52 @@ class FailoverHttpClient extends MediaServerHttpClient {
   /// One failover step, run under the [_failoverSwitching] guard so concurrent
   /// requests cannot start a second cascade.
   ///
-  /// With [retryInPlace] (a connection error, as opposed to a timeout or 5xx)
-  /// the current endpoint gets a chance to prove it is alive before any switch:
-  /// see [_retryOnCurrentEndpoint]. Otherwise, or when that retry fails, the
-  /// cascade in [_cascade] runs — unless a background promotion moved the
-  /// active endpoint meanwhile, in which case the failure belongs to an
-  /// endpoint that is no longer current and the caller surfaces it as-is.
+  /// A connection error or a timeout ([failure]) first gives the current
+  /// endpoint a chance to prove it is alive: a connection error then retries in
+  /// place ([_retryOnCurrentEndpoint]), a timeout surfaces as-is. Otherwise, or
+  /// when the endpoint fails that probe, the cascade in [_cascade] runs —
+  /// unless a background promotion moved the active endpoint meanwhile, in
+  /// which case the failure belongs to an endpoint that is no longer current
+  /// and the caller surfaces it as-is.
   Future<MediaServerResponse?> _failoverOnce({
     required String verb,
     required Future<MediaServerResponse> Function() send,
     AbortController? abort,
-    bool retryInPlace = false,
+    MediaServerHttpErrorType? failure,
   }) async {
     final manager = _endpointManager!;
     final generation = manager.generation;
     _failoverSwitching = true;
     try {
-      if (retryInPlace) {
+      if (failure == MediaServerHttpErrorType.connectionError) {
         final revived = await _retryOnCurrentEndpoint(manager, verb: verb, send: send, abort: abort);
         if (revived != null) return revived;
+        if (manager.generation != generation) return null;
+      } else if (failure == MediaServerHttpErrorType.connectionTimeout ||
+          failure == MediaServerHttpErrorType.receiveTimeout) {
+        if (await _currentEndpointAnswers(manager, abort)) {
+          appLogger.i('$logLabel endpoint still answers after $verb timeout, keeping it');
+          return null;
+        }
         if (manager.generation != generation) return null;
       }
       return await _cascade(manager, verb: verb, send: send, abort: abort);
     } finally {
       _failoverSwitching = false;
+    }
+  }
+
+  /// Whether the *current* endpoint answers [validateCandidate] over a fresh
+  /// connection. Without a validator nothing can vouch for it. Cancellations
+  /// propagate.
+  Future<bool> _currentEndpointAnswers(EndpointFailoverManager manager, AbortController? abort) async {
+    final validator = validateCandidate;
+    if (validator == null) return false;
+    try {
+      return await validator(manager.current, abort);
+    } catch (error) {
+      if (error is MediaServerHttpException && error.isCancellation) rethrow;
+      return false;
     }
   }
 
@@ -222,18 +244,8 @@ class FailoverHttpClient extends MediaServerHttpClient {
     required Future<MediaServerResponse> Function() send,
     AbortController? abort,
   }) async {
-    final validator = validateCandidate;
-    if (validator == null) return null;
-
     final generation = manager.generation;
-    bool alive;
-    try {
-      alive = await validator(manager.current, abort);
-    } catch (error) {
-      if (error is MediaServerHttpException && error.isCancellation) rethrow;
-      alive = false;
-    }
-    if (!alive) return null;
+    if (!await _currentEndpointAnswers(manager, abort)) return null;
     abort?.throwIfAborted();
     if (manager.generation != generation) return null;
 

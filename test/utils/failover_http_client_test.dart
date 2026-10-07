@@ -74,14 +74,14 @@ void main() {
       },
       validateCandidate: (candidateBaseUrl, _) async {
         validations.add(candidateBaseUrl);
-        return true;
+        return candidateBaseUrl != primary;
       },
     );
 
     final response = await h.client.get('/path');
 
     expect(response.statusCode, 200);
-    expect(validations, [fallback]);
+    expect(validations, [primary, fallback]);
     expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
     expect(h.switches, [(url: fallback, persist: false), (url: fallback, persist: true)]);
     expect(h.exhausted, isEmpty);
@@ -310,25 +310,6 @@ void main() {
       expect(h.client.baseUrl, fallback);
     });
 
-    test('timeouts skip the in-place retry and cascade directly', () async {
-      final validations = <String>[];
-      final h = build(
-        handler: (request, _) async {
-          if (request.url.host == 'primary.example.com') throw TimeoutException('slow');
-          return ok();
-        },
-        validateCandidate: (candidateBaseUrl, _) async {
-          validations.add(candidateBaseUrl);
-          return true;
-        },
-      );
-
-      await h.client.get('/path');
-
-      expect(validations, [fallback]);
-      expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
-    });
-
     test('without a validator the cascade runs as before', () async {
       final h = build(
         handler: (request, _) async {
@@ -374,6 +355,56 @@ void main() {
       expect(h.switches, isEmpty);
       expect(h.exhausted, isEmpty);
       expect(h.client.baseUrl, tertiary);
+    });
+  });
+
+  group('timeout on an endpoint that still answers (slow, not dead, #2581)', () {
+    test('surfaces the timeout without switching, replaying, or exhausting', () async {
+      final validations = <String>[];
+      final h = build(
+        handler: (request, _) async {
+          expect(request.url.host, 'primary.example.com');
+          throw TimeoutException('server still working');
+        },
+        validateCandidate: (candidateBaseUrl, _) async {
+          validations.add(candidateBaseUrl);
+          return true;
+        },
+      );
+
+      await expectLater(
+        h.client.get('/path'),
+        throwsA(
+          isA<MediaServerHttpException>().having((e) => e.type, 'type', MediaServerHttpErrorType.connectionTimeout),
+        ),
+      );
+
+      expect(validations, [primary]);
+      expect(h.requests, hasLength(1));
+      expect(h.switches, isEmpty);
+      expect(h.exhausted, isEmpty);
+      expect(h.client.baseUrl, primary);
+    });
+
+    test('cascades when the current endpoint fails its probe', () async {
+      final validations = <String>[];
+      final h = build(
+        handler: (request, _) async {
+          if (request.url.host == 'primary.example.com') throw TimeoutException('unreachable');
+          return ok();
+        },
+        validateCandidate: (candidateBaseUrl, _) async {
+          validations.add(candidateBaseUrl);
+          return candidateBaseUrl != primary;
+        },
+      );
+
+      final response = await h.client.get('/path');
+
+      expect(response.statusCode, 200);
+      expect(validations, [primary, fallback]);
+      expect(h.requests.map((u) => u.host), ['primary.example.com', 'fallback.example.com']);
+      expect(h.switches, [(url: fallback, persist: false), (url: fallback, persist: true)]);
     });
   });
 

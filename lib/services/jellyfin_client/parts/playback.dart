@@ -248,11 +248,11 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     try {
       // An immediate connection error is asked again (see
       // [retryTransientMediaServerCall]); the deadline only backstops the
-      // HTTP layer's own connect + receive budgets, so it never cuts a slow
-      // but working server short.
+      // HTTP layer's own connect, response and receive budgets, so it never
+      // cuts a slow but working server short.
       bundle = await retryTransientMediaServerCall(
         operation: 'Jellyfin playback item',
-        deadline: MediaServerTimeouts.connect + MediaServerTimeouts.receive,
+        deadline: MediaServerTimeouts.connect + MediaServerTimeouts.response + MediaServerTimeouts.receive,
         call: (_, _) => fetchPlaybackBundle(
           metadata.id,
           sourceIndex: options.selectedMediaIndex,
@@ -897,11 +897,11 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'userId': connection.userId,
         for (final MapEntry(:key, :value) in negotiation.entries) key: value.toString(),
       },
-      // Opening a cold tuner can delay response headers beyond the normal
-      // connect budget (#2274), and the server finishes the open even if we
+      // Opening a cold tuner can delay response headers past the default
+      // response budget (#2274), and the server finishes the open even if we
       // hang up (#2394): the live tune keeps its transport until the server
-      // answers, and its caller bounds the wait. Keep VOD and metadata-only
-      // requests unchanged.
+      // answers, and its caller bounds the wait. VOD and metadata-only
+      // requests stay on the default budget.
       timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tuneTransport : null,
       body: {
         'UserId': connection.userId,

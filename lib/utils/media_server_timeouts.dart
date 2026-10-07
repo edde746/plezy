@@ -3,8 +3,17 @@
 /// timeouts are kept here so the budgets per phase are visible at a
 /// glance.
 class MediaServerTimeouts {
+  /// Reaching the server: DNS, TCP and TLS. Enforced by the transport, so it
+  /// never cuts into the server's think time.
   static const connect = Duration(seconds: 10);
 
+  /// Waiting on a server that was reached for its response headers — the
+  /// server's think time. Covers a slow-but-working query (an Emby search
+  /// that takes 11–15 s, #2581) while a server that accepted the connection
+  /// and never answers still fails well before [receive].
+  static const response = Duration(seconds: 30);
+
+  /// Waiting on the response body once the headers arrived.
   static const receive = Duration(seconds: 120);
 
   /// Whole-request deadline for home `/hubs` startup calls. These endpoints can
@@ -65,8 +74,8 @@ class MediaServerTimeouts {
   static const noNetworkStartupBind = Duration(seconds: 2);
 
   /// How long a caller waits for a Plex tune or a MediaBrowser Live TV
-  /// PlaybackInfo that opens a source. Matches Plex web's value: a cold
-  /// tuner can take longer than the default 10s to return response headers.
+  /// PlaybackInfo that opens a source. Matches Plex web's value: a cold tuner
+  /// can take well over ten seconds to return response headers.
   ///
   /// Only the wait: the request itself runs to [tuneTransport]. Servers finish
   /// opening a tuner whether or not the client is still connected (#2394), so
@@ -83,7 +92,7 @@ class MediaServerTimeouts {
   static const plexTvReceive = Duration(seconds: 10);
 
   /// Authenticated health probe timeout. Health sweeps await every server, so
-  /// a stale Plex endpoint must not hold the whole sweep for [receive].
+  /// a stale Plex endpoint must not hold the whole sweep for [response].
   static const plexProbe = Duration(seconds: 8);
 
   /// Probe + token-validate timeout — Jellyfin servers respond fast on

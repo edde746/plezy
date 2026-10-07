@@ -732,7 +732,7 @@ void main() {
       ('VOD opening a source', false, true),
       ('live metadata without opening a source', true, false),
     ]) {
-      test('${connection.dialect.productName} keeps the ten-second timeout for $name', () {
+      test('${connection.dialect.productName} waits out a slow $name answer, then hangs up at the default budget', () {
         fakeAsync((async) {
           final transport = _HangingLiveTuneClient();
           final client = JellyfinClient.forTesting(connection: connection, httpClient: transport);
@@ -748,12 +748,16 @@ void main() {
                     },
                   ),
             );
-            async.elapse(const Duration(seconds: 10));
+            // Past the connect budget the server is thinking, not unreachable (#2581).
+            async.elapse(MediaServerTimeouts.connect + const Duration(seconds: 1));
+            expect(failure, isNull);
+            expect(transport.aborted, isFalse);
+            async.elapse(MediaServerTimeouts.response - const Duration(seconds: 1));
             expect(
               failure,
               isA<MediaServerHttpException>().having((e) => e.type, 'type', MediaServerHttpErrorType.connectionTimeout),
             );
-            expect(transport.aborted, isTrue);
+            expect(transport.aborted, isTrue, reason: 'only a live tune keeps its transport past the deadline');
             expect(transport.requests, 1);
           } finally {
             client.close();

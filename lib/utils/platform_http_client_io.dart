@@ -19,7 +19,9 @@ void _logPlatformClient(String platform, String client) {
 /// dart:io leaves TCP connects unbounded (Darwin retries SYNs for ~75 s) and
 /// `package:http` cannot abort a request whose connection is still being
 /// established, so every IOClient gets an explicit connect bound and
-/// permission to force-close after a failed drain (#1972).
+/// permission to force-close after a failed drain (#1972). The bound covers
+/// only reaching the server: `Client.send` then waits for response headers,
+/// which is the server's think time and the caller's deadline to set.
 ///
 /// The pool is always tuned. Every surface that matters fans out — Plex and
 /// Jellyfin home loads, artwork rails, tracker and Seerr traffic all issue
@@ -28,9 +30,9 @@ void _logPlatformClient(String platform, String client) {
 /// request on a high-RTT or CDN link. On a 60-way artwork fan-out, 12/90 s
 /// measured ~4x the default's throughput on Linux and ~2x on Android, so there
 /// is no case left for the opt-in the tuning used to be.
-ManagedHttpClient _createIoClient(String debugLabel) {
+ManagedHttpClient _createIoClient(String debugLabel, Duration connectTimeout) {
   final httpClient = HttpClient()
-    ..connectionTimeout = MediaServerTimeouts.connect
+    ..connectionTimeout = connectTimeout
     ..maxConnectionsPerHost = 12
     ..idleTimeout = const Duration(seconds: 90)
     ..connectionFactory = happyEyeballsConnectionFactory;
@@ -47,18 +49,27 @@ ManagedHttpClient _createIoClient(String debugLabel) {
 /// measured slower than this client on the request shapes Plezy actually
 /// issues — Cronet by ~10x on LAN body throughput — so neither survived; see
 /// issue #2140.
-http.Client createPlatformClient() {
+///
+/// Both transports bound only the connect, to [connectTimeout]. Waiting on
+/// the server is left to the caller's deadlines, as dart:io already does:
+/// WinHTTP's own 30 s per-read default would otherwise cut a slow server's
+/// answer short and surface it as a connection error, which endpoint failover
+/// reads as a dead endpoint (#2581).
+http.Client createPlatformClient({Duration connectTimeout = MediaServerTimeouts.connect}) {
   if (Platform.isWindows) {
     try {
-      final client = WinHttpClient.defaultConfiguration();
+      final client = WinHttpClient.fromConfiguration(
+        // A zero receive timeout is WinHTTP's "wait indefinitely".
+        WinHttpClientConfiguration(connectTimeout: connectTimeout, receiveTimeout: Duration.zero),
+      );
       _logPlatformClient('windows', 'WinHttpClient');
       return ManagedHttpClient(client, debugLabel: 'WinHttpClient');
     } catch (e, st) {
       appLogger.w('WinHttpClient init failed, falling back to IOClient', error: e, stackTrace: st);
       _logPlatformClient('windows', 'IOClient (fallback)');
-      return _createIoClient('IOClient (fallback)');
+      return _createIoClient('IOClient (fallback)', connectTimeout);
     }
   }
   _logPlatformClient(Platform.operatingSystem, 'IOClient');
-  return _createIoClient('IOClient');
+  return _createIoClient('IOClient', connectTimeout);
 }
