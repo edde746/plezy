@@ -208,11 +208,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     );
   }
 
-  /// Whether the profile binder is still wiring servers — a no-servers load
-  /// during binding stays in the loading state instead of flashing an error,
-  /// and a zero-success pass during binding stays in the loading state
-  /// instead of flashing the empty placeholder (main_screen primes another
-  /// load once binding settles).
+  /// Whether the profile binder is still wiring servers. No full pass or
+  /// Continue Watching refresh fetches while it runs: a profile switch mounts
+  /// the new session before the binder rotates the shared Plex clients to the
+  /// new user's token, so a fetch here would return the previous user's rows
+  /// (#2599). main_screen primes a load once binding settles. A bind that
+  /// starts mid-pass keeps a zero-success pass in the loading state instead
+  /// of flashing the empty placeholder.
   final bool Function() isProfileBinding;
   final Future<void> Function(String profileId, List<MediaItem>)? _syncSystemShelfOverride;
   final Future<void> Function(String profileId, List<MediaServerClient> clients)? _syncServerSourcesOverride;
@@ -299,7 +301,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Full load of Continue Watching + hubs. Concurrent calls coalesce into
   /// the in-flight pass plus at most one trailing pass (so a request that
-  /// arrives mid-load still observes its own fresh fetch).
+  /// arrives mid-load still observes its own fresh fetch). A pass requested
+  /// while the profile binder runs ends without fetching or touching state.
   Future<void> load() {
     if (isDisposed) return Future<void>.value();
     return _loadCoordinator.requestFull();
@@ -408,7 +411,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // kicked off during build (the screen's initState) doesn't mark
       // listening widgets dirty mid-build.
       await null;
-      if (isDisposed) return;
+      if (isDisposed || isProfileBinding()) return;
       ++_contentRevision;
       appLogger.d('DiscoverProvider: loading content from all servers');
       _onDeckState = DiscoverLoadState.loading;
@@ -416,10 +419,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _errorMessage = null;
       safeNotifyListeners();
 
-      if (!_multiServer.hasConnectedServers) {
-        if (isProfileBinding()) return;
-        throw Exception('No servers available');
-      }
+      if (!_multiServer.hasConnectedServers) throw Exception('No servers available');
 
       await _hiddenLibraries.ensureInitialized();
       if (isDisposed) return;
@@ -799,7 +799,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Future<void> _refreshContinueWatchingOnce() async {
     try {
-      if (!_multiServer.hasConnectedServers) return;
+      if (isProfileBinding() || !_multiServer.hasConnectedServers) return;
       final revision = _contentRevision;
       final hiddenKeys = Set<String>.of(_hiddenLibraries.hiddenLibraryKeys);
       final observation = _beginObservation();

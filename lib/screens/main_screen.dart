@@ -504,12 +504,12 @@ class _MainScreenState extends State<MainScreen>
   Timer? _startupSettleTimeout;
 
   /// Hard ceiling on how long we wait for [ActiveProfileBinder] to settle
-  /// before priming the UI anyway. The binder always calls
-  /// `markBindingFinished` in its `finally`, but this is a defence in depth:
-  /// if a transient bug or hung HTTP path keeps `isBinding` true, the user
-  /// would otherwise see an empty Discover screen forever. After the
-  /// fallback fires the screens render their normal "no servers" state and
-  /// the user can pull-to-refresh / open settings.
+  /// before priming libraries, watch sync, and downloads anyway. The binder
+  /// always calls `markBindingFinished` in its `finally`, but this is a
+  /// defence in depth against a transient bug or hung HTTP path keeping
+  /// `isBinding` true. Discover never fetches while the binder runs (the
+  /// clients may still carry the previous profile's token, #2599), so a
+  /// fallback prime that fires mid-bind leaves the settle prime armed.
   static const _startupSettleFallback = Duration(seconds: 15);
   static const _backExitWindow = Duration(seconds: 3);
   DateTime? _lastBackPressAt;
@@ -663,12 +663,14 @@ class _MainScreenState extends State<MainScreen>
       if (fromTimeout) {
         appLogger.w(
           'ActiveProfileBinder still binding after ${_startupSettleFallback.inSeconds}s '
-          '— priming UI anyway so the user is not stuck on an empty screen.',
+          '— priming services anyway; the settle will prime again.',
         );
       }
       // Set the guard before the await so re-entrant listener fires can't
-      // race a second prime.
-      _startupServicesPrimed = true;
+      // race a second prime. A fallback prime while the binder still runs is
+      // provisional: the real settle must prime again with the rebound
+      // clients.
+      _startupServicesPrimed = !activeProfile.isBinding;
       _startupSettleTimeout?.cancel();
       _startupSettleTimeout = null;
 
@@ -689,8 +691,8 @@ class _MainScreenState extends State<MainScreen>
     _bindingSettleListener = () => primeServicesOnBindingSettle();
     activeProfile.addListener(_bindingSettleListener!);
 
-    // Defence in depth: bypass the binder gate after a hard ceiling so a
-    // hung bind path can't strand the user on an empty screen.
+    // Defence in depth: prime libraries, watch sync, and downloads after a
+    // hard ceiling so a hung bind path can't hold them back indefinitely.
     _startupSettleTimeout?.cancel();
     _startupSettleTimeout = Timer(_startupSettleFallback, () {
       primeServicesOnBindingSettle(fromTimeout: true);
