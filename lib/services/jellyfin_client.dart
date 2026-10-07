@@ -609,6 +609,34 @@ class JellyfinClient
     _ => null,
   };
 
+  /// Jellyfin and Emby share this route and its `InheritFromParent` walk up to
+  /// the series; only the stream URL's token parameter differs by dialect.
+  @override
+  Future<String?> getThemeSongUrl(MediaItem item) async {
+    if (isOfflineMode) return null;
+    try {
+      final response = await _http.get(
+        '/Items/${Uri.encodeComponent(item.id)}/ThemeSongs',
+        queryParameters: {'UserId': connection.userId, 'InheritFromParent': true},
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      final themes = data is Map<String, dynamic> ? data['Items'] : null;
+      if (themes is! List) return null;
+      for (final theme in themes.whereType<Map<String, dynamic>>()) {
+        final id = theme['Id'];
+        if (id is! String || id.trim().isEmpty) continue;
+        if (theme['MediaType'] != null && theme['MediaType'] != 'Audio') continue;
+        if (theme['Type'] != null && theme['Type'] != 'Audio') continue;
+        return buildAudioDirectStreamUrl(id);
+      }
+      return null;
+    } catch (e, st) {
+      appLogger.d('Failed to look up theme song', error: e, stackTrace: st);
+      return null;
+    }
+  }
+
   @override
   Future<String?> getMachineIdentifier() async {
     try {

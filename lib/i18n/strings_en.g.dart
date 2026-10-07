@@ -405,6 +405,18 @@ class Translations$settings$en {
 	/// en: 'Appearance'
 	String get appearance => 'Appearance';
 
+	/// en: 'Detail Page'
+	String get detailPage => 'Detail Page';
+
+	/// en: 'Play Theme Songs'
+	String get themeSongsEnabled => 'Play Theme Songs';
+
+	/// en: 'Play available theme songs while viewing media details.'
+	String get themeSongsEnabledDescription => 'Play available theme songs while viewing media details.';
+
+	/// en: 'Theme Song Volume'
+	String get themeSongVolume => 'Theme Song Volume';
+
 	/// en: 'Video Playback'
 	String get videoPlayback => 'Video Playback';
 
@@ -7467,6 +7479,10 @@ extension on Translations {
 			'settings.language' => 'Language',
 			'settings.theme' => 'Theme',
 			'settings.appearance' => 'Appearance',
+			'settings.detailPage' => 'Detail Page',
+			'settings.themeSongsEnabled' => 'Play Theme Songs',
+			'settings.themeSongsEnabledDescription' => 'Play available theme songs while viewing media details.',
+			'settings.themeSongVolume' => 'Theme Song Volume',
 			'settings.videoPlayback' => 'Video Playback',
 			'settings.videoPlaybackDescription' => 'Configure playback behavior',
 			'settings.advanced' => 'Advanced',
@@ -7867,12 +7883,12 @@ extension on Translations {
 			'fileInfo.interlaced' => 'Interlaced',
 			'fileInfo.anamorphic' => 'Anamorphic',
 			'fileInfo.referenceFrames' => 'Reference Frames',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.dynamicRange' => 'Dynamic Range',
 			'fileInfo.dolbyVision' => 'Dolby Vision',
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
 			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
 			'fileInfo.avcBitstream' => 'AVC Bitstream',
@@ -8381,12 +8397,12 @@ extension on Translations {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
+			_ => null,
+		} ?? switch (path) {
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
 			'errors.reasonRefused' => 'the server refused the request',
 			'errors.reasonNotFound' => 'the item is no longer on the server',
-			_ => null,
-		} ?? switch (path) {
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -8895,12 +8911,12 @@ extension on Translations {
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -9409,12 +9425,12 @@ extension on Translations {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
+			_ => null,
+		} ?? switch (path) {
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
-			_ => null,
-		} ?? switch (path) {
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',

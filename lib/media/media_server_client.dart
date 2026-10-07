@@ -685,6 +685,10 @@ abstract class MediaServerClient {
     ExternalSeasonRef? season,
   });
 
+  /// An authenticated playback URL for [item]'s theme song, including inherited
+  /// show themes. Returns null when unavailable or unsupported.
+  Future<String?> getThemeSongUrl(MediaItem item) async => null;
+
   /// Chapters and intro/credits markers for [itemId]. Plex returns both in one
   /// round trip; Jellyfin combines item-level chapters with best-effort native
   /// media segments. Implementations may cache.

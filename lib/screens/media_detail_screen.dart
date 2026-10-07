@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import '../navigation/profile_navigation_scope.dart';
 import '../services/device_performance.dart';
 import '../services/fullscreen_state_manager.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/playback_coordinator.dart';
+import '../services/theme_song_controller.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -376,6 +379,79 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final _hubFocusMemory = HubFocusMemory();
   PageRoute<dynamic>? _route;
   RouteObserver<PageRoute<dynamic>>? _routeObserver;
+  AppLifecycleListener? _themeLifecycle;
+  bool _themeRequested = false;
+  MusicPlaybackService? _themeMusic;
+  VoidCallback? _unbindThemeMusic;
+
+  /// Tracked from [RouteAware] rather than [ModalRoute.isCurrent] so a dialog
+  /// or sheet over the page doesn't count as leaving it.
+  bool _routeVisible = false;
+
+  void _updateThemeSong() {
+    final settings = SettingsService.instanceOrNull;
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    final music = Provider.of<MusicPlaybackService?>(context, listen: false);
+    final allowed =
+        _canUseDetail &&
+        _routeVisible &&
+        !widget.isOffline &&
+        (_metadata.isMovie || _metadata.isShow || _metadata.isSeason || _metadata.isEpisode) &&
+        // Desktop windows go inactive on focus loss; only stop once hidden.
+        (lifecycle == null || lifecycle == AppLifecycleState.resumed || lifecycle == AppLifecycleState.inactive) &&
+        (settings?.read(SettingsService.themeSongsEnabled) ?? false) &&
+        music?.currentTrack == null &&
+        !PlaybackCoordinator.instance.hasVideoSession;
+    if (!allowed) {
+      _releaseThemeSong(immediate: true);
+      return;
+    }
+    if (_themeRequested) return;
+    final client = _getMediaClientForMetadata(context);
+    if (client == null) return;
+    _themeRequested = true;
+    final item = _metadata;
+    unawaited(
+      ThemeSongController.instance.request(
+        this,
+        resolveUrl: () => client.getThemeSongUrl(item),
+        volume: settings!.read(SettingsService.themeSongVolume),
+      ),
+    );
+  }
+
+  void _releaseThemeSong({bool immediate = false}) {
+    _themeRequested = false;
+    ThemeSongController.instance.release(this, immediate: immediate);
+  }
+
+  @override
+  void didPush() {
+    _routeVisible = true;
+    _updateThemeSong();
+  }
+
+  @override
+  void didPushNext() {
+    _routeVisible = false;
+    _releaseThemeSong();
+  }
+
+  @override
+  void didPop() {
+    _routeVisible = false;
+    _releaseThemeSong();
+  }
+
+  @override
+  void didUpdateWidget(covariant MediaDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.metadata.globalKey != widget.metadata.globalKey || oldWidget.isOffline != widget.isOffline) {
+      _themeRequested = false;
+      _updateThemeSong();
+    }
+  }
+
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
@@ -785,6 +861,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   void _markDetailDeleted() {
     if (!_canUseDetail) return;
+    _releaseThemeSong(immediate: true);
     setState(() {
       _isDeleted = true;
       // Retire in-flight pages and probes before navigation. A first route
@@ -865,6 +942,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void initState() {
     super.initState();
+    _themeLifecycle = AppLifecycleListener(onStateChange: (_) => _updateThemeSong());
+    // Video retires after this page is back on top, so its return alone can't
+    // restart the theme.
+    bindListenable(PlaybackCoordinator.instance.videoSessionActive, _updateThemeSong);
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) {
+      bindListenable(settings.listenable(SettingsService.themeSongsEnabled), _updateThemeSong);
+      bindListenable(settings.listenable(SettingsService.themeSongVolume), () {
+        if (_themeRequested) {
+          unawaited(ThemeSongController.instance.setVolume(settings.read(SettingsService.themeSongVolume)));
+        }
+      });
+    }
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _lastEpisodeFocusNode.addListener(_onLastEpisodeFocusChanged);
@@ -929,6 +1019,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final music = Provider.of<MusicPlaybackService?>(context, listen: false);
+    if (!identical(music, _themeMusic)) {
+      _unbindThemeMusic?.call();
+      _themeMusic = music;
+      // Closing the mini-player frees the audio channel for this page's theme.
+      _unbindThemeMusic = music == null ? null : bindListenable(music, _updateThemeSong);
+    }
     final routeObserver = ProfileNavigationScope.of(context).routeObserver;
     final route = ModalRoute.of(context);
     if (route is! PageRoute<dynamic>) return;
@@ -941,6 +1038,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void didPopNext() {
+    _routeVisible = true;
+    _updateThemeSong();
     _invalidatePlaybackProbes(refreshItems: true);
     setStateIfMounted(() {});
     _suppressBackAfterPop = true;
@@ -1051,6 +1150,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void dispose() {
+    _themeLifecycle?.dispose();
+    _releaseThemeSong();
     _libraryContentSubscription?.cancel();
     for (final source in _watchlistListenedSources) {
       source.watchlistChanges.removeListener(_onWatchlistSourceChanged);

@@ -1781,6 +1781,45 @@ class PlexClient
         [];
   }
 
+  @override
+  Future<String?> getThemeSongUrl(MediaItem item) async {
+    if (isOfflineMode) return null;
+    try {
+      Future<Map<String, dynamic>?> metadataFor(String id) async {
+        final response = await _getWithFailover('/library/metadata/${Uri.encodeComponent(id)}');
+        return _getFirstMetadataJson(response);
+      }
+
+      String? themeUrl(Map<String, dynamic>? metadata, [String key = 'theme']) {
+        final theme = metadata?[key];
+        return theme is String && theme.trim().isNotEmpty ? getThumbnailUrl(theme) : null;
+      }
+
+      // Seasons and episodes carry their show's theme inline; the show fetch
+      // only covers servers that leave those fields out.
+      final metadata = await metadataFor(item.id);
+      final inlineTheme =
+          themeUrl(metadata) ??
+          switch (item.kind) {
+            MediaKind.season => themeUrl(metadata, 'parentTheme'),
+            MediaKind.episode => themeUrl(metadata, 'grandparentTheme'),
+            _ => null,
+          };
+      if (inlineTheme != null) return inlineTheme;
+
+      final showId = switch (item.kind) {
+        MediaKind.season => item.parentId ?? metadata?['parentRatingKey']?.toString(),
+        MediaKind.episode => item.grandparentId ?? metadata?['grandparentRatingKey']?.toString(),
+        _ => null,
+      };
+      if (showId == null || showId.isEmpty || showId == item.id) return null;
+      return themeUrl(await metadataFor(showId));
+    } catch (e, st) {
+      appLogger.d('Failed to look up Plex theme song', error: e, stackTrace: st);
+      return null;
+    }
+  }
+
   String getThumbnailUrl(String? thumbPath) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
     return _http.buildUri(thumbPath).toString().withPlexToken(config.token);
