@@ -3011,7 +3011,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // dispatch), and Apple TV delivers play/pause via its native bridge.
         // The chrome deliberately stays down; _remoteTransport announces the
         // accepted command with a centred transient disc instead (#1676).
-        final transportCommand = classifyTransportKey(event.logicalKey);
+        final transportCommand = classifyTransportKey(event.logicalKey, event.physicalKey);
         if (videoPlayerNavigationPreference() && !PlatformDetector.isAppleTV() && transportCommand != null) {
           if (event is KeyDownEvent) {
             unawaited(_remoteTransport(transportCommand, source: 'Hardware media key'));

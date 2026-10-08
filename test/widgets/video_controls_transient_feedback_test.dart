@@ -677,6 +677,20 @@ void main() {
       await settleFeedback(tester);
     });
 
+    testWidgets('the Play/Pause key toggles when Linux reports it as play', (tester) async {
+      await pumpControls(tester, wireTransportCallback: true);
+
+      // XKB maps the Play/Pause key to XF86AudioPlay, so the logical key is
+      // mediaPlay while the physical key is still the combined button.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.mediaPlay, physicalKey: PhysicalKeyboardKey.mediaPlayPause);
+      await tester.pump();
+
+      expect(transportCommands, [TransportCommand.toggle]);
+      expect(player.playOrPauseCalls, 1);
+
+      await settleFeedback(tester);
+    });
+
     testWidgets('select raises the chrome before toggling so no badge flashes under it', (tester) async {
       await pumpControls(tester, wireTransportCallback: true);
 
