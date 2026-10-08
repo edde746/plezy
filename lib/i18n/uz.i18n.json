@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Yuklamalar yoʻq",
     "pauseAll": "Barchasini toʻxtatib turish",
     "resumeAll": "Barchasini davom ettirish",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Barchasini oʻchirish",
     "selectVersion": "Versiyani tanlash",
     "allEpisodes": "Barcha qismlar",

@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Inga nedladdningar",
     "pauseAll": "Pausa alla",
     "resumeAll": "Återuppta alla",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Ta bort alla",
     "selectVersion": "Välj version",
     "allEpisodes": "Alla avsnitt",

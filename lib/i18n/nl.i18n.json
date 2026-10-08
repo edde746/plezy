@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Geen downloads",
     "pauseAll": "Alles pauzeren",
     "resumeAll": "Alles hervatten",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Alles verwijderen",
     "selectVersion": "Versie selecteren",
     "allEpisodes": "Alle afleveringen",

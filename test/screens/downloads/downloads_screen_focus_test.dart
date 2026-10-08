@@ -112,6 +112,34 @@ void main() {
     expect(find.text('Sync rules'), findsOneWidget);
   });
 
+  testWidgets('Retry failed shows only while a download failed and hands D-pad focus to Sync rules', (tester) async {
+    final movie = _downloadedMovie(0);
+    downloadProvider.debugSeedState(
+      downloads: {movie.globalKey: DownloadProgress(globalKey: movie.globalKey, status: DownloadStatus.failed)},
+      metadata: {movie.globalKey: movie},
+    );
+    final screenKey = GlobalKey<DownloadsScreenState>();
+
+    await _pumpScreen(tester, db, downloadProvider, multiServerProvider, screenKey: screenKey);
+    expect(find.byTooltip('Retry failed downloads'), findsOneWidget);
+
+    final state = screenKey.currentState!;
+    state.tabController.index = 3;
+    state.getTabChipFocusNode(3).requestFocus();
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+
+    // The failure leaves while Retry failed holds focus.
+    await tester.runAsync(() => downloadProvider.cancelDownload(movie.globalKey));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Retry failed downloads'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text('Sync rules'), findsOneWidget);
+  });
+
   testWidgets('grid view renders downloaded offline cards in a bounded sliver grid', (tester) async {
     await SettingsService.instance.write(SettingsService.viewMode, ViewMode.grid);
     _seedDownloadedMovies(downloadProvider, 4);

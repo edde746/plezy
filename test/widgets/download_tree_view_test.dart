@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -184,4 +186,94 @@ void main() {
       expect(determineDownloadAggregateStatus(const []), DownloadStatus.queued);
     });
   });
+
+  group('container Retry all', () {
+    // Inserted out of order so the tree's own season/episode order shows.
+    final episodes = {
+      'srv:s2e1': _seasonEpisode(id: 's2e1', season: 2, episode: 1),
+      'srv:s1e2': _seasonEpisode(id: 's1e2', season: 1, episode: 2),
+      'srv:s1e1': _seasonEpisode(id: 's1e1', season: 1, episode: 1),
+    };
+
+    Map<String, DownloadProgress> statuses(Map<String, DownloadStatus> byKey) => {
+      for (final entry in byKey.entries) entry.key: DownloadProgress(globalKey: entry.key, status: entry.value),
+    };
+
+    Future<ValueNotifier<Map<String, DownloadProgress>>> pumpTree(
+      WidgetTester tester,
+      Map<String, DownloadStatus> initial, {
+      void Function(List<String> globalKeys)? onRetryAll,
+    }) async {
+      final downloads = ValueNotifier(statuses(initial));
+      addTearDown(downloads.dispose);
+      await tester.pumpWidget(
+        InputModeTracker(
+          child: MaterialApp(
+            home: Scaffold(
+              body: ValueListenableBuilder<Map<String, DownloadProgress>>(
+                valueListenable: downloads,
+                builder: (context, value, _) => DownloadTreeView(
+                  downloads: value,
+                  metadata: episodes,
+                  onPause: (_) {},
+                  onRetry: (_) {},
+                  onRetryAll: onRetryAll,
+                  onDelete: (_) {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return downloads;
+    }
+
+    testWidgets('retries a show\'s failed episodes in episode order while another still downloads', (tester) async {
+      final retried = <List<String>>[];
+      await pumpTree(tester, {
+        'srv:s2e1': DownloadStatus.failed,
+        'srv:s1e2': DownloadStatus.failed,
+        'srv:s1e1': DownloadStatus.downloading,
+      }, onRetryAll: retried.add);
+
+      await tester.tap(find.byTooltip('Retry all'));
+      await tester.pump();
+
+      expect(retried, [
+        ['srv:s1e2', 'srv:s2e1'],
+      ]);
+    });
+
+    testWidgets('is offered only while an episode has failed', (tester) async {
+      final downloads = await pumpTree(tester, {
+        'srv:s2e1': DownloadStatus.completed,
+        'srv:s1e2': DownloadStatus.queued,
+        'srv:s1e1': DownloadStatus.downloading,
+      }, onRetryAll: (_) {});
+      expect(find.byTooltip('Retry all'), findsNothing);
+
+      downloads.value = statuses({
+        'srv:s2e1': DownloadStatus.failed,
+        'srv:s1e2': DownloadStatus.completed,
+        'srv:s1e1': DownloadStatus.completed,
+      });
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Retry all'), findsOneWidget);
+    });
+  });
 }
+
+MediaItem _seasonEpisode({required String id, required int season, required int episode}) => testMediaItem(
+  id: id,
+  backend: MediaBackend.plex,
+  kind: MediaKind.episode,
+  title: 'Episode $id',
+  serverId: ServerId('srv'),
+  grandparentId: 'show',
+  grandparentTitle: 'Show',
+  parentId: 'season-$season',
+  parentTitle: 'Season $season',
+  parentIndex: season,
+  index: episode,
+);

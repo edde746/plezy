@@ -4505,6 +4505,12 @@ class Translations$downloads$en {
 	/// en: 'Resume all'
 	String get resumeAll => 'Resume all';
 
+	/// en: 'Retry all'
+	String get retryAll => 'Retry all';
+
+	/// en: 'Retry failed downloads'
+	String get retryFailed => 'Retry failed downloads';
+
 	/// en: 'Delete all'
 	String get deleteAll => 'Delete all';
 
@@ -8999,6 +9005,8 @@ extension on Translations {
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
+			'downloads.retryAll' => 'Retry all',
+			'downloads.retryFailed' => 'Retry failed downloads',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
 			'downloads.allEpisodes' => 'All episodes',
@@ -9423,10 +9431,10 @@ extension on Translations {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
-			'services.names.mdblist' => 'MDBList',
-			'services.simklReconnect.title' => 'Reconnect Simkl',
 			_ => null,
 		} ?? switch (path) {
+			'services.names.mdblist' => 'MDBList',
+			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',

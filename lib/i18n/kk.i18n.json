@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Жүктеулер жоқ",
     "pauseAll": "Барлығын кідірту",
     "resumeAll": "Барлығын жалғастыру",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Барлығын өшіру",
     "selectVersion": "Нұсқаны таңдау",
     "allEpisodes": "Барлық бөлімдер",

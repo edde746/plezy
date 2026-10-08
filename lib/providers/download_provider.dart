@@ -100,6 +100,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   // Track items currently being deleted with progress
   final Map<String, DeletionProgress> _deletionProgress = {};
 
+  /// Global keys whose [retryDownload] is still in flight.
+  final Set<String> _retryingKeys = {};
+
   // Persistent sync rules keyed by profile-scoped globalKey
   // (profileId|serverId:ratingKey). Downloads remain public/shared.
   final Map<String, SyncRuleItem> _syncRules = {};
@@ -649,6 +652,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Map<String, DownloadProgress> get downloads =>
       Map.unmodifiable(Map.fromEntries(_downloads.entries.where(_ownsProgressEntry)));
+
+  /// Whether the active profile owns a failed download.
+  bool get hasFailedDownloads => _downloads.entries.any(_isOwnedFailure);
+
+  /// Global keys of the active profile's failed downloads.
+  List<String> get failedDownloadKeys => [
+    for (final entry in _downloads.entries)
+      if (_isOwnedFailure(entry)) entry.key,
+  ];
+
+  bool _isOwnedFailure(MapEntry<String, DownloadProgress> entry) =>
+      entry.value.status == DownloadStatus.failed && _ownsProgressEntry(entry);
 
   /// Per-item [MediaItemSortExtras] for sorting [items] by download
   /// bookkeeping. Leaves resolve their own row; containers (shows, seasons,
@@ -2015,9 +2030,39 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<void> resumeDownload(String globalKey, MediaServerClient client) =>
       _whenOwnedIn(globalKey, const {DownloadStatus.paused}, () => _downloadManager.resumeDownload(globalKey, client));
 
-  /// Retry a failed download
-  Future<void> retryDownload(String globalKey, MediaServerClient client) =>
-      _whenOwnedIn(globalKey, const {DownloadStatus.failed}, () => _downloadManager.retryDownload(globalKey, client));
+  /// Retry a failed download. A retry still requeueing [globalKey] makes a
+  /// repeat call a no-op, so a second press cannot restart the same item.
+  Future<void> retryDownload(String globalKey, MediaServerClient client) async {
+    if (!_retryingKeys.add(globalKey)) return;
+    try {
+      await _whenOwnedIn(globalKey, const {
+        DownloadStatus.failed,
+      }, () => _downloadManager.retryDownload(globalKey, client));
+    } finally {
+      _retryingKeys.remove(globalKey);
+    }
+  }
+
+  /// Retry the failed downloads among [globalKeys] one at a time, so the
+  /// queue downloads them in the given order. [clientFor] resolves each key's
+  /// server; a key whose server is unavailable stays failed. One key's error
+  /// does not stop the rest; a profile switch does.
+  Future<void> retryDownloads(
+    Iterable<String> globalKeys,
+    MediaServerClient? Function(String globalKey) clientFor,
+  ) async {
+    final profileGeneration = _profileGeneration;
+    for (final globalKey in globalKeys.toList(growable: false)) {
+      if (isDisposed || profileGeneration != _profileGeneration) return;
+      final client = clientFor(globalKey);
+      if (client == null) continue;
+      try {
+        await retryDownload(globalKey, client);
+      } catch (e, st) {
+        appLogger.e('Failed to retry download $globalKey', error: e, stackTrace: st);
+      }
+    }
+  }
 
   /// Cancel a download
   Future<void> cancelDownload(String globalKey) async {
