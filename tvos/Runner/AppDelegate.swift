@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import AVFoundation
+import TVServices
 import universal_gamepad
 import os_media_controls
 import wakelock_plus
@@ -27,7 +28,7 @@ import wakelock_plus
   }
 
   override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-    if handlePlayPausePress(presses) {
+    if handlePlayPausePress(presses) || handleChannelPress(presses) {
       return
     }
 
@@ -35,7 +36,7 @@ import wakelock_plus
   }
 
   override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-    if containsPlayPausePress(presses) {
+    if containsPlayPausePress(presses) || containsChannelPress(presses) {
       return
     }
 
@@ -43,7 +44,7 @@ import wakelock_plus
   }
 
   override func pressesCancelled(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-    if containsPlayPausePress(presses) {
+    if containsPlayPausePress(presses) || containsChannelPress(presses) {
       return
     }
 
@@ -84,6 +85,36 @@ import wakelock_plus
     tvRemoteChannel.sendMessage(["type": "play_pause", "source": source, "detail": detail])
   }
 
+  /// Channel Up / Channel Down. The Siri Remote has neither; third-party IR
+  /// remotes and TV remotes driving the Apple TV over HDMI-CEC deliver them as
+  /// `.pageUp` / `.pageDown` presses with no `UIKey`, so Flutter never sees
+  /// them as key events.
+  private func handleChannelPress(_ presses: Set<UIPress>) -> Bool {
+    guard let type = channelPressType(presses) else { return false }
+
+    MpvLog.debug("PlezyTvRemote: intercepted \(type)")
+    tvRemoteChannel.sendMessage(["type": type])
+    return true
+  }
+
+  private func containsChannelPress(_ presses: Set<UIPress>) -> Bool {
+    channelPressType(presses) != nil
+  }
+
+  private func channelPressType(_ presses: Set<UIPress>) -> String? {
+    for press in presses {
+      switch press.type {
+      case .pageUp:
+        return "channel_up"
+      case .pageDown:
+        return "channel_down"
+      default:
+        continue
+      }
+    }
+    return nil
+  }
+
   private func remoteControlSubtypeName(_ subtype: UIEvent.EventSubtype) -> String {
     switch subtype {
     case .remoteControlPlay:
@@ -109,6 +140,42 @@ import wakelock_plus
     default:
       return "unknown(\(subtype.rawValue))"
     }
+  }
+}
+
+/// Forwards the remote's Guide button to Flutter.
+///
+/// tvOS delivers Guide as a `TVUserActivityTypeBrowsingChannelGuide` user
+/// activity rather than a press, and only to apps that declare it under
+/// `NSUserActivityTypes`; otherwise it opens the system's default guide app.
+/// With the UIScene lifecycle the activity arrives on the scene, not the app
+/// delegate.
+final class TvRemoteGuidePlugin: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate {
+  private let tvRemoteChannel: FlutterBasicMessageChannel
+
+  private init(messenger: FlutterBinaryMessenger) {
+    tvRemoteChannel = FlutterBasicMessageChannel(
+      name: "flutter/gamepadtouchevent",
+      binaryMessenger: messenger,
+      codec: FlutterJSONMessageCodec.sharedInstance()
+    )
+    super.init()
+  }
+
+  static func register(with registrar: FlutterPluginRegistrar) {
+    let instance = TvRemoteGuidePlugin(messenger: registrar.messenger())
+    // Scene delegates are held weakly; publishing gives the registry the
+    // strong reference a method-call delegate would otherwise provide.
+    registrar.publish(instance)
+    registrar.addSceneDelegate(instance)
+  }
+
+  func scene(_ scene: UIScene, continue userActivity: NSUserActivity) -> Bool {
+    guard userActivity.activityType == TVUserActivityTypeBrowsingChannelGuide else { return false }
+
+    MpvLog.debug("PlezyTvRemote: intercepted guide")
+    tvRemoteChannel.sendMessage(["type": "guide"])
+    return true
   }
 }
 
@@ -185,6 +252,9 @@ import wakelock_plus
     }
     if let r = pluginRegistry.registrar(forPlugin: "ExternalPlayerPlugin") {
       ExternalPlayerPlugin.register(with: r)
+    }
+    if let r = pluginRegistry.registrar(forPlugin: "TvRemoteGuidePlugin") {
+      TvRemoteGuidePlugin.register(with: r)
     }
   }
 

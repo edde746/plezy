@@ -790,6 +790,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Media-controls listeners created once per attempt by [_initializeServices].
   final List<StreamSubscription<dynamic>> _mediaControlSubscriptions = [];
   StreamSubscription<AppleTvRemotePlayPauseAction>? _appleTvPlayPauseSubscription;
+  StreamSubscription<AppleTvRemoteButton>? _appleTvButtonSubscription;
   TrackManager? _trackManager;
   StreamSubscription<void>? _sleepTimerSubscription;
   bool _isHandlingBack = false;
@@ -799,7 +800,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// [_playerStreamSubscriptions]), [_tearDownFailedPlayerAttempt] (rollback:
   /// player streams plus the [_mediaControlSubscriptions] created in
   /// [_initializeServices]), and the screen's `dispose`. The initState-owned
-  /// `_sleepTimerSubscription` and `_appleTvPlayPauseSubscription` are
+  /// `_sleepTimerSubscription` and the `_appleTv*Subscription`s are
   /// deliberately excluded: cancelling them on a re-wire or rollback would
   /// kill the sleep-timer prompt and the Apple TV remote for the rest of the
   /// screen's life.
@@ -2469,6 +2470,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // closes its streams, so no startup waiter outlives it.
     _cancelPlayerStreamSubscriptions(includeMediaControls: true);
     _appleTvPlayPauseSubscription?.cancel();
+    _appleTvButtonSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
     // Before the track manager is disposed, not after: its own dispose
     // invalidates the pending selection too, and running the abort second
@@ -2616,6 +2618,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _appleTvPlayPauseSubscription = AppleTvRemoteTouchService.instance.playPauseActions.listen((action) {
       unawaited(_handleAppleTvRemotePlayPause(action));
     });
+    _appleTvButtonSubscription = AppleTvRemoteTouchService.instance.buttonActions.listen(_handleAppleTvRemoteButton);
+  }
+
+  /// Channel Up/Down zap like the in-player next/previous channel controls,
+  /// and Guide leaves the player the way Back does, landing on the guide it
+  /// was tuned from. Both only mean something during Live TV; on-demand
+  /// playback ignores them rather than treating Guide as a stop button.
+  void _handleAppleTvRemoteButton(AppleTvRemoteButton button) {
+    if (!mounted || !widget.isLive) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    appLogger.d('Apple TV remote ${button.name} received');
+    switch (button) {
+      case AppleTvRemoteButton.channelUp:
+        unawaited(_switchLiveChannel(1));
+      case AppleTvRemoteButton.channelDown:
+        unawaited(_switchLiveChannel(-1));
+      case AppleTvRemoteButton.guide:
+        unawaited(_handleBackButton());
+    }
   }
 
   Future<void> _handleAppleTvRemotePlayPause(AppleTvRemotePlayPauseAction action) async {
@@ -2941,6 +2962,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final cancellations = _cancelPlayerStreamSubscriptions(includeMediaControls: true);
     final remoteCancellation = _appleTvPlayPauseSubscription?.cancel();
     if (remoteCancellation != null) cancellations.add(remoteCancellation);
+    final remoteButtonCancellation = _appleTvButtonSubscription?.cancel();
+    if (remoteButtonCancellation != null) cancellations.add(remoteButtonCancellation);
     final sleepCancellation = _sleepTimerSubscription?.cancel();
     if (sleepCancellation != null) cancellations.add(sleepCancellation);
 
