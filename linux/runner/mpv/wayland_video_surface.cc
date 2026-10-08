@@ -13,6 +13,12 @@
 #include "plane_geometry.h"
 
 namespace mpv {
+
+const PreferredColorDescription& VideoPlane::preferred() const {
+  static const PreferredColorDescription kEmpty;
+  return kEmpty;
+}
+
 namespace {
 
 // The client understands up to this version of color-management-v1; KWin 6.4

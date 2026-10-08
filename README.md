@@ -63,7 +63,7 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 <summary>Sandbox, playback, and folder access</summary>
 
 - Not on Flathub — the remote supplies the Freedesktop runtime only.
-- Video playback needs a Wayland session; a pure X11 session shows the interface but cannot create the video plane.
+- Video playback for HDR needs a Wayland session; a pure X11 will not support HDR.
 - No host or home filesystem access; app data lives in `~/.var/app/com.edde746.plezy/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
 - Network, display, audio, and device access are enabled. `--device=all` (Flatpak 1.14 compatibility) exposes more than GPUs and controllers; session-bus access stays filtered.
 
