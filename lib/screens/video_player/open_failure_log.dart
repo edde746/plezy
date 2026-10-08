@@ -56,22 +56,14 @@ const List<String> _streamInitFailedLines = [
 /// [prefix] is mpv's log prefix. The output-conversion line is terminal only
 /// on the audio chain (`af`): on the video chain (`vf`) mpv first forces a
 /// software-decode fallback (player/video.c `check_for_hwdec_fallback`) and,
-/// if that fails too, logs "Could not initialize video chain." itself.
-///
-/// [isAndroid]: the Android core consumes "Could not initialize video chain."
-/// under vo=mediacodec to fall back to the GL vo and re-select the video
-/// track (MpvPlayerCore.kt `onMpvLog`), so Dart must not pre-empt
-/// it there.
-String? openFailureCauseFromLog({
-  required PlayerLogLevel level,
-  required String prefix,
-  required String text,
-  required bool isAndroid,
-}) {
+/// if that fails too, logs "Could not initialize video chain." itself. On
+/// Android's video plane that last step is a hold instead: the fork keeps the
+/// chain for the core's switch to a GL vo (`vo-format-rejected`).
+String? openFailureCauseFromLog({required PlayerLogLevel level, required String prefix, required String text}) {
   if (level != PlayerLogLevel.error && level != PlayerLogLevel.fatal) return null;
   final line = text.trim();
   if (line == _audioOutputFailedLine) return PlayerError.audioOutputFailed;
-  if (line == _videoChainFailedLine) return isAndroid ? null : PlayerError.streamInitFailed;
+  if (line == _videoChainFailedLine) return PlayerError.streamInitFailed;
   if (line == _outputConversionFailedLine) return prefix == 'af' ? PlayerError.streamInitFailed : null;
   if (_streamInitFailedLines.contains(line) || line.startsWith(_decoderInitFailedPrefix)) {
     return PlayerError.streamInitFailed;

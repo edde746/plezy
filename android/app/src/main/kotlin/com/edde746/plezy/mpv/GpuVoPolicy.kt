@@ -263,12 +263,10 @@ internal object GpuVoPolicy {
   }
 
   /**
-   * Whether the decoder is handing mpv software frames, from `hwdec-current`.
-   *
-   * The plane refuses every format but MediaCodec buffers, so a per-file
-   * decode fallback (AV1 on Tegra, Hi10 without a profile match) has to move
-   * to a GL vo. Routing on this gets there before mpv fails the chain and
-   * [REASON_CHAIN_FAILURE] has to catch it.
+   * Whether the decoder is handing mpv software frames, from `hwdec-current`:
+   * `no`, or `mediacodec-copy`, which reads frames back into system memory.
+   * Only [softwareDecodeNeedsDvReshaping] asks; leaving the plane for such a
+   * stream is mpv's own report (`vo-format-rejected`, [REASON_FORMAT_REJECTED]).
    */
   fun needsSoftwareRender(hwdecCurrent: String?): Boolean = !hwdecCurrent.isNullOrBlank() && hwdecCurrent != "mediacodec"
 
@@ -389,8 +387,7 @@ internal object GpuVoPolicy {
 
   const val REASON_DV_RESHAPE = "dv-reshape"
   const val REASON_SHADERS = "shaders"
-  const val REASON_CHAIN_FAILURE = "chain-failure"
+  const val REASON_FORMAT_REJECTED = "format-rejected"
   const val REASON_HDR_SDR = "hdr-sdr"
-  const val REASON_SW_DECODE = "sw-decode"
   const val REASON_CODEC_SW_DECODE = "codec-sw-decode"
 }

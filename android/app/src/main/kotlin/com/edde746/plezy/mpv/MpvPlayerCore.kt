@@ -170,10 +170,11 @@ class MpvPlayerCore private constructor(
      * MediaCodec straight to the compositor with per-frame presentation
      * timestamps - no GLES pass, 10-bit and the decoder's dataspace
      * (HDR10/HLG) intact - and subtitles/OSD render on the sibling OSD
-     * surface. The plane takes decoder buffers only and refuses the rest, so
-     * a per-file decode fallback moves to a GL vo
-     * ([GpuVoPolicy.needsSoftwareRender], with the chain-failure watchdog as
-     * the backstop). gpu stays in the chain for preinit failure.
+     * surface. The plane takes decoder buffers only, so a stream decoded any
+     * other way (a codec outside `hwdec-codecs`, mpv's own per-file decode
+     * fallback) moves to a GL vo: the fork mpv holds the chain and reports
+     * `vo-format-rejected` ([collectVoFormatRejection]). gpu stays in the
+     * chain for preinit failure.
      *
      * Software sessions run gpu,gpu-next: gpu is the battle-tested GLES
      * renderer on the Android device zoo, and with film grain applied by the
@@ -1114,6 +1115,7 @@ class MpvPlayerCore private constructor(
             collectShaderState(p)
             collectHdrToneMapState(p)
             collectDecoderState(p)
+            collectVoFormatRejection(p)
           }
           // Subscribe before registration so the initial property event is kept.
           readOperations.run("internal property observation") {
@@ -1122,6 +1124,7 @@ class MpvPlayerCore private constructor(
               p.observeProperty("dwidth", PropertyFormat.Int64)
               p.observeProperty("dheight", PropertyFormat.Int64)
               p.observeProperty("hwdec-current", PropertyFormat.String)
+              p.observeProperty("vo-format-rejected", PropertyFormat.Flag)
               p.observeProperty("glsl-shaders", PropertyFormat.String)
               p.observeProperty("video-params/gamma", PropertyFormat.String)
             }
@@ -1176,13 +1179,11 @@ class MpvPlayerCore private constructor(
           }
           is MpvEvent.StartFile -> {
             endFileDiagnostics.onStartFile()
-            // Both triggers are per-file (an exotic pixel format, a gralloc
-            // refusal, mpv's own decode fallback for that stream), so give
-            // the plane back to the next file. A genuine failure re-arms
-            // them, costing one switch per bad file instead of the whole
-            // session's HDR/10-bit scanout.
-            setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, false)
-            setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, false)
+            // Per file: mpv's verdict was on the previous stream's decode
+            // path, so the next file gets the plane back. A genuine
+            // rejection re-arms it, costing one switch per affected file
+            // instead of the whole session's HDR/10-bit scanout.
+            setGpuVoRequirement(GpuVoPolicy.REASON_FORMAT_REJECTED, false)
             // The next file's rate arrives with its container-fps; until then
             // there is nothing to vote for (Media3: Format.NO_VALUE). Whether
             // it is presented as fields is measured at its first frame.
@@ -1293,18 +1294,6 @@ class MpvPlayerCore private constructor(
 
   private fun onMpvLog(msg: MpvEvent.LogMessage) {
     endFileDiagnostics.onLogMessage(msg)
-    // A chain-init failure is the one runtime signal that frames cannot
-    // reach the video plane at all (exotic pixel formats, gralloc
-    // refusal). mpv is pinned in the fork, so the log line is a stable
-    // contract.
-    if (usesMediaCodecVo &&
-      activeGpuVoTarget == null &&
-      msg.prefix.startsWith("cplayer") &&
-      msg.text.contains("Could not initialize video chain")
-    ) {
-      Log.w(TAG, "Video chain init failed under vo=mediacodec; leaving the video plane")
-      setGpuVoRequirement(GpuVoPolicy.REASON_CHAIN_FAILURE, true)
-    }
     emitLog(msg.level.name.lowercase(), msg.prefix, msg.text)
   }
 
@@ -1476,17 +1465,6 @@ class MpvPlayerCore private constructor(
             appliedGpuVoTarget = target
             if (p == null) return@withLock
             applyRenderTier(p, glVoActive = target != null)
-            if (target != null) {
-              // A failed conversion chain deselects video before this switch.
-              // Re-select its explicit id; mid-file "auto" resolves to none.
-              if (p.getString("vid").let { it == null || it == "no" }) {
-                val videoTrackId = videoTracks(p).firstOrNull()?.optLong("id")
-                if (videoTrackId != null) {
-                  Log.i(TAG, "Re-selecting video track $videoTrackId after chain failure")
-                  writeProperty("vid", videoTrackId.toString())
-                }
-              }
-            }
             applySurfaceSizeInternal(p, force = true)
             if (target == null) applyVideoRectLayout(force = true)
           }
@@ -1824,27 +1802,41 @@ class MpvPlayerCore private constructor(
   }
 
   /**
-   * Observed rather than derived from the hardware-decoding setting because
-   * the fallback is decided per file, inside mpv. Why it matters:
-   * [GpuVoPolicy.needsSoftwareRender].
+   * The plane cannot display this file's stream: it decodes to something
+   * other than MediaCodec buffers (a codec outside `hwdec-codecs` such as
+   * Xvid, #2602, or mpv's own fallback to `mediacodec-copy` or software).
+   * The fork mpv holds the video chain on the rejected frame instead of
+   * dropping the track (VO_CAP_CLIENT_FALLBACK), so the switch to a GL vo
+   * takes mpv's own vo-change path, which rebuilds the chain and seeks;
+   * video and audio then start together.
    *
    * Latched per file: the reason is only ever raised here and dropped on the
-   * next start-file. mpv's fallback to `mediacodec-copy` or software is a
-   * verdict on this stream's hardware path; clearing the reason as soon as a
-   * fresh decoder under the GL vo reports `mediacodec` again would send the
-   * session back to the plane, whose rebuild re-creates the decoder, which
-   * fails the same way — an endless plane/GL oscillation (#2272).
-   *
-   * A P5 file that lands in software decode also raises
+   * next start-file. The rebuild resets the property, and a fresh decoder
+   * under the GL vo may report `mediacodec` again; dropping the reason then
+   * would send the session back to the plane, whose rebuild re-creates the
+   * decoder, which fails the same way — an endless plane/GL oscillation
+   * (#2272).
+   */
+  private fun collectVoFormatRejection(p: MpvPlayer) {
+    scope.launch(start = CoroutineStart.UNDISPATCHED) {
+      p.propertyFlow.filterIsInstance<PropertyChange.Flag>()
+        .filter { it.name == "vo-format-rejected" && it.value }
+        .collect { setGpuVoRequirement(GpuVoPolicy.REASON_FORMAT_REJECTED, true) }
+    }
+  }
+
+  /**
+   * A P5 file that lands in software decode raises
    * [GpuVoPolicy.REASON_DV_RESHAPE], whatever [applyDvReshapePolicy]
-   * predicted: plain `sw-decode` targets `gpu`, which composites no RPU, and
-   * the base layer would scan out as SDR BT.2020. That reason is per file
-   * too — the next file's hook re-evaluates it.
+   * predicted: [GpuVoPolicy.REASON_FORMAT_REJECTED] alone targets `gpu`,
+   * which composites no RPU, and the base layer would scan out as SDR
+   * BT.2020. Observed rather than derived from the hardware-decoding setting
+   * because the fallback is decided per file, inside mpv. The reason is per
+   * file too — the next file's hook re-evaluates it.
    */
   private fun collectDecoderState(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "hwdec-current" }.collect { change ->
-        if (GpuVoPolicy.needsSoftwareRender(change.value)) setGpuVoRequirement(GpuVoPolicy.REASON_SW_DECODE, true)
         if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, change.value)) {
           Log.i(TAG, "DV P5 decoded in software (hwdec-current=${change.value}): gpu-next reshaping")
           setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)

@@ -237,12 +237,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     // as the deadline: a first frame or a latched error already settled this
     // open, and a superseded attempt's lines are not this open's business.
     if (_firstFrame.rendered || _hasFatalPlaybackError || !(_playbackAttempt?.isCurrent ?? false)) return;
-    final cause = openFailureCauseFromLog(
-      level: log.level,
-      prefix: log.prefix,
-      text: log.text,
-      isAndroid: Platform.isAndroid,
-    );
+    final cause = openFailureCauseFromLog(level: log.level, prefix: log.prefix, text: log.text);
     if (cause == null) return;
     appLogger.w('mpv gave up on a stream while opening — giving up on this open');
     _onPlayerError(PlayerError(log.text.trim(), cause: cause));
