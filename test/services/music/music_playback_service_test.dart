@@ -407,7 +407,7 @@ class FakePlayer implements Player {
   }) async => false;
 
   @override
-  Future<void> clearVideoFrameRate() async {}
+  Future<void> clearVideoFrameRate({bool awaitDisplayRestore = false}) async {}
 
   @override
   Future<void> setSubtitleStyle({
