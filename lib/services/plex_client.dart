@@ -799,7 +799,7 @@ class PlexClient
     MediaServerHttpClient? client;
 
     try {
-      client = MediaServerHttpClient(baseUrl: baseUrl, connectTimeout: timeout, receiveTimeout: timeout);
+      client = MediaServerHttpClient(baseUrl: baseUrl, connectTimeout: timeout);
 
       final headers = <String, String>{'X-Plex-Token': token};
       if (clientIdentifier != null) {
@@ -808,7 +808,7 @@ class PlexClient
         headers['X-Plex-Device-Name'] = sanitizeHeaderValue(identity.deviceName) ?? 'Plezy';
       }
 
-      final response = await client.get('/', headers: headers);
+      final response = await client.get('/', headers: headers, timeout: timeout);
 
       stopwatch.stop();
       final success = response.statusCode == 200;
@@ -3321,10 +3321,9 @@ class PlexClient
       baseUrl: candidateBaseUrl,
       defaultHeaders: const {'Accept': 'application/json'},
       connectTimeout: MediaServerTimeouts.connectionRace,
-      receiveTimeout: MediaServerTimeouts.connectionRace,
     );
     try {
-      final response = await probe.get('/identity', abort: abort);
+      final response = await probe.get('/identity', timeout: MediaServerTimeouts.connectionRace, abort: abort);
       if (response.statusCode != 200) return false;
       return _getMediaContainer(response)?['machineIdentifier']?.toString() == serverId;
     } finally {

@@ -9,6 +9,7 @@ import 'app_logger.dart';
 import 'future_extensions.dart';
 import 'isolate_helper.dart';
 import 'managed_http_client.dart';
+import 'media_server_timeouts.dart';
 import 'url_utils.dart';
 import '../exceptions/media_server_exceptions.dart';
 
@@ -76,6 +77,12 @@ class AbortController {
 
 /// HTTP client wrapper providing base URL, default headers, JSON parsing,
 /// timeouts, logging, and optional endpoint failover.
+///
+/// Timeouts are per phase. [connectTimeout] bounds reaching the server and is
+/// enforced by the transport this client creates (an injected client brings
+/// its own). [responseTimeout] then bounds the wait for the response headers —
+/// the server's think time — and [receiveTimeout] the body. A per-request
+/// `timeout` replaces every budget for that request.
 class MediaServerHttpClient {
   final http.Client _client;
 
@@ -94,9 +101,10 @@ class MediaServerHttpClient {
     http.Client? client,
     this.baseUrl = '',
     Map<String, String> defaultHeaders = const {},
-    this.connectTimeout = const Duration(seconds: 10),
-    this.receiveTimeout = const Duration(seconds: 120),
-  }) : _client = client ?? platform.createPlatformClient(),
+    this.connectTimeout = MediaServerTimeouts.connect,
+    this.responseTimeout = MediaServerTimeouts.response,
+    this.receiveTimeout = MediaServerTimeouts.receive,
+  }) : _client = client ?? platform.createPlatformClient(connectTimeout: connectTimeout),
        defaultHeaders = Map.of(defaultHeaders);
 
   /// The underlying [http.Client] for direct streaming / multipart requests.
@@ -104,8 +112,9 @@ class MediaServerHttpClient {
 
   String baseUrl;
   Map<String, String> defaultHeaders;
-  Duration connectTimeout;
-  Duration receiveTimeout;
+  final Duration connectTimeout;
+  final Duration responseTimeout;
+  final Duration receiveTimeout;
 
   Future<MediaServerResponse> get(
     String path, {
@@ -290,11 +299,11 @@ class MediaServerHttpClient {
     );
   }
 
-  /// Run one request: closing guard, abort registration, connect phase and
-  /// failure wrapping. [consume] reads the body through its scope, which
-  /// carries the same timeout and abort wiring into the receive phase;
-  /// [onError] runs after the abort and before the failure is wrapped. Every
-  /// exit path deregisters the request from [_activeAborts].
+  /// Run one request: closing guard, abort registration, the wait for
+  /// response headers, and failure wrapping. [consume] reads the body through
+  /// its scope, which carries the same timeout and abort wiring into the
+  /// receive phase; [onError] runs after the abort and before the failure is
+  /// wrapped. Every exit path deregisters the request from [_activeAborts].
   Future<T> _perform<T>(
     String method,
     String url, {
@@ -322,10 +331,16 @@ class MediaServerHttpClient {
 
     final scope = _RequestScope(this, uri, operation, requestAbort, timeout ?? receiveTimeout);
     try {
+      // `send` resolves when the response headers arrive, so this phase spans
+      // the connect *and* the server's think time. The transport bounds the
+      // connect to [connectTimeout] on its own; the server then gets the full
+      // [responseTimeout] to answer. Bounding the whole phase by the connect
+      // budget alone failed every query a large library needs more than 10 s
+      // for (#2581).
       final streamed = await _withAbortOnTimeout(
         _client.send(request),
-        timeout ?? connectTimeout,
-        operation: '$operation ${uri.path} connect',
+        timeout ?? connectTimeout + responseTimeout,
+        operation: '$operation ${uri.path} response',
         abort: requestAbort,
       );
       return await consume(streamed, scope);

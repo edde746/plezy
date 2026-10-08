@@ -1777,6 +1777,8 @@
     "noDownloadsTree": "目前沒有下載內容",
     "pauseAll": "全部暫停",
     "resumeAll": "全部繼續",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "全部刪除",
     "selectVersion": "選擇版本",
     "allEpisodes": "所有單集",

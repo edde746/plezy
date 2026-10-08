@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../media/media_item.dart';
 import '../../media/media_item_types.dart';
 import '../../media/media_kind.dart';
+import '../../media/media_server_client.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/music/music_playback_service.dart';
@@ -52,6 +54,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
   final _tvShowsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_tv_shows');
   final _moviesTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_movies');
   final _musicTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_music');
+  final _retryFailedFocusNode = FocusNode(debugLabel: 'downloads_retry_failed');
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
   final _tvShowsTabKey = GlobalKey<_DownloadsGridContentState>();
   final _moviesTabKey = GlobalKey<_DownloadsGridContentState>();
@@ -77,6 +80,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
     _tvShowsTabChipFocusNode.dispose();
     _moviesTabChipFocusNode.dispose();
     _musicTabChipFocusNode.dispose();
+    _retryFailedFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
   }
@@ -105,6 +109,18 @@ class DownloadsScreenState extends State<DownloadsScreen>
       3 => _musicTabKey.currentState,
       _ => null,
     };
+  }
+
+  /// The live client of the server a download (`serverId:ratingKey`) came
+  /// from. Backend-neutral: Jellyfin and Emby downloads resume and retry
+  /// through the same [MediaServerClient] path as Plex.
+  MediaServerClient? _clientForDownload(String globalKey) {
+    final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
+    return context.read<MultiServerProvider>().serverManager.getClient(ServerId(serverId));
+  }
+
+  void _retryDownloads(List<String> globalKeys) {
+    unawaited(context.read<DownloadProvider>().retryDownloads(globalKeys, _clientForDownload));
   }
 
   /// Focus the top of the currently active tab — its chips bar on
@@ -164,28 +180,48 @@ class DownloadsScreenState extends State<DownloadsScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
-              FocusableActionBar(
-                key: _actionBarKey,
-                onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
-                onNavigateDown: _focusCurrentTab,
-                actions: [
-                  FocusableAction(
-                    icon: Symbols.rule_settings_rounded,
-                    tooltip: t.downloads.activeSyncRules,
-                    debugLabel: 'downloads_sync_rules',
-                    onPressed: () =>
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
-                  ),
-                  // Mobile mirrors the library browse options action; desktop
-                  // and TV expose the same options as per-tab chips instead.
-                  if (PlatformDetector.isMobile(context) && tabController.index > 0)
-                    FocusableAction(
-                      icon: Symbols.tune_rounded,
-                      tooltip: t.downloads.options,
-                      debugLabel: 'downloads_options',
-                      onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
-                    ),
-                ],
+              Selector<DownloadProvider, bool>(
+                selector: (_, provider) => provider.hasFailedDownloads,
+                builder: (context, hasFailedDownloads, _) {
+                  // Retrying the last failure removes the focused action;
+                  // hand D-pad focus to its neighbour instead of dropping it.
+                  if (!hasFailedDownloads && _retryFailedFocusNode.hasFocus) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) _actionBarKey.currentState?.requestFocusOnFirst();
+                    });
+                  }
+                  return FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
+                    onNavigateDown: _focusCurrentTab,
+                    actions: [
+                      if (hasFailedDownloads)
+                        FocusableAction(
+                          icon: Symbols.refresh_rounded,
+                          tooltip: t.downloads.retryFailed,
+                          debugLabel: 'downloads_retry_failed',
+                          focusNode: _retryFailedFocusNode,
+                          onPressed: () => _retryDownloads(context.read<DownloadProvider>().failedDownloadKeys),
+                        ),
+                      FocusableAction(
+                        icon: Symbols.rule_settings_rounded,
+                        tooltip: t.downloads.activeSyncRules,
+                        debugLabel: 'downloads_sync_rules',
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
+                      ),
+                      // Mobile mirrors the library browse options action; desktop
+                      // and TV expose the same options as per-tab chips instead.
+                      if (PlatformDetector.isMobile(context) && tabController.index > 0)
+                        FocusableAction(
+                          icon: Symbols.tune_rounded,
+                          tooltip: t.downloads.options,
+                          debugLabel: 'downloads_options',
+                          onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -226,35 +262,26 @@ class DownloadsScreenState extends State<DownloadsScreen>
                   child: TabBarView(
                     controller: tabController,
                     children: [
-                      Consumer2<DownloadProvider, MultiServerProvider>(
-                        builder: (context, downloadProvider, serverProvider, _) {
-                          // Resolve the owning server's client from a download's
-                          // globalKey (`serverId:ratingKey`). Backend-neutral —
-                          // Jellyfin downloads also surface here, so the
-                          // resume/retry buttons need a [MediaServerClient]
-                          // (not a [PlexClient]) for both code paths.
-                          getClient(String globalKey) {
-                            final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
-                            return serverProvider.serverManager.getClient(ServerId(serverId));
-                          }
-
+                      Consumer<DownloadProvider>(
+                        builder: (context, downloadProvider, _) {
                           return DownloadTreeView(
                             downloads: downloadProvider.downloads,
                             metadata: downloadProvider.metadata,
                             downloadSizes: downloadProvider.downloadSizes,
                             onPause: downloadProvider.pauseDownload,
                             onResume: (globalKey) {
-                              final client = getClient(globalKey);
+                              final client = _clientForDownload(globalKey);
                               if (client != null) {
                                 downloadProvider.resumeDownload(globalKey, client);
                               }
                             },
                             onRetry: (globalKey) {
-                              final client = getClient(globalKey);
+                              final client = _clientForDownload(globalKey);
                               if (client != null) {
                                 downloadProvider.retryDownload(globalKey, client);
                               }
                             },
+                            onRetryAll: _retryDownloads,
                             onCancel: downloadProvider.cancelDownload,
                             onDelete: downloadProvider.deleteDownload,
                             onNavigateLeft: () => MainScreenFocusScope.focusSidebarOf(context),

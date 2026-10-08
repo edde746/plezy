@@ -89,6 +89,7 @@ class PlexAuthService {
     final storage = await StorageService.getInstance();
     final http = MediaServerHttpClient(
       connectTimeout: MediaServerTimeouts.plexTvConnect,
+      responseTimeout: MediaServerTimeouts.plexTvReceive,
       receiveTimeout: MediaServerTimeouts.plexTvReceive,
     );
     final clientIdentifier = await storage.getOrCreateClientIdentifier();

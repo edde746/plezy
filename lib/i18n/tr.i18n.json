@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "İndirme yok",
     "pauseAll": "Tümünü duraklat",
     "resumeAll": "Tümünü devam ettir",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Tümünü sil",
     "selectVersion": "Sürüm Seç",
     "allEpisodes": "Tüm bölümler",

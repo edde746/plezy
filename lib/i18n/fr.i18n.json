@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Aucun téléchargement",
     "pauseAll": "Tout mettre en pause",
     "resumeAll": "Tout reprendre",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Tout supprimer",
     "selectVersion": "Sélectionner la version",
     "allEpisodes": "Tous les épisodes",

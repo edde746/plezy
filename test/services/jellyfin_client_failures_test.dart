@@ -191,6 +191,9 @@ void main() {
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           probeRequests.add(request);
           events.add('probe:${request.url.host}');
+          if (request.url.host == 'primary-client-canary.invalid') {
+            throw TimeoutException('primary down');
+          }
           return publicInfo();
         }),
       );
@@ -201,13 +204,15 @@ void main() {
 
       expect(events, [
         'application:primary-client-canary.invalid',
+        'probe:primary-client-canary.invalid',
         'probe:fallback-client-canary.invalid',
         'application:fallback-client-canary.invalid',
       ]);
       expect(applicationRequests, hasLength(2));
-      expect(probeRequests, hasLength(1));
-      expect(probeRequests.single.headers.keys.map((name) => name.toLowerCase()), isNot(contains('authorization')));
-      expect(probeRequests.single.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-emby-token')));
+      for (final probe in probeRequests) {
+        expect(probe.headers.keys.map((name) => name.toLowerCase()), isNot(contains('authorization')));
+        expect(probe.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-emby-token')));
+      }
       expect(client.connection.baseUrl, fallback);
       expect(client.connection.baseUrls, [fallback, primary]);
       expect(persisted, hasLength(1));
@@ -250,6 +255,7 @@ void main() {
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           events.add('probe:${request.url.host}');
           expect(request.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-emby-token')));
+          if (request.url.host == 'primary.example.com') throw TimeoutException('primary down');
           return publicInfo(request.url.host == 'wrong-machine.example.com' ? 'srv-other' : 'srv-1');
         }),
         onAllEndpointsExhausted: () => exhausted++,
@@ -261,6 +267,7 @@ void main() {
 
       expect(events, [
         'application:primary.example.com',
+        'probe:primary.example.com',
         'probe:wrong-machine.example.com',
         'probe:valid.example.com',
         'application:valid.example.com',
@@ -297,7 +304,7 @@ void main() {
 
       expect(await client.getMachineIdentifier(), 'srv-1');
 
-      expect(events, ['application:primary.example.com', 'probe:unreachable.example.com']);
+      expect(events, ['application:primary.example.com', 'probe:primary.example.com', 'probe:unreachable.example.com']);
       expect(exhausted, 1);
       expect(persisted, isEmpty);
       expect(client.connection.baseUrl, 'https://primary.example.com');
@@ -360,7 +367,9 @@ void main() {
           baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
         ),
         httpClient: MockClient((req) async => throw TimeoutException('endpoint down')),
-        endpointProbeHttpClientFactory: () => MockClient((_) async => publicInfo()),
+        endpointProbeHttpClientFactory: () => MockClient(
+          (req) async => req.url.host == 'primary.example.com' ? throw TimeoutException('primary down') : publicInfo(),
+        ),
         onAllEndpointsExhausted: () => exhausted++,
       );
       addTearDown(client.close);
@@ -384,7 +393,9 @@ void main() {
           }
           return jsonResponse({'Id': 'srv-1'});
         }),
-        endpointProbeHttpClientFactory: () => MockClient((_) async => publicInfo()),
+        endpointProbeHttpClientFactory: () => MockClient(
+          (req) async => req.url.host == 'primary.example.com' ? throw TimeoutException('primary down') : publicInfo(),
+        ),
       );
       addTearDown(client.close);
 

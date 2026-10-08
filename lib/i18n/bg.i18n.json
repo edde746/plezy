@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Няма изтегляния",
     "pauseAll": "Пауза на всички",
     "resumeAll": "Продължи всички",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Изтрий всички",
     "selectVersion": "Избери версия",
     "allEpisodes": "Всички епизоди",

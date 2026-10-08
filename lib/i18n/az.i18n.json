@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Yükləmə yoxdur",
     "pauseAll": "Hamısını fasilə et",
     "resumeAll": "Hamısını davam etdir",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Hamısını sil",
     "selectVersion": "Versiya seç",
     "allEpisodes": "Bütün seriyalar",

@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Ingen downloads",
     "pauseAll": "Sæt alle på pause",
     "resumeAll": "Genoptag alle",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Slet alle",
     "selectVersion": "Vælg version",
     "allEpisodes": "Alle episoder",

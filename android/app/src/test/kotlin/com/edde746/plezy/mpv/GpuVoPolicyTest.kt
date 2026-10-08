@@ -338,7 +338,7 @@ class GpuVoPolicyTest {
   fun `software decode with dv reshaping targets gpu-next, not gpu`() {
     assertEquals(
       "gpu-next",
-      GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SW_DECODE, GpuVoPolicy.REASON_DV_RESHAPE))
+      GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_FORMAT_REJECTED, GpuVoPolicy.REASON_DV_RESHAPE))
     )
   }
 
@@ -379,12 +379,12 @@ class GpuVoPolicyTest {
   }
 
   @Test
-  fun `only direct mediacodec output can stay on the plane`() {
-    // -copy also reads frames back into system memory, so it leaves too.
+  fun `only direct mediacodec output counts as hardware frames`() {
+    // -copy also reads frames back into system memory.
     assertTrue(GpuVoPolicy.needsSoftwareRender("no"))
     assertTrue(GpuVoPolicy.needsSoftwareRender("mediacodec-copy"))
     assertFalse(GpuVoPolicy.needsSoftwareRender("mediacodec"))
-    // Unreported until the decoder initializes: stay on the plane.
+    // Unreported until the decoder initializes: nothing to reshape yet.
     assertFalse(GpuVoPolicy.needsSoftwareRender(null))
     assertFalse(GpuVoPolicy.needsSoftwareRender(""))
   }
@@ -404,12 +404,12 @@ class GpuVoPolicyTest {
   }
 
   @Test
-  fun `a software-decoding session targets gpu, not gpu-next`() {
-    assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SW_DECODE)))
+  fun `a rejected format and shaders target gpu, not gpu-next`() {
+    assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_FORMAT_REJECTED)))
     assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS)))
     assertEquals(
       "gpu",
-      GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS, GpuVoPolicy.REASON_SW_DECODE))
+      GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS, GpuVoPolicy.REASON_FORMAT_REJECTED))
     )
   }
 
@@ -508,16 +508,6 @@ class GpuVoPolicyTest {
     assertEquals(
       "gpu-next",
       GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS, GpuVoPolicy.REASON_DV_RESHAPE))
-    )
-  }
-
-  @Test
-  fun `shaders and chain failure target the hardware-safe gpu vo`() {
-    assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS)))
-    assertEquals("gpu", GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_CHAIN_FAILURE)))
-    assertEquals(
-      "gpu",
-      GpuVoPolicy.targetFor(setOf(GpuVoPolicy.REASON_SHADERS, GpuVoPolicy.REASON_CHAIN_FAILURE))
     )
   }
 

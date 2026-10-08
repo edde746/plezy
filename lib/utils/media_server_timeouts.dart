@@ -3,8 +3,17 @@
 /// timeouts are kept here so the budgets per phase are visible at a
 /// glance.
 class MediaServerTimeouts {
+  /// Reaching the server: DNS, TCP and TLS. Enforced by the transport, so it
+  /// never cuts into the server's think time.
   static const connect = Duration(seconds: 10);
 
+  /// Waiting on a server that was reached for its response headers — the
+  /// server's think time. Covers a slow-but-working query (an Emby search
+  /// that takes 11–15 s, #2581) while a server that accepted the connection
+  /// and never answers still fails well before [receive].
+  static const response = Duration(seconds: 30);
+
+  /// Waiting on the response body once the headers arrived.
   static const receive = Duration(seconds: 120);
 
   /// Whole-request deadline for home `/hubs` startup calls. These endpoints can
@@ -34,6 +43,21 @@ class MediaServerTimeouts {
   /// dead endpoint, and treating the timeout as one used to cascade the whole
   /// client through its stale LAN candidates (#2098).
   static const libraryLookup = Duration(seconds: 20);
+
+  /// Per-server deadline for one leg of a global search
+  /// (`DataAggregationService.searchAcrossServers`): a server's titles, and
+  /// separately its people. Every server's results are shown together, so a
+  /// server that accepted the connection and stopped answering would
+  /// otherwise hold back all of them for the full [response] budget. Same
+  /// budget as [libraryLookup], which searches the same libraries.
+  static const searchServerDeadline = Duration(seconds: 20);
+
+  /// Per-server deadline for one server's library list
+  /// (`DataAggregationService.getMediaLibrariesFromAllServers`). A server
+  /// that misses it counts as failed and is retried on the next pass instead
+  /// of holding back the libraries, and the home hubs built from them, of
+  /// every other server. Same budget as [homeHubDeadline].
+  static const libraryListServerDeadline = Duration(seconds: 15);
 
   /// Timeout for probing a cached/preferred endpoint (used in
   /// [PlexServer.findBestWorkingConnection]).
@@ -65,8 +89,8 @@ class MediaServerTimeouts {
   static const noNetworkStartupBind = Duration(seconds: 2);
 
   /// How long a caller waits for a Plex tune or a MediaBrowser Live TV
-  /// PlaybackInfo that opens a source. Matches Plex web's value: a cold
-  /// tuner can take longer than the default 10s to return response headers.
+  /// PlaybackInfo that opens a source. Matches Plex web's value: a cold tuner
+  /// can take well over ten seconds to return response headers.
   ///
   /// Only the wait: the request itself runs to [tuneTransport]. Servers finish
   /// opening a tuner whether or not the client is still connected (#2394), so
@@ -83,7 +107,7 @@ class MediaServerTimeouts {
   static const plexTvReceive = Duration(seconds: 10);
 
   /// Authenticated health probe timeout. Health sweeps await every server, so
-  /// a stale Plex endpoint must not hold the whole sweep for [receive].
+  /// a stale Plex endpoint must not hold the whole sweep for [response].
   static const plexProbe = Duration(seconds: 8);
 
   /// Probe + token-validate timeout — Jellyfin servers respond fast on

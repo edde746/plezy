@@ -1826,6 +1826,40 @@ void main() {
       });
     });
 
+    test('a paused keepalive the server has not answered is not stacked by later ticks', () {
+      fakeAsync((async) {
+        final client = _FakePlexClient();
+        final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100))
+          ..playing = false;
+        final pings = <Completer<void>>[];
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+          onPausedKeepalive: () {
+            final ping = Completer<void>();
+            pings.add(ping);
+            return ping.future;
+          },
+        );
+
+        tracker.startTracking();
+        async.elapse(const Duration(seconds: 3));
+        async.flushMicrotasks();
+        expect(pings, hasLength(1), reason: 'the first ping is still waiting on the server');
+
+        pings.single.complete();
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(pings, hasLength(2), reason: 'the next tick pings again once the server answered');
+
+        pings.last.complete();
+        tracker.dispose();
+      });
+    });
+
     test('startTracking overrides only the initial report with the caller-supplied start state (#1849)', () {
       fakeAsync((async) {
         final client = _FakePlexClient();

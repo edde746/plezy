@@ -60,6 +60,9 @@ class DownloadTreeView extends StatefulWidget {
   final void Function(String globalKey)? onPause;
   final void Function(String globalKey)? onResume;
   final void Function(String globalKey)? onRetry;
+
+  /// Retries the failed leaves of a container row, in tree order.
+  final void Function(List<String> globalKeys)? onRetryAll;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
   final VoidCallback? onNavigateLeft;
@@ -74,6 +77,7 @@ class DownloadTreeView extends StatefulWidget {
     this.onPause,
     this.onResume,
     this.onRetry,
+    this.onRetryAll,
     this.onCancel,
     this.onDelete,
     this.onNavigateLeft,
@@ -391,6 +395,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
       autofocus: isFirst && !widget.suppressAutoFocus,
       pauseAllChildren: _pauseAllChildren,
       resumeAllChildren: _resumeAllChildren,
+      retryAllChildren: widget.onRetryAll == null ? null : _retryAllChildren,
       deleteAllChildren: _deleteAllChildren,
     );
   }
@@ -411,6 +416,10 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
     for (final key in keys) {
       widget.onResume?.call(key);
     }
+  }
+
+  void _retryAllChildren(DownloadTreeNode node) {
+    widget.onRetryAll?.call(_leafKeys(node, where: (leaf) => leaf.status == DownloadStatus.failed));
   }
 
   /// Delete all children of a container node via the container's globalKey
@@ -526,6 +535,11 @@ String? _firstLeafKey(DownloadTreeNode node) {
   return null;
 }
 
+/// Whether any leaf below a container node failed. The container's aggregate
+/// status hides a failure next to an active or paused sibling.
+bool _hasFailedLeaf(DownloadTreeNode node) =>
+    node.children.any((child) => child.hasChildren ? _hasFailedLeaf(child) : child.status == DownloadStatus.failed);
+
 class _FlatNode {
   final DownloadTreeNode node;
   final int depth;
@@ -555,6 +569,7 @@ class _DownloadTreeItem extends StatefulWidget {
   final bool autofocus;
   final void Function(DownloadTreeNode) pauseAllChildren;
   final void Function(DownloadTreeNode) resumeAllChildren;
+  final void Function(DownloadTreeNode)? retryAllChildren;
   final void Function(DownloadTreeNode) deleteAllChildren;
 
   const _DownloadTreeItem({
@@ -573,6 +588,7 @@ class _DownloadTreeItem extends StatefulWidget {
     this.autofocus = false,
     required this.pauseAllChildren,
     required this.resumeAllChildren,
+    this.retryAllChildren,
     required this.deleteAllChildren,
   });
 
@@ -809,6 +825,16 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
           icon: Symbols.play_arrow_rounded,
           tooltip: t.downloads.resumeAll,
           onPressed: () => widget.resumeAllChildren(widget.node),
+        ));
+      }
+
+      // Retry all button; a failed leaf can sit under an active container
+      final retryAllChildren = widget.retryAllChildren;
+      if (retryAllChildren != null && _hasFailedLeaf(widget.node)) {
+        actions.add((
+          icon: Symbols.refresh_rounded,
+          tooltip: t.downloads.retryAll,
+          onPressed: () => retryAllChildren(widget.node),
         ));
       }
 

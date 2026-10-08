@@ -212,6 +212,30 @@ class _GatedPhysicalDeletionManager extends DownloadManagerService {
   Future<void> deleteDownload(String globalKey) => _completePhysicalDeletion();
 }
 
+/// Records [retryDownload] calls instead of requeueing. A key in [failing]
+/// throws; a pending [gate] holds every retry until it completes.
+class _RecordingRetryManager extends DownloadManagerService {
+  _RecordingRetryManager(AppDatabase database)
+    : super(
+        database: database,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      ) {
+    recoveryFuture = Future<void>.value();
+  }
+
+  final retried = <String>[];
+  final failing = <String>{};
+  Completer<void>? gate;
+
+  @override
+  Future<void> retryDownload(String globalKey, MediaServerClient client) async {
+    retried.add(globalKey);
+    await gate?.future;
+    if (failing.contains(globalKey)) throw StateError('test: retry of $globalKey fails');
+  }
+}
+
 Future<void> _insertProfile(AppDatabase db, String id) => db
     .into(db.profiles)
     .insert(ProfilesCompanion.insert(id: id, kind: 'local', displayName: id, configJson: '{}', createdAt: 0));
@@ -4026,6 +4050,79 @@ void main() {
       expect(p.getArtworkPaths('srv:99'), isNotNull);
 
       p.dispose();
+    });
+  });
+
+  group('DownloadProvider — retrying failed downloads', () {
+    late _RecordingRetryManager manager;
+    late DownloadProvider provider;
+    final client = _ThrowingClient();
+
+    DownloadProgress progress(String key, DownloadStatus status) => DownloadProgress(globalKey: key, status: status);
+
+    setUp(() async {
+      manager = _RecordingRetryManager(db);
+      provider = DownloadProvider.forTesting(downloadManager: manager, database: db);
+      await provider.ensureInitialized();
+    });
+
+    tearDown(() {
+      provider.dispose();
+      manager.dispose();
+    });
+
+    test('retries owned failures in the given order and skips everything else', () async {
+      provider.debugSeedState(
+        downloads: {
+          'srv:1': progress('srv:1', DownloadStatus.failed),
+          'srv:2': progress('srv:2', DownloadStatus.completed),
+          'srv:3': progress('srv:3', DownloadStatus.failed),
+          'offline:4': progress('offline:4', DownloadStatus.failed),
+          'srv:5': progress('srv:5', DownloadStatus.failed),
+        },
+        ownedDownloadKeys: {'srv:1', 'srv:2', 'srv:3', 'offline:4'},
+      );
+
+      expect(provider.hasFailedDownloads, isTrue);
+      expect(provider.failedDownloadKeys, ['srv:1', 'srv:3', 'offline:4'], reason: 'srv:5 belongs to another profile');
+
+      await provider.retryDownloads([
+        'srv:3',
+        'srv:2',
+        'offline:4',
+        'srv:5',
+        'srv:1',
+      ], (key) => key.startsWith('srv:') ? client : null);
+
+      expect(manager.retried, ['srv:3', 'srv:1']);
+    });
+
+    test('one failed retry does not stop the rest of the batch', () async {
+      provider.debugSeedState(
+        downloads: {
+          'srv:1': progress('srv:1', DownloadStatus.failed),
+          'srv:2': progress('srv:2', DownloadStatus.failed),
+        },
+      );
+      manager.failing.add('srv:1');
+
+      await provider.retryDownloads(['srv:1', 'srv:2'], (_) => client);
+
+      expect(manager.retried, ['srv:1', 'srv:2']);
+    });
+
+    test('a retry still in flight is not started again', () async {
+      provider.debugSeedState(downloads: {'srv:1': progress('srv:1', DownloadStatus.failed)});
+      final gate = manager.gate = Completer<void>();
+
+      final first = provider.retryDownload('srv:1', client);
+      await provider.retryDownloads(['srv:1'], (_) => client);
+      expect(manager.retried, ['srv:1']);
+
+      gate.complete();
+      await first;
+      await provider.retryDownload('srv:1', client);
+      expect(manager.retried, ['srv:1', 'srv:1'], reason: 'the guard releases once the first retry settles');
     });
   });
 

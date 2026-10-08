@@ -710,6 +710,7 @@ void main() {
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           probeRequests.add(request);
           events.add('probe:${request.url.host}');
+          if (request.url.host == 'plex.example.com') throw TimeoutException('primary down');
           return identity('server-id');
         }),
       );
@@ -719,11 +720,14 @@ void main() {
 
       expect(events, [
         'application:plex.example.com',
+        'probe:plex.example.com',
         'probe:plex-fallback.example.com',
         'application:plex-fallback.example.com',
       ]);
-      expect(probeRequests.single.url.path, '/identity');
-      expect(probeRequests.single.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-plex-token')));
+      for (final probe in probeRequests) {
+        expect(probe.url.path, '/identity');
+        expect(probe.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-plex-token')));
+      }
       expect(client.config.baseUrl, fallback);
     });
 
@@ -748,6 +752,7 @@ void main() {
         ],
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           events.add('probe:${request.url.host}');
+          if (request.url.host == 'plex.example.com') throw TimeoutException('primary down');
           return identity(request.url.host == 'wrong-machine.example.com' ? 'other-server' : 'server-id');
         }),
         onAllEndpointsExhausted: () => exhausted++,
@@ -758,6 +763,7 @@ void main() {
 
       expect(events, [
         'application:plex.example.com',
+        'probe:plex.example.com',
         'probe:wrong-machine.example.com',
         'probe:valid.example.com',
         'application:valid.example.com',
@@ -788,7 +794,7 @@ void main() {
 
       expect(await client.getMachineIdentifier(), isNull);
 
-      expect(events, ['application:plex.example.com', 'probe:unreachable.example.com']);
+      expect(events, ['application:plex.example.com', 'probe:plex.example.com', 'probe:unreachable.example.com']);
       expect(exhausted, 1);
       expect(client.config.baseUrl, 'https://plex.example.com');
     });
@@ -818,6 +824,7 @@ void main() {
         prioritizedEndpoints: const [primary, fallback],
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           events.add('probe:${request.url.host}');
+          if (request.url.host == 'plex.example.com') throw TimeoutException('primary down');
           return identity('server-id');
         }),
       );
@@ -826,7 +833,12 @@ void main() {
       final queue = await client.createPlayQueue(uri: 'server://items', type: 'audio');
 
       expect(queue.playQueueID, 7);
-      expect(events, ['POST:plex.example.com', 'probe:plex-fallback.example.com', 'POST:plex-fallback.example.com']);
+      expect(events, [
+        'POST:plex.example.com',
+        'probe:plex.example.com',
+        'probe:plex-fallback.example.com',
+        'POST:plex-fallback.example.com',
+      ]);
       expect(client.config.baseUrl, fallback);
     });
   });

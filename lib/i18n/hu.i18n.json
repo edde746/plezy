@@ -1788,6 +1788,8 @@
     "noDownloadsTree": "Nincsenek letöltések",
     "pauseAll": "Összes szüneteltetése",
     "resumeAll": "Összes folytatása",
+    "retryAll": "",
+    "retryFailed": "",
     "deleteAll": "Összes törlése",
     "selectVersion": "Verzió kiválasztása",
     "allEpisodes": "Minden epizód",
