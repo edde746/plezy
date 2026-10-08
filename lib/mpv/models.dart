@@ -103,6 +103,11 @@ sealed class AudioTrack with _$AudioTrack {
     String? title,
     String? language,
     String? codec,
+
+    /// mpv's `codec-profile` (ffmpeg's profile name, e.g. `DTS-HD MA`). The
+    /// patched demuxer publishes it for every DTS track at load; a decoder
+    /// fills or replaces it for the selected track.
+    String? codecProfile,
     int? channels,
     int? sampleRate,
     int? bitrate,

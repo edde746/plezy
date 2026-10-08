@@ -304,6 +304,7 @@ class _AudioColumn extends StatelessWidget {
           title: track.title,
           language: track.language,
           codec: track.codec,
+          codecProfile: track.codecProfile,
           channels: track.channelsCount,
           index: index,
         );

@@ -162,6 +162,25 @@ void main() {
       expect(CodecUtils.formatAudioCodec('dts-hd'), 'DTS-HD');
     });
 
+    test('ffmpeg DTS profile names the variant mpv reports as plain dts (#2603)', () {
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS-HD MA'), 'DTS-HD MA');
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS-HD HRA'), 'DTS-HD HRA');
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS-ES'), 'DTS-ES');
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS 96/24'), 'DTS 96/24');
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS Express'), 'DTS Express');
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS-HD MA + DTS:X'), 'DTS:X');
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS-HD MA + DTS:X IMAX'), 'DTS:X');
+      // The core profile and an unknown one fall back to the codec name.
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'DTS'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('dts', profile: 'Something New'), 'DTS');
+    });
+
+    test('non-DTS profiles leave the codec name alone', () {
+      expect(CodecUtils.formatAudioCodec('aac', profile: 'LC'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('aac', profile: 'HE-AAC'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('truehd', profile: null), 'TrueHD');
+    });
+
     test('RFC 6381 codec IDs from ExoPlayer map to friendly names', () {
       // AAC-LC as reported for MP4/HLS direct play (#1899).
       expect(CodecUtils.formatAudioCodec('mp4a.40.2'), 'AAC');

@@ -641,6 +641,8 @@ void main() {
               'type': 'audio',
               'id': 7,
               'title': 'Main',
+              'codec': 'dts',
+              'codec-profile': 'DTS-HD MA',
               'selected': true,
               'metadata': {
                 'nested': [true, 2, 3.5, null],
@@ -659,6 +661,7 @@ void main() {
 
           expect(player.state.tracks.audio.single.id, '7');
           expect(player.state.tracks.audio.single.title, 'Main');
+          expect(player.state.tracks.audio.single.codecProfile, 'DTS-HD MA');
           expect(player.state.buffer, const Duration(milliseconds: 12500));
           expect(player.state.bufferRanges.single.start, const Duration(seconds: 1));
           expect(player.state.bufferRanges.single.end, const Duration(milliseconds: 9250));
@@ -690,6 +693,7 @@ void main() {
               'title': 12,
               'lang': false,
               'codec': {'unexpected': true},
+              'codec-profile': 5,
               'demux-channel-count': 'many',
               'selected': true,
             },
@@ -709,6 +713,7 @@ void main() {
           expect(player.state.tracks.audio.single.id, '8');
           expect(player.state.tracks.audio.single.title, isNull);
           expect(player.state.tracks.audio.single.channels, isNull);
+          expect(player.state.tracks.audio.single.codecProfile, isNull);
           expect(player.state.buffer, const Duration(milliseconds: 12500));
           expect(player.state.bufferRanges.single.start, const Duration(seconds: 2));
           expect(player.state.bufferRanges.single.end, const Duration(seconds: 6));

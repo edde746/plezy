@@ -130,12 +130,15 @@ class TrackLabelBuilder {
     String? language,
     String? languageCode,
     String? codec,
+
+    /// mpv's `codec-profile`; see [CodecUtils.formatAudioCodec].
+    String? codecProfile,
     int? channels,
     String? displayTitle,
     required int index,
   }) {
     final tech = <String>[];
-    if (codec != null && codec.isNotEmpty) tech.add(CodecUtils.formatAudioCodec(codec));
+    if (codec != null && codec.isNotEmpty) tech.add(CodecUtils.formatAudioCodec(codec, profile: codecProfile));
     final channelsLabel = CodecUtils.formatAudioChannels(channels);
     if (channelsLabel != null) tech.add(channelsLabel);
 
