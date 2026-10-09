@@ -9,7 +9,11 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     SettingsService settingsService,
     PlayerOutputFormat output,
   ) {
-    final fps = settingsService.read(SettingsService.matchContentFrameRate) ? output.fps : null;
+    final matchRate = settingsService.read(SettingsService.matchContentFrameRate);
+    if (matchRate && !output.hasFrameRate) {
+      appLogger.d('Display matching: no frame rate to match');
+    }
+    final fps = matchRate ? output.fps : null;
     final matchResolution = settingsService.read(SettingsService.matchContentResolution);
     if (matchResolution && !output.hasDimensions) {
       appLogger.d('Display matching: no decoded dimensions for resolution matching');
@@ -85,7 +89,6 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
           });
           return;
         }
-        appLogger.d('Display matching: No valid fps available');
       }
       _frameRate.retries = 0;
       final target = _displayTargetFor(settingsService, output);

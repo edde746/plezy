@@ -487,16 +487,19 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     if (!automotivePlaybackAllowedNow()) {
       return (output: await PlayerOutputFormat.read(currentPlayer), windowStart: null);
     }
-    final step = await _stepFramesForCadence(currentPlayer);
+    final window = await _stepFramesForCadence(currentPlayer);
+    final SteppedFrames? step = window == null
+        ? null
+        : (frames: _cadenceStepFrames, advanced: window.end - window.start);
     final steppedFps = step == null
         ? null
-        : PlayerOutputFormat.steppedRate(frames: _cadenceStepFrames, advanced: step.end - step.start);
+        : PlayerOutputFormat.steppedRate(frames: step.frames, advanced: step.advanced);
     if (steppedFps != null) {
       appLogger.d(
         'Display matching: $_cadenceStepFrames stepped frames presented at ${steppedFps.toStringAsFixed(2)}fps',
       );
     }
-    return (output: await PlayerOutputFormat.read(currentPlayer, steppedFps: steppedFps), windowStart: step?.start);
+    return (output: await PlayerOutputFormat.read(currentPlayer, step: step), windowStart: window?.start);
   }
 
   /// The open outcome's first-frame signal is mpv's playback-restart, which
