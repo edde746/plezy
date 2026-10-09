@@ -2869,7 +2869,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       },
       deleteSyncRuleDownload: (downloadGlobalKey) async {
         if (!_isQueueOwnershipCurrent(ownership)) return;
-        await _deleteDownload(downloadGlobalKey, notify: true);
+        await _deleteDownload(downloadGlobalKey, notify: true, profileGeneration: ownership.generation);
       },
       isOffline: _offlineSource?.isOffline ?? false,
       force: force,
@@ -2916,7 +2916,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       ),
       deleteSyncRuleDownload: (downloadGlobalKey) async {
         if (!_isQueueOwnershipCurrent(ownership)) return;
-        await _deleteDownload(downloadGlobalKey, notify: true);
+        await _deleteDownload(downloadGlobalKey, notify: true, profileGeneration: ownership.generation);
       },
       isOffline: _offlineSource?.isOffline ?? false,
     );
