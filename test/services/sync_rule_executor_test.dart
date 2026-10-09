@@ -507,6 +507,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -909,7 +910,8 @@ class _ContinueWatchingClient implements MediaServerClient {
   Future<MediaItem?> fetchItem(String id) async => null;
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => shelf;
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
+      shelf;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
