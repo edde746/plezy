@@ -282,6 +282,21 @@ class PlatformDetector {
     _debugIsDesktopOSOverride = value;
   }
 
+  /// True on Android, TV and Automotive included. Use for OS-level checks such
+  /// as which player backend is in use; use [isMobile] for layout decisions.
+  static bool isAndroid() {
+    return _debugIsAndroidOverride ?? Platform.isAndroid;
+  }
+
+  static bool? _debugIsAndroidOverride;
+
+  /// Test-only: override [isAndroid] so Android-only paths can run on the
+  /// test host, where [Platform.isAndroid] is always false.
+  @visibleForTesting
+  static void debugSetIsAndroidOverride(bool? value) {
+    _debugIsAndroidOverride = value;
+  }
+
   /// Whether an executable path belongs to a packaged (MSIX/Store) install.
   /// Packaged apps run from C:\Program Files\WindowsApps\<package>\, matched
   /// case-insensitively because a casing difference would silently re-enable
