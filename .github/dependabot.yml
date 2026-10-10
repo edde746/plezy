@@ -4,3 +4,10 @@ updates:
     directory: /
     schedule:
       interval: monthly
+
+  - package-ecosystem: docker
+    directory: /server
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: "*bugs*"
