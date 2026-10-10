@@ -1868,6 +1868,23 @@
     "unknownSeason": "Okänd säsong",
     "unknownAlbum": "Okänt album",
     "completedOfTotal": "${completed}/${total} slutförda",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Filen hittades inte (404)",
     "errorDownloadNotAllowed": "Servern tillåter inte nedladdning (403)",
     "errorDownloadFailed": "Nedladdningen misslyckades",

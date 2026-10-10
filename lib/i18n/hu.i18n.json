@@ -1868,6 +1868,23 @@
     "unknownSeason": "Ismeretlen évad",
     "unknownAlbum": "Ismeretlen album",
     "completedOfTotal": "${completed}/${total} kész",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "A fájl nem található (404)",
     "errorDownloadNotAllowed": "A szerver nem engedélyezi a letöltést (403)",
     "errorDownloadFailed": "A letöltés nem sikerült",

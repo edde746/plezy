@@ -1868,6 +1868,23 @@
     "unknownSeason": "Белгісіз маусым",
     "unknownAlbum": "Белгісіз альбом",
     "completedOfTotal": "${completed}/${total} аяқталды",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Файл табылмады (404)",
     "errorDownloadNotAllowed": "Сервер жүктеп алуға рұқсат бермейді (403)",
     "errorDownloadFailed": "Жүктеу сәтсіз аяқталды",

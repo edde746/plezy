@@ -1857,6 +1857,19 @@
     "unknownSeason": "未知季",
     "unknownAlbum": "未知专辑",
     "completedOfTotal": "已完成 ${completed}/${total}",
+    "storageUsed": "",
+    "downloadCount": {
+      "other": ""
+    },
+    "showCount": {
+      "other": ""
+    },
+    "movieCount": {
+      "other": ""
+    },
+    "albumCount": {
+      "other": ""
+    },
     "errorFileNotFound": "未找到文件（404）",
     "errorDownloadNotAllowed": "服务器不允许下载（403）",
     "errorDownloadFailed": "下载失败",

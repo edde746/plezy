@@ -1868,6 +1868,23 @@
     "unknownSeason": "Unknown Season",
     "unknownAlbum": "Unknown Album",
     "completedOfTotal": "${completed}/${total} completed",
+    "storageUsed": "Storage used: ${size}",
+    "downloadCount": {
+      "one": "${n} download",
+      "other": "${n} downloads"
+    },
+    "showCount": {
+      "one": "${n} show",
+      "other": "${n} shows"
+    },
+    "movieCount": {
+      "one": "${n} movie",
+      "other": "${n} movies"
+    },
+    "albumCount": {
+      "one": "${n} album",
+      "other": "${n} albums"
+    },
     "errorFileNotFound": "File not found (404)",
     "errorDownloadNotAllowed": "Download not allowed by the server (403)",
     "errorDownloadFailed": "Download failed",

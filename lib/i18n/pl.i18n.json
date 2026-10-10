@@ -1890,6 +1890,31 @@
     "unknownSeason": "Nieznany sezon",
     "unknownAlbum": "Nieznany album",
     "completedOfTotal": "Ukończono ${completed}/${total}",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
     "errorFileNotFound": "Nie znaleziono pliku (404)",
     "errorDownloadNotAllowed": "Serwer nie zezwala na pobieranie (403)",
     "errorDownloadFailed": "Pobieranie nie powiodło się",

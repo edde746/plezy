@@ -1868,6 +1868,23 @@
     "unknownSeason": "Bilinmeyen Sezon",
     "unknownAlbum": "Bilinmeyen Albüm",
     "completedOfTotal": "${completed}/${total} tamamlandı",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Dosya bulunamadı (404)",
     "errorDownloadNotAllowed": "Sunucu indirmeye izin vermiyor (403)",
     "errorDownloadFailed": "İndirme başarısız oldu",

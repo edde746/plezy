@@ -1868,6 +1868,23 @@
     "unknownSeason": "Saison inconnue",
     "unknownAlbum": "Album inconnu",
     "completedOfTotal": "${completed}/${total} terminés",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Fichier introuvable (404)",
     "errorDownloadNotAllowed": "Téléchargement non autorisé par le serveur (403)",
     "errorDownloadFailed": "Échec du téléchargement",

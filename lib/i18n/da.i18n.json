@@ -1868,6 +1868,23 @@
     "unknownSeason": "Ukendt sæson",
     "unknownAlbum": "Ukendt album",
     "completedOfTotal": "${completed}/${total} fuldført",
+    "storageUsed": "",
+    "downloadCount": {
+      "one": "",
+      "other": ""
+    },
+    "showCount": {
+      "one": "",
+      "other": ""
+    },
+    "movieCount": {
+      "one": "",
+      "other": ""
+    },
+    "albumCount": {
+      "one": "",
+      "other": ""
+    },
     "errorFileNotFound": "Filen blev ikke fundet (404)",
     "errorDownloadNotAllowed": "Serveren tillader ikke download (403)",
     "errorDownloadFailed": "Download mislykkedes",
