@@ -2,10 +2,11 @@ import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import 'fullscreen_state_manager.dart';
 
-/// Windows-only native window wrapper. Exposes a monitor-aware fullscreen
-/// implementation that lives in the Win32 runner (windows/runner/flutter_window.cpp)
-/// as a workaround for window_manager's multi-monitor fullscreen bug
-/// (edde746/plezy#880).
+/// Windows-only native window wrapper for behavior that lives in the Win32
+/// runner (windows/runner/flutter_window.cpp): a monitor-aware fullscreen
+/// implementation that works around window_manager's multi-monitor fullscreen
+/// bug (edde746/plezy#880), and a frame theme the app controls, which
+/// window_manager cannot set darker than the OS app theme.
 ///
 /// No-op on non-Windows platforms — callers should keep using
 /// `MacOSWindowService` on macOS and `window_manager` on Linux.
@@ -40,5 +41,12 @@ class NativeWindowService {
   static Future<bool> isFullScreen() async {
     if (!Platform.isWindows) return false;
     return await _channel.invokeMethod<bool>('isFullScreen') ?? false;
+  }
+
+  /// Theme the window frame (title bar) dark or light. The runner follows the
+  /// OS app theme until the first call.
+  static Future<void> setDarkMode(bool dark) async {
+    if (!Platform.isWindows) return;
+    await _channel.invokeMethod<void>('setDarkMode', dark);
   }
 }

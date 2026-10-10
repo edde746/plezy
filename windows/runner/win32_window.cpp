@@ -237,6 +237,22 @@ HWND Win32Window::GetHandle() { return window_handle_; }
 
 void Win32Window::SetQuitOnClose(bool quit_on_close) { quit_on_close_ = quit_on_close; }
 
+void Win32Window::SetDarkMode(bool dark) {
+  if (dark_mode_ == dark) return;
+  dark_mode_ = dark;
+  if (window_handle_ == nullptr) return;
+  UpdateTheme(window_handle_);
+
+  // Windows 10 repaints the caption in a new frame theme only on the next
+  // activation change. Repaint it now, straight through DefWindowProc so the
+  // plugins that read WM_NCACTIVATE as focus/blur see no activation change.
+  if (IsWindowVisible(window_handle_)) {
+    const bool active = GetActiveWindow() == window_handle_;
+    DefWindowProc(window_handle_, WM_NCACTIVATE, active ? FALSE : TRUE, 0);
+    DefWindowProc(window_handle_, WM_NCACTIVATE, active ? TRUE : FALSE, 0);
+  }
+}
+
 bool Win32Window::OnCreate() {
   // No-op; provided for subclasses.
   return true;
@@ -247,14 +263,17 @@ void Win32Window::OnDestroy() {
 }
 
 void Win32Window::UpdateTheme(HWND const window) {
-  DWORD light_mode;
-  DWORD light_mode_size = sizeof(light_mode);
-  LSTATUS result = RegGetValue(
-      HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey, kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD, nullptr,
-      &light_mode, &light_mode_size);
-
-  if (result == ERROR_SUCCESS) {
-    BOOL enable_dark_mode = light_mode == 0;
-    DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable_dark_mode, sizeof(enable_dark_mode));
+  BOOL enable_dark_mode = FALSE;
+  if (dark_mode_.has_value()) {
+    enable_dark_mode = *dark_mode_ ? TRUE : FALSE;
+  } else {
+    DWORD light_mode;
+    DWORD light_mode_size = sizeof(light_mode);
+    LSTATUS result = RegGetValue(
+        HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey, kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD, nullptr,
+        &light_mode, &light_mode_size);
+    if (result != ERROR_SUCCESS) return;
+    enable_dark_mode = light_mode == 0;
   }
+  DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable_dark_mode, sizeof(enable_dark_mode));
 }
