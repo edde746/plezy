@@ -1978,6 +1978,218 @@ void main() {
       expect(uri.queryParameters['Container'], 'mkv');
     });
 
+    test('HTTP protocol (.strm) direct play uses MediaSource.Path directly without server static proxy', () async {
+      const remoteStreamUrl =
+          'https://redirector.example.org/stream?url=https%3A//cdn.example.org/video.mkv%3Ftoken%3Dabc';
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({
+          'MediaSources': [
+            {
+              'Id': 'item-1',
+              'Protocol': 'Http',
+              'Path': remoteStreamUrl,
+              'Container': 'mkv',
+              'IsRemote': true,
+              'SupportsDirectPlay': true,
+              'SupportsDirectStream': true,
+              'SupportsTranscoding': false,
+              'RequiredHttpHeaders': <String, Object?>{},
+              'MediaStreams': [
+                {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Width': 3840, 'Height': 2160},
+                {'Index': 1, 'Type': 'Audio', 'Codec': 'eac3', 'Language': 'eng', 'IsDefault': true},
+              ],
+            },
+          ],
+        }),
+        itemSources: [
+          {
+            'Id': 'item-1',
+            'Protocol': 'Http',
+            'Path': remoteStreamUrl,
+            'Container': 'mkv',
+            'IsRemote': true,
+            'SupportsDirectPlay': true,
+            'SupportsDirectStream': true,
+            'SupportsTranscoding': false,
+            'RequiredHttpHeaders': <String, Object?>{},
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Width': 3840, 'Height': 2160},
+              {'Index': 1, 'Type': 'Audio', 'Codec': 'eac3', 'Language': 'eng', 'IsDefault': true},
+            ],
+          },
+        ],
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.episode,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      expect(result.isTranscoding, isFalse);
+      expect(result.playMethod, 'DirectPlay');
+      expect(result.videoUrl, remoteStreamUrl);
+      expect(Uri.parse(result.videoUrl!).queryParameters.containsKey('ApiKey'), isFalse);
+    });
+
+    test('unprobed HTTP .strm source updates selectedVersion and audio selection from PlaybackInfo probe', () async {
+      const remoteStreamUrl = 'Https://redirector.example.org/stream?id=42';
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({
+          'MediaSources': [
+            {
+              'Id': 'src-strm',
+              'Protocol': 'Http',
+              'Path': remoteStreamUrl,
+              'Container': 'mp4',
+              'Bitrate': 16000000,
+              'RunTimeTicks': 36000000000,
+              'IsRemote': true,
+              'SupportsDirectPlay': true,
+              'SupportsDirectStream': true,
+              'SupportsTranscoding': false,
+              'DefaultAudioStreamIndex': 1,
+              'MediaStreams': [
+                {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Width': 1920, 'Height': 1080},
+                {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'IsDefault': true},
+                {'Index': 2, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'jpn', 'Title': 'Main'},
+              ],
+            },
+          ],
+        }),
+        itemSources: [
+          {
+            'Id': 'src-strm',
+            'Protocol': 'Http',
+            'Path': remoteStreamUrl,
+            'Container': 'strm',
+            'IsRemote': true,
+            'SupportsDirectPlay': true,
+            'SupportsDirectStream': true,
+            'SupportsTranscoding': false,
+            'MediaStreams': <Object?>[],
+          },
+        ],
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.episode,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          preferredAudioTrack: const AudioTrack(id: 'source:99', language: 'jpn', title: 'Main', codec: 'aac'),
+        ),
+      );
+
+      expect(result.videoUrl, 'https://redirector.example.org/stream?id=42');
+      expect(result.selectedVersion?.container, 'mp4');
+      expect(result.selectedVersion?.bitrate, 16000);
+      expect(result.selectedVersion?.resolutionHeight, 1080);
+      expect(result.activeAudioStreamId, 2);
+      expect(result.mediaInfo!.audioTracks.singleWhere((t) => t.id == 2).selected, isTrue);
+    });
+
+    test('resolveExternalPlayback and resolveDownload use MediaSource.Path for HTTP .strm sources', () async {
+      const remoteStreamUrl = 'https://redirector.example.org/stream/movie.mkv';
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({
+          'MediaSources': [
+            {
+              'Id': 'src-1',
+              'Protocol': 'Http',
+              'Path': remoteStreamUrl,
+              'Container': 'mkv',
+              'MediaStreams': <Object?>[],
+            },
+          ],
+        }),
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Protocol': 'Http',
+            'Path': remoteStreamUrl,
+            'Container': 'strm',
+            'MediaStreams': <Object?>[],
+          },
+        ],
+      );
+      addTearDown(scoped.close);
+
+      final item = testMediaItem(
+        id: 'item-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        serverId: 'srv-1',
+      );
+      final externalTarget = await scoped.resolveExternalPlayback(item);
+      expect(externalTarget!.url, remoteStreamUrl);
+
+      final downloadResolution = await scoped.resolveDownload(item);
+      expect(downloadResolution.videoUrl, remoteStreamUrl);
+    });
+
+    test('HTTP protocol source with RequiredHttpHeaders falls back to server static stream URL', () async {
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({
+          'MediaSources': [
+            {
+              'Id': 'src-1',
+              'Protocol': 'Http',
+              'Path': 'https://origin.example.org/protected.mkv',
+              'Container': 'mkv',
+              'RequiredHttpHeaders': {'X-Custom-Auth': 'secret'},
+              'MediaStreams': [
+                {'Index': 0, 'Type': 'Video'},
+              ],
+            },
+          ],
+        }),
+        itemSources: [
+          {
+            'Id': 'src-1',
+            'Protocol': 'Http',
+            'Path': 'https://origin.example.org/protected.mkv',
+            'Container': 'mkv',
+            'RequiredHttpHeaders': {'X-Custom-Auth': 'secret'},
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video'},
+            ],
+          },
+        ],
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      final uri = Uri.parse(result.videoUrl!);
+      expect(uri.host, 'jf.example.com');
+      expect(uri.path, '/Videos/item-1/stream');
+      expect(uri.queryParameters['Static'], 'true');
+      expect(uri.queryParameters['MediaSourceId'], 'src-1');
+    });
+
     test('selected external audio is sent to PlaybackInfo but omitted from static fallback URL', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
