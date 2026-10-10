@@ -1314,6 +1314,12 @@ class Translations$settings$en {
 	/// en: 'Pinch on the video to zoom in or out'
 	String get gesturePinchToZoomDescription => 'Pinch on the video to zoom in or out';
 
+	/// en: 'Seek Swipe'
+	String get gestureSeekSwipe => 'Seek Swipe';
+
+	/// en: 'Swipe left or right anywhere on the video to seek; release to jump'
+	String get gestureSeekSwipeDescription => 'Swipe left or right anywhere on the video to seek; release to jump';
+
 	/// en: 'Remember Brightness Level'
 	String get rememberBrightnessLevel => 'Remember Brightness Level';
 
@@ -7788,6 +7794,8 @@ extension on Translations {
 			'settings.gestureVolumeSwipeDescription' => 'Swipe up or down on the right edge to adjust volume',
 			'settings.gesturePinchToZoom' => 'Pinch to Zoom',
 			'settings.gesturePinchToZoomDescription' => 'Pinch on the video to zoom in or out',
+			'settings.gestureSeekSwipe' => 'Seek Swipe',
+			'settings.gestureSeekSwipeDescription' => 'Swipe left or right anywhere on the video to seek; release to jump',
 			'settings.rememberBrightnessLevel' => 'Remember Brightness Level',
 			'settings.rememberBrightnessLevelDescription' => 'Start playback at the brightness set by the last swipe',
 			'settings.controls' => 'Controls',
@@ -7887,10 +7895,10 @@ extension on Translations {
 			'fileInfo.referenceFrames' => 'Reference Frames',
 			'fileInfo.dynamicRange' => 'Dynamic Range',
 			'fileInfo.dolbyVision' => 'Dolby Vision',
-			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
-			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
+			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
 			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
 			'fileInfo.avcBitstream' => 'AVC Bitstream',
@@ -8401,10 +8409,10 @@ extension on Translations {
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
-			'errors.reasonRefused' => 'the server refused the request',
-			'errors.reasonNotFound' => 'the item is no longer on the server',
 			_ => null,
 		} ?? switch (path) {
+			'errors.reasonRefused' => 'the server refused the request',
+			'errors.reasonNotFound' => 'the item is no longer on the server',
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -8915,10 +8923,10 @@ extension on Translations {
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
-			'watchTogether.watchingWithOthers' => 'Watching with others',
-			'watchTogether.endSession' => 'End Session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.watchingWithOthers' => 'Watching with others',
+			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
