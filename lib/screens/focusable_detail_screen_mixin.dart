@@ -65,17 +65,18 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     navigateToAppBar();
   }
 
-  /// Navigate focus from app bar down to the grid
+  /// Navigate focus from app bar down to the grid: the remembered item while
+  /// its card is mounted, otherwise the first item. A re-sort or BACK from deep
+  /// in the grid leaves the remembered card unmounted; [navigateToAppBar]
+  /// scrolls to the top, so the first row is the one that is built.
   void navigateToGrid() {
     if (!hasItems) return;
-
-    final targetIndex = shouldRestoreGridFocus ? lastFocusedGridIndex! : 0;
 
     setState(() {
       isAppBarFocused = false;
     });
 
-    _focusNodeForIndex(targetIndex).requestFocus();
+    (mountedLastFocusedGridNode ?? firstItemFocusNode).requestFocus();
   }
 
   FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'detail_grid_item');
