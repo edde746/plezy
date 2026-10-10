@@ -289,12 +289,10 @@ func TestOAuthSessionLimitCountsLogicalSessions(t *testing.T) {
 	}
 	h.proxy.mu.Unlock()
 
-	body, _ := json.Marshal(map[string]string{"service": "mal"})
-	req := httptest.NewRequest(http.MethodPost, "/auth/start", bytes.NewReader(body))
-	rec := httptest.NewRecorder()
-	h.proxy.handleStart(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("start with %d logical sessions: status=%d want 200", oauthMaxSessions-1, rec.Code)
+	resp := postOAuthStart(t, h, "mal", "")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("start with %d logical sessions: status=%d want 200", oauthMaxSessions-1, resp.StatusCode)
 	}
 	h.proxy.mu.Lock()
 	browserCount := len(h.proxy.browserStates)

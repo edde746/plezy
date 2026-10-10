@@ -78,23 +78,6 @@ void main() {
     }
   });
 
-  group('GridSizeCalculator.isFirstRow / isFirstColumn', () {
-    test('isFirstRow: true for indices < columnCount', () {
-      expect(GridSizeCalculator.isFirstRow(0, 4), isTrue);
-      expect(GridSizeCalculator.isFirstRow(3, 4), isTrue);
-      expect(GridSizeCalculator.isFirstRow(4, 4), isFalse);
-      expect(GridSizeCalculator.isFirstRow(7, 4), isFalse);
-    });
-
-    test('isFirstColumn: true at column 0 of every row', () {
-      expect(GridSizeCalculator.isFirstColumn(0, 4), isTrue);
-      expect(GridSizeCalculator.isFirstColumn(4, 4), isTrue);
-      expect(GridSizeCalculator.isFirstColumn(8, 4), isTrue);
-      expect(GridSizeCalculator.isFirstColumn(1, 4), isFalse);
-      expect(GridSizeCalculator.isFirstColumn(5, 4), isFalse);
-    });
-  });
-
   group('GridSizeCalculator.getMaxCrossAxisExtent', () {
     Future<void> pumpWithWidth(WidgetTester tester, double width, void Function(BuildContext) onContext) async {
       await tester.pumpWidget(

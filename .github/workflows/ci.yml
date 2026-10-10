@@ -105,7 +105,7 @@ jobs:
           fi
 
   test:
-    name: Unit Tests
+    name: Flutter Behavior Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -136,12 +136,7 @@ jobs:
           flutter pub get
 
       - name: Run tests
-        run: |
-          if [ -d "test" ] && [ "$(find test -name '*_test.dart' | wc -l)" -gt 0 ]; then
-            scripts/run_tests.sh
-          else
-            echo "No tests found, skipping test execution"
-          fi
+        run: scripts/run_tests.sh
 
       - name: Install wakelock_plus test dependencies
         working-directory: packages/wakelock_plus
