@@ -4308,6 +4308,8 @@ class PlexClient
     int mediaIndex = 0,
     String? mediaSourceId,
     String? preferredVersionSignature,
+    // Plex versions carry no name; the signature does the sibling matching.
+    String? preferredVersionName,
   }) async {
     final cached = await cache.get(profileScopeId.cacheServerId, '/library/metadata/$itemId');
     if (cached == null) return null;

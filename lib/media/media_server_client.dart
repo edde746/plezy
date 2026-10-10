@@ -729,13 +729,15 @@ abstract class MediaServerClient {
   /// codes, displayTitles) without hitting the network. Returns `null` when
   /// the row isn't cached or carries no usable media source.
   /// Uses playback's source-selection order: stable [mediaSourceId], then a
-  /// sibling [preferredVersionSignature], then [mediaIndex], subject to the
+  /// sibling [preferredVersionName], then [preferredVersionSignature], then
+  /// [mediaIndex], subject to the
   /// backend's playable-source rules.
   Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(
     String itemId, {
     int mediaIndex = 0,
     String? mediaSourceId,
     String? preferredVersionSignature,
+    String? preferredVersionName,
   });
 
   /// Build a scrub preview source for [item] using [mediaSource]. Plex
