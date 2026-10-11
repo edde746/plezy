@@ -173,6 +173,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int? _activeSourceId;
   bool _activeSourceReadyEmitted = false;
 
+  /// The active file's previous `demuxer-cache-state` reader sample, the
+  /// baseline [_detectDemuxerProgress] compares against. Cleared at
+  /// `start-file` so one file's sample never measures the next.
+  ({double? readerPts, int? totalBytes})? _lastDemuxerReaderSample;
+
   /// Set between an open's [clearTracks] and the incoming load's `start-file`:
   /// until that event every `track-list` mpv publishes still describes the
   /// OUTGOING file (#2323).
@@ -437,7 +442,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'demuxer-cache-state':
-        _handleDemuxerCacheState(value);
+        _handleDemuxerCacheState(value, sourceId: sourceId);
         break;
 
       case 'volume':
@@ -522,7 +527,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   /// Parse demuxer-cache-state property to extract seekable ranges and buffer end.
-  void _handleDemuxerCacheState(dynamic value) {
+  void _handleDemuxerCacheState(dynamic value, {int? sourceId}) {
     if (value is String && value.isNotEmpty) {
       // Throttle JSON parsing to avoid ANR on low-end devices
       final nowMs = _throttleSw.elapsedMilliseconds;
@@ -531,6 +536,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
     final cacheState = MpvNodeDecoder.decodeMap(value);
     if (cacheState == null) return;
+    if (sourceId == null || sourceId == _activeSourceId) _detectDemuxerProgress(cacheState);
 
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
     final cacheEndMs = _timelineMsFromSourceSeconds(cacheState['cache-end']);
@@ -573,6 +579,25 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  /// Emit [demuxerProgressController] when [cacheState] shows the file moving
+  /// toward its next frame since the previous sample: the decoders took
+  /// packets (`reader-pts` moved), or a reader starving a decoder
+  /// (`underrun`) received data (`total-bytes` moved). Bytes alone are not
+  /// progress — a decode pipeline that stopped pulling still lets the demuxer
+  /// read ahead until its cache is full.
+  void _detectDemuxerProgress(Map<Object?, Object?> cacheState) {
+    final sample = (
+      readerPts: _finiteDouble(cacheState['reader-pts']),
+      totalBytes: _finiteInt(cacheState['total-bytes']),
+    );
+    final previous = _lastDemuxerReaderSample;
+    _lastDemuxerReaderSample = sample;
+    if (previous == null) return;
+    final decoded = sample.readerPts != previous.readerPts;
+    final fed = cacheState['underrun'] == true && sample.totalBytes != previous.totalBytes;
+    if (decoded || fed) demuxerProgressController.add(null);
+  }
+
   void handlePlayerEvent(String name, Map? data) {
     if (_disposed) return;
     final sourceId = _finiteInt(data?['sourceId']);
@@ -584,6 +609,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         _primaryMediaLoadStarted = true;
         _primaryMediaReadyEmitted = false;
         _primaryFileLoaded = false;
+        _lastDemuxerReaderSample = null;
         _lastErrorLogText = null;
         _state = _state.copyWith(hasRenderedFrame: false);
         fileStartedController.add(null);

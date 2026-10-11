@@ -641,7 +641,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _live.markStreamRestartedAtLiveEdge(session.captureBuffer);
       final targetEpoch = session.captureBuffer == null ? null : _live.streamStartEpoch.round();
       // A zap starts no playback attempt, so it arms its own first-frame
-      // signal; the deadline bounds a stream that never shows a frame.
+      // signal; the deadline bounds a stream that stops moving before one.
       zapOutcome = PlaybackOpenOutcome.arm(currentPlayer, deadline: VideoPlayerScreenState._openDeadline);
       frameRatePlan = _armLiveDisplayNegotiation(currentPlayer, zapOutcome);
       final opened = await _openLiveStream(

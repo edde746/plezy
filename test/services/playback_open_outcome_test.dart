@@ -14,6 +14,7 @@ class _StreamPlayer implements Player {
   final restarted = StreamController<void>.broadcast();
   final failed = StreamController<void>.broadcast();
   final switched = StreamController<void>.broadcast();
+  final progress = StreamController<void>.broadcast();
 
   @override
   late final PlayerStreams streams = PlayerStreams(
@@ -38,6 +39,7 @@ class _StreamPlayer implements Player {
     fileLoaded: loaded.stream,
     fileLoadFailed: failed.stream,
     primaryMediaReady: primaryReady.stream,
+    demuxerProgress: progress.stream,
     backendSwitched: switched.stream,
   );
 
@@ -48,6 +50,7 @@ class _StreamPlayer implements Player {
     restarted.close(),
     failed.close(),
     switched.close(),
+    progress.close(),
   ]);
 
   @override
@@ -232,6 +235,40 @@ void main() {
       // it raises cannot race a waiter that would otherwise resume.
       expect(deadlines, 1);
       expect(async.nonPeriodicTimerCount, 0);
+    });
+  });
+
+  test('a slow load that keeps progressing outlives the deadline, and a stall after it still fails', () {
+    fakeAsync((async) {
+      var deadlines = 0;
+      final outcome = PlaybackOpenOutcome.armForTesting(
+        player,
+        deadline: const Duration(seconds: 30),
+        onDeadline: () => deadlines++,
+      );
+
+      // The outgoing file's progress while this open is still being dispatched.
+      player.progress.add(null);
+      async.elapse(const Duration(minutes: 1));
+      expect(async.nonPeriodicTimerCount, 0);
+
+      player.started.add(null);
+      async.elapse(const Duration(seconds: 29));
+      player.loaded.add(null);
+      async.elapse(const Duration(seconds: 29));
+      // A precise resume seek over a thin link: minutes of decoding from the
+      // keyframe toward the resume point, every sample moving.
+      for (var i = 0; i < 8; i++) {
+        player.progress.add(null);
+        async.elapse(const Duration(seconds: 15));
+      }
+      expect(outcome.isSettled, isFalse);
+      expect(deadlines, 0);
+
+      // The link stalls: the budget runs from the last progress.
+      async.elapse(const Duration(seconds: 15));
+      expect(outcome.isAborted, isTrue);
+      expect(deadlines, 1);
     });
   });
 

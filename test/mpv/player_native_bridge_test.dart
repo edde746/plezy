@@ -732,6 +732,82 @@ void main() {
     );
   });
 
+  test('MPV reports demuxer progress only when the file moves toward a frame', () async {
+    final observations = <String, int>{};
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'observeProperty') {
+          final arguments = call.arguments as Map;
+          observations[arguments['name'] as String] = arguments['id'] as int;
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        var progress = 0;
+        final subscription = player.streams.demuxerProgress.listen((_) => progress++);
+        try {
+          await player.setLogLevel('warn');
+
+          Future<void> startFile(int sourceId) => _sendPlatformEvent({
+            'type': 'event',
+            'name': 'start-file',
+            'data': {'sourceId': sourceId},
+          });
+          Future<void> sendCacheState(
+            int sourceId, {
+            double? readerPts,
+            required int totalBytes,
+            required bool underrun,
+            int rate = 0,
+          }) => _sendPlatformEvent([
+            observations['demuxer-cache-state'],
+            {'reader-pts': ?readerPts, 'total-bytes': totalBytes, 'underrun': underrun, 'raw-input-rate': rate},
+            sourceId,
+          ]);
+
+          await startFile(1);
+          // The first sample of a file is only the baseline.
+          await sendCacheState(1, totalBytes: 0, underrun: true);
+          expect(progress, 0);
+
+          // A precise resume seek decoding its way from the keyframe.
+          await sendCacheState(1, readerPts: 985.776, totalBytes: 131888, underrun: true);
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 288240, underrun: true);
+          expect(progress, 2);
+
+          // One decoder starving while the other stream's packets arrive.
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 400000, underrun: true);
+          expect(progress, 3);
+
+          // A pipeline that stopped pulling lets the demuxer read ahead into a
+          // full queue, and a stalled link refreshes nothing but its rate
+          // estimate. Neither moves the file toward a frame.
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 900000, underrun: false);
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 900000, underrun: false, rate: 120);
+          expect(progress, 3);
+
+          // A late sample from the outgoing source is not this file's progress.
+          await sendCacheState(0, readerPts: 12, totalBytes: 5, underrun: true);
+          expect(progress, 3);
+
+          // The next file is measured against itself, not the one before it.
+          await startFile(2);
+          await sendCacheState(2, readerPts: 0, totalBytes: 10, underrun: true);
+          expect(progress, 3);
+          await sendCacheState(2, readerPts: 0.5, totalBytes: 20, underrun: true);
+          expect(progress, 4);
+        } finally {
+          await subscription.cancel();
+          await player.dispose();
+        }
+      },
+    );
+  });
+
   test('Android command failure reaches seek recovery', () async {
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',
