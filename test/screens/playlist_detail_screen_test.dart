@@ -17,6 +17,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -29,8 +30,10 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -462,6 +465,50 @@ void main() {
     expect(find.byType(SnackBar), findsNothing);
   });
 
+  testWidgets('activating a smart playlist card plays the playlist from that entry (#2634)', (tester) async {
+    final items = _mediaItems(3);
+    final client = _PlexQueuePlaylistClient(items);
+    final harness = await _createHarness(items, client: client);
+    await tester.pumpWidget(
+      harness.wrap(
+        const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _smartVideoPlaylist)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final cards = find.byType(FocusableMediaCard);
+    expect(cards, findsNWidgets(3));
+
+    Future<void> expectSequentialLaunchFrom(String itemId) async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      final request = client.queueRequests.last;
+      expect(request.playlistID, 42);
+      expect(request.key, '/library/metadata/$itemId');
+      expect(request.shuffle, 0);
+      final dialogTitle = find.descendant(of: find.byType(AlertDialog), matching: find.text(t.common.play));
+      expect(dialogTitle, findsOneWidget);
+
+      await tester.tap(find.text(t.common.cancel));
+      request.completeEmpty();
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(harness.playbackState.isQueueActive, isFalse);
+    }
+
+    // Pointer tap.
+    await tester.tap(cards.at(1));
+    await expectSequentialLaunchFrom('item_1');
+
+    // D-pad SELECT on a focused card takes the same path.
+    tester.widget<FocusableMediaCard>(cards.at(2)).focusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await expectSequentialLaunchFrom('item_2');
+
+    expect(client.queueRequests, hasLength(2));
+    expect(find.byType(PlaylistDetailScreen), findsOneWidget);
+  });
+
   testWidgets('pending D-pad move disables playlist mutations and restores the exact order on rejection', (
     tester,
   ) async {
@@ -781,6 +828,16 @@ const _smartAudioPlaylist = MediaPlaylist(
   serverName: 'Server',
 );
 
+const _smartVideoPlaylist = MediaPlaylist(
+  id: '42',
+  backend: MediaBackend.plex,
+  title: 'Smart Video Playlist',
+  playlistType: 'video',
+  smart: true,
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
 List<MediaItem> _mediaItems(int count) {
   return List.generate(
     count,
@@ -800,6 +857,7 @@ Future<_PlaylistHarness> _createHarness(
   int? failOnceAt,
   bool deleteResult = false,
   MediaBackend backend = MediaBackend.plex,
+  _PagedPlaylistClient? client,
 }) async {
   await SettingsService.getInstance();
 
@@ -816,7 +874,7 @@ Future<_PlaylistHarness> _createHarness(
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
   await downloadProvider.ensureInitialized();
 
-  final client = _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult, backend: backend);
+  client ??= _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult, backend: backend);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = testMultiServerProvider(manager);
   final playbackState = PlaybackStateProvider();
@@ -1020,6 +1078,57 @@ class _PagedPlaylistClient implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Plex flavour of [_PagedPlaylistClient] for launches: the Plex launcher
+/// resolves a [PlexClient] and creates a server-side play queue. Each queue
+/// request stays open until the test completes it, so the loading dialog can
+/// be inspected and cancelled.
+class _PlexQueuePlaylistClient extends _PagedPlaylistClient implements PlexClient {
+  _PlexQueuePlaylistClient(List<MediaItem> items)
+    : profileScopeId = buildPlexProfileScopeId(serverId: ServerId('server_1'), profileId: 'profile_1'),
+      super._(items, null, false, MediaBackend.plex);
+
+  final List<_QueueRequest> queueRequests = [];
+
+  @override
+  PlexProfileScopeId profileScopeId;
+
+  @override
+  String get scopedServerId => profileScopeId;
+
+  @override
+  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) async {}
+
+  @override
+  Future<PlayQueueResponse> createPlayQueue({
+    String? uri,
+    int? playlistID,
+    required String type,
+    String? key,
+    int shuffle = 0,
+    int repeat = 0,
+    int continuous = 0,
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) {
+    final request = _QueueRequest(playlistID: playlistID, key: key, shuffle: shuffle);
+    queueRequests.add(request);
+    return request.result.future;
+  }
+}
+
+class _QueueRequest {
+  final int? playlistID;
+  final String? key;
+  final int shuffle;
+  final Completer<PlayQueueResponse> result = Completer<PlayQueueResponse>();
+
+  _QueueRequest({required this.playlistID, required this.key, required this.shuffle});
+
+  /// Answer with an empty queue; used after the launch was cancelled.
+  void completeEmpty() =>
+      result.complete(PlayQueueResponse(playQueueID: 1, playQueueShuffled: false, playQueueTotalCount: 0));
 }
 
 class _MoveRequest {
