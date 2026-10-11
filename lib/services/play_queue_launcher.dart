@@ -117,7 +117,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     return executeWithLoading(
       context: context,
       showLoading: showLoadingIndicator,
-      actionLabel: t.common.shuffle,
+      actionLabel: shuffle ? t.common.shuffle : t.common.play,
       abort: abort,
       execute: (dismissLoading) async {
         PlayQueueResponse playQueue;
