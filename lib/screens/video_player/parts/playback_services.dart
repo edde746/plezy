@@ -709,6 +709,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         // Rate changes do not apply to a live stream; the session leaves the
         // command un-advertised, and a stray event stays inert.
         if (widget.isLive) return;
+        if (PlatformDetector.isAppleTV()) {
+          final forward = appleTvScanIsForward(speed, player?.state.rate ?? 1.0);
+          if (forward != null) _skipByConfiguredStep(forward: forward);
+          return;
+        }
         unawaited(_setPlaybackRate(speed));
       },
     );

@@ -80,3 +80,19 @@ final class MediaControlRouter {
     return false;
   }
 }
+
+/// Which way an Apple TV fast-forward/rewind press points, or null for none.
+///
+/// tvOS reports the dedicated FF/RW buttons of IR and HDMI-CEC remotes as
+/// `changePlaybackRateCommand` with a scan rate (positive for fast-forward,
+/// negative for rewind, and a step back toward normal on the opposite button).
+/// Applied as a playback speed, rewind pauses or plays in slow motion and
+/// fast-forward races ahead, depending on what tvOS last saw. The player has
+/// no scan mode, so on Apple TV a rate request is read as a direction
+/// relative to the current speed; the in-app speed menu sets the rate
+/// directly and never goes through this command.
+bool? appleTvScanIsForward(double requestedRate, double currentRate) {
+  if (requestedRate > currentRate) return true;
+  if (requestedRate < currentRate) return false;
+  return null;
+}

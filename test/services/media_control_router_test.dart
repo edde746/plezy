@@ -40,6 +40,17 @@ void main() {
     expect(calls.sublist(calls.length - 2), ['next', 'previous']);
   });
 
+  test('Apple TV scan rates read as a direction against the current speed', () {
+    // Fast-forward and rewind presses from IR/CEC remotes arrive as scan rates.
+    expect(appleTvScanIsForward(8, 1), isTrue);
+    expect(appleTvScanIsForward(-8, 1), isFalse);
+    // The opposite button steps back toward normal speed.
+    expect(appleTvScanIsForward(0.5, 1), isFalse);
+    expect(appleTvScanIsForward(1, 1.5), isFalse);
+    expect(appleTvScanIsForward(2, 1.5), isTrue);
+    expect(appleTvScanIsForward(1, 1), isNull);
+  });
+
   test('unknown lifecycle events are left to the screen lifecycle handler', () {
     final router = _router(canControl: () => false, canNavigate: () => false, calls: []);
     expect(router.route(const AudioInterruptionBeganEvent()), isFalse);
