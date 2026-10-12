@@ -253,7 +253,7 @@ class WireMpvTest < Minitest::Test
       (candidate.repositoryURL rescue nil) == 'https://github.com/kristofferR/SpatialAudioBridge'
     end
     assert_equal 1, spatial_audio.count, 'expected one SpatialAudioBridge package reference'
-    assert_equal({ 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.5.1' }, spatial_audio.first.requirement)
+    assert_equal({ 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.6.1' }, spatial_audio.first.requirement)
     runner.package_product_dependencies
       .select { |product| product.product_name.start_with?('SpatialAudio') }
       .each { |product| assert_equal spatial_audio.first, product.package }

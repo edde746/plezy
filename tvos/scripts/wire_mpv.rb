@@ -151,7 +151,7 @@ unless spatial_audio
   project.root_object.package_references << spatial_audio
   puts "[add ] SpatialAudioBridge SPM package reference"
 end
-spatial_audio.requirement = { 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.5.1' }
+spatial_audio.requirement = { 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.6.1' }
 %w[SpatialAudioBridge SpatialAudioPlayback].each do |name|
   link_product(project, runner_target, spatial_audio, name)
 end

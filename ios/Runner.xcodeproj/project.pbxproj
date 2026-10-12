@@ -821,7 +821,7 @@
 			repositoryURL = "https://github.com/kristofferR/SpatialAudioBridge";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.1;
+				minimumVersion = 1.6.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
