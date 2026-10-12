@@ -346,8 +346,9 @@ final class TopShelfFetchContractTests: XCTestCase {
       let url = try XCTUnwrap(request.url?.absoluteString)
       XCTAssertFalse(url.contains(token))
       let headers = request.allHTTPHeaderFields ?? [:]
+      XCTAssertEqual(headers["Authorization"], "MediaBrowser Token=\"\(token)\"")
       XCTAssertEqual(headers["X-Emby-Token"], token)
-      XCTAssertEqual(headers.values.filter { $0.contains(token) }.count, 1)
+      XCTAssertEqual(headers.values.filter { $0.contains(token) }.count, 2)
     }
   }
 
@@ -366,6 +367,7 @@ final class TopShelfFetchContractTests: XCTestCase {
       "\(baseUrl)/Users/user-1/Items/Resume?userId=user-1&Limit=20&MediaTypes=Video"
         + "&Recursive=true&EnableTotalRecordCount=false"
     )
+    XCTAssertEqual(resume.allHTTPHeaderFields?["Authorization"], "MediaBrowser Token=\"\(token)\"")
     XCTAssertEqual(resume.allHTTPHeaderFields?["X-Emby-Token"], token)
   }
 
