@@ -60,8 +60,9 @@ internal fun isFfmpegDtsMimeType(mimeType: String): Boolean = mimeType == MimeTy
 internal fun shouldForceFfmpegDtsDecode(
   mimeType: String,
   directOutputBlocked: () -> Boolean,
-  routeCanBitstreamDts: () -> Boolean
-): Boolean = isFfmpegDtsMimeType(mimeType) && (directOutputBlocked() || !routeCanBitstreamDts())
+  routeCanBitstreamDts: () -> Boolean,
+  ffmpegAvailable: () -> Boolean = { true }
+): Boolean = isFfmpegDtsMimeType(mimeType) && ffmpegAvailable() && (directOutputBlocked() || !routeCanBitstreamDts())
 
 /**
  * Linear PCM output encodings, i.e. the sink decoded the bitstream instead of

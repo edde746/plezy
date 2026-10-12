@@ -219,11 +219,18 @@ android {
     }
   }
 
+  packaging {
+    jniLibs {
+      pickFirsts.add("lib/*/libmpv.so")
+      pickFirsts.add("lib/*/libavcodec.so")
+    }
+  }
+
   sourceSets {
     getByName("main") {
-      // Only FFmpeg libraries not imported by CMake. CMake owns packaging of
-      // libmpv.so, libavcodec.so and the JNI glue libplayer.so.
-      jniLibs.srcDir(File(mpvNativeDir, "jni"))
+      // Include both jni and imported directories so libmpv.so and libavcodec.so
+      // are packaged even when CMake runtimeFiles omits paths containing spaces.
+      jniLibs.srcDirs(File(mpvNativeDir, "jni"), File(mpvNativeDir, "imported"))
     }
   }
 }
