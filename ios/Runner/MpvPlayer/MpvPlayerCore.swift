@@ -2,6 +2,7 @@ import AVFoundation
 #if os(tvOS)
   import AVKit
 #endif
+import Libmpv
 import QuartzCore
 import UIKit
 
@@ -25,6 +26,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   #endif
 
   var isPipStarting = false
+
+  /// SpatialAudioSink on tvOS 26. mpv holds its raw address until the handle
+  /// is destroyed.
+  private var spatialAudioSink: AnyObject?
+
+  /// The `audio-spdif` codecs: Dolby Digital (Plus) for the system decoder,
+  /// and on tvOS 26 TrueHD and DTS-HD for SpatialAudioSink.
+  static var audioSpdifCodecs: String {
+    #if os(tvOS)
+      if #available(tvOS 26, *) { return "ac3,eac3,truehd,dts-hd" }
+    #endif
+    return "ac3,eac3"
+  }
 
   private static func log(_ message: @autoclosure () -> String) {
     guard MpvLog.isDebugEnabled else { return }
@@ -73,6 +87,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     isInitialized = true
     MpvLog.debug("[MpvPlayerCore] Initialized successfully with MPV")
     return true
+  }
+
+  override func configurePlatformMpvOptions(mpv: OpaquePointer) {
+    #if os(tvOS)
+      if #available(tvOS 26, *) {
+        // Every other format falls through to the autoprobed outputs.
+        let sink = SpatialAudioSink()
+        spatialAudioSink = sink
+        var address = sink.address
+        checkError(mpv_set_option(mpv, "ao-spatial-sink", MPV_FORMAT_INT64, &address))
+        checkError(mpv_set_option_string(mpv, "ao", "spatial,"))
+      }
+    #endif
   }
 
   var sampleBufferDisplayLayer: MpvVideoLayer? { videoLayer }
@@ -825,7 +852,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #if os(iOS)
       ExternalDisplayManager.shared.detach(core: self)
     #endif
-    disposeSharedState(destroySynchronously: false)
+    disposeSharedState(destroySynchronously: false, keepAlive: spatialAudioSink)
+    spatialAudioSink = nil
 
     videoLayer?.removeFromSuperlayer()
     videoLayer = nil

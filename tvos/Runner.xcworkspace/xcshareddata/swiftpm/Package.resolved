@@ -1,5 +1,5 @@
 {
-  "originHash" : "c535d3cdb62bd4e11e67f3c9e68290fa7ee9306634c5f56d2b0396eb75ed41ee",
+  "originHash" : "d12c444e1e9f42bf7f123c42a9382357c8d2ca3358d4ad5433686188f2d3674f",
   "pins" : [
     {
       "identity" : "mpv-build",
@@ -7,6 +7,15 @@
       "location" : "https://github.com/kristofferR/mpv-build",
       "state" : {
         "revision" : "60efe8bff7efc387e2f7f1bf8fcfc6761b9f905a"
+      }
+    },
+    {
+      "identity" : "spatialaudiobridge",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kristofferR/SpatialAudioBridge",
+      "state" : {
+        "revision" : "05a9f3b4947ee7235c29039b80b3f24e03b2f860",
+        "version" : "1.5.1"
       }
     }
   ],

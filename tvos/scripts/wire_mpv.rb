@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 # Adds the Plezy MpvPlayer Swift sources and the native mpv Swift Package
 # dependency to tvos/Runner.xcodeproj so it matches the iOS project's
-# linkage. Idempotent: re-running skips already-added entries.
+# linkage, plus the tvOS-only spatial audio sink and its SpatialAudioBridge
+# package. Idempotent: re-running skips already-added entries.
 
 require 'json'
 require 'xcodeproj'
@@ -27,6 +28,7 @@ sources = [
   { name: 'MpvPipController.swift',    path: '../ios/Runner/MpvPlayer/MpvPipController.swift', tree: '<source_root>' },
   { name: 'MpvAudioPlayerCore.swift', path: '../shared/apple/MpvPlayer/MpvAudioPlayerCore.swift', tree: '<source_root>' },
   { name: 'MpvAudioPlayerPlugin.swift', path: '../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift', tree: '<source_root>' },
+  { name: 'SpatialAudioSink.swift',    path: '../ios/Runner/MpvPlayer/SpatialAudioSink.swift', tree: '<source_root>' },
 ]
 
 sources_phase = runner_target.source_build_phase
@@ -113,23 +115,45 @@ end
 pkg.requirement = { 'kind' => 'revision', 'revision' => pkg_revision }
 puts "[set ] #{pkg_name} SPM package revision #{pkg_revision[0, 12]}"
 
-product = runner_target.package_product_dependencies.find do |candidate|
-  candidate.product_name == 'MPVKit'
-end
-unless product
-  product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
-  product.product_name = 'MPVKit'
-  runner_target.package_product_dependencies << product
-  puts "[add ] MPVKit Runner product dependency"
-end
-product.package = pkg
+def link_product(project, target, package, name)
+  product = target.package_product_dependencies.find do |candidate|
+    candidate.product_name == name
+  end
+  unless product
+    product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+    product.product_name = name
+    target.package_product_dependencies << product
+    puts "[add ] #{name} Runner product dependency"
+  end
+  product.package = package
 
-frameworks_phase = runner_target.frameworks_build_phase
-unless frameworks_phase.files.any? { |build_file| build_file.product_ref == product }
+  frameworks_phase = target.frameworks_build_phase
+  return if frameworks_phase.files.any? { |build_file| build_file.product_ref == product }
+
   build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
   build_file.product_ref = product
   frameworks_phase.files << build_file
-  puts "[add ] MPVKit framework linkage"
+  puts "[add ] #{name} framework linkage"
+end
+
+link_product(project, runner_target, pkg, 'MPVKit')
+
+# SpatialAudioBridge, for SpatialAudioSink.swift. Unlike the native package it
+# is required by release: each tag downloads its core as a checksummed
+# XCFramework.
+SPATIAL_AUDIO_URL = 'https://github.com/kristofferR/SpatialAudioBridge'
+spatial_audio = project.root_object.package_references.find do |candidate|
+  (candidate.repositoryURL rescue nil) == SPATIAL_AUDIO_URL
+end
+unless spatial_audio
+  spatial_audio = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+  spatial_audio.repositoryURL = SPATIAL_AUDIO_URL
+  project.root_object.package_references << spatial_audio
+  puts "[add ] SpatialAudioBridge SPM package reference"
+end
+spatial_audio.requirement = { 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.5.1' }
+%w[SpatialAudioBridge SpatialAudioPlayback].each do |name|
+  link_product(project, runner_target, spatial_audio, name)
 end
 
 project.save

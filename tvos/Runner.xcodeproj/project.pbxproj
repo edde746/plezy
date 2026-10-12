@@ -11,10 +11,12 @@
 		013E913372C9904E64697D05 /* ShelfItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C339C20E52A6F6F6725EF31F /* ShelfItemMapper.swift */; };
 		055E465F9095D0B6E9B91D46 /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */; };
 		06E9C60A796154EDE0A0D0E8 /* ShelfSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4FE4CC3847E57D0552B366 /* ShelfSources.swift */; };
+		1A16FBC737802ACBE14ECAC5 /* SpatialAudioSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B73C756333D54ED7359A2FC4 /* SpatialAudioSink.swift */; };
 		1C6B234E223CDFFE5BF3FC0B /* TVServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */; };
 		1F6D3E8BAC792BF14F5E8B82 /* ShelfFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C792B031A97357694F027A0 /* ShelfFetcher.swift */; };
 		28DB4404B17342F46BC2B0A1 /* TopShelfProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F829B3F190657106F66379 /* TopShelfProvider.swift */; };
 		2A7C0B1D9E5F4A6381027C12 /* MpvPlayerContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */; };
+		2AD45C4F0549410C2A565843 /* SpatialAudioBridge in Frameworks */ = {isa = PBXBuildFile; productRef = 68E2F309EF743ED57CECE490 /* SpatialAudioBridge */; };
 		35DB0C8FEF635A3BCA0B722A /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		40C477DC462980F6AF17BEA1 /* ShelfFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C792B031A97357694F027A0 /* ShelfFetcher.swift */; };
@@ -50,6 +52,7 @@
 		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
 		E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */; };
 		EA0F4264E7B912702C490109 /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = EA0F4263E7B912702C490108 /* MPVKit */; };
+		EF911A1882CF39B0215451E6 /* SpatialAudioPlayback in Frameworks */ = {isa = PBXBuildFile; productRef = 7036B430C288F314B43B1911 /* SpatialAudioPlayback */; };
 		F9C95D532B6F6B72D187217D /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF0E0C298AEDE34FF7C8BFD5 /* Pods_RunnerTests.framework */; };
 		B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */; };
 		B1D51A6A2F00110000000020 /* ExternalPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000021 /* ExternalPlayerPlugin.swift */; };
@@ -140,6 +143,7 @@
 		A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPluginTests.swift; sourceTree = "<group>"; };
 		B1D51A6A2F00110000000015 /* MpvAudioPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerCore.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerCore.swift; sourceTree = "<source_root>"; };
 		B1D51A6A2F00110000000017 /* MpvAudioPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerPlugin.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift; sourceTree = "<source_root>"; };
+		B73C756333D54ED7359A2FC4 /* SpatialAudioSink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SpatialAudioSink.swift; path = ../ios/Runner/MpvPlayer/SpatialAudioSink.swift; sourceTree = "<source_root>"; };
 		BBCB49C8AE9E90DEF97A87CA /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedPreferencesPlugin.swift; sourceTree = "<group>"; };
 		C339C20E52A6F6F6725EF31F /* ShelfItemMapper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShelfItemMapper.swift; sourceTree = "<group>"; };
@@ -177,6 +181,8 @@
 			files = (
 				EA0F4264E7B912702C490109 /* MPVKit in Frameworks */,
 				C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */,
+				2AD45C4F0549410C2A565843 /* SpatialAudioBridge in Frameworks */,
+				EF911A1882CF39B0215451E6 /* SpatialAudioPlayback in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,6 +337,7 @@
 				A12B8610AE5D580077264851 /* MpvPlayerCore.swift */,
 				9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */,
 				A2635E12EB9322B151EE5127 /* MpvPipController.swift */,
+				B73C756333D54ED7359A2FC4 /* SpatialAudioSink.swift */,
 			);
 			name = MpvPlayer;
 			path = Runner/MpvPlayer;
@@ -416,6 +423,8 @@
 			name = Runner;
 			packageProductDependencies = (
 				EA0F4263E7B912702C490108 /* MPVKit */,
+				68E2F309EF743ED57CECE490 /* SpatialAudioBridge */,
+				7036B430C288F314B43B1911 /* SpatialAudioPlayback */,
 			);
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
@@ -466,6 +475,7 @@
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
 				CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */,
+				1AC2885950A50806FF07C045 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -657,6 +667,7 @@
 				40C477DC462980F6AF17BEA1 /* ShelfFetcher.swift in Sources */,
 				7CE4D37BDCAD02C28DFAF38A /* ShelfItemMapper.swift in Sources */,
 				06E9C60A796154EDE0A0D0E8 /* ShelfSources.swift in Sources */,
+				1A16FBC737802ACBE14ECAC5 /* SpatialAudioSink.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1174,6 +1185,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		1AC2885950A50806FF07C045 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kristofferR/SpatialAudioBridge";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.1;
+			};
+		};
 		CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/kristofferR/mpv-build";
@@ -1185,6 +1204,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		68E2F309EF743ED57CECE490 /* SpatialAudioBridge */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1AC2885950A50806FF07C045 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */;
+			productName = SpatialAudioBridge;
+		};
+		7036B430C288F314B43B1911 /* SpatialAudioPlayback */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1AC2885950A50806FF07C045 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */;
+			productName = SpatialAudioPlayback;
+		};
 		EA0F4263E7B912702C490108 /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */;
