@@ -346,7 +346,9 @@ final class TopShelfFetchContractTests: XCTestCase {
       let url = try XCTUnwrap(request.url?.absoluteString)
       XCTAssertFalse(url.contains(token))
       let headers = request.allHTTPHeaderFields ?? [:]
-      XCTAssertEqual(headers["X-Emby-Token"], token)
+      // Jellyfin ignores X-Emby-Token unless legacy authorization is enabled.
+      XCTAssertEqual(headers["Authorization"], "MediaBrowser Token=\"\(token)\"")
+      XCTAssertNil(headers["X-Emby-Token"])
       XCTAssertEqual(headers.values.filter { $0.contains(token) }.count, 1)
     }
   }
@@ -358,7 +360,8 @@ final class TopShelfFetchContractTests: XCTestCase {
         token: token,
         userId: "user-1",
         maxItems: 20,
-        userScopedRoute: true
+        userScopedRoute: true,
+        sendsLegacyTokenHeader: true
       )
     )
     XCTAssertEqual(
@@ -367,6 +370,18 @@ final class TopShelfFetchContractTests: XCTestCase {
         + "&Recursive=true&EnableTotalRecordCount=false"
     )
     XCTAssertEqual(resume.allHTTPHeaderFields?["X-Emby-Token"], token)
+    XCTAssertEqual(resume.allHTTPHeaderFields?["Authorization"], "MediaBrowser Token=\"\(token)\"")
+
+    let nextUp = try XCTUnwrap(
+      ShelfFetcher.mediaBrowserNextUpRequest(
+        baseUrl: baseUrl,
+        token: token,
+        userId: "user-1",
+        maxItems: 20,
+        sendsLegacyTokenHeader: true
+      )
+    )
+    XCTAssertEqual(nextUp.allHTTPHeaderFields?["X-Emby-Token"], token)
   }
 
   func testPosterUrlsCarryTokenAsQueryParameterExactlyOnce() throws {

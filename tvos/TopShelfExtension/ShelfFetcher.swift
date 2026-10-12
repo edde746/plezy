@@ -65,7 +65,8 @@ enum ShelfFetcher {
     token: String,
     userId: String,
     maxItems: Int,
-    userScopedRoute: Bool = false
+    userScopedRoute: Bool = false,
+    sendsLegacyTokenHeader: Bool = false
   ) -> URLRequest? {
     let path: String
     if userScopedRoute {
@@ -80,7 +81,8 @@ enum ShelfFetcher {
       userId: userId,
       path: path,
       trailingQuery: "MediaTypes=Video&Recursive=true&EnableTotalRecordCount=false",
-      maxItems: maxItems
+      maxItems: maxItems,
+      sendsLegacyTokenHeader: sendsLegacyTokenHeader
     )
   }
 
@@ -88,7 +90,8 @@ enum ShelfFetcher {
     baseUrl: String,
     token: String,
     userId: String,
-    maxItems: Int
+    maxItems: Int,
+    sendsLegacyTokenHeader: Bool = false
   ) -> URLRequest? {
     mediaBrowserRequest(
       baseUrl: baseUrl,
@@ -96,20 +99,30 @@ enum ShelfFetcher {
       userId: userId,
       path: "/Shows/NextUp",
       trailingQuery: "EnableResumable=false&EnableTotalRecordCount=false",
-      maxItems: maxItems
+      maxItems: maxItems,
+      sendsLegacyTokenHeader: sendsLegacyTokenHeader
     )
   }
 
+  /// The token travels in the `MediaBrowser` Authorization header, as the
+  /// app's own requests do. Jellyfin reads `X-Emby-Token` only while the
+  /// server's `EnableLegacyAuthorization` is on, which it is not by default,
+  /// so a token sent only that way is a 401 on every refresh. Emby keeps the
+  /// legacy header as well. With no Client/Device/Version fields the server
+  /// fills them from the token's own session, so the extension never renames
+  /// the app's device entry.
   private static func mediaBrowserRequest(
     baseUrl: String,
     token: String,
     userId: String,
     path: String,
     trailingQuery: String,
-    maxItems: Int
+    maxItems: Int,
+    sendsLegacyTokenHeader: Bool
   ) -> URLRequest? {
     guard !token.isEmpty, !userId.isEmpty,
       let encodedUserId = ShelfItemMapper.encodeQueryComponent(userId),
+      let encodedToken = ShelfItemMapper.encodeQueryComponent(token),
       let url = serverURL(
         baseUrl: baseUrl,
         path: path,
@@ -117,7 +130,10 @@ enum ShelfFetcher {
       )
     else { return nil }
     var request = URLRequest(url: url)
-    request.setValue(token, forHTTPHeaderField: "X-Emby-Token")
+    request.setValue("MediaBrowser Token=\"\(encodedToken)\"", forHTTPHeaderField: "Authorization")
+    if sendsLegacyTokenHeader {
+      request.setValue(token, forHTTPHeaderField: "X-Emby-Token")
+    }
     request.setValue("application/json", forHTTPHeaderField: "Accept")
     return request
   }
@@ -158,13 +174,15 @@ enum ShelfFetcher {
           token: server.token,
           userId: userId,
           maxItems: maxItems,
-          userScopedRoute: descriptor.kind == .emby
+          userScopedRoute: descriptor.kind == .emby,
+          sendsLegacyTokenHeader: descriptor.kind == .emby
         ),
         let nextUpRequest = mediaBrowserNextUpRequest(
           baseUrl: descriptor.baseUrl,
           token: server.token,
           userId: userId,
-          maxItems: maxItems
+          maxItems: maxItems,
+          sendsLegacyTokenHeader: descriptor.kind == .emby
         )
       else { return nil }
       async let resumeObject = fetchJSON(resumeRequest, session: session)
