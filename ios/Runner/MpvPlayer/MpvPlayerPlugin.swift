@@ -1,9 +1,7 @@
 import UIKit
 import Flutter
 import AVKit
-#if os(tvOS)
-  import SpatialAudioBridge
-#endif
+import SpatialAudioBridge
 
 /// Flutter plugin that bridges MPV player to Dart via method and event channels
 class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginShared {
@@ -104,12 +102,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     case "getAudioSpdifCodecs":
       result(MpvPlayerCore.audioSpdifCodecs)
     case "getSpatialAudioNotices":
-      // Every tvOS version ships the library's core.
-      #if os(tvOS)
-        result(SpatialAudioBridgeNotices.text)
-      #else
-        result(nil)
-      #endif
+      // Every iOS and tvOS version ships the library's core.
+      result(SpatialAudioBridgeNotices.text)
     default:
       result(FlutterMethodNotImplemented)
     }
