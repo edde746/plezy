@@ -712,6 +712,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         if (PlatformDetector.isAppleTV()) {
           final forward = appleTvScanIsForward(speed, player?.state.rate ?? 1.0);
           if (forward != null) _skipByConfiguredStep(forward: forward);
+          // Report the unchanged speed at once so tvOS does not stay in a
+          // scan, where the opposite button would end it with a pause.
+          _mediaControls.pushPlaybackState();
           return;
         }
         unawaited(_setPlaybackRate(speed));
