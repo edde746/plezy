@@ -7,6 +7,7 @@ import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_base.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 import '../test_helpers/mock_player_channels.dart';
 import '../test_helpers/prefs.dart';
@@ -1094,6 +1095,34 @@ void main() {
           expect(speedValues, ['1.25']);
         } finally {
           if (!releaseNormalization.isCompleted) releaseNormalization.complete();
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('Apple TV passes through the codecs its plugin reports', () async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    final spdifWrites = <String>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'getAudioSpdifCodecs') return 'ac3,eac3,truehd,dts-hd';
+        if (call.method == 'setProperty' && (call.arguments as Map)['name'] == 'audio-spdif') {
+          spdifWrites.add((call.arguments as Map)['value'] as String);
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioPassthrough(true);
+          await player.setAudioPassthrough(false);
+          expect(spdifWrites, ['ac3,eac3,truehd,dts-hd', '']);
+        } finally {
           await player.dispose();
         }
       },

@@ -346,7 +346,7 @@
     "tunneledPlaybackDescription": "Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран или движението прекъсва.",
     "audioPassthrough": "Директно предаване на аудио",
     "audioPassthroughDescription": "Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.",
-    "audioPassthroughDescriptionAppleTv": "Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.",
+    "audioPassthroughDescriptionAppleTv": "Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. От tvOS 26 нататък TrueHD Atmos и DTS:X се възпроизвеждат като пространствено аудио на Apple, а останалите DTS и TrueHD – като многоканален PCM. Изключи настройката, ако няма звук.",
     "audioPassthroughOverriddenByNormalization": "Изключено, докато е включено нормализирането на силата на звука",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

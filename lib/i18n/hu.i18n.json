@@ -346,7 +346,7 @@
     "tunneledPlaybackDescription": "Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.",
     "audioPassthrough": "Hangtovábbítás (passthrough)",
     "audioPassthroughDescription": "Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.",
-    "audioPassthroughDescriptionAppleTv": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.",
+    "audioPassthroughDescriptionAppleTv": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A tvOS 26-tól a TrueHD Atmos és a DTS:X az Apple térhatású hangjaként szól, a többi DTS és TrueHD pedig többcsatornás PCM-ként. Kapcsold ki, ha nincs hang.",
     "audioPassthroughOverriddenByNormalization": "Ki, amíg a hangerőnormalizálás be van kapcsolva",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
