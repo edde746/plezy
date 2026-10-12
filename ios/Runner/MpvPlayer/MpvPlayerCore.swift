@@ -27,17 +27,20 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   var isPipStarting = false
 
-  /// SpatialAudioSink on tvOS 26. mpv holds its raw address until the handle
-  /// is destroyed.
+  /// SpatialAudioSink on iOS and tvOS 26. mpv holds its raw address until the
+  /// handle is destroyed.
   private var spatialAudioSink: AnyObject?
 
-  /// The `audio-spdif` codecs: Dolby Digital (Plus) for the system decoder,
-  /// and on tvOS 26 TrueHD and DTS-HD for SpatialAudioSink.
+  /// The `audio-spdif` codecs: on Apple TV Dolby Digital (Plus) for the system
+  /// decoder, and on iOS and tvOS 26 TrueHD and DTS-HD for SpatialAudioSink.
   static var audioSpdifCodecs: String {
     #if os(tvOS)
       if #available(tvOS 26, *) { return "ac3,eac3,truehd,dts-hd" }
+      return "ac3,eac3"
+    #else
+      if #available(iOS 26, *) { return "truehd,dts-hd" }
+      return ""
     #endif
-    return "ac3,eac3"
   }
 
   private static func log(_ message: @autoclosure () -> String) {
@@ -90,16 +93,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   override func configurePlatformMpvOptions(mpv: OpaquePointer) {
-    #if os(tvOS)
-      if #available(tvOS 26, *) {
-        // Every other format falls through to the autoprobed outputs.
-        let sink = SpatialAudioSink()
-        spatialAudioSink = sink
-        var address = sink.address
-        checkError(mpv_set_option(mpv, "ao-spatial-sink", MPV_FORMAT_INT64, &address))
-        checkError(mpv_set_option_string(mpv, "ao", "spatial,"))
-      }
-    #endif
+    if #available(iOS 26, tvOS 26, *) {
+      // Every other format falls through to the autoprobed outputs.
+      let sink = SpatialAudioSink()
+      spatialAudioSink = sink
+      var address = sink.address
+      checkError(mpv_set_option(mpv, "ao-spatial-sink", MPV_FORMAT_INT64, &address))
+      checkError(mpv_set_option_string(mpv, "ao", "spatial,"))
+    }
   }
 
   var sampleBufferDisplayLayer: MpvVideoLayer? { videoLayer }

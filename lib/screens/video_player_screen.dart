@@ -1980,6 +1980,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // never macOS — see PlatformDetector.supportsAudioPassthrough).
       if (PlatformDetector.supportsAudioPassthrough()) {
         await currentPlayer.setAudioPassthrough(settingsService.read(SettingsService.audioPassthrough));
+      } else if (PlatformDetector.supportsSpatialAudio()) {
+        // Only TrueHD and DTS-HD pass through here, as spatial audio.
+        await currentPlayer.setAudioPassthrough(true);
       }
 
       // Set before hdr-enabled so the first image description is already built
