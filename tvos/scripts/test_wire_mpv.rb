@@ -17,9 +17,7 @@ class WireMpvTest < Minitest::Test
     MpvPipController.swift
     MpvAudioPlayerCore.swift
     MpvAudioPlayerPlugin.swift
-    SpatialAudioSink.swift
   ].freeze
-  PRODUCT_NAMES = %w[MPVKit SpatialAudioBridge SpatialAudioPlayback].freeze
   AFFECTED_NAMES = %w[
     MpvAudioPlayerCore.swift
     MpvAudioPlayerPlugin.swift
@@ -72,7 +70,7 @@ class WireMpvTest < Minitest::Test
   def test_restores_missing_package_product_and_framework_edges
     edit_project do |_project, runner, _group|
       runner.package_product_dependencies
-        .select { |product| PRODUCT_NAMES.include?(product.product_name) }
+        .select { |product| product.product_name == 'MPVKit' }
         .each(&:remove_from_project)
     end
 
@@ -92,10 +90,9 @@ class WireMpvTest < Minitest::Test
 
     project = Xcodeproj::Project.open(project_path)
     references = project.root_object.package_references.select do |candidate|
-      url = (candidate.repositoryURL rescue nil)
-      url && %w[mpvkit mpv-build].include?(File.basename(url, '.git').downcase)
+      (candidate.repositoryURL rescue nil)
     end
-    assert_equal 1, references.count, 'expected exactly one native package reference'
+    assert_equal 1, references.count, 'expected exactly one remote package reference'
     assert_equal 'https://github.com/edde746/mpv-build', references.first.repositoryURL
     assert_equal({ 'kind' => 'revision', 'revision' => revision }, references.first.requirement)
     assert_complete_source_graph
@@ -242,20 +239,9 @@ class WireMpvTest < Minitest::Test
       assert_equal 1, memberships, "expected one Runner source membership for #{name}"
     end
 
-    PRODUCT_NAMES.each do |name|
-      products = runner.package_product_dependencies.select { |product| product.product_name == name }
-      assert_equal 1, products.count, "expected one #{name} product dependency"
-      framework_links = runner.frameworks_build_phase.files.count { |file| file.product_ref == products.first }
-      assert_equal 1, framework_links, "expected one #{name} framework link"
-    end
-
-    spatial_audio = project.root_object.package_references.select do |candidate|
-      (candidate.repositoryURL rescue nil) == 'https://github.com/kristofferR/SpatialAudioBridge'
-    end
-    assert_equal 1, spatial_audio.count, 'expected one SpatialAudioBridge package reference'
-    assert_equal({ 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '1.6.1' }, spatial_audio.first.requirement)
-    runner.package_product_dependencies
-      .select { |product| product.product_name.start_with?('SpatialAudio') }
-      .each { |product| assert_equal spatial_audio.first, product.package }
+    products = runner.package_product_dependencies.select { |product| product.product_name == 'MPVKit' }
+    assert_equal 1, products.count, 'expected one MPVKit product dependency'
+    framework_links = runner.frameworks_build_phase.files.count { |file| file.product_ref == products.first }
+    assert_equal 1, framework_links, 'expected one MPVKit framework link'
   end
 end

@@ -946,8 +946,7 @@ class MpvPlayerCoreBase: NSObject {
     return CGSize(width: cachedWidth, height: cachedHeight)
   }
 
-  /// `keepAlive` outlives the handle, for objects mpv calls by raw address.
-  func disposeSharedState(destroySynchronously: Bool, keepAlive: AnyObject? = nil) {
+  func disposeSharedState(destroySynchronously: Bool) {
     cancelPendingRequests()
 
     cacheLock.lock()
@@ -977,11 +976,9 @@ class MpvPlayerCoreBase: NSObject {
     }
 
     let destroy = {
-      withExtendedLifetime(keepAlive) {
-        if let mpvHandle {
-          mpv_set_wakeup_callback(mpvHandle, nil, nil)
-          mpv_terminate_destroy(mpvHandle)
-        }
+      if let mpvHandle {
+        mpv_set_wakeup_callback(mpvHandle, nil, nil)
+        mpv_terminate_destroy(mpvHandle)
       }
       if let callbackContext {
         Unmanaged<MpvWakeupCallbackContext>.fromOpaque(callbackContext).release()

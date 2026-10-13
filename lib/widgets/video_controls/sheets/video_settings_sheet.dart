@@ -920,7 +920,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           // exists. Android also folds the track to stereo ahead of loudnorm
           // (PlayerBase._loudnormFilter), which a surround owner must hear
           // about before flipping it.
-          subtitle: PlatformDetector.supportsAudioPassthrough()
+          subtitle: PlatformDetector.supportsAudioPassthrough() || PlatformDetector.supportsSpatialAudio()
               ? Platform.isAndroid
                     ? t.videoSettings.audioNormalizationStereoMix
                     : t.videoSettings.audioNormalizationDisablesPassthrough
