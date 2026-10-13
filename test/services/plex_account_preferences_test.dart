@@ -66,7 +66,7 @@ void main() {
 
       final preferences = await source.read();
 
-      expect(preferences.playDefaultAudioTrack, isTrue);
+      expect(preferences.selectAudioByLanguage, isTrue);
       expect(preferences.subtitlePlaybackMode, SubtitlePlaybackMode.smart);
       expect(preferences.watchedIndicator, isNull);
       expect(preferences.mediaReviewsVisibility, MediaReviewsVisibility.usersOnly);
@@ -158,7 +158,7 @@ void main() {
 
       final preferences = await source.write(AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false));
 
-      expect(preferences.playDefaultAudioTrack, isFalse);
+      expect(preferences.selectAudioByLanguage, isFalse);
       expect(preferences.subtitlePlaybackMode, SubtitlePlaybackMode.none);
     });
 
@@ -189,7 +189,7 @@ Map<String, dynamic> _profilePayload() => {
 
 List<Object?> _snapshot(AccountPreferences preferences) => [
   preferences.preferredAudioLanguage,
-  preferences.playDefaultAudioTrack,
+  preferences.selectAudioByLanguage,
   preferences.preferredSubtitleLanguage,
   preferences.subtitlePlaybackMode,
   preferences.watchedIndicator,
