@@ -253,6 +253,7 @@ class AgentSettingsCommands {
       case 'gesture_brightness_swipe' ||
           'gesture_volume_swipe' ||
           'gesture_pinch_to_zoom' ||
+          'gesture_seek_swipe' ||
           'remember_brightness_level' ||
           'remembered_brightness_level' ||
           'rotation_locked' ||

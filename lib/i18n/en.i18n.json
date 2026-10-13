@@ -425,6 +425,8 @@
     "gestureVolumeSwipeDescription": "Swipe up or down on the right edge to adjust volume",
     "gesturePinchToZoom": "Pinch to Zoom",
     "gesturePinchToZoomDescription": "Pinch on the video to zoom in or out",
+    "gestureSeekSwipe": "Seek Swipe",
+    "gestureSeekSwipeDescription": "Swipe left or right anywhere on the video to seek; release to jump",
     "rememberBrightnessLevel": "Remember Brightness Level",
     "rememberBrightnessLevelDescription": "Start playback at the brightness set by the last swipe",
     "controls": "Controls",

@@ -308,6 +308,16 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
             )
           : const MobileEdgeAdjustmentEvent.none(),
     );
+    _handleSeekScrubEvent(
+      _mobileTouchGesturesAllowed && hit != null
+          ? _seekScrubTracker.pointerDown(
+              event.pointer,
+              hit.position,
+              hit.size,
+              allowed: _seekScrubAllowedAt(hit.position, hit.size),
+            )
+          : const MobileSeekScrubEvent.none(),
+    );
   }
 
   void _handleTouchPointerMove(PointerMoveEvent event) {
@@ -316,18 +326,22 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     if (_twoFingerTapTracker.isChordActive) {
       _suppressTouchTaps();
       _cancelEdgeAdjustmentGesture();
+      _cancelSeekScrubGesture();
       return;
     }
     if (!_mobileTouchGesturesAllowed) {
       _cancelEdgeAdjustmentGesture();
+      _cancelSeekScrubGesture();
       return;
     }
     final hit = _edgeAdjustmentSurfaceHit(event.position);
     if (hit == null) {
       _cancelEdgeAdjustmentGesture();
+      _cancelSeekScrubGesture();
       return;
     }
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerMove(event.pointer, hit.position));
+    _handleSeekScrubEvent(_seekScrubTracker.pointerMove(event.pointer, hit.position));
   }
 
   void _handleTouchPointerUp(PointerUpEvent event) {
@@ -335,6 +349,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     final isTwoFingerTap = _twoFingerTapTracker.pointerUp(event.pointer, event.position);
     final hit = _edgeAdjustmentSurfaceHit(event.position);
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerUp(event.pointer, hit?.position ?? event.localPosition));
+    _handleSeekScrubEvent(_seekScrubTracker.pointerUp(event.pointer, hit?.position ?? event.localPosition));
     if (_isTouchTapSuppressed || isTwoFingerTap) _suppressTouchTaps();
     // Toggle playback with the chrome left down (#1505), the moment the chord
     // resolves and in every player state. Deliberately no _toggleControls()/
@@ -356,7 +371,107 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     if (event.kind != PointerDeviceKind.touch) return;
     _twoFingerTapTracker.pointerCancel(event.pointer);
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerCancel(event.pointer));
+    _handleSeekScrubEvent(_seekScrubTracker.pointerCancel(event.pointer));
     if (_twoFingerTapTracker.isChordActive) _suppressTouchTaps();
+  }
+
+  bool get _seekScrubGestureEnabled => SettingsService.instance.read(SettingsService.gestureSeekSwipe);
+
+  /// Whether a horizontal gesture may begin at this point.
+  ///
+  /// Live TV is excluded outright: its relative skips are epoch-based against a
+  /// moving live edge, so an absolute target is meaningless there (#1253).
+  ///
+  /// The timeline band is excluded while the chrome is up. The scrubber claims
+  /// its touches through the gesture arena via [EagerHorizontalDragGestureRecognizer],
+  /// but this tracker reads the root Listener, which sees every pointer whatever
+  /// the arena decides — without the band check a scrubber drag would be applied
+  /// twice, once by the slider and once here.
+  bool _seekScrubAllowedAt(Offset position, Size size) {
+    if (!_seekScrubGestureEnabled) return false;
+    if (widget.isLive) return false;
+    if (widget.player.state.duration.inMilliseconds <= 0) return false;
+    if (_isLongPressing) return false;
+    if (_showControls && position.dy > size.height - mobileSkipZoneDimensions(size).bottomExclude) return false;
+    return true;
+  }
+
+  void _cancelSeekScrubGesture() {
+    _handleSeekScrubEvent(_seekScrubTracker.cancel());
+  }
+
+  void _handleSeekScrubEvent(MobileSeekScrubEvent event) {
+    switch (event.type) {
+      case MobileSeekScrubEventType.none:
+      case MobileSeekScrubEventType.candidate:
+        return;
+      case MobileSeekScrubEventType.activated:
+        _beginSeekScrub(event.deltaFraction);
+        return;
+      case MobileSeekScrubEventType.update:
+        _updateSeekScrub(event.deltaFraction);
+        return;
+      case MobileSeekScrubEventType.ended:
+        _finishSeekScrub(event.deltaFraction, commit: true);
+        return;
+      case MobileSeekScrubEventType.cancelled:
+        _finishSeekScrub(0, commit: false);
+        return;
+    }
+  }
+
+  void _beginSeekScrub(double deltaFraction) {
+    if (widget.player.state.duration.inMilliseconds <= 0) return;
+    _seekScrubStartPosition = widget.player.state.position;
+    // A horizontal drag is not a tap: keep it from toggling the chrome or
+    // landing a skip-zone double tap on release. Same suppression the edge
+    // swipes use when they activate.
+    _suppressTouchTaps();
+    if (_isLongPressing) _handleLongPressCancel();
+    _updateSeekScrub(deltaFraction);
+  }
+
+  void _updateSeekScrub(double deltaFraction) {
+    final start = _seekScrubStartPosition;
+    if (start == null) return;
+    final target = _seekScrubTarget(start, deltaFraction);
+    if (target == null) return;
+    _seekScrubIndicator.value = (visible: true, target: target, delta: target - start, forward: deltaFraction >= 0);
+  }
+
+  void _finishSeekScrub(double deltaFraction, {required bool commit}) {
+    final start = _seekScrubStartPosition;
+    _seekScrubStartPosition = null;
+    _scheduleSeekScrubIndicatorHide();
+    if (!commit || start == null || !widget.canControl) return;
+    final target = _seekScrubTarget(start, deltaFraction);
+    if (target == null) return;
+    unawaited(_seekToPosition(target));
+  }
+
+  /// Landing point for a swipe that has travelled [deltaFraction] of the
+  /// surface width, or null when the player has no seekable range to scale to.
+  ///
+  /// Anchored to the position the gesture started from, so the preview and the
+  /// committed seek agree even if playback advanced mid-drag.
+  Duration? _seekScrubTarget(Duration start, double deltaFraction) {
+    final span = seekScrubSpanFor(widget.player.state.duration);
+    if (span == Duration.zero) return null;
+    return clampSeekPosition(widget.player, start + span * deltaFraction);
+  }
+
+  void _scheduleSeekScrubIndicatorHide() {
+    _seekScrubIndicatorHideTimer?.cancel();
+    _seekScrubIndicatorHideTimer = Timer(const Duration(milliseconds: 320), () {
+      if (!mounted) return;
+      final current = _seekScrubIndicator.value;
+      _seekScrubIndicator.value = (
+        visible: false,
+        target: current.target,
+        delta: current.delta,
+        forward: current.forward,
+      );
+    });
   }
 
   bool get _mobileTouchGesturesAllowed {
