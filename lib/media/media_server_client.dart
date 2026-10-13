@@ -607,10 +607,11 @@ abstract class MediaServerClient {
   /// appends `MaxWidth`/`MaxHeight` to the image endpoint.
   ///
   /// [cover] picks how the requested box is interpreted. The default sizes the
-  /// image to *cover* the box — every pixel of a poster/backdrop slot is
-  /// filled, at the cost of overshooting on the long axis. Pass `false` for
-  /// artwork drawn with [BoxFit.contain] (clear logos), where the overshoot is
-  /// decoded and thrown away: a 4313×1035 logo asked for at 1200×360 comes back
+  /// image to *cover* the box — every pixel of a poster slot is filled, at the
+  /// cost of overshooting on the long axis. Pass `false` when the overshoot
+  /// would be decoded and thrown away: artwork drawn with [BoxFit.contain]
+  /// (clear logos), and backdrops, whose box is already the 16:9 frame that
+  /// covers their slot. A 4313×1035 logo asked for at 1200×360 comes back
   /// 1500×360 covering versus 1200×288 fitting, for ~20-30% more bytes and no
   /// extra rendered detail. Neither mode crops, distorts, or upscales past the
   /// source: Plex requests are built with `upscale=0` so oversized requests
