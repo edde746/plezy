@@ -1970,7 +1970,8 @@ class ExoPlayerCore(private val activity: Activity) :
         "id" to trackId,
         "title" to format.label,
         "lang" to format.language,
-        "codec" to format.codecs,
+        "codec" to codecNameForFormat(format),
+        "codec-profile" to codecProfileForFormat(format),
         "default" to (format.selectionFlags and C.SELECTION_FLAG_DEFAULT != 0),
         "selected" to isSelected,
         "demux-channel-count" to format.channelCount,
@@ -2007,7 +2008,7 @@ class ExoPlayerCore(private val activity: Activity) :
         "id" to trackId,
         "title" to format.label,
         "lang" to format.language,
-        "codec" to format.codecs,
+        "codec" to codecNameForFormat(format),
         "default" to (format.selectionFlags and C.SELECTION_FLAG_DEFAULT != 0),
         "forced" to (format.selectionFlags and C.SELECTION_FLAG_FORCED != 0),
         "selected" to isSelected,
@@ -2055,6 +2056,34 @@ class ExoPlayerCore(private val activity: Activity) :
     }
 
     delegate?.onPropertyChange("track-list", trackList)
+  }
+
+  private fun codecNameForFormat(format: Format): String? {
+    format.codecs?.takeIf { it.isNotEmpty() }?.let { return it }
+    return when (format.sampleMimeType) {
+      MimeTypes.AUDIO_AC3 -> "ac3"
+      MimeTypes.AUDIO_E_AC3, MimeTypes.AUDIO_E_AC3_JOC -> "eac3"
+      MimeTypes.AUDIO_DTS, MimeTypes.AUDIO_DTS_HD -> "dts"
+      MimeTypes.AUDIO_TRUEHD -> "truehd"
+      MimeTypes.AUDIO_AAC -> "aac"
+      MimeTypes.AUDIO_FLAC -> "flac"
+      MimeTypes.AUDIO_OPUS -> "opus"
+      MimeTypes.AUDIO_VORBIS -> "vorbis"
+      MimeTypes.AUDIO_MPEG, MimeTypes.AUDIO_MPEG_L1, MimeTypes.AUDIO_MPEG_L2 -> "mp3"
+      MimeTypes.AUDIO_ALAC -> "alac"
+      MimeTypes.APPLICATION_SUBRIP -> "subrip"
+      MimeTypes.TEXT_SSA -> "ass"
+      MimeTypes.APPLICATION_PGS -> "pgs"
+      MimeTypes.APPLICATION_VOBSUB -> "vobsub"
+      MimeTypes.TEXT_VTT -> "webvtt"
+      MimeTypes.APPLICATION_DVBSUBS -> "dvb_subtitle"
+      else -> null
+    }
+  }
+
+  private fun codecProfileForFormat(format: Format): String? = when (format.sampleMimeType) {
+    MimeTypes.AUDIO_DTS_HD -> "DTS-HD MA"
+    else -> null
   }
 
   private fun captureTrackRestore(): PendingTrackRestore? {

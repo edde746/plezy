@@ -1278,6 +1278,22 @@ void main() {
       expect(otherPlayer.selectedSubtitle, isEmpty);
     });
 
+    test('skips redundant native audio and subtitle mutations when active tracks already match', () async {
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: availableTracks,
+        track: TrackSelection(audio: audioTracks[0], subtitle: SubtitleTrack.off),
+      );
+      final mgr = _make(player: player, preferredAudioTrack: audioTracks[0], preferredSubtitleTrack: SubtitleTrack.off);
+      addTearDown(mgr.dispose);
+
+      final applied = await mgr.applyTrackSelection();
+
+      expect(applied, isTrue);
+      expect(player.selectedAudio, isEmpty);
+      expect(player.selectedSubtitle, isEmpty);
+    });
+
     test('an automatic pass writes a carried pick to the server', () async {
       await SettingsService.getInstance();
       final player = _FakePlayer(

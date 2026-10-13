@@ -546,11 +546,12 @@ MediaAudioTrack? findPlexTrackForMpvAudio(
 /// The source audio row the engine is currently playing, or null when mpv's
 /// selection cannot be mapped onto [sourceTracks].
 ///
-/// Three ladders, weakest evidence last: the selected track's ordinal in the
-/// real (non-`auto`/`no`) mpv list against the source list, then the scored
-/// [findPlexTrackForMpvAudio] match, then an mpv id that literally parses to a
-/// source stream id. [mpvTracks] is the raw engine list — the scored match
-/// needs it unfiltered for its cross-side ordinal rule.
+/// Three ladders, weakest evidence last: the scored [findPlexTrackForMpvAudio]
+/// identity match, then the selected track's ordinal in the real
+/// (non-`auto`/`no`) mpv list against the source list when languages do not
+/// contradict, then an mpv id that literally parses to a source stream id.
+/// [mpvTracks] is the raw engine list — the scored match needs it unfiltered
+/// for its cross-side ordinal rule.
 MediaAudioTrack? playingSourceAudioTrack({
   required AudioTrack? selectedMpvTrack,
   required List<AudioTrack> mpvTracks,
@@ -558,12 +559,19 @@ MediaAudioTrack? playingSourceAudioTrack({
 }) {
   if (selectedMpvTrack == null || sourceTracks.isEmpty) return null;
 
-  final realMpvTracks = mpvTracks.where((t) => t.id != 'auto' && t.id != 'no').toList(growable: false);
-  final ordinal = realMpvTracks.indexOf(selectedMpvTrack);
-  if (ordinal >= 0 && ordinal < sourceTracks.length) return sourceTracks[ordinal];
-
   final matched = findPlexTrackForMpvAudio(selectedMpvTrack, sourceTracks, allMpvTracks: mpvTracks);
   if (matched != null) return matched;
+
+  final realMpvTracks = mpvTracks.where((t) => t.id != 'auto' && t.id != 'no').toList(growable: false);
+  final ordinal = realMpvTracks.indexOf(selectedMpvTrack);
+  if (ordinal >= 0 && ordinal < sourceTracks.length) {
+    final candidate = sourceTracks[ordinal];
+    final selectedLang = selectedMpvTrack.language;
+    final candidateLang = candidate.languageCode;
+    if (selectedLang == null || candidateLang == null || _languagesMatch(selectedLang, candidateLang)) {
+      return candidate;
+    }
+  }
 
   final parsedId = int.tryParse(selectedMpvTrack.id);
   if (parsedId == null) return null;
@@ -1222,11 +1230,13 @@ class TrackSelectionService {
       appLogger.d(
         'Audio: ${selectedAudioTrack.title ?? selectedAudioTrack.language ?? "Track ${selectedAudioTrack.id}"} [${audioResult.priority.name}]',
       );
-      if (!canMutatePlayer()) return false;
-      final audioMutation = player.selectAudioTrack(selectedAudioTrack);
-      onPlayerMutationDispatched?.call(audioMutation);
-      await audioMutation;
-      if (!canMutatePlayer()) return false;
+      if (player.state.track.audio?.id != selectedAudioTrack.id) {
+        if (!canMutatePlayer()) return false;
+        final audioMutation = player.selectAudioTrack(selectedAudioTrack);
+        onPlayerMutationDispatched?.call(audioMutation);
+        await audioMutation;
+        if (!canMutatePlayer()) return false;
+      }
 
       // Save to Plex if this was user's navigation preference (Priority 1)
       if (audioResult.priority == TrackSelectionPriority.navigation && onAudioTrackChanged != null) {
@@ -1248,11 +1258,13 @@ class TrackSelectionService {
           ? 'OFF'
           : (selectedSubtitleTrack.title ?? selectedSubtitleTrack.language ?? 'Track ${selectedSubtitleTrack.id}');
       appLogger.d('Subtitle: $subtitleName [${subtitleResult.priority.name}]');
-      if (!canMutatePlayer()) return false;
-      final subtitleMutation = player.selectSubtitleTrack(selectedSubtitleTrack);
-      onPlayerMutationDispatched?.call(subtitleMutation);
-      await subtitleMutation;
-      if (!canMutatePlayer()) return false;
+      if (player.state.track.subtitle?.id != selectedSubtitleTrack.id) {
+        if (!canMutatePlayer()) return false;
+        final subtitleMutation = player.selectSubtitleTrack(selectedSubtitleTrack);
+        onPlayerMutationDispatched?.call(subtitleMutation);
+        await subtitleMutation;
+        if (!canMutatePlayer()) return false;
+      }
 
       // Save to Plex if this was user's navigation preference (Priority 1)
       if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
