@@ -1,6 +1,7 @@
 package com.edde746.plezy.exoplayer
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -184,5 +185,77 @@ class LoadControlPolicyTest {
     assertEquals(LoadControlPolicy.BufferTier.AUTO, LoadControlPolicy.BufferTier.fromWire(""))
     assertEquals(LoadControlPolicy.BufferTier.AUTO, LoadControlPolicy.BufferTier.fromWire("EXTRA_LARGE"))
     assertEquals(LoadControlPolicy.BufferTier.AUTO, LoadControlPolicy.BufferTier.fromWire("extraLarge"))
+  }
+
+  @Test
+  fun byteCapResumeThresholdIsEightyPercentOfTarget() {
+    val target = 64 * MIB
+    assertEquals((target * 4L / 5L).toInt(), LoadControlPolicy.byteCapResumeThresholdBytes(target))
+    assertEquals(0, LoadControlPolicy.byteCapResumeThresholdBytes(0))
+    assertEquals(0, LoadControlPolicy.byteCapResumeThresholdBytes(-1))
+  }
+
+  @Test
+  fun byteCapHysteresisHoldsBackUntilTwentyPercentDrains() {
+    val target = 64 * MIB
+    val resumeThreshold = LoadControlPolicy.byteCapResumeThresholdBytes(target)
+
+    // 1 MiB below cap (on a 92 Mbps remux where 64 MiB is ~5.8s < 15s minBufferMs):
+    // DefaultLoadControl would immediately re-enable loading, but hysteresis holds back.
+    assertTrue(
+      LoadControlPolicy.shouldHoldBackForByteCap(
+        targetBufferBytes = target,
+        allocatedBytes = target - 1 * MIB,
+        bufferedDurationUs = 5_500_000L,
+        playbackSpeed = 1f,
+        rebuffering = false
+      )
+    )
+
+    // Drained to 80% threshold: release for burst refill.
+    assertFalse(
+      LoadControlPolicy.shouldHoldBackForByteCap(
+        targetBufferBytes = target,
+        allocatedBytes = resumeThreshold,
+        bufferedDurationUs = 4_600_000L,
+        playbackSpeed = 1f,
+        rebuffering = false
+      )
+    )
+  }
+
+  @Test
+  fun byteCapHysteresisReleasesImmediatelyOnRebufferOrLowPlayoutBuffer() {
+    val target = 64 * MIB
+    assertFalse(
+      "never hold back a rebuffering player",
+      LoadControlPolicy.shouldHoldBackForByteCap(
+        targetBufferBytes = target,
+        allocatedBytes = target - 64 * 1024,
+        bufferedDurationUs = 5_000_000L,
+        playbackSpeed = 1f,
+        rebuffering = true
+      )
+    )
+    assertFalse(
+      "release when playout duration drops to the 2.5s floor",
+      LoadControlPolicy.shouldHoldBackForByteCap(
+        targetBufferBytes = target,
+        allocatedBytes = target - 64 * 1024,
+        bufferedDurationUs = LoadControlPolicy.BYTE_CAP_MIN_SAFE_BUFFER_US,
+        playbackSpeed = 1f,
+        rebuffering = false
+      )
+    )
+    assertFalse(
+      "2x playback speed halves playout duration (4s media -> 2s playout <= 2.5s floor)",
+      LoadControlPolicy.shouldHoldBackForByteCap(
+        targetBufferBytes = target,
+        allocatedBytes = target - 64 * 1024,
+        bufferedDurationUs = 4_000_000L,
+        playbackSpeed = 2f,
+        rebuffering = false
+      )
+    )
   }
 }

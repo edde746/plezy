@@ -140,9 +140,55 @@ internal object LoadControlPolicy {
     return maxOf(budget, MIN_TARGET_BYTES.toLong()).toInt()
   }
 
+  /**
+   * Playout-duration floor (2.5s) below which byte-cap hysteresis releases immediately even if
+   * allocated bytes have not yet drained to [byteCapResumeThresholdBytes].
+   */
+  const val BYTE_CAP_MIN_SAFE_BUFFER_US = 2_500_000L
+
+  private const val BYTE_CAP_RESUME_NUMERATOR = 4L
+  private const val BYTE_CAP_RESUME_DENOMINATOR = 5L
+
   /** Seconds of media a budget covers at [bitrateBps], for logs. Null when unknown. */
   fun readAheadSeconds(targetBufferBytes: Int, bitrateBps: Long): Double? {
     if (bitrateBps <= 0L) return null
     return targetBufferBytes * 8.0 / bitrateBps
+  }
+
+  /**
+   * Low-water mark (80% of [targetBufferBytes]) to which allocator bytes must drain after hitting
+   * the byte ceiling before loading resumes.
+   *
+   * With `prioritizeTimeOverSizeThresholds = false`, `DefaultLoadControl` has zero byte hysteresis
+   * whenever `bufferedDurationUs < minBufferUs` (which is permanent on high-bitrate streams whose
+   * entire byte budget holds less than `minBufferMs`), causing 1 MiB start/stop micro-reads that
+   * clamp TCP/HTTP2 flow-control windows over 10–15 minutes. Requiring a 20% drain restores clean
+   * multi-megabyte burst reads.
+   */
+  fun byteCapResumeThresholdBytes(targetBufferBytes: Int): Int {
+    if (targetBufferBytes <= 0) return 0
+    return (targetBufferBytes.toLong() * BYTE_CAP_RESUME_NUMERATOR / BYTE_CAP_RESUME_DENOMINATOR).toInt()
+  }
+
+  /**
+   * Whether the loader should stay paused after reaching [targetBufferBytes] until allocated bytes
+   * drain to [byteCapResumeThresholdBytes].
+   *
+   * Never holds back a rebuffering player or a buffer whose playout duration has dropped to or
+   * below [BYTE_CAP_MIN_SAFE_BUFFER_US].
+   */
+  fun shouldHoldBackForByteCap(
+    targetBufferBytes: Int,
+    allocatedBytes: Int,
+    bufferedDurationUs: Long,
+    playbackSpeed: Float,
+    rebuffering: Boolean
+  ): Boolean {
+    if (targetBufferBytes <= 0 || rebuffering) return false
+    val resumeBytes = byteCapResumeThresholdBytes(targetBufferBytes)
+    if (allocatedBytes <= resumeBytes) return false
+    val speed = if (playbackSpeed.isFinite() && playbackSpeed > 0f) playbackSpeed else 1f
+    val playoutBufferedUs = (bufferedDurationUs / speed).toLong()
+    return playoutBufferedUs > BYTE_CAP_MIN_SAFE_BUFFER_US
   }
 }
