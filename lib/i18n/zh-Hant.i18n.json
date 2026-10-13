@@ -1987,8 +1987,7 @@
     "audioOutputSpatial": "空間音訊",
     "audioOutputStereo": "立體聲",
     "audioNormalization": "音量標準化",
-    "audioNormalizationDisablesPassthrough": "將音訊解碼為 PCM；開啟時直通關閉",
-    "audioNormalizationStereoMix": "將音訊解碼為立體聲混音；開啟時直通關閉"
+    "audioNormalizationDisablesPassthrough": "將音訊解碼為 PCM；開啟時直通關閉"
   },
   "performanceOverlay": {
     "color": "色彩",

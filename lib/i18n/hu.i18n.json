@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Térbeli hang",
     "audioOutputStereo": "Sztereó",
     "audioNormalization": "Hangerő normalizálása",
-    "audioNormalizationDisablesPassthrough": "PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva",
-    "audioNormalizationStereoMix": "Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva"
+    "audioNormalizationDisablesPassthrough": "PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva"
   },
   "performanceOverlay": {
     "color": "Szín",

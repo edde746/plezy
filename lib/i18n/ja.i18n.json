@@ -1987,8 +1987,7 @@
     "audioOutputSpatial": "空間オーディオ",
     "audioOutputStereo": "ステレオ",
     "audioNormalization": "ラウドネス正規化",
-    "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります",
-    "audioNormalizationStereoMix": "音声をステレオミックスにデコードします。オンの間はパススルーがオフになります"
+    "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります"
   },
   "performanceOverlay": {
     "color": "色",

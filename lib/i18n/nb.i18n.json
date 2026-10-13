@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Romlig lyd",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normaliser lydstyrke",
-    "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; direkte lydutgang er av mens dette er på",
-    "audioNormalizationStereoMix": "Dekoder lyd til en stereomiks; direkte lydutgang er av mens dette er på"
+    "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; direkte lydutgang er av mens dette er på"
   },
   "performanceOverlay": {
     "color": "Farge",

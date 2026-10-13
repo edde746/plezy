@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Rumsligt ljud",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisera ljudstyrka",
-    "audioNormalizationDisablesPassthrough": "Avkodar ljudet till PCM; genomströmning är av medan detta är på",
-    "audioNormalizationStereoMix": "Avkodar ljudet till en stereomix; genomströmning är av medan detta är på"
+    "audioNormalizationDisablesPassthrough": "Avkodar ljudet till PCM; genomströmning är av medan detta är på"
   },
   "performanceOverlay": {
     "color": "Färg",

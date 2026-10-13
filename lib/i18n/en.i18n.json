@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Spatial Audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalize Loudness",
-    "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on",
-    "audioNormalizationStereoMix": "Decodes audio to a stereo mix; passthrough is off while this is on"
+    "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on"
   },
   "performanceOverlay": {
     "color": "Color",

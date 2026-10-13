@@ -2020,8 +2020,7 @@
     "audioOutputSpatial": "Dźwięk przestrzenny",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalizacja głośności",
-    "audioNormalizationDisablesPassthrough": "Dekoduje dźwięk do PCM; przekazywanie jest wyłączone, gdy ta opcja jest włączona",
-    "audioNormalizationStereoMix": "Dekoduje dźwięk do miksu stereo; przekazywanie jest wyłączone, gdy ta opcja jest włączona"
+    "audioNormalizationDisablesPassthrough": "Dekoduje dźwięk do PCM; przekazywanie jest wyłączone, gdy ta opcja jest włączona"
   },
   "performanceOverlay": {
     "color": "Kolor",

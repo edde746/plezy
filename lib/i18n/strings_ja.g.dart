@@ -1935,7 +1935,6 @@ class _Translations$videoSettings$ja extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'ステレオ';
 	@override String get audioNormalization => 'ラウドネス正規化';
 	@override String get audioNormalizationDisablesPassthrough => '音声をPCMにデコードします。オンの間はパススルーがオフになります';
-	@override String get audioNormalizationStereoMix => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります';
 }
 
 // Path: performanceOverlay
@@ -4802,7 +4801,6 @@ extension on TranslationsJa {
 			'videoSettings.audioOutputStereo' => 'ステレオ',
 			'videoSettings.audioNormalization' => 'ラウドネス正規化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '音声をPCMにデコードします。オンの間はパススルーがオフになります',
-			'videoSettings.audioNormalizationStereoMix' => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります',
 			'performanceOverlay.color' => '色',
 			'performanceOverlay.performance' => 'パフォーマンス',
 			'performanceOverlay.buffer' => 'バッファ',
@@ -5081,9 +5079,9 @@ extension on TranslationsJa {
 			'addServer.borrowFromAnotherProfile' => '別のプロフィールの接続を利用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
 			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',
+			'addServer.authResponseNotJson' => '認証レスポンスが有効なJSONではありません',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => '認証レスポンスが有効なJSONではありません',
 			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',
 			'addServer.quickConnectNotJson' => 'Quick Connectのレスポンスが有効なJSONではありません',

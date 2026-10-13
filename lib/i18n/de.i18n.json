@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Räumliches Audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Lautstärke normalisieren",
-    "audioNormalizationDisablesPassthrough": "Dekodiert Audio zu PCM; Durchleitung ist aus, solange dies aktiv ist",
-    "audioNormalizationStereoMix": "Dekodiert Audio zu einem Stereomix; Durchleitung ist aus, solange dies aktiv ist"
+    "audioNormalizationDisablesPassthrough": "Dekodiert Audio zu PCM; Durchleitung ist aus, solange dies aktiv ist"
   },
   "performanceOverlay": {
     "color": "Farbe",

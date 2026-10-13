@@ -1935,7 +1935,6 @@ class _Translations$videoSettings$ko extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => '스테레오';
 	@override String get audioNormalization => '음량 정규화';
 	@override String get audioNormalizationDisablesPassthrough => '오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다';
-	@override String get audioNormalizationStereoMix => '오디오를 스테레오 믹스로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다';
 }
 
 // Path: performanceOverlay
@@ -4802,7 +4801,6 @@ extension on TranslationsKo {
 			'videoSettings.audioOutputStereo' => '스테레오',
 			'videoSettings.audioNormalization' => '음량 정규화',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다',
-			'videoSettings.audioNormalizationStereoMix' => '오디오를 스테레오 믹스로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다',
 			'performanceOverlay.color' => '색상',
 			'performanceOverlay.performance' => '성능',
 			'performanceOverlay.buffer' => '버퍼',
@@ -5081,9 +5079,9 @@ extension on TranslationsKo {
 			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
 			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'addServer.invalidCredentials' => '사용자 이름 또는 비밀번호가 올바르지 않습니다',
+			'addServer.authResponseNotJson' => '인증 응답이 유효한 JSON이 아닙니다',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => '인증 응답이 유효한 JSON이 아닙니다',
 			'addServer.authResponseIncomplete' => '서버의 로그인 응답이 불완전합니다',
 			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',
 			'addServer.quickConnectNotJson' => 'Quick Connect 응답이 유효한 JSON이 아닙니다',

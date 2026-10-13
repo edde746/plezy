@@ -2020,8 +2020,7 @@
     "audioOutputSpatial": "Пространственное аудио",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализация громкости",
-    "audioNormalizationDisablesPassthrough": "Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена",
-    "audioNormalizationStereoMix": "Декодирует аудио в стереомикс; сквозной вывод отключён, пока эта опция включена"
+    "audioNormalizationDisablesPassthrough": "Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена"
   },
   "performanceOverlay": {
     "color": "Цвет",

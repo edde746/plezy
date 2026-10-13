@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$fr extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stéréo';
 	@override String get audioNormalization => 'Normaliser le volume';
 	@override String get audioNormalizationDisablesPassthrough => 'Décode l’audio en PCM ; la transmission directe est désactivée tant que cette option est active';
-	@override String get audioNormalizationStereoMix => 'Décode l’audio en un mixage stéréo ; la transmission directe est désactivée tant que cette option est active';
 }
 
 // Path: performanceOverlay
@@ -4813,7 +4812,6 @@ extension on TranslationsFr {
 			'videoSettings.audioOutputStereo' => 'Stéréo',
 			'videoSettings.audioNormalization' => 'Normaliser le volume',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Décode l’audio en PCM ; la transmission directe est désactivée tant que cette option est active',
-			'videoSettings.audioNormalizationStereoMix' => 'Décode l’audio en un mixage stéréo ; la transmission directe est désactivée tant que cette option est active',
 			'performanceOverlay.color' => 'Couleur',
 			'performanceOverlay.performance' => 'Performances',
 			'performanceOverlay.buffer' => 'Tampon',
@@ -5092,9 +5090,9 @@ extension on TranslationsFr {
 			'addServer.borrowFromAnotherProfile' => 'Emprunter à un autre profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
 			'addServer.invalidCredentials' => 'Nom d’utilisateur ou mot de passe incorrect',
+			'addServer.authResponseNotJson' => 'La réponse d’authentification n’était pas au format JSON valide',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => 'La réponse d’authentification n’était pas au format JSON valide',
 			'addServer.authResponseIncomplete' => 'La réponse de connexion du serveur était incomplète',
 			'addServer.quickConnectRejected' => 'Quick Connect a été refusé par le serveur',
 			'addServer.quickConnectNotJson' => 'La réponse de Quick Connect n’était pas au format JSON valide',

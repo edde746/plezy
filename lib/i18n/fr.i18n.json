@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Audio spatial",
     "audioOutputStereo": "Stéréo",
     "audioNormalization": "Normaliser le volume",
-    "audioNormalizationDisablesPassthrough": "Décode l’audio en PCM ; la transmission directe est désactivée tant que cette option est active",
-    "audioNormalizationStereoMix": "Décode l’audio en un mixage stéréo ; la transmission directe est désactivée tant que cette option est active"
+    "audioNormalizationDisablesPassthrough": "Décode l’audio en PCM ; la transmission directe est désactivée tant que cette option est active"
   },
   "performanceOverlay": {
     "color": "Couleur",

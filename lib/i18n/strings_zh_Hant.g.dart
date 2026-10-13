@@ -1936,7 +1936,6 @@ class _Translations$videoSettings$zh_Hant extends Translations$videoSettings$zh 
 	@override String get audioOutputStereo => '立體聲';
 	@override String get audioNormalization => '音量標準化';
 	@override String get audioNormalizationDisablesPassthrough => '將音訊解碼為 PCM；開啟時直通關閉';
-	@override String get audioNormalizationStereoMix => '將音訊解碼為立體聲混音；開啟時直通關閉';
 }
 
 // Path: performanceOverlay
@@ -4803,7 +4802,6 @@ extension on TranslationsZhHant {
 			'videoSettings.audioOutputStereo' => '立體聲',
 			'videoSettings.audioNormalization' => '音量標準化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '將音訊解碼為 PCM；開啟時直通關閉',
-			'videoSettings.audioNormalizationStereoMix' => '將音訊解碼為立體聲混音；開啟時直通關閉',
 			'performanceOverlay.color' => '色彩',
 			'performanceOverlay.performance' => '效能',
 			'performanceOverlay.buffer' => '緩衝',
@@ -5082,9 +5080,9 @@ extension on TranslationsZhHant {
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
+			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',
 			'addServer.quickConnectNotJson' => 'Quick Connect 回應不是有效的 JSON',

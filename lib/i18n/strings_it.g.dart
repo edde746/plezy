@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$it extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Normalizza il volume';
 	@override String get audioNormalizationDisablesPassthrough => 'Decodifica l\'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva';
-	@override String get audioNormalizationStereoMix => 'Decodifica l\'audio in un mix stereo; il passthrough è disattivato mentre questa opzione è attiva';
 }
 
 // Path: performanceOverlay
@@ -4813,7 +4812,6 @@ extension on TranslationsIt {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalizza il volume',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodifica l\'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva',
-			'videoSettings.audioNormalizationStereoMix' => 'Decodifica l\'audio in un mix stereo; il passthrough è disattivato mentre questa opzione è attiva',
 			'performanceOverlay.color' => 'Colore',
 			'performanceOverlay.performance' => 'Prestazioni',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -5092,9 +5090,9 @@ extension on TranslationsIt {
 			'addServer.borrowFromAnotherProfile' => 'Prendi in prestito da un altro profilo',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Riutilizza la connessione di un altro profilo. I profili protetti da PIN richiedono un PIN.',
 			'addServer.invalidCredentials' => 'Nome utente o password non validi',
+			'addServer.authResponseNotJson' => 'La risposta di autenticazione non era un JSON valido',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => 'La risposta di autenticazione non era un JSON valido',
 			'addServer.authResponseIncomplete' => 'La risposta di accesso del server era incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect è stato rifiutato dal server',
 			'addServer.quickConnectNotJson' => 'La risposta di Quick Connect non era un JSON valido',

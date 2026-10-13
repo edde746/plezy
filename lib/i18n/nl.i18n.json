@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Ruimtelijke audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Volume normaliseren",
-    "audioNormalizationDisablesPassthrough": "Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat",
-    "audioNormalizationStereoMix": "Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat"
+    "audioNormalizationDisablesPassthrough": "Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat"
   },
   "performanceOverlay": {
     "color": "Kleur",

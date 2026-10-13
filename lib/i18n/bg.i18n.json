@@ -1998,8 +1998,7 @@
     "audioOutputSpatial": "Пространствено аудио",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализиране на силата на звука",
-    "audioNormalizationDisablesPassthrough": "Декодира аудиото до PCM; директното предаване е изключено, докато това е включено",
-    "audioNormalizationStereoMix": "Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено"
+    "audioNormalizationDisablesPassthrough": "Декодира аудиото до PCM; директното предаване е изключено, докато това е включено"
   },
   "performanceOverlay": {
     "color": "Цвят",
