@@ -844,6 +844,8 @@
     "playbackNotAllowedBody": "伺服器拒絕串流此項目（HTTP 403）。此帳戶可能沒有播放權限，或伺服器可能只允許在其區域網路內播放。",
     "logsUploaded": "日誌已上傳",
     "logsUploadFailed": "上傳日誌失敗",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "日誌 ID",
     "burnedSubtitlesUseMenu": "字幕已燒錄至此串流中。請從字幕選單變更字幕。",
     "noVideoUrl": "沒有可用的視訊 URL",
@@ -1251,6 +1253,7 @@
   "logs": {
     "clearLogs": "清除日誌",
     "copyLogs": "複製日誌",
+    "saveLogs": "",
     "uploadLogs": "上傳日誌"
   },
   "startup": {

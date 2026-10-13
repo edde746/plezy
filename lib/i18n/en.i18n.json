@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
+    "logsSaved": "Logs saved",
+    "logsSaveFailed": "Failed to save logs",
     "logId": "Log ID",
     "burnedSubtitlesUseMenu": "Subtitles are burned into this stream. Change them from the subtitle menu.",
     "noVideoUrl": "No video URL available",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Clear Logs",
     "copyLogs": "Copy Logs",
+    "saveLogs": "Save Logs",
     "uploadLogs": "Upload Logs"
   },
   "startup": {

@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "Sunucu bu ögeyi yayınlamayı reddetti (HTTP 403). Hesabınızın bunu oynatma izni olmayabilir veya sunucu oynatmaya yalnızca kendi yerel ağında izin veriyor olabilir.",
     "logsUploaded": "Günlükler yüklendi",
     "logsUploadFailed": "Günlükler yüklenemedi",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Günlük Kimliği (ID)",
     "burnedSubtitlesUseMenu": "Altyazılar bu akışın görüntüsüne gömülü. Bunları altyazı menüsünden değiştirin.",
     "noVideoUrl": "Kullanılabilir video URL'si yok",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Günlükleri Temizle",
     "copyLogs": "Günlükleri Kopyala",
+    "saveLogs": "",
     "uploadLogs": "Günlükleri Yükle"
   },
   "startup": {

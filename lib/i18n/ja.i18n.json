@@ -844,6 +844,8 @@
     "playbackNotAllowedBody": "サーバーがこのアイテムのストリーミングを拒否しました（HTTP 403）。お使いのアカウントに再生の権限がないか、サーバーがローカルネットワーク内での再生のみを許可している可能性があります。",
     "logsUploaded": "ログをアップロードしました",
     "logsUploadFailed": "ログのアップロードに失敗しました",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "ログID",
     "burnedSubtitlesUseMenu": "字幕はこのストリームに焼き付けられています。字幕メニューから変更してください。",
     "noVideoUrl": "利用可能な動画URLがありません",
@@ -1251,6 +1253,7 @@
   "logs": {
     "clearLogs": "ログをクリア",
     "copyLogs": "ログをコピー",
+    "saveLogs": "",
     "uploadLogs": "ログをアップロード"
   },
   "startup": {

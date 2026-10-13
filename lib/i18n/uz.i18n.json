@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "Server bu elementni uzatishni rad etdi (HTTP 403). Hisobingizda uni ijro etishga ruxsat boʻlmasligi yoki server ijroga faqat oʻzining mahalliy tarmogʻida ruxsat berishi mumkin.",
     "logsUploaded": "Jurnallar yuklandi",
     "logsUploadFailed": "Jurnallarni yuklab boʻlmadi",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Jurnal ID-si",
     "burnedSubtitlesUseMenu": "Subtitrlar bu oqim tasviriga singdirilgan. Ularni subtitr menyusidan oʻzgartiring.",
     "noVideoUrl": "Video URL mavjud emas",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Jurnallarni tozalash",
     "copyLogs": "Jurnallarni nusxalash",
+    "saveLogs": "",
     "uploadLogs": "Jurnallarni yuklash"
   },
   "startup": {

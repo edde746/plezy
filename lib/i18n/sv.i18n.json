@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "Servern vägrade att strömma det här objektet (HTTP 403). Ditt konto kanske inte har behörighet att spela upp det, eller så tillåter servern kanske bara uppspelning i sitt lokala nätverk.",
     "logsUploaded": "Loggarna har laddats upp",
     "logsUploadFailed": "Det gick inte att ladda upp loggarna",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Logg-ID",
     "burnedSubtitlesUseMenu": "Undertexterna är inbrända i den här strömmen. Ändra dem via undertextmenyn.",
     "noVideoUrl": "Ingen video-URL är tillgänglig",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
+    "saveLogs": "",
     "uploadLogs": "Ladda upp loggar"
   },
   "startup": {

@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "Le serveur a refusé de diffuser cet élément (HTTP 403). Votre compte n'a peut-être pas l'autorisation de le lire, ou le serveur n'autorise peut-être la lecture que sur son réseau local.",
     "logsUploaded": "Journaux envoyés",
     "logsUploadFailed": "Échec de l’envoi des journaux",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Identifiant du journal",
     "burnedSubtitlesUseMenu": "Les sous-titres sont incrustés à l’image de ce flux. Modifiez-les depuis le menu des sous-titres.",
     "noVideoUrl": "Aucune URL vidéo disponible",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Effacer les journaux",
     "copyLogs": "Copier les journaux",
+    "saveLogs": "",
     "uploadLogs": "Envoyer les journaux"
   },
   "startup": {

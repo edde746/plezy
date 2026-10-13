@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "O servidor se recusou a transmitir este item (HTTP 403). Sua conta pode não ter permissão para reproduzi-lo, ou o servidor pode permitir a reprodução apenas na própria rede local.",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "ID do log",
     "burnedSubtitlesUseMenu": "As legendas estão incorporadas a esta transmissão. Altere-as no menu de legendas.",
     "noVideoUrl": "Nenhuma URL de vídeo disponível",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Limpar Logs",
     "copyLogs": "Copiar Logs",
+    "saveLogs": "",
     "uploadLogs": "Enviar Logs"
   },
   "startup": {

@@ -848,6 +848,8 @@
     "playbackNotAllowedBody": "Server bu elementi yayımlamaqdan imtina etdi (HTTP 403). Hesabınızın onu oynatmaq icazəsi olmaya bilər, yaxud server oynatmaya yalnız öz yerli şəbəkəsində icazə verə bilər.",
     "logsUploaded": "Jurnallar yükləndi",
     "logsUploadFailed": "Jurnallar yüklənə bilmədi",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "Jurnal ID-si",
     "burnedSubtitlesUseMenu": "Altyazılar bu yayıma həkk edilib. Onları altyazı menyusundan dəyişin.",
     "noVideoUrl": "Video URL-i mövcud deyil",
@@ -1256,6 +1258,7 @@
   "logs": {
     "clearLogs": "Jurnalları təmizlə",
     "copyLogs": "Jurnalları kopyala",
+    "saveLogs": "",
     "uploadLogs": "Jurnalları yüklə"
   },
   "startup": {

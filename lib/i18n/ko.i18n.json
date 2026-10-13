@@ -844,6 +844,8 @@
     "playbackNotAllowedBody": "서버에서 이 항목의 스트리밍을 거부했습니다(HTTP 403). 계정에 재생 권한이 없거나 서버가 로컬 네트워크에서만 재생을 허용할 수 있습니다.",
     "logsUploaded": "로그 업로드 완료",
     "logsUploadFailed": "로그 업로드 실패",
+    "logsSaved": "",
+    "logsSaveFailed": "",
     "logId": "로그 ID",
     "burnedSubtitlesUseMenu": "자막이 이 스트림에 입혀져 있습니다. 자막 메뉴에서 변경하세요.",
     "noVideoUrl": "사용 가능한 비디오 URL이 없습니다",
@@ -1251,6 +1253,7 @@
   "logs": {
     "clearLogs": "로그 지우기",
     "copyLogs": "로그 복사",
+    "saveLogs": "",
     "uploadLogs": "로그 업로드"
   },
   "startup": {
