@@ -607,13 +607,14 @@ sealed class MediaItem with _$MediaItem {
   }
 
   /// Backdrops eligible for rotation. Episodes prefer inherited series art;
-  /// other kinds rotate only their own artwork.
+  /// seasons fall back to it when their own artwork is absent.
   List<String> get heroBackdropPaths {
-    if (kind == MediaKind.episode) {
+    final own = resolvedBackdropPaths;
+    if (kind == MediaKind.episode || (kind == MediaKind.season && own.isEmpty)) {
       final inherited = resolvedGrandparentBackdropPaths;
       if (inherited.isNotEmpty) return inherited;
     }
-    return resolvedBackdropPaths;
+    return own;
   }
 
   /// The backdrops a hero may rotate through in a container of
@@ -642,6 +643,8 @@ sealed class MediaItem with _$MediaItem {
     final preferred = switch (kind) {
       MediaKind.episode when isNearSquare => <String?>[backgroundSquarePath, ...inherited, ...own],
       MediaKind.episode => <String?>[...inherited, ...own, backgroundSquarePath],
+      MediaKind.season when isNearSquare => <String?>[backgroundSquarePath, ...own, ...inherited],
+      MediaKind.season => <String?>[...own, ...inherited, backgroundSquarePath],
       _ when isNearSquare => <String?>[backgroundSquarePath, ...own],
       _ => <String?>[...own, backgroundSquarePath],
     };

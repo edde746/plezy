@@ -292,6 +292,91 @@ void main() {
     });
   });
 
+  group('MediaItem season hero artwork', () {
+    for (final backend in MediaBackend.values) {
+      test('${backend.name} seasons fall back to inherited backdrops', () {
+        final season = testMediaItem(
+          id: 'season',
+          backend: backend,
+          kind: MediaKind.season,
+          backdropPaths: const [],
+          grandparentBackdropPaths: ['/show-0', '/show-1'],
+        );
+
+        expect(season.heroBackdropPaths, ['/show-0', '/show-1']);
+        for (final aspect in [1.0, 16 / 9]) {
+          expect(season.heroArtCandidates(containerAspectRatio: aspect), ['/show-0', '/show-1']);
+          expect(season.heroRotationPaths(containerAspectRatio: aspect), ['/show-0', '/show-1']);
+        }
+      });
+
+      test('${backend.name} seasons prefer their own backdrops', () {
+        final season = testMediaItem(
+          id: 'season',
+          backend: backend,
+          kind: MediaKind.season,
+          backdropPaths: ['/season-0', '/season-1'],
+          grandparentBackdropPaths: ['/show-0', '/show-1'],
+        );
+
+        expect(season.heroBackdropPaths, ['/season-0', '/season-1']);
+        for (final aspect in [1.0, 16 / 9]) {
+          expect(season.heroArtCandidates(containerAspectRatio: aspect), [
+            '/season-0',
+            '/season-1',
+            '/show-0',
+            '/show-1',
+          ]);
+          expect(season.heroRotationPaths(containerAspectRatio: aspect), ['/season-0', '/season-1']);
+        }
+      });
+
+      test('${backend.name} seasons preserve scalar artwork fallbacks', () {
+        final season = testMediaItem(
+          id: 'season',
+          backend: backend,
+          kind: MediaKind.season,
+          artPath: '/season-art',
+          grandparentArtPath: '/show-art',
+        );
+
+        expect(season.heroBackdropPaths, ['/season-art']);
+        expect(season.heroArtCandidates(containerAspectRatio: 16 / 9), ['/season-art', '/show-art']);
+        expect(season.heroRotationPaths(containerAspectRatio: 16 / 9), ['/season-art']);
+
+        final inheritedOnly = season.copyWith(artPath: null);
+        expect(inheritedOnly.heroBackdropPaths, ['/show-art']);
+        expect(inheritedOnly.heroArtCandidates(containerAspectRatio: 16 / 9), ['/show-art']);
+        expect(inheritedOnly.heroRotationPaths(containerAspectRatio: 16 / 9), ['/show-art']);
+      });
+
+      test('${backend.name} seasons without artwork have no hero paths', () {
+        final season = testMediaItem(id: 'season', backend: backend, kind: MediaKind.season);
+
+        expect(season.heroBackdropPaths, isEmpty);
+        for (final aspect in [1.0, 16 / 9]) {
+          expect(season.heroArtCandidates(containerAspectRatio: aspect), isEmpty);
+          expect(season.heroRotationPaths(containerAspectRatio: aspect), isEmpty);
+        }
+      });
+
+      test('${backend.name} seasons preserve square artwork ordering', () {
+        final season = testMediaItem(
+          id: 'season',
+          backend: backend,
+          kind: MediaKind.season,
+          grandparentBackdropPaths: ['/show-0', '/show-1'],
+          backgroundSquarePath: '/square',
+        );
+
+        expect(season.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/show-0', '/show-1']);
+        expect(season.heroRotationPaths(containerAspectRatio: 1.0), ['/square']);
+        expect(season.heroArtCandidates(containerAspectRatio: 16 / 9), ['/show-0', '/show-1', '/square']);
+        expect(season.heroRotationPaths(containerAspectRatio: 16 / 9), ['/show-0', '/show-1']);
+      });
+    }
+  });
+
   group('MediaItem.isPartiallyWatched', () {
     test('show with some leaves watched is partially watched', () {
       final show = testMediaItem(
