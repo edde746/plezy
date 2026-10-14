@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} başlık",
       "other": "${n} başlık"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

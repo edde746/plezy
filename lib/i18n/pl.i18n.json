@@ -1097,6 +1097,13 @@
       "few": "${n} tytuły",
       "many": "${n} tytułów",
       "other": "${n} tytułu"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

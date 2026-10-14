@@ -1097,6 +1097,13 @@
       "few": "${n} названия",
       "many": "${n} названий",
       "other": "${n} названия"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

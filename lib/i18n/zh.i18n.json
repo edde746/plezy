@@ -1082,6 +1082,13 @@
     "moreLikeThis": "更多类似内容",
     "titleCount": {
       "other": "${n} 个标题"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

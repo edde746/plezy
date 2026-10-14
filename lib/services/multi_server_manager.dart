@@ -141,10 +141,10 @@ class MultiServerManager {
   final Map<String, String> _clientIdByServer = {};
   final Map<String, PlexProfileScopeId> _plexScopeByServer = {};
 
-  /// Per-server owning [PlexAccountConnection.id]. The clientIdentifier above
-  /// is device-wide, so this is what tells two accounts' servers apart
-  /// (see [PlexClient.plexAccountId]).
-  final Map<String, String> _plexAccountByServer = {};
+  /// Per-server owning [PlexAccountConnection]: its id and plex.tv token. The
+  /// clientIdentifier above is device-wide, so the id is what tells two
+  /// accounts' servers apart (see [PlexClient.plexAccountId]).
+  final Map<String, ({String id, String token})> _plexAccountByServer = {};
 
   String? _resolveClientIdentifier(ServerId serverId) => _clientIdByServer[serverId];
 
@@ -157,14 +157,19 @@ class MultiServerManager {
     PlexServer server, {
     required String clientIdentifier,
     required String accountId,
+    required String accountToken,
     PlexProfileScopeId? scope,
   }) {
     _clientIdByServer[serverId] = clientIdentifier;
-    _plexAccountByServer[serverId] = accountId;
+    _plexAccountByServer[serverId] = (id: accountId, token: accountToken);
     _plexServers[serverId] = server;
     if (scope != null) _plexScopeByServer[serverId] = scope;
     final client = _clients[serverId];
-    if (client is PlexClient) client.plexAccountId = accountId;
+    if (client is PlexClient) {
+      client
+        ..plexAccountId = accountId
+        ..plexAccountToken = accountToken;
+    }
   }
 
   /// Whether [compoundId] is still the client bound as the active user for
@@ -370,7 +375,13 @@ class MultiServerManager {
         final stale = _forgetServer(id);
         if (stale != null) unawaited(_closeClientGracefully(stale));
       }
-      _registerPlexServer(id, server, clientIdentifier: connection.clientIdentifier, accountId: connection.id);
+      _registerPlexServer(
+        id,
+        server,
+        clientIdentifier: connection.clientIdentifier,
+        accountId: connection.id,
+        accountToken: connection.accountToken,
+      );
       _serverStatus[id] = false;
       _refusedServers[id] = HealthStatus.authError;
     }
@@ -493,7 +504,10 @@ class MultiServerManager {
       onAllEndpointsExhausted: () => _onServerEndpointsExhausted(ServerId(serverId)),
       seedTranscoderVideoSupport: observedTranscoderVideo,
     );
-    client.plexAccountId = _plexAccountByServer[serverId];
+    final account = _plexAccountByServer[serverId];
+    client
+      ..plexAccountId = account?.id
+      ..plexAccountToken = account?.token;
 
     // Save the initial endpoint (relay is refused — see _savePreferredEndpoint)
     await _savePreferredEndpoint(ServerId(serverId), storage, baseUrl, capturedServer: server);
@@ -703,6 +717,7 @@ class MultiServerManager {
             server,
             clientIdentifier: connection.clientIdentifier,
             accountId: connection.id,
+            accountToken: connection.accountToken,
             scope: profileScopeId,
           );
           _refusedServers.remove(serverId);
@@ -733,6 +748,7 @@ class MultiServerManager {
         server,
         clientIdentifier: connection.clientIdentifier,
         accountId: connection.id,
+        accountToken: connection.accountToken,
         scope: profileScopeId,
       );
       try {

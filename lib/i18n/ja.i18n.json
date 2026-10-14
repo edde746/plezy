@@ -1082,6 +1082,13 @@
     "moreLikeThis": "似ている作品",
     "titleCount": {
       "other": "${n}作品"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

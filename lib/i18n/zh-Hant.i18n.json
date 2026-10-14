@@ -1082,6 +1082,13 @@
     "moreLikeThis": "更多類似內容",
     "titleCount": {
       "other": "${n} 部作品"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

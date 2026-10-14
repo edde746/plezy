@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titlar"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

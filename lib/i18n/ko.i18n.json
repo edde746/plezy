@@ -1082,6 +1082,13 @@
     "moreLikeThis": "비슷한 콘텐츠",
     "titleCount": {
       "other": "${n}개 타이틀"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

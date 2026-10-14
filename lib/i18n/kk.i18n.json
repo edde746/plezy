@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} атау",
       "other": "${n} атау"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {

@@ -421,6 +421,12 @@ class PlexClient
   @override
   String? plexAccountId;
 
+  /// plex.tv token of the [plexAccountId] account, set alongside it.
+  /// Plex's cloud Discover service ([fetchPersonDetails]) takes only plex.tv
+  /// credentials: it rejects a Home or shared user's server [config] token.
+  @override
+  String? plexAccountToken;
+
   Object _authenticationSessionId = Object();
 
   @override

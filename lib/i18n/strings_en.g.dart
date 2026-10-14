@@ -3102,6 +3102,8 @@ class Translations$discover$en {
 		one: '${n} title',
 		other: '${n} titles',
 	);
+
+	late final Translations$discover$person$en person = Translations$discover$person$en.internal(_root);
 }
 
 // Path: errors
@@ -6109,6 +6111,30 @@ class Translations$accountPreferences$mediaReviewsOptions$en {
 	String get nobody => 'Hidden';
 }
 
+// Path: discover.person
+class Translations$discover$person$en {
+	Translations$discover$person$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Born'
+	String get born => 'Born';
+
+	/// en: 'Died'
+	String get died => 'Died';
+
+	/// en: 'Birthplace'
+	String get birthplace => 'Birthplace';
+
+	/// en: '${date} (age ${age})'
+	String dateWithAge({required Object date, required Object age}) => '${date} (age ${age})';
+
+	/// en: '${date} (aged ${age})'
+	String dateWithAgeAtDeath({required Object date, required Object age}) => '${date} (aged ${age})';
+}
+
 // Path: libraries.tabs
 class Translations$libraries$tabs$en {
 	Translations$libraries$tabs$en.internal(this._root);
@@ -8384,6 +8410,11 @@ extension on Translations {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} title', other: '${n} titles', ), 
+			'discover.person.born' => 'Born',
+			'discover.person.died' => 'Died',
+			'discover.person.birthplace' => 'Birthplace',
+			'discover.person.dateWithAge' => ({required Object date, required Object age}) => '${date} (age ${age})',
+			'discover.person.dateWithAgeAtDeath' => ({required Object date, required Object age}) => '${date} (aged ${age})',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
@@ -8395,13 +8426,13 @@ extension on Translations {
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
+			_ => null,
+		} ?? switch (path) {
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
 			'errors.reasonRefused' => 'the server refused the request',
 			'errors.reasonNotFound' => 'the item is no longer on the server',
-			_ => null,
-		} ?? switch (path) {
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
@@ -8909,13 +8940,13 @@ extension on Translations {
 			'watchTogether.makeHostQuestion' => 'Transfer host?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.leaveSession' => 'Leave Session',
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
@@ -9423,13 +9454,13 @@ extension on Translations {
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
+			_ => null,
+		} ?? switch (path) {
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
-			_ => null,
-		} ?? switch (path) {
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
