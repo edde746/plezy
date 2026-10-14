@@ -132,10 +132,18 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     Duration position,
   ) {
     if (watchTogether == null || lease == null || !lease.canSelect || metadata.serverId == null) return;
+    // Followers open the version this open committed, not their own
+    // remembered one (#2536). Both callers commit the session first.
+    final session = _playbackSession;
+    final versions = session?.availableVersions ?? const <MediaVersion>[];
+    final index = session?.mediaIndex ?? -1;
+    final sourceId = session?.mediaSourceId;
+    final signature = index >= 0 && index < versions.length ? versions[index].signature : null;
     watchTogether.selectMedia(
       ratingKey: metadata.id,
       serverId: ServerId(metadata.serverId!),
       mediaTitle: metadata.displayTitle,
+      mediaVersion: sourceId == null && signature == null ? null : (sourceId: sourceId, signature: signature),
       position: position,
       rate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, metadata),
       lease: lease,
@@ -237,15 +245,21 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       return true;
     }
 
-    // fetchItem populates mediaVersions, so the saved preference resolves to
-    // a verified index/id here rather than a raw stored index.
-    final savedVersion = await resolveSavedMediaVersionFor(metadata);
+    // The version the host opened (#2536); this viewer's remembered one only
+    // when the room names none on offer. fetchItem populates mediaVersions,
+    // so either resolves to a verified index/id rather than a raw index.
+    final version =
+        resolveRoomMediaVersion(
+          watchTogether.roomMediaVersionFor(ratingKey: ratingKey, serverId: serverId),
+          metadata,
+        ) ??
+        await resolveSavedMediaVersionFor(metadata);
     if (!mounted || !watchTogether.isPlaybackLeaseCurrent(lease)) return false;
     final outcome = await _reloadMediaInPlace(
       metadata: metadata,
-      selectedMediaIndex: savedVersion?.index ?? 0,
-      selectedMediaSourceId: savedVersion?.sourceId,
-      preferredVersionSignature: savedVersion?.signature,
+      selectedMediaIndex: version?.index ?? 0,
+      selectedMediaSourceId: version?.sourceId,
+      preferredVersionSignature: version?.signature,
       qualityPreset: _selectedQualityPreset,
       preserveCurrentTrackSelection: false,
       useCurrentAudioStreamSelection: false,

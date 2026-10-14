@@ -187,6 +187,39 @@ void main() {
     });
   });
 
+  test('guests learn the version the host opened, for that item only (#2536)', () {
+    fakeAsync((async) {
+      final room = _Room(async);
+      const hd = (sourceId: 'media-1080', signature: '1080:h264:mkv');
+      const uhd = (sourceId: 'media-4k', signature: '4k:hevc:mkv');
+      void hostSelects(String ratingKey, RoomMediaVersion? version) {
+        room.host.selectMedia(
+          ratingKey: ratingKey,
+          serverId: 'srv',
+          mediaTitle: ratingKey,
+          mediaVersion: version,
+          position: Duration.zero,
+          rate: 1,
+          lease: room.host.capturePlaybackLease(selection: true),
+        );
+        async.flushMicrotasks();
+      }
+
+      hostSelects('rk1', hd);
+      expect(room.guest.roomMediaVersionFor(ratingKey: 'rk1', serverId: 'srv'), hd);
+      expect(room.guest.roomMediaVersionFor(ratingKey: 'rk1', serverId: 'other'), isNull);
+
+      hostSelects('rk2', uhd);
+      expect(room.guest.roomMediaVersionFor(ratingKey: 'rk2', serverId: 'srv'), uhd);
+      expect(room.guest.roomMediaVersionFor(ratingKey: 'rk1', serverId: 'srv'), isNull);
+
+      // An open that names no version does not inherit the previous one.
+      hostSelects('rk3', null);
+      expect(room.guest.roomMediaVersionFor(ratingKey: 'rk3', serverId: 'srv'), isNull);
+      room.dispose();
+    });
+  });
+
   group('host media reattachment', () {
     _Room playingRoom(FakeAsync async, {ControlMode controlMode = ControlMode.hostOnly}) {
       final room = _Room(async, controlMode: controlMode);
@@ -1047,6 +1080,32 @@ void main() {
         expect(selected.ratingKey, 'A');
         expect(selected.anchorPositionMs, 37000);
         expect(selected.phase, PlaybackPhase.loading);
+        room.dispose();
+      });
+    });
+
+    test('the room keeps its version across a promotion (#2536)', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        const hd = (sourceId: 'media-1080', signature: '1080:h264:mkv');
+        room.host.selectMedia(
+          ratingKey: 'B',
+          serverId: 'srv',
+          mediaTitle: 'Movie',
+          mediaVersion: hd,
+          position: Duration.zero,
+          rate: 1,
+          lease: room.host.capturePlaybackLease(selection: true),
+        );
+        async.flushMicrotasks();
+        room.host.applyHostChange(sessionAs(SessionRole.guest));
+        room.guest.applyHostChange(sessionAs(SessionRole.host));
+        async.flushMicrotasks();
+
+        // The promoted host answers for the version and keeps publishing it,
+        // so a follower that opens the item later still gets that version.
+        expect(room.guest.roomMediaVersionFor(ratingKey: 'B', serverId: 'srv'), hd);
+        expect(room.host.roomMediaVersionFor(ratingKey: 'B', serverId: 'srv'), hd);
         room.dispose();
       });
     });

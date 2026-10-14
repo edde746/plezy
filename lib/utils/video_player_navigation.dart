@@ -15,6 +15,7 @@ import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../watch_together/providers/watch_together_provider.dart';
+import '../watch_together/models/playback_state.dart';
 import '../watch_together/services/watch_together_controller.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
@@ -261,6 +262,25 @@ Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem me
   return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
 }
 
+/// Resolve the version a Watch Together room's host opened (#2536) against
+/// [metadata]'s version list: the host's exact source, else the closest
+/// signature match. Null when [room] is null or nothing on offer matches —
+/// the viewer's own remembered version applies then.
+ResolvedMediaVersionPreference? resolveRoomMediaVersion(RoomMediaVersion? room, MediaItem metadata) {
+  if (room == null) return null;
+  final versions = metadata.mediaVersions ?? const <MediaVersion>[];
+  // Nothing to verify against: the host's id names this exact item, so it
+  // passes through to the backend's own sourceId > signature > index order.
+  if (versions.isEmpty) return (index: 0, sourceId: room.sourceId, signature: room.signature);
+  final sourceId = room.sourceId;
+  final signature = room.signature;
+  var index = sourceId == null ? -1 : versions.indexWhere((v) => v.id == sourceId);
+  if (index < 0 && signature != null) index = MediaVersion.findMatchingIndex(versions, {signature}) ?? -1;
+  if (index < 0) return null;
+  final version = versions[index];
+  return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
+}
+
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
 ///
 /// This utility function provides a consistent way to navigate to the video player
@@ -303,10 +323,8 @@ Future<bool?> navigateToVideoPlayer(
   bool explicitStartPolicy = false,
   PlaybackLaunchObserver? launchObserver,
 }) async {
-  if (!isOffline && watchTogetherLease == null) {
-    final watchTogether = context.read<WatchTogetherProvider?>();
-    watchTogetherLease = watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
-  }
+  final watchTogether = isOffline ? null : context.read<WatchTogetherProvider?>();
+  watchTogetherLease ??= watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
   final playbackLease = watchTogetherLease;
   bool launchCurrent() =>
       (isLaunchCurrent?.call() ?? true) && (launchObserver?.isCurrent ?? true) && (playbackLease?.isCurrent ?? true);
@@ -332,8 +350,8 @@ Future<bool?> navigateToVideoPlayer(
   // streaming it (issue #2466). Only one version can be downloaded per item,
   // and saved version preferences describe online intent — they may point at
   // a version that was never downloaded (issue #1440). Explicit caller
-  // selections still win. A Watch Together launch keeps the room's version:
-  // a local session does not sync with the room.
+  // selections still win. A Watch Together launch is never retargeted: the
+  // host's pick becomes the room's version, and followers open that one.
   int? downloadedMediaIndex;
   String? downloadedMediaSourceId;
   if ((isOffline || playbackLease == null) && selectedMediaIndex == null && selectedMediaSourceId == null) {
@@ -344,19 +362,34 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
+  // A launch that follows a Watch Together room opens the version its host
+  // opened, not this viewer's remembered one (#2536). The host's own
+  // launches (canSelect) pick the room's version instead of following it.
+  final roomVersion =
+      watchTogether != null &&
+          playbackLease != null &&
+          !playbackLease.canSelect &&
+          serverId != null &&
+          selectedMediaIndex == null &&
+          selectedMediaSourceId == null
+      ? resolveRoomMediaVersion(watchTogether.roomMediaVersionFor(ratingKey: metadata.id, serverId: serverId), metadata)
+      : null;
+
   // Saved preferences only apply when nothing explicit is in play — an
-  // explicit caller selection or a downloaded version must never be
-  // second-guessed by a remembered choice.
+  // explicit caller selection, a downloaded version, or the room's version
+  // must never be second-guessed by a remembered choice.
   ResolvedMediaVersionPreference? savedVersion;
   if (selectedMediaIndex == null &&
       selectedMediaSourceId == null &&
       downloadedMediaIndex == null &&
-      downloadedMediaSourceId == null) {
+      downloadedMediaSourceId == null &&
+      roomVersion == null) {
     savedVersion = await resolveSavedMediaVersionFor(metadata);
   }
   if (!launchCurrent()) return null;
-  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? savedVersion?.index ?? 0;
-  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? savedVersion?.sourceId;
+  final preferredVersion = roomVersion ?? savedVersion;
+  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? preferredVersion?.index ?? 0;
+  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? preferredVersion?.sourceId;
 
   final launchIdentity = VideoPlayerLaunchIdentity(
     metadata: metadata,
@@ -472,7 +505,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
         selectedMediaIndex: mediaIndex,
         selectedMediaSourceId: mediaSourceId,
-        preferredVersionSignature: savedVersion?.signature,
+        preferredVersionSignature: preferredVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
         watchTogetherLease: playbackLease,
