@@ -6,7 +6,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/edde746/mpv-build",
       "state" : {
-        "revision" : "2eb62ea10fc7a010306f5aee877970a565d51390"
+        "revision" : "7361a5a6cdb38dd02e6a13451f6d16197e257c48"
       }
     }
   ],
