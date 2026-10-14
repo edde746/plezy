@@ -2318,6 +2318,8 @@ class _Translations$common$ratingSource$tr extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes eleştirmenleri';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes izleyicileri';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3112,6 +3114,8 @@ extension on TranslationsTr {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes eleştirmenleri',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes izleyicileri',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3547,10 +3551,10 @@ extension on TranslationsTr {
 			'fileInfo.streamIdentifier' => 'Akış Tanımlayıcısı',
 			'fileInfo.streamIndex' => 'Akış Dizini',
 			'fileInfo.streamId' => 'Akış Kimliği',
-			'fileInfo.language' => 'Dil',
-			'fileInfo.languageCode' => 'Dil Kodu',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Dil',
+			'fileInfo.languageCode' => 'Dil Kodu',
 			'fileInfo.streamTitle' => 'Parça Başlığı',
 			'fileInfo.channels' => 'Kanallar',
 			'fileInfo.sampleRate' => 'Örnekleme Hızı',
@@ -4061,10 +4065,10 @@ extension on TranslationsTr {
 			'libraries.analyze' => 'Analiz Et',
 			'libraries.analyzeLibrary' => 'Kitaplığı Analiz Et',
 			'libraries.refreshMetadata' => 'Meta Verileri Yenile',
-			'libraries.emptyTrash' => 'Çöpü Boşalt',
-			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" için çöp boşaltılıyor...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Çöpü Boşalt',
+			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" için çöp boşaltılıyor...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" için çöp boşaltıldı',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Çöp boşaltılamadı: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" analiz ediliyor...',
@@ -4575,10 +4579,10 @@ extension on TranslationsTr {
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} bekleniyor...',
 			'watchTogether.recentRooms' => 'Son Odalar',
 			'watchTogether.renameRoom' => 'Odayı Yeniden Adlandır',
-			'watchTogether.removeRoom' => 'Kaldır',
-			'watchTogether.guestSwitchUnavailable' => 'Geçiş yapılamadı — eşitleme için sunucu mevcut değil',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Kaldır',
+			'watchTogether.guestSwitchUnavailable' => 'Geçiş yapılamadı — eşitleme için sunucu mevcut değil',
 			'watchTogether.guestSwitchFailed' => 'Geçiş yapılamadı — içerik bu sunucuda bulunamadı',
 			'watchTogether.defaultDisplayName' => 'Kullanıcı',
 			'watchTogether.errors.timedOut' => 'Aktarıcı sunucusu zamanında yanıt vermedi',
@@ -5089,10 +5093,10 @@ extension on TranslationsTr {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} sunucunuza giriş yapın. ${name} profiline bağlanır.',
 			'addServer.borrowFromAnotherProfile' => 'Başka bir profilden ödünç al',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.',
-			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
-			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
+			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',
 			'addServer.quickConnectRejected' => 'Quick Connect sunucu tarafından reddedildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect yanıtı geçerli bir JSON değildi',

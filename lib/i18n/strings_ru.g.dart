@@ -2336,6 +2336,8 @@ class _Translations$common$ratingSource$ru extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Критики Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Зрители Rotten Tomatoes';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3134,6 +3136,8 @@ extension on TranslationsRu {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Критики Rotten Tomatoes',
 			'common.ratingSource.rottenTomatoesAudience' => 'Зрители Rotten Tomatoes',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'Н/Д',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'АБВ',
@@ -3569,10 +3573,10 @@ extension on TranslationsRu {
 			'fileInfo.streamIdentifier' => 'Идентификатор потока',
 			'fileInfo.streamIndex' => 'Индекс потока',
 			'fileInfo.streamId' => 'ID потока',
-			'fileInfo.language' => 'Язык',
-			'fileInfo.languageCode' => 'Код языка',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Язык',
+			'fileInfo.languageCode' => 'Код языка',
 			'fileInfo.streamTitle' => 'Название дорожки',
 			'fileInfo.channels' => 'Каналы',
 			'fileInfo.sampleRate' => 'Частота дискретизации',
@@ -4083,10 +4087,10 @@ extension on TranslationsRu {
 			'libraries.analyze' => 'Анализировать',
 			'libraries.analyzeLibrary' => 'Анализировать библиотеку',
 			'libraries.refreshMetadata' => 'Обновить метаданные',
-			'libraries.emptyTrash' => 'Очистить корзину',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Очистка корзины для "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Очистить корзину',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Очистка корзины для "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Корзина очищена для "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Не удалось очистить корзину: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализ "${title}"...',
@@ -4597,10 +4601,10 @@ extension on TranslationsRu {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Ожидание ${name}...',
 			'watchTogether.recentRooms' => 'Недавние комнаты',
 			'watchTogether.renameRoom' => 'Переименовать комнату',
-			'watchTogether.removeRoom' => 'Удалить',
-			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Удалить',
+			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
 			'watchTogether.guestSwitchFailed' => 'Не удалось переключиться — содержимое не найдено на этом сервере',
 			'watchTogether.defaultDisplayName' => 'Пользователь',
 			'watchTogether.errors.timedOut' => 'Сервер ретрансляции не ответил вовремя',
@@ -5111,10 +5115,10 @@ extension on TranslationsRu {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Войдите на свой сервер ${product}. Будет привязано к ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Использовать подключение другого профиля',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.',
-			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',
-			'addServer.authResponseNotJson' => 'Ответ аутентификации не является допустимым JSON',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',
+			'addServer.authResponseNotJson' => 'Ответ аутентификации не является допустимым JSON',
 			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',
 			'addServer.quickConnectNotJson' => 'Ответ Quick Connect не является допустимым JSON',

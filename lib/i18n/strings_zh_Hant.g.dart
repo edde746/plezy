@@ -2310,6 +2310,8 @@ class _Translations$common$ratingSource$zh_Hant extends Translations$common$rati
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes 影評人';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes 觀眾';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3102,6 +3104,8 @@ extension on TranslationsZhHant {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes 影評人',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes 觀眾',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3537,10 +3541,10 @@ extension on TranslationsZhHant {
 			'fileInfo.streamIdentifier' => '串流識別碼',
 			'fileInfo.streamIndex' => '串流索引',
 			'fileInfo.streamId' => '串流 ID',
-			'fileInfo.language' => '語言',
-			'fileInfo.languageCode' => '語言代碼',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => '語言',
+			'fileInfo.languageCode' => '語言代碼',
 			'fileInfo.streamTitle' => '軌道名稱',
 			'fileInfo.channels' => '聲道數',
 			'fileInfo.sampleRate' => '取樣率',
@@ -4051,10 +4055,10 @@ extension on TranslationsZhHant {
 			'libraries.analyze' => '分析',
 			'libraries.analyzeLibrary' => '分析媒體庫',
 			'libraries.refreshMetadata' => '重新整理中繼資料',
-			'libraries.emptyTrash' => '清空垃圾桶',
-			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => '清空垃圾桶',
+			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
 			'libraries.trashEmptied' => ({required Object title}) => '已清空「${title}」的垃圾桶',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '無法清空垃圾桶：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
@@ -4565,10 +4569,10 @@ extension on TranslationsZhHant {
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}…',
 			'watchTogether.recentRooms' => '最近的房間',
 			'watchTogether.renameRoom' => '重新命名房間',
-			'watchTogether.removeRoom' => '移除',
-			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => '移除',
+			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
 			'watchTogether.guestSwitchFailed' => '無法切換 — 在此伺服器上找不到內容',
 			'watchTogether.defaultDisplayName' => '使用者',
 			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
@@ -5079,10 +5083,10 @@ extension on TranslationsZhHant {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登入您的 ${product} 伺服器。將綁定至 ${name}。',
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
-			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
-			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
+			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',
 			'addServer.quickConnectNotJson' => 'Quick Connect 回應不是有效的 JSON',

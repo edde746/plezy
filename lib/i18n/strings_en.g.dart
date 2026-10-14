@@ -5806,6 +5806,12 @@ class Translations$common$ratingSource$en {
 
 	/// en: 'Rotten Tomatoes audience'
 	String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+
+	/// en: 'Metacritic'
+	String get metacritic => 'Metacritic';
+
+	/// en: 'Letterboxd'
+	String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -7475,6 +7481,8 @@ extension on Translations {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -7910,10 +7918,10 @@ extension on Translations {
 			'fileInfo.referenceFrames' => 'Reference Frames',
 			'fileInfo.dynamicRange' => 'Dynamic Range',
 			'fileInfo.dolbyVision' => 'Dolby Vision',
-			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
-			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
+			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
 			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
 			'fileInfo.avcBitstream' => 'AVC Bitstream',
@@ -8424,10 +8432,10 @@ extension on Translations {
 			'errors.pleaseEnterToken' => 'Please enter a token',
 			'errors.invalidToken' => 'Invalid token',
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
-			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
-			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			_ => null,
 		} ?? switch (path) {
+			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
+			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'errors.reasonTimedOut' => 'the connection timed out',
 			'errors.reasonUnreachable' => 'the server could not be reached',
@@ -8938,10 +8946,10 @@ extension on Translations {
 			'watchTogether.youAreHost' => 'You are the host',
 			'watchTogether.makeHost' => 'Make host',
 			'watchTogether.makeHostQuestion' => 'Transfer host?',
-			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
-			'watchTogether.transfer' => 'Transfer',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
+			'watchTogether.transfer' => 'Transfer',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
 			'watchTogether.youAreNowHost' => 'You are now the host',
 			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
@@ -9452,10 +9460,10 @@ extension on Translations {
 			'services.scrobble' => 'Track progress automatically',
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
-			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			_ => null,
 		} ?? switch (path) {
+			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
+			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',

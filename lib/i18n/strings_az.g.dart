@@ -2318,6 +2318,8 @@ class _Translations$common$ratingSource$az extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes tənqidçiləri';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes tamaşaçıları';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3112,6 +3114,8 @@ extension on TranslationsAz {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes tənqidçiləri',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes tamaşaçıları',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3547,10 +3551,10 @@ extension on TranslationsAz {
 			'fileInfo.streamIdentifier' => 'Axın identifikatoru',
 			'fileInfo.streamIndex' => 'Axın indeksi',
 			'fileInfo.streamId' => 'Axın ID-si',
-			'fileInfo.language' => 'Dil',
-			'fileInfo.languageCode' => 'Dil kodu',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Dil',
+			'fileInfo.languageCode' => 'Dil kodu',
 			'fileInfo.streamTitle' => 'Trek başlığı',
 			'fileInfo.channels' => 'Kanallar',
 			'fileInfo.sampleRate' => 'Diskretləşdirmə tezliyi',
@@ -4061,10 +4065,10 @@ extension on TranslationsAz {
 			'libraries.analyze' => 'Analiz et',
 			'libraries.analyzeLibrary' => 'Kitabxananı analiz et',
 			'libraries.refreshMetadata' => 'Meta-məlumatları yenilə',
-			'libraries.emptyTrash' => 'Zibil qutusunu təmizlə',
-			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizlənir...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Zibil qutusunu təmizlə',
+			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizlənir...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizləndi',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Zibil qutusu təmizlənə bilmədi: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" analiz edilir...',
@@ -4575,10 +4579,10 @@ extension on TranslationsAz {
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} gözlənilir...',
 			'watchTogether.recentRooms' => 'Son otaqlar',
 			'watchTogether.renameRoom' => 'Otağın adını dəyişdir',
-			'watchTogether.removeRoom' => 'Sil',
-			'watchTogether.guestSwitchUnavailable' => 'Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Sil',
+			'watchTogether.guestSwitchUnavailable' => 'Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil',
 			'watchTogether.guestSwitchFailed' => 'Keçid etmək olmadı — məzmun bu serverdə tapılmadı',
 			'watchTogether.defaultDisplayName' => 'İstifadəçi',
 			'watchTogether.errors.timedOut' => 'Rele serveri vaxtında cavab vermədi',
@@ -5089,10 +5093,10 @@ extension on TranslationsAz {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serverinizə daxil olun. ${name} ilə əlaqələndirilir.',
 			'addServer.borrowFromAnotherProfile' => 'Başqa profildən götür',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başqa profilin qoşulmasını yenidən istifadə edin. PIN ilə qorunan profillər PIN tələb edir.',
-			'addServer.invalidCredentials' => 'İstifadəçi adı və ya şifrə yanlışdır',
-			'addServer.authResponseNotJson' => 'Autentifikasiya cavabı etibarlı JSON deyildi',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'İstifadəçi adı və ya şifrə yanlışdır',
+			'addServer.authResponseNotJson' => 'Autentifikasiya cavabı etibarlı JSON deyildi',
 			'addServer.authResponseIncomplete' => 'Serverin giriş cavabı natamam idi',
 			'addServer.quickConnectRejected' => 'Quick Connect server tərəfindən rədd edildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect cavabı etibarlı JSON deyildi',

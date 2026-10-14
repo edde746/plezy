@@ -2318,6 +2318,8 @@ class _Translations$common$ratingSource$nb extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes-kritikere';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes-publikum';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3112,6 +3114,8 @@ extension on TranslationsNb {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes-kritikere',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes-publikum',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'I/T',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3547,10 +3551,10 @@ extension on TranslationsNb {
 			'fileInfo.streamIdentifier' => 'Strømidentifikator',
 			'fileInfo.streamIndex' => 'Strømindeks',
 			'fileInfo.streamId' => 'Strøm-ID',
-			'fileInfo.language' => 'Språk',
-			'fileInfo.languageCode' => 'Språkkode',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Språk',
+			'fileInfo.languageCode' => 'Språkkode',
 			'fileInfo.streamTitle' => 'Spor-tittel',
 			'fileInfo.channels' => 'Kanaler',
 			'fileInfo.sampleRate' => 'Samplingsfrekvens',
@@ -4061,10 +4065,10 @@ extension on TranslationsNb {
 			'libraries.analyze' => 'Analyser',
 			'libraries.analyzeLibrary' => 'Analyser bibliotek',
 			'libraries.refreshMetadata' => 'Oppdater metadata',
-			'libraries.emptyTrash' => 'Tøm papirkurv',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Tømmer papirkurv for "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Tøm papirkurv',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Tømmer papirkurv for "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Papirkurv tømt for "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
@@ -4575,10 +4579,10 @@ extension on TranslationsNb {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',
 			'watchTogether.recentRooms' => 'Nylige rom',
 			'watchTogether.renameRoom' => 'Gi nytt navn til rom',
-			'watchTogether.removeRoom' => 'Fjern',
-			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke bytte — server ikke tilgjengelig for synkronisering',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Fjern',
+			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke bytte — server ikke tilgjengelig for synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke bytte — innhold ble ikke funnet på denne serveren',
 			'watchTogether.defaultDisplayName' => 'Bruker',
 			'watchTogether.errors.timedOut' => 'Reléserveren svarte ikke i tide',
@@ -5089,10 +5093,10 @@ extension on TranslationsNb {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logg på ${product}-serveren din. Knyttes til ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en annen profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.',
-			'addServer.invalidCredentials' => 'Ugyldig brukernavn eller passord',
-			'addServer.authResponseNotJson' => 'Autentiseringssvaret var ikke gyldig JSON',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Ugyldig brukernavn eller passord',
+			'addServer.authResponseNotJson' => 'Autentiseringssvaret var ikke gyldig JSON',
 			'addServer.authResponseIncomplete' => 'Påloggingssvaret fra serveren var ufullstendig',
 			'addServer.quickConnectRejected' => 'Quick Connect ble avvist av serveren',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var ikke gyldig JSON',

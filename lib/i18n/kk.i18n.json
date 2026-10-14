@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes сыншылары",
-      "rottenTomatoesAudience": "Rotten Tomatoes көрермендері"
+      "rottenTomatoesAudience": "Rotten Tomatoes көрермендері",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",

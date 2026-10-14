@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes 批評家",
-      "rottenTomatoesAudience": "Rotten Tomatoes 観客"
+      "rottenTomatoesAudience": "Rotten Tomatoes 観客",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",

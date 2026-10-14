@@ -2318,6 +2318,8 @@ class _Translations$common$ratingSource$nl extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes-critici';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes-publiek';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3112,6 +3114,8 @@ extension on TranslationsNl {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes-critici',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes-publiek',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3547,10 +3551,10 @@ extension on TranslationsNl {
 			'fileInfo.streamIdentifier' => 'Stream-id',
 			'fileInfo.streamIndex' => 'Streamindex',
 			'fileInfo.streamId' => 'Stream-ID',
-			'fileInfo.language' => 'Taal',
-			'fileInfo.languageCode' => 'Taalcode',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Taal',
+			'fileInfo.languageCode' => 'Taalcode',
 			'fileInfo.streamTitle' => 'Tracktitel',
 			'fileInfo.channels' => 'Kanalen',
 			'fileInfo.sampleRate' => 'Samplingsnelheid',
@@ -4061,10 +4065,10 @@ extension on TranslationsNl {
 			'libraries.analyze' => 'Analyseren',
 			'libraries.analyzeLibrary' => 'Bibliotheek analyseren',
 			'libraries.refreshMetadata' => 'Metadata vernieuwen',
-			'libraries.emptyTrash' => 'Prullenbak legen',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Prullenbak legen voor "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Prullenbak legen',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Prullenbak legen voor "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Prullenbak geleegd voor "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kon prullenbak niet legen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
@@ -4575,10 +4579,10 @@ extension on TranslationsNl {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Wachten op ${name}...',
 			'watchTogether.recentRooms' => 'Recente kamers',
 			'watchTogether.renameRoom' => 'Kamer hernoemen',
-			'watchTogether.removeRoom' => 'Verwijderen',
-			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Verwijderen',
+			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
 			'watchTogether.defaultDisplayName' => 'Gebruiker',
 			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
@@ -5089,10 +5093,10 @@ extension on TranslationsNl {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Van een ander profiel lenen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
-			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
-			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
+			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',

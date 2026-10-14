@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/models/simkl/simkl_trending_item.dart';
@@ -155,6 +156,26 @@ Map<String, dynamic> _detailBody() => {
     },
   ],
 };
+
+/// api.simkl.org's OpenAPI example for `/anime/{id}` (Death Note), trimmed.
+Map<String, dynamic> _deathNoteBody() => {
+  'title': 'Death Note',
+  'year': 2006,
+  'type': 'anime',
+  'ids': {'simkl': 40190, 'slug': 'death-note', 'imdb': 'tt0877057', 'mal': '1535'},
+  'ratings': {
+    'simkl': {'rating': 9.0, 'votes': 4200},
+    'mal': {'rating': 8.6, 'votes': 3700000},
+    'imdb': {'rating': 9.0, 'votes': 410000},
+  },
+};
+
+http.Response _redirect(String location) => http.Response('', 302, headers: {'location': location});
+
+Matcher _rating(String source, double value, {int? votes}) => isA<MediaRatingSource>()
+    .having((rating) => rating.source, 'source', source)
+    .having((rating) => rating.value, 'value', closeTo(value, 1e-9))
+    .having((rating) => rating.votes, 'votes', votes);
 
 void main() {
   group('Simkl models', () {
@@ -532,6 +553,70 @@ void main() {
       expect(detail.related.single.recommendationCount, 76);
       expect(detail.related.single.recommendationPercent, 0.19);
       expect(detail.related.single.posterVariants, isNotNull);
+    });
+
+    test('community ratings resolve the Simkl page by an unfollowed redirect, then read its three scores', () async {
+      responder = (request) => switch (request.url.path) {
+        '/redirect' => _redirect('https://simkl.com/anime/40190/death-note'),
+        '/anime/40190' => _json(_deathNoteBody()),
+        _ => throw StateError('unexpected path ${request.url.path}'),
+      };
+
+      final ratings = await source.fetchCommunityRatings(
+        MediaKind.show,
+        const CatalogItemIds(imdb: 'tt0877057', tmdb: 13916, mal: 1535, anilist: 1535),
+      );
+
+      expect(requests.map((request) => request.url.path), ['/redirect', '/anime/40190']);
+      final redirect = requests.first;
+      expect(redirect.url.host, 'api.simkl.com');
+      expect(redirect.followRedirects, isFalse);
+      expect(redirect.headers['authorization'], 'Bearer access');
+      expect(
+        redirect.url.query,
+        startsWith('to=simkl&imdb=tt0877057&tmdb=13916&type=tv&mal=1535&anilist=1535&client_id='),
+      );
+      expect(ratings, [
+        _rating('simkl', 9.0, votes: 4200),
+        _rating('imdb', 9.0, votes: 410000),
+        _rating('mal', 8.6, votes: 3700000),
+      ]);
+    });
+
+    test('community ratings send a movie\'s TMDB id typed and treat a detail 404 as no score', () async {
+      responder = (request) => switch (request.url.path) {
+        '/redirect' => _redirect('https://simkl.com/movies/53536/terminator-3-rise-of-the-machines'),
+        _ => http.Response('{"error":"not_found"}', 404),
+      };
+
+      final ratings = await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(tmdb: 296, tvdb: 7));
+
+      expect(requests.map((request) => request.url.path), ['/redirect', '/movies/53536']);
+      expect(requests.first.url.queryParameters, containsPair('type', 'movie'));
+      expect(requests.first.url.queryParameters, containsPair('tvdb', '7'));
+      expect(ratings, isEmpty);
+    });
+
+    test('community ratings stop at a redirect that names no title page', () async {
+      responder = (request) => _redirect('https://simkl.com/search/?q=nothing');
+
+      expect(await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(imdb: 'tt0000001')), isEmpty);
+      expect(requests.single.url.path, '/redirect');
+    });
+
+    test('community ratings need a movie or show with an id Simkl can redirect by', () async {
+      expect(await source.fetchCommunityRatings(MediaKind.episode, const CatalogItemIds(imdb: 'tt0877057')), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(simkl: 40190, trakt: 1)), isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('community ratings propagate a failure other than 404', () async {
+      responder = (request) => http.Response('failed', 500);
+
+      await expectLater(
+        source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(imdb: 'tt1375666')),
+        throwsA(isA<TrackerApiException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
     });
   });
 }

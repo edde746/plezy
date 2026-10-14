@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 
 import '../../../utils/app_logger.dart';
+import '../../../utils/json_utils.dart';
 import '../future_coalescer.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
@@ -98,6 +99,18 @@ class MdblistClient implements DisposableTrackerClient {
 
   Future<void> removeFromWatchlist(Map<String, dynamic> body) =>
       _request('POST', '/watchlist/items/remove', body: body);
+
+  /// Every score MDBList aggregates for a title (`GET /{provider}/{movie|show|any}/{id}`, "Get Media Info"): its
+  /// `ratings` entries, each `value` on its source's own scale; empty when MDBList does not know the title.
+  Future<List<Map<String, dynamic>>> getMediaRatings(String provider, String mediaType, String id) async {
+    try {
+      final res = await _request('GET', '/$provider/$mediaType/$id');
+      return res is Map ? flexibleMapList(res['ratings']) : const [];
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return const [];
+      rethrow;
+    }
+  }
 
   /// Best-effort server-side revoke, mirroring Trakt's disconnect. Failure is
   /// non-fatal: the local session is already gone by the time this runs.

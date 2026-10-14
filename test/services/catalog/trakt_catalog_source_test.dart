@@ -6,10 +6,12 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/catalog_item_ref.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/trakt_catalog_source.dart';
+import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trackers/trakt/trakt_client.dart';
 
@@ -75,6 +77,42 @@ Map<String, dynamic> _watchlistBody() => {
     },
   ],
 };
+
+/// docs.trakt.tv's "Get movie ratings" example.
+Map<String, dynamic> _ratingsBody() => {
+  'rating': 7.33778,
+  'votes': 7866,
+  'distribution': {
+    '1': 298,
+    '2': 46,
+    '3': 87,
+    '4': 178,
+    '5': 446,
+    '6': 1167,
+    '7': 1855,
+    '8': 1543,
+    '9': 662,
+    '10': 1583,
+  },
+};
+
+/// docs.trakt.tv's "ID Lookup" example.
+List<Map<String, dynamic>> _lookupBody() => [
+  {
+    'type': 'movie',
+    'score': null,
+    'movie': {
+      'title': 'TRON: Legacy',
+      'year': 2010,
+      'ids': {'trakt': 12601, 'slug': 'tron-legacy-2010', 'imdb': 'tt1104001', 'tmdb': 20526},
+    },
+  },
+];
+
+Matcher _rating(String source, double value, {int? votes}) => isA<MediaRatingSource>()
+    .having((rating) => rating.source, 'source', source)
+    .having((rating) => rating.value, 'value', closeTo(value, 1e-9))
+    .having((rating) => rating.votes, 'votes', votes);
 
 void main() {
   group('TraktCatalogSource', () {
@@ -529,6 +567,60 @@ void main() {
       expect(detail.item.credits?.single.name, 'Ben Stiller');
       expect(detail.item.credits?.single.role, CatalogCreditRole.director);
       expect(detail.related, isEmpty);
+    });
+
+    test('community ratings look a TMDB-only movie up by ID Lookup, then read its ratings', () async {
+      handlers
+        ..add((request) => http.Response(json.encode(_lookupBody()), 200))
+        ..add((request) => http.Response(json.encode(_ratingsBody()), 200));
+
+      final ratings = await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(tmdb: 20526));
+
+      expect(requests.map((request) => request.url.path), ['/search/tmdb/20526', '/movies/12601/ratings']);
+      expect(requests.first.url.queryParameters['type'], 'movie');
+      expect(ratings, [_rating('trakt', 7.33778, votes: 7866)]);
+    });
+
+    test('community ratings use a known Trakt id without a lookup and drop a score without votes', () async {
+      handlers.add((request) => http.Response(json.encode({'rating': 0, 'votes': 0, 'distribution': {}}), 200));
+
+      final ratings = await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(trakt: 1388, tmdb: 1396));
+
+      expect(requests.single.url.path, '/shows/1388/ratings');
+      expect(ratings, isEmpty);
+    });
+
+    test('community ratings look a TVDB-only show up by TVDB and skip results of the other kind', () async {
+      handlers.add((request) => http.Response(json.encode(_lookupBody()), 200));
+
+      final ratings = await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(tvdb: 81189));
+
+      expect(requests.single.url.path, '/search/tvdb/81189');
+      expect(requests.single.url.queryParameters['type'], 'show');
+      expect(ratings, isEmpty);
+    });
+
+    test('community ratings are empty for a title Trakt does not know', () async {
+      handlers.add((request) => http.Response('{"error":"not found"}', 404));
+
+      expect(await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(imdb: 'tt0111161')), isEmpty);
+      expect(requests.single.url.path, '/movies/tt0111161/ratings');
+    });
+
+    test('community ratings need a movie or show with an id Trakt can look up', () async {
+      expect(await source.fetchCommunityRatings(MediaKind.episode, const CatalogItemIds(trakt: 1)), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(tvdb: 81189)), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(mal: 1535)), isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('community ratings propagate a failure other than 404', () async {
+      handlers.add((request) => http.Response('oops', 500));
+
+      await expectLater(
+        source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(trakt: 1)),
+        throwsA(isA<TrackerApiException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
     });
   });
 }

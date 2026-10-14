@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes kritikusok",
-      "rottenTomatoesAudience": "Rotten Tomatoes közönség"
+      "rottenTomatoesAudience": "Rotten Tomatoes közönség",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",

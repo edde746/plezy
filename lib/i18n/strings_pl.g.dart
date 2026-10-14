@@ -2336,6 +2336,8 @@ class _Translations$common$ratingSource$pl extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Krytycy Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Widzowie Rotten Tomatoes';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3134,6 +3136,8 @@ extension on TranslationsPl {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Krytycy Rotten Tomatoes',
 			'common.ratingSource.rottenTomatoesAudience' => 'Widzowie Rotten Tomatoes',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/D',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3569,10 +3573,10 @@ extension on TranslationsPl {
 			'fileInfo.streamIdentifier' => 'Identyfikator strumienia',
 			'fileInfo.streamIndex' => 'Indeks strumienia',
 			'fileInfo.streamId' => 'ID strumienia',
-			'fileInfo.language' => 'Język',
-			'fileInfo.languageCode' => 'Kod języka',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Język',
+			'fileInfo.languageCode' => 'Kod języka',
 			'fileInfo.streamTitle' => 'Tytuł ścieżki',
 			'fileInfo.channels' => 'Kanały',
 			'fileInfo.sampleRate' => 'Częstotliwość próbkowania',
@@ -4083,10 +4087,10 @@ extension on TranslationsPl {
 			'libraries.analyze' => 'Analizuj',
 			'libraries.analyzeLibrary' => 'Analizuj bibliotekę',
 			'libraries.refreshMetadata' => 'Odśwież metadane',
-			'libraries.emptyTrash' => 'Opróżnij kosz',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Opróżnianie kosza dla "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Opróżnij kosz',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Opróżnianie kosza dla "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Kosz opróżniony dla "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nie udało się opróżnić kosza: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analizowanie "${title}"...',
@@ -4597,10 +4601,10 @@ extension on TranslationsPl {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Oczekiwanie na ${name}...',
 			'watchTogether.recentRooms' => 'Ostatnie pokoje',
 			'watchTogether.renameRoom' => 'Zmień nazwę pokoju',
-			'watchTogether.removeRoom' => 'Usuń',
-			'watchTogether.guestSwitchUnavailable' => 'Nie można przełączyć — serwer niedostępny do synchronizacji',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Usuń',
+			'watchTogether.guestSwitchUnavailable' => 'Nie można przełączyć — serwer niedostępny do synchronizacji',
 			'watchTogether.guestSwitchFailed' => 'Nie można przełączyć — nie znaleziono treści na tym serwerze',
 			'watchTogether.defaultDisplayName' => 'Użytkownik',
 			'watchTogether.errors.timedOut' => 'Serwer pośredniczący nie odpowiedział w wymaganym czasie',
@@ -5111,10 +5115,10 @@ extension on TranslationsPl {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Zaloguj się do serwera ${product}. Powiązane z ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Pożycz z innego profilu',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Użyj połączenia innego profilu. Profile chronione PIN-em wymagają podania PIN-u.',
-			'addServer.invalidCredentials' => 'Nieprawidłowa nazwa użytkownika lub hasło',
-			'addServer.authResponseNotJson' => 'Odpowiedź uwierzytelniania ma nieprawidłowy format JSON',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Nieprawidłowa nazwa użytkownika lub hasło',
+			'addServer.authResponseNotJson' => 'Odpowiedź uwierzytelniania ma nieprawidłowy format JSON',
 			'addServer.authResponseIncomplete' => 'Odpowiedź logowania z serwera była niekompletna',
 			'addServer.quickConnectRejected' => 'Quick Connect został odrzucony przez serwer',
 			'addServer.quickConnectNotJson' => 'Odpowiedź Quick Connect ma nieprawidłowy format JSON',

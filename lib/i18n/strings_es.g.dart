@@ -2318,6 +2318,8 @@ class _Translations$common$ratingSource$es extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Críticos de Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Público de Rotten Tomatoes';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3112,6 +3114,8 @@ extension on TranslationsEs {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Críticos de Rotten Tomatoes',
 			'common.ratingSource.rottenTomatoesAudience' => 'Público de Rotten Tomatoes',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/D',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3547,10 +3551,10 @@ extension on TranslationsEs {
 			'fileInfo.streamIdentifier' => 'Identificador de flujo',
 			'fileInfo.streamIndex' => 'Índice de flujo',
 			'fileInfo.streamId' => 'ID de flujo',
-			'fileInfo.language' => 'Idioma',
-			'fileInfo.languageCode' => 'Código de idioma',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Idioma',
+			'fileInfo.languageCode' => 'Código de idioma',
 			'fileInfo.streamTitle' => 'Título de la pista',
 			'fileInfo.channels' => 'Canales',
 			'fileInfo.sampleRate' => 'Frecuencia de muestreo',
@@ -4061,10 +4065,10 @@ extension on TranslationsEs {
 			'libraries.analyze' => 'Analizar',
 			'libraries.analyzeLibrary' => 'Analizar biblioteca',
 			'libraries.refreshMetadata' => 'Actualizar metadatos',
-			'libraries.emptyTrash' => 'Vaciar papelera',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Vaciando papelera de "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Vaciar papelera',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Vaciando papelera de "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Papelera vaciada para "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Error al vaciar papelera: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analizando "${title}"...',
@@ -4575,10 +4579,10 @@ extension on TranslationsEs {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Esperando a ${name}...',
 			'watchTogether.recentRooms' => 'Salas recientes',
 			'watchTogether.renameRoom' => 'Renombrar sala',
-			'watchTogether.removeRoom' => 'Eliminar',
-			'watchTogether.guestSwitchUnavailable' => 'No se pudo cambiar — servidor no disponible para sincronización',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Eliminar',
+			'watchTogether.guestSwitchUnavailable' => 'No se pudo cambiar — servidor no disponible para sincronización',
 			'watchTogether.guestSwitchFailed' => 'No se pudo cambiar — contenido no encontrado en este servidor',
 			'watchTogether.defaultDisplayName' => 'Usuario',
 			'watchTogether.errors.timedOut' => 'El servidor de retransmisión no respondió a tiempo',
@@ -5089,10 +5093,10 @@ extension on TranslationsEs {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Inicia sesión en tu servidor ${product}. Se vincula a ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Tomar prestado de otro perfil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutiliza la conexión de otro perfil. Los perfiles protegidos con PIN requieren un PIN.',
-			'addServer.invalidCredentials' => 'Usuario o contraseña no válidos',
-			'addServer.authResponseNotJson' => 'La respuesta de autenticación no era un JSON válido',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Usuario o contraseña no válidos',
+			'addServer.authResponseNotJson' => 'La respuesta de autenticación no era un JSON válido',
 			'addServer.authResponseIncomplete' => 'La respuesta de inicio de sesión del servidor estaba incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect fue rechazado por el servidor',
 			'addServer.quickConnectNotJson' => 'La respuesta de Quick Connect no era un JSON válido',

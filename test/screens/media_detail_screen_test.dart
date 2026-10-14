@@ -2205,12 +2205,13 @@ void main() {
             serverId: 'server_1',
             serverName: 'Server',
           ).copyWith(
-            // Unbranded sources render a star icon plus the bare value text, so
-            // each badge is findable by its formatted value.
+            // Unbranded sources (Plex's critic and audience scores, a bare
+            // unattributed score) render a square icon plus the bare value
+            // text, so each badge is findable by its formatted value.
             ratings: const [
               MediaRatingSource(source: 'critic', value: 9.2),
-              MediaRatingSource(source: 'simkl', value: 7.4),
-              MediaRatingSource(source: 'mal', value: 6.4),
+              MediaRatingSource(source: 'audience', value: 7.4),
+              MediaRatingSource(source: '', value: 6.4),
             ],
           );
       final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});

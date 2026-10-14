@@ -2318,6 +2318,8 @@ class _Translations$common$ratingSource$uz extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes tanqidchilari';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes tomoshabinlari';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3112,6 +3114,8 @@ extension on TranslationsUz {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes tanqidchilari',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes tomoshabinlari',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3547,10 +3551,10 @@ extension on TranslationsUz {
 			'fileInfo.streamIdentifier' => 'Oqim identifikatori',
 			'fileInfo.streamIndex' => 'Oqim indeksi',
 			'fileInfo.streamId' => 'Oqim ID-si',
-			'fileInfo.language' => 'Til',
-			'fileInfo.languageCode' => 'Til kodi',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Til',
+			'fileInfo.languageCode' => 'Til kodi',
 			'fileInfo.streamTitle' => 'Trek nomi',
 			'fileInfo.channels' => 'Kanallar',
 			'fileInfo.sampleRate' => 'Namuna tezligi',
@@ -4061,10 +4065,10 @@ extension on TranslationsUz {
 			'libraries.analyze' => 'Tahlil qilish',
 			'libraries.analyzeLibrary' => 'Kutubxonani tahlil qilish',
 			'libraries.refreshMetadata' => 'Metamaʼlumotlarni yangilash',
-			'libraries.emptyTrash' => 'Savatni tozalash',
-			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" savati tozalanmoqda...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Savatni tozalash',
+			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" savati tozalanmoqda...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" savati tozalandi',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Savatni tozalab boʻlmadi: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" tahlil qilinmoqda...',
@@ -4575,10 +4579,10 @@ extension on TranslationsUz {
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} kutilmoqda...',
 			'watchTogether.recentRooms' => 'Yaqindagi xonalar',
 			'watchTogether.renameRoom' => 'Xona nomini oʻzgartirish',
-			'watchTogether.removeRoom' => 'Oʻchirish',
-			'watchTogether.guestSwitchUnavailable' => 'Oʻtib boʻlmadi — server sinxronlash uchun mavjud emas',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Oʻchirish',
+			'watchTogether.guestSwitchUnavailable' => 'Oʻtib boʻlmadi — server sinxronlash uchun mavjud emas',
 			'watchTogether.guestSwitchFailed' => 'Oʻtib boʻlmadi — kontent topilmadi',
 			'watchTogether.defaultDisplayName' => 'Foydalanuvchi',
 			'watchTogether.errors.timedOut' => 'Rele serveri oʻz vaqtida javob bermadi',
@@ -5089,10 +5093,10 @@ extension on TranslationsUz {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serveringizga kiring. ${name} profiliga bogʻlanadi.',
 			'addServer.borrowFromAnotherProfile' => 'Boshqa profildan olish',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
-			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',
-			'addServer.authResponseNotJson' => 'Autentifikatsiya javobi yaroqli JSON emas',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',
+			'addServer.authResponseNotJson' => 'Autentifikatsiya javobi yaroqli JSON emas',
 			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect javobi yaroqli JSON emas',

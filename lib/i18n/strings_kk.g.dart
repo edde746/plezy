@@ -2318,6 +2318,8 @@ class _Translations$common$ratingSource$kk extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes сыншылары';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes көрермендері';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3112,6 +3114,8 @@ extension on TranslationsKk {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes сыншылары',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes көрермендері',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3547,10 +3551,10 @@ extension on TranslationsKk {
 			'fileInfo.streamIdentifier' => 'Ағын идентификаторы',
 			'fileInfo.streamIndex' => 'Ағын индексі',
 			'fileInfo.streamId' => 'Ағын ID',
-			'fileInfo.language' => 'Тіл',
-			'fileInfo.languageCode' => 'Тіл коды',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Тіл',
+			'fileInfo.languageCode' => 'Тіл коды',
 			'fileInfo.streamTitle' => 'Трек атауы',
 			'fileInfo.channels' => 'Арналар',
 			'fileInfo.sampleRate' => 'Дискретизация жиілігі',
@@ -4061,10 +4065,10 @@ extension on TranslationsKk {
 			'libraries.analyze' => 'Талдау жасау',
 			'libraries.analyzeLibrary' => 'Кітапханаға талдау жасау',
 			'libraries.refreshMetadata' => 'Метадеректерді жаңарту',
-			'libraries.emptyTrash' => 'Себетті тазалау',
-			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" себеті тазалануда...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Себетті тазалау',
+			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" себеті тазалануда...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" себеті тазаланды',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Себетті тазалау мүмкін болмады: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" талдануда...',
@@ -4575,10 +4579,10 @@ extension on TranslationsKk {
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} күтілуде...',
 			'watchTogether.recentRooms' => 'Соңғы бөлмелер',
 			'watchTogether.renameRoom' => 'Бөлме атын өзгерткіңіз келе ме?',
-			'watchTogether.removeRoom' => 'Өшіру',
-			'watchTogether.guestSwitchUnavailable' => 'Ауысу мүмкін болмады — сервер синхрондау үшін қолжетімсіз',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Өшіру',
+			'watchTogether.guestSwitchUnavailable' => 'Ауысу мүмкін болмады — сервер синхрондау үшін қолжетімсіз',
 			'watchTogether.guestSwitchFailed' => 'Ауысу мүмкін болмады — мазмұн табылмады',
 			'watchTogether.defaultDisplayName' => 'Пайдаланушы',
 			'watchTogether.errors.timedOut' => 'Реле сервері уақытында жауап бермеді',
@@ -5089,10 +5093,10 @@ extension on TranslationsKk {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.',
 			'addServer.borrowFromAnotherProfile' => 'Басқа профильден алу',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану. PIN кодпен қорғалған профильдер PIN кодты талап етеді.',
-			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
-			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
+			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
 			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',
 			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',
 			'addServer.quickConnectNotJson' => 'Quick Connect жауабы жарамды JSON болмады',

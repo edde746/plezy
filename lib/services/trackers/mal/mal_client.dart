@@ -97,6 +97,19 @@ class MalClient implements DisposableTrackerClient {
     }
   }
 
+  /// An anime's community score (`GET /anime/{id}?fields=mean,num_scoring_users`): the 0-10 mean and how many
+  /// users scored it; null when MAL does not know the anime. An anime nobody scored has no `mean`.
+  Future<({double? mean, int? scoringUsers})?> getAnimeMeanScore(int animeId) async {
+    try {
+      final res = await _request('GET', '/anime/$animeId?fields=mean,num_scoring_users');
+      if (res is! Map) return null;
+      return (mean: flexibleDouble(res['mean']), scoringUsers: flexibleInt(res['num_scoring_users']));
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
   /// Anime summary fields shared by every Explore list and nested detail node.
   ///
   /// The compact metadata widening was measured at +9.2% for 25 items

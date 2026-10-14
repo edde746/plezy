@@ -13,18 +13,31 @@ library;
 
 class MediaRatingSource {
   /// Stable, lowercase source key: `imdb`, `tmdb`, `rottenTomatoesCritic`,
-  /// `rottenTomatoesAudience`, `simkl`, `mal`, `anilist`, `trakt`, `critic`,
-  /// `audience`. Rendered through a label map, never raw.
+  /// `rottenTomatoesAudience`, `metacritic`, `letterboxd`, `simkl`, `mal`,
+  /// `anilist`, `trakt`, `critic`, `audience`. Rendered through a label map,
+  /// never raw.
   final String source;
 
   /// Normalized to 0-10 by the mapper, matching `MediaItem.rating`. Percentage
-  /// sources (Rotten Tomatoes, TMDB) are rendered back as `value * 10`%.
+  /// sources (Rotten Tomatoes, TMDB, Trakt, AniList) are rendered back as
+  /// `value * 10`%, the Metascore as `value * 10`, Letterboxd as `value / 2`
+  /// stars.
   final double value;
 
   /// How many users the score is based on, when the backend says.
   final int? votes;
 
   const MediaRatingSource({required this.source, required this.value, this.votes});
+
+  /// A score a provider reported on [source]'s own scale — 10 for IMDb, 100
+  /// for percentages and the Metascore, 5 for Letterboxd stars — moved onto
+  /// the 0-10 scale. Null when it is no score: missing, zero (providers write
+  /// 0 for "not rated yet"), beyond [scale], or resting on no votes.
+  static MediaRatingSource? fromScale(String source, num? value, {required num scale, num? votes}) {
+    if (value == null || value.isNaN || value <= 0 || value > scale) return null;
+    if (votes != null && votes <= 0) return null;
+    return MediaRatingSource(source: source, value: value * 10 / scale, votes: votes?.toInt());
+  }
 
   Map<String, Object?> toJson() => {'source': source, 'value': value, if (votes != null) 'votes': votes};
 

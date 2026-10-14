@@ -167,6 +167,7 @@ Older relays still accept explicit create/join, but failed recovery requires joi
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
 - Discord Rich Presence[^desktop]
 - Trakt, MyAnimeList, AniList, and Simkl — ratings, watched sync, and real-time scrobbling[^rt]
+- Scores from connected trackers on detail pages — Trakt, Simkl, MyAnimeList, and AniList, plus Rotten Tomatoes, Metacritic, Letterboxd, IMDb, and TMDB through MDBList
 - Plezy Remote — control desktop and TV from mobile
 - Watch Next row and tvOS Top Shelf[^shelf]
 
