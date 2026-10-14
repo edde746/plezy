@@ -23,18 +23,26 @@ void _logPlatformClient(String platform, String client) {
 /// only reaching the server: `Client.send` then waits for response headers,
 /// which is the server's think time and the caller's deadline to set.
 ///
-/// The pool is always tuned. Every surface that matters fans out — Plex and
+/// The pool is always widened. Every surface that matters fans out — Plex and
 /// Jellyfin home loads, artwork rails, tracker and Seerr traffic all issue
-/// several concurrent requests per pass — and the dart:io defaults of 6
-/// connections per host and a 15 s idle timeout cost a fresh TLS handshake per
-/// request on a high-RTT or CDN link. On a 60-way artwork fan-out, 12/90 s
-/// measured ~4x the default's throughput on Linux and ~2x on Android, so there
-/// is no case left for the opt-in the tuning used to be.
+/// several concurrent requests per pass — and dart:io's default of 6
+/// connections per host queues them. On a 60-way artwork fan-out, 12
+/// connections measured ~4x the default's throughput on Linux and ~2x on
+/// Android.
+///
+/// The idle timeout has to stay below the server's keep-alive, because dart:io
+/// never resends a request that fails on a reused connection
+/// (dart-lang/sdk#21798). Plex sends `Keep-Alive: timeout=20`, and over TLS it
+/// stops answering an idle connection at 20 s but closes it only ~3 s later.
+/// Every request the pool hands that connection in between fails with
+/// "Connection closed before full header was received"; at 90 s that blanked
+/// whole rows of posters (#2670). Retiring connections at 15 s, before Plex
+/// does, costs a handshake only after a lull, never inside a fan-out.
 ManagedHttpClient _createIoClient(String debugLabel, Duration connectTimeout) {
   final httpClient = HttpClient()
     ..connectionTimeout = connectTimeout
     ..maxConnectionsPerHost = 12
-    ..idleTimeout = const Duration(seconds: 90)
+    ..idleTimeout = const Duration(seconds: 15)
     ..connectionFactory = happyEyeballsConnectionFactory;
   return ManagedHttpClient(IOClient(httpClient), debugLabel: debugLabel, forceCloseOnDrainTimeout: true);
 }
