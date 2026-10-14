@@ -91,6 +91,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
+	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 }
 
 // Path: app
@@ -5766,6 +5767,30 @@ class Translations$addServer$en {
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
+// Path: watchLink
+class Translations$watchLink$en {
+	Translations$watchLink$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Couldn't reach a Plex server for this link.'
+	String get serverUnavailable => 'Couldn\'t reach a Plex server for this link.';
+
+	/// en: 'Couldn't find this show or movie on your Plex servers.'
+	String get notFound => 'Couldn\'t find this show or movie on your Plex servers.';
+
+	/// en: 'This link matches items on more than one server. Add a server to the link.'
+	String get ambiguous => 'This link matches items on more than one server. Add a server to the link.';
+
+	/// en: 'Watch links currently support Plex servers only.'
+	String get plexOnly => 'Watch links currently support Plex servers only.';
+
+	/// en: 'Watch links can only open a show or a movie.'
+	String get unsupportedItem => 'Watch links can only open a show or a movie.';
+}
+
 // Path: common.ratingSource
 class Translations$common$ratingSource$en {
 	Translations$common$ratingSource$en.internal(this._root);
@@ -9541,6 +9566,11 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'watchLink.serverUnavailable' => 'Couldn\'t reach a Plex server for this link.',
+			'watchLink.notFound' => 'Couldn\'t find this show or movie on your Plex servers.',
+			'watchLink.ambiguous' => 'This link matches items on more than one server. Add a server to the link.',
+			'watchLink.plexOnly' => 'Watch links currently support Plex servers only.',
+			'watchLink.unsupportedItem' => 'Watch links can only open a show or a movie.',
 			_ => null,
 		};
 	}

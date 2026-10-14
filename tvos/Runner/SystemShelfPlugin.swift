@@ -342,10 +342,20 @@ import TVServices
       Self.handleSceneURLs(URLContexts.map(\.url))
     }
 
-    private static func contentId(from url: URL) -> String? {
-      guard url.scheme == "plezy", url.host == "play" else { return nil }
-      return URLComponents(url: url, resolvingAgainstBaseURL: false)?
-        .queryItems?.first { $0.name == "content_id" }?.value
+    /// The payload forwarded to Dart: the `content_id` of a `plezy://play`
+    /// shelf link, or the whole URL of a `plezy://live` or `plezy://watch`
+    /// link (parsed by `LiveTvDeepLink` / `WatchLink` on the Dart side).
+    static func contentId(from url: URL) -> String? {
+      guard url.scheme == "plezy" else { return nil }
+      switch url.host {
+      case "play":
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)?
+          .queryItems?.first { $0.name == "content_id" }?.value
+      case "live", "watch":
+        return url.absoluteString
+      default:
+        return nil
+      }
     }
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
