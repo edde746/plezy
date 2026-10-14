@@ -343,6 +343,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   },
                 ),
               ),
+              const Positioned.fill(child: TrackerPlaybackNotice()),
               // Netflix-style auto-play overlay (hidden in PiP mode)
               VideoPlayerPlayNextOverlay(
                 visible: _episode.showPlayNextDialog,

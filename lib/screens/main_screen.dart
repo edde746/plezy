@@ -24,6 +24,7 @@ import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
+import '../widgets/tracker_session_monitor.dart';
 import '../widgets/app_icon.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -1185,7 +1186,7 @@ class _MainScreenState extends State<MainScreen>
     // content. A grant must recover hidden Request actions on any real resume.
     if (resumedFromBackground && mounted) {
       unawaited(context.read<SeerrAccountProvider?>()?.refreshUser());
-      if (!_isOffline && VideoPlayerScreenState.activeGlobalKey == null) {
+      if (!_isOffline) {
         unawaited(context.read<TrackersProvider>().validateSessions());
       }
     }
@@ -1241,19 +1242,22 @@ class _MainScreenState extends State<MainScreen>
   /// IndexedStack that disables tickers for offscreen children to prevent
   /// animation controllers on non-visible tabs from scheduling frames.
   Widget _buildTickerAwareStack() {
-    return Column(
-      children: [
-        const AuthErrorBanner(),
-        Expanded(
-          child: IndexedStack(
-            index: _currentIndex,
-            clipBehavior: Clip.none,
-            children: [
-              for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
-            ],
+    return TrackerSessionMonitor(
+      enabled: !_isOffline,
+      child: Column(
+        children: [
+          const AuthErrorBanner(),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              clipBehavior: Clip.none,
+              children: [
+                for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
