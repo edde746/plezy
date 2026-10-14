@@ -918,7 +918,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           title: t.videoSettings.audioNormalization,
           // Normalization wins over passthrough; say so where passthrough
           // exists.
-          subtitle: PlatformDetector.supportsAudioPassthrough()
+          subtitle: PlatformDetector.supportsAudioPassthrough() || PlatformDetector.supportsSpatialAudio()
               ? t.videoSettings.audioNormalizationDisablesPassthrough
               : null,
           onAfterWrite: widget.player.setAudioNormalization,

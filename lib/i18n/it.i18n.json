@@ -346,7 +346,7 @@
     "tunneledPlaybackDescription": "Usa il tunneling video. Disattivalo se durante la riproduzione HDR lo schermo rimane nero o il movimento scatta.",
     "audioPassthrough": "Passthrough audio",
     "audioPassthroughDescription": "Invia l'audio Dolby/DTS al ricevitore o al televisore senza ricodificarlo, preservando l'audio surround. Disattiva questa opzione se non senti alcun suono.",
-    "audioPassthroughDescriptionAppleTv": "Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.",
+    "audioPassthroughDescriptionAppleTv": "Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. Da tvOS 26, TrueHD Atmos e DTS:X vengono riprodotti come audio spaziale di Apple; gli altri DTS e TrueHD come PCM multicanale. Disattiva questa opzione se non senti alcun suono.",
     "audioPassthroughOverriddenByNormalization": "Disattivato mentre la normalizzazione del volume è attiva",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

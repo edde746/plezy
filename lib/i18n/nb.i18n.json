@@ -346,7 +346,7 @@
     "tunneledPlaybackDescription": "Bruk videotunneling. Slå av hvis HDR-avspilling viser svart video eller bevegelser hakker.",
     "audioPassthrough": "Direkte lydutgang",
     "audioPassthroughDescription": "Send Dolby/DTS-lyd til mottakeren eller TV-en uten omkoding, slik at surroundlyd bevares. Slå av hvis du ikke har lyd.",
-    "audioPassthroughDescriptionAppleTv": "Bruk Apples innebygde Dolby-dekoder for Dolby Digital Plus, inkludert Atmos. DTS og TrueHD spilles fortsatt av som flerkanals PCM. Slå av hvis du ikke har lyd.",
+    "audioPassthroughDescriptionAppleTv": "Bruk Apples innebygde Dolby-dekoder for Dolby Digital Plus, inkludert Atmos. Fra tvOS 26 spilles TrueHD Atmos og DTS:X av som romlig lyd fra Apple; annen DTS og TrueHD spilles av som flerkanals PCM. Slå av hvis du ikke har lyd.",
     "audioPassthroughOverriddenByNormalization": "Av mens lydstyrkenormalisering er på",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

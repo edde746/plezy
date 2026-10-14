@@ -346,7 +346,7 @@
     "tunneledPlaybackDescription": "Video tunnellashdan foydalanish. HDR ijrosida ekran qora boʻlsa yoki harakat uzilib qolsa, oʻchiring.",
     "audioPassthrough": "Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.",
-    "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.",
+    "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. tvOS 26 va undan keyingi versiyalarda TrueHD Atmos va DTS:X Apple fazoviy audiosi sifatida, boshqa DTS va TrueHD esa koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.",
     "audioPassthroughOverriddenByNormalization": "Ovoz balandligini meʼyorlashtirish yoqilganda oʻchirilgan",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

@@ -322,6 +322,15 @@ class PlatformDetector {
     return isAppleTV() || Platform.isWindows || Platform.isLinux || (Platform.isAndroid && isTV());
   }
 
+  /// iPhone and iPad from iOS 26, where TrueHD and DTS-HD play as spatial
+  /// audio. They have no passthrough setting; Apple TV reaches spatial audio
+  /// through it.
+  static bool supportsSpatialAudio() {
+    if (!Platform.isIOS || isAppleTV()) return false;
+    final major = RegExp(r'\d+').firstMatch(Platform.operatingSystemVersion)?.group(0);
+    return (int.tryParse(major ?? '') ?? 0) >= 26;
+  }
+
   static bool supportsPictureInPicture() => pictureInPictureAllowed(
     hostSupportsPictureInPicture: Platform.isAndroid || Platform.isIOS || Platform.isMacOS,
     isAppleTv: isAppleTV(),

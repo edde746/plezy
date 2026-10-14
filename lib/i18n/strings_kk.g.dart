@@ -454,7 +454,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => 'Видео туннельдеуді пайдалану. HDR ойнатқанда қара экран көрінсе немесе қозғалыс кідірсе, өшіріңіз.';
 	@override String get audioPassthrough => 'Дыбысты тікелей өткізу (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. tvOS 26 және кейінгі нұсқаларда TrueHD Atmos пен DTS:X Apple кеңістіктік аудиосы ретінде, ал басқа DTS және TrueHD көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Дыбыс деңгейін нормалау қосулы кезде өшірулі';
 	@override String get downmixCenterBoost => 'Орталық арнаны күшейту';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
@@ -3368,7 +3368,7 @@ extension on TranslationsKk {
 			'settings.tunneledPlaybackDescription' => 'Видео туннельдеуді пайдалану. HDR ойнатқанда қара экран көрінсе немесе қозғалыс кідірсе, өшіріңіз.',
 			'settings.audioPassthrough' => 'Дыбысты тікелей өткізу (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. tvOS 26 және кейінгі нұсқаларда TrueHD Atmos пен DTS:X Apple кеңістіктік аудиосы ретінде, ал басқа DTS және TrueHD көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Дыбыс деңгейін нормалау қосулы кезде өшірулі',
 			'settings.downmixCenterBoost' => 'Орталық арнаны күшейту',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',

@@ -454,7 +454,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video, eller bevægelser hakker.';
 	@override String get audioPassthrough => 'Lyd-passthrough';
 	@override String get audioPassthroughDescription => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.';
+	@override String get audioPassthroughDescriptionAppleTv => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. Fra tvOS 26 afspilles TrueHD Atmos og DTS:X som rumlig lyd fra Apple; anden DTS og TrueHD afspilles som flerkanals-PCM. Slå fra, hvis du ikke har lyd.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Fra, mens lydstyrkenormalisering er slået til';
 	@override String get downmixCenterBoost => 'Forstærkning af centerkanal';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
@@ -3368,7 +3368,7 @@ extension on TranslationsDa {
 			'settings.tunneledPlaybackDescription' => 'Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video, eller bevægelser hakker.',
 			'settings.audioPassthrough' => 'Lyd-passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.',
+			'settings.audioPassthroughDescriptionAppleTv' => 'Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. Fra tvOS 26 afspilles TrueHD Atmos og DTS:X som rumlig lyd fra Apple; anden DTS og TrueHD afspilles som flerkanals-PCM. Slå fra, hvis du ikke har lyd.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Fra, mens lydstyrkenormalisering er slået til',
 			'settings.downmixCenterBoost' => 'Forstærkning af centerkanal',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../models/audio_channel_limit.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/platform_detector.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
 import 'player_base.dart';
@@ -1029,19 +1030,21 @@ class PlayerNative extends PlayerBase {
   @override
   bool get audioPassthroughActive => _passthroughActive;
 
-  /// Codecs the platform can take as a bitstream. On iOS/tvOS compressed
-  /// audio goes through the system renderer, which only handles Dolby
-  /// Digital (Plus); Windows and Linux do real device passthrough for the
-  /// full list. Never applied on macOS (PlatformDetector.supportsAudioPassthrough).
+  /// Codecs the platform can take as a bitstream. Windows and Linux do real
+  /// device passthrough for the full list. Never applied on macOS
+  /// (PlatformDetector.supportsAudioPassthrough).
   ///
   /// Android does not use this list: mpv's audiotrack AO only opens stereo
   /// IEC 61937 tracks at the 48kHz mixer rate, so naming a codec the route
   /// cannot carry that way strands playback on a dead audio output (#1991).
   /// The plugin derives the value from the current audio route instead.
-  static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
+  /// iOS and tvOS ask their plugin too: Apple TV hands Dolby Digital (Plus) to
+  /// the system renderer, and from 26 both hand TrueHD and DTS-HD to spatial
+  /// audio.
+  static const String _passthroughCodecs = 'ac3,eac3,dts,dts-hd,truehd';
 
   Future<String> _resolvePassthroughCodecs() async {
-    if (!Platform.isAndroid) return _passthroughCodecs;
+    if (!Platform.isAndroid && !Platform.isIOS && !PlatformDetector.isAppleTV()) return _passthroughCodecs;
     try {
       return await invoke<String>('getAudioSpdifCodecs') ?? '';
     } catch (error, stackTrace) {

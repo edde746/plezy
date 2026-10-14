@@ -2,6 +2,7 @@ import AVFoundation
 #if os(tvOS)
   import AVKit
 #endif
+import Libmpv
 import QuartzCore
 import UIKit
 
@@ -25,6 +26,18 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   #endif
 
   var isPipStarting = false
+
+  /// The `audio-spdif` codecs: on Apple TV Dolby Digital (Plus) for the system
+  /// decoder, and on iOS and tvOS 26 TrueHD and DTS-HD for mpv’s spatial output.
+  static var audioSpdifCodecs: String {
+    #if os(tvOS)
+      if #available(tvOS 26, *) { return "ac3,eac3,truehd,dts-hd" }
+      return "ac3,eac3"
+    #else
+      if #available(iOS 26, *) { return "truehd,dts-hd" }
+      return ""
+    #endif
+  }
 
   private static func log(_ message: @autoclosure () -> String) {
     guard MpvLog.isDebugEnabled else { return }
@@ -73,6 +86,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     isInitialized = true
     MpvLog.debug("[MpvPlayerCore] Initialized successfully with MPV")
     return true
+  }
+
+  override func configurePlatformMpvOptions(mpv: OpaquePointer) {
+    if #available(iOS 26, tvOS 26, *) {
+      // Every other format falls through to the autoprobed outputs.
+      checkError(mpv_set_option_string(mpv, "ao", "spatial,"))
+    }
   }
 
   var sampleBufferDisplayLayer: MpvVideoLayer? { videoLayer }
