@@ -60,6 +60,7 @@ class PersonSearchRow extends StatelessWidget {
         personId: person.id,
         name: person.name,
         thumbPath: person.thumbPath,
+        tagKey: person.tagKey,
         serverId: person.serverId,
         serverName: person.serverName,
         backend: person.backend,

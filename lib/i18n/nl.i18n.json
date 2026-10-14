@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titels"
-    }
+    },
+    "personBornLabel": "Geboren",
+    "personDiedLabel": "Overleden",
+    "personAgeAtDeath": "${date} (${age} jaar)"
   },
   "errors": {
     "searchFailed": "Zoeken mislukt: ${error}",

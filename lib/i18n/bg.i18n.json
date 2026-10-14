@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} заглавие",
       "other": "${n} заглавия"
-    }
+    },
+    "personBornLabel": "Роден/а",
+    "personDiedLabel": "Починал/а",
+    "personAgeAtDeath": "${date} (на ${age} г.)"
   },
   "errors": {
     "searchFailed": "Търсенето е неуспешно: ${error}",

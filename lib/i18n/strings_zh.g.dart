@@ -1228,6 +1228,9 @@ class Translations$discover$zh extends Translations$discover$en {
 	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
 		other: '${n} 个标题',
 	);
+	@override String get personBornLabel => '出生';
+	@override String get personDiedLabel => '逝世';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date}（享年 ${age} 岁）';
 }
 
 // Path: errors
@@ -4025,6 +4028,9 @@ extension on TranslationsZh {
 			'discover.minutesLeft' => ({required Object minutes}) => '剩余 ${minutes} 分钟',
 			'discover.moreLikeThis' => '更多类似内容',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 个标题', ), 
+			'discover.personBornLabel' => '出生',
+			'discover.personDiedLabel' => '逝世',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date}（享年 ${age} 岁）',
 			'errors.searchFailed' => ({required Object error}) => '搜索失败：${error}',
 			'errors.searchUnavailable' => '搜索无法连接任何媒体服务器。',
 			'errors.connectionTimeout' => ({required Object context}) => '加载 ${context} 时连接超时',
@@ -4050,11 +4056,11 @@ extension on TranslationsZh {
 			'libraries.scanLibrary' => '扫描媒体库',
 			'libraries.analyze' => '分析',
 			'libraries.analyzeLibrary' => '分析媒体库',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => '刷新元数据',
 			'libraries.emptyTrash' => '清空回收站',
 			'libraries.emptyingTrash' => ({required Object title}) => '正在清空“${title}”的回收站…',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '已清空“${title}”的回收站',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '无法清空回收站：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析“${title}”…',
@@ -4564,11 +4570,11 @@ extension on TranslationsZh {
 			'watchTogether.waitingForParticipants' => '正在等待其他人加载…',
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}…',
 			'watchTogether.recentRooms' => '最近的房间',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => '重命名房间',
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '无法切换 — 服务器不可用于同步',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => '无法切换 — 在此服务器上未找到内容',
 			'watchTogether.defaultDisplayName' => '用户',
 			'watchTogether.errors.timedOut' => '中继服务器未及时响应',
@@ -5078,11 +5084,11 @@ extension on TranslationsZh {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '连接到 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '输入你的服务器 URL、用户名和密码。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登录你的 ${product} 服务器。将绑定到 ${name}。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '使用其他用户资料的连接',
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
 			'addServer.invalidCredentials' => '用户名或密码无效',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => '身份验证响应不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',

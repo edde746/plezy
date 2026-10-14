@@ -302,6 +302,12 @@ class PlexDiscoverClient {
     return firstFlexibleMap(_mediaContainer(data)['Metadata']);
   }
 
+  Future<Map<String, dynamic>?> getPerson(String tagKey) async {
+    final data = await _request('GET', '/library/people/${Uri.encodeComponent(tagKey)}', allowNotFound: true);
+    if (data == null) return null;
+    return firstFlexibleMap(_mediaContainer(data)['Metadata']);
+  }
+
   Future<List<Map<String, dynamic>>> getRelated(String ratingKey) async {
     final data = await _request(
       'GET',

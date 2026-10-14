@@ -1,5 +1,6 @@
 import '../../media/media_rating.dart';
 import '../../media/media_kind.dart';
+import '../../media/person_details.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../models/catalog/catalog_metadata.dart';
@@ -21,6 +22,9 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
   final Map<String, String> _hubKeys = {};
 
   PlexCatalogSource(this._client, {this.includeImageVariants = false});
+
+  Future<PersonDetails?> fetchPersonDetails(String tagKey) async =>
+      PlexMappers.personDetails(await _client.getPerson(tagKey));
 
   @override
   CatalogSourceId get id => CatalogSourceId.plex;

@@ -142,6 +142,7 @@ const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
 const String _tvDetailExtrasHubId = 'detail_extras';
 const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
+const String _tvDetailActorTagKeyRawKey = 'tvDetailActorTagKey';
 
 enum _SyncRuleAction { edit, remove, delete }
 
@@ -1520,6 +1521,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         name: actor.tag,
         thumbPath: actor.thumbPath,
         characterName: actor.role,
+        tagKey: actor.tagKey,
         serverId: _metadata.serverId!,
         serverName: _metadata.serverName,
         backend: _metadata.backend,
@@ -4396,7 +4398,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       thumbPath: actor.thumbPath,
       serverId: metadata.serverId,
       serverName: metadata.serverName,
-      raw: {if (personId != null && personId.isNotEmpty) _tvDetailActorPersonIdRawKey: personId},
+      raw: {
+        if (personId != null && personId.isNotEmpty) _tvDetailActorPersonIdRawKey: personId,
+        if (actor.tagKey != null) _tvDetailActorTagKeyRawKey: actor.tagKey,
+      },
     );
   }
 
@@ -4415,7 +4420,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final personId = item.raw?[_tvDetailActorPersonIdRawKey];
     if (personId is String && personId.isNotEmpty) {
       _navigateToActorMedia(
-        MediaRole(id: personId, tag: item.displayTitle, role: item.parentTitle, thumbPath: item.thumbPath),
+        MediaRole(
+          id: personId,
+          tag: item.displayTitle,
+          role: item.parentTitle,
+          thumbPath: item.thumbPath,
+          tagKey: item.raw?[_tvDetailActorTagKeyRawKey] as String?,
+        ),
       );
     }
     return true;

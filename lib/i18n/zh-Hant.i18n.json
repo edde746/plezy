@@ -1082,7 +1082,10 @@
     "moreLikeThis": "更多類似內容",
     "titleCount": {
       "other": "${n} 部作品"
-    }
+    },
+    "personBornLabel": "出生",
+    "personDiedLabel": "逝世",
+    "personAgeAtDeath": "${date}（享年 ${age} 歲）"
   },
   "errors": {
     "searchFailed": "搜尋失敗：${error}",

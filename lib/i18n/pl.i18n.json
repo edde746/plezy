@@ -1097,7 +1097,10 @@
       "few": "${n} tytuły",
       "many": "${n} tytułów",
       "other": "${n} tytułu"
-    }
+    },
+    "personBornLabel": "Urodzenie",
+    "personDiedLabel": "Śmierć",
+    "personAgeAtDeath": "${date} (w wieku ${age} lat)"
   },
   "errors": {
     "searchFailed": "Wyszukiwanie nie powiodło się: ${error}",

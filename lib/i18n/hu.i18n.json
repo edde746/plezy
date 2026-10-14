@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} cím",
       "other": "${n} cím"
-    }
+    },
+    "personBornLabel": "Született",
+    "personDiedLabel": "Elhunyt",
+    "personAgeAtDeath": "${date} (${age} évesen)"
   },
   "errors": {
     "searchFailed": "Keresés sikertelen: ${error}",

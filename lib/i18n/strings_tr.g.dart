@@ -1233,6 +1233,9 @@ class _Translations$discover$tr extends Translations$discover$en {
 		one: '${n} başlık',
 		other: '${n} başlık',
 	);
+	@override String get personBornLabel => 'Doğum';
+	@override String get personDiedLabel => 'Ölüm';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} yaşında)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsTr {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} dk kaldı',
 			'discover.moreLikeThis' => 'Buna Benzerler',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('tr'))(n, one: '${n} başlık', other: '${n} başlık', ), 
+			'discover.personBornLabel' => 'Doğum',
+			'discover.personDiedLabel' => 'Ölüm',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} yaşında)',
 			'errors.searchFailed' => ({required Object error}) => 'Arama başarısız: ${error}',
 			'errors.searchUnavailable' => 'Arama hiçbir medya sunucusuna ulaşamadı.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} yüklenirken bağlantı zaman aşımına uğradı',
@@ -4061,11 +4067,11 @@ extension on TranslationsTr {
 			'libraries.scanLibrary' => 'Kitaplığı Taramak',
 			'libraries.analyze' => 'Analiz Et',
 			'libraries.analyzeLibrary' => 'Kitaplığı Analiz Et',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Meta Verileri Yenile',
 			'libraries.emptyTrash' => 'Çöpü Boşalt',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" için çöp boşaltılıyor...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" için çöp boşaltıldı',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Çöp boşaltılamadı: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" analiz ediliyor...',
@@ -4575,11 +4581,11 @@ extension on TranslationsTr {
 			'watchTogether.waitingForParticipants' => 'Diğerlerinin yüklemesi bekleniyor...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} bekleniyor...',
 			'watchTogether.recentRooms' => 'Son Odalar',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Odayı Yeniden Adlandır',
 			'watchTogether.removeRoom' => 'Kaldır',
 			'watchTogether.guestSwitchUnavailable' => 'Geçiş yapılamadı — eşitleme için sunucu mevcut değil',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Geçiş yapılamadı — içerik bu sunucuda bulunamadı',
 			'watchTogether.defaultDisplayName' => 'Kullanıcı',
 			'watchTogether.errors.timedOut' => 'Aktarıcı sunucusu zamanında yanıt vermedi',
@@ -5089,11 +5095,11 @@ extension on TranslationsTr {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product} ile Bağlan',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Sunucu URL\'nizi, kullanıcı adınızı ve şifrenizi girin.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} sunucunuza giriş yapın. ${name} profiline bağlanır.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Başka bir profilden ödünç al',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.',
 			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',
 			'addServer.quickConnectRejected' => 'Quick Connect sunucu tarafından reddedildi',

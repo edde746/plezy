@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titlar"
-    }
+    },
+    "personBornLabel": "Född",
+    "personDiedLabel": "Död",
+    "personAgeAtDeath": "${date} (${age} år)"
   },
   "errors": {
     "searchFailed": "Sökningen misslyckades: ${error}",

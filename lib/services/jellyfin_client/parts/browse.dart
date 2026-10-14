@@ -1734,6 +1734,22 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
+  Future<PersonDetails?> fetchPersonDetails(String personId) async {
+    if (isOfflineMode) return null;
+    try {
+      final response = await _http.get(
+        '/Users/${_segment(connection.userId)}/Items/${_segment(personId)}',
+        queryParameters: {'Fields': 'Overview,ProductionLocations'},
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      return data is Map<String, dynamic> ? JellyfinMappers.personDetails(data) : null;
+    } on MediaServerHttpException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
   @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
     if (excludedLibraryIds.isEmpty) {

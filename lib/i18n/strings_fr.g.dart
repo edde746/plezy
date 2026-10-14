@@ -1233,6 +1233,9 @@ class _Translations$discover$fr extends Translations$discover$en {
 		one: '${n} titre',
 		other: '${n} titres',
 	);
+	@override String get personBornLabel => 'Naissance';
+	@override String get personDiedLabel => 'Décès';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (à ${age} ans)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsFr {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min restantes',
 			'discover.moreLikeThis' => 'Plus de contenus similaires',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(n, one: '${n} titre', other: '${n} titres', ), 
+			'discover.personBornLabel' => 'Naissance',
+			'discover.personDiedLabel' => 'Décès',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (à ${age} ans)',
 			'errors.searchFailed' => ({required Object error}) => 'Échec de la recherche : ${error}',
 			'errors.searchUnavailable' => 'La recherche n\'a pu atteindre aucun serveur multimédia.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Délai d\'attente de connexion dépassé pendant le chargement ${context}',
@@ -4061,11 +4067,11 @@ extension on TranslationsFr {
 			'libraries.scanLibrary' => 'Scanner la bibliothèque',
 			'libraries.analyze' => 'Analyser',
 			'libraries.analyzeLibrary' => 'Analyser la bibliothèque',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Actualiser les métadonnées',
 			'libraries.emptyTrash' => 'Vider la corbeille',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Vidage de la corbeille de « ${title} »…',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Corbeille vidée pour « ${title} »',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Échec du vidage de la corbeille : ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyse de « ${title} »…',
@@ -4575,11 +4581,11 @@ extension on TranslationsFr {
 			'watchTogether.waitingForParticipants' => 'En attente du chargement des autres...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'En attente de ${name}...',
 			'watchTogether.recentRooms' => 'Salons récents',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Renommer le salon',
 			'watchTogether.removeRoom' => 'Supprimer',
 			'watchTogether.guestSwitchUnavailable' => 'Impossible de changer — serveur indisponible pour la synchronisation',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Impossible de changer — contenu introuvable sur ce serveur',
 			'watchTogether.defaultDisplayName' => 'Utilisateur',
 			'watchTogether.errors.timedOut' => 'Le serveur relais n’a pas répondu à temps',
@@ -5089,11 +5095,11 @@ extension on TranslationsFr {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Se connecter à ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Saisissez l\'URL de votre serveur, votre nom d\'utilisateur et votre mot de passe.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Connectez-vous à votre serveur ${product}. Sera associé à ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Emprunter à un autre profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
 			'addServer.invalidCredentials' => 'Nom d’utilisateur ou mot de passe incorrect',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'La réponse d’authentification n’était pas au format JSON valide',
 			'addServer.authResponseIncomplete' => 'La réponse de connexion du serveur était incomplète',
 			'addServer.quickConnectRejected' => 'Quick Connect a été refusé par le serveur',

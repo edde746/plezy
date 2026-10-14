@@ -26,6 +26,7 @@ class MediaPerson {
   final MediaBackend backend;
   final ServerId serverId;
   final String? serverName;
+  final String? tagKey;
 
   const MediaPerson({
     required this.id,
@@ -35,6 +36,7 @@ class MediaPerson {
     required this.backend,
     required this.serverId,
     this.serverName,
+    this.tagKey,
   });
 
   /// Cross-server identity. The `person:` prefix keeps it apart from a media

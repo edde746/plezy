@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} başlıq",
       "other": "${n} başlıq"
-    }
+    },
+    "personBornLabel": "Doğum",
+    "personDiedLabel": "Vəfat",
+    "personAgeAtDeath": "${date} (${age} yaşında)"
   },
   "errors": {
     "searchFailed": "Axtarış uğursuz oldu: ${error}",

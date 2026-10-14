@@ -7,6 +7,7 @@ import '../media/media_library.dart';
 import '../media/media_part.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
+import '../media/person_details.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
 import '../i18n/strings.g.dart';
@@ -169,6 +170,28 @@ class JellyfinMappers {
   static String _segment(String value) => Uri.encodeComponent(value);
 
   static String _query(String value) => Uri.encodeComponent(value);
+
+  static PersonDetails? personDetails(Map<String, dynamic> item) {
+    final overview = (item['Overview'] as String?)?.trim();
+    final locations = item['ProductionLocations'];
+    final birthPlace = locations is List && locations.isNotEmpty ? locations.first?.toString().trim() : null;
+    final details = PersonDetails(
+      overview: overview == null || overview.isEmpty ? null : overview,
+      birthDate: _localYmd(item['PremiereDate'] as String?),
+      deathDate: _localYmd(item['EndDate'] as String?),
+      birthPlace: birthPlace == null || birthPlace.isEmpty ? null : birthPlace,
+    );
+    return details.isEmpty ? null : details;
+  }
+
+  static String? _localYmd(String? iso) {
+    final parsed = iso == null ? null : DateTime.tryParse(iso);
+    if (parsed == null) return null;
+    final local = parsed.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '${local.year.toString().padLeft(4, '0')}-$month-$day';
+  }
 
   static String _itemImagePath(String id, String type, {String? tag, int? imageIndex}) {
     final indexPart = imageIndex != null ? '/$imageIndex' : '';

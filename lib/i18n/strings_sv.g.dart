@@ -1233,6 +1233,9 @@ class _Translations$discover$sv extends Translations$discover$en {
 		one: '${n} titel',
 		other: '${n} titlar',
 	);
+	@override String get personBornLabel => 'Född';
+	@override String get personDiedLabel => 'Död';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} år)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsSv {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min kvar',
 			'discover.moreLikeThis' => 'Mer liknande innehåll',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${n} titel', other: '${n} titlar', ), 
+			'discover.personBornLabel' => 'Född',
+			'discover.personDiedLabel' => 'Död',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} år)',
 			'errors.searchFailed' => ({required Object error}) => 'Sökningen misslyckades: ${error}',
 			'errors.searchUnavailable' => 'Sökningen kunde inte nå någon medieserver.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Anslutningen tog för lång tid när ${context} lästes in',
@@ -4061,11 +4067,11 @@ extension on TranslationsSv {
 			'libraries.scanLibrary' => 'Skanna bibliotek',
 			'libraries.analyze' => 'Analysera',
 			'libraries.analyzeLibrary' => 'Analysera bibliotek',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Uppdatera metadata',
 			'libraries.emptyTrash' => 'Töm papperskorg',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Tömmer papperskorgen för "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papperskorgen har tömts för "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Det gick inte att tömma papperskorgen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserar "${title}"...',
@@ -4575,11 +4581,11 @@ extension on TranslationsSv {
 			'watchTogether.waitingForParticipants' => 'Väntar på att de andra ska ladda klart...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Väntar på ${name}...',
 			'watchTogether.recentRooms' => 'Senaste rummen',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Byt namn på rummet',
 			'watchTogether.removeRoom' => 'Ta bort',
 			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Kunde inte byta — innehåll hittades inte på denna server',
 			'watchTogether.defaultDisplayName' => 'Användare',
 			'watchTogether.errors.timedOut' => 'Reläservern svarade inte i tid',
@@ -5089,11 +5095,11 @@ extension on TranslationsSv {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Anslut till ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Ange din server-URL, användarnamn och lösenord.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logga in på din ${product}-server. Knyts till ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Låna från en annan profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.',
 			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Autentiseringssvaret var inte ett giltigt JSON-svar',
 			'addServer.authResponseIncomplete' => 'Inloggningssvaret från servern var ofullständigt',
 			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',

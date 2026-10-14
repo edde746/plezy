@@ -1233,6 +1233,9 @@ class _Translations$discover$hu extends Translations$discover$en {
 		one: '${n} cím',
 		other: '${n} cím',
 	);
+	@override String get personBornLabel => 'Született';
+	@override String get personDiedLabel => 'Elhunyt';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} évesen)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsHu {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} perc van hátra',
 			'discover.moreLikeThis' => 'Hasonló tartalmak',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hu'))(n, one: '${n} cím', other: '${n} cím', ), 
+			'discover.personBornLabel' => 'Született',
+			'discover.personDiedLabel' => 'Elhunyt',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} évesen)',
 			'errors.searchFailed' => ({required Object error}) => 'Keresés sikertelen: ${error}',
 			'errors.searchUnavailable' => 'A keresés egyetlen médiaszervert sem tudott elérni.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Hálózati időtúllépés a következő betöltésekor: ${context}',
@@ -4061,11 +4067,11 @@ extension on TranslationsHu {
 			'libraries.scanLibrary' => 'Könyvtár beolvasása',
 			'libraries.analyze' => 'Elemzés',
 			'libraries.analyzeLibrary' => 'Könyvtár elemzése',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Metaadatok frissítése',
 			'libraries.emptyTrash' => 'Lomtár ürítése',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Lomtár ürítése a következőhöz: "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Lomtár kiürítve a következőhöz: "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nem sikerült a lomtár ürítése: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" elemzése...',
@@ -4575,11 +4581,11 @@ extension on TranslationsHu {
 			'watchTogether.waitingForParticipants' => 'Várakozás, amíg a többieknél betöltődik a tartalom...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Várakozás: ${name}...',
 			'watchTogether.recentRooms' => 'Legutóbbi szobák',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Szoba átnevezése',
 			'watchTogether.removeRoom' => 'Eltávolítás',
 			'watchTogether.guestSwitchUnavailable' => 'Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Nem sikerült a váltás — a tartalom nem található ezen a szerveren',
 			'watchTogether.defaultDisplayName' => 'Felhasználó',
 			'watchTogether.errors.timedOut' => 'A relészerver nem válaszolt időben',
@@ -5089,11 +5095,11 @@ extension on TranslationsHu {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Csatlakozás a(z) ${product} szolgáltatáshoz',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Adja meg a szerver URL-jét, felhasználónevét és jelszavát.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Jelentkezzen be a(z) ${product} szerverére. A(z) ${name} szolgáltatáshoz kötődik.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Kapcsolat használata másik profilból',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
 			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'A hitelesítési válasz nem érvényes JSON',
 			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',

@@ -1233,6 +1233,9 @@ class _Translations$discover$da extends Translations$discover$en {
 		one: '${n} titel',
 		other: '${n} titler',
 	);
+	@override String get personBornLabel => 'Født';
+	@override String get personDiedLabel => 'Død';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} år)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsDa {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min tilbage',
 			'discover.moreLikeThis' => 'Mere som dette',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${n} titel', other: '${n} titler', ), 
+			'discover.personBornLabel' => 'Født',
+			'discover.personDiedLabel' => 'Død',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} år)',
 			'errors.searchFailed' => ({required Object error}) => 'Søgning mislykkedes: ${error}',
 			'errors.searchUnavailable' => 'Søgningen kunne ikke nå nogen medieserver.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Forbindelsen fik timeout under indlæsning af ${context}',
@@ -4061,11 +4067,11 @@ extension on TranslationsDa {
 			'libraries.scanLibrary' => 'Scan bibliotek',
 			'libraries.analyze' => 'Analysér',
 			'libraries.analyzeLibrary' => 'Analysér bibliotek',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Opdater metadata',
 			'libraries.emptyTrash' => 'Tøm papirkurv',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Tømmer papirkurv for "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papirkurv tømt for "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
@@ -4575,11 +4581,11 @@ extension on TranslationsDa {
 			'watchTogether.waitingForParticipants' => 'Venter på, at de andre bliver klar...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',
 			'watchTogether.recentRooms' => 'Seneste rum',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Omdøb rum',
 			'watchTogether.removeRoom' => 'Fjern',
 			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke skifte — server ikke tilgængelig for synkronisering',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke skifte — indhold blev ikke fundet på denne server',
 			'watchTogether.defaultDisplayName' => 'Bruger',
 			'watchTogether.errors.timedOut' => 'Relayserveren svarede ikke i tide',
@@ -5089,11 +5095,11 @@ extension on TranslationsDa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Opret forbindelse til ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Indtast din server-URL, brugernavn og adgangskode.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Log ind på din ${product}-server. Tilknyttes til ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en anden profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.',
 			'addServer.invalidCredentials' => 'Ugyldigt brugernavn eller ugyldig adgangskode',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Godkendelsessvaret var ikke gyldig JSON',
 			'addServer.authResponseIncomplete' => 'Loginsvaret fra serveren var ufuldstændigt',
 			'addServer.quickConnectRejected' => 'Quick Connect blev afvist af serveren',

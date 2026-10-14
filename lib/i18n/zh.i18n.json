@@ -1082,7 +1082,10 @@
     "moreLikeThis": "更多类似内容",
     "titleCount": {
       "other": "${n} 个标题"
-    }
+    },
+    "personBornLabel": "出生",
+    "personDiedLabel": "逝世",
+    "personAgeAtDeath": "${date}（享年 ${age} 岁）"
   },
   "errors": {
     "searchFailed": "搜索失败：${error}",

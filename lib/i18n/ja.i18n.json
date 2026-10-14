@@ -1082,7 +1082,10 @@
     "moreLikeThis": "似ている作品",
     "titleCount": {
       "other": "${n}作品"
-    }
+    },
+    "personBornLabel": "生年月日",
+    "personDiedLabel": "没年月日",
+    "personAgeAtDeath": "${date}（享年${age}歳）"
   },
   "errors": {
     "searchFailed": "検索に失敗しました: ${error}",

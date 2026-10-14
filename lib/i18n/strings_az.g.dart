@@ -1233,6 +1233,9 @@ class _Translations$discover$az extends Translations$discover$en {
 		one: '${n} başlıq',
 		other: '${n} başlıq',
 	);
+	@override String get personBornLabel => 'Doğum';
+	@override String get personDiedLabel => 'Vəfat';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} yaşında)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsAz {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} dəq qaldı',
 			'discover.moreLikeThis' => 'Buna bənzərlər',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n, one: '${n} başlıq', other: '${n} başlıq', ), 
+			'discover.personBornLabel' => 'Doğum',
+			'discover.personDiedLabel' => 'Vəfat',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} yaşında)',
 			'errors.searchFailed' => ({required Object error}) => 'Axtarış uğursuz oldu: ${error}',
 			'errors.searchUnavailable' => 'Axtarış heç bir media serverinə çata bilmədi.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} yüklənərkən vaxt bitdi',
@@ -4061,11 +4067,11 @@ extension on TranslationsAz {
 			'libraries.scanLibrary' => 'Kitabxananı skan et',
 			'libraries.analyze' => 'Analiz et',
 			'libraries.analyzeLibrary' => 'Kitabxananı analiz et',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Meta-məlumatları yenilə',
 			'libraries.emptyTrash' => 'Zibil qutusunu təmizlə',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizlənir...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizləndi',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Zibil qutusu təmizlənə bilmədi: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" analiz edilir...',
@@ -4575,11 +4581,11 @@ extension on TranslationsAz {
 			'watchTogether.waitingForParticipants' => 'Digərlərinin yükləməsi gözlənilir...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} gözlənilir...',
 			'watchTogether.recentRooms' => 'Son otaqlar',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Otağın adını dəyişdir',
 			'watchTogether.removeRoom' => 'Sil',
 			'watchTogether.guestSwitchUnavailable' => 'Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Keçid etmək olmadı — məzmun bu serverdə tapılmadı',
 			'watchTogether.defaultDisplayName' => 'İstifadəçi',
 			'watchTogether.errors.timedOut' => 'Rele serveri vaxtında cavab vermədi',
@@ -5089,11 +5095,11 @@ extension on TranslationsAz {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}-a qoşul',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Server URL-inizi, istifadəçi adınızı və şifrənizi daxil edin.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serverinizə daxil olun. ${name} ilə əlaqələndirilir.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Başqa profildən götür',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başqa profilin qoşulmasını yenidən istifadə edin. PIN ilə qorunan profillər PIN tələb edir.',
 			'addServer.invalidCredentials' => 'İstifadəçi adı və ya şifrə yanlışdır',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Autentifikasiya cavabı etibarlı JSON deyildi',
 			'addServer.authResponseIncomplete' => 'Serverin giriş cavabı natamam idi',
 			'addServer.quickConnectRejected' => 'Quick Connect server tərəfindən rədd edildi',

@@ -1233,6 +1233,9 @@ class _Translations$discover$kk extends Translations$discover$en {
 		one: '${n} атау',
 		other: '${n} атау',
 	);
+	@override String get personBornLabel => 'Туған';
+	@override String get personDiedLabel => 'Қайтыс болған';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} жаста)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsKk {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} мин қалды',
 			'discover.moreLikeThis' => 'Ұқсастар',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('kk'))(n, one: '${n} атау', other: '${n} атау', ), 
+			'discover.personBornLabel' => 'Туған',
+			'discover.personDiedLabel' => 'Қайтыс болған',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} жаста)',
 			'errors.searchFailed' => ({required Object error}) => 'Іздеу қатесі: ${error}',
 			'errors.searchUnavailable' => 'Іздеу ешбір медиа серверге қосыла алмады.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} жүктеу уақыты өтті',
@@ -4061,11 +4067,11 @@ extension on TranslationsKk {
 			'libraries.scanLibrary' => 'Кітапхананы сканерлеу',
 			'libraries.analyze' => 'Талдау жасау',
 			'libraries.analyzeLibrary' => 'Кітапханаға талдау жасау',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Метадеректерді жаңарту',
 			'libraries.emptyTrash' => 'Себетті тазалау',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" себеті тазалануда...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" себеті тазаланды',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Себетті тазалау мүмкін болмады: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" талдануда...',
@@ -4575,11 +4581,11 @@ extension on TranslationsKk {
 			'watchTogether.waitingForParticipants' => 'Басқалардың жүктеуін күтуде...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} күтілуде...',
 			'watchTogether.recentRooms' => 'Соңғы бөлмелер',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Бөлме атын өзгерткіңіз келе ме?',
 			'watchTogether.removeRoom' => 'Өшіру',
 			'watchTogether.guestSwitchUnavailable' => 'Ауысу мүмкін болмады — сервер синхрондау үшін қолжетімсіз',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Ауысу мүмкін болмады — мазмұн табылмады',
 			'watchTogether.defaultDisplayName' => 'Пайдаланушы',
 			'watchTogether.errors.timedOut' => 'Реле сервері уақытында жауап бермеді',
@@ -5089,11 +5095,11 @@ extension on TranslationsKk {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product} қосылу',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Сервер URL мекенжайын, пайдаланушы атын және құпия сөзді енгізіңіз.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Басқа профильден алу',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану. PIN кодпен қорғалған профильдер PIN кодты талап етеді.',
 			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
 			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',
 			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',

@@ -1228,6 +1228,9 @@ class _Translations$discover$ko extends Translations$discover$en {
 	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
 		other: '${n}개 타이틀',
 	);
+	@override String get personBornLabel => '출생';
+	@override String get personDiedLabel => '사망';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (향년 ${age}세)';
 }
 
 // Path: errors
@@ -4025,6 +4028,9 @@ extension on TranslationsKo {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes}분 남음',
 			'discover.moreLikeThis' => '비슷한 콘텐츠',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, other: '${n}개 타이틀', ), 
+			'discover.personBornLabel' => '출생',
+			'discover.personDiedLabel' => '사망',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (향년 ${age}세)',
 			'errors.searchFailed' => ({required Object error}) => '검색 실패: ${error}',
 			'errors.searchUnavailable' => '검색이 어떤 미디어 서버에도 연결할 수 없습니다.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} 로드 중 연결 시간 초과',
@@ -4050,11 +4056,11 @@ extension on TranslationsKo {
 			'libraries.scanLibrary' => '미디어 라이브러리 스캔',
 			'libraries.analyze' => '분석',
 			'libraries.analyzeLibrary' => '미디어 라이브러리 분석',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => '메타데이터 새로 고침',
 			'libraries.emptyTrash' => '휴지통 비우기',
 			'libraries.emptyingTrash' => ({required Object title}) => '「${title}」의 휴지통을 비우고 있습니다...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '「${title}」의 휴지통을 비웠습니다',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '휴지통 비우기 실패: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" 분석 중...',
@@ -4564,11 +4570,11 @@ extension on TranslationsKo {
 			'watchTogether.waitingForParticipants' => '다른 참가자의 로딩을 기다리는 중...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}님을 기다리는 중...',
 			'watchTogether.recentRooms' => '최근 참여한 방',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => '방 이름 변경',
 			'watchTogether.removeRoom' => '제거',
 			'watchTogether.guestSwitchUnavailable' => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다',
 			'watchTogether.defaultDisplayName' => '사용자',
 			'watchTogether.errors.timedOut' => '릴레이 서버가 제시간에 응답하지 않았습니다',
@@ -5078,11 +5084,11 @@ extension on TranslationsKo {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}에 연결',
 			'addServer.connectToMediaBrowserCardSubtitle' => '서버 URL, 사용자 이름, 비밀번호를 입력하세요.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} 서버에 로그인하세요. ${name}에 연결됩니다.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
 			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'addServer.invalidCredentials' => '사용자 이름 또는 비밀번호가 올바르지 않습니다',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => '인증 응답이 유효한 JSON이 아닙니다',
 			'addServer.authResponseIncomplete' => '서버의 로그인 응답이 불완전합니다',
 			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',

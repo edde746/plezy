@@ -31,6 +31,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
 import '../media/media_person.dart';
+import '../media/person_details.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
@@ -281,6 +282,7 @@ class JellyfinClient
         MediaServerClient,
         SeasonEpisodePagingClient,
         MediaDeletionPermissionClient,
+        PersonDetailsClient,
         ScopedMediaServerClient,
         GracefullyCloseable {
   JellyfinClient._({required this._connection, required this._http, FavoriteChannelsRepository? favoritesRepository})

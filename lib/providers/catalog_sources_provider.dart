@@ -271,6 +271,8 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     }
   }
 
+  PlexCatalogSource? get plexSource => _plex.source;
+
   CatalogSourceId? get preferredSourceId => _preferredSourceId;
 
   /// Null clears the override and restores the first connected source.

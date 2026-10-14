@@ -1243,6 +1243,9 @@ class _Translations$discover$ru extends Translations$discover$en {
 		many: '${n} названий',
 		other: '${n} названия',
 	);
+	@override String get personBornLabel => 'Дата рождения';
+	@override String get personDiedLabel => 'Дата смерти';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} лет)';
 }
 
 // Path: errors
@@ -4058,6 +4061,9 @@ extension on TranslationsRu {
 			'discover.minutesLeft' => ({required Object minutes}) => 'Осталось ${minutes} мин',
 			'discover.moreLikeThis' => 'Похожее',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ru'))(n, one: '${n} название', few: '${n} названия', many: '${n} названий', other: '${n} названия', ), 
+			'discover.personBornLabel' => 'Дата рождения',
+			'discover.personDiedLabel' => 'Дата смерти',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} лет)',
 			'errors.searchFailed' => ({required Object error}) => 'Ошибка поиска: ${error}',
 			'errors.searchUnavailable' => 'Поиску не удалось связаться ни с одним медиасервером.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Таймаут подключения при загрузке ${context}',
@@ -4083,11 +4089,11 @@ extension on TranslationsRu {
 			'libraries.scanLibrary' => 'Сканировать библиотеку',
 			'libraries.analyze' => 'Анализировать',
 			'libraries.analyzeLibrary' => 'Анализировать библиотеку',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Обновить метаданные',
 			'libraries.emptyTrash' => 'Очистить корзину',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Очистка корзины для "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Корзина очищена для "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Не удалось очистить корзину: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализ "${title}"...',
@@ -4597,11 +4603,11 @@ extension on TranslationsRu {
 			'watchTogether.waitingForParticipants' => 'Ожидание загрузки у других...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Ожидание ${name}...',
 			'watchTogether.recentRooms' => 'Недавние комнаты',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Переименовать комнату',
 			'watchTogether.removeRoom' => 'Удалить',
 			'watchTogether.guestSwitchUnavailable' => 'Не удалось переключиться — сервер недоступен для синхронизации',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Не удалось переключиться — содержимое не найдено на этом сервере',
 			'watchTogether.defaultDisplayName' => 'Пользователь',
 			'watchTogether.errors.timedOut' => 'Сервер ретрансляции не ответил вовремя',
@@ -5111,11 +5117,11 @@ extension on TranslationsRu {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Подключиться к ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Введите URL сервера, имя пользователя и пароль.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Войдите на свой сервер ${product}. Будет привязано к ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Использовать подключение другого профиля',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.',
 			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Ответ аутентификации не является допустимым JSON',
 			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',

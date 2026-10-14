@@ -1233,6 +1233,9 @@ class _Translations$discover$nb extends Translations$discover$en {
 		one: '${n} tittel',
 		other: '${n} titler',
 	);
+	@override String get personBornLabel => 'Født';
+	@override String get personDiedLabel => 'Død';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} år)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsNb {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min igjen',
 			'discover.moreLikeThis' => 'Mer som dette',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nb'))(n, one: '${n} tittel', other: '${n} titler', ), 
+			'discover.personBornLabel' => 'Født',
+			'discover.personDiedLabel' => 'Død',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} år)',
 			'errors.searchFailed' => ({required Object error}) => 'Søk mislyktes: ${error}',
 			'errors.searchUnavailable' => 'Søket kunne ikke nå noen medieserver.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Tidsavbrudd ved lasting av ${context}',
@@ -4061,11 +4067,11 @@ extension on TranslationsNb {
 			'libraries.scanLibrary' => 'Skann bibliotek',
 			'libraries.analyze' => 'Analyser',
 			'libraries.analyzeLibrary' => 'Analyser bibliotek',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Oppdater metadata',
 			'libraries.emptyTrash' => 'Tøm papirkurv',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Tømmer papirkurv for "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Papirkurv tømt for "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
@@ -4575,11 +4581,11 @@ extension on TranslationsNb {
 			'watchTogether.waitingForParticipants' => 'Venter på at de andre skal laste inn...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Venter på ${name}...',
 			'watchTogether.recentRooms' => 'Nylige rom',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Gi nytt navn til rom',
 			'watchTogether.removeRoom' => 'Fjern',
 			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke bytte — server ikke tilgjengelig for synkronisering',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Kunne ikke bytte — innhold ble ikke funnet på denne serveren',
 			'watchTogether.defaultDisplayName' => 'Bruker',
 			'watchTogether.errors.timedOut' => 'Reléserveren svarte ikke i tide',
@@ -5089,11 +5095,11 @@ extension on TranslationsNb {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Koble til ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Skriv inn server-URL-en, brukernavnet og passordet ditt.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logg på ${product}-serveren din. Knyttes til ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en annen profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.',
 			'addServer.invalidCredentials' => 'Ugyldig brukernavn eller passord',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Autentiseringssvaret var ikke gyldig JSON',
 			'addServer.authResponseIncomplete' => 'Påloggingssvaret fra serveren var ufullstendig',
 			'addServer.quickConnectRejected' => 'Quick Connect ble avvist av serveren',

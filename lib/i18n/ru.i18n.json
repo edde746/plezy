@@ -1097,7 +1097,10 @@
       "few": "${n} названия",
       "many": "${n} названий",
       "other": "${n} названия"
-    }
+    },
+    "personBornLabel": "Дата рождения",
+    "personDiedLabel": "Дата смерти",
+    "personAgeAtDeath": "${date} (${age} лет)"
   },
   "errors": {
     "searchFailed": "Ошибка поиска: ${error}",

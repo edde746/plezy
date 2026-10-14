@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} атау",
       "other": "${n} атау"
-    }
+    },
+    "personBornLabel": "Туған",
+    "personDiedLabel": "Қайтыс болған",
+    "personAgeAtDeath": "${date} (${age} жаста)"
   },
   "errors": {
     "searchFailed": "Іздеу қатесі: ${error}",

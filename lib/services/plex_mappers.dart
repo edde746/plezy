@@ -29,6 +29,7 @@ import '../media/media_person.dart';
 import '../media/media_playlist.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
+import '../media/person_details.dart';
 import '../media/media_source_info.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
@@ -1147,7 +1148,13 @@ class PlexMappers {
 
   /// Map a parsed [PlexRoleDto] into a [MediaRole].
   static MediaRole role(PlexRoleDto dto) {
-    return MediaRole(id: dto.id?.toString(), tag: dto.tag, role: dto.role, thumbPath: dto.thumb);
+    return MediaRole(
+      id: dto.id?.toString(),
+      tag: dto.tag,
+      role: dto.role,
+      thumbPath: dto.thumb,
+      tagKey: _stringOrNull(dto.tagKey),
+    );
   }
 
   /// Map one `Directory` row of a `/library/search?searchTypes=people`
@@ -1181,7 +1188,19 @@ class PlexMappers {
       backend: MediaBackend.plex,
       serverId: serverId,
       serverName: serverName,
+      tagKey: _stringOrNull(json['tagKey']),
     );
+  }
+
+  static PersonDetails? personDetails(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final details = PersonDetails(
+      overview: _stringOrNull(json['summary']),
+      birthDate: _stringOrNull(json['bornAt']),
+      deathDate: _stringOrNull(json['diedAt']),
+      birthPlace: _stringOrNull(json['birthPlace']),
+    );
+    return details.isEmpty ? null : details;
   }
 
   /// Map a parsed [PlexMediaVersionDto] into a [MediaVersion].

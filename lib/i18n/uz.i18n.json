@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} ta nom",
       "other": "${n} ta nom"
-    }
+    },
+    "personBornLabel": "Tugʻilgan",
+    "personDiedLabel": "Vafot etgan",
+    "personAgeAtDeath": "${date} (${age} yoshda)"
   },
   "errors": {
     "searchFailed": "Qidiruv xatoligi: ${error}",

@@ -1228,6 +1228,9 @@ class _Translations$discover$ja extends Translations$discover$en {
 	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n,
 		other: '${n}作品',
 	);
+	@override String get personBornLabel => '生年月日';
+	@override String get personDiedLabel => '没年月日';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date}（享年${age}歳）';
 }
 
 // Path: errors
@@ -4025,6 +4028,9 @@ extension on TranslationsJa {
 			'discover.minutesLeft' => ({required Object minutes}) => '残り${minutes}分',
 			'discover.moreLikeThis' => '似ている作品',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ja'))(n, other: '${n}作品', ), 
+			'discover.personBornLabel' => '生年月日',
+			'discover.personDiedLabel' => '没年月日',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date}（享年${age}歳）',
 			'errors.searchFailed' => ({required Object error}) => '検索に失敗しました: ${error}',
 			'errors.searchUnavailable' => '検索中にメディアサーバーへ接続できませんでした。',
 			'errors.connectionTimeout' => ({required Object context}) => '${context}の読み込み中に接続がタイムアウトしました',
@@ -4050,11 +4056,11 @@ extension on TranslationsJa {
 			'libraries.scanLibrary' => 'ライブラリをスキャン',
 			'libraries.analyze' => '解析',
 			'libraries.analyzeLibrary' => 'ライブラリを解析',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'メタデータを更新',
 			'libraries.emptyTrash' => 'ゴミ箱を空にする',
 			'libraries.emptyingTrash' => ({required Object title}) => '「${title}」のゴミ箱を空にしています…',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '「${title}」のゴミ箱を空にしました',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'ゴミ箱を空にできませんでした: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '「${title}」を解析中…',
@@ -4564,11 +4570,11 @@ extension on TranslationsJa {
 			'watchTogether.waitingForParticipants' => '他の参加者の読み込みを待っています…',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}を待っています…',
 			'watchTogether.recentRooms' => '最近のルーム',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'ルーム名を変更',
 			'watchTogether.removeRoom' => '削除',
 			'watchTogether.guestSwitchUnavailable' => '切り替えられません — 同期に必要なサーバーを利用できません',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => '切り替えられません — このサーバーにコンテンツが見つかりません',
 			'watchTogether.defaultDisplayName' => 'ユーザー',
 			'watchTogether.errors.timedOut' => 'リレーサーバーが時間内に応答しませんでした',
@@ -5078,11 +5084,11 @@ extension on TranslationsJa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}に接続',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'サーバーのURL、ユーザー名、パスワードを入力してください。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product}サーバーにサインインします。「${name}」に紐付けられます。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '別のプロフィールの接続を利用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
 			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => '認証レスポンスが有効なJSONではありません',
 			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',

@@ -1233,6 +1233,9 @@ class _Translations$discover$bg extends Translations$discover$en {
 		one: '${n} заглавие',
 		other: '${n} заглавия',
 	);
+	@override String get personBornLabel => 'Роден/а';
+	@override String get personDiedLabel => 'Починал/а';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (на ${age} г.)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsBg {
 			'discover.minutesLeft' => ({required Object minutes}) => 'Остават ${minutes} мин',
 			'discover.moreLikeThis' => 'Подобно на това',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: '${n} заглавие', other: '${n} заглавия', ), 
+			'discover.personBornLabel' => 'Роден/а',
+			'discover.personDiedLabel' => 'Починал/а',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (на ${age} г.)',
 			'errors.searchFailed' => ({required Object error}) => 'Търсенето е неуспешно: ${error}',
 			'errors.searchUnavailable' => 'Търсенето не можа да достигне до нито един медиен сървър.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Изтече времето за връзка при зареждане на ${context}',
@@ -4061,11 +4067,11 @@ extension on TranslationsBg {
 			'libraries.scanLibrary' => 'Сканирай библиотеката',
 			'libraries.analyze' => 'Анализирай',
 			'libraries.analyzeLibrary' => 'Анализирай библиотеката',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Опресни метаданни',
 			'libraries.emptyTrash' => 'Изпразни кошчето',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Изпразване на кошчето за "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Кошчето е изпразнено за "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Неуспешно изпразване на кошчето: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Анализиране на "${title}"...',
@@ -4575,11 +4581,11 @@ extension on TranslationsBg {
 			'watchTogether.waitingForParticipants' => 'Изчакване другите да заредят...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Изчакване на ${name}...',
 			'watchTogether.recentRooms' => 'Скорошни стаи',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Преименувай стая',
 			'watchTogether.removeRoom' => 'Премахни',
 			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
 			'watchTogether.defaultDisplayName' => 'Потребител',
 			'watchTogether.errors.timedOut' => 'Релейният сървър не отговори навреме',
@@ -5089,11 +5095,11 @@ extension on TranslationsBg {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Свържи се с ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Въведете URL адреса на сървъра, потребителското име и паролата.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Впишете се в своя ${product} сървър. Обвързва се с ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Използвай от друг профил',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			'addServer.invalidCredentials' => 'Невалидно потребителско име или парола',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Отговорът при удостоверяване не беше валиден JSON',
 			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',
 			'addServer.quickConnectRejected' => 'Quick Connect беше отхвърлен от сървъра',

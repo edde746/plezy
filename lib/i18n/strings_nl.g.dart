@@ -1233,6 +1233,9 @@ class _Translations$discover$nl extends Translations$discover$en {
 		one: '${n} titel',
 		other: '${n} titels',
 	);
+	@override String get personBornLabel => 'Geboren';
+	@override String get personDiedLabel => 'Overleden';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} jaar)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsNl {
 			'discover.minutesLeft' => ({required Object minutes}) => 'nog ${minutes} min',
 			'discover.moreLikeThis' => 'Meer zoals dit',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(n, one: '${n} titel', other: '${n} titels', ), 
+			'discover.personBornLabel' => 'Geboren',
+			'discover.personDiedLabel' => 'Overleden',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} jaar)',
 			'errors.searchFailed' => ({required Object error}) => 'Zoeken mislukt: ${error}',
 			'errors.searchUnavailable' => 'Zoeken kon geen enkele mediaserver bereiken.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Time-out van verbinding tijdens het laden van ${context}',
@@ -4061,11 +4067,11 @@ extension on TranslationsNl {
 			'libraries.scanLibrary' => 'Bibliotheek scannen',
 			'libraries.analyze' => 'Analyseren',
 			'libraries.analyzeLibrary' => 'Bibliotheek analyseren',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Metadata vernieuwen',
 			'libraries.emptyTrash' => 'Prullenbak legen',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Prullenbak legen voor "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Prullenbak geleegd voor "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kon prullenbak niet legen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
@@ -4575,11 +4581,11 @@ extension on TranslationsNl {
 			'watchTogether.waitingForParticipants' => 'Wachten tot anderen klaar zijn met laden...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Wachten op ${name}...',
 			'watchTogether.recentRooms' => 'Recente kamers',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Kamer hernoemen',
 			'watchTogether.removeRoom' => 'Verwijderen',
 			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
 			'watchTogether.defaultDisplayName' => 'Gebruiker',
 			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
@@ -5089,11 +5095,11 @@ extension on TranslationsNl {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Verbinding maken met ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Voer je server-URL, gebruikersnaam en wachtwoord in.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Van een ander profiel lenen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
 			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',

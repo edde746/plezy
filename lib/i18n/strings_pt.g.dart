@@ -1233,6 +1233,9 @@ class _Translations$discover$pt extends Translations$discover$en {
 		one: '${n} título',
 		other: '${n} títulos',
 	);
+	@override String get personBornLabel => 'Nascimento';
+	@override String get personDiedLabel => 'Falecimento';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} anos)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsPt {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min restantes',
 			'discover.moreLikeThis' => 'Títulos semelhantes',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(n, one: '${n} título', other: '${n} títulos', ), 
+			'discover.personBornLabel' => 'Nascimento',
+			'discover.personDiedLabel' => 'Falecimento',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} anos)',
 			'errors.searchFailed' => ({required Object error}) => 'Falha na busca: ${error}',
 			'errors.searchUnavailable' => 'A busca não conseguiu alcançar nenhum servidor de mídia.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Tempo de conexão esgotado ao carregar ${context}',
@@ -4061,11 +4067,11 @@ extension on TranslationsPt {
 			'libraries.scanLibrary' => 'Escanear Biblioteca',
 			'libraries.analyze' => 'Analisar',
 			'libraries.analyzeLibrary' => 'Analisar Biblioteca',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Atualizar Metadados',
 			'libraries.emptyTrash' => 'Esvaziar Lixeira',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Esvaziando lixeira de "${title}"...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => 'Lixeira esvaziada de "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Falha ao esvaziar lixeira: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analisando "${title}"...',
@@ -4575,11 +4581,11 @@ extension on TranslationsPt {
 			'watchTogether.waitingForParticipants' => 'Aguardando o carregamento dos outros participantes...',
 			'watchTogether.waitingForName' => ({required Object name}) => 'Aguardando ${name}...',
 			'watchTogether.recentRooms' => 'Salas recentes',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Renomear sala',
 			'watchTogether.removeRoom' => 'Remover',
 			'watchTogether.guestSwitchUnavailable' => 'Não foi possível trocar — servidor indisponível para sincronização',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Não foi possível trocar — conteúdo não encontrado neste servidor',
 			'watchTogether.defaultDisplayName' => 'Usuário',
 			'watchTogether.errors.timedOut' => 'O servidor de retransmissão não respondeu a tempo',
@@ -5089,11 +5095,11 @@ extension on TranslationsPt {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Conectar ao ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Digite a URL do servidor, o nome de usuário e a senha.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Entre no seu servidor ${product}. Vinculado a ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Pegar emprestado de outro perfil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutilize a conexão de outro perfil. Perfis protegidos por PIN exigem PIN.',
 			'addServer.invalidCredentials' => 'Usuário ou senha inválidos',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'A resposta de autenticação não era um JSON válido',
 			'addServer.authResponseIncomplete' => 'A resposta de login do servidor estava incompleta',
 			'addServer.quickConnectRejected' => 'O Quick Connect foi rejeitado pelo servidor',

@@ -1087,7 +1087,10 @@
     "titleCount": {
       "one": "${n} title",
       "other": "${n} titles"
-    }
+    },
+    "personBornLabel": "Born",
+    "personDiedLabel": "Died",
+    "personAgeAtDeath": "${date} (aged ${age})"
   },
   "errors": {
     "searchFailed": "Search failed: ${error}",

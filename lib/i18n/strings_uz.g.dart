@@ -1233,6 +1233,9 @@ class _Translations$discover$uz extends Translations$discover$en {
 		one: '${n} ta nom',
 		other: '${n} ta nom',
 	);
+	@override String get personBornLabel => 'Tugʻilgan';
+	@override String get personDiedLabel => 'Vafot etgan';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date} (${age} yoshda)';
 }
 
 // Path: errors
@@ -4036,6 +4039,9 @@ extension on TranslationsUz {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} daq qoldi',
 			'discover.moreLikeThis' => 'Oʻxshashlar',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: '${n} ta nom', other: '${n} ta nom', ), 
+			'discover.personBornLabel' => 'Tugʻilgan',
+			'discover.personDiedLabel' => 'Vafot etgan',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} yoshda)',
 			'errors.searchFailed' => ({required Object error}) => 'Qidiruv xatoligi: ${error}',
 			'errors.searchUnavailable' => 'Qidiruv hech bir media serverga ulana olmadi.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} yuklanish vaqti tugadi',
@@ -4061,11 +4067,11 @@ extension on TranslationsUz {
 			'libraries.scanLibrary' => 'Kutubxonani skanerlash',
 			'libraries.analyze' => 'Tahlil qilish',
 			'libraries.analyzeLibrary' => 'Kutubxonani tahlil qilish',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => 'Metamaʼlumotlarni yangilash',
 			'libraries.emptyTrash' => 'Savatni tozalash',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" savati tozalanmoqda...',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" savati tozalandi',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Savatni tozalab boʻlmadi: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" tahlil qilinmoqda...',
@@ -4575,11 +4581,11 @@ extension on TranslationsUz {
 			'watchTogether.waitingForParticipants' => 'Boshqalarning yuklashini kutilmoqda...',
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} kutilmoqda...',
 			'watchTogether.recentRooms' => 'Yaqindagi xonalar',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => 'Xona nomini oʻzgartirish',
 			'watchTogether.removeRoom' => 'Oʻchirish',
 			'watchTogether.guestSwitchUnavailable' => 'Oʻtib boʻlmadi — server sinxronlash uchun mavjud emas',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => 'Oʻtib boʻlmadi — kontent topilmadi',
 			'watchTogether.defaultDisplayName' => 'Foydalanuvchi',
 			'watchTogether.errors.timedOut' => 'Rele serveri oʻz vaqtida javob bermadi',
@@ -5089,11 +5095,11 @@ extension on TranslationsUz {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}ga ulanish',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Server URL-ini, foydalanuvchi nomini va parolni kiriting.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serveringizga kiring. ${name} profiliga bogʻlanadi.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Boshqa profildan olish',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
 			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => 'Autentifikatsiya javobi yaroqli JSON emas',
 			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',

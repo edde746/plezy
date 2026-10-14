@@ -1082,7 +1082,10 @@
     "moreLikeThis": "비슷한 콘텐츠",
     "titleCount": {
       "other": "${n}개 타이틀"
-    }
+    },
+    "personBornLabel": "출생",
+    "personDiedLabel": "사망",
+    "personAgeAtDeath": "${date} (향년 ${age}세)"
   },
   "errors": {
     "searchFailed": "검색 실패: ${error}",

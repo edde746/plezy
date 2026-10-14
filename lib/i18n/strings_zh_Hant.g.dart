@@ -1229,6 +1229,9 @@ class _Translations$discover$zh_Hant extends Translations$discover$zh {
 	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
 		other: '${n} 部作品',
 	);
+	@override String get personBornLabel => '出生';
+	@override String get personDiedLabel => '逝世';
+	@override String personAgeAtDeath({required Object date, required Object age}) => '${date}（享年 ${age} 歲）';
 }
 
 // Path: errors
@@ -4026,6 +4029,9 @@ extension on TranslationsZhHant {
 			'discover.minutesLeft' => ({required Object minutes}) => '剩餘 ${minutes} 分鐘',
 			'discover.moreLikeThis' => '更多類似內容',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, other: '${n} 部作品', ), 
+			'discover.personBornLabel' => '出生',
+			'discover.personDiedLabel' => '逝世',
+			'discover.personAgeAtDeath' => ({required Object date, required Object age}) => '${date}（享年 ${age} 歲）',
 			'errors.searchFailed' => ({required Object error}) => '搜尋失敗：${error}',
 			'errors.searchUnavailable' => '搜尋無法連線至任何媒體伺服器。',
 			'errors.connectionTimeout' => ({required Object context}) => '載入 ${context} 時連線逾時',
@@ -4051,11 +4057,11 @@ extension on TranslationsZhHant {
 			'libraries.scanLibrary' => '掃描媒體庫',
 			'libraries.analyze' => '分析',
 			'libraries.analyzeLibrary' => '分析媒體庫',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.refreshMetadata' => '重新整理中繼資料',
 			'libraries.emptyTrash' => '清空垃圾桶',
 			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.trashEmptied' => ({required Object title}) => '已清空「${title}」的垃圾桶',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '無法清空垃圾桶：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
@@ -4565,11 +4571,11 @@ extension on TranslationsZhHant {
 			'watchTogether.waitingForParticipants' => '正在等待其他人載入…',
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}…',
 			'watchTogether.recentRooms' => '最近的房間',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.renameRoom' => '重新命名房間',
 			'watchTogether.removeRoom' => '移除',
 			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.guestSwitchFailed' => '無法切換 — 在此伺服器上找不到內容',
 			'watchTogether.defaultDisplayName' => '使用者',
 			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
@@ -5079,11 +5085,11 @@ extension on TranslationsZhHant {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '連線至 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '輸入您的伺服器 URL、使用者名稱與密碼。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登入您的 ${product} 伺服器。將綁定至 ${name}。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',

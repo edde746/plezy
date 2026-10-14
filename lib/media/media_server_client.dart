@@ -24,6 +24,7 @@ import 'media_kind.dart';
 import 'media_library.dart';
 import 'media_person.dart';
 import 'media_playlist.dart';
+import 'person_details.dart';
 import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
 
@@ -986,6 +987,10 @@ abstract interface class SeasonEpisodePagingClient {
     int? size,
     AbortController? abort,
   });
+}
+
+abstract interface class PersonDetailsClient {
+  Future<PersonDetails?> fetchPersonDetails(String personId);
 }
 
 /// Optional capability for clients whose server can answer "may the signed-in

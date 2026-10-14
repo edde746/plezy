@@ -308,6 +308,7 @@ Future<void> navigateToPersonMedia(
   required String name,
   String? thumbPath,
   String? characterName,
+  String? tagKey,
   required String serverId,
   String? serverName,
   required MediaBackend backend,
@@ -318,6 +319,7 @@ Future<void> navigateToPersonMedia(
       builder: (_) => ActorMediaScreen(
         actorName: name,
         personId: personId,
+        personTagKey: tagKey,
         actorThumb: thumbPath,
         characterName: characterName,
         serverId: serverId,

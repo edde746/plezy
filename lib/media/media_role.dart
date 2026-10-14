@@ -12,8 +12,9 @@ class MediaRole {
   final String tag;
   final String? role;
   final String? thumbPath;
+  final String? tagKey;
 
-  const MediaRole({this.id, required this.tag, this.role, this.thumbPath});
+  const MediaRole({this.id, required this.tag, this.role, this.thumbPath, this.tagKey});
 
   factory MediaRole.fromJson(Map<String, dynamic> json) => _$MediaRoleFromJson(json);
 
