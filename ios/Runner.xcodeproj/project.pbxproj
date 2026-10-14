@@ -13,9 +13,6 @@
 		69E1B4BB161DC9D84D1DFC62 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB346A1D0705AB171F80B11B /* Pods_Runner.framework */; };
 		6A48DFB02EA70C7100C1F7CD /* plezy.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6A48DFAF2EA70C7100C1F7CD /* plezy.icon */; };
 		6A8A46212EDB320D0057B88C /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6A8A46202EDB320D0057B88C /* MPVKit */; };
-		7F960DA814B17E632113551C /* SpatialAudioPlayback in Frameworks */ = {isa = PBXBuildFile; productRef = 997B8BCF4A2DB17A30EB1262 /* SpatialAudioPlayback */; };
-		830192F5F765BBF7D64BB8BD /* SpatialAudioSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2CBDBDACA02EDC7C33ECDA /* SpatialAudioSink.swift */; };
-		FAC37EFFF320BF588DB05E22 /* SpatialAudioBridge in Frameworks */ = {isa = PBXBuildFile; productRef = 8868FE8B88257CDF1266D792 /* SpatialAudioBridge */; };
 		6A8A46252EDB370C0057B88C /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */; };
 		6A8A46262EDB370C0057B88C /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
@@ -65,7 +62,6 @@
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		6A48DFAF2EA70C7100C1F7CD /* plezy.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = plezy.icon; sourceTree = "<group>"; };
 		6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerCore.swift; sourceTree = "<group>"; };
-		0B2CBDBDACA02EDC7C33ECDA /* SpatialAudioSink.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpatialAudioSink.swift; sourceTree = "<group>"; };
 		6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerPlugin.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -107,8 +103,6 @@
 			files = (
 				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 				6A8A46212EDB320D0057B88C /* MPVKit in Frameworks */,
-				FAC37EFFF320BF588DB05E22 /* SpatialAudioBridge in Frameworks */,
-				7F960DA814B17E632113551C /* SpatialAudioPlayback in Frameworks */,
 				69E1B4BB161DC9D84D1DFC62 /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -144,7 +138,6 @@
 				6A8A46222EDB370C0057B88C /* MpvPlayerCore.swift */,
 				6A8A46232EDB370C0057B88C /* MpvPlayerPlugin.swift */,
 				92F969587D0E464D999910F4 /* MpvPipController.swift */,
-				0B2CBDBDACA02EDC7C33ECDA /* SpatialAudioSink.swift */,
 			);
 			path = MpvPlayer;
 			sourceTree = "<group>";
@@ -237,8 +230,6 @@
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			packageProductDependencies = (
 				78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */,
-				8868FE8B88257CDF1266D792 /* SpatialAudioBridge */,
-				997B8BCF4A2DB17A30EB1262 /* SpatialAudioPlayback */,
 			);
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
@@ -293,7 +284,6 @@
 			packageReferences = (
 				781AD8BC2B33823900A9FFBB /* XCLocalSwiftPackageReference "Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage" */,
 				6A8A461F2EDB320D0057B88C /* XCRemoteSwiftPackageReference "mpv-build" */,
-				670EA2990080066EE41DAD89 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -441,7 +431,6 @@
 				B1D51A6A2F00110000000008 /* ExternalDisplayManager.swift in Sources */,
 				6A8A46252EDB370C0057B88C /* MpvPlayerPlugin.swift in Sources */,
 				6A8A46262EDB370C0057B88C /* MpvPlayerCore.swift in Sources */,
-				830192F5F765BBF7D64BB8BD /* SpatialAudioSink.swift in Sources */,
 				92F969587D0E464D999910F5 /* MpvPipController.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */,
@@ -813,30 +802,12 @@
 			repositoryURL = "https://github.com/kristofferR/mpv-build";
 			requirement = {
 				kind = revision;
-				revision = 60efe8bff7efc387e2f7f1bf8fcfc6761b9f905a;
-			};
-		};
-		670EA2990080066EE41DAD89 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/kristofferR/SpatialAudioBridge";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.1;
+				revision = ddfc1a3f4581f8855eba4aacbe3724d06b57ee34;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		8868FE8B88257CDF1266D792 /* SpatialAudioBridge */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 670EA2990080066EE41DAD89 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */;
-			productName = SpatialAudioBridge;
-		};
-		997B8BCF4A2DB17A30EB1262 /* SpatialAudioPlayback */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 670EA2990080066EE41DAD89 /* XCRemoteSwiftPackageReference "SpatialAudioBridge" */;
-			productName = SpatialAudioPlayback;
-		};
 		6A8A46202EDB320D0057B88C /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6A8A461F2EDB320D0057B88C /* XCRemoteSwiftPackageReference "mpv-build" */;

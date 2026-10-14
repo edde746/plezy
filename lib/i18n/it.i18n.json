@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} titolo",
       "other": "${n} titoli"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2005,7 @@
     "audioOutputSpatial": "Audio spaziale",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalizza il volume",
-    "audioNormalizationDisablesPassthrough": "Decodifica l'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva",
-    "audioNormalizationStereoMix": "Decodifica l'audio in un mix stereo; il passthrough è disattivato mentre questa opzione è attiva"
+    "audioNormalizationDisablesPassthrough": "Decodifica l'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva"
   },
   "performanceOverlay": {
     "color": "Colore",

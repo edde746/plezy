@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} başlıq",
       "other": "${n} başlıq"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2005,7 @@
     "audioOutputSpatial": "Məkan səsi",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Səsin gurluğunu normallaşdır",
-    "audioNormalizationDisablesPassthrough": "Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür",
-    "audioNormalizationStereoMix": "Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür"
+    "audioNormalizationDisablesPassthrough": "Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür"
   },
   "performanceOverlay": {
     "color": "Rəng",

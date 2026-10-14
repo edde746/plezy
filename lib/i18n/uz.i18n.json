@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} ta nom",
       "other": "${n} ta nom"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2005,7 @@
     "audioOutputSpatial": "Fazoviy audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ovoz balandligini meʼyorlashtirish",
-    "audioNormalizationDisablesPassthrough": "Ovozni PCM-ga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi",
-    "audioNormalizationStereoMix": "Ovozni stereo miksga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi"
+    "audioNormalizationDisablesPassthrough": "Ovozni PCM-ga dekodlaydi; bu yoqilganda toʻgʻridan-toʻgʻri oʻtkazish oʻchiriladi"
   },
   "performanceOverlay": {
     "color": "Rang",

@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} атау",
       "other": "${n} атау"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2005,7 @@
     "audioOutputSpatial": "Кеңістіктік дыбыс",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Дыбыс деңгейін нормалау",
-    "audioNormalizationDisablesPassthrough": "Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі",
-    "audioNormalizationStereoMix": "Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі"
+    "audioNormalizationDisablesPassthrough": "Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі"
   },
   "performanceOverlay": {
     "color": "Түс",

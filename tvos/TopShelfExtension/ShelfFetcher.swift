@@ -100,6 +100,13 @@ enum ShelfFetcher {
     )
   }
 
+  /// Sends the token in `Authorization: MediaBrowser Token="…"` plus the legacy
+  /// `X-Emby-Token`, the same pair JellyfinClient sends. Jellyfin 12 reads
+  /// `X-Emby-Token` only when `EnableLegacyAuthorization` is on (off by
+  /// default), so without the Authorization header every fetch 401s. The
+  /// header carries only the token: a `Device`/`Version` that differs from
+  /// the app's would rename the server-side device record. The value is
+  /// percent-encoded like buildJellyfinAuthHeader; the server decodes it.
   private static func mediaBrowserRequest(
     baseUrl: String,
     token: String,
@@ -109,6 +116,7 @@ enum ShelfFetcher {
     maxItems: Int
   ) -> URLRequest? {
     guard !token.isEmpty, !userId.isEmpty,
+      let encodedToken = ShelfItemMapper.encodeQueryComponent(token),
       let encodedUserId = ShelfItemMapper.encodeQueryComponent(userId),
       let url = serverURL(
         baseUrl: baseUrl,
@@ -117,6 +125,7 @@ enum ShelfFetcher {
       )
     else { return nil }
     var request = URLRequest(url: url)
+    request.setValue("MediaBrowser Token=\"\(encodedToken)\"", forHTTPHeaderField: "Authorization")
     request.setValue(token, forHTTPHeaderField: "X-Emby-Token")
     request.setValue("application/json", forHTTPHeaderField: "Accept")
     return request

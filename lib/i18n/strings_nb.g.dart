@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$nb extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Normaliser lydstyrke';
 	@override String get audioNormalizationDisablesPassthrough => 'Dekoder lyd til PCM; direkte lydutgang er av mens dette er på';
-	@override String get audioNormalizationStereoMix => 'Dekoder lyd til en stereomiks; direkte lydutgang er av mens dette er på';
 }
 
 // Path: performanceOverlay
@@ -4813,7 +4812,6 @@ extension on TranslationsNb {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normaliser lydstyrke',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Dekoder lyd til PCM; direkte lydutgang er av mens dette er på',
-			'videoSettings.audioNormalizationStereoMix' => 'Dekoder lyd til en stereomiks; direkte lydutgang er av mens dette er på',
 			'performanceOverlay.color' => 'Farge',
 			'performanceOverlay.performance' => 'Ytelse',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -5092,9 +5090,9 @@ extension on TranslationsNb {
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en annen profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.',
 			'addServer.invalidCredentials' => 'Ugyldig brukernavn eller passord',
+			'addServer.authResponseNotJson' => 'Autentiseringssvaret var ikke gyldig JSON',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => 'Autentiseringssvaret var ikke gyldig JSON',
 			'addServer.authResponseIncomplete' => 'Påloggingssvaret fra serveren var ufullstendig',
 			'addServer.quickConnectRejected' => 'Quick Connect ble avvist av serveren',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var ikke gyldig JSON',

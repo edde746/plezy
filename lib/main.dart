@@ -1054,7 +1054,7 @@ void _startNonessentialInitialization(SettingsService settings) {
   }
 
   bestEffort('Shader licenses', _registerShaderLicenses);
-  if (Platform.isIOS) bestEffort('Spatial audio licenses', _registerSpatialAudioLicenses);
+  if (Platform.isIOS || Platform.isMacOS) bestEffort('Spatial audio licenses', _registerSpatialAudioLicenses);
   // The startup-gate application can precede the engine's first metrics
   // report, which reads as a 1.0 display budget; re-derive it now that the
   // tree is mounted and the display is known.
@@ -1177,12 +1177,11 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   return event;
 }
 
-/// SpatialAudioBridge's notices, which the iOS and tvOS apps ship. Fetched
-/// only when the licenses screen collects them: they run to about 320 KB.
+/// Notices for the SpatialAudioBridge source compiled into libmpv.
 void _registerSpatialAudioLicenses() {
   LicenseRegistry.addLicense(() async* {
-    final notices = await const MethodChannel('com.plezy/mpv_player').invokeMethod<String>('getSpatialAudioNotices');
-    if (notices != null) yield LicenseEntryWithLineBreaks(const ['SpatialAudioBridge'], notices);
+    final notices = await rootBundle.loadString('assets/licenses/SpatialAudioBridge.txt');
+    yield LicenseEntryWithLineBreaks(const ['SpatialAudioBridge'], notices);
   });
 }
 

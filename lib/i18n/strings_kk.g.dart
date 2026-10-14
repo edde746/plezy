@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$kk extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Стерео';
 	@override String get audioNormalization => 'Дыбыс деңгейін нормалау';
 	@override String get audioNormalizationDisablesPassthrough => 'Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі';
-	@override String get audioNormalizationStereoMix => 'Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі';
 }
 
 // Path: performanceOverlay
@@ -4813,7 +4812,6 @@ extension on TranslationsKk {
 			'videoSettings.audioOutputStereo' => 'Стерео',
 			'videoSettings.audioNormalization' => 'Дыбыс деңгейін нормалау',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі',
-			'videoSettings.audioNormalizationStereoMix' => 'Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі',
 			'performanceOverlay.color' => 'Түс',
 			'performanceOverlay.performance' => 'Өнімділік',
 			'performanceOverlay.buffer' => 'Буфер',
@@ -5092,9 +5090,9 @@ extension on TranslationsKk {
 			'addServer.borrowFromAnotherProfile' => 'Басқа профильден алу',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану. PIN кодпен қорғалған профильдер PIN кодты талап етеді.',
 			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
+			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
 			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',
 			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',
 			'addServer.quickConnectNotJson' => 'Quick Connect жауабы жарамды JSON болмады',

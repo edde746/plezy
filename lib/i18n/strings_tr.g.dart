@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$tr extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Ses Yüksekliğini Normalleştir';
 	@override String get audioNormalizationDisablesPassthrough => 'Sesi PCM\'e çözer; bu açıkken doğrudan geçiş kapalıdır';
-	@override String get audioNormalizationStereoMix => 'Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır';
 }
 
 // Path: performanceOverlay
@@ -4813,7 +4812,6 @@ extension on TranslationsTr {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Ses Yüksekliğini Normalleştir',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Sesi PCM\'e çözer; bu açıkken doğrudan geçiş kapalıdır',
-			'videoSettings.audioNormalizationStereoMix' => 'Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır',
 			'performanceOverlay.color' => 'Renk',
 			'performanceOverlay.performance' => 'Performans',
 			'performanceOverlay.buffer' => 'Arabellek',
@@ -5092,9 +5090,9 @@ extension on TranslationsTr {
 			'addServer.borrowFromAnotherProfile' => 'Başka bir profilden ödünç al',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.',
 			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
+			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',
 			'addServer.quickConnectRejected' => 'Quick Connect sunucu tarafından reddedildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect yanıtı geçerli bir JSON değildi',

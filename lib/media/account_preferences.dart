@@ -10,8 +10,9 @@ enum AccountPreferenceKey {
   preferredAudioLanguage(AccountPreferenceValueKind.languageCode),
 
   /// Auto-pick an audio track from the language preference instead of keeping
-  /// the file's default. Jellyfin `PlayDefaultAudioTrack`, Plex
-  /// `autoSelectAudio`. Applied by the server.
+  /// the file's default. Plex `autoSelectAudio`; the inverse of MediaBrowser
+  /// `PlayDefaultAudioTrack` ("play default track regardless of language").
+  /// Applied by the server.
   autoSelectAudio(AccountPreferenceValueKind.boolean),
 
   /// Preferred subtitle language. Jellyfin `SubtitleLanguagePreference`,
@@ -183,7 +184,7 @@ enum ForcedSubtitlePreference {
 class AccountPreferences implements MediaServerUserProfile {
   const AccountPreferences({
     this.preferredAudioLanguage,
-    this.playDefaultAudioTrack,
+    this.selectAudioByLanguage,
     this.preferredSubtitleLanguage,
     this.subtitlePlaybackMode,
     this.rememberAudioSelections,
@@ -202,7 +203,7 @@ class AccountPreferences implements MediaServerUserProfile {
   static const empty = AccountPreferences();
 
   final String? preferredAudioLanguage;
-  final bool? playDefaultAudioTrack;
+  final bool? selectAudioByLanguage;
   final String? preferredSubtitleLanguage;
   final SubtitlePlaybackMode? subtitlePlaybackMode;
   final bool? rememberAudioSelections;
@@ -231,7 +232,7 @@ class AccountPreferences implements MediaServerUserProfile {
   /// Typed read of a single key, for generic UI rows.
   Object? operator [](AccountPreferenceKey key) => switch (key) {
     AccountPreferenceKey.preferredAudioLanguage => preferredAudioLanguageCode1,
-    AccountPreferenceKey.autoSelectAudio => playDefaultAudioTrack,
+    AccountPreferenceKey.autoSelectAudio => selectAudioByLanguage,
     AccountPreferenceKey.preferredSubtitleLanguage => preferredSubtitleLanguageCode1,
     AccountPreferenceKey.subtitleMode => subtitlePlaybackMode,
     AccountPreferenceKey.rememberAudioSelections => rememberAudioSelections,
@@ -251,10 +252,11 @@ class AccountPreferences implements MediaServerUserProfile {
   // Implemented so the account cache can feed TrackSelectionService directly
   // instead of maintaining a second fetch path for the same fields.
 
-  /// Defaults to true, matching both backends' own defaults
-  /// (`PlayDefaultAudioTrack` / `autoSelectAudio`) when unset.
+  /// Defaults to true, Plex's own `autoSelectAudio` default, when unset.
+  /// MediaBrowser servers always serialize `PlayDefaultAudioTrack`, so the
+  /// fallback never stands in for their (inverse) default.
   @override
-  bool get autoSelectAudio => playDefaultAudioTrack ?? true;
+  bool get autoSelectAudio => selectAudioByLanguage ?? true;
 
   @override
   String? get defaultAudioLanguage => preferredAudioLanguage;

@@ -917,13 +917,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           icon: Symbols.graphic_eq_rounded,
           title: t.videoSettings.audioNormalization,
           // Normalization wins over passthrough; say so where passthrough
-          // exists. Android also folds the track to stereo ahead of loudnorm
-          // (PlayerBase._loudnormFilter), which a surround owner must hear
-          // about before flipping it.
-          subtitle: PlatformDetector.supportsAudioPassthrough()
-              ? Platform.isAndroid
-                    ? t.videoSettings.audioNormalizationStereoMix
-                    : t.videoSettings.audioNormalizationDisablesPassthrough
+          // exists.
+          subtitle: PlatformDetector.supportsAudioPassthrough() || PlatformDetector.supportsSpatialAudio()
+              ? t.videoSettings.audioNormalizationDisablesPassthrough
               : null,
           onAfterWrite: widget.player.setAudioNormalization,
         ),

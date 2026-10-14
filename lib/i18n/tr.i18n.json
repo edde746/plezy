@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} başlık",
       "other": "${n} başlık"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2005,7 @@
     "audioOutputSpatial": "Uzamsal Ses",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ses Yüksekliğini Normalleştir",
-    "audioNormalizationDisablesPassthrough": "Sesi PCM'e çözer; bu açıkken doğrudan geçiş kapalıdır",
-    "audioNormalizationStereoMix": "Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır"
+    "audioNormalizationDisablesPassthrough": "Sesi PCM'e çözer; bu açıkken doğrudan geçiş kapalıdır"
   },
   "performanceOverlay": {
     "color": "Renk",

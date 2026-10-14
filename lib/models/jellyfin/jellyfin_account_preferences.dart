@@ -14,7 +14,7 @@ class JellyfinAccountPreferences {
   static AccountPreferences fromConfiguration(Map<String, dynamic> configuration, {bool? rewatchingInNextUp}) {
     return AccountPreferences(
       preferredAudioLanguage: _language(configuration['AudioLanguagePreference']),
-      playDefaultAudioTrack: flexibleBoolNullable(configuration['PlayDefaultAudioTrack']),
+      selectAudioByLanguage: _invert(flexibleBoolNullable(configuration['PlayDefaultAudioTrack'])),
       preferredSubtitleLanguage: _language(configuration['SubtitleLanguagePreference']),
       subtitlePlaybackMode: SubtitlePlaybackMode.fromServerValue(configuration['SubtitleMode']),
       rememberAudioSelections: flexibleBoolNullable(configuration['RememberAudioSelections']),
@@ -35,7 +35,7 @@ class JellyfinAccountPreferences {
           merged['AudioLanguagePreference'] = _serverLanguage(entry.value as String?);
           break;
         case AccountPreferenceKey.autoSelectAudio:
-          merged['PlayDefaultAudioTrack'] = entry.value as bool?;
+          merged['PlayDefaultAudioTrack'] = _invert(entry.value as bool?);
           break;
         case AccountPreferenceKey.preferredSubtitleLanguage:
           merged['SubtitleLanguagePreference'] = _serverLanguage(entry.value as String?);
@@ -74,6 +74,11 @@ class JellyfinAccountPreferences {
     }
     return merged;
   }
+
+  /// `PlayDefaultAudioTrack` is the inverse of the neutral key: true means
+  /// "play the file's default track regardless of language" (jellyfin-web
+  /// `LabelPlayDefaultAudioTrack`), so language-based selection is its negation.
+  static bool? _invert(bool? value) => value == null ? null : !value;
 
   static String? _language(Object? value) {
     final language = stringOrEmpty(value);

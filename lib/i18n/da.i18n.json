@@ -1087,6 +1087,13 @@
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titler"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2005,7 @@
     "audioOutputSpatial": "Rumlig lyd",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisér lydstyrke",
-    "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; passthrough er fra, mens dette er slået til",
-    "audioNormalizationStereoMix": "Dekoder lyd til en stereomix; passthrough er fra, mens dette er slået til"
+    "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; passthrough er fra, mens dette er slået til"
   },
   "performanceOverlay": {
     "color": "Farve",

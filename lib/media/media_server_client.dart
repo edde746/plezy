@@ -433,6 +433,21 @@ abstract class MediaServerClient {
   /// Page through media featuring a specific person/actor.
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(String personId, {int? start, int? size, AbortController? abort});
 
+  /// Biography, birth and death dates, and birthplace of the person
+  /// [fetchPersonMediaPage] takes [personId] for. Fields the server has
+  /// nothing for stay null; offline, the result is [MediaPersonDetails.empty].
+  ///
+  /// Plex Media Server stores only a person's name and photo, so Plex reads
+  /// the tag's plex.tv id (`tagKey`) from `/library/people/{id}` and fetches
+  /// `discover.provider.plex.tv/library/people/{tagKey}`, the record Plex Web
+  /// shows, with the owning account's plex.tv token (Discover rejects a Home
+  /// or shared user's server token). A person without a `tagKey` (legacy
+  /// agents, Personal Media) has no details. Jellyfin/Emby read the `Person`
+  /// item's `Overview`, `PremiereDate` (birth), `EndDate` (death) and
+  /// `ProductionLocations`. Every backend supports it, so no
+  /// [ServerCapabilities] flag gates it.
+  Future<MediaPersonDetails> fetchPersonDetails(String personId, {AbortController? abort});
+
   /// Page through items in [hubId] when the hub previewed only the first N
   /// items (`MediaHub.more == true`). Plex hits `/hubs/{key}` (the same
   /// id used in [fetchGlobalHubs]); Jellyfin re-runs the synthesised query
@@ -607,10 +622,11 @@ abstract class MediaServerClient {
   /// appends `MaxWidth`/`MaxHeight` to the image endpoint.
   ///
   /// [cover] picks how the requested box is interpreted. The default sizes the
-  /// image to *cover* the box — every pixel of a poster/backdrop slot is
-  /// filled, at the cost of overshooting on the long axis. Pass `false` for
-  /// artwork drawn with [BoxFit.contain] (clear logos), where the overshoot is
-  /// decoded and thrown away: a 4313×1035 logo asked for at 1200×360 comes back
+  /// image to *cover* the box — every pixel of a poster slot is filled, at the
+  /// cost of overshooting on the long axis. Pass `false` when the overshoot
+  /// would be decoded and thrown away: artwork drawn with [BoxFit.contain]
+  /// (clear logos), and backdrops, whose box is already the 16:9 frame that
+  /// covers their slot. A 4313×1035 logo asked for at 1200×360 comes back
   /// 1500×360 covering versus 1200×288 fitting, for ~20-30% more bytes and no
   /// extra rendered detail. Neither mode crops, distorts, or upscales past the
   /// source: Plex requests are built with `upscale=0` so oversized requests

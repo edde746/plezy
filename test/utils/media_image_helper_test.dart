@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -111,7 +113,7 @@ void main() {
         imageType: ImageType.art,
       );
 
-      expect(url, 'sized:/library/metadata/1/art/2?w=880&h=540&cover=true');
+      expect(url, 'sized:/library/metadata/1/art/2?w=880&h=540&cover=false');
     });
 
     test('logos ask the server to fit inside the slot, not cover it', () {
@@ -132,7 +134,7 @@ void main() {
     });
 
     test('slot-filling artwork keeps covering the requested box', () {
-      for (final type in [ImageType.poster, ImageType.art, ImageType.thumb, ImageType.square, ImageType.avatar]) {
+      for (final type in [ImageType.poster, ImageType.thumb, ImageType.square, ImageType.avatar]) {
         final url = MediaImageHelper.getOptimizedImageUrl(
           client: client,
           thumbPath: '/library/metadata/1/thumb/2',
@@ -181,6 +183,53 @@ void main() {
         MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.art),
         (1280, 720),
       );
+    });
+  });
+
+  group('MediaImageHelper backdrop sizing (#2658)', () {
+    tearDown(DevicePerformance.debugReset);
+
+    test('a 16:9 backdrop fills hero slots of any shape without upscaling', () {
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto);
+      // Portrait phone hero, ultra-wide desktop hero, 16:9 TV-style hero. Both
+      // the decode bound and Jellyfin's maxWidth/maxHeight fit the backdrop
+      // inside the box, so a box shaped like the slot left a portrait hero
+      // with a width-bound image that cover then upscaled 2.25×.
+      for (final (width, height) in [(400, 600), (1200, 500), (960, 540)]) {
+        final boxes = {
+          'decode': MediaImageHelper.getMemCacheDimensions(
+            displayWidth: width,
+            displayHeight: height,
+            imageType: ImageType.art,
+          ),
+          'fetch': MediaImageHelper.calculateOptimalDimensions(
+            maxWidth: width.toDouble(),
+            maxHeight: height.toDouble(),
+            pixelRatio: 1,
+            imageType: ImageType.art,
+          ),
+        };
+        for (final MapEntry(key: name, value: (boxWidth, boxHeight)) in boxes.entries) {
+          final fitScale = math.min(boxWidth / 16, boxHeight / 9);
+          expect(16 * fitScale, greaterThanOrEqualTo(width), reason: '$name box for ${width}x$height');
+          expect(9 * fitScale, greaterThanOrEqualTo(height), reason: '$name box for ${width}x$height');
+        }
+      }
+    });
+
+    test('backdrops fit inside their frame instead of covering it', () {
+      // The frame already covers the slot; covering the frame with square or
+      // 4:3 art would fetch pixels the frame-sized decode bound discards.
+      final url = MediaImageHelper.getOptimizedImageUrl(
+        client: _SizedUrlFakeClient(),
+        thumbPath: '/library/metadata/1/art/2',
+        maxWidth: 400,
+        maxHeight: 600,
+        pixelRatio: 1,
+        imageType: ImageType.art,
+      );
+
+      expect(url, contains('cover=false'));
     });
   });
 
