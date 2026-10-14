@@ -5789,6 +5789,24 @@ class Translations$watchLink$en {
 
 	/// en: 'Watch links can only open a show or a movie.'
 	String get unsupportedItem => 'Watch links can only open a show or a movie.';
+
+	/// en: 'Show watch link'
+	String get menuItem => 'Show watch link';
+
+	/// en: 'Watch link'
+	String get dialogTitle => 'Watch link';
+
+	/// en: 'Opening this link plays the next episode. Add &mode=shuffle to the end to play the show on shuffle.'
+	String get dialogShowHint => 'Opening this link plays the next episode. Add &mode=shuffle to the end to play the show on shuffle.';
+
+	/// en: 'Opening this link plays the movie.'
+	String get dialogMovieHint => 'Opening this link plays the movie.';
+
+	/// en: 'Copy'
+	String get copy => 'Copy';
+
+	/// en: 'Link copied'
+	String get copied => 'Link copied';
 }
 
 // Path: common.ratingSource
@@ -9571,6 +9589,12 @@ extension on Translations {
 			'watchLink.ambiguous' => 'This link matches items on more than one server. Add a server to the link.',
 			'watchLink.plexOnly' => 'Watch links currently support Plex servers only.',
 			'watchLink.unsupportedItem' => 'Watch links can only open a show or a movie.',
+			'watchLink.menuItem' => 'Show watch link',
+			'watchLink.dialogTitle' => 'Watch link',
+			'watchLink.dialogShowHint' => 'Opening this link plays the next episode. Add &mode=shuffle to the end to play the show on shuffle.',
+			'watchLink.dialogMovieHint' => 'Opening this link plays the movie.',
+			'watchLink.copy' => 'Copy',
+			'watchLink.copied' => 'Link copied',
 			_ => null,
 		};
 	}
