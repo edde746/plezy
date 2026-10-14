@@ -305,7 +305,7 @@ import TVServices
     }
 
     static func handleOpenURL(_ url: URL) -> Bool {
-      guard let contentId = contentId(from: url) else { return false }
+      guard let contentId = deepLinkPayload(from: url) else { return false }
       switch deepLinkDelivery.receive(contentId: contentId) {
       case let .deliver(event):
         deliverLive(event)
@@ -345,7 +345,7 @@ import TVServices
     /// The payload forwarded to Dart: the `content_id` of a `plezy://play`
     /// shelf link, or the whole URL of a `plezy://live` or `plezy://watch`
     /// link (parsed by `LiveTvDeepLink` / `WatchLink` on the Dart side).
-    static func contentId(from url: URL) -> String? {
+    static func deepLinkPayload(from url: URL) -> String? {
       guard url.scheme == "plezy" else { return nil }
       switch url.host {
       case "play":

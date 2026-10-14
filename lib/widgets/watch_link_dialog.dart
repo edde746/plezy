@@ -36,7 +36,7 @@ class WatchLinkDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final link = WatchLink.forItem(item)!.toUri();
+    final link = WatchLink.forItem(item)!.toLink();
     final canCopy = !PlatformDetector.isAppleTV();
     final screen = MediaQuery.sizeOf(context);
     // QR on top, link and hint under it. Wide screens (TV, desktop) get a

@@ -40,7 +40,7 @@ final class SceneLifecycleTests: XCTestCase {
 
   func testDeepLinkPayloadForEachHost() {
     func payload(_ string: String) -> String? {
-      SystemShelfPlugin.contentId(from: URL(string: string)!)
+      SystemShelfPlugin.deepLinkPayload(from: URL(string: string)!)
     }
 
     XCTAssertEqual(payload("plezy://play?content_id=plezy_abc_123"), "plezy_abc_123")

@@ -83,7 +83,7 @@ sealed class WatchLink {
     if (item.backend != MediaBackend.plex) return null;
     if (item.kind != MediaKind.show && item.kind != MediaKind.movie) return null;
     final guid = item.guid;
-    final prefix = 'plex://${item.kind == MediaKind.show ? 'show' : 'movie'}/';
+    final prefix = _plexGuidPrefix(item.kind);
     if (guid != null && guid.startsWith(prefix) && guid.length > prefix.length) {
       return PortableWatchLink(kind: item.kind, hash: guid.substring(prefix.length));
     }
@@ -91,10 +91,13 @@ sealed class WatchLink {
     return ServerWatchLink(ratingKey: item.id, serverId: serverId);
   }
 
+  /// `plex://show/` or `plex://movie/`: a Plex GUID minus its hash.
+  static String _plexGuidPrefix(MediaKind kind) => 'plex://${kind.name}/';
+
   Map<String, String> get _identityParams;
 
   /// The link as a URL string.
-  String toUri() => Uri(
+  String toLink() => Uri(
     scheme: scheme,
     host: host,
     queryParameters: {..._identityParams, if (mode != WatchMode.next) 'mode': mode.name},
@@ -104,39 +107,71 @@ sealed class WatchLink {
   /// server order.
   Future<WatchLinkResolution> resolve(List<WatchLinkServer> servers);
 
-  /// How many times [launch] waits for servers to connect before giving up.
+  /// How many times [resolveWhenConnected] waits for servers to connect
+  /// before giving up.
   static const coldStartAttempts = 10;
   static const coldStartRetryDelay = Duration(seconds: 2);
+
+  /// Resolves the link, and on a cold start keeps trying for a while: with
+  /// no server online yet, or with a failure while some servers are still
+  /// connecting (the one that has the title may be among them). [servers]
+  /// is asked afresh before each attempt. Stops early once [isCurrent]
+  /// turns false.
+  Future<WatchLinkResolution> resolveWhenConnected(
+    WatchLinkServers Function() servers, {
+    Duration retryDelay = coldStartRetryDelay,
+    bool Function()? isCurrent,
+  }) async {
+    var snapshot = servers();
+    var resolution = await resolve(snapshot.online);
+    for (var attempt = 0; attempt < coldStartAttempts && _worthWaiting(resolution, snapshot.connecting); attempt++) {
+      await Future<void>.delayed(retryDelay);
+      if (isCurrent != null && !isCurrent()) break;
+      snapshot = servers();
+      resolution = await resolve(snapshot.online);
+    }
+    return resolution;
+  }
+
+  static bool _worthWaiting(WatchLinkResolution resolution, bool connecting) => switch (resolution) {
+    WatchLinkFailure(reason: WatchLinkFailureReason.noServer) => true,
+    WatchLinkFailure(
+      reason: WatchLinkFailureReason.notFound ||
+          WatchLinkFailureReason.unreachable ||
+          WatchLinkFailureReason.unsupportedBackend,
+    ) =>
+      connecting,
+    _ => false,
+  };
 
   /// Resolves the link on the connected servers and starts playback,
   /// replacing any player already open. Returns whether playback was
   /// launched; failures are reported to the user.
   Future<bool> launch(BuildContext context, MultiServerProvider multiServer) async {
-    List<WatchLinkServer> online() => [
-      for (final id in multiServer.onlineServerIds)
-        if (multiServer.getClientForServer(ServerId(id)) case final client?) (id: ServerId(id), client: client),
-    ];
-
-    // On a cold start the servers may still be connecting; give them a moment.
-    var resolution = await resolve(online());
-    for (
-      var attempt = 0;
-      resolution is WatchLinkFailure &&
-          resolution.reason == WatchLinkFailureReason.noServer &&
-          attempt < coldStartAttempts;
-      attempt++
-    ) {
-      await Future<void>.delayed(coldStartRetryDelay);
-      if (!context.mounted) return false;
-      resolution = await resolve(online());
+    WatchLinkServers servers() {
+      final online = multiServer.onlineServerIds.toSet();
+      final failed = {
+        ...multiServer.authErrorServerIds,
+        ...multiServer.accessDeniedServerIds,
+        ...multiServer.refusedServerIds,
+      };
+      return (
+        online: [
+          for (final id in online)
+            if (multiServer.getClientForServer(ServerId(id)) case final client?) (id: ServerId(id), client: client),
+        ],
+        connecting: multiServer.serverIds.any((id) => !online.contains(id) && !failed.contains(id)),
+      );
     }
+
+    final resolution = await resolveWhenConnected(servers, isCurrent: () => context.mounted);
     if (!context.mounted) return false;
 
     switch (resolution) {
       case WatchLinkFailure(:final reason):
-        appLogger.w('Watch link ${toUri()} failed: ${reason.name}');
+        appLogger.w('Watch link ${toLink()} failed: ${reason.name}');
         showMainSnackBar(switch (reason) {
-          WatchLinkFailureReason.noServer => t.watchLink.serverUnavailable,
+          WatchLinkFailureReason.noServer || WatchLinkFailureReason.unreachable => t.watchLink.serverUnavailable,
           WatchLinkFailureReason.notFound => t.watchLink.notFound,
           WatchLinkFailureReason.ambiguous => t.watchLink.ambiguous,
           WatchLinkFailureReason.unsupportedBackend => t.watchLink.plexOnly,
@@ -144,8 +179,8 @@ sealed class WatchLink {
         });
         return false;
       case WatchTarget(:final item, :final episode, :final shuffle):
-        // A scan replaces whatever is playing.
-        Navigator.of(context).popUntil((route) => route is! VideoPlayerRoute);
+        // A scan replaces whatever is playing: the player route swaps out an
+        // open player itself.
         if (shuffle) {
           final result = await MediaListPlaybackLauncher.forItem(context, item).launchShuffledShow(metadata: item);
           return result is! PlayQueueError;
@@ -166,19 +201,17 @@ final class PortableWatchLink extends WatchLink {
   /// The GUID after `plex://show/` or `plex://movie/`.
   final String hash;
 
-  String get plexGuid => 'plex://${kind == MediaKind.show ? 'show' : 'movie'}/$hash';
+  String get plexGuid => '${WatchLink._plexGuidPrefix(kind)}$hash';
 
   @override
-  Map<String, String> get _identityParams => {'plex': plexGuid.substring('plex://'.length)};
+  Map<String, String> get _identityParams => {'plex': '${kind.name}/$hash'};
 
   @override
   Future<WatchLinkResolution> resolve(List<WatchLinkServer> servers) async {
-    final plexServers = [
-      for (final s in servers)
-        if (s.client.backend == MediaBackend.plex) s,
-    ];
+    final plexServers = _plexOnly(servers);
     if (plexServers.isEmpty) return _noPlexServer(servers);
 
+    var unreachable = false;
     final lookups = await Future.wait([
       for (final server in plexServers)
         server.client
@@ -186,6 +219,7 @@ final class PortableWatchLink extends WatchLink {
             .then((items) => items ?? const <MediaItem>[])
             .catchError((Object e) {
               appLogger.w('Watch link: Plex GUID lookup failed on ${server.id}', error: e);
+              unreachable = true;
               return const <MediaItem>[];
             }),
     ]);
@@ -195,7 +229,7 @@ final class PortableWatchLink extends WatchLink {
       for (var i = 0; i < plexServers.length; i++)
         for (final item in lookups[i]) (server: plexServers[i], item: item),
     ];
-    if (copies.isEmpty) return const WatchLinkFailure(WatchLinkFailureReason.notFound);
+    if (copies.isEmpty) return _notFound(unreachable: unreachable);
     if (kind == MediaKind.movie) {
       // Progress is per copy, so play the copy watched most recently on any
       // server; with none watched, the first in server order. The full item
@@ -211,7 +245,7 @@ final class PortableWatchLink extends WatchLink {
                 return copy;
               }),
       ]);
-      final latest = full.reduce((a, b) => (b.item.lastViewedAt ?? 0) > (a.item.lastViewedAt ?? 0) ? b : a);
+      final latest = _watchedLast(full, (copy) => copy.item);
       return _targetFor([latest], mode);
     }
     return _targetFor(copies, mode);
@@ -236,16 +270,15 @@ final class ServerWatchLink extends WatchLink {
       for (final s in servers)
         if (serverId == null || s.id == serverId) s,
     ];
-    final plexServers = [
-      for (final s in candidates)
-        if (s.client.backend == MediaBackend.plex) s,
-    ];
+    final plexServers = _plexOnly(candidates);
     if (plexServers.isEmpty) return _noPlexServer(candidates);
 
+    var unreachable = false;
     final items = await Future.wait([
       for (final server in plexServers)
         server.client.fetchItem(ratingKey).catchError((Object e) {
           appLogger.w('Watch link: item lookup failed on ${server.id}', error: e);
+          unreachable = true;
           return null;
         }),
     ]);
@@ -253,7 +286,7 @@ final class ServerWatchLink extends WatchLink {
       for (var i = 0; i < plexServers.length; i++)
         if (items[i] case final item?) (server: plexServers[i], item: item),
     ];
-    if (copies.isEmpty) return const WatchLinkFailure(WatchLinkFailureReason.notFound);
+    if (copies.isEmpty) return _notFound(unreachable: unreachable);
     // Rating keys are per-server database numbers: the same key on two
     // servers is almost certainly two unrelated items.
     if (copies.length > 1) return const WatchLinkFailure(WatchLinkFailureReason.ambiguous);
@@ -263,6 +296,9 @@ final class ServerWatchLink extends WatchLink {
 
 /// One connected server as seen by Watch link resolution.
 typedef WatchLinkServer = ({ServerId id, MediaServerClient client});
+
+/// The servers online now, and whether any others may still connect.
+typedef WatchLinkServers = ({List<WatchLinkServer> online, bool connecting});
 
 typedef _Copy = ({WatchLinkServer server, MediaItem item});
 
@@ -294,6 +330,9 @@ enum WatchLinkFailureReason {
   /// No connected server has the title.
   notFound,
 
+  /// A server that might have the title failed to answer.
+  unreachable,
+
   /// A server link without `server` matched on more than one server.
   ambiguous,
 
@@ -309,6 +348,21 @@ final class WatchLinkFailure extends WatchLinkResolution {
 
   final WatchLinkFailureReason reason;
 }
+
+/// No copy was found: unreachable when some server failed to answer, since
+/// it may have had the title.
+WatchLinkFailure _notFound({required bool unreachable}) =>
+    WatchLinkFailure(unreachable ? WatchLinkFailureReason.unreachable : WatchLinkFailureReason.notFound);
+
+List<WatchLinkServer> _plexOnly(List<WatchLinkServer> servers) => [
+  for (final s in servers)
+    if (s.client.backend == MediaBackend.plex) s,
+];
+
+/// The entry whose item was watched most recently; the first on a tie, so
+/// with nothing watched, the first in server order.
+T _watchedLast<T>(List<T> entries, MediaItem Function(T) item) =>
+    entries.reduce((a, b) => (item(b).lastViewedAt ?? 0) > (item(a).lastViewedAt ?? 0) ? b : a);
 
 WatchLinkFailure _noPlexServer(List<WatchLinkServer> servers) =>
     WatchLinkFailure(servers.isEmpty ? WatchLinkFailureReason.noServer : WatchLinkFailureReason.unsupportedBackend);
@@ -343,7 +397,7 @@ Future<WatchLinkResolution> _targetFor(List<_Copy> copies, WatchMode mode) async
   ]);
   final watched = withOnDeck.where((r) => r.onDeck != null).toList();
   if (watched.isNotEmpty) {
-    final latest = watched.reduce((a, b) => (b.show.lastViewedAt ?? 0) > (a.show.lastViewedAt ?? 0) ? b : a);
+    final latest = _watchedLast(watched, (r) => r.show);
     return WatchTarget(serverId: latest.copy.server.id, item: latest.show, episode: latest.onDeck);
   }
 
@@ -353,7 +407,7 @@ Future<WatchLinkResolution> _targetFor(List<_Copy> copies, WatchMode mode) async
     firstEpisode = firstEpisodeOf(await first.server.client.fetchPlayableDescendants(first.item.id));
   } catch (e) {
     appLogger.w('Watch link: episode lookup failed on ${first.server.id}', error: e);
-    return const WatchLinkFailure(WatchLinkFailureReason.notFound);
+    return const WatchLinkFailure(WatchLinkFailureReason.unreachable);
   }
   if (firstEpisode == null) return const WatchLinkFailure(WatchLinkFailureReason.notFound);
   return WatchTarget(serverId: first.server.id, item: withOnDeck.first.show, episode: firstEpisode);

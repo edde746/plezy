@@ -113,12 +113,12 @@ void main() {
       }
     });
 
-    test('round-trips through toUri', () {
+    test('round-trips through toLink', () {
       for (final uri in [
         'plezy://watch?plex=show%2F5d9c086c46115600200aa2fe&mode=shuffle',
         'plezy://watch?id=123&server=abc',
       ]) {
-        expect(WatchLink.tryParse(uri)!.toUri(), uri);
+        expect(WatchLink.tryParse(uri)!.toLink(), uri);
       }
     });
   });
@@ -127,12 +127,12 @@ void main() {
     test('uses the Plex GUID when the item has one', () {
       final link = WatchLink.forItem(testMediaItem(kind: MediaKind.show, guid: _guid, serverId: 's1'));
       expect(link, isA<PortableWatchLink>());
-      expect(WatchLink.tryParse(link!.toUri()), isA<PortableWatchLink>());
+      expect(WatchLink.tryParse(link!.toLink()), isA<PortableWatchLink>());
     });
 
     test('falls back to the rating key and server without one', () {
       final link = WatchLink.forItem(testMediaItem(id: '42', guid: 'com.plexapp.agents.none://x', serverId: 's1'));
-      expect(link!.toUri(), 'plezy://watch?id=42&server=s1');
+      expect(link!.toLink(), 'plezy://watch?id=42&server=s1');
     });
 
     test('is null for episodes and non-Plex items', () {
@@ -189,6 +189,22 @@ void main() {
       final target = await link.resolve([idle, older, newer]) as WatchTarget;
       expect(target.serverId, ServerId('s3'));
       expect(target.episode?.id, 'b');
+    });
+
+    test('starts a fully watched show over from the first episode', () async {
+      final server = plex('s1', {
+        '/library/all': [_show('10', lastViewedAt: 300)],
+        '/library/metadata/10': [
+          {..._show('10', lastViewedAt: 300), 'leafCount': 2, 'viewedLeafCount': 2},
+        ],
+        '/library/metadata/10/grandchildren': [
+          _episode('s1e2', season: 1, index: 2),
+          _episode('s1e1', season: 1, index: 1),
+        ],
+      });
+
+      final target = await link.resolve([server]) as WatchTarget;
+      expect(target.episode?.id, 's1e1');
     });
   });
 
@@ -355,6 +371,86 @@ void main() {
         ]),
         WatchLinkFailureReason.notFound,
       );
+    });
+
+    test('reports a server that cannot be reached as unreachable, not missing', () async {
+      final down = (
+        id: ServerId('s1'),
+        client: testPlexClient(
+          serverId: ServerId('s1'),
+          handler: (_) async => throw http.ClientException('Connection refused'),
+        ),
+      );
+      addTearDown(down.client.close);
+
+      for (final link in [
+        WatchLink.tryParse('plezy://watch?plex=show/5d9c086c46115600200aa2fe')!,
+        WatchLink.tryParse('plezy://watch?id=10&server=s1')!,
+      ]) {
+        expect((await link.resolve([down]) as WatchLinkFailure).reason, WatchLinkFailureReason.unreachable);
+      }
+    });
+  });
+
+  group('resolveWhenConnected', () {
+    final link = WatchLink.tryParse('plezy://watch?plex=show/5d9c086c46115600200aa2fe')!;
+
+    test('waits for the Plex server that has the title while others are already online', () async {
+      final bluey = plex('s1', {
+        '/library/all': [_show('10')],
+        '/library/metadata/10': [_show('10', lastViewedAt: 5, onDeck: _episode('e4', season: 1, index: 4))],
+      });
+      final snapshots = [
+        (online: [jellyfin('j1')], connecting: true),
+        (
+          online: [
+            jellyfin('j1'),
+            plex('s2', {'/library/all': []}),
+          ],
+          connecting: true,
+        ),
+        (
+          online: [
+            jellyfin('j1'),
+            plex('s2', {'/library/all': []}),
+            bluey,
+          ],
+          connecting: false,
+        ),
+      ];
+      var calls = 0;
+
+      final target =
+          await link.resolveWhenConnected(() => snapshots[calls++], retryDelay: Duration.zero) as WatchTarget;
+      expect(target.serverId, ServerId('s1'));
+      expect(calls, 3);
+    });
+
+    test('fails without waiting once every server has connected', () async {
+      var calls = 0;
+      final result = await link.resolveWhenConnected(() {
+        calls++;
+        return (
+          online: [
+            plex('s1', {'/library/all': []}),
+          ],
+          connecting: false,
+        );
+      }, retryDelay: Duration.zero);
+
+      expect((result as WatchLinkFailure).reason, WatchLinkFailureReason.notFound);
+      expect(calls, 1);
+    });
+
+    test('gives up after the cold-start budget', () async {
+      var calls = 0;
+      final result = await link.resolveWhenConnected(() {
+        calls++;
+        return (online: <WatchLinkServer>[], connecting: true);
+      }, retryDelay: Duration.zero);
+
+      expect((result as WatchLinkFailure).reason, WatchLinkFailureReason.noServer);
+      expect(calls, 1 + WatchLink.coldStartAttempts);
     });
   });
 }
