@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/seerr_account_provider.dart';
+import '../../providers/trackers_provider.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/app_icon.dart';
@@ -86,10 +87,14 @@ class _TrackerHubRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final connected = info.isConnected(context);
+    final needsReconnect = context.select<TrackersProvider, bool>(
+      (account) => account.reconnectRequiredServices.contains(info.service),
+    );
     return _ServiceHubRow(
       leading: CatalogSourceLogo(info.logoSource, size: 24),
       title: info.displayName,
       username: connected ? info.username(context) : null,
+      status: needsReconnect ? t.connections.signInAgain : null,
       onTap: () {
         if (connected) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => info.buildSettingsScreen()));
@@ -107,17 +112,26 @@ class _ServiceHubRow extends StatelessWidget {
 
   /// Non-null when connected. When null, the subtitle shows "Not connected".
   final String? username;
+  final String? status;
 
   final VoidCallback onTap;
 
-  const _ServiceHubRow({required this.leading, required this.title, required this.username, required this.onTap});
+  const _ServiceHubRow({
+    required this.leading,
+    required this.title,
+    required this.username,
+    required this.onTap,
+    this.status,
+  });
 
   @override
   Widget build(BuildContext context) {
     return FocusableListTile(
       leading: leading,
       title: Text(title),
-      subtitle: Text(username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
+      subtitle: Text(
+        status ?? (username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
+      ),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
     );

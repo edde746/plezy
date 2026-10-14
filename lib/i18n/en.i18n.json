@@ -2244,6 +2244,9 @@
     "disconnectConfirm": "Disconnect ${service}?",
     "disconnectConfirmBody": "Plezy will stop updating ${service}. Reconnect any time.",
     "connectFailed": "Couldn't connect to ${service}. Try again.",
+    "reconnectWarning": "Sign in to ${service} again to restore syncing.",
+    "reconnectWarningMany": "${count} trackers need you to sign in again.",
+    "dismissReconnectWarning": "Dismiss tracker warnings",
     "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",

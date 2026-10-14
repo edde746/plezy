@@ -2244,6 +2244,9 @@
     "disconnectConfirm": "Desconectar ${service}?",
     "disconnectConfirmBody": "O Plezy deixará de atualizar ${service}. Reconecte quando quiser.",
     "connectFailed": "Não foi possível conectar ao ${service}. Tente novamente.",
+    "reconnectWarning": "",
+    "reconnectWarningMany": "",
+    "dismissReconnectWarning": "",
     "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",

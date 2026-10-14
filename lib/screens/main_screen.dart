@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../navigation/main_screen_scope.dart';
 import '../navigation/page_refresh_shortcut.dart';
+
 import 'dart:io' show Platform, exit;
 
 export '../navigation/main_screen_scope.dart'
@@ -15,6 +17,7 @@ import 'package:flutter/services.dart'
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+
 import '../i18n/strings.g.dart';
 import '../services/app_exit_service.dart';
 import '../services/tvos_system_navigation_service.dart';
@@ -42,6 +45,7 @@ import '../providers/catalog_sources_provider.dart';
 import '../providers/account_preferences_controller.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/trackers_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -1181,6 +1185,9 @@ class _MainScreenState extends State<MainScreen>
     // content. A grant must recover hidden Request actions on any real resume.
     if (resumedFromBackground && mounted) {
       unawaited(context.read<SeerrAccountProvider?>()?.refreshUser());
+      if (!_isOffline && VideoPlayerScreenState.activeGlobalKey == null) {
+        unawaited(context.read<TrackersProvider>().validateSessions());
+      }
     }
     if (shouldShowProfileSelectionOnResume(
       resumedFromBackground: resumedFromBackground,

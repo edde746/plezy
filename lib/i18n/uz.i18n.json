@@ -2244,6 +2244,9 @@
     "disconnectConfirm": "${service} uzilsinmi?",
     "disconnectConfirmBody": "Plezy ${service} yangilashni toʻxtatadi. Istalgan vaqtda qayta ulanishingiz mumkin.",
     "connectFailed": "${service} ulana olmadi. Qaytadan urinib koʻring.",
+    "reconnectWarning": "",
+    "reconnectWarningMany": "",
+    "dismissReconnectWarning": "",
     "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",

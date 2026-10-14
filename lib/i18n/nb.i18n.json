@@ -2244,6 +2244,9 @@
     "disconnectConfirm": "Koble fra ${service}?",
     "disconnectConfirmBody": "Plezy slutter å oppdatere ${service}. Koble til igjen når som helst.",
     "connectFailed": "Kunne ikke koble til ${service}. Prøv igjen.",
+    "reconnectWarning": "",
+    "reconnectWarningMany": "",
+    "dismissReconnectWarning": "",
     "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",

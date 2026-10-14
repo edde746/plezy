@@ -5609,6 +5609,15 @@ class Translations$services$en {
 	/// en: 'Couldn't connect to ${service}. Try again.'
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
+	/// en: 'Sign in to ${service} again to restore syncing.'
+	String reconnectWarning({required Object service}) => 'Sign in to ${service} again to restore syncing.';
+
+	/// en: '${count} trackers need you to sign in again.'
+	String reconnectWarningMany({required Object count}) => '${count} trackers need you to sign in again.';
+
+	/// en: 'Dismiss tracker warnings'
+	String get dismissReconnectWarning => 'Dismiss tracker warnings';
+
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
 	late final Translations$services$simklReconnect$en simklReconnect = Translations$services$simklReconnect$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
@@ -9427,12 +9436,15 @@ extension on Translations {
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
+			'services.reconnectWarning' => ({required Object service}) => 'Sign in to ${service} again to restore syncing.',
+			'services.reconnectWarningMany' => ({required Object count}) => '${count} trackers need you to sign in again.',
+			'services.dismissReconnectWarning' => 'Dismiss tracker warnings',
 			'services.names.mal' => 'MyAnimeList',
+			_ => null,
+		} ?? switch (path) {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
-			_ => null,
-		} ?? switch (path) {
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Reconnect Simkl',
 			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',

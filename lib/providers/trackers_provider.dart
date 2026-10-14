@@ -7,6 +7,7 @@ import '../models/trackers/device_code.dart';
 import '../services/trackers/anilist/anilist_auth_service.dart';
 import '../services/trackers/anilist/anilist_client.dart';
 import '../services/trackers/anilist/anilist_tracker.dart';
+import '../services/trackers/future_coalescer.dart';
 import '../services/trackers/mal/mal_auth_service.dart';
 import '../services/trackers/mal/mal_client.dart';
 import '../services/trackers/mal/mal_tracker.dart';
@@ -117,6 +118,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   TrackerService? _connecting;
   Completer<void>? _cancelCompleter;
   int _connectGeneration = 0;
+  final _sessionChecks = FutureCoalescer<void>();
 
   TrackerSession? get mal => _mal.session;
   TrackerSession? get anilist => _anilist.session;
@@ -167,14 +169,59 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   bool isConnecting(TrackerService service) => _connecting == service;
 
+  bool get isConnectingTracker => _connecting != null;
+
+  List<TrackerService> get reconnectRequiredServices => [
+    for (final slot in _slots)
+      if (slot.needsReconnect) slot.service,
+  ];
+
+  /// Dismissing acknowledges that this service will remain disconnected.
+  /// Reuses explicit disconnect so the warning and any old queued writes are
+  /// cleared under the same profile and generation guards.
+  Future<void> dismissReconnectWarning(TrackerService service) {
+    final slot = _slots.firstWhere((slot) => slot.service == service);
+    if (!slot.needsReconnect || isConnectingTracker) return Future<void>.value();
+    return _clearAndRebind(slot);
+  }
+
+  /// Check through the live clients, sharing their token refresh and auth
+  /// classification with playback and Explore. A timeout, rate limit or server
+  /// outage is logged, never interpreted here as a lost login.
+  Future<void> validateSessions() => _sessionChecks.run(() async {
+    if (isDisposed) return;
+    final mal = malCatalogClient;
+    final anilist = anilistCatalogClient;
+    final simkl = simklCatalogClient;
+    final trakt = traktCatalogClient;
+    final mdblist = mdblistCatalogClient;
+    await Future.wait<void>([
+      if (mal != null) _checkSession(TrackerService.mal, mal.getMyUser),
+      if (anilist != null) _checkSession(TrackerService.anilist, anilist.getViewerName),
+      if (simkl != null) _checkSession(TrackerService.simkl, simkl.getUserSettings),
+      if (trakt != null) _checkSession(TrackerService.trakt, trakt.getUserSettings),
+      if (mdblist != null) _checkSession(TrackerService.mdblist, mdblist.getUser),
+    ]);
+  });
+
+  Future<void> _checkSession(TrackerService service, Future<Object?> Function() check) async {
+    try {
+      await check();
+    } catch (error, stackTrace) {
+      appLogger.d('${service.name}: account check failed', error: error, stackTrace: stackTrace);
+    }
+  }
+
   /// Cancel an in-flight connect. Completing the completer both wakes the
   /// blocking `Future.any` race and flips `isCompleted` for the next sync check.
   void cancelConnect() {
     _invalidateConnect();
   }
 
-  Future<void> onActiveProfileChanged(String? newUserUuid) async {
+  Future<void> onActiveProfileChanged(String? newUserUuid, {bool validate = false}) async {
     _invalidateConnect();
+    // A new profile must not wait for account checks owned by the old one.
+    _sessionChecks.reset();
     final userUuid = newUserUuid ?? '';
     // Drop any in-flight scrobble state and release the resolver (which
     // holds a PlexClient + session cache) before binding to the new profile.
@@ -188,6 +235,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // retry queue.
     for (final slot in _slots) {
       slot.session = null;
+      slot.needsReconnect = false;
       _rebind(slot);
     }
     // Publish the detach before awaiting: proxy consumers cache the client they
@@ -198,12 +246,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // that races this load only suppresses its own service (whose generation
     // moves) rather than dropping the freshly-loaded sessions for the others.
     final rebinds = [for (final slot in _slots) slot.rebindGeneration];
-    final results = await Future.wait<TrackerSession?>([for (final slot in _slots) slot.store.load(userUuid)]);
+    final results = await Future.wait<TrackerAccountState>([for (final slot in _slots) slot.store.loadState(userUuid)]);
     if (!_isCurrentProfileBinding(userUuid, generation)) return;
     for (var i = 0; i < _slots.length; i++) {
       final slot = _slots[i];
       if (slot.rebindGeneration != rebinds[i]) continue;
-      slot.session = results[i];
+      slot.session = results[i].session;
+      slot.needsReconnect = results[i].needsReconnect;
       _rebind(slot);
     }
     // Connect/disconnect may flip `needsFribb` — drop cached resolver IDs so
@@ -211,6 +260,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     TrackerCoordinator.instance.invalidateResolverCache();
     unawaited(TrackerCoordinator.instance.flushWriteQueue());
     safeNotifyListeners();
+    if (validate) unawaited(validateSessions());
   }
 
   Future<bool> connectMal({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect(
@@ -384,6 +434,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         assign: (session) {
           if (!_isCurrentConnect(service, userUuid, generation)) return;
           slot.session = session;
+          slot.needsReconnect = false;
           _rebind(slot);
           // Same ordering contract as [_clearAndRebind] and the invalidation
           // teardown: the rebind above moved the account binding first, so an
@@ -421,10 +472,16 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // no longer touch the shared profile-binding generation (which would also
     // abort that load for the other services).
     slot.session = null;
+    slot.needsReconnect = false;
     _rebind(slot);
+    // Queue persistence before publishing the empty slot: a listener may start
+    // reconnecting immediately and its save must follow this clear.
+    final clearing = Future.wait<void>([
+      slot.store.clear(userUuid),
+      TrackerCoordinator.instance.purgeWriteQueueForService(slot.service),
+    ]);
     safeNotifyListeners();
-    await TrackerCoordinator.instance.purgeWriteQueueForService(slot.service);
-    await slot.store.clear(userUuid);
+    await clearing;
   }
 
   void _invalidateConnect([TrackerService? service]) {
@@ -515,8 +572,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       slot.session,
       onInvalidated: () {
         if (!isCurrent()) return;
-        slot.store.clear(boundUuid);
+        unawaited(
+          slot.store.markNeedsReconnect(boundUuid).catchError((Object error, StackTrace stackTrace) {
+            appLogger.w('${slot.service.name}: could not save reconnect warning', error: error, stackTrace: stackTrace);
+          }),
+        );
         slot.session = null;
+        slot.needsReconnect = true;
         _rebind(slot);
         // Same contract as the explicit-disconnect purge in [_clearAndRebind]:
         // rows queued under the session that just died must never replay
@@ -567,6 +629,7 @@ class _TrackerSlot {
   final TrackerAccountStore store;
   final _TrackerBind bind;
   TrackerSession? session;
+  bool needsReconnect = false;
 
   /// Bumped on every rebind so a late callback from a disposed client (e.g. an
   /// in-flight refresh that resolves after a profile switch) can't persist or
