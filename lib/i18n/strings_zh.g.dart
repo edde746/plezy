@@ -1935,7 +1935,6 @@ class Translations$videoSettings$zh extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => '立体声';
 	@override String get audioNormalization => '响度标准化';
 	@override String get audioNormalizationDisablesPassthrough => '将音频解码为 PCM；开启时直通关闭';
-	@override String get audioNormalizationStereoMix => '将音频解码为立体声混音；开启时直通关闭';
 }
 
 // Path: performanceOverlay
@@ -4802,7 +4801,6 @@ extension on TranslationsZh {
 			'videoSettings.audioOutputStereo' => '立体声',
 			'videoSettings.audioNormalization' => '响度标准化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '将音频解码为 PCM；开启时直通关闭',
-			'videoSettings.audioNormalizationStereoMix' => '将音频解码为立体声混音；开启时直通关闭',
 			'performanceOverlay.color' => '颜色',
 			'performanceOverlay.performance' => '性能',
 			'performanceOverlay.buffer' => '缓冲',
@@ -5081,9 +5079,9 @@ extension on TranslationsZh {
 			'addServer.borrowFromAnotherProfile' => '使用其他用户资料的连接',
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
 			'addServer.invalidCredentials' => '用户名或密码无效',
+			'addServer.authResponseNotJson' => '身份验证响应不是有效的 JSON',
 			_ => null,
 		} ?? switch (path) {
-			'addServer.authResponseNotJson' => '身份验证响应不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',

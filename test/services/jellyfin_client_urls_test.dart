@@ -5222,6 +5222,43 @@ void main() {
       expect(query['Limit'], '10');
     });
 
+    test('fetchPersonDetails maps the Person item fields Jellyfin shows on its person page', () async {
+      final routed = _routedClient({
+        '/Users/user-1/Items/person-1': {
+          'Id': 'person-1',
+          'Name': 'Jeanette Nolan',
+          'Type': 'Person',
+          'Overview': 'Jeanette Nolan was an American actress.',
+          'PremiereDate': '1911-12-30T00:00:00.0000000Z',
+          'EndDate': '1998-06-05T00:00:00.0000000Z',
+          'ProductionLocations': ['Los Angeles, California, USA'],
+        },
+      });
+
+      final details = await routed.client.fetchPersonDetails('person-1');
+
+      expect(details.biography, 'Jeanette Nolan was an American actress.');
+      expect(details.birthDate, DateTime.utc(1911, 12, 30));
+      expect(details.deathDate, DateTime.utc(1998, 6, 5));
+      expect(details.birthPlace, 'Los Angeles, California, USA');
+    });
+
+    test('fetchPersonDetails leaves out the fields a Person item does not fill in', () async {
+      final routed = _routedClient({
+        '/Users/user-1/Items/person-1': {
+          'Id': 'person-1',
+          'Name': 'Tom Hanks',
+          'Type': 'Person',
+          'Overview': '',
+          'ProductionLocations': <String>[],
+        },
+      });
+
+      final details = await routed.client.fetchPersonDetails('person-1');
+
+      expect(details.isEmpty, isTrue);
+    });
+
     test('fetchPlayableDescendantsPage uses requested page bounds', () async {
       final routed = _routedClient({
         '/Items': {

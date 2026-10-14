@@ -1,12 +1,12 @@
 {
-  "originHash" : "d12c444e1e9f42bf7f123c42a9382357c8d2ca3358d4ad5433686188f2d3674f",
+  "originHash" : "c535d3cdb62bd4e11e67f3c9e68290fa7ee9306634c5f56d2b0396eb75ed41ee",
   "pins" : [
     {
       "identity" : "mpv-build",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/kristofferR/mpv-build",
       "state" : {
-        "revision" : "7fa674907597f6a19e319b25c93dc9e4474be4a6"
+        "revision" : "ddfc1a3f4581f8855eba4aacbe3724d06b57ee34"
       }
     }
   ],

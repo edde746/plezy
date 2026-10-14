@@ -1082,6 +1082,13 @@
     "moreLikeThis": "似ている作品",
     "titleCount": {
       "other": "${n}作品"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1987,8 +1994,7 @@
     "audioOutputSpatial": "空間オーディオ",
     "audioOutputStereo": "ステレオ",
     "audioNormalization": "ラウドネス正規化",
-    "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります",
-    "audioNormalizationStereoMix": "音声をステレオミックスにデコードします。オンの間はパススルーがオフになります"
+    "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります"
   },
   "performanceOverlay": {
     "color": "色",

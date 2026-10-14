@@ -1082,6 +1082,13 @@
     "moreLikeThis": "更多类似内容",
     "titleCount": {
       "other": "${n} 个标题"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1987,8 +1994,7 @@
     "audioOutputSpatial": "空间音频",
     "audioOutputStereo": "立体声",
     "audioNormalization": "响度标准化",
-    "audioNormalizationDisablesPassthrough": "将音频解码为 PCM；开启时直通关闭",
-    "audioNormalizationStereoMix": "将音频解码为立体声混音；开启时直通关闭"
+    "audioNormalizationDisablesPassthrough": "将音频解码为 PCM；开启时直通关闭"
   },
   "performanceOverlay": {
     "color": "颜色",

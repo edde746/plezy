@@ -702,6 +702,99 @@ void main() {
     expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
   });
 
+  group('person details', () {
+    http.Response json(Object body) =>
+        http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+
+    test('reads the person from Plex Discover with the plex.tv account token', () async {
+      final requests = <Uri>[];
+      String? discoverToken;
+      final client = makeClient((request) async {
+        requests.add(request.url);
+        if (request.url.host == 'discover.provider.plex.tv') {
+          discoverToken = request.headers['X-Plex-Token'];
+          return json({
+            'MediaContainer': {
+              'size': 1,
+              'Metadata': [
+                {
+                  'title': 'Heath Ledger',
+                  'summary': 'Heath Andrew Ledger was an Australian actor.',
+                  'bornAt': '1979-04-04',
+                  'diedAt': '2008-01-22',
+                  'birthPlace': ' Perth, Western Australia, Australia',
+                },
+              ],
+            },
+          });
+        }
+        if (request.url.path == '/library/people/38943') {
+          return json({
+            'MediaContainer': {
+              'size': 1,
+              'Directory': [
+                {'id': 38943, 'tag': 'Heath Ledger', 'tagType': 6, 'tagKey': '5d776825eb5d26001f1dd125'},
+              ],
+            },
+          });
+        }
+        return http.Response('not found', 404);
+      });
+      client.plexAccountToken = 'account-token';
+      addTearDown(client.close);
+
+      final details = await client.fetchPersonDetails('38943');
+
+      expect(requests.last.host, 'discover.provider.plex.tv');
+      expect(requests.last.path, '/library/people/5d776825eb5d26001f1dd125');
+      // Discover rejects a Home or shared user's server token as invalid.
+      expect(discoverToken, 'account-token');
+      expect(details.biography, 'Heath Andrew Ledger was an Australian actor.');
+      expect(details.birthDate, DateTime.utc(1979, 4, 4));
+      expect(details.deathDate, DateTime.utc(2008, 1, 22));
+      expect(details.birthPlace, 'Perth, Western Australia, Australia');
+    });
+
+    test('a tag without a plex.tv id has no details and never reaches Discover', () async {
+      final requests = <Uri>[];
+      final client = makeClient((request) async {
+        requests.add(request.url);
+        if (request.url.path == '/library/people/7') {
+          return json({
+            'MediaContainer': {
+              'size': 1,
+              'Directory': [
+                {'id': 7, 'tag': 'Local Actor', 'tagType': 6},
+              ],
+            },
+          });
+        }
+        return http.Response('not found', 404);
+      });
+      client.plexAccountToken = 'account-token';
+      addTearDown(client.close);
+
+      final details = await client.fetchPersonDetails('7');
+
+      expect(details.isEmpty, isTrue);
+      expect(requests.map((uri) => uri.host), isNot(contains('discover.provider.plex.tv')));
+    });
+
+    test('a client without a plex.tv account token has no details and sends nothing', () async {
+      final requests = <Uri>[];
+      final client = makeClient((request) async {
+        requests.add(request.url);
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      final details = await client.fetchPersonDetails('38943');
+
+      expect(details.isEmpty, isTrue);
+      expect(requests, isEmpty);
+    });
+  });
+
   test('playable descendants page passes requested pagination params', () async {
     Uri? requestUri;
     final client = makeClient((request) async {
