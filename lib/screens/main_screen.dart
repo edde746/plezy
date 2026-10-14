@@ -1242,21 +1242,25 @@ class _MainScreenState extends State<MainScreen>
   /// IndexedStack that disables tickers for offscreen children to prevent
   /// animation controllers on non-visible tabs from scheduling frames.
   Widget _buildTickerAwareStack() {
-    return TrackerSessionMonitor(
-      enabled: !_isOffline,
-      child: Column(
-        children: [
-          const AuthErrorBanner(),
-          Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              clipBehavior: Clip.none,
-              children: [
-                for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
-              ],
+    return SettingsBuilder(
+      prefs: [SettingsService.enableTrackerConnectionChecks, SettingsService.trackerConnectionCheckMinutes],
+      builder: (context) => TrackerSessionMonitor(
+        enabled: !_isOffline && SettingsService.instance.read(SettingsService.enableTrackerConnectionChecks),
+        intervalMinutes: SettingsService.instance.read(SettingsService.trackerConnectionCheckMinutes),
+        child: Column(
+          children: [
+            const AuthErrorBanner(),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                clipBehavior: Clip.none,
+                children: [
+                  for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

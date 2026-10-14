@@ -15,10 +15,10 @@ void main() {
   setUp(() => trackers = _TestTrackersProvider());
   tearDown(() => trackers.dispose());
 
-  Future<void> pumpMonitor(WidgetTester tester, {bool enabled = true}) => tester.pumpWidget(
+  Future<void> pumpMonitor(WidgetTester tester, {bool enabled = true, int minutes = 5}) => tester.pumpWidget(
     ChangeNotifierProvider<TrackersProvider>.value(
       value: trackers,
-      child: TrackerSessionMonitor(enabled: enabled, child: const SizedBox()),
+      child: TrackerSessionMonitor(enabled: enabled, intervalMinutes: minutes, child: const SizedBox()),
     ),
   );
 
@@ -92,6 +92,20 @@ void main() {
     expect(trackers.checks, 0);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump(const Duration(minutes: 6));
+    expect(trackers.checks, 1);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('changing the interval replaces the pending timer immediately', (tester) async {
+    await pumpMonitor(tester, minutes: 10);
+    await tester.pump(const Duration(seconds: 20));
+    await pumpMonitor(tester, minutes: 1);
+    await tester.pump(const Duration(seconds: 47));
+    expect(trackers.checks, 0);
+    await tester.pump(const Duration(seconds: 25));
+    expect(trackers.checks, 1);
+    await pumpMonitor(tester, enabled: false, minutes: 1);
+    await tester.pump(const Duration(minutes: 10));
     expect(trackers.checks, 1);
     await tester.pumpWidget(const SizedBox());
   });

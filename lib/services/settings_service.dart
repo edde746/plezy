@@ -654,6 +654,16 @@ class SettingsService extends BaseSharedPreferencesService {
   static const autoHidePerformanceOverlay = BoolPref('auto_hide_performance_overlay', defaultValue: true);
   static const enableDiscordRPC = BoolPref('enable_discord_rpc');
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
+
+  /// Timer checks are optional; startup and normal tracker requests still
+  /// detect lost logins. These preferences follow the existing app settings
+  /// export/reset policy, while credentials and warnings remain profile scoped.
+  static const enableTrackerConnectionChecks = BoolPref('enable_tracker_connection_checks', defaultValue: true);
+  static final trackerConnectionCheckMinutes = IntPref(
+    'tracker_connection_check_minutes',
+    defaultValue: 5,
+    transform: (value) => value.clamp(1, 60),
+  );
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const matchContentResolution = BoolPref('match_content_resolution');
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: false);
@@ -1391,6 +1401,8 @@ class SettingsService extends BaseSharedPreferencesService {
     autoHidePerformanceOverlay,
     enableDiscordRPC,
     enableTraktWatchedSync,
+    enableTrackerConnectionChecks,
+    trackerConnectionCheckMinutes,
     // Scrobble toggle, one per tracker service.
     for (final s in TrackerService.values) scrobblePref(s),
     matchContentFrameRate,
@@ -1545,6 +1557,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'sleep_timer_duration' => (5, 240),
     'play_next_countdown' => (0, 30),
     'auto_skip_delay' => (1, 30),
+    'tracker_connection_check_minutes' => (1, 60),
     'subtitle_font_size' => (10, 80),
     'subtitle_border_size' => (0, 5),
     'subtitle_position' => (0, 150),

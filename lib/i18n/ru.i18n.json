@@ -2269,6 +2269,11 @@
     "reconnectWarning": "",
     "reconnectWarningMany": "",
     "dismissReconnectWarning": "",
+    "connectionChecks": "",
+    "periodicChecks": "",
+    "periodicChecksDescription": "",
+    "checkInterval": "",
+    "checkIntervalDescription": "",
     "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",

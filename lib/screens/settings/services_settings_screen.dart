@@ -14,6 +14,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_section.dart';
+import '../../widgets/settings_builder.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
 import 'tracker_service_info.dart';
@@ -41,6 +42,29 @@ class ServicesSettingsScreen extends StatelessWidget {
               ),
             ),
             SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
+            SettingValueBuilder<bool>(
+              pref: SettingsService.enableTrackerConnectionChecks,
+              builder: (_, enabled, _) => SettingsGroup(
+                title: t.services.connectionChecks,
+                children: [
+                  SettingSwitchTile(
+                    pref: SettingsService.enableTrackerConnectionChecks,
+                    icon: Symbols.sync_rounded,
+                    title: t.services.periodicChecks,
+                    subtitle: t.services.periodicChecksDescription,
+                  ),
+                  if (enabled)
+                    SettingNumberTile(
+                      pref: SettingsService.trackerConnectionCheckMinutes,
+                      icon: Symbols.timer_rounded,
+                      title: t.services.checkInterval,
+                      subtitleBuilder: (minutes) => t.services.checkIntervalDescription(minutes: minutes),
+                      labelText: t.settings.minutesLabel,
+                      suffixText: t.settings.minutesShort,
+                    ),
+                ],
+              ),
+            ),
             if (DiscordRPCService.isAvailable)
               SettingsGroup(
                 title: t.services.integrations,

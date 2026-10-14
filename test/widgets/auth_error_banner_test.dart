@@ -114,6 +114,31 @@ void main() {
     expect(trackers.dismissed, [TrackerService.trakt, TrackerService.mal]);
   });
 
+  testWidgets('Services exposes a persisted polling toggle and bounded custom interval', (tester) async {
+    requireReconnect([TrackerService.trakt, TrackerService.mal]);
+    await pumpBanner(tester);
+    await tester.tap(find.text(t.common.reconnect));
+    await tester.pumpAndSettle();
+    final interval = find.text(t.services.checkInterval);
+    await tester.ensureVisible(interval);
+    expect(interval, findsOneWidget);
+    await tester.tap(find.text(t.services.periodicChecks));
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.enableTrackerConnectionChecks), isFalse);
+    expect(interval, findsNothing);
+    await tester.tap(find.text(t.services.periodicChecks));
+    await tester.pumpAndSettle();
+    expect(interval, findsOneWidget);
+    await tester.ensureVisible(interval);
+    await tester.tap(interval);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '2');
+    await tester.tap(find.text(t.common.save));
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.trackerConnectionCheckMinutes), 2);
+    expect(find.text(t.services.checkIntervalDescription(minutes: 2)), findsOneWidget);
+  });
+
   testWidgets('multiple tracker warnings fit on a narrow phone with enlarged text', (tester) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;

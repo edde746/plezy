@@ -2247,6 +2247,11 @@
     "reconnectWarning": "Sign in to ${service} again to restore syncing.",
     "reconnectWarningMany": "${count} trackers need you to sign in again.",
     "dismissReconnectWarning": "Dismiss tracker warnings",
+    "connectionChecks": "Connection checks",
+    "periodicChecks": "Check tracker connections periodically",
+    "periodicChecksDescription": "Check while Plezy is active, including during playback. Startup checks still run when this is off.",
+    "checkInterval": "Check interval",
+    "checkIntervalDescription": "About ${minutes} minutes between checks, with up to 20% random variation.",
     "names": {
       "mal": "MyAnimeList",
       "anilist": "AniList",
