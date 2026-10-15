@@ -16,9 +16,17 @@ class AppIconOption {
   String label(Translations t) => _label(t);
 
   /// The bundled picker thumbnail; null for the default, which the picker draws
-  /// from the shipping logo so it always matches the installed icon.
+  /// as this device's launcher shows it (see [defaultAppIconTvosPreview]).
   String? get previewAsset => isDefault ? null : 'assets/app_icons/previews/$id.webp';
 }
+
+/// The default icon as the TV launchers draw it, rendered from the shipping
+/// tvOS image stack and Android TV banner by
+/// scripts/codegen/generate_app_icons.py: both are dark plates, unlike the
+/// phone icons. Phone launchers draw the shipping logo on a flat plate, which
+/// the picker paints itself.
+const defaultAppIconTvosPreview = 'assets/app_icons/previews/default-tvos.webp';
+const defaultAppIconAndroidTvPreview = 'assets/app_icons/previews/default-androidtv.webp';
 
 /// What the platforms call the icon the app ships with.
 const defaultAppIconId = 'default';

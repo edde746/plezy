@@ -24,7 +24,10 @@ Outputs, all committed:
 * android/app/src/main/res: an adaptive icon (background, foreground and monochrome layers), a
   legacy launcher icon for API 25 and an Android TV banner per icon, plus the matching
   <activity-alias> block in AndroidManifest.xml between the generated markers.
-* assets/app_icons/previews/<id>.webp: the picker thumbnails, bundled as Flutter assets.
+* assets/app_icons/previews/<id>.webp: the picker thumbnails, bundled as Flutter assets. Also
+  default-tvos.webp and default-androidtv.webp: the shipping default as the TV launchers draw it,
+  rendered from tvOS's App Icon image stack and the Android TV banner. Re-run after changing the
+  default icon; phones need no default thumbnail, the picker draws their flat plate itself.
 
 Wide formats (the tvOS tile and the Android TV banner) scale the foreground canvas to 1.25x the
 tile height and centre it, so the mark sits at about the default icon's size; the back layer
@@ -58,6 +61,9 @@ IOS_CATALOG = ROOT / "ios/Runner/AlternateAppIcons.xcassets"
 TVOS_CATALOG = ROOT / "tvos/Runner/AlternateAppIcons.xcassets"
 ANDROID_RES = ROOT / "android/app/src/main/res"
 ANDROID_MANIFEST = ROOT / "android/app/src/main/AndroidManifest.xml"
+# The shipping default icon's TV artwork, which the default picker thumbnails are cut from.
+TVOS_DEFAULT_STACK = ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack"
+ANDROID_DEFAULT_BANNER = ANDROID_RES / "drawable-xxxhdpi/tv_banner.png"
 
 # Picker order; the default icon is not part of this set.
 ICONS = [
@@ -178,6 +184,22 @@ class Renderer:
     def composite(self, back: Path, front: Path) -> Path:
         out = self.temp(".png")
         _run(self.magick, str(back), str(front), "-compose", "over", "-composite", str(out))
+        return out
+
+    def cover_square(self, source: Path, size: int) -> Path:
+        """The centred square of [source], scaled to [size]: how a wide TV tile reads as a thumbnail."""
+        out = self.temp(".png")
+        _run(
+            self.magick,
+            str(source),
+            "-resize",
+            f"{size}x{size}^",
+            "-gravity",
+            "center",
+            "-extent",
+            f"{size}x{size}",
+            str(out),
+        )
         return out
 
     def white_silhouette(self, source: Path, size: int) -> Path:
@@ -365,6 +387,16 @@ def generate_previews(renderer: Renderer) -> None:
     _reset_dir(PREVIEWS)
     for icon in ICONS:
         renderer.webp(renderer.square(SOURCE / icon / "icon.svg", PREVIEW_SIZE), PREVIEWS / f"{icon}.webp")
+    tvos = TVOS_DEFAULT_STACK
+    stack = renderer.composite(
+        renderer.composite(
+            tvos / "Back.imagestacklayer/Content.imageset/Back@2x.png",
+            tvos / "Middle.imagestacklayer/Content.imageset/Middle@2x.png",
+        ),
+        tvos / "Front.imagestacklayer/Content.imageset/Front@2x.png",
+    )
+    renderer.webp(renderer.cover_square(stack, PREVIEW_SIZE), PREVIEWS / "default-tvos.webp")
+    renderer.webp(renderer.cover_square(ANDROID_DEFAULT_BANNER, PREVIEW_SIZE), PREVIEWS / "default-androidtv.webp")
 
 
 def main() -> None:

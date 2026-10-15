@@ -1,7 +1,13 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SemanticsNode;
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/screens/settings/app_icon_setting.dart';
@@ -12,6 +18,8 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/supporter/supporter_mode.dart';
 import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/app_icon_fakes.dart';
@@ -85,20 +93,43 @@ void main() {
   SemanticsNode tileSemantics(WidgetTester tester, String id) =>
       find.semantics.byLabel(appIconById(id)!.label(t)).evaluate().single;
 
+  /// The icon whose tile holds D-pad focus.
+  String? focusedId() {
+    final focused = FocusManager.instance.primaryFocus?.context;
+    if (focused == null) return null;
+    for (final option in appIconCatalog) {
+      final match = find.ancestor(of: find.byElementPredicate((e) => e == focused), matching: tile(option.id));
+      if (match.evaluate().isNotEmpty) return option.id;
+    }
+    return null;
+  }
+
   group('Appearance entry', () {
+    /// Settings > Appearance as the app shows it: pushed over Settings, below
+    /// the app's input-mode tracker.
     Future<void> pumpAppearance(WidgetTester tester, SupporterService supporter, AppIconService appIcons) async {
       useViewport(tester, const Size(1000, 3000));
       final theme = ThemeProvider(supporter: supporter);
       addTearDown(theme.dispose);
+      final navigator = GlobalKey<NavigatorState>();
       await tester.pumpWidget(
         providers(
           supporter: supporter,
           appIcons: appIcons,
           child: ChangeNotifierProvider<ThemeProvider>.value(
             value: theme,
-            child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const AppearanceSettingsScreen()),
+            child: InputModeTracker(
+              child: MaterialApp(
+                navigatorKey: navigator,
+                theme: monoTheme(MonoPalette.dark),
+                home: const SizedBox.shrink(),
+              ),
+            ),
           ),
         ),
+      );
+      unawaited(
+        navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => const AppearanceSettingsScreen())),
       );
       await tester.pumpAndSettle();
     }
@@ -146,6 +177,54 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(AppIconPickerSheet), findsOneWidget);
+    });
+
+    testWidgets('on TV the picker is a hosted sheet that starts D-pad focus in the grid and closes on Back', (
+      tester,
+    ) async {
+      TvDetectionService.debugSetAppleTVOverride(true);
+      PlatformDetector.debugSetIsDesktopOSOverride(false);
+      addTearDown(() {
+        TvDetectionService.debugSetAppleTVOverride(null);
+        PlatformDetector.debugSetIsDesktopOSOverride(null);
+        BackKeyCoordinator.clear();
+      });
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      await pumpAppearance(tester, supporter, await appIconsFor(supporter));
+
+      // A remote arrow puts the app in D-pad mode; Select on the row opens the picker.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      Focus.of(tester.element(find.text(t.appIcon.title))).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      final picker = find.byType(AppIconPickerSheet);
+      expect(picker, findsOneWidget);
+      expect(find.ancestor(of: picker, matching: find.byType(OverlaySheetHost)), findsOneWidget);
+      expect(find.byType(BottomSheet), findsNothing, reason: 'not the modal fallback');
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Container && widget.constraints == const BoxConstraints.tightFor(width: 32, height: 4),
+        ),
+        findsNothing,
+        reason: 'no drag handle on TV',
+      );
+      expect(focusedId(), defaultAppIconId);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(focusedId(), appIconCatalog[1].id, reason: 'the first RIGHT already moves along the grid');
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
+      // Android TV can also dispatch a route Back for the same press.
+      await tester.binding.handlePopRoute();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.pumpAndSettle();
+
+      expect(picker, findsNothing);
+      expect(find.byType(AppearanceSettingsScreen), findsOneWidget);
     });
   });
 
@@ -263,20 +342,60 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
     });
 
+    group('the Default tile looks like the default icon on the home screen', () {
+      Future<void> pumpDefault(WidgetTester tester) async {
+        final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+        addTearDown(supporter.dispose);
+        await pumpPicker(tester, supporter: supporter, appIcons: await appIconsFor(supporter));
+      }
+
+      Finder defaultLogo() => find.descendant(of: tile(defaultAppIconId), matching: find.byType(SvgPicture));
+
+      Color plate(WidgetTester tester) =>
+          tester.widget<ColoredBox>(find.ancestor(of: defaultLogo(), matching: find.byType(ColoredBox)).first).color;
+
+      testWidgets('on TV: the dark TV artwork', (tester) async {
+        TvDetectionService.debugSetAppleTVOverride(true);
+        addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+        await pumpDefault(tester);
+
+        final image = tester.widget<Image>(find.descendant(of: tile(defaultAppIconId), matching: find.byType(Image)));
+        expect((image.image as AssetImage).assetName, defaultAppIconTvosPreview);
+        expect(defaultLogo(), findsNothing);
+      });
+
+      testWidgets('on Android phones: white, or #1A1A1A in night mode', (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        try {
+          await pumpDefault(tester);
+          expect(plate(tester), const Color(0xFFFFFFFF));
+
+          tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+          addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+          await tester.pump();
+          expect(plate(tester), const Color(0xFF1A1A1A));
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      });
+
+      testWidgets('on iOS: the light plate, also in dark mode', (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        try {
+          tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+          addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+          await pumpDefault(tester);
+          expect(plate(tester), const Color(0xFFF1F1F1));
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      });
+    });
+
     testWidgets('D-pad moves through the grid by row and column and Select applies the icon', (tester) async {
       final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
       addTearDown(supporter.dispose);
       await pumpPicker(tester, supporter: supporter, appIcons: await appIconsFor(supporter));
-
-      String? focusedId() {
-        final focused = FocusManager.instance.primaryFocus?.context;
-        if (focused == null) return null;
-        for (final option in appIconCatalog) {
-          final match = find.ancestor(of: find.byElementPredicate((e) => e == focused), matching: tile(option.id));
-          if (match.evaluate().isNotEmpty) return option.id;
-        }
-        return null;
-      }
 
       final firstFocus = find.descendant(of: tile(defaultAppIconId), matching: find.byType(Focus)).first;
       Focus.of(tester.element(find.descendant(of: firstFocus, matching: find.byType(Column)).first)).requestFocus();

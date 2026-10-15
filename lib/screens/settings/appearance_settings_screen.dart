@@ -12,6 +12,7 @@ import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
@@ -25,6 +26,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hosts the App icon picker and the Supporter sheet it opens. Content
+    // builds below the host so they find it instead of falling back to a
+    // modal route, which keeps its drag handle and gives no D-pad focus on TV.
+    return OverlaySheetHost(canPop: true, child: Builder(builder: _buildContent));
+  }
+
+  Widget _buildContent(BuildContext context) {
     // Nullable watch: hosts without the profile session scope (tests) simply
     // never show the Explore toggle, mirroring the tab's own visibility.
     final hasExplore = context.watch<CatalogSourcesProvider?>()?.hasAnySource ?? false;

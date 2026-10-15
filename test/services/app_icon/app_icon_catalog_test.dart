@@ -66,4 +66,10 @@ void main() {
       expect(File(option.previewAsset!).existsSync(), isTrue, reason: '${option.id} has no picker thumbnail');
     }
   });
+
+  test('the default has a thumbnail for each TV launcher, which draws it on a dark plate', () {
+    for (final preview in [defaultAppIconTvosPreview, defaultAppIconAndroidTvPreview]) {
+      expect(File(preview).existsSync(), isTrue, reason: 'missing $preview');
+    }
+  });
 }

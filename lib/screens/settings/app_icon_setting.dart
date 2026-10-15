@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -141,7 +142,10 @@ class _AppIconPickerSheetState extends State<AppIconPickerSheet> {
                 ),
                 if (Platform.isAndroid) ...[
                   const SizedBox(height: 16),
-                  Text(PlatformDetector.isTV() ? t.appIcon.tvLauncherHint : t.appIcon.launcherHint, style: hintStyle),
+                  Text(
+                    PlatformDetector.isTVDevice() ? t.appIcon.tvLauncherHint : t.appIcon.launcherHint,
+                    style: hintStyle,
+                  ),
                 ],
               ],
             ),
@@ -226,25 +230,53 @@ class _AppIconTile extends StatelessWidget {
   }
 }
 
-/// The icon as the home screen shows it. The default is drawn from the shipping
-/// mark on the iOS icon's light fill, so it follows any change to the default.
+/// The icon as the home screen shows it.
 class _AppIconPreview extends StatelessWidget {
   const _AppIconPreview(this.option);
-
-  static const _defaultIconFill = Color(0xFFF1F1F1);
 
   final AppIconOption option;
 
   @override
   Widget build(BuildContext context) {
     final asset = option.previewAsset;
-    if (asset == null) {
-      return ColoredBox(
-        color: _defaultIconFill,
-        child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', fit: BoxFit.contain),
-      );
-    }
+    if (asset == null) return const _DefaultIconPreview();
     return Image.asset(asset, fit: BoxFit.cover, filterQuality: FilterQuality.medium);
+  }
+}
+
+/// The shipping icon as this device's launcher draws it, so picking Default
+/// looks like what comes back on the home screen:
+/// * tvOS and Android TV: dark plates, from the thumbnails
+///   scripts/codegen/generate_app_icons.py renders from the shipping image
+///   stack and banner.
+/// * Android phones: the adaptive foreground on `ic_launcher_background`, white
+///   or #1A1A1A with the system night mode the launcher resolves it in
+///   (res/values/colors.xml, res/values-night/colors.xml).
+/// * iOS: ios/plezy.icon's one light fill, which its dark appearance inherits.
+class _DefaultIconPreview extends StatelessWidget {
+  const _DefaultIconPreview();
+
+  static const _iosFill = Color(0xFFF1F1F1);
+  static const _androidDayFill = Color(0xFFFFFFFF);
+  static const _androidNightFill = Color(0xFF1A1A1A);
+
+  @override
+  Widget build(BuildContext context) {
+    final tvPreview = PlatformDetector.isAppleTV()
+        ? defaultAppIconTvosPreview
+        : PlatformDetector.isTVDevice()
+        ? defaultAppIconAndroidTvPreview
+        : null;
+    if (tvPreview != null) return Image.asset(tvPreview, fit: BoxFit.cover, filterQuality: FilterQuality.medium);
+    final fill = defaultTargetPlatform != TargetPlatform.android
+        ? _iosFill
+        : MediaQuery.platformBrightnessOf(context) == Brightness.dark
+        ? _androidNightFill
+        : _androidDayFill;
+    return ColoredBox(
+      color: fill,
+      child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', fit: BoxFit.contain),
+    );
   }
 }
 
