@@ -11,6 +11,9 @@ import '../settings_service.dart';
 import 'supporter_mode.dart';
 import 'supporter_store.dart';
 
+/// The StoreKit plugin's error code for a product query that found nothing.
+const _storeKitNoProducts = 'storekit_no_response';
+
 /// Where a purchase or restore the user started currently stands.
 enum SupporterPurchaseStatus {
   idle,
@@ -205,7 +208,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
       _setStoreState(current.copyWith(productError: () => SupporterError.storeUnavailable));
       return;
     }
-    _setStoreState(current.copyWith(isLoadingProduct: true, productError: () => null));
+    _setStoreState(current.copyWith(isLoadingProduct: true, productError: () => null, error: () => null));
     SupporterError? failure;
     try {
       if (!await store.platform.isAvailable()) {
@@ -214,7 +217,10 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
         final response = await store.platform.queryProductDetails({supporterProductId});
         _product = response.productDetails.firstWhereOrNull((p) => p.id == supporterProductId);
         if (_product == null) {
-          if (response.error case final error?) {
+          // StoreKit 2 reports a query that found no product as the error
+          // `storekit_no_response` rather than an empty result.
+          final error = response.error;
+          if (error != null && error.code != _storeKitNoProducts) {
             appLogger.w('Supporter: product query failed: ${error.code} ${error.message}');
             failure = SupporterError.productQueryFailed;
           } else {
@@ -271,6 +277,9 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
     var synced = true;
     try {
       await store.syncForRestore();
+    } on SupporterRestoreCancelled {
+      if (!isDisposed) _setStoreState(_storeState.value.copyWith(status: SupporterPurchaseStatus.idle));
+      return;
     } catch (error, stackTrace) {
       // The history may still hold the purchase; only report this failure if
       // it does not.
@@ -278,7 +287,8 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
       synced = false;
     }
     if (isDisposed) return;
-    final ownership = await _refreshEntitlement(store);
+    var failure = SupporterError.restoreFailed;
+    final ownership = await _refreshEntitlement(store, onFailure: (error) => failure = error);
     if (isDisposed) return;
     _setStoreState(switch (ownership) {
       SupporterOwnership.owned => _storeState.value.copyWith(status: SupporterPurchaseStatus.idle),
@@ -287,11 +297,16 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
         status: SupporterPurchaseStatus.idle,
         error: () => synced ? SupporterError.nothingToRestore : SupporterError.restoreFailed,
       ),
-      null => _storeState.value.copyWith(
-        status: SupporterPurchaseStatus.idle,
-        error: () => SupporterError.restoreFailed,
-      ),
+      null => _storeState.value.copyWith(status: SupporterPurchaseStatus.idle, error: () => failure),
     });
+  }
+
+  /// Drops the last purchase or restore error, so a sheet opened later starts
+  /// from the offer rather than an old failure.
+  void clearError() {
+    if (_storeState.value.error != null && !_storeState.value.isBusy) {
+      _setStoreState(_storeState.value.copyWith(error: () => null));
+    }
   }
 
   /// Creates the store and subscribes to its purchase stream on first use.
@@ -393,8 +408,12 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Applies the store's history. Returns null when the store could not
-  /// answer, in which case the cached entitlement stands.
-  Future<SupporterOwnership?> _refreshEntitlement(SupporterStore store) async {
+  /// answer, in which case the cached entitlement stands and [onFailure]
+  /// learns why.
+  Future<SupporterOwnership?> _refreshEntitlement(
+    SupporterStore store, {
+    void Function(SupporterError error)? onFailure,
+  }) async {
     final generation = _entitlementGeneration;
     final SupporterHistory history;
     try {
@@ -404,6 +423,9 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
         'Supporter: store history unavailable; keeping the cached entitlement',
         error: error,
         stackTrace: stackTrace,
+      );
+      onFailure?.call(
+        error is SupporterStoreUnavailable ? SupporterError.storeUnavailable : SupporterError.restoreFailed,
       );
       return null;
     }

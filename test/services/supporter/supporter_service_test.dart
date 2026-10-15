@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
@@ -320,22 +321,54 @@ void main() {
       expect(service.storeState.value.error, SupporterError.nothingToRestore);
     });
 
-    test('an unreachable store keeps the cached unlock', () async {
+    test('a failing purchase query keeps the cached unlock and Restore says the store was unreachable', () async {
       await _cacheEntitlement(true);
-      platform.available = false;
       play.historyError = IAPError(source: 'google_play', code: 'restore_transactions_failed', message: '3');
       final service = _purchasable(play.store);
       final notifications = _countNotifications(service);
 
       await service.init();
-      await service.loadProduct();
       await service.restore();
 
       expect(service.isUnlocked, isTrue);
       expect(notifications(), 0);
-      expect(service.storeState.value.productError, SupporterError.storeUnavailable);
       expect(service.storeState.value.error, SupporterError.restoreFailed);
       expect(await _cachedEntitlement(), isTrue);
+    });
+
+    test('unavailable Play Billing answering with an empty history is not a refund', () async {
+      // No Google account or no Play Store: the purchase query comes back
+      // empty and error-free from a client that never connected.
+      await _cacheEntitlement(true);
+      platform.available = false;
+      final service = _purchasable(play.store);
+      final notifications = _countNotifications(service);
+
+      await service.init();
+      await service.loadProduct();
+      await pumpEventQueue();
+
+      expect(service.isUnlocked, isTrue);
+      expect(notifications(), 0);
+      expect(service.storeState.value.productError, SupporterError.storeUnavailable);
+      expect(await _cachedEntitlement(), isTrue);
+
+      await service.restore();
+
+      expect(service.isUnlocked, isTrue);
+      expect(service.storeState.value.error, SupporterError.storeUnavailable);
+      expect(await _cachedEntitlement(), isTrue);
+    });
+
+    test('clearing the error leaves the offer without the last failure', () async {
+      final service = _purchasable(play.store);
+      await service.restore();
+      expect(service.storeState.value.error, SupporterError.nothingToRestore);
+
+      service.clearError();
+
+      expect(service.storeState.value.error, isNull);
+      expect(service.storeState.value.status, SupporterPurchaseStatus.idle);
     });
 
     test('a refunded purchase locks the perks, notifies and clears the cache', () async {
@@ -441,6 +474,51 @@ void main() {
       expect(service.isUnlocked, isTrue);
       expect(service.storeState.value.error, isNull);
       expect(await _cachedEntitlement(), isTrue);
+    });
+
+    test('a store without the product reports it missing, not a connection failure', () async {
+      // StoreKit 2 answers an empty product query with this error.
+      platform.product = null;
+      platform.productResponseError = IAPError(
+        source: 'app_store',
+        code: 'storekit_no_response',
+        message: 'StoreKit: Failed to get response from platform.',
+      );
+      final service = _purchasable(appStore.store);
+
+      await service.loadProduct();
+
+      expect(service.storeState.value.price, isNull);
+      expect(service.storeState.value.productError, SupporterError.productNotFound);
+    });
+
+    test('cancelling the Apple Account sign-in during Restore returns to the offer without an error', () async {
+      appStore.syncError = PlatformException(
+        code: 'storekit2_failed_to_sync_to_app_store',
+        message: 'Storekit has failed to sync to the app store.',
+        details: 'userCancelled',
+      );
+      final service = _purchasable(appStore.store);
+
+      await service.restore();
+
+      expect(appStore.syncs, 1);
+      expect(service.storeState.value.status, SupporterPurchaseStatus.idle);
+      expect(service.storeState.value.error, isNull);
+      expect(service.isUnlocked, isFalse);
+    });
+
+    test('a failed Apple Account sync with no purchase in the history reports the failure', () async {
+      appStore.syncError = PlatformException(
+        code: 'storekit2_failed_to_sync_to_app_store',
+        message: 'Storekit has failed to sync to the app store.',
+        details: 'networkError',
+      );
+      final service = _purchasable(appStore.store);
+
+      await service.restore();
+
+      expect(service.storeState.value.error, SupporterError.restoreFailed);
     });
 
     test('an empty history keeps the cached unlock: another Apple Account may be signed in', () async {

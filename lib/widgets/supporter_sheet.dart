@@ -25,6 +25,7 @@ import 'overlay_sheet.dart';
 Future<void> showSupporterSheet(BuildContext context) async {
   final supporter = context.read<SupporterService>();
   if (supporter.availability != SupporterAvailability.purchasable) return;
+  supporter.clearError();
   unawaited(supporter.loadProduct());
   await OverlaySheetController.showAdaptive<void>(
     context,
@@ -52,6 +53,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
   late final FocusNode _primaryFocusNode = FocusNode(debugLabel: 'supporter_primary');
   late final FocusNode _restoreFocusNode = FocusNode(debugLabel: 'supporter_restore');
   late final FocusNode _closeFocusNode = FocusNode(debugLabel: 'supporter_close');
+  final ScrollController _scrollController = ScrollController();
 
   late SupporterStoreState _state = widget.supporter.storeState.value;
   late bool _unlocked = widget.supporter.isUnlocked;
@@ -72,6 +74,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
     _primaryFocusNode.dispose();
     _restoreFocusNode.dispose();
     _closeFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -124,6 +127,13 @@ class _SupporterSheetState extends State<SupporterSheet> {
 
   void _close() => OverlaySheetController.closeAdaptive(context);
 
+  /// UP from the top button: nothing above it takes focus, so bring the intro
+  /// and perks back into view on short screens (a 1080p TV is 960x540).
+  void _scrollToTop() {
+    if (!_scrollController.hasClients) return;
+    unawaited(_scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -134,6 +144,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
         BottomSheetHeader(title: t.supporter.title),
         Flexible(
           child: SingleChildScrollView(
+            controller: _scrollController,
             primary: false,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: _unlocked ? _buildThankYou(theme) : _buildOffer(theme),
@@ -162,6 +173,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
           focusNode: _closeFocusNode,
           useBackgroundFocus: true,
           onPressed: _close,
+          onNavigateUp: _scrollToTop,
           child: FilledButton.tonal(onPressed: _close, child: Text(t.common.close)),
         ),
       ],
@@ -191,9 +203,11 @@ class _SupporterSheetState extends State<SupporterSheet> {
         if (supporterOffersAppIcons())
           _Perk(icon: Symbols.apps_rounded, title: t.supporter.appIcons, description: t.supporter.appIconsDescription),
         const SizedBox(height: 12),
-        if (productError != null) _Notice.error(productError),
-        if (state.error case final error?) _Notice.error(error),
-        if (state.status == SupporterPurchaseStatus.pending)
+        // One notice at a time: the latest action's error, else why the price
+        // is missing, else the pending purchase.
+        if (state.error ?? productError case final error?)
+          _Notice.error(error)
+        else if (state.status == SupporterPurchaseStatus.pending)
           _Notice(icon: Symbols.hourglass_top_rounded, message: t.supporter.pending, isFailure: false),
         const SizedBox(height: 4),
         if (productError != null) _buildRetryButton() else _buildBuyButton(state),
@@ -211,6 +225,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
       focusNode: _primaryFocusNode,
       useBackgroundFocus: true,
       onPressed: onBuy,
+      onNavigateUp: _scrollToTop,
       child: FilledButton.icon(
         onPressed: onBuy,
         icon: showSpinner ? const LoadingIndicatorBox() : const AppIcon(Symbols.favorite_rounded, fill: 1),
@@ -224,6 +239,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
       focusNode: _primaryFocusNode,
       useBackgroundFocus: true,
       onPressed: _retryProduct,
+      onNavigateUp: _scrollToTop,
       child: FilledButton.tonalIcon(
         onPressed: _retryProduct,
         icon: const AppIcon(Symbols.refresh_rounded, fill: 1),

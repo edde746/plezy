@@ -198,6 +198,39 @@ void main() {
     expect(find.text(t.supporter.thankYouTitle), findsNothing);
   });
 
+  testWidgets('an error from an earlier visit is gone when the sheet opens again', (tester) async {
+    final harness = _Harness();
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.open(tester);
+    await tester.tap(find.text(t.supporter.restore));
+    await tester.pumpAndSettle();
+    expect(find.text(t.supporter.errors.nothingToRestore), findsOneWidget);
+
+    await tester.tap(find.byTooltip(t.common.close));
+    await tester.pumpAndSettle();
+    expect(find.byType(SupporterSheet), findsNothing);
+    await harness.open(tester);
+
+    expect(find.text(t.supporter.errors.nothingToRestore), findsNothing);
+  });
+
+  testWidgets('shows one notice at a time: the latest action\'s error replaces the price error', (tester) async {
+    final harness = _Harness();
+    addTearDown(harness.dispose);
+    harness.platform.productQueryError = Exception('offline');
+    await harness.pump(tester);
+    await harness.open(tester);
+    expect(find.text(t.supporter.errors.productQueryFailed), findsOneWidget);
+
+    await tester.tap(find.text(t.supporter.restore));
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.supporter.errors.nothingToRestore), findsOneWidget);
+    expect(find.text(t.supporter.errors.productQueryFailed), findsNothing);
+    expect(find.text(t.common.retry), findsOneWidget);
+  });
+
   testWidgets('an unlocked user sees the thank-you and Close dismisses the sheet', (tester) async {
     final harness = _Harness(purchased: true);
     addTearDown(harness.dispose);
@@ -276,6 +309,42 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
       await tester.pumpAndSettle();
       expect(find.byType(SupporterSheet), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('on a 1080p TV (960x540) the sheet scrolls, and UP from the top button brings the intro back', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(960, 540);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final harness = _Harness();
+      addTearDown(harness.dispose);
+      harness.platform.productQueryError = Exception('offline');
+      await harness.pump(tester);
+      await harness.open(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(_focusedLabel(), 'supporter_primary');
+      final scrollable = find.descendant(of: find.byType(SupporterSheet), matching: find.byType(Scrollable));
+      final position = tester.state<ScrollableState>(scrollable).position;
+      expect(position.maxScrollExtent, greaterThan(0));
+
+      // As after focus scrolled down to the buttons: the intro is out of view.
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+      expect(tester.getRect(find.text(t.supporter.intro)).top, lessThan(tester.getRect(scrollable).top));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+
+      expect(position.pixels, 0);
+      expect(tester.getRect(find.text(t.supporter.intro)).top, greaterThanOrEqualTo(tester.getRect(scrollable).top));
+      expect(_focusedLabel(), 'supporter_primary');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'supporter_restore');
+      expect(tester.takeException(), isNull);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 
