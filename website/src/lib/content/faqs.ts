@@ -25,7 +25,7 @@ export const faqs: Faq[] = [
     id: "free",
     question: "Is Plezy free?",
     answer:
-      "Plezy is open-source and free to download from GitHub. The App Store and Play Store versions are a paid, one-time purchase (price varies by region), which helps cover developer account fees, test devices, and the time spent developing and maintaining the app.<br><br>On the App Store and Play Store, an optional one-time Supporter purchase adds cosmetic extras: preset themes, a custom theme, and alternate app icons. It doesn't unlock any features. The GitHub builds stay free.",
+      "Plezy is open-source and free to download from GitHub. The App Store and Play Store versions are a paid, one-time purchase (price varies by region), which helps cover developer account fees, test devices, and the time spent developing and maintaining the app.<br><br>On the App Store and Play Store, an optional one-time Supporter purchase adds cosmetic extras: preset themes, a custom theme, and alternate app icons. It doesn't unlock any features. The Microsoft Store, Amazon Appstore, macOS, and Linux versions include the themes at no extra charge.<br><br>There's no free trial because the app stores don't natively support trials for paid apps. If you'd like to try before you buy, you can sideload the binaries from GitHub or try it on desktop first.",
   },
   {
     id: "apple-tv",
