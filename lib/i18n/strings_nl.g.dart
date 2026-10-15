@@ -454,7 +454,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.';
 	@override String get audioPassthrough => 'Audio-doorvoer';
 	@override String get audioPassthroughDescription => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.';
+	@override String get audioPassthroughDescriptionApple => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Uit zolang volumenormalisatie aan staat';
 	@override String get downmixCenterBoost => 'Versterking middenkanaal';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$nl extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Volume normaliseren';
 	@override String get audioNormalizationDisablesPassthrough => 'Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat';
-	@override String get audioNormalizationStereoMix => 'Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat';
 }
 
 // Path: performanceOverlay
@@ -2319,6 +2318,8 @@ class _Translations$common$ratingSource$nl extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes-critici';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes-publiek';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3113,6 +3114,8 @@ extension on TranslationsNl {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes-critici',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes-publiek',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3369,7 +3372,7 @@ extension on TranslationsNl {
 			'settings.tunneledPlaybackDescription' => 'Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.',
 			'settings.audioPassthrough' => 'Audio-doorvoer',
 			'settings.audioPassthroughDescription' => 'Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
+			'settings.audioPassthroughDescriptionApple' => 'Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Uit zolang volumenormalisatie aan staat',
 			'settings.downmixCenterBoost' => 'Versterking middenkanaal',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
@@ -3548,10 +3551,10 @@ extension on TranslationsNl {
 			'fileInfo.streamIdentifier' => 'Stream-id',
 			'fileInfo.streamIndex' => 'Streamindex',
 			'fileInfo.streamId' => 'Stream-ID',
-			'fileInfo.language' => 'Taal',
-			'fileInfo.languageCode' => 'Taalcode',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Taal',
+			'fileInfo.languageCode' => 'Taalcode',
 			'fileInfo.streamTitle' => 'Tracktitel',
 			'fileInfo.channels' => 'Kanalen',
 			'fileInfo.sampleRate' => 'Samplingsnelheid',
@@ -4062,10 +4065,10 @@ extension on TranslationsNl {
 			'libraries.analyze' => 'Analyseren',
 			'libraries.analyzeLibrary' => 'Bibliotheek analyseren',
 			'libraries.refreshMetadata' => 'Metadata vernieuwen',
-			'libraries.emptyTrash' => 'Prullenbak legen',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Prullenbak legen voor "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Prullenbak legen',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Prullenbak legen voor "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Prullenbak geleegd voor "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kon prullenbak niet legen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
@@ -4576,10 +4579,10 @@ extension on TranslationsNl {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Wachten op ${name}...',
 			'watchTogether.recentRooms' => 'Recente kamers',
 			'watchTogether.renameRoom' => 'Kamer hernoemen',
-			'watchTogether.removeRoom' => 'Verwijderen',
-			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Verwijderen',
+			'watchTogether.guestSwitchUnavailable' => 'Kon niet schakelen — server niet beschikbaar voor synchronisatie',
 			'watchTogether.guestSwitchFailed' => 'Kon niet schakelen — inhoud niet gevonden op deze server',
 			'watchTogether.defaultDisplayName' => 'Gebruiker',
 			'watchTogether.errors.timedOut' => 'De relayserver heeft niet op tijd gereageerd',
@@ -4813,7 +4816,6 @@ extension on TranslationsNl {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Volume normaliseren',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat',
-			'videoSettings.audioNormalizationStereoMix' => 'Decodeert audio naar een stereomix; doorvoer is uit zolang dit aan staat',
 			'performanceOverlay.color' => 'Kleur',
 			'performanceOverlay.performance' => 'Prestaties',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -5091,9 +5093,9 @@ extension on TranslationsNl {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Van een ander profiel lenen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
-			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',
 			'addServer.authResponseNotJson' => 'Het authenticatieantwoord was geen geldige JSON',
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',

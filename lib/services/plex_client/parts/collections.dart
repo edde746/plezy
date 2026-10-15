@@ -1,6 +1,12 @@
 part of '../../plex_client.dart';
 
+/// Plex's online metadata provider, where Plex Web reads a person's
+/// biography; Plex Media Server keeps only the name and photo.
+const _discoverPeopleUrl = 'https://discover.provider.plex.tv/library/people/';
+
 mixin _PlexCollectionMethods on _PlexClientInternals {
+  String? get plexAccountToken;
+
   _LibraryContentResult _extractLibraryContentResult(
     MediaServerResponse response, {
     int? librarySectionID,
@@ -242,6 +248,26 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
       totalCount: result.totalSize,
       offset: start ?? 0,
     );
+  }
+
+  @override
+  Future<MediaPersonDetails> fetchPersonDetails(String personId, {AbortController? abort}) async {
+    final accountToken = plexAccountToken;
+    if (isOfflineMode || accountToken == null || accountToken.isEmpty) return MediaPersonDetails.empty;
+    final tagResponse = await _getWithFailover('/library/people/$personId', abort: abort);
+    final tagKey = firstFlexibleMap(_getMediaContainer(tagResponse)?['Directory'])?['tagKey'];
+    if (tagKey is! String || tagKey.isEmpty) return MediaPersonDetails.empty;
+    // A plex.tv failure says nothing about this server's endpoints, so it
+    // must not walk (or exhaust) the server's failover list.
+    final response = await _http.get(
+      '$_discoverPeopleUrl${Uri.encodeComponent(tagKey)}',
+      headers: {'X-Plex-Token': accountToken},
+      abort: abort,
+      allowEndpointFailover: false,
+    );
+    throwIfHttpError(response);
+    final container = _getMediaContainer(response);
+    return PlexMappers.personDetails(firstFlexibleMap(container?['Metadata']));
   }
 
   @override

@@ -499,9 +499,9 @@ class PlaybackSettingsScreen extends StatelessWidget {
     subtitle: t.settings.deinterlaceDescription,
   );
 
-  // Normalization wins over passthrough in the player (loudnorm cannot filter
-  // a bitstream), so the switch reports that override instead of promising
-  // bitstreaming that will not happen.
+  // Normalization wins over passthrough in the player (neither loudnorm nor
+  // Android's platform effect can process a bitstream), so the switch reports
+  // that override instead of promising bitstreaming that will not happen.
   Widget _audioPassthroughTile() => SettingsBuilder(
     prefs: const [SettingsService.audioNormalization],
     builder: (context) {
@@ -512,8 +512,8 @@ class PlaybackSettingsScreen extends StatelessWidget {
         title: t.settings.audioPassthrough,
         subtitle: normalizationOn
             ? t.settings.audioPassthroughOverriddenByNormalization
-            : PlatformDetector.isAppleTV()
-            ? t.settings.audioPassthroughDescriptionAppleTv
+            : Platform.isIOS || Platform.isMacOS
+            ? t.settings.audioPassthroughDescriptionApple
             : t.settings.audioPassthroughDescription,
         enabled: !normalizationOn,
       );

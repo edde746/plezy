@@ -195,6 +195,9 @@ void _bootstrapApp() {
 
 /// Resolves the theme the app will settle on, for the frames that precede it.
 ///
+/// Also themes the native window frame, which is already on screen and would
+/// otherwise keep the platform theme until [ThemeProvider] exists.
+///
 /// Both singletons are memoised and awaited again by the gate, so this costs
 /// one preference load and one platform-channel round trip, shared. TV
 /// detection has to come first: the `themeMode` default is TV-aware and
@@ -204,6 +207,9 @@ Future<StartupThemeResolution> _resolveStartupTheme() async {
   final settings = await SettingsService.getInstance();
   await TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode));
   final mode = settings.read(SettingsService.themeMode);
+  ThemeProvider.applyWindowChromeBrightness(
+    ThemeProvider.isDarkFor(mode, WidgetsBinding.instance.platformDispatcher.platformBrightness),
+  );
   return (themeMode: ThemeProvider.materialThemeModeFor(mode), darkTheme: ThemeProvider.darkThemeFor(mode));
 }
 

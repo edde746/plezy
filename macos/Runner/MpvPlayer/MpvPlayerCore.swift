@@ -113,17 +113,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     return true
   }
 
-  override func configurePlatformMpvOptions(mpv: OpaquePointer) {
-    // CoreAudio first: every format normally plays through the one HAL-backed
-    // timing path, deliberately giving up AVFoundation spatialization. The
-    // avfoundation fallback mirrors upstream mpv's macOS probe order and only
-    // engages when CoreAudio's init fails outright — macOS 27 beta rejects
-    // ao_coreaudio's channel-layout setup with paramErr (-50), and a
-    // single-entry ao list would turn that into playback with no audio at
-    // all (#1964).
-    checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
-  }
-
   func reattachMetalLayer() {
     guard let contentView = window?.contentView else { return }
 

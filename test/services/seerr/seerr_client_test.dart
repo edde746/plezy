@@ -1073,6 +1073,35 @@ void main() {
       expect(updated, isNull);
     });
 
+    test('getPublicSettings shares one in-flight request and retries after a failure', () async {
+      var fetches = 0;
+      var available = false;
+      final mock = MockClient((request) async {
+        expect(request.url.path, '/api/v1/settings/public');
+        fetches++;
+        return available
+            ? _json({'initialized': true, 'cacheImages': true})
+            : _json({'message': 'unavailable'}, status: 500);
+      });
+      final client = SeerrClient(_session(), onSessionInvalidated: () {}, httpClient: mock);
+      addTearDown(client.dispose);
+
+      // Every Explore row asks at once: one request answers them all, and
+      // its failure reaches each caller.
+      final failures = await Future.wait([
+        for (var i = 0; i < 3; i++) client.getPublicSettings().then<Object>((s) => s, onError: (Object e) => e),
+      ]);
+      expect(fetches, 1);
+      expect(failures, everyElement(isA<SeerrApiException>()));
+
+      // The failure is not cached; the success is.
+      available = true;
+      await Future.wait([client.getPublicSettings(), client.getPublicSettings()]);
+      expect(fetches, 2);
+      expect(await client.tmdbImageProxyUrl(), 'https://seerr.example.com/imageproxy');
+      expect(fetches, 2);
+    });
+
     test('refreshUser adopts and persists a changed permission mask', () async {
       var permissions = SeerrPermission.request;
       SeerrSession? updated;

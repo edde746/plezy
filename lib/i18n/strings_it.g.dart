@@ -454,7 +454,7 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => 'Usa il tunneling video. Disattivalo se durante la riproduzione HDR lo schermo rimane nero o il movimento scatta.';
 	@override String get audioPassthrough => 'Passthrough audio';
 	@override String get audioPassthroughDescription => 'Invia l\'audio Dolby/DTS al ricevitore o al televisore senza ricodificarlo, preservando l\'audio surround. Disattiva questa opzione se non senti alcun suono.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.';
+	@override String get audioPassthroughDescriptionApple => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Disattivato mentre la normalizzazione del volume è attiva';
 	@override String get downmixCenterBoost => 'Amplificazione canale centrale';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$it extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Normalizza il volume';
 	@override String get audioNormalizationDisablesPassthrough => 'Decodifica l\'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva';
-	@override String get audioNormalizationStereoMix => 'Decodifica l\'audio in un mix stereo; il passthrough è disattivato mentre questa opzione è attiva';
 }
 
 // Path: performanceOverlay
@@ -2319,6 +2318,8 @@ class _Translations$common$ratingSource$it extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Critici di Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Pubblico di Rotten Tomatoes';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3113,6 +3114,8 @@ extension on TranslationsIt {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Critici di Rotten Tomatoes',
 			'common.ratingSource.rottenTomatoesAudience' => 'Pubblico di Rotten Tomatoes',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/D',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3369,7 +3372,7 @@ extension on TranslationsIt {
 			'settings.tunneledPlaybackDescription' => 'Usa il tunneling video. Disattivalo se durante la riproduzione HDR lo schermo rimane nero o il movimento scatta.',
 			'settings.audioPassthrough' => 'Passthrough audio',
 			'settings.audioPassthroughDescription' => 'Invia l\'audio Dolby/DTS al ricevitore o al televisore senza ricodificarlo, preservando l\'audio surround. Disattiva questa opzione se non senti alcun suono.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.',
+			'settings.audioPassthroughDescriptionApple' => 'Usa il decoder Dolby nativo di Apple per Dolby Digital Plus, incluso Atmos. DTS e TrueHD vengono comunque riprodotti come PCM multicanale. Disattiva questa opzione se non senti alcun suono.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Disattivato mentre la normalizzazione del volume è attiva',
 			'settings.downmixCenterBoost' => 'Amplificazione canale centrale',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
@@ -3548,10 +3551,10 @@ extension on TranslationsIt {
 			'fileInfo.streamIdentifier' => 'Identificatore flusso',
 			'fileInfo.streamIndex' => 'Indice flusso',
 			'fileInfo.streamId' => 'ID flusso',
-			'fileInfo.language' => 'Lingua',
-			'fileInfo.languageCode' => 'Codice lingua',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Lingua',
+			'fileInfo.languageCode' => 'Codice lingua',
 			'fileInfo.streamTitle' => 'Titolo traccia',
 			'fileInfo.channels' => 'Canali',
 			'fileInfo.sampleRate' => 'Frequenza di campionamento',
@@ -4062,10 +4065,10 @@ extension on TranslationsIt {
 			'libraries.analyze' => 'Analizza',
 			'libraries.analyzeLibrary' => 'Analizza libreria',
 			'libraries.refreshMetadata' => 'Aggiorna metadati',
-			'libraries.emptyTrash' => 'Svuota cestino',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Svuotamento del cestino di "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Svuota cestino',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Svuotamento del cestino di "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Cestino di "${title}" svuotato',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Impossibile svuotare il cestino: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analisi di "${title}"...',
@@ -4576,10 +4579,10 @@ extension on TranslationsIt {
 			'watchTogether.waitingForName' => ({required Object name}) => 'In attesa di ${name}...',
 			'watchTogether.recentRooms' => 'Stanze usate di recente',
 			'watchTogether.renameRoom' => 'Rinomina stanza',
-			'watchTogether.removeRoom' => 'Rimuovi',
-			'watchTogether.guestSwitchUnavailable' => 'Impossibile cambiare — server non disponibile per la sincronizzazione',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Rimuovi',
+			'watchTogether.guestSwitchUnavailable' => 'Impossibile cambiare — server non disponibile per la sincronizzazione',
 			'watchTogether.guestSwitchFailed' => 'Impossibile cambiare — contenuto non trovato su questo server',
 			'watchTogether.defaultDisplayName' => 'Utente',
 			'watchTogether.errors.timedOut' => 'Il server relay non ha risposto in tempo',
@@ -4813,7 +4816,6 @@ extension on TranslationsIt {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalizza il volume',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodifica l\'audio in PCM; il passthrough è disattivato mentre questa opzione è attiva',
-			'videoSettings.audioNormalizationStereoMix' => 'Decodifica l\'audio in un mix stereo; il passthrough è disattivato mentre questa opzione è attiva',
 			'performanceOverlay.color' => 'Colore',
 			'performanceOverlay.performance' => 'Prestazioni',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -5091,9 +5093,9 @@ extension on TranslationsIt {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Accedi al tuo server ${product}. Associato a ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Prendi in prestito da un altro profilo',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Riutilizza la connessione di un altro profilo. I profili protetti da PIN richiedono un PIN.',
-			'addServer.invalidCredentials' => 'Nome utente o password non validi',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Nome utente o password non validi',
 			'addServer.authResponseNotJson' => 'La risposta di autenticazione non era un JSON valido',
 			'addServer.authResponseIncomplete' => 'La risposta di accesso del server era incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect è stato rifiutato dal server',

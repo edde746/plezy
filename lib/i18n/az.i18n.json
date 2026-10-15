@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes tənqidçiləri",
-      "rottenTomatoesAudience": "Rotten Tomatoes tamaşaçıları"
+      "rottenTomatoesAudience": "Rotten Tomatoes tamaşaçıları",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Video tünelləməni istifadə et. HDR oynatmada qara ekran görünürsə və ya hərəkət takılırsa söndürün.",
     "audioPassthrough": "Səsin birbaşa ötürülməsi (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.",
-    "audioPassthroughDescriptionAppleTv": "Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.",
+    "audioPassthroughDescriptionApple": "Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.",
     "audioPassthroughOverriddenByNormalization": "Səsin gurluğunu normallaşdırma aktivkən söndürülüb",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} başlıq",
       "other": "${n} başlıq"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Məkan səsi",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Səsin gurluğunu normallaşdır",
-    "audioNormalizationDisablesPassthrough": "Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür",
-    "audioNormalizationStereoMix": "Səsi stereo miksə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür"
+    "audioNormalizationDisablesPassthrough": "Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür"
   },
   "performanceOverlay": {
     "color": "Rəng",

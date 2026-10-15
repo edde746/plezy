@@ -303,6 +303,26 @@ void main() {
       expect(item.heroBackdropPaths, item.grandparentBackdropPaths);
     });
 
+    test('season without its own backdrops heroes the inherited series backdrops (#2661)', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'season-parent-art',
+          'Type': 'Season',
+          'SeriesId': 'series-1',
+          'BackdropImageTags': <String>[],
+          'ParentBackdropItemId': 'series-1',
+          'ParentBackdropImageTags': ['parent-0', 'parent-1'],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.heroBackdropPaths, [
+        '/Items/series-1/Images/Backdrop/0?tag=parent-0',
+        '/Items/series-1/Images/Backdrop/1?tag=parent-1',
+      ]);
+    });
+
     test('episode season poster falls back to series poster when season image tag is absent', () {
       final json = {
         'Id': 'ep1',

@@ -65,17 +65,18 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     navigateToAppBar();
   }
 
-  /// Navigate focus from app bar down to the grid
+  /// Navigate focus from app bar down to the grid: the remembered item while
+  /// its card is mounted, otherwise the first item. A re-sort or BACK from deep
+  /// in the grid leaves the remembered card unmounted; [navigateToAppBar]
+  /// scrolls to the top, so the first row is the one that is built.
   void navigateToGrid() {
     if (!hasItems) return;
-
-    final targetIndex = shouldRestoreGridFocus ? lastFocusedGridIndex! : 0;
 
     setState(() {
       isAppBarFocused = false;
     });
 
-    _focusNodeForIndex(targetIndex).requestFocus();
+    (mountedLastFocusedGridNode ?? firstItemFocusNode).requestFocus();
   }
 
   FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'detail_grid_item');
@@ -173,6 +174,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   Widget buildFocusableGrid({
     required List<MediaItem> items,
     required void Function(MediaItem source) onRefresh,
+    void Function(int index)? onItemTap,
     String? collectionId,
     VoidCallback? onListRefresh,
     CardShape? shape,
@@ -182,6 +184,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
       totalItems: items.length,
       itemAt: (index) => items[index],
       onRefresh: onRefresh,
+      onItemTap: onItemTap,
       collectionId: collectionId,
       onListRefresh: onListRefresh,
       shape: shape,
@@ -194,24 +197,32 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// fetched. Null slots render a skeleton and invoke [onSkeletonVisible] so
   /// the caller can kick off a page fetch containing that index.
   ///
+  /// [onItemTap] replaces each card's default media navigation (pointer tap
+  /// and D-pad SELECT) with a callback receiving the slot's local index — for
+  /// screens where activating an entry means "play this list from here".
+  ///
   /// [indexOffset] shifts this grid's slots into the screen-global focus
   /// index space (focus nodes and [lastFocusedGridIndex] are keyed 0..n-1
   /// across every grid on the screen). Screens that stack several titled
   /// grids pass the running total; single-grid screens keep the default 0.
   /// With an offset, up-navigation from this grid's first row falls through
   /// to framework traversal (crossing into the previous section's grid)
-  /// instead of jumping to the app bar. [isOffline] renders downloaded items
-  /// from local artwork and opens them offline.
+  /// instead of jumping to the app bar. [onFirstRowNavigateUp] replaces that
+  /// app-bar handoff for a screen with focusable content between the two.
+  /// [isOffline] renders downloaded items from local artwork and opens them
+  /// offline.
   Widget buildSparseFocusableGrid({
     required int totalItems,
     required MediaItem? Function(int index) itemAt,
     required void Function(MediaItem source) onRefresh,
+    void Function(int index)? onItemTap,
     void Function(int index)? onSkeletonVisible,
     String? collectionId,
     VoidCallback? onListRefresh,
     CardShape? shape,
     int indexOffset = 0,
     bool isOffline = false,
+    VoidCallback? onFirstRowNavigateUp,
   }) {
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
@@ -238,6 +249,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
             semanticValue: _semanticPosition(position),
             disableScale: position.disableScale,
             onRefresh: onRefresh,
+            onTap: onItemTap == null ? null : () => onItemTap(index),
             collectionId: collectionId,
             onListRefresh: onListRefresh,
             isOffline: isOffline,
@@ -246,7 +258,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
             // The first section's first row reaches the app bar; later
             // sections fall through to traversal, which enters the previous
             // section's grid.
-            onNavigateUp: position.isFirstRow && indexOffset == 0 ? navigateToAppBar : null,
+            onNavigateUp: position.isFirstRow && indexOffset == 0 ? onFirstRowNavigateUp ?? navigateToAppBar : null,
             onBack: handleBackFromContent,
             onFocusChange: (hasFocus) => trackGridItemFocus(globalIndex, hasFocus),
           );

@@ -125,6 +125,13 @@ class PlayerStreams {
   /// subtitle sidecars finish opening.
   final Stream<void> primaryMediaReady;
 
+  /// Emits when an mpv file moves toward its next frame: the decoders took
+  /// packets from the demuxer (`reader-pts` moved), or a demuxer that is
+  /// starving a decoder received data. Silence while a load is pending means
+  /// neither the network nor the decode pipeline is moving. Backends without
+  /// mpv's demuxer reader state (ExoPlayer) never emit.
+  final Stream<void> demuxerProgress;
+
   /// Emits when the compositor's preferred colour description for the video
   /// plane changes: the window moved to another output, or an output's HDR
   /// state was toggled under it. Linux only, where it is the only notice that
@@ -171,6 +178,7 @@ class PlayerStreams {
     this.sourceReady = const Stream<PlayerSourceReady>.empty(),
     this.sourceFailed = const Stream<PlayerSourceFailed>.empty(),
     this.primaryMediaReady = const Stream<void>.empty(),
+    this.demuxerProgress = const Stream<void>.empty(),
     this.hdrOutputChanged = const Stream<void>.empty(),
     required this.backendSwitched,
     this.trackTransition = const Stream<String>.empty(),

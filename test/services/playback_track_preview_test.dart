@@ -167,7 +167,7 @@ void main() {
         previewPlaybackTracks(
           plexEpisode,
           cached,
-          profile: const AccountPreferences(playDefaultAudioTrack: true, preferredAudioLanguage: 'eng'),
+          profile: const AccountPreferences(selectAudioByLanguage: true, preferredAudioLanguage: 'eng'),
         )!.audio?.languageCode,
         'eng',
       );

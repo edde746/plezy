@@ -1184,6 +1184,18 @@ class PlexMappers {
     );
   }
 
+  /// Map the row `discover.provider.plex.tv/library/people/{tagKey}` answers
+  /// with. An unknown person comes back as an empty container: null [json].
+  static MediaPersonDetails personDetails(Map<String, dynamic>? json) {
+    if (json == null) return MediaPersonDetails.empty;
+    return MediaPersonDetails(
+      biography: _stringOrNull(json['summary']),
+      birthDate: MediaPersonDetails.parseDate(json['bornAt']),
+      deathDate: MediaPersonDetails.parseDate(json['diedAt']),
+      birthPlace: _stringOrNull(json['birthPlace']),
+    );
+  }
+
   /// Map a parsed [PlexMediaVersionDto] into a [MediaVersion].
   static MediaVersion mediaVersion(PlexMediaVersionDto dto) {
     final parts = dto.parts.isEmpty

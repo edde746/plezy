@@ -103,6 +103,15 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
   bool get shouldRestoreGridFocus =>
       lastFocusedGridIndex != null && lastFocusedGridContentVersion == gridContentVersion && lastFocusedGridIndex! >= 0;
 
+  /// The remembered item's node while its card is mounted, else null. The
+  /// grid unmounts cards outside its build range, and Flutter parks a request
+  /// on a detached node until it is reparented, so focusing one does nothing.
+  FocusNode? get mountedLastFocusedGridNode {
+    if (!shouldRestoreGridFocus) return null;
+    final node = gridItemFocusNodes[lastFocusedGridIndex!];
+    return node is _GridFocusNode && node._isAttached ? node : null;
+  }
+
   void _retireGridFocusNode(FocusNode node) {
     // Disable stale menu/route destinations immediately, without issuing a
     // replacement request. The owning scope supplies its normal fallback.

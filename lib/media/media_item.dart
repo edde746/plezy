@@ -597,8 +597,9 @@ sealed class MediaItem with _$MediaItem {
     return primary == null || primary.isEmpty ? const [] : [primary];
   }
 
-  /// Every inherited series backdrop in Jellyfin display order. Older
-  /// persisted objects fall back to [grandparentArtPath].
+  /// Every backdrop inherited from an ancestor (the series, for episodes and
+  /// seasons) in Jellyfin display order. Older persisted objects fall back to
+  /// [grandparentArtPath].
   List<String> get resolvedGrandparentBackdropPaths {
     final paths = grandparentBackdropPaths;
     if (paths != null && paths.isNotEmpty) return paths;
@@ -607,13 +608,16 @@ sealed class MediaItem with _$MediaItem {
   }
 
   /// Backdrops eligible for rotation. Episodes prefer inherited series art;
-  /// other kinds rotate only their own artwork.
+  /// every other kind rotates its own artwork and falls back to inherited art
+  /// only when it has none. Jellyfin applies the same rule: it sends
+  /// `ParentBackdropImageTags` only for items without backdrops of their own.
   List<String> get heroBackdropPaths {
     if (kind == MediaKind.episode) {
       final inherited = resolvedGrandparentBackdropPaths;
-      if (inherited.isNotEmpty) return inherited;
+      return inherited.isNotEmpty ? inherited : resolvedBackdropPaths;
     }
-    return resolvedBackdropPaths;
+    final own = resolvedBackdropPaths;
+    return own.isNotEmpty ? own : resolvedGrandparentBackdropPaths;
   }
 
   /// The backdrops a hero may rotate through in a container of
@@ -642,8 +646,8 @@ sealed class MediaItem with _$MediaItem {
     final preferred = switch (kind) {
       MediaKind.episode when isNearSquare => <String?>[backgroundSquarePath, ...inherited, ...own],
       MediaKind.episode => <String?>[...inherited, ...own, backgroundSquarePath],
-      _ when isNearSquare => <String?>[backgroundSquarePath, ...own],
-      _ => <String?>[...own, backgroundSquarePath],
+      _ when isNearSquare => <String?>[backgroundSquarePath, ...own, ...inherited],
+      _ => <String?>[...own, ...inherited, backgroundSquarePath],
     };
 
     final candidates = <String>[];

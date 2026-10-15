@@ -175,6 +175,12 @@ class WatchTogetherProvider with ChangeNotifier {
   bool get hasCurrentPlayback =>
       currentMediaRatingKey != null && currentMediaServerId != null && currentMediaTitle != null;
 
+  /// The version the room's host opened for [ratingKey] on [serverId], for a
+  /// launch that follows the room to open too; null for any other item or
+  /// when the host named none.
+  RoomMediaVersion? roomMediaVersionFor({required String ratingKey, required ServerId serverId}) =>
+      _controller?.roomMediaVersionFor(ratingKey: ratingKey, serverId: serverId);
+
   String? _buildPlaybackKey(String? ratingKey, ServerId? serverId) {
     if (ratingKey == null || serverId == null) return null;
     return '$serverId:$ratingKey';
@@ -944,6 +950,7 @@ class WatchTogetherProvider with ChangeNotifier {
     required String ratingKey,
     required ServerId serverId,
     required String mediaTitle,
+    RoomMediaVersion? mediaVersion,
     required Duration position,
     required double rate,
     required WatchPlaybackLease? lease,
@@ -953,6 +960,7 @@ class WatchTogetherProvider with ChangeNotifier {
           ratingKey: ratingKey,
           serverId: serverId,
           mediaTitle: mediaTitle,
+          mediaVersion: mediaVersion,
           position: position,
           rate: rate,
           lease: lease,

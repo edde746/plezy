@@ -333,6 +333,28 @@ class AnilistClient implements DisposableTrackerClient {
     return (scoreRaw / 10).round().clamp(1, 10).toInt();
   }
 
+  /// An anime's 0-100 community average (`Media.averageScore`), by its AniList [id] or else its MAL [idMal]; null
+  /// while AniList has no average yet or when it does not know the anime (HTTP 404, "Not Found.").
+  Future<int?> getAverageScore({int? id, int? idMal}) async {
+    if (id == null && idMal == null) throw ArgumentError('getAverageScore needs an AniList or MAL id');
+    const mediaQuery = '''
+      query(\$id: Int, \$idMal: Int) {
+        Media(id: \$id, idMal: \$idMal, type: ANIME) {
+          averageScore
+        }
+      }
+    ''';
+    final Map<String, dynamic> data;
+    try {
+      data = await query(mediaQuery, variables: id != null ? {'id': id} : {'idMal': idMal});
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+    final media = data['Media'];
+    return media is Map ? flexibleInt(media['averageScore']) : null;
+  }
+
   /// Episode count plus the viewer's list entry in one request, so the
   /// rewatch-preserving scrobble path costs no extra call.
   Future<AnimeListSnapshot?> getAnimeListSnapshot(int mediaId) async {

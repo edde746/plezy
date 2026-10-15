@@ -3,15 +3,19 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:window_manager/window_manager.dart' show windowManager;
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../services/native_window_service.dart';
 import '../services/settings_binding_owner.dart';
 import '../services/settings_service.dart' as settings;
 import '../theme/mono_theme.dart';
+import '../utils/app_logger.dart';
 
 class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, WidgetsBindingObserver {
   late final SettingsBindingOwner _settingsBinding;
   settings.ThemeMode _themeMode = settings.ThemeMode.system;
   late Brightness _systemBrightness;
+  bool? _windowChromeDark;
 
   ThemeProvider() {
     _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
@@ -26,12 +30,14 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
     );
     unawaited(_settingsBinding.bind());
     WidgetsBinding.instance.addObserver(this);
+    _syncWindowChrome();
   }
 
   @override
   void didChangePlatformBrightness() {
     _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
     if (_themeMode == settings.ThemeMode.system) {
+      _syncWindowChrome();
       safeNotifyListeners();
     }
   }
@@ -47,6 +53,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
     final changed = _themeMode != mode;
     _themeMode = mode;
     _updateSplashTheme(mode);
+    _syncWindowChrome();
     if (changed || forceNotify) safeNotifyListeners();
   }
 
@@ -73,17 +80,45 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
 
   ThemeMode get materialThemeMode => materialThemeModeFor(_themeMode);
 
-  bool get isDarkMode {
-    switch (_themeMode) {
-      case settings.ThemeMode.light:
-        return false;
-      case settings.ThemeMode.dark:
-        return true;
-      case settings.ThemeMode.oled:
-        return true;
-      case settings.ThemeMode.system:
-        return _systemBrightness == Brightness.dark;
+  /// Whether [mode] resolves to a dark theme when the platform reports [platformBrightness].
+  static bool isDarkFor(settings.ThemeMode mode, Brightness platformBrightness) => switch (mode) {
+    settings.ThemeMode.light => false,
+    settings.ThemeMode.dark || settings.ThemeMode.oled => true,
+    settings.ThemeMode.system => platformBrightness == Brightness.dark,
+  };
+
+  bool get isDarkMode => isDarkFor(_themeMode, _systemBrightness);
+
+  /// Themes the native window frame, which Flutter does not paint, to match the app.
+  ///
+  /// Neither desktop frame follows the app on its own: the GTK3 title bar on Linux keeps the GTK theme's light
+  /// variant even under GNOME's dark style, and the Windows caption follows the OS app theme (#2622). macOS needs
+  /// nothing: its title bar is transparent over Flutter content. Best-effort, because a frame left in the platform's
+  /// own theme is the correct fallback.
+  ///
+  /// Static so startup can theme the frame as soon as settings load, before this provider exists.
+  static void applyWindowChromeBrightness(bool dark) {
+    final Future<void> applied;
+    if (Platform.isLinux) {
+      applied = windowManager.setBrightness(dark ? Brightness.dark : Brightness.light);
+    } else if (Platform.isWindows) {
+      applied = NativeWindowService.setDarkMode(dark);
+    } else {
+      return;
     }
+    unawaited(
+      applied.catchError((Object error, StackTrace stackTrace) {
+        appLogger.d('Window frame theme not applied', error: error, stackTrace: stackTrace);
+      }),
+    );
+  }
+
+  void _syncWindowChrome() {
+    if (isDisposed) return;
+    final dark = isDarkMode;
+    if (_windowChromeDark == dark) return;
+    _windowChromeDark = dark;
+    applyWindowChromeBrightness(dark);
   }
 
   static const _themeChannel = MethodChannel('com.plezy/theme');

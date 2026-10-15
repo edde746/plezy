@@ -11,6 +11,12 @@ enum PlaybackPhase { loading, waitingForPeers, paused, playing }
 /// Serialized as the enum index — append new values only.
 enum PlaybackActionHint { play, pause, seek, rate, mediaSwitch }
 
+/// The media version the host opened for the room's item: its backend source
+/// id, plus the version's `MediaVersion.signature` for matching the
+/// equivalent version when a peer is not offered that id. At least one of the
+/// two is set.
+typedef RoomMediaVersion = ({String? sourceId, String? signature});
+
 /// Authoritative playback state, broadcast by the host on every transition
 /// and as the periodic heartbeat. Receivers keep the highest [seq] seen and
 /// drop anything older, so missed or reordered messages self-heal on the
@@ -25,6 +31,10 @@ class PlaybackState {
   final String ratingKey;
   final String serverId;
   final String? mediaTitle;
+
+  /// The version the host opened. Null when the host named none — an older
+  /// app; peers then fall back to their own remembered version.
+  final RoomMediaVersion? mediaVersion;
   final PlaybackPhase phase;
 
   /// Timeline-adjusted position at [anchorHostTimeMs].
@@ -54,6 +64,7 @@ class PlaybackState {
     required this.rate,
     required this.controlMode,
     this.mediaTitle,
+    this.mediaVersion,
     this.waitingOn = const [],
     this.actorPeerId,
     this.actionHint,
@@ -76,6 +87,7 @@ class PlaybackState {
     String? ratingKey,
     String? serverId,
     String? mediaTitle,
+    RoomMediaVersion? mediaVersion,
     PlaybackPhase? phase,
     int? anchorPositionMs,
     int? anchorHostTimeMs,
@@ -90,6 +102,7 @@ class PlaybackState {
       ratingKey: ratingKey ?? this.ratingKey,
       serverId: serverId ?? this.serverId,
       mediaTitle: mediaTitle ?? this.mediaTitle,
+      mediaVersion: mediaVersion ?? this.mediaVersion,
       phase: phase ?? this.phase,
       anchorPositionMs: anchorPositionMs ?? this.anchorPositionMs,
       anchorHostTimeMs: anchorHostTimeMs ?? this.anchorHostTimeMs,
@@ -106,6 +119,8 @@ class PlaybackState {
     'rk': ratingKey,
     'sid': serverId,
     if (mediaTitle != null) 'ti': mediaTitle,
+    if (mediaVersion?.sourceId != null) 'vid': mediaVersion!.sourceId,
+    if (mediaVersion?.signature != null) 'vsig': mediaVersion!.signature,
     'ph': phase.index,
     'ap': anchorPositionMs,
     'at': anchorHostTimeMs,
@@ -122,6 +137,7 @@ class PlaybackState {
       ratingKey: map['rk'] as String,
       serverId: map['sid'] as String,
       mediaTitle: map['ti'] as String?,
+      mediaVersion: _mediaVersionFromMap(map),
       phase: _enumFromIndex(PlaybackPhase.values, map['ph'] as int) ?? PlaybackPhase.paused,
       anchorPositionMs: map['ap'] as int,
       anchorHostTimeMs: map['at'] as int,
@@ -140,6 +156,7 @@ class PlaybackState {
       other.ratingKey == ratingKey &&
       other.serverId == serverId &&
       other.mediaTitle == mediaTitle &&
+      other.mediaVersion == mediaVersion &&
       other.phase == phase &&
       other.anchorPositionMs == anchorPositionMs &&
       other.anchorHostTimeMs == anchorHostTimeMs &&
@@ -155,6 +172,7 @@ class PlaybackState {
     ratingKey,
     serverId,
     mediaTitle,
+    mediaVersion,
     phase,
     anchorPositionMs,
     anchorHostTimeMs,
@@ -256,6 +274,14 @@ class ControlRequest {
 
   @override
   String toString() => 'ControlRequest(${kind.name}, pos: $positionMs, rate: $rate)';
+}
+
+/// Absent on states from older hosts, which never name a version.
+RoomMediaVersion? _mediaVersionFromMap(Map<String, dynamic> map) {
+  final sourceId = map['vid'] as String?;
+  final signature = map['vsig'] as String?;
+  if (sourceId == null && signature == null) return null;
+  return (sourceId: sourceId, signature: signature);
 }
 
 /// Index-safe enum decode: out-of-range values (from a newer protocol

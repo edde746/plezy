@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Critiques Rotten Tomatoes",
-      "rottenTomatoesAudience": "Public Rotten Tomatoes"
+      "rottenTomatoesAudience": "Public Rotten Tomatoes",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir ou si l’image saccade.",
     "audioPassthrough": "Transmission audio directe",
     "audioPassthroughDescription": "Envoyer l’audio Dolby/DTS à votre ampli ou téléviseur sans le réencoder afin de préserver le son surround. Désactivez cette option en l’absence de son.",
-    "audioPassthroughDescriptionAppleTv": "Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.",
+    "audioPassthroughDescriptionApple": "Utiliser le décodeur Dolby natif d’Apple pour le Dolby Digital Plus, y compris Atmos. Le DTS et le TrueHD sont toujours lus en PCM multicanal. Désactivez cette option en l’absence de son.",
     "audioPassthroughOverriddenByNormalization": "Désactivée tant que la normalisation du volume est active",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} titre",
       "other": "${n} titres"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Audio spatial",
     "audioOutputStereo": "Stéréo",
     "audioNormalization": "Normaliser le volume",
-    "audioNormalizationDisablesPassthrough": "Décode l’audio en PCM ; la transmission directe est désactivée tant que cette option est active",
-    "audioNormalizationStereoMix": "Décode l’audio en un mixage stéréo ; la transmission directe est désactivée tant que cette option est active"
+    "audioNormalizationDisablesPassthrough": "Décode l’audio en PCM ; la transmission directe est désactivée tant que cette option est active"
   },
   "performanceOverlay": {
     "color": "Couleur",

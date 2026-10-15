@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Критиците на Rotten Tomatoes",
-      "rottenTomatoesAudience": "Публиката на Rotten Tomatoes"
+      "rottenTomatoesAudience": "Публиката на Rotten Tomatoes",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "Н/Д",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран или движението прекъсва.",
     "audioPassthrough": "Директно предаване на аудио",
     "audioPassthroughDescription": "Изпращай Dolby/DTS звук към приемника или телевизора без прекодиране, за да запазиш съраунд звука. Изключи настройката, ако няма звук.",
-    "audioPassthroughDescriptionAppleTv": "Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.",
+    "audioPassthroughDescriptionApple": "Използвай вградения декодер на Apple за Dolby Digital Plus, включително Atmos. DTS и TrueHD продължават да се възпроизвеждат като многоканален PCM. Изключи настройката, ако няма звук.",
     "audioPassthroughOverriddenByNormalization": "Изключено, докато е включено нормализирането на силата на звука",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} заглавие",
       "other": "${n} заглавия"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Пространствено аудио",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Нормализиране на силата на звука",
-    "audioNormalizationDisablesPassthrough": "Декодира аудиото до PCM; директното предаване е изключено, докато това е включено",
-    "audioNormalizationStereoMix": "Декодира аудиото до стерео микс; директното предаване е изключено, докато това е включено"
+    "audioNormalizationDisablesPassthrough": "Декодира аудиото до PCM; директното предаване е изключено, докато това е включено"
   },
   "performanceOverlay": {
     "color": "Цвят",

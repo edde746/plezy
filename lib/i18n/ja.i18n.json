@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes 批評家",
-      "rottenTomatoesAudience": "Rotten Tomatoes 観客"
+      "rottenTomatoesAudience": "Rotten Tomatoes 観客",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "動画トンネリングを使用します。HDR再生で画面が黒くなる場合や動きがカクつく場合は無効にしてください。",
     "audioPassthrough": "オーディオパススルー",
     "audioPassthroughDescription": "Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。",
-    "audioPassthroughDescriptionAppleTv": "Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。",
+    "audioPassthroughDescriptionApple": "Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。",
     "audioPassthroughOverriddenByNormalization": "ラウドネス正規化がオンの間はオフ",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1082,6 +1084,13 @@
     "moreLikeThis": "似ている作品",
     "titleCount": {
       "other": "${n}作品"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2000,8 +2009,7 @@
     "audioOutputSpatial": "空間オーディオ",
     "audioOutputStereo": "ステレオ",
     "audioNormalization": "ラウドネス正規化",
-    "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります",
-    "audioNormalizationStereoMix": "音声をステレオミックスにデコードします。オンの間はパススルーがオフになります"
+    "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります"
   },
   "performanceOverlay": {
     "color": "色",

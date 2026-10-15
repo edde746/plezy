@@ -223,6 +223,37 @@ void main() {
       ]);
     });
 
+    test('seasons without backdrops of their own fall back to inherited series backdrops (#2661)', () {
+      final season = testMediaItem(
+        id: 's-inherited',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(season.heroBackdropPaths, ['/show-0', '/show-1']);
+      expect(season.heroArtCandidates(containerAspectRatio: 16 / 9), ['/show-0', '/show-1', '/square']);
+    });
+
+    test('non-episodes keep their own backdrops ahead of inherited ones', () {
+      final season = testMediaItem(
+        id: 's-own',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        artPath: '/season-0',
+        backdropPaths: ['/season-0', '/season-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(season.heroBackdropPaths, ['/season-0', '/season-1']);
+      expect(season.heroArtCandidates(containerAspectRatio: 16 / 9), ['/season-0', '/season-1', '/show-0', '/square']);
+      expect(season.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/season-0', '/season-1', '/show-0']);
+    });
+
     test('legacy scalar art remains a single static backdrop', () {
       final movie = _movie(artPath: '/legacy-art');
 
@@ -281,13 +312,27 @@ void main() {
         backgroundSquarePath: '/square',
         serverId: 's1',
       );
+      final seasonWithOwn = testMediaItem(
+        id: 's-order',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        artPath: '/season-0',
+        backdropPaths: ['/season-0', '/season-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1'],
+        backgroundSquarePath: '/square',
+        serverId: 's1',
+      );
+      final seasonInheriting = seasonWithOwn.copyWith(artPath: null, backdropPaths: null);
 
-      for (final aspect in [0.75, 1.0, 1.38, 1.39, 16 / 9, 2.4]) {
-        expect(
-          displayOrder(episode, aspect),
-          episode.heroArtCandidates(containerAspectRatio: aspect),
-          reason: 'aspect $aspect',
-        );
+      for (final item in [episode, seasonWithOwn, seasonInheriting]) {
+        for (final aspect in [0.75, 1.0, 1.38, 1.39, 16 / 9, 2.4]) {
+          expect(
+            displayOrder(item, aspect),
+            item.heroArtCandidates(containerAspectRatio: aspect),
+            reason: '${item.id} (${item.resolvedBackdropPaths.length} own) at aspect $aspect',
+          );
+        }
       }
     });
   });

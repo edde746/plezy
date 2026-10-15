@@ -23,7 +23,7 @@ AccountPreferences _profile({
   String? defaultSubtitleLanguage,
 }) {
   return AccountPreferences(
-    playDefaultAudioTrack: autoSelectAudio,
+    selectAudioByLanguage: autoSelectAudio,
     preferredAudioLanguage: defaultAudioLanguage,
     preferredSubtitleLanguage: defaultSubtitleLanguage,
   );
@@ -35,7 +35,7 @@ AccountPreferences _jellyfinProfile({
   SubtitlePlaybackMode? subtitleMode,
 }) {
   return AccountPreferences(
-    playDefaultAudioTrack: true,
+    selectAudioByLanguage: true,
     preferredAudioLanguage: defaultAudioLanguage,
     preferredSubtitleLanguage: defaultSubtitleLanguage,
     subtitlePlaybackMode: subtitleMode,

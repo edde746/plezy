@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
@@ -14,14 +15,43 @@ import 'package:plezy/utils/external_ids.dart';
 
 import '../../test_helpers/http_fixtures.dart';
 
+/// Answers `/settings/public` ahead of the test's own handler — with the given
+/// settings, or a 404 when there are none, which leaves artwork on TMDB's CDN
+/// and the session's product untouched — so each handler sees only the
+/// catalog traffic it asserts on.
+class _PublicSettingsClient extends http.BaseClient {
+  _PublicSettingsClient(this._inner, this._settings);
+
+  final http.Client _inner;
+  final Map<String, Object?>? _settings;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (!request.url.path.endsWith('${SeerrConstants.apiPath}/settings/public')) return _inner.send(request);
+    final settings = _settings;
+    final response = settings == null ? jsonResponse({'message': 'Not Found'}, status: 404) : jsonResponse(settings);
+    return http.StreamedResponse(
+      Stream.value(response.bodyBytes),
+      response.statusCode,
+      headers: response.headers,
+      request: request,
+    );
+  }
+
+  @override
+  void close() => _inner.close();
+}
+
 SeerrCatalogSource _source(
   MockClient mock, {
   SeerrProduct product = SeerrProduct.unknown,
   int permissions = SeerrPermission.admin,
+  String baseUrl = 'https://seerr.example.com',
+  Map<String, Object?>? publicSettings,
 }) {
   final client = SeerrClient(
     SeerrSession(
-      baseUrl: 'https://seerr.example.com',
+      baseUrl: baseUrl,
       method: SeerrAuthMethod.local,
       identifier: 'a@b.c',
       secret: 'pw',
@@ -34,7 +64,7 @@ SeerrCatalogSource _source(
       createdAt: 0,
     ),
     onSessionInvalidated: () {},
-    httpClient: mock,
+    httpClient: _PublicSettingsClient(mock, publicSettings),
   );
   final source = SeerrCatalogSource(client);
   addTearDown(() {
@@ -43,6 +73,23 @@ SeerrCatalogSource _source(
   });
   return source;
 }
+
+/// One trending page holding a single movie with poster and backdrop art.
+MockClient _matrixRow() => MockClient(
+  (request) async => jsonResponse({
+    'page': 1,
+    'totalPages': 1,
+    'results': [
+      {
+        'id': 603,
+        'mediaType': 'movie',
+        'title': 'The Matrix',
+        'posterPath': '/matrix.jpg',
+        'backdropPath': '/matrix-backdrop.jpg',
+      },
+    ],
+  }),
+);
 
 void main() {
   group('SeerrCatalogSource', () {
@@ -112,6 +159,89 @@ void main() {
       expect(page.items.last.countries, ['US', 'GB']);
       expect(page.items.last.posterVariants, isNull);
       expect(page.items.last.serverState, isNull);
+    });
+
+    test('image caching routes rows, search, details, cast, and recommendations through the instance proxy', () async {
+      Map<String, Object?> matrixPage() => {
+        'page': 1,
+        'totalPages': 1,
+        'results': [
+          {
+            'id': 603,
+            'mediaType': 'movie',
+            'title': 'The Matrix',
+            'posterPath': '/matrix.jpg',
+            'backdropPath': '/matrix-backdrop.jpg',
+          },
+        ],
+      };
+      final source = _source(
+        MockClient((request) async {
+          switch (request.url.path) {
+            case '/seerr/api/v1/discover/trending' ||
+                '/seerr/api/v1/search' ||
+                '/seerr/api/v1/movie/603/recommendations':
+              return jsonResponse(matrixPage());
+            case '/seerr/api/v1/movie/603':
+              return jsonResponse({
+                'id': 603,
+                'title': 'The Matrix',
+                'posterPath': '/matrix.jpg',
+                'credits': {
+                  'cast': [
+                    {'name': 'Keanu Reeves', 'character': 'Neo', 'profilePath': '/keanu.jpg'},
+                  ],
+                },
+              });
+          }
+          fail('unexpected request ${request.url}');
+        }),
+        // A sub-path install, entered with a trailing slash.
+        baseUrl: 'https://example.com/seerr/',
+        publicSettings: {'cacheImages': true, 'mediaServerType': 2, 'youtubeUrl': ''},
+      );
+      const proxy = 'https://example.com/seerr/imageproxy/tmdb/t/p';
+
+      final row = (await source.fetchRow(CatalogRowId.trending)).items.single;
+      expect(row.posterUrl, '$proxy/w600_and_h900_bestv2/matrix.jpg');
+      expect(row.backdropUrl, '$proxy/w1920_and_h800_multi_faces/matrix-backdrop.jpg');
+      expect(row.posterVariants?.values, everyElement(startsWith('$proxy/')));
+      expect(row.backdropVariants?.values, everyElement(startsWith('$proxy/')));
+
+      expect((await source.search('matrix')).single.posterUrl, '$proxy/w600_and_h900_bestv2/matrix.jpg');
+
+      final detail = await source.fetchDetail(row);
+      expect(detail.item.posterUrl, '$proxy/w600_and_h900_bestv2/matrix.jpg');
+      expect(detail.cast.single.imageUrl, '$proxy/w300/keanu.jpg');
+      expect(detail.related.single.posterUrl, '$proxy/w600_and_h900_bestv2/matrix.jpg');
+    });
+
+    test('the proxy route follows the server release, and caching off keeps artwork on TMDB', () async {
+      Future<String?> posterWith(Map<String, Object?> settings) async => (await _source(
+        _matrixRow(),
+        publicSettings: settings,
+      ).fetchRow(CatalogRowId.trending)).items.single.posterUrl;
+
+      // Jellyseerr 2.6+ and Seerr route by provider.
+      expect(
+        await posterWith({'cacheImages': true, 'mediaServerType': 2, 'youtubeUrl': ''}),
+        'https://seerr.example.com/imageproxy/tmdb/t/p/w600_and_h900_bestv2/matrix.jpg',
+      );
+      // Jellyseerr before 2.6 (no youtubeUrl yet) and Overseerr (no
+      // mediaServerType) serve only the untyped route.
+      expect(
+        await posterWith({'cacheImages': true, 'mediaServerType': 2}),
+        'https://seerr.example.com/imageproxy/t/p/w600_and_h900_bestv2/matrix.jpg',
+      );
+      expect(
+        await posterWith({'cacheImages': true}),
+        'https://seerr.example.com/imageproxy/t/p/w600_and_h900_bestv2/matrix.jpg',
+      );
+      // Caching off: the web UI loads from TMDB, and so does Plezy.
+      expect(
+        await posterWith({'cacheImages': false, 'mediaServerType': 2, 'youtubeUrl': ''}),
+        'https://image.tmdb.org/t/p/w600_and_h900_bestv2/matrix.jpg',
+      );
     });
 
     test('maps availability and request state independently with explicit pending semantics', () async {

@@ -41,10 +41,11 @@ void main() {
   test('a frame step that advanced media time at field rate doubles even while mpv has no estimate', () async {
     // Tegra's plane: ten stepped frames advanced time-pos by ten field
     // durations while estimated-vf-fps still reads unavailable.
-    final stepped = PlayerOutputFormat.steppedRate(frames: 10, advanced: const Duration(microseconds: 166833));
+    const step = (frames: 10, advanced: Duration(microseconds: 166833));
+    final stepped = PlayerOutputFormat.steppedRate(frames: step.frames, advanced: step.advanced);
     final output = await PlayerOutputFormat.read(
       _PropertyPlayer({'container-fps': '29.970030', 'deinterlace-active': 'no'}),
-      steppedFps: stepped,
+      step: step,
     );
 
     expect(stepped, closeTo(59.94, 0.01));
@@ -93,5 +94,40 @@ void main() {
       expect(output.hasFrameRate, isFalse, reason: 'container-fps=$raw');
       expect(output.fps, isNull, reason: 'container-fps=$raw');
     }
+  });
+
+  test('a track without a container rate takes the standard rate its frame step identifies', () async {
+    // #2607: a Matroska track with no DefaultDuration gives mpv no rate.
+    // Millisecond timestamps make ten 23.976 fps frames span 417 or 418 ms.
+    Future<double?> fpsFor(Duration advanced) async =>
+        (await PlayerOutputFormat.read(_PropertyPlayer(const {}), step: (frames: 10, advanced: advanced))).fps;
+
+    expect(await fpsFor(const Duration(milliseconds: 417)), closeTo(24000 / 1001, 1e-9));
+    expect(await fpsFor(const Duration(milliseconds: 418)), closeTo(24000 / 1001, 1e-9));
+    expect(await fpsFor(const Duration(milliseconds: 416)), 24);
+    expect(await fpsFor(const Duration(milliseconds: 400)), 25);
+    // Field output needs no doubling: the step already counts presented frames.
+    expect(await fpsFor(const Duration(milliseconds: 167)), closeTo(60000 / 1001, 1e-9));
+  });
+
+  test('a frame step that matches no standard rate yields no rate', () async {
+    for (final advanced in const [
+      Duration(microseconds: 409556), // 24.417 fps, the rate Plex misdetected in #2607
+      Duration(milliseconds: 375), // a duplicated timestamp inside a 23.976 fps step
+      Duration.zero, // a stalled step
+    ]) {
+      final output = await PlayerOutputFormat.read(_PropertyPlayer(const {}), step: (frames: 10, advanced: advanced));
+
+      expect(output.fps, isNull, reason: 'advanced=$advanced');
+    }
+  });
+
+  test('a container rate wins over the frame step', () async {
+    final output = await PlayerOutputFormat.read(
+      _PropertyPlayer({'container-fps': '25.000000'}),
+      step: (frames: 10, advanced: const Duration(milliseconds: 417)),
+    );
+
+    expect(output.fps, 25);
   });
 }

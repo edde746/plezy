@@ -173,6 +173,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int? _activeSourceId;
   bool _activeSourceReadyEmitted = false;
 
+  /// The active file's previous `demuxer-cache-state` reader sample, the
+  /// baseline [_detectDemuxerProgress] compares against. Cleared at
+  /// `start-file` so one file's sample never measures the next.
+  ({double? readerPts, int? totalBytes})? _lastDemuxerReaderSample;
+
   /// Set between an open's [clearTracks] and the incoming load's `start-file`:
   /// until that event every `track-list` mpv publishes still describes the
   /// OUTGOING file (#2323).
@@ -437,7 +442,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'demuxer-cache-state':
-        _handleDemuxerCacheState(value);
+        _handleDemuxerCacheState(value, sourceId: sourceId);
         break;
 
       case 'volume':
@@ -522,7 +527,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   /// Parse demuxer-cache-state property to extract seekable ranges and buffer end.
-  void _handleDemuxerCacheState(dynamic value) {
+  void _handleDemuxerCacheState(dynamic value, {int? sourceId}) {
     if (value is String && value.isNotEmpty) {
       // Throttle JSON parsing to avoid ANR on low-end devices
       final nowMs = _throttleSw.elapsedMilliseconds;
@@ -531,6 +536,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
     final cacheState = MpvNodeDecoder.decodeMap(value);
     if (cacheState == null) return;
+    if (sourceId == null || sourceId == _activeSourceId) _detectDemuxerProgress(cacheState);
 
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
     final cacheEndMs = _timelineMsFromSourceSeconds(cacheState['cache-end']);
@@ -573,6 +579,25 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
+  /// Emit [demuxerProgressController] when [cacheState] shows the file moving
+  /// toward its next frame since the previous sample: the decoders took
+  /// packets (`reader-pts` moved), or a reader starving a decoder
+  /// (`underrun`) received data (`total-bytes` moved). Bytes alone are not
+  /// progress — a decode pipeline that stopped pulling still lets the demuxer
+  /// read ahead until its cache is full.
+  void _detectDemuxerProgress(Map<Object?, Object?> cacheState) {
+    final sample = (
+      readerPts: _finiteDouble(cacheState['reader-pts']),
+      totalBytes: _finiteInt(cacheState['total-bytes']),
+    );
+    final previous = _lastDemuxerReaderSample;
+    _lastDemuxerReaderSample = sample;
+    if (previous == null) return;
+    final decoded = sample.readerPts != previous.readerPts;
+    final fed = cacheState['underrun'] == true && sample.totalBytes != previous.totalBytes;
+    if (decoded || fed) demuxerProgressController.add(null);
+  }
+
   void handlePlayerEvent(String name, Map? data) {
     if (_disposed) return;
     final sourceId = _finiteInt(data?['sourceId']);
@@ -584,6 +609,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         _primaryMediaLoadStarted = true;
         _primaryMediaReadyEmitted = false;
         _primaryFileLoaded = false;
+        _lastDemuxerReaderSample = null;
         _lastErrorLogText = null;
         _state = _state.copyWith(hasRenderedFrame: false);
         fileStartedController.add(null);
@@ -767,6 +793,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
             title: cleanTrackMetadataValue(track['title'] is String ? track['title'] as String : null),
             language: cleanTrackMetadataValue(track['lang'] is String ? track['lang'] as String : null),
             codec: track['codec'] is String ? track['codec'] as String : null,
+            codecProfile: track['codec-profile'] is String ? track['codec-profile'] as String : null,
             channels: _finiteInt(track['demux-channel-count']),
             sampleRate: _finiteInt(track['demux-samplerate']),
             isDefault: track['default'] == true,
@@ -1342,8 +1369,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
 
-  /// mpv loudnorm targeting streaming-style loudness; mirrored by the
-  /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.
+  /// mpv loudnorm targeting streaming-style loudness; Android uses the platform
+  /// effect with matching parameters instead (see [setAudioNormalization]).
   ///
   /// Dynamic-mode loudnorm always outputs float64 at 192 kHz, which made the
   /// AO open at f64/192k and forced the OS mixer to convert/resample on the
@@ -1352,25 +1379,23 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// chain back to 48 kHz float, so the conversion runs once on the buffered
   /// decode side. mpv's own `format` filter is used instead of lavfi
   /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
-  ///
-  /// Android downmixes to stereo *ahead* of loudnorm. The filter's f64/192 kHz
-  /// pass costs CPU per channel, and the Android SoCs measured cannot afford
-  /// the multichannel bill: on the 32-bit TV boxes (Fire TV Stick 4K Max,
-  /// Google TV Streamer, Box R 4K Plus) 8ch adds +2.62 CPU-s per media second
-  /// against ~1 core, so 5.1 holds 0.35–0.57x and 7.1 0.33x real time under an
-  /// underrun storm while stereo holds 0.985x; arm64 (Pixel 7, SHIELD) still
-  /// underruns 5–20 times a minute at 8ch. Limiting channels at the AO
-  /// (`audio-channels`, the "Audio Channels" setting) does not help because
-  /// it lands after the filter. Desktop and Apple measured clean at
-  /// 7.1 and keep the multichannel chain. `format=channels=` remixes through
-  /// swresample, so the downmix options (`audio-swresample-o`,
-  /// `audio-normalize-downmix`) apply to it as well.
-  static final String _loudnormFilter =
-      '${Platform.isAndroid ? 'format=channels=stereo,' : ''}'
-      'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
+  static const String _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
+  /// Android normalizes in the platform mixer: mpv-build's
+  /// `audiotrack-normalize` attaches DynamicsProcessing (LoudnessEnhancer
+  /// below API 28) to the AudioTrack's session, the effect ExoPlayer uses.
+  /// loudnorm runs on mpv's core thread, which also hands video frames to the
+  /// output; on 32-bit TV boxes its f64/192 kHz pass made those frames late
+  /// (#2654) and could not keep up with multichannel audio at all, so the
+  /// filter used to fold everything to stereo first. The effect costs mpv
+  /// nothing and keeps every channel. The option reopens the audio output when
+  /// it changes, and only processes PCM, like the filter.
   @override
   Future<void> setAudioNormalization(bool enabled) async {
+    if (Platform.isAndroid) {
+      await setProperty('audiotrack-normalize', enabled ? 'yes' : 'no');
+      return;
+    }
     await setProperty('af', enabled ? _loudnormFilter : '');
   }
 

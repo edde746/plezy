@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes-anmeldere",
-      "rottenTomatoesAudience": "Rotten Tomatoes-publikum"
+      "rottenTomatoesAudience": "Rotten Tomatoes-publikum",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video, eller bevægelser hakker.",
     "audioPassthrough": "Lyd-passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.",
-    "audioPassthroughDescriptionAppleTv": "Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.",
+    "audioPassthroughDescriptionApple": "Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.",
     "audioPassthroughOverriddenByNormalization": "Fra, mens lydstyrkenormalisering er slået til",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titler"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Rumlig lyd",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisér lydstyrke",
-    "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; passthrough er fra, mens dette er slået til",
-    "audioNormalizationStereoMix": "Dekoder lyd til en stereomix; passthrough er fra, mens dette er slået til"
+    "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; passthrough er fra, mens dette er slået til"
   },
   "performanceOverlay": {
     "color": "Farve",

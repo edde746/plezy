@@ -365,8 +365,6 @@ class MpvPlayerCoreBase: NSObject {
     return body(mpv)
   }
 
-  func configurePlatformMpvOptions(mpv: OpaquePointer) {}
-
   func updateEDRMode(sigPeak: Double) {}
 
   /// Platform hook fed by `scheduleDisplayCriteriaUpdate` with the decoded
@@ -528,7 +526,6 @@ class MpvPlayerCoreBase: NSObject {
       var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
       checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
       applySharedMpvOptions(mpv: mpv)
-      configurePlatformMpvOptions(mpv: mpv)
     }
     guard created else { return false }
 
@@ -587,6 +584,7 @@ class MpvPlayerCoreBase: NSObject {
       checkError(mpv_set_option_string(mpv, "ytdl", "no"))
     #endif
 
+    applyPlatformAudioOutput(mpv: mpv)
     configure(mpv)
 
     let initResult = mpv_initialize(mpv)
@@ -624,6 +622,37 @@ class MpvPlayerCoreBase: NSObject {
     )
     lifecycleLock.unlock()
     return true
+  }
+
+  /// The audio output mpv probes, applied to every context so the video and
+  /// music cores render the same way. Runs before `configure`, so a core can
+  /// still narrow it.
+  private func applyPlatformAudioOutput(mpv: OpaquePointer) {
+    #if os(iOS)
+      // AVFoundation first: ao_audiounit (RemoteIO) sizes its output from the
+      // route's hardware channels, and AirPods report 2 even with Spatial
+      // Audio, so it remixed every 5.1/7.1 source to stereo (#2264).
+      // AVSampleBufferAudioRenderer takes the decoder's full layout, which the
+      // system spatializes on AirPods and multichannel routes, and its AC3/EAC3
+      // sink is the system Dolby decoder that renders Atmos. audiounit stays
+      // as the fallback when the renderer fails to open.
+      checkError(mpv_set_option_string(mpv, "ao", "avfoundation,audiounit"))
+    #elseif os(macOS)
+      // CoreAudio first: PCM plays through the one HAL-backed timing path,
+      // deliberately giving up AVFoundation spatialization of multichannel PCM.
+      // AVFoundation is still reached for two cases: Dolby passthrough, where
+      // CoreAudio redirects the bitstream to coreaudio_exclusive and that
+      // declines on outputs without IEC 61937 substreams, so the AC3/EAC3 lands
+      // on the system decoder (Dolby Atmos on AirPods and built-in speakers,
+      // #2477); and a CoreAudio init that fails outright — macOS 27 beta
+      // rejects ao_coreaudio's channel-layout setup with paramErr (-50), and a
+      // single-entry ao list would turn that into playback with no audio at
+      // all (#1964).
+      checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
+    #endif
+    // tvOS keeps mpv's default (audiounit, then avfoundation): audiounit drives
+    // HDMI multichannel PCM, and refusing passthrough formats hands AC3/EAC3
+    // to the AVFoundation Dolby sink.
   }
 
   func setLogLevel(_ level: String) {

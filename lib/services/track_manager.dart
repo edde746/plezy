@@ -434,6 +434,7 @@ class TrackManager {
           title: next.title,
           language: next.language,
           codec: next.codec,
+          codecProfile: next.codecProfile,
           channels: next.channelsCount,
           index: nextIndex,
         ).joined,

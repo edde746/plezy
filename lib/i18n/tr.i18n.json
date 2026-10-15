@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes eleştirmenleri",
-      "rottenTomatoesAudience": "Rotten Tomatoes izleyicileri"
+      "rottenTomatoesAudience": "Rotten Tomatoes izleyicileri",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.",
     "audioPassthrough": "Ses Doğrudan Geçişi (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.",
-    "audioPassthroughDescriptionAppleTv": "Atmos dahil Dolby Digital Plus için Apple'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.",
+    "audioPassthroughDescriptionApple": "Atmos dahil Dolby Digital Plus için Apple'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.",
     "audioPassthroughOverriddenByNormalization": "Ses normalleştirme açıkken kapalıdır",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} başlık",
       "other": "${n} başlık"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Uzamsal Ses",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Ses Yüksekliğini Normalleştir",
-    "audioNormalizationDisablesPassthrough": "Sesi PCM'e çözer; bu açıkken doğrudan geçiş kapalıdır",
-    "audioNormalizationStereoMix": "Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır"
+    "audioNormalizationDisablesPassthrough": "Sesi PCM'e çözer; bu açıkken doğrudan geçiş kapalıdır"
   },
   "performanceOverlay": {
     "color": "Renk",

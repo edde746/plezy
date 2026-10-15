@@ -1101,8 +1101,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// collapses its waiters. Superseded by every [_beginPlaybackAttempt].
   _PlaybackAttempt? _playbackAttempt;
 
-  /// How long the backend may sit on a started load without loading,
-  /// failing, or dying before the attempt gives up on it.
+  /// How long a started load may go without progress — no `file-loaded`, no
+  /// demuxer progress, no failure, no death — before the attempt gives up on
+  /// it. A slow load that keeps moving is not bounded by this (#2635).
   static const Duration _openDeadline = Duration(seconds: 30);
 
   /// Start a new playback attempt: aborts the previous attempt's open,
@@ -1131,12 +1132,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       this,
       generation,
       currentPlayer,
-      // Bounds a backend that started the load and then went silent: longer
-      // than the sidecar guard's discovery + file-loaded budget, so it cannot
-      // pre-empt a sidecar-stall verdict. It arms from the backend's load
-      // start, so an open that never starts one is bounded by
-      // [OpenHttp503Watchdog] instead, not by this. A passed deadline is a
-      // failure the user sees, not just aborted waiters.
+      // Bounds a backend that started the load and then stopped moving:
+      // re-armed by every sign of progress, so it fires no earlier than the
+      // sidecar guard's discovery + file-loaded budget and cannot pre-empt a
+      // sidecar-stall verdict. It arms from the backend's load start, so an
+      // open that never starts one is bounded by [OpenHttp503Watchdog]
+      // instead, not by this. A passed deadline is a failure the user sees,
+      // not just aborted waiters.
       PlaybackOpenOutcome.arm(
         currentPlayer,
         deadline: _openDeadline,

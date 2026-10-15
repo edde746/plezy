@@ -272,10 +272,11 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
 }
 
 /// Reflects the system's resolved audio rendering mode, as the Dolby
-/// application guide requires. Renders nothing until the system reports a
-/// conclusive value: Apple only resolves `renderingMode` for CarPlay and
-/// AirPlay routes, and showing "Stereo" for an inconclusive HDMI route would
-/// be worse than showing nothing.
+/// application guide requires, and on iPhone/iPad confirms Spatial Audio or
+/// Dolby Atmos reached the headphones. Renders nothing until the system
+/// reports a conclusive value: `renderingMode` is only populated for routes
+/// the system renders itself, and showing "Stereo" for an inconclusive HDMI
+/// route would be worse than showing nothing.
 class _AudioRenderingModeItem extends StatefulWidget {
   const _AudioRenderingModeItem({required this.player});
 
@@ -906,24 +907,21 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // re-decides video tunneling. It lives in Settings > Video Playback next to
         // Tunneled Playback, which is applied the same way — at the next player start.
 
-        // Dolby playback badge. The Dolby application guide requires the app
-        // to reflect AVAudioSession.renderingMode; Apple only resolves that
-        // for CarPlay/AirPlay routes, so it is hidden rather than shown as
-        // "not Dolby" when the system reports notApplicable.
-        if (PlatformDetector.isAppleTV()) _AudioRenderingModeItem(player: widget.player),
+        // Dolby / Spatial Audio badge. The Dolby application guide requires
+        // the app to reflect AVAudioSession.renderingMode; the system only
+        // resolves it for routes it renders itself (AirPlay, CarPlay,
+        // headphones), so it is hidden rather than shown as "not Dolby" when
+        // it reports notApplicable. iOS covers iPhone, iPad, and Apple TV.
+        if (Platform.isIOS) _AudioRenderingModeItem(player: widget.player),
 
         _SettingsToggleItem(
           pref: SettingsService.audioNormalization,
           icon: Symbols.graphic_eq_rounded,
           title: t.videoSettings.audioNormalization,
           // Normalization wins over passthrough; say so where passthrough
-          // exists. Android also folds the track to stereo ahead of loudnorm
-          // (PlayerBase._loudnormFilter), which a surround owner must hear
-          // about before flipping it.
+          // exists.
           subtitle: PlatformDetector.supportsAudioPassthrough()
-              ? Platform.isAndroid
-                    ? t.videoSettings.audioNormalizationStereoMix
-                    : t.videoSettings.audioNormalizationDisablesPassthrough
+              ? t.videoSettings.audioNormalizationDisablesPassthrough
               : null,
           onAfterWrite: widget.player.setAudioNormalization,
         ),

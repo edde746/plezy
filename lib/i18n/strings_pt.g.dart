@@ -454,7 +454,7 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => 'Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR ou o movimento travar.';
 	@override String get audioPassthrough => 'Passagem direta de áudio';
 	@override String get audioPassthroughDescription => 'Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.';
+	@override String get audioPassthroughDescriptionApple => 'Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Desativada enquanto a normalização de intensidade sonora estiver ativa';
 	@override String get downmixCenterBoost => 'Reforço do canal central';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$pt extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Estéreo';
 	@override String get audioNormalization => 'Normalizar intensidade sonora';
 	@override String get audioNormalizationDisablesPassthrough => 'Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa';
-	@override String get audioNormalizationStereoMix => 'Decodifica o áudio para uma mixagem estéreo; a passagem direta fica desativada enquanto esta opção estiver ativa';
 }
 
 // Path: performanceOverlay
@@ -2319,6 +2318,8 @@ class _Translations$common$ratingSource$pt extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Críticos do Rotten Tomatoes';
 	@override String get rottenTomatoesAudience => 'Público do Rotten Tomatoes';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3113,6 +3114,8 @@ extension on TranslationsPt {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Críticos do Rotten Tomatoes',
 			'common.ratingSource.rottenTomatoesAudience' => 'Público do Rotten Tomatoes',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/D',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3369,7 +3372,7 @@ extension on TranslationsPt {
 			'settings.tunneledPlaybackDescription' => 'Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR ou o movimento travar.',
 			'settings.audioPassthrough' => 'Passagem direta de áudio',
 			'settings.audioPassthroughDescription' => 'Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.',
+			'settings.audioPassthroughDescriptionApple' => 'Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Desativada enquanto a normalização de intensidade sonora estiver ativa',
 			'settings.downmixCenterBoost' => 'Reforço do canal central',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
@@ -3548,10 +3551,10 @@ extension on TranslationsPt {
 			'fileInfo.streamIdentifier' => 'Identificador do fluxo',
 			'fileInfo.streamIndex' => 'Índice do fluxo',
 			'fileInfo.streamId' => 'ID do fluxo',
-			'fileInfo.language' => 'Idioma',
-			'fileInfo.languageCode' => 'Código do idioma',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Idioma',
+			'fileInfo.languageCode' => 'Código do idioma',
 			'fileInfo.streamTitle' => 'Título da faixa',
 			'fileInfo.channels' => 'Canais',
 			'fileInfo.sampleRate' => 'Taxa de amostragem',
@@ -4062,10 +4065,10 @@ extension on TranslationsPt {
 			'libraries.analyze' => 'Analisar',
 			'libraries.analyzeLibrary' => 'Analisar Biblioteca',
 			'libraries.refreshMetadata' => 'Atualizar Metadados',
-			'libraries.emptyTrash' => 'Esvaziar Lixeira',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Esvaziando lixeira de "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Esvaziar Lixeira',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Esvaziando lixeira de "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Lixeira esvaziada de "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Falha ao esvaziar lixeira: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analisando "${title}"...',
@@ -4576,10 +4579,10 @@ extension on TranslationsPt {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Aguardando ${name}...',
 			'watchTogether.recentRooms' => 'Salas recentes',
 			'watchTogether.renameRoom' => 'Renomear sala',
-			'watchTogether.removeRoom' => 'Remover',
-			'watchTogether.guestSwitchUnavailable' => 'Não foi possível trocar — servidor indisponível para sincronização',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Remover',
+			'watchTogether.guestSwitchUnavailable' => 'Não foi possível trocar — servidor indisponível para sincronização',
 			'watchTogether.guestSwitchFailed' => 'Não foi possível trocar — conteúdo não encontrado neste servidor',
 			'watchTogether.defaultDisplayName' => 'Usuário',
 			'watchTogether.errors.timedOut' => 'O servidor de retransmissão não respondeu a tempo',
@@ -4813,7 +4816,6 @@ extension on TranslationsPt {
 			'videoSettings.audioOutputStereo' => 'Estéreo',
 			'videoSettings.audioNormalization' => 'Normalizar intensidade sonora',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa',
-			'videoSettings.audioNormalizationStereoMix' => 'Decodifica o áudio para uma mixagem estéreo; a passagem direta fica desativada enquanto esta opção estiver ativa',
 			'performanceOverlay.color' => 'Cor',
 			'performanceOverlay.performance' => 'Desempenho',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -5091,9 +5093,9 @@ extension on TranslationsPt {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Entre no seu servidor ${product}. Vinculado a ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Pegar emprestado de outro perfil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutilize a conexão de outro perfil. Perfis protegidos por PIN exigem PIN.',
-			'addServer.invalidCredentials' => 'Usuário ou senha inválidos',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Usuário ou senha inválidos',
 			'addServer.authResponseNotJson' => 'A resposta de autenticação não era um JSON válido',
 			'addServer.authResponseIncomplete' => 'A resposta de login do servidor estava incompleta',
 			'addServer.quickConnectRejected' => 'O Quick Connect foi rejeitado pelo servidor',

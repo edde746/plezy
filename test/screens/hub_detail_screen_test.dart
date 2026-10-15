@@ -266,6 +266,88 @@ void main() {
     });
   });
 
+  group('DOWN from the app bar', () {
+    // Regression for #2618: DOWN re-focused the remembered card even after the
+    // grid had unmounted it. Flutter parks a request on a detached node until it
+    // is reparented, so focus stayed on the app bar and every DOWN was a no-op.
+    Future<void> pumpHub(WidgetTester tester, List<MediaItem> items) async {
+      final harness = await _createHarness(items, backend: MediaBackend.plex);
+      await tester.pumpWidget(
+        harness.wrap(
+          HubDetailScreen(
+            hub: MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: items, size: items.length),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // D-pad session.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> focusCard(WidgetTester tester, String title) async {
+      _cardFor(tester, title).focusNode!.requestFocus();
+      await tester.pumpAndSettle();
+      expect(_cardFor(tester, title).focusNode!.hasPrimaryFocus, isTrue);
+    }
+
+    Future<void> backToAppBar(WidgetTester tester) async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+    }
+
+    String numbered(int index) => 'Item ${index.toString().padLeft(3, '0')}';
+
+    testWidgets('after a sort moved the remembered card out of range, DOWN lands on the first item', (tester) async {
+      // Zulu opens first and sorts last under Title ascending.
+      await pumpHub(tester, [_titled('z', 'Zulu'), for (var i = 1; i < 60; i++) _titled('i$i', numbered(i))]);
+      await focusCard(tester, 'Zulu');
+      await backToAppBar(tester);
+
+      // Open Sort, pick Title (the sheet's initial focus), close the sheet.
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+      expect(find.text('Zulu'), findsNothing, reason: 'the remembered card must be outside the build range');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      expect(_cardFor(tester, numbered(1)).focusNode!.hasPrimaryFocus, isTrue);
+    });
+
+    testWidgets('after BACK from deep in the grid, DOWN lands on the first item', (tester) async {
+      await pumpHub(tester, [for (var i = 0; i < 60; i++) _titled('i$i', numbered(i))]);
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
+      await tester.pumpAndSettle();
+      await focusCard(tester, numbered(59));
+      // BACK scrolls to the top, unmounting the remembered card.
+      await backToAppBar(tester);
+      expect(find.text(numbered(59)), findsNothing, reason: 'the remembered card must be outside the build range');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      expect(_cardFor(tester, numbered(0)).focusNode!.hasPrimaryFocus, isTrue);
+    });
+
+    testWidgets('a remembered card that is still mounted gets the focus back', (tester) async {
+      await pumpHub(tester, [_titled('z', 'Zulu'), _titled('m', 'Mike'), _titled('a', 'Alpha')]);
+      await focusCard(tester, 'Mike');
+      await backToAppBar(tester);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+
+      expect(_cardFor(tester, 'Mike').focusNode!.hasPrimaryFocus, isTrue);
+    });
+  });
+
   testWidgets('Plex section sorts order by their own field and unsupported ones are not offered', (tester) async {
     MediaItem played(String id, String title, int plays) => testMediaItem(
       id: id,

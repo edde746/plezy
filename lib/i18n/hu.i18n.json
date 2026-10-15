@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes kritikusok",
-      "rottenTomatoesAudience": "Rotten Tomatoes közönség"
+      "rottenTomatoesAudience": "Rotten Tomatoes közönség",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.",
     "audioPassthrough": "Hangtovábbítás (passthrough)",
     "audioPassthroughDescription": "Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.",
-    "audioPassthroughDescriptionAppleTv": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.",
+    "audioPassthroughDescriptionApple": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.",
     "audioPassthroughOverriddenByNormalization": "Ki, amíg a hangerőnormalizálás be van kapcsolva",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} cím",
       "other": "${n} cím"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Térbeli hang",
     "audioOutputStereo": "Sztereó",
     "audioNormalization": "Hangerő normalizálása",
-    "audioNormalizationDisablesPassthrough": "PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva",
-    "audioNormalizationStereoMix": "Sztereó keverékké dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva"
+    "audioNormalizationDisablesPassthrough": "PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva"
   },
   "performanceOverlay": {
     "color": "Szín",

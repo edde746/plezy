@@ -228,8 +228,9 @@ abstract class Player {
   ///
   /// mpv backends insert/remove the `loudnorm` audio filter and, because a
   /// filter cannot process a bitstream, leave passthrough while it is on.
-  /// Android ExoPlayer attaches platform audio effects (DynamicsProcessing
-  /// on API 28+, LoudnessEnhancer otherwise) and forces decoded non-tunneled
+  /// Android mpv sets `audiotrack-normalize` instead, and Android ExoPlayer
+  /// attaches the same platform audio effects (DynamicsProcessing on API 28+,
+  /// LoudnessEnhancer otherwise); ExoPlayer also forces decoded non-tunneled
   /// PCM output while enabled so the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);
 

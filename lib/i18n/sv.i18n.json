@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes-kritiker",
-      "rottenTomatoesAudience": "Rotten Tomatoes-publik"
+      "rottenTomatoesAudience": "Rotten Tomatoes-publik",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video eller rörelser hackar.",
     "audioPassthrough": "Ljudgenomströmning",
     "audioPassthroughDescription": "Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.",
-    "audioPassthroughDescriptionAppleTv": "Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.",
+    "audioPassthroughDescriptionApple": "Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.",
     "audioPassthroughOverriddenByNormalization": "Av medan ljudstyrkenormalisering är på",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titlar"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Rumsligt ljud",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisera ljudstyrka",
-    "audioNormalizationDisablesPassthrough": "Avkodar ljudet till PCM; genomströmning är av medan detta är på",
-    "audioNormalizationStereoMix": "Avkodar ljudet till en stereomix; genomströmning är av medan detta är på"
+    "audioNormalizationDisablesPassthrough": "Avkodar ljudet till PCM; genomströmning är av medan detta är på"
   },
   "performanceOverlay": {
     "color": "Färg",

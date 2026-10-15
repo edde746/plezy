@@ -55,10 +55,11 @@ sealed class PlayerError with _$PlayerError {
   /// copy from this tag instead of parsing it.
   static const String playerInitFailed = 'player-init-failed';
 
-  /// Cause tag for an open the backend started and then neither loaded,
-  /// failed, nor died within the attempt's deadline. Synthesized by the
-  /// player screen; the backend raised nothing, so the localized copy is the
-  /// headline and the last error line mpv logged, if any, is the detail.
+  /// Cause tag for an open the backend started and then stopped moving on —
+  /// no load, failure, death, or demuxer progress within the attempt's
+  /// deadline. Synthesized by the player screen; the backend raised nothing,
+  /// so the localized copy is the headline and the last error line mpv
+  /// logged, if any, is the detail.
   static const String openTimedOut = 'open-timed-out';
 
   /// Cause tag for a stream mpv gave up on while opening: its `error_on_track`
@@ -103,6 +104,11 @@ sealed class AudioTrack with _$AudioTrack {
     String? title,
     String? language,
     String? codec,
+
+    /// mpv's `codec-profile` (ffmpeg's profile name, e.g. `DTS-HD MA`). The
+    /// patched demuxer publishes it for every DTS track at load; a decoder
+    /// fills or replaces it for the selected track.
+    String? codecProfile,
     int? channels,
     int? sampleRate,
     int? bitrate,

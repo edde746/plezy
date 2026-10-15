@@ -94,6 +94,20 @@ class MediaImageHelper {
   static const int _reducedMaxArtWidth = 1280;
   static const int _reducedMaxArtHeight = 720;
 
+  /// Backdrops are authored 16:9.
+  static const double _artAspectRatio = 16 / 9;
+
+  /// The smallest 16:9 frame that covers a [width]×[height] slot.
+  ///
+  /// Backdrops paint with [BoxFit.cover] into hero slots of every shape.
+  /// Fetching and fit-decoding them at the slot's own size bounds the artwork
+  /// by whichever axis the slot is short on, and cover then upscales the
+  /// result by the aspect mismatch: 2.25× behind a portrait phone hero
+  /// (#2658), and likewise behind a hero wider than 16:9. Sizing both to this
+  /// frame fills the slot without upscaling, up to the display budget caps.
+  static (double, double) _artFrame(num width, num height) =>
+      (max(width, height * _artAspectRatio).toDouble(), max(height, width / _artAspectRatio).toDouble());
+
   /// Rounds a value up to the next multiple of [factor]. Shared between the
   /// URL dimension rounding (transcode bucket) and the mem-cache dimension
   /// rounding (decode bucket) so both snap to the same grid.
@@ -188,17 +202,15 @@ class MediaImageHelper {
 
     switch (imageType) {
       case ImageType.art:
+        final (frameWidth, frameHeight) = _artFrame(targetWidth, targetHeight);
         if (DevicePerformance.isReduced) {
           // No 1.1× cover overshoot, capped at ~720p.
           return roundDimensions(
-            min(targetWidth, _reducedMaxArtWidth.toDouble()),
-            min(targetHeight, _reducedMaxArtHeight.toDouble()),
+            min(frameWidth, _reducedMaxArtWidth.toDouble()),
+            min(frameHeight, _reducedMaxArtHeight.toDouble()),
           );
         }
-        final coverWidth = targetWidth * 1.1;
-        final coverHeight = targetHeight * 1.1;
-
-        return roundDimensions(coverWidth, coverHeight);
+        return roundDimensions(frameWidth * 1.1, frameHeight * 1.1);
 
       case ImageType.logo:
       case ImageType.heroLogo:
@@ -223,14 +235,16 @@ class MediaImageHelper {
     }
   }
 
-  /// Whether [type] fills its slot ([BoxFit.cover]) or sits inside it
-  /// ([BoxFit.contain]), which is what [MediaServerClient.thumbnailUrl]'s
-  /// `cover` flag selects. Logos are the contain case: asking Plex to cover
-  /// their slot overshoots the long axis by 20-30% in bytes, and the decode
-  /// bounds throw those pixels away again.
-  static bool _coversSlot(ImageType type) => switch (type) {
-    ImageType.logo || ImageType.heroLogo => false,
-    ImageType.art || ImageType.thumb || ImageType.poster || ImageType.avatar || ImageType.square => true,
+  /// Whether the server should size [type] to cover the requested box or fit
+  /// inside it, which is what [MediaServerClient.thumbnailUrl]'s `cover` flag
+  /// selects. Logos are the contain case: asking Plex to cover their slot
+  /// overshoots the long axis by 20-30% in bytes, and the decode bounds throw
+  /// those pixels away again. Backdrops fit too, because their box is already
+  /// the frame that covers the slot ([_artFrame]): covering that frame with
+  /// non-16:9 artwork would only fetch pixels the frame-sized decode discards.
+  static bool _coversBox(ImageType type) => switch (type) {
+    ImageType.logo || ImageType.heroLogo || ImageType.art => false,
+    ImageType.thumb || ImageType.poster || ImageType.avatar || ImageType.square => true,
   };
 
   /// Creates an optimized image URL.
@@ -283,7 +297,7 @@ class MediaImageHelper {
         pixelRatio: pixelRatio,
         imageType: imageType,
       );
-      return client.externalImageUrl(basePath, width: width, height: height, cover: _coversSlot(imageType));
+      return client.externalImageUrl(basePath, width: width, height: height, cover: _coversBox(imageType));
     }
 
     // Relative path — let the client build the sized URL using its native
@@ -310,7 +324,7 @@ class MediaImageHelper {
     // hands the full original to the decoder, and a multi-megapixel
     // original behind a 40px avatar is exactly the decode spike that OOMs
     // low-RAM devices. The floor is 160×240 via [roundDimensions].
-    return client.thumbnailUrl(basePath, width: width, height: height, cover: _coversSlot(imageType));
+    return client.thumbnailUrl(basePath, width: width, height: height, cover: _coversBox(imageType));
   }
 
   /// Generates cache-friendly dimensions for memory caching.
@@ -330,9 +344,13 @@ class MediaImageHelper {
     //
     // [displayWidth]/[displayHeight] come from the caller's slot scaled by
     // [artworkPixelRatio], so any supersample headroom is already in them and
-    // the decode cannot disagree with the fetch.
-    final bucketedWidth = _bucketUp(displayWidth, _widthRoundingFactor);
-    final bucketedHeight = _bucketUp(displayHeight, _heightRoundingFactor);
+    // the decode cannot disagree with the fetch. Art decodes into the same
+    // 16:9 frame it is fetched at ([_artFrame]).
+    final (frameWidth, frameHeight) = imageType == ImageType.art
+        ? _artFrame(displayWidth, displayHeight)
+        : (displayWidth, displayHeight);
+    final bucketedWidth = _bucketUp(frameWidth, _widthRoundingFactor);
+    final bucketedHeight = _bucketUp(frameHeight, _heightRoundingFactor);
 
     // Full-tier caps are a 1080p baseline scaled to the display, so slots on
     // a 4K surface decode at the resolution they render at instead of being

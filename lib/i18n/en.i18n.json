@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes critics",
-      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+      "rottenTomatoesAudience": "Rotten Tomatoes audience",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video or motion stutters.",
     "audioPassthrough": "Audio Passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
-    "audioPassthroughDescriptionAppleTv": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
+    "audioPassthroughDescriptionApple": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
     "audioPassthroughOverriddenByNormalization": "Off while loudness normalization is on",
     "audioChannelLimit": "Audio Channels",
     "audioChannelLimitDescription": "Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} title",
       "other": "${n} titles"
+    },
+    "person": {
+      "born": "Born",
+      "died": "Died",
+      "birthplace": "Birthplace",
+      "dateWithAge": "${date} (age ${age})",
+      "dateWithAgeAtDeath": "${date} (aged ${age})"
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Spatial Audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalize Loudness",
-    "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on",
-    "audioNormalizationStereoMix": "Decodes audio to a stereo mix; passthrough is off while this is on"
+    "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on"
   },
   "performanceOverlay": {
     "color": "Color",

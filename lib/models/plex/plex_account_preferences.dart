@@ -18,7 +18,7 @@ class PlexAccountPreferences {
 
     return AccountPreferences(
       preferredAudioLanguage: _profileLanguage(profile['defaultAudioLanguage']),
-      playDefaultAudioTrack: flexibleBoolNullable(profile['autoSelectAudio']),
+      selectAudioByLanguage: flexibleBoolNullable(profile['autoSelectAudio']),
       preferredSubtitleLanguage: _profileLanguage(profile['defaultSubtitleLanguage']),
       subtitlePlaybackMode: _subtitleMode(profile['autoSelectSubtitle']),
       watchedIndicator: WatchedIndicatorScope.fromPlexValue(flexibleInt(profile['watchedIndicator'])),

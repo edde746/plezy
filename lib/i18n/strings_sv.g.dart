@@ -454,7 +454,7 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video eller rörelser hackar.';
 	@override String get audioPassthrough => 'Ljudgenomströmning';
 	@override String get audioPassthroughDescription => 'Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.';
+	@override String get audioPassthroughDescriptionApple => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Av medan ljudstyrkenormalisering är på';
 	@override String get downmixCenterBoost => 'Förstärkning av centerkanal';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
@@ -1944,7 +1944,6 @@ class _Translations$videoSettings$sv extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Normalisera ljudstyrka';
 	@override String get audioNormalizationDisablesPassthrough => 'Avkodar ljudet till PCM; genomströmning är av medan detta är på';
-	@override String get audioNormalizationStereoMix => 'Avkodar ljudet till en stereomix; genomströmning är av medan detta är på';
 }
 
 // Path: performanceOverlay
@@ -2319,6 +2318,8 @@ class _Translations$common$ratingSource$sv extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes-kritiker';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes-publik';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3113,6 +3114,8 @@ extension on TranslationsSv {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes-kritiker',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes-publik',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3369,7 +3372,7 @@ extension on TranslationsSv {
 			'settings.tunneledPlaybackDescription' => 'Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video eller rörelser hackar.',
 			'settings.audioPassthrough' => 'Ljudgenomströmning',
 			'settings.audioPassthroughDescription' => 'Skicka Dolby-/DTS-ljud till receivern eller TV:n utan omkodning så att surroundljudet bevaras. Stäng av om inget ljud hörs.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.',
+			'settings.audioPassthroughDescriptionApple' => 'Använd Apples inbyggda Dolby-avkodare för Dolby Digital Plus, inklusive Atmos. DTS och TrueHD spelas fortfarande upp som flerkanaligt PCM-ljud. Stäng av om inget ljud hörs.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Av medan ljudstyrkenormalisering är på',
 			'settings.downmixCenterBoost' => 'Förstärkning av centerkanal',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
@@ -3548,10 +3551,10 @@ extension on TranslationsSv {
 			'fileInfo.streamIdentifier' => 'Strömidentifierare',
 			'fileInfo.streamIndex' => 'Strömindex',
 			'fileInfo.streamId' => 'Ström-ID',
-			'fileInfo.language' => 'Språk',
-			'fileInfo.languageCode' => 'Språkkod',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => 'Språk',
+			'fileInfo.languageCode' => 'Språkkod',
 			'fileInfo.streamTitle' => 'Spårnamn',
 			'fileInfo.channels' => 'Kanaler',
 			'fileInfo.sampleRate' => 'Samplingsfrekvens',
@@ -4062,10 +4065,10 @@ extension on TranslationsSv {
 			'libraries.analyze' => 'Analysera',
 			'libraries.analyzeLibrary' => 'Analysera bibliotek',
 			'libraries.refreshMetadata' => 'Uppdatera metadata',
-			'libraries.emptyTrash' => 'Töm papperskorg',
-			'libraries.emptyingTrash' => ({required Object title}) => 'Tömmer papperskorgen för "${title}"...',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'Töm papperskorg',
+			'libraries.emptyingTrash' => ({required Object title}) => 'Tömmer papperskorgen för "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Papperskorgen har tömts för "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Det gick inte att tömma papperskorgen: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserar "${title}"...',
@@ -4576,10 +4579,10 @@ extension on TranslationsSv {
 			'watchTogether.waitingForName' => ({required Object name}) => 'Väntar på ${name}...',
 			'watchTogether.recentRooms' => 'Senaste rummen',
 			'watchTogether.renameRoom' => 'Byt namn på rummet',
-			'watchTogether.removeRoom' => 'Ta bort',
-			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => 'Ta bort',
+			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunde inte byta — innehåll hittades inte på denna server',
 			'watchTogether.defaultDisplayName' => 'Användare',
 			'watchTogether.errors.timedOut' => 'Reläservern svarade inte i tid',
@@ -4813,7 +4816,6 @@ extension on TranslationsSv {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalisera ljudstyrka',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Avkodar ljudet till PCM; genomströmning är av medan detta är på',
-			'videoSettings.audioNormalizationStereoMix' => 'Avkodar ljudet till en stereomix; genomströmning är av medan detta är på',
 			'performanceOverlay.color' => 'Färg',
 			'performanceOverlay.performance' => 'Prestanda',
 			'performanceOverlay.buffer' => 'Buffert',
@@ -5091,9 +5093,9 @@ extension on TranslationsSv {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logga in på din ${product}-server. Knyts till ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Låna från en annan profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.',
-			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',
 			'addServer.authResponseNotJson' => 'Autentiseringssvaret var inte ett giltigt JSON-svar',
 			'addServer.authResponseIncomplete' => 'Inloggningssvaret från servern var ofullständigt',
 			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',

@@ -455,7 +455,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get tunneledPlaybackDescription => '使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。';
 	@override String get audioPassthrough => '音訊直通';
 	@override String get audioPassthroughDescription => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。';
-	@override String get audioPassthroughDescriptionAppleTv => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。';
+	@override String get audioPassthroughDescriptionApple => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。';
 	@override String get audioPassthroughOverriddenByNormalization => '音量標準化開啟時停用';
 	@override String get downmixCenterBoost => '中置聲道增強';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
@@ -1936,7 +1936,6 @@ class _Translations$videoSettings$zh_Hant extends Translations$videoSettings$zh 
 	@override String get audioOutputStereo => '立體聲';
 	@override String get audioNormalization => '音量標準化';
 	@override String get audioNormalizationDisablesPassthrough => '將音訊解碼為 PCM；開啟時直通關閉';
-	@override String get audioNormalizationStereoMix => '將音訊解碼為立體聲混音；開啟時直通關閉';
 }
 
 // Path: performanceOverlay
@@ -2311,6 +2310,8 @@ class _Translations$common$ratingSource$zh_Hant extends Translations$common$rati
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes 影評人';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes 觀眾';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3103,6 +3104,8 @@ extension on TranslationsZhHant {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes 影評人',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes 觀眾',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3359,7 +3362,7 @@ extension on TranslationsZhHant {
 			'settings.tunneledPlaybackDescription' => '使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。',
 			'settings.audioPassthrough' => '音訊直通',
 			'settings.audioPassthroughDescription' => '將 Dolby/DTS 音訊不經重新編碼，直接傳送至擴大機或電視以保留環繞音效。若播放無聲，請關閉此設定。',
-			'settings.audioPassthroughDescriptionAppleTv' => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。',
+			'settings.audioPassthroughDescriptionApple' => '使用 Apple 原生 Dolby 解碼器處理 Dolby Digital Plus（包括 Atmos）。DTS 與 TrueHD 仍以多聲道 PCM 播放。若沒有聲音，請關閉此設定。',
 			'settings.audioPassthroughOverriddenByNormalization' => '音量標準化開啟時停用',
 			'settings.downmixCenterBoost' => '中置聲道增強',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
@@ -3538,10 +3541,10 @@ extension on TranslationsZhHant {
 			'fileInfo.streamIdentifier' => '串流識別碼',
 			'fileInfo.streamIndex' => '串流索引',
 			'fileInfo.streamId' => '串流 ID',
-			'fileInfo.language' => '語言',
-			'fileInfo.languageCode' => '語言代碼',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => '語言',
+			'fileInfo.languageCode' => '語言代碼',
 			'fileInfo.streamTitle' => '軌道名稱',
 			'fileInfo.channels' => '聲道數',
 			'fileInfo.sampleRate' => '取樣率',
@@ -4052,10 +4055,10 @@ extension on TranslationsZhHant {
 			'libraries.analyze' => '分析',
 			'libraries.analyzeLibrary' => '分析媒體庫',
 			'libraries.refreshMetadata' => '重新整理中繼資料',
-			'libraries.emptyTrash' => '清空垃圾桶',
-			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => '清空垃圾桶',
+			'libraries.emptyingTrash' => ({required Object title}) => '正在清空「${title}」的垃圾桶…',
 			'libraries.trashEmptied' => ({required Object title}) => '已清空「${title}」的垃圾桶',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '無法清空垃圾桶：${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析「${title}」…',
@@ -4566,10 +4569,10 @@ extension on TranslationsZhHant {
 			'watchTogether.waitingForName' => ({required Object name}) => '正在等待 ${name}…',
 			'watchTogether.recentRooms' => '最近的房間',
 			'watchTogether.renameRoom' => '重新命名房間',
-			'watchTogether.removeRoom' => '移除',
-			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => '移除',
+			'watchTogether.guestSwitchUnavailable' => '無法切換 — 伺服器無法進行同步',
 			'watchTogether.guestSwitchFailed' => '無法切換 — 在此伺服器上找不到內容',
 			'watchTogether.defaultDisplayName' => '使用者',
 			'watchTogether.errors.timedOut' => '中繼伺服器未及時回應',
@@ -4803,7 +4806,6 @@ extension on TranslationsZhHant {
 			'videoSettings.audioOutputStereo' => '立體聲',
 			'videoSettings.audioNormalization' => '音量標準化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '將音訊解碼為 PCM；開啟時直通關閉',
-			'videoSettings.audioNormalizationStereoMix' => '將音訊解碼為立體聲混音；開啟時直通關閉',
 			'performanceOverlay.color' => '色彩',
 			'performanceOverlay.performance' => '效能',
 			'performanceOverlay.buffer' => '緩衝',
@@ -5081,9 +5083,9 @@ extension on TranslationsZhHant {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登入您的 ${product} 伺服器。將綁定至 ${name}。',
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
-			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
 			'addServer.authResponseNotJson' => '驗證回應不是有效的 JSON',
 			'addServer.authResponseIncomplete' => '伺服器傳回的登入回應不完整',
 			'addServer.quickConnectRejected' => 'Quick Connect 遭到伺服器拒絕',

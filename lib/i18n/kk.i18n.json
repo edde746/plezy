@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes сыншылары",
-      "rottenTomatoesAudience": "Rotten Tomatoes көрермендері"
+      "rottenTomatoesAudience": "Rotten Tomatoes көрермендері",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Видео туннельдеуді пайдалану. HDR ойнатқанда қара экран көрінсе немесе қозғалыс кідірсе, өшіріңіз.",
     "audioPassthrough": "Дыбысты тікелей өткізу (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.",
-    "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.",
+    "audioPassthroughDescriptionApple": "Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.",
     "audioPassthroughOverriddenByNormalization": "Дыбыс деңгейін нормалау қосулы кезде өшірулі",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} атау",
       "other": "${n} атау"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Кеңістіктік дыбыс",
     "audioOutputStereo": "Стерео",
     "audioNormalization": "Дыбыс деңгейін нормалау",
-    "audioNormalizationDisablesPassthrough": "Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі",
-    "audioNormalizationStereoMix": "Дыбысты стерео микске декодтайды; бұл қосулы кезде тікелей өткізу өшірулі"
+    "audioNormalizationDisablesPassthrough": "Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі"
   },
   "performanceOverlay": {
     "color": "Түс",

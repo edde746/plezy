@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Críticos do Rotten Tomatoes",
-      "rottenTomatoesAudience": "Público do Rotten Tomatoes"
+      "rottenTomatoesAudience": "Público do Rotten Tomatoes",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/D",
     "url": "URL",
@@ -346,7 +348,7 @@
     "tunneledPlaybackDescription": "Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR ou o movimento travar.",
     "audioPassthrough": "Passagem direta de áudio",
     "audioPassthroughDescription": "Enviar o áudio Dolby/DTS ao receptor ou à TV sem recodificação, preservando o som surround. Desative se não houver som.",
-    "audioPassthroughDescriptionAppleTv": "Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.",
+    "audioPassthroughDescriptionApple": "Usar o decodificador Dolby nativo da Apple para Dolby Digital Plus, incluindo Atmos. DTS e TrueHD continuam sendo reproduzidos como PCM multicanal. Desative se não houver som.",
     "audioPassthroughOverriddenByNormalization": "Desativada enquanto a normalização de intensidade sonora estiver ativa",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} título",
       "other": "${n} títulos"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -2015,8 +2024,7 @@
     "audioOutputSpatial": "Áudio espacial",
     "audioOutputStereo": "Estéreo",
     "audioNormalization": "Normalizar intensidade sonora",
-    "audioNormalizationDisablesPassthrough": "Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa",
-    "audioNormalizationStereoMix": "Decodifica o áudio para uma mixagem estéreo; a passagem direta fica desativada enquanto esta opção estiver ativa"
+    "audioNormalizationDisablesPassthrough": "Decodifica o áudio para PCM; a passagem direta fica desativada enquanto esta opção estiver ativa"
   },
   "performanceOverlay": {
     "color": "Cor",
