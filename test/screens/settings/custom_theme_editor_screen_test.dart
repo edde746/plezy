@@ -12,6 +12,7 @@ import 'package:plezy/services/settings_service.dart' as settings show ThemeMode
 import 'package:plezy/services/supporter/supporter_mode.dart';
 import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
@@ -237,6 +238,25 @@ void main() {
     final popped = await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(popped, isTrue);
+    expect(find.text(t.themeEditor.discardTitle), findsOneWidget);
+    expect(_editor, findsOneWidget);
+  });
+
+  testWidgets('the app-bar back arrow with unsaved changes asks too; without changes it just leaves', (tester) async {
+    await _pumpEditor(tester, MonoPalette.paper);
+
+    await tester.tap(find.byType(AppBarBackButton));
+    await tester.pumpAndSettle();
+    expect(_editor, findsNothing);
+    expect(find.text(t.themeEditor.discardTitle), findsNothing);
+
+    await tester.tap(find.text('open editor'));
+    await tester.pumpAndSettle();
+    await _tapVisible(tester, _slot(MonoPaletteSlot.text));
+    await _enterHex(tester, '#000000');
+
+    await tester.tap(find.byType(AppBarBackButton));
+    await tester.pumpAndSettle();
     expect(find.text(t.themeEditor.discardTitle), findsOneWidget);
     expect(_editor, findsOneWidget);
   });
