@@ -482,6 +482,7 @@
     "editCustom": "Edit custom theme",
     "editCustomDescription": "Choose every color yourself",
     "locked": "Unlock with Supporter",
+    "savedLocked": "Saved — unlocks with Supporter",
     "title": "Custom Theme",
     "startFrom": "Start from",
     "startFromDescription": "Copy all colors from another theme",

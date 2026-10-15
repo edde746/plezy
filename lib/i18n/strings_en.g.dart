@@ -1465,6 +1465,9 @@ class Translations$themeEditor$en {
 	/// en: 'Unlock with Supporter'
 	String get locked => 'Unlock with Supporter';
 
+	/// en: 'Saved — unlocks with Supporter'
+	String get savedLocked => 'Saved — unlocks with Supporter';
+
 	/// en: 'Custom Theme'
 	String get title => 'Custom Theme';
 
@@ -8116,6 +8119,7 @@ extension on Translations {
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
 			'themeEditor.locked' => 'Unlock with Supporter',
+			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
 			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
@@ -8165,9 +8169,9 @@ extension on Translations {
 			'hotkeys.actions.fullscreenToggle' => 'Toggle Fullscreen',
 			'hotkeys.actions.muteToggle' => 'Toggle Mute',
 			'hotkeys.actions.subtitleToggle' => 'Toggle Subtitles',
-			'hotkeys.actions.audioTrackNext' => 'Next Audio Track',
 			_ => null,
 		} ?? switch (path) {
+			'hotkeys.actions.audioTrackNext' => 'Next Audio Track',
 			'hotkeys.actions.subtitleTrackNext' => 'Next Subtitle Track',
 			'hotkeys.actions.chapterNext' => 'Next Chapter',
 			'hotkeys.actions.chapterPrevious' => 'Previous Chapter',
@@ -8679,9 +8683,9 @@ extension on Translations {
 			'accountPreferences.subtitleModes.smart' => 'Shown with foreign audio',
 			'accountPreferences.subtitleModes.smartDescription' => 'Turn subtitles on only when the audio is in another language.',
 			'accountPreferences.subtitleAccessibility' => 'SDH subtitles',
-			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Prefer non-SDH subtitles',
 			_ => null,
 		} ?? switch (path) {
+			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Prefer non-SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Prefer SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Only SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Only non-SDH subtitles',
@@ -9193,9 +9197,9 @@ extension on Translations {
 			'playlists.emptyPlaylist' => 'This playlist is empty',
 			'playlists.deleteConfirm' => 'Delete Playlist?',
 			'playlists.deleteMessage' => ({required Object name}) => 'Are you sure you want to delete "${name}"?',
-			'playlists.created' => 'Playlist created',
 			_ => null,
 		} ?? switch (path) {
+			'playlists.created' => 'Playlist created',
 			'playlists.deleted' => 'Playlist deleted',
 			'playlists.itemAdded' => 'Added to playlist',
 			'playlists.itemRemoved' => 'Removed from playlist',
@@ -9707,9 +9711,9 @@ extension on Translations {
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',
 			'trakt.title' => 'Trakt',
-			'trakt.connected' => 'Connected',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.connected' => 'Connected',
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'trakt.disconnectConfirm' => 'Disconnect Trakt account?',
 			'trakt.disconnectConfirmBody' => 'Plezy will stop sending events to Trakt. You can reconnect any time.',

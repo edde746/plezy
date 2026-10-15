@@ -39,8 +39,11 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
     _settingsBinding = SettingsBindingOwner(
       prefs: [settings.SettingsService.themeMode, settings.SettingsService.customThemePalette],
       onRefresh: (service) {
+        final previous = (_storedMode, _customPalette);
         _readStored(service);
-        _apply(pushSplash: true);
+        // A stored change that paints the same still changes what the picker
+        // shows (the saved-but-locked marker, the Custom swatch).
+        _apply(pushSplash: true, forceNotify: (_storedMode, _customPalette) != previous);
       },
     );
     unawaited(_settingsBinding.bind());
@@ -95,6 +98,14 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
 
   /// The saved Custom palette, whether or not Custom is selected or unlocked.
   MonoPalette? get customPalette => _customPalette;
+
+  /// The saved choice while only a missing Supporter entitlement keeps it off
+  /// screen, so the picker can show it is still saved; null when the saved
+  /// choice is what paints, or would not paint even if unlocked.
+  settings.ThemeMode? get lockedStoredThemeMode {
+    final ifUnlocked = resolve(_storedMode, _customPalette, unlocked: true).mode;
+    return ifUnlocked == _choice.mode ? null : ifUnlocked;
+  }
 
   /// What [stored] paints. A Supporter perk applies only while [unlocked], and
   /// Custom only once a palette is saved; otherwise the app paints System.
