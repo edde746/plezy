@@ -1,4 +1,5 @@
 import '../../media/media_kind.dart';
+import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../utils/external_ids.dart';
 import '../../utils/json_utils.dart';
@@ -10,10 +11,24 @@ import 'catalog_watchlist_machinery.dart';
 typedef _WatchlistEnvelope = ({Object? movies, Object? shows, Map<Object?, Object?> pageData, int limit});
 
 /// MDBList watchlist/search adapter. The tracker owns [_client].
-class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
+class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogCommunityRatings {
   MdblistCatalogSource(this._client);
 
   final MdblistClient _client;
+
+  /// MDBList `ratings[].source` → our source key and the scale MDBList reports that source's `value` on.
+  static const Map<String, ({String key, int scale})> _ratingSources = {
+    'imdb': (key: 'imdb', scale: 10),
+    'tmdb': (key: 'tmdb', scale: 100),
+    'tomatoes': (key: 'rottenTomatoesCritic', scale: 100),
+    // The Popcornmeter; MDBList's older API called it `tomatoesaudience`.
+    'popcorn': (key: 'rottenTomatoesAudience', scale: 100),
+    'tomatoesaudience': (key: 'rottenTomatoesAudience', scale: 100),
+    'metacritic': (key: 'metacritic', scale: 100),
+    'letterboxd': (key: 'letterboxd', scale: 5),
+    'trakt': (key: 'trakt', scale: 100),
+    'myanimelist': (key: 'mal', scale: 10),
+  };
 
   @override
   CatalogSourceId get id => CatalogSourceId.mdblist;
@@ -77,6 +92,37 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   @override
   Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async =>
       CatalogDetail(item: item);
+
+  /// Every score MDBList aggregates for the title (`/{provider}/{movie|show|any}/{id}`, looked up by IMDb, then
+  /// TMDB, a show's TVDB, then MAL id), each moved off its source's scale. MDBList's own `score` is not one.
+  @override
+  Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids) async {
+    final type = switch (kind) {
+      MediaKind.movie => 'movie',
+      MediaKind.show => 'show',
+      _ => null,
+    };
+    if (type == null) return const [];
+    final lookup = switch (ids) {
+      CatalogItemIds(:final imdb?) => ('imdb', type, imdb),
+      CatalogItemIds(:final tmdb?) => ('tmdb', type, '$tmdb'),
+      CatalogItemIds(:final tvdb?) when kind == MediaKind.show => ('tvdb', 'show', '$tvdb'),
+      CatalogItemIds(:final mal?) => ('mal', 'any', '$mal'),
+      _ => null,
+    };
+    if (lookup == null) return const [];
+    final (provider, mediaType, id) = lookup;
+    return [
+      for (final rating in await _client.getMediaRatings(provider, mediaType, id))
+        if (_ratingSources[rating['source']] case final source?)
+          ?MediaRatingSource.fromScale(
+            source.key,
+            flexibleDouble(rating['value']),
+            scale: source.scale,
+            votes: flexibleInt(rating['votes']),
+          ),
+    ];
+  }
 
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {

@@ -36,6 +36,7 @@ class TrackerHttpClient {
     Duration timeout = TrackerConstants.requestTimeout,
     Set<String> allowedMethods = allMethods,
     String? operation,
+    bool followRedirects = true,
   }) async {
     if (!allowedMethods.contains(method)) {
       throw ArgumentError('Unsupported HTTP method: $method');
@@ -51,6 +52,7 @@ class TrackerHttpClient {
       body: body,
       timeout: timeout,
       operation: op,
+      followRedirects: followRedirects,
     );
     sw.stop();
     appLogger.d('$op -> ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
@@ -65,6 +67,7 @@ class TrackerHttpClient {
     Duration timeout = TrackerConstants.requestTimeout,
     Set<String> allowedMethods = allMethods,
     String? operation,
+    bool followRedirects = true,
   }) {
     return send(
       method,
@@ -76,6 +79,7 @@ class TrackerHttpClient {
       timeout: timeout,
       allowedMethods: allowedMethods,
       operation: operation,
+      followRedirects: followRedirects,
     );
   }
 

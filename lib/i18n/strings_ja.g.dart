@@ -1935,7 +1935,6 @@ class _Translations$videoSettings$ja extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'ステレオ';
 	@override String get audioNormalization => 'ラウドネス正規化';
 	@override String get audioNormalizationDisablesPassthrough => '音声をPCMにデコードします。オンの間はパススルーがオフになります';
-	@override String get audioNormalizationStereoMix => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります';
 }
 
 // Path: performanceOverlay
@@ -2310,6 +2309,8 @@ class _Translations$common$ratingSource$ja extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes 批評家';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes 観客';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -3102,6 +3103,8 @@ extension on TranslationsJa {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes 批評家',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes 観客',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3537,10 +3540,10 @@ extension on TranslationsJa {
 			'fileInfo.streamIdentifier' => 'ストリーム識別子',
 			'fileInfo.streamIndex' => 'ストリームインデックス',
 			'fileInfo.streamId' => 'ストリーム ID',
-			'fileInfo.language' => '言語',
-			'fileInfo.languageCode' => '言語コード',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.language' => '言語',
+			'fileInfo.languageCode' => '言語コード',
 			'fileInfo.streamTitle' => 'トラックタイトル',
 			'fileInfo.channels' => 'チャンネル',
 			'fileInfo.sampleRate' => 'サンプルレート',
@@ -4051,10 +4054,10 @@ extension on TranslationsJa {
 			'libraries.analyze' => '解析',
 			'libraries.analyzeLibrary' => 'ライブラリを解析',
 			'libraries.refreshMetadata' => 'メタデータを更新',
-			'libraries.emptyTrash' => 'ゴミ箱を空にする',
-			'libraries.emptyingTrash' => ({required Object title}) => '「${title}」のゴミ箱を空にしています…',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrash' => 'ゴミ箱を空にする',
+			'libraries.emptyingTrash' => ({required Object title}) => '「${title}」のゴミ箱を空にしています…',
 			'libraries.trashEmptied' => ({required Object title}) => '「${title}」のゴミ箱を空にしました',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'ゴミ箱を空にできませんでした: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '「${title}」を解析中…',
@@ -4565,10 +4568,10 @@ extension on TranslationsJa {
 			'watchTogether.waitingForName' => ({required Object name}) => '${name}を待っています…',
 			'watchTogether.recentRooms' => '最近のルーム',
 			'watchTogether.renameRoom' => 'ルーム名を変更',
-			'watchTogether.removeRoom' => '削除',
-			'watchTogether.guestSwitchUnavailable' => '切り替えられません — 同期に必要なサーバーを利用できません',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.removeRoom' => '削除',
+			'watchTogether.guestSwitchUnavailable' => '切り替えられません — 同期に必要なサーバーを利用できません',
 			'watchTogether.guestSwitchFailed' => '切り替えられません — このサーバーにコンテンツが見つかりません',
 			'watchTogether.defaultDisplayName' => 'ユーザー',
 			'watchTogether.errors.timedOut' => 'リレーサーバーが時間内に応答しませんでした',
@@ -4802,7 +4805,6 @@ extension on TranslationsJa {
 			'videoSettings.audioOutputStereo' => 'ステレオ',
 			'videoSettings.audioNormalization' => 'ラウドネス正規化',
 			'videoSettings.audioNormalizationDisablesPassthrough' => '音声をPCMにデコードします。オンの間はパススルーがオフになります',
-			'videoSettings.audioNormalizationStereoMix' => '音声をステレオミックスにデコードします。オンの間はパススルーがオフになります',
 			'performanceOverlay.color' => '色',
 			'performanceOverlay.performance' => 'パフォーマンス',
 			'performanceOverlay.buffer' => 'バッファ',
@@ -5080,9 +5082,9 @@ extension on TranslationsJa {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product}サーバーにサインインします。「${name}」に紐付けられます。',
 			'addServer.borrowFromAnotherProfile' => '別のプロフィールの接続を利用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
-			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',
 			'addServer.authResponseNotJson' => '認証レスポンスが有効なJSONではありません',
 			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',

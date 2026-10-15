@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes 평론가",
-      "rottenTomatoesAudience": "Rotten Tomatoes 관객"
+      "rottenTomatoesAudience": "Rotten Tomatoes 관객",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -1082,6 +1084,13 @@
     "moreLikeThis": "비슷한 콘텐츠",
     "titleCount": {
       "other": "${n}개 타이틀"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1987,8 +1996,7 @@
     "audioOutputSpatial": "공간 음향",
     "audioOutputStereo": "스테레오",
     "audioNormalization": "음량 정규화",
-    "audioNormalizationDisablesPassthrough": "오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다",
-    "audioNormalizationStereoMix": "오디오를 스테레오 믹스로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다"
+    "audioNormalizationDisablesPassthrough": "오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다"
   },
   "performanceOverlay": {
     "color": "색상",

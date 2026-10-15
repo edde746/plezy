@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes-kritiker",
-      "rottenTomatoesAudience": "Rotten Tomatoes-publik"
+      "rottenTomatoesAudience": "Rotten Tomatoes-publik",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titlar"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2007,7 @@
     "audioOutputSpatial": "Rumsligt ljud",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalisera ljudstyrka",
-    "audioNormalizationDisablesPassthrough": "Avkodar ljudet till PCM; genomströmning är av medan detta är på",
-    "audioNormalizationStereoMix": "Avkodar ljudet till en stereomix; genomströmning är av medan detta är på"
+    "audioNormalizationDisablesPassthrough": "Avkodar ljudet till PCM; genomströmning är av medan detta är på"
   },
   "performanceOverlay": {
     "color": "Färg",

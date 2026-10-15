@@ -31,6 +31,7 @@ import '../providers/multi_server_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
+import '../services/catalog/community_ratings.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
@@ -99,6 +100,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   CatalogItem? _detailItem;
 
+  /// The connected trackers' scores, merged as they arrive; empty until then.
+  List<MediaRatingSource> _communityRatings = const [];
+  StreamSubscription<List<MediaRatingSource>>? _communityRatingsSubscription;
+
   /// Library items matching this catalog item; null while resolving.
   List<MediaItem>? _matches;
 
@@ -151,6 +156,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       node.dispose();
     }
     _watchlistSource?.watchlistChanges.removeListener(_onWatchlistChanged);
+    unawaited(_communityRatingsSubscription?.cancel());
     for (final node in _libraryMatchNodesByKey.values) {
       node.dispose();
     }
@@ -267,45 +273,54 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   /// One lazy detail load against the item's own source; failures keep the
-  /// opening item visible and leave provider-only sections hidden.
+  /// opening item visible and leave provider-only sections hidden. The
+  /// trackers' scores are asked for afterwards, with the detail's ids (a Plex
+  /// Discover row carries only its rating key).
   Future<void> _loadDetail() async {
     final source = _ownSource;
-    if (source == null) return;
-    try {
-      final detail = await source.fetchDetail(widget.item);
-      if (!mounted) return;
-      final relationEntries = [
-        for (final relation in detail.relations)
-          for (final item in relation.items) (type: relation.type, item: item),
-      ];
-      _syncDetailCollections(detail.item);
-      _replaceRelationFocusNodes(relationEntries.length);
-      setState(() {
-        _detailItem = detail.item;
-        _cast = detail.cast;
-        _related = detail.related;
-        _relationEntries = relationEntries;
-      });
-      // The row form of a Plex Discover item carries only its rating key;
-      // the detail body brings the external ids (#1715). Ask again with the
-      // full set whenever enrichment added id forms — not just when the bare
-      // lookup came back empty: the exact `plex://` guid finds only copies in
-      // libraries on the modern agent, while a legacy-agent sibling is
-      // reachable solely through the imdb/tmdb forms (#1754). Likewise when
-      // it added title candidates (Trakt aliases and translations, #2098): a
-      // copy filed under a romaji or localized title is reachable only
-      // through that title. The result merges, so a re-ask can only add
-      // copies.
-      final gainedIds = !widget.item.ids.allKeys.toSet().containsAll(detail.item.ids.allKeys);
-      final gainedTitles = !CatalogLibraryMatcher.lookupTitles(
-        widget.item,
-      ).toSet().containsAll(CatalogLibraryMatcher.lookupTitles(detail.item));
-      if (gainedIds || gainedTitles) {
-        unawaited(_resolveMatches(detail.item));
+    if (source != null) {
+      try {
+        final detail = await source.fetchDetail(widget.item);
+        if (!mounted) return;
+        final relationEntries = [
+          for (final relation in detail.relations)
+            for (final item in relation.items) (type: relation.type, item: item),
+        ];
+        _syncDetailCollections(detail.item);
+        _replaceRelationFocusNodes(relationEntries.length);
+        setState(() {
+          _detailItem = detail.item;
+          _cast = detail.cast;
+          _related = detail.related;
+          _relationEntries = relationEntries;
+        });
+        // The row form of a Plex Discover item carries only its rating key;
+        // the detail body brings the external ids (#1715). Ask again with the
+        // full set whenever enrichment added id forms — not just when the bare
+        // lookup came back empty: the exact `plex://` guid finds only copies in
+        // libraries on the modern agent, while a legacy-agent sibling is
+        // reachable solely through the imdb/tmdb forms (#1754). Likewise when
+        // it added title candidates (Trakt aliases and translations, #2098): a
+        // copy filed under a romaji or localized title is reachable only
+        // through that title. The result merges, so a re-ask can only add
+        // copies.
+        final gainedIds = !widget.item.ids.allKeys.toSet().containsAll(detail.item.ids.allKeys);
+        final gainedTitles = !CatalogLibraryMatcher.lookupTitles(
+          widget.item,
+        ).toSet().containsAll(CatalogLibraryMatcher.lookupTitles(detail.item));
+        if (gainedIds || gainedTitles) {
+          unawaited(_resolveMatches(detail.item));
+        }
+      } catch (e) {
+        appLogger.d('Catalog detail load failed for ${widget.item.identityKey}', error: e);
       }
-    } catch (e) {
-      appLogger.d('Catalog detail load failed for ${widget.item.identityKey}', error: e);
     }
+    if (!mounted) return;
+    _communityRatingsSubscription = context.read<CatalogSourcesProvider>().communityRatingsForCatalogItem(_item).listen(
+      (ratings) {
+        if (mounted) setState(() => _communityRatings = ratings);
+      },
+    );
   }
 
   void _replaceRelationFocusNodes(int count) {
@@ -826,13 +841,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   /// Attributed scores, each behind its own brand badge where the source has
-  /// one — the same Rotten Tomatoes/IMDb/TMDB marks the media detail screen
-  /// draws. Sources without a mark (`critic`, `audience`, tracker scores)
-  /// keep their written label.
+  /// one — the same marks the media detail screen draws — with the connected
+  /// trackers' scores merged in as they arrive. Sources without a mark
+  /// (`critic`, `audience`) keep their written label.
   Widget? _buildRatingsSection(ThemeData theme) {
     final compact = NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName);
     final chips = <Widget>[];
-    for (final rating in _item.ratings ?? const <MediaRatingSource>[]) {
+    for (final rating in withCommunityRatings(_item.ratings ?? const [], _communityRatings)) {
       final source = ratingSourceLabel(rating.source);
       final badge = ratingInfoForSource(rating.source, rating.value);
       if (source == null && badge == null) continue;
@@ -844,7 +859,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         badge == null
             ? StatChip(icon: Symbols.star_rounded, iconColor: Colors.amber, label: label)
             : StatChip(
-                leading: SvgPicture.asset(badge.assetPath, width: 14, height: 14, semanticsLabel: source),
+                leading: SvgPicture.asset(
+                  badge.assetPath,
+                  width: 14,
+                  height: 14,
+                  semanticsLabel: source,
+                  theme: SvgTheme(currentColor: theme.colorScheme.onSurface),
+                ),
                 label: label,
               ),
       );

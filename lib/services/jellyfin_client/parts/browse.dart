@@ -1734,6 +1734,21 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
+  /// Not cached: [fetchItem] is the single writer of this endpoint's cache
+  /// row, and a person carries none of its detail fields.
+  @override
+  Future<MediaPersonDetails> fetchPersonDetails(String personId, {AbortController? abort}) async {
+    if (isOfflineMode) return MediaPersonDetails.empty;
+    final response = await _http.get(
+      '/Users/${_segment(connection.userId)}/Items/${_segment(personId)}',
+      queryParameters: {'Fields': 'Overview,ProductionLocations'},
+      abort: abort,
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    return data is Map<String, dynamic> ? JellyfinMappers.personDetails(data) : MediaPersonDetails.empty;
+  }
+
   @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
     if (excludedLibraryIds.isEmpty) {

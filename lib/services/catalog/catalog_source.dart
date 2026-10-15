@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../media/media_kind.dart';
+import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../utils/external_ids.dart';
@@ -148,6 +149,22 @@ abstract interface class CatalogHubSource {
   Future<List<CatalogHub>> fetchHubs({int limit = 25});
 
   Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25});
+}
+
+/// Optional capability for catalog providers that publish community scores
+/// for a title: their own, and any other sites' they report (MDBList carries
+/// Rotten Tomatoes, IMDb, TMDB, Metacritic, Letterboxd, Trakt and MyAnimeList;
+/// Simkl carries IMDb and MyAnimeList). The detail screens show them next to
+/// the media server's own scores.
+abstract interface class CatalogCommunityRatings {
+  /// Every score the provider has for the title [ids] names, each attributed
+  /// and on [MediaRatingSource]'s 0-10 scale (see [MediaRatingSource.fromScale]).
+  ///
+  /// Empty when [kind] is neither a movie nor a show, when [ids] carry no id
+  /// the provider can look the title up by, or when it does not know the
+  /// title (HTTP 404). Any other failure throws, so the caller can leave the
+  /// provider out without remembering the miss.
+  Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids);
 }
 
 /// A pluggable external catalog provider backing the Explore tab (Trakt

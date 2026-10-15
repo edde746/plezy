@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten-Tomatoes-Kritiker",
-      "rottenTomatoesAudience": "Rotten-Tomatoes-Publikum"
+      "rottenTomatoesAudience": "Rotten-Tomatoes-Publikum",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N. v.",
     "url": "URL",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} Titel",
       "other": "${n} Titel"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2007,7 @@
     "audioOutputSpatial": "Räumliches Audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Lautstärke normalisieren",
-    "audioNormalizationDisablesPassthrough": "Dekodiert Audio zu PCM; Durchleitung ist aus, solange dies aktiv ist",
-    "audioNormalizationStereoMix": "Dekodiert Audio zu einem Stereomix; Durchleitung ist aus, solange dies aktiv ist"
+    "audioNormalizationDisablesPassthrough": "Dekodiert Audio zu PCM; Durchleitung ist aus, solange dies aktiv ist"
   },
   "performanceOverlay": {
     "color": "Farbe",

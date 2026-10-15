@@ -79,7 +79,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Críticos de Rotten Tomatoes",
-      "rottenTomatoesAudience": "Público de Rotten Tomatoes"
+      "rottenTomatoesAudience": "Público de Rotten Tomatoes",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/D",
     "url": "URL",
@@ -1087,6 +1089,13 @@
     "titleCount": {
       "one": "${n} título",
       "other": "${n} títulos"
+    },
+    "person": {
+      "born": "",
+      "died": "",
+      "birthplace": "",
+      "dateWithAge": "",
+      "dateWithAgeAtDeath": ""
     }
   },
   "errors": {
@@ -1998,8 +2007,7 @@
     "audioOutputSpatial": "Audio espacial",
     "audioOutputStereo": "Estéreo",
     "audioNormalization": "Normalizar volumen",
-    "audioNormalizationDisablesPassthrough": "Decodifica el audio a PCM; la transferencia directa está desactivada mientras esta opción esté activa",
-    "audioNormalizationStereoMix": "Decodifica el audio a una mezcla estéreo; la transferencia directa está desactivada mientras esta opción esté activa"
+    "audioNormalizationDisablesPassthrough": "Decodifica el audio a PCM; la transferencia directa está desactivada mientras esta opción esté activa"
   },
   "performanceOverlay": {
     "color": "Color",

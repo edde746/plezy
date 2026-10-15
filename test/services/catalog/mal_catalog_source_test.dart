@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
@@ -21,6 +22,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/trackers/fribb_mapping_store.dart';
 import 'package:plezy/services/trackers/mal/mal_client.dart';
+import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/utils/external_ids.dart';
 
@@ -788,6 +790,55 @@ void main() {
       expect(detail.related, isEmpty);
       expect(detail.relations, isEmpty);
       expect(requests, isEmpty);
+    });
+
+    test('community ratings read the mean score and its scorers', () async {
+      // The MAL API v2 reference's `GET /anime/{id}` example.
+      handlers.add(
+        (_) => _json({
+          'id': 30230,
+          'title': 'Diamond no Ace: Second Season',
+          'main_picture': {'medium': 'https://myanimelist.cdn-dena.com/images/anime/9/74398.jpg'},
+          'mean': 8.42,
+          'num_scoring_users': 29027,
+        }),
+      );
+
+      final ratings = await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(mal: 30230, tvdb: 1));
+
+      expect(requests.single.url.path, '/v2/anime/30230');
+      expect(requests.single.url.queryParameters['fields'], 'mean,num_scoring_users');
+      expect(ratings, [
+        isA<MediaRatingSource>()
+            .having((rating) => rating.source, 'source', 'mal')
+            .having((rating) => rating.value, 'value', closeTo(8.42, 1e-9))
+            .having((rating) => rating.votes, 'votes', 29027),
+      ]);
+    });
+
+    test('community ratings are empty for an anime nobody scored or MAL does not know', () async {
+      handlers
+        ..add((_) => _json({'id': 1, 'title': 'Not yet aired'}))
+        ..add((_) => http.Response('{"error":"not_found"}', 404));
+
+      expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(mal: 1)), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(mal: 999999)), isEmpty);
+      expect(requests, hasLength(2));
+    });
+
+    test('community ratings need a movie or show with a MAL id', () async {
+      expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(tvdb: 267440)), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.episode, const CatalogItemIds(mal: 16498)), isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('community ratings propagate a failure other than 404', () async {
+      handlers.add((_) => http.Response('oops', 500));
+
+      await expectLater(
+        source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(mal: 16498)),
+        throwsA(isA<TrackerApiException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
     });
   });
 

@@ -9,6 +9,7 @@ import '../../../models/trakt/trakt_catalog_media.dart';
 import '../../../models/trakt/trakt_scrobble_request.dart';
 import '../../../models/trakt/trakt_user.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/json_utils.dart';
 import '../future_coalescer.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
@@ -160,6 +161,27 @@ class TraktClient implements DisposableTrackerClient {
     );
   }
 
+  /// The Trakt id a TMDB or TVDB id ([idType]) names (`GET /search/{tmdb|tvdb}/{id}?type=movie|show`,
+  /// "ID Lookup"), from the first result of [type]'s kind; null when Trakt does not know the title.
+  Future<int?> lookupTraktId(String idType, int id, TraktCatalogType type) async {
+    final kind = type == TraktCatalogType.movies ? 'movie' : 'show';
+    final res = await _getOrNull('/search/$idType/$id?type=$kind');
+    if (res == null) return null;
+    for (final entry in _decodeEntries(res.body)) {
+      if (entry.type == kind) return (type == TraktCatalogType.movies ? entry.movie : entry.show)?.ids.trakt;
+    }
+    return null;
+  }
+
+  /// A title's community rating (`GET /{movies|shows}/{id}/ratings`): the 0-10 average and its votes; null
+  /// when Trakt does not know the title. [id] is a Trakt id, slug or IMDb id.
+  Future<({double? rating, int? votes})?> getCommunityRating(TraktCatalogType type, String id) async {
+    final res = await _getOrNull('/${type.name}/$id/ratings');
+    final decoded = res == null ? null : TrackerHttpClient.decodeJson(res.body);
+    if (decoded is! Map) return null;
+    return (rating: flexibleDouble(decoded['rating']), votes: flexibleInt(decoded['votes']));
+  }
+
   /// Body shape: `{"movies":[{"ids":{...}}],"shows":[{"ids":{...}}]}`.
   Future<void> addToWatchlist(Map<String, dynamic> body) =>
       _request('POST', '/sync/watchlist', body: body, allowStatuses: const {200, 201});
@@ -308,6 +330,16 @@ class TraktClient implements DisposableTrackerClient {
     }
 
     throw TrackerApiException(service: TrackerService.trakt, statusCode: res.statusCode);
+  }
+
+  /// [_requestResponse] for a read whose 404 means Trakt does not know the title.
+  Future<http.Response?> _getOrNull(String path) async {
+    try {
+      return await _requestResponse('GET', path);
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<http.Response> _send(String method, String path, {Map<String, dynamic>? body}) async {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
@@ -230,6 +231,92 @@ void main() {
       expect(provider.cachedWatchlistCandidatesFor(item), isNull);
     });
   });
+
+  group('community ratings', () {
+    MediaRatingSource rating(String source, double value) => MediaRatingSource(source: source, value: value);
+    List<String> sourcesOf(List<MediaRatingSource> ratings) => [for (final r in ratings) r.source];
+
+    test('a library item resolves its external ids once for the watchlist and the scores', () async {
+      final trakt = _FakeScoringSource(CatalogSourceId.trakt, [rating('trakt', 9.1)]);
+      final provider = _FakeSourcesProvider([trakt]);
+      addTearDown(provider.dispose);
+      final client = _ExternalIdsClient(const ExternalIds(imdb: 'tt1'));
+      final item = testMediaItem(id: 'movie-1', serverId: 'server-1');
+
+      await provider.watchlistCandidatesFor(item, client: client);
+      final emissions = await provider.communityRatingsForLibraryItem(item, client: client).toList();
+
+      expect(client.calls, 1);
+      expect(trakt.askedIds.single.imdb, 'tt1');
+      expect(emissions.map(sourcesOf), [
+        ['trakt'],
+      ]);
+    });
+
+    test('an episode is not scored: the trackers score whole titles', () async {
+      final trakt = _FakeScoringSource(CatalogSourceId.trakt, [rating('trakt', 9.1)]);
+      final provider = _FakeSourcesProvider([trakt]);
+      addTearDown(provider.dispose);
+      final client = _ExternalIdsClient(const ExternalIds(imdb: 'tt1'));
+      final episode = testMediaItem(id: 'episode-1', serverId: 'server-1', kind: MediaKind.episode);
+
+      expect(await provider.communityRatingsForLibraryItem(episode, client: client).toList(), isEmpty);
+      expect(client.calls, 0);
+    });
+
+    test('a catalog item is not asked of its own tracker, and the others\' copy of its score is dropped', () async {
+      final trakt = _FakeScoringSource(CatalogSourceId.trakt, [rating('trakt', 9.1)]);
+      final mdblist = _FakeScoringSource(CatalogSourceId.mdblist, [rating('imdb', 9.3), rating('trakt', 9.0)]);
+      final provider = _FakeSourcesProvider([trakt, mdblist]);
+      addTearDown(provider.dispose);
+      const item = CatalogItem(
+        source: CatalogSourceId.trakt,
+        kind: MediaKind.movie,
+        title: 'The Shawshank Redemption',
+        ids: CatalogItemIds(trakt: 234, imdb: 'tt0111161'),
+      );
+
+      final emissions = await provider.communityRatingsForCatalogItem(item).toList();
+
+      expect(trakt.askedIds, isEmpty);
+      expect(emissions.map(sourcesOf).last, ['imdb']);
+    });
+
+    test('an MDBList item is asked of MDBList, which has no score of its own', () async {
+      final mdblist = _FakeScoringSource(CatalogSourceId.mdblist, [rating('imdb', 9.3), rating('trakt', 9.0)]);
+      final provider = _FakeSourcesProvider([mdblist]);
+      addTearDown(provider.dispose);
+      const item = CatalogItem(
+        source: CatalogSourceId.mdblist,
+        kind: MediaKind.movie,
+        title: 'The Shawshank Redemption',
+        ids: CatalogItemIds(imdb: 'tt0111161'),
+      );
+
+      final emissions = await provider.communityRatingsForCatalogItem(item).toList();
+
+      expect(emissions.map(sourcesOf).last, ['imdb', 'trakt']);
+    });
+
+    test('a tracker that cannot place a catalog item still gets the item\'s own ids', () async {
+      // AniList rows carry MAL ids but no imdb/tmdb, so MAL's own id lookup
+      // has nothing to go on.
+      final mal = _FakeScoringSource(CatalogSourceId.mal, [rating('mal', 8.6)])..resolves = false;
+      final provider = _FakeSourcesProvider([mal]);
+      addTearDown(provider.dispose);
+      const item = CatalogItem(
+        source: CatalogSourceId.anilist,
+        kind: MediaKind.show,
+        title: 'Frieren',
+        ids: CatalogItemIds(anilist: 154587, mal: 52991),
+      );
+
+      final emissions = await provider.communityRatingsForCatalogItem(item).toList();
+
+      expect(mal.askedIds.single.mal, 52991);
+      expect(emissions.map(sourcesOf).last, ['mal']);
+    });
+  });
 }
 
 class _ExternalIdsClient implements MediaServerClient {
@@ -268,6 +355,35 @@ class _FakeWatchlistSource implements CatalogSource {
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (resolveError != null) throw resolveError!;
     return CatalogItemIds(imdb: external.imdb);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeScoringSource implements CatalogSource, CatalogCommunityRatings {
+  _FakeScoringSource(this.id, this.ratings);
+
+  @override
+  final CatalogSourceId id;
+  final List<MediaRatingSource> ratings;
+
+  /// Whether [resolveItemIds] places titles; false answers null, as MAL does
+  /// for a title it has no mapping for.
+  bool resolves = true;
+  final List<CatalogItemIds> askedIds = [];
+
+  @override
+  bool get supportsWatchlist => true;
+
+  @override
+  Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async =>
+      resolves && external.hasCatalogIds ? CatalogItemIds.fromExternal(external) : null;
+
+  @override
+  Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids) async {
+    askedIds.add(ids);
+    return ratings;
   }
 
   @override

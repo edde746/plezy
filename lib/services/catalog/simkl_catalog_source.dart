@@ -15,6 +15,7 @@ import '../../utils/country_codes.dart';
 import '../../utils/external_ids.dart';
 import '../trackers/simkl/simkl_client.dart';
 import '../trackers/simkl/simkl_constants.dart';
+import '../trackers/tracker_exceptions.dart';
 import '../trackers/future_coalescer.dart';
 import '../../utils/trailer_urls.dart';
 import 'catalog_source.dart';
@@ -25,7 +26,7 @@ import 'catalog_watchlist_machinery.dart';
 /// The client is owned and rebound by `TrackersProvider`; this source only
 /// borrows it. Simkl accepts the media server's native external IDs directly,
 /// so library-item resolution does not require Fribb.
-class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
+class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogCommunityRatings {
   static const Duration _rowCacheTtl = Duration(minutes: 15);
 
   final SimklClient _client;
@@ -562,6 +563,52 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
           if (recommendation.ids.hasAny) _catalogItemFromRecommendation(recommendation),
     ];
     return CatalogDetail(item: item.enrichedWith(_catalogItemFromDetail(detail, type)), related: related);
+  }
+
+  /// Simkl's own score and the IMDb and MAL ones it carries, each 0-10 (the `ratings` of `/{movies|tv|anime}/{id}`).
+  /// `/redirect` first resolves the Simkl page, and so the kind and id, from every other id the title has.
+  @override
+  Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids) async {
+    if (kind != MediaKind.movie && kind != MediaKind.show) return const [];
+    final query = {
+      'imdb': ?ids.imdb,
+      if (ids.tmdb case final tmdb?) ...{'tmdb': '$tmdb', 'type': kind == MediaKind.movie ? 'movie' : 'tv'},
+      'tvdb': ?ids.tvdb?.toString(),
+      'mal': ?ids.mal?.toString(),
+      'anilist': ?ids.anilist?.toString(),
+    };
+    if (query.isEmpty) return const [];
+    final location = await _client.getRedirectLocation(query);
+    final page = location == null ? null : _pageFor(location);
+    if (page == null) return const [];
+    final SimklDetail? detail;
+    try {
+      detail = await _client.getDetail(page.type, page.id);
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return const [];
+      rethrow;
+    }
+    final ratings = detail?.ratings;
+    return [
+      for (final (source, rating) in [('simkl', ratings?.simkl), ('imdb', ratings?.imdb), ('mal', ratings?.mal)])
+        ?MediaRatingSource.fromScale(source, rating?.rating, scale: 10, votes: rating?.votes),
+    ];
+  }
+
+  /// The detail record a `/redirect` target names (`https://simkl.com/movies/53536/slug` → movies, 53536); null for
+  /// any other page, such as the search a title Simkl does not know lands on.
+  static ({SimklCatalogType type, int id})? _pageFor(String location) {
+    final segments = Uri.tryParse(location)?.pathSegments ?? const <String>[];
+    if (segments.length < 2) return null;
+    final type = switch (segments[0]) {
+      'movies' => SimklCatalogType.movies,
+      'tv' => SimklCatalogType.tv,
+      'anime' => SimklCatalogType.anime,
+      _ => null,
+    };
+    final id = int.tryParse(segments[1]);
+    if (type == null || id == null || id <= 0) return null;
+    return (type: type, id: id);
   }
 
   @override

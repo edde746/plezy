@@ -1,5 +1,6 @@
 import '../../i18n/strings.g.dart';
 import '../../media/media_kind.dart';
+import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../models/catalog/catalog_metadata.dart';
@@ -20,7 +21,7 @@ import 'catalog_watchlist_machinery.dart';
 /// Wraps the catalog [TraktClient] owned by `TrackersProvider` (not owned here
 /// — never disposed by this class). Watchlist membership rides
 /// [CatalogWatchlistMachinery] with kind-namespaced keys over every id form.
-class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
+class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogCommunityRatings {
   final TraktClient _client;
 
   TraktCatalogSource(this._client);
@@ -149,6 +150,28 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       cast: _castFrom(people, castLimit),
       related: related == null ? const [] : _fromMedia(related, item.kind),
     );
+  }
+
+  /// Trakt's own community score, its 0-10 average (`/{movies|shows}/{id}/ratings`). A title known only by
+  /// TMDB (or a show's TVDB) id is first looked up for its Trakt id.
+  @override
+  Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids) async {
+    final type = switch (kind) {
+      MediaKind.movie => TraktCatalogType.movies,
+      MediaKind.show => TraktCatalogType.shows,
+      _ => null,
+    };
+    if (type == null) return const [];
+    final id = ids.trakt?.toString() ?? ids.slug ?? ids.imdb ?? (await _lookupTraktId(type, ids))?.toString();
+    if (id == null) return const [];
+    final rating = await _client.getCommunityRating(type, id);
+    return [?MediaRatingSource.fromScale('trakt', rating?.rating, scale: 10, votes: rating?.votes)];
+  }
+
+  Future<int?> _lookupTraktId(TraktCatalogType type, CatalogItemIds ids) async {
+    if (ids.tmdb case final tmdb?) return _client.lookupTraktId('tmdb', tmdb, type);
+    if (ids.tvdb case final tvdb? when type == TraktCatalogType.shows) return _client.lookupTraktId('tvdb', tvdb, type);
+    return null;
   }
 
   Future<T?> _withoutFailure<T>(Future<T> request, String requestName, CatalogItem item) async {

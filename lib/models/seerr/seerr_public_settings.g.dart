@@ -16,4 +16,6 @@ SeerrPublicSettings _$SeerrPublicSettingsFromJson(Map<String, dynamic> json) =>
       movie4kEnabled: json['movie4kEnabled'] as bool? ?? false,
       series4kEnabled: json['series4kEnabled'] as bool? ?? false,
       partialRequestsEnabled: json['partialRequestsEnabled'] as bool? ?? true,
+      cacheImages: json['cacheImages'] as bool? ?? false,
+      youtubeUrl: json['youtubeUrl'] as String?,
     );
