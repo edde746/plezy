@@ -712,6 +712,7 @@ class DownloadManagerService {
       'jellyfin' => MediaBackend.jellyfin,
       'emby' => MediaBackend.emby,
       'plex' => MediaBackend.plex,
+      'silo' => MediaBackend.silo,
       _ => null,
     };
   }

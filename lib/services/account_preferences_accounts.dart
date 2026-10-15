@@ -72,6 +72,8 @@ AccountPreferenceResolution resolveAccountPreferenceAccounts({
         row: row,
         connection: connection,
       ),
+      // Silo has no server-side account preferences Plezy can edit.
+      SiloConnection() => null,
       null => null,
     };
     if (account == null) continue;

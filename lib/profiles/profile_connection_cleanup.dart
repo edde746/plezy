@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../media/ids.dart';
 import '../models/plex/plex_home_user.dart';
 import '../services/multi_server_manager.dart';
+import '../services/silo/silo_auth_service.dart';
 import '../services/storage_service.dart';
 import 'profile.dart';
 import 'profile_connection_registry.dart';
@@ -63,11 +66,13 @@ class ProfileConnectionCleanup {
     await _clearProfileServerPrefsNoLongerReferenced(
       profileId: profileId,
       removedServerIds: removedServerIds,
-      clearEverywhereWhenUnreferenced: connection is JellyfinConnection,
+      clearEverywhereWhenUnreferenced: connection is JellyfinConnection || connection is SiloConnection,
     );
 
     if (connection is JellyfinConnection) {
       await _removeUnreferencedJellyfinConnection(connection);
+    } else if (connection is SiloConnection) {
+      await _removeUnreferencedSiloConnection(connection);
     }
   }
 
@@ -164,6 +169,11 @@ class ProfileConnectionCleanup {
       await _removeJellyfinConnection(connection);
       removed++;
     }
+    for (final connection in all.whereType<SiloConnection>()) {
+      if (referencedConnectionIds.contains(connection.id)) continue;
+      await _removeSiloConnection(connection);
+      removed++;
+    }
 
     return removed;
   }
@@ -177,6 +187,24 @@ class ProfileConnectionCleanup {
     await connections.remove(connection.id);
     serverManager?.removeJellyfinConnection(connection);
     final serverId = ServerId.tryParse(connection.serverMachineId);
+    if (serverId != null && !await _isServerReferenced(serverId)) {
+      await storage.clearLibraryPreferencesForServerEverywhere(serverId);
+    }
+  }
+
+  Future<void> _removeUnreferencedSiloConnection(SiloConnection connection) async {
+    if ((await profileConnections.listForConnection(connection.id)).isNotEmpty) return;
+    await _removeSiloConnection(connection);
+  }
+
+  /// Sign out of Silo: delete the stored tokens first, then revoke the
+  /// session on the server (best effort; an unreachable server must not keep
+  /// credentials on disk).
+  Future<void> _removeSiloConnection(SiloConnection connection) async {
+    await connections.remove(connection.id);
+    serverManager?.removeSiloConnection(connection);
+    unawaited(revokeSiloSession(connection));
+    final serverId = ServerId.tryParse(connection.serverId);
     if (serverId != null && !await _isServerReferenced(serverId)) {
       await storage.clearLibraryPreferencesForServerEverywhere(serverId);
     }
@@ -245,5 +273,6 @@ Set<ServerId> _serverIdsForConnection(Connection connection) {
       for (final server in servers) ?ServerId.tryParse(server.clientIdentifier),
     },
     JellyfinConnection(:final serverMachineId) => {?ServerId.tryParse(serverMachineId)},
+    SiloConnection(:final serverId) => {?ServerId.tryParse(serverId)},
   };
 }

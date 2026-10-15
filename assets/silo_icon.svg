@@ -1,0 +1,4 @@
+<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+  <!-- Generic storage-silo glyph used to mark Silo connections. Not the Silo project's logo. -->
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M36 4C24.4 4 15 13.4 15 25V66C15 67.1 15.9 68 17 68H55C56.1 68 57 67.1 57 66V25C57 13.4 47.6 4 36 4ZM23 25C23 17.8 28.8 12 36 12C43.2 12 49 17.8 49 25V27H23V25ZM23 33H49V43H23V33ZM23 49H49V60H23V49Z"/>
+</svg>

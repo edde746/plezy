@@ -207,6 +207,8 @@ bool isMediaDeletionAllowed({
   null => false,
   MediaBackend.jellyfin || MediaBackend.emby => resolvedItemPermission == true,
   MediaBackend.plex => isAdminActionAllowed,
+  // Plezy does not delete media on Silo servers.
+  MediaBackend.silo => false,
 };
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)

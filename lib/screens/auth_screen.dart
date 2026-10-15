@@ -33,6 +33,7 @@ import '../widgets/dialog_action_button.dart';
 import 'auth/plex_pin_auth_flow.dart';
 import 'profile/profile_switch_screen.dart';
 import 'settings/add_jellyfin_screen.dart';
+import 'settings/add_silo_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({
@@ -248,6 +249,14 @@ class _AuthScreenState extends State<AuthScreen> {
     unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen())));
   }
 
+  Future<void> _connectToSilo() async {
+    if (!await _prepareDatabaseRecoveryForSignIn()) return;
+    if (!mounted) return;
+    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddSiloScreen()));
+    if (!mounted || added != true) return;
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen())));
+  }
+
   void _showDebugTokenDialog() {
     unawaited(
       showScopedDialog<void>(
@@ -362,6 +371,7 @@ class _AuthScreenState extends State<AuthScreen> {
     const embyDialect = MediaBrowserDialect.emby;
     void connectToJellyfin() => unawaited(_connectToMediaBrowser(jellyfinDialect));
     void connectToEmby() => unawaited(_connectToMediaBrowser(embyDialect));
+    void connectToSilo() => unawaited(_connectToSilo());
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .stretch,
@@ -451,6 +461,16 @@ class _AuthScreenState extends State<AuthScreen> {
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
             icon: const BackendBadge(backend: MediaBackend.emby, size: 18),
             label: Text(t.auth.connectToMediaBrowser(product: embyDialect.productName)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FocusableButton(
+          onPressed: connectToSilo,
+          child: OutlinedButton.icon(
+            onPressed: connectToSilo,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.silo, size: 18),
+            label: Text(t.addServer.silo.connectCard),
           ),
         ),
         if (kDebugMode) ...[

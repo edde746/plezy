@@ -95,6 +95,8 @@ String? connectionAvatarUrl({
       tag: primaryImageTag,
     ),
     PlexAccountConnection() => _plexHomeUserThumb(plexHomeByConnectionId[connection.id], link.userIdentifier),
+    // Silo avatar URLs are short-lived presigned links; show the initials.
+    SiloConnection() => null,
   };
 }
 

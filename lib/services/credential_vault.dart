@@ -97,6 +97,10 @@ class CredentialVault {
     final tokenKey = _tokenKeyForKind(kind);
     final token = tokenKey == null ? null : copy[tokenKey];
     if (token is String) copy[tokenKey!] = await protect(token);
+    for (final key in _extraSecretKeysForKind(kind)) {
+      final secret = copy[key];
+      if (secret is String && secret.isNotEmpty) copy[key] = await protect(secret);
+    }
     if (kind == 'plex') {
       copy['servers'] = await _protectPlexServers(copy['servers']);
     }
@@ -118,6 +122,13 @@ class CredentialVault {
       migrated = revealed != null && !isProtected(token);
       copy[tokenKey!] = revealed ?? '';
     }
+    for (final key in _extraSecretKeysForKind(kind)) {
+      final secret = copy[key];
+      if (secret is! String || secret.isEmpty) continue;
+      final revealed = await reveal(secret);
+      migrated = migrated || (revealed != null && !isProtected(secret));
+      copy[key] = revealed ?? '';
+    }
     if (kind == 'plex') {
       final result = await _revealPlexServers(copy['servers']);
       copy['servers'] = result.servers;
@@ -131,8 +142,15 @@ class CredentialVault {
   /// be listed here — an omission silently persists the token in plaintext.
   static String? _tokenKeyForKind(String kind) => switch (kind) {
     'plex' => 'accountToken',
-    'jellyfin' || 'emby' => 'accessToken',
+    'jellyfin' || 'emby' || 'silo' => 'accessToken',
     _ => null,
+  };
+
+  /// Further credentials a kind keeps beside its [_tokenKeyForKind] token.
+  /// Silo stores a rotating refresh token and an optional profile PIN proof.
+  static List<String> _extraSecretKeysForKind(String kind) => switch (kind) {
+    'silo' => const ['refreshToken', 'profileToken'],
+    _ => const [],
   };
 
   static Future<Object?> _protectPlexServers(Object? rawServers) async {

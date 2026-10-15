@@ -365,3 +365,177 @@ class JellyfinConnection extends Connection {
     return tag == null || tag.isEmpty ? null : tag;
   }
 }
+
+/// A connection to one Silo server through its native `/api/v2` contract,
+/// signed in as one account and acting as one of its household profiles.
+///
+/// The id is `{serverId}/{profileId}` so two Plezy profiles bound to two Silo
+/// profiles on the same server keep separate rows, caches and progress (the
+/// same compound shape [JellyfinConnection] uses for its users).
+///
+/// [refreshToken] rotates on every refresh, so the client persists the
+/// updated connection through `MultiServerManager.onSiloConnectionUpdated`.
+/// [profileToken] proves a PIN for a PIN-locked profile and expires; once it
+/// does the server refuses profile-scoped calls and the user signs in again.
+class SiloConnection extends Connection {
+  @override
+  final String id;
+
+  @override
+  final DateTime createdAt;
+
+  @override
+  final DateTime? lastAuthenticatedAt;
+
+  /// Server base URL including any reverse-proxy path prefix, without the
+  /// `/api/v2` suffix and without a trailing slash.
+  final String baseUrl;
+
+  /// `server_id` from `GET /api/v2/system/identity`: the deployment's stable
+  /// identity at every address. Used as the public [ServerId].
+  final String serverId;
+  final String serverName;
+
+  final String accountId;
+  final String userName;
+
+  /// Server role of the account (`admin`, `user`, ...).
+  final String role;
+
+  final String profileId;
+  final String profileName;
+
+  final String accessToken;
+  final String refreshToken;
+
+  /// When [accessToken] stops being accepted.
+  final DateTime? accessTokenExpiresAt;
+
+  final String? profileToken;
+  final DateTime? profileTokenExpiresAt;
+
+  /// Per-installation device id sent as `X-Silo-Device-Id`.
+  final String deviceId;
+
+  SiloConnection({
+    required this.serverId,
+    required String baseUrl,
+    required this.serverName,
+    required this.accountId,
+    required this.userName,
+    required this.profileId,
+    required this.profileName,
+    required this.accessToken,
+    required this.refreshToken,
+    required this.deviceId,
+    required this.createdAt,
+    this.role = '',
+    this.accessTokenExpiresAt,
+    this.profileToken,
+    this.profileTokenExpiresAt,
+    this.lastAuthenticatedAt,
+    String? id,
+  }) : id = id ?? siloConnectionId(serverId: serverId, profileId: profileId),
+       baseUrl = canonicalizeBaseUrl(baseUrl);
+
+  static String siloConnectionId({required String serverId, required String profileId}) => '$serverId/$profileId';
+
+  @override
+  MediaBackend get kind => MediaBackend.silo;
+
+  @override
+  String get displayName => '$profileName · $serverName';
+
+  @override
+  String get displayLabel => serverName;
+
+  @override
+  String? get displaySubtitle => '$profileName · $userName';
+
+  bool get isAdministrator => role == 'admin';
+
+  SiloConnection copyWith({
+    String? baseUrl,
+    String? serverName,
+    String? userName,
+    String? role,
+    String? profileName,
+    String? accessToken,
+    String? refreshToken,
+    DateTime? accessTokenExpiresAt,
+    String? profileToken,
+    DateTime? profileTokenExpiresAt,
+    bool clearProfileToken = false,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    return SiloConnection(
+      id: id,
+      serverId: serverId,
+      baseUrl: baseUrl ?? this.baseUrl,
+      serverName: serverName ?? this.serverName,
+      accountId: accountId,
+      userName: userName ?? this.userName,
+      role: role ?? this.role,
+      profileId: profileId,
+      profileName: profileName ?? this.profileName,
+      accessToken: accessToken ?? this.accessToken,
+      refreshToken: refreshToken ?? this.refreshToken,
+      accessTokenExpiresAt: accessTokenExpiresAt ?? this.accessTokenExpiresAt,
+      profileToken: clearProfileToken ? null : (profileToken ?? this.profileToken),
+      profileTokenExpiresAt: clearProfileToken ? null : (profileTokenExpiresAt ?? this.profileTokenExpiresAt),
+      deviceId: deviceId,
+      createdAt: createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
+    );
+  }
+
+  @override
+  Map<String, Object?> toConfigJson() {
+    return {
+      'baseUrl': baseUrl,
+      'serverId': serverId,
+      'serverName': serverName,
+      'accountId': accountId,
+      'userName': userName,
+      'role': role,
+      'profileId': profileId,
+      'profileName': profileName,
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
+      'accessTokenExpiresAt': accessTokenExpiresAt?.toUtc().toIso8601String(),
+      'profileToken': profileToken,
+      'profileTokenExpiresAt': profileTokenExpiresAt?.toUtc().toIso8601String(),
+      'deviceId': deviceId,
+    };
+  }
+
+  factory SiloConnection.fromConfigJson({
+    required String id,
+    required Map<String, Object?> json,
+    required DateTime createdAt,
+    DateTime? lastAuthenticatedAt,
+  }) {
+    String str(String key) => json[key] is String ? json[key] as String : '';
+    DateTime? date(String key) => json[key] is String ? DateTime.tryParse(json[key] as String) : null;
+    final profileToken = str('profileToken');
+    return SiloConnection(
+      id: id,
+      serverId: str('serverId'),
+      baseUrl: str('baseUrl'),
+      serverName: str('serverName').isEmpty ? 'Silo' : str('serverName'),
+      accountId: str('accountId'),
+      userName: str('userName'),
+      role: str('role'),
+      profileId: str('profileId'),
+      profileName: str('profileName'),
+      accessToken: str('accessToken'),
+      refreshToken: str('refreshToken'),
+      accessTokenExpiresAt: date('accessTokenExpiresAt'),
+      profileToken: profileToken.isEmpty ? null : profileToken,
+      profileTokenExpiresAt: date('profileTokenExpiresAt'),
+      deviceId: str('deviceId'),
+      createdAt: createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt,
+    );
+  }
+}

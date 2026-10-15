@@ -2332,6 +2332,26 @@
     "redirectUnsupported": "The server redirected to an unsupported URL",
     "redirectDifferentHost": "The server redirected to a different host. Enter the final ${product} URL directly.",
     "redirectInsecure": "The server redirected from HTTPS to an insecure URL",
-    "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly."
+    "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly.",
+    "silo": {
+      "title": "Add Silo server",
+      "connectCard": "Connect to Silo",
+      "connectCardSubtitle": "Sign in with Silo's own API. Pick a household profile after signing in.",
+      "connectCardSubtitleScoped": "Sign in to your Silo server. Binds to ${name}.",
+      "serverAddress": "Server address",
+      "serverAddressHelper": "Include the port and any path prefix, for example silo.example.com:8443/media.",
+      "version": "Silo ${version}",
+      "insecureTitle": "Use an unencrypted connection?",
+      "insecureMessage": "${host} is not on your local network and does not use HTTPS. Your password and viewing activity would be sent unencrypted.",
+      "insecureConfirm": "Connect anyway",
+      "passwordLoginDisabled": "This server does not allow password sign-in.",
+      "chooseProfile": "Choose a profile",
+      "chooseProfileHelper": "Plezy watches as this Silo profile. Add the server again to use another one.",
+      "pinRequired": "PIN required",
+      "wrongPin": "Wrong PIN. Try again.",
+      "primaryProfile": "Main profile",
+      "childProfile": "Child profile",
+      "signInAsAnotherAccount": "Use a different account"
+    }
   }
 }

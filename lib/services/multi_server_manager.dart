@@ -14,6 +14,8 @@ import 'connectivity_probe.dart';
 import 'jellyfin_client.dart';
 import 'jellyfin_endpoint_discovery.dart';
 import 'plex_client.dart';
+import 'silo/silo_client.dart';
+import 'silo/silo_identity.dart';
 import '../models/plex/plex_config.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_timeouts.dart';
@@ -70,6 +72,15 @@ class MultiServerManager {
   final Stream<List<ConnectivityResult>> Function() _connectivityChanges;
   final Duration _connectivityDebounceDuration;
   FutureOr<void> Function(JellyfinConnection connection)? onJellyfinConnectionUpdated;
+
+  /// Persists a [SiloConnection] whose tokens rotated. Silo refresh tokens
+  /// are single-use, so a rotation that is not persisted signs the user out
+  /// at the next launch.
+  FutureOr<void> Function(SiloConnection connection)? onSiloConnectionUpdated;
+
+  /// Silo clients by connection id (`{serverId}/{profileId}`); the one bound
+  /// to the active profile is also in [_clients] under its server id.
+  final Map<String, SiloClient> _siloByConnectionId = {};
 
   final Map<String, MediaServerClient> _clients = {};
 
@@ -241,6 +252,9 @@ class MultiServerManager {
   }) {
     final client = _clients[serverId];
     if (client is JellyfinClient && !jellyfinConnectionIds.contains(client.connection.id)) return true;
+    // Silo connection ids travel in the same set: both are single-server,
+    // per-user connections bound to a profile through a join row.
+    if (client is SiloClient && !jellyfinConnectionIds.contains(client.connection.id)) return true;
     if (client is PlexClient && client.profileScopeId.profileId != profileId) return true;
     final scope = _plexScopeByServer[serverId];
     return scope != null && scope.profileId != profileId;
@@ -257,6 +271,8 @@ class MultiServerManager {
   MediaServerClient? getClientByScope(String clientScopeId) {
     final jellyfin = getJellyfinClientByCompoundId(clientScopeId);
     if (jellyfin != null) return jellyfin;
+    final silo = _siloByConnectionId[clientScopeId];
+    if (silo != null) return silo;
     final plexScope = PlexProfileScopeId.tryParse(clientScopeId);
     if (plexScope == null || _plexScopeByServer[plexScope.publicServerId] != plexScope) return null;
     final client = _clients[plexScope.publicServerId];
@@ -604,6 +620,14 @@ class MultiServerManager {
   }
 
   void removeServer(ServerId serverId) {
+    final siloIds = _siloByConnectionId.entries
+        .where((entry) => entry.value.connection.serverId == serverId)
+        .map((entry) => entry.key)
+        .toList();
+    for (final id in siloIds) {
+      final client = _siloByConnectionId.remove(id);
+      if (client != null && !identical(client, _clients[serverId])) unawaited(_closeClientGracefully(client));
+    }
     final jellyfinCompoundIds = _jellyfinByCompoundId.entries
         .where((entry) => entry.value.connection.serverMachineId == serverId)
         .map((entry) => entry.key)
@@ -996,6 +1020,78 @@ class MultiServerManager {
       _emitStatus();
     }
   }
+
+  /// Register the client for a [SiloConnection] and bind it as the active
+  /// client for its server. An unchanged re-add (same tokens) keeps the live
+  /// client. Returns whether the server answered as healthy; a refusing
+  /// server stays registered so the refusal can be shown.
+  Future<bool> addSiloConnection(SiloConnection connection) async {
+    try {
+      final existing = _siloByConnectionId[connection.id];
+      final SiloClient client;
+      if (existing != null &&
+          existing.connection.refreshToken == connection.refreshToken &&
+          existing.connection.profileToken == connection.profileToken &&
+          existing.connection.baseUrl == connection.baseUrl) {
+        client = existing;
+      } else {
+        final identity = await resolveSiloClientIdentity();
+        late final SiloClient created;
+        created = SiloClient.create(
+          connection,
+          identity: identity,
+          onConnectionUpdated: (updated) async {
+            if (!identical(_siloByConnectionId[updated.id], created)) return;
+            final persist = onSiloConnectionUpdated;
+            if (persist == null) return;
+            try {
+              await Future.sync(() => persist(updated));
+            } catch (e, st) {
+              appLogger.w('Failed to persist rotated Silo tokens', error: e, stackTrace: st);
+            }
+          },
+          onSessionEnded: () {
+            if (identical(_clients[connection.serverId], created)) {
+              _applyHealth(ServerId(connection.serverId), HealthStatus.authError);
+            }
+          },
+        );
+        client = created;
+        if (existing != null) unawaited(_closeClientGracefully(existing));
+        _siloByConnectionId[connection.id] = client;
+      }
+      final serverId = connection.serverId;
+      final previous = _clients[serverId];
+      _clients[serverId] = client;
+      if (previous != null && !identical(previous, client) && previous is! SiloClient) {
+        unawaited(_closeClientGracefully(previous));
+      }
+      final health = await client.checkHealth();
+      if (!identical(_clients[serverId], client)) return health == HealthStatus.online;
+      _applyHealth(ServerId(serverId), health);
+      if (!identical(previous, client)) _emitStatus();
+      appLogger.i('Added Silo server ${connection.serverName} (${health.name})');
+      return health == HealthStatus.online;
+    } catch (e, st) {
+      appLogger.e('Failed to add Silo server ${connection.serverName}', error: e, stackTrace: st);
+      return false;
+    }
+  }
+
+  /// Tear down one Silo connection's client. If it was the active client for
+  /// its server, the server slot is cleared.
+  void removeSiloConnection(SiloConnection connection) {
+    final client = _siloByConnectionId.remove(connection.id);
+    if (client == null) return;
+    if (identical(_clients[connection.serverId], client)) {
+      _forgetServer(connection.serverId);
+      _emitStatus();
+    }
+    unawaited(_closeClientGracefully(client));
+  }
+
+  /// The Silo client for a connection id, active or not.
+  SiloClient? getSiloClientByConnectionId(String connectionId) => _siloByConnectionId[connectionId];
 
   /// Update server status (used for health monitoring).
   ///
@@ -1485,6 +1581,19 @@ class MultiServerManager {
           () => _reconnectServer(ServerId(serverId), server),
           timeout: const Duration(seconds: 15),
           timeoutLabel: 'Reconnection',
+        );
+      }
+
+      final active = _clients[serverId];
+      if (active is SiloClient) {
+        return _runServerTask(
+          serverId,
+          () async {
+            final health = await active.checkHealth();
+            if (identical(_clients[serverId], active)) _applyHealth(ServerId(serverId), health);
+          },
+          timeout: const Duration(seconds: 15),
+          timeoutLabel: 'Silo reconnection',
         );
       }
 

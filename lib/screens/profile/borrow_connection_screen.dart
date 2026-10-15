@@ -254,6 +254,8 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
           await _borrowPlex(cand);
         case JellyfinConnection():
           await _borrowJellyfin(cand);
+        case SiloConnection():
+          await _borrowSilo(cand);
       }
     } catch (e, st) {
       // Without this, a throw from the verify/borrow steps (network, DB)
@@ -341,6 +343,22 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       }
       return;
     }
+    _finishBorrow();
+  }
+
+  /// A Silo connection is already scoped to one server profile; borrowing
+  /// shares that same profile with [widget.targetProfile].
+  Future<void> _borrowSilo(_BorrowCandidate cand) async {
+    final silo = cand.connection as SiloConnection;
+    await context.read<ProfileConnectionRegistry>().upsert(
+      ProfileConnection(
+        profileId: widget.targetProfile.id,
+        connectionId: silo.id,
+        userToken: '',
+        userIdentifier: silo.profileId,
+        tokenAcquiredAt: DateTime.now(),
+      ),
+    );
     _finishBorrow();
   }
 

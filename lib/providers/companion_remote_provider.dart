@@ -330,6 +330,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
           );
         case JellyfinConnection():
           addContext(await _createMediaBrowserAuthContext(connection: connection));
+        case SiloConnection():
+          // Companion remote is not offered for Silo connections.
+          break;
       }
     }
 

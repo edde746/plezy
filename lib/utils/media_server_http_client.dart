@@ -149,13 +149,24 @@ class MediaServerHttpClient {
     abort: abort,
   );
 
+  /// [body] is optional: most servers take none, but Silo's playback stop
+  /// (`DELETE /api/v2/playback/{session_id}`) carries its final sample in one.
   Future<MediaServerResponse> delete(
     String path, {
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
+    Object? body,
     Duration? timeout,
     AbortController? abort,
-  }) => _send('DELETE', path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
+  }) => _send(
+    'DELETE',
+    path,
+    queryParameters: queryParameters,
+    headers: headers,
+    body: body,
+    timeout: timeout,
+    abort: abort,
+  );
 
   /// Fetch raw bytes (e.g. images, BIF files, subtitles).
   Future<Uint8List> getBytes(String url, {Map<String, String>? headers, Duration? timeout, AbortController? abort}) {

@@ -174,6 +174,10 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
           if (serverMachineId == rule.serverId && serverName.isNotEmpty) {
             return _RuleServerInfo(label: serverName, isKnown: true);
           }
+        case SiloConnection(:final serverId, :final serverName):
+          if (serverId == rule.serverId && serverName.isNotEmpty) {
+            return _RuleServerInfo(label: serverName, isKnown: true);
+          }
       }
     }
 

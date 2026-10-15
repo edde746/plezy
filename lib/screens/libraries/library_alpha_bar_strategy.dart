@@ -67,7 +67,8 @@ abstract class LibraryAlphaBarStrategy {
         libraryKey: libraryKey,
         isShared: isShared,
       ),
-      MediaBackend.jellyfin || MediaBackend.emby => const MediaBrowserAlphaBarStrategy(),
+      // Silo's catalog takes a `name_prefix` filter, which fits the same UX.
+      MediaBackend.jellyfin || MediaBackend.emby || MediaBackend.silo => const MediaBrowserAlphaBarStrategy(),
     };
   }
 }

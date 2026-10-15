@@ -437,6 +437,8 @@ class AccountPreferencesController extends ChangeNotifier with DisposableChangeN
         final token = selected.plexToken;
         if (token == null || token.isEmpty) return null;
         return PlexAccountPreferencesSource(authToken: token, serviceFactory: _plexServiceFactory);
+      case MediaBackend.silo:
+        return null;
     }
   }
 
