@@ -67,7 +67,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   final TvSpotlightController _spotlight = TvSpotlightController();
   HubFocusMemory _hubFocusMemory = HubFocusMemory();
 
-  void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+  void _setSpotlightItem(MediaHub hub, MediaItem item) => _spotlight.select(item, hub: hub);
 
   @override
   void didUpdateWidget(LibraryRecommendedTab oldWidget) {
@@ -428,7 +428,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                 hubs: tvHubs,
                 focusMemory: _hubFocusMemory,
                 iconForHub: (hub, _) => hubIconFor(hub),
-                onFocusedItemChanged: _setSpotlightItem,
+                onFocusedHubItemChanged: _setSpotlightItem,
                 onRefresh: updateItem,
                 onRemoveFromContinueWatching: _refreshContinueWatching,
                 isContinueWatchingHub: _isContinueWatchingHub,

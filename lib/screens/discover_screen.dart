@@ -204,7 +204,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return hubs;
   }
 
-  void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+  void _setSpotlightItem(MediaHub hub, MediaItem item) => _spotlight.select(item, hub: hub);
 
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
@@ -1133,7 +1133,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
       iconForHub: (hub, _) => hubIconFor(hub),
-      onFocusedItemChanged: _setSpotlightItem,
+      onFocusedHubItemChanged: _setSpotlightItem,
       onRefresh: _discover.updateItem,
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
       isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,

@@ -58,4 +58,25 @@ void main() {
       same(refreshed),
     );
   });
+
+  test('spotlight controller tracks the row an item was focused in', () {
+    final movie = _item('movie');
+    final plain = _hub('plain', [movie]);
+    final hero = _hub('hero', [movie]);
+    final controller = TvSpotlightController(settleDelay: Duration.zero);
+    addTearDown(controller.dispose);
+    var notifications = 0;
+    controller.addListener(() => notifications++);
+
+    controller.select(movie, hub: plain);
+    expect(controller.hub, same(plain));
+
+    // Same title in a later row: the item is unchanged but the row is not.
+    controller.select(movie, hub: hero);
+    expect(controller.hub, same(hero));
+    expect(notifications, 2);
+
+    controller.select(movie, hub: hero);
+    expect(notifications, 2);
+  });
 }

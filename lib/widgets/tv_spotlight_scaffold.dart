@@ -29,10 +29,24 @@ class TvSpotlightController extends ValueNotifier<MediaItem?> {
   final Duration _settleDelay;
   final Debouncer _debouncer;
 
-  void select(MediaItem item) {
+  MediaHub? _hub;
+
+  /// The row the spotlighted item was focused in, when the caller knows it.
+  /// The same title can sit in several rows (a movie in both a merged
+  /// Recently Released row and a Plex hub), so the item alone can't say which
+  /// row's Hero setting applies.
+  MediaHub? get hub => _hub;
+
+  void select(MediaItem item, {MediaHub? hub}) {
     void apply() {
-      if (value?.globalKey == item.globalKey) return;
-      value = item;
+      final sameHub = hubIdentityOf(_hub) == hubIdentityOf(hub);
+      if (value?.globalKey == item.globalKey && sameHub) return;
+      _hub = hub;
+      if (value?.globalKey == item.globalKey) {
+        notifyListeners();
+      } else {
+        value = item;
+      }
     }
 
     if (_settleDelay == Duration.zero) {
@@ -63,6 +77,10 @@ class TvSpotlightController extends ValueNotifier<MediaItem?> {
   }
 }
 
+/// Stable identity for a hub across reloads (hub objects are rebuilt on every
+/// refresh), matching the identity the TV screens key their focus state by.
+String? hubIdentityOf(MediaHub? hub) => hub == null ? null : '${hub.serverId ?? ''}:${hub.identifier ?? hub.id}';
+
 typedef TvSpotlightClientResolver = MediaServerClient? Function(MediaItem? item);
 
 /// Shared full-screen TV backdrop and foreground stack used by hub rails.
@@ -90,6 +108,14 @@ class TvSpotlightScaffold extends StatelessWidget {
   /// `TvSpotlightController.resolve` already scans `hubs` to find the item
   /// itself.
   MediaHub? _hubFor(MediaItem item) {
+    final listenable = spotlightListenable;
+    final focusedHub = listenable is TvSpotlightController ? listenable.hub : null;
+    if (focusedHub != null) {
+      final identity = hubIdentityOf(focusedHub);
+      for (final hub in hubs) {
+        if (hubIdentityOf(hub) == identity && hub.items.any((i) => i.globalKey == item.globalKey)) return hub;
+      }
+    }
     for (final hub in hubs) {
       if (hub.items.any((i) => i.globalKey == item.globalKey)) return hub;
     }
