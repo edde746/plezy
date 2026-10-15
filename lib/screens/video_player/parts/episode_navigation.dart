@@ -148,12 +148,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // throw would be an unhandled async error that also strands the loading flag set by
     // _playNext — which then silently disables item navigation for the rest of the session.
     try {
-      // Carry the playing version to the next episode by signature — its Media
-      // list may order versions differently, so the bare index is a guess and
-      // the source id is per-episode.
-      final currentVersionSignature =
+      // Carry the playing version to the next episode by name and signature —
+      // its Media list may order versions differently, so the bare index is a
+      // guess and the source id is per-episode.
+      final currentVersion =
           _effectiveSelectedMediaIndex >= 0 && _effectiveSelectedMediaIndex < _availableVersions.length
-          ? _availableVersions[_effectiveSelectedMediaIndex].signature
+          ? _availableVersions[_effectiveSelectedMediaIndex]
           : null;
       // Users who curate per-episode selections server-side (e.g. via Plex Auto
       // Languages) opt out of carrying tracks across episodes entirely: with no
@@ -186,7 +186,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         metadata: episodeMetadata,
         selectedMediaIndex: _effectiveSelectedMediaIndex,
         selectedMediaSourceId: null,
-        preferredVersionSignature: currentVersionSignature,
+        preferredVersionSignature: currentVersion?.signature,
+        preferredVersionName: currentVersion?.name,
         qualityPreset: _selectedQualityPreset,
         // Stream ids are per-part: the previous episode's audio id is
         // meaningless on the new item, so let preferences pick the track.

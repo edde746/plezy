@@ -125,6 +125,22 @@ class MediaVersion {
   String get _resolutionPart => (videoResolution ?? '').toLowerCase();
   String get _codecPart => (videoCodec ?? '').toLowerCase();
 
+  /// Index of the version named [name] (trimmed, case-insensitive), or null
+  /// when [name] is empty or no version or more than one version carries it.
+  /// Names only exist where they tell versions apart (see
+  /// `jellyfinSourcesToVersions`), so a unique match is the same version.
+  static int? findNamedIndex(List<MediaVersion> versions, String? name) {
+    final target = name?.trim().toLowerCase();
+    if (target == null || target.isEmpty) return null;
+    int? match;
+    for (var i = 0; i < versions.length; i++) {
+      if (versions[i].name?.trim().toLowerCase() != target) continue;
+      if (match != null) return null;
+      match = i;
+    }
+    return match;
+  }
+
   /// Find the best matching version index from a set of accepted signatures.
   ///
   /// Matching runs globally by tier: exact signature, resolution+codec, then

@@ -3434,6 +3434,7 @@ class _FakeMediaServerClient implements MediaServerClient {
     int mediaIndex = 0,
     String? mediaSourceId,
     String? preferredVersionSignature,
+    String? preferredVersionName,
   }) async {
     sourceReads++;
     final raw = rawItems[itemId];

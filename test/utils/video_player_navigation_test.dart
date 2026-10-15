@@ -286,6 +286,29 @@ void main() {
       expect(resolved.signature, '4k:hevc:mkv');
     });
 
+    test('resolveSavedMediaVersionFor passes the stored name through without versions', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {
+          'media_version_preferences': jsonEncode({
+            'srv-1:show-1': {'id': 'src-primary', 'name': '# 1 Primary', 'sig': '1080:h264:mkv', 'idx': 0},
+          }),
+        },
+      );
+      SettingsService.resetForTesting();
+
+      final bare = testMediaItem(
+        id: 'ep-3',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        title: 'Episode 3',
+        serverId: 'srv-1',
+        grandparentId: 'show-1',
+      );
+      final resolved = await resolveSavedMediaVersionFor(bare);
+      expect(resolved!.name, '# 1 Primary');
+      expect(resolved.signature, '1080:h264:mkv');
+    });
+
     test('resolveSavedMediaVersionFor returns null when nothing is stored', () async {
       expect(await resolveSavedMediaVersionFor(episode), isNull);
     });

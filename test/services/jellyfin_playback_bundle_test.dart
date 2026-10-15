@@ -290,6 +290,54 @@ void main() {
       client.close();
     });
 
+    test('selects source by preferred name before signature', () async {
+      // Emby lists same-quality versions in no fixed order; only the name
+      // tells "# 1 Primary" from "# 2 Secondary".
+      final body = jsonEncode({
+        'Id': 'item-6',
+        'Type': 'Episode',
+        'MediaSources': [
+          {
+            'Id': 'src-secondary',
+            'Name': '# 2 Secondary',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+            ],
+          },
+          {
+            'Id': 'src-primary',
+            'Name': '# 1 Primary',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'h264', 'Height': 1080, 'Width': 1920},
+            ],
+          },
+        ],
+      });
+      final client = buildClient(body);
+      final probe = await client.fetchPlaybackBundle('item-6');
+      final signature = probe!.availableVersions[1].signature;
+
+      final bundle = await client.fetchPlaybackBundle(
+        'item-6',
+        sourceIndex: 0,
+        preferredSignature: signature,
+        preferredName: '# 1 Primary',
+      );
+      expect(bundle!.selectedSourceId, 'src-primary');
+      expect(bundle.selectedSourceIndex, 1);
+
+      // An explicit sourceId still wins over the name.
+      final pinned = await client.fetchPlaybackBundle(
+        'item-6',
+        sourceId: 'src-secondary',
+        preferredName: '# 1 Primary',
+      );
+      expect(pinned!.selectedSourceId, 'src-secondary');
+      client.close();
+    });
+
     test('chapters defaults to empty list when item has no Chapters field', () async {
       final body = jsonEncode({
         'Id': 'item-3',
