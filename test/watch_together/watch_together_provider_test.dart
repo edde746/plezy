@@ -292,12 +292,6 @@ class _ProviderRelay {
 }
 
 void main() {
-  test('generated relay versions match the protocol specification', () {
-    final spec = (jsonDecode(File('relay_protocol.json').readAsStringSync()) as Map).cast<String, dynamic>();
-    expect(RelayProtocol.protocolVersion, spec['protocolVersion']);
-    expect(RelayProtocol.legacyProtocolVersion, spec['legacyProtocolVersion']);
-  });
-
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {

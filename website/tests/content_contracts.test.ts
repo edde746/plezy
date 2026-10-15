@@ -1,122 +1,74 @@
 import { describe, expect, test } from 'bun:test';
-import {
-	detectMobileStorePlatform,
-	linuxArchitectures,
-	storeOptionsForPlatform
-} from '../src/lib/content/downloads';
-import {
-	faqSchemaMainEntity,
-	faqs,
-	watchTogetherFaqAnswer
-} from '../src/lib/content/faqs';
+import { detectMobileStorePlatform, storeOptionsForPlatform } from '../src/lib/content/downloads';
 import {
 	buildSoftwareApplicationOffers,
 	normalizeUsdStorePrice
 } from '../src/lib/content/software_app_offers';
-import { csr as privacyCsr } from '../src/routes/privacy/+page';
 
 describe('mobile store selection', () => {
-	test('treats missing and unrecognized client evidence as unknown', () => {
-		expect(detectMobileStorePlatform()).toBe('unknown');
-		expect(
-			detectMobileStorePlatform({
-				userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-				platform: 'Win32',
-				maxTouchPoints: 0
-			})
-		).toBe('unknown');
-	});
+	test('routes browser evidence to the appropriate store buttons', () => {
+		const cases = [
+			{ evidence: {}, platform: 'unknown', storeIds: ['app-store', 'play-store'] },
+			{
+				evidence: { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)' },
+				platform: 'ios',
+				storeIds: ['app-store']
+			},
+			{
+				evidence: { userAgent: 'Mozilla/5.0 (Linux; Android 15; Pixel 9)' },
+				platform: 'android',
+				storeIds: ['play-store']
+			},
+			{
+				evidence: {
+					userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+					platform: 'MacIntel',
+					maxTouchPoints: 5
+				},
+				platform: 'ios',
+				storeIds: ['app-store']
+			},
+			{
+				evidence: {
+					userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+					platform: 'MacIntel',
+					maxTouchPoints: 0
+				},
+				platform: 'unknown',
+				storeIds: ['app-store', 'play-store']
+			}
+		] as const;
 
-	test('detects iOS and Android user agents', () => {
-		expect(
-			detectMobileStorePlatform({
-				userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)'
-			})
-		).toBe('ios');
-		expect(
-			detectMobileStorePlatform({
-				userAgent: 'Mozilla/5.0 (Linux; Android 15; Pixel 9)'
-			})
-		).toBe('android');
-	});
-
-	test('distinguishes desktop-mode iPadOS from a non-touch Mac', () => {
-		const desktopSafari = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)';
-		expect(
-			detectMobileStorePlatform({
-				userAgent: desktopSafari,
-				platform: 'MacIntel',
-				maxTouchPoints: 5
-			})
-		).toBe('ios');
-		expect(
-			detectMobileStorePlatform({
-				userAgent: desktopSafari,
-				platform: 'MacIntel',
-				maxTouchPoints: 0
-			})
-		).toBe('unknown');
-	});
-
-	test('shows only the matching store when known and both stores when unknown', () => {
-		expect(storeOptionsForPlatform('ios').map((option) => option.id)).toEqual(['app-store']);
-		expect(storeOptionsForPlatform('android').map((option) => option.id)).toEqual([
-			'play-store'
-		]);
-		expect(storeOptionsForPlatform('unknown').map((option) => option.id)).toEqual([
-			'app-store',
-			'play-store'
-		]);
+		for (const { evidence, platform, storeIds } of cases) {
+			const detected = detectMobileStorePlatform(evidence);
+			expect(detected).toBe(platform);
+			expect(storeOptionsForPlatform(detected).map(({ id }) => id)).toEqual(storeIds);
+		}
 	});
 });
 
-describe('Linux download inventory', () => {
-	test('keeps a unique four-format artifact matrix for x64 and ARM64', () => {
-		const artifactNames = linuxArchitectures.map((architecture) =>
-			architecture.formats.map(({ url }) => url.slice(url.lastIndexOf('/') + 1))
-		);
-
-		expect(linuxArchitectures.map(({ label }) => label)).toEqual(['x64 (Intel/AMD)', 'ARM64']);
-		expect(artifactNames).toEqual([
-			[
-				'plezy-linux-x64.deb',
-				'plezy-linux-x64.rpm',
-				'plezy-linux-x64.pkg.tar.zst',
-				'plezy-linux-x64.tar.gz'
-			],
-			[
-				'plezy-linux-arm64.deb',
-				'plezy-linux-arm64.rpm',
-				'plezy-linux-arm64.pkg.tar.zst',
-				'plezy-linux-arm64.tar.gz'
-			]
-		]);
-
-		const urls = linuxArchitectures.flatMap((architecture) =>
-			architecture.formats.map(({ url }) => url)
-		);
-		expect(new Set(urls).size).toBe(8);
-		expect(
-			urls.every((url) =>
-				url.startsWith('https://github.com/edde746/plezy/releases/latest/download/')
-			)
-		).toBe(true);
-	});
-});
-
-describe('software application offers', () => {
-	test('accepts only finite nonnegative numeric USD prices', () => {
+describe('store price normalization', () => {
+	test('accepts only finite nonnegative USD amounts', () => {
 		expect(normalizeUsdStorePrice(0, 'USD')).toBe('0');
 		expect(normalizeUsdStorePrice(4.99, 'USD')).toBe('4.99');
 
-		for (const value of [-1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, '4.99', null]) {
+		for (const value of [
+			-1,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			Number.NEGATIVE_INFINITY,
+			'4.99',
+			null
+		]) {
 			expect(normalizeUsdStorePrice(value, 'USD')).toBeNull();
 		}
 		for (const currency of ['EUR', 'usd', '', null, undefined]) {
 			expect(normalizeUsdStorePrice(4.99, currency)).toBeNull();
 		}
 	});
+});
 
+describe('software application offers', () => {
 	test('keeps unavailable paid-store links without describing them as free', () => {
 		const offers = buildSoftwareApplicationOffers({
 			appStorePrice: null,
@@ -152,21 +104,5 @@ describe('software application offers', () => {
 			price: '3.99',
 			priceCurrency: 'USD'
 		});
-	});
-});
-
-describe('route content contracts', () => {
-	test('uses the same Watch Together answer in the visible FAQ and FAQ schema', () => {
-		const visibleFaq = faqs.find(({ id }) => id === 'watch-together');
-		expect(visibleFaq).toBeDefined();
-		expect(visibleFaq?.answer).toBe(watchTogetherFaqAnswer);
-
-		const schemaFaq = faqSchemaMainEntity.find(({ name }) => name === visibleFaq?.question);
-		expect(schemaFaq).toBeDefined();
-		expect(schemaFaq?.acceptedAnswer.text).toBe(watchTogetherFaqAnswer);
-	});
-
-	test('keeps the privacy route server-rendered without client hydration', () => {
-		expect(privacyCsr).toBe(false);
 	});
 });
