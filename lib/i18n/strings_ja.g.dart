@@ -454,7 +454,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合や動きがカクつく場合は無効にしてください。';
 	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioPassthroughDescription => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。';
-	@override String get audioPassthroughDescriptionAppleTv => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。';
+	@override String get audioPassthroughDescriptionApple => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。';
 	@override String get audioPassthroughOverriddenByNormalization => 'ラウドネス正規化がオンの間はオフ';
 	@override String get downmixCenterBoost => 'センターチャンネルブースト';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
@@ -3361,7 +3361,7 @@ extension on TranslationsJa {
 			'settings.tunneledPlaybackDescription' => '動画トンネリングを使用します。HDR再生で画面が黒くなる場合や動きがカクつく場合は無効にしてください。',
 			'settings.audioPassthrough' => 'オーディオパススルー',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。',
+			'settings.audioPassthroughDescriptionApple' => 'Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。',
 			'settings.audioPassthroughOverriddenByNormalization' => 'ラウドネス正規化がオンの間はオフ',
 			'settings.downmixCenterBoost' => 'センターチャンネルブースト',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',

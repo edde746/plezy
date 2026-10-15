@@ -454,7 +454,7 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get tunneledPlaybackDescription => 'Использовать видеотуннелирование. Отключите, если при воспроизведении HDR отображается чёрный экран или движение прерывается.';
 	@override String get audioPassthrough => 'Сквозной вывод аудио';
 	@override String get audioPassthroughDescription => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.';
+	@override String get audioPassthroughDescriptionApple => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Отключено при включённой нормализации громкости';
 	@override String get downmixCenterBoost => 'Усиление центрального канала';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} дБ';
@@ -3394,7 +3394,7 @@ extension on TranslationsRu {
 			'settings.tunneledPlaybackDescription' => 'Использовать видеотуннелирование. Отключите, если при воспроизведении HDR отображается чёрный экран или движение прерывается.',
 			'settings.audioPassthrough' => 'Сквозной вывод аудио',
 			'settings.audioPassthroughDescription' => 'Передавать звук Dolby/DTS на ресивер или телевизор без перекодирования, сохраняя объёмный звук. Отключите, если нет звука.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.',
+			'settings.audioPassthroughDescriptionApple' => 'Использовать встроенный декодер Dolby от Apple для Dolby Digital Plus, включая Atmos. DTS и TrueHD по-прежнему воспроизводятся как многоканальный PCM. Отключите, если звук отсутствует.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Отключено при включённой нормализации громкости',
 			'settings.downmixCenterBoost' => 'Усиление центрального канала',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} дБ',

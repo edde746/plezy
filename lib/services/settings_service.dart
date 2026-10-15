@@ -402,9 +402,10 @@ class _UseExternalPlayerPref extends Pref<bool> {
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
 }
 
-/// Native Dolby playback: bitstreaming on Android TV, Apple's EAC3+JOC
-/// sample-buffer renderer on Apple TV. Both default on for the living-room
-/// form factor, off everywhere else.
+/// Native Dolby playback: bitstreaming on Android TV and desktop, Apple's
+/// system Dolby decoder on Apple platforms. Defaults on for the living-room
+/// form factor; iPhone, iPad, and Mac opt in until that sink is verified on
+/// headphone and speaker routes the way it is on Apple TV receivers.
 class _AudioPassthroughPref extends Pref<bool> {
   const _AudioPassthroughPref() : super('audio_passthrough');
   @override

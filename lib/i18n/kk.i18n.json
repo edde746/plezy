@@ -348,7 +348,7 @@
     "tunneledPlaybackDescription": "Видео туннельдеуді пайдалану. HDR ойнатқанда қара экран көрінсе немесе қозғалыс кідірсе, өшіріңіз.",
     "audioPassthrough": "Дыбысты тікелей өткізу (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS дыбысын қайта кодтамай, көлемдік дыбысты сақтап ресиверге немесе теледидарға жіберу. Дыбыс болмаса, өшіріңіз.",
-    "audioPassthroughDescriptionAppleTv": "Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.",
+    "audioPassthroughDescriptionApple": "Dolby Digital Plus, соның ішінде Atmos үшін Apple-дың өз Dolby декодерін пайдалану. DTS және TrueHD бұрынғыша көпарналы PCM ретінде ойнатылады. Дыбыс болмаса, өшіріңіз.",
     "audioPassthroughOverriddenByNormalization": "Дыбыс деңгейін нормалау қосулы кезде өшірулі",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

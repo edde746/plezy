@@ -348,7 +348,7 @@
     "tunneledPlaybackDescription": "Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.",
     "audioPassthrough": "Audio-doorvoer",
     "audioPassthroughDescription": "Stuur Dolby/DTS-audio zonder hercodering naar je receiver of tv en behoud surroundgeluid. Schakel uit als je geen geluid hebt.",
-    "audioPassthroughDescriptionAppleTv": "Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.",
+    "audioPassthroughDescriptionApple": "Gebruik de ingebouwde Dolby-decoder van Apple voor Dolby Digital Plus, inclusief Atmos. DTS en TrueHD worden nog steeds als meerkanaals-PCM afgespeeld. Schakel dit uit als je geen geluid hoort.",
     "audioPassthroughOverriddenByNormalization": "Uit zolang volumenormalisatie aan staat",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

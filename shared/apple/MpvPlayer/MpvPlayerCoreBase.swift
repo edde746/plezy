@@ -638,11 +638,14 @@ class MpvPlayerCoreBase: NSObject {
       // as the fallback when the renderer fails to open.
       checkError(mpv_set_option_string(mpv, "ao", "avfoundation,audiounit"))
     #elseif os(macOS)
-      // CoreAudio first: every format normally plays through the one HAL-backed
-      // timing path, deliberately giving up AVFoundation spatialization. The
-      // avfoundation fallback mirrors upstream mpv's macOS probe order and only
-      // engages when CoreAudio's init fails outright — macOS 27 beta rejects
-      // ao_coreaudio's channel-layout setup with paramErr (-50), and a
+      // CoreAudio first: PCM plays through the one HAL-backed timing path,
+      // deliberately giving up AVFoundation spatialization of multichannel PCM.
+      // AVFoundation is still reached for two cases: Dolby passthrough, where
+      // CoreAudio redirects the bitstream to coreaudio_exclusive and that
+      // declines on outputs without IEC 61937 substreams, so the AC3/EAC3 lands
+      // on the system decoder (Dolby Atmos on AirPods and built-in speakers,
+      // #2477); and a CoreAudio init that fails outright — macOS 27 beta
+      // rejects ao_coreaudio's channel-layout setup with paramErr (-50), and a
       // single-entry ao list would turn that into playback with no audio at
       // all (#1964).
       checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))

@@ -348,7 +348,7 @@
     "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video or motion stutters.",
     "audioPassthrough": "Audio Passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
-    "audioPassthroughDescriptionAppleTv": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
+    "audioPassthroughDescriptionApple": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
     "audioPassthroughOverriddenByNormalization": "Off while loudness normalization is on",
     "audioChannelLimit": "Audio Channels",
     "audioChannelLimitDescription": "Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel",

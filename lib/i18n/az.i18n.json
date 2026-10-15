@@ -348,7 +348,7 @@
     "tunneledPlaybackDescription": "Video tünelləməni istifadə et. HDR oynatmada qara ekran görünürsə və ya hərəkət takılırsa söndürün.",
     "audioPassthrough": "Səsin birbaşa ötürülməsi (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.",
-    "audioPassthroughDescriptionAppleTv": "Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.",
+    "audioPassthroughDescriptionApple": "Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.",
     "audioPassthroughOverriddenByNormalization": "Səsin gurluğunu normallaşdırma aktivkən söndürülüb",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
