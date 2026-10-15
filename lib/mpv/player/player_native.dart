@@ -285,8 +285,10 @@ class PlayerNative extends PlayerBase {
         await observeProperty('playlist-pos', _nodeFormat);
         // ao_audiounit requests mixWithOthers unless audio-exclusive is set,
         // and a mixable session disqualifies the app from iOS Now Playing —
-        // no lock-screen/headphone controls (#1921). Same contract as the
-        // video path (VideoPlayerScreen sets it at playback start). iOS-only:
+        // no lock-screen/headphone controls (#1921). AVFoundation, the first
+        // output on iPhone/iPad, never mixes, but audiounit is still their
+        // fallback and the tvOS PCM output. Same contract as the video path
+        // (VideoPlayerScreen sets it at playback start). iOS-only:
         // elsewhere audio-exclusive means exclusive device access (hog-mode
         // CoreAudio on macOS, exclusive WASAPI on Windows). Direct invoke —
         // setProperty() would await _ensureInitialized and deadlock on the

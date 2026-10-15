@@ -220,6 +220,19 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
+  func testMpvContextsPreferAVFoundationOverAudioUnit() {
+    // ao_audiounit remixes 5.1/7.1 to stereo on AirPods (#2264); both the
+    // video and the music core must probe AVFoundation first.
+    let core = MpvAudioPlayerCore()
+    XCTAssertTrue(core.initialize())
+    defer {
+      core.dispose()
+      core.queue.sync {}
+    }
+
+    XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), "avfoundation,audiounit")
+  }
+
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
     let core = MpvAudioPlayerCore()
     XCTAssertTrue(core.initialize())
@@ -803,6 +816,17 @@ final class MpvPlayerContractTests: XCTestCase {
     let completion = expectation(description: "set \(name)")
     var propertyResult: Result<Void, Error>?
     core.setPropertyAsync(name, value: value) {
+      propertyResult = $0
+      completion.fulfill()
+    }
+    wait(for: [completion], timeout: 2)
+    return propertyResult ?? .failure(failure)
+  }
+
+  private func awaitGetProperty(_ core: MpvPlayerCoreBase, name: String) -> Result<String?, Error> {
+    let completion = expectation(description: "get \(name)")
+    var propertyResult: Result<String?, Error>?
+    core.getPropertyAsync(name) {
       propertyResult = $0
       completion.fulfill()
     }

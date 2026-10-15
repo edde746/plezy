@@ -174,30 +174,17 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
-  func testMacOSVideoCoreUsesCoreAudioWithAVFoundationFallback() {
-    guard let mpv = mpv_create() else {
-      return XCTFail("mpv_create failed")
-    }
-    var initialized = false
+  func testMpvContextsUseCoreAudioWithAVFoundationFallback() {
+    // The music core shares the video core's context setup, so it must reach
+    // the same output list instead of mpv's default.
+    let core = MpvAudioPlayerCore()
+    XCTAssertTrue(core.initialize())
     defer {
-      if initialized {
-        mpv_terminate_destroy(mpv)
-      } else {
-        mpv_destroy(mpv)
-      }
+      core.dispose()
+      core.queue.sync {}
     }
 
-    MpvPlayerCore().configurePlatformMpvOptions(mpv: mpv)
-    let initializeResult = mpv_initialize(mpv)
-    XCTAssertGreaterThanOrEqual(initializeResult, 0)
-    guard initializeResult >= 0 else { return }
-    initialized = true
-
-    let optionValue = "options/ao".withCString {
-      mpv_get_property_string(mpv, $0)
-    }
-    defer { mpv_free(optionValue) }
-    XCTAssertEqual(optionValue.map { String(cString: $0) }, "coreaudio,avfoundation")
+    XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), "coreaudio,avfoundation")
   }
 
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
@@ -603,6 +590,17 @@ final class MpvPlayerContractTests: XCTestCase {
     let completion = expectation(description: "set \(name)")
     var propertyResult: Result<Void, Error>?
     core.setPropertyAsync(name, value: value) {
+      propertyResult = $0
+      completion.fulfill()
+    }
+    wait(for: [completion], timeout: 2)
+    return propertyResult ?? .failure(failure)
+  }
+
+  private func awaitGetProperty(_ core: MpvPlayerCoreBase, name: String) -> Result<String?, Error> {
+    let completion = expectation(description: "get \(name)")
+    var propertyResult: Result<String?, Error>?
+    core.getPropertyAsync(name) {
       propertyResult = $0
       completion.fulfill()
     }
