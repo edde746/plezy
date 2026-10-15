@@ -67,11 +67,13 @@ dependencies:
   # a resumed SAF download reuse its own partial document and deletes SAF
   # partials through the provider; ebdf69a resumes a download the system stops
   # (job quota, lost network) instead of reporting it canceled and deleting the
-  # partial. Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
+  # partial; 7c341be makes the rerun of a SAF download whose process died write
+  # to the document the dead run created instead of a "name (1)" copy. Keep the
+  # same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: ebdf69a7bdd03d410bfdfc700add08eed0de161d
+      ref: 7c341be73df8a6a5ddccb06124807ac250a32bc1
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
