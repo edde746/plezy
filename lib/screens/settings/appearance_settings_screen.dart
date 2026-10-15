@@ -181,7 +181,8 @@ class AppearanceSettingsScreen extends StatelessWidget {
   }
 
   // Opens the theme picker; the subtitle and icon follow the theme on screen,
-  // which is System while a stored Supporter theme is locked.
+  // which is the device's default theme while a stored Supporter theme is
+  // locked.
   Widget _themeSelector() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {

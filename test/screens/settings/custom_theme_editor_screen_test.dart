@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/focus/focusable_button.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/main.dart' as app;
 import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/screens/settings/custom_theme_editor_screen.dart';
 import 'package:plezy/services/settings_service.dart' hide ThemeMode;
@@ -30,7 +31,8 @@ Finder get _hexField => find.byKey(const ValueKey('custom_theme_hex'));
 Finder _slot(MonoPaletteSlot slot) => find.byKey(ValueKey('custom_theme_slot_${slot.id}'));
 Finder _button(String name) => find.byKey(ValueKey('custom_theme_$name'));
 
-/// The editor pushed over a launcher, under the root providers it reads.
+/// The editor pushed over a launcher, under the root providers it reads and
+/// the app's root shell, whose scaffold resizes for the keyboard.
 Future<ThemeProvider> _pumpEditor(WidgetTester tester, MonoPalette initial, {Size size = _phone}) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -51,6 +53,7 @@ Future<ThemeProvider> _pumpEditor(WidgetTester tester, MonoPalette initial, {Siz
         ],
         child: MaterialApp(
           theme: monoTheme(MonoPalette.dark),
+          builder: (context, child) => app.rootShell(child),
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(
@@ -289,6 +292,57 @@ void main() {
     );
     await _scrollTo(tester, _slot(MonoPaletteSlot.accent));
     expect(find.descendant(of: _slot(MonoPaletteSlot.accent), matching: find.text(hex)), findsOneWidget);
+  });
+
+  testWidgets('typing on a small phone keeps the field and its warnings above the keyboard', (tester) async {
+    // An iPhone SE-sized screen with a 260 dp software keyboard, reported on
+    // the view the way the platform does.
+    const screen = Size(375, 667);
+    const keyboard = 260.0;
+    await _pumpEditor(tester, MonoPalette.dark, size: screen);
+    expect(find.bySemanticsLabel(t.themeEditor.preview), findsOneWidget);
+
+    await _tapVisible(tester, _slot(MonoPaletteSlot.accent));
+    await tester.ensureVisible(_hexField);
+    await tester.showKeyboard(_hexField);
+    tester.view.viewInsets = const FakeViewPadding(bottom: keyboard);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+    await tester.enterText(_hexField, '#202020');
+    await tester.pumpAndSettle();
+
+    // The pinned preview gives way to this colour's warnings.
+    expect(find.bySemanticsLabel(t.themeEditor.preview), findsNothing);
+    final barWarnings = find.byKey(const ValueKey('custom_theme_bar_warnings'));
+    final keyboardTop = screen.height - keyboard;
+    final appBarBottom = tester.getRect(find.byType(AppBar)).bottom;
+    final barTop = tester.getRect(barWarnings).top;
+
+    final field = tester.getRect(_hexField);
+    expect(field.top, greaterThanOrEqualTo(appBarBottom), reason: 'field under the app bar');
+    expect(field.bottom, lessThanOrEqualTo(barTop), reason: 'field under the bar');
+    for (final pair in [t.themeEditor.contrast.accentOnBg, t.themeEditor.contrast.accentOnSurface]) {
+      final warning = find.textContaining(pair);
+      expect(warning, findsOneWidget, reason: pair);
+      expect(
+        find.descendant(of: barWarnings, matching: warning),
+        findsOneWidget,
+        reason: pair,
+      );
+      expect(tester.getRect(warning).bottom, lessThanOrEqualTo(keyboardTop), reason: pair);
+    }
+    expect(tester.getRect(_button('save')).bottom, lessThanOrEqualTo(keyboardTop));
+
+    // Fixing the colour clears the warnings while still typing.
+    await tester.enterText(_hexField, '#FF8A3D');
+    await tester.pumpAndSettle();
+    expect(barWarnings, findsNothing);
+    expect(find.textContaining(t.themeEditor.contrast.accentOnBg), findsNothing);
+
+    // With the keyboard gone the preview is back.
+    tester.view.resetViewInsets();
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel(t.themeEditor.preview), findsOneWidget);
   });
 
   testWidgets('on a TV-sized screen the D-pad reaches every control and adjusts a slider', (tester) async {

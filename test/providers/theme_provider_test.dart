@@ -9,6 +9,7 @@ import 'package:plezy/services/settings_service.dart' as settings;
 import 'package:plezy/services/supporter/supporter_mode.dart';
 import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/supporter_store_fakes.dart';
@@ -293,7 +294,7 @@ void main() {
       (settings.ThemeMode.paper, MonoPalette.paper),
       (settings.ThemeMode.custom, _custom),
     ]) {
-      test('a locked ${mode.name} paints System, keeps the stored choice and returns on unlock', () async {
+      test('a locked ${mode.name} paints the default theme, keeps the stored choice and returns on unlock', () async {
         final svc = await _store(mode, custom: _custom);
         final supporter = _supporter(SupporterAvailability.purchasable);
         final p = _provider(supporter);
@@ -376,7 +377,7 @@ void main() {
       expect(p.lockedStoredThemeMode, isNull);
     });
 
-    test('a build without the perks paints a stored preset as System and built-ins as chosen', () async {
+    test('a build without the perks paints a stored preset as the default theme and built-ins as chosen', () async {
       final svc = await _store(settings.ThemeMode.forest);
       final p = _provider(_supporter(SupporterAvailability.hidden));
       await Future.delayed(Duration.zero);
@@ -388,7 +389,7 @@ void main() {
       expect(p.darkTheme.scaffoldBackgroundColor, MonoPalette.oled.bg);
     });
 
-    test('Custom with no saved palette paints System', () async {
+    test('Custom with no saved palette paints the default theme', () async {
       await _store(settings.ThemeMode.custom);
       final p = _provider();
       await Future.delayed(Duration.zero);
@@ -447,6 +448,44 @@ void main() {
       addTearDown(live.dispose);
       await live.init();
       expect(SupporterService.startupUnlocked(svc), live.isUnlocked);
+    });
+
+    group('on TV, where a fresh install starts on OLED', () {
+      setUp(() => TvDetectionService.debugSetAppleTVOverride(true));
+      tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+      test('a locked perk paints OLED and keeps the stored choice', () async {
+        final svc = await _store(settings.ThemeMode.glacier);
+        final p = _provider(_supporter(SupporterAvailability.purchasable));
+        await Future.delayed(Duration.zero);
+
+        expect(p.themeMode, settings.ThemeMode.oled);
+        expect(p.materialThemeMode, material.ThemeMode.dark);
+        expect(p.darkTheme.scaffoldBackgroundColor, MonoPalette.oled.bg);
+        expect(p.lockedStoredThemeMode, settings.ThemeMode.glacier);
+        expect(svc.read(settings.SettingsService.themeMode), settings.ThemeMode.glacier);
+      });
+
+      test('Custom with no saved palette paints OLED', () async {
+        await _store(settings.ThemeMode.custom);
+        final p = _provider();
+        await Future.delayed(Duration.zero);
+
+        expect(p.themeMode, settings.ThemeMode.oled);
+        expect(p.lockedStoredThemeMode, isNull);
+      });
+
+      test('the startup resolution lands on the same OLED fallback', () async {
+        final svc = await _store(settings.ThemeMode.ember);
+        final p = _provider(_supporter(SupporterAvailability.purchasable));
+        await Future.delayed(Duration.zero);
+
+        final startup = ThemeProvider.resolveStored(svc, unlocked: false);
+        expect(startup.mode, settings.ThemeMode.oled);
+        expect(startup.mode, p.themeMode);
+        expect(ThemeProvider.materialThemeModeFor(startup.palette), p.materialThemeMode);
+        expect(identical(ThemeProvider.darkThemeFor(startup.palette), p.darkTheme), isTrue);
+      });
     });
   });
 
