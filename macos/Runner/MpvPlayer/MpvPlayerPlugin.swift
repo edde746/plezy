@@ -16,6 +16,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     playerCore?.setVisible(visible, restoreOnWindowVisible: restoreOnWindowVisible)
   }
   func updatePlayerFrame() { playerCore?.updateFrame() }
+  func setPlayerVideoZoom(_ scale: Double) { playerCore?.setVideoZoom(scale) }
 
   private var pipController: MpvPipController?
   private var pipChannel: FlutterMethodChannel?
@@ -98,6 +99,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     case "updateFrame":
       handleUpdateFrame(result: result)
 
+    case "setVideoZoom":
+      handleSetVideoZoom(call: call, result: result)
+
     case "setLogLevel":
       handleSetLogLevel(call: call, result: result)
 
@@ -152,17 +156,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  /// Enter PiP by moving the Metal rendering layer to a PiP window.
-  /// No VO switching — mpv keeps rendering to the same layer.
+  /// Enter PiP by lending the player's video layers to a PiP window.
+  /// No VO switching — mpv keeps rendering into the same layers.
   private func enterPip(manual: Bool, result: FlutterResult? = nil) {
     guard let playerCore = playerCore else {
       result?([
         "success": false, "errorCode": "failed", "errorMessage": "Player not initialized",
       ])
-      return
-    }
-    guard let metalLayer = playerCore.metalLayer else {
-      result?(["success": false, "errorCode": "failed", "errorMessage": "No Metal layer"])
       return
     }
     guard let window = findFlutterWindow()?.0 else {
@@ -181,10 +181,15 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       aspectRatio = NSSize(width: videoSize.width, height: videoSize.height)
     }
 
+    guard let layers = playerCore.lendVideoLayersForPip() else {
+      result?(["success": false, "errorCode": "failed", "errorMessage": "No video layer"])
+      return
+    }
+
     enteredPipViaAuto = !manual
     playerCore.isPipActive = true
 
-    pip.startPip(metalLayer: metalLayer, window: window, aspectRatio: aspectRatio)
+    pip.startPip(layers: layers, window: window, aspectRatio: aspectRatio)
     pipChannel?.invokeMethod("onPipChanged", arguments: true)
     result?(["success": true])
   }
@@ -256,7 +261,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       guard let self = self else { result(nil); return }
       if let pip = self.pipController, pip.isActive {
         pip.stopPip()
-        pip.detachLayer()
+        pip.detachLayers()
         // The controller is released below, before PiP's close callback
         // (pipDidStop) can arrive, so tell Dart PiP ended here; otherwise
         // later players stay covered by the PiP placeholder.
@@ -326,13 +331,8 @@ extension MpvPlayerPlugin: MpvPipDelegate {
     playerCore?.isPipActive = false
     enteredPipViaAuto = false
 
-    pipController?.detachLayer()
-
-    playerCore?.reattachMetalLayer()
-
-    if playerCore?.isPaused == true {
-      playerCore?.forceDraw()
-    }
+    let layers = pipController?.detachLayers() ?? []
+    playerCore?.takeBackVideoLayers(layers)
 
     pipChannel?.invokeMethod("onPipChanged", arguments: false)
   }

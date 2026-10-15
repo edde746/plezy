@@ -30,6 +30,7 @@ import 'package:plezy/services/offline_watch_sync_service.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/shader_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:provider/provider.dart';
@@ -64,6 +65,7 @@ void main() {
     tmpRoot = await Directory.systemTemp.createTemp('ambient_lighting_startup_test_');
     previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+    ShaderService.debugPlatformSupported = true;
     await installHdrStartupHarness();
     await SettingsService.instance.write(SettingsService.ambientLighting, true);
     DownloadStorageService.resetForTesting();
@@ -76,6 +78,7 @@ void main() {
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
+    ShaderService.debugPlatformSupported = null;
     if (await tmpRoot.exists()) {
       await tmpRoot.delete(recursive: true);
     }

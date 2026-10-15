@@ -1964,7 +1964,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       if (Platform.isIOS) {
         await currentPlayer.setProperty('audio-exclusive', 'yes');
+      }
 
+      if (Platform.isIOS || Platform.isMacOS) {
         // Rasterize subtitles at the video's resolution instead of the
         // display's; the OSD layer upscales them with the video.
         await currentPlayer.setProperty(

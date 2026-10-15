@@ -120,7 +120,7 @@ enum SubAssOverride { no, yes, scale, force, strip }
 
 /// Resolution ASS/image subtitles are rasterized at.
 ///
-/// iOS/tvOS (avfoundation VO) uses the [screen] vs [video] basis (video is much
+/// iOS/tvOS/macOS (avfoundation VO) use the [screen] vs [video] basis (video is much
 /// cheaper on 4K displays; subs can't carry more detail than the video they're
 /// typeset against). Android (libass overlay) instead downscales by a fixed
 /// fraction of the surface — [screen] is full, and [threeQuarter]/[half]/[third]/
@@ -138,7 +138,7 @@ enum HdrToneMapping { compositor, player }
 
 extension SubtitleRenderScale on SubtitleRenderResolution {
   /// Android libass overlay render scale (fraction of the surface resolution).
-  /// Only Android reads this; the iOS-only [video] basis maps to full scale here.
+  /// Only Android reads this; the Apple-only [video] basis maps to full scale here.
   double get androidRenderScale => switch (this) {
     SubtitleRenderResolution.screen => 1.0,
     SubtitleRenderResolution.video => 1.0,

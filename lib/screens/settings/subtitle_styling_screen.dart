@@ -57,8 +57,8 @@ class SubtitleStylingScreen extends StatelessWidget {
               subtitleBuilder: _assOverrideLabel,
               options: SubAssOverride.values.map((v) => DialogOption(value: v, title: _assOverrideLabel(v))).toList(),
             ),
-            // iOS/tvOS avfoundation VO: screen vs video-resolution basis.
-            if (Platform.isIOS)
+            // Apple avfoundation VO: screen vs video-resolution basis.
+            if (Platform.isIOS || Platform.isMacOS)
               SettingSelectionTile<SubtitleRenderResolution>(
                 pref: SettingsService.subtitleRenderResolution,
                 icon: Symbols.aspect_ratio_rounded,
