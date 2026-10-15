@@ -163,4 +163,46 @@ class AppIconSwitcherTest {
 
     assertTrue(switcher().isSupported())
   }
+
+  @Test
+  fun aPickWaitsForTheUserToLeaveButReadsAsCurrentAtOnce() {
+    val selection = AppIconSelection(switcher())
+
+    assertTrue(selection.choose("ember"))
+
+    // The launcher alias that started the task stays enabled while the user is still in the app.
+    assertEquals("ember", selection.current())
+    assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, state(launcher))
+    assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, state(ember))
+
+    selection.applyPending()
+
+    assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DISABLED, state(launcher))
+    assertEquals(PackageManager.COMPONENT_ENABLED_STATE_ENABLED, state(ember))
+    assertEquals("ember", selection.current())
+  }
+
+  @Test
+  fun pickingTheShownIconAgainCancelsAWaitingPick() {
+    val selection = AppIconSelection(switcher())
+    selection.choose("ember")
+
+    selection.choose(AppIconSwitcher.DEFAULT_ICON)
+    selection.applyPending()
+
+    assertEquals(AppIconSwitcher.DEFAULT_ICON, selection.current())
+    assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, state(launcher))
+    assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, state(ember))
+  }
+
+  @Test
+  fun anUnknownPickIsRefusedAndNothingWaits() {
+    val selection = AppIconSelection(switcher())
+
+    assertFalse(selection.choose("bogus"))
+    selection.applyPending()
+
+    assertEquals(AppIconSwitcher.DEFAULT_ICON, selection.current())
+    assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, state(launcher))
+  }
 }

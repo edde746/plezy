@@ -9,7 +9,8 @@
     "locked": "Supporter perk",
     "lockedHint": "Alternate icons are a Supporter perk.",
     "changeFailed": "Couldn't change the app icon",
-    "launcherHint": "Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.",
+    "launcherHint": "The new icon appears on your home screen once you leave Plezy.",
+    "tvLauncherHint": "The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.",
     "names": {
       "midnight": "Midnight",
       "ember": "Ember",

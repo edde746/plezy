@@ -13,6 +13,7 @@ import '../../services/app_icon/app_icon_service.dart';
 import '../../services/supporter/supporter_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/bottom_sheet_header.dart';
@@ -138,7 +139,10 @@ class _AppIconPickerSheetState extends State<AppIconPickerSheet> {
                     );
                   },
                 ),
-                if (Platform.isAndroid) ...[const SizedBox(height: 16), Text(t.appIcon.launcherHint, style: hintStyle)],
+                if (Platform.isAndroid) ...[
+                  const SizedBox(height: 16),
+                  Text(PlatformDetector.isTV() ? t.appIcon.tvLauncherHint : t.appIcon.launcherHint, style: hintStyle),
+                ],
               ],
             ),
           ),

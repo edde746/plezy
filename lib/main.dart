@@ -187,7 +187,7 @@ void _bootstrapApp() {
       darkTheme: monoTheme(MonoPalette.dark),
       resolveTheme: _resolveStartupTheme,
       // Android runs the Flutter surface in transparent mode over a window
-      // whose background MainActivity already restored, so the loading frame
+      // whose background PlezyActivity already restored, so the loading frame
       // can leave the launch screen on display. Every other platform composites
       // opaquely and has nothing behind Flutter worth showing.
       transparentWhileLoading: Platform.isAndroid,
@@ -683,7 +683,7 @@ class StartupBootstrap<T> extends StatefulWidget {
   /// background, so the loading frame must not cover it.
   ///
   /// True only on Android, where `TransparencyMode.transparent` lets the
-  /// window decor show through and `MainActivity` has already restored the
+  /// window decor show through and `PlezyActivity` has already restored the
   /// persisted launch colour.
   final bool transparentWhileLoading;
 

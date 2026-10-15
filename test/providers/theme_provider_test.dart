@@ -145,7 +145,7 @@ void main() {
     });
 
     test('every theme choice launches on a native splash mode Android knows', () {
-      // MainActivity / ThemeHelper only map these four; anything else would
+      // PlezyActivity / ThemeHelper only map these four; anything else would
       // leave the launch window on the platform default.
       const known = {'system', 'light', 'dark', 'oled'};
       for (final mode in settings.ThemeMode.values) {

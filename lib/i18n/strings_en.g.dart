@@ -132,8 +132,11 @@ class Translations$appIcon$en {
 	/// en: 'Couldn't change the app icon'
 	String get changeFailed => 'Couldn\'t change the app icon';
 
-	/// en: 'Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.'
-	String get launcherHint => 'Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.';
+	/// en: 'The new icon appears on your home screen once you leave Plezy.'
+	String get launcherHint => 'The new icon appears on your home screen once you leave Plezy.';
+
+	/// en: 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.'
+	String get tvLauncherHint => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.';
 
 	late final Translations$appIcon$names$en names = Translations$appIcon$names$en.internal(_root);
 }
@@ -7539,7 +7542,8 @@ extension on Translations {
 			'appIcon.locked' => 'Supporter perk',
 			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
 			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
-			'appIcon.launcherHint' => 'Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.',
+			'appIcon.launcherHint' => 'The new icon appears on your home screen once you leave Plezy.',
+			'appIcon.tvLauncherHint' => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.',
 			'appIcon.names.midnight' => 'Midnight',
 			'appIcon.names.ember' => 'Ember',
 			'appIcon.names.paper' => 'Paper',
@@ -8043,9 +8047,9 @@ extension on Translations {
 			'fileInfo.delivery' => 'Delivery',
 			'fileInfo.versionCounter' => ({required Object index, required Object count}) => 'Version ${index} of ${count}',
 			'fileInfo.fileCounter' => ({required Object index, required Object count}) => 'File ${index} of ${count}',
-			'fileInfo.noStreams' => 'The server reported no streams for this file.',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.noStreams' => 'The server reported no streams for this file.',
 			'fileInfo.copyPath' => 'Copy path',
 			'fileInfo.pathCopied' => 'File path copied',
 			'fileInfo.codec' => 'Codec',
@@ -8557,9 +8561,9 @@ extension on Translations {
 			'discover.title' => 'Discover',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
-			'discover.continueWatching' => 'Continue Watching',
 			_ => null,
 		} ?? switch (path) {
+			'discover.continueWatching' => 'Continue Watching',
 			'discover.continueWatchingIn' => ({required Object library}) => 'Continue Watching in ${library}',
 			'discover.nextUp' => 'Next Up',
 			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
@@ -9071,9 +9075,9 @@ extension on Translations {
 			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minutes',
 			'music.stopPlayback' => 'Stop playback',
 			'music.previousTrack' => 'Previous track',
-			'music.nextTrack' => 'Next track',
 			_ => null,
 		} ?? switch (path) {
+			'music.nextTrack' => 'Next track',
 			'music.repeat' => 'Repeat',
 			'music.repeatAll' => 'Repeat all',
 			'music.repeatOne' => 'Repeat one',
@@ -9585,9 +9589,9 @@ extension on Translations {
 			'seerr.qualityProfile' => 'Quality profile',
 			'seerr.rootFolder' => 'Root folder',
 			'seerr.languageProfile' => 'Language profile',
-			'seerr.tags' => 'Tags',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.tags' => 'Tags',
 			'seerr.noTags' => 'No tags',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (Default)',
 			'seerr.animeNote' => 'This series is an anime.',

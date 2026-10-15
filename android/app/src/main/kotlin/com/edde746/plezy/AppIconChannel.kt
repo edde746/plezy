@@ -1,7 +1,7 @@
 package com.edde746.plezy
 
+import android.app.Activity
 import android.content.ComponentName
-import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -50,6 +50,9 @@ internal class AppIconSwitcher(private val packageManager: PackageManager, priva
   fun current(): String = aliases.entries.filter { (_, info) -> isEnabled(info) }.map { it.key }
     .firstOrNull { it != DEFAULT_ICON } ?: DEFAULT_ICON
 
+  /** Whether [id] names one of the icons. */
+  fun has(id: String): Boolean = id in aliases
+
   /** Enables [id]'s alias and disables the rest. False, changing nothing, when [id] is not an icon. */
   fun set(id: String): Boolean {
     if (id !in aliases) return false
@@ -66,7 +69,8 @@ internal class AppIconSwitcher(private val packageManager: PackageManager, priva
       // Enable before disabling: if the process dies part way through, the app keeps a launcher entry.
       .sortedByDescending { it.enables }
     if (changes.isEmpty()) return true
-    // DONT_KILL_APP: the running task belongs to PlezyActivity, which is never disabled.
+    // DONT_KILL_APP keeps the process; the activities started through a disabled alias still
+    // finish, which is why AppIconSelection waits for the user to leave.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       // One atomic update and one package-changed broadcast, so launchers refresh once.
       packageManager.setComponentEnabledSettings(
@@ -107,26 +111,92 @@ internal class AppIconSwitcher(private val packageManager: PackageManager, priva
   private fun ActivityInfo.component() = ComponentName(this.packageName, this.name)
 }
 
-/** `com.plezy/app_icon`: isSupported, getCurrent and setIcon({id}) over [AppIconSwitcher]. */
-internal class AppIconChannel(private val context: Context) {
+/**
+ * The icon the user picked, applied once they leave the app.
+ *
+ * Android finishes every activity started through a component that gets disabled, and the
+ * running task was almost always started through the launcher alias a switch disables. Applying
+ * the switch at once therefore closes Plezy in the user's face (DONT_KILL_APP keeps only the
+ * process). Deferred to the moment the user leaves, the task closes behind the launcher, which
+ * already shows the new icon when it comes up.
+ *
+ * One instance per process (see [AppIconChannel]) so a recreated activity keeps the pick. A
+ * process killed before the user leaves loses it, and the picker then shows the icon the launcher
+ * still has.
+ */
+internal class AppIconSelection(private val switcher: AppIconSwitcher) {
+  companion object {
+    private const val TAG = "AppIconSelection"
+  }
+
+  private var pendingIcon: String? = null
+
+  fun isSupported(): Boolean = switcher.isSupported()
+
+  /** The picked icon, or the one the launcher shows when nothing is waiting. */
+  fun current(): String = pendingIcon ?: switcher.current()
+
+  /** Picks [id] for the next [applyPending]. False, changing nothing, when [id] is not an icon. */
+  fun choose(id: String): Boolean {
+    if (!switcher.has(id)) return false
+    pendingIcon = if (id == switcher.current()) null else id
+    return true
+  }
+
+  /** Shows the picked icon on the launcher. */
+  fun applyPending() {
+    val id = pendingIcon ?: return
+    pendingIcon = null
+    try {
+      switcher.set(id)
+    } catch (e: Exception) {
+      Log.w(TAG, "Could not switch the app icon to $id", e)
+    }
+  }
+}
+
+/**
+ * `com.plezy/app_icon`: isSupported, getCurrent and setIcon({id}) over [AppIconSelection]. The
+ * activity forwards its lifecycle so a pick is applied when the user leaves: Home, Recents or
+ * Back, but not another activity Plezy opens itself or a picture-in-picture player.
+ */
+internal class AppIconChannel(private val activity: Activity) {
   companion object {
     private const val TAG = "AppIconChannel"
     private const val CHANNEL = "com.plezy/app_icon"
+
+    private var processSelection: AppIconSelection? = null
   }
 
-  private val switcher by lazy(LazyThreadSafetyMode.NONE) {
-    AppIconSwitcher(context.packageManager, context.packageName)
+  private val selection: AppIconSelection by lazy(LazyThreadSafetyMode.NONE) {
+    processSelection ?: AppIconSelection(
+      AppIconSwitcher(activity.applicationContext.packageManager, activity.packageName)
+    ).also { processSelection = it }
   }
+
+  private var userLeaving = false
 
   fun attach(messenger: BinaryMessenger) {
     MethodChannel(messenger, CHANNEL).setMethodCallHandler(::onMethodCall)
   }
 
+  fun onStart() {
+    userLeaving = false
+  }
+
+  fun onUserLeaveHint() {
+    userLeaving = true
+  }
+
+  fun onStop() {
+    if ((userLeaving || activity.isFinishing) && !activity.isInPictureInPictureMode) selection.applyPending()
+  }
+
   private fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     try {
       when (call.method) {
-        "isSupported" -> result.success(switcher.isSupported())
-        "getCurrent" -> result.success(switcher.current())
+        "isSupported" -> result.success(selection.isSupported())
+        "getCurrent" -> result.success(selection.current())
         "setIcon" -> setIcon(call.argument<String>("id"), result)
         else -> result.notImplemented()
       }
@@ -138,8 +208,8 @@ internal class AppIconChannel(private val context: Context) {
 
   private fun setIcon(id: String?, result: MethodChannel.Result) {
     when {
-      !switcher.isSupported() -> result.error("unsupported", "This launcher does not switch app icons", null)
-      id == null || !switcher.set(id) -> result.error("unknown_icon", "No app icon with id $id", null)
+      !selection.isSupported() -> result.error("unsupported", "This launcher does not switch app icons", null)
+      id == null || !selection.choose(id) -> result.error("unknown_icon", "No app icon with id $id", null)
       else -> result.success(null)
     }
   }

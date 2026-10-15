@@ -563,7 +563,7 @@
             </intent-filter>
         </receiver>
         <!-- Setting this stops FlutterLoader from appending its half-of-RAM default after
-             MainActivity's shell args, where it would override the low-RAM cap. MainActivity
+             PlezyActivity's shell args, where it would override the low-RAM cap. PlezyActivity
              always passes the per-device value; this one applies only if another engine
              initializes Flutter first. -->
         <meta-data

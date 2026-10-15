@@ -117,7 +117,7 @@ void main() {
     await CarUxRestrictionsService.instance.ensureResolved(timeout: const Duration(milliseconds: 300));
     expect(CarUxRestrictionsService.instance.state, CarUxRestrictionState.unrestricted);
 
-    // What MainActivity pushes when the car service goes away: nothing maintains
+    // What PlezyActivity pushes when the car service goes away: nothing maintains
     // the verdict any more, so callers must go back to lifecycle gating rather
     // than keep reading "parked" forever.
     await messenger.handlePlatformMessage(

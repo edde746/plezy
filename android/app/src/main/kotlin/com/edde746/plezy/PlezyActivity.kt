@@ -51,8 +51,8 @@ import kotlin.math.roundToInt
 /**
  * The Flutter activity. It has no launcher entry of its own: the launcher components are the
  * activity-aliases in AndroidManifest.xml that target it (`.MainActivity` for the default icon,
- * `.appicon.<id>` for the alternates), so [AppIconChannel] can switch the icon without ever
- * disabling the running activity.
+ * `.appicon.<id>` for the alternates), and [AppIconChannel] switches the icon by enabling one
+ * of them.
  */
 class PlezyActivity : FlutterActivity() {
 
@@ -733,12 +733,14 @@ class PlezyActivity : FlutterActivity() {
   override fun onStop() {
     activityStarted = false
     if (isAndroidTvDevice()) flutterSurfaceReconnectPending = true
+    appIconChannel.onStop()
     super.onStop()
   }
 
   override fun onStart() {
     super.onStart()
     activityStarted = true
+    appIconChannel.onStart()
     tryReconnectFlutterSurface()
   }
 
@@ -1149,6 +1151,7 @@ class PlezyActivity : FlutterActivity() {
 
   override fun onUserLeaveHint() {
     super.onUserLeaveHint()
+    appIconChannel.onUserLeaveHint()
     // Auto PiP for API 26-30 (API 31+ uses setAutoEnterEnabled)
     if (isPipSupportedDevice() &&
       Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
