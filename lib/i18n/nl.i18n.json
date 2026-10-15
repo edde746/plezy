@@ -117,6 +117,33 @@
     "latestVersion": "Je hebt de nieuwste versie",
     "checkFailed": "Kon niet controleren op updates"
   },
+  "supporter": {
+    "title": "",
+    "intro": "",
+    "presetThemes": "",
+    "presetThemesDescription": "",
+    "customTheme": "",
+    "customThemeDescription": "",
+    "appIcons": "",
+    "appIconsDescription": "",
+    "buy": "",
+    "loadingPrice": "",
+    "restore": "",
+    "pending": "",
+    "thankYouTitle": "",
+    "thankYouBody": "",
+    "tileSubtitle": "",
+    "tileSubtitleThemesOnly": "",
+    "tileUnlocked": "",
+    "errors": {
+      "storeUnavailable": "",
+      "productNotFound": "",
+      "productQueryFailed": "",
+      "purchaseFailed": "",
+      "restoreFailed": "",
+      "nothingToRestore": ""
+    }
+  },
   "settings": {
     "title": "Instellingen",
     "supportDeveloper": "Steun Plezy",

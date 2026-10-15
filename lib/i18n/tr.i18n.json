@@ -117,6 +117,33 @@
     "latestVersion": "En son sürümü kullanıyorsunuz",
     "checkFailed": "Güncellemeler kontrol edilemedi"
   },
+  "supporter": {
+    "title": "",
+    "intro": "",
+    "presetThemes": "",
+    "presetThemesDescription": "",
+    "customTheme": "",
+    "customThemeDescription": "",
+    "appIcons": "",
+    "appIconsDescription": "",
+    "buy": "",
+    "loadingPrice": "",
+    "restore": "",
+    "pending": "",
+    "thankYouTitle": "",
+    "thankYouBody": "",
+    "tileSubtitle": "",
+    "tileSubtitleThemesOnly": "",
+    "tileUnlocked": "",
+    "errors": {
+      "storeUnavailable": "",
+      "productNotFound": "",
+      "productQueryFailed": "",
+      "purchaseFailed": "",
+      "restoreFailed": "",
+      "nothingToRestore": ""
+    }
+  },
   "settings": {
     "title": "Ayarlar",
     "supportDeveloper": "Plezy'yi Destekleyin",

@@ -45,6 +45,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
+	late final Translations$supporter$en supporter = Translations$supporter$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
 	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
@@ -377,6 +378,68 @@ class Translations$update$en {
 
 	/// en: 'Failed to check for updates'
 	String get checkFailed => 'Failed to check for updates';
+}
+
+// Path: supporter
+class Translations$supporter$en {
+	Translations$supporter$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Plezy Supporter'
+	String get title => 'Plezy Supporter';
+
+	/// en: 'A one-time purchase that supports Plezy's development and unlocks cosmetic extras:'
+	String get intro => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:';
+
+	/// en: 'Preset themes'
+	String get presetThemes => 'Preset themes';
+
+	/// en: 'Ember, Glacier, Forest, Plum and Paper'
+	String get presetThemesDescription => 'Ember, Glacier, Forest, Plum and Paper';
+
+	/// en: 'Custom theme'
+	String get customTheme => 'Custom theme';
+
+	/// en: 'Pick every color yourself'
+	String get customThemeDescription => 'Pick every color yourself';
+
+	/// en: 'App icons'
+	String get appIcons => 'App icons';
+
+	/// en: 'Choose an alternate Plezy icon'
+	String get appIconsDescription => 'Choose an alternate Plezy icon';
+
+	/// en: 'Buy for ${price}'
+	String buy({required Object price}) => 'Buy for ${price}';
+
+	/// en: 'Loading price...'
+	String get loadingPrice => 'Loading price...';
+
+	/// en: 'Restore Purchases'
+	String get restore => 'Restore Purchases';
+
+	/// en: 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.'
+	String get pending => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.';
+
+	/// en: 'Thank you for supporting Plezy'
+	String get thankYouTitle => 'Thank you for supporting Plezy';
+
+	/// en: 'Your Supporter extras are unlocked.'
+	String get thankYouBody => 'Your Supporter extras are unlocked.';
+
+	/// en: 'Unlock themes and app icons with a one-time purchase'
+	String get tileSubtitle => 'Unlock themes and app icons with a one-time purchase';
+
+	/// en: 'Unlock themes with a one-time purchase'
+	String get tileSubtitleThemesOnly => 'Unlock themes with a one-time purchase';
+
+	/// en: 'Thank you for your support'
+	String get tileUnlocked => 'Thank you for your support';
+
+	late final Translations$supporter$errors$en errors = Translations$supporter$errors$en.internal(_root);
 }
 
 // Path: settings
@@ -5874,6 +5937,33 @@ class Translations$common$mediaKind$en {
 	String get folder => 'Folder';
 }
 
+// Path: supporter.errors
+class Translations$supporter$errors$en {
+	Translations$supporter$errors$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
+	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
+
+	/// en: 'The Supporter purchase isn't available in your store right now.'
+	String get productNotFound => 'The Supporter purchase isn\'t available in your store right now.';
+
+	/// en: 'Couldn't load the price. Check your connection and try again.'
+	String get productQueryFailed => 'Couldn\'t load the price. Check your connection and try again.';
+
+	/// en: 'The purchase didn't go through. Try again.'
+	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
+
+	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
+	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
+
+	/// en: 'No Supporter purchase was found for this store account.'
+	String get nothingToRestore => 'No Supporter purchase was found for this store account.';
+}
+
 // Path: hotkeys.actions
 class Translations$hotkeys$actions$en {
 	Translations$hotkeys$actions$en.internal(this._root);
@@ -7525,6 +7615,29 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
+			'supporter.title' => 'Plezy Supporter',
+			'supporter.intro' => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:',
+			'supporter.presetThemes' => 'Preset themes',
+			'supporter.presetThemesDescription' => 'Ember, Glacier, Forest, Plum and Paper',
+			'supporter.customTheme' => 'Custom theme',
+			'supporter.customThemeDescription' => 'Pick every color yourself',
+			'supporter.appIcons' => 'App icons',
+			'supporter.appIconsDescription' => 'Choose an alternate Plezy icon',
+			'supporter.buy' => ({required Object price}) => 'Buy for ${price}',
+			'supporter.loadingPrice' => 'Loading price...',
+			'supporter.restore' => 'Restore Purchases',
+			'supporter.pending' => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.',
+			'supporter.thankYouTitle' => 'Thank you for supporting Plezy',
+			'supporter.thankYouBody' => 'Your Supporter extras are unlocked.',
+			'supporter.tileSubtitle' => 'Unlock themes and app icons with a one-time purchase',
+			'supporter.tileSubtitleThemesOnly' => 'Unlock themes with a one-time purchase',
+			'supporter.tileUnlocked' => 'Thank you for your support',
+			'supporter.errors.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
+			'supporter.errors.productNotFound' => 'The Supporter purchase isn\'t available in your store right now.',
+			'supporter.errors.productQueryFailed' => 'Couldn\'t load the price. Check your connection and try again.',
+			'supporter.errors.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
+			'supporter.errors.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
+			'supporter.errors.nothingToRestore' => 'No Supporter purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support Plezy',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
@@ -7910,6 +8023,8 @@ extension on Translations {
 			'fileInfo.resolution' => 'Resolution',
 			'fileInfo.codedResolution' => 'Coded Resolution',
 			'fileInfo.bitrate' => 'Bitrate',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.frameRate' => 'Frame Rate',
 			'fileInfo.rotation' => 'Rotation',
 			'fileInfo.comment' => 'Comment',
@@ -7933,8 +8048,6 @@ extension on Translations {
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
 			'fileInfo.chromaLocation' => 'Chroma Location',
 			'fileInfo.scanType' => 'Scan Type',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.interlaced' => 'Interlaced',
 			'fileInfo.anamorphic' => 'Anamorphic',
 			'fileInfo.referenceFrames' => 'Reference Frames',
@@ -8424,6 +8537,8 @@ extension on Translations {
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Recently Added in ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Latest Albums in ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Recently Played in ${library}',
+			_ => null,
+		} ?? switch (path) {
 			'discover.mostPlayedIn' => ({required Object library}) => 'Most Played in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
@@ -8447,8 +8562,6 @@ extension on Translations {
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
-			_ => null,
-		} ?? switch (path) {
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
 			'errors.noClientAvailable' => 'No client available',
 			'errors.pleaseEnterToken' => 'Please enter a token',
@@ -8938,6 +9051,8 @@ extension on Translations {
 			'music.instantMixFailed' => 'Failed to load the instant mix',
 			'music.instantMixEmpty' => 'The instant mix came back with no tracks',
 			'music.noAudioUrl' => ({required Object track}) => 'No audio URL is available for ${track}',
+			_ => null,
+		} ?? switch (path) {
 			'music.discography.singlesAndEps' => 'Singles & EPs',
 			'music.discography.live' => 'Live',
 			'music.discography.compilations' => 'Compilations',
@@ -8961,8 +9076,6 @@ extension on Translations {
 			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
 			'watchTogether.participants' => 'Participants',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
@@ -9452,6 +9565,8 @@ extension on Translations {
 			'seerr.requestFailed' => ({required Object error}) => 'Request failed: ${error}',
 			'seerr.requestsLoadFailed' => 'Couldn\'t load request options',
 			'seerr.nothingToRequest' => 'Everything is already available or requested.',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.statusAvailable' => 'Available',
 			'seerr.statusPartiallyAvailable' => 'Partially available',
 			'seerr.statusRequested' => 'Requested',
@@ -9475,8 +9590,6 @@ extension on Translations {
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
-			_ => null,
-		} ?? switch (path) {
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',

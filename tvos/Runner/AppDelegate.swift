@@ -186,6 +186,9 @@ import wakelock_plus
     if let r = pluginRegistry.registrar(forPlugin: "ExternalPlayerPlugin") {
       ExternalPlayerPlugin.register(with: r)
     }
+    if let r = pluginRegistry.registrar(forPlugin: "InAppPurchasePlugin") {
+      InAppPurchasePlugin.register(with: r)
+    }
   }
 
   override func application(

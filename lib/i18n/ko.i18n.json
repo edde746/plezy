@@ -117,6 +117,33 @@
     "latestVersion": "최신 버전을 사용 중입니다",
     "checkFailed": "업데이트 확인 실패"
   },
+  "supporter": {
+    "title": "",
+    "intro": "",
+    "presetThemes": "",
+    "presetThemesDescription": "",
+    "customTheme": "",
+    "customThemeDescription": "",
+    "appIcons": "",
+    "appIconsDescription": "",
+    "buy": "",
+    "loadingPrice": "",
+    "restore": "",
+    "pending": "",
+    "thankYouTitle": "",
+    "thankYouBody": "",
+    "tileSubtitle": "",
+    "tileSubtitleThemesOnly": "",
+    "tileUnlocked": "",
+    "errors": {
+      "storeUnavailable": "",
+      "productNotFound": "",
+      "productQueryFailed": "",
+      "purchaseFailed": "",
+      "restoreFailed": "",
+      "nothingToRestore": ""
+    }
+  },
   "settings": {
     "title": "설정",
     "supportDeveloper": "Plezy 후원하기",

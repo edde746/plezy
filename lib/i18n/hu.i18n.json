@@ -117,6 +117,33 @@
     "latestVersion": "A legújabb verziót használod",
     "checkFailed": "Nem sikerült az újabb frissítések ellenőrzése"
   },
+  "supporter": {
+    "title": "",
+    "intro": "",
+    "presetThemes": "",
+    "presetThemesDescription": "",
+    "customTheme": "",
+    "customThemeDescription": "",
+    "appIcons": "",
+    "appIconsDescription": "",
+    "buy": "",
+    "loadingPrice": "",
+    "restore": "",
+    "pending": "",
+    "thankYouTitle": "",
+    "thankYouBody": "",
+    "tileSubtitle": "",
+    "tileSubtitleThemesOnly": "",
+    "tileUnlocked": "",
+    "errors": {
+      "storeUnavailable": "",
+      "productNotFound": "",
+      "productQueryFailed": "",
+      "purchaseFailed": "",
+      "restoreFailed": "",
+      "nothingToRestore": ""
+    }
+  },
   "settings": {
     "title": "Beállítások",
     "supportDeveloper": "Plezy támogatása",

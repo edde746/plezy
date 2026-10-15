@@ -117,6 +117,33 @@
     "latestVersion": "Du har den nyeste versjonen",
     "checkFailed": "Kunne ikke se etter oppdateringer"
   },
+  "supporter": {
+    "title": "",
+    "intro": "",
+    "presetThemes": "",
+    "presetThemesDescription": "",
+    "customTheme": "",
+    "customThemeDescription": "",
+    "appIcons": "",
+    "appIconsDescription": "",
+    "buy": "",
+    "loadingPrice": "",
+    "restore": "",
+    "pending": "",
+    "thankYouTitle": "",
+    "thankYouBody": "",
+    "tileSubtitle": "",
+    "tileSubtitleThemesOnly": "",
+    "tileUnlocked": "",
+    "errors": {
+      "storeUnavailable": "",
+      "productNotFound": "",
+      "productQueryFailed": "",
+      "purchaseFailed": "",
+      "restoreFailed": "",
+      "nothingToRestore": ""
+    }
+  },
   "settings": {
     "title": "Innstillinger",
     "supportDeveloper": "Støtt Plezy",

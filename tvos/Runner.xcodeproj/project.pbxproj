@@ -26,6 +26,10 @@
 		6F3C0DD6F2F8DA14E7E2F386 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12B8610AE5D580077264851 /* MpvPlayerCore.swift */; };
 		72B802AB7864268C4439E8FA /* ShelfSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC4FE4CC3847E57D0552B366 /* ShelfSources.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		7A9C6EB5D12457D92C6041DC /* InAppPurchasePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7445B8E53E56D6E08F6328F3 /* InAppPurchasePlugin.swift */; };
+		85196766A2A2BEF8AF7BB2D4 /* StoreKit2Translators.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4E382F89789AD9A8232ED27 /* StoreKit2Translators.swift */; };
+		A1F7CF09591B8FA69063EC27 /* StoreKit2Messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14EA8D9407ABD45D25119692 /* StoreKit2Messages.g.swift */; };
+		C8E8277DB6C15F663837C944 /* InAppPurchasePlugin+StoreKit2.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B21B060FF4BC14C93C3754 /* InAppPurchasePlugin+StoreKit2.swift */; };
 		7CE4D37BDCAD02C28DFAF38A /* ShelfItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C339C20E52A6F6F6725EF31F /* ShelfItemMapper.swift */; };
 		81325C1CD13794375A81AC02 /* messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CD411CCD84E381C4BF4C1B /* messages.g.swift */; };
 		81F08E404EBEB19B00FF148D /* ConnectivityPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */; };
@@ -102,6 +106,10 @@
 		04DD35536DEE7C27FFA53862 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPlugin.swift; sourceTree = "<group>"; };
 		0C25F4F2367A30B47E945AD6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
+		14EA8D9407ABD45D25119692 /* StoreKit2Messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StoreKit2Messages.g.swift; sourceTree = "<group>"; };
+		7445B8E53E56D6E08F6328F3 /* InAppPurchasePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InAppPurchasePlugin.swift; sourceTree = "<group>"; };
+		A4E382F89789AD9A8232ED27 /* StoreKit2Translators.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StoreKit2Translators.swift; sourceTree = "<group>"; };
+		E4B21B060FF4BC14C93C3754 /* InAppPurchasePlugin+StoreKit2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "InAppPurchasePlugin+StoreKit2.swift"; sourceTree = "<group>"; };
 		1B17916D7270A141E3AC7B5D /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1CC83B6BDD3EF9204BEF754B /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TVServices.framework; path = System/Library/Frameworks/TVServices.framework; sourceTree = SDKROOT; };
@@ -190,6 +198,18 @@
 			);
 			name = package_info_plus;
 			path = package_info_plus;
+			sourceTree = "<group>";
+		};
+		248B36B1989A43BD1610A60F /* in_app_purchase_storekit */ = {
+			isa = PBXGroup;
+			children = (
+				7445B8E53E56D6E08F6328F3 /* InAppPurchasePlugin.swift */,
+				E4B21B060FF4BC14C93C3754 /* InAppPurchasePlugin+StoreKit2.swift */,
+				14EA8D9407ABD45D25119692 /* StoreKit2Messages.g.swift */,
+				A4E382F89789AD9A8232ED27 /* StoreKit2Translators.swift */,
+			);
+			name = in_app_purchase_storekit;
+			path = in_app_purchase_storekit;
 			sourceTree = "<group>";
 		};
 		24CE237B5ECBF841DDDAD2D1 /* shared_preferences_foundation */ = {
@@ -344,6 +364,7 @@
 				DF39F6BC85D449736C737F18 /* path_provider */,
 				6B0884FDB3DBCBC1E7F0CBAD /* device_info_plus */,
 				25FB49FF35E9FB1E7A2040EF /* connectivity_plus */,
+				248B36B1989A43BD1610A60F /* in_app_purchase_storekit */,
 			);
 			name = Plugins;
 			path = Plugins;
@@ -652,6 +673,10 @@
 				81F08E404EBEB19B00FF148D /* ConnectivityPlusPlugin.swift in Sources */,
 				A7596F780E93AF0BE3838A26 /* ConnectivityProvider.swift in Sources */,
 				CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */,
+				7A9C6EB5D12457D92C6041DC /* InAppPurchasePlugin.swift in Sources */,
+				C8E8277DB6C15F663837C944 /* InAppPurchasePlugin+StoreKit2.swift in Sources */,
+				A1F7CF09591B8FA69063EC27 /* StoreKit2Messages.g.swift in Sources */,
+				85196766A2A2BEF8AF7BB2D4 /* StoreKit2Translators.swift in Sources */,
 				D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */,
 				89CF031971F407719E4B5DD8 /* TvosEventDeliveryCoordinator.swift in Sources */,
 				40C477DC462980F6AF17BEA1 /* ShelfFetcher.swift in Sources */,

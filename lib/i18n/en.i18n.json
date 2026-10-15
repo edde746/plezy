@@ -117,6 +117,33 @@
     "latestVersion": "You are on the latest version",
     "checkFailed": "Failed to check for updates"
   },
+  "supporter": {
+    "title": "Plezy Supporter",
+    "intro": "A one-time purchase that supports Plezy's development and unlocks cosmetic extras:",
+    "presetThemes": "Preset themes",
+    "presetThemesDescription": "Ember, Glacier, Forest, Plum and Paper",
+    "customTheme": "Custom theme",
+    "customThemeDescription": "Pick every color yourself",
+    "appIcons": "App icons",
+    "appIconsDescription": "Choose an alternate Plezy icon",
+    "buy": "Buy for ${price}",
+    "loadingPrice": "Loading price...",
+    "restore": "Restore Purchases",
+    "pending": "Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.",
+    "thankYouTitle": "Thank you for supporting Plezy",
+    "thankYouBody": "Your Supporter extras are unlocked.",
+    "tileSubtitle": "Unlock themes and app icons with a one-time purchase",
+    "tileSubtitleThemesOnly": "Unlock themes with a one-time purchase",
+    "tileUnlocked": "Thank you for your support",
+    "errors": {
+      "storeUnavailable": "Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.",
+      "productNotFound": "The Supporter purchase isn't available in your store right now.",
+      "productQueryFailed": "Couldn't load the price. Check your connection and try again.",
+      "purchaseFailed": "The purchase didn't go through. Try again.",
+      "restoreFailed": "Couldn't reach the store to restore your purchase. Try again.",
+      "nothingToRestore": "No Supporter purchase was found for this store account."
+    }
+  },
   "settings": {
     "title": "Settings",
     "supportDeveloper": "Support Plezy",

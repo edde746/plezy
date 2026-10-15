@@ -138,6 +138,9 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
 void _registerTvosPlatformPlugins() {
   if (!Platform.isIOS) return; // tvOS reports as iOS via dart:io.
   SharedPreferencesFoundation.registerWith();
+  // in_app_purchase needs no entry here: `InAppPurchase.instance` registers
+  // its StoreKit platform on first use (tvOS reports iOS), which
+  // SupporterService reaches only in SUPPORTER_MODE=iap builds.
 }
 
 void main() {
