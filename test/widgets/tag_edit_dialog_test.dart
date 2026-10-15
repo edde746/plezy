@@ -156,7 +156,7 @@ Future<_DialogResult> _pumpDialog(
     InputModeTracker(
       child: TranslationProvider(
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(

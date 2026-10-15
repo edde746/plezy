@@ -59,33 +59,57 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
 
   settings.ThemeMode get themeMode => _themeMode;
 
-  /// Dark palette for [mode], honouring the OLED variant.
+  /// The fixed palette [mode] paints with, or null for [settings.ThemeMode.system],
+  /// which follows the platform between Light and Dark.
+  static MonoPalette? paletteFor(settings.ThemeMode mode) => switch (mode) {
+    settings.ThemeMode.system => null,
+    settings.ThemeMode.light => MonoPalette.light,
+    settings.ThemeMode.dark => MonoPalette.dark,
+    settings.ThemeMode.oled => MonoPalette.oled,
+    settings.ThemeMode.ember => MonoPalette.ember,
+    settings.ThemeMode.glacier => MonoPalette.glacier,
+    settings.ThemeMode.forest => MonoPalette.forest,
+    settings.ThemeMode.plum => MonoPalette.plum,
+    settings.ThemeMode.paper => MonoPalette.paper,
+  };
+
+  /// Light-slot theme for [mode]: its own palette when that palette is light,
+  /// otherwise Light (the System theme's light half).
+  ///
+  /// Static, like [darkThemeFor], so the pre-provider startup frame resolves
+  /// the same theme this provider will settle on (#1833).
+  static ThemeData lightThemeFor(settings.ThemeMode mode) {
+    final palette = paletteFor(mode);
+    return monoTheme(palette?.brightness == Brightness.light ? palette! : MonoPalette.light);
+  }
+
+  /// Dark-slot theme for [mode]: its own palette when that palette is dark,
+  /// otherwise Dark (the System theme's dark half).
   ///
   /// Static so the pre-provider startup frame can resolve the same theme this
   /// provider will settle on, instead of guessing from platform brightness
   /// and flashing when the two disagree (#1833).
-  static ThemeData darkThemeFor(settings.ThemeMode mode) =>
-      monoTheme(dark: true, oled: mode == settings.ThemeMode.oled);
+  static ThemeData darkThemeFor(settings.ThemeMode mode) {
+    final palette = paletteFor(mode);
+    return monoTheme(palette?.brightness == Brightness.dark ? palette! : MonoPalette.dark);
+  }
 
-  /// Material equivalent of the app's own [settings.ThemeMode].
-  static ThemeMode materialThemeModeFor(settings.ThemeMode mode) => switch (mode) {
-    settings.ThemeMode.light => ThemeMode.light,
-    settings.ThemeMode.dark => ThemeMode.dark,
-    settings.ThemeMode.oled => ThemeMode.dark,
-    settings.ThemeMode.system => ThemeMode.system,
+  /// Material equivalent of the app's own [settings.ThemeMode]: system for
+  /// System, otherwise the brightness of the fixed palette.
+  static ThemeMode materialThemeModeFor(settings.ThemeMode mode) => switch (paletteFor(mode)?.brightness) {
+    null => ThemeMode.system,
+    Brightness.light => ThemeMode.light,
+    Brightness.dark => ThemeMode.dark,
   };
 
-  ThemeData get lightTheme => monoTheme(dark: false);
+  ThemeData get lightTheme => lightThemeFor(_themeMode);
   ThemeData get darkTheme => darkThemeFor(_themeMode);
 
   ThemeMode get materialThemeMode => materialThemeModeFor(_themeMode);
 
   /// Whether [mode] resolves to a dark theme when the platform reports [platformBrightness].
-  static bool isDarkFor(settings.ThemeMode mode, Brightness platformBrightness) => switch (mode) {
-    settings.ThemeMode.light => false,
-    settings.ThemeMode.dark || settings.ThemeMode.oled => true,
-    settings.ThemeMode.system => platformBrightness == Brightness.dark,
-  };
+  static bool isDarkFor(settings.ThemeMode mode, Brightness platformBrightness) =>
+      (paletteFor(mode)?.brightness ?? platformBrightness) == Brightness.dark;
 
   bool get isDarkMode => isDarkFor(_themeMode, _systemBrightness);
 
@@ -139,25 +163,34 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
 
   void _updateSplashTheme(settings.ThemeMode mode) {
     if (!Platform.isAndroid) return;
-    final name = switch (mode) {
-      settings.ThemeMode.dark => 'dark',
-      settings.ThemeMode.oled => 'oled',
-      settings.ThemeMode.light => 'light',
-      settings.ThemeMode.system => 'system',
-    };
-    _themeChannel.invokeMethod('setSplashTheme', {'mode': name});
+    _themeChannel.invokeMethod('setSplashTheme', {'mode': nativeSplashMode(mode)});
   }
 
-  IconData get themeModeIcon {
-    switch (_themeMode) {
-      case settings.ThemeMode.light:
-        return Symbols.light_mode_rounded;
-      case settings.ThemeMode.dark:
-        return Symbols.dark_mode_rounded;
-      case settings.ThemeMode.oled:
-        return Symbols.contrast_rounded;
-      case settings.ThemeMode.system:
-        return Symbols.brightness_auto_rounded;
-    }
-  }
+  /// Launch-screen mode the Android side understands. It only knows the
+  /// built-in launch colours (`ThemeHelper.themeColor` and the `SplashTheme_*`
+  /// styles), so a preset launches on the nearest built-in: the dark presets
+  /// on Dark, Paper on Light. The first Flutter frame then paints the preset.
+  @visibleForTesting
+  static String nativeSplashMode(settings.ThemeMode mode) => switch (mode) {
+    settings.ThemeMode.system => 'system',
+    settings.ThemeMode.light || settings.ThemeMode.paper => 'light',
+    settings.ThemeMode.dark ||
+    settings.ThemeMode.ember ||
+    settings.ThemeMode.glacier ||
+    settings.ThemeMode.forest ||
+    settings.ThemeMode.plum => 'dark',
+    settings.ThemeMode.oled => 'oled',
+  };
+
+  IconData get themeModeIcon => switch (_themeMode) {
+    settings.ThemeMode.light => Symbols.light_mode_rounded,
+    settings.ThemeMode.dark => Symbols.dark_mode_rounded,
+    settings.ThemeMode.oled => Symbols.contrast_rounded,
+    settings.ThemeMode.system => Symbols.brightness_auto_rounded,
+    settings.ThemeMode.ember ||
+    settings.ThemeMode.glacier ||
+    settings.ThemeMode.forest ||
+    settings.ThemeMode.plum ||
+    settings.ThemeMode.paper => Symbols.palette_rounded,
+  };
 }

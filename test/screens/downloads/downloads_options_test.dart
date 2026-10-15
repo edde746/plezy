@@ -120,7 +120,7 @@ void main() {
             ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+            theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: 0,

@@ -181,8 +181,8 @@ void _bootstrapApp() {
       ),
       discard: (dependencies) => dependencies.appDatabase.close(),
       onCommitted: (dependencies) => _startNonessentialInitialization(dependencies.settings),
-      lightTheme: monoTheme(dark: false),
-      darkTheme: monoTheme(dark: true),
+      lightTheme: monoTheme(MonoPalette.light),
+      darkTheme: monoTheme(MonoPalette.dark),
       resolveTheme: _resolveStartupTheme,
       // Android runs the Flutter surface in transparent mode over a window
       // whose background MainActivity already restored, so the loading frame
@@ -210,7 +210,11 @@ Future<StartupThemeResolution> _resolveStartupTheme() async {
   ThemeProvider.applyWindowChromeBrightness(
     ThemeProvider.isDarkFor(mode, WidgetsBinding.instance.platformDispatcher.platformBrightness),
   );
-  return (themeMode: ThemeProvider.materialThemeModeFor(mode), darkTheme: ThemeProvider.darkThemeFor(mode));
+  return (
+    themeMode: ThemeProvider.materialThemeModeFor(mode),
+    lightTheme: ThemeProvider.lightThemeFor(mode),
+    darkTheme: ThemeProvider.darkThemeFor(mode),
+  );
 }
 
 /// Wraps [step] so a failure names the gate phase it came from.
@@ -621,7 +625,7 @@ Future<void> showRepairOutcomeDialog(
 }
 
 /// Theme the startup frames adopt once the persisted preference is readable.
-typedef StartupThemeResolution = ({material.ThemeMode themeMode, ThemeData darkTheme});
+typedef StartupThemeResolution = ({material.ThemeMode themeMode, ThemeData lightTheme, ThemeData darkTheme});
 
 /// Mounts a Flutter-owned startup frame before invoking the asynchronous
 /// initialization gate. The generic seam keeps frame ordering, failure, and
@@ -832,7 +836,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
         builder: (context) => InputModeTracker(
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: widget.lightTheme,
+            theme: resolved?.lightTheme ?? widget.lightTheme,
             darkTheme: resolved?.darkTheme ?? widget.darkTheme,
             themeMode: resolved?.themeMode ?? widget.themeMode,
             home: Builder(builder: _buildBootstrapHome),

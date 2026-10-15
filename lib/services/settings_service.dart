@@ -40,7 +40,9 @@ import 'trackers/tracker_constants.dart';
 import '../profiles/profile.dart';
 import '../watch_together/services/watch_together_relay_endpoint.dart';
 
-enum ThemeMode { system, light, dark, oled }
+/// The app theme. Value names are the persisted ids. [system] follows the
+/// platform between [light] and [dark]; every other value is one fixed palette.
+enum ThemeMode { system, light, dark, oled, ember, glacier, forest, plum, paper }
 
 /// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
 /// Default is 3.

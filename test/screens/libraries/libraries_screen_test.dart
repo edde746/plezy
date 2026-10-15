@@ -570,7 +570,7 @@ final class _Harness {
         ],
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: OverlaySheetHost(
               child: FocusScope(
                 child: enabled == null

@@ -463,7 +463,7 @@ Future<_ControlledPreferences> _pumpEditor(
       child: TranslationProvider(
         child: MaterialApp(
           navigatorKey: navigatorKey,
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: const Scaffold(body: Text('home')),
         ),
       ),

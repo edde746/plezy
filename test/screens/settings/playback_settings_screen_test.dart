@@ -25,7 +25,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Music Quality');
@@ -51,7 +51,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Shader Preset');
@@ -79,7 +79,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Play Next Countdown');
@@ -105,7 +105,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Deinterlacing');
@@ -130,7 +130,7 @@ void main() {
     await settings.write(SettingsService.audioNormalization, true);
     expect(settings.read(SettingsService.audioPassthrough), isTrue);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Audio Passthrough');
@@ -159,7 +159,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Audio Channels');
@@ -192,7 +192,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Play Smaller Videos at Original Quality');
@@ -215,7 +215,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
         home: const PlaybackSettingsScreen(),
       ),
     );
@@ -240,7 +240,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
     await tester.pumpAndSettle();
 
     final title = find.text('Shuffle Starts at Beginning');
@@ -262,7 +262,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
+        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS),
         home: const PlaybackSettingsScreen(),
       ),
     );

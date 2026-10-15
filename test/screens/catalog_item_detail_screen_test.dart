@@ -337,7 +337,7 @@ Future<void> _pumpDetail(
           if (account != null) ChangeNotifierProvider<SeerrAccountProvider>.value(value: account),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: pushedRoute
               ? Builder(
                   builder: (context) => Scaffold(

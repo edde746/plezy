@@ -118,8 +118,8 @@ void main() {
         StartupBootstrap<int>(
           initialize: () => completion.future,
           buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-          lightTheme: monoTheme(dark: false),
-          darkTheme: monoTheme(dark: true),
+          lightTheme: monoTheme(MonoPalette.light),
+          darkTheme: monoTheme(MonoPalette.dark),
           transparentWhileLoading: true,
         ),
       ),
@@ -140,13 +140,13 @@ void main() {
         StartupBootstrap<int>(
           initialize: () => completion.future,
           buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-          lightTheme: monoTheme(dark: false),
-          darkTheme: monoTheme(dark: true),
+          lightTheme: monoTheme(MonoPalette.light),
+          darkTheme: monoTheme(MonoPalette.dark),
         ),
       ),
     );
 
-    expect(await windowPixel(tester), monoTheme(dark: false).scaffoldBackgroundColor.toARGB32());
+    expect(await windowPixel(tester), monoTheme(MonoPalette.light).scaffoldBackgroundColor.toARGB32());
 
     completion.complete(1);
     await tester.pump();
@@ -158,8 +158,8 @@ void main() {
         StartupBootstrap<int>(
           initialize: () async => throw StateError('database unavailable'),
           buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-          lightTheme: monoTheme(dark: false),
-          darkTheme: monoTheme(dark: true),
+          lightTheme: monoTheme(MonoPalette.light),
+          darkTheme: monoTheme(MonoPalette.dark),
           transparentWhileLoading: true,
         ),
       ),
@@ -167,7 +167,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(startupBootstrapFailureKey), findsOneWidget);
-    expect(await windowPixel(tester), monoTheme(dark: false).scaffoldBackgroundColor.toARGB32());
+    expect(await windowPixel(tester), monoTheme(MonoPalette.light).scaffoldBackgroundColor.toARGB32());
   });
 
   testWidgets('adopts the persisted theme instead of platform brightness', (tester) async {
@@ -183,16 +183,17 @@ void main() {
       StartupBootstrap<int>(
         initialize: () => completion.future,
         buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-        lightTheme: monoTheme(dark: false),
-        darkTheme: monoTheme(dark: true),
+        lightTheme: monoTheme(MonoPalette.light),
+        darkTheme: monoTheme(MonoPalette.dark),
         resolveTheme: () => resolved.future,
       ),
     );
 
-    expect(bootstrapTheme(tester).scaffoldBackgroundColor, monoTheme(dark: false).scaffoldBackgroundColor);
+    expect(bootstrapTheme(tester).scaffoldBackgroundColor, monoTheme(MonoPalette.light).scaffoldBackgroundColor);
 
     resolved.complete((
       themeMode: ThemeProvider.materialThemeModeFor(settings.ThemeMode.oled),
+      lightTheme: ThemeProvider.lightThemeFor(settings.ThemeMode.oled),
       darkTheme: ThemeProvider.darkThemeFor(settings.ThemeMode.oled),
     ));
     await tester.pump();
@@ -204,6 +205,44 @@ void main() {
     completion.complete(1);
     await tester.pump();
   });
+
+  for (final (mode, platformBrightness) in [
+    (settings.ThemeMode.ember, Brightness.light),
+    (settings.ThemeMode.paper, Brightness.dark),
+  ]) {
+    testWidgets('adopts the persisted ${mode.name} preset whatever the platform brightness', (tester) async {
+      tester.platformDispatcher.platformBrightnessTestValue = platformBrightness;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+
+      final resolved = Completer<StartupThemeResolution>();
+      final completion = Completer<int>();
+
+      await tester.pumpWidget(
+        StartupBootstrap<int>(
+          initialize: () => completion.future,
+          buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+          lightTheme: monoTheme(MonoPalette.light),
+          darkTheme: monoTheme(MonoPalette.dark),
+          resolveTheme: () => resolved.future,
+        ),
+      );
+
+      resolved.complete((
+        themeMode: ThemeProvider.materialThemeModeFor(mode),
+        lightTheme: ThemeProvider.lightThemeFor(mode),
+        darkTheme: ThemeProvider.darkThemeFor(mode),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final palette = ThemeProvider.paletteFor(mode)!;
+      expect(bootstrapTheme(tester).brightness, palette.brightness);
+      expect(bootstrapTheme(tester).scaffoldBackgroundColor, palette.bg);
+
+      completion.complete(1);
+      await tester.pump();
+    });
+  }
 
   testWidgets('a theme preference that cannot be read does not block the gate', (tester) async {
     final completion = Completer<int>();

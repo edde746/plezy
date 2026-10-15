@@ -773,7 +773,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
           ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
           home: pushSettingsRoute
               ? Builder(
                   builder: (context) => Scaffold(

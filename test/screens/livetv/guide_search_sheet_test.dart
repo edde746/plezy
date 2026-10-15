@@ -244,7 +244,7 @@ final class _SheetHarness {
           child: ChangeNotifierProvider<MultiServerProvider>.value(
             value: _provider,
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: OverlaySheetHost(
                 child: Scaffold(
                   body: Center(

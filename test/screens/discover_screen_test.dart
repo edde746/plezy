@@ -150,7 +150,7 @@ void main() {
             ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: targetSidebarOffset,
@@ -316,7 +316,7 @@ void main() {
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -430,7 +430,7 @@ void main() {
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -563,7 +563,7 @@ void main() {
             ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -673,7 +673,7 @@ void main() {
           ],
           child: InputModeTracker(
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: MainScreenFocusScope(
                 focusSidebar: () {},
                 sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -938,7 +938,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
         ],
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Row(
               children: [
                 Column(
@@ -1042,7 +1042,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
         ],
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,

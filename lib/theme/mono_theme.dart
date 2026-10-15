@@ -1,51 +1,162 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'gapped_track_shape.dart';
 import 'mono_tokens.dart';
 
-final Map<({bool dark, bool oled, TargetPlatform platform}), ThemeData> _monoThemeCache = {};
+/// The six colours a theme is built from.
+///
+/// [accent] carries interactive and selected state; body text stays [text].
+/// Brightness follows [bg] and the colour drawn on [accent] is derived, so a
+/// palette states nothing else.
+@immutable
+class MonoPalette {
+  const MonoPalette({
+    required this.bg,
+    required this.surface,
+    required this.outline,
+    required this.text,
+    required this.textMuted,
+    required this.accent,
+  });
 
-ThemeData monoTheme({required bool dark, bool oled = false}) {
+  final Color bg;
+  final Color surface;
+  final Color outline;
+  final Color text;
+  final Color textMuted;
+
+  /// Primary, filled buttons, switches, sliders, progress, selection and the
+  /// focus ring. The built-ins set it to [text], which keeps them monochrome.
+  final Color accent;
+
+  // Neutral greys tuned for crisp contrast.
+  static const light = MonoPalette(
+    bg: Color(0xFFF7F7F8),
+    surface: Color(0xFFFFFFFF),
+    outline: Color(0x19000000),
+    text: Color(0xFF111111),
+    textMuted: Color(0x99111111),
+    accent: Color(0xFF111111),
+  );
+  static const dark = MonoPalette(
+    bg: Color(0xFF0E0F12),
+    surface: Color(0xFF15171C),
+    outline: Color(0x1FFFFFFF),
+    text: Color(0xFFEDEDED),
+    textMuted: Color(0x99EDEDED),
+    accent: Color(0xFFEDEDED),
+  );
+  static const oled = MonoPalette(
+    bg: Color(0xFF000000), // Pure black for OLED
+    surface: Color(0xFF0A0A0A),
+    outline: Color(0x1FFFFFFF),
+    text: Color(0xFFEDEDED),
+    textMuted: Color(0x99EDEDED),
+    accent: Color(0xFFEDEDED),
+  );
+
+  // Presets keep bg/surface low-chroma so artwork stays the loudest thing on
+  // screen; the character is in the tint and the accent. Every accent clears
+  // 4.5:1 against bg and surface, because primary is also used as text.
+
+  /// Warm charcoal with the brand orange.
+  static const ember = MonoPalette(
+    bg: Color(0xFF14110F),
+    surface: Color(0xFF1D1916),
+    outline: Color(0x1FF2EBE6),
+    text: Color(0xFFF2EBE6),
+    textMuted: Color(0xA3F2EBE6),
+    accent: Color(0xFFFF7E57),
+  );
+
+  /// Cool blue-grey with an ice-blue accent.
+  static const glacier = MonoPalette(
+    bg: Color(0xFF0E1319),
+    surface: Color(0xFF151C25),
+    outline: Color(0x1FE6EDF5),
+    text: Color(0xFFE6EDF5),
+    textMuted: Color(0xA3E6EDF5),
+    accent: Color(0xFF7CC4FF),
+  );
+
+  /// Green-black with a mint accent.
+  static const forest = MonoPalette(
+    bg: Color(0xFF0E1411),
+    surface: Color(0xFF151D18),
+    outline: Color(0x1FE5EFE8),
+    text: Color(0xFFE5EFE8),
+    textMuted: Color(0xA3E5EFE8),
+    accent: Color(0xFF6BD6A0),
+  );
+
+  /// Aubergine with an orchid accent.
+  static const plum = MonoPalette(
+    bg: Color(0xFF151118),
+    surface: Color(0xFF1E1823),
+    outline: Color(0x1FF0E9F4),
+    text: Color(0xFFF0E9F4),
+    textMuted: Color(0xA3F0E9F4),
+    accent: Color(0xFFE29BF0),
+  );
+
+  /// Warm off-white paper with a deep teal accent; the light preset.
+  static const paper = MonoPalette(
+    bg: Color(0xFFF3F0E9),
+    surface: Color(0xFFFBF9F4),
+    outline: Color(0x1F1F1C17),
+    text: Color(0xFF1F1C17),
+    textMuted: Color(0xAD1F1C17),
+    accent: Color(0xFF1F6B6B),
+  );
+
+  Brightness get brightness => ThemeData.estimateBrightnessForColor(bg);
+
+  /// [bg] or white, whichever contrasts more with [accent]. The pair is never
+  /// worse than [accent] against [bg], so an accent that reads on the page
+  /// keeps a readable label.
+  Color get onAccent {
+    const white = Color(0xFFFFFFFF);
+    final accentLuminance = accent.computeLuminance();
+    return _contrastRatio(accentLuminance, bg.computeLuminance()) >=
+            _contrastRatio(accentLuminance, white.computeLuminance())
+        ? bg
+        : white;
+  }
+
+  static double _contrastRatio(double a, double b) => (math.max(a, b) + 0.05) / (math.min(a, b) + 0.05);
+
+  @override
+  bool operator ==(Object other) =>
+      other is MonoPalette &&
+      other.bg == bg &&
+      other.surface == surface &&
+      other.outline == outline &&
+      other.text == text &&
+      other.textMuted == textMuted &&
+      other.accent == accent;
+
+  @override
+  int get hashCode => Object.hash(bg, surface, outline, text, textMuted, accent);
+}
+
+final Map<({MonoPalette palette, TargetPlatform platform}), ThemeData> _monoThemeCache = {};
+
+ThemeData monoTheme(MonoPalette palette) {
   // ThemeData derives several defaults from defaultTargetPlatform.
-  final key = (dark: dark || oled, oled: oled, platform: defaultTargetPlatform);
+  final key = (palette: palette, platform: defaultTargetPlatform);
   final cached = _monoThemeCache[key];
   if (cached != null) return cached;
 
-  final theme = _buildMonoTheme(dark: key.dark, oled: key.oled, platform: key.platform);
+  final theme = _buildMonoTheme(palette, platform: key.platform);
   _monoThemeCache[key] = theme;
   return theme;
 }
 
-ThemeData _buildMonoTheme({required bool dark, required bool oled, required TargetPlatform platform}) {
-  // neutral greys tuned for crisp contrast
-  final ({Color bg, Color surface, Color outline, Color text, Color textMuted}) c;
-  if (oled) {
-    c = (
-      bg: const Color(0xFF000000), // Pure black for OLED
-      surface: const Color(0xFF0A0A0A), // Very dark gray
-      outline: const Color(0x1FFFFFFF),
-      text: const Color(0xFFEDEDED),
-      textMuted: const Color(0x99EDEDED),
-    );
-  } else if (dark) {
-    c = (
-      bg: const Color(0xFF0E0F12),
-      surface: const Color(0xFF15171C),
-      outline: const Color(0x1FFFFFFF),
-      text: const Color(0xFFEDEDED),
-      textMuted: const Color(0x99EDEDED),
-    );
-  } else {
-    c = (
-      bg: const Color(0xFFF7F7F8),
-      surface: const Color(0xFFFFFFFF),
-      outline: const Color(0x19000000),
-      text: const Color(0xFF111111),
-      textMuted: const Color(0x99111111),
-    );
-  }
-
-  final isDark = dark || oled;
+ThemeData _buildMonoTheme(MonoPalette c, {required TargetPlatform platform}) {
+  final brightness = c.brightness;
+  final onAccent = c.onAccent;
   final clickableCursor = WidgetStateProperty.resolveWith<MouseCursor>(
     (states) => states.contains(WidgetState.disabled) ? MouseCursor.defer : SystemMouseCursors.click,
   );
@@ -57,11 +168,10 @@ ThemeData _buildMonoTheme({required bool dark, required bool oled, required Targ
     padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
     elevation: const WidgetStatePropertyAll(0),
     backgroundColor: WidgetStateProperty.resolveWith(
-      (states) => states.contains(WidgetState.disabled) ? c.text.withValues(alpha: 0.12) : c.text,
+      (states) => states.contains(WidgetState.disabled) ? c.text.withValues(alpha: 0.12) : c.accent,
     ),
     foregroundColor: WidgetStateProperty.resolveWith(
-      (states) =>
-          states.contains(WidgetState.disabled) ? c.text.withValues(alpha: 0.38) : (isDark ? c.bg : Colors.white),
+      (states) => states.contains(WidgetState.disabled) ? c.text.withValues(alpha: 0.38) : onAccent,
     ),
     shape: const WidgetStatePropertyAll(StadiumBorder()),
   );
@@ -69,15 +179,21 @@ ThemeData _buildMonoTheme({required bool dark, required bool oled, required Targ
   final base = ThemeData(
     platform: platform,
     useMaterial3: true,
-    brightness: isDark ? Brightness.dark : Brightness.light,
+    brightness: brightness,
     // Linux resolves UI text through fontconfig, which on a minimal desktop
     // may have no CJK font at all; the bundled subtitle fonts (pubspec
     // `fonts:`) cover it. Other platforms keep their native CJK fonts.
     fontFamilyFallback: platform == TargetPlatform.linux ? const ['Go Noto Current', 'Go Noto Current Hangul'] : null,
     colorScheme: ColorScheme(
-      brightness: isDark ? Brightness.dark : Brightness.light,
-      primary: c.text,
-      onPrimary: isDark ? c.bg : Colors.white,
+      brightness: brightness,
+      // Accent: everything Material derives from primary (switches, sliders,
+      // progress, checkboxes, text selection, text buttons, selected list
+      // tiles) plus the widgets that read primary for selection and focus.
+      primary: c.accent,
+      onPrimary: onAccent,
+      // Elevation tint stays on the neutral text colour so dialogs and menus
+      // keep the palette's surfaces rather than picking up the accent hue.
+      surfaceTint: c.text,
       secondary: c.text,
       onSecondary: c.bg,
       surface: c.surface,
@@ -166,7 +282,7 @@ ThemeData _buildMonoTheme({required bool dark, required bool oled, required Targ
       labelTextStyle: WidgetStatePropertyAll(TextStyle(color: c.textMuted, fontSize: 11)),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final active = states.contains(WidgetState.selected);
-        return IconThemeData(opacity: active ? 1 : 0.6, size: 22, color: c.text);
+        return IconThemeData(opacity: active ? 1 : 0.6, size: 22, color: active ? c.accent : c.text);
       }),
     ),
     // Floating snackbars auto-offset above the Scaffold's bottom NavigationBar,
@@ -201,6 +317,7 @@ ThemeData _buildMonoTheme({required bool dark, required bool oled, required Targ
         outline: c.outline,
         text: c.text,
         textMuted: c.textMuted,
+        accent: c.accent,
       ),
     ],
   );

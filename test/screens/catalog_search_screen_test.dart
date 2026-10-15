@@ -65,7 +65,7 @@ Future<void> _pump(WidgetTester tester, _FakeSearchSource source) async {
   await tester.pumpWidget(
     TranslationProvider(
       child: MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: CatalogSearchScreen(source: source),
       ),
     ),
@@ -239,7 +239,7 @@ Future<void> _pumpMenuSearch(WidgetTester tester, _FakeSearchSource source, {req
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: platform),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: platform),
           home: CatalogSearchScreen(source: source),
         ),
       ),

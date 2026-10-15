@@ -497,7 +497,7 @@ class _HubHarness {
       value: provider,
       child: InputModeTracker(
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: platform),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: platform),
           home: SizedBox(width: 1280, height: 720, child: child),
         ),
       ),
