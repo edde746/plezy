@@ -168,8 +168,17 @@ class TvBrowseRailLayout {
         ? posterWidth
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
     final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
-    final containerHeight = (posterHeight + labelHeight).ceilToDouble();
-    final height = containerHeight + focusExtra + (10 * scale);
+    // A Hero hub is represented entirely by the spotlight banner above the
+    // rail (see TvSpotlightScaffold) — its own poster strip would just be a
+    // duplicate of whatever the banner is already showing (per user request
+    // 2026-09-10: "the banner is the continue watching row"). Horizontal
+    // metrics (cardWidth/posterWidth/itemGap) stay real — the row's
+    // items/focus/scroll bookkeeping is untouched, only its own vertical
+    // footprint collapses to a sliver so neighboring rows close up around
+    // it instead of leaving a dead gap.
+    final collapsed = hub.heroStyle;
+    final containerHeight = collapsed ? 0.0 : (posterHeight + labelHeight).ceilToDouble();
+    final height = collapsed ? 0.0 : containerHeight + focusExtra + (10 * scale);
 
     return TvBrowseRailLayoutMetrics(
       isPersonHub: isPersonHub,
@@ -181,7 +190,7 @@ class TvBrowseRailLayout {
       hasLeading: hasLeading,
       cardWidth: cardWidth,
       posterWidth: posterWidth,
-      posterHeight: posterHeight,
+      posterHeight: collapsed ? 0.0 : posterHeight,
       containerHeight: containerHeight,
       height: height,
     );
@@ -427,6 +436,25 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   int _hubIndex = 0;
   int _itemIndex = 0;
 
+  /// Hero rows only: auto-advance while the row is focused and its own
+  /// Auto-slide setting is on. Single-shot, re-armed after every move (manual
+  /// or automatic), so any d-pad press restarts the countdown.
+  static const _heroAutoSlideInterval = Duration(seconds: 8);
+  Timer? _heroAutoSlideTimer;
+
+  bool _isPageableHero(MediaHub hub) => hub.heroStyle && _totalItemCount(hub) > 1;
+
+  void _restartHeroAutoSlide() {
+    _heroAutoSlideTimer?.cancel();
+    _heroAutoSlideTimer = null;
+    if (!mounted || !_focusNode.hasFocus) return;
+    final hub = _activeHub;
+    if (hub == null || !hub.heroAutoSlide || !_isPageableHero(hub)) return;
+    _heroAutoSlideTimer = Timer(_heroAutoSlideInterval, () {
+      if (mounted) _moveItem(1, wrap: true);
+    });
+  }
+
   /// Mirrors (_hubIndex, _itemIndex) plus the rail's focus state for the
   /// per-card/header/artwork-dim selectors, so d-pad moves and focus flips repaint
   /// only the affected subtrees instead of setState-rebuilding every visible
@@ -616,6 +644,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
   @override
   void dispose() {
+    _heroAutoSlideTimer?.cancel();
     _selectLongPress.dispose();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
@@ -639,6 +668,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     // (per-card focus wrappers, headers and artwork dim), so a focus flip
     // repaints only those subtrees instead of rebuilding every visible row.
     _focusModel.setRailFocus(_focusNode.hasFocus);
+    _restartHeroAutoSlide();
   }
 
   void _resetLongPressState() {
@@ -757,6 +787,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     if (hub == null) return KeyEventResult.ignored;
     if (key.isDpadDirection || key.isContextMenuKey) _hasUserInteracted = true;
 
+    // Left never wraps on TV: the first card (hero or not) hands Left to the
+    // sidebar, otherwise the sidebar would be unreachable from a hero row.
+    // Right wraps on hero rows unless the user turned that off.
     if (key.isLeftKey) {
       if (_itemIndex > 0) {
         _moveItem(-1);
@@ -767,7 +800,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     }
 
     if (key.isRightKey) {
-      if (_itemIndex < _totalItemCount(hub) - 1) {
+      if (_isPageableHero(hub) && SettingsService.instance.read(SettingsService.tvHeroWrapAround)) {
+        _moveItem(1, wrap: true);
+      } else if (_itemIndex < _totalItemCount(hub) - 1) {
         _moveItem(1);
       }
       return KeyEventResult.handled;
@@ -795,11 +830,12 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     return KeyEventResult.ignored;
   }
 
-  void _moveItem(int delta) {
+  void _moveItem(int delta, {bool wrap = false}) {
     final hub = _activeHub;
     if (hub == null) return;
     _hasUserInteracted = true;
-    final next = (_itemIndex + delta).clamp(0, _totalItemCount(hub) - 1);
+    final count = _totalItemCount(hub);
+    final next = wrap && count > 0 ? (_itemIndex + delta) % count : (_itemIndex + delta).clamp(0, count - 1);
     if (next == _itemIndex) return;
 
     // No setState: the per-card focus selectors and the fixed semantics proxy
@@ -811,6 +847,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _rememberFocus(hub);
     _notifyFocusedItem();
     _scrollToItem();
+    _restartHeroAutoSlide();
   }
 
   void _moveHub(int delta) {
@@ -842,6 +879,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _notifyFocusedItem();
     _notifyActiveHubChanged();
     _scrollToItemAfterLayout(animate: false);
+    _restartHeroAutoSlide();
     // Section offsets are computed at build, so a laid-out list can start the
     // vertical glide in this frame instead of one frame later.
     if (!_alignActiveHubToTop(animate: true)) _scrollActiveHubToTop();
@@ -1130,6 +1168,21 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   @override
   Widget build(BuildContext context) {
     if (_activeHub == null) return const SizedBox.shrink();
+    // While a hero row is focused its spotlight banner owns the whole screen,
+    // so the poster rows fade out (2026-10-11 user request). Opacity only:
+    // the rail stays mounted and focused, so the d-pad keeps paging the hero
+    // and Down still moves on to the next row, which fades the rail back in.
+    return ListenableSelector<bool>(
+      listenable: _focusModel,
+      selector: () =>
+          widget.hubs.isNotEmpty && widget.hubs[_focusModel.hubIndex.clamp(0, widget.hubs.length - 1)].heroStyle,
+      builder: (context, heroFocused, child) =>
+          AnimatedOpacity(opacity: heroFocused ? 0.0 : 1.0, duration: const Duration(milliseconds: 250), child: child),
+      child: _buildRail(context),
+    );
+  }
+
+  Widget _buildRail(BuildContext context) {
     return SettingsBuilder(
       prefs: const [
         SettingsService.libraryDensity,
@@ -1173,8 +1226,20 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
               ),
           ];
           final sectionHeights = [
-            for (final metrics in metricsByHub)
-              TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height),
+            for (var i = 0; i < metricsByHub.length; i++)
+              // Hero hubs keep just their header strip's worth of height —
+              // NOT zero. The whole vertical list shares one fixed viewport
+              // height (viewportSectionHeight below, sized to the tallest
+              // row anywhere), so a truly zero-height row left a hole that
+              // viewport filled with whatever real content came next,
+              // regardless of what was actually focused (2026-09-10 bug:
+              // scrolling among several hero rows kept showing a much later
+              // "Movie Collections" row stuck in place). A real, if slim,
+              // section keeps the scroll offsets honest and still shows the
+              // row's own name via the normal header, same as any other row.
+              widget.hubs[i].heroStyle
+                  ? TvBrowseRailLayout.hubStripHeightForScale(scale)
+                  : TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metricsByHub[i].height),
           ];
           final offsets = <double>[];
           var nextOffset = 0.0;
@@ -1325,6 +1390,29 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         // repaints only the two affected headers/artwork tints; the row content
         // below is passed through as a stable child.
         bool isActiveHub() => _focusModel.hubIndex == hubIndex;
+
+        if (hub.heroStyle) {
+          // Header only, no poster row — the spotlight banner above is this
+          // hub's real visual representation now, so its own poster strip
+          // would just duplicate that. Keeping the header (rather than
+          // rendering nothing) gives this row a genuine, non-zero slot in
+          // the vertical list — a true zero-height slot let the shared
+          // fixed-height viewport (viewportSectionHeight below, sized to
+          // the tallest row anywhere) fill the hole with whatever real
+          // content came next, regardless of which row was actually
+          // focused (2026-09-10 bug). The header also means the row's own
+          // name shows the same way every other row's does — no separate
+          // "which row is this" label needed elsewhere.
+          return ListenableSelector<bool>(
+            listenable: _focusModel,
+            selector: isActiveHub,
+            builder: (context, isActive, _) => SizedBox(
+              key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
+              height: sectionHeight,
+              child: _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+            ),
+          );
+        }
 
         return SnapshotWidget(
           controller: _verticalScrollSnapshotController,
