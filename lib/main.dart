@@ -207,17 +207,21 @@ void _bootstrapApp() {
 /// detection has to come first: the `themeMode` default is TV-aware and
 /// [TvDetectionService.isTVSync] answers false until its singleton exists,
 /// which would make a fresh Android TV install resolve the light theme.
+///
+/// A stored Supporter perk is gated by the cached entitlement, the same rule
+/// [ThemeProvider] applies, so a locked perk never flashes and an unlocked one
+/// never flashes the fallback.
 Future<StartupThemeResolution> _resolveStartupTheme() async {
   final settings = await SettingsService.getInstance();
   await TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode));
-  final mode = settings.read(SettingsService.themeMode);
+  final palette = ThemeProvider.resolveStored(settings, unlocked: SupporterService.startupUnlocked(settings)).palette;
   ThemeProvider.applyWindowChromeBrightness(
-    ThemeProvider.isDarkFor(mode, WidgetsBinding.instance.platformDispatcher.platformBrightness),
+    ThemeProvider.isDarkFor(palette, WidgetsBinding.instance.platformDispatcher.platformBrightness),
   );
   return (
-    themeMode: ThemeProvider.materialThemeModeFor(mode),
-    lightTheme: ThemeProvider.lightThemeFor(mode),
-    darkTheme: ThemeProvider.darkThemeFor(mode),
+    themeMode: ThemeProvider.materialThemeModeFor(palette),
+    lightTheme: ThemeProvider.lightThemeFor(palette),
+    darkTheme: ThemeProvider.darkThemeFor(palette),
   );
 }
 
@@ -1833,7 +1837,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return supporter;
           },
         ),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider(supporter: context.read<SupporterService>())),
         // Shader presets are app-global — deliberately outside the
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),

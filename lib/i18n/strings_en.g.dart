@@ -47,6 +47,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$update$en update = Translations$update$en.internal(_root);
 	late final Translations$supporter$en supporter = Translations$supporter$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
 	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
 	late final Translations$fileInfo$en fileInfo = Translations$fileInfo$en.internal(_root);
@@ -1433,6 +1434,91 @@ class Translations$settings$en {
 
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
+}
+
+// Path: themeEditor
+class Translations$themeEditor$en {
+	Translations$themeEditor$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Built-in'
+	String get builtIn => 'Built-in';
+
+	/// en: 'Presets'
+	String get presets => 'Presets';
+
+	/// en: 'Custom'
+	String get custom => 'Custom';
+
+	/// en: 'Not created yet'
+	String get customEmpty => 'Not created yet';
+
+	/// en: 'Edit custom theme'
+	String get editCustom => 'Edit custom theme';
+
+	/// en: 'Choose every color yourself'
+	String get editCustomDescription => 'Choose every color yourself';
+
+	/// en: 'Unlock with Supporter'
+	String get locked => 'Unlock with Supporter';
+
+	/// en: 'Custom Theme'
+	String get title => 'Custom Theme';
+
+	/// en: 'Start from'
+	String get startFrom => 'Start from';
+
+	/// en: 'Copy all colors from another theme'
+	String get startFromDescription => 'Copy all colors from another theme';
+
+	/// en: 'Colors'
+	String get colors => 'Colors';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
+
+	late final Translations$themeEditor$slots$en slots = Translations$themeEditor$slots$en.internal(_root);
+
+	/// en: 'Opacity'
+	String get opacity => 'Opacity';
+
+	/// en: '#RRGGBB or #AARRGGBB'
+	String get hexHint => '#RRGGBB or #AARRGGBB';
+
+	/// en: 'From other themes'
+	String get fromOtherThemes => 'From other themes';
+
+	/// en: '${theme} ${color}'
+	String swatchLabel({required Object theme, required Object color}) => '${theme} ${color}';
+
+	late final Translations$themeEditor$contrast$en contrast = Translations$themeEditor$contrast$en.internal(_root);
+
+	/// en: '${pair}: ${ratio}:1, below the recommended ${minimum}:1'
+	String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1';
+
+	/// en: 'Discard changes?'
+	String get discardTitle => 'Discard changes?';
+
+	/// en: 'Your unsaved color changes will be lost.'
+	String get discardMessage => 'Your unsaved color changes will be lost.';
+
+	/// en: 'Discard'
+	String get discard => 'Discard';
+
+	/// en: 'Episode ${number}'
+	String previewCardTitle({required Object number}) => 'Episode ${number}';
+
+	/// en: '${minutes} min left'
+	String previewCardSubtitle({required Object minutes}) => '${minutes} min left';
+
+	/// en: 'Autoplay'
+	String get previewSwitch => 'Autoplay';
+
+	/// en: 'Secondary text reads like this'
+	String get previewMutedText => 'Secondary text reads like this';
 }
 
 // Path: search
@@ -5964,6 +6050,63 @@ class Translations$supporter$errors$en {
 	String get nothingToRestore => 'No Supporter purchase was found for this store account.';
 }
 
+// Path: themeEditor.slots
+class Translations$themeEditor$slots$en {
+	Translations$themeEditor$slots$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Background'
+	String get bg => 'Background';
+
+	/// en: 'Surface'
+	String get surface => 'Surface';
+
+	/// en: 'Outline'
+	String get outline => 'Outline';
+
+	/// en: 'Text'
+	String get text => 'Text';
+
+	/// en: 'Secondary text'
+	String get textMuted => 'Secondary text';
+
+	/// en: 'Accent'
+	String get accent => 'Accent';
+}
+
+// Path: themeEditor.contrast
+class Translations$themeEditor$contrast$en {
+	Translations$themeEditor$contrast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Text on background'
+	String get textOnBg => 'Text on background';
+
+	/// en: 'Text on surface'
+	String get textOnSurface => 'Text on surface';
+
+	/// en: 'Secondary text on background'
+	String get textMutedOnBg => 'Secondary text on background';
+
+	/// en: 'Secondary text on surface'
+	String get textMutedOnSurface => 'Secondary text on surface';
+
+	/// en: 'Accent on background'
+	String get accentOnBg => 'Accent on background';
+
+	/// en: 'Accent on surface'
+	String get accentOnSurface => 'Accent on surface';
+
+	/// en: 'Button label on accent'
+	String get labelOnAccent => 'Button label on accent';
+}
+
 // Path: hotkeys.actions
 class Translations$hotkeys$actions$en {
 	Translations$hotkeys$actions$en.internal(this._root);
@@ -7966,6 +8109,43 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'themeEditor.builtIn' => 'Built-in',
+			'themeEditor.presets' => 'Presets',
+			'themeEditor.custom' => 'Custom',
+			'themeEditor.customEmpty' => 'Not created yet',
+			'themeEditor.editCustom' => 'Edit custom theme',
+			'themeEditor.editCustomDescription' => 'Choose every color yourself',
+			'themeEditor.locked' => 'Unlock with Supporter',
+			'themeEditor.title' => 'Custom Theme',
+			'themeEditor.startFrom' => 'Start from',
+			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
+			'themeEditor.colors' => 'Colors',
+			'themeEditor.preview' => 'Preview',
+			'themeEditor.slots.bg' => 'Background',
+			'themeEditor.slots.surface' => 'Surface',
+			'themeEditor.slots.outline' => 'Outline',
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
+			'themeEditor.slots.accent' => 'Accent',
+			'themeEditor.opacity' => 'Opacity',
+			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
+			'themeEditor.fromOtherThemes' => 'From other themes',
+			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
+			'themeEditor.contrast.textOnBg' => 'Text on background',
+			'themeEditor.contrast.textOnSurface' => 'Text on surface',
+			'themeEditor.contrast.textMutedOnBg' => 'Secondary text on background',
+			'themeEditor.contrast.textMutedOnSurface' => 'Secondary text on surface',
+			'themeEditor.contrast.accentOnBg' => 'Accent on background',
+			'themeEditor.contrast.accentOnSurface' => 'Accent on surface',
+			'themeEditor.contrast.labelOnAccent' => 'Button label on accent',
+			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1',
+			'themeEditor.discardTitle' => 'Discard changes?',
+			'themeEditor.discardMessage' => 'Your unsaved color changes will be lost.',
+			'themeEditor.discard' => 'Discard',
+			'themeEditor.previewCardTitle' => ({required Object number}) => 'Episode ${number}',
+			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min left',
+			'themeEditor.previewSwitch' => 'Autoplay',
+			'themeEditor.previewMutedText' => 'Secondary text reads like this',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -7986,6 +8166,8 @@ extension on Translations {
 			'hotkeys.actions.muteToggle' => 'Toggle Mute',
 			'hotkeys.actions.subtitleToggle' => 'Toggle Subtitles',
 			'hotkeys.actions.audioTrackNext' => 'Next Audio Track',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.actions.subtitleTrackNext' => 'Next Subtitle Track',
 			'hotkeys.actions.chapterNext' => 'Next Chapter',
 			'hotkeys.actions.chapterPrevious' => 'Previous Chapter',
@@ -8023,8 +8205,6 @@ extension on Translations {
 			'fileInfo.resolution' => 'Resolution',
 			'fileInfo.codedResolution' => 'Coded Resolution',
 			'fileInfo.bitrate' => 'Bitrate',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.frameRate' => 'Frame Rate',
 			'fileInfo.rotation' => 'Rotation',
 			'fileInfo.comment' => 'Comment',
@@ -8500,6 +8680,8 @@ extension on Translations {
 			'accountPreferences.subtitleModes.smartDescription' => 'Turn subtitles on only when the audio is in another language.',
 			'accountPreferences.subtitleAccessibility' => 'SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Prefer non-SDH subtitles',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Prefer SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Only SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlyNonSdh' => 'Only non-SDH subtitles',
@@ -8537,8 +8719,6 @@ extension on Translations {
 			'discover.recentlyAddedIn' => ({required Object library}) => 'Recently Added in ${library}',
 			'discover.latestAlbumsIn' => ({required Object library}) => 'Latest Albums in ${library}',
 			'discover.recentlyPlayedIn' => ({required Object library}) => 'Recently Played in ${library}',
-			_ => null,
-		} ?? switch (path) {
 			'discover.mostPlayedIn' => ({required Object library}) => 'Most Played in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
@@ -9014,6 +9194,8 @@ extension on Translations {
 			'playlists.deleteConfirm' => 'Delete Playlist?',
 			'playlists.deleteMessage' => ({required Object name}) => 'Are you sure you want to delete "${name}"?',
 			'playlists.created' => 'Playlist created',
+			_ => null,
+		} ?? switch (path) {
 			'playlists.deleted' => 'Playlist deleted',
 			'playlists.itemAdded' => 'Added to playlist',
 			'playlists.itemRemoved' => 'Removed from playlist',
@@ -9051,8 +9233,6 @@ extension on Translations {
 			'music.instantMixFailed' => 'Failed to load the instant mix',
 			'music.instantMixEmpty' => 'The instant mix came back with no tracks',
 			'music.noAudioUrl' => ({required Object track}) => 'No audio URL is available for ${track}',
-			_ => null,
-		} ?? switch (path) {
 			'music.discography.singlesAndEps' => 'Singles & EPs',
 			'music.discography.live' => 'Live',
 			'music.discography.compilations' => 'Compilations',
@@ -9528,6 +9708,8 @@ extension on Translations {
 			'serverTasks.noTasks' => 'No tasks running',
 			'trakt.title' => 'Trakt',
 			'trakt.connected' => 'Connected',
+			_ => null,
+		} ?? switch (path) {
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'trakt.disconnectConfirm' => 'Disconnect Trakt account?',
 			'trakt.disconnectConfirmBody' => 'Plezy will stop sending events to Trakt. You can reconnect any time.',
@@ -9565,8 +9747,6 @@ extension on Translations {
 			'seerr.requestFailed' => ({required Object error}) => 'Request failed: ${error}',
 			'seerr.requestsLoadFailed' => 'Couldn\'t load request options',
 			'seerr.nothingToRequest' => 'Everything is already available or requested.',
-			_ => null,
-		} ?? switch (path) {
 			'seerr.statusAvailable' => 'Available',
 			'seerr.statusPartiallyAvailable' => 'Partially available',
 			'seerr.statusRequested' => 'Requested',

@@ -29,6 +29,7 @@ String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
   settings.ThemeMode.forest => t.settings.forestTheme,
   settings.ThemeMode.plum => t.settings.plumTheme,
   settings.ThemeMode.paper => t.settings.paperTheme,
+  settings.ThemeMode.custom => t.themeEditor.custom,
 };
 
 /// Model for option selection dialogs.

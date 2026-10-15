@@ -8,7 +8,6 @@ import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
-import '../../services/settings_service.dart' as settings show ThemeMode;
 import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
@@ -18,6 +17,7 @@ import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import 'settings_utils.dart';
+import 'theme_settings_screen.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
@@ -178,17 +178,16 @@ class AppearanceSettingsScreen extends StatelessWidget {
     );
   }
 
-  // Writes the pref directly; ThemeProvider listens to the pref's listenable
-  // and applies the change live. The Consumer only feeds the dynamic icon.
+  // Opens the theme picker; the subtitle and icon follow the theme on screen,
+  // which is System while a stored Supporter theme is locked.
   Widget _themeSelector() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
-        return SettingSelectionTile<settings.ThemeMode>(
-          pref: SettingsService.themeMode,
+        return SettingNavigationTile(
           icon: themeProvider.themeModeIcon,
           title: t.settings.theme,
-          subtitleBuilder: themeModeLabel,
-          options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: themeModeLabel(m))).toList(),
+          subtitle: themeModeLabel(themeProvider.themeMode),
+          destinationBuilder: (_) => const ThemeSettingsScreen(),
         );
       },
     );

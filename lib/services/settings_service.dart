@@ -38,11 +38,31 @@ import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 import '../profiles/profile.dart';
+import '../theme/mono_theme.dart' show MonoPalette;
 import '../watch_together/services/watch_together_relay_endpoint.dart';
 
 /// The app theme. Value names are the persisted ids. [system] follows the
-/// platform between [light] and [dark]; every other value is one fixed palette.
-enum ThemeMode { system, light, dark, oled, ember, glacier, forest, plum, paper }
+/// platform between [light] and [dark]; every other value is one fixed palette,
+/// [custom] the one stored in [SettingsService.customThemePalette].
+enum ThemeMode {
+  system,
+  light,
+  dark,
+  oled,
+  ember,
+  glacier,
+  forest,
+  plum,
+  paper,
+  custom;
+
+  /// The presets and Custom are Supporter perks; the built-ins are free in
+  /// every build.
+  bool get isSupporterPerk => switch (this) {
+    system || light || dark || oled => false,
+    ember || glacier || forest || plum || paper || custom => true,
+  };
+}
 
 /// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
 /// Default is 3.
@@ -899,6 +919,16 @@ class SettingsService extends BaseSharedPreferencesService {
     values: ThemeMode.values,
     defaultValueProvider: _tvAwareThemeModeDefault,
   );
+
+  /// The Custom theme's colours, or null until the theme editor first saves
+  /// one. A partial or corrupt stored value also reads as null (Custom then
+  /// paints System) instead of a palette with made-up colours.
+  static final customThemePalette = JsonPref<MonoPalette?>(
+    'custom_theme_palette',
+    defaultValue: null,
+    encode: (palette) => json.encode(palette?.toJson()),
+    decode: (raw) => raw == null ? null : MonoPalette.fromJson(raw),
+  );
   static const videoPlayerNavigationEnabled = BoolPref(
     'video_player_navigation_enabled',
     defaultValueProvider: PlatformDetector.isTV,
@@ -1456,6 +1486,7 @@ class SettingsService extends BaseSharedPreferencesService {
     syncOffsetScope,
     scopedPlayerPrefValues,
     themeMode,
+    customThemePalette,
     videoPlayerNavigationEnabled,
     playbackBufferTier,
     libraryDensity,

@@ -3,8 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/screens/settings/appearance_settings_screen.dart';
+import 'package:plezy/screens/settings/theme_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart' hide ThemeMode;
 import 'package:plezy/services/settings_service.dart' as settings show ThemeMode;
+import 'package:plezy/services/supporter/supporter_mode.dart';
+import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
 
@@ -24,7 +27,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    final theme = ThemeProvider();
+    final supporter = SupporterService.forTesting(availability: SupporterAvailability.hidden);
+    addTearDown(supporter.dispose);
+    final theme = ThemeProvider(supporter: supporter);
     addTearDown(theme.dispose);
     await tester.pumpWidget(
       ChangeNotifierProvider<ThemeProvider>.value(
@@ -50,17 +55,22 @@ void main() {
     expect(find.text(t.settings.autoHidePerformanceOverlay), findsNothing);
   });
 
-  testWidgets('the theme picker lists the presets beside the built-ins and applies a pick live', (tester) async {
+  testWidgets('the Theme entry opens the theme picker and a pick applies live', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 3000);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    final theme = ThemeProvider();
+    final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+    addTearDown(supporter.dispose);
+    final theme = ThemeProvider(supporter: supporter);
     addTearDown(theme.dispose);
     await tester.pumpWidget(
-      ChangeNotifierProvider<ThemeProvider>.value(
-        value: theme,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SupporterService>.value(value: supporter),
+          ChangeNotifierProvider<ThemeProvider>.value(value: theme),
+        ],
         child: Consumer<ThemeProvider>(
           builder: (_, provider, _) => MaterialApp(
             theme: provider.lightTheme,
@@ -75,34 +85,23 @@ void main() {
 
     await tester.tap(find.text(t.settings.theme));
     await tester.pumpAndSettle();
-    final dialog = find.byType(AlertDialog);
-    for (final label in [
-      t.settings.systemTheme,
-      t.settings.lightTheme,
-      t.settings.darkTheme,
-      t.settings.oledTheme,
-      t.settings.emberTheme,
-      t.settings.glacierTheme,
-      t.settings.forestTheme,
-      t.settings.plumTheme,
-      t.settings.paperTheme,
-    ]) {
-      expect(
-        find.descendant(of: dialog, matching: find.text(label)),
-        findsOneWidget,
-        reason: label,
-      );
-    }
+    expect(find.byType(ThemeSettingsScreen), findsOneWidget);
 
-    await tester.tap(find.descendant(of: dialog, matching: find.text(t.settings.plumTheme)));
+    await tester.tap(find.text(t.settings.plumTheme));
     await tester.pumpAndSettle();
 
     expect(SettingsService.instance.read(SettingsService.themeMode), settings.ThemeMode.plum);
     expect(theme.themeMode, settings.ThemeMode.plum);
-    final screenTheme = Theme.of(tester.element(find.byType(AppearanceSettingsScreen)));
+    final screenTheme = Theme.of(tester.element(find.byType(ThemeSettingsScreen)));
     expect(screenTheme.scaffoldBackgroundColor, MonoPalette.plum.bg);
     expect(screenTheme.colorScheme.primary, MonoPalette.plum.accent);
-    // The tile's subtitle names the active preset.
-    expect(find.text(t.settings.plumTheme), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    // Back on Appearance, the entry's subtitle names the active preset.
+    expect(
+      find.descendant(of: find.byType(AppearanceSettingsScreen), matching: find.text(t.settings.plumTheme)),
+      findsOneWidget,
+    );
   });
 }

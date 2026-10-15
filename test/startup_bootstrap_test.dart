@@ -192,9 +192,9 @@ void main() {
     expect(bootstrapTheme(tester).scaffoldBackgroundColor, monoTheme(MonoPalette.light).scaffoldBackgroundColor);
 
     resolved.complete((
-      themeMode: ThemeProvider.materialThemeModeFor(settings.ThemeMode.oled),
-      lightTheme: ThemeProvider.lightThemeFor(settings.ThemeMode.oled),
-      darkTheme: ThemeProvider.darkThemeFor(settings.ThemeMode.oled),
+      themeMode: ThemeProvider.materialThemeModeFor(MonoPalette.oled),
+      lightTheme: ThemeProvider.lightThemeFor(MonoPalette.oled),
+      darkTheme: ThemeProvider.darkThemeFor(MonoPalette.oled),
     ));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
@@ -227,15 +227,15 @@ void main() {
         ),
       );
 
+      final palette = ThemeProvider.paletteFor(mode)!;
       resolved.complete((
-        themeMode: ThemeProvider.materialThemeModeFor(mode),
-        lightTheme: ThemeProvider.lightThemeFor(mode),
-        darkTheme: ThemeProvider.darkThemeFor(mode),
+        themeMode: ThemeProvider.materialThemeModeFor(palette),
+        lightTheme: ThemeProvider.lightThemeFor(palette),
+        darkTheme: ThemeProvider.darkThemeFor(palette),
       ));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      final palette = ThemeProvider.paletteFor(mode)!;
       expect(bootstrapTheme(tester).brightness, palette.brightness);
       expect(bootstrapTheme(tester).scaffoldBackgroundColor, palette.bg);
 
