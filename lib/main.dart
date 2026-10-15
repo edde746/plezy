@@ -57,6 +57,7 @@ import 'providers/account_preferences_controller.dart';
 import 'services/account_preferences_repository.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/supporter/supporter_service.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
@@ -1819,6 +1820,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ),
         ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
           update: (_, controller, _) => controller.repository,
+        ),
+        // App-global: a Supporter purchase belongs to the store account on this
+        // device, not to a profile.
+        ChangeNotifierProvider(
+          create: (context) {
+            final supporter = SupporterService();
+            unawaited(supporter.init());
+            return supporter;
+          },
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         // Shader presets are app-global — deliberately outside the

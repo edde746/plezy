@@ -616,6 +616,11 @@ class SettingsService extends BaseSharedPreferencesService {
   /// [subtitleUseMargins] instead.
   static const subtitleAnchorToScreen = BoolPref('subtitle_anchor_to_screen');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
+
+  /// Last confirmed Supporter entitlement on this device. Runtime state owned
+  /// by `SupporterService`: never exported, never reset, and only cleared on a
+  /// confirmed revocation so an unreachable store cannot lock perks.
+  static const supporterEntitlementCached = BoolPref('supporter_entitlement_cached');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
 
   /// Episode advance follows the server's per-episode audio/subtitle
