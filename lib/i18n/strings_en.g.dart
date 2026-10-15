@@ -46,6 +46,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
 	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
 	late final Translations$fileInfo$en fileInfo = Translations$fileInfo$en.internal(_root);
@@ -1370,6 +1371,91 @@ class Translations$settings$en {
 
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
+}
+
+// Path: themeEditor
+class Translations$themeEditor$en {
+	Translations$themeEditor$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Built-in'
+	String get builtIn => 'Built-in';
+
+	/// en: 'Presets'
+	String get presets => 'Presets';
+
+	/// en: 'Custom'
+	String get custom => 'Custom';
+
+	/// en: 'Not created yet'
+	String get customEmpty => 'Not created yet';
+
+	/// en: 'Edit custom theme'
+	String get editCustom => 'Edit custom theme';
+
+	/// en: 'Choose every color yourself'
+	String get editCustomDescription => 'Choose every color yourself';
+
+	/// en: 'Unlock with Supporter'
+	String get locked => 'Unlock with Supporter';
+
+	/// en: 'Custom Theme'
+	String get title => 'Custom Theme';
+
+	/// en: 'Start from'
+	String get startFrom => 'Start from';
+
+	/// en: 'Copy all colors from another theme'
+	String get startFromDescription => 'Copy all colors from another theme';
+
+	/// en: 'Colors'
+	String get colors => 'Colors';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
+
+	late final Translations$themeEditor$slots$en slots = Translations$themeEditor$slots$en.internal(_root);
+
+	/// en: 'Opacity'
+	String get opacity => 'Opacity';
+
+	/// en: '#RRGGBB or #AARRGGBB'
+	String get hexHint => '#RRGGBB or #AARRGGBB';
+
+	/// en: 'From other themes'
+	String get fromOtherThemes => 'From other themes';
+
+	/// en: '${theme} ${color}'
+	String swatchLabel({required Object theme, required Object color}) => '${theme} ${color}';
+
+	late final Translations$themeEditor$contrast$en contrast = Translations$themeEditor$contrast$en.internal(_root);
+
+	/// en: '${pair}: ${ratio}:1, below the recommended ${minimum}:1'
+	String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1';
+
+	/// en: 'Discard changes?'
+	String get discardTitle => 'Discard changes?';
+
+	/// en: 'Your unsaved color changes will be lost.'
+	String get discardMessage => 'Your unsaved color changes will be lost.';
+
+	/// en: 'Discard'
+	String get discard => 'Discard';
+
+	/// en: 'Episode ${number}'
+	String previewCardTitle({required Object number}) => 'Episode ${number}';
+
+	/// en: '${minutes} min left'
+	String previewCardSubtitle({required Object minutes}) => '${minutes} min left';
+
+	/// en: 'Autoplay'
+	String get previewSwitch => 'Autoplay';
+
+	/// en: 'Secondary text reads like this'
+	String get previewMutedText => 'Secondary text reads like this';
 }
 
 // Path: search
@@ -5874,6 +5960,63 @@ class Translations$common$mediaKind$en {
 	String get folder => 'Folder';
 }
 
+// Path: themeEditor.slots
+class Translations$themeEditor$slots$en {
+	Translations$themeEditor$slots$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Background'
+	String get bg => 'Background';
+
+	/// en: 'Surface'
+	String get surface => 'Surface';
+
+	/// en: 'Outline'
+	String get outline => 'Outline';
+
+	/// en: 'Text'
+	String get text => 'Text';
+
+	/// en: 'Secondary text'
+	String get textMuted => 'Secondary text';
+
+	/// en: 'Accent'
+	String get accent => 'Accent';
+}
+
+// Path: themeEditor.contrast
+class Translations$themeEditor$contrast$en {
+	Translations$themeEditor$contrast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Text on background'
+	String get textOnBg => 'Text on background';
+
+	/// en: 'Text on surface'
+	String get textOnSurface => 'Text on surface';
+
+	/// en: 'Secondary text on background'
+	String get textMutedOnBg => 'Secondary text on background';
+
+	/// en: 'Secondary text on surface'
+	String get textMutedOnSurface => 'Secondary text on surface';
+
+	/// en: 'Accent on background'
+	String get accentOnBg => 'Accent on background';
+
+	/// en: 'Accent on surface'
+	String get accentOnSurface => 'Accent on surface';
+
+	/// en: 'Button label on accent'
+	String get labelOnAccent => 'Button label on accent';
+}
+
 // Path: hotkeys.actions
 class Translations$hotkeys$actions$en {
 	Translations$hotkeys$actions$en.internal(this._root);
@@ -7853,6 +7996,43 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'themeEditor.builtIn' => 'Built-in',
+			'themeEditor.presets' => 'Presets',
+			'themeEditor.custom' => 'Custom',
+			'themeEditor.customEmpty' => 'Not created yet',
+			'themeEditor.editCustom' => 'Edit custom theme',
+			'themeEditor.editCustomDescription' => 'Choose every color yourself',
+			'themeEditor.locked' => 'Unlock with Supporter',
+			'themeEditor.title' => 'Custom Theme',
+			'themeEditor.startFrom' => 'Start from',
+			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
+			'themeEditor.colors' => 'Colors',
+			'themeEditor.preview' => 'Preview',
+			'themeEditor.slots.bg' => 'Background',
+			'themeEditor.slots.surface' => 'Surface',
+			'themeEditor.slots.outline' => 'Outline',
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
+			'themeEditor.slots.accent' => 'Accent',
+			'themeEditor.opacity' => 'Opacity',
+			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
+			'themeEditor.fromOtherThemes' => 'From other themes',
+			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
+			'themeEditor.contrast.textOnBg' => 'Text on background',
+			'themeEditor.contrast.textOnSurface' => 'Text on surface',
+			'themeEditor.contrast.textMutedOnBg' => 'Secondary text on background',
+			'themeEditor.contrast.textMutedOnSurface' => 'Secondary text on surface',
+			'themeEditor.contrast.accentOnBg' => 'Accent on background',
+			'themeEditor.contrast.accentOnSurface' => 'Accent on surface',
+			'themeEditor.contrast.labelOnAccent' => 'Button label on accent',
+			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1',
+			'themeEditor.discardTitle' => 'Discard changes?',
+			'themeEditor.discardMessage' => 'Your unsaved color changes will be lost.',
+			'themeEditor.discard' => 'Discard',
+			'themeEditor.previewCardTitle' => ({required Object number}) => 'Episode ${number}',
+			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min left',
+			'themeEditor.previewSwitch' => 'Autoplay',
+			'themeEditor.previewMutedText' => 'Secondary text reads like this',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -7896,6 +8076,8 @@ extension on Translations {
 			'fileInfo.subtitles' => 'Subtitles',
 			'fileInfo.images' => 'Embedded Images',
 			'fileInfo.dataStreams' => 'Data Streams',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.lyrics' => 'Lyrics',
 			'fileInfo.file' => 'File',
 			'fileInfo.attachments' => 'Attachments',
@@ -7933,8 +8115,6 @@ extension on Translations {
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
 			'fileInfo.chromaLocation' => 'Chroma Location',
 			'fileInfo.scanType' => 'Scan Type',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.interlaced' => 'Interlaced',
 			'fileInfo.anamorphic' => 'Anamorphic',
 			'fileInfo.referenceFrames' => 'Reference Frames',
@@ -8410,6 +8590,8 @@ extension on Translations {
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV shows only',
 			'accountPreferences.mediaReviewsVisibility' => 'Ratings & reviews',
 			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Users and critics',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
@@ -8447,8 +8629,6 @@ extension on Translations {
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
-			_ => null,
-		} ?? switch (path) {
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
 			'errors.noClientAvailable' => 'No client available',
 			'errors.pleaseEnterToken' => 'Please enter a token',
@@ -8924,6 +9104,8 @@ extension on Translations {
 			'music.queue' => 'Queue',
 			'music.clearQueue' => 'Clear queue',
 			'music.lyrics' => 'Lyrics',
+			_ => null,
+		} ?? switch (path) {
 			'music.noLyrics' => 'No lyrics available',
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepTimerEndOfTrack' => 'End of track',
@@ -8961,8 +9143,6 @@ extension on Translations {
 			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
 			'watchTogether.participants' => 'Participants',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
@@ -9438,6 +9618,8 @@ extension on Translations {
 			'seerr.request' => 'Request',
 			'seerr.request4k' => 'Request in 4K',
 			'seerr.seasons' => 'Seasons',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.allSeasons' => 'All seasons',
 			'seerr.advancedOptions' => 'Advanced',
 			'seerr.destinationServer' => 'Destination server',
@@ -9475,8 +9657,6 @@ extension on Translations {
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
-			_ => null,
-		} ?? switch (path) {
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',

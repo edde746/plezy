@@ -5,6 +5,36 @@ import 'package:flutter/material.dart';
 import 'gapped_track_shape.dart';
 import 'mono_tokens.dart';
 
+/// One of the six colours a [MonoPalette] holds. [id] is the key the custom
+/// theme persists the colour under.
+enum MonoPaletteSlot {
+  bg('bg'),
+  surface('surface'),
+  outline('outline'),
+  text('text'),
+  textMuted('textMuted'),
+  accent('accent');
+
+  const MonoPaletteSlot(this.id);
+
+  final String id;
+}
+
+/// [color] as `#AARRGGBB`, upper case.
+String colorToArgbHex(Color color) => '#${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';
+
+final _hexColorPattern = RegExp(r'^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$');
+
+/// Parses `#RRGGBB` (opaque) or `#AARRGGBB`, with or without the `#`. Null
+/// for anything else.
+Color? tryParseHexColor(String input) {
+  final match = _hexColorPattern.firstMatch(input.trim());
+  if (match == null) return null;
+  final digits = match.group(1)!;
+  final value = int.parse(digits, radix: 16);
+  return Color(digits.length == 6 ? 0xFF000000 | value : value);
+}
+
 /// The six colours a theme is built from.
 ///
 /// [accent] carries interactive and selected state; body text stays [text].
@@ -127,6 +157,54 @@ class MonoPalette {
 
   static double _contrastRatio(double a, double b) => (math.max(a, b) + 0.05) / (math.min(a, b) + 0.05);
 
+  /// WCAG 2 contrast ratio between two colours, ignoring alpha: composite a
+  /// translucent colour over its background first.
+  static double contrastRatio(Color a, Color b) => _contrastRatio(a.computeLuminance(), b.computeLuminance());
+
+  Color operator [](MonoPaletteSlot slot) => switch (slot) {
+    MonoPaletteSlot.bg => bg,
+    MonoPaletteSlot.surface => surface,
+    MonoPaletteSlot.outline => outline,
+    MonoPaletteSlot.text => text,
+    MonoPaletteSlot.textMuted => textMuted,
+    MonoPaletteSlot.accent => accent,
+  };
+
+  /// This palette with [slot] replaced by [color].
+  MonoPalette withColor(MonoPaletteSlot slot, Color color) => MonoPalette(
+    bg: slot == MonoPaletteSlot.bg ? color : bg,
+    surface: slot == MonoPaletteSlot.surface ? color : surface,
+    outline: slot == MonoPaletteSlot.outline ? color : outline,
+    text: slot == MonoPaletteSlot.text ? color : text,
+    textMuted: slot == MonoPaletteSlot.textMuted ? color : textMuted,
+    accent: slot == MonoPaletteSlot.accent ? color : accent,
+  );
+
+  /// `{"bg": "#AARRGGBB", …}`, keyed by [MonoPaletteSlot.id].
+  Map<String, String> toJson() => {for (final slot in MonoPaletteSlot.values) slot.id: colorToArgbHex(this[slot])};
+
+  /// Reads the [toJson] shape. Throws [FormatException] unless every slot
+  /// holds a hex colour, so a partial or corrupt value never yields a palette
+  /// mixing stored and made-up colours. Unknown keys are ignored.
+  factory MonoPalette.fromJson(Object? json) {
+    if (json is! Map) throw const FormatException('Expected a palette object');
+    Color read(MonoPaletteSlot slot) {
+      final value = json[slot.id];
+      final color = value is String ? tryParseHexColor(value) : null;
+      if (color == null) throw FormatException('Missing or invalid "${slot.id}" colour');
+      return color;
+    }
+
+    return MonoPalette(
+      bg: read(MonoPaletteSlot.bg),
+      surface: read(MonoPaletteSlot.surface),
+      outline: read(MonoPaletteSlot.outline),
+      text: read(MonoPaletteSlot.text),
+      textMuted: read(MonoPaletteSlot.textMuted),
+      accent: read(MonoPaletteSlot.accent),
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is MonoPalette &&
@@ -153,6 +231,11 @@ ThemeData monoTheme(MonoPalette palette) {
   _monoThemeCache[key] = theme;
   return theme;
 }
+
+/// [monoTheme] without the cache, for a palette that changes every frame: the
+/// custom theme editor's live preview would otherwise keep every intermediate
+/// palette's theme alive.
+ThemeData monoThemeUncached(MonoPalette palette) => _buildMonoTheme(palette, platform: defaultTargetPlatform);
 
 ThemeData _buildMonoTheme(MonoPalette c, {required TargetPlatform platform}) {
   final brightness = c.brightness;
