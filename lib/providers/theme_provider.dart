@@ -88,8 +88,8 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
     if (changed || forceNotify) safeNotifyListeners();
   }
 
-  /// The effective theme: the stored choice, or System while that choice is
-  /// a locked Supporter perk.
+  /// The effective theme: the stored choice, or the device's default theme
+  /// (see [resolve]) while that choice is a locked Supporter perk.
   settings.ThemeMode get themeMode => _choice.mode;
 
   /// The palette on screen right now, with System resolved against the
@@ -108,14 +108,17 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
   }
 
   /// What [stored] paints. A Supporter perk applies only while [unlocked], and
-  /// Custom only once a palette is saved; otherwise the app paints System.
+  /// Custom only once a palette is saved; otherwise the app paints the theme a
+  /// fresh install gets on this device (System, OLED on TV), read from the
+  /// pref's own default so the TV rule lives in one place.
   ///
   /// Static so the pre-provider startup frame resolves through the same rule
-  /// and never flashes a locked perk or the fallback for an unlocked one.
+  /// and never flashes a locked perk or the fallback for an unlocked one. It
+  /// runs after TV detection there, like the pref default it reads.
   static ThemeChoice resolve(settings.ThemeMode stored, MonoPalette? customPalette, {required bool unlocked}) {
     final locked = stored.isSupporterPerk && !unlocked;
     final missingCustom = stored == settings.ThemeMode.custom && customPalette == null;
-    final mode = locked || missingCustom ? settings.ThemeMode.system : stored;
+    final mode = locked || missingCustom ? settings.SettingsService.themeMode.resolvedDefault : stored;
     return (mode: mode, palette: paletteFor(mode, customPalette: customPalette));
   }
 

@@ -58,7 +58,8 @@ class CustomThemeEditorScreen extends StatefulWidget {
   State<CustomThemeEditorScreen> createState() => _CustomThemeEditorScreenState();
 }
 
-class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with ControllerDisposerMixin {
+class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
+    with ControllerDisposerMixin, WidgetsBindingObserver {
   late MonoPalette _draft = widget.initialPalette;
   MonoPaletteSlot _slot = MonoPaletteSlot.bg;
 
@@ -76,12 +77,31 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with 
   bool _saving = false;
   bool _leaving = false;
 
+  /// Whether the software keyboard was up at the last build.
+  bool _keyboardOpen = false;
+
   bool get _dirty => _draft != widget.initialPalette;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _saveFocusNode.dispose();
     super.dispose();
+  }
+
+  /// The keyboard inset from the view itself: the app's root scaffold resizes
+  /// for the keyboard and strips the inset from the MediaQuery below it.
+  bool _isKeyboardOpen(BuildContext context) => View.of(context).viewInsets.bottom > 0;
+
+  @override
+  void didChangeMetrics() {
+    if (mounted && _isKeyboardOpen(context) != _keyboardOpen) setState(() {});
   }
 
   static String _hexFor(Color color) {
@@ -224,9 +244,17 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with 
   @override
   Widget build(BuildContext context) {
     final narrow = _isNarrow(context);
+    _keyboardOpen = _isKeyboardOpen(context);
+    // While typing on a phone the bar rides on the keyboard. The preview
+    // would leave about one row for the field, so the bar trades it for this
+    // colour's contrast warnings, which then stay in view as the hex changes.
+    final warningsInBar = narrow && _keyboardOpen;
     final failing = PaletteContrastCheck.failing(_draft);
-    final controls = _buildControls(context, failing);
-    final preview = _ThemePreview(theme: _previewThemeData);
+    final slotWarnings = [
+      for (final check in failing)
+        if (check.slots.contains(_slot)) check,
+    ];
+    final controls = _buildControls(context, failing, warningsInBar ? const [] : slotWarnings);
 
     return PopScope(
       canPop: _leaving || !_dirty,
@@ -242,7 +270,17 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with 
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(padding: const EdgeInsets.fromLTRB(16, 8, 16, 0), child: preview),
+                  if (!warningsInBar)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: _ThemePreview(theme: _previewThemeData),
+                    )
+                  else if (slotWarnings.isNotEmpty)
+                    Padding(
+                      key: const ValueKey('custom_theme_bar_warnings'),
+                      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+                      child: _ContrastWarnings(checks: slotWarnings, palette: _draft),
+                    ),
                   _buildActions(context),
                 ],
               )
@@ -283,7 +321,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with 
                                   ),
                                 ),
                               ),
-                              preview,
+                              _ThemePreview(theme: _previewThemeData),
                             ],
                           ),
                         ),
@@ -296,11 +334,11 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with 
     );
   }
 
-  List<Widget> _buildControls(BuildContext context, List<PaletteContrastCheck> failing) {
-    final slotWarnings = [
-      for (final check in failing)
-        if (check.slots.contains(_slot)) check,
-    ];
+  List<Widget> _buildControls(
+    BuildContext context,
+    List<PaletteContrastCheck> failing,
+    List<PaletteContrastCheck> slotWarnings,
+  ) {
     return [
       SettingsGroup(
         children: [
@@ -398,10 +436,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with 
             max: 1,
             onChanged: (value) => _setHsv(_hsv.withAlpha(value)),
           ),
-          if (warnings.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            for (final check in warnings) _ContrastWarning(check: check, ratio: check.ratioIn(_draft)),
-          ],
+          if (warnings.isNotEmpty) ...[const SizedBox(height: 8), _ContrastWarnings(checks: warnings, palette: _draft)],
           const SizedBox(height: 12),
           Text(t.themeEditor.fromOtherThemes, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
@@ -444,17 +479,25 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen> with 
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
-              FocusableButton(
-                key: const ValueKey('custom_theme_reset'),
-                useBackgroundFocus: true,
-                onPressed: reset,
-                child: TextButton.icon(
-                  onPressed: reset,
-                  icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
-                  label: Text(t.common.reset),
+              // Reset takes what Cancel and Save leave, so a narrow phone or a
+              // long translation shortens its label instead of overflowing.
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  heightFactor: 1,
+                  child: FocusableButton(
+                    key: const ValueKey('custom_theme_reset'),
+                    useBackgroundFocus: true,
+                    onPressed: reset,
+                    child: TextButton.icon(
+                      onPressed: reset,
+                      icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
+                      label: Text(t.common.reset, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               FocusableButton(
                 key: const ValueKey('custom_theme_cancel'),
                 useBackgroundFocus: true,
@@ -620,6 +663,22 @@ class _QuickSwatch extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The failing [checks] for the colour being edited, measured in [palette].
+class _ContrastWarnings extends StatelessWidget {
+  const _ContrastWarnings({required this.checks, required this.palette});
+
+  final List<PaletteContrastCheck> checks;
+  final MonoPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [for (final check in checks) _ContrastWarning(check: check, ratio: check.ratioIn(palette))],
     );
   }
 }

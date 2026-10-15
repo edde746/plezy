@@ -211,7 +211,7 @@ void _bootstrapApp() {
 ///
 /// A stored Supporter perk is gated by the cached entitlement, the same rule
 /// [ThemeProvider] applies, so a locked perk never flashes and an unlocked one
-/// never flashes the fallback.
+/// never flashes the fallback. That fallback is the same TV-aware default.
 Future<StartupThemeResolution> _resolveStartupTheme() async {
   final settings = await SettingsService.getInstance();
   await TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode));

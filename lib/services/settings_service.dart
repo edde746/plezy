@@ -922,7 +922,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// The Custom theme's colours, or null until the theme editor first saves
   /// one. A partial or corrupt stored value also reads as null (Custom then
-  /// paints System) instead of a palette with made-up colours.
+  /// paints the [themeMode] default) instead of a palette with made-up colours.
   static final customThemePalette = JsonPref<MonoPalette?>(
     'custom_theme_palette',
     defaultValue: null,

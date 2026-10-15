@@ -14,6 +14,7 @@ import 'package:plezy/services/settings_service.dart' as settings show ThemeMode
 import 'package:plezy/services/supporter/supporter_mode.dart';
 import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
@@ -237,6 +238,19 @@ void main() {
     await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.glacier);
     await _pumpPicker(tester, SupporterAvailability.purchasable, viaKeyboard: true);
     expect(_focusedTile(), settings.ThemeMode.system);
+  });
+
+  testWidgets('on TV a locked saved perk shows the TV default, OLED, selected and focused', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.glacier);
+    final harness = await _pumpPicker(tester, SupporterAvailability.purchasable, viaKeyboard: true);
+
+    expect(_isChecked(settings.ThemeMode.oled), isTrue);
+    expect(_isChecked(settings.ThemeMode.system), isFalse);
+    expect(_focusedTile(), settings.ThemeMode.oled);
+    expect(find.descendant(of: _tile(settings.ThemeMode.glacier), matching: _savedMarker), findsOneWidget);
+    expect(harness.stored, settings.ThemeMode.glacier);
   });
 
   testWidgets('a free build applies every pick without the sheet', (tester) async {
