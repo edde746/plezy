@@ -16,9 +16,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           .then((service) {
             if (service == null) return;
             // Keyed on item + what the preview covers rather than session
-            // identity: the preview is per part (per stacked version), so a
-            // load that outlives a same-part source switch (quality/audio)
-            // still applies.
+            // identity: the preview is per part (per stacked version, per
+            // Jellyfin/Emby source), so a load that outlives a same-part
+            // source switch (quality/audio) still applies.
             if (mounted &&
                 _currentMetadata.globalKey == metadataAtStart.globalKey &&
                 scrubPreviewServes(mediaInfoAtStart, _currentMediaInfo)) {
