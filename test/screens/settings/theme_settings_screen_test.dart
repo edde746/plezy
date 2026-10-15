@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,14 +33,19 @@ class _Harness {
 }
 
 /// The picker at the app root, themed by the provider the way MainApp is.
-/// [purchaseInSheet] makes the Supporter sheet end with a purchase.
+/// [purchaseInSheet] makes the Supporter sheet end with a purchase. With
+/// [viaKeyboard] the picker opens from a launcher after a D-pad session
+/// started, the way a TV viewer reaches it.
 Future<_Harness> _pumpPicker(
   WidgetTester tester,
   SupporterAvailability availability, {
   bool purchaseInSheet = false,
+  bool viaKeyboard = false,
 }) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(900, 2000);
+  // D-pad runs use an Android TV screen (1920x1080 at 2x), where the Custom
+  // group sits below the fold.
+  tester.view.devicePixelRatio = viaKeyboard ? 2 : 1;
+  tester.view.physicalSize = viaKeyboard ? const Size(1920, 1080) : const Size(900, 2000);
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
 
@@ -55,6 +62,8 @@ Future<_Harness> _pumpPicker(
     await supporter.init();
   }
 
+  final navigatorKey = GlobalKey<NavigatorState>();
+  Widget picker() => ThemeSettingsScreen(openSupporterSheet: openSheet);
   await tester.pumpWidget(
     InputModeTracker(
       child: MultiProvider(
@@ -64,16 +73,23 @@ Future<_Harness> _pumpPicker(
         ],
         child: Consumer<ThemeProvider>(
           builder: (_, provider, _) => MaterialApp(
+            navigatorKey: navigatorKey,
             theme: provider.lightTheme,
             darkTheme: provider.darkTheme,
             themeMode: provider.materialThemeMode,
-            home: ThemeSettingsScreen(openSupporterSheet: openSheet),
+            home: viaKeyboard ? const Scaffold(body: Text('launcher')) : picker(),
           ),
         ),
       ),
     ),
   );
   await tester.pumpAndSettle();
+  if (viaKeyboard) {
+    InputModeTracker.reportNonPointerInput();
+    await tester.pump();
+    unawaited(navigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => picker())));
+    await tester.pumpAndSettle();
+  }
   return harness;
 }
 
@@ -81,6 +97,19 @@ Finder _tile(settings.ThemeMode mode) => find.byKey(ValueKey(mode));
 
 bool _isChecked(settings.ThemeMode mode) =>
     find.descendant(of: _tile(mode), matching: find.byIcon(Symbols.radio_button_checked_rounded)).evaluate().isNotEmpty;
+
+Finder get _savedMarker => find.text(t.themeEditor.savedLocked);
+
+/// The theme tile holding focus, if any.
+settings.ThemeMode? _focusedTile() {
+  settings.ThemeMode? found;
+  FocusManager.instance.primaryFocus?.context?.visitAncestorElements((element) {
+    final key = element.widget.key;
+    if (key is ValueKey<settings.ThemeMode>) found = key.value;
+    return found == null;
+  });
+  return found;
+}
 
 void main() {
   setUp(() async {
@@ -152,13 +181,62 @@ void main() {
     expect(_isChecked(settings.ThemeMode.glacier), isTrue);
   });
 
-  testWidgets('a stored perk that is locked shows System checked and stays stored', (tester) async {
+  testWidgets('a stored perk that is locked shows System checked, stays stored and says so', (tester) async {
     await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.forest);
     final harness = await _pumpPicker(tester, SupporterAvailability.purchasable);
 
     expect(_isChecked(settings.ThemeMode.system), isTrue);
     expect(_isChecked(settings.ThemeMode.forest), isFalse);
     expect(harness.stored, settings.ThemeMode.forest);
+    expect(find.descendant(of: _tile(settings.ThemeMode.forest), matching: _savedMarker), findsOneWidget);
+    expect(_savedMarker, findsOneWidget);
+  });
+
+  testWidgets('unlocking clears the saved marker and paints the saved perk', (tester) async {
+    await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.glacier);
+    final harness = await _pumpPicker(tester, SupporterAvailability.purchasable, purchaseInSheet: true);
+    expect(find.descendant(of: _tile(settings.ThemeMode.glacier), matching: _savedMarker), findsOneWidget);
+
+    await tester.tap(find.text('Glacier'));
+    await tester.pumpAndSettle();
+
+    expect(harness.sheetOpened, 1);
+    expect(_isChecked(settings.ThemeMode.glacier), isTrue);
+    expect(_savedMarker, findsNothing);
+  });
+
+  testWidgets('no saved marker when the saved theme is what paints', (tester) async {
+    // A built-in in a locked build.
+    await _pumpPicker(tester, SupporterAvailability.purchasable);
+    expect(_isChecked(settings.ThemeMode.dark), isTrue);
+    expect(_savedMarker, findsNothing);
+  });
+
+  testWidgets('no saved marker for a perk in an unlocked build', (tester) async {
+    await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.forest);
+    await _pumpPicker(tester, SupporterAvailability.free);
+    expect(_isChecked(settings.ThemeMode.forest), isTrue);
+    expect(_savedMarker, findsNothing);
+  });
+
+  testWidgets('with a D-pad the picker opens focused on the theme in use', (tester) async {
+    await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.oled);
+    await _pumpPicker(tester, SupporterAvailability.purchasable, viaKeyboard: true);
+    expect(_isChecked(settings.ThemeMode.oled), isTrue);
+    expect(_focusedTile(), settings.ThemeMode.oled);
+  });
+
+  testWidgets('with a D-pad the picker opens focused on a saved Custom theme far down the list', (tester) async {
+    await SettingsService.instance.write(SettingsService.customThemePalette, MonoPalette.plum);
+    await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.custom);
+    await _pumpPicker(tester, SupporterAvailability.free, viaKeyboard: true);
+    expect(_focusedTile(), settings.ThemeMode.custom);
+  });
+
+  testWidgets('with a D-pad and a locked saved perk the picker opens on System, which paints', (tester) async {
+    await SettingsService.instance.write(SettingsService.themeMode, settings.ThemeMode.glacier);
+    await _pumpPicker(tester, SupporterAvailability.purchasable, viaKeyboard: true);
+    expect(_focusedTile(), settings.ThemeMode.system);
   });
 
   testWidgets('a free build applies every pick without the sheet', (tester) async {

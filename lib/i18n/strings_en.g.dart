@@ -1402,6 +1402,9 @@ class Translations$themeEditor$en {
 	/// en: 'Unlock with Supporter'
 	String get locked => 'Unlock with Supporter';
 
+	/// en: 'Saved — unlocks with Supporter'
+	String get savedLocked => 'Saved — unlocks with Supporter';
+
 	/// en: 'Custom Theme'
 	String get title => 'Custom Theme';
 
@@ -8003,6 +8006,7 @@ extension on Translations {
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
 			'themeEditor.locked' => 'Unlock with Supporter',
+			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
 			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
@@ -8075,9 +8079,9 @@ extension on Translations {
 			'fileInfo.audio' => 'Audio',
 			'fileInfo.subtitles' => 'Subtitles',
 			'fileInfo.images' => 'Embedded Images',
-			'fileInfo.dataStreams' => 'Data Streams',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dataStreams' => 'Data Streams',
 			'fileInfo.lyrics' => 'Lyrics',
 			'fileInfo.file' => 'File',
 			'fileInfo.attachments' => 'Attachments',
@@ -8589,9 +8593,9 @@ extension on Translations {
 			'accountPreferences.watchedIndicatorOptions.movies' => 'Movies only',
 			'accountPreferences.watchedIndicatorOptions.shows' => 'TV shows only',
 			'accountPreferences.mediaReviewsVisibility' => 'Ratings & reviews',
-			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Users and critics',
 			_ => null,
 		} ?? switch (path) {
+			'accountPreferences.mediaReviewsOptions.usersAndCritics' => 'Users and critics',
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
@@ -9103,9 +9107,9 @@ extension on Translations {
 			'music.playingFrom' => ({required Object title}) => 'Playing from ${title}',
 			'music.queue' => 'Queue',
 			'music.clearQueue' => 'Clear queue',
-			'music.lyrics' => 'Lyrics',
 			_ => null,
 		} ?? switch (path) {
+			'music.lyrics' => 'Lyrics',
 			'music.noLyrics' => 'No lyrics available',
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepTimerEndOfTrack' => 'End of track',
@@ -9617,9 +9621,9 @@ extension on Translations {
 			'seerr.disconnectConfirmBody' => 'Plezy will forget this Seerr instance. Reconnect any time.',
 			'seerr.request' => 'Request',
 			'seerr.request4k' => 'Request in 4K',
-			'seerr.seasons' => 'Seasons',
 			_ => null,
 		} ?? switch (path) {
+			'seerr.seasons' => 'Seasons',
 			'seerr.allSeasons' => 'All seasons',
 			'seerr.advancedOptions' => 'Advanced',
 			'seerr.destinationServer' => 'Destination server',

@@ -304,6 +304,7 @@ void main() {
         expect(identical(p.darkTheme, monoTheme(MonoPalette.dark)), isTrue);
         expect(svc.read(settings.SettingsService.themeMode), mode);
         expect(svc.read(settings.SettingsService.customThemePalette), _custom);
+        expect(p.lockedStoredThemeMode, mode);
 
         var notified = 0;
         p.addListener(() => notified++);
@@ -317,6 +318,7 @@ void main() {
         final painted = palette.brightness == material.Brightness.light ? p.lightTheme : p.darkTheme;
         expect(painted.scaffoldBackgroundColor, palette.bg);
         expect(painted.colorScheme.primary, palette.accent);
+        expect(p.lockedStoredThemeMode, isNull);
       });
     }
 
@@ -334,6 +336,37 @@ void main() {
       expect(supporter.isUnlocked, isFalse);
       expect(p.themeMode, settings.ThemeMode.system);
       expect(svc.read(settings.SettingsService.themeMode), settings.ThemeMode.glacier);
+    });
+
+    test('reports the saved choice only while the entitlement alone holds it back', () async {
+      final svc = await _store(settings.ThemeMode.dark);
+      final p = _provider(_supporter(SupporterAvailability.purchasable));
+      await Future.delayed(Duration.zero);
+      expect(p.lockedStoredThemeMode, isNull, reason: 'a built-in paints as saved');
+
+      var notified = 0;
+      p.addListener(() => notified++);
+      await svc.write(settings.SettingsService.themeMode, settings.ThemeMode.glacier);
+      expect(p.lockedStoredThemeMode, settings.ThemeMode.glacier);
+      notified = 0;
+
+      // Another locked perk paints the same System, but the saved choice moved.
+      await svc.write(settings.SettingsService.themeMode, settings.ThemeMode.forest);
+      expect(notified, 1);
+      expect(p.themeMode, settings.ThemeMode.system);
+      expect(p.lockedStoredThemeMode, settings.ThemeMode.forest);
+
+      // Custom with nothing saved would paint System even if unlocked.
+      await svc.write(settings.SettingsService.themeMode, settings.ThemeMode.custom);
+      expect(p.lockedStoredThemeMode, isNull);
+    });
+
+    test('an unlocked saved perk is not reported as held back', () async {
+      await _store(settings.ThemeMode.plum);
+      final p = _provider();
+      await Future.delayed(Duration.zero);
+      expect(p.themeMode, settings.ThemeMode.plum);
+      expect(p.lockedStoredThemeMode, isNull);
     });
 
     test('a build without the perks paints a stored preset as System and built-ins as chosen', () async {

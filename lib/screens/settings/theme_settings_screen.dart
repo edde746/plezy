@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/settings_mutation_service.dart';
@@ -68,14 +69,25 @@ class ThemeSettingsScreen extends StatelessWidget {
     final showPerks = _perksCompiled && supporter.isAvailable;
     final locked = !supporter.isUnlocked;
     final current = theme.themeMode;
+    final lockedStored = theme.lockedStoredThemeMode;
     final customPalette = theme.customPalette;
+    // D-pad/keyboard users land on the theme in use, like the selection
+    // dialogs; autofocus only acts when the tile first builds.
+    final focusSelected = InputModeTracker.isKeyboardMode(context, listen: false);
 
-    _ThemeOptionTile option(settings.ThemeMode mode, {String? subtitle}) => _ThemeOptionTile(
+    _ThemeOptionTile option(settings.ThemeMode mode) => _ThemeOptionTile(
       mode: mode,
       palette: ThemeProvider.paletteFor(mode, customPalette: customPalette),
       selected: current == mode,
+      autofocus: focusSelected && current == mode,
       locked: locked && mode.isSupporterPerk,
-      subtitle: subtitle,
+      // The radio follows what paints; the saved-but-locked choice says it
+      // is kept, so losing the entitlement doesn't read as losing the theme.
+      subtitle: mode == lockedStored
+          ? t.themeEditor.savedLocked
+          : mode == settings.ThemeMode.custom && customPalette == null
+          ? t.themeEditor.customEmpty
+          : null,
       onTap: () => _choose(context, mode),
     );
 
@@ -91,7 +103,7 @@ class ThemeSettingsScreen extends StatelessWidget {
           SettingsGroup(
             title: t.themeEditor.custom,
             children: [
-              option(settings.ThemeMode.custom, subtitle: customPalette == null ? t.themeEditor.customEmpty : null),
+              option(settings.ThemeMode.custom),
               FocusableListTile(
                 key: const ValueKey('theme_edit_custom'),
                 leading: const AppIcon(Symbols.edit_rounded, fill: 1),
@@ -154,6 +166,7 @@ class _ThemeOptionTile extends StatelessWidget {
     required this.mode,
     required this.palette,
     required this.selected,
+    required this.autofocus,
     required this.locked,
     required this.onTap,
     this.subtitle,
@@ -165,6 +178,7 @@ class _ThemeOptionTile extends StatelessWidget {
   /// theme that has no palette yet.
   final MonoPalette? palette;
   final bool selected;
+  final bool autofocus;
   final bool locked;
   final String? subtitle;
   final VoidCallback onTap;
@@ -197,6 +211,7 @@ class _ThemeOptionTile extends StatelessWidget {
           ),
         ],
       ),
+      autofocus: autofocus,
       onTap: onTap,
     );
   }
