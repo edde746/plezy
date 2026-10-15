@@ -65,6 +65,43 @@ class _SupporterSheetState extends State<SupporterSheet> {
     super.initState();
     _supporter.addListener(_handleChange);
     _supporter.storeState.addListener(_handleChange);
+    for (final node in _buttonFocusNodes) {
+      node.addListener(_revealFocusedButton);
+    }
+  }
+
+  List<FocusNode> get _buttonFocusNodes => [_primaryFocusNode, _restoreFocusNode, _closeFocusNode];
+
+  /// Scrolls a D-pad-focused button into view with as much of the content
+  /// above it showing as fits. Nothing above the buttons takes focus, so on a
+  /// short screen (a 1080p TV is 960x540) this keeps the intro and perks in
+  /// view whenever the top button is focused: when the sheet opens and on UP
+  /// from below. The buttons' own auto-scroll is off because it centers them,
+  /// which pushes the intro out.
+  void _revealFocusedButton() {
+    if (InputModeTracker.currentMode != InputMode.keyboard) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      FocusNode? focused;
+      for (final node in _buttonFocusNodes) {
+        if (node.hasPrimaryFocus) focused = node;
+      }
+      final button = focused?.context?.findRenderObject();
+      final viewport = focused?.context == null
+          ? null
+          : Scrollable.maybeOf(focused!.context!)?.context.findRenderObject();
+      if (button is! RenderBox || viewport is! RenderBox) return;
+      final position = _scrollController.position;
+      // Room for the focus decoration below the button.
+      const focusPadding = 8.0;
+      final buttonBottom = button.localToGlobal(Offset(0, button.size.height), ancestor: viewport).dy;
+      final target = (position.pixels + buttonBottom + focusPadding - viewport.size.height).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      if ((target - position.pixels).abs() < 1) return;
+      unawaited(position.animateTo(target, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+    });
   }
 
   @override
@@ -127,8 +164,8 @@ class _SupporterSheetState extends State<SupporterSheet> {
 
   void _close() => OverlaySheetController.closeAdaptive(context);
 
-  /// UP from the top button: nothing above it takes focus, so bring the intro
-  /// and perks back into view on short screens (a 1080p TV is 960x540).
+  /// UP on the top button: show the rest of the intro and perks, even where
+  /// they and the button do not fit on screen together.
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
     unawaited(_scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
@@ -173,6 +210,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
           focusNode: _closeFocusNode,
           useBackgroundFocus: true,
           onPressed: _close,
+          autoScroll: false,
           onNavigateUp: _scrollToTop,
           child: FilledButton.tonal(onPressed: _close, child: Text(t.common.close)),
         ),
@@ -225,6 +263,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
       focusNode: _primaryFocusNode,
       useBackgroundFocus: true,
       onPressed: onBuy,
+      autoScroll: false,
       onNavigateUp: _scrollToTop,
       child: FilledButton.icon(
         onPressed: onBuy,
@@ -239,6 +278,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
       focusNode: _primaryFocusNode,
       useBackgroundFocus: true,
       onPressed: _retryProduct,
+      autoScroll: false,
       onNavigateUp: _scrollToTop,
       child: FilledButton.tonalIcon(
         onPressed: _retryProduct,
@@ -253,6 +293,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
     return FocusableButton(
       focusNode: _restoreFocusNode,
       onPressed: onRestore,
+      autoScroll: false,
       child: TextButton.icon(
         onPressed: onRestore,
         icon: state.status == SupporterPurchaseStatus.restoring

@@ -311,7 +311,7 @@ void main() {
       expect(find.byType(SupporterSheet), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-    testWidgets('on a 1080p TV (960x540) the sheet scrolls, and UP from the top button brings the intro back', (
+    testWidgets('on a 1080p TV (960x540) the intro stays in view whenever focus reaches the top button', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(960, 540);
@@ -324,26 +324,44 @@ void main() {
       await harness.open(tester);
 
       expect(tester.takeException(), isNull);
-      expect(_focusedLabel(), 'supporter_primary');
       final scrollable = find.descendant(of: find.byType(SupporterSheet), matching: find.byType(Scrollable));
       final position = tester.state<ScrollableState>(scrollable).position;
       expect(position.maxScrollExtent, greaterThan(0));
+      bool inView(Finder target) {
+        final viewport = tester.getRect(scrollable);
+        final rect = tester.getRect(target);
+        return rect.top >= viewport.top - 0.5 && rect.bottom <= viewport.bottom + 0.5;
+      }
 
-      // As after focus scrolled down to the buttons: the intro is out of view.
-      position.jumpTo(position.maxScrollExtent);
-      await tester.pump();
-      expect(tester.getRect(find.text(t.supporter.intro)).top, lessThan(tester.getRect(scrollable).top));
+      final intro = find.text(t.supporter.intro);
+      final retry = _button(t.common.retry);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-      await tester.pumpAndSettle();
-
-      expect(position.pixels, 0);
-      expect(tester.getRect(find.text(t.supporter.intro)).top, greaterThanOrEqualTo(tester.getRect(scrollable).top));
+      // Opening by D-pad focuses Retry without scrolling the intro away.
       expect(_focusedLabel(), 'supporter_primary');
+      expect(inView(intro), isTrue);
+      expect(inView(retry), isTrue);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'supporter_restore');
+      expect(inView(_button(t.supporter.restore)), isTrue);
+
+      // A single UP returns to Retry with the intro back in view.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(_focusedLabel(), 'supporter_primary');
+      expect(inView(intro), isTrue);
+      expect(inView(retry), isTrue);
+
+      // UP on the top button also brings the intro back from any scroll.
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+      expect(inView(intro), isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(position.pixels, 0);
+      expect(inView(intro), isTrue);
+      expect(_focusedLabel(), 'supporter_primary');
       expect(tester.takeException(), isNull);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
