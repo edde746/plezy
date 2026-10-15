@@ -15,6 +15,7 @@ import '../../media/media_server_client.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../mpv/models.dart';
 import '../../mpv/player/player.dart';
+import '../../mpv/player/player_native.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/notification_permission.dart';
 import '../../utils/platform_detector.dart';
@@ -751,7 +752,27 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (isNew && _player == player && !player.disposed && _volume != 100.0) {
       unawaited(player.setVolume(_volume));
     }
+    if (isNew && _player == player && !player.disposed) await _applyAudioPassthrough(player);
     return player;
+  }
+
+  /// Apple platforms hand AC3/EAC3 to the system Dolby decoder, the only path
+  /// that keeps Atmos in music (#2595). It shares the video Audio Passthrough
+  /// setting, honoring the same normalization override the settings tile shows,
+  /// and lands before the first open so the audio output starts on it rather
+  /// than reloading mid-track; like video, a changed setting takes effect on
+  /// the next player. Elsewhere passthrough claims the output device (exclusive
+  /// WASAPI, IEC 61937 AudioTrack), which music playback does not opt into.
+  Future<void> _applyAudioPassthrough(Player player) async {
+    if (!PlayerNative.usesAppleAudioOutput) return;
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null) return;
+    if (!settings.read(SettingsService.audioPassthrough) || settings.read(SettingsService.audioNormalization)) return;
+    try {
+      await player.setAudioPassthrough(true);
+    } catch (error, stackTrace) {
+      appLogger.w('Music: audio passthrough not applied; decoding instead', error: error, stackTrace: stackTrace);
+    }
   }
 
   void _wirePlayerStreams(Player player) {
