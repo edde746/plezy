@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
@@ -38,6 +39,17 @@ class SupporterHistory {
   final List<PurchaseDetails> unfinished;
 }
 
+/// The store's billing service is not usable on this device: no store app,
+/// no signed-in account, or an unsupported billing version.
+class SupporterStoreUnavailable implements Exception {
+  const SupporterStoreUnavailable();
+}
+
+/// The user dismissed the store's sign-in during Restore Purchases.
+class SupporterRestoreCancelled implements Exception {
+  const SupporterRestoreCancelled();
+}
+
 /// The store calls behind the Supporter purchase.
 ///
 /// in_app_purchase's cross-store [platform] buys and reports transactions, but
@@ -49,10 +61,12 @@ abstract class SupporterStore {
   final InAppPurchasePlatform platform;
 
   /// Reads the account's Supporter purchase history from the store. Throws
-  /// when the store cannot answer; a failure never means "not owned".
+  /// when the store cannot answer, [SupporterStoreUnavailable] when billing
+  /// itself is unavailable; a failure never means "not owned".
   Future<SupporterHistory> queryHistory();
 
   /// The explicit step a user-initiated restore needs before [queryHistory].
+  /// Throws [SupporterRestoreCancelled] when the user dismissed it.
   Future<void> syncForRestore();
 
   /// Whether a transaction on [InAppPurchasePlatform.purchaseStream] reports a
@@ -89,9 +103,15 @@ class PlaySupporterStore extends SupporterStore {
 
   final Future<QueryPurchaseDetailsResponse> Function() _queryPastPurchases;
 
+  /// Play Billing answers a query on a client that never connected (no Play
+  /// Store, no Google account, "billing API version 3 is not supported") with
+  /// an empty, error-free list, which would read as a refund. Only a query on
+  /// a connected client can confirm the product is gone.
   @override
   Future<SupporterHistory> queryHistory() async {
+    if (!await platform.isAvailable()) throw const SupporterStoreUnavailable();
     final response = await _queryPastPurchases();
+    if (!await platform.isAvailable()) throw const SupporterStoreUnavailable();
     final error = response.error;
     if (error != null) {
       throw InAppPurchaseException(source: error.source, code: error.code, message: error.message);
@@ -147,7 +167,18 @@ class AppStoreSupporterStore extends SupporterStore {
 
   /// `AppStore.sync`, which asks the user to sign in to the App Store.
   @override
-  Future<void> syncForRestore() => _sync();
+  Future<void> syncForRestore() async {
+    try {
+      await _sync();
+    } on PlatformException catch (error) {
+      // The plugin reports StoreKit's `userCancelled` in the error's text.
+      if (error.code == 'storekit2_failed_to_sync_to_app_store' &&
+          '${error.message} ${error.details}'.contains('userCancelled')) {
+        throw const SupporterRestoreCancelled();
+      }
+      rethrow;
+    }
+  }
 
   /// StoreKit 2 delivers a refund or revocation through `Transaction.updates`.
   /// The plugin forwards it as a purchased transaction, so the revocation is

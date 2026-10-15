@@ -25,6 +25,10 @@ final class FakeInAppPurchasePlatform extends InAppPurchasePlatform {
   /// Holds the product query open until completed, when set.
   Completer<void>? productQueryGate;
 
+  /// The error a product query reports alongside an empty result, as StoreKit
+  /// does with `storekit_no_response`.
+  IAPError? productResponseError;
+
   /// Whether `buyNonConsumable` reports that the store opened its flow.
   bool launchesPurchase = true;
 
@@ -59,7 +63,11 @@ final class FakeInAppPurchasePlatform extends InAppPurchasePlatform {
     await productQueryGate?.future;
     if (productQueryError case final error?) throw error;
     final product = this.product;
-    return ProductDetailsResponse(productDetails: [?product], notFoundIDs: [if (product == null) ...identifiers]);
+    return ProductDetailsResponse(
+      productDetails: [?product],
+      notFoundIDs: [if (product == null) ...identifiers],
+      error: product == null ? productResponseError : null,
+    );
   }
 
   @override
@@ -137,6 +145,9 @@ final class FakeAppStore {
   List<SK2Transaction> transactions = [];
   int syncs = 0;
 
+  /// Thrown by `AppStore.sync` when set, as the plugin reports a failure.
+  Object? syncError;
+
   late final SupporterStore store = AppStoreSupporterStore(
     platform,
     transactions: () async {
@@ -146,6 +157,7 @@ final class FakeAppStore {
     sync: () async {
       platform.billingCalls++;
       syncs++;
+      if (syncError case final error?) throw error;
     },
   );
 }
