@@ -1,0 +1,308 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsNode;
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/providers/theme_provider.dart';
+import 'package:plezy/screens/settings/app_icon_setting.dart';
+import 'package:plezy/screens/settings/appearance_settings_screen.dart';
+import 'package:plezy/services/app_icon/app_icon_catalog.dart';
+import 'package:plezy/services/app_icon/app_icon_service.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/supporter/supporter_mode.dart';
+import 'package:plezy/services/supporter/supporter_service.dart';
+import 'package:plezy/theme/mono_theme.dart';
+import 'package:provider/provider.dart';
+
+import '../../test_helpers/app_icon_fakes.dart';
+import '../../test_helpers/prefs.dart';
+
+void main() {
+  late FakeAppIconPlatform platform;
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    platform = FakeAppIconPlatform()..install();
+    addTearDown(platform.uninstall);
+  });
+
+  void useViewport(WidgetTester tester, Size size) {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = size;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+  }
+
+  Future<AppIconService> appIconsFor(SupporterService supporter, {bool platformHasAlternateIcons = true}) async {
+    final service = AppIconService(supporter: supporter, platformHasAlternateIcons: platformHasAlternateIcons);
+    addTearDown(service.dispose);
+    await service.refresh();
+    return service;
+  }
+
+  Widget providers({required SupporterService supporter, required AppIconService appIcons, required Widget child}) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<SupporterService>.value(value: supporter),
+        ChangeNotifierProvider<AppIconService>.value(value: appIcons),
+      ],
+      child: child,
+    );
+  }
+
+  Future<void> pumpPicker(
+    WidgetTester tester, {
+    required SupporterService supporter,
+    required AppIconService appIcons,
+    Future<void> Function(BuildContext context)? openSupporterSheet,
+  }) async {
+    useViewport(tester, const Size(800, 1400));
+    await tester.pumpWidget(
+      providers(
+        supporter: supporter,
+        appIcons: appIcons,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: Scaffold(
+            body: openSupporterSheet == null
+                ? const AppIconPickerSheet()
+                : AppIconPickerSheet(openSupporterSheet: openSupporterSheet),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  Finder tile(String id) => find.byKey(ValueKey(id));
+
+  Matcher marked(String label, String? value) => isSemantics(label: label, value: value ?? '');
+
+  /// The node a screen reader lands on for the tile of [id].
+  SemanticsNode tileSemantics(WidgetTester tester, String id) =>
+      find.semantics.byLabel(appIconById(id)!.label(t)).evaluate().single;
+
+  group('Appearance entry', () {
+    Future<void> pumpAppearance(WidgetTester tester, SupporterService supporter, AppIconService appIcons) async {
+      useViewport(tester, const Size(1000, 3000));
+      final theme = ThemeProvider(supporter: supporter);
+      addTearDown(theme.dispose);
+      await tester.pumpWidget(
+        providers(
+          supporter: supporter,
+          appIcons: appIcons,
+          child: ChangeNotifierProvider<ThemeProvider>.value(
+            value: theme,
+            child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const AppearanceSettingsScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a build without the Supporter perks shows no App icon row', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.hidden);
+      addTearDown(supporter.dispose);
+      await pumpAppearance(tester, supporter, await appIconsFor(supporter));
+
+      expect(find.text(t.appIcon.title), findsNothing);
+    });
+
+    testWidgets('a device that cannot switch icons shows no App icon row', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      platform.supported = false;
+      await pumpAppearance(tester, supporter, await appIconsFor(supporter));
+
+      expect(find.text(t.appIcon.title), findsNothing);
+    });
+
+    testWidgets('desktop builds show no App icon row', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      await pumpAppearance(tester, supporter, await appIconsFor(supporter, platformHasAlternateIcons: false));
+
+      expect(find.text(t.appIcon.title), findsNothing);
+    });
+
+    testWidgets('the row sits right below Theme, names the current icon and opens the picker', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      platform.current = 'vhs';
+      await pumpAppearance(tester, supporter, await appIconsFor(supporter));
+
+      final row = find.text(t.appIcon.title);
+      expect(row, findsOneWidget);
+      expect(find.text(t.appIcon.names.vhs), findsOneWidget);
+      final themeRow = tester.getRect(find.text(t.settings.theme));
+      final iconRow = tester.getRect(row);
+      expect(iconRow.top, greaterThan(themeRow.top));
+      expect(iconRow.top - themeRow.top, lessThan(themeRow.height * 6), reason: 'directly below Theme');
+
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppIconPickerSheet), findsOneWidget);
+    });
+  });
+
+  group('picker', () {
+    testWidgets('the default comes first and the current icon is marked', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      platform.current = 'gold';
+      await pumpPicker(tester, supporter: supporter, appIcons: await appIconsFor(supporter));
+
+      final first = tester.getTopLeft(tile(defaultAppIconId));
+      for (final option in appIconCatalog.skip(1)) {
+        final other = tester.getTopLeft(tile(option.id));
+        expect(other.dy > first.dy || (other.dy == first.dy && other.dx > first.dx), isTrue, reason: option.id);
+      }
+      expect(tileSemantics(tester, 'gold'), marked(t.appIcon.names.gold, t.appIcon.current));
+      expect(tileSemantics(tester, defaultAppIconId), marked(t.appIcon.defaultIcon, null));
+      expect(tileSemantics(tester, 'ember'), marked(t.appIcon.names.ember, null));
+      expect(find.text(t.appIcon.lockedHint), findsNothing);
+    });
+
+    testWidgets('a free build switches straight to the chosen icon', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      var sheetOpened = false;
+      await pumpPicker(
+        tester,
+        supporter: supporter,
+        appIcons: await appIconsFor(supporter),
+        openSupporterSheet: (_) async => sheetOpened = true,
+      );
+
+      await tester.tap(tile('ember'));
+      await tester.pumpAndSettle();
+
+      expect(sheetOpened, isFalse);
+      expect(platform.current, 'ember');
+      expect(tileSemantics(tester, 'ember'), marked(t.appIcon.names.ember, t.appIcon.current));
+      expect(tileSemantics(tester, defaultAppIconId), marked(t.appIcon.defaultIcon, null));
+    });
+
+    testWidgets('locked alternates carry a lock and a declined Supporter sheet changes nothing', (tester) async {
+      final supporter = ToggleSupporter(unlocked: false);
+      addTearDown(supporter.dispose);
+      var sheetOpened = 0;
+      await pumpPicker(
+        tester,
+        supporter: supporter,
+        appIcons: await appIconsFor(supporter),
+        openSupporterSheet: (_) async => sheetOpened++,
+      );
+
+      expect(find.text(t.appIcon.lockedHint), findsOneWidget);
+      expect(tileSemantics(tester, 'ember'), marked(t.appIcon.names.ember, t.appIcon.locked));
+      expect(tileSemantics(tester, defaultAppIconId), marked(t.appIcon.defaultIcon, t.appIcon.current));
+
+      await tester.tap(tile('ember'));
+      await tester.pumpAndSettle();
+
+      expect(sheetOpened, 1);
+      expect(platform.calls.where((call) => call.startsWith('setIcon')), isEmpty);
+      expect(tileSemantics(tester, defaultAppIconId), marked(t.appIcon.defaultIcon, t.appIcon.current));
+    });
+
+    testWidgets('a purchase in the Supporter sheet applies the locked icon that opened it', (tester) async {
+      final supporter = ToggleSupporter(unlocked: false);
+      addTearDown(supporter.dispose);
+      await pumpPicker(
+        tester,
+        supporter: supporter,
+        appIcons: await appIconsFor(supporter),
+        openSupporterSheet: (_) async => supporter.unlocked = true,
+      );
+
+      await tester.tap(tile('neon'));
+      await tester.pumpAndSettle();
+
+      expect(platform.current, 'neon');
+      expect(find.text(t.appIcon.lockedHint), findsNothing);
+      expect(tileSemantics(tester, 'neon'), marked(t.appIcon.names.neon, t.appIcon.current));
+      expect(tileSemantics(tester, 'ember'), marked(t.appIcon.names.ember, null));
+    });
+
+    testWidgets('a locked build can always go back to the default icon without the sheet', (tester) async {
+      final supporter = ToggleSupporter(unlocked: false);
+      addTearDown(supporter.dispose);
+      platform.current = 'neon';
+      var sheetOpened = false;
+      await pumpPicker(
+        tester,
+        supporter: supporter,
+        appIcons: await appIconsFor(supporter),
+        openSupporterSheet: (_) async => sheetOpened = true,
+      );
+
+      await tester.tap(tile(defaultAppIconId));
+      await tester.pumpAndSettle();
+
+      expect(sheetOpened, isFalse);
+      expect(platform.current, defaultAppIconId);
+    });
+
+    testWidgets('a refused switch reports it and keeps the current icon', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      final appIcons = await appIconsFor(supporter);
+      await pumpPicker(tester, supporter: supporter, appIcons: appIcons);
+      platform.failWith = PlatformException(code: 'failed', message: 'launcher said no');
+
+      await tester.tap(tile('ember'));
+      await tester.pump();
+
+      expect(find.text(t.appIcon.changeFailed), findsOneWidget);
+      expect(tileSemantics(tester, defaultAppIconId), marked(t.appIcon.defaultIcon, t.appIcon.current));
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+    });
+
+    testWidgets('D-pad moves through the grid by row and column and Select applies the icon', (tester) async {
+      final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+      addTearDown(supporter.dispose);
+      await pumpPicker(tester, supporter: supporter, appIcons: await appIconsFor(supporter));
+
+      String? focusedId() {
+        final focused = FocusManager.instance.primaryFocus?.context;
+        if (focused == null) return null;
+        for (final option in appIconCatalog) {
+          final match = find.ancestor(of: find.byElementPredicate((e) => e == focused), matching: tile(option.id));
+          if (match.evaluate().isNotEmpty) return option.id;
+        }
+        return null;
+      }
+
+      final firstFocus = find.descendant(of: tile(defaultAppIconId), matching: find.byType(Focus)).first;
+      Focus.of(tester.element(find.descendant(of: firstFocus, matching: find.byType(Column)).first)).requestFocus();
+      await tester.pumpAndSettle();
+      expect(focusedId(), defaultAppIconId);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      expect(focusedId(), appIconCatalog[1].id);
+
+      final before = tester.getCenter(tile(focusedId()!));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      final below = focusedId()!;
+      final after = tester.getCenter(tile(below));
+      expect(after.dy, greaterThan(before.dy), reason: 'Down moves to the next row');
+      expect(after.dx, closeTo(before.dx, 1), reason: 'Down keeps the column');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+      final left = focusedId()!;
+      expect(tester.getCenter(tile(left)).dx, lessThan(after.dx));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(platform.current, left);
+    });
+  });
+}

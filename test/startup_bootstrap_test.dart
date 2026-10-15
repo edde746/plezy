@@ -84,7 +84,7 @@ void main() {
   });
 
   // The window behind Flutter already holds the launch colour: on Android
-  // `MainActivity` restores the persisted one and the television resource
+  // `PlezyActivity` restores the persisted one and the television resource
   // qualifier pins the default to black. Anything the loading frame paints
   // over it lasts the whole gate, so #1833 saw a near-white #F7F7F8 sheet in
   // place of a black TV splash.

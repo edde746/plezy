@@ -50,6 +50,7 @@ import 'services/discord_rpc_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'services/image_cache_service.dart';
+import 'services/app_icon/app_icon_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'services/playback_coordinator.dart';
@@ -189,7 +190,7 @@ void _bootstrapApp() {
       darkTheme: monoTheme(MonoPalette.dark),
       resolveTheme: _resolveStartupTheme,
       // Android runs the Flutter surface in transparent mode over a window
-      // whose background MainActivity already restored, so the loading frame
+      // whose background PlezyActivity already restored, so the loading frame
       // can leave the launch screen on display. Every other platform composites
       // opaquely and has nothing behind Flutter worth showing.
       transparentWhileLoading: Platform.isAndroid,
@@ -689,7 +690,7 @@ class StartupBootstrap<T> extends StatefulWidget {
   /// background, so the loading frame must not cover it.
   ///
   /// True only on Android, where `TransparencyMode.transparent` lets the
-  /// window decor show through and `MainActivity` has already restored the
+  /// window decor show through and `PlezyActivity` has already restored the
   /// persisted launch colour.
   final bool transparentWhileLoading;
 
@@ -1841,6 +1842,16 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Shader presets are app-global — deliberately outside the
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
+        // Created eagerly: it must be listening when a Supporter refund is
+        // confirmed, so the default app icon comes back even with Settings closed.
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (context) {
+            final appIcons = AppIconService(supporter: context.read<SupporterService>());
+            unawaited(appIcons.refresh());
+            return appIcons;
+          },
+        ),
       ],
       child: _AppShell(databaseRecoveryOutcome: widget.databaseRecoveryOutcome),
     );

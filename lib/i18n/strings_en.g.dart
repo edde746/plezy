@@ -41,6 +41,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
@@ -105,6 +106,41 @@ class Translations$app$en {
 
 	/// en: 'Plezy'
 	String get title => 'Plezy';
+}
+
+// Path: appIcon
+class Translations$appIcon$en {
+	Translations$appIcon$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'App icon'
+	String get title => 'App icon';
+
+	/// en: 'Default'
+	String get defaultIcon => 'Default';
+
+	/// en: 'Current icon'
+	String get current => 'Current icon';
+
+	/// en: 'Supporter perk'
+	String get locked => 'Supporter perk';
+
+	/// en: 'Alternate icons are a Supporter perk.'
+	String get lockedHint => 'Alternate icons are a Supporter perk.';
+
+	/// en: 'Couldn't change the app icon'
+	String get changeFailed => 'Couldn\'t change the app icon';
+
+	/// en: 'The new icon appears on your home screen once you leave Plezy.'
+	String get launcherHint => 'The new icon appears on your home screen once you leave Plezy.';
+
+	/// en: 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.'
+	String get tvLauncherHint => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.';
+
+	late final Translations$appIcon$names$en names = Translations$appIcon$names$en.internal(_root);
 }
 
 // Path: auth
@@ -5933,6 +5969,84 @@ class Translations$addServer$en {
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
+// Path: appIcon.names
+class Translations$appIcon$names$en {
+	Translations$appIcon$names$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Midnight'
+	String get midnight => 'Midnight';
+
+	/// en: 'Ember'
+	String get ember => 'Ember';
+
+	/// en: 'Paper'
+	String get paper => 'Paper';
+
+	/// en: 'OLED'
+	String get oled => 'OLED';
+
+	/// en: 'Line'
+	String get line => 'Line';
+
+	/// en: 'Ocean'
+	String get ocean => 'Ocean';
+
+	/// en: 'Ultraviolet'
+	String get ultraviolet => 'Ultraviolet';
+
+	/// en: 'Matcha'
+	String get matcha => 'Matcha';
+
+	/// en: 'Sunset'
+	String get sunset => 'Sunset';
+
+	/// en: 'Gold'
+	String get gold => 'Gold';
+
+	/// en: 'Titanium'
+	String get titanium => 'Titanium';
+
+	/// en: 'Glass'
+	String get glass => 'Glass';
+
+	/// en: 'CRT'
+	String get crt => 'CRT';
+
+	/// en: 'VHS'
+	String get vhs => 'VHS';
+
+	/// en: 'Synthwave'
+	String get synthwave => 'Synthwave';
+
+	/// en: 'Pixel'
+	String get pixel => 'Pixel';
+
+	/// en: 'Neon'
+	String get neon => 'Neon';
+
+	/// en: 'Sticker'
+	String get sticker => 'Sticker';
+
+	/// en: 'Ticket'
+	String get ticket => 'Ticket';
+
+	/// en: 'Pop'
+	String get pop => 'Pop';
+
+	/// en: 'Strata'
+	String get strata => 'Strata';
+
+	/// en: 'Facet'
+	String get facet => 'Facet';
+
+	/// en: 'Tilde'
+	String get tilde => 'Tilde';
+}
+
 // Path: common.ratingSource
 class Translations$common$ratingSource$en {
 	Translations$common$ratingSource$en.internal(this._root);
@@ -7658,6 +7772,37 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'appIcon.title' => 'App icon',
+			'appIcon.defaultIcon' => 'Default',
+			'appIcon.current' => 'Current icon',
+			'appIcon.locked' => 'Supporter perk',
+			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
+			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
+			'appIcon.launcherHint' => 'The new icon appears on your home screen once you leave Plezy.',
+			'appIcon.tvLauncherHint' => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.',
+			'appIcon.names.midnight' => 'Midnight',
+			'appIcon.names.ember' => 'Ember',
+			'appIcon.names.paper' => 'Paper',
+			'appIcon.names.oled' => 'OLED',
+			'appIcon.names.line' => 'Line',
+			'appIcon.names.ocean' => 'Ocean',
+			'appIcon.names.ultraviolet' => 'Ultraviolet',
+			'appIcon.names.matcha' => 'Matcha',
+			'appIcon.names.sunset' => 'Sunset',
+			'appIcon.names.gold' => 'Gold',
+			'appIcon.names.titanium' => 'Titanium',
+			'appIcon.names.glass' => 'Glass',
+			'appIcon.names.crt' => 'CRT',
+			'appIcon.names.vhs' => 'VHS',
+			'appIcon.names.synthwave' => 'Synthwave',
+			'appIcon.names.pixel' => 'Pixel',
+			'appIcon.names.neon' => 'Neon',
+			'appIcon.names.sticker' => 'Sticker',
+			'appIcon.names.ticket' => 'Ticket',
+			'appIcon.names.pop' => 'Pop',
+			'appIcon.names.strata' => 'Strata',
+			'appIcon.names.facet' => 'Facet',
+			'appIcon.names.tilde' => 'Tilde',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
@@ -8138,6 +8283,8 @@ extension on Translations {
 			'themeEditor.contrast.textOnBg' => 'Text on background',
 			'themeEditor.contrast.textOnSurface' => 'Text on surface',
 			'themeEditor.contrast.textMutedOnBg' => 'Secondary text on background',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.contrast.textMutedOnSurface' => 'Secondary text on surface',
 			'themeEditor.contrast.accentOnBg' => 'Accent on background',
 			'themeEditor.contrast.accentOnSurface' => 'Accent on surface',
@@ -8169,8 +8316,6 @@ extension on Translations {
 			'hotkeys.actions.fullscreenToggle' => 'Toggle Fullscreen',
 			'hotkeys.actions.muteToggle' => 'Toggle Mute',
 			'hotkeys.actions.subtitleToggle' => 'Toggle Subtitles',
-			_ => null,
-		} ?? switch (path) {
 			'hotkeys.actions.audioTrackNext' => 'Next Audio Track',
 			'hotkeys.actions.subtitleTrackNext' => 'Next Subtitle Track',
 			'hotkeys.actions.chapterNext' => 'Next Chapter',
@@ -8652,6 +8797,8 @@ extension on Translations {
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers refused access for this account',
 			'connections.signInAgain' => 'Sign in again',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edit ${product} connection',
+			_ => null,
+		} ?? switch (path) {
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.',
 			'accountPreferences.sectionTitle' => 'Account preferences',
 			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Audio, subtitle and library options saved on ${account}',
@@ -8683,8 +8830,6 @@ extension on Translations {
 			'accountPreferences.subtitleModes.smart' => 'Shown with foreign audio',
 			'accountPreferences.subtitleModes.smartDescription' => 'Turn subtitles on only when the audio is in another language.',
 			'accountPreferences.subtitleAccessibility' => 'SDH subtitles',
-			_ => null,
-		} ?? switch (path) {
 			'accountPreferences.subtitleAccessibilityOptions.preferNonSdh' => 'Prefer non-SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.preferSdh' => 'Prefer SDH subtitles',
 			'accountPreferences.subtitleAccessibilityOptions.onlySdh' => 'Only SDH subtitles',
@@ -9166,6 +9311,8 @@ extension on Translations {
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
+			_ => null,
+		} ?? switch (path) {
 			'collections.deleteCollection' => 'Delete Collection',
 			'collections.deleteConfirm' => ({required Object title}) => 'Delete "${title}"? This can\'t be undone.',
 			'collections.deleted' => 'Collection deleted',
@@ -9197,8 +9344,6 @@ extension on Translations {
 			'playlists.emptyPlaylist' => 'This playlist is empty',
 			'playlists.deleteConfirm' => 'Delete Playlist?',
 			'playlists.deleteMessage' => ({required Object name}) => 'Are you sure you want to delete "${name}"?',
-			_ => null,
-		} ?? switch (path) {
 			'playlists.created' => 'Playlist created',
 			'playlists.deleted' => 'Playlist deleted',
 			'playlists.itemAdded' => 'Added to playlist',
@@ -9680,6 +9825,8 @@ extension on Translations {
 			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
 			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
 			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
 			'metadataEdit.manuallySelected' => 'Manually selected',
@@ -9711,8 +9858,6 @@ extension on Translations {
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',
 			'trakt.title' => 'Trakt',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.connected' => 'Connected',
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'trakt.disconnectConfirm' => 'Disconnect Trakt account?',

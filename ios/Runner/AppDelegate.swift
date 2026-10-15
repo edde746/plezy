@@ -55,6 +55,10 @@ import MediaPlayer
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "DeviceAdjustmentChannel") {
       registerDeviceAdjustmentChannel(messenger: registrar.messenger())
     }
+
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AppIconPlugin") {
+      AppIconPlugin.register(with: registrar)
+    }
   }
 
   private func registerDeviceAdjustmentChannel(messenger: FlutterBinaryMessenger) {

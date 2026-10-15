@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<linearGradient id="gf" x1="0" y1="32" x2="358" y2="432" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff" stop-opacity="0.74"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.3"/></linearGradient><linearGradient id="gr" x1="0" y1="32" x2="300" y2="432" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0.25"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.55"/></linearGradient><clipPath id="tri"><path d="M335.65,192.66L68.01,38.14C37.78,20.69,0,42.5,0,77.41v309.04c0,34.91,37.78,56.72,68.01,39.27l267.64-154.52c30.23-17.45,30.23-61.08,0-78.54Z"/></clipPath><mask id="holes" maskUnits="userSpaceOnUse" x="-400" y="-400" width="1200" height="1200"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><path d="M46.4 195.20C79.6 164.50 113.6 164.50 146.8 195.20S214 225.90 247.4 195.20M46.4 267.96C79.6 237.26 113.6 237.26 146.8 267.96S214 298.66 247.4 267.96" fill="none" stroke="#000" stroke-width="24.1" stroke-linecap="round"/></mask><filter id="blob" filterUnits="userSpaceOnUse" x="-300" y="-300" width="1624" height="1624"><feGaussianBlur stdDeviation="110"/></filter><filter id="sh" filterUnits="userSpaceOnUse" x="-200" y="-200" width="1400" height="1400"><feGaussianBlur stdDeviation="22"/></filter>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="#ff6a3d"/><g filter="url(#blob)"><circle cx="230" cy="210" r="330" fill="#ffc94a"/><circle cx="860" cy="820" r="360" fill="#e0307a"/><circle cx="170" cy="900" r="300" fill="#7a3cff"/><circle cx="900" cy="160" r="220" fill="#ff8a5c"/></g>
+</g>
+</svg>
