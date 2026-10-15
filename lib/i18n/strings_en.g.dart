@@ -41,6 +41,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
@@ -103,6 +104,38 @@ class Translations$app$en {
 
 	/// en: 'Plezy'
 	String get title => 'Plezy';
+}
+
+// Path: appIcon
+class Translations$appIcon$en {
+	Translations$appIcon$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'App icon'
+	String get title => 'App icon';
+
+	/// en: 'Default'
+	String get defaultIcon => 'Default';
+
+	/// en: 'Current icon'
+	String get current => 'Current icon';
+
+	/// en: 'Supporter perk'
+	String get locked => 'Supporter perk';
+
+	/// en: 'Alternate icons are a Supporter perk.'
+	String get lockedHint => 'Alternate icons are a Supporter perk.';
+
+	/// en: 'Couldn't change the app icon'
+	String get changeFailed => 'Couldn\'t change the app icon';
+
+	/// en: 'Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.'
+	String get launcherHint => 'Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.';
+
+	late final Translations$appIcon$names$en names = Translations$appIcon$names$en.internal(_root);
 }
 
 // Path: auth
@@ -5781,6 +5814,84 @@ class Translations$addServer$en {
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
+// Path: appIcon.names
+class Translations$appIcon$names$en {
+	Translations$appIcon$names$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Midnight'
+	String get midnight => 'Midnight';
+
+	/// en: 'Ember'
+	String get ember => 'Ember';
+
+	/// en: 'Paper'
+	String get paper => 'Paper';
+
+	/// en: 'OLED'
+	String get oled => 'OLED';
+
+	/// en: 'Line'
+	String get line => 'Line';
+
+	/// en: 'Ocean'
+	String get ocean => 'Ocean';
+
+	/// en: 'Ultraviolet'
+	String get ultraviolet => 'Ultraviolet';
+
+	/// en: 'Matcha'
+	String get matcha => 'Matcha';
+
+	/// en: 'Sunset'
+	String get sunset => 'Sunset';
+
+	/// en: 'Gold'
+	String get gold => 'Gold';
+
+	/// en: 'Titanium'
+	String get titanium => 'Titanium';
+
+	/// en: 'Glass'
+	String get glass => 'Glass';
+
+	/// en: 'CRT'
+	String get crt => 'CRT';
+
+	/// en: 'VHS'
+	String get vhs => 'VHS';
+
+	/// en: 'Synthwave'
+	String get synthwave => 'Synthwave';
+
+	/// en: 'Pixel'
+	String get pixel => 'Pixel';
+
+	/// en: 'Neon'
+	String get neon => 'Neon';
+
+	/// en: 'Sticker'
+	String get sticker => 'Sticker';
+
+	/// en: 'Ticket'
+	String get ticket => 'Ticket';
+
+	/// en: 'Pop'
+	String get pop => 'Pop';
+
+	/// en: 'Strata'
+	String get strata => 'Strata';
+
+	/// en: 'Facet'
+	String get facet => 'Facet';
+
+	/// en: 'Tilde'
+	String get tilde => 'Tilde';
+}
+
 // Path: common.ratingSource
 class Translations$common$ratingSource$en {
 	Translations$common$ratingSource$en.internal(this._root);
@@ -7422,6 +7533,36 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'appIcon.title' => 'App icon',
+			'appIcon.defaultIcon' => 'Default',
+			'appIcon.current' => 'Current icon',
+			'appIcon.locked' => 'Supporter perk',
+			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
+			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
+			'appIcon.launcherHint' => 'Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.',
+			'appIcon.names.midnight' => 'Midnight',
+			'appIcon.names.ember' => 'Ember',
+			'appIcon.names.paper' => 'Paper',
+			'appIcon.names.oled' => 'OLED',
+			'appIcon.names.line' => 'Line',
+			'appIcon.names.ocean' => 'Ocean',
+			'appIcon.names.ultraviolet' => 'Ultraviolet',
+			'appIcon.names.matcha' => 'Matcha',
+			'appIcon.names.sunset' => 'Sunset',
+			'appIcon.names.gold' => 'Gold',
+			'appIcon.names.titanium' => 'Titanium',
+			'appIcon.names.glass' => 'Glass',
+			'appIcon.names.crt' => 'CRT',
+			'appIcon.names.vhs' => 'VHS',
+			'appIcon.names.synthwave' => 'Synthwave',
+			'appIcon.names.pixel' => 'Pixel',
+			'appIcon.names.neon' => 'Neon',
+			'appIcon.names.sticker' => 'Sticker',
+			'appIcon.names.ticket' => 'Ticket',
+			'appIcon.names.pop' => 'Pop',
+			'appIcon.names.strata' => 'Strata',
+			'appIcon.names.facet' => 'Facet',
+			'appIcon.names.tilde' => 'Tilde',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
@@ -7903,6 +8044,8 @@ extension on Translations {
 			'fileInfo.versionCounter' => ({required Object index, required Object count}) => 'Version ${index} of ${count}',
 			'fileInfo.fileCounter' => ({required Object index, required Object count}) => 'File ${index} of ${count}',
 			'fileInfo.noStreams' => 'The server reported no streams for this file.',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.copyPath' => 'Copy path',
 			'fileInfo.pathCopied' => 'File path copied',
 			'fileInfo.codec' => 'Codec',
@@ -7933,8 +8076,6 @@ extension on Translations {
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
 			'fileInfo.chromaLocation' => 'Chroma Location',
 			'fileInfo.scanType' => 'Scan Type',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.interlaced' => 'Interlaced',
 			'fileInfo.anamorphic' => 'Anamorphic',
 			'fileInfo.referenceFrames' => 'Reference Frames',
@@ -8417,6 +8558,8 @@ extension on Translations {
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
+			_ => null,
+		} ?? switch (path) {
 			'discover.continueWatchingIn' => ({required Object library}) => 'Continue Watching in ${library}',
 			'discover.nextUp' => 'Next Up',
 			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
@@ -8447,8 +8590,6 @@ extension on Translations {
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
-			_ => null,
-		} ?? switch (path) {
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
 			'errors.noClientAvailable' => 'No client available',
 			'errors.pleaseEnterToken' => 'Please enter a token',
@@ -8931,6 +9072,8 @@ extension on Translations {
 			'music.stopPlayback' => 'Stop playback',
 			'music.previousTrack' => 'Previous track',
 			'music.nextTrack' => 'Next track',
+			_ => null,
+		} ?? switch (path) {
 			'music.repeat' => 'Repeat',
 			'music.repeatAll' => 'Repeat all',
 			'music.repeatOne' => 'Repeat one',
@@ -8961,8 +9104,6 @@ extension on Translations {
 			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
 			'watchTogether.participants' => 'Participants',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
@@ -9445,6 +9586,8 @@ extension on Translations {
 			'seerr.rootFolder' => 'Root folder',
 			'seerr.languageProfile' => 'Language profile',
 			'seerr.tags' => 'Tags',
+			_ => null,
+		} ?? switch (path) {
 			'seerr.noTags' => 'No tags',
 			'seerr.defaultOption' => ({required Object name}) => '${name} (Default)',
 			'seerr.animeNote' => 'This series is an anime.',
@@ -9475,8 +9618,6 @@ extension on Translations {
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
 			'services.integrations' => 'Integrations',
-			_ => null,
-		} ?? switch (path) {
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',

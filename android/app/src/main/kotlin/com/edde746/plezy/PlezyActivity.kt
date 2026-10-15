@@ -48,10 +48,16 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
-class MainActivity : FlutterActivity() {
+/**
+ * The Flutter activity. It has no launcher entry of its own: the launcher components are the
+ * activity-aliases in AndroidManifest.xml that target it (`.MainActivity` for the default icon,
+ * `.appicon.<id>` for the alternates), so [AppIconChannel] can switch the icon without ever
+ * disabling the running activity.
+ */
+class PlezyActivity : FlutterActivity() {
 
   companion object {
-    private const val TAG = "MainActivity"
+    private const val TAG = "PlezyActivity"
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
 
     // Safety net for a device where the text-editor proxy (see
@@ -123,6 +129,7 @@ class MainActivity : FlutterActivity() {
   private var activityStarted = false
   private val externalPlayerChannel = ExternalPlayerChannel(this)
   private val userCertificateChannel = UserCertificateChannel()
+  private val appIconChannel = AppIconChannel(this)
   private val exitDiagnosticsRequested = AtomicBoolean(false)
 
   private inline fun logTextInputDiag(message: () -> String) {
@@ -946,6 +953,7 @@ class MainActivity : FlutterActivity() {
 
     externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
     userCertificateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+    appIconChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
 
     // Splash screen theme: persist user's chosen theme for next launch (API 31+)
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->

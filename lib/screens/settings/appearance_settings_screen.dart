@@ -18,6 +18,7 @@ import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import 'settings_utils.dart';
+import 'app_icon_setting.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
@@ -34,6 +35,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.display,
           children: [
             _themeSelector(),
+            if (AppIconSetting.isShown(context)) const AppIconSetting(),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             if (Platform.isAndroid) _visualEffectsSelector(context),
           ],

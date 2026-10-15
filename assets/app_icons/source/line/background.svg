@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<linearGradient id="bl" x1="22.67" y1="425.72" x2="201.83" y2="115.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#b4583c"/><stop offset="1" stop-color="#ff7e57"/></linearGradient>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="#fbf6f1"/>
+</g>
+</svg>

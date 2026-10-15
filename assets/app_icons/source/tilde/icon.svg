@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<linearGradient id="bgO" x1="180" y1="1024" x2="844" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#a24c33"/><stop offset="0.55" stop-color="#e86c49"/><stop offset="1" stop-color="#ff8d63"/></linearGradient>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="url(#bgO)"/>
+</g>
+<g id="foreground">
+<g transform="translate(512 512) scale(1.85) translate(-146.9 -231.58)" fill="none" stroke="#fff8f3" stroke-linecap="round"><path d="M46.4 195.20C79.6 164.50 113.6 164.50 146.8 195.20S214 225.90 247.4 195.20M46.4 267.96C79.6 237.26 113.6 237.26 146.8 267.96S214 298.66 247.4 267.96" stroke-width="30"/></g>
+</g>
+</svg>

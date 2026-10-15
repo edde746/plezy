@@ -2,6 +2,40 @@
   "app": {
     "title": "Plezy"
   },
+  "appIcon": {
+    "title": "",
+    "defaultIcon": "",
+    "current": "",
+    "locked": "",
+    "lockedHint": "",
+    "changeFailed": "",
+    "launcherHint": "",
+    "names": {
+      "midnight": "",
+      "ember": "",
+      "paper": "",
+      "oled": "",
+      "line": "",
+      "ocean": "",
+      "ultraviolet": "",
+      "matcha": "",
+      "sunset": "",
+      "gold": "",
+      "titanium": "",
+      "glass": "",
+      "crt": "",
+      "vhs": "",
+      "synthwave": "",
+      "pixel": "",
+      "neon": "",
+      "sticker": "",
+      "ticket": "",
+      "pop": "",
+      "strata": "",
+      "facet": "",
+      "tilde": ""
+    }
+  },
   "auth": {
     "signInWithPlex": "Bejelentkezés Plexszel",
     "showQRCode": "QR-kód megjelenítése",

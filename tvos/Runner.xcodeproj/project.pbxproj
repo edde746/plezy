@@ -53,6 +53,8 @@
 		F9C95D532B6F6B72D187217D /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF0E0C298AEDE34FF7C8BFD5 /* Pods_RunnerTests.framework */; };
 		B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */; };
 		B1D51A6A2F00110000000020 /* ExternalPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000021 /* ExternalPlayerPlugin.swift */; };
+		A9C0FF1C2F00120000000011 /* AppIconPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000012 /* AppIconPlugin.swift */; };
+		A9C0FF1C2F00120000000013 /* AlternateAppIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000014 /* AlternateAppIcons.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -152,6 +154,8 @@
 		FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvosEventDeliveryCoordinatorTests.swift; sourceTree = "<group>"; };
 		B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VideoDecodeCapabilitiesPlugin.swift; path = ../ios/Runner/VideoDecodeCapabilitiesPlugin.swift; sourceTree = SOURCE_ROOT; };
 		B1D51A6A2F00110000000021 /* ExternalPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExternalPlayerPlugin.swift; sourceTree = "<group>"; };
+		A9C0FF1C2F00120000000012 /* AppIconPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppIconPlugin.swift; path = ../shared/apple/AppIcon/AppIconPlugin.swift; sourceTree = SOURCE_ROOT; };
+		A9C0FF1C2F00120000000014 /* AlternateAppIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AlternateAppIcons.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -306,11 +310,13 @@
 			children = (
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
+				A9C0FF1C2F00120000000014 /* AlternateAppIcons.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */,
 				B1D51A6A2F00110000000021 /* ExternalPlayerPlugin.swift */,
+				A9C0FF1C2F00120000000012 /* AppIconPlugin.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				BF0B7DFE378943E9D7865D18 /* MpvPlayer */,
 				D58B788B11920D95BC7D750C /* Plugins */,
@@ -493,6 +499,7 @@
 				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
+				A9C0FF1C2F00120000000013 /* AlternateAppIcons.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -637,6 +644,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */,
 				B1D51A6A2F00110000000020 /* ExternalPlayerPlugin.swift in Sources */,
+				A9C0FF1C2F00120000000011 /* AppIconPlugin.swift in Sources */,
 				691577F0EB3F4EB1A5160280 /* MpvPlayerCoreBase.swift in Sources */,
 				5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */,
 				B1D51A6A2F00110000000014 /* MpvAudioPlayerCore.swift in Sources */,
@@ -764,6 +772,7 @@
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -1020,6 +1029,7 @@
 			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -1059,6 +1069,7 @@
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";

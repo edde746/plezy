@@ -50,6 +50,7 @@ import 'services/discord_rpc_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'services/image_cache_service.dart';
+import 'services/app_icon/app_icon_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'services/playback_coordinator.dart';
@@ -1834,6 +1835,16 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Shader presets are app-global — deliberately outside the
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
+        // Created eagerly: it must be listening when a Supporter refund is
+        // confirmed, so the default app icon comes back even with Settings closed.
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (context) {
+            final appIcons = AppIconService(supporter: context.read<SupporterService>());
+            unawaited(appIcons.refresh());
+            return appIcons;
+          },
+        ),
       ],
       child: _AppShell(databaseRecoveryOutcome: widget.databaseRecoveryOutcome),
     );

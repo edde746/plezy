@@ -2,6 +2,40 @@
   "app": {
     "title": "Plezy"
   },
+  "appIcon": {
+    "title": "App icon",
+    "defaultIcon": "Default",
+    "current": "Current icon",
+    "locked": "Supporter perk",
+    "lockedHint": "Alternate icons are a Supporter perk.",
+    "changeFailed": "Couldn't change the app icon",
+    "launcherHint": "Some launchers drop a home screen shortcut when the icon changes. Add Plezy again from the app list if it disappears.",
+    "names": {
+      "midnight": "Midnight",
+      "ember": "Ember",
+      "paper": "Paper",
+      "oled": "OLED",
+      "line": "Line",
+      "ocean": "Ocean",
+      "ultraviolet": "Ultraviolet",
+      "matcha": "Matcha",
+      "sunset": "Sunset",
+      "gold": "Gold",
+      "titanium": "Titanium",
+      "glass": "Glass",
+      "crt": "CRT",
+      "vhs": "VHS",
+      "synthwave": "Synthwave",
+      "pixel": "Pixel",
+      "neon": "Neon",
+      "sticker": "Sticker",
+      "ticket": "Ticket",
+      "pop": "Pop",
+      "strata": "Strata",
+      "facet": "Facet",
+      "tilde": "Tilde"
+    }
+  },
   "auth": {
     "signInWithPlex": "Sign in with Plex",
     "showQRCode": "Show QR Code",
