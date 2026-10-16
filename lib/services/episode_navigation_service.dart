@@ -103,7 +103,11 @@ class EpisodeNavigationService {
         return const AdjacentEpisodes.failed();
       }
 
-      final nextResult = await playbackState.getNextEpisode(metadata.id, playedPartId: playedPartId);
+      final nextResult = await playbackState.getNextEpisode(
+        metadata.id,
+        loopQueue: playbackState.isRepeatActive,
+        playedPartId: playedPartId,
+      );
       final previousResult = await playbackState.getPreviousEpisode(metadata.id, playedPartId: playedPartId);
       final nextStatus = nextResult.status == QueueNavigationStatus.unavailable
           ? QueueNavigationStatus.failed
@@ -113,7 +117,9 @@ class EpisodeNavigationService {
           : previousResult.status;
       final mode = playbackState.isShuffleActive ? 'Shuffle' : 'Sequential';
       appLogger.d(
-        '$mode mode - Next: ${nextResult.item?.title} ($nextStatus), '
+        '$mode mode'
+        '${playbackState.isRepeatActive ? ' with repeat' : ''}'
+        ' - Next: ${nextResult.item?.title} ($nextStatus), '
         'Previous: ${previousResult.item?.title} ($previousStatus)',
       );
       return AdjacentEpisodes(
