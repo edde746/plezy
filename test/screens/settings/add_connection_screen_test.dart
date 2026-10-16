@@ -7,6 +7,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/screens/settings/add_connection_screen.dart';
+import 'package:plezy/screens/settings/add_direct_plex_screen.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
 import 'package:plezy/screens/settings/add_plex_account_screen.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -28,6 +29,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Sign in with Plex'), findsOneWidget);
+    expect(find.text('Plex Media Server (Direct / Local)'), findsOneWidget);
     expect(find.text('Connect to Jellyfin'), findsOneWidget);
     expect(find.text('Connect to Emby'), findsOneWidget);
 
@@ -90,20 +92,31 @@ void main() {
     expect(screen.targetProfile?.id, target.id);
   });
 
-  testWidgets('the D-pad steps through all three backend cards', (tester) async {
+  testWidgets('the direct Plex card opens AddDirectPlexScreen', (tester) async {
+    await tester.pumpWidget(app(const AddConnectionScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Plex Media Server (Direct / Local)'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(AddDirectPlexScreen), findsOneWidget);
+  });
+
+  testWidgets('the D-pad steps through all backend cards', (tester) async {
     await tester.pumpWidget(app(const AddConnectionScreen()));
     await tester.pumpAndSettle();
 
     // The cards share a debugLabel, so track focus-node identity instead.
     final visited = <FocusNode>{};
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < 8; i++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       final focused = FocusManager.instance.primaryFocus;
       if (focused != null) visited.add(focused);
     }
 
-    expect(find.byType(FocusableWrapper), findsNWidgets(3));
-    expect(visited.length, greaterThanOrEqualTo(3), reason: 'D-pad did not reach every backend card');
+    expect(find.byType(FocusableWrapper), findsNWidgets(4));
+    expect(visited.length, greaterThanOrEqualTo(4), reason: 'D-pad did not reach every backend card');
   });
 }

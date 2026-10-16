@@ -481,6 +481,8 @@ class ActiveProfileBinder {
       switch (connectionsById[pc.connectionId]) {
         case final PlexAccountConnection account:
           expected.addAll(plexMembership(account));
+        case PlexDirectConnection(:final serverMachineId):
+          expected.add(serverMachineId);
         case JellyfinConnection(:final serverMachineId):
           expected.add(serverMachineId);
         case null:
@@ -633,6 +635,9 @@ class ActiveProfileBinder {
               generation: generation,
             ),
           );
+        case PlexDirectConnection():
+          expected.add(conn.serverMachineId);
+          futures.add(_bindDirectPlexServer(conn, profileId: profile.id, generation: generation));
         case JellyfinConnection():
           expected.add(conn.serverMachineId);
           futures.add(_bindMediaBrowser(conn, profileId: profile.id, generation: generation));
@@ -1116,6 +1121,21 @@ class ActiveProfileBinder {
     // filter so the refusal banner can surface it instead of hiding it as if
     // the profile had no server.
     if (ok || serverManager.refusedServerIds.contains(conn.serverMachineId)) {
+      return _ProfileBindResult.visible({conn.serverMachineId});
+    }
+    return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+  }
+
+  Future<_ProfileBindResult> _bindDirectPlexServer(
+    PlexDirectConnection conn, {
+    required String profileId,
+    required int generation,
+  }) async {
+    final ok = await serverManager.addDirectPlexConnection(conn, profileId: profileId);
+    if (!_isCurrentBind(profileId, generation)) {
+      return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});
+    }
+    if (ok || serverManager.authErrorServerIds.contains(conn.serverMachineId)) {
       return _ProfileBindResult.visible({conn.serverMachineId});
     }
     return _ProfileBindResult(visibleServerIds: const {}, expectedServerIds: {conn.serverMachineId});

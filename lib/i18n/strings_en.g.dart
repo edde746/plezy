@@ -163,6 +163,9 @@ class Translations$auth$en {
 
 	/// en: 'The Plex PIN check was rejected'
 	String get pinCheckRejected => 'The Plex PIN check was rejected';
+
+	/// en: 'Connect to local Plex server'
+	String get connectToDirectPlex => 'Connect to local Plex server';
 }
 
 // Path: common
@@ -5764,6 +5767,30 @@ class Translations$addServer$en {
 
 	/// en: 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.'
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
+
+	/// en: 'Plex server URL'
+	String get directPlexServerUrl => 'Plex server URL';
+
+	/// en: 'Enter the local IP and port of your Plex Media Server.'
+	String get directPlexServerUrlHelper => 'Enter the local IP and port of your Plex Media Server.';
+
+	/// en: 'Plex Token (optional)'
+	String get plexToken => 'Plex Token (optional)';
+
+	/// en: 'Leave blank if access without auth is allowed on this server.'
+	String get plexTokenHelper => 'Leave blank if access without auth is allowed on this server.';
+
+	/// en: 'Authentication required. Please enter your Plex token (X-Plex-Token).'
+	String get plexTokenRequired => 'Authentication required. Please enter your Plex token (X-Plex-Token).';
+
+	/// en: 'Plex Media Server (Direct / Local)'
+	String get connectDirectPlexCard => 'Plex Media Server (Direct / Local)';
+
+	/// en: 'Connect directly using local IP or URL without plex.tv account.'
+	String get connectDirectPlexCardSubtitle => 'Connect directly using local IP or URL without plex.tv account.';
+
+	/// en: 'Connect directly using local IP or URL. Binds to ${name}.'
+	String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.';
 }
 
 // Path: common.ratingSource
@@ -7424,6 +7451,7 @@ extension on Translations {
 			'auth.quickConnectExpired' => 'Quick Connect expired. Try again.',
 			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'auth.pinCheckRejected' => 'The Plex PIN check was rejected',
+			'auth.connectToDirectPlex' => 'Connect to local Plex server',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -7917,9 +7945,9 @@ extension on Translations {
 			'fileInfo.anamorphic' => 'Anamorphic',
 			'fileInfo.referenceFrames' => 'Reference Frames',
 			'fileInfo.dynamicRange' => 'Dynamic Range',
-			'fileInfo.dolbyVision' => 'Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.dolbyVision' => 'Dolby Vision',
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
@@ -8431,9 +8459,9 @@ extension on Translations {
 			'errors.noClientAvailable' => 'No client available',
 			'errors.pleaseEnterToken' => 'Please enter a token',
 			'errors.invalidToken' => 'Invalid token',
-			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
@@ -8945,9 +8973,9 @@ extension on Translations {
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
 			'watchTogether.makeHost' => 'Make host',
-			'watchTogether.makeHostQuestion' => 'Transfer host?',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.makeHostQuestion' => 'Transfer host?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
@@ -9459,9 +9487,9 @@ extension on Translations {
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
-			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
 			_ => null,
 		} ?? switch (path) {
+			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',
@@ -9541,6 +9569,14 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'addServer.directPlexServerUrl' => 'Plex server URL',
+			'addServer.directPlexServerUrlHelper' => 'Enter the local IP and port of your Plex Media Server.',
+			'addServer.plexToken' => 'Plex Token (optional)',
+			'addServer.plexTokenHelper' => 'Leave blank if access without auth is allowed on this server.',
+			'addServer.plexTokenRequired' => 'Authentication required. Please enter your Plex token (X-Plex-Token).',
+			'addServer.connectDirectPlexCard' => 'Plex Media Server (Direct / Local)',
+			'addServer.connectDirectPlexCardSubtitle' => 'Connect directly using local IP or URL without plex.tv account.',
+			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.',
 			_ => null,
 		};
 	}

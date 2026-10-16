@@ -208,5 +208,35 @@ void main() {
 
       expect((await registry.list()).single.createdAt, DateTime.fromMillisecondsSinceEpoch(5_000_000));
     });
+
+    test('PlexDirectConnection upsert, get and list round-trip with encrypted token', () async {
+      final direct = PlexDirectConnection(
+        id: 'direct-pms-test',
+        baseUrl: 'http://192.168.1.50:32400',
+        baseUrls: const ['http://192.168.1.50:32400'],
+        serverName: 'Local PMS',
+        serverMachineId: 'pms-machine-xyz',
+        clientIdentifier: 'client-xyz',
+        accessToken: 'secret-pms-token',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
+      );
+
+      await registry.upsert(direct);
+
+      final directList = await registry.listDirectPlexConnections();
+      expect(directList.length, 1);
+      expect(directList.first.serverName, 'Local PMS');
+      expect(directList.first.serverMachineId, 'pms-machine-xyz');
+      expect(directList.first.accessToken, 'secret-pms-token');
+
+      final directSingle = await registry.getDirectPlexConnection('direct-pms-test');
+      expect(directSingle, isNotNull);
+      expect(directSingle!.baseUrl, 'http://192.168.1.50:32400');
+      expect(directSingle.accessToken, 'secret-pms-token');
+
+      // Verify token is encrypted at rest in the DB
+      final row = await (db.select(db.connections)..where((t) => t.id.equals('direct-pms-test'))).getSingle();
+      expect(row.configJson, isNot(contains('secret-pms-token')));
+    });
   });
 }
