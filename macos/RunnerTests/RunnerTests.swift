@@ -186,6 +186,9 @@ final class MpvPlayerContractTests: XCTestCase {
     }
 
     XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), "coreaudio,avfoundation")
+    // The fallback must not run under mpv-build's 0.5 s PCM lookahead bound,
+    // which skips audio on Bluetooth routes (#1711).
+    XCTAssertEqual(try awaitGetProperty(core, name: "options/ao-avfoundation-max-lookahead").get(), "0.000000")
   }
 
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {

@@ -606,6 +606,18 @@ class MpvPlayerCoreBase: NSObject {
       // single-entry ao list would turn that into playback with no audio at
       // all (#1964).
       checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
+      // Leave the AVFoundation renderer's own PCM queue depth alone, as 2.11
+      // to 2.13 did (#1711). mpv-build's macOS-only bound defaults to 0.5 s
+      // and, once reached, stops feeding until half of it has drained, so the
+      // queue swings between ~0.25 s and 0.5 s ahead of the synchronizer
+      // clock. A Bluetooth route's output latency (~0.2-0.3 s on AirPods)
+      // has to come out of that same queue, which leaves the renderer
+      // starving between refills: audio skips about twice a second on
+      // AirPods while built-in speakers sound fine. The override went away
+      // in 2.14 when CoreAudio became the only macOS output, and did not come
+      // back with the AVFoundation fallback in 2.15, so every fallback and
+      // passthrough open since then has run under the bound.
+      checkError(mpv_set_option_string(mpv, "ao-avfoundation-max-lookahead", "0"))
     #endif
     // tvOS keeps mpv's default (audiounit, then avfoundation): audiounit drives
     // HDMI multichannel PCM, and refusing passthrough formats hands AC3/EAC3
