@@ -20,6 +20,10 @@ PLUGIN_BASENAMES = %w[
   ConnectivityPlusPlugin.swift
   ConnectivityProvider.swift
   PathMonitorConnectivityProvider.swift
+  InAppPurchasePlugin.swift
+  InAppPurchasePlugin+StoreKit2.swift
+  StoreKit2Messages.g.swift
+  StoreKit2Translators.swift
 ]
 
 # Remove any existing file refs for these basenames from the entire project.
@@ -62,6 +66,13 @@ plugins = {
     ConnectivityPlusPlugin.swift
     ConnectivityProvider.swift
     PathMonitorConnectivityProvider.swift
+  ],
+  # StoreKit 2 only; see the header of InAppPurchasePlugin.swift.
+  'in_app_purchase_storekit' => %w[
+    InAppPurchasePlugin.swift
+    InAppPurchasePlugin+StoreKit2.swift
+    StoreKit2Messages.g.swift
+    StoreKit2Translators.swift
   ],
   # universal_gamepad + os_media_controls come from CocoaPods (tvos/Podfile)
   # — their upstream podspecs declare tvOS support, so no embedded copy

@@ -232,7 +232,7 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   Widget build(BuildContext context) {
     return buildDetailScaffold(
       slivers: [
-        CustomAppBar(title: Text(widget.artist.displayTitle)),
+        CustomAppBar(title: Text(widget.artist.displayTitle), onBackPressed: popFromAppBar),
         SliverToBoxAdapter(child: _buildHeader()),
         ...buildStateSlivers(),
         // Albums arrive newest-first from both backends — no client-side sort.

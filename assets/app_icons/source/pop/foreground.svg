@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<pattern id="half" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="18" cy="18" r="7" fill="#ff8a1f" fill-opacity="0.55"/></pattern>
+</defs>
+<g id="foreground">
+<g transform="translate(545 512) scale(1.1) translate(-179.16 -231.93)" stroke-linejoin="round" stroke-linecap="round"><path d="M335.65,192.66L68.01,38.14C37.78,20.69,0,42.5,0,77.41v309.04c0,34.91,37.78,56.72,68.01,39.27l267.64-154.52c30.23-17.45,30.23-61.08,0-78.54Z" fill="#151515" transform="translate(16 16)"/><path d="M335.65,192.66L68.01,38.14C37.78,20.69,0,42.5,0,77.41v309.04c0,34.91,37.78,56.72,68.01,39.27l267.64-154.52c30.23-17.45,30.23-61.08,0-78.54Z" fill="#ff6a3d" stroke="#151515" stroke-width="16"/><path d="M46.4 195.20C79.6 164.50 113.6 164.50 146.8 195.20S214 225.90 247.4 195.20M46.4 267.96C79.6 237.26 113.6 237.26 146.8 267.96S214 298.66 247.4 267.96" fill="none" stroke="#151515" stroke-width="40.1"/><path d="M46.4 195.20C79.6 164.50 113.6 164.50 146.8 195.20S214 225.90 247.4 195.20M46.4 267.96C79.6 237.26 113.6 237.26 146.8 267.96S214 298.66 247.4 267.96" fill="none" stroke="#ffffff" stroke-width="24.1"/><path d="M58 92 Q60 70 82 74" fill="none" stroke="#ffffff" stroke-width="12" opacity="0.9"/></g>
+</g>
+</svg>

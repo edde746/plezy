@@ -1,0 +1,546 @@
+// Copyright 2013 The Flutter Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+// Plezy tvOS copy: in_app_purchase_storekit 0.4.13+3 (pub.dev), file
+// darwin/.../StoreKit2/InAppPurchasePlugin+StoreKit2.swift. Local delta: add
+// tvOS versions to the iOS 17.4/18.0 `#available` checks, and answer offer-code
+// redemption with an unsupported error, which tvOS StoreKit lacks. Update this
+// together with InAppPurchasePlugin.swift using the guidance in that file.
+
+import StoreKit
+
+@available(iOS 15.0, macOS 12.0, *)
+extension InAppPurchasePlugin: InAppPurchase2API {
+  // MARK: - Pigeon Functions
+
+  /// Wrapper method around StoreKit2's canMakePayments() method
+  /// https://developer.apple.com/documentation/storekit/appstore/3822277-canmakepayments
+  func canMakePayments() throws -> Bool {
+    return AppStore.canMakePayments
+  }
+
+  /// Wrapper method around StoreKit2's products() method
+  /// https://developer.apple.com/documentation/storekit/product/3851116-products
+  func products(
+    identifiers: [String], completion: @escaping (Result<[SK2ProductMessage], Error>) -> Void
+  ) {
+    Task {
+      do {
+        let products = try await Product.products(for: identifiers)
+        let productMessages = products.map {
+          $0.convertToPigeon
+        }
+        completion(.success(productMessages))
+      } catch {
+        completion(
+          .failure(
+            PigeonError(
+              code: "storekit2_products_error",
+              message: error.localizedDescription,
+              details: error.localizedDescription)))
+      }
+    }
+  }
+
+  /// Gets the appropriate product, then calls purchase on it.
+  /// https://developer.apple.com/documentation/storekit/product/3791971-purchase
+  func purchase(
+    id: String, options: SK2ProductPurchaseOptionsMessage?,
+    completion: @escaping (Result<SK2ProductPurchaseResultMessage, Error>) -> Void
+  ) {
+    Task { @MainActor in
+      do {
+        guard let product = try await Product.products(for: [id]).first else {
+          let error = PigeonError(
+            code: "storekit2_failed_to_fetch_product",
+            message: "Storekit has failed to fetch this product.",
+            details: "Product ID : \(id)")
+          return completion(.failure(error))
+        }
+
+        var purchaseOptions: Set<Product.PurchaseOption> = []
+
+        if let appAccountToken = options?.appAccountToken,
+          let accountTokenUUID = UUID(uuidString: appAccountToken)
+        {
+          purchaseOptions.insert(.appAccountToken(accountTokenUUID))
+        }
+        if let quantity = options?.quantity {
+          purchaseOptions.insert(.quantity(Int(quantity)))
+        }
+
+        if #available(iOS 17.4, macOS 14.4, tvOS 17.4, *) {
+          if let promotionalOffer = options?.promotionalOffer {
+            purchaseOptions.insert(
+              .promotionalOffer(
+                offerID: promotionalOffer.promotionalOfferId,
+                signature: promotionalOffer.promotionalOfferSignature.convertToSignature
+              )
+            )
+          }
+        }
+
+        if #available(iOS 18.0, macOS 15.0, tvOS 18.0, *) {
+          if let winBackOfferId = options?.winBackOfferId,
+            let winBackOffer = product.subscription?.winBackOffers.first(where: {
+              $0.id == winBackOfferId
+            })
+          {
+            purchaseOptions.insert(.winBackOffer(winBackOffer))
+          }
+        }
+
+        // No availability check is needed: `introductoryOfferEligibility` is
+        // back deployed, so it is available on the same iOS 15 / macOS 12
+        // floor as the rest of this StoreKit 2 extension.
+        if let compactJWS = options?.introductoryOfferEligibilityCompactJWS {
+          purchaseOptions.insert(.introductoryOfferEligibility(compactJWS: compactJWS))
+        }
+
+        for await verificationResult in Transaction.unfinished {
+          switch verificationResult {
+          case .verified(let transaction):
+            if transaction.productID == id {
+              let error = PigeonError(
+                code: "storekit_duplicate_product_object",
+                message:
+                  "There is a pending transaction for the same product identifier. Please either wait for it to be finished or finish it manually using `completePurchase` to avoid edge cases.",
+                details: id)
+              return completion(.failure(error))
+            }
+          case .unverified:
+            break
+          }
+        }
+
+        let result = try await product.purchase(options: purchaseOptions)
+
+        switch result {
+        case .success(let verification):
+          sendTransactionUpdate(
+            productId: id,
+            transaction: verification.unsafePayloadValue,
+            receipt: verification.jwsRepresentation,
+            status: .purchased
+          )
+        case .pending:
+          sendTransactionUpdate(productId: id, status: .pending)
+        case .userCancelled:
+          sendTransactionUpdate(productId: id, status: .cancelled)
+        @unknown default:
+          fatalError("An unknown StoreKit PurchaseResult has been encountered.")
+        }
+        completion(.success(result.convertToPigeon()))
+      } catch {
+        completion(.failure(error))
+      }
+    }
+  }
+
+  /// Checks if the user is eligible for a specific win back offer.
+  ///
+  /// - Parameters:
+  ///   - productId: The product ID associated with the offer.
+  ///   - offerId: The ID of the win back offer.
+  ///   - completion: Returns `Bool` for eligibility or `Error` on failure.
+  ///
+  /// - Availability: iOS 18.0+, macOS 15.0+, Swift 6.0+ (Xcode 16+).
+  func isWinBackOfferEligible(
+    productId: String,
+    offerId: String,
+    completion: @escaping (Result<Bool, Error>) -> Void
+  ) {
+    if #available(iOS 18.0, macOS 15.0, tvOS 18.0, *) {
+      Task {
+        do {
+          guard let product = try await Product.products(for: [productId]).first else {
+            completion(
+              .failure(
+                PigeonError(
+                  code: "storekit2_failed_to_fetch_product",
+                  message: "Storekit has failed to fetch this product.",
+                  details: "Product ID: \(productId)")))
+            return
+          }
+
+          guard let subscription = product.subscription else {
+            completion(
+              .failure(
+                PigeonError(
+                  code: "storekit2_not_subscription",
+                  message: "Product is not a subscription",
+                  details: "Product ID: \(productId)")))
+            return
+          }
+
+          let isEligible = try await subscription.status.contains { status in
+            if case .verified(let renewalInfo) = status.renewalInfo {
+              return renewalInfo.eligibleWinBackOfferIDs.contains(offerId)
+            }
+            return false
+          }
+
+          completion(.success(isEligible))
+
+        } catch {
+          completion(
+            .failure(
+              PigeonError(
+                code: "storekit2_eligibility_check_failed",
+                message: "Failed to check offer eligibility: \(error.localizedDescription)",
+                details: "Product ID: \(productId), Error: \(error)")))
+        }
+      }
+    } else {
+      completion(
+        .failure(
+          PigeonError(
+            code: "storekit2_unsupported_platform_version",
+            message: "Win back offers require iOS 18+ or macOS 15.0+",
+            details: nil)))
+    }
+  }
+
+  /// Checks if the user is eligible for an introductory offer.
+  ///
+  /// - Parameters:
+  ///   - productId: The product ID associated with the offer.
+  ///   - completion: Returns `Bool` for eligibility or `Error` on failure.
+  ///
+  /// - Availability: iOS 15.0+, macOS 12.0+
+  func isIntroductoryOfferEligible(
+    productId: String,
+    completion: @escaping (Result<Bool, Error>) -> Void
+  ) {
+    Task {
+      do {
+        guard let product = try await Product.products(for: [productId]).first else {
+          completion(
+            .failure(
+              PigeonError(
+                code: "storekit2_failed_to_fetch_product",
+                message: "Storekit has failed to fetch this product.",
+                details: "Product ID: \(productId)")))
+          return
+        }
+
+        guard let subscription = product.subscription else {
+          completion(
+            .failure(
+              PigeonError(
+                code: "storekit2_not_subscription",
+                message: "Product is not a subscription",
+                details: "Product ID: \(productId)")))
+          return
+        }
+
+        let isEligible = await subscription.isEligibleForIntroOffer
+
+        completion(.success(isEligible))
+      } catch {
+        completion(
+          .failure(
+            PigeonError(
+              code: "storekit2_eligibility_check_failed",
+              message: "Failed to check offer eligibility: \(error.localizedDescription)",
+              details: "Product ID: \(productId), Error: \(error)")))
+      }
+    }
+  }
+
+  /// Wrapper method around StoreKit2's transactions() method
+  /// https://developer.apple.com/documentation/storekit/product/3851116-products
+  func transactions(
+    completion: @escaping (Result<[SK2TransactionMessage], Error>) -> Void
+  ) {
+    Task {
+      @MainActor in
+      do {
+        let transactionsMsgs = await rawTransactions().map {
+          $0.convertToPigeon(receipt: nil, status: .purchased)
+        }
+        completion(.success(transactionsMsgs))
+      }
+    }
+  }
+
+  /// Wrapper method around StoreKit2's Transaction.unfinished
+  /// https://developer.apple.com/documentation/storekit/transaction/unfinished
+  func unfinishedTransactions(
+    completion: @escaping (Result<[SK2TransactionMessage], Error>) -> Void
+  ) {
+    Task {
+      @MainActor in
+      var transactionsMsgs: [SK2TransactionMessage] = []
+      for await verificationResult in Transaction.unfinished {
+        switch verificationResult {
+        case .verified(let transaction):
+          transactionsMsgs.append(
+            transaction.convertToPigeon(
+              receipt: verificationResult.jwsRepresentation, status: .purchased)
+          )
+        case .unverified:
+          break
+        }
+      }
+      completion(.success(transactionsMsgs))
+    }
+  }
+
+  func restorePurchases(completion: @escaping (Result<Void, Error>) -> Void) {
+    Task { [weak self] in
+      guard let self = self else { return }
+      do {
+        var restoredTransactions: [SK2TransactionMessage] = []
+        var unverifiedPurchases: [UInt64: (receipt: String, error: Error?)] = [:]
+        for await completedPurchase in Transaction.currentEntitlements {
+          switch completedPurchase {
+          case .verified(let purchase):
+            restoredTransactions.append(
+              purchase.convertToPigeon(
+                receipt: "\(completedPurchase.jwsRepresentation)",
+                status: .restored
+              )
+            )
+          case .unverified(let failedPurchase, let error):
+            unverifiedPurchases[failedPurchase.id] = (
+              receipt: completedPurchase.jwsRepresentation, error: error
+            )
+          }
+        }
+        self.sendTransactionUpdates(restoredTransactions)
+        if !unverifiedPurchases.isEmpty {
+          completion(
+            .failure(
+              PigeonError(
+                code: "storekit2_restore_failed",
+                message:
+                  "This purchase could not be restored.",
+                details: unverifiedPurchases)))
+          return
+        }
+        completion(.success(Void()))
+      }
+    }
+  }
+
+  /// Wrapper method around StoreKit2's finish() method https://developer.apple.com/documentation/storekit/transaction/3749694-finish
+  func finish(id: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+    Task {
+      // Report success when no verified transaction matches, as StoreKit 1
+      // does; a finished consumable is no longer in Transaction.all.
+      if let transaction = await fetchTransaction(by: UInt64(id)) {
+        await transaction.finish()
+      }
+      completion(.success(Void()))
+    }
+  }
+
+  /// Wrapper method around StoreKit2's countryCode() method
+  /// https://developer.apple.com/documentation/storekit/storefront/countrycode
+  func countryCode(completion: @escaping (Result<String, Error>) -> Void) {
+    Task {
+      guard let currentStorefront = await Storefront.current else {
+        let error = PigeonError(
+          code: "storekit2_failed_to_fetch_country_code",
+          message: "Storekit has failed to fetch the country code.",
+          details: "Storefront.current returned nil.")
+        completion(.failure(error))
+        return
+      }
+      completion(.success(currentStorefront.countryCode))
+      return
+    }
+  }
+
+  func presentOfferCodeRedeemSheet(completion: @escaping (Result<Void, Error>) -> Void) {
+    #if os(iOS)
+      if #available(iOS 16.0, *) {
+        guard let windowScene = self.registrar?.viewController?.view.window?.windowScene else {
+          let error = PigeonError(
+            code: "storekit2_missing_key_window_scene",
+            message: "Failed to fetch key window scene",
+            details: "registrar.viewController.view.window.windowScene returned nil."
+          )
+          completion(.failure(error))
+          return
+        }
+        Task { @MainActor in
+          do {
+            try await AppStore.presentOfferCodeRedeemSheet(in: windowScene)
+            completion(.success(()))
+          } catch {
+            completion(.failure(error))
+          }
+        }
+      } else {
+        completion(
+          .failure(
+            PigeonError(
+              code: "storekit2_unsupported_platform_version",
+              message: "Offer code redemption requires iOS 16+",
+              details: nil
+            )))
+      }
+    #elseif os(macOS)
+      if #available(macOS 15.0, *) {
+        guard let viewController = self.registrar?.viewController else {
+          let error = PigeonError(
+            code: "storekit2_missing_view_controller",
+            message: "Failed to fetch view controller",
+            details: "registrar.viewController returned nil."
+          )
+          completion(.failure(error))
+          return
+        }
+
+        Task { @MainActor in
+          do {
+            try await AppStore.presentOfferCodeRedeemSheet(from: viewController)
+            completion(.success(()))
+          } catch {
+            completion(.failure(error))
+          }
+        }
+      } else {
+        completion(
+          .failure(
+            PigeonError(
+              code: "storekit2_unsupported_platform_version",
+              message: "Offer code redemption requires macOS 15+",
+              details: nil
+            )))
+      }
+    #else
+      completion(
+        .failure(
+          PigeonError(
+            code: "storekit2_unsupported_platform",
+            message: "Offer code redemption is not available on tvOS",
+            details: nil
+          )))
+    #endif
+  }
+
+  /// Wrapper method around StoreKit2's sync() method
+  /// https://developer.apple.com/documentation/storekit/appstore/sync()
+  /// When called, a system prompt will ask users to enter their authentication details
+  func sync(completion: @escaping (Result<Void, Error>) -> Void) {
+    Task {
+      do {
+        try await AppStore.sync()
+        completion(.success(()))
+        return
+      } catch {
+        let pigeonError = PigeonError(
+          code: "storekit2_failed_to_sync_to_app_store",
+          message: "Storekit has failed to sync to the app store.",
+          details: "\(error)")
+        completion(.failure(pigeonError))
+        return
+      }
+    }
+  }
+
+  /// This Task listens  to Transation.updates as shown here
+  /// https://developer.apple.com/documentation/storekit/transaction/3851206-updates
+  /// This function should be called as soon as the app starts to avoid missing any Transactions done outside of the app.
+  func startListeningToTransactions() throws {
+    self.setListenerTaskAsTask(
+      task: Task { [weak self] in
+        for await verificationResult in Transaction.updates {
+          switch verificationResult {
+          case .verified(let transaction):
+            self?.sendTransactionUpdate(
+              productId: transaction.productID,
+              transaction: transaction,
+              receipt: verificationResult.jwsRepresentation,
+              status: .purchased
+            )
+          case .unverified:
+            break
+          }
+        }
+      })
+  }
+
+  /// Stop subscribing to Transaction.updates
+  func stopListeningToTransactions() throws {
+    updateListenerTask.cancel()
+  }
+
+  /// Sends a transaction or status update back to Dart. Access these transactions with `purchaseStream`
+  /// - Parameters:
+  ///   - productId: The product ID (required)
+  ///   - transaction: The transaction object (for success cases, nil for pending/cancelled)
+  ///   - receipt: The JWS receipt data
+  ///   - status: The purchase status
+  private func sendTransactionUpdate(
+    productId: String,
+    transaction: Transaction? = nil,
+    receipt: String? = nil,
+    status: SK2PurchaseStatusMessage
+  ) {
+    let transactionMessage: SK2TransactionMessage
+
+    if let transaction = transaction {
+      // Has real transaction: use transaction info
+      transactionMessage = transaction.convertToPigeon(receipt: receipt, status: status)
+    } else {
+      // No transaction (pending/cancelled): create minimal message without purchaseDate
+      transactionMessage = SK2TransactionMessage(
+        id: 0,
+        originalId: 0,
+        productId: productId,
+        purchasedQuantity: 1,
+        status: status
+      )
+    }
+
+    sendTransactionUpdates([transactionMessage])
+  }
+
+  private func sendTransactionUpdates(_ transactionMessages: [SK2TransactionMessage]) {
+    Task { @MainActor in
+      self.transactionCallbackAPI?.onTransactionsUpdated(newTransactions: transactionMessages) {
+        result in
+        switch result {
+        case .success: break
+        case .failure(let error):
+          print("Failed to send transaction update: \(error)")
+        }
+      }
+    }
+  }
+
+  // MARK: - Internal Convenience Functions
+
+  /// Helper function that fetches and unwraps all verified transactions
+  func rawTransactions() async -> [Transaction] {
+    var transactions: [Transaction] = []
+    for await verificationResult in Transaction.all {
+      switch verificationResult {
+      case .verified(let transaction):
+        transactions.append(transaction)
+      case .unverified:
+        break
+      }
+    }
+    return transactions
+  }
+
+  /// Helper function to fetch specific transaction
+  func fetchTransaction(by id: UInt64) async -> Transaction? {
+    for await result in Transaction.all {
+      switch result {
+      case .verified(let transaction):
+        if transaction.id == id {
+          return transaction
+        }
+      case .unverified:
+        continue
+      }
+    }
+    return nil
+  }
+}

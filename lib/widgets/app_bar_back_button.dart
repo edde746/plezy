@@ -33,7 +33,8 @@ class AppBarBackButton extends StatefulWidget {
   /// Creates a back button with the specified style.
   ///
   /// [style] determines the visual appearance of the back button.
-  /// [onPressed] is called when the button is tapped. If null, defaults to Navigator.pop.
+  /// [onPressed] is called when the button is tapped. If null, defaults to [Navigator.maybePop], so a
+  /// [PopScope] on the route can veto or intercept the press like a system back.
   /// [color] overrides the default icon color. If null, uses white for circular/video, theme default for plain.
   /// [focusNode] allows callers to connect this control to an explicit focus graph.
   /// [semanticLabel] overrides the localized back-button label.
@@ -48,7 +49,7 @@ class AppBarBackButton extends StatefulWidget {
 
   final BackButtonStyle style;
 
-  /// Callback when the button is pressed. Defaults to Navigator.of(context).pop()
+  /// Callback when the button is pressed. Defaults to [Navigator.maybePop].
   final VoidCallback? onPressed;
 
   /// The color of the back arrow icon. If null, uses style-appropriate default.
@@ -68,7 +69,7 @@ class _AppBarBackButtonState extends State<AppBarBackButton> {
     if (widget.onPressed != null) {
       widget.onPressed!();
     } else {
-      Navigator.of(context).pop();
+      Navigator.maybePop(context);
     }
   }
 

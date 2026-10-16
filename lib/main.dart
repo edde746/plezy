@@ -50,6 +50,7 @@ import 'services/discord_rpc_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'services/image_cache_service.dart';
+import 'services/app_icon/app_icon_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'services/playback_coordinator.dart';
@@ -57,6 +58,7 @@ import 'providers/account_preferences_controller.dart';
 import 'services/account_preferences_repository.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/supporter/supporter_service.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
@@ -137,6 +139,9 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
 void _registerTvosPlatformPlugins() {
   if (!Platform.isIOS) return; // tvOS reports as iOS via dart:io.
   SharedPreferencesFoundation.registerWith();
+  // in_app_purchase needs no entry here: `InAppPurchase.instance` registers
+  // its StoreKit platform on first use (tvOS reports iOS), which
+  // SupporterService reaches only in SUPPORTER_MODE=iap builds.
 }
 
 void main() {
@@ -181,11 +186,11 @@ void _bootstrapApp() {
       ),
       discard: (dependencies) => dependencies.appDatabase.close(),
       onCommitted: (dependencies) => _startNonessentialInitialization(dependencies.settings),
-      lightTheme: monoTheme(dark: false),
-      darkTheme: monoTheme(dark: true),
+      lightTheme: monoTheme(MonoPalette.light),
+      darkTheme: monoTheme(MonoPalette.dark),
       resolveTheme: _resolveStartupTheme,
       // Android runs the Flutter surface in transparent mode over a window
-      // whose background MainActivity already restored, so the loading frame
+      // whose background PlezyActivity already restored, so the loading frame
       // can leave the launch screen on display. Every other platform composites
       // opaquely and has nothing behind Flutter worth showing.
       transparentWhileLoading: Platform.isAndroid,
@@ -203,14 +208,22 @@ void _bootstrapApp() {
 /// detection has to come first: the `themeMode` default is TV-aware and
 /// [TvDetectionService.isTVSync] answers false until its singleton exists,
 /// which would make a fresh Android TV install resolve the light theme.
+///
+/// A stored Supporter perk is gated by the cached entitlement, the same rule
+/// [ThemeProvider] applies, so a locked perk never flashes and an unlocked one
+/// never flashes the fallback. That fallback is the same TV-aware default.
 Future<StartupThemeResolution> _resolveStartupTheme() async {
   final settings = await SettingsService.getInstance();
   await TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode));
-  final mode = settings.read(SettingsService.themeMode);
+  final palette = ThemeProvider.resolveStored(settings, unlocked: SupporterService.startupUnlocked(settings)).palette;
   ThemeProvider.applyWindowChromeBrightness(
-    ThemeProvider.isDarkFor(mode, WidgetsBinding.instance.platformDispatcher.platformBrightness),
+    ThemeProvider.isDarkFor(palette, WidgetsBinding.instance.platformDispatcher.platformBrightness),
   );
-  return (themeMode: ThemeProvider.materialThemeModeFor(mode), darkTheme: ThemeProvider.darkThemeFor(mode));
+  return (
+    themeMode: ThemeProvider.materialThemeModeFor(palette),
+    lightTheme: ThemeProvider.lightThemeFor(palette),
+    darkTheme: ThemeProvider.darkThemeFor(palette),
+  );
 }
 
 /// Wraps [step] so a failure names the gate phase it came from.
@@ -621,7 +634,7 @@ Future<void> showRepairOutcomeDialog(
 }
 
 /// Theme the startup frames adopt once the persisted preference is readable.
-typedef StartupThemeResolution = ({material.ThemeMode themeMode, ThemeData darkTheme});
+typedef StartupThemeResolution = ({material.ThemeMode themeMode, ThemeData lightTheme, ThemeData darkTheme});
 
 /// Mounts a Flutter-owned startup frame before invoking the asynchronous
 /// initialization gate. The generic seam keeps frame ordering, failure, and
@@ -677,7 +690,7 @@ class StartupBootstrap<T> extends StatefulWidget {
   /// background, so the loading frame must not cover it.
   ///
   /// True only on Android, where `TransparencyMode.transparent` lets the
-  /// window decor show through and `MainActivity` has already restored the
+  /// window decor show through and `PlezyActivity` has already restored the
   /// persisted launch colour.
   final bool transparentWhileLoading;
 
@@ -832,7 +845,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
         builder: (context) => InputModeTracker(
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: widget.lightTheme,
+            theme: resolved?.lightTheme ?? widget.lightTheme,
             darkTheme: resolved?.darkTheme ?? widget.darkTheme,
             themeMode: resolved?.themeMode ?? widget.themeMode,
             home: Builder(builder: _buildBootstrapHome),
@@ -1816,10 +1829,29 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
           update: (_, controller, _) => controller.repository,
         ),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        // App-global: a Supporter purchase belongs to the store account on this
+        // device, not to a profile.
+        ChangeNotifierProvider(
+          create: (context) {
+            final supporter = SupporterService();
+            unawaited(supporter.init());
+            return supporter;
+          },
+        ),
+        ChangeNotifierProvider(create: (context) => ThemeProvider(supporter: context.read<SupporterService>())),
         // Shader presets are app-global — deliberately outside the
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
+        // Created eagerly: it must be listening when a Supporter refund is
+        // confirmed, so the default app icon comes back even with Settings closed.
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (context) {
+            final appIcons = AppIconService(supporter: context.read<SupporterService>());
+            unawaited(appIcons.refresh());
+            return appIcons;
+          },
+        ),
       ],
       child: _AppShell(databaseRecoveryOutcome: widget.databaseRecoveryOutcome),
     );

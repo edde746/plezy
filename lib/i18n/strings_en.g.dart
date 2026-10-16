@@ -41,11 +41,14 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
+	late final Translations$supporter$en supporter = Translations$supporter$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
 	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
 	late final Translations$fileInfo$en fileInfo = Translations$fileInfo$en.internal(_root);
@@ -103,6 +106,41 @@ class Translations$app$en {
 
 	/// en: 'Plezy'
 	String get title => 'Plezy';
+}
+
+// Path: appIcon
+class Translations$appIcon$en {
+	Translations$appIcon$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'App icon'
+	String get title => 'App icon';
+
+	/// en: 'Default'
+	String get defaultIcon => 'Default';
+
+	/// en: 'Current icon'
+	String get current => 'Current icon';
+
+	/// en: 'Supporter perk'
+	String get locked => 'Supporter perk';
+
+	/// en: 'Alternate icons are a Supporter perk.'
+	String get lockedHint => 'Alternate icons are a Supporter perk.';
+
+	/// en: 'Couldn't change the app icon'
+	String get changeFailed => 'Couldn\'t change the app icon';
+
+	/// en: 'The new icon appears on your home screen once you leave Plezy.'
+	String get launcherHint => 'The new icon appears on your home screen once you leave Plezy.';
+
+	/// en: 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.'
+	String get tvLauncherHint => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.';
+
+	late final Translations$appIcon$names$en names = Translations$appIcon$names$en.internal(_root);
 }
 
 // Path: auth
@@ -379,6 +417,68 @@ class Translations$update$en {
 	String get checkFailed => 'Failed to check for updates';
 }
 
+// Path: supporter
+class Translations$supporter$en {
+	Translations$supporter$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Plezy Supporter'
+	String get title => 'Plezy Supporter';
+
+	/// en: 'A one-time purchase that supports Plezy's development and unlocks cosmetic extras:'
+	String get intro => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:';
+
+	/// en: 'Preset themes'
+	String get presetThemes => 'Preset themes';
+
+	/// en: 'Ember, Glacier, Forest, Plum and Paper'
+	String get presetThemesDescription => 'Ember, Glacier, Forest, Plum and Paper';
+
+	/// en: 'Custom theme'
+	String get customTheme => 'Custom theme';
+
+	/// en: 'Pick every color yourself'
+	String get customThemeDescription => 'Pick every color yourself';
+
+	/// en: 'App icons'
+	String get appIcons => 'App icons';
+
+	/// en: 'Choose an alternate Plezy icon'
+	String get appIconsDescription => 'Choose an alternate Plezy icon';
+
+	/// en: 'Buy for ${price}'
+	String buy({required Object price}) => 'Buy for ${price}';
+
+	/// en: 'Loading price...'
+	String get loadingPrice => 'Loading price...';
+
+	/// en: 'Restore Purchases'
+	String get restore => 'Restore Purchases';
+
+	/// en: 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.'
+	String get pending => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.';
+
+	/// en: 'Thank you for supporting Plezy'
+	String get thankYouTitle => 'Thank you for supporting Plezy';
+
+	/// en: 'Your Supporter extras are unlocked.'
+	String get thankYouBody => 'Your Supporter extras are unlocked.';
+
+	/// en: 'Unlock themes and app icons with a one-time purchase'
+	String get tileSubtitle => 'Unlock themes and app icons with a one-time purchase';
+
+	/// en: 'Unlock themes with a one-time purchase'
+	String get tileSubtitleThemesOnly => 'Unlock themes with a one-time purchase';
+
+	/// en: 'Thank you for your support'
+	String get tileUnlocked => 'Thank you for your support';
+
+	late final Translations$supporter$errors$en errors = Translations$supporter$errors$en.internal(_root);
+}
+
 // Path: settings
 class Translations$settings$en {
 	Translations$settings$en.internal(this._root);
@@ -455,6 +555,21 @@ class Translations$settings$en {
 
 	/// en: 'OLED'
 	String get oledTheme => 'OLED';
+
+	/// en: 'Ember'
+	String get emberTheme => 'Ember';
+
+	/// en: 'Glacier'
+	String get glacierTheme => 'Glacier';
+
+	/// en: 'Forest'
+	String get forestTheme => 'Forest';
+
+	/// en: 'Plum'
+	String get plumTheme => 'Plum';
+
+	/// en: 'Paper'
+	String get paperTheme => 'Paper';
 
 	/// en: 'Library Density'
 	String get libraryDensity => 'Library Density';
@@ -1373,6 +1488,94 @@ class Translations$settings$en {
 
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
+}
+
+// Path: themeEditor
+class Translations$themeEditor$en {
+	Translations$themeEditor$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Built-in'
+	String get builtIn => 'Built-in';
+
+	/// en: 'Presets'
+	String get presets => 'Presets';
+
+	/// en: 'Custom'
+	String get custom => 'Custom';
+
+	/// en: 'Not created yet'
+	String get customEmpty => 'Not created yet';
+
+	/// en: 'Edit custom theme'
+	String get editCustom => 'Edit custom theme';
+
+	/// en: 'Choose every color yourself'
+	String get editCustomDescription => 'Choose every color yourself';
+
+	/// en: 'Unlock with Supporter'
+	String get locked => 'Unlock with Supporter';
+
+	/// en: 'Saved — unlocks with Supporter'
+	String get savedLocked => 'Saved — unlocks with Supporter';
+
+	/// en: 'Custom Theme'
+	String get title => 'Custom Theme';
+
+	/// en: 'Start from'
+	String get startFrom => 'Start from';
+
+	/// en: 'Copy all colors from another theme'
+	String get startFromDescription => 'Copy all colors from another theme';
+
+	/// en: 'Colors'
+	String get colors => 'Colors';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
+
+	late final Translations$themeEditor$slots$en slots = Translations$themeEditor$slots$en.internal(_root);
+
+	/// en: 'Opacity'
+	String get opacity => 'Opacity';
+
+	/// en: '#RRGGBB or #AARRGGBB'
+	String get hexHint => '#RRGGBB or #AARRGGBB';
+
+	/// en: 'From other themes'
+	String get fromOtherThemes => 'From other themes';
+
+	/// en: '${theme} ${color}'
+	String swatchLabel({required Object theme, required Object color}) => '${theme} ${color}';
+
+	late final Translations$themeEditor$contrast$en contrast = Translations$themeEditor$contrast$en.internal(_root);
+
+	/// en: '${pair}: ${ratio}:1, below the recommended ${minimum}:1'
+	String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1';
+
+	/// en: 'Discard changes?'
+	String get discardTitle => 'Discard changes?';
+
+	/// en: 'Your unsaved color changes will be lost.'
+	String get discardMessage => 'Your unsaved color changes will be lost.';
+
+	/// en: 'Discard'
+	String get discard => 'Discard';
+
+	/// en: 'Episode ${number}'
+	String previewCardTitle({required Object number}) => 'Episode ${number}';
+
+	/// en: '${minutes} min left'
+	String previewCardSubtitle({required Object minutes}) => '${minutes} min left';
+
+	/// en: 'Autoplay'
+	String get previewSwitch => 'Autoplay';
+
+	/// en: 'Secondary text reads like this'
+	String get previewMutedText => 'Secondary text reads like this';
 }
 
 // Path: search
@@ -5784,6 +5987,84 @@ class Translations$addServer$en {
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
+// Path: appIcon.names
+class Translations$appIcon$names$en {
+	Translations$appIcon$names$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Midnight'
+	String get midnight => 'Midnight';
+
+	/// en: 'Ember'
+	String get ember => 'Ember';
+
+	/// en: 'Paper'
+	String get paper => 'Paper';
+
+	/// en: 'OLED'
+	String get oled => 'OLED';
+
+	/// en: 'Line'
+	String get line => 'Line';
+
+	/// en: 'Ocean'
+	String get ocean => 'Ocean';
+
+	/// en: 'Ultraviolet'
+	String get ultraviolet => 'Ultraviolet';
+
+	/// en: 'Matcha'
+	String get matcha => 'Matcha';
+
+	/// en: 'Sunset'
+	String get sunset => 'Sunset';
+
+	/// en: 'Gold'
+	String get gold => 'Gold';
+
+	/// en: 'Titanium'
+	String get titanium => 'Titanium';
+
+	/// en: 'Glass'
+	String get glass => 'Glass';
+
+	/// en: 'CRT'
+	String get crt => 'CRT';
+
+	/// en: 'VHS'
+	String get vhs => 'VHS';
+
+	/// en: 'Synthwave'
+	String get synthwave => 'Synthwave';
+
+	/// en: 'Pixel'
+	String get pixel => 'Pixel';
+
+	/// en: 'Neon'
+	String get neon => 'Neon';
+
+	/// en: 'Sticker'
+	String get sticker => 'Sticker';
+
+	/// en: 'Ticket'
+	String get ticket => 'Ticket';
+
+	/// en: 'Pop'
+	String get pop => 'Pop';
+
+	/// en: 'Strata'
+	String get strata => 'Strata';
+
+	/// en: 'Facet'
+	String get facet => 'Facet';
+
+	/// en: 'Tilde'
+	String get tilde => 'Tilde';
+}
+
 // Path: common.ratingSource
 class Translations$common$ratingSource$en {
 	Translations$common$ratingSource$en.internal(this._root);
@@ -5875,6 +6156,90 @@ class Translations$common$mediaKind$en {
 
 	/// en: 'Folder'
 	String get folder => 'Folder';
+}
+
+// Path: supporter.errors
+class Translations$supporter$errors$en {
+	Translations$supporter$errors$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
+	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
+
+	/// en: 'The Supporter purchase isn't available in your store right now.'
+	String get productNotFound => 'The Supporter purchase isn\'t available in your store right now.';
+
+	/// en: 'Couldn't load the price. Check your connection and try again.'
+	String get productQueryFailed => 'Couldn\'t load the price. Check your connection and try again.';
+
+	/// en: 'The purchase didn't go through. Try again.'
+	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
+
+	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
+	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
+
+	/// en: 'No Supporter purchase was found for this store account.'
+	String get nothingToRestore => 'No Supporter purchase was found for this store account.';
+}
+
+// Path: themeEditor.slots
+class Translations$themeEditor$slots$en {
+	Translations$themeEditor$slots$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Background'
+	String get bg => 'Background';
+
+	/// en: 'Surface'
+	String get surface => 'Surface';
+
+	/// en: 'Outline'
+	String get outline => 'Outline';
+
+	/// en: 'Text'
+	String get text => 'Text';
+
+	/// en: 'Secondary text'
+	String get textMuted => 'Secondary text';
+
+	/// en: 'Accent'
+	String get accent => 'Accent';
+}
+
+// Path: themeEditor.contrast
+class Translations$themeEditor$contrast$en {
+	Translations$themeEditor$contrast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Text on background'
+	String get textOnBg => 'Text on background';
+
+	/// en: 'Text on surface'
+	String get textOnSurface => 'Text on surface';
+
+	/// en: 'Secondary text on background'
+	String get textMutedOnBg => 'Secondary text on background';
+
+	/// en: 'Secondary text on surface'
+	String get textMutedOnSurface => 'Secondary text on surface';
+
+	/// en: 'Accent on background'
+	String get accentOnBg => 'Accent on background';
+
+	/// en: 'Accent on surface'
+	String get accentOnSurface => 'Accent on surface';
+
+	/// en: 'Button label on accent'
+	String get labelOnAccent => 'Button label on accent';
 }
 
 // Path: hotkeys.actions
@@ -7425,6 +7790,37 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'appIcon.title' => 'App icon',
+			'appIcon.defaultIcon' => 'Default',
+			'appIcon.current' => 'Current icon',
+			'appIcon.locked' => 'Supporter perk',
+			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
+			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
+			'appIcon.launcherHint' => 'The new icon appears on your home screen once you leave Plezy.',
+			'appIcon.tvLauncherHint' => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.',
+			'appIcon.names.midnight' => 'Midnight',
+			'appIcon.names.ember' => 'Ember',
+			'appIcon.names.paper' => 'Paper',
+			'appIcon.names.oled' => 'OLED',
+			'appIcon.names.line' => 'Line',
+			'appIcon.names.ocean' => 'Ocean',
+			'appIcon.names.ultraviolet' => 'Ultraviolet',
+			'appIcon.names.matcha' => 'Matcha',
+			'appIcon.names.sunset' => 'Sunset',
+			'appIcon.names.gold' => 'Gold',
+			'appIcon.names.titanium' => 'Titanium',
+			'appIcon.names.glass' => 'Glass',
+			'appIcon.names.crt' => 'CRT',
+			'appIcon.names.vhs' => 'VHS',
+			'appIcon.names.synthwave' => 'Synthwave',
+			'appIcon.names.pixel' => 'Pixel',
+			'appIcon.names.neon' => 'Neon',
+			'appIcon.names.sticker' => 'Sticker',
+			'appIcon.names.ticket' => 'Ticket',
+			'appIcon.names.pop' => 'Pop',
+			'appIcon.names.strata' => 'Strata',
+			'appIcon.names.facet' => 'Facet',
+			'appIcon.names.tilde' => 'Tilde',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
@@ -7528,6 +7924,29 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
+			'supporter.title' => 'Plezy Supporter',
+			'supporter.intro' => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:',
+			'supporter.presetThemes' => 'Preset themes',
+			'supporter.presetThemesDescription' => 'Ember, Glacier, Forest, Plum and Paper',
+			'supporter.customTheme' => 'Custom theme',
+			'supporter.customThemeDescription' => 'Pick every color yourself',
+			'supporter.appIcons' => 'App icons',
+			'supporter.appIconsDescription' => 'Choose an alternate Plezy icon',
+			'supporter.buy' => ({required Object price}) => 'Buy for ${price}',
+			'supporter.loadingPrice' => 'Loading price...',
+			'supporter.restore' => 'Restore Purchases',
+			'supporter.pending' => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.',
+			'supporter.thankYouTitle' => 'Thank you for supporting Plezy',
+			'supporter.thankYouBody' => 'Your Supporter extras are unlocked.',
+			'supporter.tileSubtitle' => 'Unlock themes and app icons with a one-time purchase',
+			'supporter.tileSubtitleThemesOnly' => 'Unlock themes with a one-time purchase',
+			'supporter.tileUnlocked' => 'Thank you for your support',
+			'supporter.errors.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
+			'supporter.errors.productNotFound' => 'The Supporter purchase isn\'t available in your store right now.',
+			'supporter.errors.productQueryFailed' => 'Couldn\'t load the price. Check your connection and try again.',
+			'supporter.errors.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
+			'supporter.errors.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
+			'supporter.errors.nothingToRestore' => 'No Supporter purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support Plezy',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
@@ -7551,6 +7970,11 @@ extension on Translations {
 			'settings.lightTheme' => 'Light',
 			'settings.darkTheme' => 'Dark',
 			'settings.oledTheme' => 'OLED',
+			'settings.emberTheme' => 'Ember',
+			'settings.glacierTheme' => 'Glacier',
+			'settings.forestTheme' => 'Forest',
+			'settings.plumTheme' => 'Plum',
+			'settings.paperTheme' => 'Paper',
 			'settings.libraryDensity' => 'Library Density',
 			'settings.displayScale' => 'Display Scale',
 			'settings.compact' => 'Compact',
@@ -7857,6 +8281,46 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'themeEditor.builtIn' => 'Built-in',
+			'themeEditor.presets' => 'Presets',
+			'themeEditor.custom' => 'Custom',
+			'themeEditor.customEmpty' => 'Not created yet',
+			'themeEditor.editCustom' => 'Edit custom theme',
+			'themeEditor.editCustomDescription' => 'Choose every color yourself',
+			'themeEditor.locked' => 'Unlock with Supporter',
+			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
+			'themeEditor.title' => 'Custom Theme',
+			'themeEditor.startFrom' => 'Start from',
+			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
+			'themeEditor.colors' => 'Colors',
+			'themeEditor.preview' => 'Preview',
+			'themeEditor.slots.bg' => 'Background',
+			'themeEditor.slots.surface' => 'Surface',
+			'themeEditor.slots.outline' => 'Outline',
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
+			'themeEditor.slots.accent' => 'Accent',
+			'themeEditor.opacity' => 'Opacity',
+			_ => null,
+		} ?? switch (path) {
+			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
+			'themeEditor.fromOtherThemes' => 'From other themes',
+			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
+			'themeEditor.contrast.textOnBg' => 'Text on background',
+			'themeEditor.contrast.textOnSurface' => 'Text on surface',
+			'themeEditor.contrast.textMutedOnBg' => 'Secondary text on background',
+			'themeEditor.contrast.textMutedOnSurface' => 'Secondary text on surface',
+			'themeEditor.contrast.accentOnBg' => 'Accent on background',
+			'themeEditor.contrast.accentOnSurface' => 'Accent on surface',
+			'themeEditor.contrast.labelOnAccent' => 'Button label on accent',
+			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1',
+			'themeEditor.discardTitle' => 'Discard changes?',
+			'themeEditor.discardMessage' => 'Your unsaved color changes will be lost.',
+			'themeEditor.discard' => 'Discard',
+			'themeEditor.previewCardTitle' => ({required Object number}) => 'Episode ${number}',
+			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min left',
+			'themeEditor.previewSwitch' => 'Autoplay',
+			'themeEditor.previewMutedText' => 'Secondary text reads like this',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -7936,8 +8400,6 @@ extension on Translations {
 			'fileInfo.colorTransfer' => 'Color Transfer',
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
 			'fileInfo.chromaLocation' => 'Chroma Location',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.scanType' => 'Scan Type',
 			'fileInfo.interlaced' => 'Interlaced',
 			'fileInfo.anamorphic' => 'Anamorphic',
@@ -8353,6 +8815,8 @@ extension on Translations {
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
@@ -8450,8 +8914,6 @@ extension on Translations {
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
-			_ => null,
-		} ?? switch (path) {
 			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
 			'errors.noClientAvailable' => 'No client available',
@@ -8867,6 +9329,8 @@ extension on Translations {
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Couldn\'t start the channel: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Couldn\'t switch channel: ${reason}',
@@ -8964,8 +9428,6 @@ extension on Translations {
 			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
 			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.participants' => 'Participants',
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
@@ -9381,6 +9843,8 @@ extension on Translations {
 			'metadataEdit.show' => 'Show',
 			'metadataEdit.hide' => 'Hide',
 			'metadataEdit.episodeOrdering' => 'Episode Ordering',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
@@ -9478,8 +9942,6 @@ extension on Translations {
 			'seerr.permissionRevoked' => 'You no longer have permission to request this',
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
-			_ => null,
-		} ?? switch (path) {
 			'services.integrations' => 'Integrations',
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',

@@ -189,7 +189,7 @@ class NavigationRailItem extends StatelessWidget {
         isSelected && selectedIcon != null ? selectedIcon! : icon,
         fill: 1,
         size: iconSize,
-        color: isSelected ? t.text : t.textMuted,
+        color: isSelected ? t.accent : t.textMuted,
       );
 
   static double _collapsedItemWidth(BuildContext context) =>

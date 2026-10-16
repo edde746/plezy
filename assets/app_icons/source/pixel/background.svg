@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="#241b38"/><rect x="171.0" y="179.0" width="14" height="42" fill="#5d4b8a"/><rect x="157.0" y="193.0" width="42" height="14" fill="#5d4b8a"/><rect x="829.0" y="215.0" width="14" height="42" fill="#7a66b0"/><rect x="815.0" y="229.0" width="42" height="14" fill="#7a66b0"/><rect x="853.0" y="769.0" width="14" height="42" fill="#5d4b8a"/><rect x="839.0" y="783.0" width="42" height="14" fill="#5d4b8a"/><rect x="143.0" y="799.0" width="14" height="42" fill="#4a3b70"/><rect x="129.0" y="813.0" width="42" height="14" fill="#4a3b70"/><rect x="300" y="120" width="14" height="14" fill="#47386b"/><rect x="640" y="150" width="14" height="14" fill="#47386b"/><rect x="930" y="470" width="14" height="14" fill="#47386b"/><rect x="90" y="520" width="14" height="14" fill="#47386b"/><rect x="560" y="900" width="14" height="14" fill="#47386b"/><rect x="750" y="640" width="14" height="14" fill="#47386b"/><rect x="250" y="660" width="14" height="14" fill="#47386b"/>
+</g>
+</svg>

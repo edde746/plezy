@@ -394,7 +394,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   Widget build(BuildContext context) {
     return buildDetailScaffold(
       slivers: [
-        CustomAppBar(title: Text(widget.album.displayTitle)),
+        CustomAppBar(title: Text(widget.album.displayTitle), onBackPressed: popFromAppBar),
         SliverToBoxAdapter(child: _buildHeader()),
         ...buildStateSlivers(),
         if (hasItems) _buildTrackList(),

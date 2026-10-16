@@ -86,6 +86,12 @@ dependencies:
   xml: ^7.0.1
   string_similarity: ^2.2.0
   unorm_dart: ^0.3.2
+  # Supporter purchase (App Store and Play builds only). The store packages
+  # supply the refund/revocation queries the app-facing API lacks.
+  in_app_purchase: ^3.3.1
+  in_app_purchase_android: ^0.5.4
+  in_app_purchase_platform_interface: ^1.4.1
+  in_app_purchase_storekit: ^0.4.13+3
 
 dev_dependencies:
   archive: ^4.0.9
@@ -164,6 +170,9 @@ flutter:
     - assets/shaders/anime4k/
     - assets/player_icons/
     - assets/rating_icons/
+    # App icon picker thumbnails; scripts/codegen/generate_app_icons.py renders them from
+    # assets/app_icons/source, which stays out of the bundle.
+    - assets/app_icons/previews/
   # Registered as UI font families so the Linux build, whose fontconfig may
   # lack CJK fonts, can fall back to the bundled subtitle fonts (mono_theme).
   fonts:

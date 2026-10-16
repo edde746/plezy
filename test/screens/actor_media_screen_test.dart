@@ -20,7 +20,7 @@ void main() {
         child: ChangeNotifierProvider<MultiServerProvider>.value(
           value: multi.provider,
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: const ActorMediaScreen(
               actorName: 'Jane Doe',
               personId: 'person_1',

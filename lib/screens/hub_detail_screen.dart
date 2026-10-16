@@ -495,7 +495,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
             primary: true,
             clipBehavior: Clip.none,
             slivers: [
-              CustomAppBar(title: Text(widget.hub.title), pinned: true, actions: buildFocusableAppBarActions()),
+              CustomAppBar(
+                title: Text(widget.hub.title),
+                pinned: true,
+                actions: buildFocusableAppBarActions(),
+                onBackPressed: popFromAppBar,
+              ),
               if (_errorMessage != null)
                 SliverErrorState(message: _errorMessage!, onRetry: _loadMoreItems)
               else if (_filteredItems.isEmpty && _isLoading)

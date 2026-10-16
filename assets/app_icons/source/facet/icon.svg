@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="tri"><path d="M335.65,192.66L68.01,38.14C37.78,20.69,0,42.5,0,77.41v309.04c0,34.91,37.78,56.72,68.01,39.27l267.64-154.52c30.23-17.45,30.23-61.08,0-78.54Z"/></clipPath><mask id="holes" maskUnits="userSpaceOnUse" x="-400" y="-400" width="1200" height="1200"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><path d="M46.4 195.20C79.6 164.50 113.6 164.50 146.8 195.20S214 225.90 247.4 195.20M46.4 267.96C79.6 237.26 113.6 237.26 146.8 267.96S214 298.66 247.4 267.96" fill="none" stroke="#000" stroke-width="24.1" stroke-linecap="round"/></mask><radialGradient id="bg" cx="512" cy="470" r="640" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2a2d36"/><stop offset="1" stop-color="#101116"/></radialGradient>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="url(#bg)"/>
+</g>
+<g id="foreground">
+<g transform="translate(549 512) scale(1.2) translate(-179.16 -231.93)"><g clip-path="url(#tri)" mask="url(#holes)"><path d="M134.50 231.93L-40.00 -41.13L443.60 231.93Z" fill="#ffa37c"/><path d="M134.50 231.93L-40.00 504.99L443.60 231.93Z" fill="#c1502f"/><path d="M134.50 231.93L-40.00 -41.13L-40.00 504.99Z" fill="#ee6e45"/></g></g>
+</g>
+</svg>

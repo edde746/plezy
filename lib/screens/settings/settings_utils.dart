@@ -24,6 +24,12 @@ String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
   settings.ThemeMode.light => t.settings.lightTheme,
   settings.ThemeMode.dark => t.settings.darkTheme,
   settings.ThemeMode.oled => t.settings.oledTheme,
+  settings.ThemeMode.ember => t.settings.emberTheme,
+  settings.ThemeMode.glacier => t.settings.glacierTheme,
+  settings.ThemeMode.forest => t.settings.forestTheme,
+  settings.ThemeMode.plum => t.settings.plumTheme,
+  settings.ThemeMode.paper => t.settings.paperTheme,
+  settings.ThemeMode.custom => t.themeEditor.custom,
 };
 
 /// Model for option selection dialogs.

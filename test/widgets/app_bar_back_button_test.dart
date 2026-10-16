@@ -55,4 +55,52 @@ void main() {
     expect(data.hasAction(SemanticsAction.tap), isTrue);
     semantics.dispose();
   });
+
+  testWidgets('without onPressed it pops like a system back: a PopScope can veto it', (tester) async {
+    var blocked = 0;
+    var allowPop = false;
+    late StateSetter setGuard;
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => StatefulBuilder(
+                    builder: (context, setState) {
+                      setGuard = setState;
+                      return PopScope(
+                        canPop: allowPop,
+                        onPopInvokedWithResult: (didPop, _) {
+                          if (!didPop) blocked++;
+                        },
+                        child: const Scaffold(body: AppBarBackButton()),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(AppBarBackButton));
+    await tester.pumpAndSettle();
+    expect(blocked, 1);
+    expect(find.byType(AppBarBackButton), findsOneWidget);
+
+    setGuard(() => allowPop = true);
+    await tester.pump();
+    await tester.tap(find.byType(AppBarBackButton));
+    await tester.pumpAndSettle();
+    expect(blocked, 1);
+    expect(find.byType(AppBarBackButton), findsNothing);
+  });
 }

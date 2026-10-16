@@ -881,7 +881,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
           ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: SearchScreen(key: key),
         ),
       ),

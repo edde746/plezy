@@ -405,7 +405,7 @@ Future<_EditorHarness> _pumpEditor(WidgetTester tester, _PlexMetadataRequests re
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Builder(
               builder: (context) => Scaffold(
                 body: Center(
@@ -625,7 +625,7 @@ Future<void> _pumpArtworkDialog(WidgetTester tester, _ArtworkAdapter adapter, _D
   await tester.pumpWidget(
     TranslationProvider(
       child: MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

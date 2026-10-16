@@ -131,7 +131,7 @@ Future<void> _pumpScreen(WidgetTester tester, MultiServerProvider provider) asyn
         child: ChangeNotifierProvider<MultiServerProvider>.value(
           value: provider,
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: const LiveTvShowScheduleScreen(showTitle: 'Example Show', serverId: 'server-a', channels: []),
           ),
         ),
