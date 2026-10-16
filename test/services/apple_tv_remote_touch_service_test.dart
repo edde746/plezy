@@ -11,6 +11,31 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AppleTvRemoteTouchService', () {
+    test('forwards Channel Up/Down and Guide as button actions, not focus keys', () async {
+      final harness = _Harness();
+      final buttons = <AppleTvRemoteButton>[];
+      final sub = harness.service.buttonActions.listen(buttons.add);
+      addTearDown(sub.cancel);
+
+      await harness.send('channel_up');
+      await harness.send('channel_down');
+      await harness.send('guide');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(buttons, [AppleTvRemoteButton.channelUp, AppleTvRemoteButton.channelDown, AppleTvRemoteButton.guide]);
+      expect(harness.keys, isEmpty);
+    });
+
+    test('a channel button between touches does not disturb swipe tracking', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('channel_up');
+      await harness.send('move', x: 380, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
     test('a single fast flick emits exactly one swipe', () async {
       final harness = _Harness();
 

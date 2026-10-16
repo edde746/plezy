@@ -49,7 +49,7 @@ class LiveTvScreen extends StatefulWidget {
 
 class _LiveTvScreenState extends State<LiveTvScreen>
     with TickerProviderStateMixin, TabNavigationMixin
-    implements FocusableTab, ManualRefreshable {
+    implements FocusableTab, ManualRefreshable, LiveTvGuideShowable {
   final _guideTabFocusNode = FocusNode(debugLabel: 'tab_chip_guide');
   final _whatsOnTabFocusNode = FocusNode(debugLabel: 'tab_chip_whats_on');
   final _recordingsTabFocusNode = FocusNode(debugLabel: 'tab_chip_recordings');
@@ -752,6 +752,19 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   @override
   void focusActiveTabIfReady() => _focusCurrentTab();
+
+  @override
+  void showGuide() {
+    final guideIndex = _visibleTabs.indexOf(LiveTvTab.guide);
+    if (guideIndex < 0) return;
+    if (tabController.index != guideIndex) {
+      setState(() => tabController.index = guideIndex);
+    }
+    // A tab switch builds GuideTab fresh, so focus once it has mounted.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusCurrentTab();
+    });
+  }
 
   String _getTabLabel(LiveTvTab tab) {
     return switch (tab) {

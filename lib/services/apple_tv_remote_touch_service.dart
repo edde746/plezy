@@ -18,6 +18,12 @@ class AppleTvRemotePlayPauseAction {
   const AppleTvRemotePlayPauseAction({required this.source, this.detail});
 }
 
+/// Dedicated live-TV buttons that third-party IR and HDMI-CEC remotes add on
+/// top of the Siri Remote's. tvOS reports Channel Up/Down as `.pageUp` /
+/// `.pageDown` presses and Guide as a user activity; the native host forwards
+/// all three on the touch channel.
+enum AppleTvRemoteButton { channelUp, channelDown, guide }
+
 const double _axisSwitchDominanceRatio = 1.5;
 // Tuned against the native tvOS focus engine. Two instrumentation passes on
 // an Apple TV 4K (issue #2006):
@@ -85,6 +91,7 @@ class AppleTvRemoteTouchService {
 
   final StreamController<AppleTvRemotePlayPauseAction> _playPauseController =
       StreamController<AppleTvRemotePlayPauseAction>.broadcast();
+  final StreamController<AppleTvRemoteButton> _buttonController = StreamController<AppleTvRemoteButton>.broadcast();
 
   /// Fallback touch travel that prices one focus step when no usable focus
   /// geometry exists.
@@ -121,6 +128,9 @@ class AppleTvRemoteTouchService {
        _duplicateInputGuard = GamepadDuplicateInputGuard(now: now);
 
   Stream<AppleTvRemotePlayPauseAction> get playPauseActions => _playPauseController.stream;
+
+  /// Channel Up/Down and Guide presses from remotes that have them.
+  Stream<AppleTvRemoteButton> get buttonActions => _buttonController.stream;
 
   void start() {
     if (_listening) return;
@@ -186,11 +196,23 @@ class AppleTvRemoteTouchService {
         final detail = arguments['detail'] is String ? arguments['detail'] as String : null;
         _log('emit action=play_pause source=$source${detail == null ? '' : ' detail=$detail'}');
         _playPauseController.add(AppleTvRemotePlayPauseAction(source: source, detail: detail));
+      case 'channel_up':
+        _emitButton(AppleTvRemoteButton.channelUp);
+      case 'channel_down':
+        _emitButton(AppleTvRemoteButton.channelDown);
+      case 'guide':
+        _emitButton(AppleTvRemoteButton.guide);
       case 'loc':
         break;
       default:
         break;
     }
+  }
+
+  void _emitButton(AppleTvRemoteButton button) {
+    InputModeTracker.reportNonPointerInput();
+    _log('emit action=${button.name}');
+    _buttonController.add(button);
   }
 
   (double, double)? _positionFrom(Map<dynamic, dynamic> arguments) {

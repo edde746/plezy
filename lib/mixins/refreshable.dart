@@ -37,6 +37,11 @@ mixin SearchInputFocusable {
   void submitSearchQuery(String query);
 }
 
+mixin LiveTvGuideShowable {
+  /// Switch to the Guide sub-tab and focus it (the remote's Guide button).
+  void showGuide();
+}
+
 mixin LibraryLoadable {
   void loadLibraryByKey(String libraryGlobalKey);
 }
