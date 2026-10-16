@@ -8,6 +8,7 @@ add_executable(${BINARY_NAME}
   "mpv/mpv_plugin.cc"
   "mpv/plane_render_executor.cc"
   "mpv/wayland_video_surface.cc"
+  "mpv/x11_video_surface.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 

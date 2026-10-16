@@ -1,14 +1,13 @@
 #ifndef PLEZY_LINUX_MPV_WAYLAND_VIDEO_SURFACE_H_
 #define PLEZY_LINUX_MPV_WAYLAND_VIDEO_SURFACE_H_
 
-#include <EGL/egl.h>
 #include <gtk/gtk.h>
 
 #include <cstdint>
 #include <functional>
 #include <string>
 
-#include "hdr_metadata.h"
+#include "video_plane.h"
 
 struct wl_callback;
 struct wl_compositor;
@@ -72,10 +71,10 @@ struct PreferredColorDescription {
 // framebuffer. Embedding mpv into a foreign Wayland surface is not possible
 // (mpv's --wid does not work on Wayland and upstream considers it out of
 // scope), so the app owns the subsurface and drives the render itself.
-class WaylandVideoSurface {
+class WaylandVideoSurface : public VideoPlane {
  public:
   WaylandVideoSurface() = default;
-  ~WaylandVideoSurface();
+  ~WaylandVideoSurface() override;
 
   WaylandVideoSurface(const WaylandVideoSurface&) = delete;
   WaylandVideoSurface& operator=(const WaylandVideoSurface&) = delete;
@@ -91,38 +90,38 @@ class WaylandVideoSurface {
   // window config, then half-float (NVIDIA offers no 10-bit unorm configs on
   // Wayland), falling back to 8. Returns false and fills `error` on any
   // failure — the caller reports it; there is no other video path.
-  bool Create(GtkWidget* view, std::string* error);
+  bool Create(GtkWidget* view, std::string* error) override;
 
   // Releases the EGL surface, subsurface and Wayland objects. Idempotent.
-  void Destroy();
+  void Destroy() override;
 
-  bool valid() const { return egl_surface_ != EGL_NO_SURFACE; }
-  EGLDisplay egl_display() const { return egl_display_; }
-  EGLConfig egl_config() const { return egl_config_; }
-  EGLSurface egl_surface() const { return egl_surface_; }
+  bool valid() const override { return egl_surface_ != EGL_NO_SURFACE; }
+  EGLDisplay egl_display() const override { return egl_display_; }
+  EGLConfig egl_config() const override { return egl_config_; }
+  EGLSurface egl_surface() const override { return egl_surface_; }
 
   // Current buffer size in physical pixels. Zero until the first SetRect().
-  int32_t width() const { return width_; }
-  int32_t height() const { return height_; }
+  int32_t width() const override { return width_; }
+  int32_t height() const override { return height_; }
   // "Dart has given the plane a rect worth showing", not "the stored numbers
   // are non-zero" - SetRect floors the buffer size at one scale-sized block to
   // keep it a multiple of the buffer scale, so after the first SetRect() the
   // stored size is never zero.
-  bool has_size() const { return rect_valid_; }
+  bool has_size() const override { return rect_valid_; }
 
   // Places and sizes the plane. Coordinates are physical pixels in the
   // toplevel's frame, matching what the Dart side sends via setVideoRect.
-  void SetRect(int32_t x, int32_t y, int32_t width, int32_t height, int32_t scale);
+  void SetRect(int32_t x, int32_t y, int32_t width, int32_t height, int32_t scale) override;
 
   // Hides the plane by attaching a null buffer. The next present re-shows it.
-  void SetVisible(bool visible);
-  bool visible() const { return visible_; }
+  void SetVisible(bool visible) override;
+  bool visible() const override { return visible_; }
 
   // True while a committed frame has not yet been acknowledged by the
   // compositor. Callers must not render while this holds: the compositor stops
   // acknowledging frames for an occluded or minimized surface, and rendering
   // regardless would queue work that can never drain.
-  bool frame_pending() const { return frame_pending_; }
+  bool frame_pending() const override { return frame_pending_; }
 
   // Whether any buffer has been presented since the surface was created. The
   // caller uses this to refuse the very first present until mpv has actually
@@ -130,13 +129,13 @@ class WaylandVideoSurface {
   // black frame) is exactly the commit an occluded surface is entitled to
   // ignore, and the frame callback it arms would then be the one a stalled
   // plane waits on forever.
-  bool first_frame_presented() const { return first_frame_presented_; }
+  bool first_frame_presented() const override { return first_frame_presented_; }
 
   // Invoked on the GTK main thread when the compositor acknowledges a frame.
   // This is what resumes rendering after the plane becomes visible again, so
   // it must trigger a render — mpv's redraw latch stays set while frames are
   // being skipped and will not notify again on its own.
-  void SetFrameCallback(std::function<void()> callback) { on_frame_ = std::move(callback); }
+  void SetFrameCallback(std::function<void()> callback) override { on_frame_ = std::move(callback); }
 
   // Invoked when the plane needs a frame *now*, whether or not mpv has produced
   // one. The frame callback above is not a substitute: it is the "a frame was
@@ -145,7 +144,7 @@ class WaylandVideoSurface {
   // after an abandoned colour transition has neither, and still has to commit -
   // withdrawing a description only stages it, and eglSwapBuffers is what makes
   // it real.
-  void SetForcedRenderCallback(std::function<void()> callback) { on_forced_render_ = std::move(callback); }
+  void SetForcedRenderCallback(std::function<void()> callback) override { on_forced_render_ = std::move(callback); }
 
   // First half of a present: the gates, and the frame-callback request that
   // must precede the commit eglSwapBuffers performs so the callback belongs to
@@ -157,13 +156,13 @@ class WaylandVideoSurface {
   // On true, the plane is reserved for the caller's render + eglSwapBuffers -
   // frame_pending_ holds every later prepare off - and CompletePresent() must
   // follow on the main thread once the swap's result is known.
-  bool PreparePresent();
+  bool PreparePresent() override;
 
   // Second half, on the main thread, with |swapped| = the eglSwapBuffers
   // result. Owns the first-frame scale flush and the ack watchdog, and
   // re-detaches the buffer when the plane was hidden or lost its rect while
   // the swap was in flight. Returns whether the frame truly presented.
-  bool CompletePresent(bool swapped);
+  bool CompletePresent(bool swapped) override;
 
   // True when this plane can be described as HDR at all: the compositor offers
   // a parametric image-description creator, accepts the perceptual render
@@ -173,40 +172,42 @@ class WaylandVideoSurface {
   // Create(). Which curve a given source needs is checked per source by
   // CanDescribeSource(). This says nothing about whether the *display* is in
   // HDR — see output_is_hdr().
-  bool supports_hdr() const { return supports_hdr_; }
+  bool supports_hdr() const override { return supports_hdr_; }
 
   // What the compositor says it would prefer for this surface, from
   // wp_color_management_surface_feedback_v1. This is the only way to learn the
   // output's *real* peak: an HDR output's preferred description carries the
   // panel's target luminance, where PQ's own nominal maximum is always 10000.
-  const PreferredColorDescription& preferred() const { return preferred_; }
+  const PreferredColorDescription& preferred() const override { return preferred_; }
 
   // True when the output this surface sits on has enough luminance headroom
   // above its own reference white to be worth passing HDR through. The claim
   // this makes is deliberately narrower than "the user's HDR toggle is on":
   // OutputHasHdrHeadroom explains why no signal in this protocol answers that,
   // and why the margin it applies is not a magic number.
-  bool output_is_hdr() const {
+  bool output_is_hdr() const override {
     return preferred_.valid && OutputHasHdrHeadroom(preferred_.max_luminance, preferred_.reference_luminance);
   }
 
   // Invoked on the GTK main thread when the compositor's preferred description
   // changes — a monitor move, or HDR being switched on or off under us.
-  void SetPreferredChangedCallback(std::function<void()> callback) { on_preferred_changed_ = std::move(callback); }
+  void SetPreferredChangedCallback(std::function<void()> callback) override {
+    on_preferred_changed_ = std::move(callback);
+  }
 
   // Invoked on the GTK main thread when the compositor places the plane on an
   // output, with GDK's monitor for it. This is the only word the plugin gets
   // that the plane moved: dragging the window to another monitor of the same
   // scale raises no GTK signal on Wayland, and the preferred-description
   // feedback above exists only under a colour-managing compositor.
-  void SetMonitorEnteredCallback(std::function<void(GdkMonitor*)> callback) {
+  void SetMonitorEnteredCallback(std::function<void(GdkMonitor*)> callback) override {
     on_monitor_entered_ = std::move(callback);
   }
 
   // Number of bits per colour channel the plane actually got: 16 on a
   // half-float plane, 10 on a 10-bit unorm one, otherwise 8. PQ in 8 bits
   // bands badly, so HDR needs at least 10.
-  int depth_bits() const { return depth_bits_; }
+  int depth_bits() const override { return depth_bits_; }
 
   // Stages a colour change. It has to be two-phase; apply_hdr_state in
   // mpv_plugin.cc tells that story in full. In outline: BeginHdrTransition
@@ -226,20 +227,21 @@ class WaylandVideoSurface {
   // so a settled-but-uncommitted transition whose mpv request is still in flight
   // cannot be committed against a newer description. A token of zero means nothing
   // was staged, so there is nothing to commit or abort.
-  void BeginHdrTransition(bool describe, const HdrMetadata& metadata, std::function<void(uint64_t, bool)> on_settled);
+  void BeginHdrTransition(
+      bool describe, const HdrMetadata& metadata, std::function<void(uint64_t, bool)> on_settled) override;
 
   // Applies the transition named by `token`. Returns true when the plane should
   // be re-rendered and presented at once, so the new state reaches the screen
   // instead of waiting for whatever frame mpv happens to produce next. Ignores a
   // token that is not the staged one.
-  bool CommitHdrTransition(uint64_t token);
+  bool CommitHdrTransition(uint64_t token) override;
 
   // Discards the transition named by `token` and releases the hold. The committed
   // colour state is left exactly as it was. Ignores a stale token.
-  void AbortHdrTransition(uint64_t token);
+  void AbortHdrTransition(uint64_t token) override;
 
   // True while a transition is staged, i.e. while presents are being held.
-  bool hdr_transition_staged() const { return transition_staged_; }
+  bool hdr_transition_staged() const override { return transition_staged_; }
 
   // Drops any staged transition and unsets the description immediately.
   //
@@ -247,7 +249,7 @@ class WaylandVideoSurface {
   // unwinding a refused change: the description already committed is then no
   // longer true of the pixels, and aborting alone would leave it in place. Returns
   // true when the plane should be re-rendered and presented at once.
-  bool ForceUndescribed();
+  bool ForceUndescribed() override;
 
   // Whether this source could be described at all: it carries an HDR curve, a
   // BT.2020 container, and the compositor advertised that specific named pair.
@@ -255,11 +257,11 @@ class WaylandVideoSurface {
   // Public because the caller has to know the answer *before* it changes mpv's
   // output colour space — the pixels have to be committed to before the surface
   // is described, or the two disagree for a frame.
-  bool CanDescribeSource(const HdrMetadata& metadata) const;
+  bool CanDescribeSource(const HdrMetadata& metadata) const override;
 
   // Whether a description is attached, i.e. whether the compositor is currently
   // being told this plane carries an HDR curve.
-  bool hdr_active() const { return hdr_active_; }
+  bool hdr_active() const override { return hdr_active_; }
 
   // Bounds each half of a staged transition: first the compositor's verdict on
   // the image description, then the caller's mpv leg deciding to commit or

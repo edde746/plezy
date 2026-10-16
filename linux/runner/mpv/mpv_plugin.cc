@@ -9,10 +9,12 @@
 #include <optional>
 
 #include "plane_render_executor.h"
+#include "video_plane.h"
 #include "wayland_video_surface.h"
+#include "x11_video_surface.h"
 
 using PlayerPtr = std::unique_ptr<mpv::MpvPlayer>;
-using VideoSurfacePtr = std::unique_ptr<mpv::WaylandVideoSurface>;
+using VideoSurfacePtr = std::unique_ptr<mpv::VideoPlane>;
 using ExecutorPtr = std::unique_ptr<mpv::PlaneRenderExecutor>;
 
 // One queued HDR transaction: what to apply, and who to tell when it settles.
@@ -429,6 +431,7 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
   // flight's duration: release_video_resources drains the render thread
   // before the player or the plane is torn down.
   mpv::MpvPlayer* player = self->player.get();
+  mpv::VideoPlane* plane = self->video_surface.get();
   EGLDisplay display = self->video_surface->egl_display();
   EGLSurface egl_surface = self->video_surface->egl_surface();
   const int width = self->video_surface->width();
@@ -437,8 +440,9 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
   self->render_in_flight = TRUE;
   const bool posted = post_render_job(
       self,
-      [player, display, egl_surface, width, height]() -> bool {
+      [player, plane, display, egl_surface, width, height]() -> bool {
         if (!player->RenderToSurface(egl_surface, width, height)) return false;
+        plane->BlendOverlay();
         // The swap is the child surface's commit. Non-throttled
         // (eglSwapInterval 0), so it never blocks on the compositor; its cost
         // is the render's, which is exactly what this thread is for.
@@ -466,6 +470,8 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
         if (self->rect_apply_deferred) {
           self->rect_apply_deferred = FALSE;
           apply_pending_rect(self);
+          // Trigger a render to update the plane with the new size (x11)
+          self->plane_needs_render = TRUE;
         }
         if (self->hdr_start_deferred) {
           self->hdr_start_deferred = FALSE;
@@ -982,10 +988,11 @@ static gboolean start_video_plane(MpvPlugin* self, FlView* view, std::string* er
     return FALSE;
   }
   GtkWidget* widget = GTK_WIDGET(view);
-  if (!mpv::WaylandVideoSurface::IsSupported(gtk_widget_get_display(widget))) {
-    *error =
-        "Video needs a Wayland session. This looks like an X11 session; log in "
-        "under Wayland, or run X11 applications through XWayland instead.";
+  GdkDisplay* display = gtk_widget_get_display(widget);
+  const bool wayland = mpv::WaylandVideoSurface::IsSupported(display);
+  const bool x11 = mpv::X11VideoSurface::IsX11(display);
+  if (!wayland && !x11) {
+    *error = "Video needs a Wayland session or an X11 session.";
     return FALSE;
   }
 
@@ -995,7 +1002,7 @@ static gboolean start_video_plane(MpvPlugin* self, FlView* view, std::string* er
   // video area would go blank while every other symptom looked healthy. Say so
   // instead, because the symptom on its own points nowhere near here.
   GtkWidget* toplevel = gtk_widget_get_toplevel(widget);
-  if (toplevel != nullptr && gtk_widget_is_toplevel(toplevel)) {
+  if (wayland && toplevel != nullptr && gtk_widget_is_toplevel(toplevel)) {
     GdkScreen* screen = gtk_widget_get_screen(toplevel);
     GdkVisual* rgba = screen != nullptr ? gdk_screen_get_rgba_visual(screen) : nullptr;
     if (rgba == nullptr || gtk_widget_get_visual(toplevel) != rgba) {
@@ -1004,8 +1011,16 @@ static gboolean start_video_plane(MpvPlugin* self, FlView* view, std::string* er
     }
   }
 
-  auto surface = std::make_unique<mpv::WaylandVideoSurface>();
-  if (!surface->Create(widget, error)) return FALSE;
+  std::unique_ptr<mpv::VideoPlane> surface;
+  if (wayland) {
+    auto wayland_surface = std::make_unique<mpv::WaylandVideoSurface>();
+    if (!wayland_surface->Create(widget, error)) return FALSE;
+    surface = std::move(wayland_surface);
+  } else {
+    auto x11_surface = std::make_unique<mpv::X11VideoSurface>();
+    if (!x11_surface->Create(widget, error)) return FALSE;
+    surface = std::move(x11_surface);
+  }
   if (!self->player->InitRenderContextForSurface(
           surface->egl_display(), surface->egl_config(), surface->egl_surface(), surface->depth_bits())) {
     surface->Destroy();
