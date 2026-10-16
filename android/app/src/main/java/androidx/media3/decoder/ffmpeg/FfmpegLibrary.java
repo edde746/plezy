@@ -24,7 +24,7 @@ import androidx.media3.common.util.UnstableApi;
 
 /** Configures and queries the FFmpeg libraries shared with libmpv. */
 @UnstableApi
-final class FfmpegLibrary {
+public final class FfmpegLibrary {
 
   private static final String TAG = "FfmpegLibrary";
   private static final LibraryLoader LOADER =
@@ -42,7 +42,7 @@ final class FfmpegLibrary {
 
 
   /** Returns whether the JNI adapter and libmpv's FFmpeg libraries can be loaded. */
-  static boolean isAvailable() {
+  public static boolean isAvailable() {
     return LOADER.isAvailable();
   }
 
@@ -65,7 +65,10 @@ final class FfmpegLibrary {
   }
 
   /** Returns whether the linked FFmpeg build supports the MIME type. */
-  static boolean supportsFormat(String mimeType) {
+  public static boolean supportsFormat(String mimeType) {
+    if (!isAvailable()) {
+      return false;
+    }
     @Nullable String codecName = getCodecName(mimeType);
     if (codecName == null) {
       return false;

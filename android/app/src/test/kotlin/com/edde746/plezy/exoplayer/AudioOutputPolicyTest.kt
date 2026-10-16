@@ -84,6 +84,20 @@ class AudioOutputPolicyTest {
   }
 
   @Test
+  fun dtsDecodeIsNotForcedToFfmpegWhenFfmpegIsUnavailable() {
+    // If the bundled FFmpeg decoder is unavailable, hiding the platform decoder leaves
+    // MediaCodecAudioRenderer with no decoder (NO_UNSUPPORTED_SUBTYPE / error 4001).
+    assertFalse(
+      shouldForceFfmpegDtsDecode(
+        "audio/vnd.dts.hd",
+        { throw AssertionError("directOutputBlocked consulted when FFmpeg is unavailable") },
+        { throw AssertionError("routeCanBitstreamDts consulted when FFmpeg is unavailable") },
+        ffmpegAvailable = { false }
+      )
+    )
+  }
+
+  @Test
   fun dtsHdTakesTheCarrierOnlyWhenTheRouteAdvertisesDtsHd() {
     assertTrue(dtsHdCarrierUsable({ it == C.ENCODING_DTS_HD }, { true }))
     // Carries the tuple for TrueHD but decodes no DTS-HD: the burst would drain unheard.

@@ -349,6 +349,8 @@ android {
       // mpv-build tarballs win for std::from_chars<float>, while older
       // native consumers remain ABI-compatible.
       pickFirsts.add("lib/*/libc++_shared.so")
+      pickFirsts.add("lib/*/libmpv.so")
+      pickFirsts.add("lib/*/libavcodec.so")
     }
   }
 

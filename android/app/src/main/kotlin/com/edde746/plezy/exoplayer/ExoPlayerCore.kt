@@ -45,6 +45,7 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cronet.CronetDataSource
+import androidx.media3.decoder.ffmpeg.FfmpegLibrary
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -2330,7 +2331,8 @@ class ExoPlayerCore(private val activity: Activity) :
     val forceDts = shouldForceFfmpegDtsDecode(
       mimeType,
       directOutputBlocked = { shouldBlockDirectAudioOutput(dtsProbeFormat(mimeType), "decoder selection") },
-      routeCanBitstreamDts = { routeCanBitstreamDts(mimeType) }
+      routeCanBitstreamDts = { routeCanBitstreamDts(mimeType) },
+      ffmpegAvailable = { FfmpegLibrary.supportsFormat(mimeType) }
     )
     if (forceDts && loggedDtsAppDecoderMimes.add(mimeType)) {
       emitLog("info", "decoder", "Using app decoder for $mimeType; the stream will decode and platform DTS decoders render silence on license-gated devices")
