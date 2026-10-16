@@ -616,10 +616,10 @@ class MpvPlayerCoreBase: NSObject {
       // CoreAudio redirects the bitstream to coreaudio_exclusive and that
       // declines on outputs without IEC 61937 substreams, so the AC3/EAC3 lands
       // on the system decoder (Dolby Atmos on AirPods and built-in speakers,
-      // #2477); and a CoreAudio init that fails outright — macOS 27 beta
-      // rejects ao_coreaudio's channel-layout setup with paramErr (-50), and a
-      // single-entry ao list would turn that into playback with no audio at
-      // all (#1964).
+      // #2477); and a CoreAudio init that fails outright, which a single-entry
+      // ao list would turn into playback with no audio at all (#1964). Until
+      // mpv-build patch 0037, macOS 27 failed that init with paramErr (-50) for
+      // every planar or mono format, so most video audio played through here.
       checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
     #endif
     // tvOS keeps mpv's default (audiounit, then avfoundation): audiounit drives
