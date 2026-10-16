@@ -264,6 +264,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get listView => '清單檢視';
 	@override String get showHeroSection => '顯示精選內容區';
 	@override String get continueWatchingAction => '繼續觀看操作';
+	@override String get continueWatchingLimit => '繼續觀看數量上限';
 	@override String get continueWatchingPlay => '播放影片';
 	@override String get continueWatchingDetails => '開啟詳情頁';
 	@override String get episodeAction => '單集操作';
@@ -3171,6 +3172,7 @@ extension on TranslationsZhHant {
 			'settings.listView' => '清單檢視',
 			'settings.showHeroSection' => '顯示精選內容區',
 			'settings.continueWatchingAction' => '繼續觀看操作',
+			'settings.continueWatchingLimit' => '繼續觀看數量上限',
 			'settings.continueWatchingPlay' => '播放影片',
 			'settings.continueWatchingDetails' => '開啟詳情頁',
 			'settings.episodeAction' => '單集操作',

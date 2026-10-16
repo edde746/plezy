@@ -320,7 +320,7 @@ void main() {
 
     await provider.load();
 
-    expect(provider.onDeck, hasLength(DiscoverProvider.continueWatchingPreviewLimit));
+    expect(provider.onDeck, hasLength(provider.continueWatchingPreviewLimit));
     expect(provider.hasMoreContinueWatching, isTrue);
   });
 
@@ -447,7 +447,7 @@ void main() {
 
     expect(provider.onDeck.first.viewOffsetMs, 30000);
     expect(provider.onDeck.first.isWatched, isFalse);
-    expect(provider.onDeck, hasLength(DiscoverProvider.continueWatchingPreviewLimit));
+    expect(provider.onDeck, hasLength(provider.continueWatchingPreviewLimit));
     expect(provider.hasMoreContinueWatching, isTrue);
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);

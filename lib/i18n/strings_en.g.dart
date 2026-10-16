@@ -501,6 +501,9 @@ class Translations$settings$en {
 	/// en: 'Continue Watching Action'
 	String get continueWatchingAction => 'Continue Watching Action';
 
+	/// en: 'Continue Watching Limit'
+	String get continueWatchingLimit => 'Continue Watching Limit';
+
 	/// en: 'Play'
 	String get continueWatchingPlay => 'Play';
 
@@ -7548,6 +7551,7 @@ extension on Translations {
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
 			'settings.continueWatchingAction' => 'Continue Watching Action',
+			'settings.continueWatchingLimit' => 'Continue Watching Limit',
 			'settings.continueWatchingPlay' => 'Play',
 			'settings.continueWatchingDetails' => 'Open Details',
 			'settings.episodeAction' => 'Episode Action',

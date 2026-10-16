@@ -263,6 +263,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get listView => 'Тізім';
 	@override String get showHeroSection => 'Басты бөлімді көрсету';
 	@override String get continueWatchingAction => '"Көруді жалғастыру" әрекеті';
+	@override String get continueWatchingLimit => '"Көруді жалғастыру" шегі';
 	@override String get continueWatchingPlay => 'Ойнату';
 	@override String get continueWatchingDetails => 'Толығырақ ашу';
 	@override String get episodeAction => 'Бөлім әрекеті';
@@ -3181,6 +3182,7 @@ extension on TranslationsKk {
 			'settings.listView' => 'Тізім',
 			'settings.showHeroSection' => 'Басты бөлімді көрсету',
 			'settings.continueWatchingAction' => '"Көруді жалғастыру" әрекеті',
+			'settings.continueWatchingLimit' => '"Көруді жалғастыру" шегі',
 			'settings.continueWatchingPlay' => 'Ойнату',
 			'settings.continueWatchingDetails' => 'Толығырақ ашу',
 			'settings.episodeAction' => 'Бөлім әрекеті',

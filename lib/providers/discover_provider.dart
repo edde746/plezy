@@ -74,11 +74,11 @@ DiscoverRefreshOutcome _refreshOutcome({
 /// resets it by construction. The screen is a consumer: it renders this
 /// state and keeps only UI concerns (hero carousel, focus, spotlight).
 class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  /// Preview row caps at 20; one extra item is fetched as a probe so
-  /// [hasMoreContinueWatching] can show the "more" affordance without a
-  /// second request.
-  static const int continueWatchingPreviewLimit = 20;
-  static const int _continueWatchingProbeLimit = continueWatchingPreviewLimit + 1;
+  /// Preview row caps at the user's configured limit; one extra item is
+  /// fetched as a probe so [hasMoreContinueWatching] can show the "more"
+  /// affordance without a second request.
+  int get continueWatchingPreviewLimit => SettingsService.instance.read(SettingsService.continueWatchingLimit);
+  int get _continueWatchingProbeLimit => continueWatchingPreviewLimit + 1;
 
   /// Home hubs refetch when the tab is shown or the app resumes after this
   /// long. New media added server-side is otherwise invisible until a restart,

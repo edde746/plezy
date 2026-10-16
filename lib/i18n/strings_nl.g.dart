@@ -263,6 +263,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get listView => 'Lijst';
 	@override String get showHeroSection => 'Toon hoofdsectie';
 	@override String get continueWatchingAction => 'Actie voor \'Doorgaan met kijken\'';
+	@override String get continueWatchingLimit => 'Limiet voor \'Doorgaan met kijken\'';
 	@override String get continueWatchingPlay => 'Afspelen';
 	@override String get continueWatchingDetails => 'Details openen';
 	@override String get episodeAction => 'Afleveringsactie';
@@ -3181,6 +3182,7 @@ extension on TranslationsNl {
 			'settings.listView' => 'Lijst',
 			'settings.showHeroSection' => 'Toon hoofdsectie',
 			'settings.continueWatchingAction' => 'Actie voor \'Doorgaan met kijken\'',
+			'settings.continueWatchingLimit' => 'Limiet voor \'Doorgaan met kijken\'',
 			'settings.continueWatchingPlay' => 'Afspelen',
 			'settings.continueWatchingDetails' => 'Details openen',
 			'settings.episodeAction' => 'Afleveringsactie',

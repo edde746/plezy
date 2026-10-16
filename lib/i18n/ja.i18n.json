@@ -156,6 +156,7 @@
     "listView": "リスト",
     "showHeroSection": "注目コンテンツを表示",
     "continueWatchingAction": "視聴中の操作",
+    "continueWatchingLimit": "視聴中の表示件数の上限",
     "continueWatchingPlay": "再生",
     "continueWatchingDetails": "詳細を開く",
     "episodeAction": "エピソードの操作",

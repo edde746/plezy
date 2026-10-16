@@ -156,6 +156,7 @@
     "listView": "Lista",
     "showHeroSection": "Visa utvalt innehåll",
     "continueWatchingAction": "Åtgärd för Fortsätt titta",
+    "continueWatchingLimit": "Gräns för Fortsätt titta",
     "continueWatchingPlay": "Spela",
     "continueWatchingDetails": "Öppna detaljer",
     "episodeAction": "Åtgärd för avsnitt",

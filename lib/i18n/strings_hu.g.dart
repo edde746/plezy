@@ -263,6 +263,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Kiemelt sáv megjelenítése';
 	@override String get continueWatchingAction => 'A „Folytatás” művelete';
+	@override String get continueWatchingLimit => 'A „Folytatás” korlátja';
 	@override String get continueWatchingPlay => 'Lejátszás';
 	@override String get continueWatchingDetails => 'Részletek megnyitása';
 	@override String get episodeAction => 'Az epizódkártya művelete';
@@ -3181,6 +3182,7 @@ extension on TranslationsHu {
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Kiemelt sáv megjelenítése',
 			'settings.continueWatchingAction' => 'A „Folytatás” művelete',
+			'settings.continueWatchingLimit' => 'A „Folytatás” korlátja',
 			'settings.continueWatchingPlay' => 'Lejátszás',
 			'settings.continueWatchingDetails' => 'Részletek megnyitása',
 			'settings.episodeAction' => 'Az epizódkártya művelete',

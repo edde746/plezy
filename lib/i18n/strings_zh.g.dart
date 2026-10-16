@@ -263,6 +263,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get listView => '列表视图';
 	@override String get showHeroSection => '显示精选内容区';
 	@override String get continueWatchingAction => '继续观看操作';
+	@override String get continueWatchingLimit => '继续观看数量上限';
 	@override String get continueWatchingPlay => '播放';
 	@override String get continueWatchingDetails => '打开详情';
 	@override String get episodeAction => '剧集操作';
@@ -3170,6 +3171,7 @@ extension on TranslationsZh {
 			'settings.listView' => '列表视图',
 			'settings.showHeroSection' => '显示精选内容区',
 			'settings.continueWatchingAction' => '继续观看操作',
+			'settings.continueWatchingLimit' => '继续观看数量上限',
 			'settings.continueWatchingPlay' => '播放',
 			'settings.continueWatchingDetails' => '打开详情',
 			'settings.episodeAction' => '剧集操作',

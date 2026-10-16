@@ -156,6 +156,7 @@
     "listView": "Список",
     "showHeroSection": "Показать раздел избранного",
     "continueWatchingAction": "Действие для «Продолжить просмотр»",
+    "continueWatchingLimit": "Лимит для «Продолжить просмотр»",
     "continueWatchingPlay": "Воспроизвести",
     "continueWatchingDetails": "Открыть сведения",
     "episodeAction": "Действие для эпизодов",

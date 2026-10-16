@@ -263,6 +263,7 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Visa utvalt innehåll';
 	@override String get continueWatchingAction => 'Åtgärd för Fortsätt titta';
+	@override String get continueWatchingLimit => 'Gräns för Fortsätt titta';
 	@override String get continueWatchingPlay => 'Spela';
 	@override String get continueWatchingDetails => 'Öppna detaljer';
 	@override String get episodeAction => 'Åtgärd för avsnitt';
@@ -3181,6 +3182,7 @@ extension on TranslationsSv {
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Visa utvalt innehåll',
 			'settings.continueWatchingAction' => 'Åtgärd för Fortsätt titta',
+			'settings.continueWatchingLimit' => 'Gräns för Fortsätt titta',
 			'settings.continueWatchingPlay' => 'Spela',
 			'settings.continueWatchingDetails' => 'Öppna detaljer',
 			'settings.episodeAction' => 'Åtgärd för avsnitt',

@@ -53,6 +53,16 @@ class LibraryDensity {
   static double factor(int density) => (density.clamp(min, max) - min) / (max - min);
 }
 
+/// How many items the Continue Watching row shows before "more". A TV-remote
+/// friendly fixed step (no free-form typing), previously hardcoded to 20.
+class ContinueWatchingLimit {
+  static const int defaultValue = 20;
+  static const List<int> options = [15, 20, 25, 30, 35, 40];
+
+  static int clampToStep(int value) =>
+      options.contains(value) ? value : options.reduce((a, b) => (value - a).abs() <= (value - b).abs() ? a : b);
+}
+
 /// Gap between cards in media grids (#2083, #1597). [tight] is the
 /// pre-setting look, so nothing moves on update.
 enum GridSpacing { tight, normal, spacious }
@@ -922,6 +932,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: ContinueWatchingAction.values,
     defaultValue: ContinueWatchingAction.play,
   );
+  static final continueWatchingLimit = IntPref(
+    'continue_watching_limit',
+    defaultValue: ContinueWatchingLimit.defaultValue,
+    transform: ContinueWatchingLimit.clampToStep,
+  );
   static const episodeAction = EnumPref<EpisodeAction>(
     'episode_action',
     values: EpisodeAction.values,
@@ -1457,6 +1472,7 @@ class SettingsService extends BaseSharedPreferencesService {
     tvCornerSpotlightBackdrop,
     episodePosterMode,
     continueWatchingAction,
+    continueWatchingLimit,
     episodeAction,
     keyboardHotkeys,
     // Library filters, one pair per tracker service.

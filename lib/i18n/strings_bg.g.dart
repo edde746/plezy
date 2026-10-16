@@ -263,6 +263,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get listView => 'Списък';
 	@override String get showHeroSection => 'Показвай водеща секция';
 	@override String get continueWatchingAction => 'Действие за продължаване на гледането';
+	@override String get continueWatchingLimit => 'Лимит за продължаване на гледането';
 	@override String get continueWatchingPlay => 'Пусни';
 	@override String get continueWatchingDetails => 'Отвори подробности';
 	@override String get episodeAction => 'Действие за епизод';
@@ -3181,6 +3182,7 @@ extension on TranslationsBg {
 			'settings.listView' => 'Списък',
 			'settings.showHeroSection' => 'Показвай водеща секция',
 			'settings.continueWatchingAction' => 'Действие за продължаване на гледането',
+			'settings.continueWatchingLimit' => 'Лимит за продължаване на гледането',
 			'settings.continueWatchingPlay' => 'Пусни',
 			'settings.continueWatchingDetails' => 'Отвори подробности',
 			'settings.episodeAction' => 'Действие за епизод',

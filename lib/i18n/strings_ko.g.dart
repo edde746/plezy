@@ -263,6 +263,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get listView => '목록 보기';
 	@override String get showHeroSection => '주요 추천 영역 표시';
 	@override String get continueWatchingAction => '계속 보기 동작';
+	@override String get continueWatchingLimit => '계속 보기 제한';
 	@override String get continueWatchingPlay => '재생';
 	@override String get continueWatchingDetails => '상세 정보 열기';
 	@override String get episodeAction => '에피소드 동작';
@@ -3170,6 +3171,7 @@ extension on TranslationsKo {
 			'settings.listView' => '목록 보기',
 			'settings.showHeroSection' => '주요 추천 영역 표시',
 			'settings.continueWatchingAction' => '계속 보기 동작',
+			'settings.continueWatchingLimit' => '계속 보기 제한',
 			'settings.continueWatchingPlay' => '재생',
 			'settings.continueWatchingDetails' => '상세 정보 열기',
 			'settings.episodeAction' => '에피소드 동작',

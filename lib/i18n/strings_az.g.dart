@@ -263,6 +263,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get listView => 'Siyahı';
 	@override String get showHeroSection => 'Xüsusi bölməni göstər';
 	@override String get continueWatchingAction => 'İzləməyə davam et əməliyyatı';
+	@override String get continueWatchingLimit => 'İzləməyə davam et limiti';
 	@override String get continueWatchingPlay => 'Oynat';
 	@override String get continueWatchingDetails => 'Ətraflı aç';
 	@override String get episodeAction => 'Seriya əməliyyatı';
@@ -3181,6 +3182,7 @@ extension on TranslationsAz {
 			'settings.listView' => 'Siyahı',
 			'settings.showHeroSection' => 'Xüsusi bölməni göstər',
 			'settings.continueWatchingAction' => 'İzləməyə davam et əməliyyatı',
+			'settings.continueWatchingLimit' => 'İzləməyə davam et limiti',
 			'settings.continueWatchingPlay' => 'Oynat',
 			'settings.continueWatchingDetails' => 'Ətraflı aç',
 			'settings.episodeAction' => 'Seriya əməliyyatı',

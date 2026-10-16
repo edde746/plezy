@@ -156,6 +156,7 @@
     "listView": "Liste",
     "showHeroSection": "Empfehlungsbereich anzeigen",
     "continueWatchingAction": "Aktion für Weiterschauen",
+    "continueWatchingLimit": "Limit für Weiterschauen",
     "continueWatchingPlay": "Abspielen",
     "continueWatchingDetails": "Details öffnen",
     "episodeAction": "Episodenaktion",

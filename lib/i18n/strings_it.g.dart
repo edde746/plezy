@@ -263,6 +263,7 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get listView => 'Elenco';
 	@override String get showHeroSection => 'Mostra sezione in evidenza';
 	@override String get continueWatchingAction => 'Azione per Continua a guardare';
+	@override String get continueWatchingLimit => 'Limite per Continua a guardare';
 	@override String get continueWatchingPlay => 'Riproduci';
 	@override String get continueWatchingDetails => 'Apri dettagli';
 	@override String get episodeAction => 'Azione episodio';
@@ -3181,6 +3182,7 @@ extension on TranslationsIt {
 			'settings.listView' => 'Elenco',
 			'settings.showHeroSection' => 'Mostra sezione in evidenza',
 			'settings.continueWatchingAction' => 'Azione per Continua a guardare',
+			'settings.continueWatchingLimit' => 'Limite per Continua a guardare',
 			'settings.continueWatchingPlay' => 'Riproduci',
 			'settings.continueWatchingDetails' => 'Apri dettagli',
 			'settings.episodeAction' => 'Azione episodio',

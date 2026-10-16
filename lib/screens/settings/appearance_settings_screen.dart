@@ -106,6 +106,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 subtitle: t.settings.showHeroSectionDescription,
               ),
             _continueWatchingActionSelector(),
+            _continueWatchingLimitSelector(),
             _episodeActionSelector(),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
@@ -308,6 +309,14 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: ContinueWatchingAction.play, label: Text(t.settings.continueWatchingPlay)),
       ButtonSegment(value: ContinueWatchingAction.details, label: Text(t.settings.continueWatchingDetails)),
     ],
+  );
+
+  Widget _continueWatchingLimitSelector() => SettingSelectionTile<int>(
+    pref: SettingsService.continueWatchingLimit,
+    icon: Symbols.filter_list_rounded,
+    title: t.settings.continueWatchingLimit,
+    subtitleBuilder: (value) => '$value',
+    options: ContinueWatchingLimit.options.map((n) => DialogOption(value: n, title: '$n')).toList(),
   );
 
   Widget _episodeActionSelector() => SettingSegmentedTile<EpisodeAction>(

@@ -156,6 +156,7 @@
     "listView": "清單檢視",
     "showHeroSection": "顯示精選內容區",
     "continueWatchingAction": "繼續觀看操作",
+    "continueWatchingLimit": "繼續觀看數量上限",
     "continueWatchingPlay": "播放影片",
     "continueWatchingDetails": "開啟詳情頁",
     "episodeAction": "單集操作",

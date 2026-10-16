@@ -263,6 +263,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get listView => 'Roʻyxat';
 	@override String get showHeroSection => 'Asosiy boʻlimni koʻrsatish';
 	@override String get continueWatchingAction => '"Tomoshani davom ettirish" harakati';
+	@override String get continueWatchingLimit => '"Tomoshani davom ettirish" chegarasi';
 	@override String get continueWatchingPlay => 'Ijro etish';
 	@override String get continueWatchingDetails => 'Tafsilotlarni ochish';
 	@override String get episodeAction => 'Qism harakati';
@@ -3181,6 +3182,7 @@ extension on TranslationsUz {
 			'settings.listView' => 'Roʻyxat',
 			'settings.showHeroSection' => 'Asosiy boʻlimni koʻrsatish',
 			'settings.continueWatchingAction' => '"Tomoshani davom ettirish" harakati',
+			'settings.continueWatchingLimit' => '"Tomoshani davom ettirish" chegarasi',
 			'settings.continueWatchingPlay' => 'Ijro etish',
 			'settings.continueWatchingDetails' => 'Tafsilotlarni ochish',
 			'settings.episodeAction' => 'Qism harakati',

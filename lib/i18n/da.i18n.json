@@ -156,6 +156,7 @@
     "listView": "Liste",
     "showHeroSection": "Vis udvalgt indhold",
     "continueWatchingAction": "Handling for \"Fortsæt med at se\"",
+    "continueWatchingLimit": "Grænse for \"Fortsæt med at se\"",
     "continueWatchingPlay": "Afspil",
     "continueWatchingDetails": "Åbn detaljer",
     "episodeAction": "Handling for afsnit",

@@ -263,6 +263,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Vis fremhevet seksjon';
 	@override String get continueWatchingAction => 'Handling for «Fortsett å se»';
+	@override String get continueWatchingLimit => 'Grense for «Fortsett å se»';
 	@override String get continueWatchingPlay => 'Spill av';
 	@override String get continueWatchingDetails => 'Åpne detaljer';
 	@override String get episodeAction => 'Handling for episoder';
@@ -3181,6 +3182,7 @@ extension on TranslationsNb {
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Vis fremhevet seksjon',
 			'settings.continueWatchingAction' => 'Handling for «Fortsett å se»',
+			'settings.continueWatchingLimit' => 'Grense for «Fortsett å se»',
 			'settings.continueWatchingPlay' => 'Spill av',
 			'settings.continueWatchingDetails' => 'Åpne detaljer',
 			'settings.episodeAction' => 'Handling for episoder',

@@ -263,6 +263,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Öne Çıkan Bölümünü Göster';
 	@override String get continueWatchingAction => 'İzlemeye Devam Et Eylemi';
+	@override String get continueWatchingLimit => 'İzlemeye Devam Et Sınırı';
 	@override String get continueWatchingPlay => 'Oynat';
 	@override String get continueWatchingDetails => 'Detayları Aç';
 	@override String get episodeAction => 'Bölüm Eylemi';
@@ -3181,6 +3182,7 @@ extension on TranslationsTr {
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Öne Çıkan Bölümünü Göster',
 			'settings.continueWatchingAction' => 'İzlemeye Devam Et Eylemi',
+			'settings.continueWatchingLimit' => 'İzlemeye Devam Et Sınırı',
 			'settings.continueWatchingPlay' => 'Oynat',
 			'settings.continueWatchingDetails' => 'Detayları Aç',
 			'settings.episodeAction' => 'Bölüm Eylemi',
