@@ -818,6 +818,47 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(prepared.manager.refreshCalls, 2);
     });
+
+    Future<String> bindProtectedPlexHomeOnline() async {
+      final prepared = await preparePlexHomeBind(
+        protected: true,
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode([_serverJson()]), 200, headers: {'content-type': 'application/json'}),
+        ),
+      );
+      await binder.rebindActive();
+      manager.updateServerStatus(ServerId('srv-1'), true);
+      expect(multiServerProvider.onlineServerIds, ['srv-1']);
+      return prepared.profileId;
+    }
+
+    test('a passive rebind whose PIN-gated /switch is suppressed keeps the bound Plex servers visible', () async {
+      await bindProtectedPlexHomeOnline();
+
+      await binder.rebindActive();
+
+      expect(activeProfile.lastBindingSucceeded, isTrue);
+      expect(multiServerProvider.onlineServerIds, ['srv-1']);
+    });
+
+    test('a user-initiated rebind whose PIN is refused still hides the Plex servers', () async {
+      final profileId = await bindProtectedPlexHomeOnline();
+
+      binder.markUserInitiatedActivation(profileId);
+      await binder.rebindActive();
+
+      expect(activeProfile.lastBindingSucceeded, isFalse);
+      expect(multiServerProvider.onlineServerIds, isEmpty);
+    });
+
+    test('a passive rebind does not keep a server whose token was rejected', () async {
+      await bindProtectedPlexHomeOnline();
+      manager.debugMarkAuthErrorForTesting(ServerId('srv-1'));
+
+      await binder.rebindActive();
+
+      expect(multiServerProvider.onlineServerIds, isEmpty);
+    });
   });
 
   test('local cached Plex token remints when resources returns zero servers', () async {
