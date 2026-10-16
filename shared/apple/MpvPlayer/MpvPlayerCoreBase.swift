@@ -121,6 +121,7 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedDoviLevel: Int64 = 0
   private var cachedContainerFps: Double = 0
   private var cachedDeinterlaceActive = false
+  private var cachedIvtcActive = false
   private var cachedEstimatedFps: Double = 0
   private var displayCriteriaUpdateScheduled = false
   /// No stream is being presented: between a file's END_FILE (or START_FILE)
@@ -189,6 +190,7 @@ class MpvPlayerCoreBase: NSObject {
   private static let internalVideoPrimariesObserverId: UInt64 = UInt64.max - 8
   private static let internalVideoColorMatrixObserverId: UInt64 = UInt64.max - 9
   private static let internalDeinterlaceActiveObserverId: UInt64 = UInt64.max - 10
+  private static let internalIvtcActiveObserverId: UInt64 = UInt64.max - 11
   private static let internalObserverIds: Set<UInt64> = [
     internalSigPeakObserverId,
     internalWidthObserverId,
@@ -200,6 +202,7 @@ class MpvPlayerCoreBase: NSObject {
     internalVideoPrimariesObserverId,
     internalVideoColorMatrixObserverId,
     internalDeinterlaceActiveObserverId,
+    internalIvtcActiveObserverId,
   ]
 
   let queue = DispatchQueue(label: "mpv", qos: .userInitiated)
@@ -385,11 +388,20 @@ class MpvPlayerCoreBase: NSObject {
     // The stream is presented one frame per field when mpv's own
     // deinterlacer is active (bwdif send_field, d3d11vpp, vavpp all emit
     // fields) or when the measured cadence says the decoder did it; either
-    // way the presented rate is twice the container rate (#2322).
-    let fieldOutput =
-      cachedDeinterlaceActive
+    // way the presented rate is twice the container rate (#2322). Inverse
+    // telecine (the fork's `deinterlace=ivtc`) instead rebuilds the film
+    // frames and drops one in five: 29.97i is presented at 23.976 (#2710).
+    let presentedFps: Double
+    if cachedIvtcActive {
+      presentedFps = cachedContainerFps * 4 / 5
+    } else if cachedDeinterlaceActive
       || Self.presentsFields(container: cachedContainerFps, presented: cachedEstimatedFps)
-    let fps = Self.nominalRefreshRate(fieldOutput ? cachedContainerFps * 2 : cachedContainerFps)
+    {
+      presentedFps = cachedContainerFps * 2
+    } else {
+      presentedFps = cachedContainerFps
+    }
+    let fps = Self.nominalRefreshRate(presentedFps)
     let width = Int32(cachedWidth)
     let height = Int32(cachedHeight)
     let sigPeak = cachedLastSigPeak
@@ -502,6 +514,9 @@ class MpvPlayerCoreBase: NSObject {
       mpv_observe_property(
         mpv, Self.internalDeinterlaceActiveObserverId,
         "deinterlace-active", MPV_FORMAT_FLAG)
+      mpv_observe_property(
+        mpv, Self.internalIvtcActiveObserverId,
+        "ivtc-active", MPV_FORMAT_FLAG)
       mpv_observe_property(mpv, Self.internalVideoGammaObserverId, "video-params/gamma", MPV_FORMAT_STRING)
       mpv_observe_property(mpv, Self.internalVideoPrimariesObserverId, "video-params/primaries", MPV_FORMAT_STRING)
       mpv_observe_property(
@@ -946,6 +961,7 @@ class MpvPlayerCoreBase: NSObject {
     cachedVideoPrimaries = nil
     cachedVideoColorMatrix = nil
     cachedDeinterlaceActive = false
+    cachedIvtcActive = false
     cachedEstimatedFps = 0
     cacheLock.unlock()
 
@@ -1370,12 +1386,14 @@ class MpvPlayerCoreBase: NSObject {
       let estimatedFps = readDoubleProperty("estimated-vf-fps") ?? 0
       let containerFps = readDoubleProperty("container-fps") ?? 0
       let deinterlaceActive = readFlagProperty("deinterlace-active") ?? false
+      let ivtcActive = readFlagProperty("ivtc-active") ?? false
       let videoParams = readMapProperty("video-params") ?? [:]
       let videoTrack = readMapProperty("current-tracks/video") ?? [:]
       cacheLock.lock()
       cachedEstimatedFps = estimatedFps
       cachedContainerFps = containerFps
       cachedDeinterlaceActive = deinterlaceActive
+      cachedIvtcActive = ivtcActive
       cachedWidth = Double((videoParams["w"] as? Int64) ?? 0)
       cachedHeight = Double((videoParams["h"] as? Int64) ?? 0)
       cachedLastSigPeak = (videoParams["sig-peak"] as? Double) ?? 0
@@ -1541,6 +1559,12 @@ class MpvPlayerCoreBase: NSObject {
       guard let active = value as? Bool else { break }
       cacheLock.lock()
       cachedDeinterlaceActive = active
+      cacheLock.unlock()
+      scheduleDisplayCriteriaUpdate()
+    case "ivtc-active":
+      guard let active = value as? Bool else { break }
+      cacheLock.lock()
+      cachedIvtcActive = active
       cacheLock.unlock()
       scheduleDisplayCriteriaUpdate()
     case "video-params/gamma":

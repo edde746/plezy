@@ -492,12 +492,35 @@ class PlaybackSettingsScreen extends StatelessWidget {
     subtitle: t.settings.matchDynamicRangeDescription,
   );
 
-  Widget _deinterlaceTile() => SettingSwitchTile(
-    pref: SettingsService.deinterlace,
+  Widget _deinterlaceTile() => SettingSelectionTile<DeinterlaceMode>(
+    pref: SettingsService.deinterlaceMode,
     icon: Symbols.deblur_rounded,
     title: t.settings.deinterlace,
-    subtitle: t.settings.deinterlaceDescription,
+    subtitleBuilder: (mode) => '${_deinterlaceModeLabel(mode)} · ${t.settings.deinterlaceDescription}',
+    options: [
+      DialogOption(
+        value: DeinterlaceMode.off,
+        title: t.settings.deinterlaceOff,
+        subtitle: t.settings.deinterlaceOffDescription,
+      ),
+      DialogOption(
+        value: DeinterlaceMode.video,
+        title: t.settings.deinterlaceVideo,
+        subtitle: t.settings.deinterlaceVideoDescription,
+      ),
+      DialogOption(
+        value: DeinterlaceMode.film,
+        title: t.settings.deinterlaceFilm,
+        subtitle: t.settings.deinterlaceFilmDescription,
+      ),
+    ],
   );
+
+  String _deinterlaceModeLabel(DeinterlaceMode mode) => switch (mode) {
+    DeinterlaceMode.off => t.settings.deinterlaceOff,
+    DeinterlaceMode.video => t.settings.deinterlaceVideo,
+    DeinterlaceMode.film => t.settings.deinterlaceFilm,
+  };
 
   // Normalization wins over passthrough in the player (neither loudnorm nor
   // Android's platform effect can process a bitstream), so the switch reports

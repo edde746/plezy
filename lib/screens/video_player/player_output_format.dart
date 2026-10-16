@@ -34,8 +34,10 @@ class PlayerOutputFormat {
   /// decoder that deinterlaces by itself (MediaCodec on Tegra, MediaTek,
   /// Amlogic) where that estimate has not converged on the video plane, the
   /// media time the caller measured a frame [step] advancing — see
-  /// [presentsFields]. Backends without these properties (ExoPlayer) never
-  /// deinterlace.
+  /// [presentsFields]. Under inverse telecine (`ivtc-active`, the fork's
+  /// `deinterlace=ivtc`) the chain rebuilds the film frames and drops one in
+  /// five instead, so 29.97i is presented at 23.976 fps. Backends without
+  /// these properties (ExoPlayer) never deinterlace.
   ///
   /// Without `container-fps` — a Matroska track with no DefaultDuration,
   /// for which mpv's own demuxer has no other source (#2607) — the rate is
@@ -45,13 +47,17 @@ class PlayerOutputFormat {
     var fps = _positive(await player.getProperty('container-fps'));
     if (fps != null) {
       final container = fps;
-      final deinterlacing = await player.getProperty('deinterlace-active') == 'yes';
-      final estimated = _positive(await player.getProperty('estimated-vf-fps'));
-      final fieldOutput =
-          deinterlacing ||
-          (estimated != null && presentsFields(container: container, presented: estimated)) ||
-          (steppedFps != null && presentsFields(container: container, presented: steppedFps));
-      if (fieldOutput) fps *= 2;
+      if (await player.getProperty('ivtc-active') == 'yes') {
+        fps = container * 4 / 5;
+      } else {
+        final deinterlacing = await player.getProperty('deinterlace-active') == 'yes';
+        final estimated = _positive(await player.getProperty('estimated-vf-fps'));
+        final fieldOutput =
+            deinterlacing ||
+            (estimated != null && presentsFields(container: container, presented: estimated)) ||
+            (steppedFps != null && presentsFields(container: container, presented: steppedFps));
+        if (fieldOutput) fps *= 2;
+      }
     } else if (step != null) {
       fps = standardRate(frames: step.frames, advanced: step.advanced);
       appLogger.d(

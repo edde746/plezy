@@ -248,7 +248,7 @@ class AgentSettingsCommands {
         if (exo || !ShaderService.isPlatformSupported) {
           return 'Shaders are unavailable on the current platform or player backend.';
         }
-      case 'mpv_config_text' || 'mpv_config_presets' || 'deinterlace' || 'subtitle_use_margins':
+      case 'mpv_config_text' || 'mpv_config_presets' || 'deinterlace_mode' || 'subtitle_use_margins':
         if (exo) return 'This setting requires the mpv backend.';
       case 'subtitle_render_resolution':
         if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
@@ -359,7 +359,7 @@ class AgentSettingsCommands {
     'selected_external_player',
     'android_use_exoplayer',
     'playback_buffer_tier',
-    'deinterlace',
+    'deinterlace_mode',
     'player_always_on_top',
     'match_refresh_rate',
     'match_dynamic_range',

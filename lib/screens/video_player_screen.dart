@@ -1869,13 +1869,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
       await currentPlayer.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
-      // Deinterlacing (#2149) is mpv-only by design — ExoPlayer has no filter
-      // chain. `auto` deinterlaces only content flagged interlaced. Wrapped:
-      // a preference must never abort player initialization (an older core
-      // that rejects `auto` just keeps its default).
-      if (!(Platform.isAndroid && useExoPlayer) && settingsService.read(SettingsService.deinterlace)) {
+      // Deinterlacing (#2149, #2710) is mpv-only by design — ExoPlayer has no
+      // filter chain. Both modes act only on content flagged interlaced. Live
+      // TV keeps plain deinterlacing under Film: broadcast mixes telecined
+      // film with sports and news shot at field rate, which inverse telecine
+      // makes stutter. Wrapped: a preference must never abort player
+      // initialization (a core that rejects the value keeps its default).
+      final deinterlaceMode = settingsService.read(SettingsService.deinterlaceMode);
+      if (!(Platform.isAndroid && useExoPlayer) && deinterlaceMode != DeinterlaceMode.off) {
+        final applied = widget.isLive && deinterlaceMode == DeinterlaceMode.film
+            ? DeinterlaceMode.video
+            : deinterlaceMode;
         try {
-          await currentPlayer.setProperty('deinterlace', 'auto');
+          await currentPlayer.setProperty('deinterlace', applied.mpvValue);
         } catch (e) {
           appLogger.w('VideoPlayerScreen: deinterlace not applied', error: e);
         }

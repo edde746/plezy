@@ -256,6 +256,18 @@ void main() {
     });
   });
 
+  group('SettingsService deinterlace mode', () {
+    for (final (enabled, mode) in [(true, DeinterlaceMode.video), (false, DeinterlaceMode.off)]) {
+      test('migrates the legacy deinterlace toggle=$enabled to ${mode.name} (#2710)', () async {
+        resetSharedPreferencesForTest(initialAsync: {'deinterlace': enabled});
+        final settings = await SettingsService.getInstance();
+
+        expect(settings.read(SettingsService.deinterlaceMode), mode);
+        expect(settings.prefs.containsKey('deinterlace'), isFalse, reason: 'migrated once, then forgotten');
+      });
+    }
+  });
+
   group('SettingsService music quality', () {
     test('defaults to original and persists changes by enum name', () async {
       var settings = await SettingsService.getInstance();

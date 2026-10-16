@@ -38,6 +38,21 @@ void main() {
     expect(output.fps, closeTo(59.94006, 1e-5));
   });
 
+  test('inverse telecine presents the film rate, four fifths of the container rate', () async {
+    // #2710: fieldmatch + decimate turn 29.97i film back into 23.976p, so a
+    // 29.97 or 59.94 Hz mode would bring the 3:2 judder back.
+    final output = await PlayerOutputFormat.read(
+      _PropertyPlayer({
+        'container-fps': '29.970030',
+        'ivtc-active': 'yes',
+        'deinterlace-active': 'no',
+        'estimated-vf-fps': '23.976024',
+      }),
+    );
+
+    expect(output.fps, closeTo(23.976024, 1e-5));
+  });
+
   test('a frame step that advanced media time at field rate doubles even while mpv has no estimate', () async {
     // Tegra's plane: ten stepped frames advanced time-pos by ten field
     // durations while estimated-vf-fps still reads unavailable.

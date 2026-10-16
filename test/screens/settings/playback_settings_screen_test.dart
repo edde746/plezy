@@ -99,7 +99,7 @@ void main() {
     expect(find.descendant(of: tile, matching: find.text('Play immediately')), findsOneWidget);
   });
 
-  testWidgets('toggles deinterlacing on the mpv path', (tester) async {
+  testWidgets('picks inverse telecine on the mpv path', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -112,10 +112,18 @@ void main() {
     await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
     await tester.ensureVisible(title);
     await tester.pumpAndSettle();
+    final tile = find.widgetWithText(ListTile, 'Deinterlacing');
+    expect(find.descendant(of: tile, matching: find.textContaining('Off · ')), findsOneWidget);
+
     await tester.tap(title);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Film'));
+    await tester.pumpAndSettle();
 
-    expect(SettingsService.instance.read(SettingsService.deinterlace), isTrue);
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.deinterlaceMode), DeinterlaceMode.film);
+    expect(settings.prefs.getString(SettingsService.deinterlaceMode.key), 'film');
+    expect(find.descendant(of: tile, matching: find.textContaining('Film · ')), findsOneWidget);
   });
 
   testWidgets('audio passthrough is held off and inactive while loudness normalization is on', (tester) async {

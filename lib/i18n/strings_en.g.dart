@@ -1191,6 +1191,24 @@ class Translations$settings$en {
 	/// en: 'Remove combing artifacts from interlaced video (mpv player only)'
 	String get deinterlaceDescription => 'Remove combing artifacts from interlaced video (mpv player only)';
 
+	/// en: 'Off'
+	String get deinterlaceOff => 'Off';
+
+	/// en: 'Show interlaced video as it is decoded'
+	String get deinterlaceOffDescription => 'Show interlaced video as it is decoded';
+
+	/// en: 'Video'
+	String get deinterlaceVideo => 'Video';
+
+	/// en: 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts'
+	String get deinterlaceVideoDescription => 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts';
+
+	/// en: 'Film'
+	String get deinterlaceFilm => 'Film';
+
+	/// en: 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video'
+	String get deinterlaceFilmDescription => 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video';
+
 	/// en: 'Ask for profile on app open'
 	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
 
@@ -7778,6 +7796,12 @@ extension on Translations {
 			'settings.hdrSdrConversionPlayerDescription' => 'The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes',
 			'settings.deinterlace' => 'Deinterlacing',
 			'settings.deinterlaceDescription' => 'Remove combing artifacts from interlaced video (mpv player only)',
+			'settings.deinterlaceOff' => 'Off',
+			'settings.deinterlaceOffDescription' => 'Show interlaced video as it is decoded',
+			'settings.deinterlaceVideo' => 'Video',
+			'settings.deinterlaceVideoDescription' => 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts',
+			'settings.deinterlaceFilm' => 'Film',
+			'settings.deinterlaceFilmDescription' => 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.forceTvMode' => 'Force TV mode',
@@ -7912,14 +7936,14 @@ extension on Translations {
 			'fileInfo.colorTransfer' => 'Color Transfer',
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
 			'fileInfo.chromaLocation' => 'Chroma Location',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.scanType' => 'Scan Type',
 			'fileInfo.interlaced' => 'Interlaced',
 			'fileInfo.anamorphic' => 'Anamorphic',
 			'fileInfo.referenceFrames' => 'Reference Frames',
 			'fileInfo.dynamicRange' => 'Dynamic Range',
 			'fileInfo.dolbyVision' => 'Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
@@ -8426,14 +8450,14 @@ extension on Translations {
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
+			_ => null,
+		} ?? switch (path) {
 			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
 			'errors.noClientAvailable' => 'No client available',
 			'errors.pleaseEnterToken' => 'Please enter a token',
 			'errors.invalidToken' => 'Invalid token',
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
@@ -8940,14 +8964,14 @@ extension on Translations {
 			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
 			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.participants' => 'Participants',
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
 			'watchTogether.makeHost' => 'Make host',
 			'watchTogether.makeHostQuestion' => 'Transfer host?',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
 			'watchTogether.transfer' => 'Transfer',
 			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
@@ -9454,14 +9478,14 @@ extension on Translations {
 			'seerr.permissionRevoked' => 'You no longer have permission to request this',
 			'services.title' => 'Services',
 			'services.hubSubtitle' => 'Sync watch progress and request new titles.',
+			_ => null,
+		} ?? switch (path) {
 			'services.integrations' => 'Integrations',
 			'services.notConnected' => 'Not connected',
 			'services.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'services.scrobble' => 'Track progress automatically',
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
-			_ => null,
-		} ?? switch (path) {
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',

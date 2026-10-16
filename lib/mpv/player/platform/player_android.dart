@@ -438,6 +438,7 @@ class PlayerAndroid extends PlayerBase {
         return fps?.toString();
       case 'estimated-vf-fps':
       case 'deinterlace-active':
+      case 'ivtc-active':
         final stats = await getStats();
         return stats[name]?.toString();
       case 'width':

@@ -1185,17 +1185,18 @@ class MpvPlayerCore private constructor(
             // instead of the whole session's HDR/10-bit scanout.
             setGpuVoRequirement(GpuVoPolicy.REASON_FORMAT_REJECTED, false)
             // The next file's rate arrives with its container-fps; until then
-            // there is nothing to vote for (Media3: Format.NO_VALUE). Whether
-            // it is presented as fields is measured at its first frame.
+            // there is nothing to vote for (Media3: Format.NO_VALUE). Its
+            // presented rate (fields, inverse telecine) is measured at its
+            // first frame.
             frameRateVote.onMediaFrameRate(0f)
-            frameRateVote.onFieldOutput(false)
+            frameRateVote.onPresentedRateFactor(1f)
             delegate?.onEvent("start-file", lifecycleData(event.sourceId))
           }
           is MpvEvent.FileLoaded -> {
             delegate?.onEvent("file-loaded", lifecycleData(event.sourceId))
           }
           is MpvEvent.PlaybackRestart -> {
-            if (!audioOnly) measureFieldOutput()
+            if (!audioOnly) measurePresentedRate()
             delegate?.onEvent(
               "playback-restart",
               lifecycleData(event.sourceId, event.positionSeconds)
@@ -1230,7 +1231,7 @@ class MpvPlayerCore private constructor(
             frameRateVote.onStopped()
           } else {
             frameRateVote.onStarted()
-            if (!audioOnly) measureFieldOutput()
+            if (!audioOnly) measurePresentedRate()
           }
         }
         if (change.name == "speed" && change is PropertyChange.Double) {
@@ -1256,30 +1257,32 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  /** The pending [measureFieldOutput] delay; a newer trigger supersedes it. */
-  private var fieldOutputMeasurement: Job? = null
+  /** The pending [measurePresentedRate] delay; a newer trigger supersedes it. */
+  private var presentedRateMeasurement: Job? = null
 
   /**
-   * Whether the stream is presented one frame per field ([PresentedFrameRate]),
-   * feeding the Surface vote. `estimated-vf-fps` is mpv's ten-frame average
-   * of shown frames, so it is honest only once playback has run: on the
-   * paused first frame Tegra has no interval yet and MediaTek's first field
-   * pair carries a duplicate timestamp. Hence the read is scheduled a moment
-   * after each playback restart and each unpause, superseding any pending one,
-   * and reads nothing while paused (the vote is cleared then anyway). Observing
-   * the property instead would forward a notification per frame to Dart.
+   * The presented rate over `container-fps` ([PresentedFrameRate]: field
+   * output or inverse telecine), feeding the Surface vote. `estimated-vf-fps`
+   * is mpv's average of shown frames, so it is honest only once playback has
+   * run: on the paused first frame Tegra has no interval yet and MediaTek's
+   * first field pair carries a duplicate timestamp. Hence the read is
+   * scheduled a moment after each playback restart and each unpause,
+   * superseding any pending one, and reads nothing while paused (the vote is
+   * cleared then anyway). Observing the property instead would forward a
+   * notification per frame to Dart.
    */
-  private fun measureFieldOutput() {
-    fieldOutputMeasurement?.cancel()
-    fieldOutputMeasurement = scope.launch {
+  private fun measurePresentedRate() {
+    presentedRateMeasurement?.cancel()
+    presentedRateMeasurement = scope.launch {
       delay(FIELD_OUTPUT_SETTLE_MS)
       if (disposing || cachedPaused) return@launch
-      val fieldOutput = try {
+      val rateFactor = try {
         readOperations.run("presented rate") {
-          PresentedFrameRate.presentsFields(
+          PresentedFrameRate.rateFactor(
             containerFps = readProperty("container-fps")?.toDoubleOrNull() ?: 0.0,
             estimatedFps = readProperty("estimated-vf-fps")?.toDoubleOrNull(),
-            deinterlaceActive = readProperty("deinterlace-active") == "yes"
+            deinterlaceActive = readProperty("deinterlace-active") == "yes",
+            ivtcActive = readProperty("ivtc-active") == "yes"
           )
         }
       } catch (e: CancellationException) {
@@ -1288,7 +1291,7 @@ class MpvPlayerCore private constructor(
         Log.w(TAG, "Presented rate unreadable", e)
         return@launch
       }
-      if (!disposing) frameRateVote.onFieldOutput(fieldOutput)
+      if (!disposing) frameRateVote.onPresentedRateFactor(rateFactor)
     }
   }
 
@@ -2903,6 +2906,7 @@ class MpvPlayerCore private constructor(
       "container-fps" to readProperty("container-fps"),
       "estimated-vf-fps" to readProperty("estimated-vf-fps"),
       "deinterlace-active" to readProperty("deinterlace-active"),
+      "ivtc-active" to readProperty("ivtc-active"),
       "video-bitrate" to readProperty("video-bitrate"),
       "hwdec-current" to readProperty("hwdec-current"),
       "audio-codec-name" to readProperty("audio-codec-name"),
