@@ -1,4 +1,5 @@
 # Miscellaneous
+AGENTS.md
 *.class
 *.log
 *.pyc
@@ -31,6 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /debug-info/
+android/build/
 
 # Windows Store packaging output (windows/build-msix.ps1)
 /staging-msix/
