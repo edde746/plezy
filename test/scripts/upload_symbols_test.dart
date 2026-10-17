@@ -124,7 +124,6 @@ void main() {
 
   test('packaged identities exclude unshipped ABI, stale intermediates and mixed targets', () async {
     android();
-    final rich = put('build/libmpv/libmpv/native/imported/arm64-v8a/libmpv.so', elf(30));
     put(
       'build/app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib/x86_64/libmpv.so',
       elf(40, machine: 62),
@@ -140,7 +139,13 @@ void main() {
     put('debug-info/android-aab/app.ios-arm64.symbols', elf(80));
     final selected = await plan();
     expect(selected.native.map((a) => path.basename(a.file.path)).toList()..sort(), ['libapp.so', 'libmpv.so']);
-    expect(selected.native.singleWhere((a) => path.basename(a.file.path) == 'libmpv.so').file.path, rich.path);
+    expect(
+      selected.native.singleWhere((a) => path.basename(a.file.path) == 'libmpv.so').file.path,
+      path.join(
+        repository.path,
+        'build/app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib/arm64-v8a/libmpv.so',
+      ),
+    );
     expect(selected.dart.map((a) => a.variants.single.debugId), [fixtureDebugId(1)]);
   });
 

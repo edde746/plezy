@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written by scripts/set_native_revision.sh with mpv-build.lock.json: the mpv-android AAR's sha256, checked by Gradle
+     wherever it resolves the AAR. Every other group is trusted. -->
+<verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.3.xsd">
+   <configuration>
+      <verify-metadata>true</verify-metadata>
+      <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <trust group="^(?!edde746$).*$" regex="true"/>
+      </trusted-artifacts>
+   </configuration>
+   <components>
+      <component group="edde746" name="mpv-android" version="504d364899fe">
+         <artifact name="mpv-android-504d364899fe.aar">
+            <sha256 value="b8a5d65b57c0c9fd01c92703e27e185ae0e717b1607b4402a64d43dcd6cc2180" origin="mpv-build.lock.json"/>
+         </artifact>
+      </component>
+   </components>
+</verification-metadata>

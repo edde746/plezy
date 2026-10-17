@@ -17,7 +17,9 @@
 # for p in ios, macos, tvos, plus the root mpv-build.lock.json. The duplicate
 # SwiftPM locks are not redundant to us: scripts/checks/check_apple_spm_locks.py
 # fails the build when a pair drifts, and tvos/scripts/test_wire_mpv.rb asserts
-# all ten sites name one commit.
+# all ten sites name one commit. android/gradle/verification-metadata.xml moves
+# with them: it repeats the lock's mpv-android sha256 for Gradle's dependency
+# verification, which checks the AAR wherever Gradle resolves it.
 #
 # mpv-build.lock.json is how the non-Apple platforms consume the same pin.
 # JSON cannot carry comments, so its schema lives here:
@@ -27,11 +29,20 @@
 #     "repo": "edde746/mpv-build",         the GitHub repo the commit lives in
 #     "commit": "<full-40-char-sha>",       must equal the nine Apple pin sites
 #     "artifacts": {                        one entry per published non-apple group
-#       "<group>": {                        android | linux | windows
+#       "android": {                        the mpv-android library (artifacts.json's
+#                                           mpv-android entry), resolved by Gradle
+#         "assetBase": "https://...",       release download base for the asset
+#         "aar": {
+#           "key": "<12-hex>",             its content-address key: the version Gradle resolves
+#           "asset": "mpv-android-<key>.aar", downloaded as <assetBase>/<asset>
+#           "checksum": "<sha256>"          of the complete AAR
+#         }
+#       },
+#       "<group>": {                        linux | windows
 #         "key": "<12-hex>",               the group's content-address key
 #         "assetBase": "https://...",       release download base for the assets
 #         "assets": {                       one entry per platform variant
-#           "<variant>": {                  e.g. an Android ABI
+#           "<variant>": {                  a CPU architecture
 #             "asset": "<file name>",       downloaded as <assetBase>/<asset>
 #             "checksum": "<sha256>"        of the complete asset file
 #           }
@@ -42,9 +53,10 @@
 #
 # The artifacts map is extracted from artifacts.json at the pinned commit;
 # groups that commit has not published yet are omitted, and each omission is
-# noted on stdout. Each group records its one per-variant native library; a
-# packaged artifact (a single asset with no per-variant trees, such as the
-# mpv-android AAR) is not consumed here and is likewise omitted with a note.
+# noted on stdout. Android records the mpv-android AAR alone. Every other
+# group records its one per-variant native library; a packaged artifact there
+# (a single asset with no per-variant trees) is not consumed and is likewise
+# omitted with a note.
 # Serialization is deterministic: two-space indent, sorted keys, trailing
 # newline. Consumers must fail when their group is missing rather than fall
 # back to an unpinned source.
@@ -243,6 +255,11 @@ for target in "${PROJECTS[@]}" "${LOCKS[@]}"; do
     MISSING+=("$target")
   fi
 done
+# Gradle's verification metadata is written whole, into the Android build's
+# gradle/ directory.
+if [ ! -d android/gradle ]; then
+  MISSING+=("android/gradle/")
+fi
 if [ "${#MISSING[@]}" -gt 0 ]; then
   echo "error: missing native pin site(s); refusing to run:" >&2
   printf '  %s\n' "${MISSING[@]}" >&2
@@ -251,7 +268,8 @@ fi
 
 MPV_BUILD_REVISION="$REVISION" MPV_BUILD_MANIFEST_DIR="$MANIFEST_DIR" MPV_BUILD_REPO="$TARGET_REPO" \
   python3 - "${#PROJECTS[@]}" "${PROJECTS[@]}" "${LOCKS[@]}" <<'PY'
-"""Rewrite the native requirement, SwiftPM pins, and mpv-build.lock.json.
+"""Rewrite the native requirement, SwiftPM pins, mpv-build.lock.json and
+Gradle's verification metadata.
 
 Every file is parsed and rewritten in memory first; nothing is written unless
 all nine Apple edits are unambiguous and the lock can be derived completely,
@@ -276,6 +294,10 @@ projects = sys.argv[2 : 2 + project_count]
 locks = sys.argv[2 + project_count :]
 
 LOCK_PATH = "mpv-build.lock.json"
+VERIFICATION_PATH = "android/gradle/verification-metadata.xml"
+# artifacts.json's Android entry Plezy consumes; the group's per-ABI tarballs
+# are the AAR's own inputs.
+ANDROID_LIBRARY = "mpv-android"
 LOCK_REPO = os.environ["MPV_BUILD_REPO"]
 TARGET_URL = f"https://github.com/{LOCK_REPO}"
 # Xcode names the package after the URL's last path component; SwiftPM
@@ -395,8 +417,44 @@ def load_manifest(name: str, label: str) -> dict | None:
     return payload
 
 
-def build_lock() -> str | None:
-    """The lock file's content for this commit, or None with errors recorded.
+def android_aar(label: str, libraries: dict) -> dict[str, str] | None:
+    """The lock's android entry, the mpv-android AAR; None with an error or a
+    note recorded."""
+    entry = libraries.get(ANDROID_LIBRARY)
+    if entry is None:
+        notes.append(
+            f"note: android has not published {ANDROID_LIBRARY} at this commit; "
+            f"omitted from {LOCK_PATH}"
+        )
+        return None
+    label = f"{label}.libraries.{ANDROID_LIBRARY}"
+    if not isinstance(entry, dict):
+        errors.append(f"{label}: expected an object")
+        return None
+    key = entry.get("key")
+    asset = entry.get("asset")
+    checksum = entry.get("checksum")
+    if not isinstance(key, str) or not KEY_RE.fullmatch(key):
+        errors.append(f"{label}.key: {key!r} is not a 12-hex content key")
+        return None
+    # Gradle's Ivy pattern (android/app/build.gradle.kts) asks for exactly this name.
+    if asset != f"{ANDROID_LIBRARY}-{key}.aar":
+        errors.append(
+            f"{label}.asset: {asset!r} is not {ANDROID_LIBRARY}-{key}.aar, "
+            f"the file Gradle resolves"
+        )
+        return None
+    if not isinstance(checksum, str) or not CHECKSUM_RE.fullmatch(checksum):
+        errors.append(
+            f"{label}.checksum: {checksum!r} is not a full lowercase SHA-256; "
+            f"refusing an unverifiable pin"
+        )
+        return None
+    return {"asset": asset, "checksum": checksum, "key": key}
+
+
+def build_lock() -> dict | None:
+    """The lock for this commit, or None with errors recorded.
 
     Schema documented in this script's header comment. The versions.json read
     is a guard, not a data source: a commit without formatVersion 1 predates
@@ -439,6 +497,11 @@ def build_lock() -> str | None:
         libraries = section.get("libraries")
         if not isinstance(libraries, dict):
             errors.append(f"{label}.libraries: expected an object")
+            continue
+        if group == "android":
+            aar = android_aar(label, libraries)
+            if aar is not None:
+                artifacts[group] = {"aar": aar, "assetBase": asset_base}
             continue
         packaged = sorted(
             name
@@ -514,7 +577,45 @@ def build_lock() -> str | None:
         "formatVersion": 1,
         "repo": LOCK_REPO,
     }
-    return json.dumps(lock, indent=2, sort_keys=True) + "\n"
+    return lock
+
+
+def verification_metadata(aar: dict[str, str] | None) -> str:
+    """Gradle's dependency verification for the AAR the lock names; every other
+    group stays trusted, as without the file."""
+    component = "" if aar is None else f"""
+      <component group="edde746" name="{ANDROID_LIBRARY}" version="{aar['key']}">
+         <artifact name="{aar['asset']}">
+            <sha256 value="{aar['checksum']}" origin="{LOCK_PATH}"/>
+         </artifact>
+      </component>"""
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written by scripts/set_native_revision.sh with mpv-build.lock.json: the mpv-android AAR's sha256, checked by Gradle
+     wherever it resolves the AAR. Every other group is trusted. -->
+<verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.3.xsd">
+   <configuration>
+      <verify-metadata>true</verify-metadata>
+      <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <trust group="^(?!edde746$).*$" regex="true"/>
+      </trusted-artifacts>
+   </configuration>
+   <components>{component}
+   </components>
+</verification-metadata>
+"""
+
+
+def stage(path: str, content: str) -> None:
+    """Queue a whole-file write unless the file already holds content."""
+    try:
+        existing = Path(path).read_text(encoding="utf-8")
+    except OSError:
+        existing = None
+    if content == existing:
+        unchanged.append(path)
+    else:
+        writes.append((path, content))
 
 
 for path in projects:
@@ -571,16 +672,10 @@ for path in locks:
     else:
         writes.append((path, updated))
 
-lock_content = build_lock()
-if lock_content is not None:
-    try:
-        existing_lock = Path(LOCK_PATH).read_text(encoding="utf-8")
-    except OSError:
-        existing_lock = None
-    if lock_content == existing_lock:
-        unchanged.append(LOCK_PATH)
-    else:
-        writes.append((LOCK_PATH, lock_content))
+lock = build_lock()
+if lock is not None:
+    stage(LOCK_PATH, json.dumps(lock, indent=2, sort_keys=True) + "\n")
+    stage(VERIFICATION_PATH, verification_metadata(lock["artifacts"].get("android", {}).get("aar")))
 
 if errors:
     for error in errors:
