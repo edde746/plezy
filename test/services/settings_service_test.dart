@@ -268,6 +268,34 @@ void main() {
     }
   });
 
+  group('SettingsService player setting scopes', () {
+    test('a keyed scope chosen before #2722 drops its stale Everywhere value once', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {
+          SettingsService.playbackSpeedScope.key: 'library',
+          SettingsService.defaultPlaybackSpeed.key: 1.5,
+          SettingsService.shaderPresetScope.key: 'off',
+          SettingsService.globalShaderPreset.key: 'nvscaler',
+        },
+      );
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.defaultPlaybackSpeed), 1.0);
+      expect(
+        settings.read(SettingsService.globalShaderPreset),
+        'nvscaler',
+        reason: "Don't save applies the Everywhere value to every playback",
+      );
+
+      // A later fallback write (an item without a library) survives restarts.
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.25);
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.defaultPlaybackSpeed), 1.25);
+    });
+  });
+
   group('SettingsService music quality', () {
     test('defaults to original and persists changes by enum name', () async {
       var settings = await SettingsService.getInstance();

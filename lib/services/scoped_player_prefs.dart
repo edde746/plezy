@@ -37,7 +37,8 @@ final class ScopedPlayerPref<T> {
 /// Resolution consults only the configured scope's entry, then the global
 /// pref — never entries saved under another scope — so switching scopes makes
 /// old entries inert instead of shadowing the new regime, and switching back
-/// resurrects them.
+/// resurrects them. The global pref does not carry over: entering a keyed
+/// scope resets it (see [PlayerSettingScopePref]).
 abstract final class ScopedPlayerPrefs {
   static final playbackSpeed = ScopedPlayerPref<double>._(
     'playback_speed',

@@ -240,6 +240,7 @@ const String _legacyAutoSkipIntroKey = 'auto_skip_intro';
 const String _legacyAutoSkipCreditsKey = 'auto_skip_credits';
 const String _legacyAudioDownmixKey = 'audio_downmix';
 const String _legacyDeinterlaceKey = 'deinterlace';
+const String _playerScopeGlobalsResetKey = 'player_scope_globals_reset';
 
 /// Migrates from the legacy enum-string format and clamps to 1..5.
 class _LibraryDensityPref extends Pref<int> {
@@ -330,6 +331,33 @@ class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
       return migrated;
     }
     return super.readFrom(svc);
+  }
+}
+
+/// Where one player-sheet property persists (see [PlayerSettingScope]).
+///
+/// [globals] hold the Everywhere value. A keyed scope consults them only as
+/// the fallback for a library or title the user never tuned, so entering one
+/// from Everywhere or Don't save resets them: kept, the Everywhere value would
+/// apply to every such library or title (#2722). Don't save keeps them, as it
+/// applies them as the value of every playback.
+class PlayerSettingScopePref extends EnumPref<PlayerSettingScope> {
+  final List<Pref<Object?>> globals;
+
+  const PlayerSettingScopePref(super.key, this.globals)
+    : super(values: PlayerSettingScope.values, defaultValue: PlayerSettingScope.global);
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, PlayerSettingScope value) async {
+    final entersKeyedScope = value.keysEntries && !readFrom(svc).keysEntries;
+    await super.writeTo(svc, value);
+    if (entersKeyedScope) await resetGlobals(svc);
+  }
+
+  Future<void> resetGlobals(BaseSharedPreferencesService svc) async {
+    for (final pref in globals) {
+      await svc.reset(pref);
+    }
   }
 }
 
@@ -916,29 +944,13 @@ class SettingsService extends BaseSharedPreferencesService {
   // Where a change made in the player's settings sheet persists (see
   // [PlayerSettingScope]). Defaults preserve the pre-existing behavior:
   // every change updates the global default.
-  static const playbackSpeedScope = EnumPref<PlayerSettingScope>(
-    'playback_speed_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
-  static const shaderPresetScope = EnumPref<PlayerSettingScope>(
-    'shader_preset_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
-  static const boxFitScope = EnumPref<PlayerSettingScope>(
-    'box_fit_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
+  static final playbackSpeedScope = PlayerSettingScopePref('playback_speed_scope', [defaultPlaybackSpeed]);
+  static final shaderPresetScope = PlayerSettingScopePref('shader_preset_scope', [globalShaderPreset]);
+  static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
 
   /// One scope for both sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
-  static const syncOffsetScope = EnumPref<PlayerSettingScope>(
-    'sync_offset_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
+  static final syncOffsetScope = PlayerSettingScopePref('sync_offset_scope', [audioSyncOffset, subtitleSyncOffset]);
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
   static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
@@ -1127,6 +1139,7 @@ class SettingsService extends BaseSharedPreferencesService {
     // One-way move to the mpv default: the pre-`android_use_exoplayer` pick is
     // dropped rather than carried over, and nothing reads the old key.
     await prefs.remove(_legacyUseExoPlayerKey);
+    await _resetGlobalsOfKeyedPlayerScopes();
 
     final storedRelay = readNullableString(customRelayUrl.key);
     if (storedRelay == null) return;
@@ -1136,6 +1149,18 @@ class SettingsService extends BaseSharedPreferencesService {
     } else if (endpoint.canonicalBaseUrl != storedRelay) {
       await prefs.setString(customRelayUrl.key, endpoint.canonicalBaseUrl);
     }
+  }
+
+  /// One-time repair for #2722: a scope switched to per-library or per-title
+  /// before [PlayerSettingScopePref] reset its globals still falls back to the
+  /// stale Everywhere value. The sentinel keeps later fallback writes (items
+  /// without a library or title identity) from being wiped on every launch.
+  Future<void> _resetGlobalsOfKeyedPlayerScopes() async {
+    if (prefs.containsKey(_playerScopeGlobalsResetKey)) return;
+    for (final scope in [playbackSpeedScope, shaderPresetScope, boxFitScope, syncOffsetScope]) {
+      if (read(scope).keysEntries) await scope.resetGlobals(this);
+    }
+    await prefs.setBool(_playerScopeGlobalsResetKey, true);
   }
 
   /// Raises [UnreadableSensitivePreferenceException] if any stored credential

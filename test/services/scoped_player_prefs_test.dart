@@ -126,6 +126,40 @@ void main() {
     });
   });
 
+  group('entering a keyed scope (#2722)', () {
+    test('a speed saved under Everywhere does not follow into libraries without their own', () async {
+      final tvEpisode = episode(library: 'tv-shows');
+      final film = movie(library: 'movies');
+      await ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, tvEpisode, 1.5);
+
+      await settings.write(SettingsService.playbackSpeedScope, PlayerSettingScope.library);
+      await ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, tvEpisode, 1.5);
+
+      expect(ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, tvEpisode), 1.5);
+      expect(ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, film), 1.0);
+    });
+
+    test("Don't save keeps the Everywhere value until a keyed scope is entered", () async {
+      await ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, movie(), 1.5);
+
+      await settings.write(SettingsService.playbackSpeedScope, PlayerSettingScope.off);
+      expect(ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, movie()), 1.5);
+
+      await settings.write(SettingsService.playbackSpeedScope, PlayerSettingScope.title);
+      expect(ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, movie()), 1.0);
+    });
+
+    test('both sync offsets reset with their shared scope', () async {
+      await ScopedPlayerPrefs.write(ScopedPlayerPrefs.audioSyncOffset, episode(), 150);
+      await ScopedPlayerPrefs.write(ScopedPlayerPrefs.subtitleSyncOffset, episode(), -400);
+
+      await settings.write(SettingsService.syncOffsetScope, PlayerSettingScope.library);
+
+      expect(ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, episode()), 0);
+      expect(ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, episode()), 0);
+    });
+  });
+
   group('sync offsets', () {
     test('audio and subtitle offsets share one scope but store separately', () async {
       await settings.write(SettingsService.syncOffsetScope, PlayerSettingScope.title);
