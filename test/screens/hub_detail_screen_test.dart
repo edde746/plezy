@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,8 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/library_filter_result.dart';
+import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -337,7 +341,7 @@ void main() {
     Future<void> backToAppBar(WidgetTester tester) async {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'hub_detail_sort');
     }
 
     String numbered(int index) => 'Item ${index.toString().padLeft(3, '0')}';
@@ -355,7 +359,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'hub_detail_sort');
       expect(find.text('Zulu'), findsNothing, reason: 'the remembered card must be outside the build range');
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
@@ -438,6 +442,101 @@ void main() {
         .map((card) => (card.item as MediaItem).title)
         .toList();
     expect(titles, ['Bravo', 'Charlie', 'Alpha']);
+  });
+
+  group('provider-filtered hub', () {
+    final items = [_titled('a', 'Alpha'), _titled('b', 'Bravo')];
+    final genre = MediaFilter(
+      filter: 'genre',
+      filterType: 'string',
+      key: '/library/sections/watchlist/genre',
+      title: 'By Genre',
+      type: 'filter',
+    );
+
+    Future<void> pumpFiltered(
+      WidgetTester tester,
+      Future<List<MediaItem>> Function(List<LibraryFilter> filters) loadItems,
+    ) async {
+      final harness = await _createHarness(const [], backend: MediaBackend.plex);
+      await tester.pumpWidget(
+        harness.wrap(
+          HubDetailScreen(
+            hub: MediaHub(id: 'explore:plex:watchlist', title: 'Watchlist', type: 'mixed', items: items, more: true),
+            // Explore passes both loaders, so the filter source has to win.
+            loadItems: () async => items,
+            filterSource: HubFilterSource(
+              loadFilters: () async => LibraryFilterResult(filters: [genre], cachedValues: const {}),
+              loadFilterValues: (_) async => [
+                MediaFilterValue(key: 'g1', title: 'Comedy'),
+                MediaFilterValue(key: 'g2', title: 'Drama'),
+              ],
+              loadItems: loadItems,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> step(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+    }
+
+    Future<void> toggleGenre(WidgetTester tester, String value) async {
+      await tester.tap(
+        find.byWidgetPredicate((w) => w is Tooltip && (w.message?.startsWith(t.libraries.filters) ?? false)),
+      );
+      await step(tester);
+      await tester.tap(find.text('By Genre'));
+      await step(tester);
+      await tester.tap(find.text(value));
+      await tester.pump();
+      await tester.binding.handlePopRoute();
+      await step(tester);
+    }
+
+    String describe(List<LibraryFilter> filters) =>
+        filters.map((clause) => '${clause.field}=${clause.values.join(',')}').join('&');
+
+    testWidgets("offers the provider's filters and reloads the hub with the selection", (tester) async {
+      final loads = <String>[];
+      await pumpFiltered(tester, (filters) async {
+        loads.add(describe(filters));
+        return filters.isEmpty ? items : const <MediaItem>[];
+      });
+
+      await toggleGenre(tester, 'Comedy');
+
+      await tester.pumpAndSettle();
+      expect(loads, ['', 'genre=g1']);
+      expect(find.text(t.libraries.noItemsMatchFilters), findsOneWidget);
+      expect(find.byTooltip(t.libraries.filtersWithCount(count: 1)), findsOneWidget);
+    });
+
+    testWidgets('a newer selection wins over a reload still in flight', (tester) async {
+      final pending = <String, Completer<List<MediaItem>>>{};
+      await pumpFiltered(tester, (filters) {
+        if (filters.isEmpty) return Future.value(items);
+        return (pending[describe(filters)] = Completer<List<MediaItem>>()).future;
+      });
+
+      await toggleGenre(tester, 'Comedy');
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await toggleGenre(tester, 'Drama');
+      expect(pending.keys, ['genre=g1', 'genre=g1,g2']);
+
+      // The newer result arrives first and the older one must not replace it.
+      pending['genre=g1,g2']!.complete(items.skip(1).toList());
+      await tester.pumpAndSettle();
+      pending['genre=g1']!.complete(items.take(1).toList());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bravo'), findsOneWidget);
+      expect(find.text('Alpha'), findsNothing);
+    });
   });
 
   group('default sort fallback logging', () {

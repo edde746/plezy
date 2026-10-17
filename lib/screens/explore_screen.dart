@@ -36,6 +36,7 @@ import '../widgets/toolbar_scrim.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import 'catalog_search_screen.dart';
+import 'hub_detail_screen.dart';
 import 'libraries/state_messages.dart';
 
 /// The Explore tab: watchlist + discover rows from the active external
@@ -377,6 +378,7 @@ class ExploreScreenState extends State<ExploreScreen>
               focusMemory: _hubFocusMemory,
               icon: _rowIcon(rowHubs[i].row),
               loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
+              filterSource: _filterSourceFor(rowHubs[i].row),
               onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
               onNavigateUp: i == 0 ? searchFocusNode.requestFocus : null,
               onNavigateToSidebar: _navigateToSidebar,
@@ -433,6 +435,17 @@ class ExploreScreenState extends State<ExploreScreen>
         onNavigateUp: index == 0 ? searchFocusNode.requestFocus : null,
       );
     });
+  }
+
+  HubFilterSource? _filterSourceFor(CatalogRowId? row) {
+    final source = _explore.activeSource;
+    if (row == null || source is! CatalogRowFilters) return null;
+    final filtering = source as CatalogRowFilters;
+    return HubFilterSource(
+      loadFilters: () => filtering.fetchRowFilters(row),
+      loadFilterValues: filtering.fetchRowFilterValues,
+      loadItems: (filters) => _explore.loadAllForFilteredRow(row, filters),
+    );
   }
 
   ExploreRowHub? _rowForHub(MediaHub hub) {
@@ -536,6 +549,7 @@ class ExploreScreenState extends State<ExploreScreen>
                   final rowHub = _rowForHub(hub);
                   return rowHub == null ? () => Future.value(hub.items) : () => _explore.loadAllForHub(rowHub);
                 },
+                filterSourceFor: (hub) => _filterSourceFor(_rowForHub(hub)?.row),
                 onNavigateUp: _actionBarKey.currentState?.requestFocusOnFirst,
                 onNavigateToSidebar: _navigateToSidebar,
                 onBack: _navigateToSidebar,
