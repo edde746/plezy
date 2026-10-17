@@ -17,8 +17,8 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
+import com.edde746.mpv.*
 import com.edde746.plezy.exoplayer.DoviBridge
-import com.edde746.plezy.libmpv.*
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.GlCapabilities
@@ -32,8 +32,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 /**
@@ -96,6 +94,13 @@ class MpvPlayerCore private constructor(
      * [handoffDestroyedSurface].
      */
     private const val SURFACE_HANDOFF_TIMEOUT_MS = 2_000L
+
+    /**
+     * Upper bound for the `on_preloaded` decode routing. mpv holds playback
+     * start until the hook is continued; past this the routing is cancelled
+     * and the library continues the hook itself.
+     */
+    private const val HOOK_TIMEOUT_MS = 3_000L
 
     /**
      * How long an admitted write may go unanswered before the core is declared
@@ -413,6 +418,53 @@ class MpvPlayerCore private constructor(
   @Volatile private var player: MpvPlayer? = null
   private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
   private val endFileDiagnostics = MpvEndFileDiagnostics()
+
+  /**
+   * Per-file decode routing run inside mpv's `on_preloaded` hook, set once
+   * the session is adopted; null continues the hook at once.
+   */
+  @Volatile private var hookHandler: (suspend (name: String) -> Unit)? = null
+
+  /**
+   * The session's callbacks. The library calls them on the session's
+   * `mpv-listener-<session>` thread, one at a time in mpv's order (property
+   * changes, events, log lines, hooks), and mpv's own event thread never
+   * waits for them. Each only launches into [scope], so the handlers run on
+   * the main thread in that order, and a disposed core runs none: dispose
+   * cancels the scope before the player closes. The delivery thread never
+   * blocks on Plezy, so nothing that waits on mpv (a close, a surface handoff
+   * holding the main thread) can wait on it in turn.
+   */
+  private val mpvListener = object : MpvPlayer.Listener {
+    override fun onPropertyChange(change: PropertyChange) {
+      scope.launch { onMpvPropertyChange(change) }
+    }
+
+    override fun onEvent(event: MpvEvent) {
+      scope.launch { onMpvEvent(event) }
+    }
+
+    override fun onHook(player: MpvPlayer, name: String, id: Long) {
+      // Undispatched: the handler suspends on the write queue at once, which
+      // frees the delivery thread, and even a cancelled scope runs the finally
+      // that answers the hook. continueHook is idempotent, so answering after
+      // the library's own timeout or close is a no-op.
+      scope.launch(start = CoroutineStart.UNDISPATCHED) {
+        try {
+          val handle = hookHandler
+          if (handle != null && withTimeoutOrNull(HOOK_TIMEOUT_MS) { handle(name) } == null) {
+            Log.w(TAG, "Hook $name handler overran; continuing playback")
+          }
+        } catch (e: CancellationException) {
+          PlayerDebugLog.d(TAG) { "Hook $name handler canceled" }
+        } catch (e: Exception) {
+          Log.w(TAG, "Hook $name handler failed; continuing playback", e)
+        } finally {
+          player.continueHook(id)
+        }
+      }
+    }
+  }
 
   private val nativeFailure = AtomicReference<Exception?>()
   private val nativeOwnershipLock = Any()
@@ -963,7 +1015,8 @@ class MpvPlayerCore private constructor(
           val demuxerBudget = DemuxerBudget.forHeapClassMB(heapClassMB)
           val p = writeOperations.run("initialization") {
             withContext(NonCancellable) {
-              val created = MpvPlayer.create(context.applicationContext) {
+              // Blocks through mpv_initialize on this write worker (IO), never main.
+              val created = MpvPlayer.create(context.applicationContext, mpvListener, HOOK_TIMEOUT_MS) {
                 // The level Dart hands us at `initialize` drives mpv's own
                 // verbosity and the Kotlin-side traces alike.
                 PlayerDebugLog.applyLogLevel(initialLogLevel)
@@ -1063,7 +1116,7 @@ class MpvPlayerCore private constructor(
             // MediaCodec decoder is already created by then (#2065). Nothing
             // is selected yet either, so the track both policies decide for
             // is resolved once here, from mpv's pending selection.
-            p.hookHandler = { name ->
+            hookHandler = { name ->
               if (name == "on_preloaded" && !disposing) {
                 writeOperations.run("preloaded hook") {
                   val track = pendingVideoTrack(p)
@@ -1077,7 +1130,7 @@ class MpvPlayerCore private constructor(
           } else if (!audioOnly) {
             // The plane arbiter that moves a DV P5 file to gpu-next never
             // runs in a software session, and its vo=gpu composites no RPU.
-            p.hookHandler = { name ->
+            hookHandler = { name ->
               if (name == "on_preloaded" && !disposing) {
                 writeOperations.run("preloaded hook") {
                   applySoftwareDvReshapeOutput(pendingVideoTrack(p))
@@ -1106,18 +1159,8 @@ class MpvPlayerCore private constructor(
             }
           }
 
-          // Start collecting events/properties/logs
-          collectEvents(p)
-          collectPropertyChanges(p)
-          if (!audioOnly) collectMediaFrameRate(p)
-          if (usesMediaCodecVo) {
-            collectVideoDimensions(p)
-            collectShaderState(p)
-            collectHdrToneMapState(p)
-            collectDecoderState(p)
-            collectVoFormatRejection(p)
-          }
-          // Subscribe before registration so the initial property event is kept.
+          // Every observation, the internal ones below and Dart's, reports
+          // through [mpvListener], which the session has had since create.
           readOperations.run("internal property observation") {
             if (!audioOnly) p.observeProperty("container-fps", PropertyFormat.Double)
             if (usesMediaCodecVo) {
@@ -1170,90 +1213,95 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  private fun collectEvents(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.eventFlow.collect { event ->
-        when (event) {
-          is MpvEvent.EndFile -> {
-            delegate?.onEvent("end-file", endFileDiagnostics.onEndFile(event))
-          }
-          is MpvEvent.StartFile -> {
-            endFileDiagnostics.onStartFile()
-            // Per file: mpv's verdict was on the previous stream's decode
-            // path, so the next file gets the plane back. A genuine
-            // rejection re-arms it, costing one switch per affected file
-            // instead of the whole session's HDR/10-bit scanout.
-            setGpuVoRequirement(GpuVoPolicy.REASON_FORMAT_REJECTED, false)
-            // The next file's rate arrives with its container-fps; until then
-            // there is nothing to vote for (Media3: Format.NO_VALUE). Its
-            // presented rate (fields, inverse telecine) is measured at its
-            // first frame.
-            frameRateVote.onMediaFrameRate(0f)
-            frameRateVote.onPresentedRateFactor(1f)
-            delegate?.onEvent("start-file", lifecycleData(event.sourceId))
-          }
-          is MpvEvent.FileLoaded -> {
-            delegate?.onEvent("file-loaded", lifecycleData(event.sourceId))
-          }
-          is MpvEvent.PlaybackRestart -> {
-            if (!audioOnly) measurePresentedRate()
-            delegate?.onEvent(
-              "playback-restart",
-              lifecycleData(event.sourceId, event.positionSeconds)
-            )
-          }
-          is MpvEvent.LogMessage -> onMpvLog(event)
-        }
+  /** A lifecycle event or log line, on main through [mpvListener]. */
+  private fun onMpvEvent(event: MpvEvent) {
+    when (event) {
+      is MpvEvent.EndFile -> {
+        delegate?.onEvent("end-file", endFileDiagnostics.onEndFile(event))
       }
+      is MpvEvent.StartFile -> {
+        endFileDiagnostics.onStartFile()
+        // Per file: mpv's verdict was on the previous stream's decode
+        // path, so the next file gets the plane back. A genuine
+        // rejection re-arms it, costing one switch per affected file
+        // instead of the whole session's HDR/10-bit scanout.
+        setGpuVoRequirement(GpuVoPolicy.REASON_FORMAT_REJECTED, false)
+        // The next file's rate arrives with its container-fps; until then
+        // there is nothing to vote for (Media3: Format.NO_VALUE). Its
+        // presented rate (fields, inverse telecine) is measured at its
+        // first frame.
+        frameRateVote.onMediaFrameRate(0f)
+        frameRateVote.onPresentedRateFactor(1f)
+        delegate?.onEvent("start-file", lifecycleData(event.sourceId))
+      }
+      is MpvEvent.FileLoaded -> {
+        delegate?.onEvent("file-loaded", lifecycleData(event.sourceId))
+      }
+      is MpvEvent.PlaybackRestart -> {
+        if (!audioOnly) measurePresentedRate()
+        delegate?.onEvent(
+          "playback-restart",
+          lifecycleData(event.sourceId, event.positionSeconds)
+        )
+      }
+      is MpvEvent.LogMessage -> onMpvLog(event)
     }
   }
 
-  private fun collectPropertyChanges(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.collect { change ->
-        // Skip None — matches old MPVLib behavior where eventProperty(name)
-        // with no value was a no-op. Forwarding null would incorrectly clear
-        // track selections (aid/sid) before the file loads.
-        if (change is PropertyChange.None) return@collect
-        val value: Any? = when (change) {
-          is PropertyChange.Flag -> change.value
-          is PropertyChange.Int64 -> change.value
-          is PropertyChange.Double -> change.value
-          is PropertyChange.Str -> change.value
-          is PropertyChange.None -> null
-        }
-        // pause and speed are Dart's core observations (PlayerBase
-        // corePropertyObservations), registered for every backend; a second
-        // native observer here would double every change Dart receives.
-        if (change.name == "pause" && change is PropertyChange.Flag) {
-          cachedPaused = change.value
-          if (change.value) {
-            frameRateVote.onStopped()
-          } else {
-            frameRateVote.onStarted()
-            if (!audioOnly) measurePresentedRate()
-          }
-        }
-        if (change.name == "speed" && change is PropertyChange.Double) {
-          frameRateVote.onPlaybackSpeed(change.value.toFloat())
-          // The decoder was told a rate for the previous speed; at 8x it needs eight times it.
-          if (usesMediaCodecVo) {
-            launchMpvWrite("operating rate") {
-              operatingRate.onSpeed(change.value)?.let { writeOperatingRate(it, "speed ${change.value}") }
-            }
-          }
-        }
-        delegate?.onPropertyChange(change.name, value, change.sourceId)
+  /**
+   * An observed property changed, on main through [mpvListener]: Dart's
+   * observations and the core's own (initialize registers those under the
+   * same conditions their handlers check here).
+   */
+  private fun onMpvPropertyChange(change: PropertyChange) {
+    // Skip None — matches old MPVLib behavior where eventProperty(name)
+    // with no value was a no-op. Forwarding null would incorrectly clear
+    // track selections (aid/sid) before the file loads.
+    if (change is PropertyChange.None) return
+    val value: Any? = when (change) {
+      is PropertyChange.Flag -> change.value
+      is PropertyChange.Int64 -> change.value
+      is PropertyChange.Double -> change.value
+      is PropertyChange.Str -> change.value
+      is PropertyChange.None -> null
+    }
+    // pause and speed are Dart's core observations (PlayerBase
+    // corePropertyObservations), registered for every backend; a second
+    // native observer here would double every change Dart receives.
+    if (change.name == "pause" && change is PropertyChange.Flag) {
+      cachedPaused = change.value
+      if (change.value) {
+        frameRateVote.onStopped()
+      } else {
+        frameRateVote.onStarted()
+        if (!audioOnly) measurePresentedRate()
       }
     }
-  }
-
-  /** `container-fps` drives the Surface vote, as `Format.frameRate` does in Media3. */
-  private fun collectMediaFrameRate(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Double>().filter { it.name == "container-fps" }.collect { change ->
-        frameRateVote.onMediaFrameRate(change.value.toFloat())
+    if (change.name == "speed" && change is PropertyChange.Double) {
+      frameRateVote.onPlaybackSpeed(change.value.toFloat())
+      // The decoder was told a rate for the previous speed; at 8x it needs eight times it.
+      if (usesMediaCodecVo) {
+        launchMpvWrite("operating rate") {
+          operatingRate.onSpeed(change.value)?.let { writeOperatingRate(it, "speed ${change.value}") }
+        }
       }
+    }
+    delegate?.onPropertyChange(change.name, value, change.sourceId)
+
+    // `container-fps` drives the Surface vote, as `Format.frameRate` does in Media3.
+    if (!audioOnly && change is PropertyChange.Double && change.name == "container-fps") {
+      frameRateVote.onMediaFrameRate(change.value.toFloat())
+    }
+    if (!usesMediaCodecVo) return
+    when (change) {
+      is PropertyChange.Int64 -> onVideoDisplaySize(change.name, change.value.toInt())
+      is PropertyChange.Flag -> if (change.name == "vo-format-rejected" && change.value) onVoFormatRejected()
+      is PropertyChange.Str -> when (change.name) {
+        "hwdec-current" -> onDecoderState(change.value)
+        "glsl-shaders" -> onShaderState(change.value)
+        "video-params/gamma" -> onHdrToneMapState(change.value)
+      }
+      else -> {}
     }
   }
 
@@ -1385,23 +1433,16 @@ class MpvPlayerCore private constructor(
     }
   }
 
-  private fun collectVideoDimensions(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Int64>().filter { it.name == "dwidth" }.collect { change ->
-        val w = change.value.toInt()
-        if (w > 0 && w != videoDisplayWidth) {
-          videoDisplayWidth = w
-          applyVideoRectLayout()
-        }
+  private fun onVideoDisplaySize(name: String, size: Int) {
+    if (size <= 0) return
+    when (name) {
+      "dwidth" -> if (size != videoDisplayWidth) {
+        videoDisplayWidth = size
+        applyVideoRectLayout()
       }
-    }
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Int64>().filter { it.name == "dheight" }.collect { change ->
-        val h = change.value.toInt()
-        if (h > 0 && h != videoDisplayHeight) {
-          videoDisplayHeight = h
-          applyVideoRectLayout()
-        }
+      "dheight" -> if (size != videoDisplayHeight) {
+        videoDisplayHeight = size
+        applyVideoRectLayout()
       }
     }
   }
@@ -1820,12 +1861,8 @@ class MpvPlayerCore private constructor(
    * decoder, which fails the same way — an endless plane/GL oscillation
    * (#2272).
    */
-  private fun collectVoFormatRejection(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Flag>()
-        .filter { it.name == "vo-format-rejected" && it.value }
-        .collect { setGpuVoRequirement(GpuVoPolicy.REASON_FORMAT_REJECTED, true) }
-    }
+  private fun onVoFormatRejected() {
+    setGpuVoRequirement(GpuVoPolicy.REASON_FORMAT_REJECTED, true)
   }
 
   /**
@@ -1837,14 +1874,10 @@ class MpvPlayerCore private constructor(
    * because the fallback is decided per file, inside mpv. The reason is per
    * file too — the next file's hook re-evaluates it.
    */
-  private fun collectDecoderState(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "hwdec-current" }.collect { change ->
-        if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, change.value)) {
-          Log.i(TAG, "DV P5 decoded in software (hwdec-current=${change.value}): gpu-next reshaping")
-          setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)
-        }
-      }
+  private fun onDecoderState(hwdecCurrent: String) {
+    if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, hwdecCurrent)) {
+      Log.i(TAG, "DV P5 decoded in software (hwdec-current=$hwdecCurrent): gpu-next reshaping")
+      setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)
     }
   }
 
@@ -1853,25 +1886,17 @@ class MpvPlayerCore private constructor(
    * natively so Dart's `glsl-shaders` change-list writes (ShaderService,
    * ambient lighting) switch the session live, without a channel contract.
    */
-  private fun collectShaderState(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "glsl-shaders" }.collect { change ->
-        setGpuVoRequirement(GpuVoPolicy.REASON_SHADERS, change.value.isNotBlank())
-      }
-    }
+  private fun onShaderState(shaders: String) {
+    setGpuVoRequirement(GpuVoPolicy.REASON_SHADERS, shaders.isNotBlank())
   }
 
   /**
    * Observed from video-params so the reason follows per-file transfer
    * changes. Why it matters: [GpuVoPolicy.needsHdrToneMapping].
    */
-  private fun collectHdrToneMapState(p: MpvPlayer) {
-    scope.launch(start = CoroutineStart.UNDISPATCHED) {
-      p.propertyFlow.filterIsInstance<PropertyChange.Str>().filter { it.name == "video-params/gamma" }.collect { change ->
-        videoGamma = change.value
-        refreshHdrToneMapRequirement()
-      }
-    }
+  private fun onHdrToneMapState(gamma: String) {
+    videoGamma = gamma
+    refreshHdrToneMapRequirement()
   }
 
   private fun refreshHdrToneMapRequirement() {
@@ -2429,7 +2454,13 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  /**
+   * The library's calls block and never look at the coroutine, so the
+   * cancellation point is here: once its operation is cancelled (an overrun
+   * `on_preloaded` hook, a condemned session) no later write of it reaches mpv.
+   */
   private suspend fun writeProperty(name: String, value: String) {
+    currentCoroutineContext().ensureActive()
     val writer = propertyWriterOverride
     if (writer != null) {
       writer(name, value)
@@ -2441,6 +2472,7 @@ class MpvPlayerCore private constructor(
 
   /** The command counterpart of [writeProperty], on the same write operation. */
   private suspend fun runCommand(vararg args: String) {
+    currentCoroutineContext().ensureActive()
     val runner = commandRunnerOverride
     if (runner != null) {
       runner(arrayOf(*args))
