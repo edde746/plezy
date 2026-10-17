@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
@@ -575,7 +577,7 @@ void main() {
       );
       addTearDown(client.dispose);
 
-      final page = await client.getWatchlist(page: 2, limit: 100);
+      final page = await client.getWatchlist(page: 2, limit: 100, query: {'genre': 'g1'});
 
       // The rejected request, then the same range in proven-size chunks:
       // the caller's offset math survives the cap drift.
@@ -588,6 +590,7 @@ void main() {
         ),
         [('100', '100'), ('100', '25'), ('125', '25'), ('150', '25'), ('175', '25')],
       );
+      expect(requests.map((request) => request.url.queryParameters['genre']), everyElement('g1'));
       expect(page.items, hasLength(80));
       expect(page.items.first['ratingKey'], 'rk-100');
       expect(page.items.last['ratingKey'], 'rk-179');
@@ -921,6 +924,109 @@ void main() {
       expect(detail.cast, isEmpty);
       expect(detail.related, isEmpty);
       expect(requested, isFalse);
+    });
+
+    test('watchlist filters come from its own Meta, equality only', () async {
+      Map<String, Object?> type(String id, String title, String kind, {bool active = false}) => {
+        'key': '/library/sections/watchlist/all?type=$id',
+        'title': title,
+        'type': kind,
+        'active': ?(active ? true : null),
+        'Filter': [
+          {
+            'filter': 'genre',
+            'filterType': 'string',
+            'key': '/library/sections/watchlist/genre?type=$id',
+            'title': 'By Genre',
+            'type': 'filter',
+          },
+          {
+            'filter': 'availabilityPlatform',
+            'filterType': 'string',
+            'key': '/library/sections/watchlist/availabilityPlatform?type=$id',
+            'title': 'By Service',
+            'type': 'filter',
+          },
+          {
+            'filter': 'released',
+            'filterType': 'boolean',
+            'key': '/library/sections/watchlist/released?type=$id',
+            'title': 'Released',
+            'type': 'filter',
+          },
+        ],
+      };
+      final source = PlexCatalogSource(
+        PlexDiscoverClient(
+          _session,
+          httpClient: MockClient(
+            (request) async => jsonResponse({
+              'MediaContainer': {
+                'Meta': {
+                  'Type': [
+                    type('1', 'Movies', 'movie'),
+                    type('2', 'Shows', 'show'),
+                    type('99', 'Movies & Shows', 'mixed', active: true),
+                  ],
+                },
+              },
+            }),
+          ),
+        ),
+      );
+      addTearDown(source.dispose);
+
+      final result = await source.fetchRowFilters(CatalogRowId.watchlist);
+      final filters = result.filters;
+
+      expect(filters.map((filter) => (filter.filter, filter.key)), [
+        ('type', 'type'),
+        ('genre', '/library/sections/watchlist/genre?type=99'),
+        ('released', '/library/sections/watchlist/released?type=99'),
+      ]);
+      expect(filters.any((filter) => filter.supportsExclusion), isFalse);
+      final types = result.cachedValues['type']!;
+      expect(types.map((value) => value.title), ['Movies', 'Shows']);
+      expect(types.map((value) => libraryFilterValueId(value.key, 'type')), ['1', '2']);
+    });
+
+    test('a filtered watchlist sends Discover its filter params, and numeric value titles become text', () async {
+      final requests = <Uri>[];
+      final source = PlexCatalogSource(
+        PlexDiscoverClient(
+          _session,
+          httpClient: MockClient((request) async {
+            requests.add(request.url);
+            return jsonResponse({
+              'MediaContainer': {
+                'Directory': [
+                  {'key': '/library/sections/watchlist/all?year=2025', 'title': 2025},
+                ],
+              },
+            });
+          }),
+        ),
+      );
+      addTearDown(source.dispose);
+
+      await source.fetchFilteredRow(
+        CatalogRowId.watchlist,
+        filters: const [
+          LibraryFilter(field: 'genre', values: ['g1', 'g2']),
+        ],
+      );
+      final years = await source.fetchRowFilterValues(
+        MediaFilter(
+          filter: 'year',
+          filterType: 'integer',
+          key: '/library/sections/watchlist/year?type=99',
+          title: 'By Year',
+          type: 'filter',
+        ),
+      );
+
+      expect(requests.first.queryParameters, containsPair('genre', 'g1,g2'));
+      expect(years.single.title, '2025');
     });
 
     test('Discover requests have a bounded duration', () async {
