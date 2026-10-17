@@ -1315,6 +1315,9 @@ class _MainScreenState extends State<MainScreen>
         if (multiServerProvider.hasConnectedServers) {
           _offlineUntilConnected = false;
           _handleOfflineStatusChanged();
+        } else {
+          // Without this a failed press looks ignored (#2616).
+          showMainSnackBar(t.errors.connectionFailed);
         }
       } finally {
         setStateIfMounted(() => _isReconnecting = false);

@@ -63,6 +63,16 @@ typedef _ClassifiedFetch = ({
   StackTrace? stackTrace,
 });
 
+/// The plex.tv user token a Plex account was bound with, kept for the bind
+/// generation that used it.
+typedef _PlexBindToken = ({
+  String token,
+  String profileId,
+  String profileLabel,
+  int generation,
+  Future<void> Function() invalidateCachedToken,
+});
+
 @visibleForTesting
 bool shouldUsePlexHomeTokenCache({required bool preVerified, required bool hasBoundOnce}) {
   return preVerified || !hasBoundOnce;
@@ -81,7 +91,9 @@ class ActiveProfileBinder {
     required this.pinPrompt,
     this.shouldDeferInitialBind,
     this._plexAuth,
-  });
+  }) {
+    serverManager.plexServerListRefresher = _refreshPlexServerList;
+  }
 
   final ActiveProfileProvider activeProfile;
   final ConnectionRegistry connections;
@@ -138,6 +150,12 @@ class ActiveProfileBinder {
   /// that single rebind and avoid a duplicate PIN prompt.
   final Set<String> _plexHomePreVerified = {};
   final Set<String> _userInitiatedActivations = {};
+
+  /// Token each Plex account was bound with in the current bind generation,
+  /// by account id. [_refreshPlexServerList] reuses it: minting a new one
+  /// goes through `/switch`, which a passive path must not do for a
+  /// PIN-protected Plex Home user.
+  final Map<String, _PlexBindToken> _plexBindTokens = {};
 
   @visibleForTesting
   String? get debugLastBoundProfileId => _lastBoundProfileId;
@@ -286,6 +304,7 @@ class ActiveProfileBinder {
   Future<bool> _runRebindOnce() async {
     _bindingProfileId = activeProfile.activeId;
     final generation = ++_bindGeneration;
+    _plexBindTokens.clear();
     final stopwatch = Stopwatch()..start();
     var success = false;
     _lastBindFailureConnectivityOnly = false;
@@ -730,6 +749,13 @@ class ActiveProfileBinder {
       }
 
       final token = userToken!;
+      _plexBindTokens[account.id] = (
+        token: token,
+        profileId: profileId,
+        profileLabel: profileLabel,
+        generation: generation,
+        invalidateCachedToken: invalidateCachedToken,
+      );
       final fetchOutcome = _settleServerFetch(_fetchServersTimed(auth, token, profileLabel));
       _ProfileBindResult? optimistic;
       if (usingCachedToken) {
@@ -814,6 +840,7 @@ class ActiveProfileBinder {
             error: fetched.error,
             stackTrace: fetched.stackTrace,
           );
+          _plexBindTokens.remove(account.id);
           serverManager.markPlexConnectionAuthError(account, profileId: profileId);
           return _ProfileBindResult.visible(account.servers.map((server) => server.clientIdentifier).toSet());
         case _ServerFetchStatus.transientFailure:
@@ -1020,9 +1047,7 @@ class ActiveProfileBinder {
     return _connectFromServers(account, userToken, cachedServers, profileLabel, profileId: profileId);
   }
 
-  /// Apply the background resource refresh after an optimistic cached bind:
-  /// persist fresh metadata, rotate per-server tokens in place, retry servers
-  /// the optimistic pass left offline, and pick up membership changes.
+  /// Apply the background resource refresh after an optimistic cached bind.
   ///
   /// Waits for the in-flight rebind to settle first (applying mid-rebind
   /// would race the visibility sweep in [_runRebindOnce]) and no-ops when the
@@ -1040,58 +1065,14 @@ class ActiveProfileBinder {
       () async {
         final settled = await fetchOutcome;
         await activeProfile.awaitBindingSettle();
-        final error = settled.error;
-        if (error != null) {
-          if (error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
-            appLogger.w(
-              'ActiveProfileBinder: cached token rejected (${error.statusCode}) during background refresh '
-              'for $profileLabel — flagging re-auth',
-            );
-            // Wipe the bad token regardless of the active profile (DB hygiene),
-            // but only surface the auth banner while this profile is active.
-            await onAuthRejected();
-            if (_isCurrentBind(profileId, generation)) {
-              serverManager.markPlexConnectionAuthError(account, profileId: profileId);
-            }
-          } else {
-            appLogger.w(
-              'ActiveProfileBinder: background resource refresh failed for $profileLabel; staying on cached metadata',
-              error: error,
-            );
-          }
-          return;
-        }
-        final fresh = settled.servers!;
-        if (fresh.isEmpty) {
-          // A previously-populated account answering with zero servers is
-          // almost always transient plex.tv weirdness. Re-minting from a
-          // background task could pop a PIN prompt out of nowhere — keep the
-          // cache and let the next explicit bind sort it out.
-          appLogger.w(
-            'ActiveProfileBinder: background refresh returned 0 servers for $profileLabel; keeping cached metadata',
-          );
-          return;
-        }
-        await _persistRefreshedServers(account, fresh);
-        if (!_isCurrentBind(profileId, generation)) return;
-        final freshIds = fresh.map((server) => server.clientIdentifier).toSet();
-        final cachedIds = account.servers.map((server) => server.clientIdentifier).toSet();
-        if (!setEquals(freshIds, cachedIds)) {
-          appLogger.i(
-            'ActiveProfileBinder: server membership changed for $profileLabel — rebinding',
-            error: {'cached': cachedIds.length, 'fresh': freshIds.length},
-          );
-          // The refresh just round-trip-validated this profile's token; let
-          // the rebind reuse the cache instead of re-prompting through /switch.
-          markPlexHomePreVerified(profileId);
-          await rebindIfActive(profileId);
-          return;
-        }
-        // Same membership: rotate tokens/URIs in place and retry anything the
-        // optimistic pass left offline. Newly-online expected servers are
-        // promoted into the visibility filter by MultiServerProvider when the
-        // status emission this triggers lands.
-        await serverManager.refreshTokensForProfile(account.copyWith(servers: fresh), profileId: profileId);
+        await _applyResourceRefresh(
+          settled,
+          account: account,
+          profileId: profileId,
+          profileLabel: profileLabel,
+          generation: generation,
+          onAuthRejected: onAuthRejected,
+        );
       }().catchError((Object error, StackTrace stackTrace) {
         appLogger.w(
           'ActiveProfileBinder: background reconcile failed for $profileLabel',
@@ -1100,6 +1081,100 @@ class ActiveProfileBinder {
         );
       }),
     );
+  }
+
+  /// Installed as [MultiServerManager.plexServerListRefresher]: re-fetch the
+  /// server list of a Plex account bound in the current generation and apply
+  /// it. The manager calls this when reconnecting one of the account's
+  /// servers fails, because the endpoints it retries are from the last bind
+  /// and a server that restarted can come back on a new LAN address or
+  /// remote-access port (#2616). Reuses the bound token, so it never goes
+  /// through `/switch` and never prompts for a Plex Home PIN.
+  Future<void> _refreshPlexServerList(String accountId) async {
+    final bound = _plexBindTokens[accountId];
+    if (bound == null || !_isCurrentBind(bound.profileId, bound.generation)) return;
+    final account = await connections.getPlexAccount(accountId);
+    if (account == null || !_isCurrentBind(bound.profileId, bound.generation)) return;
+    appLogger.i('ActiveProfileBinder: re-fetching Plex servers for ${bound.profileLabel} after a failed reconnect');
+    final auth = await _ensureAuth();
+    final settled = await _settleServerFetch(_fetchServersTimed(auth, bound.token, bound.profileLabel));
+    // Same ordering as [_reconcileWhenFetchLands]: never apply mid-rebind.
+    await activeProfile.awaitBindingSettle();
+    await _applyResourceRefresh(
+      settled,
+      account: account,
+      profileId: bound.profileId,
+      profileLabel: bound.profileLabel,
+      generation: bound.generation,
+      onAuthRejected: bound.invalidateCachedToken,
+    );
+  }
+
+  /// Apply a resource refresh made outside a bind pass: persist fresh
+  /// metadata, rotate per-server tokens/URIs in place, retry servers that are
+  /// offline, and pick up membership changes. Callers wait for any in-flight
+  /// rebind to settle first.
+  Future<void> _applyResourceRefresh(
+    _FetchOutcome settled, {
+    required PlexAccountConnection account,
+    required String profileId,
+    required String profileLabel,
+    required int generation,
+    required Future<void> Function() onAuthRejected,
+  }) async {
+    final error = settled.error;
+    if (error != null) {
+      if (error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
+        appLogger.w(
+          'ActiveProfileBinder: cached token rejected (${error.statusCode}) during background refresh '
+          'for $profileLabel — flagging re-auth',
+        );
+        // Wipe the bad token regardless of the active profile (DB hygiene),
+        // but only surface the auth banner while this profile is active.
+        await onAuthRejected();
+        if (_isCurrentBind(profileId, generation)) {
+          _plexBindTokens.remove(account.id);
+          serverManager.markPlexConnectionAuthError(account, profileId: profileId);
+        }
+      } else {
+        appLogger.w(
+          'ActiveProfileBinder: background resource refresh failed for $profileLabel; staying on cached metadata',
+          error: error,
+        );
+      }
+      return;
+    }
+    final fresh = settled.servers!;
+    if (fresh.isEmpty) {
+      // A previously-populated account answering with zero servers is
+      // almost always transient plex.tv weirdness. Re-minting from a
+      // background task could pop a PIN prompt out of nowhere — keep the
+      // cache and let the next explicit bind sort it out.
+      appLogger.w(
+        'ActiveProfileBinder: background refresh returned 0 servers for $profileLabel; keeping cached metadata',
+      );
+      return;
+    }
+    await _persistRefreshedServers(account, fresh);
+    if (!_isCurrentBind(profileId, generation)) return;
+    final freshIds = fresh.map((server) => server.clientIdentifier).toSet();
+    final cachedIds = account.servers.map((server) => server.clientIdentifier).toSet();
+    if (!setEquals(freshIds, cachedIds)) {
+      appLogger.i(
+        'ActiveProfileBinder: server membership changed for $profileLabel — rebinding',
+        error: {'cached': cachedIds.length, 'fresh': freshIds.length},
+      );
+      // The refresh just round-trip-validated this profile's token; let
+      // the rebind reuse the cache instead of re-prompting through /switch.
+      markPlexHomePreVerified(profileId);
+      await rebindIfActive(profileId);
+      return;
+    }
+    // Same membership: rotate tokens/URIs in place and retry anything that is
+    // offline. Newly-online expected servers are promoted into the visibility
+    // filter by MultiServerProvider when the status emission this triggers
+    // lands.
+    await serverManager.refreshTokensForProfile(account.copyWith(servers: fresh), profileId: profileId);
   }
 
   Future<_ProfileBindResult> _bindMediaBrowser(
@@ -1150,6 +1225,10 @@ class ActiveProfileBinder {
 
   void dispose() {
     _bindGeneration++;
+    _plexBindTokens.clear();
+    if (serverManager.plexServerListRefresher == _refreshPlexServerList) {
+      serverManager.plexServerListRefresher = null;
+    }
     if (!_started) return;
     activeProfile.removeListener(_onActiveProfileChanged);
     _plexHomePreVerified.clear();
