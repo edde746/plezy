@@ -175,11 +175,38 @@ class MediaServerHttpClient {
       timeout: timeout,
       abort: abort,
       consume: (streamed, scope) async {
-        final bytes = await scope.receive(streamed.stream.toBytes());
+        final bytes = await scope.receive(_readBody(streamed));
         scope.logResponse(streamed.statusCode);
         return bytes;
       },
     );
+  }
+
+  /// Reads [response]'s body into one buffer. `ByteStream.toBytes` grows its
+  /// buffer by doubling and then copies the result twice, so a multi-MB body
+  /// (a BIF scrub preview) allocated about five times its size - enough to
+  /// force back-to-back old-generation GCs on low-end TV boxes. A declared
+  /// length is filled in place; without one (a body decompressed on the fly),
+  /// or once the body outgrows it, the chunks are copied once at the end.
+  static Future<Uint8List> _readBody(http.StreamedResponse response) async {
+    final declared = response.contentLength;
+    Uint8List? sized = declared != null && declared > 0 ? Uint8List(declared) : null;
+    var length = 0;
+    final unsized = BytesBuilder(copy: false);
+    await for (final chunk in response.stream) {
+      if (sized != null) {
+        if (length + chunk.length <= sized.length) {
+          sized.setRange(length, length + chunk.length, chunk);
+          length += chunk.length;
+          continue;
+        }
+        unsized.add(Uint8List.sublistView(sized, 0, length));
+        sized = null;
+      }
+      unsized.add(chunk);
+    }
+    if (sized == null) return unsized.takeBytes();
+    return length == sized.length ? sized : Uint8List.sublistView(sized, 0, length);
   }
 
   /// Stream-download a URL directly into a file.
