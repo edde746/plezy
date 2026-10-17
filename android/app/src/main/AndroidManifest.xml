@@ -45,9 +45,13 @@
         <uses-library android:name="android.car" android:required="false" />
         <!-- The activity itself has no launcher entry: the launcher components are the aliases
              below, so the app icon can be switched by enabling one alias and disabling the rest.
-             Deep links stay here so they resolve whichever alias is enabled. -->
+             Deep links stay here so they resolve whichever alias is enabled.
+             turnScreenOn lets a plezy:// link sent during the screensaver (e.g. by a home
+             automation) wake the device; set at runtime it comes too late, as the activity
+             is already launched behind the screensaver. -->
         <activity
             android:name=".PlezyActivity"
+            android:turnScreenOn="true"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
