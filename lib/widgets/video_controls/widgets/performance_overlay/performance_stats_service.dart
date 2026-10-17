@@ -222,9 +222,11 @@ class PerformanceStatsService {
         // Performance metrics
         frameDropCount: statsMap['videoDroppedFrames'] as int?,
         // Buffer metrics - convert ms to seconds for duration
-        cacheDuration: ((statsMap['totalBufferedDurationMs'] as int?) ?? 0) / 1000.0,
-        bufferTargetBytes: statsMap['bufferTargetBytes'] as int?,
-        bufferMaxMs: statsMap['bufferMaxMs'] as int?,
+        cacheDuration: ((statsMap['totalBufferedDurationMs'] as num?)?.toInt() ?? 0) / 1000.0,
+        cacheUsed: (statsMap['bufferAllocatedBytes'] as num?)?.toInt(),
+        cacheSpeed: (statsMap['bufferSpeedBytesPerSec'] as num?)?.toDouble(),
+        bufferTargetBytes: (statsMap['bufferTargetBytes'] as num?)?.toInt(),
+        bufferMaxMs: (statsMap['bufferMaxMs'] as num?)?.toInt(),
         // DV conversion
         dvConversionActive: statsMap['dvConversionActive'] == true,
         dvConversionMode: statsMap['dvConversionMode'] as String? ?? '',
