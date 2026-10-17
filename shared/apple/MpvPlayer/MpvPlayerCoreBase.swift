@@ -596,6 +596,21 @@ class MpvPlayerCoreBase: NSObject {
     return true
   }
 
+  /// The codecs mpv-build's spatial output plays from iOS and tvOS 26, passed
+  /// through even with the passthrough setting off.
+  static var spatialAudioCodecs: String {
+    #if os(iOS) || os(tvOS)
+      if #available(iOS 26, tvOS 26, *) { return "truehd,dts-hd" }
+    #endif
+    return ""
+  }
+
+  /// The `audio-spdif` codecs with passthrough on: Dolby Digital (Plus) for
+  /// the system decoder, and the spatial codecs.
+  static var audioSpdifCodecs: String {
+    spatialAudioCodecs.isEmpty ? "ac3,eac3" : "ac3,eac3," + spatialAudioCodecs
+  }
+
   /// The audio output mpv probes, applied to every context so the video and
   /// music cores render the same way. Runs before `configure`, so a core can
   /// still narrow it.
@@ -608,7 +623,13 @@ class MpvPlayerCoreBase: NSObject {
       // system spatializes on AirPods and multichannel routes, and its AC3/EAC3
       // sink is the system Dolby decoder that renders Atmos. audiounit stays
       // as the fallback when the renderer fails to open.
-      checkError(mpv_set_option_string(mpv, "ao", "avfoundation,audiounit"))
+      if #available(iOS 26, *) {
+        // mpv-build's ao_spatial plays TrueHD Atmos and DTS:X passthrough as
+        // Apple spatial audio and refuses everything else.
+        checkError(mpv_set_option_string(mpv, "ao", "spatial,avfoundation,audiounit"))
+      } else {
+        checkError(mpv_set_option_string(mpv, "ao", "avfoundation,audiounit"))
+      }
     #elseif os(macOS)
       // CoreAudio first: PCM plays through the one HAL-backed timing path,
       // deliberately giving up AVFoundation spatialization of multichannel PCM.
@@ -621,10 +642,16 @@ class MpvPlayerCoreBase: NSObject {
       // mpv-build patch 0037, macOS 27 failed that init with paramErr (-50) for
       // every planar or mono format, so most video audio played through here.
       checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
+    #elseif os(tvOS)
+      // ao_spatial first, as on iOS; the trailing comma keeps mpv's default
+      // outputs after it for every other format.
+      if #available(tvOS 26, *) {
+        checkError(mpv_set_option_string(mpv, "ao", "spatial,"))
+      }
     #endif
-    // tvOS keeps mpv's default (audiounit, then avfoundation): audiounit drives
-    // HDMI multichannel PCM, and refusing passthrough formats hands AC3/EAC3
-    // to the AVFoundation Dolby sink.
+    // Otherwise tvOS keeps mpv's default (audiounit, then avfoundation):
+    // audiounit drives HDMI multichannel PCM, and refusing passthrough formats
+    // hands AC3/EAC3 to the AVFoundation Dolby sink.
   }
 
   func setLogLevel(_ level: String) {

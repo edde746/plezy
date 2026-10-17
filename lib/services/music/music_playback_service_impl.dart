@@ -763,13 +763,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// than reloading mid-track; like video, a changed setting takes effect on
   /// the next player. Elsewhere passthrough claims the output device (exclusive
   /// WASAPI, IEC 61937 AudioTrack), which music playback does not opt into.
+  /// The setting is applied when off as well: iOS and tvOS 26 hand TrueHD and
+  /// DTS-HD to spatial audio either way.
   Future<void> _applyAudioPassthrough(Player player) async {
     if (!PlayerNative.usesAppleAudioOutput) return;
     final settings = SettingsService.instanceOrNull;
     if (settings == null) return;
-    if (!settings.read(SettingsService.audioPassthrough) || settings.read(SettingsService.audioNormalization)) return;
+    if (settings.read(SettingsService.audioNormalization)) return;
     try {
-      await player.setAudioPassthrough(true);
+      await player.setAudioPassthrough(settings.read(SettingsService.audioPassthrough));
     } catch (error, stackTrace) {
       appLogger.w('Music: audio passthrough not applied; decoding instead', error: error, stackTrace: stackTrace);
     }
