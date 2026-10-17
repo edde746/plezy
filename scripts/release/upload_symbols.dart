@@ -344,12 +344,12 @@ Future<SymbolPlan> createSymbolPlan(
     if (dartShipped.isEmpty || dartShipped.length != allowedArch.length) {
       throw SymbolFailure('Packaged release is missing Dart AOT libraries');
     }
-    nativeRoots.addAll([
-      (path.join(build, 'app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib'), 30),
-      (path.join(build, 'libmpv/libmpv/native/jni'), 20),
-      (path.join(build, 'libmpv/libmpv/native/imported'), 20),
-      (path.join(build, 'libmpv/libmpv/libcxx/jni'), 20),
-    ]);
+    // The AAR's libraries (libmpv, FFmpeg, libplayer, libc++) arrive stripped,
+    // so the merged libraries are the only Android candidates.
+    nativeRoots.add((
+      path.join(build, 'app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib'),
+      30,
+    ));
   } else if (platform.startsWith('linux-') || platform.startsWith('windows-')) {
     final arch = platform.split('-').last;
     allowedArch.add(arch == 'x64' ? 'x86_64' : 'arm64');

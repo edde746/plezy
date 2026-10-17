@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-216.18 102.4 1456.36 819.2" width="1456.36" height="819.2">
+<!-- Wide back layer for the tvOS icon and the Android TV banner. Drawn in foreground.svg's 1024
+     canvas so it lines up with the foreground; generate_app_icons.py crops it to 5:3 and 16:9
+     around x = 512 over y = 102.4..921.6 (the foreground canvas spans 1.25x the tile height).
+     The burst is scaled to 0.88 so its spikes stay inside the shorter tile. -->
+<defs>
+<pattern id="half" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="18" cy="18" r="7" fill="#ff8a1f" fill-opacity="0.55"/></pattern>
+</defs>
+<g id="background">
+<rect x="-260" y="0" width="1544" height="1024" fill="#ffd23f"/><rect x="-260" y="0" width="1544" height="1024" fill="url(#half)"/><g transform="translate(512 512) scale(0.88) translate(-512 -512)"><path d="M967.0,512.0 L845.2,601.3 L906.0,739.5 L756.0,756.0 L739.5,906.0 L601.3,845.2 L512.0,967.0 L422.7,845.2 L284.5,906.0 L268.0,756.0 L118.0,739.5 L178.8,601.3 L57.0,512.0 L178.8,422.7 L118.0,284.5 L268.0,268.0 L284.5,118.0 L422.7,178.8 L512.0,57.0 L601.3,178.8 L739.5,118.0 L756.0,268.0 L906.0,284.5 L845.2,422.7Z" fill="#ffffff" stroke="#151515" stroke-width="16" stroke-linejoin="round"/></g>
+</g>
+</svg>

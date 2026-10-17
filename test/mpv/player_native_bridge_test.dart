@@ -75,7 +75,12 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
+    // Passthrough expectations below model a Windows/Linux device bitstream;
+    // the Apple system-decoder path opts in explicitly.
+    PlayerNative.debugUseAppleAudioOutput = false;
   });
+
+  tearDown(() => PlayerNative.debugUseAppleAudioOutput = null);
 
   test('MPV coalesces concurrent Dart initialization requests', () async {
     final initialize = Completer<bool>();
@@ -1298,6 +1303,39 @@ void main() {
         try {
           await player.setAudioPassthrough(true);
           expect(player.audioPassthroughActive, isTrue);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('Apple passthrough hands only Dolby to the system decoder and never claims the device', () async {
+    PlayerNative.debugUseAppleAudioOutput = true;
+    final audioWrites = <(String, String)>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          final name = arguments['name'] as String;
+          if (name == 'audio-spdif' || name == 'audio-exclusive') audioWrites.add((name, arguments['value'] as String));
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioPassthrough(true);
+          expect(player.audioPassthroughActive, isTrue);
+          await player.setAudioPassthrough(false);
+          expect(player.audioPassthroughActive, isFalse);
+
+          // On macOS an exclusive hint would push every CoreAudio open, the
+          // PCM fallback included, into hog-mode coreaudio_exclusive.
+          expect(audioWrites, [('audio-spdif', 'ac3,eac3'), ('audio-spdif', '')]);
         } finally {
           await player.dispose();
         }

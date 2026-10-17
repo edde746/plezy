@@ -19,6 +19,7 @@ import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
+import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -374,8 +375,12 @@ class FakePlayer implements Player {
   @override
   Future<void> configureSubtitleFonts() async {}
 
+  /// Each setAudioPassthrough write with the number of opens before it, so a
+  /// test can tell whether the output started on it or reloaded mid-track.
+  final List<(bool, int)> passthroughWrites = [];
+
   @override
-  Future<void> setAudioPassthrough(bool enabled) async {}
+  Future<void> setAudioPassthrough(bool enabled) async => passthroughWrites.add((enabled, openedUris.length));
 
   @override
   Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
@@ -2084,5 +2089,58 @@ void main() {
       expect(harness.service.status, MusicPlaybackStatus.idle);
       expect(harness.service.currentTrack, isNull);
     });
+  });
+
+  group('Dolby passthrough for music (#2595)', () {
+    Future<SettingsService> bootstrapSettings({required bool passthrough, bool normalization = false}) async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      addTearDown(BaseSharedPreferencesService.resetForTesting);
+      addTearDown(SettingsService.resetForTesting);
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.audioPassthrough, passthrough);
+      await settings.write(SettingsService.audioNormalization, normalization);
+      return settings;
+    }
+
+    void useAppleAudioOutput(bool value) {
+      PlayerNative.debugUseAppleAudioOutput = value;
+      addTearDown(() => PlayerNative.debugUseAppleAudioOutput = null);
+    }
+
+    test('an Apple music player starts on the system Dolby decoder before its first open', () async {
+      await bootstrapSettings(passthrough: true);
+      useAppleAudioOutput(true);
+
+      await h.playTracks([t1, t2]);
+
+      expect(h.player.openedUris, [_urlFor(t1)]);
+      expect(h.player.passthroughWrites, [(true, 0)]);
+    });
+
+    test(
+      'music stays decoded when the setting is off, normalization overrides it, or the output is not Apple',
+      () async {
+        for (final (passthrough, normalization, apple) in [
+          (false, false, true),
+          (true, true, true),
+          (true, false, false),
+        ]) {
+          await bootstrapSettings(passthrough: passthrough, normalization: normalization);
+          useAppleAudioOutput(apple);
+          final harness = _Harness.create();
+          addTearDown(harness.dispose);
+
+          await harness.playTracks([t1]);
+
+          expect(harness.player.openedUris, [_urlFor(t1)]);
+          expect(
+            harness.player.passthroughWrites,
+            isEmpty,
+            reason: 'passthrough=$passthrough normalization=$normalization apple=$apple',
+          );
+        }
+      },
+    );
   });
 }

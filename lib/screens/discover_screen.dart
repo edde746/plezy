@@ -21,6 +21,7 @@ import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
+import '../widgets/hero_carousel_backdrop.dart';
 import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
@@ -1152,6 +1153,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              Positioned.fill(child: _buildHeroBackdrop(heroHeight)),
               PageView.builder(
                 controller: _heroController,
                 itemCount: _onDeck.length,
@@ -1264,13 +1266,105 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
+  /// Artwork and scrim behind the hero pages. One shared layer instead of
+  /// per-page artwork, so a swipe crossfades between backdrops rather than
+  /// sliding two images past each other with a hard seam (#2660).
+  Widget _buildHeroBackdrop(double heroHeight) {
+    final isTv = PlatformDetector.isTV();
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          // Vertical-scroll parallax plus a fade/zoom when the hero first shows.
+          ClipRect(
+            child: AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+                return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
+              },
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: 1.0 + (0.1 * (1 - value)),
+                    child: Opacity(opacity: value, child: child),
+                  );
+                },
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _heroIndex,
+                  builder: (context, heroIndex, _) => HeroCarouselBackdrop(
+                    controller: _heroController,
+                    currentIndex: heroIndex,
+                    itemCount: _onDeck.length,
+                    backdropBuilder: (context, index, active, artSize) =>
+                        _buildHeroArtwork(_onDeck[index], heroHeight, artSize: artSize, active: active),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Gradient Overlay - blends into scaffold background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: -4, // Extend past stack bounds to ensure coverage
+            child: Builder(
+              builder: (context) {
+                final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      // Reach full bg before the bottom edge so the hero
+                      // blends seamlessly into the content below and the
+                      // page dots sit on a solid band.
+                      colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
+                      stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroArtwork(MediaItem heroItem, double heroHeight, {required Size artSize, required bool active}) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final heroAspectRatio = screenWidth / heroHeight;
+    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: heroAspectRatio);
+    final fallbackColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    if (heroArtPaths.isEmpty) return ColoredBox(color: fallbackColor);
+    // heroClient resolves to the actual server's client (Plex or Jellyfin) so
+    // each backend's transcoder builds sized URLs. Size the request to the
+    // drift box, which is wider than the hero, so the art stays sharp.
+    return blurArtwork(
+      CyclingMediaBackdrop(
+        mediaKey: heroItem.globalKey,
+        imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
+        fallbackImagePaths: heroArtPaths,
+        client: _getMediaClientForItem(heroItem),
+        active: active && _isTabVisible,
+        width: artSize.width,
+        height: artSize.height,
+        fallbackColor: fallbackColor,
+      ),
+    );
+  }
+
   Widget _buildHeroItem(MediaItem heroItem, double heroHeight) {
     final heroClient = _getMediaClientForItem(heroItem);
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final heroAspectRatio = screenWidth / heroHeight;
-    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: heroAspectRatio);
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
     final isTv = PlatformDetector.isTV();
     final alignLeft = isTv || isLargeScreen;
@@ -1305,6 +1399,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       hint: t.accessibility.tapToPlay,
       child: ClickableCursor(
         child: GestureDetector(
+          // The artwork lives in the shared backdrop below the PageView, so
+          // the page itself must claim taps on its empty area.
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             appLogger.d('Activating hero item: ${heroItem.title}');
             navigateToMediaItem(context, heroItem, playDirectly: true);
@@ -1313,78 +1410,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             fit: StackFit.expand,
             clipBehavior: Clip.none,
             children: [
-              // Background Image with fade/zoom animation and parallax
-              if (heroArtPaths.isNotEmpty)
-                ClipRect(
-                  child: AnimatedBuilder(
-                    animation: _scrollController,
-                    builder: (context, child) {
-                      final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                      return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
-                    },
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: 1.0 + (0.1 * (1 - value)),
-                          child: Opacity(opacity: value, child: child),
-                        );
-                      },
-                      child: Builder(
-                        builder: (context) {
-                          // heroClient resolves to the actual server's client
-                          // (Plex or Jellyfin) so each backend's transcoder
-                          // builds sized URLs.
-                          return blurArtwork(
-                            CyclingMediaBackdrop(
-                              mediaKey: heroItem.globalKey,
-                              imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
-                              fallbackImagePaths: heroArtPaths,
-                              client: heroClient,
-                              active: _isTabVisible,
-                              width: screenWidth,
-                              height: heroHeight,
-                              fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                )
-              else
-                ColoredBox(color: colorScheme.surfaceContainerHighest),
-
-              // Gradient Overlay - blends into scaffold background
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: -4, // Extend past stack bounds to ensure coverage
-                child: IgnorePointer(
-                  child: Builder(
-                    builder: (context) {
-                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            // Reach full bg before the bottom edge so the hero
-                            // blends seamlessly into the content below and the
-                            // page dots sit on a solid band.
-                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
-                            stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
               // Content with responsive alignment
               Positioned(
                 bottom: isTv

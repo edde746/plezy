@@ -180,11 +180,17 @@ import wakelock_plus
     if let r = pluginRegistry.registrar(forPlugin: "SystemShelfPlugin") {
       SystemShelfPlugin.register(with: r)
     }
+    if let r = pluginRegistry.registrar(forPlugin: "AppIconPlugin") {
+      AppIconPlugin.register(with: r)
+    }
     if let r = pluginRegistry.registrar(forPlugin: "VideoDecodeCapabilitiesPlugin") {
       VideoDecodeCapabilitiesPlugin.register(with: r)
     }
     if let r = pluginRegistry.registrar(forPlugin: "ExternalPlayerPlugin") {
       ExternalPlayerPlugin.register(with: r)
+    }
+    if let r = pluginRegistry.registrar(forPlugin: "InAppPurchasePlugin") {
+      InAppPurchasePlugin.register(with: r)
     }
   }
 

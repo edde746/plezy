@@ -209,7 +209,7 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
           ChangeNotifierProvider<ExploreProvider>.value(value: explore),
         ],
-        child: MaterialApp(theme: monoTheme(dark: true), home: const ExploreScreen()),
+        child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const ExploreScreen()),
       ),
     ),
   );
@@ -386,7 +386,7 @@ void main() {
         findsOneWidget,
       );
 
-      final baseColor = monoTheme(dark: true).scaffoldBackgroundColor;
+      final baseColor = monoTheme(MonoPalette.dark).scaffoldBackgroundColor;
       final expectedTint = Color.alphaBlend(const Color(0xff336699).withValues(alpha: 0.18), baseColor);
       expect(Theme.of(tester.element(spotlightFinder)).scaffoldBackgroundColor, expectedTint);
     });

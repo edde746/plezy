@@ -18,7 +18,9 @@ a shell input keyevent 224 >/dev/null 2>&1 || true
 
 # --ez enable-dart-profiling: FlutterShellArgs reads it from the intent, which
 # `am start` must supply explicitly (only `flutter run` passes it for us).
-a shell am start -W -S --ez enable-dart-profiling true -n "$PKG/$PKG.MainActivity" >/dev/null 2>&1
+# Start the activity itself: the launcher alias (.MainActivity) is disabled
+# while an alternate app icon is chosen.
+a shell am start -W -S --ez enable-dart-profiling true -n "$PKG/$PKG.PlezyActivity" >/dev/null 2>&1
 
 LINE=""
 for _ in $(seq 1 40); do

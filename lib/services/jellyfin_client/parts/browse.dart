@@ -1889,7 +1889,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // When the caller knows the library kind, skip NextUp for movie libraries;
     // Jellyfin can otherwise spend time scanning TV state only to return [].
     return _playbackHubSet(
-      parentId: libraryId,
+      library: (id: libraryId, name: libraryName),
       idPrefix: 'library.$libraryId',
       limit: limit,
       includePlaybackHubs: includePlaybackHubs,
@@ -1905,7 +1905,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// Latest + Continue Watching + Next Up row set shared by the home and
   /// per-library surfaces. Both scopes issue the same three requests in the
   /// same order and synthesise the same three rows; they differ only in
-  /// [parentId], the row identifier prefix, the titles, and the transport
+  /// [library], the row identifier prefix, the titles, and the transport
   /// policy. The Latest request fires before the [includePlaybackHubs]
   /// short-circuit so callers that only want Recently Added still get it in
   /// one round-trip.
@@ -1918,10 +1918,12 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     required String continueTitle,
     required String nextUpTitle,
     required String recentTitle,
-    String? parentId,
+    ({String id, String name})? library,
     String? latestItemTypes,
     HubFetchDiagnostics? diagnostics,
   }) async {
+    final parentId = library?.id;
+    final mapItem = library == null ? _mapItem : _libraryRowMapper(library.id, library.name);
     final latestFuture = _safeFetchItemsArray(
       _latestItemsPath,
       {
@@ -1937,7 +1939,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
 
     MediaHub hub(String suffix, String title, String type, List<Map<String, dynamic>> items) =>
         JellyfinMappers.syntheticHub(
-          mapItem: _mapItem,
+          mapItem: mapItem,
           identifier: '$idPrefix.$suffix',
           title: title,
           type: type,
@@ -1996,6 +1998,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     ].where((h) => h.items.isNotEmpty).toList();
   }
 
+  /// Maps rows fetched with `ParentId` = [libraryId] and stamps that library
+  /// on them. A MediaBrowser item DTO never names its library (see
+  /// [JellyfinMappers.mediaItem]), so without the stamp home cannot order
+  /// these rows by the user's library order or tell which library they hide.
+  MediaItem? Function(Map<String, dynamic>) _libraryRowMapper(String libraryId, String libraryName) =>
+      (json) => _mapItem(json)?.copyWith(libraryId: libraryId, libraryTitle: libraryName);
+
   /// Music-library hub set, mirroring the Jellyfin web client's music
   /// "Suggestions" tab. `/Users/{userId}/Items/Latest` natively groups a
   /// music library's new items into albums; the row carries the
@@ -2009,6 +2018,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     required bool includePlaybackHubs,
     HubFetchDiagnostics? diagnostics,
   }) async {
+    final mapItem = _libraryRowMapper(libraryId, libraryName);
     final latestFuture = _safeFetchItemsArray(
       _latestItemsPath,
       _latestAlbumsQuery(limit: limit, parentId: libraryId),
@@ -2017,7 +2027,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     );
 
     MediaHub latestAlbumsHub(List<Map<String, dynamic>> items) => JellyfinMappers.syntheticHub(
-      mapItem: _mapItem,
+      mapItem: mapItem,
       identifier: 'library.$libraryId.latestalbums',
       title: t.discover.latestAlbumsIn(library: libraryName),
       type: 'album',
@@ -2049,7 +2059,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return [
       latestAlbumsHub(results.first),
       JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
+        mapItem: mapItem,
         identifier: 'library.$libraryId.recentlyplayed',
         title: t.discover.recentlyPlayedIn(library: libraryName),
         type: 'track',
@@ -2059,7 +2069,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         serverName: serverName,
       ),
       JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
+        mapItem: mapItem,
         identifier: 'library.$libraryId.mostplayed',
         title: t.discover.mostPlayedIn(library: libraryName),
         type: 'track',

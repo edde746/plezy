@@ -65,7 +65,7 @@ void main() {
         child: Provider<AccountPreferencesRepository>.value(
           value: repository,
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: AccountPreferencesScreen(targets: targets),
           ),
         ),

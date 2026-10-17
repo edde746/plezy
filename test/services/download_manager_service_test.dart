@@ -3442,6 +3442,66 @@ void main() {
       }
     });
   });
+
+  group('SAF downloads', () {
+    test('a new attempt sweeps every numbered copy of its file and enqueues a pausable task', () async {
+      final fixture = await _createSupplementaryFixture(saf: true);
+      final client = _SupplementaryClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/library/parts/1/file.mkv'),
+      );
+      final safStorage = _FakeSafStorage();
+      final fileName = fixture.storage.getMovieSafFileName(fixture.metadata, 'mkv');
+      final base = p.basenameWithoutExtension(fileName);
+      // What interrupted attempts leave behind, numbered by either provider scheme, at any depth.
+      final leftovers = [
+        for (final name in [
+          fileName,
+          '$base (1).mkv',
+          '$base (1) (1).mkv',
+          '$base (2) (1) (1).mkv',
+          '$fileName (1)',
+          '$fileName (1) (1)',
+        ])
+          safStorage.addMovieFile(fixture.storage, fixture.metadata, name),
+      ];
+      final unrelated = [
+        for (final name in ['$base (1).srt', '$base (copy).mkv', 'Other (1).mkv'])
+          safStorage.addMovieFile(fixture.storage, fixture.metadata, name),
+      ];
+      final enqueued = Completer<Task>();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        safStorage: safStorage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+        enqueueTaskOverride: (task) async {
+          enqueued.complete(task);
+          return true;
+        },
+      );
+      addTearDown(manager.dispose);
+
+      await manager.queueDownload(metadata: fixture.metadata, client: client);
+      final task = await enqueued.future.timeout(const Duration(seconds: 10));
+
+      for (final uri in leftovers) {
+        expect(safStorage.existsSync(uri), isFalse, reason: uri);
+      }
+      for (final uri in unrelated) {
+        expect(safStorage.existsSync(uri), isTrue, reason: uri);
+      }
+      expect(task, isA<UriDownloadTask>());
+      expect(task.filename, fileName);
+      expect(
+        (task as UriDownloadTask).allowPause,
+        isTrue,
+        reason: 'an unpausable task fails at the end of every 9-minute run instead of continuing',
+      );
+    });
+  });
 }
 
 Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath, bool saf = false}) async {

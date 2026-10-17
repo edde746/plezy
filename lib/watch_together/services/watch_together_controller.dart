@@ -148,6 +148,15 @@ class WatchTogetherController {
   /// The room's current playback rate, or null before the room has one.
   double? get roomRate => _session.isHost ? _coordinator?.rate : _reconciler?.latestState?.rate;
 
+  /// The version the room's host opened for [ratingKey] on [serverId]; null
+  /// for any other item, or when the host named none.
+  RoomMediaVersion? roomMediaVersionFor({required String ratingKey, required String serverId}) {
+    final mediaKey = PlaybackState.mediaKeyFor(ratingKey: ratingKey, serverId: serverId);
+    if (_session.isHost) return _coordinator?.mediaVersionFor(mediaKey);
+    final state = _reconciler?.latestState;
+    return state != null && state.mediaKey == mediaKey ? state.mediaVersion : null;
+  }
+
   /// Whether the sync layer is temporarily driving the player's rate (a
   /// guest drift nudge). Player rate events are not user feedback while true.
   bool get syncOwnsRate => _reconciler?.nudging ?? false;
@@ -325,6 +334,7 @@ class WatchTogetherController {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
+    RoomMediaVersion? mediaVersion,
     required Duration position,
     required double rate,
     required WatchPlaybackLease lease,
@@ -335,6 +345,7 @@ class WatchTogetherController {
       ratingKey: ratingKey,
       serverId: serverId,
       mediaTitle: mediaTitle,
+      mediaVersion: mediaVersion,
       position: position,
       rate: rate,
     );

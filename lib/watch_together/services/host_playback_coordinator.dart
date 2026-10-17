@@ -105,9 +105,15 @@ class HostPlaybackCoordinator {
   String? _ratingKey;
   String? _serverId;
   String? _mediaTitle;
+  RoomMediaVersion? _mediaVersion;
   bool get hasActiveEpoch => _ratingKey != null && _serverId != null;
   String? get _mediaKey =>
       hasActiveEpoch ? PlaybackState.mediaKeyFor(ratingKey: _ratingKey!, serverId: _serverId!) : null;
+
+  /// The version this epoch's item was opened at when [mediaKey] names that
+  /// item, for followers to open too. Fixed for the epoch: a same-media
+  /// source switch is the host's own.
+  RoomMediaVersion? mediaVersionFor(String mediaKey) => mediaKey == _mediaKey ? _mediaVersion : null;
 
   // Player attachment.
   AttachedPlayer? _player;
@@ -184,12 +190,14 @@ class HostPlaybackCoordinator {
     required String ratingKey,
     required String serverId,
     String? mediaTitle,
+    RoomMediaVersion? mediaVersion,
     required Duration position,
     required double rate,
   }) {
     _ratingKey = ratingKey;
     _serverId = serverId;
     _mediaTitle = mediaTitle;
+    _mediaVersion = mediaVersion;
     _authority++;
     _timelineOperation++;
     _playOperation++;
@@ -248,6 +256,7 @@ class HostPlaybackCoordinator {
     _ratingKey = state.ratingKey;
     _serverId = state.serverId;
     _mediaTitle = state.mediaTitle;
+    _mediaVersion = state.mediaVersion;
     // The room's rate, not this player's: it may be mid-nudge.
     _rate = state.rate;
     _timelinePositionMs = anchorMs ?? state.anchorPositionMs;
@@ -341,6 +350,7 @@ class HostPlaybackCoordinator {
     _ratingKey = null;
     _serverId = null;
     _mediaTitle = null;
+    _mediaVersion = null;
     _timelinePositionMs = 0;
     _lastBroadcast = null;
     _clearTransitionAnchor();
@@ -1110,6 +1120,7 @@ class HostPlaybackCoordinator {
       ratingKey: _ratingKey!,
       serverId: _serverId!,
       mediaTitle: _mediaTitle,
+      mediaVersion: _mediaVersion,
       phase: _phase,
       anchorPositionMs: anchorPositionMs,
       anchorHostTimeMs: anchorHostTimeMs,

@@ -872,7 +872,7 @@ void main() {
               'replace',
               '-1',
               'sub-files=${_fixedLengthPathList([subtitle])},sid=no,secondary-sid=no,'
-                  'demuxer-lavf-o-append=live_start_index=0',
+                  'demuxer-lavf-o-append=live_start_index=0,cache-pause-initial=yes,cache-pause-wait=6',
             ]);
           } finally {
             await player.dispose();

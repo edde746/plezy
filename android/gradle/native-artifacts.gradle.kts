@@ -3,8 +3,8 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.UUID
 
-// Checksum + atomic-promotion helpers shared by :app and :libmpv, which both
-// download pinned native artifact trees. Exposed as extra properties because
+// Checksum + atomic-promotion helpers for the pinned native artifact trees
+// :app downloads (FFmpeg headers, libdovi). Exposed as extra properties because
 // Kotlin DSL script plugins cannot export functions directly.
 extra["verifySha256"] = fun(file: File, expected: String, identity: String) {
   val digest = MessageDigest.getInstance("SHA-256")

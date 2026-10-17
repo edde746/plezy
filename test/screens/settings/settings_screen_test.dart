@@ -34,6 +34,8 @@ import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/settings_export_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/services/supporter/supporter_mode.dart';
+import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/services/update_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -702,7 +704,9 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   final libraries = _FixtureLibrariesProvider(initialLibraries);
   final hiddenLibraries = HiddenLibrariesProvider(storageService: _FakeHiddenLibrariesStorage());
   await hiddenLibraries.ensureInitialized();
-  final theme = ThemeProvider();
+  final supporter = SupporterService.forTesting(availability: SupporterAvailability.hidden);
+  addTearDown(supporter.dispose);
+  final theme = ThemeProvider(supporter: supporter);
   final trackerHttpClients = <FakeHttpClient>[];
   FakeHttpClient trackerHttpClientFactory() {
     final client = FakeHttpClient(HttpStatus.ok, const <int>[]);
@@ -773,7 +777,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
           ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
           home: pushSettingsRoute
               ? Builder(
                   builder: (context) => Scaffold(

@@ -713,9 +713,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             // Versions/mediaInfo come from the committed session; rebuild so
             // the controls pick them up. Same-part switches
             // (quality/audio/subtitle) and moves between the files of one
-            // stacked version keep the scrub-preview source — BIF/trickplay
-            // is per part (a stacked preview spans them all), so a reset
-            // would re-download identical bytes.
+            // stacked version keep the scrub-preview source — a BIF is per
+            // part (a stacked preview spans them all) and Jellyfin/Emby
+            // previews are per source, so a reset would re-download
+            // identical bytes.
             final reusesScrubPreview =
                 previousMetadata.globalKey == metadata.globalKey &&
                 previousMediaInfo != null &&

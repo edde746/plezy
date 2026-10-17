@@ -924,7 +924,7 @@ class _PlaylistHarness {
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: platform),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: platform),
           home: child,
         ),
       ),

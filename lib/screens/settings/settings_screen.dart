@@ -32,6 +32,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/settings_mutation_service.dart';
+import '../../services/supporter/supporter_mode.dart';
 import '../../widgets/background_download_warning_banner.dart';
 import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
@@ -61,6 +62,7 @@ import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
 import 'services_settings_screen.dart';
 import 'settings_utils.dart';
+import 'supporter_settings_tile.dart';
 import 'tracker_service_info.dart';
 import '../../widgets/loading_indicator_box.dart';
 
@@ -95,6 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   // Focus tracking keys
   static const _kDonate = 'donate';
+  static const _kSupporter = 'supporter';
   static const _kGeneral = 'general';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
@@ -148,9 +151,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   @override
   void focusActiveTabIfReady() {
     if (InputModeTracker.isKeyboardMode(context, listen: false)) {
-      _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kGeneral);
+      _focusTracker.restoreFocus(fallbackKey: _topTileKey);
     }
   }
+
+  /// Focus key of the first tile: Supporter in purchasable builds, the
+  /// Liberapay link in donation builds (never both), else General.
+  static String get _topTileKey => supporterBuildMode == SupporterMode.iap
+      ? _kSupporter
+      : DonationService.isEnabled
+      ? _kDonate
+      : _kGeneral;
 
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
@@ -197,7 +208,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 const SizedBox(height: 8),
                 SettingsGroup(
                   children: [
-                    if (DonationService.isEnabled) _buildDonateTile(),
+                    if (supporterBuildMode == SupporterMode.iap)
+                      SupporterSettingsTile(focusNode: _focusTracker.get(_kSupporter))
+                    else if (DonationService.isEnabled)
+                      _buildDonateTile(),
                     _buildGeneralTile(),
                     _buildAppearanceTile(),
                     _buildPlaybackTile(),

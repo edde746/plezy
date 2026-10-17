@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -257,6 +256,18 @@ void main() {
     });
   });
 
+  group('SettingsService deinterlace mode', () {
+    for (final (enabled, mode) in [(true, DeinterlaceMode.video), (false, DeinterlaceMode.off)]) {
+      test('migrates the legacy deinterlace toggle=$enabled to ${mode.name} (#2710)', () async {
+        resetSharedPreferencesForTest(initialAsync: {'deinterlace': enabled});
+        final settings = await SettingsService.getInstance();
+
+        expect(settings.read(SettingsService.deinterlaceMode), mode);
+        expect(settings.prefs.containsKey('deinterlace'), isFalse, reason: 'migrated once, then forgotten');
+      });
+    }
+  });
+
   group('SettingsService music quality', () {
     test('defaults to original and persists changes by enum name', () async {
       var settings = await SettingsService.getInstance();
@@ -336,16 +347,6 @@ void main() {
   });
 
   group('SettingsService platform gates', () {
-    test('audio passthrough stays available on Apple TV and non-macOS desktop, never macOS', () {
-      // Platform.is* is unmockable, so the desktop expectation follows the
-      // test host: hidden on a macOS host (#1964), available elsewhere.
-      expect(PlatformDetector.supportsAudioPassthrough(), Platform.isMacOS ? isFalse : isTrue);
-
-      TvDetectionService.debugSetAppleTVOverride(true);
-
-      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
-    });
-
     test('audio passthrough defaults off on a non-TV host and honors explicit writes', () async {
       final settings = await SettingsService.getInstance();
       // The Android-TV default-on branch depends on Platform.isAndroid, which

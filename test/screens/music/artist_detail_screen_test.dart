@@ -142,7 +142,7 @@ class _ArtistHarness {
           ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: SizedBox(width: 1280, height: 720, child: child),
         ),
       ),

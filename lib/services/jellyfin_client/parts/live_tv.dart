@@ -45,6 +45,10 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
   /// `minEndDate` (programme still running at window start), not
   /// `minStartDate` (started inside the window), so a currently-airing
   /// programme that began before the window still overlaps it.
+  ///
+  /// Both dialects omit `Overview` unless `fields` names it; the program
+  /// details sheet and the show schedule render [LiveTvProgram.summary]
+  /// from this response without a per-item fetch.
   Future<List<LiveTvProgram>> fetchLiveTvPrograms({
     List<String> channelIds = const [],
     int? beginsAt,
@@ -54,6 +58,7 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
     final params = <String, dynamic>{
       'userId': connection.userId,
       'enableImages': 'true',
+      'fields': 'Overview',
       'sortBy': 'StartDate',
       'sortOrder': 'Ascending',
       if (channelIds.isNotEmpty) 'channelIds': channelIds.join(','),

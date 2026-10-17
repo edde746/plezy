@@ -22,6 +22,7 @@ class MpvAudioPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPl
   var coreBase: MpvPlayerCoreBase? { playerCore }
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible _: Bool) {}
   func updatePlayerFrame() {}
+  func setPlayerVideoZoom(_: Double) {}
   func didSetPauseProperty(value _: String) {}
 
   // MARK: - FlutterPlugin Registration

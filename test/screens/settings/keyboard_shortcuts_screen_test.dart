@@ -156,7 +156,7 @@ Future<void> _pumpScreen(WidgetTester tester, KeyboardShortcutsService service) 
   await tester.pumpWidget(
     TranslationProvider(
       child: MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: KeyboardShortcutsScreen(keyboardService: service),
       ),
     ),

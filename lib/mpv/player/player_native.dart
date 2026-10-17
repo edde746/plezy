@@ -85,6 +85,18 @@ class PlayerNative extends PlayerBase {
   /// tests agree on which path is live without reading a test-only field.
   static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
 
+  /// Overrides the Apple audio-output detection in host tests.
+  @visibleForTesting
+  static bool? debugUseAppleAudioOutput;
+
+  /// Whether audio leaves through mpv's Apple outputs (iPhone, iPad, Apple TV,
+  /// Mac). There, passthrough hands AC3/EAC3 to the system Dolby decoder
+  /// behind ao_avfoundation instead of bitstreaming to a device: it takes
+  /// Dolby Digital (Plus) only and never needs the device claimed.
+  ///
+  /// Resolved in one place for the same reason as [usesLinuxVideoPlane].
+  static bool get usesAppleAudioOutput => debugUseAppleAudioOutput ?? (Platform.isIOS || Platform.isMacOS);
+
   /// First successful (positive) [getHeapSize] result; the device heap is
   /// immutable per process, so one channel round trip serves every caller.
   static int? _cachedHeapSizeMB;
@@ -285,8 +297,10 @@ class PlayerNative extends PlayerBase {
         await observeProperty('playlist-pos', _nodeFormat);
         // ao_audiounit requests mixWithOthers unless audio-exclusive is set,
         // and a mixable session disqualifies the app from iOS Now Playing —
-        // no lock-screen/headphone controls (#1921). Same contract as the
-        // video path (VideoPlayerScreen sets it at playback start). iOS-only:
+        // no lock-screen/headphone controls (#1921). AVFoundation, the first
+        // output on iPhone/iPad, never mixes, but audiounit is still their
+        // fallback and the tvOS PCM output. Same contract as the video path
+        // (VideoPlayerScreen sets it at playback start). iOS-only:
         // elsewhere audio-exclusive means exclusive device access (hog-mode
         // CoreAudio on macOS, exclusive WASAPI on Windows). Direct invoke —
         // setProperty() would await _ensureInitialized and deadlock on the
@@ -523,6 +537,13 @@ class PlayerNative extends PlayerBase {
       // offset. FFmpeg's default (-3) can skip much of it before decoding.
       // Keep this file-local and append so other demuxer options survive.
       if (isLive && startLivePlaylistFromBeginning) 'demuxer-lavf-o-append=live_start_index=0',
+      // A live stream arrives at 1x, so mpv's defaults — start at the first
+      // decodable frame, leave a stall once 1 s is buffered — ride the live
+      // edge with one segment of headroom and stall on every segment that
+      // lands late (#2711). Start and resume with three 2 s segments buffered
+      // instead, the hold-back HLS asks of clients (RFC 8216 §6.3.3). A
+      // runtime write (Watch Together's host value) still overrides it.
+      if (isLive) ...const ['cache-pause-initial=yes', 'cache-pause-wait=6'],
     ];
     // Always the 4-argument form (`loadfile <url> replace <index> <options>`),
     // which needs mpv >= 0.38: 0.37 has no index parameter and rejects the
@@ -1029,16 +1050,17 @@ class PlayerNative extends PlayerBase {
   @override
   bool get audioPassthroughActive => _passthroughActive;
 
-  /// Codecs the platform can take as a bitstream. On iOS/tvOS compressed
-  /// audio goes through the system renderer, which only handles Dolby
-  /// Digital (Plus); Windows and Linux do real device passthrough for the
-  /// full list. Never applied on macOS (PlatformDetector.supportsAudioPassthrough).
+  /// Codecs the platform can take as a bitstream. On Apple platforms
+  /// compressed audio goes through the system Dolby decoder
+  /// ([usesAppleAudioOutput]), which only handles Dolby Digital (Plus); a DTS
+  /// or TrueHD entry would just cost an output probe before decoding to PCM.
+  /// Windows and Linux do real device passthrough for the full list.
   ///
   /// Android does not use this list: mpv's audiotrack AO only opens stereo
   /// IEC 61937 tracks at the 48kHz mixer rate, so naming a codec the route
   /// cannot carry that way strands playback on a dead audio output (#1991).
   /// The plugin derives the value from the current audio route instead.
-  static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
+  static String get _passthroughCodecs => usesAppleAudioOutput ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
 
   Future<String> _resolvePassthroughCodecs() async {
     if (!Platform.isAndroid) return _passthroughCodecs;
@@ -1203,12 +1225,14 @@ class PlayerNative extends PlayerBase {
     // audio-spdif is the authoritative transition. Publish only after mpv
     // accepts it; audio-exclusive below is an independent device-mode hint.
     _passthroughActive = enabled;
-    // audio-exclusive claims the device for bitstreaming on desktop outputs
-    // (exclusive WASAPI on Windows, hog-mode CoreAudio on macOS). On iOS/tvOS
-    // it is set once at playback start and must not be clobbered here.
+    // audio-exclusive claims the device for bitstreaming on Windows and Linux
+    // (exclusive WASAPI on Windows). Apple passthrough decodes in the system
+    // and must not claim it: on macOS the hint would push every CoreAudio
+    // open, the PCM fallback included, into hog-mode coreaudio_exclusive, and
+    // on iOS/tvOS it is set once at playback start and must not be clobbered.
     // Android's audiotrack and opensles outputs ignore it, yet every change
     // makes mpv reload the audio output mid-playback (#2530).
-    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    if (!usesAppleAudioOutput && !Platform.isAndroid) {
       try {
         await setProperty('audio-exclusive', enabled ? 'yes' : 'no');
       } catch (error, stackTrace) {
@@ -1241,14 +1265,13 @@ class PlayerNative extends PlayerBase {
     }
   }
 
-  /// iOS/tvOS scale the native video container instead of mpv's `video-zoom`:
-  /// on the avfoundation VO a nonzero zoom re-renders every frame through
-  /// Core Image, which destroys HDR/Dolby Vision passthrough (DV renders
-  /// near-black on tvOS). macOS keeps the property path — gpu-next zooms
-  /// losslessly in-shader.
+  /// iOS/tvOS and macOS scale the native display layer instead of mpv's
+  /// `video-zoom`: on the avfoundation VO a nonzero zoom re-renders every
+  /// frame through Core Image, which destroys HDR/Dolby Vision passthrough
+  /// (DV renders near-black on tvOS).
   @override
   Future<void> setVideoZoom(double scale) async {
-    if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS || !initialized) return;
+    if (_nativeCoreUnavailable || audioOnly || !(Platform.isIOS || Platform.isMacOS) || !initialized) return;
     await invoke('setVideoZoom', {'scale': scale});
   }
 

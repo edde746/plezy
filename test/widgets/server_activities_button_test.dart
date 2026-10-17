@@ -217,7 +217,7 @@ Future<_ActivitiesHarness> _pumpActivitiesHarness(
   final buttonKey = GlobalKey<ServerActivitiesButtonState>();
 
   Widget app = MaterialApp(
-    theme: monoTheme(dark: true),
+    theme: monoTheme(MonoPalette.dark),
     home: Scaffold(body: ServerActivitiesButton(key: buttonKey)),
   );
   if (trackInputMode) app = InputModeTracker(child: app);

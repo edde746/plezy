@@ -65,7 +65,7 @@ class DevicePerformance {
 
   /// Caps Skia's GPU resource cache on low-end hardware, where it is otherwise
   /// sized from the surface area (hundreds of MB on a 4K-composited TV) and
-  /// drives LMK kills on 2GB boxes (#1349). MainActivity can't set this cap as
+  /// drives LMK kills on 2GB boxes (#1349). PlezyActivity can't set this cap as
   /// a shell arg because FlutterLoader appends its own threshold after it; a
   /// flutter/skia override sticks. Impeller ignores it.
   static void _capSkiaResourceCache() {

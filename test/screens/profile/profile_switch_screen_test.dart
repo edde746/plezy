@@ -201,7 +201,7 @@ void main() {
               Provider<PlexHomeService>.value(value: plexHome),
               ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
             ],
-            child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
+            child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const ProfileSwitchScreen()),
           ),
         ),
       ),
@@ -548,7 +548,7 @@ Future<void> _pumpPicker(
           Provider<PlexHomeService>.value(value: plexHome),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
         ],
-        child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
+        child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const ProfileSwitchScreen()),
       ),
     ),
   );

@@ -373,7 +373,7 @@ class _CollectionHarness {
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
         ],
         child: InputModeTracker(
-          child: MaterialApp(theme: monoTheme(dark: true), home: child),
+          child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: child),
         ),
       ),
     );

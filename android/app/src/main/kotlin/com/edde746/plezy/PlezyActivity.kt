@@ -1,0 +1,1204 @@
+package com.edde746.plezy
+
+import android.app.ActivityManager
+import android.app.AppOpsManager
+import android.app.PictureInPictureParams
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.media.AudioManager
+import android.os.Build
+import android.os.Bundle
+import android.os.Process
+import android.os.SystemClock
+import android.provider.Settings
+import android.util.Log
+import android.util.Rational
+import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowInsets
+import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
+import androidx.annotation.RequiresApi
+import com.edde746.plezy.car.CarRestrictionsMonitor
+import com.edde746.plezy.exoplayer.ExoPlayerPlugin
+import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
+import com.edde746.plezy.mpv.MpvPlayerPlugin
+import com.edde746.plezy.shared.AssistiveTechnologyMonitor
+import com.edde746.plezy.shared.DeviceQuirks
+import com.edde746.plezy.shared.MediaCodecQuery
+import com.edde746.plezy.shared.ThemeHelper
+import com.edde746.plezy.watchnext.WatchNextPlugin
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterTextureView
+import io.flutter.embedding.android.RenderMode
+import io.flutter.embedding.android.TransparencyMode
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterShellArgs
+import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.roundToInt
+
+/**
+ * The Flutter activity. It has no launcher entry of its own: the launcher components are the
+ * activity-aliases in AndroidManifest.xml that target it (`.MainActivity` for the default icon,
+ * `.appicon.<id>` for the alternates), and [AppIconChannel] switches the icon by enabling one
+ * of them.
+ */
+class PlezyActivity : FlutterActivity() {
+
+  companion object {
+    private const val TAG = "PlezyActivity"
+    private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
+
+    // Safety net for a device where the text-editor proxy (see
+    // TextEditorProxyView) still leaves the IME without a key session: a
+    // bounded number of restartInput repairs, spaced so one cannot pile on
+    // another mid-bind.
+    private const val IME_LEAK_RESTART_BUDGET = 2
+    private const val IME_LEAK_RESTART_MIN_INTERVAL_MS = 1000L
+    private const val EXIT_DIAGNOSTICS_PREFS = "plezy_exit_diagnostics"
+    private const val LAST_EXIT_DEDUPE_KEY = "last_reported_exit"
+    private const val LAST_STARTUP_PHASE_KEY = "last_startup_phase"
+    private val startupPhaseLock = Any()
+
+    @Volatile private var startupPhaseInitializationAttempted = false
+
+    @Volatile private var startupPhaseStore: StartupPhaseStore? = null
+
+    @Volatile private var previousRuntimeDiagnostics = RuntimeDiagnosticSnapshot()
+    private val exitDiagnosticsExecutor by lazy {
+      Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "plezy-exit-diagnostics").apply { isDaemon = true }
+      }
+    }
+
+    // Mirrors DevicePerformance._lowMemThresholdBytes (2252 MiB): nominal
+    // "2GB" devices report totalMem slightly above 2 GiB after carve-outs.
+    private const val LOW_MEM_THRESHOLD_BYTES = 2252L shl 20
+
+    // Configuration bits only a fold/unfold or display switch flips (a
+    // subset of the android:configChanges set that keeps this activity alive
+    // across them). CONFIG_SCREEN_SIZE is handled separately: rotation
+    // reports it too because width/height swap, so it only counts when no
+    // orientation change explains it. Density alone is not a fold.
+    private const val FOLD_CONFIG_MASK =
+      ActivityInfo.CONFIG_SMALLEST_SCREEN_SIZE or ActivityInfo.CONFIG_SCREEN_LAYOUT
+
+    // How long the nav-bar show in [reassertHiddenSystemBars] is left to
+    // settle before the hide: past InsetsController's show animation
+    // (275 ms), so the hide lands as a fresh transition the window manager
+    // acts on rather than a cancellation of the show it never finished.
+    private const val SYSTEM_BARS_SETTLE_MS = 400L
+
+    private var selectedFlutterRenderer = FlutterRenderer.IMPELLER
+  }
+
+  private val PIP_CHANNEL = "com.plezy/pip"
+  private val THEME_CHANNEL = "com.plezy/theme"
+  private val DEVICE_CHANNEL = "com.plezy/device"
+  private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
+  private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
+  private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
+  private val CAR_RESTRICTIONS_CHANNEL = "com.plezy/car_restrictions"
+  private val ASSISTIVE_TECHNOLOGY_CHANNEL = "com.plezy/assistive_technology"
+  private var watchNextPlugin: WatchNextPlugin? = null
+  private var carRestrictions: CarRestrictionsMonitor? = null
+  private var carRestrictionsChannel: MethodChannel? = null
+  private var assistiveTechnology: AssistiveTechnologyMonitor? = null
+  private var assistiveTechnologyChannel: MethodChannel? = null
+  private var nativeTextInputFocused = false
+  private var imeLeakRestartBudget = 0
+  private var lastImeLeakRestartUptime = 0L
+  private var systemBarsInsetsHost: View? = null
+  private var systemBarsReassertPending = false
+  private var pendingSystemBarsHide: Runnable? = null
+  private var lastConfig: Configuration? = null
+  private var originalWindowBrightness: Float? = null
+  private var flutterTextureView: FlutterTextureView? = null
+  private var flutterSurfaceReconnectPending = false
+  private var activityStarted = false
+  private val externalPlayerChannel = ExternalPlayerChannel(this)
+  private val userCertificateChannel = UserCertificateChannel()
+  private val appIconChannel = AppIconChannel(this)
+  private val exitDiagnosticsRequested = AtomicBoolean(false)
+
+  private inline fun logTextInputDiag(message: () -> String) {
+    if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
+      Log.i(TAG, "TextInputDiag ${message()}")
+    }
+  }
+
+  private var autoPipReady = false
+  private var autoPipWidth: Int = 16
+  private var autoPipHeight: Int = 9
+
+  private fun isAndroidTvDevice(): Boolean = getAndroidTvDetection()["isTv"] as Boolean
+
+  private fun isPipSupportedDevice(): Boolean = !isAndroidTvDevice() && packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+
+  private fun isImeVisible(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
+    return window.decorView.rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true
+  }
+
+  private fun keyActionName(action: Int): String = when (action) {
+    KeyEvent.ACTION_DOWN -> "down"
+    KeyEvent.ACTION_UP -> "up"
+    KeyEvent.ACTION_MULTIPLE -> "multiple"
+    else -> "unknown($action)"
+  }
+
+  private fun sourceNames(source: Int): String {
+    val names = mutableListOf<String>()
+    if ((source and InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD) names.add("keyboard")
+    if ((source and InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD) names.add("dpad")
+    if ((source and InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) names.add("gamepad")
+    if ((source and InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) names.add("joystick")
+    if ((source and InputDevice.SOURCE_TOUCHSCREEN) == InputDevice.SOURCE_TOUCHSCREEN) names.add("touchscreen")
+    if ((source and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE) names.add("mouse")
+    return names.ifEmpty { listOf("unknown") }.joinToString("+")
+  }
+
+  private fun isDpadKeyCode(keyCode: Int): Boolean = when (keyCode) {
+    KeyEvent.KEYCODE_DPAD_UP,
+    KeyEvent.KEYCODE_DPAD_DOWN,
+    KeyEvent.KEYCODE_DPAD_LEFT,
+    KeyEvent.KEYCODE_DPAD_RIGHT,
+    KeyEvent.KEYCODE_DPAD_CENTER,
+    KeyEvent.KEYCODE_BACK,
+    KeyEvent.KEYCODE_ENTER,
+    KeyEvent.KEYCODE_NUMPAD_ENTER -> true
+    else -> false
+  }
+
+  private fun describeDevice(event: KeyEvent): String {
+    val device = event.device ?: return "device=null deviceId=${event.deviceId}"
+    return "deviceId=${event.deviceId} name=${device.name} vendor=${device.vendorId} product=${device.productId} " +
+      "keyboardType=${device.keyboardType} sources=0x${Integer.toHexString(device.sources)}[${sourceNames(device.sources)}]"
+  }
+
+  private fun describeKeyEvent(event: KeyEvent): String = "action=${keyActionName(event.action)} key=${KeyEvent.keyCodeToString(event.keyCode)}(${event.keyCode}) " +
+    "scan=${event.scanCode} repeat=${event.repeatCount} source=0x${Integer.toHexString(event.source)}[${sourceNames(event.source)}] " +
+    "flags=0x${Integer.toHexString(event.flags)} meta=0x${Integer.toHexString(event.metaState)} ${describeDevice(event)}"
+
+  private fun describeImeState(): String {
+    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    val focus = currentFocus
+    return "nativeTextInputFocused=$nativeTextInputFocused imeVisible=${isImeVisible()} " +
+      "acceptingText=${imm.isAcceptingText} activeDecor=${imm.isActive(window.decorView)} " +
+      "decorHasFocus=${window.decorView.hasFocus()} currentFocus=${focus?.javaClass?.name} " +
+      "currentFocusHasFocus=${focus?.hasFocus()} currentFocusFocused=${focus?.isFocused}"
+  }
+
+  private fun shouldForwardDpadBeforeIme(): Boolean {
+    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    val forward = !nativeTextInputFocused && !isImeVisible() && !imm.isAcceptingText
+    logTextInputDiag { "shouldForwardDpadBeforeIme=$forward ${describeImeState()}" }
+    return forward
+  }
+
+  private fun inputMethodManager(): InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+  private fun flutterView(): View? = findViewById(FLUTTER_VIEW_ID)
+
+  // Android TV's low-RAM overlay enables config_preventImeStartupUnlessTextEditor
+  // (Chromecast with Google TV, Philips/TCL Google TVs): InputMethodManagerService
+  // answers every startInput whose focused view does not report
+  // onCheckIsTextEditor() with NO_EDITOR and unbinds the IME. FlutterView never
+  // reports it, so the engine's restartInput kills Gboard, the showSoftInput
+  // that follows revives it, and the revived session's bind carries a sequence
+  // this process never asked for ("Ignoring onBind: cur seq=-1"): the keyboard
+  // is drawn but the app holds no IME session, and D-pad keys fall through to
+  // Flutter (#1051, #1079, #2405, flutter/flutter#177360).
+  //
+  // This view lives inside FlutterView and holds Android focus in its place
+  // (FOCUS_AFTER_DESCENDANTS routes the engine's requestFocus here too). It
+  // reports text-editor status from the Dart-side session flag, hands the
+  // IMM Flutter's own InputConnection, and vouches for FlutterView so the
+  // engine's showSoftInput/restartInput(flutterView) still pass the IMM's
+  // served-view check. Keys are unaffected: FlutterView.dispatchKeyEvent runs
+  // before descending to the focused child.
+  private inner class TextEditorProxyView(context: Context, private val flutterView: View) : View(context) {
+    init {
+      isFocusable = true
+      isFocusableInTouchMode = true
+      importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+    }
+
+    override fun onCheckIsTextEditor(): Boolean = nativeTextInputFocused
+
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? = flutterView.onCreateInputConnection(outAttrs)
+
+    override fun checkInputConnectionProxy(view: View): Boolean = view === flutterView
+  }
+
+  private fun installTextEditorProxy() {
+    val flutterView = flutterView() as? ViewGroup ?: return
+    flutterView.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+    val proxy = TextEditorProxyView(this, flutterView)
+    flutterView.addView(proxy, FrameLayout.LayoutParams(1, 1))
+    if (flutterView.isFocused) proxy.requestFocus()
+  }
+
+  private fun restartNativeTextInput(reason: String) {
+    val view = flutterView() ?: return
+    logTextInputDiag { "restartInput reason=$reason ${describeImeState()}" }
+    inputMethodManager().restartInput(view)
+  }
+
+  // A visible IME owns D-pad navigation: a healthy Gboard consumes these keys
+  // at the ImeInputStage, before the app. One arriving here means the IME's
+  // key session is not bound in this process. With the text-editor proxy in
+  // place a restartInput re-attaches the bound session synchronously, so
+  // rebind and eat the press so Flutter focus cannot wander behind the stuck
+  // keyboard. The bounded budget guarantees keys flow again (and Flutter can
+  // close the session) if a device still cannot be healed.
+  private fun consumeLeakedImeNavigationKey(event: KeyEvent): Boolean {
+    if (!nativeTextInputFocused || imeLeakRestartBudget <= 0) return false
+    when (event.keyCode) {
+      KeyEvent.KEYCODE_DPAD_UP,
+      KeyEvent.KEYCODE_DPAD_DOWN,
+      KeyEvent.KEYCODE_DPAD_LEFT,
+      KeyEvent.KEYCODE_DPAD_RIGHT,
+      KeyEvent.KEYCODE_DPAD_CENTER -> Unit
+      else -> return false
+    }
+    if (!isImeVisible()) return false
+    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+      val now = SystemClock.uptimeMillis()
+      if (now - lastImeLeakRestartUptime >= IME_LEAK_RESTART_MIN_INTERVAL_MS) {
+        lastImeLeakRestartUptime = now
+        imeLeakRestartBudget--
+        restartNativeTextInput("leaked-dpad-while-ime-visible")
+      }
+    }
+    logTextInputDiag { "consuming leaked IME key ${describeKeyEvent(event)} budget=$imeLeakRestartBudget" }
+    return true
+  }
+
+  private fun getAndroidTvDetection(): Map<String, Any> {
+    val pm = packageManager
+    val uiModeType = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+    val isTelevisionUiMode = uiModeType == Configuration.UI_MODE_TYPE_TELEVISION
+
+    @Suppress("DEPRECATION")
+    val hasTelevisionFeature = pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
+    val hasLeanback = pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+    val hasFireTvFeature = pm.hasSystemFeature("amazon.hardware.fire_tv")
+    val hasTouchscreen = pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)
+    val hasFakeTouch = pm.hasSystemFeature(PackageManager.FEATURE_FAKETOUCH)
+    val isAutomotive = pm.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+
+    val reasons = mutableListOf<String>()
+    if (isTelevisionUiMode) reasons.add("ui_mode_television")
+    if (hasTelevisionFeature) reasons.add("television_feature")
+    if (hasLeanback) reasons.add("leanback")
+    if (hasFireTvFeature) reasons.add("fire_tv")
+    if (!hasTouchscreen) reasons.add("no_touchscreen")
+
+    return mapOf(
+      // A car is never a TV: rotary-only head units report no touchscreen, and
+      // an OEM image can carry a stray leanback flag. Keep the raw reasons for
+      // diagnostics, but never let them promote a vehicle to the TV experience.
+      "isTv" to (!isAutomotive && reasons.isNotEmpty()),
+      "isAutomotive" to isAutomotive,
+      "reasons" to reasons,
+      "isTelevisionUiMode" to isTelevisionUiMode,
+      "hasTelevisionFeature" to hasTelevisionFeature,
+      "hasLeanback" to hasLeanback,
+      "hasFireTvFeature" to hasFireTvFeature,
+      "hasTouchscreen" to hasTouchscreen,
+      "hasFakeTouch" to hasFakeTouch,
+      "manufacturer" to Build.MANUFACTURER,
+      "model" to Build.MODEL
+    )
+  }
+
+  /** Hardware capability signals used by Dart to pick the visual-effects tier. */
+  private fun getPerformanceSignals(): Map<String, Any> {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return mapOf(
+      // Actual process bitness: low-end TV boxes often run 32-bit userspace.
+      "is64Bit" to Process.is64Bit(),
+      "isLowRamDevice" to activityManager.isLowRamDevice,
+      "totalMemBytes" to memoryInfo.totalMem
+    )
+  }
+
+  private fun initializeStartupPhaseStore() {
+    var shouldMarkNativeOnCreate = false
+    synchronized(startupPhaseLock) {
+      if (startupPhaseInitializationAttempted) return
+      startupPhaseInitializationAttempted = true
+      try {
+        previousRuntimeDiagnostics = AndroidRuntimeDiagnostics.read(this)
+        val preferences = getSharedPreferences(EXIT_DIAGNOSTICS_PREFS, Context.MODE_PRIVATE)
+        startupPhaseStore = StartupPhaseStore(
+          readPhase = { preferences.getString(LAST_STARTUP_PHASE_KEY, null) },
+          persistPhase = { phase ->
+            preferences.edit().putString(LAST_STARTUP_PHASE_KEY, phase).commit()
+          }
+        )
+        shouldMarkNativeOnCreate = true
+      } catch (_: Throwable) {
+        Log.w(TAG, "Startup phase persistence unavailable")
+      }
+    }
+    if (shouldMarkNativeOnCreate) {
+      queueStartupPhase(AndroidStartupPhases.NATIVE_ON_CREATE)
+    }
+  }
+
+  private fun queueStartupPhase(raw: String?, result: MethodChannel.Result? = null) {
+    val phase = AndroidStartupPhases.sanitize(raw)
+    if (phase == null) {
+      result?.let { completeStartupPhase(it, false) }
+      return
+    }
+    AndroidRuntimeDiagnostics.update(this, uiState = uiStateForStartupPhase(phase))
+    try {
+      exitDiagnosticsExecutor.execute {
+        val persisted = try {
+          startupPhaseStore?.mark(phase) == true
+        } catch (_: Throwable) {
+          Log.w(TAG, "Startup phase update failed")
+          false
+        }
+        result?.let { reply ->
+          runOnUiThread { completeStartupPhase(reply, persisted) }
+        }
+      }
+    } catch (_: Throwable) {
+      Log.w(TAG, "Startup phase update could not start")
+      result?.let { completeStartupPhase(it, false) }
+    }
+  }
+
+  private fun uiStateForStartupPhase(phase: String): String = when (phase) {
+    "credentials_loaded", "binding_started", "binding_settled" -> AndroidRuntimeDiagnostics.UI_AUTHENTICATION
+    "main_screen" -> AndroidRuntimeDiagnostics.UI_MAIN_SCREEN
+    else -> AndroidRuntimeDiagnostics.UI_STARTUP
+  }
+
+  private fun completeStartupPhase(result: MethodChannel.Result, persisted: Boolean) {
+    try {
+      result.success(persisted)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Startup phase reply failed")
+    }
+  }
+
+  private fun handlePreviousExit(result: MethodChannel.Result) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+      completePreviousExit(result, null)
+      return
+    }
+    if (!exitDiagnosticsRequested.compareAndSet(false, true)) {
+      completePreviousExit(result, null)
+      return
+    }
+
+    try {
+      exitDiagnosticsExecutor.execute {
+        val report = try {
+          readPreviousExit()
+        } catch (_: Throwable) {
+          Log.w(TAG, "Previous exit diagnostics failed")
+          null
+        }
+        runOnUiThread { completePreviousExit(result, report) }
+      }
+    } catch (_: RejectedExecutionException) {
+      completePreviousExit(result, null)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Previous exit diagnostics could not start")
+      completePreviousExit(result, null)
+    }
+  }
+
+  private fun completePreviousExit(result: MethodChannel.Result, report: Map<String, Any>?) {
+    try {
+      result.success(report)
+    } catch (_: Throwable) {
+      Log.w(TAG, "Previous exit diagnostics reply failed")
+    }
+  }
+
+  @RequiresApi(Build.VERSION_CODES.R)
+  private fun readPreviousExit(): Map<String, Any>? {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val exitInfo = activityManager
+      .getHistoricalProcessExitReasons(packageName, 0, 1)
+      .firstOrNull()
+      ?: return null
+    val report = AndroidExitReportMapper.map(
+      record = HistoricalExitRecord(
+        reason = exitInfo.reason,
+        status = exitInfo.status,
+        importance = exitInfo.importance,
+        timestamp = exitInfo.timestamp
+      ),
+      deviceModel = Build.MODEL,
+      apiLevel = Build.VERSION.SDK_INT,
+      abi = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
+      lowRam = activityManager.isLowRamDevice,
+      startupPhase = startupPhaseStore?.previousPhase,
+      runtime = previousRuntimeDiagnostics
+    )
+    val preferences = getSharedPreferences(EXIT_DIAGNOSTICS_PREFS, Context.MODE_PRIVATE)
+    return PreviousExitReportStore(
+      readDedupeKey = { preferences.getString(LAST_EXIT_DEDUPE_KEY, null) },
+      persistDedupeKey = { key ->
+        preferences.edit().putString(LAST_EXIT_DEDUPE_KEY, key).commit()
+      }
+    ).takeIfNew(report)
+  }
+
+  /**
+   * Same triple DevicePerformance uses for the reduced tier on the Dart
+   * side — keep the two in sync. Evaluated here too because engine shell
+   * args must be decided before Dart runs.
+   */
+  private fun isLowRamClass(): Boolean {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return !Process.is64Bit() || activityManager.isLowRamDevice || memoryInfo.totalMem <= LOW_MEM_THRESHOLD_BYTES
+  }
+
+  /** User-assigned device name (Settings > About > Device name), or null. */
+  private fun getDeviceName(): String? {
+    // The name the user gave the device; also used by Cast/Nearby.
+    val name = Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+    if (!name.isNullOrBlank()) return name
+    // Fallback: the Bluetooth name usually mirrors the device name. Reading the
+    // settings string needs no BLUETOOTH permission (unlike BluetoothAdapter).
+    val bt = Settings.Secure.getString(contentResolver, "bluetooth_name")
+    return if (!bt.isNullOrBlank()) bt else null
+  }
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    // Snapshot the previous process phase before this launch can overwrite it.
+    initializeStartupPhaseStore()
+    // Apply persisted theme color to the window background before anything
+    // else renders.  This prevents a white flash between the native splash
+    // screen and Flutter's first frame for non-default themes (e.g. OLED).
+    val prefs = getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
+    val savedTheme = prefs.getString("splash_theme", null)
+    ThemeHelper.themeColor(savedTheme)?.let { window.decorView.setBackgroundColor(it) }
+
+    super.onCreate(savedInstanceState)
+    lastConfig = Configuration(resources.configuration)
+
+    // Disable the Android splash screen fade-out animation to avoid
+    // a flicker before Flutter draws its first frame.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      splashScreen.setOnExitAnimationListener { splashScreenView -> splashScreenView.remove() }
+    }
+
+    // Disable Android's default focus highlight ring that appears when using
+    // D-pad navigation so the Flutter UI can render its own focus state.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      window.decorView.defaultFocusHighlightEnabled = false
+    }
+
+    // Wrap the content view in a layout that intercepts DPAD key events
+    // before the IME input stage, which can consume DPAD direction events
+    // from virtual remotes before they reach Flutter's key handler.
+    val content = findViewById<ViewGroup>(android.R.id.content)
+    val wrapper = object : FrameLayout(this) {
+      override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
+        if (isDpadKeyCode(event.keyCode)) {
+          logTextInputDiag { "preIme received ${describeKeyEvent(event)} ${describeImeState()}" }
+        }
+        when (event.keyCode) {
+          KeyEvent.KEYCODE_DPAD_UP,
+          KeyEvent.KEYCODE_DPAD_DOWN,
+          KeyEvent.KEYCODE_DPAD_LEFT,
+          KeyEvent.KEYCODE_DPAD_RIGHT,
+          KeyEvent.KEYCODE_DPAD_CENTER -> {
+            if (shouldForwardDpadBeforeIme()) {
+              logTextInputDiag { "preIme forwarding-to-Flutter-and-consuming ${describeKeyEvent(event)}" }
+              super.dispatchKeyEvent(event)
+              return true
+            }
+            logTextInputDiag { "preIme letting-IME-handle ${describeKeyEvent(event)}" }
+          }
+        }
+        val handled = super.dispatchKeyEventPreIme(event)
+        if (isDpadKeyCode(event.keyCode)) {
+          logTextInputDiag { "preIme superResult=$handled ${describeKeyEvent(event)} ${describeImeState()}" }
+        }
+        return handled
+      }
+    }
+    while (content.childCount > 0) {
+      val child = content.getChildAt(0)
+      content.removeViewAt(0)
+      wrapper.addView(child)
+    }
+    content.addView(
+      wrapper,
+      ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.MATCH_PARENT
+      )
+    )
+
+    // Anchor the post-fold system-bar re-assert on the first inset dispatch
+    // after the configuration change: that lands on a vsync traversal after
+    // the window manager has re-laid the window out, whereas a post from
+    // onConfigurationChanged raced the taskbar's force-show. The listener
+    // lives on the wrapper, not the DecorView, so DecorView.onApplyWindowInsets
+    // keeps its color-view handling; insets are never consumed so FlutterView
+    // still receives them.
+    wrapper.setOnApplyWindowInsetsListener { v, insets ->
+      if (systemBarsReassertPending) {
+        systemBarsReassertPending = false
+        v.post { reassertHiddenSystemBars() }
+      }
+      insets
+    }
+    systemBarsInsetsHost = wrapper
+
+    if (isAndroidTvDevice()) installTextEditorProxy()
+
+    // Handle Watch Next deep link from initial launch. A restored activity or a
+    // relaunch from Recents carries the original launch intent, whose tap was
+    // already handled; replaying it would start that item again.
+    val launchedFromHistory = (intent?.flags ?: 0) and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+    if (savedInstanceState == null && !launchedFromHistory) {
+      handleWatchNextIntent(intent)
+    }
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    // Handle Watch Next deep link when app is already running
+    handleWatchNextIntent(intent)
+  }
+
+  override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    if (isDpadKeyCode(event.keyCode)) {
+      logTextInputDiag { "activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}" }
+    }
+    // Reaching the activity means the ImeInputStage already declined this
+    // key, so consumption below cannot starve a healthy IME.
+    if (consumeLeakedImeNavigationKey(event)) return true
+    val handled = super.dispatchKeyEvent(event)
+    if (isDpadKeyCode(event.keyCode)) {
+      logTextInputDiag {
+        "activity.dispatchKeyEvent after handled=$handled ${describeKeyEvent(event)} ${describeImeState()}"
+      }
+    }
+    return handled
+  }
+
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    if (!externalPlayerChannel.onActivityResult(requestCode, resultCode, data)) {
+      super.onActivityResult(requestCode, resultCode, data)
+    }
+  }
+
+  override fun onDestroy() {
+    externalPlayerChannel.dispose()
+    systemBarsInsetsHost?.setOnApplyWindowInsetsListener(null)
+    systemBarsInsetsHost = null
+    cancelPendingSystemBarsHide()
+    carRestrictions?.release()
+    carRestrictions = null
+    carRestrictionsChannel = null
+    assistiveTechnology?.release()
+    assistiveTechnology = null
+    assistiveTechnologyChannel = null
+    activityStarted = false
+    flutterSurfaceReconnectPending = false
+    flutterTextureView = null
+    super.onDestroy()
+  }
+
+  private fun handleWatchNextIntent(intent: Intent?) {
+    val contentId = WatchNextPlugin.handleIntent(intent)
+    if (contentId != null) {
+      // Notify the plugin to send event to Flutter
+      watchNextPlugin?.notifyDeepLink(contentId)
+    }
+  }
+
+  // Connects the car UX-restriction monitor on first use, retrying while the platform signal is
+  // unavailable: a car service that was not ready during startup can still answer later, and on a
+  // phone every attempt fails cheaply on the FEATURE_AUTOMOTIVE check. The connect itself never
+  // blocks, so this is safe on the main thread; readiness arrives through the callback below.
+  private fun startCarRestrictionsIfNeeded() {
+    val existing = carRestrictions
+    if (existing?.supported == true) return
+    val monitor = existing ?: CarRestrictionsMonitor(applicationContext).also { carRestrictions = it }
+    monitor.start { restricted ->
+      runOnUiThread {
+        // `supported` rides along because it can go false again when the car service dies, and Dart
+        // must then fall back to lifecycle gating rather than read a stale verdict.
+        carRestrictionsChannel?.invokeMethod(
+          "onChanged",
+          mapOf(
+            "supported" to monitor.supported,
+            "requiresDistractionOptimization" to restricted
+          )
+        )
+      }
+    }
+  }
+
+  override fun getFlutterShellArgs(): FlutterShellArgs {
+    val args = super.getFlutterShellArgs()
+    selectedFlutterRenderer = selectFlutterRenderer()
+    selectedFlutterRenderer.shellArgument?.let { args.add(it) }
+    // FlutterLoader appends its own defaults after these args and the engine
+    // keeps the last value of a flag. The manifest's OldGenHeapSize meta-data
+    // suppresses the loader's old-gen default, so the value set here is the
+    // one that sticks. Skia's resource cache threshold has no such opt-out;
+    // Dart caps that cache over the flutter/skia channel (DevicePerformance).
+    if (isLowRamClass()) {
+      // The Dart old gen defaults to half of physical RAM, which drives LMK
+      // kills on 2GB boxes (#1349).
+      args.add("--old-gen-heap-size=256")
+      Log.i(
+        TAG,
+        "Low-RAM device: capped engine caches " +
+          "(renderer=${selectedFlutterRenderer.diagnosticName}, oldGen=256MB)"
+      )
+    } else {
+      args.add("--old-gen-heap-size=${defaultOldGenHeapSizeMegabytes()}")
+    }
+    return args
+  }
+
+  /** FlutterLoader's own default (half of physical RAM), which the manifest meta-data turns off. */
+  private fun defaultOldGenHeapSizeMegabytes(): Int {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return (memoryInfo.totalMem / 1e6 / 2).toInt()
+  }
+
+  private fun selectFlutterRenderer(): FlutterRenderer {
+    val isAndroidTv = isAndroidTvDevice()
+    val vulkan11 = 0x401000 // FEATURE_VULKAN_HARDWARE_VERSION encodes 1.1.0 as 0x401000
+    return FlutterRendererPolicy.select(
+      isEWaste = DeviceQuirks.isEWaste,
+      manufacturer = Build.MANUFACTURER,
+      isAndroidTv = isAndroidTv,
+      sdkInt = Build.VERSION.SDK_INT,
+      supportsVulkan11 = isAndroidTv &&
+        packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION, vulkan11),
+      is64Bit = Process.is64Bit()
+    )
+  }
+
+  override fun getRenderMode(): RenderMode {
+    // Keep Flutter in the normal View hierarchy so video/subtitle SurfaceViews
+    // remain the only native composition layers. This restores the pre-1.35.0
+    // behavior and avoids compositor regressions with Dolby Vision playback.
+    return RenderMode.texture
+  }
+
+  override fun getTransparencyMode(): TransparencyMode {
+    // Keep Flutter transparent so video/subtitles are visible below.
+    return TransparencyMode.transparent
+  }
+
+  override fun onFlutterTextureViewCreated(flutterTextureView: FlutterTextureView) {
+    this.flutterTextureView = flutterTextureView
+    val original = flutterTextureView.surfaceTextureListener ?: return
+    flutterTextureView.surfaceTextureListener =
+      DeferredSurfaceTextureListener(
+        delegate = original,
+        onSurfaceAvailable = ::tryReconnectFlutterSurface
+      ) { surface ->
+        flutterTextureView.isAvailable && flutterTextureView.surfaceTexture === surface
+      }
+  }
+
+  override fun onStop() {
+    activityStarted = false
+    if (isAndroidTvDevice()) flutterSurfaceReconnectPending = true
+    appIconChannel.onStop()
+    super.onStop()
+  }
+
+  override fun onStart() {
+    super.onStart()
+    activityStarted = true
+    appIconChannel.onStart()
+    tryReconnectFlutterSurface()
+  }
+
+  /**
+   * Arm a one-shot re-assert of the hidden navigation bar after a fold-class
+   * configuration change. The manifest keeps this activity alive across
+   * fold/unfold and display switches, and Samsung's taskbar (a window of its
+   * own, not an inset this activity controls) is force-shown on the inner
+   * display without any `systemUIChange` the Dart guard could answer.
+   *
+   * Replaying the requested overlays here was a no-op at three layers:
+   * `View.setSystemUiVisibility` drops unchanged flags, `ViewRootImpl` only
+   * issues an inset hide on a flag transition, and `InsetsController.hide`
+   * skips a type that is already requested-hidden. No timing can make an
+   * unchanged request reach the window manager, so instead
+   * [reassertHiddenSystemBars] flips the requested visibility (show, then
+   * hide once the show has settled) once the first inset dispatch after the
+   * change confirms the window has been re-laid out. Only screen-size and
+   * layout diffs arm it; orientation-only and density-only changes do not.
+   */
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    val diff = lastConfig?.diff(newConfig) ?: 0
+    lastConfig = Configuration(newConfig)
+    val foldClass = (diff and FOLD_CONFIG_MASK) != 0 ||
+      ((diff and ActivityInfo.CONFIG_SCREEN_SIZE) != 0 && (diff and ActivityInfo.CONFIG_ORIENTATION) == 0)
+    if (foldClass) systemBarsReassertPending = true
+  }
+
+  // Forces a real requested-visibility transition on the navigation bar so
+  // the window manager, StatusBar service and SystemUI re-derive "nav hidden"
+  // for this window. show() makes the consumer requested-visible; the hide
+  // follows once that show has settled. Issuing both in one runnable reached
+  // the window manager (requested true→false) but the hide only cancelled
+  // the show's pending animation (`cancelAnimation: types=navigationBars`)
+  // and the taskbar never retracted, whereas a transient that runs to
+  // completion does retract it. So the show is allowed to complete, as a
+  // swipe-reveal would, and the hide is a fresh transition after it.
+  // The show also rewrites Flutter's legacy flags: once the bar is visible
+  // with control, ViewRootImpl.updateCompatSysUiVisibility marks
+  // HIDE_NAVIGATION as a local change and View.updateLocalSystemUiVisibility
+  // clears it on the DecorView. A flag-gated controller.hide() therefore
+  // never ran, and every later fold failed the entry guard. So the hide is a
+  // restore of the flags snapshotted before the show: putting HIDE_NAVIGATION
+  // back is a flag transition, so ViewRootImpl.controlInsetsForCompatibility
+  // issues the hide itself — the path Flutter takes to enter immersive — and
+  // the engine's flags are coherent again for the next fold. Ownership is a
+  // flag comparison rather than a HIDE_NAVIGATION check: leaving the player
+  // meanwhile writes edge-to-edge flags, which also drop FULLSCREEN and
+  // IMMERSIVE_STICKY, so they mismatch the snapshot even with HIDE_NAVIGATION
+  // added back. Outside immersive mode (edge-to-edge screens) there is
+  // nothing to re-assert.
+  @Suppress("DEPRECATION")
+  private fun reassertHiddenSystemBars() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+    if (!navigationHiddenByFlags()) return
+    val controller = window.insetsController ?: return
+    Log.i(TAG, "Re-asserting hidden navigation bars after a fold-class configuration change")
+    cancelPendingSystemBarsHide()
+    val immersiveFlags = window.decorView.systemUiVisibility
+    controller.show(WindowInsets.Type.navigationBars())
+    val hide = Runnable {
+      pendingSystemBarsHide = null
+      val current = window.decorView.systemUiVisibility
+      if ((current or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != immersiveFlags) return@Runnable
+      if (current == immersiveFlags) {
+        // The show never reached the compat sync (no control at that instant), so
+        // the flags carry no transition to replay; hide the bar directly.
+        window.insetsController?.hide(WindowInsets.Type.navigationBars())
+      } else {
+        window.decorView.systemUiVisibility = immersiveFlags
+      }
+    }
+    pendingSystemBarsHide = hide
+    window.decorView.postDelayed(hide, SYSTEM_BARS_SETTLE_MS)
+  }
+
+  private fun cancelPendingSystemBarsHide() {
+    pendingSystemBarsHide?.let { window.decorView.removeCallbacks(it) }
+    pendingSystemBarsHide = null
+  }
+
+  // Whether Dart's last requested system-UI mode hides the navigation bar,
+  // i.e. the player's immersive mode is in force.
+  @Suppress("DEPRECATION")
+  private fun navigationHiddenByFlags(): Boolean = (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != 0
+
+  private fun tryReconnectFlutterSurface() {
+    if (!activityStarted || !flutterSurfaceReconnectPending) return
+    val textureView = flutterTextureView ?: return
+    textureView.post {
+      if (!activityStarted ||
+        !flutterSurfaceReconnectPending ||
+        textureView !== flutterTextureView ||
+        !textureView.isAttachedToWindow ||
+        !textureView.isAvailable
+      ) {
+        return@post
+      }
+
+      // Some TV firmware retains an available TextureView while invalidating
+      // its compositor surface during standby. Force Flutter's supported
+      // surface-swap path so rendering resumes without restarting the engine.
+      Log.i(TAG, "Reconnecting Flutter texture surface after Android TV standby")
+      textureView.pause()
+      textureView.resume()
+      flutterSurfaceReconnectPending = false
+    }
+  }
+
+  override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+    super.configureFlutterEngine(flutterEngine)
+    flutterEngine.plugins.add(MpvPlayerPlugin())
+    flutterEngine.plugins.add(ExoPlayerPlugin())
+    flutterEngine.plugins.add(MpvAudioPlayerPlugin())
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getTvDetection" -> result.success(getAndroidTvDetection())
+        "getDeviceName" -> result.success(getDeviceName())
+        "getPerformanceSignals" -> result.success(getPerformanceSignals())
+        "getVideoDecodeCapabilities" -> result.success(MediaCodecQuery.hardwareVideoDecodeSupport())
+        "getBackgroundWorkSignals" -> result.success(
+          BackgroundWorkClassifier.toMap(BackgroundWorkDiagnostics.read(this))
+        )
+        "openBackgroundSettings" -> {
+          val target = BackgroundSettingsTarget.fromId(call.arguments as? String)
+          result.success(target != null && BackgroundWorkDiagnostics.openSettings(this, target))
+        }
+        "getPreviousExit" -> handlePreviousExit(result)
+        "setStartupPhase" -> queueStartupPhase(call.arguments as? String, result)
+        "setRuntimeUiState" -> {
+          val uiState = AndroidRuntimeDiagnostics.sanitizeUiState(call.arguments as? String)
+          if (uiState == null) {
+            result.success(false)
+          } else {
+            AndroidRuntimeDiagnostics.update(this, uiState = uiState)
+            result.success(true)
+          }
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    val carChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CAR_RESTRICTIONS_CHANNEL)
+    carRestrictionsChannel = carChannel
+    carChannel.setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getState" -> {
+          startCarRestrictionsIfNeeded()
+          val monitor = carRestrictions
+          val supported = monitor?.supported == true
+          result.success(
+            mapOf(
+              "supported" to supported,
+              // Tells Dart the difference between "this device has no car service" and "the verdict
+              // is coming": only the latter is worth waiting for.
+              "pending" to (monitor?.pending == true),
+              "requiresDistractionOptimization" to (supported && monitor.requiresDistractionOptimization)
+            )
+          )
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    val assistiveChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ASSISTIVE_TECHNOLOGY_CHANNEL)
+    assistiveTechnologyChannel = assistiveChannel
+    val assistiveMonitor = assistiveTechnology ?: AssistiveTechnologyMonitor(applicationContext).also {
+      assistiveTechnology = it
+    }
+    assistiveMonitor.start { runOnUiThread { assistiveTechnologyChannel?.invokeMethod("onChanged", null) } }
+    assistiveChannel.setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getSignals" -> result.success(assistiveMonitor.signals())
+        else -> result.notImplemented()
+      }
+    }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_ADJUSTMENT_CHANNEL).setMethodCallHandler { call, result ->
+      handleDeviceAdjustmentCall(call.method, call.arguments, result)
+    }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TEXT_INPUT_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "setNativeTextInputFocused" -> {
+          val oldValue = nativeTextInputFocused
+          nativeTextInputFocused = call.arguments as? Boolean ?: false
+          logTextInputDiag {
+            "methodChannel setNativeTextInputFocused old=$oldValue new=$nativeTextInputFocused ${describeImeState()}"
+          }
+          if (nativeTextInputFocused && !oldValue) {
+            imeLeakRestartBudget = IME_LEAK_RESTART_BUDGET
+          }
+          result.success(null)
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, APP_EXIT_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "requestExit" -> {
+          result.success(true)
+          window.decorView.post {
+            finishAndRemoveTask()
+          }
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+    userCertificateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+    appIconChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+
+    // Splash screen theme: persist user's chosen theme for next launch (API 31+)
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, THEME_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getRenderer" -> result.success(selectedFlutterRenderer.diagnosticName)
+        "setSplashTheme" -> {
+          val mode = call.argument<String>("mode")
+
+          // Persist for next cold start & update window background now
+          getSharedPreferences("plezy_prefs", Context.MODE_PRIVATE)
+            .edit().putString("splash_theme", mode).apply()
+          ThemeHelper.themeColor(mode)?.let { window.decorView.setBackgroundColor(it) }
+
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val themeId = when (mode) {
+              "dark" -> R.style.SplashTheme_Dark
+              "oled" -> R.style.SplashTheme_Oled
+              "light" -> R.style.SplashTheme_Light
+              "system" -> android.content.res.Resources.ID_NULL
+              else -> android.content.res.Resources.ID_NULL
+            }
+            splashScreen.setSplashScreenTheme(themeId)
+          }
+          result.success(true)
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    // Register Watch Next plugin and keep reference for deep link handling
+    watchNextPlugin = WatchNextPlugin()
+    flutterEngine.plugins.add(watchNextPlugin!!)
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "isSupported" -> {
+          result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isPipSupportedDevice())
+        }
+        "enter" -> {
+          if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            result.success(mapOf("success" to false, "errorCode" to "android_version"))
+            return@setMethodCallHandler
+          }
+
+          if (!isPipSupportedDevice()) {
+            result.success(mapOf("success" to false, "errorCode" to "not_supported"))
+            return@setMethodCallHandler
+          }
+
+          if (!isPipPermissionGranted()) {
+            result.success(mapOf("success" to false, "errorCode" to "permission_disabled"))
+            return@setMethodCallHandler
+          }
+
+          try {
+            val width = call.argument<Int>("width") ?: 16
+            val height = call.argument<Int>("height") ?: 9
+            val params = buildPipParams(width, height)
+            val success = enterPictureInPictureMode(params)
+            if (success) {
+              result.success(mapOf("success" to true))
+            } else {
+              result.success(mapOf("success" to false, "errorCode" to "failed"))
+            }
+          } catch (e: IllegalStateException) {
+            result.success(mapOf("success" to false, "errorCode" to "not_supported"))
+          } catch (e: Exception) {
+            Log.w(TAG, "Failed to enter PiP", e)
+            result.success(mapOf("success" to false, "errorCode" to "unknown", "errorMessage" to e.message))
+          }
+        }
+        "setAutoPipReady" -> {
+          if (!isPipSupportedDevice()) {
+            autoPipReady = false
+            result.success(true)
+            return@setMethodCallHandler
+          }
+
+          autoPipReady = call.argument<Boolean>("ready") ?: false
+          autoPipWidth = call.argument<Int>("width") ?: 16
+          autoPipHeight = call.argument<Int>("height") ?: 9
+
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+              val params = buildPipParams(autoPipWidth, autoPipHeight, autoEnterEnabled = autoPipReady)
+              setPictureInPictureParams(params)
+            } catch (e: Exception) {
+              Log.w(TAG, "Failed to set auto-PiP params", e)
+            }
+          }
+          result.success(true)
+        }
+        else -> result.notImplemented()
+      }
+    }
+  }
+
+  private fun handleDeviceAdjustmentCall(method: String, arguments: Any?, result: MethodChannel.Result) {
+    try {
+      when (method) {
+        "getBrightness" -> result.success(getScreenBrightnessFraction())
+        "setBrightness" -> {
+          setScreenBrightnessFraction(argumentAsDouble(arguments))
+          result.success(null)
+        }
+        "restoreBrightness" -> {
+          restoreScreenBrightness()
+          result.success(null)
+        }
+        "getMediaVolume" -> result.success(getMediaVolumeFraction())
+        "setMediaVolume" -> {
+          setMediaVolumeFraction(argumentAsDouble(arguments))
+          result.success(null)
+        }
+        else -> result.notImplemented()
+      }
+    } catch (e: IllegalArgumentException) {
+      result.error("INVALID_ARGUMENT", e.message ?: e.javaClass.simpleName, null)
+    } catch (e: Exception) {
+      result.error("DEVICE_ADJUSTMENT_FAILED", e.message ?: e.javaClass.simpleName, null)
+    }
+  }
+
+  private fun argumentAsDouble(arguments: Any?): Double {
+    val value = (arguments as? Number)?.toDouble()
+      ?: throw IllegalArgumentException("Expected a numeric value")
+    if (value.isNaN() || value.isInfinite()) {
+      throw IllegalArgumentException("Expected a finite numeric value")
+    }
+    return value.coerceIn(0.0, 1.0)
+  }
+
+  private fun getScreenBrightnessFraction(): Double {
+    val windowBrightness = window.attributes.screenBrightness
+    if (windowBrightness >= 0f) return windowBrightness.coerceIn(0f, 1f).toDouble()
+
+    return try {
+      Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS).coerceIn(0, 255) / 255.0
+    } catch (e: Settings.SettingNotFoundException) {
+      0.5
+    }
+  }
+
+  private fun setScreenBrightnessFraction(value: Double) {
+    if (originalWindowBrightness == null) originalWindowBrightness = window.attributes.screenBrightness
+    val attributes = window.attributes
+    attributes.screenBrightness = value.coerceIn(0.0, 1.0).toFloat()
+    window.attributes = attributes
+  }
+
+  private fun restoreScreenBrightness() {
+    val attributes = window.attributes
+    attributes.screenBrightness = originalWindowBrightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+    window.attributes = attributes
+    originalWindowBrightness = null
+  }
+
+  private fun getMediaVolumeFraction(): Double {
+    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    val minVolume = streamMinVolume(audioManager)
+    if (maxVolume <= minVolume) return 0.0
+
+    val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).coerceIn(minVolume, maxVolume)
+    return (volume - minVolume).toDouble() / (maxVolume - minVolume).toDouble()
+  }
+
+  private fun setMediaVolumeFraction(value: Double) {
+    val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    val minVolume = streamMinVolume(audioManager)
+    val target = (minVolume + value.coerceIn(0.0, 1.0) * (maxVolume - minVolume))
+      .roundToInt()
+      .coerceIn(minVolume, maxVolume)
+    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
+  }
+
+  private fun streamMinVolume(audioManager: AudioManager): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    audioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC)
+  } else {
+    0
+  }
+
+  override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+    super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+    flutterEngine?.let { engine ->
+      MethodChannel(engine.dartExecutor.binaryMessenger, PIP_CHANNEL).invokeMethod("onPipChanged", isInPictureInPictureMode)
+      engine.plugins.get(ExoPlayerPlugin::class.java)?.let { plugin ->
+        (plugin as? ExoPlayerPlugin)?.onPipModeChanged(isInPictureInPictureMode)
+      }
+    }
+  }
+
+  override fun onUserLeaveHint() {
+    super.onUserLeaveHint()
+    appIconChannel.onUserLeaveHint()
+    // Auto PiP for API 26-30 (API 31+ uses setAutoEnterEnabled)
+    if (isPipSupportedDevice() &&
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
+      autoPipReady &&
+      isPipPermissionGranted()
+    ) {
+      try {
+        // Notify Flutter to prepare video filter before PiP
+        flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+          MethodChannel(messenger, PIP_CHANNEL).invokeMethod("onAutoPipEntering", null)
+        }
+        val params = buildPipParams(autoPipWidth, autoPipHeight)
+        enterPictureInPictureMode(params)
+      } catch (e: Exception) {
+        Log.w(TAG, "Failed to enter auto-PiP", e)
+      }
+    }
+  }
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  private fun isPipPermissionGranted(): Boolean {
+    val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+    return appOpsManager.checkOpNoThrow(
+      AppOpsManager.OPSTR_PICTURE_IN_PICTURE,
+      applicationInfo.uid,
+      packageName
+    ) == AppOpsManager.MODE_ALLOWED
+  }
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  private fun buildPipParams(width: Int, height: Int, autoEnterEnabled: Boolean? = null): PictureInPictureParams {
+    val (w, h) = if (width <= 0 || height <= 0) {
+      Pair(16, 9)
+    } else {
+      val ratio = width.toFloat() / height.toFloat()
+      when {
+        ratio < 1f / 2.39f -> Pair(100, 239)
+        ratio > 2.39f -> Pair(239, 100)
+        else -> Pair(width, height)
+      }
+    }
+    val builder = PictureInPictureParams.Builder()
+      .setAspectRatio(Rational(w, h))
+    if (autoEnterEnabled != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      builder.setAutoEnterEnabled(autoEnterEnabled)
+    }
+    return builder.build()
+  }
+}

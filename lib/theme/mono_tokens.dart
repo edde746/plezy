@@ -45,6 +45,10 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
   final Color text;
   final Color textMuted;
 
+  /// Interactive and selected-state colour; equal to [text] on the built-in
+  /// themes. Mirrors `colorScheme.primary`.
+  final Color accent;
+
   const MonoTokens({
     required this.radiusSm,
     required this.radiusMd,
@@ -61,6 +65,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     required this.outline,
     required this.text,
     required this.textMuted,
+    required this.accent,
   });
 
   @override
@@ -80,6 +85,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     Color? outline,
     Color? text,
     Color? textMuted,
+    Color? accent,
   }) => MonoTokens(
     radiusSm: radiusSm ?? this.radiusSm,
     radiusMd: radiusMd ?? this.radiusMd,
@@ -96,6 +102,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     outline: outline ?? this.outline,
     text: text ?? this.text,
     textMuted: textMuted ?? this.textMuted,
+    accent: accent ?? this.accent,
   );
 
   @override
@@ -120,6 +127,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
       outline: lerpC(outline, other.outline),
       text: lerpC(text, other.text),
       textMuted: lerpC(textMuted, other.textMuted),
+      accent: lerpC(accent, other.accent),
     );
   }
 }
