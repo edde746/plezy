@@ -14,6 +14,7 @@ class MediaCardSliverPosition {
     required this.columnCount,
     required this.isGrid,
     this.layoutEpoch,
+    this.isOnScreen,
   });
 
   final int index;
@@ -22,10 +23,22 @@ class MediaCardSliverPosition {
   final bool isGrid;
   final Object? layoutEpoch;
 
+  /// Grid cells only: whether the cell intersects the grid's visible extent as
+  /// of the grid's latest layout (cells realized in the cache extent do not).
+  final bool Function()? isOnScreen;
+
   bool get isFirstRow => index < columnCount;
   bool get isFirstColumn => index % columnCount == 0;
   bool get isLastColumn => index % columnCount == columnCount - 1;
   bool get disableScale => !isGrid;
+}
+
+bool _gridCellOnScreen(BuildContext gridContext, SliverGridDelegate delegate, int index) {
+  final constraints = gridContext.mounted ? SliverCrossAxisLayoutBuilder.latestConstraintsOf(gridContext) : null;
+  if (constraints == null) return true;
+  final cell = delegate.getLayout(constraints).getGeometryForChildIndex(index);
+  return cell.scrollOffset < constraints.scrollOffset + constraints.remainingPaintExtent &&
+      cell.trailingScrollOffset > constraints.scrollOffset;
 }
 
 typedef MediaCardSliverItemBuilder = Widget Function(BuildContext context, MediaCardSliverPosition position);
@@ -125,6 +138,7 @@ class MediaCardSliverLayout extends StatelessWidget {
                   columnCount: geometry.columnCount,
                   isGrid: true,
                   layoutEpoch: layoutEpoch,
+                  isOnScreen: () => _gridCellOnScreen(context, geometry.delegate, index),
                 ),
               ),
             );
