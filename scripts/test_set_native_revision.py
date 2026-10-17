@@ -523,6 +523,27 @@ class SetNativeRevisionTest(unittest.TestCase):
         self.assertEqual(sorted(lock["artifacts"]), ["android"])
         self.assertIn("linux has published no libraries", result.stdout)
 
+    def test_a_packaged_artifact_beside_the_native_trees_is_omitted_with_a_note(self) -> None:
+        # mpv-build publishes the mpv-android AAR beside the per-ABI trees;
+        # Plezy builds its own JNI glue against the trees, so the lock keeps
+        # them alone instead of refusing the group.
+        artifacts = artifacts_fixture()
+        artifacts["platforms"]["android"]["libraries"]["mpv-android"] = {
+            "asset": "mpv-android-ab12cd34ef56.aar",
+            "checksum": "7" * 64,
+            "key": "ab12cd34ef56",
+        }
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.root / "mpv-build.lock.json").read_text(encoding="utf-8"),
+            self._expected_lock(commit),
+        )
+        self.assertIn("android library mpv-android is a packaged artifact", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

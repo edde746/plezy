@@ -42,9 +42,12 @@
 #
 # The artifacts map is extracted from artifacts.json at the pinned commit;
 # groups that commit has not published yet are omitted, and each omission is
-# noted on stdout. Serialization is deterministic: two-space indent, sorted
-# keys, trailing newline. Consumers must fail when their group is missing
-# rather than fall back to an unpinned source.
+# noted on stdout. Each group records its one per-variant native library; a
+# packaged artifact (a single asset with no per-variant trees, such as the
+# mpv-android AAR) is not consumed here and is likewise omitted with a note.
+# Serialization is deterministic: two-space indent, sorted keys, trailing
+# newline. Consumers must fail when their group is missing rather than fall
+# back to an unpinned source.
 #
 # Usage:
 #   scripts/set_native_revision.sh <full-40-char-commit-sha> [--repo <path-or-url>]
@@ -437,6 +440,17 @@ def build_lock() -> str | None:
         if not isinstance(libraries, dict):
             errors.append(f"{label}.libraries: expected an object")
             continue
+        packaged = sorted(
+            name
+            for name, entry in libraries.items()
+            if isinstance(entry, dict) and "prebuilt" not in entry and "asset" in entry
+        )
+        for name in packaged:
+            notes.append(
+                f"note: {group} library {name} is a packaged artifact, not "
+                f"per-variant native trees; omitted from {LOCK_PATH}"
+            )
+        libraries = {name: entry for name, entry in libraries.items() if name not in packaged}
         if not libraries:
             notes.append(
                 f"note: {group} has published no libraries at this commit; "
