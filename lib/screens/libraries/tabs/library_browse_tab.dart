@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import '../../../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+
 import '../../../media/library_first_character.dart';
 import '../../../media/library_query.dart';
 import '../../../media/media_item.dart';
@@ -1906,6 +1908,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   bool get _isSortChipVisible => _sortOptions.isNotEmpty && _selectedGrouping != 'folders';
 
+  /// Whether the current browse result count is ready to display.
+  bool get _isItemCountVisible => !isLoading && errorMessage == null;
+
   /// Builds the chips bar widget
   Widget _buildChipsBar() {
     return OptionsChipsBar(
@@ -1940,6 +1945,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       onNavigateUp: widget.onBack,
       onNavigateLeftEdge: _navigateToSidebar,
       onBack: widget.onBack,
+      trailing: _isItemCountVisible
+          ? Semantics(
+              key: const ValueKey('library_browse_item_count'),
+              label: t.libraries.content,
+              value: totalSize.toString(),
+              excludeSemantics: true,
+              child: Text(
+                totalSize.toString(),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            )
+          : null,
     );
   }
 
