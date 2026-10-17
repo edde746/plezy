@@ -1,7 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/library_change_event.dart';
 import '../../../media/media_library.dart';
@@ -13,6 +15,7 @@ import '../../../utils/refresh_pacer.dart';
 import '../../../providers/libraries_provider.dart';
 import '../../../mixins/refreshable.dart';
 import '../../video_player_screen.dart';
+import '../../../widgets/app_refresh_indicator.dart';
 import '../content_state_builder.dart';
 
 /// Base class for library tab screens that provides common state management
@@ -564,7 +567,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
       emptyIcon: emptyIcon,
       emptyMessage: emptyMessage,
       onRetry: loadItems,
-      builder: (items) => RefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
+      builder: (items) => AppRefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
     );
   }
 }
