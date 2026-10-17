@@ -160,7 +160,10 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 create: (context) {
                   final provider = TrackersProvider(httpClientFactory: widget.trackerHttpClientFactory);
                   unawaited(
-                    provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                    provider.onActiveProfileChanged(activeId, validate: !widget.isOfflineMode).catchError((
+                      Object e,
+                      StackTrace s,
+                    ) {
                       appLogger.w('Trackers profile hydrate failed', error: e, stackTrace: s);
                     }),
                   );

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/seerr_account_provider.dart';
+import '../../providers/trackers_provider.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/app_icon.dart';
@@ -13,6 +14,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_section.dart';
+import '../../widgets/settings_builder.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
 import 'tracker_service_info.dart';
@@ -40,6 +42,29 @@ class ServicesSettingsScreen extends StatelessWidget {
               ),
             ),
             SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
+            SettingValueBuilder<bool>(
+              pref: SettingsService.enableTrackerConnectionChecks,
+              builder: (_, enabled, _) => SettingsGroup(
+                title: t.services.connectionChecks,
+                children: [
+                  SettingSwitchTile(
+                    pref: SettingsService.enableTrackerConnectionChecks,
+                    icon: Symbols.sync_rounded,
+                    title: t.services.periodicChecks,
+                    subtitle: t.services.periodicChecksDescription,
+                  ),
+                  if (enabled)
+                    SettingNumberTile(
+                      pref: SettingsService.trackerConnectionCheckMinutes,
+                      icon: Symbols.timer_rounded,
+                      title: t.services.checkInterval,
+                      subtitleBuilder: (minutes) => t.services.checkIntervalDescription(minutes: minutes),
+                      labelText: t.settings.minutesLabel,
+                      suffixText: t.settings.minutesShort,
+                    ),
+                ],
+              ),
+            ),
             if (DiscordRPCService.isAvailable)
               SettingsGroup(
                 title: t.services.integrations,
@@ -86,10 +111,14 @@ class _TrackerHubRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final connected = info.isConnected(context);
+    final needsReconnect = context.select<TrackersProvider, bool>(
+      (account) => account.reconnectRequiredServices.contains(info.service),
+    );
     return _ServiceHubRow(
       leading: CatalogSourceLogo(info.logoSource, size: 24),
       title: info.displayName,
       username: connected ? info.username(context) : null,
+      status: needsReconnect ? t.connections.signInAgain : null,
       onTap: () {
         if (connected) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => info.buildSettingsScreen()));
@@ -107,17 +136,26 @@ class _ServiceHubRow extends StatelessWidget {
 
   /// Non-null when connected. When null, the subtitle shows "Not connected".
   final String? username;
+  final String? status;
 
   final VoidCallback onTap;
 
-  const _ServiceHubRow({required this.leading, required this.title, required this.username, required this.onTap});
+  const _ServiceHubRow({
+    required this.leading,
+    required this.title,
+    required this.username,
+    required this.onTap,
+    this.status,
+  });
 
   @override
   Widget build(BuildContext context) {
     return FocusableListTile(
       leading: leading,
       title: Text(title),
-      subtitle: Text(username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
+      subtitle: Text(
+        status ?? (username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
+      ),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
     );
