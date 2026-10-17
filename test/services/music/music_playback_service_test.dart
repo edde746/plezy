@@ -364,6 +364,9 @@ class FakePlayer implements Player {
   Future<String?> getProperty(String name) async => null;
 
   @override
+  Future<bool> isExternalDisplayActive() async => false;
+
+  @override
   Future<void> setLogLevel(String level) async {}
 
   @override
