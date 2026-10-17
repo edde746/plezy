@@ -884,6 +884,62 @@ final class MpvPlayerContractTests: XCTestCase {
     )
   }
 
+  func testDisabledAutomaticPipRejectsQueuedSystemCallbacks() {
+    let fake = FakePictureInPictureController()
+    let controller = MpvPipController(
+      controller: fake, readiness: { (true, true, true) }, retryScheduler: { $0() })
+    let delegate = RecordingPipDelegate()
+    controller.delegate = delegate
+    controller.setAutoStart(true)
+    controller.setAutoStart(false)
+
+    controller.pictureInPictureWillStart(from: fake)
+    controller.pictureInPictureDidStart(from: fake)
+    controller.pictureInPictureDidStop(from: fake)
+
+    XCTAssertTrue(delegate.events.isEmpty, "A stale automatic start must not prepare or publish PiP")
+    XCTAssertGreaterThan(fake.stopCount, 0)
+  }
+
+  func testDisablingAutomaticPipDuringStartCancelsPreparation() {
+    let fake = FakePictureInPictureController()
+    let controller = MpvPipController(
+      controller: fake, readiness: { (true, true, true) }, retryScheduler: { $0() })
+    let delegate = RecordingPipDelegate()
+    controller.delegate = delegate
+    controller.setAutoStart(true)
+    controller.pictureInPictureWillStart(from: fake)
+    controller.setAutoStart(false)
+    controller.pictureInPictureDidStart(from: fake)
+    controller.pictureInPictureDidStop(from: fake)
+
+    XCTAssertEqual(delegate.events, ["willStart", "failed"])
+    XCTAssertEqual(fake.stopCount, 1)
+  }
+
+  func testExternalDisplayPipSuppressionSurvivesAppSwitching() {
+    var policy = ExternalDisplayPipPolicy()
+    policy.update(externalDisplayActive: true, applicationSceneActive: true)
+    XCTAssertTrue(policy.suppressesAutomaticPip)
+
+    // The accessory may disconnect while the app switcher changes scene visibility.
+    policy.update(externalDisplayActive: false, applicationSceneActive: false)
+    XCTAssertTrue(policy.suppressesAutomaticPip)
+    policy.update(externalDisplayActive: true, applicationSceneActive: false)
+    XCTAssertTrue(policy.suppressesAutomaticPip)
+
+    // Restore ordinary auto-PiP after returning with no external output.
+    policy.update(externalDisplayActive: false, applicationSceneActive: true)
+    XCTAssertFalse(policy.suppressesAutomaticPip)
+  }
+
+  func testOrdinaryAutomaticPipDoesNotRequireAnActiveApplicationScene() {
+    var policy = ExternalDisplayPipPolicy()
+    policy.update(externalDisplayActive: false, applicationSceneActive: true)
+    policy.update(externalDisplayActive: false, applicationSceneActive: false)
+    XCTAssertFalse(policy.suppressesAutomaticPip)
+  }
+
   func testPipStartTimesOutWithoutDelegateOutcome() {
     let fake = FakePictureInPictureController()
     var timeouts: [() -> Void] = []
@@ -1184,6 +1240,70 @@ final class MpvPlayerContractTests: XCTestCase {
     if case .success = result {
       XCTFail("Expected failure", file: file, line: line)
     }
+  }
+}
+
+private final class ExternalDisplayPlaybackCore: MpvPlayerCore {
+  var displayActive = false
+  var applicationBackgrounded = false
+  private(set) var propertyCalls: [(String, String)] = []
+
+  override var isExternalDisplayActive: Bool { displayActive }
+  override var isApplicationBackgrounded: Bool { applicationBackgrounded }
+
+  override func setProperty(_ name: String, value: String) {
+    propertyCalls.append((name, value))
+  }
+
+  var videoWrites: [String] { propertyCalls.filter { $0.0 == "vid" }.map { $0.1 } }
+  var pauseWrites: [String] { propertyCalls.filter { $0.0 == "pause" }.map { $0.1 } }
+}
+
+extension MpvPlayerContractTests {
+  func testLockedExternalDisplayReconnectPreservesVideoTrackAndStaysPaused() {
+    let core = ExternalDisplayPlaybackCore()
+    core.applicationBackgrounded = true
+    core.displayActive = true
+    _ = core.perform(NSSelectorFromString("enterBackground"))
+    XCTAssertTrue(core.videoWrites.isEmpty, "Locking must keep the external video enabled")
+
+    core.displayActive = false
+    core.externalDisplayDidChange()
+    XCTAssertEqual(core.pauseWrites, ["yes"], "Unplugging while locked must pause playback")
+    XCTAssertTrue(core.videoWrites.isEmpty, "Unplugging must preserve the selected video track")
+
+    core.displayActive = true
+    core.externalDisplayDidChange()
+    XCTAssertEqual(core.pauseWrites, ["yes"], "Reconnecting must not automatically resume playback")
+    XCTAssertTrue(core.videoWrites.isEmpty, "An unsuppressed video track must not be overwritten")
+  }
+
+  func testLockedExternalDisplayReconnectRestoresVideoSuppressedBeforeConnection() {
+    let core = ExternalDisplayPlaybackCore()
+    core.applicationBackgrounded = true
+    _ = core.perform(NSSelectorFromString("enterBackground"))
+    XCTAssertEqual(core.videoWrites, ["no"])
+
+    core.displayActive = true
+    core.externalDisplayDidChange()
+    core.externalDisplayDidChange()
+    XCTAssertEqual(core.videoWrites, ["no", "auto"], "Restore background suppression only once")
+    XCTAssertTrue(core.pauseWrites.isEmpty, "Restoring video must not change the playback intent")
+  }
+
+  func testExternalDisplayChangesDoNotPauseForegroundOrPipPlayback() {
+    let core = ExternalDisplayPlaybackCore()
+    core.externalDisplayDidChange()
+    XCTAssertTrue(core.pauseWrites.isEmpty)
+
+    core.applicationBackgrounded = true
+    core.isPipStarting = true
+    core.externalDisplayDidChange()
+    core.isPipStarting = false
+    core.isPipActive = true
+    core.externalDisplayDidChange()
+    XCTAssertTrue(core.pauseWrites.isEmpty)
+    XCTAssertTrue(core.videoWrites.isEmpty)
   }
 }
 
