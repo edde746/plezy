@@ -931,6 +931,12 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
+  Future<bool> isExternalDisplayActive() async {
+    if (!Platform.isIOS || audioOnly || _nativeCoreUnavailable) return false;
+    return await invoke<bool>('isExternalDisplayActive') ?? false;
+  }
+
+  @override
   Future<Map<String, dynamic>> getStats() async {
     if (_nativeCoreUnavailable || !Platform.isAndroid) return super.getStats();
     await _ensureInitialized();

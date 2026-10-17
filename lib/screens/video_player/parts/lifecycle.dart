@@ -61,7 +61,49 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     _recordLifecycleState('pip_transition', action: '${value ? 'started' : 'cleared'}:$reason');
   }
 
+  Future<bool> _hasExternalDisplayPlayback() async {
+    final currentPlayer = player;
+    if (currentPlayer == null || !_isPlayerInitialized) return false;
+    try {
+      final active = await currentPlayer.isExternalDisplayActive();
+      return active && currentPlayer == player && _isPlayerInitialized;
+    } catch (e) {
+      appLogger.w('Failed to query external display playback', error: e);
+      return false;
+    }
+  }
+
+  Future<void> _handleAppPaused() async {
+    final externalDisplayActive = await _hasExternalDisplayPlayback();
+    // The native query can finish after a quick return to the app. Do not
+    // clear the resumed session's controls or wakelock with a stale result.
+    if (!mounted || _shuttingDown || WidgetsBinding.instance.lifecycleState != AppLifecycleState.paused) return;
+    if (externalDisplayActive) {
+      // Keep lock-screen transport controls, but let the built-in screen sleep.
+      await _wakelockController.setEnabled(false);
+      _recordLifecycleState('paused', action: 'skipped_for_external_display');
+      return;
+    }
+    if (_shouldSkipForPip) {
+      _recordLifecycleState('paused', action: 'skipped_for_pip');
+      return;
+    }
+    if (_mediaControls.shouldSuspendForTvBackground) {
+      unawaited(_mediaControls.suspendForTvBackground('paused'));
+    } else {
+      unawaited(_mediaControlsManager?.clear());
+    }
+    unawaited(_wakelockController.setEnabled(false));
+    _recordLifecycleState('paused', action: 'backgrounded');
+  }
+
   Future<void> _handleAppHidden() async {
+    final externalDisplayActive = await _hasExternalDisplayPlayback();
+    if (!mounted || _shuttingDown) return;
+    if (externalDisplayActive) {
+      _recordLifecycleState('hidden', action: 'skipped_for_external_display');
+      return;
+    }
     if (_shouldSkipForPip) {
       _recordLifecycleState('hidden', action: 'skipped_for_pip');
       return;

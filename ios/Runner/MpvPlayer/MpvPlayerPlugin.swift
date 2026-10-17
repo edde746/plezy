@@ -2,6 +2,20 @@ import UIKit
 import Flutter
 import AVKit
 
+/// Keep external playback's priority through inactive/background scene transitions.
+/// An external scene can disappear before the application finishes switching apps.
+struct ExternalDisplayPipPolicy {
+  private(set) var suppressesAutomaticPip = false
+
+  mutating func update(externalDisplayActive: Bool, applicationSceneActive: Bool) {
+    if externalDisplayActive {
+      suppressesAutomaticPip = true
+    } else if applicationSceneActive {
+      suppressesAutomaticPip = false
+    }
+  }
+}
+
 /// Flutter plugin that bridges MPV player to Dart via method and event channels
 class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginShared {
 
@@ -20,6 +34,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   private var pipController: MpvPipController?
   private var pipChannel: FlutterMethodChannel?
   private var autoPipEnabled = false
+  private var externalDisplayPipPolicy = ExternalDisplayPipPolicy()
   private var isManualPipRequest = false
   private var pendingInlineRestoreAfterPip = false
   private var sceneActivationObserverRegistered = false
@@ -93,6 +108,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleSetVideoZoom(call: call, result: result)
     case "isInitialized":
       result(playerCore?.isInitialized ?? false)
+    case "isExternalDisplayActive":
+      DispatchQueue.main.async { [weak self] in
+        result(self?.playerCore?.isExternalDisplayActive ?? false)
+      }
     case "updateFrame":
       handleUpdateFrame(result: result)
     case "setLogLevel":
@@ -188,6 +207,14 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     pendingInlineRestoreAfterPip = false
   }
 
+  private func updateAutomaticPipAvailability() {
+    externalDisplayPipPolicy.update(
+      externalDisplayActive: playerCore?.isExternalDisplayActive == true,
+      applicationSceneActive: isSceneActive)
+    pipController?.setAutoStart(
+      autoPipEnabled && !externalDisplayPipPolicy.suppressesAutomaticPip)
+  }
+
   private func handlePipCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     DispatchQueue.main.async { [weak self] in
       guard let self = self else { result(nil); return }
@@ -207,7 +234,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
               result(nil)
               return
             }
-            pip.setAutoStart(true)
+            self.updateAutomaticPipAvailability()
             if let pc = self.playerCore {
               pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
             }
@@ -286,6 +313,15 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
+  private var canRestoreExternalPlayer: Bool {
+    #if os(iOS)
+      externalDisplayPipPolicy.suppressesAutomaticPip
+        && ExternalDisplayManager.shared.videoSuperview != nil
+    #else
+      false
+    #endif
+  }
+
   private func cleanupPip(notify: Bool, pause: Bool = false) {
     playerCore?.setPipSubtitleCompositing(false)
     playerCore?.isPipStarting = false
@@ -299,7 +335,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
     pendingInlineRestoreAfterPip = true
     if pendingInlineRestoreAfterPip {
-      if isSceneActive {
+      if isSceneActive || canRestoreExternalPlayer {
         restoreInlinePlayerAfterPip()
       } else {
         MpvLog.debug("[MpvPlayerPlugin] Deferring inline restore until scene activation")
@@ -324,6 +360,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   /// sample-buffer layer so future auto-PiP remains possible.
   @objc private func sceneDidActivate() {
     restoreInlinePlayerAfterPip()
+    updateAutomaticPipAvailability()
     if autoPipEnabled, let pip = pipController, let pc = playerCore, !pc.isPipActive {
       pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
     }
@@ -368,6 +405,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       }
 
       self.playerCore = core
+      core.onExternalDisplayChanged = { [weak self] in
+        guard let self else { return }
+        self.updateAutomaticPipAvailability()
+      }
       self.registerSceneActivationObserver()
       core.setVisible(false)
       result(true)
@@ -382,6 +423,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       MpvLog.debug("[MpvPlayerPlugin] dispose preserveDisplayMode=\(preserveDisplayMode.description)")
       self.teardownPip()
       self.autoPipEnabled = false
+      self.externalDisplayPipPolicy = ExternalDisplayPipPolicy()
       self.pendingInlineRestoreAfterPip = false
       self.unregisterSceneActivationObserver()
       self.playerCore?.dispose(preserveDisplayCriteria: preserveDisplayMode)
