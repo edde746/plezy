@@ -8,10 +8,16 @@ enum TransportCommand { play, pause, toggle }
 /// that are not transport keys (including the configured play/pause hotkey,
 /// which callers resolve to [TransportCommand.toggle] themselves).
 ///
+/// Pass [physical] when it is known: on Linux, XKB maps the Play/Pause key
+/// (evdev `KEY_PLAYPAUSE`) to the `XF86AudioPlay` keysym, so the logical key
+/// is [LogicalKeyboardKey.mediaPlay] even though the button is a toggle. The
+/// physical key still says [PhysicalKeyboardKey.mediaPlayPause].
+///
 /// Shared by the video player screen (foreground remote transport, #1375) and
 /// the music hardware-transport handler (#1948); it deliberately lives outside
 /// `lib/widgets/` so the music service layer does not import widget code.
-TransportCommand? classifyTransportKey(LogicalKeyboardKey key) {
+TransportCommand? classifyTransportKey(LogicalKeyboardKey key, [PhysicalKeyboardKey? physical]) {
+  if (physical == PhysicalKeyboardKey.mediaPlayPause) return TransportCommand.toggle;
   if (key == LogicalKeyboardKey.mediaPlay) return TransportCommand.play;
   if (key == LogicalKeyboardKey.mediaPause) return TransportCommand.pause;
   if (key == LogicalKeyboardKey.mediaPlayPause) return TransportCommand.toggle;

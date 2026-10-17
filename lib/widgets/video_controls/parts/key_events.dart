@@ -14,7 +14,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
   /// configured hotkey is always a toggle.
   TransportCommand? _transportCommandFor(KeyEvent event) {
     // Always accept hardware media transport keys (Android TV remotes)
-    final hardware = classifyTransportKey(event.logicalKey);
+    final hardware = classifyTransportKey(event.logicalKey, event.physicalKey);
     if (hardware != null) return hardware;
 
     final physicalKey = event.physicalKey;
