@@ -9,6 +9,41 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
   return true;
 }
 
+/// Direct HTTP/HTTPS URL from a Jellyfin `MediaSource` when `Protocol == 'Http'`
+/// (such as `.strm` files pointing at a remote stream) and no custom headers
+/// are required.
+///
+/// Official Jellyfin clients (`jellyfin-web`) open `MediaSource.Path` directly
+/// for `Protocol: 'Http'` sources instead of routing through
+/// `/Videos/{id}/stream?Static=true`, whose `GetStaticRemoteStreamResult`
+/// returns an empty 302 without a `Location` header when the upstream URL
+/// redirects (#2574).
+String? _jellyfinHttpDirectPlayUrl(Map<String, dynamic>? source) {
+  if (source == null) return null;
+  final protocol = source['Protocol'];
+  if (protocol is! String || protocol.trim().toLowerCase() != 'http') return null;
+  final requiredHeaders = source['RequiredHttpHeaders'];
+  if (requiredHeaders is Map && requiredHeaders.isNotEmpty) return null;
+  if (requiredHeaders is List && requiredHeaders.isNotEmpty) return null;
+  final path = source['Path'];
+  if (path is! String) return null;
+  final trimmed = path.trim();
+  if (trimmed.isEmpty) return null;
+  final uri = Uri.tryParse(trimmed);
+  if (uri == null || !uri.hasAuthority) return null;
+  final scheme = uri.scheme.toLowerCase();
+  if (scheme != 'http' && scheme != 'https') return null;
+  final colonIndex = trimmed.indexOf(':');
+  return colonIndex > 0 ? '$scheme${trimmed.substring(colonIndex)}' : trimmed;
+}
+
+String? _resolveJellyfinHttpDirectPlayUrl(Map<String, dynamic>? negotiatedSource, Map<String, dynamic>? bundleSource) {
+  if (negotiatedSource != null && (negotiatedSource.containsKey('Protocol') || negotiatedSource.containsKey('Path'))) {
+    return _jellyfinHttpDirectPlayUrl(negotiatedSource);
+  }
+  return _jellyfinHttpDirectPlayUrl(bundleSource);
+}
+
 /// Video codecs the client accepts in an original file, as a set: a codec
 /// missing here makes the server transcode instead of serving the file, which
 /// is the right trade when [VideoDecodeCapabilities] reports no hardware
@@ -272,6 +307,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       trickplay: bundle.trickplay,
       mediaIndex: bundle.selectedSourceIndex,
     );
+    var availableVersions = bundle.availableVersions;
     var effectiveSourceId = bundle.selectedSourceId;
     var effectiveContainer = bundle.container;
 
@@ -290,11 +326,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final preset = options.qualityPreset;
     final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
     final wantsOriginal = isTrack ? audioPreset.isOriginal : preset.isOriginal;
-    final requestedAudioStreamId = options.selectedAudioStreamId == null
-        ? options.preferredAudioTrack == null
-              ? null
-              : findSourceAudioTrackForIntent(options.preferredAudioTrack!, mediaInfo.audioTracks)?.id
-        : _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
+    var requestedAudioStreamId = _resolveRequestedJellyfinAudioStreamId(options, mediaInfo);
     final requestedSubtitleStreamId = _validJellyfinSubtitleStreamId(options.preferredSubtitleTrack, mediaInfo);
     // A real external subtitle file stays a file the client fetches, on a transcode as much as on
     // a direct play - it is the one case where the client genuinely holds it. Jellyfin decides
@@ -376,6 +408,8 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
           trickplay: bundle.trickplay,
           mediaIndex: bundle.selectedSourceIndex,
         );
+        availableVersions = _withNegotiatedSelectedVersion(bundle, chosenSource);
+        requestedAudioStreamId ??= _resolveRequestedJellyfinAudioStreamId(options, mediaInfo);
       }
 
       final transcodingUrl = chosenSource['TranscodingUrl'];
@@ -430,12 +464,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     // different file. Pin the source the negotiation actually settled on, as
     // every official client does.
     final pinnedSourceId = _normalizedSourceId(effectiveSourceId);
-    videoUrl ??= isTrack
-        ? buildAudioDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId)
-        : buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
+    videoUrl ??=
+        _resolveJellyfinHttpDirectPlayUrl(chosenSource, bundle.selectedSource) ??
+        (isTrack
+            ? buildAudioDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId)
+            : buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId));
 
     return PlaybackInitializationResult(
-      availableVersions: bundle.availableVersions,
+      availableVersions: availableVersions,
       videoUrl: videoUrl,
       mediaInfo: mediaInfo,
       subtitleSidecars: subtitleSidecars,
@@ -469,6 +505,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
             : buildDirectStreamUrl(item.id, containerExtension: true),
       );
     }
+    final directHttpUrl = _jellyfinHttpDirectPlayUrl(bundle.selectedSource);
     final container = bundle.container;
     final pinnedSourceId = bundle.pinnedSourceId;
     // External players get `stream.{container}`: the extension is the only
@@ -476,12 +513,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     // for players that can't tell an ISO stream from a plain video file.
     if (isTrack) {
       return ExternalPlaybackTarget(
-        url: buildAudioDirectStreamUrl(
-          item.id,
-          container: container,
-          mediaSourceId: pinnedSourceId,
-          containerExtension: true,
-        ),
+        url:
+            directHttpUrl ??
+            buildAudioDirectStreamUrl(
+              item.id,
+              container: container,
+              mediaSourceId: pinnedSourceId,
+              containerExtension: true,
+            ),
       );
     }
     // A direct play, so only real external files: the player reads embedded
@@ -492,7 +531,9 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       mediaIndex: bundle.selectedSourceIndex,
     );
     return ExternalPlaybackTarget(
-      url: buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId, containerExtension: true),
+      url:
+          directHttpUrl ??
+          buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId, containerExtension: true),
       subtitles: [
         for (final sidecar in _buildExternalSubtitles(item.id, bundle.selectedSourceId, mediaInfo)) sidecar.track,
       ],
@@ -505,6 +546,37 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   static String? _normalizedSourceId(String? sourceId) {
     final id = sourceId?.trim();
     return id == null || id.isEmpty ? null : id;
+  }
+
+  List<MediaVersion> _withNegotiatedSelectedVersion(
+    JellyfinPlaybackBundle bundle,
+    Map<String, dynamic> negotiatedSource,
+  ) {
+    final index = bundle.selectedSourceIndex;
+    final versions = bundle.availableVersions;
+    if (index < 0 || index >= versions.length) return versions;
+    final existing = versions[index];
+    final merged = <String, dynamic>{...bundle.selectedSource, ...negotiatedSource};
+    final sourceId = (merged['Id'] as String?) ?? '';
+    final updated = jellyfinMediaSourceToVersion(
+      merged,
+      versionId: existing.id,
+      partId: existing.parts.firstOrNull?.id ?? index.toString(),
+      streamPath: sourceId,
+      name: existing.name,
+    );
+    return [
+      for (var i = 0; i < versions.length; i++)
+        if (i == index) updated else versions[i],
+    ];
+  }
+
+  int? _resolveRequestedJellyfinAudioStreamId(PlaybackInitializationOptions options, MediaSourceInfo mediaInfo) {
+    return options.selectedAudioStreamId == null
+        ? options.preferredAudioTrack == null
+              ? null
+              : findSourceAudioTrackForIntent(options.preferredAudioTrack!, mediaInfo.audioTracks)?.id
+        : _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
   }
 
   int? _validJellyfinAudioStreamId(int? explicit, MediaSourceInfo mediaInfo) {

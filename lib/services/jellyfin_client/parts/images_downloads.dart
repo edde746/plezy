@@ -38,17 +38,18 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
     // Tracks download from the audio static-stream endpoint and have no
     // subtitle sidecars to enumerate.
     if (item.kind == MediaKind.track) {
-      final audioUrl = buildAudioDirectStreamUrl(
-        item.id,
-        container: bundle?.container,
-        mediaSourceId: bundle?.pinnedSourceId,
-      );
+      final audioUrl =
+          _jellyfinHttpDirectPlayUrl(bundle?.selectedSource) ??
+          buildAudioDirectStreamUrl(item.id, container: bundle?.container, mediaSourceId: bundle?.pinnedSourceId);
       return DownloadResolution(videoUrl: audioUrl, mediaSourceId: selectedSourceId, externalSubtitles: const []);
     }
 
     // Direct-stream the selected original file. Jellyfin's `Static=true`
-    // skips the transcoder so the byte-for-byte source lands on disk.
-    final videoUrl = buildDirectStreamUrl(item.id, container: bundle?.container, mediaSourceId: bundle?.pinnedSourceId);
+    // skips the transcoder so the byte-for-byte source lands on disk;
+    // `Protocol: 'Http'` (.strm) sources resolve directly to `MediaSource.Path`.
+    var videoUrl =
+        _jellyfinHttpDirectPlayUrl(bundle?.selectedSource) ??
+        buildDirectStreamUrl(item.id, container: bundle?.container, mediaSourceId: bundle?.pinnedSourceId);
 
     // External subtitle sidecars are listed in the per-source MediaStreams.
     // PlaybackInfo gives us the canonical view including DeliveryUrl when
@@ -74,6 +75,13 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
       appLogger.w('Jellyfin download subtitle enrichment returned no usable source; using the static stream');
       return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitlesResolved: false);
     }
+    videoUrl =
+        _resolveJellyfinHttpDirectPlayUrl(source, bundle?.selectedSource) ??
+        buildDirectStreamUrl(
+          item.id,
+          container: (source['Container'] as String?) ?? bundle?.container,
+          mediaSourceId: bundle?.pinnedSourceId,
+        );
     if (source['MediaStreams'] is! List) {
       appLogger.w('Jellyfin download subtitle enrichment returned malformed streams; using the static stream');
       return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitlesResolved: false);
