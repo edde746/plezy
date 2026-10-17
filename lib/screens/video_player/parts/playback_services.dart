@@ -1,6 +1,11 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
+  /// Loads the scrub preview once the open has a frame on screen. A Plex or
+  /// Emby preview is a BIF file of several to tens of MB, and receiving it
+  /// mid-open drove back-to-back old-generation GCs on the UI thread that
+  /// stalled the open's frames on low-end TV boxes; with the video up the UI
+  /// is static, and a scrub can't happen before there is something to scrub.
   void _queueScrubPreviewLoad({
     required MediaItem metadata,
     required MediaSourceInfo? mediaInfo,
@@ -10,18 +15,23 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     final mediaInfoAtStart = mediaInfo;
     final metadataAtStart = metadata;
+    // Keyed on item + what the preview covers rather than session identity:
+    // the preview is per part (per stacked version, per Jellyfin/Emby source),
+    // so a load that outlives a same-part source switch (quality/audio) still
+    // applies.
+    bool stillWanted() =>
+        mounted &&
+        _currentMetadata.globalKey == metadataAtStart.globalKey &&
+        scrubPreviewServes(mediaInfoAtStart, _currentMediaInfo);
     unawaited(
-      mediaClient
-          .createScrubPreviewSource(item: metadataAtStart, mediaSource: mediaInfoAtStart)
+      _untilFirstFrameUi()
+          .then((_) {
+            if (!stillWanted()) return null;
+            return mediaClient.createScrubPreviewSource(item: metadataAtStart, mediaSource: mediaInfoAtStart);
+          })
           .then((service) {
             if (service == null) return;
-            // Keyed on item + what the preview covers rather than session
-            // identity: the preview is per part (per stacked version, per
-            // Jellyfin/Emby source), so a load that outlives a same-part
-            // source switch (quality/audio) still applies.
-            if (mounted &&
-                _currentMetadata.globalKey == metadataAtStart.globalKey &&
-                scrubPreviewServes(mediaInfoAtStart, _currentMediaInfo)) {
+            if (stillWanted()) {
               _setPlayerState(() => _scrubPreviewSource = service);
             } else {
               service.dispose();
@@ -31,6 +41,22 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
             appLogger.w('Scrub preview load failed', error: e, stackTrace: st);
           }),
     );
+  }
+
+  /// Completes once the current open's spinner is gone (a frame is on screen,
+  /// or the open failed). Never completes if the screen is disposed first.
+  Future<void> _untilFirstFrameUi() {
+    final uiReady = _firstFrame.uiReady;
+    if (uiReady.value) return Future.value();
+    final completer = Completer<void>();
+    void onChanged() {
+      if (!uiReady.value) return;
+      uiReady.removeListener(onChanged);
+      completer.complete();
+    }
+
+    uiReady.addListener(onChanged);
+    return completer.future;
   }
 
   Future<void> _markFirstFrameReady(Player currentPlayer, SettingsService settingsService) async {

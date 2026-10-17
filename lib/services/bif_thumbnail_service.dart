@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import '../utils/isolate_helper.dart';
-
 import 'scrub_preview_source.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -20,8 +18,6 @@ typedef BifEntry = ({int timestampMs, Uint8List imageBytes});
 ///   - 64..   : index table — (imageCount + 1) entries of 8 bytes each:
 ///              [timestamp (uint32 LE), offset (uint32 LE)]
 ///              The last entry is a sentinel (timestamp = 0xFFFFFFFF).
-///
-/// Top-level function so it can be passed to [Isolate.run].
 List<BifEntry> _parseBifBytes(Uint8List bytes) {
   if (bytes.length < 64) return [];
 
@@ -85,7 +81,11 @@ class BifThumbnailService implements ScrubPreviewSource {
         appLogger.w('BIF file too large (${bytes.length} bytes), skipping');
         return;
       }
-      _entries = await tryIsolateRun(() => _parseBifBytes(bytes));
+      // Parsed in place: the walk only reads the index table and hands out
+      // views into [bytes] (well under a millisecond for thousands of
+      // entries), where Isolate.run would first copy the whole file — tens of
+      // MB — into the worker.
+      _entries = _parseBifBytes(bytes);
     } catch (e) {
       appLogger.w('BIF download/parse failed', error: e);
     }
