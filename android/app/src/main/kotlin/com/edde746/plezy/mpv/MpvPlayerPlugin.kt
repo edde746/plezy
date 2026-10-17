@@ -230,7 +230,7 @@ open class MpvPlayerPlugin(
       "setVisible" -> handleSetVisible(call, result)
       "updateFrame" -> handleUpdateFrame(result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
-      "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+      "clearVideoFrameRate" -> handleClearVideoFrameRate(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "getAudioSpdifCodecs" -> handleGetAudioSpdifCodecs(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
@@ -626,9 +626,15 @@ open class MpvPlayerPlugin(
     }
   }
 
-  private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
-    PlayerDebugLog.d(tag) { "clearVideoFrameRate" }
-    playerCore?.clearVideoFrameRate()
+  private fun handleClearVideoFrameRate(call: MethodCall, result: MethodChannel.Result) {
+    val awaitDisplayRestore = call.argument<Boolean>("awaitDisplayRestore") == true
+    PlayerDebugLog.d(tag) { "clearVideoFrameRate(awaitDisplayRestore=$awaitDisplayRestore)" }
+    val core = playerCore
+    if (awaitDisplayRestore && core != null) {
+      core.clearVideoFrameRate { result.success(null) }
+      return
+    }
+    core?.clearVideoFrameRate()
     result.success(null)
   }
 

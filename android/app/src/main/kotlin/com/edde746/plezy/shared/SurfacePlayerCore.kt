@@ -15,7 +15,7 @@ interface SurfacePlayerCore {
   fun onPipModeChanged(isInPipMode: Boolean)
   fun requestAudioFocus(): Boolean
   fun abandonAudioFocus()
-  fun clearVideoFrameRate()
+  fun clearVideoFrameRate(onRestored: (() -> Unit)? = null)
   fun setVideoFrameRate(
     fps: Float,
     videoDurationMs: Long,
