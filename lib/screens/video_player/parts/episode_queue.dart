@@ -49,13 +49,32 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
       }
 
       appLogger.d('Creating sequential play queue for show $showRatingKey');
-      final playQueue = await client.createShowPlayQueue(
+      var playQueue = await client.createShowPlayQueue(
         showRatingKey: showRatingKey,
         shuffle: 0,
         startingEpisodeKey: _currentMetadata.id,
         librarySectionID: _currentMetadata.libraryId,
         librarySectionTitle: _currentMetadata.libraryTitle,
       );
+      // Aired order can come back scrambled (see [breaksEpisodeOrder]);
+      // season order then gives the right next episode.
+      final scrambled = playQueue?.items;
+      if (scrambled != null && breaksEpisodeOrder(scrambled)) {
+        appLogger.w(
+          'Plex queue for show $showRatingKey is out of episode order '
+          '(${episodeOrderLog(scrambled)}); rebuilding it season by season',
+        );
+        playQueue =
+            await client.createShowPlayQueue(
+              showRatingKey: showRatingKey,
+              shuffle: 0,
+              startingEpisodeKey: _currentMetadata.id,
+              librarySectionID: _currentMetadata.libraryId,
+              librarySectionTitle: _currentMetadata.libraryTitle,
+              seasonOrder: true,
+            ) ??
+            playQueue;
+      }
 
       if (playQueue != null && playQueue.items != null && playQueue.items!.isNotEmpty) {
         await playbackState.setPlaybackFromPlayQueue(playQueue, showRatingKey);

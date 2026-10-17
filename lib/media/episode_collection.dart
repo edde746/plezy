@@ -1,6 +1,7 @@
 import 'library_query.dart';
 import '../services/settings_service.dart' show SettingsService, SpecialsOrdering;
 import 'media_item.dart';
+import 'media_item_types.dart';
 import 'media_kind.dart';
 import 'media_server_client.dart';
 
@@ -195,6 +196,26 @@ String? _airDateKey(MediaItem episode) {
   final date = episode.originallyAvailableAt;
   return (date == null || date.isEmpty) ? null : date;
 }
+
+/// Whether regular (non-Specials) episodes in [queue] step backwards in
+/// season/episode number. Plex's aired-order `/allLeaves` queue scrambles
+/// shows where only some episodes carry an air date: on a 50-episode series
+/// with a few dated episodes, E21 was followed by E06, and the misplaced
+/// episodes changed from one queue to the next. Specials are skipped since
+/// aired order may place them anywhere.
+bool breaksEpisodeOrder(List<MediaItem> queue) {
+  MediaItem? last;
+  for (final item in queue) {
+    if (!item.isEpisode || isSpecialSeasonNumber(item.parentIndex)) continue;
+    if (last != null && compareEpisodesSpecialsLast(last, item) > 0) return true;
+    last = item;
+  }
+  return false;
+}
+
+/// [queue] as compact season/episode numbers for logs: "1x20 1x21 1x06".
+String episodeOrderLog(List<MediaItem> queue) =>
+    queue.map((item) => '${item.parentIndex ?? '?'}x${(item.index ?? 0).toString().padLeft(2, '0')}').join(' ');
 
 /// The user's [SettingsService.specialsOrdering] preference, defaulting to
 /// [SpecialsOrdering.respectServer] when settings are unavailable.

@@ -109,6 +109,7 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
     String? startingEpisodeKey,
     String? librarySectionID,
     String? librarySectionTitle,
+    bool seasonOrder = false,
   }) async {
     try {
       // `/allLeaves` preserves Plex's aired episode order and interleaves
@@ -116,7 +117,11 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
       // and the explicit airDate mode. `/children` flattens season-by-season,
       // keeping the Specials folder out of the regular run (#1952). Mirrors
       // the client-side choice in [sortEpisodesByWatchOrder].
-      final leaf = effectiveSpecialsOrdering() == SpecialsOrdering.specialsLast ? 'children' : 'allLeaves';
+      // [seasonOrder] forces `/children` for shows whose aired order Plex
+      // scrambles (see [breaksEpisodeOrder]).
+      final leaf = seasonOrder || effectiveSpecialsOrdering() == SpecialsOrdering.specialsLast
+          ? 'children'
+          : 'allLeaves';
       final uri = '${await buildMetadataUri(showRatingKey)}/$leaf';
       return await createPlayQueue(
         uri: uri,

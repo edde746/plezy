@@ -541,4 +541,28 @@ void main() {
       expect(previousEpisodeSkippingSameFile(episodes, 0), isNull);
     });
   });
+
+  group('breaksEpisodeOrder', () {
+    test('flags a regular episode that steps backwards', () {
+      // Plex's aired order on a show with only a few dated episodes.
+      final queue = [
+        _episode('e20', parentIndex: 1, index: 20),
+        _episode('e21', parentIndex: 1, index: 21),
+        _episode('e06', parentIndex: 1, index: 6, originallyAvailableAt: '1983-11-07'),
+        _episode('e22', parentIndex: 1, index: 22),
+      ];
+      expect(breaksEpisodeOrder(queue), isTrue);
+      expect(episodeOrderLog(queue), '1x20 1x21 1x06 1x22');
+    });
+
+    test('accepts season order and interleaved Specials', () {
+      final queue = [
+        _episode('e01', parentIndex: 1, index: 1),
+        _episode('s01', parentIndex: 0, index: 1),
+        _episode('e02', parentIndex: 1, index: 2),
+        _episode('e201', parentIndex: 2, index: 1),
+      ];
+      expect(breaksEpisodeOrder(queue), isFalse);
+    });
+  });
 }

@@ -589,6 +589,12 @@ void main() {
     final specialsApart = await client.createShowPlayQueue(showRatingKey: 'show-1');
     expect(specialsApart, isNotNull);
     expect(uris.last, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/children');
+
+    // seasonOrder: `/children` whatever the preference, for shows whose
+    // aired order comes back scrambled.
+    await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.respectServer);
+    await client.createShowPlayQueue(showRatingKey: 'show-1', seasonOrder: true);
+    expect(uris.last, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/children');
   });
 
   test('show play queue starting at an episode selects it with key', () async {
