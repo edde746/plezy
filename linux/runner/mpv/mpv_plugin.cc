@@ -363,7 +363,7 @@ constexpr guint kRenderRetryDelayMs = 100;
 // instead of straight from its completion: a persistent failure would otherwise
 // spin the render thread, and under PLEZY_PLANE_RENDER_MAIN_THREAD, where the
 // completion runs inside post_render_job, recurse until the stack overflows.
-// plane_needs_render stays set, so the retry still owes the frame.
+// The completion hands plane_needs_render back, so the retry still owes the frame.
 static void schedule_render_retry(MpvPlugin* self) {
   if (self->render_retry_source_ != 0) return;
   self->render_retry_source_ = g_timeout_add(
@@ -424,6 +424,16 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
   // mpv's redraw latch is what says a new frame actually exists.
   if (!self->plane_needs_render && !self->player->NeedsRedraw()) return;
   if (!self->video_surface->PreparePresent()) return;
+  // The flight takes the refresh request with it, the same way RenderToSurface
+  // consumes mpv's redraw latch before it renders. Consumed here rather than at
+  // completion so that a request made *during* the flight survives it: a rect
+  // deferred by setVideoRect, or a forced render that bailed on
+  // render_in_flight above, sets the flag while this job is still drawing at
+  // the size snapshotted below. A clear at completion would take that request
+  // down with the one the flight served, and with playback paused no later mpv
+  // frame covers for it: the plane keeps the buffer rendered at the old size
+  // until something else forces a render.
+  self->plane_needs_render = FALSE;
 
   // Everything the job touches is snapshotted now and stays alive for the
   // flight's duration: release_video_resources drains the render thread
@@ -454,10 +464,12 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
         if (self->generation != generation) return;
         self->render_in_flight = FALSE;
         if (self->video_surface == nullptr) return;
-        // A swap failure leaves plane_needs_render set, so the retry - and the
-        // frame callback CompletePresent just cleared - are owed to the next
-        // event that moves the plane, or to the delayed retry scheduled below.
-        if (self->video_surface->CompletePresent(swapped)) self->plane_needs_render = FALSE;
+        // A present that did not happen still owes its frame: the flight
+        // consumed the request up front, so it is handed back here. The retry -
+        // and the frame callback CompletePresent just cleared - are then owed
+        // to the next event that moves the plane, or to the delayed retry
+        // scheduled below.
+        if (!self->video_surface->CompletePresent(swapped)) self->plane_needs_render = TRUE;
         // Work that had to wait out the flight, in dependency order: geometry
         // first (wl_egl_window_resize must not race a swap), then the HDR
         // transaction pump (a transition staged mid-flight would pair an
