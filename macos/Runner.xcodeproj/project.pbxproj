@@ -892,10 +892,10 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "mpv-build" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/edde746/mpv-build";
+			repositoryURL = "https://github.com/kristofferR/mpv-build";
 			requirement = {
 				kind = revision;
-				revision = 505e1616594870da97bd3c591d4809a01d11d313;
+				revision = 8cc6b4153ddf198e7ecddc22dc9be92af153f4b8;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
