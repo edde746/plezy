@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/models/livetv_capture_buffer.dart';
+import 'package:plezy/media/live_tv_timeline.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -23,6 +23,7 @@ import 'package:plezy/widgets/video_controls/mobile_video_controls.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
+import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 import 'package:plezy/widgets/video_controls/widgets/live_timeline_bar.dart';
 import 'package:plezy/widgets/video_controls/widgets/volume_control.dart';
 
@@ -133,11 +134,18 @@ void main() {
         hasFirstFrame: hasFirstFrame,
         canNavigateMediaItems: false,
         isLive: liveSeeks != null,
-        captureBuffer: liveSeeks == null
+        liveTimelineForPosition: liveSeeks == null
             ? null
-            : CaptureBuffer(startedAt: _liveStartEpoch.toDouble(), seekStartSeconds: 0, seekEndSeconds: 3600),
-        liveEpochForPosition: liveSeeks == null ? null : (position) => _liveStartEpoch + position.inSeconds,
-        onLiveSeek: liveSeeks?.add,
+            : (position) => LiveTvTimeline.resolve(
+                playback: LiveTvPlaybackPosition(
+                  epoch: _liveStartEpoch + position.inMilliseconds / 1000,
+                  active: true,
+                  accuracy: LiveTvTimeAccuracy.estimated,
+                ),
+                seekable: const LiveTvSeekWindow(startEpoch: _liveStartEpoch, endEpoch: _liveStartEpoch + 3600),
+                metadataNowEpoch: _liveStartEpoch.toDouble(),
+              ),
+        onLiveSeek: liveSeeks == null ? null : (epoch) => liveSeeks.add(epoch.round()),
       );
       await tester.pumpWidget(
         shell(
@@ -259,12 +267,7 @@ void main() {
     testWidgets('a held live TV timeline keeps phone controls up and seeks on release', (tester) async {
       final liveSeeks = <int>[];
       await pumpControls(tester, surface: _Surface.phone, liveSeeks: liveSeeks);
-      final scrubber = find.descendant(
-        of: find.byType(LiveTimelineBar),
-        matching: find.byWidgetPredicate(
-          (widget) => widget is Semantics && widget.properties.label == t.videoControls.timelineSlider,
-        ),
-      );
+      final scrubber = find.descendant(of: find.byType(LiveTimelineBar), matching: find.byType(TimelineSlider));
       expect(scrubber, findsOneWidget);
 
       final gesture = await tester.startGesture(tester.getCenter(scrubber));
@@ -290,7 +293,7 @@ void main() {
 
 enum _Surface { tv, desktop, phone }
 
-const _liveStartEpoch = 1767268800;
+const _liveStartEpoch = 1767268800.0;
 
 /// Minimal [Player] whose playing state the test can flip, the way a remote's
 /// pause reaches the controls.

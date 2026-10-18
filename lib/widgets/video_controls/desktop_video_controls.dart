@@ -18,7 +18,7 @@ import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
-import '../../models/livetv_capture_buffer.dart';
+import '../../media/live_tv_timeline.dart';
 import 'models/track_controls_state.dart';
 import 'player_chrome_controller.dart';
 import 'widgets/content_strip.dart';
@@ -77,14 +77,13 @@ class DesktopVideoControls extends StatefulWidget {
   final String? liveChannelName;
 
   // Live TV time-shift
-  final CaptureBuffer? captureBuffer;
-  final bool isAtLiveEdge;
-  final int Function(Duration position)? liveEpochForPosition;
-  final ValueChanged<int>? onLiveSeek;
+  final LiveTvTimeline Function(Duration position)? liveTimelineForPosition;
+  final ValueChanged<double>? onLiveSeek;
 
   /// Relative live-TV skip entry point (delta seconds); the parent accumulates
   /// and debounces, and reports back the seconds it actually applied.
   final LiveSeekBy? onLiveSeekBy;
+  final LiveSeekBy? onLiveSeekByWithPreview;
   final VoidCallback? onJumpToLive;
 
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)
@@ -142,11 +141,10 @@ class DesktopVideoControls extends StatefulWidget {
     this.hasFirstFrame,
     this.thumbnailDataBuilder,
     this.liveChannelName,
-    this.captureBuffer,
-    this.isAtLiveEdge = true,
-    this.liveEpochForPosition,
+    this.liveTimelineForPosition,
     this.onLiveSeek,
     this.onLiveSeekBy,
+    this.onLiveSeekByWithPreview,
     this.onJumpToLive,
     required this.useDpadNavigation,
     this.serverId,
@@ -579,7 +577,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       // sums them.
       if (_isLive && widget.onLiveSeekBy != null) {
         final stepSeconds = (widget.seekTimeSmall * effectiveMultiplier).clamp(1, 300).round();
-        widget.onLiveSeekBy!(isForward ? stepSeconds : -stepSeconds);
+        (widget.onLiveSeekByWithPreview ?? widget.onLiveSeekBy)!(isForward ? stepSeconds : -stepSeconds);
         widget.onFocusActivity?.call();
         return KeyEventResult.handled;
       }
@@ -697,13 +695,17 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
           Expanded(
             child: VideoControlsHeader(
               metadata: widget.metadata,
+              player: widget.player,
+              liveTimelineForPosition: _isLive ? widget.liveTimelineForPosition : null,
               style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
               onBack: widget.onBack,
               onCancelAutoHide: widget.onCancelAutoHide,
               onStartAutoHide: widget.onStartAutoHide,
             ),
           ),
-          if (_isLive && (widget.captureBuffer == null || widget.isAtLiveEdge)) ...[
+          if (_isLive &&
+              (widget.liveTimelineForPosition == null ||
+                  (widget.liveTimelineForPosition?.call(widget.player.state.position).isAtLive ?? true))) ...[
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -727,13 +729,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
-          if (_isLive && widget.captureBuffer != null) ...[
+          if (_isLive && widget.liveTimelineForPosition != null) ...[
             LiveTimelineBar(
               player: widget.player,
-              captureBuffer: widget.captureBuffer!,
-              epochForPosition: widget.liveEpochForPosition!,
-              isAtLiveEdge: widget.isAtLiveEdge,
+              timelineForPosition: widget.liveTimelineForPosition!,
+
               onSeekEnd: widget.onLiveSeek,
+              onSeekBy: widget.onLiveSeekBy,
               horizontalLayout: true,
               focusNode: _timelineFocusNode,
               onKeyEvent: _handleTimelineKeyEvent,
@@ -797,7 +799,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     },
                   ),
                 ],
-                if (!_isLive || widget.captureBuffer != null) ...[
+                if (!_isLive || widget.onLiveSeekBy != null) ...[
                   // Skip backward
                   Opacity(
                     opacity: _canControl ? 1.0 : 0.5,
@@ -827,7 +829,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     },
                   ),
                 ),
-                if (!_isLive || widget.captureBuffer != null) ...[
+                if (!_isLive || widget.onLiveSeekBy != null) ...[
                   // Skip forward
                   Opacity(
                     opacity: _canControl ? 1.0 : 0.5,
@@ -841,7 +843,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   ),
                 ],
                 // Go to Live button (only when time-shifted behind live edge)
-                if (_isLive && widget.captureBuffer != null && !widget.isAtLiveEdge && widget.onJumpToLive != null) ...[
+                if (_isLive &&
+                    widget.liveTimelineForPosition != null &&
+                    !(widget.liveTimelineForPosition?.call(widget.player.state.position).isAtLive ?? true) &&
+                    widget.onJumpToLive != null) ...[
                   _buildFocusableButton(
                     focusNode: _goToLiveFocusNode,
                     index: 7,

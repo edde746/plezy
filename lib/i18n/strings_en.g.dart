@@ -3894,6 +3894,24 @@ class Translations$liveTv$en {
 	/// en: 'Unknown Program'
 	String get unknownProgram => 'Unknown Program';
 
+	/// en: 'Live program (playback may be outside this program)'
+	String get timelineLiveProgram => 'Live program (playback may be outside this program)';
+
+	/// en: 'Buffer timeline'
+	String get timelineBuffer => 'Buffer timeline';
+
+	/// en: 'Timeline unavailable'
+	String get timelineUnavailable => 'Timeline unavailable';
+
+	/// en: 'Estimated playback'
+	String get timelineEstimated => 'Estimated playback';
+
+	/// en: 'Pending seek'
+	String get timelinePending => 'Pending seek';
+
+	/// en: 'Schedule may be outdated'
+	String get timelineStale => 'Schedule may be outdated';
+
 	/// en: 'Unknown'
 	String get unknownHub => 'Unknown';
 
@@ -9249,6 +9267,12 @@ extension on Translations {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.liveStreamFailed' => 'Live stream failed',
 			'liveTv.unknownProgram' => 'Unknown Program',
+			'liveTv.timelineLiveProgram' => 'Live program (playback may be outside this program)',
+			'liveTv.timelineBuffer' => 'Buffer timeline',
+			'liveTv.timelineUnavailable' => 'Timeline unavailable',
+			'liveTv.timelineEstimated' => 'Estimated playback',
+			'liveTv.timelinePending' => 'Pending seek',
+			'liveTv.timelineStale' => 'Schedule may be outdated',
 			'liveTv.unknownHub' => 'Unknown',
 			'liveTv.unknownError' => 'Unknown error',
 			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
@@ -9323,14 +9347,14 @@ extension on Translations {
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Couldn\'t start the channel: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Couldn\'t switch channel: ${reason}',
@@ -9837,14 +9861,14 @@ extension on Translations {
 			'metadataEdit.never' => 'Never',
 			'metadataEdit.afterADay' => 'After a day',
 			'metadataEdit.afterAWeek' => 'After a week',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterAMonth' => 'After a month',
 			'metadataEdit.onNextRefresh' => 'On next refresh',
 			'metadataEdit.seasons' => 'Seasons',
 			'metadataEdit.show' => 'Show',
 			'metadataEdit.hide' => 'Hide',
 			'metadataEdit.episodeOrdering' => 'Episode Ordering',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
