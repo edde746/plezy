@@ -840,17 +840,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     ),
                   ),
                 ],
-                // Go to Live button (only when time-shifted behind live edge)
-                if (_isLive && widget.captureBuffer != null && !widget.isAtLiveEdge && widget.onJumpToLive != null) ...[
-                  _buildFocusableButton(
-                    focusNode: _goToLiveFocusNode,
-                    index: 7,
-                    icon: Symbols.stream_rounded,
-                    onPressed: _canControl ? widget.onJumpToLive : null,
-                    semanticLabel: t.liveTv.goToLive,
-                    tooltip: t.liveTv.goToLive,
-                  ),
-                ],
                 if (!_isLive) ...[
                   // Next chapter
                   StreamBuilder<String?>(
@@ -884,9 +873,29 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     ),
                   ),
                 ],
-                // Finish time (hidden for live TV, faded when too narrow)
+                // Live TV: Go to Live, only while time-shifted behind the live
+                // edge. A labelled pill, since no glyph names this action and
+                // a tooltip never shows under D-pad focus. It takes the slot
+                // VOD gives the finish time, so a long translation ellipsizes
+                // instead of overflowing the row.
+                // VOD: finish time, faded when too narrow.
                 if (_isLive)
-                  const Spacer()
+                  Expanded(
+                    child: widget.captureBuffer != null && !widget.isAtLiveEdge && widget.onJumpToLive != null
+                        ? Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: _buildFocusableButton(
+                              focusNode: _goToLiveFocusNode,
+                              index: 7,
+                              icon: Symbols.fiber_manual_record_rounded,
+                              iconSize: 12,
+                              label: t.liveTv.goToLive,
+                              onPressed: _canControl ? widget.onJumpToLive : null,
+                              semanticLabel: t.liveTv.goToLive,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  )
                 else
                   Expanded(
                     child: FinishTimeBuilder(
@@ -968,12 +977,14 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     Color color = Colors.white,
     double iconSize = 24,
     String? tooltip,
+    String? label,
   }) {
     return VideoControlButton(
       icon: icon,
       iconSize: iconSize,
       color: color,
       tooltip: tooltip,
+      label: label,
       semanticLabel: semanticLabel,
       focusNode: focusNode,
       onKeyEvent: (node, event) => _handleButtonKeyEvent(node, event, index),
