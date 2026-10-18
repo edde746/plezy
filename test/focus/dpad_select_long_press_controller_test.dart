@@ -26,6 +26,22 @@ const _up = KeyUpEvent(
   timeStamp: Duration(milliseconds: 450),
 );
 
+/// One controller plus the presses it reported. Each scenario keeps its own
+/// event order and elapsed intervals at the call site; only the counters and
+/// the always-active owner wiring are shared.
+class _PressRecorder {
+  final controller = DpadSelectLongPressController();
+  int shortPresses = 0;
+  int longPresses = 0;
+
+  KeyEventResult handle(KeyEvent event) => controller.handleKeyEvent(
+    event,
+    isOwnerActive: () => true,
+    onShortPress: () => shortPresses++,
+    onLongPress: () => longPresses++,
+  );
+}
+
 void main() {
   // Long-press fire arms SelectKeyUpSuppressor, whose hardware observer
   // registers on HardwareKeyboard.instance - that needs a live binding.
@@ -35,108 +51,66 @@ void main() {
 
   test('initial down starts once and down/repeat events do not restart it', () {
     fakeAsync((async) {
-      final controller = DpadSelectLongPressController();
-      var shortPresses = 0;
-      var longPresses = 0;
+      final presses = _PressRecorder();
 
-      KeyEventResult handle(KeyEvent event) => controller.handleKeyEvent(
-        event,
-        isOwnerActive: () => true,
-        onShortPress: () => shortPresses++,
-        onLongPress: () => longPresses++,
-      );
-
-      expect(handle(_down), KeyEventResult.handled);
+      expect(presses.handle(_down), KeyEventResult.handled);
       async.elapse(const Duration(milliseconds: 400));
-      expect(handle(_secondDown), KeyEventResult.handled);
-      expect(handle(_repeat), KeyEventResult.handled);
-      expect(shortPresses, 0);
-      expect(longPresses, 0);
+      expect(presses.handle(_secondDown), KeyEventResult.handled);
+      expect(presses.handle(_repeat), KeyEventResult.handled);
+      expect(presses.shortPresses, 0);
+      expect(presses.longPresses, 0);
 
       async.elapse(const Duration(milliseconds: 100));
-      expect(longPresses, 1);
-      expect(shortPresses, 0);
-      expect(handle(_up), KeyEventResult.handled);
-      expect(shortPresses, 0);
+      expect(presses.longPresses, 1);
+      expect(presses.shortPresses, 0);
+      expect(presses.handle(_up), KeyEventResult.handled);
+      expect(presses.shortPresses, 0);
     });
   });
 
   test('key up before the deadline fires one short press and cancels long press', () {
     fakeAsync((async) {
-      final controller = DpadSelectLongPressController();
-      var shortPresses = 0;
-      var longPresses = 0;
+      final presses = _PressRecorder();
 
-      controller.handleKeyEvent(
-        _down,
-        isOwnerActive: () => true,
-        onShortPress: () => shortPresses++,
-        onLongPress: () => longPresses++,
-      );
+      presses.handle(_down);
       async.elapse(const Duration(milliseconds: 450));
-      expect(
-        controller.handleKeyEvent(
-          _up,
-          isOwnerActive: () => true,
-          onShortPress: () => shortPresses++,
-          onLongPress: () => longPresses++,
-        ),
-        KeyEventResult.handled,
-      );
+      expect(presses.handle(_up), KeyEventResult.handled);
       async.elapse(const Duration(seconds: 1));
 
-      expect(shortPresses, 1);
-      expect(longPresses, 0);
+      expect(presses.shortPresses, 1);
+      expect(presses.longPresses, 0);
     });
   });
 
   test('focus-loss reset cancels a pending press and clears key-down state', () {
     fakeAsync((async) {
-      final controller = DpadSelectLongPressController();
-      var shortPresses = 0;
-      var longPresses = 0;
+      final presses = _PressRecorder();
 
-      void handle(KeyEvent event) => controller.handleKeyEvent(
-        event,
-        isOwnerActive: () => true,
-        onShortPress: () => shortPresses++,
-        onLongPress: () => longPresses++,
-      );
-
-      handle(_down);
-      controller.reset();
+      presses.handle(_down);
+      presses.controller.reset();
       async.elapse(const Duration(seconds: 1));
-      handle(_up);
+      presses.handle(_up);
 
-      expect(shortPresses, 0);
-      expect(longPresses, 0);
+      expect(presses.shortPresses, 0);
+      expect(presses.longPresses, 0);
 
-      handle(_down);
+      presses.handle(_down);
       async.elapse(DpadSelectLongPressController.defaultDuration);
-      expect(longPresses, 1);
+      expect(presses.longPresses, 1);
     });
   });
 
   test('disposal cancels the timer and prevents later key-up activation', () {
     fakeAsync((async) {
-      final controller = DpadSelectLongPressController();
-      var shortPresses = 0;
-      var longPresses = 0;
+      final presses = _PressRecorder();
 
-      void handle(KeyEvent event) => controller.handleKeyEvent(
-        event,
-        isOwnerActive: () => true,
-        onShortPress: () => shortPresses++,
-        onLongPress: () => longPresses++,
-      );
-
-      handle(_down);
-      controller.dispose();
+      presses.handle(_down);
+      presses.controller.dispose();
       async.elapse(const Duration(seconds: 1));
-      handle(_up);
+      presses.handle(_up);
 
-      expect(shortPresses, 0);
-      expect(longPresses, 0);
+      expect(presses.shortPresses, 0);
+      expect(presses.longPresses, 0);
     });
   });
 }

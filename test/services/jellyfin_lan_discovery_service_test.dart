@@ -108,11 +108,17 @@ void main() {
       }
     });
 
-    test('UdpBroadcastSocketSet close cancels owned datagram listeners', () async {
+    test('UdpBroadcastSocketSet close cancels owned datagram listeners and closes every socket', () async {
       final socketSet = await UdpBroadcastSockets.bind();
       socketSet.listen((_) {}, debugLabel: 'JellyfinLanDiscoveryService test');
 
-      await expectLater(socketSet.close(), completes);
+      await socketSet.close();
+
+      // A closed RawDatagramSocket drops sends (returns 0 bytes) instead of
+      // transmitting; every socket in the set must be in that state.
+      for (final socket in socketSet.sockets) {
+        expect(socket.send(utf8.encode('ping'), InternetAddress.loopbackIPv4, 9), 0);
+      }
     });
   });
 }

@@ -23,9 +23,13 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
 
   @override
   Future<MetadataEditDraft> load(MediaItem item) async {
-    MediaItem fullItem = item;
-    if (item.summary == null || item.libraryId == null) {
-      fullItem = await client.fetchItem(item.id) ?? item;
+    // Always start from the item's own metadata: a list or hub row can carry
+    // a summary and library id yet omit genres, labels, credits and other
+    // fields, and save() diffs tag edits against these loaded originals, so a
+    // partial row would drop the tags it never showed.
+    final fullItem = await client.fetchEditableItem(item.id);
+    if (fullItem == null) {
+      throw StateError('Editable Plex metadata item is unavailable');
     }
 
     late final Map<String, String> preferences;
@@ -107,6 +111,33 @@ class PlexMetadataEditAdapter extends MetadataEditAdapter {
       draft.originalValues[field.id] = value;
     }
     return success;
+  }
+
+  @override
+  Future<List<String>> fetchTagSuggestions(MetadataEditDraft draft, MetadataEditField field) async {
+    // Plex advertises per-library tag facets under /library/sections/{id}/filters;
+    // 'label' is the Plex name for what Jellyfin calls Tags. Older PMS versions
+    // may not advertise it — return empty and let recents fill in.
+    final filterName = switch (field.id) {
+      'label' => 'label',
+      'genre' => 'genre',
+      _ => null,
+    };
+    final sectionId = int.tryParse(draft.currentItem.libraryId ?? draft.sourceItem.libraryId ?? '');
+    if (filterName == null || sectionId == null) return const [];
+    try {
+      final filters = await client.getLibraryFilters(sectionId.toString());
+      final filter = filters.where((f) => f.filter == filterName).firstOrNull;
+      if (filter == null || filter.key.isEmpty) return const [];
+      final values = await client.getFilterValues(filter.key);
+      return [
+        for (final value in values)
+          if (value.title.isNotEmpty) value.title,
+      ];
+    } catch (e, st) {
+      appLogger.w('Failed to load Plex tag suggestions', error: e, stackTrace: st);
+      return const [];
+    }
   }
 
   @override

@@ -119,7 +119,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Stream of peer IDs when a peer disconnects
   Stream<String> get onPeerDisconnected => _peerDisconnectedController.stream;
 
-  /// Stream of sync messages received from peers
   Stream<SyncMessage> get onMessageReceived => _messageReceivedController.stream;
 
   /// Stream of errors
@@ -176,7 +175,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Whether currently connected to a session
   bool get isConnected => _admitted && _channel != null && _connectedPeers.isNotEmpty;
 
-  /// List of connected peer IDs
   List<String> get connectedPeers => _connectedPeers.toList();
 
   /// Generate a short, readable session ID (5 alphanumeric chars)
@@ -586,7 +584,6 @@ class WatchTogetherPeerService with KeepaliveMixin {
     }
   }
 
-  /// Send a raw JSON map to the relay.
   void _sendRaw(Map<String, dynamic> msg) {
     try {
       _channel?.sink.add(jsonEncode(msg));

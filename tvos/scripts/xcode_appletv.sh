@@ -242,7 +242,6 @@ EmbedFlutterFrameworks() {
     NormalizeFrameworkMinimumOSVersion "$source" "$minimum_os_version"
     rm -rf "$destination"
     cp -R "$source" "$app_frameworks_dir"
-    NormalizeFrameworkMinimumOSVersion "$destination" "$minimum_os_version"
   done
 
   for framework in "$app_frameworks_dir"/*.framework; do
@@ -430,6 +429,7 @@ BuildAppDebug() {
     --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
     --tfa --target=flutter \
     -DTVOS_BUILD=true \
+    -DSUPPORTER_MODE=iap \
     --output-dill "$OUTDIR/App.framework/flutter_assets/kernel_blob.bin" \
     "$FLUTTER_APPLICATION_PATH/lib/main.dart"
 
@@ -476,11 +476,9 @@ BuildAppDebug() {
   echo " └─copy frameworks"
   CopyAppFrameworkInfoPlist "$OUTDIR/App.framework/Info.plist" "$tvos_deployment_target"
 
-  # Two destinations:
-  # 1. BUILT_PRODUCTS_DIR — Swift/linker search path. For plain builds this
-  #    equals TARGET_BUILD_DIR; for Archive it differs.
-  # 2. $TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks — embedded into Runner.app
-  #    so @rpath resolves at runtime.
+  # BUILT_PRODUCTS_DIR — Swift/linker search path. For plain builds this
+  # equals TARGET_BUILD_DIR; for Archive it differs. The late sync_version
+  # phase (EmbedFlutterFrameworks) owns embedding into Runner.app and signing.
   #
   # DO NOT drop frameworks flat into TARGET_BUILD_DIR. During archive that's
   # Products/Applications/ — sibling to Runner.app — and extra framework
@@ -489,19 +487,11 @@ BuildAppDebug() {
   rm -rf "$BUILT_PRODUCTS_DIR/App.framework" "$BUILT_PRODUCTS_DIR/Flutter.framework"
   cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$BUILT_PRODUCTS_DIR"
 
-  APP_FRAMEWORKS_DIR="$TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks"
-  mkdir -p "$APP_FRAMEWORKS_DIR"
-  rm -rf "$APP_FRAMEWORKS_DIR/App.framework" "$APP_FRAMEWORKS_DIR/Flutter.framework"
-  cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$APP_FRAMEWORKS_DIR"
-
-  # Sign the embedded frameworks. Skip when signing is disabled. Xcode's
-  # later CodeSign phase re-signs the full app anyway.
+  # Sign the published build products. Skip when signing is disabled.
   echo " └─Sign"
   if [[ "$debug_sim" != "true" && -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" && "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/App.framework/App"
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/Flutter.framework/Flutter"
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/App.framework/App"
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/Flutter.framework/Flutter"
   else
     echo "   (skipped — no code sign identity or signing disabled)"
   fi
@@ -599,6 +589,7 @@ BuildAppRelease() {
     -DFLUTTER_BUILD_MODE=release \
     -DTARGET_PLATFORM=TVOS \
     -DTVOS_BUILD=true \
+    -DSUPPORTER_MODE=iap \
     --output-dill "$OUTDIR/app.dill" \
     "$FLUTTER_APPLICATION_PATH/lib/main.dart"
 
@@ -639,17 +630,10 @@ BuildAppRelease() {
   rm -rf "$BUILT_PRODUCTS_DIR/App.framework" "$BUILT_PRODUCTS_DIR/Flutter.framework"
   cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$BUILT_PRODUCTS_DIR"
 
-  APP_FRAMEWORKS_DIR="$TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks"
-  mkdir -p "$APP_FRAMEWORKS_DIR"
-  rm -rf "$APP_FRAMEWORKS_DIR/App.framework" "$APP_FRAMEWORKS_DIR/Flutter.framework"
-  cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$APP_FRAMEWORKS_DIR"
-
   echo " └─Sign"
   if [[ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" && "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/App.framework/App"
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/Flutter.framework/Flutter"
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/App.framework/App"
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/Flutter.framework/Flutter"
   else
     echo "   (skipped — no code sign identity or signing disabled)"
   fi

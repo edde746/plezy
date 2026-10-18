@@ -41,11 +41,14 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
+	late final Translations$supporter$en supporter = Translations$supporter$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
 	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
 	late final Translations$fileInfo$en fileInfo = Translations$fileInfo$en.internal(_root);
@@ -103,6 +106,41 @@ class Translations$app$en {
 
 	/// en: 'Plezy'
 	String get title => 'Plezy';
+}
+
+// Path: appIcon
+class Translations$appIcon$en {
+	Translations$appIcon$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'App icon'
+	String get title => 'App icon';
+
+	/// en: 'Default'
+	String get defaultIcon => 'Default';
+
+	/// en: 'Current icon'
+	String get current => 'Current icon';
+
+	/// en: 'Supporter perk'
+	String get locked => 'Supporter perk';
+
+	/// en: 'Alternate icons are a Supporter perk.'
+	String get lockedHint => 'Alternate icons are a Supporter perk.';
+
+	/// en: 'Couldn't change the app icon'
+	String get changeFailed => 'Couldn\'t change the app icon';
+
+	/// en: 'The new icon appears on your home screen once you leave Plezy.'
+	String get launcherHint => 'The new icon appears on your home screen once you leave Plezy.';
+
+	/// en: 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.'
+	String get tvLauncherHint => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.';
+
+	late final Translations$appIcon$names$en names = Translations$appIcon$names$en.internal(_root);
 }
 
 // Path: auth
@@ -379,6 +417,68 @@ class Translations$update$en {
 	String get checkFailed => 'Failed to check for updates';
 }
 
+// Path: supporter
+class Translations$supporter$en {
+	Translations$supporter$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Plezy Supporter'
+	String get title => 'Plezy Supporter';
+
+	/// en: 'A one-time purchase that supports Plezy's development and unlocks cosmetic extras:'
+	String get intro => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:';
+
+	/// en: 'Preset themes'
+	String get presetThemes => 'Preset themes';
+
+	/// en: 'Ember, Glacier, Forest, Plum and Paper'
+	String get presetThemesDescription => 'Ember, Glacier, Forest, Plum and Paper';
+
+	/// en: 'Custom theme'
+	String get customTheme => 'Custom theme';
+
+	/// en: 'Pick every color yourself'
+	String get customThemeDescription => 'Pick every color yourself';
+
+	/// en: 'App icons'
+	String get appIcons => 'App icons';
+
+	/// en: 'Choose an alternate Plezy icon'
+	String get appIconsDescription => 'Choose an alternate Plezy icon';
+
+	/// en: 'Buy for ${price}'
+	String buy({required Object price}) => 'Buy for ${price}';
+
+	/// en: 'Loading price...'
+	String get loadingPrice => 'Loading price...';
+
+	/// en: 'Restore Purchases'
+	String get restore => 'Restore Purchases';
+
+	/// en: 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.'
+	String get pending => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.';
+
+	/// en: 'Thank you for supporting Plezy'
+	String get thankYouTitle => 'Thank you for supporting Plezy';
+
+	/// en: 'Your Supporter extras are unlocked.'
+	String get thankYouBody => 'Your Supporter extras are unlocked.';
+
+	/// en: 'Unlock themes and app icons with a one-time purchase'
+	String get tileSubtitle => 'Unlock themes and app icons with a one-time purchase';
+
+	/// en: 'Unlock themes with a one-time purchase'
+	String get tileSubtitleThemesOnly => 'Unlock themes with a one-time purchase';
+
+	/// en: 'Thank you for your support'
+	String get tileUnlocked => 'Thank you for your support';
+
+	late final Translations$supporter$errors$en errors = Translations$supporter$errors$en.internal(_root);
+}
+
 // Path: settings
 class Translations$settings$en {
 	Translations$settings$en.internal(this._root);
@@ -455,6 +555,21 @@ class Translations$settings$en {
 
 	/// en: 'OLED'
 	String get oledTheme => 'OLED';
+
+	/// en: 'Ember'
+	String get emberTheme => 'Ember';
+
+	/// en: 'Glacier'
+	String get glacierTheme => 'Glacier';
+
+	/// en: 'Forest'
+	String get forestTheme => 'Forest';
+
+	/// en: 'Plum'
+	String get plumTheme => 'Plum';
+
+	/// en: 'Paper'
+	String get paperTheme => 'Paper';
 
 	/// en: 'Library Density'
 	String get libraryDensity => 'Library Density';
@@ -645,6 +760,15 @@ class Translations$settings$en {
 	/// en: 'Direct play videos already within the quality limit instead of transcoding them'
 	String get directPlayCoveredQualityDescription => 'Direct play videos already within the quality limit instead of transcoding them';
 
+	/// en: 'Video Codecs'
+	String get videoCodecs => 'Video Codecs';
+
+	/// en: 'Unchecked codecs are transcoded by the server'
+	String get videoCodecsDescription => 'Unchecked codecs are transcoded by the server';
+
+	/// en: 'Always accepted'
+	String get videoCodecsAlwaysAccepted => 'Always accepted';
+
 	/// en: 'Music Quality'
 	String get musicQualityTitle => 'Music Quality';
 
@@ -815,6 +939,9 @@ class Translations$settings$en {
 
 	/// en: 'Shortcuts reset to defaults'
 	String get shortcutsReset => 'Shortcuts reset to defaults';
+
+	/// en: 'This will replace your custom shortcuts with the defaults. Continue?'
+	String get resetShortcutsConfirm => 'This will replace your custom shortcuts with the defaults. Continue?';
 
 	/// en: 'About'
 	String get about => 'About';
@@ -1014,6 +1141,12 @@ class Translations$settings$en {
 	/// en: 'Allow mobile devices on your network to control this app'
 	String get companionRemoteServerDescription => 'Allow mobile devices on your network to control this app';
 
+	/// en: 'Couldn't start the companion server'
+	String get companionRemoteServerStartFailed => 'Couldn\'t start the companion server';
+
+	/// en: 'Couldn't stop the companion server'
+	String get companionRemoteServerStopFailed => 'Couldn\'t stop the companion server';
+
 	/// en: 'Auto Picture-in-Picture'
 	String get autoPip => 'Auto Picture-in-Picture';
 
@@ -1060,16 +1193,34 @@ class Translations$settings$en {
 	String get audioPassthroughDescription => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.';
 
 	/// en: 'Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.'
-	String get audioPassthroughDescriptionAppleTv => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.';
+	String get audioPassthroughDescriptionApple => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.';
 
 	/// en: 'Off while loudness normalization is on'
 	String get audioPassthroughOverriddenByNormalization => 'Off while loudness normalization is on';
 
-	/// en: 'Downmix to Stereo'
-	String get audioDownmix => 'Downmix to Stereo';
+	/// en: 'Audio Channels'
+	String get audioChannelLimit => 'Audio Channels';
 
-	/// en: 'Mix surround audio down to two channels for stereo speakers or headphones'
-	String get audioDownmixDescription => 'Mix surround audio down to two channels for stereo speakers or headphones';
+	/// en: 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel'
+	String get audioChannelLimitDescription => 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel';
+
+	/// en: 'Original'
+	String get audioChannelLimitOriginal => 'Original';
+
+	/// en: 'Play every channel in the track'
+	String get audioChannelLimitOriginalDescription => 'Play every channel in the track';
+
+	/// en: 'Up to 5.1'
+	String get audioChannelLimitSurround51 => 'Up to 5.1';
+
+	/// en: 'Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.'
+	String get audioChannelLimitSurround51Description => 'Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.';
+
+	/// en: 'Stereo'
+	String get audioChannelLimitStereo => 'Stereo';
+
+	/// en: 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.'
+	String get audioChannelLimitStereoDescription => 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.';
 
 	/// en: 'Center Channel Boost'
 	String get downmixCenterBoost => 'Center Channel Boost';
@@ -1119,11 +1270,59 @@ class Translations$settings$en {
 	/// en: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'
 	String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL layers and present plain HEVC';
 
+	/// en: 'Disable Dolby Vision'
+	String get disableDolbyVision => 'Disable Dolby Vision';
+
+	/// en: 'Play the file's HDR10 or HLG layer instead of Dolby Vision, when it has one'
+	String get disableDolbyVisionDescription => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one';
+
+	/// en: 'HDR to SDR Conversion'
+	String get hdrSdrConversion => 'HDR to SDR Conversion';
+
+	/// en: 'Choose what converts HDR video when the display can't show HDR.'
+	String get hdrSdrConversionDescription => 'Choose what converts HDR video when the display can\'t show HDR.';
+
+	/// en: 'Auto'
+	String get hdrSdrConversionAuto => 'Auto';
+
+	/// en: 'Device on Android 9 and later, player on older versions'
+	String get hdrSdrConversionAutoDescription => 'Device on Android 9 and later, player on older versions';
+
+	/// en: 'Device'
+	String get hdrSdrConversionDevice => 'Device';
+
+	/// en: 'Your device's video hardware converts it. Fastest, but colors depend on the device'
+	String get hdrSdrConversionDeviceDescription => 'Your device\'s video hardware converts it. Fastest, but colors depend on the device';
+
+	/// en: 'Player'
+	String get hdrSdrConversionPlayer => 'Player';
+
+	/// en: 'The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes'
+	String get hdrSdrConversionPlayerDescription => 'The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes';
+
 	/// en: 'Deinterlacing'
 	String get deinterlace => 'Deinterlacing';
 
 	/// en: 'Remove combing artifacts from interlaced video (mpv player only)'
 	String get deinterlaceDescription => 'Remove combing artifacts from interlaced video (mpv player only)';
+
+	/// en: 'Off'
+	String get deinterlaceOff => 'Off';
+
+	/// en: 'Show interlaced video as it is decoded'
+	String get deinterlaceOffDescription => 'Show interlaced video as it is decoded';
+
+	/// en: 'Video'
+	String get deinterlaceVideo => 'Video';
+
+	/// en: 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts'
+	String get deinterlaceVideoDescription => 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts';
+
+	/// en: 'Film'
+	String get deinterlaceFilm => 'Film';
+
+	/// en: 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video'
+	String get deinterlaceFilmDescription => 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video';
 
 	/// en: 'Ask for profile on app open'
 	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
@@ -1291,6 +1490,94 @@ class Translations$settings$en {
 	String get exportDialogTitle => 'Export Plezy settings';
 }
 
+// Path: themeEditor
+class Translations$themeEditor$en {
+	Translations$themeEditor$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Built-in'
+	String get builtIn => 'Built-in';
+
+	/// en: 'Presets'
+	String get presets => 'Presets';
+
+	/// en: 'Custom'
+	String get custom => 'Custom';
+
+	/// en: 'Not created yet'
+	String get customEmpty => 'Not created yet';
+
+	/// en: 'Edit custom theme'
+	String get editCustom => 'Edit custom theme';
+
+	/// en: 'Choose every color yourself'
+	String get editCustomDescription => 'Choose every color yourself';
+
+	/// en: 'Unlock with Supporter'
+	String get locked => 'Unlock with Supporter';
+
+	/// en: 'Saved — unlocks with Supporter'
+	String get savedLocked => 'Saved — unlocks with Supporter';
+
+	/// en: 'Custom Theme'
+	String get title => 'Custom Theme';
+
+	/// en: 'Start from'
+	String get startFrom => 'Start from';
+
+	/// en: 'Copy all colors from another theme'
+	String get startFromDescription => 'Copy all colors from another theme';
+
+	/// en: 'Colors'
+	String get colors => 'Colors';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
+
+	late final Translations$themeEditor$slots$en slots = Translations$themeEditor$slots$en.internal(_root);
+
+	/// en: 'Opacity'
+	String get opacity => 'Opacity';
+
+	/// en: '#RRGGBB or #AARRGGBB'
+	String get hexHint => '#RRGGBB or #AARRGGBB';
+
+	/// en: 'From other themes'
+	String get fromOtherThemes => 'From other themes';
+
+	/// en: '${theme} ${color}'
+	String swatchLabel({required Object theme, required Object color}) => '${theme} ${color}';
+
+	late final Translations$themeEditor$contrast$en contrast = Translations$themeEditor$contrast$en.internal(_root);
+
+	/// en: '${pair}: ${ratio}:1, below the recommended ${minimum}:1'
+	String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1';
+
+	/// en: 'Discard changes?'
+	String get discardTitle => 'Discard changes?';
+
+	/// en: 'Your unsaved color changes will be lost.'
+	String get discardMessage => 'Your unsaved color changes will be lost.';
+
+	/// en: 'Discard'
+	String get discard => 'Discard';
+
+	/// en: 'Episode ${number}'
+	String previewCardTitle({required Object number}) => 'Episode ${number}';
+
+	/// en: '${minutes} min left'
+	String previewCardSubtitle({required Object minutes}) => '${minutes} min left';
+
+	/// en: 'Autoplay'
+	String get previewSwitch => 'Autoplay';
+
+	/// en: 'Secondary text reads like this'
+	String get previewMutedText => 'Secondary text reads like this';
+}
+
 // Path: search
 class Translations$search$en {
 	Translations$search$en.internal(this._root);
@@ -1310,6 +1597,9 @@ class Translations$search$en {
 
 	/// en: 'Enter a title, actor, or keyword'
 	String get enterTitleActorOrKeyword => 'Enter a title, actor, or keyword';
+
+	/// en: 'People'
+	String get people => 'People';
 }
 
 // Path: hotkeys
@@ -2156,6 +2446,9 @@ class Translations$videoControls$en {
 	/// en: 'Zoom ${percent}%'
 	String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 
+	/// en: 'Volume ${percent}%'
+	String volumePercent({required Object percent}) => 'Volume ${percent}%';
+
 	late final Translations$videoControls$pipErrors$en pipErrors = Translations$videoControls$pipErrors$en.internal(_root);
 
 	/// en: 'Chapters'
@@ -2395,6 +2688,12 @@ class Translations$messages$en {
 	/// en: 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.'
 	String get serverBusyBody => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.';
 
+	/// en: 'Playback not allowed'
+	String get playbackNotAllowedTitle => 'Playback not allowed';
+
+	/// en: 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.'
+	String get playbackNotAllowedBody => 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.';
+
 	/// en: 'Logs uploaded'
 	String get logsUploaded => 'Logs uploaded';
 
@@ -2626,6 +2925,12 @@ class Translations$profiles$en {
 	/// en: 'Remove ${displayName} and all Plex Home users? Sign back in anytime.'
 	String signOutPlexMessage({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.';
 
+	/// en: 'Also delete downloads'
+	String get signOutPlexDeleteDownloads => 'Also delete downloads';
+
+	/// en: 'Otherwise they stay on this device and come back when you sign back in to this account.'
+	String get signOutPlexDeleteDownloadsDescription => 'Otherwise they stay on this device and come back when you sign back in to this account.';
+
 	/// en: 'Signed out of Plex.'
 	String get signedOutPlex => 'Signed out of Plex.';
 
@@ -2811,6 +3116,12 @@ class Translations$connections$en {
 
 	/// en: 'Session expired for ${count} servers'
 	String sessionExpiredMany({required Object count}) => 'Session expired for ${count} servers';
+
+	/// en: '${name} refused access for this account'
+	String accessDeniedOne({required Object name}) => '${name} refused access for this account';
+
+	/// en: '${count} servers refused access for this account'
+	String accessDeniedMany({required Object count}) => '${count} servers refused access for this account';
 
 	/// en: 'Sign in again'
 	String get signInAgain => 'Sign in again';
@@ -3012,6 +3323,8 @@ class Translations$discover$en {
 		one: '${n} title',
 		other: '${n} titles',
 	);
+
+	late final Translations$discover$person$en person = Translations$discover$person$en.internal(_root);
 }
 
 // Path: errors
@@ -3057,6 +3370,27 @@ class Translations$errors$en {
 
 	/// en: 'Couldn't update rating'
 	String get failedToRate => 'Couldn\'t update rating';
+
+	/// en: 'the connection timed out'
+	String get reasonTimedOut => 'the connection timed out';
+
+	/// en: 'the server could not be reached'
+	String get reasonUnreachable => 'the server could not be reached';
+
+	/// en: 'the server refused the request'
+	String get reasonRefused => 'the server refused the request';
+
+	/// en: 'the item is no longer on the server'
+	String get reasonNotFound => 'the item is no longer on the server';
+
+	/// en: 'the server reported an error'
+	String get reasonServerError => 'the server reported an error';
+
+	/// en: 'the request was cancelled'
+	String get reasonCancelled => 'the request was cancelled';
+
+	/// en: 'an unexpected error occurred'
+	String get reasonUnexpected => 'an unexpected error occurred';
 }
 
 // Path: libraries
@@ -3194,6 +3528,7 @@ class Translations$libraries$en {
 	late final Translations$libraries$groupings$en groupings = Translations$libraries$groupings$en.internal(_root);
 	late final Translations$libraries$filterCategories$en filterCategories = Translations$libraries$filterCategories$en.internal(_root);
 	late final Translations$libraries$sortLabels$en sortLabels = Translations$libraries$sortLabels$en.internal(_root);
+	late final Translations$libraries$advancedFilters$en advancedFilters = Translations$libraries$advancedFilters$en.internal(_root);
 }
 
 // Path: about
@@ -3769,8 +4104,14 @@ class Translations$liveTv$en {
 	/// en: 'Guide refresh requested'
 	String get guideReloadRequested => 'Guide refresh requested';
 
+	/// en: 'Couldn't refresh the guide'
+	String get guideReloadFailed => 'Couldn\'t refresh the guide';
+
 	/// en: 'Rule re-evaluation requested'
 	String get rulesProcessRequested => 'Rule re-evaluation requested';
+
+	/// en: 'Couldn't re-evaluate recording rules'
+	String get rulesProcessFailed => 'Couldn\'t re-evaluate recording rules';
 
 	/// en: 'Record show'
 	String get recordShow => 'Record show';
@@ -3791,6 +4132,12 @@ class Translations$liveTv$en {
 
 	/// en: 'Could not build the stream URL'
 	String get failedToBuildStreamUrl => 'Could not build the stream URL';
+
+	/// en: 'Couldn't start the channel: ${reason}'
+	String playbackStartFailed({required Object reason}) => 'Couldn\'t start the channel: ${reason}';
+
+	/// en: 'Couldn't switch channel: ${reason}'
+	String channelSwitchFailed({required Object reason}) => 'Couldn\'t switch channel: ${reason}';
 }
 
 // Path: collections
@@ -4339,6 +4686,15 @@ class Translations$downloads$en {
 	/// en: 'Delete "${title}" from this device?'
 	String deleteConfirm({required Object title}) => 'Delete "${title}" from this device?';
 
+	/// en: 'Delete downloads'
+	String get deleteCollectionDownloads => 'Delete downloads';
+
+	/// en: 'Delete every download in "${title}" from this device?'
+	String deleteCollectionDownloadsConfirm({required Object title}) => 'Delete every download in "${title}" from this device?';
+
+	/// en: 'Downloads deleted'
+	String get collectionDownloadsDeleted => 'Downloads deleted';
+
 	/// en: 'Canceled Download'
 	String get cancelledDownloadTitle => 'Canceled Download';
 
@@ -4389,6 +4745,12 @@ class Translations$downloads$en {
 
 	/// en: 'Resume all'
 	String get resumeAll => 'Resume all';
+
+	/// en: 'Retry all'
+	String get retryAll => 'Retry all';
+
+	/// en: 'Retry failed downloads'
+	String get retryFailed => 'Retry failed downloads';
 
 	/// en: 'Delete all'
 	String get deleteAll => 'Delete all';
@@ -4498,6 +4860,9 @@ class Translations$downloads$en {
 	/// en: 'Sign in required'
 	String get syncRuleSignInRequired => 'Sign in required';
 
+	/// en: 'Access denied'
+	String get syncRuleAccessDenied => 'Access denied';
+
 	/// en: 'Not available for current profile'
 	String get syncRuleNotAvailableForProfile => 'Not available for current profile';
 
@@ -4508,6 +4873,14 @@ class Translations$downloads$en {
 	String get syncRuleListCreated => 'Sync rule created';
 
 	late final Translations$downloads$backgroundWarning$en backgroundWarning = Translations$downloads$backgroundWarning$en.internal(_root);
+
+	/// en: 'Downloads options'
+	String get options => 'Downloads options';
+
+	late final Translations$downloads$groupings$en groupings = Translations$downloads$groupings$en.internal(_root);
+
+	/// en: 'Unknown library'
+	String get unknownLibrary => 'Unknown library';
 
 	/// en: 'Unknown Show'
 	String get unknownShow => 'Unknown Show';
@@ -4524,11 +4897,29 @@ class Translations$downloads$en {
 	/// en: 'File not found (404)'
 	String get errorFileNotFound => 'File not found (404)';
 
+	/// en: 'Download not allowed by the server (403)'
+	String get errorDownloadNotAllowed => 'Download not allowed by the server (403)';
+
 	/// en: 'Download failed'
 	String get errorDownloadFailed => 'Download failed';
 
-	/// en: 'Post-processing failed: ${error}'
-	String errorPostProcessing({required Object error}) => 'Post-processing failed: ${error}';
+	/// en: 'Download failed: ${reason}'
+	String errorDownloadFailedWithReason({required Object reason}) => 'Download failed: ${reason}';
+
+	/// en: 'Download failed (HTTP ${status})'
+	String errorHttpStatus({required Object status}) => 'Download failed (HTTP ${status})';
+
+	/// en: 'Post-processing failed: ${reason}'
+	String errorPostProcessing({required Object reason}) => 'Post-processing failed: ${reason}';
+
+	/// en: 'the file could not be saved on this device'
+	String get reasonFileNotSaved => 'the file could not be saved on this device';
+
+	/// en: 'the partial download could not be resumed'
+	String get reasonCannotResume => 'the partial download could not be resumed';
+
+	/// en: 'this device is out of storage'
+	String get reasonDeviceStorageFull => 'this device is out of storage';
 
 	/// en: 'Downloading...'
 	String get notificationDownloading => 'Downloading...';
@@ -4699,12 +5090,6 @@ class Translations$videoSettings$en {
 
 	/// en: 'Decodes audio to PCM; passthrough is off while this is on'
 	String get audioNormalizationDisablesPassthrough => 'Decodes audio to PCM; passthrough is off while this is on';
-
-	/// en: 'Decodes audio to a stereo mix; passthrough is off while this is on'
-	String get audioNormalizationStereoMix => 'Decodes audio to a stereo mix; passthrough is off while this is on';
-
-	/// en: 'Downmix to Stereo'
-	String get audioDownmix => 'Downmix to Stereo';
 }
 
 // Path: performanceOverlay
@@ -4750,6 +5135,27 @@ class Translations$performanceOverlay$en {
 
 	/// en: 'DV Path'
 	String get dvPath => 'DV Path';
+
+	/// en: 'Dolby Vision decoder'
+	String get dvRouteDecoder => 'Dolby Vision decoder';
+
+	/// en: 'Dolby Vision decoder (P7→8.1)'
+	String get dvRouteDecoderP81 => 'Dolby Vision decoder (P7→8.1)';
+
+	/// en: 'Base layer'
+	String get dvRouteBaseLayer => 'Base layer';
+
+	/// en: 'HDR10 base layer'
+	String get dvRouteBaseLayerHdr10 => 'HDR10 base layer';
+
+	/// en: 'HLG base layer'
+	String get dvRouteBaseLayerHlg => 'HLG base layer';
+
+	/// en: 'SDR base layer'
+	String get dvRouteBaseLayerSdr => 'SDR base layer';
+
+	/// en: 'RPU reshaped (gpu-next)'
+	String get dvRouteReshaped => 'RPU reshaped (gpu-next)';
 
 	/// en: 'P7 Conv'
 	String get p7Conversion => 'P7 Conv';
@@ -5140,6 +5546,9 @@ class Translations$metadataEdit$en {
 
 	/// en: 'Label'
 	String get label => 'Label';
+
+	/// en: 'Quick Tag...'
+	String get quickTag => 'Quick Tag...';
 }
 
 // Path: matchScreen
@@ -5439,6 +5848,7 @@ class Translations$services$en {
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
+	late final Translations$services$simklReconnect$en simklReconnect = Translations$services$simklReconnect$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
 	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
 	late final Translations$services$pendingAuth$en pendingAuth = Translations$services$pendingAuth$en.internal(_root);
@@ -5595,6 +6005,84 @@ class Translations$addServer$en {
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
+// Path: appIcon.names
+class Translations$appIcon$names$en {
+	Translations$appIcon$names$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Midnight'
+	String get midnight => 'Midnight';
+
+	/// en: 'Ember'
+	String get ember => 'Ember';
+
+	/// en: 'Paper'
+	String get paper => 'Paper';
+
+	/// en: 'OLED'
+	String get oled => 'OLED';
+
+	/// en: 'Line'
+	String get line => 'Line';
+
+	/// en: 'Ocean'
+	String get ocean => 'Ocean';
+
+	/// en: 'Ultraviolet'
+	String get ultraviolet => 'Ultraviolet';
+
+	/// en: 'Matcha'
+	String get matcha => 'Matcha';
+
+	/// en: 'Sunset'
+	String get sunset => 'Sunset';
+
+	/// en: 'Gold'
+	String get gold => 'Gold';
+
+	/// en: 'Titanium'
+	String get titanium => 'Titanium';
+
+	/// en: 'Glass'
+	String get glass => 'Glass';
+
+	/// en: 'CRT'
+	String get crt => 'CRT';
+
+	/// en: 'VHS'
+	String get vhs => 'VHS';
+
+	/// en: 'Synthwave'
+	String get synthwave => 'Synthwave';
+
+	/// en: 'Pixel'
+	String get pixel => 'Pixel';
+
+	/// en: 'Neon'
+	String get neon => 'Neon';
+
+	/// en: 'Sticker'
+	String get sticker => 'Sticker';
+
+	/// en: 'Ticket'
+	String get ticket => 'Ticket';
+
+	/// en: 'Pop'
+	String get pop => 'Pop';
+
+	/// en: 'Strata'
+	String get strata => 'Strata';
+
+	/// en: 'Facet'
+	String get facet => 'Facet';
+
+	/// en: 'Tilde'
+	String get tilde => 'Tilde';
+}
+
 // Path: common.ratingSource
 class Translations$common$ratingSource$en {
 	Translations$common$ratingSource$en.internal(this._root);
@@ -5635,6 +6123,12 @@ class Translations$common$ratingSource$en {
 
 	/// en: 'Rotten Tomatoes audience'
 	String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+
+	/// en: 'Metacritic'
+	String get metacritic => 'Metacritic';
+
+	/// en: 'Letterboxd'
+	String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -5680,6 +6174,90 @@ class Translations$common$mediaKind$en {
 
 	/// en: 'Folder'
 	String get folder => 'Folder';
+}
+
+// Path: supporter.errors
+class Translations$supporter$errors$en {
+	Translations$supporter$errors$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
+	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
+
+	/// en: 'The Supporter purchase isn't available in your store right now.'
+	String get productNotFound => 'The Supporter purchase isn\'t available in your store right now.';
+
+	/// en: 'Couldn't load the price. Check your connection and try again.'
+	String get productQueryFailed => 'Couldn\'t load the price. Check your connection and try again.';
+
+	/// en: 'The purchase didn't go through. Try again.'
+	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
+
+	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
+	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
+
+	/// en: 'No Supporter purchase was found for this store account.'
+	String get nothingToRestore => 'No Supporter purchase was found for this store account.';
+}
+
+// Path: themeEditor.slots
+class Translations$themeEditor$slots$en {
+	Translations$themeEditor$slots$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Background'
+	String get bg => 'Background';
+
+	/// en: 'Surface'
+	String get surface => 'Surface';
+
+	/// en: 'Outline'
+	String get outline => 'Outline';
+
+	/// en: 'Text'
+	String get text => 'Text';
+
+	/// en: 'Secondary text'
+	String get textMuted => 'Secondary text';
+
+	/// en: 'Accent'
+	String get accent => 'Accent';
+}
+
+// Path: themeEditor.contrast
+class Translations$themeEditor$contrast$en {
+	Translations$themeEditor$contrast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Text on background'
+	String get textOnBg => 'Text on background';
+
+	/// en: 'Text on surface'
+	String get textOnSurface => 'Text on surface';
+
+	/// en: 'Secondary text on background'
+	String get textMutedOnBg => 'Secondary text on background';
+
+	/// en: 'Secondary text on surface'
+	String get textMutedOnSurface => 'Secondary text on surface';
+
+	/// en: 'Accent on background'
+	String get accentOnBg => 'Accent on background';
+
+	/// en: 'Accent on surface'
+	String get accentOnSurface => 'Accent on surface';
+
+	/// en: 'Button label on accent'
+	String get labelOnAccent => 'Button label on accent';
 }
 
 // Path: hotkeys.actions
@@ -5940,6 +6518,30 @@ class Translations$accountPreferences$mediaReviewsOptions$en {
 	String get nobody => 'Hidden';
 }
 
+// Path: discover.person
+class Translations$discover$person$en {
+	Translations$discover$person$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Born'
+	String get born => 'Born';
+
+	/// en: 'Died'
+	String get died => 'Died';
+
+	/// en: 'Birthplace'
+	String get birthplace => 'Birthplace';
+
+	/// en: '${date} (age ${age})'
+	String dateWithAge({required Object date, required Object age}) => '${date} (age ${age})';
+
+	/// en: '${date} (aged ${age})'
+	String dateWithAgeAtDeath({required Object date, required Object age}) => '${date} (aged ${age})';
+}
+
 // Path: libraries.tabs
 class Translations$libraries$tabs$en {
 	Translations$libraries$tabs$en.internal(this._root);
@@ -6028,6 +6630,9 @@ class Translations$libraries$filterCategories$en {
 
 	/// en: 'Favorites'
 	String get favorites => 'Favorites';
+
+	/// en: 'File Path'
+	String get filePath => 'File Path';
 }
 
 // Path: libraries.sortLabels
@@ -6097,6 +6702,102 @@ class Translations$libraries$sortLabels$en {
 
 	/// en: 'Last Episode Date Added'
 	String get lastEpisodeDateAdded => 'Last Episode Date Added';
+
+	/// en: 'Date Downloaded'
+	String get dateDownloaded => 'Date Downloaded';
+
+	/// en: 'Size'
+	String get size => 'Size';
+
+	/// en: 'Library'
+	String get library => 'Library';
+}
+
+// Path: libraries.advancedFilters
+class Translations$libraries$advancedFilters$en {
+	Translations$libraries$advancedFilters$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Include'
+	String get include => 'Include';
+
+	/// en: 'Exclude'
+	String get exclude => 'Exclude';
+
+	/// en: 'Any'
+	String get any => 'Any';
+
+	/// en: 'Yes'
+	String get yes => 'Yes';
+
+	/// en: 'No'
+	String get no => 'No';
+
+	/// en: 'Not ${value}'
+	String not({required Object value}) => 'Not ${value}';
+
+	/// en: '${count} selected'
+	String valueCount({required Object count}) => '${count} selected';
+
+	/// en: '${count} excluded'
+	String valueCountExcluded({required Object count}) => '${count} excluded';
+
+	/// en: 'Search values'
+	String get searchValues => 'Search values';
+
+	/// en: 'No values'
+	String get noValues => 'No values';
+
+	/// en: 'Contains'
+	String get matchContains => 'Contains';
+
+	/// en: 'Does not contain'
+	String get matchNotContains => 'Does not contain';
+
+	/// en: 'Is'
+	String get matchIs => 'Is';
+
+	/// en: 'Is not'
+	String get matchIsNot => 'Is not';
+
+	/// en: 'Begins with'
+	String get matchBeginsWith => 'Begins with';
+
+	/// en: 'Ends with'
+	String get matchEndsWith => 'Ends with';
+
+	/// en: 'Type to match'
+	String get textHint => 'Type to match';
+
+	/// en: 'From'
+	String get from => 'From';
+
+	/// en: 'To'
+	String get to => 'To';
+
+	/// en: '${from} to ${to}'
+	String range({required Object from, required Object to}) => '${from} to ${to}';
+
+	/// en: '${value} and up'
+	String atLeast({required Object value}) => '${value} and up';
+
+	/// en: 'Up to ${value}'
+	String atMost({required Object value}) => 'Up to ${value}';
+
+	/// en: 'Last ${count} days'
+	String dateLastDays({required Object count}) => 'Last ${count} days';
+
+	/// en: 'Past year'
+	String get dateLastYear => 'Past year';
+
+	/// en: 'Older than ${count} days'
+	String dateOlderThanDays({required Object count}) => 'Older than ${count} days';
+
+	/// en: 'Older than a year'
+	String get dateOlderThanYear => 'Older than a year';
 }
 
 // Path: explore.rows
@@ -6400,6 +7101,9 @@ class Translations$explore$creditRole$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// en: 'Actor'
+	String get actor => 'Actor';
 
 	/// en: 'Director'
 	String get director => 'Director';
@@ -6714,6 +7418,21 @@ class Translations$downloads$backgroundWarning$en {
 	String get linkUnavailable => 'Couldn\'t open dontkillmyapp.com on this device';
 }
 
+// Path: downloads.groupings
+class Translations$downloads$groupings$en {
+	Translations$downloads$groupings$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Library'
+	String get library => 'Library';
+
+	/// en: 'Collections'
+	String get collections => 'Collections';
+}
+
 // Path: companionRemote.session
 class Translations$companionRemote$session$en {
 	Translations$companionRemote$session$en.internal(this._root);
@@ -6960,6 +7679,21 @@ class Translations$services$names$en {
 	String get mdblist => 'MDBList';
 }
 
+// Path: services.simklReconnect
+class Translations$services$simklReconnect$en {
+	Translations$services$simklReconnect$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Reconnect Simkl'
+	String get title => 'Reconnect Simkl';
+
+	/// en: 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.'
+	String get subtitle => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.';
+}
+
 // Path: services.deviceCode
 class Translations$services$deviceCode$en {
 	Translations$services$deviceCode$en.internal(this._root);
@@ -7074,6 +7808,37 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'appIcon.title' => 'App icon',
+			'appIcon.defaultIcon' => 'Default',
+			'appIcon.current' => 'Current icon',
+			'appIcon.locked' => 'Supporter perk',
+			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
+			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
+			'appIcon.launcherHint' => 'The new icon appears on your home screen once you leave Plezy.',
+			'appIcon.tvLauncherHint' => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.',
+			'appIcon.names.midnight' => 'Midnight',
+			'appIcon.names.ember' => 'Ember',
+			'appIcon.names.paper' => 'Paper',
+			'appIcon.names.oled' => 'OLED',
+			'appIcon.names.line' => 'Line',
+			'appIcon.names.ocean' => 'Ocean',
+			'appIcon.names.ultraviolet' => 'Ultraviolet',
+			'appIcon.names.matcha' => 'Matcha',
+			'appIcon.names.sunset' => 'Sunset',
+			'appIcon.names.gold' => 'Gold',
+			'appIcon.names.titanium' => 'Titanium',
+			'appIcon.names.glass' => 'Glass',
+			'appIcon.names.crt' => 'CRT',
+			'appIcon.names.vhs' => 'VHS',
+			'appIcon.names.synthwave' => 'Synthwave',
+			'appIcon.names.pixel' => 'Pixel',
+			'appIcon.names.neon' => 'Neon',
+			'appIcon.names.sticker' => 'Sticker',
+			'appIcon.names.ticket' => 'Ticket',
+			'appIcon.names.pop' => 'Pop',
+			'appIcon.names.strata' => 'Strata',
+			'appIcon.names.facet' => 'Facet',
+			'appIcon.names.tilde' => 'Tilde',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
@@ -7148,6 +7913,8 @@ extension on Translations {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -7175,6 +7942,29 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
+			'supporter.title' => 'Plezy Supporter',
+			'supporter.intro' => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:',
+			'supporter.presetThemes' => 'Preset themes',
+			'supporter.presetThemesDescription' => 'Ember, Glacier, Forest, Plum and Paper',
+			'supporter.customTheme' => 'Custom theme',
+			'supporter.customThemeDescription' => 'Pick every color yourself',
+			'supporter.appIcons' => 'App icons',
+			'supporter.appIconsDescription' => 'Choose an alternate Plezy icon',
+			'supporter.buy' => ({required Object price}) => 'Buy for ${price}',
+			'supporter.loadingPrice' => 'Loading price...',
+			'supporter.restore' => 'Restore Purchases',
+			'supporter.pending' => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.',
+			'supporter.thankYouTitle' => 'Thank you for supporting Plezy',
+			'supporter.thankYouBody' => 'Your Supporter extras are unlocked.',
+			'supporter.tileSubtitle' => 'Unlock themes and app icons with a one-time purchase',
+			'supporter.tileSubtitleThemesOnly' => 'Unlock themes with a one-time purchase',
+			'supporter.tileUnlocked' => 'Thank you for your support',
+			'supporter.errors.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
+			'supporter.errors.productNotFound' => 'The Supporter purchase isn\'t available in your store right now.',
+			'supporter.errors.productQueryFailed' => 'Couldn\'t load the price. Check your connection and try again.',
+			'supporter.errors.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
+			'supporter.errors.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
+			'supporter.errors.nothingToRestore' => 'No Supporter purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support Plezy',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
@@ -7198,6 +7988,11 @@ extension on Translations {
 			'settings.lightTheme' => 'Light',
 			'settings.darkTheme' => 'Dark',
 			'settings.oledTheme' => 'OLED',
+			'settings.emberTheme' => 'Ember',
+			'settings.glacierTheme' => 'Glacier',
+			'settings.forestTheme' => 'Forest',
+			'settings.plumTheme' => 'Plum',
+			'settings.paperTheme' => 'Paper',
 			'settings.libraryDensity' => 'Library Density',
 			'settings.displayScale' => 'Display Scale',
 			'settings.compact' => 'Compact',
@@ -7261,6 +8056,9 @@ extension on Translations {
 			'settings.cellularQualitySameAsDefault' => 'Same as Default Quality',
 			'settings.directPlayCoveredQuality' => 'Play Smaller Videos at Original Quality',
 			'settings.directPlayCoveredQualityDescription' => 'Direct play videos already within the quality limit instead of transcoding them',
+			'settings.videoCodecs' => 'Video Codecs',
+			'settings.videoCodecsDescription' => 'Unchecked codecs are transcoded by the server',
+			'settings.videoCodecsAlwaysAccepted' => 'Always accepted',
 			'settings.musicQualityTitle' => 'Music Quality',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
@@ -7318,6 +8116,7 @@ extension on Translations {
 			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
+			'settings.resetShortcutsConfirm' => 'This will replace your custom shortcuts with the defaults. Continue?',
 			'settings.about' => 'About',
 			'settings.aboutDescription' => 'App information and licenses',
 			'settings.updates' => 'Updates',
@@ -7384,6 +8183,8 @@ extension on Translations {
 			'settings.manageLibrariesDescription' => 'Reorder and hide libraries',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
+			'settings.companionRemoteServerStartFailed' => 'Couldn\'t start the companion server',
+			'settings.companionRemoteServerStopFailed' => 'Couldn\'t stop the companion server',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
 			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when you leave the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
@@ -7399,10 +8200,16 @@ extension on Translations {
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
+			'settings.audioPassthroughDescriptionApple' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Off while loudness normalization is on',
-			'settings.audioDownmix' => 'Downmix to Stereo',
-			'settings.audioDownmixDescription' => 'Mix surround audio down to two channels for stereo speakers or headphones',
+			'settings.audioChannelLimit' => 'Audio Channels',
+			'settings.audioChannelLimitDescription' => 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel',
+			'settings.audioChannelLimitOriginal' => 'Original',
+			'settings.audioChannelLimitOriginalDescription' => 'Play every channel in the track',
+			'settings.audioChannelLimitSurround51' => 'Up to 5.1',
+			'settings.audioChannelLimitSurround51Description' => 'Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.',
+			'settings.audioChannelLimitStereo' => 'Stereo',
+			'settings.audioChannelLimitStereoDescription' => 'Mix down to two channels for stereo speakers or headphones. Turns passthrough off.',
 			'settings.downmixCenterBoost' => 'Center Channel Boost',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Boost (dB)',
@@ -7419,8 +8226,24 @@ extension on Translations {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 and suppress DV conversion retry',
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
+			'settings.disableDolbyVision' => 'Disable Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
+			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
+			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
+			'settings.hdrSdrConversionAuto' => 'Auto',
+			'settings.hdrSdrConversionAutoDescription' => 'Device on Android 9 and later, player on older versions',
+			'settings.hdrSdrConversionDevice' => 'Device',
+			'settings.hdrSdrConversionDeviceDescription' => 'Your device\'s video hardware converts it. Fastest, but colors depend on the device',
+			'settings.hdrSdrConversionPlayer' => 'Player',
+			'settings.hdrSdrConversionPlayerDescription' => 'The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes',
 			'settings.deinterlace' => 'Deinterlacing',
 			'settings.deinterlaceDescription' => 'Remove combing artifacts from interlaced video (mpv player only)',
+			'settings.deinterlaceOff' => 'Off',
+			'settings.deinterlaceOffDescription' => 'Show interlaced video as it is decoded',
+			'settings.deinterlaceVideo' => 'Video',
+			'settings.deinterlaceVideoDescription' => 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts',
+			'settings.deinterlaceFilm' => 'Film',
+			'settings.deinterlaceFilmDescription' => 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.forceTvMode' => 'Force TV mode',
@@ -7476,10 +8299,51 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'themeEditor.builtIn' => 'Built-in',
+			'themeEditor.presets' => 'Presets',
+			'themeEditor.custom' => 'Custom',
+			'themeEditor.customEmpty' => 'Not created yet',
+			'themeEditor.editCustom' => 'Edit custom theme',
+			'themeEditor.editCustomDescription' => 'Choose every color yourself',
+			'themeEditor.locked' => 'Unlock with Supporter',
+			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
+			'themeEditor.title' => 'Custom Theme',
+			'themeEditor.startFrom' => 'Start from',
+			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
+			'themeEditor.colors' => 'Colors',
+			'themeEditor.preview' => 'Preview',
+			'themeEditor.slots.bg' => 'Background',
+			'themeEditor.slots.surface' => 'Surface',
+			'themeEditor.slots.outline' => 'Outline',
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
+			'themeEditor.slots.accent' => 'Accent',
+			'themeEditor.opacity' => 'Opacity',
+			_ => null,
+		} ?? switch (path) {
+			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
+			'themeEditor.fromOtherThemes' => 'From other themes',
+			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
+			'themeEditor.contrast.textOnBg' => 'Text on background',
+			'themeEditor.contrast.textOnSurface' => 'Text on surface',
+			'themeEditor.contrast.textMutedOnBg' => 'Secondary text on background',
+			'themeEditor.contrast.textMutedOnSurface' => 'Secondary text on surface',
+			'themeEditor.contrast.accentOnBg' => 'Accent on background',
+			'themeEditor.contrast.accentOnSurface' => 'Accent on surface',
+			'themeEditor.contrast.labelOnAccent' => 'Button label on accent',
+			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1',
+			'themeEditor.discardTitle' => 'Discard changes?',
+			'themeEditor.discardMessage' => 'Your unsaved color changes will be lost.',
+			'themeEditor.discard' => 'Discard',
+			'themeEditor.previewCardTitle' => ({required Object number}) => 'Episode ${number}',
+			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min left',
+			'themeEditor.previewSwitch' => 'Autoplay',
+			'themeEditor.previewMutedText' => 'Secondary text reads like this',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
+			'search.people' => 'People',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
 			'hotkeys.noShortcutSet' => 'No shortcut set',
@@ -7585,8 +8449,6 @@ extension on Translations {
 			'fileInfo.sourceStream' => 'Copied From',
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
 			'fileInfo.fileName' => 'File Name',
@@ -7761,6 +8623,7 @@ extension on Translations {
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.screenshotSaved' => 'Screenshot saved',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
 			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture is disabled. Enable it in system settings.',
@@ -7844,6 +8707,8 @@ extension on Translations {
 			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
 			'messages.serverBusyTitle' => 'Stream unavailable',
 			'messages.serverBusyBody' => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.',
+			'messages.playbackNotAllowedTitle' => 'Playback not allowed',
+			'messages.playbackNotAllowedBody' => 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -7909,6 +8774,8 @@ extension on Translations {
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
+			'profiles.signOutPlexDeleteDownloads' => 'Also delete downloads',
+			'profiles.signOutPlexDeleteDownloadsDescription' => 'Otherwise they stay on this device and come back when you sign back in to this account.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
@@ -7966,8 +8833,12 @@ extension on Translations {
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
+			_ => null,
+		} ?? switch (path) {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} servers refused access for this account',
 			'connections.signInAgain' => 'Sign in again',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edit ${product} connection',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.',
@@ -8053,6 +8924,11 @@ extension on Translations {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} title', other: '${n} titles', ), 
+			'discover.person.born' => 'Born',
+			'discover.person.died' => 'Died',
+			'discover.person.birthplace' => 'Birthplace',
+			'discover.person.dateWithAge' => ({required Object date, required Object age}) => '${date} (age ${age})',
+			'discover.person.dateWithAgeAtDeath' => ({required Object date, required Object age}) => '${date} (aged ${age})',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
@@ -8065,6 +8941,13 @@ extension on Translations {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
+			'errors.reasonTimedOut' => 'the connection timed out',
+			'errors.reasonUnreachable' => 'the server could not be reached',
+			'errors.reasonRefused' => 'the server refused the request',
+			'errors.reasonNotFound' => 'the item is no longer on the server',
+			'errors.reasonServerError' => 'the server reported an error',
+			'errors.reasonCancelled' => 'the request was cancelled',
+			'errors.reasonUnexpected' => 'an unexpected error occurred',
 			'libraries.title' => 'Libraries',
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
@@ -8099,8 +8982,6 @@ extension on Translations {
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.content' => 'library content',
 			'libraries.selectLibrary' => 'Select library',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filters (${count})',
@@ -8129,6 +9010,7 @@ extension on Translations {
 			'libraries.filterCategories.unwatched' => 'Unwatched',
 			'libraries.filterCategories.unplayed' => 'Unplayed',
 			'libraries.filterCategories.favorites' => 'Favorites',
+			'libraries.filterCategories.filePath' => 'File Path',
 			'libraries.sortLabels.title' => 'Title',
 			'libraries.sortLabels.dateAdded' => 'Date Added',
 			'libraries.sortLabels.releaseDate' => 'Release Date',
@@ -8149,6 +9031,35 @@ extension on Translations {
 			'libraries.sortLabels.dateShared' => 'Date Shared',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
+			'libraries.sortLabels.dateDownloaded' => 'Date Downloaded',
+			'libraries.sortLabels.size' => 'Size',
+			'libraries.sortLabels.library' => 'Library',
+			'libraries.advancedFilters.include' => 'Include',
+			'libraries.advancedFilters.exclude' => 'Exclude',
+			'libraries.advancedFilters.any' => 'Any',
+			'libraries.advancedFilters.yes' => 'Yes',
+			'libraries.advancedFilters.no' => 'No',
+			'libraries.advancedFilters.not' => ({required Object value}) => 'Not ${value}',
+			'libraries.advancedFilters.valueCount' => ({required Object count}) => '${count} selected',
+			'libraries.advancedFilters.valueCountExcluded' => ({required Object count}) => '${count} excluded',
+			'libraries.advancedFilters.searchValues' => 'Search values',
+			'libraries.advancedFilters.noValues' => 'No values',
+			'libraries.advancedFilters.matchContains' => 'Contains',
+			'libraries.advancedFilters.matchNotContains' => 'Does not contain',
+			'libraries.advancedFilters.matchIs' => 'Is',
+			'libraries.advancedFilters.matchIsNot' => 'Is not',
+			'libraries.advancedFilters.matchBeginsWith' => 'Begins with',
+			'libraries.advancedFilters.matchEndsWith' => 'Ends with',
+			'libraries.advancedFilters.textHint' => 'Type to match',
+			'libraries.advancedFilters.from' => 'From',
+			'libraries.advancedFilters.to' => 'To',
+			'libraries.advancedFilters.range' => ({required Object from, required Object to}) => '${from} to ${to}',
+			'libraries.advancedFilters.atLeast' => ({required Object value}) => '${value} and up',
+			'libraries.advancedFilters.atMost' => ({required Object value}) => 'Up to ${value}',
+			'libraries.advancedFilters.dateLastDays' => ({required Object count}) => 'Last ${count} days',
+			'libraries.advancedFilters.dateLastYear' => 'Past year',
+			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => 'Older than ${count} days',
+			'libraries.advancedFilters.dateOlderThanYear' => 'Older than a year',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -8300,6 +9211,7 @@ extension on Translations {
 			'explore.sourceMaterial.webComic' => 'Web comic',
 			'explore.sourceMaterial.musicRelease' => 'Music',
 			'explore.sourceMaterial.otherMedia' => 'Other',
+			'explore.creditRole.actor' => 'Actor',
 			'explore.creditRole.director' => 'Director',
 			'explore.creditRole.writer' => 'Writer',
 			'explore.creditRole.producer' => 'Producer',
@@ -8425,7 +9337,9 @@ extension on Translations {
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
+			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
+			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -8433,6 +9347,8 @@ extension on Translations {
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
@@ -8440,6 +9356,8 @@ extension on Translations {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Couldn\'t start the channel: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Couldn\'t switch channel: ${reason}',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -8613,8 +9531,9 @@ extension on Translations {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
-			_ => null,
-		} ?? switch (path) {
+			'downloads.deleteCollectionDownloads' => 'Delete downloads',
+			'downloads.deleteCollectionDownloadsConfirm' => ({required Object title}) => 'Delete every download in "${title}" from this device?',
+			'downloads.collectionDownloadsDeleted' => 'Downloads deleted',
 			'downloads.cancelledDownloadTitle' => 'Canceled Download',
 			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
@@ -8632,6 +9551,8 @@ extension on Translations {
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
+			'downloads.retryAll' => 'Retry all',
+			'downloads.retryFailed' => 'Retry failed downloads',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
 			'downloads.allEpisodes' => 'All episodes',
@@ -8668,6 +9589,7 @@ extension on Translations {
 			'downloads.syncRuleAvailable' => 'Available',
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Sign in required',
+			'downloads.syncRuleAccessDenied' => 'Access denied',
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',
@@ -8697,13 +9619,23 @@ extension on Translations {
 			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
 			'downloads.backgroundWarning.linkUnavailable' => 'Couldn\'t open dontkillmyapp.com on this device',
+			'downloads.options' => 'Downloads options',
+			'downloads.groupings.library' => 'Library',
+			'downloads.groupings.collections' => 'Collections',
+			'downloads.unknownLibrary' => 'Unknown library',
 			'downloads.unknownShow' => 'Unknown Show',
 			'downloads.unknownSeason' => 'Unknown Season',
 			'downloads.unknownAlbum' => 'Unknown Album',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} completed',
 			'downloads.errorFileNotFound' => 'File not found (404)',
+			'downloads.errorDownloadNotAllowed' => 'Download not allowed by the server (403)',
 			'downloads.errorDownloadFailed' => 'Download failed',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Post-processing failed: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download failed: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'Download failed (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Post-processing failed: ${reason}',
+			'downloads.reasonFileNotSaved' => 'the file could not be saved on this device',
+			'downloads.reasonCannotResume' => 'the partial download could not be resumed',
+			'downloads.reasonDeviceStorageFull' => 'this device is out of storage',
 			'downloads.notificationDownloading' => 'Downloading...',
 			'downloads.notificationComplete' => 'Download complete',
 			'downloads.notificationPaused' => 'Download paused',
@@ -8812,8 +9744,6 @@ extension on Translations {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
-			'videoSettings.audioNormalizationStereoMix' => 'Decodes audio to a stereo mix; passthrough is off while this is on',
-			'videoSettings.audioDownmix' => 'Downmix to Stereo',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',
@@ -8826,6 +9756,13 @@ extension on Translations {
 			'performanceOverlay.rotation' => 'Rotation',
 			'performanceOverlay.dvSource' => 'DV Source',
 			'performanceOverlay.dvPath' => 'DV Path',
+			'performanceOverlay.dvRouteDecoder' => 'Dolby Vision decoder',
+			'performanceOverlay.dvRouteDecoderP81' => 'Dolby Vision decoder (P7→8.1)',
+			'performanceOverlay.dvRouteBaseLayer' => 'Base layer',
+			'performanceOverlay.dvRouteBaseLayerHdr10' => 'HDR10 base layer',
+			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
+			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
+			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
@@ -8924,6 +9861,8 @@ extension on Translations {
 			'metadataEdit.never' => 'Never',
 			'metadataEdit.afterADay' => 'After a day',
 			'metadataEdit.afterAWeek' => 'After a week',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.afterAMonth' => 'After a month',
 			'metadataEdit.onNextRefresh' => 'On next refresh',
 			'metadataEdit.seasons' => 'Seasons',
@@ -8950,6 +9889,7 @@ extension on Translations {
 			'metadataEdit.country' => 'Country',
 			'metadataEdit.collection' => 'Collection',
 			'metadataEdit.label' => 'Label',
+			'metadataEdit.quickTag' => 'Quick Tag...',
 			'matchScreen.match' => 'Match...',
 			'matchScreen.fixMatch' => 'Fix Match...',
 			'matchScreen.unmatch' => 'Unmatch',
@@ -9039,6 +9979,8 @@ extension on Translations {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
+			'services.simklReconnect.title' => 'Reconnect Simkl',
+			'services.simklReconnect.subtitle' => 'Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl.',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',

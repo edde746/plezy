@@ -46,7 +46,7 @@ void main() {
   group('OfflineWatchProvider', () {
     test('getNextUnwatchedEpisode returns null for show with no downloads', () async {
       final p = OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
-      expect(await p.getNextUnwatchedEpisode('show-123'), isNull);
+      expect(await p.getNextUnwatchedEpisode('srv:show-123'), isNull);
       p.dispose();
     });
 

@@ -208,11 +208,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     );
   }
 
-  /// Whether the profile binder is still wiring servers — a no-servers load
-  /// during binding stays in the loading state instead of flashing an error,
-  /// and a zero-success pass during binding stays in the loading state
-  /// instead of flashing the empty placeholder (main_screen primes another
-  /// load once binding settles).
+  /// Whether the profile binder is still wiring servers. No full pass or
+  /// Continue Watching refresh fetches while it runs: a profile switch mounts
+  /// the new session before the binder rotates the shared Plex clients to the
+  /// new user's token, so a fetch here would return the previous user's rows
+  /// (#2599). main_screen primes a load once binding settles. A bind that
+  /// starts mid-pass keeps a zero-success pass in the loading state instead
+  /// of flashing the empty placeholder.
   final bool Function() isProfileBinding;
   final Future<void> Function(String profileId, List<MediaItem>)? _syncSystemShelfOverride;
   final Future<void> Function(String profileId, List<MediaServerClient> clients)? _syncServerSourcesOverride;
@@ -299,7 +301,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Full load of Continue Watching + hubs. Concurrent calls coalesce into
   /// the in-flight pass plus at most one trailing pass (so a request that
-  /// arrives mid-load still observes its own fresh fetch).
+  /// arrives mid-load still observes its own fresh fetch). A pass requested
+  /// while the profile binder runs ends without fetching or touching state.
   Future<void> load() {
     if (isDisposed) return Future<void>.value();
     return _loadCoordinator.requestFull();
@@ -408,7 +411,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // kicked off during build (the screen's initState) doesn't mark
       // listening widgets dirty mid-build.
       await null;
-      if (isDisposed) return;
+      if (isDisposed || isProfileBinding()) return;
       ++_contentRevision;
       appLogger.d('DiscoverProvider: loading content from all servers');
       _onDeckState = DiscoverLoadState.loading;
@@ -416,10 +419,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _errorMessage = null;
       safeNotifyListeners();
 
-      if (!_multiServer.hasConnectedServers) {
-        if (isProfileBinding()) return;
-        throw Exception('No servers available');
-      }
+      if (!_multiServer.hasConnectedServers) throw Exception('No servers available');
 
       await _hiddenLibraries.ensureInitialized();
       if (isDisposed) return;
@@ -799,7 +799,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Future<void> _refreshContinueWatchingOnce() async {
     try {
-      if (!_multiServer.hasConnectedServers) return;
+      if (isProfileBinding() || !_multiServer.hasConnectedServers) return;
       final revision = _contentRevision;
       final hiddenKeys = Set<String>.of(_hiddenLibraries.hiddenLibraryKeys);
       final observation = _beginObservation();
@@ -871,15 +871,17 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _replaceOnDeck(List.of(_onDeck)..[onDeckIndex] = updatedItem, hasMore: _hasMoreContinueWatching);
     }
 
+    List<MediaHub>? updatedHubs;
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
       final itemIndex = hub.items.indexWhere((item) => item.globalKey == sourceGlobalKey);
       if (itemIndex != -1) {
         final newItems = List<MediaItem>.from(hub.items);
         newItems[itemIndex] = updatedItem;
-        _replaceHubs(List.of(_hubs)..[i] = hub.copyWith(items: newItems));
+        (updatedHubs ??= List.of(_hubs))[i] = hub.copyWith(items: newItems);
       }
     }
+    if (updatedHubs != null) _replaceHubs(updatedHubs);
   }
 
   void _applyOnDeck(List<MediaItem> fetched) {
@@ -921,8 +923,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return;
     }
 
+    final serverId = event.serverId.value;
     if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
-      _evictFromOnDeck((item) => item.id == event.itemId);
+      _evictFromOnDeck((item) => item.serverId == serverId && item.id == event.itemId);
     } else if (event.changeType == WatchStateChangeType.watched ||
         (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched == true)) {
       // Finished items have no business in Continue Watching, so drop the row
@@ -931,7 +934,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // it, matching the parent-aware filter this subscription uses — the
       // series' successor comes back from the refetch (#1812).
       _evictFromOnDeck(
-        (item) => item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId,
+        (item) =>
+            item.serverId == serverId &&
+            (item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId),
       );
     }
     unawaited(refreshContinueWatching());
@@ -973,13 +978,17 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _replaceOnDeck(remainingOnDeck, hasMore: _hasMoreContinueWatching);
       changed = true;
     }
+    List<MediaHub>? updatedHubs;
     for (var i = 0; i < _hubs.length; i++) {
       final hub = _hubs[i];
       final newItems = hub.items.where((item) => !affected(item)).toList();
       if (newItems.length != hub.items.length) {
-        _replaceHubs(List.of(_hubs)..[i] = hub.copyWith(items: newItems));
-        changed = true;
+        (updatedHubs ??= List.of(_hubs))[i] = hub.copyWith(items: newItems);
       }
+    }
+    if (updatedHubs != null) {
+      _replaceHubs(updatedHubs);
+      changed = true;
     }
     if (changed) safeNotifyListeners();
     if (event.origin == DeletionOrigin.local) {
@@ -1084,7 +1093,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   List<MediaServerClient> _onlineShelfSourceClients() =>
-      _multiServer.serverManager.onlineClients.values.toList(growable: false);
+      _multiServer.serverManager.visibleOnlineClients.values.toList(growable: false);
 
   @override
   void dispose() {

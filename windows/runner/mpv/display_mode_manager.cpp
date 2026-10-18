@@ -132,6 +132,27 @@ bool ApplyDisplayConfigSnapshot(const DisplayConfigSnapshot& snapshot, bool save
          ERROR_SUCCESS;
 }
 
+bool SameLuid(const LUID& a, const LUID& b) { return a.LowPart == b.LowPart && a.HighPart == b.HighPart; }
+
+// Whether |snapshot| still describes the active topology: the same set of
+// source -> target paths. A mode override never adds, drops or re-routes a
+// path, so a difference means displays were connected, disconnected or
+// re-projected since the capture, and re-applying the snapshot (saved to the
+// display database, no less) would undo that change.
+bool SnapshotMatchesActiveTopology(const DisplayConfigSnapshot& snapshot) {
+  if (!snapshot.valid()) return false;
+  const DisplayConfigSnapshot current = CaptureDisplayConfigSnapshot();
+  if (current.paths.size() != snapshot.paths.size()) return false;
+  return std::all_of(snapshot.paths.begin(), snapshot.paths.end(), [&current](const DISPLAYCONFIG_PATH_INFO& saved) {
+    return std::any_of(current.paths.begin(), current.paths.end(), [&saved](const DISPLAYCONFIG_PATH_INFO& active) {
+      return SameLuid(saved.sourceInfo.adapterId, active.sourceInfo.adapterId) &&
+             saved.sourceInfo.id == active.sourceInfo.id &&
+             SameLuid(saved.targetInfo.adapterId, active.targetInfo.adapterId) &&
+             saved.targetInfo.id == active.targetInfo.id;
+    });
+  });
+}
+
 // Re-apply the user's persisted display configuration for the current
 // topology -- the documented "return from a temporary mode to the last saved
 // display configuration" SetDisplayConfig scenario. The database entry keeps
@@ -352,8 +373,11 @@ bool DisplayModeManager::RestoreOriginalMode(HWND) {
 
   // Prefer re-applying the pre-override topology through SetDisplayConfig: it
   // restores a "Dynamic" refresh-rate selection that the DEVMODE fallback
-  // would pin to a fixed rate at the DRR base frequency (issue #2055).
-  bool restored = ApplyDisplayConfigSnapshot(original_config_, /*save_to_database=*/true);
+  // would pin to a fixed rate at the DRR base frequency (issue #2055). Only
+  // while the displays are still laid out as captured; otherwise the DEVMODE
+  // path restores just this display's mode.
+  bool restored = SnapshotMatchesActiveTopology(original_config_) &&
+                  ApplyDisplayConfigSnapshot(original_config_, /*save_to_database=*/true);
 
   if (!restored) {
     original_devmode_.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;

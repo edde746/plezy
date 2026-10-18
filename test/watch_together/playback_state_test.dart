@@ -9,6 +9,7 @@ void main() {
     ratingKey: '12345',
     serverId: 'srv-1',
     mediaTitle: 'Some Episode',
+    mediaVersion: (sourceId: 'media-1080', signature: '1080:h264:mkv'),
     phase: PlaybackPhase.playing,
     anchorPositionMs: 90000,
     anchorHostTimeMs: 1718700000000,
@@ -40,7 +41,17 @@ void main() {
       expect(map.containsKey('w'), isFalse);
       expect(map.containsKey('ab'), isFalse);
       expect(map.containsKey('ah'), isFalse);
+      expect(map.containsKey('vid'), isFalse);
+      expect(map.containsKey('vsig'), isFalse);
       expect(PlaybackState.fromMap(map), minimal);
+      expect(PlaybackState.fromMap(map).mediaVersion, isNull, reason: 'an older host names no version');
+    });
+
+    test('a version known only by signature round-trips', () {
+      final state = fullState.copyWith(mediaVersion: (sourceId: null, signature: '4k:hevc:mkv'));
+      final map = state.toMap();
+      expect(map.containsKey('vid'), isFalse);
+      expect(PlaybackState.fromMap(map).mediaVersion, (sourceId: null, signature: '4k:hevc:mkv'));
     });
 
     test('round-trips through the SyncMessage envelope', () {

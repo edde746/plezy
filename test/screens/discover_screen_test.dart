@@ -150,7 +150,7 @@ void main() {
             ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: targetSidebarOffset,
@@ -316,7 +316,7 @@ void main() {
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -430,7 +430,7 @@ void main() {
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -563,7 +563,7 @@ void main() {
             ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -673,7 +673,7 @@ void main() {
           ],
           child: InputModeTracker(
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: MainScreenFocusScope(
                 focusSidebar: () {},
                 sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -938,7 +938,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
         ],
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Row(
               children: [
                 Column(
@@ -1042,7 +1042,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
         ],
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -1083,7 +1083,8 @@ class _FakeMediaServerClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => continueWatching;
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
+      continueWatching;
 
   @override
   Future<List<MediaHub>> fetchGlobalHubs({
@@ -1124,7 +1125,8 @@ class _GatedHubsFakeClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => const [];
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
+      const [];
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async => const [];

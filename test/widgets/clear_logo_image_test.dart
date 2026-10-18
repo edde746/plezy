@@ -4,7 +4,15 @@ import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/widgets/optimized_media_image.dart';
 
 void main() {
-  Widget buildLogo({String? logoPath, double width = 400, double height = 120, double devicePixelRatio = 3}) {
+  const fallbackKey = Key('fallback');
+
+  Widget buildLogo({
+    String? logoPath,
+    double width = 400,
+    double height = 120,
+    double? fallbackWidth,
+    double devicePixelRatio = 3,
+  }) {
     return MaterialApp(
       home: MediaQuery(
         // DPR 3 is where the phone hero logo slot (400×120) asks for a
@@ -16,7 +24,9 @@ void main() {
             logoPath: logoPath,
             width: width,
             height: height,
-            fallbackBuilder: (context) => const Text('Fallback Title'),
+            fallbackWidth: fallbackWidth ?? width,
+            // Expands to whatever slot the fallback is offered.
+            fallbackBuilder: (context) => const SizedBox.expand(key: fallbackKey, child: Text('Fallback Title')),
           ),
         ),
       ),
@@ -80,9 +90,30 @@ void main() {
     expect(find.byType(Image), findsNothing);
   });
 
-  testWidgets('sizes itself to the requested logo slot', (tester) async {
-    await tester.pumpWidget(buildLogo(logoPath: null, width: 520, height: 150));
+  testWidgets('the logo keeps its slot inside the wider title slot', (tester) async {
+    // A hero wider than the logo cap: the mark stays contained in 520×150 at
+    // the left edge, the widget itself spans the hero (#1796).
+    await tester.pumpWidget(
+      buildLogo(logoPath: 'https://example.com/logo.png', width: 520, height: 150, fallbackWidth: 760),
+    );
 
-    expect(tester.getSize(find.byType(ClearLogoImage)), const Size(520, 150));
+    expect(tester.getSize(find.byType(ClearLogoImage)), const Size(760, 150));
+    expect(tester.getSize(find.byType(Image)), const Size(520, 150));
+    expect(tester.getTopLeft(find.byType(Image)), tester.getTopLeft(find.byType(ClearLogoImage)));
+  });
+
+  testWidgets('the title fallback gets the whole title slot', (tester) async {
+    for (final logoPath in [null, '/library/metadata/1/clearLogo']) {
+      await tester.pumpWidget(buildLogo(logoPath: logoPath, width: 520, height: 150, fallbackWidth: 760));
+
+      expect(tester.getSize(find.byKey(fallbackKey)), const Size(760, 150), reason: 'logoPath=$logoPath');
+    }
+  });
+
+  test('the title slot is twice the logo slot, capped to the column', () {
+    expect(ClearLogoImage.fallbackWidthFor(logoWidth: 400, available: 1068), 800);
+    expect(ClearLogoImage.fallbackWidthFor(logoWidth: 400, available: 620), 620);
+    // A phone clamps the logo to the column already; the title matches it.
+    expect(ClearLogoImage.fallbackWidthFor(logoWidth: 358, available: 358), 358);
   });
 }

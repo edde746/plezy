@@ -56,6 +56,7 @@ import 'package:plezy/utils/media_server_timeouts.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/file_info_bottom_sheet.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
+import 'package:plezy/widgets/tag_edit_dialog.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
@@ -751,6 +752,79 @@ void main() {
     });
   });
 
+  group('MediaContextMenu quick tag', () {
+    testWidgets('shows Quick Tag for an admin on a movie and applies a suggestion', (tester) async {
+      String? postedBody;
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        handler: (request) async {
+          final path = request.url.path;
+          if (request.url.queryParameters['Fields'] == 'CanDelete') {
+            return _canDeleteResponse('movie-1', true);
+          }
+          if (request.method == 'GET' && path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Name': 'Movie', 'Type': 'Movie', 'Tags': <String>[]});
+          }
+          if (request.method == 'GET' && path == '/Items/Filters') {
+            return jsonResponse({
+              'Tags': ['kids', 'horror'],
+            });
+          }
+          if (request.method == 'POST' && path == '/Items/movie-1') {
+            postedBody = request.body;
+            return http.Response('', 204);
+          }
+          return http.Response('unexpected ${request.method} $path', 500);
+        },
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.metadataEdit.quickTag));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TagEditDialog), findsOneWidget);
+      expect(find.text('kids'), findsOneWidget);
+
+      await tester.tap(find.text('kids'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.common.save));
+      await tester.pumpAndSettle();
+
+      expect(postedBody, isNotNull);
+      expect((jsonDecode(postedBody!) as Map<String, dynamic>)['Tags'], ['kids']);
+      expect(find.text(t.metadataEdit.metadataUpdated), findsOneWidget);
+    });
+
+    testWidgets('hides Quick Tag for a non-admin', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        handler: (_) async => _canDeleteResponse('movie-1', true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.metadataEdit.editMetadata), findsNothing);
+      expect(find.text(t.metadataEdit.quickTag), findsNothing);
+    });
+
+    testWidgets('hides Quick Tag on kinds without a label field', (tester) async {
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-1', index: 1, file: '/tv/bb/S01E01.mkv'),
+        handler: (_) async => _canDeleteResponse('ep-1', true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      // Episodes still get the full editor (director/writer), just not tags.
+      expect(find.text(t.metadataEdit.editMetadata), findsOneWidget);
+      expect(find.text(t.metadataEdit.quickTag), findsNothing);
+    });
+  });
+
   group('MediaContextMenu actions', () {
     testWidgets('audio playlist play and shuffle actions use music playback', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);
@@ -803,7 +877,7 @@ void main() {
               ChangeNotifierProvider<MusicPlaybackService>.value(value: music),
             ],
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: MediaContextMenu(
@@ -905,7 +979,7 @@ void main() {
               ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
             ],
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: MediaContextMenu(
@@ -969,7 +1043,7 @@ void main() {
               ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
             ],
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: MediaContextMenu(
@@ -1046,7 +1120,7 @@ void main() {
             ],
             child: MaterialApp(
               navigatorKey: navigatorKey,
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: ValueListenableBuilder<bool>(
@@ -1090,6 +1164,57 @@ void main() {
       expect(find.byType(FileInfoBottomSheet), findsNothing);
       expect(navigatorKey.currentState!.canPop(), isFalse, reason: 'no modal route may remain stuck above the screen');
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Mark as Watched reports a failure when the item server has no client', (tester) async {
+      final requests = <Uri>[];
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        requests: requests,
+        handler: (_) async => http.Response('{}', 200),
+        item: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Movie',
+          serverId: 'missing-server',
+        ),
+      );
+      await _openMenu(tester, menuKey);
+      requests.clear();
+
+      await tester.tap(find.text(t.mediaMenu.markAsWatched));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.messages.markedAsWatched), findsNothing);
+      expect(find.text(t.messages.errorLoading(error: t.errors.reasonUnreachable)), findsOneWidget);
+      expect(requests, isEmpty);
+    });
+
+    testWidgets('an item whose server has no client is never sent to another server', (tester) async {
+      final requests = <Uri>[];
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        requests: requests,
+        handler: (_) async => http.Response('{}', 200),
+        item: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Movie',
+          serverId: 'missing-server',
+        ),
+      );
+      await _openMenu(tester, menuKey);
+      requests.clear();
+
+      await tester.tap(find.text(t.mediaMenu.fileInfo));
+      await tester.pumpAndSettle();
+
+      expect(requests, isEmpty, reason: 'the registered srv-1 must not be asked about another server item');
+      expect(find.byType(SnackBar), findsOneWidget);
     });
 
     testWidgets('playlist picker filters playlists by title', (tester) async {
@@ -1552,7 +1677,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(body: Center(child: wrapMenu?.call(menu) ?? menu)),
         ),
       ),
@@ -1736,7 +1861,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
         ],
         child: MaterialApp(
           navigatorKey: navigatorKey,
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: onPushedRoute ? const Scaffold(body: Center(child: Text('home screen'))) : menuScreen,
         ),
       ),
@@ -1946,7 +2071,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
     TranslationProvider(
       child: MaterialApp(
         navigatorKey: rootNavigatorKey,
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
+        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS),
         home: MultiProvider(
           providers: [
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
@@ -2163,7 +2288,7 @@ _pumpWatchlistMenu(WidgetTester tester, {required List<CatalogSource> sources, L
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: Center(
               child: MediaContextMenu(

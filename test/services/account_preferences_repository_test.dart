@@ -66,7 +66,7 @@ void main() {
     );
     addTearDown(repository.dispose);
 
-    final first = repository.update(account, AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false));
+    final first = repository.update(account, AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, true));
     final second = repository.update(
       account,
       AccountPreferencesPatch.of(AccountPreferenceKey.hidePlayedInLatest, true),
@@ -87,7 +87,7 @@ void main() {
       'OrderedViews': ['movies', 'shows'],
     });
     final cached = repository.cached(account)!;
-    expect(cached.autoSelectAudio, isFalse);
+    expect(cached.autoSelectAudio, isTrue);
     expect(cached.hidePlayedInLatest, isTrue);
     expect(sourceLookups, 2);
   });

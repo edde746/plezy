@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
@@ -21,6 +22,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/trackers/fribb_mapping_store.dart';
 import 'package:plezy/services/trackers/mal/mal_client.dart';
+import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/utils/external_ids.dart';
 
@@ -148,11 +150,17 @@ class _FakeFribb implements FribbMappingLookup {
   _FakeFribb(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => [
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async => [
     for (final row in rows)
       if ((anidbId != null && row.anidbId == anidbId) ||
-          (tvdbId != null && row.tvdbId == tvdbId) ||
-          (tmdbId != null && (row.tmdbIds?.contains(tmdbId) ?? false)) ||
+          (!movie && tvdbId != null && row.tvdbId == tvdbId) ||
+          (tmdbId != null && (movie ? (row.tmdbMovieIds?.contains(tmdbId) ?? false) : row.tmdbTvId == tmdbId)) ||
           (imdbId != null && (row.imdbIds?.contains(imdbId) ?? false)))
         row,
   ];
@@ -227,7 +235,7 @@ void main() {
     imdbIds: ['tt2560140'],
   );
   // An anime movie.
-  const yourName = FribbMappingRow(malId: 32281, tmdbIds: [372058], imdbIds: ['tt5311514'], type: 'MOVIE');
+  const yourName = FribbMappingRow(malId: 32281, tmdbMovieIds: [372058], imdbIds: ['tt5311514'], type: 'MOVIE');
 
   group('MalCatalogSource', () {
     late List<http.Request> requests;
@@ -416,9 +424,7 @@ void main() {
           source.dispose();
           source = MalCatalogSource(
             client,
-            fribb: _FakeFribb(const [
-              FribbMappingRow(malId: 35760, tmdbIds: [1429], tvdbSeason: 3, tmdbSeason: 3),
-            ]),
+            fribb: _FakeFribb(const [FribbMappingRow(malId: 35760, tmdbTvId: 1429, tvdbSeason: 3, tmdbSeason: 3)]),
           );
           handlers.add(
             (_) => _json(
@@ -553,14 +559,42 @@ void main() {
       expect(requests, isEmpty);
     });
 
+    http.Response listStatus(String status) => http.Response(
+      json.encode({
+        'id': 16498,
+        'my_list_status': {'status': status, 'num_watched_episodes': 3},
+      }),
+      200,
+    );
+
     test('removeFromWatchlist DELETEs and treats 404 as success', () async {
       await source.ensureWatchlistLoaded();
       requests.clear();
 
-      handlers.add((request) => http.Response('', 404));
+      handlers
+        ..add((request) => listStatus('plan_to_watch'))
+        ..add((request) => http.Response('', 404));
       await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498));
 
-      expect(requests.single.method, 'DELETE');
+      expect(requests.map((request) => request.method), ['GET', 'DELETE']);
+      expect(requests.first.url.queryParameters['fields'], 'my_list_status');
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498)), isFalse);
+    });
+
+    test('removeFromWatchlist leaves an entry that moved past Plan to Watch alone', () async {
+      await source.ensureWatchlistLoaded();
+      requests.clear();
+
+      // The snapshot still lists it, but the user has since started watching:
+      // deleting would take their progress, score and dates with it.
+      handlers
+        ..add((request) => listStatus('watching'))
+        ..add((request) => http.Response(json.encode(_pageBody(const [])), 200));
+      await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498));
+      await source.ensureWatchlistLoaded();
+
+      expect(requests.map((request) => request.method), ['GET', 'GET'], reason: 'status read + snapshot reload');
+      expect(requests.last.url.path, '/v2/users/@me/animelist');
       expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(mal: 16498)), isFalse);
     });
 
@@ -756,6 +790,55 @@ void main() {
       expect(detail.related, isEmpty);
       expect(detail.relations, isEmpty);
       expect(requests, isEmpty);
+    });
+
+    test('community ratings read the mean score and its scorers', () async {
+      // The MAL API v2 reference's `GET /anime/{id}` example.
+      handlers.add(
+        (_) => _json({
+          'id': 30230,
+          'title': 'Diamond no Ace: Second Season',
+          'main_picture': {'medium': 'https://myanimelist.cdn-dena.com/images/anime/9/74398.jpg'},
+          'mean': 8.42,
+          'num_scoring_users': 29027,
+        }),
+      );
+
+      final ratings = await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(mal: 30230, tvdb: 1));
+
+      expect(requests.single.url.path, '/v2/anime/30230');
+      expect(requests.single.url.queryParameters['fields'], 'mean,num_scoring_users');
+      expect(ratings, [
+        isA<MediaRatingSource>()
+            .having((rating) => rating.source, 'source', 'mal')
+            .having((rating) => rating.value, 'value', closeTo(8.42, 1e-9))
+            .having((rating) => rating.votes, 'votes', 29027),
+      ]);
+    });
+
+    test('community ratings are empty for an anime nobody scored or MAL does not know', () async {
+      handlers
+        ..add((_) => _json({'id': 1, 'title': 'Not yet aired'}))
+        ..add((_) => http.Response('{"error":"not_found"}', 404));
+
+      expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(mal: 1)), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(mal: 999999)), isEmpty);
+      expect(requests, hasLength(2));
+    });
+
+    test('community ratings need a movie or show with a MAL id', () async {
+      expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(tvdb: 267440)), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.episode, const CatalogItemIds(mal: 16498)), isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('community ratings propagate a failure other than 404', () async {
+      handlers.add((_) => http.Response('oops', 500));
+
+      await expectLater(
+        source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(mal: 16498)),
+        throwsA(isA<TrackerApiException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
     });
   });
 

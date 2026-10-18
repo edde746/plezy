@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 
+import '../../../models/audio_channel_limit.dart';
 import '../../../services/device_performance.dart';
 import '../../../services/settings_service.dart';
 import '../../models.dart';
@@ -61,12 +62,6 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   bool get supportsSecondarySubtitles => false;
-
-  // ExoPlayer attaches external subtitles to the MediaItem before prepare;
-  // the Android mpv fallback mirrors PlayerNative by passing sub-files through
-  // loadfile options.
-  @override
-  bool get attachesExternalSubtitlesAtOpen => true;
 
   // The fallback runs mpv over MediaCodec — the same display-switch decoder
   // constraint as PlayerNative on Android. The whole startup-gate chain
@@ -184,16 +179,19 @@ class PlayerAndroid extends PlayerBase {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
   }) async {
     if (disposed) return;
     await _ensureInitialized();
-    final startPosition = media.start ?? Duration.zero;
-    final hasStartPosition = media.start != null && startPosition > Duration.zero;
+    final startPosition = media.start ?? timelineOffset;
     final previousState = state;
     final previousPosition = currentPosition;
     final previousTimelineDuration = configuredTimelineDuration;
+    final previousTimelineOffset = this.timelineOffset;
     final previousExternalSubtitleMetadata = snapshotExternalSubtitleMetadata();
-    configureTimeline(duration: timelineDuration);
+    configureTimeline(duration: timelineDuration, offset: timelineOffset);
+    final sourceStart = sourcePositionFor(startPosition);
+    final hasStartPosition = media.start != null && sourceStart > Duration.zero;
     clearTracks();
     setExternalSubtitleMetadata(externalSubtitles);
     resetPlaybackProgress(startPosition);
@@ -206,7 +204,7 @@ class PlayerAndroid extends PlayerBase {
       await invoke('open', {
         'uri': media.uri,
         'headers': media.headers,
-        'startPositionMs': startPosition.inMilliseconds,
+        'startPositionMs': sourceStart.inMilliseconds,
         'hasStartPosition': hasStartPosition,
         'autoPlay': play,
         'isLive': isLive,
@@ -229,7 +227,7 @@ class PlayerAndroid extends PlayerBase {
       });
     } catch (_) {
       if (!disposed) {
-        configureTimeline(duration: previousTimelineDuration);
+        configureTimeline(duration: previousTimelineDuration, offset: previousTimelineOffset);
         restorePlaybackProgress(previousState, position: previousPosition);
         restoreTracks(previousState);
         restoreExternalSubtitleMetadata(previousExternalSubtitleMetadata);
@@ -258,7 +256,7 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    await runSeek(position, () => invoke('seek', {'positionMs': position.inMilliseconds}));
+    await runSeek(position, () => invoke('seek', {'positionMs': sourcePositionFor(position).inMilliseconds}));
   }
 
   @override
@@ -283,19 +281,6 @@ class PlayerAndroid extends PlayerBase {
 
   Future<void> _selectSubtitleTrackNatively(SubtitleTrack track) async {
     await invoke('selectSubtitleTrack', {'trackId': track.id});
-  }
-
-  /// A sidecar flagged default must not draw itself onto a hidden renderer
-  /// either; the selection pass that follows the add records it the same way
-  /// [selectSubtitleTrack] does.
-  @override
-  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
-    await invoke('addSubtitleTrack', {
-      'uri': uri,
-      'title': title,
-      'language': language,
-      'select': select && !_subtitlesHidden,
-    });
   }
 
   @override
@@ -382,14 +367,20 @@ class PlayerAndroid extends PlayerBase {
       () => invoke('setAudioNormalization', {'enabled': enabled}),
       () => _audioNormalizationEnabled == enabled,
     );
-    // Keep the mpv af property flowing through setMpvProperty so the plugin's
-    // pendingMpvProperties replay applies loudnorm if exo falls back to mpv.
+    // Keep the mpv audiotrack-normalize property flowing through setMpvProperty so
+    // the plugin's pendingMpvProperties replay normalizes if exo falls back to mpv.
     await super.setAudioNormalization(enabled);
   }
 
   @override
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) async {
+  Future<void> setAudioChannelLimit(
+    AudioChannelLimit limit, {
+    required int centerBoostDb,
+    required bool normalize,
+  }) async {
     if (disposed) return;
+    final effective = limit.onExoPlayer;
+    final enabled = effective == AudioChannelLimit.stereo;
     _downmixEnabled = enabled;
     _downmixCenterBoostDb = centerBoostDb;
     _downmixNormalize = normalize;
@@ -398,8 +389,9 @@ class PlayerAndroid extends PlayerBase {
       () => _downmixEnabled == enabled && _downmixCenterBoostDb == centerBoostDb && _downmixNormalize == normalize,
     );
     // Keep the mpv properties flowing through setMpvProperty so the plugin's
-    // pendingMpvProperties replay applies downmix if exo falls back to mpv.
-    await super.setAudioDownmix(enabled: enabled, centerBoostDb: centerBoostDb, normalize: normalize);
+    // pendingMpvProperties replay applies the same limit if exo falls back to
+    // mpv mid-session.
+    await super.setAudioChannelLimit(effective, centerBoostDb: centerBoostDb, normalize: normalize);
   }
 
   @override
@@ -446,6 +438,7 @@ class PlayerAndroid extends PlayerBase {
         return fps?.toString();
       case 'estimated-vf-fps':
       case 'deinterlace-active':
+      case 'ivtc-active':
         final stats = await getStats();
         return stats[name]?.toString();
       case 'width':

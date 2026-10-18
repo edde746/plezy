@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/library_query_translator.dart';
+import 'package:plezy/utils/url_utils.dart';
 
 void main() {
   group('PlexLibraryQueryTranslator', () {
@@ -57,15 +58,6 @@ void main() {
       expect(params['title'], 'star wars');
     });
 
-    test('includeWatched=false sets unwatched=1', () {
-      final params = translator.toQueryParameters(const LibraryQuery(includeWatched: false));
-      expect(params['unwatched'], '1');
-    });
-
-    test('favoritesOnly is ignored (Plex has no favorites)', () {
-      expect(translator.toQueryParameters(const LibraryQuery(favoritesOnly: true)), isEmpty);
-    });
-
     test('arbitrary filter clauses pass through verbatim', () {
       final params = translator.toQueryParameters(
         const LibraryQuery(
@@ -75,6 +67,79 @@ void main() {
         ),
       );
       expect(params['genre'], 'Action,Drama');
+    });
+
+    test('a title clause and a search term both reach the wire instead of one winning', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          search: 'wick',
+          filters: [
+            LibraryFilter(field: 'title', op: LibraryFilterOperator.beginsWith, values: ['The']),
+          ],
+        ),
+      );
+      expect(params['title'], 'wick');
+      expect(params['title<'], 'The');
+    });
+
+    test('the operator rides in the query key, keeping its trailing = as the separator', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'genre', op: LibraryFilterOperator.isNot, values: ['Comedy']),
+            LibraryFilter(field: 'year', op: LibraryFilterOperator.atLeast, values: ['2015']),
+            LibraryFilter(field: 'year', op: LibraryFilterOperator.atMost, values: ['2018']),
+            LibraryFilter(field: 'title', op: LibraryFilterOperator.matches, values: ['Wicked']),
+            LibraryFilter(field: 'title', op: LibraryFilterOperator.beginsWith, values: ['Wick']),
+          ],
+        ),
+      );
+      expect(params['genre!'], 'Comedy');
+      expect(params['year>>'], '2015');
+      expect(params['year<<'], '2018');
+      expect(params['title='], 'Wicked');
+      expect(params['title<'], 'Wick');
+    });
+
+    test('two clauses on one field with the same operator repeat the key so Plex ANDs them', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'genre', values: ['Comedy']),
+            LibraryFilter(field: 'genre', values: ['Drama']),
+          ],
+        ),
+      );
+      expect(params['genre'], ['Comedy', 'Drama']);
+      expect(encodeQueryParameters(params), 'genre=Comedy&genre=Drama');
+    });
+
+    // Percent-encoding the operator and the value separator is safe: PMS
+    // decodes query keys, so `genre!=a%2Cb` and `genre!=a,b` select the same
+    // rows. What it must never see is an encoded separator (`genre%21%3D=a`),
+    // which is why the operator's trailing `=` is not part of the key.
+    test('a negated clause encodes to a query Plex parses as one clause', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'genre', op: LibraryFilterOperator.isNot, values: ['Comedy', 'Horror']),
+          ],
+        ),
+      );
+      expect(encodeQueryParameters(params), 'genre!=Comedy%2CHorror');
+    });
+
+    test('empty clauses and values are dropped rather than sent as bare keys', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'genre', values: ['']),
+            LibraryFilter(field: '', values: ['x']),
+            LibraryFilter(field: 'tag', values: []),
+          ],
+        ),
+      );
+      expect(params, isEmpty);
     });
   });
 
@@ -128,14 +193,52 @@ void main() {
       expect(params['IncludeItemTypes'], 'Movie,Series,Episode,Audio');
     });
 
-    test('genres joined with pipe separator', () {
-      final params = translator.toQueryParameters(const LibraryQuery(genres: ['Action', 'Drama']));
+    test('genre clause values join with the pipe separator Jellyfin ORs', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'genre', values: ['Action', 'Drama']),
+          ],
+        ),
+      );
       expect(params['Genres'], 'Action|Drama');
     });
 
-    test('years joined with comma separator', () {
-      final params = translator.toQueryParameters(const LibraryQuery(years: [2020, 2021]));
+    test('year clause values join with a comma', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'year', values: ['2020', '2021']),
+          ],
+        ),
+      );
       expect(params['Years'], '2020,2021');
+    });
+
+    test('fields MediaBrowser cannot filter on are dropped instead of sent raw', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'director', values: ['12345']),
+            LibraryFilter(field: 'file', values: ['1080p']),
+          ],
+        ),
+      );
+      expect(params, isNot(contains('director')));
+      expect(params, isNot(contains('file')));
+      expect(params, isNot(contains('Filters')));
+    });
+
+    test('a second clause on one field is dropped: /Items cannot AND them', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'genre', values: ['Action']),
+            LibraryFilter(field: 'genre', values: ['Drama']),
+          ],
+        ),
+      );
+      expect(params['Genres'], 'Action');
     });
 
     test('sort field "title" maps to SortName, "addedAt" to DateCreated', () {
@@ -221,18 +324,62 @@ void main() {
       expect(params, isNot(contains('NameLessThan')));
     });
 
-    test('includeWatched=false sets Filters=IsUnplayed', () {
-      final params = translator.toQueryParameters(const LibraryQuery(includeWatched: false));
+    test('unwatched clause sets Filters=IsUnplayed', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'unwatched', values: ['1']),
+          ],
+        ),
+      );
       expect(params['Filters'], 'IsUnplayed');
     });
 
-    test('favoritesOnly sets Filters=IsFavorite', () {
-      final params = translator.toQueryParameters(const LibraryQuery(favoritesOnly: true));
-      expect(params['Filters'], 'IsFavorite');
+    test('a negated unwatched clause asks for played items instead', () {
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'unwatched', op: LibraryFilterOperator.isNot, values: ['1']),
+          ],
+        ),
+      );
+      expect(params['Filters'], 'IsPlayed');
+    });
+
+    test('favorite clause sets Filters=IsFavorite; a negated one is dropped', () {
+      final favorite = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'favorite', values: ['1']),
+          ],
+        ),
+      );
+      expect(favorite['Filters'], 'IsFavorite');
+
+      // `/Items` has no `IsNotFavorite`, and `isFavorite=false` is a UserData
+      // join that also drops every item the user never touched (0 of 250
+      // series on a library with no favorites), so there is no correct wire
+      // form to approximate with.
+      final notFavorite = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'favorite', op: LibraryFilterOperator.isNot, values: ['1']),
+          ],
+        ),
+      );
+      expect(notFavorite, isNot(contains('isFavorite')));
+      expect(notFavorite, isNot(contains('Filters')));
     });
 
     test('unwatched + favorites combine into a comma-separated Filters list', () {
-      final params = translator.toQueryParameters(const LibraryQuery(includeWatched: false, favoritesOnly: true));
+      final params = translator.toQueryParameters(
+        const LibraryQuery(
+          filters: [
+            LibraryFilter(field: 'unwatched', values: ['1']),
+            LibraryFilter(field: 'favorite', values: ['1']),
+          ],
+        ),
+      );
       expect(params['Filters'], 'IsUnplayed,IsFavorite');
     });
 
@@ -279,92 +426,61 @@ void main() {
     });
   });
 
-  // The library browse tab still keeps `_selectedFilters` as a Plex-shaped
-  // map (the FiltersBottomSheet emits that shape) but routes it through
-  // `libraryQueryFromPlexMap` at the `fetchLibraryPagedContent` boundary.
-  // The Plex client then translates the resulting `LibraryQuery` back to a
-  // map via `PlexLibraryQueryTranslator`. Round-tripping must be loss-free
-  // (modulo the `includeCollections=1` always-on case the client adds back
-  // explicitly) so user-saved filters from prior versions don't silently
-  // drop on first reload.
-  group('libraryQueryFromPlexMap round-trip with PlexLibraryQueryTranslator', () {
+  // The browse tab holds the user's selection as clauses and assembles the
+  // neutral query at the fetch boundary; the Plex client lowers it back to
+  // wire params. Selections saved by prior versions (and by the sheet) must
+  // survive that trip, so the assembly is pinned here.
+  group('libraryQueryFromSelection', () {
     const translator = PlexLibraryQueryTranslator();
 
-    Map<String, String> roundTrip(Map<String, String> input, {MediaKind? libraryKind}) {
-      final query = libraryQueryFromPlexMap(map: input, libraryKind: libraryKind);
-      return translator.toQueryParameters(query);
-    }
+    Map<String, dynamic> wire({
+      List<LibraryFilter> clauses = const [],
+      MediaKind? libraryKind,
+      String? typeParam,
+      String? sortParam,
+      String? alphaPrefix,
+    }) => translator.toQueryParameters(
+      libraryQueryFromSelection(
+        clauses: clauses,
+        libraryKind: libraryKind,
+        typeParam: typeParam,
+        sortParam: sortParam,
+        alphaPrefix: alphaPrefix,
+      ),
+    );
 
-    test('genre + sort round-trips into the same map', () {
-      final input = {'genre': 'Comedy', 'sort': 'addedAt:desc'};
-      expect(roundTrip(input), {'genre': 'Comedy', 'sort': 'addedAt:desc'});
+    test('clauses, sort and alpha prefix reach the wire together', () {
+      expect(
+        wire(
+          clauses: const [
+            LibraryFilter(field: 'genre', values: ['Comedy']),
+            LibraryFilter(field: 'unwatched', values: ['1']),
+          ],
+          sortParam: 'addedAt:desc',
+          alphaPrefix: 'B',
+        ),
+        {'genre': 'Comedy', 'unwatched': '1', 'sort': 'addedAt:desc', 'alphaPrefix': 'B'},
+      );
     });
 
-    test('multi-value year filter round-trips', () {
-      final input = {'year': '2010,2011,2012'};
-      expect(roundTrip(input)['year'], '2010,2011,2012');
-    });
-
-    test('contentRating + tag + alphaPrefix round-trip together', () {
-      final input = {'contentRating': 'PG-13', 'tag': 'Christmas', 'alphaPrefix': 'A'};
-      expect(roundTrip(input), {'contentRating': 'PG-13', 'tag': 'Christmas', 'alphaPrefix': 'A'});
-    });
-
-    test('unwatched=1 round-trips (LibraryQuery.includeWatched=false → unwatched=1)', () {
-      final input = {'unwatched': '1'};
-      expect(roundTrip(input), {'unwatched': '1'});
-    });
-
-    test('unwatched absent round-trips to absent (default includeWatched=true)', () {
-      expect(roundTrip(const {}), isEmpty);
-    });
-
-    test('unknown Plex filter keys (director) survive as generic LibraryFilter entries', () {
-      final input = {'director': '12345'};
-      expect(roundTrip(input)['director'], '12345');
-    });
-
-    test('favorite=1 maps to favoritesOnly, not a generic filter entry', () {
-      // Jellyfin-only key; the Plex translator deliberately drops it, so it
-      // must not leak into the verbatim-pass-through filters bucket either.
-      final query = libraryQueryFromPlexMap(map: {'favorite': '1'});
-      expect(query.favoritesOnly, isTrue);
-      expect(query.filters, isEmpty);
-    });
-
-    test('libraryKind argument overrides any type entry in the map', () {
-      // The browse tab always passes the library's actual kind; map's `type`
-      // is dropped if the explicit arg is present.
-      final query = libraryQueryFromPlexMap(map: {'type': '1'}, libraryKind: MediaKind.show);
+    test('libraryKind overrides any grouping type parameter', () {
+      final query = libraryQueryFromSelection(clauses: const [], typeParam: '1', libraryKind: MediaKind.show);
       expect(query.kind, MediaKind.show);
     });
 
-    test('multi-value type stays in the generic filters bucket (Plex passes it verbatim)', () {
-      // Plex shared libraries use `type=1,4` to mean movies+episodes — no
-      // single MediaKind covers that, so it has to round-trip via filters.
-      final input = {'type': '1,4'};
-      expect(roundTrip(input)['type'], '1,4');
-    });
-
-    test('numeric type maps to MediaKind when libraryKind is absent', () {
-      final query = libraryQueryFromPlexMap(map: {'type': '1'});
+    test('numeric grouping type maps to a kind when no libraryKind is given', () {
+      final query = libraryQueryFromSelection(clauses: const [], typeParam: '1');
       expect(query.kind, MediaKind.movie);
     });
 
-    test('full realistic browse-tab map round-trips byte-for-byte', () {
-      final input = {
-        'genre': 'Comedy',
-        'year': '2024',
-        'contentRating': 'PG-13',
-        'tag': 'Christmas',
-        'unwatched': '1',
-        'sort': 'rating:desc',
-        'alphaPrefix': 'B',
-      };
-      // includeCollections is added by PlexClient.fetchLibraryPagedContent
-      // *after* the translator, so the round-trip-only output skips it. The
-      // production path still emits it.
-      expect(roundTrip(input), input);
+    test('multi-value type stays a clause so Plex still receives it verbatim', () {
+      // Plex shared libraries use `type=1,4` for movies+episodes — no single
+      // MediaKind covers that.
+      expect(wire(typeParam: '1,4')['type'], '1,4');
+    });
+
+    test('an empty selection produces an empty query', () {
+      expect(wire(), isEmpty);
     });
   });
 }

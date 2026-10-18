@@ -12,6 +12,7 @@ import '../../../utils/platform_detector.dart';
 import '../../../widgets/card_inflation_budget.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/media_card_sliver_layout.dart';
+import '../../../widgets/nested_tab_scrollbar.dart';
 import '../../../widgets/settings_builder.dart';
 import '../../../widgets/skeleton_media_card.dart';
 import '../../../widgets/sliver_child_memo.dart';
@@ -111,12 +112,14 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
         final viewMode = settings.read(SettingsService.viewMode);
         final density = settings.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
-        return CustomScrollView(
-          clipBehavior: Clip.none,
-          slivers: [
-            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
-            _buildItemsSliver(viewMode, density, fullCardLayout: fullCardLayout),
-          ],
+        return NestedTabScrollbar(
+          child: CustomScrollView(
+            clipBehavior: Clip.none,
+            slivers: [
+              SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+              _buildItemsSliver(viewMode, density, fullCardLayout: fullCardLayout),
+            ],
+          ),
         );
       },
     );

@@ -94,8 +94,9 @@ void main() {
     );
 
     expect(downloads, 0);
-    expect(output.readAsStringSync(), contains('const String _ducetRanks ='));
-    expect(output.readAsStringSync(), isNot(contains('_buildRanks')));
+    final (cjkOrder, kangxiDecomp) = parseRadicals(fractionalText);
+    final expected = renderDucetOrder(buildOrder(parseAllKeys(allKeysText), cjkOrder), kangxiDecomp);
+    expect(output.readAsStringSync(), expected);
   });
 
   test('rejects an explicit digest mismatch without replacing output', () async {

@@ -72,7 +72,6 @@ class _FakeMusicService extends StubMusicPlaybackService {
   int toggleCalls = 0;
   int nextCalls = 0;
   int stopCalls = 0;
-  final List<Duration> seekCalls = [];
 
   _FakeMusicService({this.track});
 
@@ -129,11 +128,6 @@ class _FakeMusicService extends StubMusicPlaybackService {
   }
 
   @override
-  Future<void> seek(Duration position) async {
-    seekCalls.add(position);
-  }
-
-  @override
   void dispose() {
     _positionController.close();
     super.dispose();
@@ -183,7 +177,7 @@ void main() {
           if (downloadProvider != null) ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: platform),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: platform),
           navigatorObservers: [?navigatorObserver],
           builder: (context, child) => Directionality(textDirection: textDirection, child: child!),
           home: const Stack(

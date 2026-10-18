@@ -713,6 +713,24 @@ void main() {
     expect(provider.hubs.single.items.map((i) => i.serverId), ['server_1']);
   });
 
+  test('a watched event evicts only the emitting server\'s copy of a colliding id', () async {
+    aggregation.onDeckResult = () => [_item('42', serverId: 'server_1'), _item('42', serverId: 'server_2')];
+    await provider.load();
+
+    // Hold the trailing refresh open so the immediate eviction is observable.
+    final gate = Completer<void>();
+    aggregation.onDeckGate = gate.future;
+    aggregation.onDeckStarted = Completer<void>();
+
+    WatchStateNotifier().notifyWatched(item: _item('42', serverId: 'server_1'));
+    await aggregation.onDeckStarted!.future;
+
+    expect(provider.onDeck.map((item) => item.globalKey), ['server_2:42']);
+
+    gate.complete();
+    await pumpEventQueue();
+  });
+
   test('library order change re-sorts hubs without any refetch', () async {
     aggregation.hubsResult = () => [_hub('hub-lib2', libraryId: 'lib-2'), _hub('hub-lib1', libraryId: 'lib-1')];
     await provider.load();
@@ -786,6 +804,47 @@ void main() {
     expect(binderProvider.errorMessage, isNotNull);
   });
 
+  test('nothing is fetched while the profile binder runs (#2599)', () async {
+    // A profile switch mounts the new session while the shared Plex client
+    // still carries the previous user's token: a fetch here returns that
+    // user's rows, and a pass still in flight at settle swallows the prime.
+    isBinding = true;
+    await provider.load();
+    await provider.refreshContinueWatching();
+
+    expect(aggregation.onDeckCalls, 0);
+    expect(aggregation.hubCalls, 0);
+    expect(provider.isLoading, isTrue);
+    expect(provider.areHubsLoading, isTrue);
+    expect(provider.isLoadInFlight, isFalse, reason: 'the settle prime must not ride along with a skipped pass');
+    expect(shelfSyncs, isEmpty);
+
+    isBinding = false;
+    aggregation.onDeckResult = () => [_item('rebound')];
+    aggregation.hubsResult = () => [_hub('rebound-hub')];
+    await provider.load();
+
+    expect(provider.onDeck.map((i) => i.id), ['rebound']);
+    expect(provider.hubs.map((h) => h.id), ['rebound-hub']);
+  });
+
+  test('a rebind of the active profile keeps loaded content on screen', () async {
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+    await provider.load();
+
+    isBinding = true;
+    await provider.load();
+    await provider.refreshContinueWatching();
+
+    expect(aggregation.onDeckCalls, 1);
+    expect(aggregation.hubCalls, 1);
+    expect(provider.isLoading, isFalse);
+    expect(provider.areHubsLoading, isFalse);
+    expect(provider.onDeck.map((i) => i.id), ['a']);
+    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+  });
+
   // A pass in which zero servers succeeded is never authoritative: it must
   // not wipe existing content, and it may only commit "loaded, empty" when
   // the failure is settled (no cancellations, binder not running). The
@@ -822,13 +881,20 @@ void main() {
   });
 
   test('zero-success pass during profile binding stays loading (no cancellations)', () async {
-    // Covers the timeout-during-bind window: every fetch failed while the
-    // binder was still wiring servers, with no cancellation marker.
-    isBinding = true;
+    // A bind that starts mid-pass: every fetch failed while the binder was
+    // wiring servers, with no cancellation marker.
+    final gate = Completer<void>();
+    aggregation.onDeckGate = gate.future;
+    aggregation.hubGate = gate.future;
+    aggregation.onDeckStarted = Completer<void>();
     aggregation.onDeckSucceededServerIds = const {};
     aggregation.hubSucceededServerIds = const {};
 
-    await provider.load();
+    final pass = provider.load();
+    await aggregation.onDeckStarted!.future;
+    isBinding = true;
+    gate.complete();
+    await pass;
 
     expect(provider.isLoading, isTrue);
     expect(provider.areHubsLoading, isTrue);

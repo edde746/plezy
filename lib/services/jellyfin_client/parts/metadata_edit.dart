@@ -17,6 +17,34 @@ mixin _JellyfinMetadataEditMethods on _JellyfinClientInternals {
     return response.statusCode >= 200 && response.statusCode < 300;
   }
 
+  /// Server-wide values for a tag-like facet (`'Tags'`, `'Genres'`).
+  ///
+  /// Item DTOs carry no library id (`jellyfin_mappers` leaves
+  /// `MediaItem.libraryId` null), so the facet is read without `ParentId`:
+  /// Jellyfin answers the aggregate `/Items/Filters`, Emby the per-facet
+  /// route (`/Tags`, `/Genres`). Best-effort — failures return empty so a
+  /// suggestion list never blocks editing.
+  Future<List<String>> fetchTagFacetValues(String facet) async {
+    if (isOfflineMode) return const [];
+    try {
+      if (!dialect.supportsAggregateItemFilters) return await _fetchFilterFacet('/$facet', null);
+      final response = await _http.get(
+        '/Items/Filters',
+        queryParameters: {'userId': connection.userId},
+        timeout: _filtersTimeout,
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      if (data is! Map<String, dynamic>) return const [];
+      final values = data[facet];
+      if (values is! List) return const [];
+      return values.whereType<String>().where((v) => v.isNotEmpty).toList();
+    } catch (e, st) {
+      appLogger.w('JellyfinClient: tag facet $facet unavailable', error: e, stackTrace: st);
+      return const [];
+    }
+  }
+
   Future<Map<String, dynamic>> getRemoteImages(
     String itemId, {
     required String imageType,

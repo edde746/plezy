@@ -22,6 +22,8 @@ extension DownloadFixtures on AppDatabase {
     required String type,
     String? parentRatingKey,
     String? grandparentRatingKey,
+    String? libraryId,
+    String? libraryTitle,
     required int status,
     int mediaIndex = 0,
     String? mediaSourceId,
@@ -36,10 +38,12 @@ extension DownloadFixtures on AppDatabase {
         type,
         parent_rating_key,
         grandparent_rating_key,
+        library_id,
+        library_title,
         status,
         media_index,
         media_source_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(global_key) DO UPDATE SET
         server_id = excluded.server_id,
         client_scope_id = excluded.client_scope_id,
@@ -47,6 +51,8 @@ extension DownloadFixtures on AppDatabase {
         type = excluded.type,
         parent_rating_key = excluded.parent_rating_key,
         grandparent_rating_key = excluded.grandparent_rating_key,
+        library_id = excluded.library_id,
+        library_title = excluded.library_title,
         status = excluded.status,
         progress = 0,
         total_bytes = NULL,
@@ -64,6 +70,8 @@ extension DownloadFixtures on AppDatabase {
         Variable<String>(type),
         Variable<String>(parentRatingKey),
         Variable<String>(grandparentRatingKey),
+        Variable<String>(libraryId),
+        Variable<String>(libraryTitle),
         Variable<int>(status),
         Variable<int>(mediaIndex),
         Variable<String>(mediaSourceId),

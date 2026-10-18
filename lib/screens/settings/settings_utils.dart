@@ -15,6 +15,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/scroll_ink_boundary.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
 
@@ -23,6 +24,12 @@ String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
   settings.ThemeMode.light => t.settings.lightTheme,
   settings.ThemeMode.dark => t.settings.darkTheme,
   settings.ThemeMode.oled => t.settings.oledTheme,
+  settings.ThemeMode.ember => t.settings.emberTheme,
+  settings.ThemeMode.glacier => t.settings.glacierTheme,
+  settings.ThemeMode.forest => t.settings.forestTheme,
+  settings.ThemeMode.plum => t.settings.plumTheme,
+  settings.ThemeMode.paper => t.settings.paperTheme,
+  settings.ThemeMode.custom => t.themeEditor.custom,
 };
 
 /// Model for option selection dialogs.
@@ -176,27 +183,85 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
       contentPadding: const EdgeInsets.only(top: 12, bottom: 24),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: .min,
-          children: options.map((option) {
-            final selected = option.value == currentValue;
-            return FocusableListTile(
-              key: ValueKey(option.value),
-              leading: AppIcon(
-                selected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
-                color: selected ? Theme.of(dialogContext).colorScheme.primary : null,
-              ),
-              title: Text(option.title),
-              subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
-              selected: selected,
-              autofocus: focusFirstItem && selected,
-              onTap: () => Navigator.pop(dialogContext, option),
-            );
-          }).toList(),
+      content: ScrollInkBoundary(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: .min,
+            children: options.map((option) {
+              final selected = option.value == currentValue;
+              return FocusableListTile(
+                key: ValueKey(option.value),
+                leading: AppIcon(
+                  selected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
+                  color: selected ? Theme.of(dialogContext).colorScheme.primary : null,
+                ),
+                title: Text(option.title),
+                subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
+                selected: selected,
+                autofocus: focusFirstItem && selected,
+                onTap: () => Navigator.pop(dialogContext, option),
+              );
+            }).toList(),
+          ),
         ),
       ),
     ),
+  );
+}
+
+/// Shows a checkbox dialog with focusable rows and Save/Cancel. [onSave]
+/// receives the checked values in [options] order. Values in [locked] render
+/// checked and disabled, so D-pad traversal skips them.
+void showChecklistDialog<T>({
+  required BuildContext context,
+  required String title,
+  required List<DialogOption<T>> options,
+  required Set<T> checked,
+  Set<T> locked = const {},
+  required Future<void> Function(List<T> checked) onSave,
+}) {
+  final current = {...checked, ...locked};
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
+  final firstEditable = options.where((option) => !locked.contains(option.value)).firstOrNull?.value;
+
+  _showSettingsInputDialog(
+    context: context,
+    title: title,
+    contentBuilder: (_, _, setDialogState, _) => ScrollInkBoundary(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: .min,
+          children: [
+            for (final option in options)
+              FocusableCheckboxListTile(
+                key: ValueKey(option.value),
+                value: current.contains(option.value),
+                onChanged: locked.contains(option.value)
+                    ? null
+                    : (value) => setDialogState(() {
+                        if (value ?? false) {
+                          current.add(option.value);
+                        } else {
+                          current.remove(option.value);
+                        }
+                      }),
+                title: Text(option.title),
+                subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
+                autofocus: focusFirstItem && option.value == firstEditable,
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+          ],
+        ),
+      ),
+    ),
+    onSave: (_) async {
+      await onSave([
+        for (final option in options)
+          if (current.contains(option.value)) option.value,
+      ]);
+      return true;
+    },
   );
 }
 

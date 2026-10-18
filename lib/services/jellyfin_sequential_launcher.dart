@@ -70,7 +70,6 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
 
     return _launchLocalQueue(
       serverId: serverId,
-      queueId: 'jellyfin:${facts.id}',
       contextKey: facts.id,
       shuffle: shuffle,
       showLoadingIndicator: showLoadingIndicator,
@@ -120,7 +119,6 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
 
     return _launchLocalQueue(
       serverId: serverId,
-      queueId: 'jellyfin:folder:${folder.id}',
       contextKey: folder.id,
       shuffle: shuffle,
       showLoadingIndicator: showLoadingIndicator,
@@ -164,7 +162,6 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
 
     return _launchLocalQueue(
       serverId: serverId,
-      queueId: 'jellyfin:$seriesId',
       contextKey: seriesId,
       shuffle: true,
       showLoadingIndicator: showLoadingIndicator,
@@ -184,7 +181,6 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
   /// client call produces the items and how they're normalized.
   Future<PlayQueueResult> _launchLocalQueue({
     required String serverId,
-    required String queueId,
     required String contextKey,
     required bool shuffle,
     required bool showLoadingIndicator,
@@ -226,7 +222,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
         return launchLocalQueuePlayback(
           context: context,
           playbackState: playbackState,
-          queue: LocalPlayQueue(id: queueId, items: items, currentIndex: startIndex, shuffled: shuffle),
+          queue: LocalPlayQueue(items: items, currentIndex: startIndex, shuffled: shuffle),
           contextKey: contextKey,
           navigateForTesting: navigateForTesting,
         );

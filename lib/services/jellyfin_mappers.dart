@@ -5,6 +5,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
+import '../media/media_person.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/media_stream.dart';
@@ -443,6 +444,16 @@ class JellyfinMappers {
     final rating = flexibleDouble(value);
     return rating != null && rating.isFinite ? rating : null;
   }
+
+  /// Map a MediaBrowser `Person` item the way Jellyfin's own person page
+  /// reads it: `PremiereDate` is the birth date, `EndDate` the death date,
+  /// and the first `ProductionLocations` entry the birthplace.
+  static MediaPersonDetails personDetails(Map<String, dynamic> item) => MediaPersonDetails(
+    biography: firstNonBlank([item['Overview'] as String?]),
+    birthDate: MediaPersonDetails.parseDate(item['PremiereDate']),
+    deathDate: MediaPersonDetails.parseDate(item['EndDate']),
+    birthPlace: firstNonBlank([_firstString(item['ProductionLocations'])]),
+  );
 
   static String? _firstString(Object? list) {
     if (list is List && list.isNotEmpty && list.first is String) return list.first as String;

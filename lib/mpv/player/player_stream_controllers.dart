@@ -29,6 +29,7 @@ mixin PlayerStreamControllersMixin {
   final sourceReadyController = StreamController<PlayerSourceReady>.broadcast();
   final sourceFailedController = StreamController<PlayerSourceFailed>.broadcast();
   final primaryMediaReadyController = StreamController<void>.broadcast();
+  final demuxerProgressController = StreamController<void>.broadcast();
   final hdrOutputChangedController = StreamController<void>.broadcast();
   final backendSwitchedController = StreamController<void>.broadcast();
   final trackTransitionController = StreamController<String>.broadcast();
@@ -60,6 +61,7 @@ mixin PlayerStreamControllersMixin {
       sourceReady: sourceReadyController.stream,
       sourceFailed: sourceFailedController.stream,
       primaryMediaReady: primaryMediaReadyController.stream,
+      demuxerProgress: demuxerProgressController.stream,
       backendSwitched: backendSwitchedController.stream,
       hdrOutputChanged: hdrOutputChangedController.stream,
       trackTransition: trackTransitionController.stream,
@@ -92,6 +94,7 @@ mixin PlayerStreamControllersMixin {
     await sourceReadyController.close();
     await sourceFailedController.close();
     await primaryMediaReadyController.close();
+    await demuxerProgressController.close();
     await backendSwitchedController.close();
     await hdrOutputChangedController.close();
     await trackTransitionController.close();

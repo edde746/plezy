@@ -27,6 +27,7 @@ void _logPartSelection(
   int selectedMediaIndex,
   int selectedPartIndex,
 ) {
+  if (!debugLoggingEnabled) return;
   final candidateCount = mediaList.fold<int>(0, (count, media) => count + _mapList(media['Part']).length);
   if (candidateCount <= 1) return;
 
@@ -59,6 +60,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   String? selectedMediaSourceId,
   String? preferredVersionSignature,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
+  Duration? position,
 }) {
   String? videoUrl;
   MediaSourceInfo? mediaInfo;
@@ -73,6 +75,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
       mediaSourceId: selectedMediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
       onVersionFallback: onVersionFallback,
+      position: position,
     );
     if (selection != null) {
       availableVersions = selection.versions;

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +15,7 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/bif_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/media_items.dart';
 
@@ -80,12 +80,10 @@ void main() {
       addTearDown(jellyfin.close);
 
       expect(await emby.checkHealth(), HealthStatus.online);
-      expect(await emby.isHealthy(), isTrue);
       expect(await jellyfin.checkHealth(), HealthStatus.online);
-      expect(await jellyfin.isHealthy(), isTrue);
 
-      expect(embyRequests.log, ['GET /Users/user-1?', 'GET /Users/user-1?']);
-      expect(jellyfinRequests.log, ['GET /Users/Me?', 'GET /Users/Me?']);
+      expect(embyRequests.log, ['GET /Users/user-1?']);
+      expect(jellyfinRequests.log, ['GET /Users/Me?']);
       expect(embyRequests.log, isNot(contains('GET /Users/Me?')));
       expect(embyRequests.requests.every((request) => request.body.isEmpty), isTrue);
       expect(jellyfinRequests.requests.every((request) => request.body.isEmpty), isTrue);
@@ -271,6 +269,55 @@ void main() {
       );
     });
 
+    test('Emby episode rows carry every merged version (#2474)', () async {
+      // Models the measured Emby 4.10 behavior: list routes answer
+      // Fields=MediaSources with the row item's own file only, and add the
+      // versions merged with it once AlternateMediaSources is named too.
+      final requests = _RequestCapture((request) {
+        // A season id is not a series: the Seasons probe finds nothing and the
+        // client falls through to its ParentId episode route.
+        if (request.url.path.endsWith('/Seasons')) return jsonResponse({'Items': <Object?>[], 'TotalRecordCount': 0});
+        final fields = (request.url.queryParameters['Fields'] ?? '').split(',');
+        return jsonResponse({
+          'Items': [
+            {
+              'Id': '9',
+              'Name': 'S01E01 [DropBox]',
+              'Type': 'Episode',
+              'MediaSources': [
+                if (fields.contains('AlternateMediaSources'))
+                  {'Id': 'mediasource_12', 'Name': 'S01E01 [Teldrive]', 'MediaStreams': <Object?>[]},
+                {'Id': 'mediasource_9', 'Name': 'S01E01 [DropBox]', 'MediaStreams': <Object?>[]},
+              ],
+            },
+          ],
+          'TotalRecordCount': 1,
+        });
+      });
+      final emby = testEmbyClient(handler: requests.handle);
+      addTearDown(emby.close);
+
+      final seasonPage = await emby.fetchSeasonEpisodesPage('series-1', 'season-1');
+      final parentPage = await emby.fetchChildrenPage('season-1');
+
+      for (final row in [seasonPage.items.single, parentPage.items.single]) {
+        expect(row.mediaVersions!.map((version) => version.id), ['mediasource_12', 'mediasource_9']);
+      }
+    });
+
+    test('Emby rows without MediaSources skip the per-row alternate lookup', () async {
+      final requests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[], 'TotalRecordCount': 0}));
+      final emby = testEmbyClient(handler: requests.handle);
+      addTearDown(emby.close);
+
+      await emby.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
+      await emby.fetchContinueWatching(count: 5);
+
+      for (final request in requests.requests) {
+        expect(request.url.queryParameters['Fields'] ?? '', isNot(contains('AlternateMediaSources')));
+      }
+    });
+
     test('Emby scopes trailers and special features while Jellyfin keeps item routes', () async {
       final embyRequests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[]}));
       final jellyfinRequests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[]}));
@@ -323,16 +370,19 @@ void main() {
       }
     });
 
-    test('Jellyfin request strings stay free of the Emby-only token', () async {
+    test('Jellyfin request strings stay free of the Emby-only tokens', () async {
       final requests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[]}));
       final client = testJellyfinClient(handler: requests.handle);
       addTearDown(client.close);
 
       await client.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
+      // The ParentId episode route names MediaSources; Jellyfin's rows already
+      // carry every version there.
       await client.fetchChildren('season-1');
 
       for (final request in requests.requests) {
         expect(request.url.query, isNot(contains('UserDataLastPlayedDate')));
+        expect(request.url.query, isNot(contains('AlternateMediaSources')));
       }
     });
   });
@@ -1077,11 +1127,9 @@ void main() {
       expect(result.filters.map((filter) => filter.filter), contains('contentRating'));
     });
 
-    test('Emby preserves successful filter facets when one facet fails', () async {
+    test('Emby keeps the facets that answered when one facet is unreachable', () async {
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Tags') {
-          return jsonResponse({'Error': 'tags failed'}, status: 500);
-        }
+        if (request.url.path == '/Tags') throw http.ClientException('connection reset', request.url);
         final names = switch (request.url.path) {
           '/Genres' => ['Action'],
           '/OfficialRatings' => ['PG'],
@@ -1097,11 +1145,32 @@ void main() {
 
       final result = await client.fetchLibraryFiltersWithValues('lib-1', libraryKind: MediaKind.movie);
 
-      expect(requests.requests, hasLength(4), reason: requests.log.join('\n'));
       expect(result.cachedValues['genre']!.map((value) => value.key).toList(), ['Action']);
       expect(result.cachedValues['contentRating']!.map((value) => value.key).toList(), ['PG']);
       expect(result.cachedValues['year']!.map((value) => value.key).toList(), ['2024']);
       expect(result.cachedValues['tag'] ?? const [], isEmpty);
+    });
+
+    // Swallowing a 5xx here left an Emby user with a sheet showing only the
+    // synthetic filters and no error — the same picture as a library with no
+    // genres. Jellyfin's aggregate route already rethrew; the dialects agree.
+    test('Emby surfaces a facet server error instead of hiding it as an empty facet', () async {
+      final requests = _RequestCapture((request) {
+        if (request.url.path == '/Tags') return jsonResponse({'Error': 'tags failed'}, status: 500);
+        return jsonResponse({
+          'Items': [
+            {'Name': 'Action'},
+          ],
+          'TotalRecordCount': 1,
+        });
+      });
+      final client = testEmbyClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      await expectLater(
+        client.fetchLibraryFiltersWithValues('lib-1', libraryKind: MediaKind.movie),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.statusCode, 'statusCode', 500)),
+      );
     });
 
     test('Jellyfin keeps the single aggregate filter request', () async {
@@ -1632,7 +1701,9 @@ void main() {
       chapters: <MediaChapter>[],
     );
     test('fetches /Videos/{id}/index.bif?Width=320 and parses Roku BIF bytes', () async {
-      final bif = _bifWith(imageBytes: const [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0xFF, 0xD9]);
+      final bif = buildBif([
+        (timestamp: 0, bytes: [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0xFF, 0xD9]),
+      ]);
       late http.Request sent;
       final client = testEmbyClient(
         handler: (request) async {
@@ -1660,7 +1731,7 @@ void main() {
     test('a header-only BIF (extraction never ran) keeps the service unavailable', () async {
       // Emby's measured 4.9.5 answer for an item without previews: 72 bytes,
       // valid magic, zero frames.
-      final client = testEmbyClient(handler: (_) async => http.Response.bytes(_bifWith(imageBytes: const []), 200));
+      final client = testEmbyClient(handler: (_) async => http.Response.bytes(buildBif(const []), 200));
       addTearDown(client.close);
 
       final service = await client.createScrubPreviewSource(item: _item(MediaBackend.emby), mediaSource: mediaInfo);
@@ -1682,28 +1753,4 @@ void main() {
       expect(service!.isAvailable, isFalse);
     });
   });
-}
-
-/// Minimal Roku BIF: 64-byte header, one index entry and sentinel, then
-/// [imageBytes] as the (optional) single frame. Timestamps are milliseconds.
-Uint8List _bifWith({required List<int> imageBytes}) {
-  final imageCount = imageBytes.isEmpty ? 0 : 1;
-  final indexBytes = (imageCount + 1) * 8;
-  final buf = Uint8List(64 + indexBytes + imageBytes.length);
-  final view = ByteData.sublistView(buf);
-  const magic = [0x89, 0x42, 0x49, 0x46, 0x0D, 0x0A, 0x1A, 0x0A];
-  for (var i = 0; i < magic.length; i++) {
-    buf[i] = magic[i];
-  }
-  view.setUint32(12, imageCount, Endian.little);
-  view.setUint32(16, 1000, Endian.little);
-  if (imageCount > 0) {
-    view.setUint32(64, 0, Endian.little);
-    view.setUint32(68, 64 + indexBytes, Endian.little);
-  }
-  // Sentinel entry: timestamp 0xFFFFFFFF, offset = end of data.
-  view.setUint32(64 + imageCount * 8, 0xFFFFFFFF, Endian.little);
-  view.setUint32(64 + imageCount * 8 + 4, 64 + indexBytes + imageBytes.length, Endian.little);
-  buf.setRange(64 + indexBytes, 64 + indexBytes + imageBytes.length, imageBytes);
-  return buf;
 }

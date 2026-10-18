@@ -10,7 +10,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     _watchTogetherLease = watchTogetherLease;
     if (watchTogether != null && watchTogetherLease != null && watchTogetherLease.isCurrent) {
       _watchTogetherProvider = watchTogether;
-      watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+      watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
     }
     bool isCurrentStart() => attempt.isCurrent && (watchTogetherLease == null || watchTogetherLease.isCurrent);
     _firstFrame.resetRenderedForAttempt();
@@ -21,6 +21,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
+      // Owned until the start commits or fails: a zap from a source that
+      // does not wait for the on-screen controls (OS media session, companion
+      // remote) would otherwise tune alongside it, and whichever adopted last
+      // would orphan the other's session. The attempt above idled the gate.
+      final startLease = _transitionGate.tryAcquire(PlaybackTransition.startingLive);
+      final replacement = _live.beginReplacement();
+      var committed = false;
+      _FrameRateStartupPlan? frameRatePlan;
+      int? openedStream;
       try {
         _firstFrame.resetUiForOpen();
         await currentPlayer.requestAudioFocus();
@@ -49,10 +58,18 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           final programStart = session.program.beginsAt?.toDouble() ?? window.startEpoch;
           final effectiveStart = window.target(programStart)!;
           if (window.endEpoch - effectiveStart > 60) {
-            widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
-            final watchFromStart = await _showWatchFromStartDialog(effectiveStart.ceil(), window.endEpoch.floor());
-            widget.launchObserver?.mark('opening');
-            if (!attempt.isCurrent || !identical(_live.session, session)) return;
+            final bool? watchFromStart;
+            switch (widget.live!.startPosition) {
+              case LiveTvStartPosition.beginning:
+                watchFromStart = true;
+              case LiveTvStartPosition.live:
+                watchFromStart = false;
+              case LiveTvStartPosition.ask:
+                widget.launchObserver?.mark('blocked', blocker: 'confirmationRequired');
+                watchFromStart = await _showWatchFromStartDialog(effectiveStart.ceil(), window.endEpoch.floor());
+                widget.launchObserver?.mark('opening');
+                if (!attempt.isCurrent || !identical(_live.session, session)) return;
+            }
             if (watchFromStart == true) requestedEpoch = effectiveStart;
           }
         }
@@ -78,17 +95,18 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             ..start();
         }
 
-        await _openLiveStream(
+        frameRatePlan = _armLiveDisplayNegotiation(currentPlayer, attempt.outcome);
+        final holdPlaybackStart = frameRatePlan?.holdPlaybackStart ?? false;
+        final opened = await _openLiveStream(
           currentPlayer,
           streamUrl,
           targetEpoch: targetEpoch,
-          play: !PlatformDetector.isAutomotive(),
+          play: !holdPlaybackStart && !PlatformDetector.isAutomotive(),
           isCurrent: () => attempt.isCurrent && identical(_live.session, session),
           timeShifted: requestedEpoch != null,
         );
+        if (opened) openedStream = _live.streamGeneration;
         if (!attempt.isCurrent) return;
-
-        _trackManager?.cacheExternalSubtitles(const []);
 
         await _initVideoFilterAndPip();
         if (!mounted || !attempt.isCurrent) return;
@@ -101,16 +119,25 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           });
           _trackManager?.mediaInfo = null;
         }
-        if (PlatformDetector.isAutomotive()) {
+        // A held start is resumed by the display gate, which applies the
+        // same vehicle check.
+        if (PlatformDetector.isAutomotive() && !holdPlaybackStart) {
           await _playWithPlaybackIntent(currentPlayer);
         }
+        committed = attempt.isCurrent;
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));
         widget.launchObserver?.mark('failed', failure: 'playbackFailed');
         if (mounted && !_shuttingDown) {
-          showErrorSnackBar(context, e.toString());
+          showErrorSnackBar(context, t.liveTv.playbackStartFailed(reason: localizedErrorReason(e)));
           unawaited(_handleBackButton());
+        }
+      } finally {
+        if (startLease != null) _finishLiveReplacement(startLease, replacement, committed: committed);
+        final plan = frameRatePlan;
+        if (plan != null) {
+          await _releaseLiveDisplayNegotiation(currentPlayer, plan, stream: committed ? openedStream : null);
         }
       }
       return;
@@ -143,6 +170,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
         );
+        // The resume the open will land on, so a stacked download opens the
+        // file holding it.
+        final startPosition = await _resolveOpenResumePosition(
+          metadata: _currentMetadata,
+          isOffline: true,
+          offlineWatchService: offlineWatchService,
+          requested: widget.initialPosition,
+        );
+        if (!attempt.isCurrent) return;
         playbackContext = await playbackResolver.resolve(
           PlaybackInitializationOptions(
             metadata: _currentMetadata,
@@ -154,6 +190,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            startPosition: startPosition,
           ),
           offlineLibraryMode: true,
         );

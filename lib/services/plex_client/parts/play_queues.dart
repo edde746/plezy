@@ -1,12 +1,6 @@
 part of '../../plex_client.dart';
 
 mixin _PlexPlayQueueMethods on _PlexClientInternals {
-  PlexMetadataDto _createTaggedMetadataWithLibrary(
-    Map<String, dynamic> json, {
-    int? librarySectionID,
-    String? librarySectionTitle,
-  });
-
   PlayQueueResponse _parsePlayQueueResponse(dynamic data, {int? librarySectionID, String? librarySectionTitle}) {
     final container = data is Map && data['MediaContainer'] is Map
         ? data['MediaContainer'] as Map<String, dynamic>
@@ -129,7 +123,6 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
         type: 'video',
         shuffle: shuffle,
         key: startingEpisodeKey == null ? null : '/library/metadata/$startingEpisodeKey',
-        continuous: startingEpisodeKey != null && shuffle == 0 ? 1 : 0,
         librarySectionID: librarySectionID,
         librarySectionTitle: librarySectionTitle,
       );

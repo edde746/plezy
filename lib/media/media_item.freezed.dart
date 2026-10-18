@@ -18,7 +18,11 @@ mixin _$MediaItem {
 /// listings yield one or two (the `rating`/`audienceRating` pair with
 /// their source images); `/library/metadata/{id}` adds the `Rating[]`
 /// array, so IMDb and TMDB join Rotten Tomatoes on detail screens.
-@JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? get ratings; bool? get isFavorite;@JsonKey(fromJson: _mediaItemStringList) List<String>? get genres;@JsonKey(fromJson: _mediaItemStringList) List<String>? get directors;@JsonKey(fromJson: _mediaItemStringList) List<String>? get writers;@JsonKey(fromJson: _mediaItemStringList) List<String>? get producers;@JsonKey(fromJson: _mediaItemStringList) List<String>? get countries;@JsonKey(fromJson: _mediaItemStringList) List<String>? get collections;@JsonKey(fromJson: _mediaItemStringList) List<String>? get labels;@JsonKey(fromJson: _mediaItemStringList) List<String>? get styles;@JsonKey(fromJson: _mediaItemStringList) List<String>? get moods;@JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? get roles;@JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? get mediaVersions; String? get libraryId; String? get libraryTitle;/// Jellyfin playlist entry id used by playlist write endpoints.
+@JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? get ratings; bool? get isFavorite;@JsonKey(fromJson: _mediaItemStringList) List<String>? get genres;@JsonKey(fromJson: _mediaItemStringList) List<String>? get directors;@JsonKey(fromJson: _mediaItemStringList) List<String>? get writers;@JsonKey(fromJson: _mediaItemStringList) List<String>? get producers;@JsonKey(fromJson: _mediaItemStringList) List<String>? get countries;@JsonKey(fromJson: _mediaItemStringList) List<String>? get collections;@JsonKey(fromJson: _mediaItemStringList) List<String>? get labels;@JsonKey(fromJson: _mediaItemStringList) List<String>? get styles;@JsonKey(fromJson: _mediaItemStringList) List<String>? get moods;@JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? get roles;/// The item's versions, one per Plex `Media`. Null means the response
+/// carried none, so fetch the item; a non-empty list is complete.
+/// Version pickers, saved-version resolution and delete impact trust it
+/// without a detail fetch. Plex inlines every `Media` on list rows.
+@JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? get mediaVersions; String? get libraryId; String? get libraryTitle;/// Jellyfin playlist entry id used by playlist write endpoints.
 @JsonKey(fromJson: flexibleInt) Object? get playlistItemId; String? get serverId; String? get serverName;/// Relative folder key (`/library/sections/{id}/folder?parent=…`) for
 /// [MediaKind.folder] rows — what [MediaServerClient.fetchFolderChildren]
 /// tunes into. Stamped by the folder fetchers, null elsewhere.
@@ -322,6 +326,10 @@ class PlexMediaItem extends MediaItem {
 @override@JsonKey(fromJson: _mediaItemStringList) final  List<String>? styles;
 @override@JsonKey(fromJson: _mediaItemStringList) final  List<String>? moods;
 @override@JsonKey(fromJson: _mediaItemRolesFromJson) final  List<MediaRole>? roles;
+/// The item's versions, one per Plex `Media`. Null means the response
+/// carried none, so fetch the item; a non-empty list is complete.
+/// Version pickers, saved-version resolution and delete impact trust it
+/// without a detail fetch. Plex inlines every `Media` on list rows.
 @override@JsonKey(fromJson: _mediaItemVersionsFromJson) final  List<MediaVersion>? mediaVersions;
 @override final  String? libraryId;
 @override final  String? libraryTitle;
@@ -516,6 +524,10 @@ class JellyfinMediaItem extends MediaItem {
 @override@JsonKey(fromJson: _mediaItemStringList) final  List<String>? styles;
 @override@JsonKey(fromJson: _mediaItemStringList) final  List<String>? moods;
 @override@JsonKey(fromJson: _mediaItemRolesFromJson) final  List<MediaRole>? roles;
+/// The item's versions, one per `MediaSources` entry. Same contract as
+/// the Plex variant: null means not fetched, non-empty means complete.
+/// Emby list rows are complete only when `AlternateMediaSources` is
+/// requested beside `MediaSources` (#2474); the client adds it.
 @override@JsonKey(fromJson: _mediaItemVersionsFromJson) final  List<MediaVersion>? mediaVersions;
 @override final  String? libraryId;
 @override final  String? libraryTitle;

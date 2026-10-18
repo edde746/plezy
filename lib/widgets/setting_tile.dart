@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../screens/settings/settings_utils.dart';
 import '../services/settings_service.dart';
 import '../services/settings_mutation_service.dart';
+import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'focusable_list_tile.dart';
 import 'settings_section.dart';
@@ -16,13 +17,17 @@ import 'settings_section.dart';
 
 /// Shared commit path for every tile: persist [value] under [pref], then hand
 /// it to the tile's optional [onAfterWrite] callback.
+///
+/// `onChanged` returns a future nobody awaits, so a declining effect has to be
+/// reported here — thrown past this point it becomes an unhandled async error.
 Future<void> _writeAndNotify<T>(
   BuildContext context,
   Pref<T> pref,
   T value,
   FutureOr<void> Function(T)? onAfterWrite,
 ) async {
-  await const SettingsMutationService().write(context, pref, value);
+  final failure = await const SettingsMutationService().write(context, pref, value);
+  if (failure != null && context.mounted) showErrorSnackBar(context, failure.display);
   if (onAfterWrite != null) await onAfterWrite(value);
 }
 
@@ -216,6 +221,59 @@ class SettingSelectionTile<T> extends StatelessWidget {
           if (context.mounted) await _writeAndNotify(context, pref, picked.value, onAfterWrite);
         },
       ),
+    );
+  }
+}
+
+/// ListTile that opens [showChecklistDialog] for a pref holding the
+/// *unchecked* option values, so an option added later starts checked. The
+/// subtitle lists the checked options, then [description].
+class SettingChecklistTile extends StatelessWidget {
+  final Pref<List<String>> uncheckedPref;
+  final IconData icon;
+  final String title;
+  final String description;
+  final List<DialogOption<String>> options;
+
+  /// Options that are always checked and cannot be unchecked.
+  final Set<String> locked;
+
+  const SettingChecklistTile({
+    super.key,
+    required this.uncheckedPref,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.options,
+    this.locked = const {},
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<String>>(
+      valueListenable: SettingsService.instance.listenable(uncheckedPref),
+      builder: (_, unchecked, _) {
+        final checked = [
+          for (final option in options)
+            if (locked.contains(option.value) || !unchecked.contains(option.value)) option,
+        ];
+        return _SettingRow(
+          icon: icon,
+          title: title,
+          subtitle: Text('${checked.map((option) => option.title).join(', ')} · $description'),
+          onTap: () => showChecklistDialog<String>(
+            context: context,
+            title: title,
+            options: options,
+            checked: {for (final option in checked) option.value},
+            locked: locked,
+            onSave: (values) => _writeAndNotify(context, uncheckedPref, [
+              for (final option in options)
+                if (!values.contains(option.value)) option.value,
+            ], null),
+          ),
+        );
+      },
     );
   }
 }

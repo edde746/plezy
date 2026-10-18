@@ -11,7 +11,7 @@ enum LiveStreamRetryResult { succeeded, failed, stale }
 ///
 /// A recovery may hand back the very session it was asked to recover
 /// (Jellyfin's `recover` returns the receiver), so a failed attempt must not
-/// discard — terminally stop-report — the session that is still current and
+/// discard — terminally release — the session that is still current and
 /// will be re-adopted by the next retry. [currentSession] guards the discard
 /// by identity.
 Future<LiveStreamRetryResult> runLiveStreamRetry<Session>({

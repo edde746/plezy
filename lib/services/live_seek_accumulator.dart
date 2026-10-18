@@ -5,6 +5,11 @@ import '../media/live_tv_timeline.dart';
 /// seekable range). `start` ≈ earliest seekable point, `end` ≈ the live edge.
 typedef LiveSeekBounds = LiveTvSeekWindow;
 
+/// Relative live skip entry point: accumulates [deltaSeconds] and returns the
+/// seconds actually applied in the direction of the press, or zero — which is
+/// all a readout may announce. See [LiveSeekAccumulator.seekBy].
+typedef LiveSeekBy = int Function(int deltaSeconds);
+
 /// Coalesces rapid relative live-TV skips into a single transcode re-open.
 ///
 /// Live time-shift seeks don't use `player.seek()` — each one re-opens a fresh
@@ -64,36 +69,37 @@ class LiveSeekAccumulator {
   /// available through debounce and source readiness, then clears on any outcome.
   double? get programPreviewEpoch => _previewProgram ? _pendingEpoch : null;
 
-  /// Accumulate a relative skip of [deltaSeconds] and (re)arm the debounce.
-  /// No-op when there is no seekable window.
-  void seekBy(int deltaSeconds, {bool previewProgram = false}) {
-    if (_disposed) return;
+  /// Accumulate a relative skip, returning seconds applied in its direction.
+  /// A fresh press at an edge does nothing. A pending burst still follows a
+  /// moving window, but reports zero if that moves it against the press.
+  /// Playback may run past a stale heartbeat's end; preserve a rewind's step
+  /// from that raw position and revalidate against fresh bounds at dispatch.
+  int seekBy(int deltaSeconds, {bool previewProgram = false}) {
+    if (_disposed) return 0;
     final window = bounds();
-    if (window == null || !window.isValid) return;
-
+    if (window == null || !window.isValid) return 0;
     final base = _pendingEpoch ?? currentEpoch();
-    if (base == null) return;
-    final clampedBase = window.target(base)!;
-    final target = window.target(base + deltaSeconds)!;
-    // Do not rebuild the stream when a relative skip is clamped back to the
-    // position it already occupies (most commonly fast-forward at live edge).
-    // Once a burst has a pending target, keep its normal debounce semantics.
-    if (_pendingEpoch == null && target == clampedBase) return;
+    if (base == null) return 0;
+    final ceiling = base > window.endEpoch ? base : window.endEpoch;
+    final target = (base + deltaSeconds).clamp(window.startEpoch, ceiling).toDouble();
+    final travelled = target - base;
+    final applied = travelled.sign == deltaSeconds.sign ? travelled.truncate() : 0;
+    if (_pendingEpoch == null && (travelled == 0 || travelled.sign != deltaSeconds.sign)) return 0;
     if (_pendingEpoch == target && !_pendingLive) {
       if (_previewProgram != previewProgram) {
         _previewProgram = previewProgram;
         onChanged?.call();
       }
-      return;
+      return 0;
     }
     _intentGeneration++;
     _pendingLive = false;
     _previewProgram = previewProgram;
     _pendingEpoch = target;
-    onChanged?.call(); // Also notify when only live/offset operation changes.
-
+    onChanged?.call();
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, () => unawaited(_flush()));
+    return applied;
   }
 
   /// Absolute scrubs share pending ownership with skips and return-to-live.

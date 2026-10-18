@@ -81,6 +81,14 @@ else
   FAILED=1
 fi
 
+section "user-facing error text"
+if python3 scripts/checks/check_user_facing_errors.py; then
+  ok "no raw exception text in user-facing messages"
+else
+  fail "raw exception text reaches a snackbar"
+  FAILED=1
+fi
+
 section "workflow and script guards"
 if bash scripts/ci_guard_checks.sh; then
   ok "workflow and script guards passed"

@@ -113,9 +113,30 @@ String _nextUpDateCutoff() =>
 /// queries because it is the heaviest item field Jellyfin returns.
 const _baseEpisodeRowFields = '$_baseBrowseFields,MediaSources';
 
-/// Media types global search surfaces. Episodes are included so a user can
-/// find a single episode by name.
-const _searchItemTypes = 'Movie,Series,Episode,MusicAlbum,Audio';
+/// `IncludeItemTypes` for a scoped search of one non-music library, narrowed to
+/// what its kind can hold. Emby 4.11 answers a library-scoped search of a large
+/// TV library in ~70 ms for `Series,Episode` but takes 11–12 s once
+/// `MusicAlbum,Audio` join the list (#2581). Episodes are included so a user
+/// can find a single episode by name. A library of unknown kind (mixed
+/// content, books) keeps the broad list.
+String _searchItemTypesFor(MediaKind libraryKind) => switch (libraryKind) {
+  MediaKind.movie => 'Movie',
+  MediaKind.show => 'Series,Episode',
+  // Home video and music video libraries.
+  MediaKind.clip => 'Video,MusicVideo',
+  _ => 'Movie,Series,Episode,MusicAlbum,Audio',
+};
+
+/// Title types a person's filmography lists. People search checks each
+/// candidate against the same set, so a person it returns never opens an empty
+/// [MediaServerClient.fetchPersonMediaPage].
+const _personMediaItemTypes = 'Movie,Series';
+
+/// `/Persons` candidates fetched per people search. The server orders them by
+/// name, not relevance, so asking for only the caller's limit can cut off the
+/// best match behind alphabetically earlier partial matches; ranking runs
+/// client-side over this pool instead.
+const _peopleSearchCandidateLimit = 100;
 
 /// Folder-tree field set for MEDIA children. The tree renders
 /// title/thumb/watch state plus default dto fields (year, runtime, ratings);
@@ -222,6 +243,14 @@ const _episodeOrderQueryParameters = {
   'SortBy': 'ParentIndexNumber,IndexNumber,SortName',
   'SortOrder': 'Ascending,Ascending,Ascending',
 };
+
+/// Hides the placeholder (virtual) episodes a server synthesises for episodes
+/// that have no file — missing and not-yet-aired alike (#2551). Recursive
+/// `/Items` queries return them unless asked not to, and they carry a fresh
+/// `DateCreated`, so they float to the top of date-sorted lists. `/Items` does
+/// not accept the `IsVirtualUnaired` key the `/Shows/{id}/Episodes` calls use;
+/// this is the filter Jellyfin Web's playback queries send.
+const _excludeVirtualItemsQuery = {'ExcludeLocationTypes': 'Virtual'};
 
 bool _isJellyfinFolderDto(Map<String, dynamic> item) {
   final type = (item['Type'] as String?)?.toLowerCase();
@@ -382,27 +411,37 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// branch concurrently reads `/Genres`, `/Tags`, and `/Years`. The
   /// unwatched/unplayed boolean remains synthetic because both dialects expose
   /// it as an `/Items` query filter. Keys are translated to Plex's filter
-  /// naming so the existing filter-param map round-trips through
-  /// `_buildFilterParams` unchanged; the synthesised `MediaFilter.key` keeps
-  /// the historic `jellyfin:` prefix so existing cached preferences remain valid.
+  /// naming so a selection round-trips through the neutral clause model
+  /// unchanged; the synthesised `MediaFilter.key` keeps the historic
+  /// `jellyfin:` prefix so existing cached preferences remain valid.
   @override
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
+    // MediaBrowser can negate the played state (`Filters=IsPlayed`) but
+    // nothing else: `/Items` has no `IsNotFavorite`, and `isFavorite=false`
+    // is a UserData join that also drops every item the user never touched
+    // (0 of 250 series on a library with no favorites). The value facets have
+    // no per-field exclusion either, so both declare equality only and the
+    // editor hides the include/exclude control for them.
+    const booleanOperators = [LibraryFilterOperator.is_, LibraryFilterOperator.isNot];
+    const valueOperators = [LibraryFilterOperator.is_];
     final filters = <MediaFilter>[
       MediaFilter(
-        filter: 'unwatched',
-        filterType: 'boolean',
+        filter: MediaFilterField.unwatched,
+        filterType: MediaFilterType.boolean,
         key: 'jellyfin:unwatched',
         title: libraryKind?.isMusic == true
             ? t.libraries.filterCategories.unplayed
             : t.libraries.filterCategories.unwatched,
         type: 'filter',
+        operators: booleanOperators,
       ),
       MediaFilter(
-        filter: 'favorite',
-        filterType: 'boolean',
+        filter: MediaFilterField.favorite,
+        filterType: MediaFilterType.boolean,
         key: 'jellyfin:favorite',
         title: t.libraries.filterCategories.favorites,
         type: 'filter',
+        operators: valueOperators,
       ),
     ];
     final data = await _safeFetchFilterPayload(libraryId);
@@ -445,7 +484,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       final entries = raw[key];
       if (entries == null || entries.isEmpty) continue;
       filters.add(
-        MediaFilter(filter: key, filterType: 'string', key: 'jellyfin:$key', title: titles[key] ?? key, type: 'filter'),
+        MediaFilter(
+          filter: key,
+          filterType: key == MediaFilterField.year ? MediaFilterType.integer : MediaFilterType.tag,
+          key: 'jellyfin:$key',
+          title: titles[key] ?? key,
+          type: 'filter',
+          operators: valueOperators,
+        ),
       );
       final sorted = List<String>.from(entries);
       if (key == 'year') {
@@ -486,42 +532,48 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// `/OfficialRatings`, not the `/Items/OfficialRatings` form its siblings
   /// might suggest (that one 404s). Jellyfin has none of these four and answers
   /// the aggregate route instead.
+  ///
+  /// Same failure policy as the Jellyfin aggregate above: a transient failure
+  /// leaves that facet empty, anything else (auth, 5xx, cancellation) throws
+  /// so a real outage does not look like a library with no genres.
   Future<Map<String, dynamic>> _safeFetchFilterFacets(String libraryId) async {
-    final facets = await Future.wait([
-      _safeFetchFilterFacet('/Genres', libraryId),
-      _safeFetchFilterFacet('/OfficialRatings', libraryId),
-      _safeFetchFilterFacet('/Tags', libraryId),
-      _safeFetchFilterFacet('/Years', libraryId),
-    ]);
+    Future<List<String>> facet(String endpoint) async {
+      try {
+        return await _fetchFilterFacet(endpoint, libraryId);
+      } on MediaServerHttpException catch (e, st) {
+        if (!e.isTransient) rethrow;
+        appLogger.w('MediaBrowserClient: $endpoint filter facet unreachable (facet empty)', error: e, stackTrace: st);
+        return const [];
+      }
+    }
+
+    final facets = await Future.wait([facet('/Genres'), facet('/OfficialRatings'), facet('/Tags'), facet('/Years')]);
     return {'Genres': facets[0], 'OfficialRatings': facets[1], 'Tags': facets[2], 'Years': facets[3]};
   }
 
-  Future<List<String>> _safeFetchFilterFacet(String endpoint, String libraryId) async {
-    try {
-      final response = await _http.get(
-        endpoint,
-        // `Recursive=true` is required: without it Emby only considers the
-        // library view's direct children and every facet comes back empty
-        // (measured against Emby 4.9.5 — `/Years` returns 0 vs 15 rows).
-        queryParameters: {'UserId': connection.userId, 'ParentId': libraryId, 'Recursive': 'true'},
-        timeout: _filtersTimeout,
-      );
-      throwIfHttpError(response);
-      final data = response.data;
-      if (data is! Map<String, dynamic>) return const [];
-      final items = data['Items'];
-      if (items is! List) return const [];
-      final names = <String>[];
-      for (final item in items) {
-        if (item is! Map<String, dynamic>) continue;
-        final name = item['Name'];
-        if (name is String && name.isNotEmpty) names.add(name);
-      }
-      return names;
-    } catch (e, st) {
-      appLogger.w('MediaBrowserClient: $endpoint filter facet unavailable', error: e, stackTrace: st);
-      return const [];
+  @override
+  Future<List<String>> _fetchFilterFacet(String endpoint, String? libraryId) async {
+    final response = await _http.get(
+      endpoint,
+      // `Recursive=true` is required: without it Emby only considers the
+      // library view's direct children and every facet comes back empty
+      // (measured against Emby 4.9.5 — `/Years` returns 0 vs 15 rows).
+      // A null [libraryId] scopes the facet server-wide, which is what tag
+      // suggestions want: MediaBrowser item DTOs carry no library id.
+      queryParameters: {'UserId': connection.userId, 'ParentId': ?libraryId, 'Recursive': 'true'},
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    if (data is! Map<String, dynamic>) return const [];
+    final items = data['Items'];
+    if (items is! List) return const [];
+    final names = <String>[];
+    for (final item in items) {
+      if (item is! Map<String, dynamic>) continue;
+      final name = item['Name'];
+      if (name is String && name.isNotEmpty) names.add(name);
     }
+    return names;
   }
 
   /// Jellyfin has no `/sorts` listing endpoint, so this returns a hardcoded
@@ -639,44 +691,6 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         ? query.copyWith(kind: libraryKind)
         : query;
     return _fetchLibraryContent(libraryId, effective, abort: abort);
-  }
-
-  /// Synthesised 27-letter alphabet — Jellyfin has no equivalent of Plex's
-  /// `/firstCharacter` endpoint, so the UI treats the bar as a name-prefix
-  /// filter instead of a scroll affordance. Each entry has `size: 1` so
-  /// the alpha-jump helper renders it without trying to do offset math.
-  @override
-  Future<List<LibraryFirstCharacter>> fetchFirstCharacters(String libraryId, {Map<String, String>? filters}) async {
-    const letters = [
-      '#',
-      'A',
-      'B',
-      'C',
-      'D',
-      'E',
-      'F',
-      'G',
-      'H',
-      'I',
-      'J',
-      'K',
-      'L',
-      'M',
-      'N',
-      'O',
-      'P',
-      'Q',
-      'R',
-      'S',
-      'T',
-      'U',
-      'V',
-      'W',
-      'X',
-      'Y',
-      'Z',
-    ];
-    return [for (final l in letters) LibraryFirstCharacter(key: l, title: l, size: 1)];
   }
 
   /// Queue a metadata refresh for the library. Jellyfin treats a library
@@ -1167,7 +1181,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// collection containing a Series plays its episodes instead of the
   /// unplayable Series entry, a playlist mixing both comes through the same
   /// path, and an album/artist/audio-playlist expands to its tracks.
-  /// Direct browsing keeps using [fetchChildren] / [fetchPlaylistItems]
+  /// Direct browsing keeps using [fetchChildren] / [fetchPlaylistPage]
   /// since those preserve the container shape (Series rows, PlaylistItemId).
   ///
   @override
@@ -1252,6 +1266,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
         'Fields': _episodeRowFields,
+        ..._excludeVirtualItemsQuery,
         ...jellyfinImageQueryParameters,
       },
       abort: abort,
@@ -1330,17 +1345,11 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // CollectionFolder. Searching one scoped request per visible library is
     // therefore the only way a hit ever learns which library it came from
     // (#1970) — and the only way a hidden library can be excluded at all.
-    var libraries = _loadedLibraryViews;
-    if (libraries == null) {
-      libraries = await _fetchLibraries(abort: abort);
-      // `??=`, not `=`: an explicit library load that started later can finish
-      // first, and this older response must not clobber its newer views.
-      _loadedLibraryViews ??= libraries;
-    }
-    abort?.throwIfAborted();
+    final libraries = await _searchLibraryViews(abort: abort);
     final visible = [
       for (final library in libraries)
-        if (!excludedLibraryIds.contains(library.id)) library,
+        // A photo library holds nothing search surfaces.
+        if (!excludedLibraryIds.contains(library.id) && library.kind != MediaKind.photo) library,
     ];
     if (visible.isEmpty) return const [];
 
@@ -1413,7 +1422,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               'SearchTerm': query,
               'Recursive': 'true',
               'Limit': limit.toString(),
-              'IncludeItemTypes': _searchItemTypes,
+              'IncludeItemTypes': _searchItemTypesFor(library.kind),
               'ParentId': library.id,
               'Fields': _browseFields,
               'EnableTotalRecordCount': 'false',
@@ -1443,6 +1452,125 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       for (final item in _mapItems([for (final result in results) ...result]))
         item.copyWith(libraryId: library.id, libraryTitle: library.title),
     ];
+  }
+
+  /// Library views a scoped search pass works from: the last load's when warm
+  /// (see [_loadedLibraryViews]), otherwise fetched under [abort].
+  Future<List<MediaLibrary>> _searchLibraryViews({AbortController? abort}) async {
+    var libraries = _loadedLibraryViews;
+    if (libraries == null) {
+      libraries = await _fetchLibraries(abort: abort);
+      // `??=`, not `=`: an explicit library load that started later can finish
+      // first, and this older response must not clobber its newer views.
+      _loadedLibraryViews ??= libraries;
+    }
+    abort?.throwIfAborted();
+    return libraries;
+  }
+
+  /// `/Persons` lists people with no title this user can see and ignores
+  /// `parentId`, so every candidate is confirmed against the same `/Items`
+  /// query [fetchPersonMediaPage] runs. Hidden libraries can only be honoured
+  /// there: the check is scoped to each library that stays visible.
+  @override
+  Future<List<MediaPerson>> searchPeople(
+    String query, {
+    int limit = defaultPeopleSearchLimit,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
+    // Null = one unscoped check per person, which is exact whenever no
+    // library that can hold a filmography title is hidden.
+    List<MediaLibrary>? checkedLibraries;
+    if (excludedLibraryIds.isNotEmpty) {
+      final titleLibraries = [
+        for (final library in await _searchLibraryViews(abort: abort))
+          // Music and photo libraries never hold a Movie or Series.
+          if (library.kind != MediaKind.artist && library.kind != MediaKind.photo) library,
+      ];
+      final visible = [
+        for (final library in titleLibraries)
+          if (!excludedLibraryIds.contains(library.id)) library,
+      ];
+      if (visible.isEmpty) return const [];
+      if (visible.length < titleLibraries.length) checkedLibraries = visible;
+    }
+
+    final rows = await _fetchItemsArray('/Persons', {
+      'userId': connection.userId,
+      'SearchTerm': query,
+      'PersonTypes': 'Actor,Director',
+      'Limit': '$_peopleSearchCandidateLimit',
+      'EnableImageTypes': 'Primary',
+      'ImageTypeLimit': '1',
+      'EnableUserData': 'false',
+      'EnableTotalRecordCount': 'false',
+    }, abort: abort);
+    final ranked = rankPeopleSearchResults([for (final row in rows) ?_personFromJson(row)], query, limit: limit);
+
+    const concurrency = 3;
+    final found = <MediaPerson>[];
+    for (var start = 0; start < ranked.length; start += concurrency) {
+      abort?.throwIfAborted();
+      final batch = ranked.skip(start).take(concurrency).toList(growable: false);
+      final hasMedia = await Future.wait([
+        for (final person in batch) _personHasVisibleMedia(person.id, libraries: checkedLibraries, abort: abort),
+      ]);
+      for (var index = 0; index < batch.length; index++) {
+        if (hasMedia[index]) found.add(batch[index]);
+      }
+    }
+    return found;
+  }
+
+  MediaPerson? _personFromJson(Map<String, dynamic> json) {
+    final id = json['Id'];
+    final name = json['Name'];
+    if (id is! String || id.isEmpty || name is! String || name.trim().isEmpty) return null;
+    final imageTags = json['ImageTags'];
+    final primaryTag = imageTags is Map<String, dynamic> ? imageTags['Primary'] : null;
+    return MediaPerson(
+      id: id,
+      name: name,
+      // No tagless fallback: a person without a primary image 404s there.
+      thumbPath: primaryTag is String && primaryTag.isNotEmpty
+          ? _absolutizeImagePath('/Items/${_segment(id)}/Images/Primary?tag=${Uri.encodeComponent(primaryTag)}')
+          : null,
+      backend: backend,
+      serverId: serverId,
+      serverName: serverName,
+    );
+  }
+
+  /// Whether [personId] has a filmography title in any of [libraries], or
+  /// anywhere this user can see when [libraries] is null. Libraries are asked
+  /// in turn and the first hit ends the walk.
+  Future<bool> _personHasVisibleMedia(
+    String personId, {
+    required List<MediaLibrary>? libraries,
+    AbortController? abort,
+  }) async {
+    if (libraries == null) return _personHasMedia(personId, abort: abort);
+    for (final library in libraries) {
+      if (await _personHasMedia(personId, parentId: library.id, abort: abort)) return true;
+    }
+    return false;
+  }
+
+  Future<bool> _personHasMedia(String personId, {String? parentId, AbortController? abort}) async {
+    final items = await _fetchItemsArray('/Items', {
+      'userId': connection.userId,
+      'PersonIds': personId,
+      'IncludeItemTypes': _personMediaItemTypes,
+      'Recursive': 'true',
+      'ParentId': ?parentId,
+      'Limit': '1',
+      'CollapseBoxSetItems': 'false',
+      'EnableTotalRecordCount': 'false',
+      'EnableImages': 'false',
+      'EnableUserData': 'false',
+    }, abort: abort);
+    return items.isNotEmpty;
   }
 
   /// Jellyfin removed `anyProviderIdEquals` (silently ignored on 10.11.10, so
@@ -1538,6 +1666,12 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// unstamped.
   Future<MediaItem> _withLibraryFromAncestors(MediaItem item) => _stampAncestorLibrary(item, _libraryAncestor(item.id));
 
+  /// Stamps library identity onto an item that lacks it (the download
+  /// pipeline's enqueue path). Same ancestors lookup as
+  /// [_withLibraryFromAncestors]; failures return the item unstamped.
+  @override
+  Future<MediaItem> stampLibrary(MediaItem item) => _withLibraryFromAncestors(item);
+
   /// Applies a settled [_libraryAncestor] lookup, or returns [item] unchanged
   /// when the lookup found nothing.
   Future<MediaItem> _stampAncestorLibrary(MediaItem item, Future<({String? id, String? title})?>? ancestor) async {
@@ -1571,12 +1705,6 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<List<MediaItem>> fetchPersonMedia(String personId) => drainPages<MediaItem>(
-    (start, size) => fetchPersonMediaPage(personId, start: start, size: size),
-    pageSize: _pagedListPageSize,
-  );
-
-  @override
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
     String personId, {
     int? start,
@@ -1590,7 +1718,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       queryParameters: {
         'userId': connection.userId,
         'PersonIds': personId,
-        'IncludeItemTypes': 'Movie,Series',
+        'IncludeItemTypes': _personMediaItemTypes,
         'Recursive': 'true',
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
@@ -1606,49 +1734,103 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
+  /// Not cached: [fetchItem] is the single writer of this endpoint's cache
+  /// row, and a person carries none of its detail fields.
   @override
-  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
+  Future<MediaPersonDetails> fetchPersonDetails(String personId, {AbortController? abort}) async {
+    if (isOfflineMode) return MediaPersonDetails.empty;
+    final response = await _http.get(
+      '/Users/${_segment(connection.userId)}/Items/${_segment(personId)}',
+      queryParameters: {'Fields': 'Overview,ProductionLocations'},
+      abort: abort,
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    return data is Map<String, dynamic> ? JellyfinMappers.personDetails(data) : MediaPersonDetails.empty;
+  }
+
+  @override
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async {
+    if (excludedLibraryIds.isEmpty) {
+      final rows = await _continueWatchingRows(count: count);
+      return _mergeContinueWatchingAndNextUp(resume: rows.resume, nextUp: rows.nextUp, limit: count);
+    }
+
+    // Resume and Next Up rows name no library, so the caller cannot drop a
+    // hidden library's rows. As in [searchItems] (#1970), asking each visible
+    // library on its own is the only way to leave one out, and it stamps every
+    // row with the library it came from. Music is skipped: both queries are
+    // video-only there.
+    var libraries = _loadedLibraryViews;
+    if (libraries == null) {
+      libraries = await _fetchLibraries();
+      _loadedLibraryViews ??= libraries;
+    }
+    final visible = [
+      for (final library in libraries)
+        if (!excludedLibraryIds.contains(library.id) && library.kind != MediaKind.artist) library,
+    ];
+    const concurrency = 3;
+    final resume = <MediaItem>[];
+    final nextUp = <MediaItem>[];
+    for (var start = 0; start < visible.length; start += concurrency) {
+      final batch = await Future.wait([
+        for (final library in visible.skip(start).take(concurrency))
+          _continueWatchingRows(count: count, library: library),
+      ]);
+      for (final rows in batch) {
+        resume.addAll(rows.resume);
+        nextUp.addAll(rows.nextUp);
+      }
+    }
+    return _mergeContinueWatchingAndNextUp(resume: resume, nextUp: nextUp, limit: count);
+  }
+
+  /// The two Continue Watching halves, server-wide or scoped to [library]
+  /// (whose rows are then stamped with it).
+  Future<({List<MediaItem> resume, List<MediaItem> nextUp})> _continueWatchingRows({
+    int? count,
+    MediaLibrary? library,
+  }) async {
+    final parentId = library?.id;
+    List<MediaItem> stamped(List<MediaItem> items) => library == null
+        ? items
+        : [for (final item in items) item.copyWith(libraryId: library.id, libraryTitle: library.title)];
+
     if (!dialect.resumeReturnsOnlyStartedItems) {
       // Emby: both shelf halves ride the one hide-aware window request — see
       // [_embyResumeWindowQuery].
       final split = _splitEmbyResumeRows(
-        await _fetchItemsArray(paths.resumeItems, _embyResumeWindowQuery(), retry: _continueWatchingRetry),
+        await _fetchItemsArray(
+          paths.resumeItems,
+          _embyResumeWindowQuery(parentId: parentId),
+          retry: _continueWatchingRetry,
+        ),
       );
-      return _mergeContinueWatchingAndNextUp(
-        resume: _mapItems(split.resume),
-        nextUp: _mapItems(await _stampEmbyNextUpRows(split.nextUp)),
-        limit: count,
+      return (
+        resume: stamped(_mapItems(split.resume)),
+        nextUp: stamped(_mapItems(await _stampEmbyNextUpRows(split.nextUp, parentId: parentId))),
       );
     }
 
     final results = await Future.wait([
-      _fetchItemsArray(paths.resumeItems, {
-        'userId': connection.userId,
-        'Limit': ?count?.toString(),
-        'Fields': _hubRowFields,
-        'MediaTypes': 'Video',
-        'Recursive': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _continueWatchingRetry),
-      _safeFetchItemsArray('/Shows/NextUp', {
-        'userId': connection.userId,
-        'Limit': ?count?.toString(),
-        'Fields': _hubRowFields,
-        'EnableResumable': 'false',
-        'NextUpDateCutoff': _nextUpDateCutoff(),
-        if (sendNextUpRewatching) 'EnableRewatching': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _continueWatchingRetry),
+      _fetchItemsArray(
+        paths.resumeItems,
+        _resumeItemsQuery(limit: count, parentId: parentId),
+        retry: _continueWatchingRetry,
+      ),
+      _safeFetchItemsArray(
+        '/Shows/NextUp',
+        _nextUpQuery(limit: count, parentId: parentId),
+        retry: _continueWatchingRetry,
+      ),
     ]);
 
-    return _mergeContinueWatchingAndNextUp(
-      resume: _mapItems(results.first),
+    return (
+      resume: stamped(_mapItems(results.first)),
       // `/Shows/NextUp` rows carry no series play date, so stamp them with one
       // before the recency merge.
-      nextUp: await _attachSeriesLastPlayed(_mapItems(results[1])),
-      limit: count,
+      nextUp: stamped(await _attachSeriesLastPlayed(_mapItems(results[1]))),
     );
   }
 
@@ -1707,7 +1889,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     // When the caller knows the library kind, skip NextUp for movie libraries;
     // Jellyfin can otherwise spend time scanning TV state only to return [].
     return _playbackHubSet(
-      parentId: libraryId,
+      library: (id: libraryId, name: libraryName),
       idPrefix: 'library.$libraryId',
       limit: limit,
       includePlaybackHubs: includePlaybackHubs,
@@ -1723,7 +1905,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// Latest + Continue Watching + Next Up row set shared by the home and
   /// per-library surfaces. Both scopes issue the same three requests in the
   /// same order and synthesise the same three rows; they differ only in
-  /// [parentId], the row identifier prefix, the titles, and the transport
+  /// [library], the row identifier prefix, the titles, and the transport
   /// policy. The Latest request fires before the [includePlaybackHubs]
   /// short-circuit so callers that only want Recently Added still get it in
   /// one round-trip.
@@ -1736,12 +1918,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     required String continueTitle,
     required String nextUpTitle,
     required String recentTitle,
-    String? parentId,
+    ({String id, String name})? library,
     String? latestItemTypes,
     HubFetchDiagnostics? diagnostics,
   }) async {
+    final parentId = library?.id;
+    final mapItem = library == null ? _mapItem : _libraryRowMapper(library.id, library.name);
     final latestFuture = _safeFetchItemsArray(
-      '/Users/${_segment(connection.userId)}/Items/Latest',
+      _latestItemsPath,
       {
         'Limit': limit.toString(),
         'ParentId': ?parentId,
@@ -1755,7 +1939,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
 
     MediaHub hub(String suffix, String title, String type, List<Map<String, dynamic>> items) =>
         JellyfinMappers.syntheticHub(
-          mapItem: _mapItem,
+          mapItem: mapItem,
           identifier: '$idPrefix.$suffix',
           title: title,
           type: type,
@@ -1775,33 +1959,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     if (dialect.resumeReturnsOnlyStartedItems) {
       resumeRowsFuture = _safeFetchItemsArray(
         paths.resumeItems,
-        {
-          'userId': connection.userId,
-          'ParentId': ?parentId,
-          'Limit': limit.toString(),
-          'Fields': _hubRowFields,
-          'MediaTypes': 'Video',
-          'Recursive': 'true',
-          'EnableTotalRecordCount': 'false',
-          ...jellyfinImageQueryParameters,
-        },
+        _resumeItemsQuery(limit: limit, parentId: parentId),
         retry: retry,
         diagnostics: diagnostics,
       );
       nextUpRowsFuture = includeNextUp
           ? _safeFetchItemsArray(
               '/Shows/NextUp',
-              {
-                'userId': connection.userId,
-                'ParentId': ?parentId,
-                'Limit': limit.toString(),
-                'Fields': _hubRowFields,
-                'EnableResumable': 'false',
-                'NextUpDateCutoff': _nextUpDateCutoff(),
-                if (sendNextUpRewatching) 'EnableRewatching': 'true',
-                'EnableTotalRecordCount': 'false',
-                ...jellyfinImageQueryParameters,
-              },
+              _nextUpQuery(limit: limit, parentId: parentId),
               retry: retry,
               diagnostics: diagnostics,
             )
@@ -1833,6 +1998,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     ].where((h) => h.items.isNotEmpty).toList();
   }
 
+  /// Maps rows fetched with `ParentId` = [libraryId] and stamps that library
+  /// on them. A MediaBrowser item DTO never names its library (see
+  /// [JellyfinMappers.mediaItem]), so without the stamp home cannot order
+  /// these rows by the user's library order or tell which library they hide.
+  MediaItem? Function(Map<String, dynamic>) _libraryRowMapper(String libraryId, String libraryName) =>
+      (json) => _mapItem(json)?.copyWith(libraryId: libraryId, libraryTitle: libraryName);
+
   /// Music-library hub set, mirroring the Jellyfin web client's music
   /// "Suggestions" tab. `/Users/{userId}/Items/Latest` natively groups a
   /// music library's new items into albums; the row carries the
@@ -1846,21 +2018,16 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     required bool includePlaybackHubs,
     HubFetchDiagnostics? diagnostics,
   }) async {
+    final mapItem = _libraryRowMapper(libraryId, libraryName);
     final latestFuture = _safeFetchItemsArray(
-      '/Users/${_segment(connection.userId)}/Items/Latest',
-      {
-        'Limit': limit.toString(),
-        'ParentId': libraryId,
-        'Fields': _musicAlbumRowFields,
-        'EnableUserData': 'false',
-        ...jellyfinImageQueryParameters,
-      },
+      _latestItemsPath,
+      _latestAlbumsQuery(limit: limit, parentId: libraryId),
       retry: _libraryHubRetry,
       diagnostics: diagnostics,
     );
 
     MediaHub latestAlbumsHub(List<Map<String, dynamic>> items) => JellyfinMappers.syntheticHub(
-      mapItem: _mapItem,
+      mapItem: mapItem,
       identifier: 'library.$libraryId.latestalbums',
       title: t.discover.latestAlbumsIn(library: libraryName),
       type: 'album',
@@ -1873,29 +2040,17 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     if (!includePlaybackHubs) {
       return [latestAlbumsHub(await latestFuture)].where((hub) => hub.items.isNotEmpty).toList();
     }
-    final playedParams = <String, String>{
-      'userId': connection.userId,
-      'ParentId': libraryId,
-      'IncludeItemTypes': 'Audio',
-      'Recursive': 'true',
-      'Filters': 'IsPlayed',
-      'SortOrder': 'Descending',
-      'Limit': limit.toString(),
-      'Fields': _musicTrackRowFields,
-      'EnableTotalRecordCount': 'false',
-      ...jellyfinImageQueryParameters,
-    };
     final results = await Future.wait([
       latestFuture,
       _safeFetchItemsArray(
         '/Items',
-        {...playedParams, 'SortBy': 'DatePlayed'},
+        _playedTracksQuery(sortBy: 'DatePlayed', limit: limit, parentId: libraryId),
         retry: _libraryHubRetry,
         diagnostics: diagnostics,
       ),
       _safeFetchItemsArray(
         '/Items',
-        {...playedParams, 'SortBy': 'PlayCount'},
+        _playedTracksQuery(sortBy: 'PlayCount', limit: limit, parentId: libraryId),
         retry: _libraryHubRetry,
         diagnostics: diagnostics,
       ),
@@ -1904,7 +2059,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return [
       latestAlbumsHub(results.first),
       JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
+        mapItem: mapItem,
         identifier: 'library.$libraryId.recentlyplayed',
         title: t.discover.recentlyPlayedIn(library: libraryName),
         type: 'track',
@@ -1914,7 +2069,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         serverName: serverName,
       ),
       JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
+        mapItem: mapItem,
         identifier: 'library.$libraryId.mostplayed',
         title: t.discover.mostPlayedIn(library: libraryName),
         type: 'track',
@@ -1978,6 +2133,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
             'SortBy': 'DateCreated,SortName,ProductionYear',
             'SortOrder': 'Descending,Descending,Descending',
             'Fields': _hubRowFields,
+            ..._excludeVirtualItemsQuery,
             ...jellyfinImageQueryParameters,
           },
           offset: offset,
@@ -1988,14 +2144,8 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         // Latest groups music into albums but does not expose StartIndex.
         if (offset > 0) return LibraryPage<MediaItem>(items: const [], totalCount: offset, offset: offset);
         return _safeFetchMediaPage(
-          '/Users/${_segment(connection.userId)}/Items/Latest',
-          {
-            'Limit': effectiveLimit,
-            'Fields': _musicAlbumRowFields,
-            'EnableUserData': 'false',
-            'ParentId': ?parentId,
-            ...jellyfinImageQueryParameters,
-          },
+          _latestItemsPath,
+          _latestAlbumsQuery(limit: pageSize, parentId: parentId),
           offset: offset,
           requestedSize: pageSize,
           singlePage: true,
@@ -2012,16 +2162,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         }
         return _safeFetchMediaPage(
           paths.resumeItems,
-          {
-            'userId': connection.userId,
-            'StartIndex': offset.toString(),
-            'Limit': effectiveLimit,
-            'Fields': _hubRowFields,
-            'Recursive': 'true',
-            'EnableTotalRecordCount': 'true',
-            if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
-            ...jellyfinImageQueryParameters,
-          },
+          _resumeItemsQuery(
+            limit: pageSize,
+            parentId: parentId,
+            start: offset,
+            totalCount: true,
+            videoOnly: parentId == null,
+          ),
           offset: offset,
           requestedSize: pageSize,
           abort: abort,
@@ -2030,18 +2177,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         if (dialect.supportsGlobalNextUp) {
           return _safeFetchMediaPage(
             '/Shows/NextUp',
-            {
-              'userId': connection.userId,
-              'StartIndex': offset.toString(),
-              'Limit': effectiveLimit,
-              'Fields': _hubRowFields,
-              'ParentId': ?parentId,
-              'EnableResumable': 'false',
-              'NextUpDateCutoff': _nextUpDateCutoff(),
-              if (sendNextUpRewatching) 'EnableRewatching': 'true',
-              'EnableTotalRecordCount': 'true',
-              ...jellyfinImageQueryParameters,
-            },
+            _nextUpQuery(limit: pageSize, parentId: parentId, start: offset, totalCount: true),
             offset: offset,
             requestedSize: pageSize,
             abort: abort,
@@ -2059,20 +2195,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       case 'mostplayed':
         return _safeFetchMediaPage(
           '/Items',
-          {
-            'userId': connection.userId,
-            'ParentId': ?parentId,
-            'IncludeItemTypes': 'Audio',
-            'Recursive': 'true',
-            'Filters': 'IsPlayed',
-            'SortBy': tail == 'mostplayed' ? 'PlayCount' : 'DatePlayed',
-            'SortOrder': 'Descending',
-            'StartIndex': offset.toString(),
-            'Limit': effectiveLimit,
-            'Fields': _musicTrackRowFields,
-            'EnableTotalRecordCount': 'true',
-            ...jellyfinImageQueryParameters,
-          },
+          _playedTracksQuery(
+            sortBy: tail == 'mostplayed' ? 'PlayCount' : 'DatePlayed',
+            limit: pageSize,
+            parentId: parentId,
+            start: offset,
+            totalCount: true,
+          ),
           offset: offset,
           requestedSize: pageSize,
           abort: abort,
@@ -2256,14 +2385,79 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// removed row to the shelf forever (#2003). The response is split by
   /// [_splitEmbyResumeRows] instead: previews slice the halves and the see-all
   /// surfaces page them in memory.
-  Map<String, dynamic> _embyResumeWindowQuery({String? parentId}) => {
+  Map<String, String> _embyResumeWindowQuery({String? parentId}) =>
+      _resumeItemsQuery(limit: _embyResumeWindowLimit, parentId: parentId);
+
+  String get _latestItemsPath => '/Users/${_segment(connection.userId)}/Items/Latest';
+
+  /// Resume-route query behind the Continue Watching shelf, hub preview and
+  /// see-all page (and, via [_embyResumeWindowQuery], the Emby window).
+  /// [start]/[totalCount] are the see-all paging extras; [videoOnly] adds the
+  /// `MediaTypes` filter.
+  Map<String, String> _resumeItemsQuery({
+    int? limit,
+    String? parentId,
+    int? start,
+    bool totalCount = false,
+    bool videoOnly = true,
+  }) => {
     'userId': connection.userId,
     'ParentId': ?parentId,
-    'Limit': _embyResumeWindowLimit.toString(),
+    'StartIndex': ?start?.toString(),
+    'Limit': ?limit?.toString(),
     'Fields': _hubRowFields,
-    'MediaTypes': 'Video',
+    if (videoOnly) 'MediaTypes': 'Video',
     'Recursive': 'true',
-    'EnableTotalRecordCount': 'false',
+    'EnableTotalRecordCount': totalCount ? 'true' : 'false',
+    ...jellyfinImageQueryParameters,
+  };
+
+  /// `/Shows/NextUp` query behind the Next Up shelf, hub preview and see-all
+  /// page: resumable episodes are excluded (they belong to the resume shelf)
+  /// and the server-side scan is bounded by [_nextUpDateCutoff].
+  Map<String, String> _nextUpQuery({int? limit, String? parentId, int? start, bool totalCount = false}) => {
+    'userId': connection.userId,
+    'ParentId': ?parentId,
+    'StartIndex': ?start?.toString(),
+    'Limit': ?limit?.toString(),
+    'Fields': _hubRowFields,
+    'EnableResumable': 'false',
+    'NextUpDateCutoff': _nextUpDateCutoff(),
+    if (sendNextUpRewatching) 'EnableRewatching': 'true',
+    'EnableTotalRecordCount': totalCount ? 'true' : 'false',
+    ...jellyfinImageQueryParameters,
+  };
+
+  /// `/Users/{id}/Items/Latest` query behind the Latest Albums row and its
+  /// see-all page — see [_musicAlbumRowFields] for the slim field set.
+  Map<String, String> _latestAlbumsQuery({required int limit, String? parentId}) => {
+    'Limit': limit.toString(),
+    'ParentId': ?parentId,
+    'Fields': _musicAlbumRowFields,
+    'EnableUserData': 'false',
+    ...jellyfinImageQueryParameters,
+  };
+
+  /// `/Items` query behind the Recently Played / Most Played rows and their
+  /// see-all pages: played tracks only, descending by [sortBy].
+  Map<String, String> _playedTracksQuery({
+    required String sortBy,
+    required int limit,
+    String? parentId,
+    int? start,
+    bool totalCount = false,
+  }) => {
+    'userId': connection.userId,
+    'ParentId': ?parentId,
+    'IncludeItemTypes': 'Audio',
+    'Recursive': 'true',
+    'Filters': 'IsPlayed',
+    'SortBy': sortBy,
+    'SortOrder': 'Descending',
+    'StartIndex': ?start?.toString(),
+    'Limit': limit.toString(),
+    'Fields': _musicTrackRowFields,
+    'EnableTotalRecordCount': totalCount ? 'true' : 'false',
     ...jellyfinImageQueryParameters,
   };
 

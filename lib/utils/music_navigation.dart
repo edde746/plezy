@@ -52,8 +52,13 @@ Future<void> openArtistById(BuildContext context, MediaServerClient client, Stri
 }
 
 /// Push the album detail screen for [album] on the profile navigator.
-Future<void> navigateToAlbum(BuildContext context, MediaItem album) async {
-  await _contentNavigatorOf(context).push(MaterialPageRoute(builder: (context) => AlbumDetailScreen(album: album)));
+/// [isOffline] makes the screen read its track list from downloads.
+Future<void> navigateToAlbum(BuildContext context, MediaItem album, {bool isOffline = false}) async {
+  await _contentNavigatorOf(context).push(
+    MaterialPageRoute(
+      builder: (context) => AlbumDetailScreen(album: album, isOffline: isOffline),
+    ),
+  );
 }
 
 /// Push the now-playing screen (slide-up + fade) on the profile navigator.

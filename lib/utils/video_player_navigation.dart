@@ -15,6 +15,7 @@ import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../watch_together/providers/watch_together_provider.dart';
+import '../watch_together/models/playback_state.dart';
 import '../watch_together/services/watch_together_controller.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
@@ -138,14 +139,6 @@ final class VideoPlayerLaunchIdentity {
   int get hashCode => Object.hash(globalKey, mediaIndex, mediaSourceId, selectedQualityPreset, isOffline, routeKind);
 }
 
-class VideoPlayerNavigationInFlightGuard {
-  final Set<VideoPlayerLaunchIdentity> _identities = <VideoPlayerLaunchIdentity>{};
-
-  bool tryStart(VideoPlayerLaunchIdentity identity) => _identities.add(identity);
-
-  void finish(VideoPlayerLaunchIdentity identity) => _identities.remove(identity);
-}
-
 class VideoPlayerActiveRouteGuard {
   Object? _owner;
   VideoPlayerLaunchIdentity? _identity;
@@ -175,16 +168,9 @@ class VideoPlayerActiveRouteGuard {
   }
 }
 
-final _videoPlayerNavigationInFlightGuard = VideoPlayerNavigationInFlightGuard();
-
-class WatchTogetherPlaybackNavigationException implements Exception {
-  final String message;
-
-  const WatchTogetherPlaybackNavigationException(this.message);
-
-  @override
-  String toString() => message;
-}
+/// Launch identities currently between the duplicate check and the route
+/// push; a second launch of the same identity in that window is dropped.
+final _inFlightLaunches = <VideoPlayerLaunchIdentity>{};
 
 /// Series (keyed by grandparent) or standalone-item key under
 /// [SettingsService.mediaVersionPreferences], scoped by server — raw Plex
@@ -276,6 +262,25 @@ Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem me
   return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
 }
 
+/// Resolve the version a Watch Together room's host opened (#2536) against
+/// [metadata]'s version list: the host's exact source, else the closest
+/// signature match. Null when [room] is null or nothing on offer matches —
+/// the viewer's own remembered version applies then.
+ResolvedMediaVersionPreference? resolveRoomMediaVersion(RoomMediaVersion? room, MediaItem metadata) {
+  if (room == null) return null;
+  final versions = metadata.mediaVersions ?? const <MediaVersion>[];
+  // Nothing to verify against: the host's id names this exact item, so it
+  // passes through to the backend's own sourceId > signature > index order.
+  if (versions.isEmpty) return (index: 0, sourceId: room.sourceId, signature: room.signature);
+  final sourceId = room.sourceId;
+  final signature = room.signature;
+  var index = sourceId == null ? -1 : versions.indexWhere((v) => v.id == sourceId);
+  if (index < 0 && signature != null) index = MediaVersion.findMatchingIndex(versions, {signature}) ?? -1;
+  if (index < 0) return null;
+  final version = versions[index];
+  return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
+}
+
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
 ///
 /// This utility function provides a consistent way to navigate to the video player
@@ -318,10 +323,8 @@ Future<bool?> navigateToVideoPlayer(
   bool explicitStartPolicy = false,
   PlaybackLaunchObserver? launchObserver,
 }) async {
-  if (!isOffline && watchTogetherLease == null) {
-    final watchTogether = context.read<WatchTogetherProvider?>();
-    watchTogetherLease = watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
-  }
+  final watchTogether = isOffline ? null : context.read<WatchTogetherProvider?>();
+  watchTogetherLease ??= watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
   final playbackLease = watchTogetherLease;
   bool launchCurrent() =>
       (isLaunchCurrent?.call() ?? true) && (launchObserver?.isCurrent ?? true) && (playbackLease?.isCurrent ?? true);
@@ -343,12 +346,15 @@ Future<bool?> navigateToVideoPlayer(
       : null;
 
   // Plain Play on a downloaded item must target the version actually on
-  // disk. Only one version can be downloaded per item, and saved version
-  // preferences describe online intent — they may point at a version that
-  // was never downloaded (issue #1440). Explicit caller selections still win.
+  // disk, online too, so the player can open the local copy instead of
+  // streaming it (issue #2466). Only one version can be downloaded per item,
+  // and saved version preferences describe online intent — they may point at
+  // a version that was never downloaded (issue #1440). Explicit caller
+  // selections still win. A Watch Together launch is never retargeted: the
+  // host's pick becomes the room's version, and followers open that one.
   int? downloadedMediaIndex;
   String? downloadedMediaSourceId;
-  if (isOffline && selectedMediaIndex == null && selectedMediaSourceId == null) {
+  if ((isOffline || playbackLease == null) && selectedMediaIndex == null && selectedMediaSourceId == null) {
     final downloaded = await downloadProvider.getCompletedDownload(metadata.globalKey);
     if (downloaded != null) {
       downloadedMediaIndex = downloaded.mediaIndex;
@@ -356,19 +362,34 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
+  // A launch that follows a Watch Together room opens the version its host
+  // opened, not this viewer's remembered one (#2536). The host's own
+  // launches (canSelect) pick the room's version instead of following it.
+  final roomVersion =
+      watchTogether != null &&
+          playbackLease != null &&
+          !playbackLease.canSelect &&
+          serverId != null &&
+          selectedMediaIndex == null &&
+          selectedMediaSourceId == null
+      ? resolveRoomMediaVersion(watchTogether.roomMediaVersionFor(ratingKey: metadata.id, serverId: serverId), metadata)
+      : null;
+
   // Saved preferences only apply when nothing explicit is in play — an
-  // explicit caller selection or a downloaded version must never be
-  // second-guessed by a remembered choice.
+  // explicit caller selection, a downloaded version, or the room's version
+  // must never be second-guessed by a remembered choice.
   ResolvedMediaVersionPreference? savedVersion;
   if (selectedMediaIndex == null &&
       selectedMediaSourceId == null &&
       downloadedMediaIndex == null &&
-      downloadedMediaSourceId == null) {
+      downloadedMediaSourceId == null &&
+      roomVersion == null) {
     savedVersion = await resolveSavedMediaVersionFor(metadata);
   }
   if (!launchCurrent()) return null;
-  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? savedVersion?.index ?? 0;
-  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? savedVersion?.sourceId;
+  final preferredVersion = roomVersion ?? savedVersion;
+  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? preferredVersion?.index ?? 0;
+  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? preferredVersion?.sourceId;
 
   final launchIdentity = VideoPlayerLaunchIdentity(
     metadata: metadata,
@@ -380,7 +401,7 @@ Future<bool?> navigateToVideoPlayer(
   );
   var markedInFlight = false;
   if (!usePushReplacement) {
-    markedInFlight = _videoPlayerNavigationInFlightGuard.tryStart(launchIdentity);
+    markedInFlight = _inFlightLaunches.add(launchIdentity);
     if (!markedInFlight) {
       appLogger.d(
         'Video player navigation already in flight for ${metadata.id} (mediaIndex=$mediaIndex), '
@@ -410,34 +431,24 @@ Future<bool?> navigateToVideoPlayer(
             launchObserver.mark('blocked', blocker: 'externalPlayerOptionsUnsupported');
             return null;
           }
-          bool launched = false;
-
-          if (isOffline) {
-            final globalKey = metadata.globalKey;
+          String? videoUrl;
+          // A reachable download of the requested version plays from disk,
+          // online too; anything else streams from the server.
+          if (isOffline || downloadProvider.isDownloaded(metadata.globalKey)) {
             final videoPath = await downloadProvider.getVideoFilePath(
-              globalKey,
+              metadata.globalKey,
               mediaIndex: mediaIndex,
               mediaSourceId: mediaSourceId,
             );
             if (!launchCurrent()) return null;
-            if (videoPath != null && context.mounted) {
-              final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
-              launched = await ExternalPlayerService.launch(
-                context: context,
-                videoUrl: videoUrl,
-                metadata: metadata,
-                client: mediaClient,
-                offlineWatchService: offlineWatchService,
-                mediaIndex: mediaIndex,
-                mediaSourceId: mediaSourceId,
-                isLaunchCurrent: launchCurrent,
-                onHandoffPending: () => launchObserver?.mark('blocked', blocker: 'externalHandoffPending'),
-                onLaunched: () => launchObserver?.mark('externalLaunched'),
-              );
-            }
-          } else if (context.mounted) {
+            if (videoPath != null) videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+          }
+          // An offline item with no local file falls through to the built-in player.
+          var launched = false;
+          if ((!isOffline || videoUrl != null) && context.mounted) {
             launched = await ExternalPlayerService.launch(
               context: context,
+              videoUrl: videoUrl,
               metadata: metadata,
               client: mediaClient,
               offlineWatchService: offlineWatchService,
@@ -494,7 +505,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
         selectedMediaIndex: mediaIndex,
         selectedMediaSourceId: mediaSourceId,
-        preferredVersionSignature: savedVersion?.signature,
+        preferredVersionSignature: preferredVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
         watchTogetherLease: playbackLease,
@@ -508,9 +519,7 @@ Future<bool?> navigateToVideoPlayer(
     pushFuture = route.push(navigator, replaceCurrent: usePushReplacement);
     launchObserver?.mark('opening');
   } finally {
-    if (markedInFlight) {
-      _videoPlayerNavigationInFlightGuard.finish(launchIdentity);
-    }
+    if (markedInFlight) _inFlightLaunches.remove(launchIdentity);
   }
   return pushFuture;
 }
@@ -657,14 +666,10 @@ Future<bool> navigateToWatchTogetherPlayback(
   final multiServer = context.read<MultiServerProvider>();
   final client = multiServer.getClientForServer(serverId);
 
-  if (client == null) {
-    throw const WatchTogetherPlaybackNavigationException('Watch Together server is unavailable');
-  }
+  if (client == null) throw StateError('Watch Together server is unavailable');
 
   final metadata = await client.fetchItem(ratingKey);
-  if (metadata == null) {
-    throw const WatchTogetherPlaybackNavigationException('Current Watch Together media is unavailable');
-  }
+  if (metadata == null) throw StateError('Current Watch Together media is unavailable');
 
   if (!context.mounted) return false;
 

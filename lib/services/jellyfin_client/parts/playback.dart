@@ -12,18 +12,18 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
 /// Video codecs the client accepts in an original file, as a set: a codec
 /// missing here makes the server transcode instead of serving the file, which
 /// is the right trade when [VideoDecodeCapabilities] reports no hardware
-/// decoder. `h265` is Jellyfin's alternate spelling of `hevc` and travels with
-/// it; the unconditional entries software-decode cheaply on any device that
-/// plays video at all.
+/// decoder or the user refused the codec. `h265` is Jellyfin's alternate
+/// spelling of `hevc` and travels with it; the unconditional entries
+/// software-decode cheaply on any device that plays video at all.
 String _jellyfinDirectPlayVideoCodecs() {
-  final hevc = VideoDecodeCapabilities.supportsHevc;
+  final hevc = VideoDecodeCapabilities.accepts(RankedVideoCodec.hevc);
   return [
     if (hevc) 'hevc',
     'h264',
     if (hevc) 'h265',
     'vp8',
     'vp9',
-    if (VideoDecodeCapabilities.supportsAv1) 'av1',
+    if (VideoDecodeCapabilities.accepts(RankedVideoCodec.av1)) 'av1',
     'mpeg4',
     'mpeg2video',
   ].join(',');
@@ -39,15 +39,17 @@ String _jellyfinDirectPlayVideoCodecs() {
 /// with a codec the server cannot produce (#2230) — see
 /// [MediaBrowserDialect.rotatesDisabledTranscodeCodecs].
 String _jellyfinTranscodeVideoCodecs(MediaBrowserDialect dialect) => [
-  if (dialect.rotatesDisabledTranscodeCodecs && VideoDecodeCapabilities.supportsAv1) 'av1',
-  if (VideoDecodeCapabilities.supportsHevc) 'hevc',
-  'h264',
+  for (final codec in VideoDecodeCapabilities.transcodeVideoCodecs)
+    if (codec != RankedVideoCodec.av1 || dialect.rotatesDisabledTranscodeCodecs) codec.id,
 ].join(',');
 
 /// Transcode output codecs for the MPEG-TS fallback profile. A strict subset
 /// of [_jellyfinTranscodeVideoCodecs]: AV1 is absent because a TS segment
 /// cannot carry it — that gap is why the fMP4 profile exists (#2131).
-String _jellyfinTranscodeVideoCodecsTs() => [if (VideoDecodeCapabilities.supportsHevc) 'hevc', 'h264'].join(',');
+String _jellyfinTranscodeVideoCodecsTs() => [
+  for (final codec in VideoDecodeCapabilities.transcodeVideoCodecs)
+    if (codec != RankedVideoCodec.av1) codec.id,
+].join(',');
 
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
@@ -66,7 +68,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
-    final item = await fetchItemFreshCacheFirst(itemId);
+    final item = forceRefresh ? await fetchItem(itemId) : await fetchItemFreshCacheFirst(itemId);
     final markers = item == null ? const <MediaMarker>[] : await _fetchMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
       item?.raw,
@@ -214,6 +216,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
+    // A server-supplied absolute URL can point at another host (a remote
+    // subtitle provider, a tuner); the token only ever goes to the server's
+    // own origin.
+    final base = Uri.tryParse(connection.baseUrl);
+    if (base == null || uri.scheme != base.scheme || uri.host != base.host || uri.port != base.port) {
+      return uri.toString();
+    }
     final params = Map<String, String>.from(uri.queryParameters)
       ..[connection.dialect.tokenQueryParam] = connection.accessToken;
     return uri.replace(queryParameters: params).toString();
@@ -235,12 +244,25 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     final metadata = options.metadata;
-    final bundle = await fetchPlaybackBundle(
-      metadata.id,
-      sourceIndex: options.selectedMediaIndex,
-      sourceId: options.selectedMediaSourceId,
-      preferredSignature: options.preferredVersionSignature,
-    );
+    final JellyfinPlaybackBundle? bundle;
+    try {
+      // An immediate connection error is asked again (see
+      // [retryTransientMediaServerCall]); the deadline only backstops the
+      // HTTP layer's own connect, response and receive budgets, so it never
+      // cuts a slow but working server short.
+      bundle = await retryTransientMediaServerCall(
+        operation: 'Jellyfin playback item',
+        deadline: MediaServerTimeouts.connect + MediaServerTimeouts.response + MediaServerTimeouts.receive,
+        call: (_, _) => fetchPlaybackBundle(
+          metadata.id,
+          sourceIndex: options.selectedMediaIndex,
+          sourceId: options.selectedMediaSourceId,
+          preferredSignature: options.preferredVersionSignature,
+        ),
+      );
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
+    }
     if (bundle == null) {
       throw PlaybackException(t.messages.playbackNoMediaSources, reason: PlaybackFailureReason.noPlayableSource);
     }
@@ -369,7 +391,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
-      } else if (!wantsOriginal) {
+      } else if (!wantsOriginal && chosenSource['SupportsDirectPlay'] != true) {
+        // No transcode is only a refusal when the server also declined direct
+        // play. A file that already fits the cap direct-plays with no
+        // `TranscodingUrl`, which is the capped request succeeding.
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
     }
@@ -421,6 +446,56 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       playSessionId: playSessionId,
       playMethod: playMethod,
       selectedMediaIndex: bundle.selectedSourceIndex,
+    );
+  }
+
+  /// [position] is ignored: a MediaBrowser item is never stacked across
+  /// files (see [MediaPart]).
+  @override
+  Future<ExternalPlaybackTarget?> resolveExternalPlayback(
+    MediaItem item, {
+    int mediaIndex = 0,
+    String? mediaSourceId,
+    Duration? position,
+  }) async {
+    // Tracks stream from /Audio/{id}/stream; the URL contract (Static=true,
+    // api_key in the query string) is otherwise identical to the video one.
+    final isTrack = item.kind == MediaKind.track;
+    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
+    if (bundle == null) {
+      return ExternalPlaybackTarget(
+        url: isTrack
+            ? buildAudioDirectStreamUrl(item.id, containerExtension: true)
+            : buildDirectStreamUrl(item.id, containerExtension: true),
+      );
+    }
+    final container = bundle.container;
+    final pinnedSourceId = bundle.pinnedSourceId;
+    // External players get `stream.{container}`: the extension is the only
+    // hint they get about the payload, and disc images (ISO) are unplayable
+    // for players that can't tell an ISO stream from a plain video file.
+    if (isTrack) {
+      return ExternalPlaybackTarget(
+        url: buildAudioDirectStreamUrl(
+          item.id,
+          container: container,
+          mediaSourceId: pinnedSourceId,
+          containerExtension: true,
+        ),
+      );
+    }
+    // A direct play, so only real external files: the player reads embedded
+    // rows out of the container itself. `DefaultSubtitleStreamIndex` marks
+    // the one to switch on.
+    final mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
+      bundle.selectedSource,
+      mediaIndex: bundle.selectedSourceIndex,
+    );
+    return ExternalPlaybackTarget(
+      url: buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId, containerExtension: true),
+      subtitles: [
+        for (final sidecar in _buildExternalSubtitles(item.id, bundle.selectedSourceId, mediaInfo)) sidecar.track,
+      ],
     );
   }
 
@@ -698,6 +773,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     String? playSessionId,
     String? liveStreamId,
     int? audioStreamIndex,
+    bool containerExtension = false,
   }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
@@ -710,6 +786,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       playSessionId: playSessionId,
       liveStreamId: liveStreamId,
       audioStreamIndex: audioStreamIndex,
+      containerExtension: containerExtension,
     );
   }
 
@@ -717,7 +794,12 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// same `Static=true` + token query + `DeviceId` self-authentication. Used
   /// for track direct-play fallback, downloads, and external players.
   @override
-  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
+  String buildAudioDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    bool containerExtension = false,
+  }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
       accessToken: connection.accessToken,
@@ -727,6 +809,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       mediaSegment: 'Audio',
       container: container,
       mediaSourceId: mediaSourceId,
+      containerExtension: containerExtension,
     );
   }
 
@@ -792,41 +875,37 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     /// the selected subtitle into a transcode instead of serving it alongside.
     bool burnSubtitles = false,
   }) async {
-    final query = <String, String>{
-      'userId': connection.userId,
-      'MaxStreamingBitrate': ?maxStreamingBitrate?.toString(),
+    // The same negotiation fields go out stringified in the query string and
+    // typed in the body.
+    final negotiation = <String, Object>{
+      'MaxStreamingBitrate': ?maxStreamingBitrate,
       'MediaSourceId': ?mediaSourceId,
       'LiveStreamId': ?liveStreamId,
-      'StartTimeTicks': ?startTimeTicks?.toString(),
-      'AudioStreamIndex': ?audioStreamIndex?.toString(),
-      'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
-      'AutoOpenLiveStream': ?autoOpenLiveStream?.toString(),
-      'EnableDirectPlay': ?enableDirectPlay?.toString(),
-      'EnableDirectStream': ?enableDirectStream?.toString(),
-      'EnableTranscoding': ?enableTranscoding?.toString(),
-      'AllowVideoStreamCopy': ?allowVideoStreamCopy?.toString(),
-      'AllowAudioStreamCopy': ?allowAudioStreamCopy?.toString(),
+      'StartTimeTicks': ?startTimeTicks,
+      'AudioStreamIndex': ?audioStreamIndex,
+      'SubtitleStreamIndex': ?subtitleStreamIndex,
+      'AutoOpenLiveStream': ?autoOpenLiveStream,
+      'EnableDirectPlay': ?enableDirectPlay,
+      'EnableDirectStream': ?enableDirectStream,
+      'EnableTranscoding': ?enableTranscoding,
+      'AllowVideoStreamCopy': ?allowVideoStreamCopy,
+      'AllowAudioStreamCopy': ?allowAudioStreamCopy,
     };
     final response = await _http.post(
       '/Items/${_segment(itemId)}/PlaybackInfo',
-      queryParameters: query,
-      // Opening a cold tuner can delay response headers beyond the normal
-      // connect budget (#2274). Keep VOD and metadata-only requests unchanged.
-      timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tune : null,
+      queryParameters: {
+        'userId': connection.userId,
+        for (final MapEntry(:key, :value) in negotiation.entries) key: value.toString(),
+      },
+      // Opening a cold tuner can delay response headers past the default
+      // response budget (#2274), and the server finishes the open even if we
+      // hang up (#2394): the live tune keeps its transport until the server
+      // answers, and its caller bounds the wait. VOD and metadata-only
+      // requests stay on the default budget.
+      timeout: isLiveTv && autoOpenLiveStream == true ? MediaServerTimeouts.tuneTransport : null,
       body: {
         'UserId': connection.userId,
-        'MaxStreamingBitrate': ?maxStreamingBitrate,
-        'MediaSourceId': ?mediaSourceId,
-        'LiveStreamId': ?liveStreamId,
-        'StartTimeTicks': ?startTimeTicks,
-        'AudioStreamIndex': ?audioStreamIndex,
-        'SubtitleStreamIndex': ?subtitleStreamIndex,
-        'AutoOpenLiveStream': ?autoOpenLiveStream,
-        'EnableDirectPlay': ?enableDirectPlay,
-        'EnableDirectStream': ?enableDirectStream,
-        'EnableTranscoding': ?enableTranscoding,
-        'AllowVideoStreamCopy': ?allowVideoStreamCopy,
-        'AllowAudioStreamCopy': ?allowAudioStreamCopy,
+        ...negotiation,
         'DeviceProfile': <String, Object?>{
           'Name': 'Plezy',
           'MaxStreamingBitrate': ?maxStreamingBitrate,

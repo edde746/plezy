@@ -147,23 +147,30 @@ internal object AndroidRuntimeDiagnostics {
     normalizationEnabled: Boolean? = null,
     uiState: String? = null
   ) {
-    val safeCodecContext = codecContext?.takeIf(allowedCodecContexts::contains)
-    val safeChannelCount = channelCount?.takeIf { it in 1..32 }
-    val safeSampleRate = sampleRate?.takeIf { it in 1..768_000 }
-    val safeDecoder = sanitizeDecoderName(selectedDecoder)
-    val safeUiState = sanitizeUiState(uiState)
+    val sanitized = sanitize(
+      RuntimeDiagnosticSnapshot(
+        codecContext = codecContext,
+        channelCount = channelCount,
+        sampleRate = sampleRate,
+        selectedDecoder = selectedDecoder,
+        passthroughEnabled = passthroughEnabled,
+        downmixEnabled = downmixEnabled,
+        normalizationEnabled = normalizationEnabled,
+        uiState = uiState
+      )
+    )
     val applicationContext = context.applicationContext
     executor.execute {
       runCatching {
         applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE).edit().apply {
-          safeCodecContext?.let { putString(KEY_CODEC_CONTEXT, it) }
-          safeChannelCount?.let { putInt(KEY_CHANNEL_COUNT, it) }
-          safeSampleRate?.let { putInt(KEY_SAMPLE_RATE, it) }
-          safeDecoder?.let { putString(KEY_SELECTED_DECODER, it) }
-          passthroughEnabled?.let { putBoolean(KEY_PASSTHROUGH_ENABLED, it) }
-          downmixEnabled?.let { putBoolean(KEY_DOWNMIX_ENABLED, it) }
-          normalizationEnabled?.let { putBoolean(KEY_NORMALIZATION_ENABLED, it) }
-          safeUiState?.let { putString(KEY_UI_STATE, it) }
+          sanitized.codecContext?.let { putString(KEY_CODEC_CONTEXT, it) }
+          sanitized.channelCount?.let { putInt(KEY_CHANNEL_COUNT, it) }
+          sanitized.sampleRate?.let { putInt(KEY_SAMPLE_RATE, it) }
+          sanitized.selectedDecoder?.let { putString(KEY_SELECTED_DECODER, it) }
+          sanitized.passthroughEnabled?.let { putBoolean(KEY_PASSTHROUGH_ENABLED, it) }
+          sanitized.downmixEnabled?.let { putBoolean(KEY_DOWNMIX_ENABLED, it) }
+          sanitized.normalizationEnabled?.let { putBoolean(KEY_NORMALIZATION_ENABLED, it) }
+          sanitized.uiState?.let { putString(KEY_UI_STATE, it) }
         }.commit()
       }
     }
@@ -189,17 +196,17 @@ internal object AndroidRuntimeDiagnostics {
 
   fun read(context: Context): RuntimeDiagnosticSnapshot {
     val preferences = context.applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-    return RuntimeDiagnosticSnapshot(
-      codecContext = runCatching { preferences.getString(KEY_CODEC_CONTEXT, null) }
-        .getOrNull()
-        ?.takeIf(allowedCodecContexts::contains),
-      channelCount = runCatching { preferences.getInt(KEY_CHANNEL_COUNT, -1) }.getOrNull()?.takeIf { it in 1..32 },
-      sampleRate = runCatching { preferences.getInt(KEY_SAMPLE_RATE, -1) }.getOrNull()?.takeIf { it in 1..768_000 },
-      selectedDecoder = sanitizeDecoderName(runCatching { preferences.getString(KEY_SELECTED_DECODER, null) }.getOrNull()),
-      passthroughEnabled = readBoolean(preferences, KEY_PASSTHROUGH_ENABLED),
-      downmixEnabled = readBoolean(preferences, KEY_DOWNMIX_ENABLED),
-      normalizationEnabled = readBoolean(preferences, KEY_NORMALIZATION_ENABLED),
-      uiState = sanitizeUiState(runCatching { preferences.getString(KEY_UI_STATE, null) }.getOrNull())
+    return sanitize(
+      RuntimeDiagnosticSnapshot(
+        codecContext = runCatching { preferences.getString(KEY_CODEC_CONTEXT, null) }.getOrNull(),
+        channelCount = runCatching { preferences.getInt(KEY_CHANNEL_COUNT, -1) }.getOrNull(),
+        sampleRate = runCatching { preferences.getInt(KEY_SAMPLE_RATE, -1) }.getOrNull(),
+        selectedDecoder = runCatching { preferences.getString(KEY_SELECTED_DECODER, null) }.getOrNull(),
+        passthroughEnabled = readBoolean(preferences, KEY_PASSTHROUGH_ENABLED),
+        downmixEnabled = readBoolean(preferences, KEY_DOWNMIX_ENABLED),
+        normalizationEnabled = readBoolean(preferences, KEY_NORMALIZATION_ENABLED),
+        uiState = runCatching { preferences.getString(KEY_UI_STATE, null) }.getOrNull()
+      )
     )
   }
 

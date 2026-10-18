@@ -9,6 +9,7 @@ import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
@@ -98,27 +99,32 @@ void main() {
       manager.dispose();
     });
 
-    test('auth-error-only visible servers do not collapse to generic offline', () async {
-      final manager = MultiServerManager();
-      final client = JellyfinClient.forTesting(
-        connection: _jellyfinConnection(),
-        httpClient: MockClient((_) async => http.Response('', 401)),
-      );
-      manager.debugRegisterJellyfinClientForTesting(client, online: false);
-      final multi = testMultiServerProvider(manager);
-      final p = OfflineModeProvider(manager, multiServerProvider: multi);
-      await p.initialize();
+    for (final (label, mark) in <(String, void Function(MultiServerManager, ServerId))>[
+      ('auth-error', (m, id) => m.debugMarkAuthErrorForTesting(id)),
+      ('access-denied', (m, id) => m.debugMarkAccessDeniedForTesting(id)),
+    ]) {
+      test('$label-only visible servers do not collapse to generic offline', () async {
+        final manager = MultiServerManager();
+        final client = JellyfinClient.forTesting(
+          connection: _jellyfinConnection(),
+          httpClient: MockClient((_) async => http.Response('', 401)),
+        );
+        manager.debugRegisterJellyfinClientForTesting(client, online: false);
+        final multi = testMultiServerProvider(manager);
+        final p = OfflineModeProvider(manager, multiServerProvider: multi);
+        await p.initialize();
 
-      manager.debugMarkAuthErrorForTesting(ServerId('jf-machine'));
-      await Future<void>.delayed(Duration.zero);
+        mark(manager, ServerId('jf-machine'));
+        await Future<void>.delayed(Duration.zero);
 
-      expect(multi.authErrorServerIds, contains('jf-machine'));
-      expect(p.isOffline, isFalse);
+        expect(multi.refusedServerIds, contains('jf-machine'));
+        expect(p.isOffline, isFalse);
 
-      p.dispose();
-      multi.dispose();
-      manager.dispose();
-    });
+        p.dispose();
+        multi.dispose();
+        manager.dispose();
+      });
+    }
 
     test('expected but unreachable visible servers enter offline without live clients', () async {
       final manager = MultiServerManager();
@@ -178,7 +184,7 @@ void main() {
       await p.initialize();
 
       multi.setExpectedVisibleServerIds({'plex-server'});
-      manager.markPlexConnectionAuthError(_plexConnection());
+      manager.markPlexConnectionAuthError(_plexConnection(), profileId: 'profile-a');
       await Future<void>.delayed(Duration.zero);
 
       expect(multi.authErrorServerIds, ['plex-server']);
@@ -216,6 +222,37 @@ void main() {
         expect(p.hasWifiOrEthernet, isFalse);
         expect(p.isOffline, isTrue, reason: 'servers are still unreachable');
         expect(notifications, 1);
+
+        p.dispose();
+        multi.dispose();
+        manager.dispose();
+      });
+
+      test('a reachable server keeps the app online while the OS reports no network (#2505)', () async {
+        final manager = MultiServerManager();
+        final multi = testMultiServerProvider(manager);
+        final p = OfflineModeProvider(manager, multiServerProvider: multi);
+        await p.initialize();
+        multi.setExpectedVisibleServerIds({'loopback-server'});
+        multi.setVisibleServerIds({'loopback-server'});
+        manager.updateServerStatus(ServerId('loopback-server'), true);
+        await Future<void>.delayed(Duration.zero);
+        expect(p.isOffline, isFalse);
+
+        var notifications = 0;
+        p.addListener(() => notifications++);
+
+        // A server on 127.0.0.1 (or a LAN without internet on Windows) stays
+        // reachable when connectivity_plus reports `none`.
+        p.applyConnectivityResults(const [ConnectivityResult.none]);
+        expect(p.hasNetworkConnection, isFalse);
+        expect(p.isOffline, isFalse);
+        expect(notifications, 1, reason: 'internet-only consumers still hear the network loss');
+
+        // Only the server actually becoming unreachable takes the app offline.
+        manager.updateServerStatus(ServerId('loopback-server'), false);
+        await Future<void>.delayed(Duration.zero);
+        expect(p.isOffline, isTrue);
 
         p.dispose();
         multi.dispose();
@@ -297,16 +334,12 @@ PlexAccountConnection _plexConnection() {
   );
 }
 
-JellyfinConnection _jellyfinConnection() {
-  return JellyfinConnection(
-    id: 'jf-machine/user-a',
-    baseUrl: 'https://jellyfin.example',
-    serverName: 'Jellyfin',
-    serverMachineId: 'jf-machine',
-    userId: 'user-a',
-    userName: 'User A',
-    accessToken: 'token',
-    deviceId: 'device',
-    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-  );
-}
+JellyfinConnection _jellyfinConnection() => testJellyfinConnection(
+  machineId: 'jf-machine',
+  userId: 'user-a',
+  baseUrl: 'https://jellyfin.example',
+  serverName: 'Jellyfin',
+  userName: 'User A',
+  deviceId: 'device',
+  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+);

@@ -67,6 +67,22 @@ class MalClient implements DisposableTrackerClient {
     await _request('DELETE', '/anime/$animeId/my_list_status');
   }
 
+  /// The viewer's list status for an anime — `plan_to_watch`, `watching`,
+  /// `completed`, `on_hold` or `dropped` — or null when it is not on their list.
+  Future<String?> getMyListStatusName(int animeId) async {
+    try {
+      final res = await _request('GET', '/anime/$animeId?fields=my_list_status');
+      if (res is! Map) return null;
+      final myListStatus = res['my_list_status'];
+      if (myListStatus is! Map) return null;
+      final status = myListStatus['status'];
+      return status is String ? status : null;
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
   Future<int?> getMyListScore(int animeId) async {
     try {
       final res = await _request('GET', '/anime/$animeId?fields=my_list_status');
@@ -75,6 +91,19 @@ class MalClient implements DisposableTrackerClient {
       if (myListStatus is! Map) return null;
       final score = flexibleInt(myListStatus['score']);
       return score != null && score > 0 ? score : null;
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// An anime's community score (`GET /anime/{id}?fields=mean,num_scoring_users`): the 0-10 mean and how many
+  /// users scored it; null when MAL does not know the anime. An anime nobody scored has no `mean`.
+  Future<({double? mean, int? scoringUsers})?> getAnimeMeanScore(int animeId) async {
+    try {
+      final res = await _request('GET', '/anime/$animeId?fields=mean,num_scoring_users');
+      if (res is! Map) return null;
+      return (mean: flexibleDouble(res['mean']), scoringUsers: flexibleInt(res['num_scoring_users']));
     } on TrackerApiException catch (e) {
       if (e.statusCode == 404) return null;
       rethrow;
@@ -165,6 +194,7 @@ class MalClient implements DisposableTrackerClient {
       rewatching: list is Map && flexibleBool(list['is_rewatching']),
       completed: list is Map && list['status'] == 'completed',
       rewatchCount: list is Map ? (flexibleInt(list['num_times_rewatched']) ?? 0) : 0,
+      progress: list is Map ? (flexibleInt(list['num_watched_episodes']) ?? 0) : 0,
     );
   }
 
@@ -202,13 +232,7 @@ class MalClient implements DisposableTrackerClient {
     var res = await _send(method, path, body: body, formBody: formBody);
 
     if (res.statusCode == 401) {
-      try {
-        await _refresh();
-      } catch (_) {
-        // Reported as an API 401, not as the TrackerAuthException Trakt
-        // propagates from the same path.
-        throw const TrackerApiException(service: TrackerService.mal, statusCode: 401);
-      }
+      await _refresh();
       res = await _send(method, path, body: body, formBody: formBody);
     }
 

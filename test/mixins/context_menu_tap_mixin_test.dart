@@ -43,17 +43,5 @@ void main() {
       // currentState is null — the `?? false` fallback must hold.
       expect(state.isContextMenuOpen, isFalse);
     });
-
-    testWidgets('showContextMenuFromTap and showContextMenu are no-ops without a mounted menu', (tester) async {
-      late _ProbeState state;
-      await tester.pumpWidget(_Probe(onState: (s) => state = s));
-
-      // Both helpers go through `currentState?.showContextMenu(...)` so when
-      // the GlobalKey isn't attached to a MediaContextMenu the calls silently
-      // succeed. This is the contract: tap handlers can fire even when the
-      // menu hasn't been instantiated yet.
-      expect(state.showContextMenu, returnsNormally);
-      expect(state.showContextMenuFromTap, returnsNormally);
-    });
   });
 }

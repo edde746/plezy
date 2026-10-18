@@ -128,7 +128,17 @@ class CodecUtils {
   /// ExoPlayer's `Format.codecs` ('mp4a.40.2', 'ec-3', 'dtsc'), and
   /// `audio/...` MIME types as reported by ExoPlayer's
   /// `Format.sampleMimeType` ('audio/eac3', 'audio/vnd.dts').
-  static String formatAudioCodec(String codec) {
+  ///
+  /// [profile] is ffmpeg's profile name as mpv reports it in `codec-profile`.
+  /// It names the DTS variant, which the codec cannot: mpv calls every DTS
+  /// stream `dts`, DTS-HD MA or not. Other profiles leave the name alone.
+  static String formatAudioCodec(String codec, {String? profile}) {
+    final dtsVariant = switch (profile) {
+      'DTS-ES' || 'DTS 96/24' || 'DTS-HD HRA' || 'DTS-HD MA' || 'DTS Express' => profile,
+      'DTS-HD MA + DTS:X' || 'DTS-HD MA + DTS:X IMAX' => 'DTS:X',
+      _ => null,
+    };
+    if (dtsVariant != null) return dtsVariant;
     final lower = codec.toLowerCase();
     if (lower.startsWith('audio/')) {
       return switch (lower.substring('audio/'.length)) {

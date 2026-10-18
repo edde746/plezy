@@ -188,4 +188,34 @@ void main() {
     // The windowed state must satisfy controller invariants.
     expect(MusicQueueController().restoreState(loaded.queue), isTrue);
   });
+
+  test('progress on an oversized queue stays window-relative and re-windows when the cursor leaves', () async {
+    final items = [for (var i = 0; i < 2000; i++) track('i$i')];
+    final session = store();
+    await session.save(
+      MusicSessionSnapshot(
+        queue: state(items: items, cursor: 700),
+        playContext: null,
+        position: Duration.zero,
+      ),
+    );
+
+    // Window start = 700 - 250 = 450.
+    await session.updateProgress(cursor: 701, position: const Duration(seconds: 5));
+    var loaded = await store().load();
+    expect(loaded!.queue.items[loaded.queue.cursor].id, 'i701');
+    expect(loaded.position, const Duration(seconds: 5));
+
+    // Past the window's end (450 + 1000): re-windowed around the cursor.
+    await session.updateProgress(cursor: 1600, position: const Duration(seconds: 1));
+    loaded = await store().load();
+    expect(loaded!.queue.items, hasLength(MusicSessionStore.maxPersistedTracks));
+    expect(loaded.queue.items[loaded.queue.cursor].id, 'i1600');
+    expect(loaded.position, const Duration(seconds: 1));
+    expect(MusicQueueController().restoreState(loaded.queue), isTrue);
+
+    await session.updateProgress(cursor: 1601, position: Duration.zero);
+    loaded = await store().load();
+    expect(loaded!.queue.items[loaded.queue.cursor].id, 'i1601');
+  });
 }

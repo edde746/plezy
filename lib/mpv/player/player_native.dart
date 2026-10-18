@@ -2,9 +2,10 @@ import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart' show mapEquals, visibleForTesting;
 import 'package:flutter/services.dart';
 
+import '../../models/audio_channel_limit.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
@@ -14,7 +15,7 @@ import 'player_base.dart';
 typedef _AudioStateRequest = ({
   bool passthrough,
   bool normalization,
-  bool downmix,
+  AudioChannelLimit channelLimit,
   int downmixCenterBoostDb,
   bool downmixNormalize,
   double rate,
@@ -58,9 +59,15 @@ class PlayerNative extends PlayerBase {
   // _armedNextUri keeps the ORIGINAL media URI (the music service matches
   // trackTransition events against it); _armedNextFd is the content-fd claim
   // when the armed URI needed fdclose:// conversion (see _toPlayableUri).
+  // _armedNextHeaders are the HTTP headers the armed entry opens with (empty
+  // for none). _prefetchHeaders are the ones a prefetch of it would send: the
+  // playing entry's own list, set by open() and taken over from the armed
+  // entry when mpv advances into it; null while unknown.
   bool _hasArmedNext = false;
   String? _armedNextUri;
   int? _armedNextFd;
+  Map<String, String> _armedNextHeaders = const {};
+  Map<String, String>? _prefetchHeaders;
 
   /// Host tests aren't Android, so the content:// → fdclose:// path would be
   /// unreachable; forces the conversion regardless of platform.
@@ -77,6 +84,18 @@ class PlayerNative extends PlayerBase {
   /// The one place the test override is resolved, so production code and host
   /// tests agree on which path is live without reading a test-only field.
   static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
+
+  /// Overrides the Apple audio-output detection in host tests.
+  @visibleForTesting
+  static bool? debugUseAppleAudioOutput;
+
+  /// Whether audio leaves through mpv's Apple outputs (iPhone, iPad, Apple TV,
+  /// Mac). There, passthrough hands AC3/EAC3 to the system Dolby decoder
+  /// behind ao_avfoundation instead of bitstreaming to a device: it takes
+  /// Dolby Digital (Plus) only and never needs the device claimed.
+  ///
+  /// Resolved in one place for the same reason as [usesLinuxVideoPlane].
+  static bool get usesAppleAudioOutput => debugUseAppleAudioOutput ?? (Platform.isIOS || Platform.isMacOS);
 
   /// First successful (positive) [getHeapSize] result; the device heap is
   /// immutable per process, so one channel round trip serves every caller.
@@ -132,9 +151,6 @@ class PlayerNative extends PlayerBase {
   @override
   bool get nativeDisposeIsStaleGuarded => Platform.isAndroid;
 
-  @override
-  bool get attachesExternalSubtitlesAtOpen => true;
-
   /// Node properties are returned as structured maps on desktop and Apple
   /// platforms, but as JSON strings on Android.
   static final String _nodeFormat = Platform.isAndroid ? 'string' : 'node';
@@ -165,9 +181,12 @@ class PlayerNative extends PlayerBase {
     return path.length <= 40 ? path : '…${path.substring(path.length - 40)}';
   }
 
-  static String _escapePathListEntry(String value, String separator) {
-    return value.replaceAll(r'\', r'\\').replaceAll(separator, '\\$separator');
-  }
+  /// Escapes [separator] in one `sub-files` path-list entry. mpv's splitter
+  /// (`get_nextsep`) removes only a backslash directly before the separator
+  /// and keeps every other one, so backslashes must pass through unchanged.
+  /// A non-final entry ending in `\` cannot be expressed; no subtitle source
+  /// produces one.
+  static String _escapePathListEntry(String value, String separator) => value.replaceAll(separator, '\\$separator');
 
   static String? _externalSubtitlesLoadfileOption(List<SubtitleTrack>? externalSubtitles) {
     final separator = Platform.isWindows ? ';' : ':';
@@ -183,22 +202,25 @@ class PlayerNative extends PlayerBase {
     return 'sub-files=${_fixedLengthQuote(escapedUris.join(separator))}';
   }
 
-  /// Per-entry `http-header-fields` options for a `loadfile ... append`
-  /// options arg. Every header rides its own `-append` entry because mpv's
-  /// string-LIST parser splits a plain `http-header-fields=a,b` value on
-  /// commas with no way to escape them — a header value containing a comma
-  /// (`X-Plex-Device: Mac17,9` on Apple hardware) would be split into a
-  /// colon-less garbage line that Plex rejects with 400 "Error parsing HTTP
-  /// request". `-append` takes a single verbatim item; the fixed-length
-  /// quote shields it from the outer key=value list split. The leading
-  /// `-clr` stops the file-local list from inheriting (and duplicating) the
-  /// current track's global headers set by [open].
-  static String? _httpHeaderFieldsLoadfileOption(Map<String, String>? headers) {
-    if (headers == null || headers.isEmpty) return null;
-    final appends = headers.entries
-        .map((e) => 'http-header-fields-append=${_fixedLengthQuote('${e.key}: ${e.value}')}')
-        .join(',');
-    return 'http-header-fields-clr=,$appends';
+  /// File-local `http-header-fields` for a `loadfile` options arg, so the
+  /// entry opens with its own headers rather than the list mpv holds when it
+  /// starts, which may belong to another server. The options arg is an
+  /// mpv key/value list whose keys are unique — a repeated key replaces the
+  /// earlier pair — so all headers ride ONE list value; one `-append` pair
+  /// per header collapsed to the last header (#2511). mpv's list splitter
+  /// drops a backslash directly before a `,` and keeps every other one, so a
+  /// comma in a value (`X-Plex-Device: Mac17,9`) is sent as `\,`, and an item
+  /// ending in `\` gets a trailing space (optional whitespace HTTP strips) so
+  /// it cannot escape the separator after it. The fixed-length quote shields
+  /// the list from the outer key/value split. No headers clears the list: a
+  /// bare empty value would parse as one empty item, a blank header line.
+  static String _httpHeaderFieldsLoadfileOption(Map<String, String> headers) {
+    if (headers.isEmpty) return 'http-header-fields-clr=';
+    final items = headers.entries.map((e) {
+      final item = '${e.key}: ${e.value}'.replaceAll(',', r'\,');
+      return item.endsWith(r'\') ? '$item ' : item;
+    });
+    return 'http-header-fields=${_fixedLengthQuote(items.join(','))}';
   }
 
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
@@ -275,8 +297,10 @@ class PlayerNative extends PlayerBase {
         await observeProperty('playlist-pos', _nodeFormat);
         // ao_audiounit requests mixWithOthers unless audio-exclusive is set,
         // and a mixable session disqualifies the app from iOS Now Playing —
-        // no lock-screen/headphone controls (#1921). Same contract as the
-        // video path (VideoPlayerScreen sets it at playback start). iOS-only:
+        // no lock-screen/headphone controls (#1921). AVFoundation, the first
+        // output on iPhone/iPad, never mixes, but audiounit is still their
+        // fallback and the tvOS PCM output. Same contract as the video path
+        // (VideoPlayerScreen sets it at playback start). iOS-only:
         // elsewhere audio-exclusive means exclusive device access (hog-mode
         // CoreAudio on macOS, exclusive WASAPI on Windows). Direct invoke —
         // setProperty() would await _ensureInitialized and deadlock on the
@@ -362,6 +386,7 @@ class PlayerNative extends PlayerBase {
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
     Duration? timelineDuration,
+    Duration timelineOffset = Duration.zero,
     bool startLivePlaylistFromBeginning = false,
   }) async {
     if (_nativeCoreUnavailable) return null;
@@ -371,15 +396,16 @@ class PlayerNative extends PlayerBase {
     // gapless entry armed via setNext — settle its content-fd claim first.
     // No transition is surfaced: the caller is replacing playback anyway.
     await _clearArmedNext(adoptIfRolledIn: false);
-    final startPosition = media.start ?? Duration.zero;
+    final startPosition = media.start ?? timelineOffset;
     // Everything below tears down the outgoing file's state before the load
     // is dispatched. A rejected load leaves that file playing, so the
     // teardown has to be undone — see the catch.
     final previousState = state;
     final previousPosition = currentPosition;
     final previousTimelineDuration = configuredTimelineDuration;
+    final previousTimelineOffset = this.timelineOffset;
     final previousExternalSubtitleMetadata = snapshotExternalSubtitleMetadata();
-    configureTimeline(duration: timelineDuration);
+    configureTimeline(duration: timelineDuration, offset: timelineOffset);
     clearTracks();
     deferTrackListUntilLoadStarts();
     setExternalSubtitleMetadata(externalSubtitles);
@@ -393,7 +419,7 @@ class PlayerNative extends PlayerBase {
       // after — see the unpause below.
       playlistEntryId = await _loadReplacement(
         media,
-        startPosition: startPosition,
+        startPosition: sourcePositionFor(startPosition),
         play: play,
         isLive: isLive,
         externalSubtitles: externalSubtitles,
@@ -406,7 +432,7 @@ class PlayerNative extends PlayerBase {
       // `hasRenderedFrame` for readiness — must see that file, not the
       // replacement that never arrived.
       if (!_nativeCoreUnavailable) {
-        configureTimeline(duration: previousTimelineDuration);
+        configureTimeline(duration: previousTimelineDuration, offset: previousTimelineOffset);
         restorePlaybackProgress(previousState, position: previousPosition);
         restoreTracks(previousState);
         restoreExternalSubtitleMetadata(previousExternalSubtitleMetadata);
@@ -458,6 +484,9 @@ class PlayerNative extends PlayerBase {
         headerCommands.add(command(['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}']));
       }
     }
+    // A failed replacement leaves the playing entry on this rewritten list,
+    // so until the load is accepted no arm may prefetch with it (setNext).
+    if (audioOnly) _prefetchHeaders = null;
     await Future.wait(headerCommands);
 
     // 'start' must be set before loadfile. These are playback defaults, not
@@ -489,6 +518,13 @@ class PlayerNative extends PlayerBase {
     final loadfileArgs = ['loadfile', uri, 'replace'];
     final loadfileOptions = <String>[
       ?_externalSubtitlesLoadfileOption(externalSubtitles),
+      // The audio core also passes the headers file-local. After a gapless
+      // advance the playing entry's own header list is file-local, and mpv
+      // restores the list it replaced when that entry ends — after the
+      // change-list above, before this file opens — so the global list alone
+      // would open this file with an older track's headers, possibly another
+      // server's.
+      if (audioOnly) _httpHeaderFieldsLoadfileOption(media.headers ?? const {}),
       // Suppress mpv's own default subtitle selection so it cannot race the
       // server-backed TrackManager decision. File-local, never a property
       // write: writing `sid` while the outgoing file is still loaded
@@ -501,6 +537,13 @@ class PlayerNative extends PlayerBase {
       // offset. FFmpeg's default (-3) can skip much of it before decoding.
       // Keep this file-local and append so other demuxer options survive.
       if (isLive && startLivePlaylistFromBeginning) 'demuxer-lavf-o-append=live_start_index=0',
+      // A live stream arrives at 1x, so mpv's defaults — start at the first
+      // decodable frame, leave a stall once 1 s is buffered — ride the live
+      // edge with one segment of headroom and stall on every segment that
+      // lands late (#2711). Start and resume with three 2 s segments buffered
+      // instead, the hold-back HLS asks of clients (RFC 8216 §6.3.3). A
+      // runtime write (Watch Together's host value) still overrides it.
+      if (isLive) ...const ['cache-pause-initial=yes', 'cache-pause-wait=6'],
     ];
     // Always the 4-argument form (`loadfile <url> replace <index> <options>`),
     // which needs mpv >= 0.38: 0.37 has no index parameter and rejects the
@@ -513,6 +556,7 @@ class PlayerNative extends PlayerBase {
     // `command` path makes the same re-check before dispatching.
     if (_nativeCoreUnavailable) return null;
     final loadfileReply = await invoke<Map>('command', {'args': loadfileArgs});
+    if (audioOnly) _prefetchHeaders = media.headers ?? const {};
     final playlistEntryId = loadfileReply?['playlistEntryId'];
     return playlistEntryId is int ? playlistEntryId : null;
   }
@@ -543,7 +587,10 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> seek(Duration position) async {
     if (_nativeCoreUnavailable) return;
-    await runSeek(position, () => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
+    await runSeek(
+      position,
+      () => command(['seek', (sourcePositionFor(position).inMilliseconds / 1000.0).toString(), 'absolute']),
+    );
   }
 
   @override
@@ -564,8 +611,15 @@ class PlayerNative extends PlayerBase {
     // playlist-pos still reads 0, breaking _clearArmedNext's "provably
     // never opened" proof (double close) — and local opens are instant
     // anyway. Set before the fd claim so a property failure cannot leak it.
+    // Off too for an arm whose headers differ from what a prefetch would
+    // send: mpv prefetches with the PLAYING entry's header list (the armed
+    // entry's own list applies only once it starts), which would hand one
+    // server's credentials to another even behind a shared origin. Such an
+    // arm opens at the boundary with its own headers.
+    final headers = media.headers ?? const <String, String>{};
     final networkArm = media.uri.startsWith('http://') || media.uri.startsWith('https://');
-    await setProperty('prefetch-playlist', networkArm ? 'yes' : 'no');
+    final prefetch = networkArm && mapEquals(headers, _prefetchHeaders);
+    await setProperty('prefetch-playlist', prefetch ? 'yes' : 'no');
 
     final (loadUri, fd) = await _toPlayableUri(media.uri, strict: true);
 
@@ -573,11 +627,7 @@ class PlayerNative extends PlayerBase {
     // (`loadfile <url> append -1 opt=val`), exactly like open() passes
     // sub-files. `gapless-audio=weak` splices the armed entry into the
     // running audio stream when formats match.
-    final args = ['loadfile', loadUri, 'append'];
-    final headerOption = _httpHeaderFieldsLoadfileOption(media.headers);
-    if (headerOption != null) {
-      args.addAll(['-1', headerOption]);
-    }
+    final args = ['loadfile', loadUri, 'append', '-1', _httpHeaderFieldsLoadfileOption(headers)];
     try {
       await command(args);
     } catch (e) {
@@ -588,6 +638,7 @@ class PlayerNative extends PlayerBase {
     _hasArmedNext = true;
     _armedNextUri = media.uri;
     _armedNextFd = fd;
+    _armedNextHeaders = headers;
     appLogger.d('MPV-audio: armed next ${_uriTail(media.uri)}');
   }
 
@@ -612,9 +663,11 @@ class PlayerNative extends PlayerBase {
     if (!_hasArmedNext) return;
     final uri = _armedNextUri;
     final fd = _armedNextFd;
+    final headers = _armedNextHeaders;
     _hasArmedNext = false;
     _armedNextUri = null;
     _armedNextFd = null;
+    _armedNextHeaders = const {};
 
     String? pos;
     try {
@@ -626,7 +679,7 @@ class PlayerNative extends PlayerBase {
     }
     if (pos == '1') {
       appLogger.d('MPV-audio: clear requested but armed entry already playing');
-      if (adoptIfRolledIn) _completeArmedAdvance(uri);
+      if (adoptIfRolledIn) _completeArmedAdvance(uri, headers);
       return;
     }
 
@@ -664,14 +717,17 @@ class PlayerNative extends PlayerBase {
 
   /// The armed entry became the playing one (mpv rolled into it): clear the
   /// arm — the fd (if any) was consumed by mpv — remove the spent entry so
-  /// the playing entry rebases to index 0, and surface the transition.
-  void _completeArmedAdvance(String? uri) {
+  /// the playing entry rebases to index 0, and surface the transition. Its
+  /// own header list, [headers], is now the one a prefetch would send.
+  void _completeArmedAdvance(String? uri, Map<String, String> headers) {
     // A different source is playing now, so a seek still in flight against the
     // old one must not land its target on this one's timeline (#1819).
     takeSourceOwnership();
     _hasArmedNext = false;
     _armedNextUri = null;
     _armedNextFd = null;
+    _armedNextHeaders = const {};
+    _prefetchHeaders = headers;
     appLogger.d('MPV-audio: armed entry advanced → playlist-remove 0, ${_uriTail(uri ?? '')}');
     unawaited(_removeSpentPlaylistEntry());
     if (uri != null) trackTransitionController.add(uri);
@@ -732,7 +788,7 @@ class PlayerNative extends PlayerBase {
       appLogger.d('MPV-audio: file-loaded (nothing armed, ignored)');
       return;
     }
-    _completeArmedAdvance(_armedNextUri);
+    _completeArmedAdvance(_armedNextUri, _armedNextHeaders);
   }
 
   @override
@@ -777,15 +833,6 @@ class PlayerNative extends PlayerBase {
   Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {
     if (_nativeCoreUnavailable) return;
     await setProperty('secondary-sid', track.id);
-  }
-
-  @override
-  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
-    if (_nativeCoreUnavailable) return;
-    final args = ['sub-add', uri, select ? 'select' : 'auto'];
-    if (title != null) args.add('title=$title');
-    if (language != null) args.add('lang=$language');
-    await command(args);
   }
 
   @override
@@ -857,7 +904,7 @@ class PlayerNative extends PlayerBase {
         _acceptedAudioState = (
           passthrough: accepted.passthrough,
           normalization: accepted.normalization,
-          downmix: accepted.downmix,
+          channelLimit: accepted.channelLimit,
           downmixCenterBoostDb: accepted.downmixCenterBoostDb,
           downmixNormalize: accepted.downmixNormalize,
           rate: rate,
@@ -931,7 +978,7 @@ class PlayerNative extends PlayerBase {
     // and the backend's next tick supplies the real position.
     final seconds = double.tryParse(await invoke<String>('getProperty', {'name': 'time-pos'}) ?? '');
     if (seconds != null && seconds.isFinite && !seconds.isNegative) {
-      publishPlayheadRelocation(Duration(milliseconds: (seconds * 1000).round()), token: token);
+      publishPlayheadRelocation(Duration(milliseconds: (seconds * 1000).round()) + timelineOffset, token: token);
     }
   }
 
@@ -980,8 +1027,8 @@ class PlayerNative extends PlayerBase {
   bool _passthroughActive = false;
   bool _normalizationRequested = false;
   bool _normalizationActive = false;
-  bool _downmixRequested = false;
-  bool _downmixActive = false;
+  AudioChannelLimit _channelLimitRequested = AudioChannelLimit.original;
+  AudioChannelLimit _activeChannelLimit = AudioChannelLimit.original;
   int _downmixCenterBoostDb = 0;
   int _activeDownmixCenterBoostDb = 0;
   bool _downmixNormalize = false;
@@ -994,7 +1041,7 @@ class PlayerNative extends PlayerBase {
   _AudioStateRequest _acceptedAudioState = const (
     passthrough: false,
     normalization: false,
-    downmix: false,
+    channelLimit: AudioChannelLimit.original,
     downmixCenterBoostDb: 0,
     downmixNormalize: false,
     rate: 1.0,
@@ -1003,16 +1050,17 @@ class PlayerNative extends PlayerBase {
   @override
   bool get audioPassthroughActive => _passthroughActive;
 
-  /// Codecs the platform can take as a bitstream. On iOS/tvOS compressed
-  /// audio goes through the system renderer, which only handles Dolby
-  /// Digital (Plus); Windows and Linux do real device passthrough for the
-  /// full list. Never applied on macOS (PlatformDetector.supportsAudioPassthrough).
+  /// Codecs the platform can take as a bitstream. On Apple platforms
+  /// compressed audio goes through the system Dolby decoder
+  /// ([usesAppleAudioOutput]), which only handles Dolby Digital (Plus); a DTS
+  /// or TrueHD entry would just cost an output probe before decoding to PCM.
+  /// Windows and Linux do real device passthrough for the full list.
   ///
   /// Android does not use this list: mpv's audiotrack AO only opens stereo
   /// IEC 61937 tracks at the 48kHz mixer rate, so naming a codec the route
   /// cannot carry that way strands playback on a dead audio output (#1991).
   /// The plugin derives the value from the current audio route instead.
-  static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
+  static String get _passthroughCodecs => usesAppleAudioOutput ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
 
   Future<String> _resolvePassthroughCodecs() async {
     if (!Platform.isAndroid) return _passthroughCodecs;
@@ -1027,7 +1075,7 @@ class PlayerNative extends PlayerBase {
   _AudioStateRequest get _requestedAudioState => (
     passthrough: _passthroughRequested,
     normalization: _normalizationRequested,
-    downmix: _downmixRequested,
+    channelLimit: _channelLimitRequested,
     downmixCenterBoostDb: _downmixCenterBoostDb,
     downmixNormalize: _downmixNormalize,
     rate: _requestedRate,
@@ -1036,7 +1084,7 @@ class PlayerNative extends PlayerBase {
   _AudioStateRequest _rebaseAudioState(_AudioStateRequest accepted, _AudioStateRequest requested, int fields) => (
     passthrough: fields & _passthroughAudioField != 0 ? requested.passthrough : accepted.passthrough,
     normalization: fields & _normalizationAudioField != 0 ? requested.normalization : accepted.normalization,
-    downmix: fields & _downmixAudioField != 0 ? requested.downmix : accepted.downmix,
+    channelLimit: fields & _downmixAudioField != 0 ? requested.channelLimit : accepted.channelLimit,
     downmixCenterBoostDb: fields & _downmixAudioField != 0
         ? requested.downmixCenterBoostDb
         : accepted.downmixCenterBoostDb,
@@ -1052,7 +1100,7 @@ class PlayerNative extends PlayerBase {
       _normalizationRequested = previous.normalization;
     }
     if (fields & _downmixAudioField != 0 && generations.downmix == _downmixGeneration) {
-      _downmixRequested = previous.downmix;
+      _channelLimitRequested = previous.channelLimit;
       _downmixCenterBoostDb = previous.downmixCenterBoostDb;
       _downmixNormalize = previous.downmixNormalize;
     }
@@ -1118,10 +1166,15 @@ class PlayerNative extends PlayerBase {
     // Normalization wins over passthrough: loudnorm is a filter and filters
     // cannot process a bitstream, so honouring the user's normalization choice
     // means decoding every track to PCM (AC3/DTS/TrueHD included). mpv also
-    // cannot scaletempo compressed audio. Passthrough therefore only engages
-    // when nothing else claims the decoded stream.
+    // cannot scaletempo compressed audio, and the stereo limit is a promise
+    // about everything that plays. Passthrough therefore only engages when
+    // nothing else claims the decoded stream; the 5.1 limit only shapes
+    // decoded PCM, so a bitstream passes it.
     final passthroughShouldBeActive =
-        target.passthrough && target.rate == 1.0 && !target.downmix && !target.normalization;
+        target.passthrough &&
+        target.rate == 1.0 &&
+        target.channelLimit != AudioChannelLimit.stereo &&
+        !target.normalization;
     final normalizationShouldBeActive = target.normalization;
 
     // Ordering keeps loudnorm off a bitstream in both directions: leave
@@ -1136,16 +1189,16 @@ class PlayerNative extends PlayerBase {
       _currentRate = target.rate;
     }
     if (forceDownmix ||
-        _downmixActive != target.downmix ||
-        (target.downmix &&
+        _activeChannelLimit != target.channelLimit ||
+        (target.channelLimit != AudioChannelLimit.original &&
             (_activeDownmixCenterBoostDb != target.downmixCenterBoostDb ||
                 _activeDownmixNormalize != target.downmixNormalize))) {
-      await super.setAudioDownmix(
-        enabled: target.downmix,
+      await super.setAudioChannelLimit(
+        target.channelLimit,
         centerBoostDb: target.downmixCenterBoostDb,
         normalize: target.downmixNormalize,
       );
-      _downmixActive = target.downmix;
+      _activeChannelLimit = target.channelLimit;
       _activeDownmixCenterBoostDb = target.downmixCenterBoostDb;
       _activeDownmixNormalize = target.downmixNormalize;
     }
@@ -1172,10 +1225,14 @@ class PlayerNative extends PlayerBase {
     // audio-spdif is the authoritative transition. Publish only after mpv
     // accepts it; audio-exclusive below is an independent device-mode hint.
     _passthroughActive = enabled;
-    // audio-exclusive claims the device for bitstreaming (exclusive WASAPI on
-    // Windows); on iOS/tvOS it is set once at
-    // playback start and must not be clobbered here.
-    if (!Platform.isIOS) {
+    // audio-exclusive claims the device for bitstreaming on Windows and Linux
+    // (exclusive WASAPI on Windows). Apple passthrough decodes in the system
+    // and must not claim it: on macOS the hint would push every CoreAudio
+    // open, the PCM fallback included, into hog-mode coreaudio_exclusive, and
+    // on iOS/tvOS it is set once at playback start and must not be clobbered.
+    // Android's audiotrack and opensles outputs ignore it, yet every change
+    // makes mpv reload the audio output mid-playback (#2530).
+    if (!usesAppleAudioOutput && !Platform.isAndroid) {
       try {
         await setProperty('audio-exclusive', enabled ? 'yes' : 'no');
       } catch (error, stackTrace) {
@@ -1192,9 +1249,9 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize}) {
+  Future<void> setAudioChannelLimit(AudioChannelLimit limit, {required int centerBoostDb, required bool normalize}) {
     if (_nativeCoreUnavailable) return Future<void>.value();
-    _downmixRequested = enabled;
+    _channelLimitRequested = limit;
     _downmixCenterBoostDb = centerBoostDb;
     _downmixNormalize = normalize;
     return _enqueueAudioStateReconciliation(_downmixAudioField);
@@ -1208,14 +1265,13 @@ class PlayerNative extends PlayerBase {
     }
   }
 
-  /// iOS/tvOS scale the native video container instead of mpv's `video-zoom`:
-  /// on the avfoundation VO a nonzero zoom re-renders every frame through
-  /// Core Image, which destroys HDR/Dolby Vision passthrough (DV renders
-  /// near-black on tvOS). macOS keeps the property path — gpu-next zooms
-  /// losslessly in-shader.
+  /// iOS/tvOS and macOS scale the native display layer instead of mpv's
+  /// `video-zoom`: on the avfoundation VO a nonzero zoom re-renders every
+  /// frame through Core Image, which destroys HDR/Dolby Vision passthrough
+  /// (DV renders near-black on tvOS).
   @override
   Future<void> setVideoZoom(double scale) async {
-    if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS || !initialized) return;
+    if (_nativeCoreUnavailable || audioOnly || !(Platform.isIOS || Platform.isMacOS) || !initialized) return;
     await invoke('setVideoZoom', {'scale': scale});
   }
 

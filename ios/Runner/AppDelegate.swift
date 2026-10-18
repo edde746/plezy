@@ -21,6 +21,16 @@ import MediaPlayer
     } catch {
       MpvLog.error("Failed to configure audio session: \(error)")
     }
+    // Declares that playback can carry 5.1/7.1 and Dolby content, so the
+    // system offers multichannel Spatial Audio on AirPods (#2264). mpv's
+    // AVFoundation output only declares it for sources above stereo, and only
+    // in builds that compiled the call in; declaring it here does not depend
+    // on either.
+    do {
+      try AVAudioSession.sharedInstance().setSupportsMultichannelContent(true)
+    } catch {
+      MpvLog.error("Failed to declare multichannel audio content: \(error)")
+    }
 
     application.beginReceivingRemoteControlEvents()
 
@@ -44,6 +54,10 @@ import MediaPlayer
 
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "DeviceAdjustmentChannel") {
       registerDeviceAdjustmentChannel(messenger: registrar.messenger())
+    }
+
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AppIconPlugin") {
+      AppIconPlugin.register(with: registrar)
     }
   }
 

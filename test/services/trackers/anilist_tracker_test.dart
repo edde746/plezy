@@ -155,57 +155,53 @@ void main() {
       expect(saved.single, {'mediaId': 21, 'progress': 12, 'status': 'CURRENT'});
     });
 
-    test('episode unwatch is a no-op', () async {
-      final requests = <http.Request>[];
-      final client = MockClient((request) async {
-        requests.add(request);
-        fail('Unexpected ${request.method} ${request.url}');
-      });
+    test('unwatch resets an in-progress entry to zero without deleting it', () async {
+      final saved = <Map<String, dynamic>>[];
+      final client = _mediaClient({
+        'episodes': 12,
+        'mediaListEntry': {'status': 'CURRENT', 'repeat': 0, 'progress': 5},
+      }, saved);
       tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
 
-      await tracker.markUnwatched(_episode(animeProgress: 1));
+      await tracker.markUnwatched(_episode(animeProgress: null));
 
-      expect(requests, isEmpty);
+      expect(saved.single, {'mediaId': 21, 'progress': 0, 'status': 'CURRENT'});
     });
 
-    test('removeFromList removes anime entry', () async {
-      final variables = <Map<String, dynamic>>[];
-      final client = MockClient((request) async {
-        final body = json.decode(request.body) as Map<String, dynamic>;
-        final query = body['query'] as String;
-        variables.add((body['variables'] as Map).cast<String, dynamic>());
-        if (query.contains('mediaListEntry')) {
-          return http.Response(
-            json.encode({
-              'data': {
-                'Media': {
-                  'mediaListEntry': {'id': 99},
-                },
-              },
-            }),
-            200,
-          );
-        }
-        if (query.contains('DeleteMediaListEntry')) {
-          return http.Response(
-            json.encode({
-              'data': {
-                'DeleteMediaListEntry': {'deleted': true},
-              },
-            }),
-            200,
-          );
-        }
-        fail('Unexpected AniList query: $query');
-      });
+    test('unwatch keeps a rewatch in progress at zero', () async {
+      final saved = <Map<String, dynamic>>[];
+      final client = _mediaClient({
+        'episodes': 12,
+        'mediaListEntry': {'status': 'REPEATING', 'repeat': 1, 'progress': 5},
+      }, saved);
       tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
 
-      await tracker.removeFromList(_episode());
+      await tracker.markUnwatched(_episode(animeProgress: null));
 
-      expect(variables, [
-        {'mediaId': 21},
-        {'id': 99},
-      ]);
+      expect(saved.single, {'mediaId': 21, 'progress': 0, 'status': 'REPEATING'});
+    });
+
+    test('unwatch leaves a completed entry untouched (issue #2424)', () async {
+      final saved = <Map<String, dynamic>>[];
+      final client = _mediaClient({
+        'episodes': 12,
+        'mediaListEntry': {'status': 'COMPLETED', 'repeat': 0, 'progress': 12},
+      }, saved);
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markUnwatched(_episode(animeProgress: null));
+
+      expect(saved, isEmpty);
+    });
+
+    test('unwatch does not create an entry for an unlisted anime', () async {
+      final saved = <Map<String, dynamic>>[];
+      final client = _mediaClient({'episodes': 12, 'mediaListEntry': null}, saved);
+      tracker.rebindSession(_session(), onSessionInvalidated: () {}, httpClient: client);
+
+      await tracker.markUnwatched(_episode(animeProgress: null));
+
+      expect(saved, isEmpty);
     });
 
     test('keeps the snapshot cached when the write fails', () async {

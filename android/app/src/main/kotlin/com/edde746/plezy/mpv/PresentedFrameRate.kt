@@ -1,12 +1,15 @@
 package com.edde746.plezy.mpv
 
 /**
- * Whether mpv presents one frame per field for interlaced content, so the
- * presented rate is twice `container-fps` (#2322). Two things do that: mpv's
- * own deinterlacer (`deinterlace-active` — every backend `deinterlace=auto`
+ * What mpv presents for interlaced content, as a multiple of `container-fps`.
+ * One frame per field doubles it (#2322). Two things do that: mpv's own
+ * deinterlacer (`deinterlace-active` — every backend `deinterlace=auto`
  * picks emits fields), and a decoder that deinterlaces by itself (MediaCodec
  * on Tegra and Amlogic), which no mpv filter reports and only the measured
- * cadence reveals. Mirrors the Dart `PlayerOutputFormat.presentsFields`.
+ * cadence reveals. Inverse telecine (`ivtc-active`, the fork's
+ * `deinterlace=ivtc`) rebuilds the film frames and drops one in five, so
+ * 29.97i is presented at 23.976 (#2710). Mirrors the Dart
+ * `PlayerOutputFormat.read`.
  */
 internal object PresentedFrameRate {
   /**
@@ -24,4 +27,14 @@ internal object PresentedFrameRate {
     val ratio = estimatedFps / containerFps
     return ratio > 1.7 && ratio < 2.3
   }
+
+  /** The presented rate over `container-fps`: inverse telecine wins over field output. */
+  fun rateFactor(containerFps: Double, estimatedFps: Double?, deinterlaceActive: Boolean, ivtcActive: Boolean): Float = when {
+    ivtcActive -> IVTC_RATE_FACTOR
+    presentsFields(containerFps, estimatedFps, deinterlaceActive) -> 2f
+    else -> 1f
+  }
+
+  /** 3:2 pulldown carries four film frames in five video frames. */
+  const val IVTC_RATE_FACTOR = 0.8f
 }

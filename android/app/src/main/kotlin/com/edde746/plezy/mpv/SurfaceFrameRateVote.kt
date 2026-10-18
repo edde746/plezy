@@ -22,8 +22,8 @@ import com.edde746.plezy.shared.PlayerDebugLog
  * Mirrors Media3 semantics: the vote is the presented frame rate times
  * playback speed while rendering is started, cleared (rate 0) when stopped,
  * cleared on the outgoing Surface and re-applied unconditionally on a new
- * one. The presented rate is `container-fps`, doubled while the stream is
- * presented one frame per field (see [PresentedFrameRate]). Callers drive it
+ * one. The presented rate is `container-fps` times the factor
+ * [PresentedFrameRate.rateFactor] measures. Callers drive it
  * from one thread.
  */
 internal class SurfaceFrameRateVote(
@@ -31,7 +31,7 @@ internal class SurfaceFrameRateVote(
 ) {
   private var surface: Surface? = null
   private var mediaFrameRate = 0f
-  private var fieldOutput = false
+  private var rateFactor = 1f
   private var playbackSpeed = 1f
   private var started = false
 
@@ -55,10 +55,11 @@ internal class SurfaceFrameRateVote(
     update(force = false)
   }
 
-  /** [PresentedFrameRate.presentsFields]: the presented rate is doubled. */
-  fun onFieldOutput(active: Boolean) {
-    if (fieldOutput == active) return
-    fieldOutput = active
+  /** [PresentedFrameRate.rateFactor]: the presented rate over `container-fps`. */
+  fun onPresentedRateFactor(factor: Float) {
+    val next = if (factor.isFinite() && factor > 0f) factor else 1f
+    if (rateFactor == next) return
+    rateFactor = next
     update(force = false)
   }
 
@@ -83,7 +84,7 @@ internal class SurfaceFrameRateVote(
 
   private fun update(force: Boolean) {
     val target = surface ?: return
-    val presentedFrameRate = if (fieldOutput) mediaFrameRate * 2 else mediaFrameRate
+    val presentedFrameRate = mediaFrameRate * rateFactor
     val rate = if (started && presentedFrameRate > 0f) presentedFrameRate * playbackSpeed else 0f
     if (!force && rate == votedFrameRate) return
     votedFrameRate = rate

@@ -109,14 +109,36 @@ class DebouncedSeekAccumulator {
     cancel();
   }
 
-  void seekBy(Duration delta) {
-    if (_disposed) return;
+  /// Accumulate a relative step and (re)arm the debounce.
+  ///
+  /// Returns the displacement actually applied to the pending target — the
+  /// requested [delta] less whatever the `[0, duration]` clamp swallowed, so
+  /// zero once the target is pinned at either end. A readout that announces
+  /// this rather than [delta] can never promise more than the playhead will
+  /// travel (#2425).
+  ///
+  /// Measured from the clamped origin: [duration] is authoritative, so a
+  /// reported position past it is a reporting artifact, not headroom, and is
+  /// already "at the end" as far as travel is concerned. The live accumulator
+  /// (`LiveSeekAccumulator.seekBy`) measures from its raw base for the opposite
+  /// reason — its window is only as fresh as a heartbeat, so a playhead past
+  /// `end` really is past it.
+  ///
+  /// A fresh press the clamp swallows whole — already at the start, pressing
+  /// back — arms nothing: there is no target to pin and no seek worth
+  /// dispatching to the position the playhead already occupies. Once a burst
+  /// is pending its debounce keeps running so the flush still waits out the
+  /// user's hand.
+  Duration seekBy(Duration delta) {
+    if (_disposed) return Duration.zero;
     final maximum = duration();
-    if (maximum <= Duration.zero) return;
+    if (maximum <= Duration.zero) return Duration.zero;
 
     final base = _pendingPosition ?? currentPosition();
+    final originMs = base.inMilliseconds.clamp(0, maximum.inMilliseconds);
     final targetMs = (base + delta).inMilliseconds.clamp(0, maximum.inMilliseconds);
     final target = Duration(milliseconds: targetMs);
+    if (_pendingPosition == null && targetMs == originMs) return Duration.zero;
     if (target != _pendingPosition) {
       _settleTimer?.cancel();
       _settleTimer = null;
@@ -127,6 +149,7 @@ class DebouncedSeekAccumulator {
 
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, flush);
+    return Duration(milliseconds: targetMs - originMs);
   }
 
   void flush() {

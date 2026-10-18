@@ -48,7 +48,13 @@ Future<void> launchTrackerConnect<T>(
   }
 
   final ok = await connect((payload) {
-    if (!context.mounted) return;
+    // The screen went away while the code was being requested: nobody can see
+    // the code, so abort the poll rather than hold the connect busy until the
+    // code expires.
+    if (!context.mounted) {
+      cancelDialog();
+      return;
+    }
     dialogOpen = true;
     showScopedDialog<void>(
       context: context,

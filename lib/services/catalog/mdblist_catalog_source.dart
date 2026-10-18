@@ -1,4 +1,5 @@
 import '../../media/media_kind.dart';
+import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../utils/external_ids.dart';
 import '../../utils/json_utils.dart';
@@ -6,11 +7,28 @@ import '../trackers/mdblist/mdblist_client.dart';
 import 'catalog_source.dart';
 import 'catalog_watchlist_machinery.dart';
 
+/// Raw watchlist envelope shared by the row and membership projections.
+typedef _WatchlistEnvelope = ({Object? movies, Object? shows, Map<Object?, Object?> pageData, int limit});
+
 /// MDBList watchlist/search adapter. The tracker owns [_client].
-class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
+class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogCommunityRatings {
   MdblistCatalogSource(this._client);
 
   final MdblistClient _client;
+
+  /// MDBList `ratings[].source` → our source key and the scale MDBList reports that source's `value` on.
+  static const Map<String, ({String key, int scale})> _ratingSources = {
+    'imdb': (key: 'imdb', scale: 10),
+    'tmdb': (key: 'tmdb', scale: 100),
+    'tomatoes': (key: 'rottenTomatoesCritic', scale: 100),
+    // The Popcornmeter; MDBList's older API called it `tomatoesaudience`.
+    'popcorn': (key: 'rottenTomatoesAudience', scale: 100),
+    'tomatoesaudience': (key: 'rottenTomatoesAudience', scale: 100),
+    'metacritic': (key: 'metacritic', scale: 100),
+    'letterboxd': (key: 'letterboxd', scale: 5),
+    'trakt': (key: 'trakt', scale: 100),
+    'myanimelist': (key: 'mal', scale: 10),
+  };
 
   @override
   CatalogSourceId get id => CatalogSourceId.mdblist;
@@ -36,26 +54,29 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   @override
   Future<CatalogPage> fetchRow(CatalogRowId row, {int page = 1, int limit = 25}) async {
     if (row != CatalogRowId.watchlist) throw ArgumentError('MDBList does not serve ${row.name}');
-    final result = await _fetchWatchlistPage(page, limit);
-    return CatalogPage(items: result.items, hasMore: result.hasMore, totalResults: result.total);
+    final envelope = await _fetchWatchlistEnvelope(page, limit);
+    final items = [..._itemsFrom(envelope.movies, MediaKind.movie), ..._itemsFrom(envelope.shows, MediaKind.show)];
+    final totalMovies = flexibleInt(envelope.pageData['total_movies']);
+    final totalShows = flexibleInt(envelope.pageData['total_shows']);
+    final total = totalMovies == null && totalShows == null ? null : (totalMovies ?? 0) + (totalShows ?? 0);
+    return CatalogPage(items: items, hasMore: _hasMore(envelope, items.length), totalResults: total);
   }
 
-  Future<({List<CatalogItem> items, bool hasMore, int? total})> _fetchWatchlistPage(int page, int limit) async {
+  Future<_WatchlistEnvelope> _fetchWatchlistEnvelope(int page, int limit) async {
     final normalizedPage = page < 1 ? 1 : page;
     final normalizedLimit = limit < 1 ? 1 : limit;
     final response = await _client.getWatchlist(limit: normalizedLimit, offset: (normalizedPage - 1) * normalizedLimit);
-    final items = [
-      ..._itemsFrom(response['movies'], MediaKind.movie),
-      ..._itemsFrom(response['shows'], MediaKind.show),
-    ];
     final pagination = response['pagination'];
-    final pageData = pagination is Map ? pagination : const <Object?, Object?>{};
-    final hasMore = flexibleBoolNullable(pageData['has_more']) ?? items.length >= normalizedLimit;
-    final totalMovies = flexibleInt(pageData['total_movies']);
-    final totalShows = flexibleInt(pageData['total_shows']);
-    final total = totalMovies == null && totalShows == null ? null : (totalMovies ?? 0) + (totalShows ?? 0);
-    return (items: items, hasMore: hasMore, total: total);
+    return (
+      movies: response['movies'],
+      shows: response['shows'],
+      pageData: pagination is Map ? pagination : const <Object?, Object?>{},
+      limit: normalizedLimit,
+    );
   }
+
+  static bool _hasMore(_WatchlistEnvelope envelope, int rows) =>
+      flexibleBoolNullable(envelope.pageData['has_more']) ?? rows >= envelope.limit;
 
   @override
   Future<List<CatalogItem>> search(String query, {int limit = 30}) async {
@@ -72,6 +93,37 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async =>
       CatalogDetail(item: item);
 
+  /// Every score MDBList aggregates for the title (`/{provider}/{movie|show|any}/{id}`, looked up by IMDb, then
+  /// TMDB, a show's TVDB, then MAL id), each moved off its source's scale. MDBList's own `score` is not one.
+  @override
+  Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids) async {
+    final type = switch (kind) {
+      MediaKind.movie => 'movie',
+      MediaKind.show => 'show',
+      _ => null,
+    };
+    if (type == null) return const [];
+    final lookup = switch (ids) {
+      CatalogItemIds(:final imdb?) => ('imdb', type, imdb),
+      CatalogItemIds(:final tmdb?) => ('tmdb', type, '$tmdb'),
+      CatalogItemIds(:final tvdb?) when kind == MediaKind.show => ('tvdb', 'show', '$tvdb'),
+      CatalogItemIds(:final mal?) => ('mal', 'any', '$mal'),
+      _ => null,
+    };
+    if (lookup == null) return const [];
+    final (provider, mediaType, id) = lookup;
+    return [
+      for (final rating in await _client.getMediaRatings(provider, mediaType, id))
+        if (_ratingSources[rating['source']] case final source?)
+          ?MediaRatingSource.fromScale(
+            source.key,
+            flexibleDouble(rating['value']),
+            scale: source.scale,
+            votes: flexibleInt(rating['votes']),
+          ),
+    ];
+  }
+
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (kind != MediaKind.movie && kind != MediaKind.show) return null;
@@ -80,8 +132,12 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
 
   @override
   Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit) async {
-    final result = await _fetchWatchlistPage(page, limit);
-    return (groups: [for (final item in result.items) membershipKeysFor(item.kind, item.ids)], hasMore: result.hasMore);
+    final envelope = await _fetchWatchlistEnvelope(page, limit);
+    final groups = [
+      ..._membershipFrom(envelope.movies, MediaKind.movie),
+      ..._membershipFrom(envelope.shows, MediaKind.show),
+    ];
+    return (groups: groups, hasMore: _hasMore(envelope, groups.length));
   }
 
   @override
@@ -109,6 +165,16 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   List<CatalogItem> _itemsFrom(Object? value, MediaKind kind) => [
     for (final entry in flexibleMapList(value)) ?_itemFor(entry, kind),
   ];
+
+  List<List<String>> _membershipFrom(Object? value, MediaKind kind) {
+    final groups = <List<String>>[];
+    for (final entry in flexibleMapList(value)) {
+      final ids = _idsFor(entry);
+      if (_string(entry['title']) == null || !ids.hasAny) continue;
+      groups.add(membershipKeysFor(kind, ids));
+    }
+    return groups;
+  }
 
   CatalogItem? _itemFor(Map<String, dynamic> entry, MediaKind kind) {
     final title = _string(entry['title']);

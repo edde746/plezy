@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../exceptions/media_server_exceptions.dart';
+import '../focus/focusable_button.dart';
 import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
@@ -44,6 +45,14 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   final _buttonKey = GlobalKey();
   OverlayEntry? _overlayEntry;
   final _panelNotifier = ValueNotifier<_PanelData>(_PanelData.loading);
+
+  /// Owns keyboard focus while the panel is open, so Back closes it and the
+  /// arrows reach its cancel buttons. `autofocus` cannot do this: the overlay
+  /// entry sits beside the current route under the navigator scope, which
+  /// already has a focused child (that route), so a pending autofocus is
+  /// dropped. Focus is requested once the entry has built; on close the scope
+  /// stack unwinds to whatever was focused before.
+  final _panelScope = FocusScopeNode(debugLabel: 'server_activities_panel');
   Timer? _pollTimer;
   AbortController? _activeLoadAbort;
   int _loadGeneration = 0;
@@ -57,6 +66,7 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   @override
   void dispose() {
     _removeOverlay();
+    _panelScope.dispose();
     _panelNotifier.dispose();
     super.dispose();
   }
@@ -92,6 +102,9 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       builder: (_) => _buildOverlay(right: right, top: top),
     );
     Overlay.of(context).insert(_overlayEntry!);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _overlayEntry != null) _panelScope.requestFocus();
+    });
     _startRefresh(silent: false);
   }
 
@@ -200,8 +213,13 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
         Positioned(
           right: right,
           top: top,
-          child: Focus(
-            autofocus: true,
+          // A scope, not a plain node: directional traversal from a focused
+          // node only considers targets outside its own rect, so a bare Focus
+          // holding the panel could never hand focus to the cancel buttons
+          // inside it. An empty scope keeps primary focus itself, so Back still
+          // closes a panel with nothing to cancel.
+          child: FocusScope(
+            node: _panelScope,
             onKeyEvent: (_, event) => handleBackKeyAction(event, _removeOverlay),
             child: ValueListenableBuilder<_PanelData>(
               valueListenable: _panelNotifier,
@@ -371,11 +389,16 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
             ),
           ),
           if (activity.cancellable)
-            IconButton(
-              icon: AppIcon(Symbols.close_rounded, size: 16, color: theme.colorScheme.onSurface),
+            // Keyboard/D-pad target with visible focus chrome; the inner
+            // IconButton keeps the pointer path (see FocusableButton).
+            FocusableButton(
               onPressed: () => _cancelActivity(serverId, activity.uuid),
-              visualDensity: VisualDensity.compact,
-              tooltip: t.common.cancel,
+              child: IconButton(
+                icon: AppIcon(Symbols.close_rounded, size: 16, color: theme.colorScheme.onSurface),
+                onPressed: () => _cancelActivity(serverId, activity.uuid),
+                visualDensity: VisualDensity.compact,
+                tooltip: t.common.cancel,
+              ),
             ),
         ],
       ),

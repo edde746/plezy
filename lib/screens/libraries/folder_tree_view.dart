@@ -50,7 +50,22 @@ class FolderTreeViewState extends State<FolderTreeView> {
   /// Reload the root folders. Exposed for parent-driven refreshes; resolves
   /// `true` only when the fresh root listing was applied under the current
   /// load epoch (not superseded, unmounted, or failed).
-  Future<bool> refresh() => _loadRootFolders();
+  Future<bool> refresh() => _trackRootLoad(_loadRootFolders());
+
+  /// The root listing load already running — the one [initState] starts on
+  /// mount — or a fresh reload when the tree is idle. Lets a parent that owns
+  /// a load epoch credit the tree's own load instead of refetching it.
+  Future<bool> ensureRootLoaded() => _rootLoad ?? refresh();
+
+  /// The root listing load in flight, `null` when none is running.
+  Future<bool>? _rootLoad;
+
+  Future<bool> _trackRootLoad(Future<bool> load) {
+    _rootLoad = load;
+    return load.whenComplete(() {
+      if (identical(_rootLoad, load)) _rootLoad = null;
+    });
+  }
 
   /// Folders/items returned by the backend's folder API and mapped to neutral
   /// [MediaItem]s. Plex folder URLs survive in [MediaItem.raw]['key'];
@@ -77,7 +92,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
   @override
   void initState() {
     super.initState();
-    _loadRootFolders();
+    _trackRootLoad(_loadRootFolders());
   }
 
   /// Invalidate in-flight loads (epoch bump) and drop their partial results

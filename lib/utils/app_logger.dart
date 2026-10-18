@@ -4,9 +4,6 @@ import 'package:logger/logger.dart';
 
 import 'log_redaction_manager.dart';
 
-/// Redacts sensitive information from a log field.
-String _redactSensitiveData(String value) => LogRedactionManager.redact(value);
-
 /// Represents a single log entry stored in memory
 class LogEntry {
   final DateTime timestamp;
@@ -35,12 +32,22 @@ class LogEntry {
 
 /// In-memory log store with a circular buffer.
 ///
-/// Storage is handled by [MemoryAwareLogPrinter.log()]; console output goes
-/// through the logger's default [ConsoleOutput].
+/// Fed by [MemoryAwareLogPrinter.log()]; console output goes through the
+/// logger's default [ConsoleOutput].
 class MemoryLogOutput {
   static const int maxLogSizeBytes = 5 * 1024 * 1024;
   static final ListQueue<LogEntry> _logs = ListQueue<LogEntry>();
   static int _currentSize = 0;
+
+  /// Append [entry], evicting the oldest entries once the buffer exceeds
+  /// [maxLogSizeBytes] — O(1) with ListQueue.
+  static void add(LogEntry entry) {
+    _logs.add(entry);
+    _currentSize += entry.estimatedSize;
+    while (_currentSize > maxLogSizeBytes && _logs.isNotEmpty) {
+      _currentSize -= _logs.removeFirst().estimatedSize;
+    }
+  }
 
   static List<LogEntry> getLogs() => _logs.toList().reversed.toList();
 
@@ -58,29 +65,15 @@ class MemoryAwareLogPrinter extends LogPrinter {
 
   @override
   List<String> log(LogEvent event) {
-    // Store the log with error and stack trace if available
-    final message = _redactSensitiveData(event.message.toString());
-    final error = event.error != null ? _redactSensitiveData(event.error.toString()) : null;
+    final message = LogRedactionManager.redact(event.message.toString());
+    final error = event.error != null ? LogRedactionManager.redact(event.error.toString()) : null;
     final stackTrace = event.stackTrace != null
-        ? StackTrace.fromString(_redactSensitiveData(event.stackTrace.toString()))
+        ? StackTrace.fromString(LogRedactionManager.redact(event.stackTrace.toString()))
         : null;
 
-    final logEntry = LogEntry(
-      timestamp: DateTime.now(),
-      level: event.level,
-      message: message,
-      error: error,
-      stackTrace: stackTrace,
+    MemoryLogOutput.add(
+      LogEntry(timestamp: DateTime.now(), level: event.level, message: message, error: error, stackTrace: stackTrace),
     );
-
-    MemoryLogOutput._logs.add(logEntry);
-    MemoryLogOutput._currentSize += logEntry.estimatedSize;
-
-    // Maintain buffer size limit (remove oldest entries) — O(1) with ListQueue
-    while (MemoryLogOutput._currentSize > MemoryLogOutput.maxLogSizeBytes && MemoryLogOutput._logs.isNotEmpty) {
-      final removed = MemoryLogOutput._logs.removeFirst();
-      MemoryLogOutput._currentSize -= removed.estimatedSize;
-    }
 
     return _wrappedPrinter.log(LogEvent(event.level, message, time: event.time, error: error, stackTrace: stackTrace));
   }
@@ -122,20 +115,14 @@ bool get debugLoggingEnabled => _productionFilter.isEnabledFor(Level.debug);
 /// appLogger.w('Warning message');
 /// appLogger.e('Error message', error: e, stackTrace: stackTrace);
 /// ```
-Logger appLogger = Logger(
-  printer: MemoryAwareLogPrinter(SimplePrinter()),
-  filter: _productionFilter,
-  level: Level.debug,
-);
+///
+/// Non-final so tests can swap in a recording logger.
+Logger appLogger = Logger(printer: MemoryAwareLogPrinter(SimplePrinter()), filter: _productionFilter);
 
-/// Update the logger's level dynamically based on debug setting
-/// Recreates the logger instance to ensure it works in release mode
+/// Update the logger's level dynamically based on the debug setting.
+///
+/// [ProductionFilter] is the only gate: [Logger] asks its filter on every
+/// event, so changing the filter level is sufficient even in release mode.
 void setLoggerLevel(bool debugEnabled) {
-  final newLevel = debugEnabled ? Level.debug : Level.info;
-
-  _productionFilter.setLevel(newLevel);
-
-  appLogger = Logger(printer: MemoryAwareLogPrinter(SimplePrinter()), filter: _productionFilter, level: newLevel);
-
-  Logger.level = newLevel;
+  _productionFilter.setLevel(debugEnabled ? Level.debug : Level.info);
 }

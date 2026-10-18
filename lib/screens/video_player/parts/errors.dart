@@ -37,8 +37,11 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     );
 
     switch (action) {
-      // Both dialogs are unrecoverable until the server side changes, so they
-      // replace the snackbar rather than joining it.
+      // Every dialog is unrecoverable until the server side changes, so each
+      // replaces the snackbar rather than joining it.
+      case PlaybackFailureAction.playbackNotAllowedDialog:
+        _latchFatalPlaybackError(action);
+        unawaited(_showPlaybackNotAllowedDialog());
       case PlaybackFailureAction.serverLimitDialog:
         _latchFatalPlaybackError(action);
         unawaited(_showServerLimitDialog());
@@ -113,6 +116,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       widget.launchObserver?.mark(
         'failed',
         failure: switch (action) {
+          PlaybackFailureAction.playbackNotAllowedDialog => 'playbackNotAllowed',
           PlaybackFailureAction.serverLimitDialog => 'serverLimit',
           PlaybackFailureAction.mediaUnreadableDialog => 'mediaUnreadable',
           PlaybackFailureAction.serverBusyDialog => 'serverBusy',
@@ -132,6 +136,10 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   void _presentPlaybackFailure(String message) {
     if (!mounted || _shuttingDown) return;
     _firstFrame.forceUiReadyOnFailure();
+    // Nothing plays behind the view, so it must not hold the screen awake
+    // while it waits; the playing-state handler takes the wakelock again once
+    // a retried open plays.
+    unawaited(_wakelockController.setEnabled(false));
     _setPlayerState(() {
       _playbackFailureMessage = message;
       _playbackFailureRetry = _retryFailedPlayback;
@@ -221,6 +229,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
       _lastLogError = _redactPlayerError(log.text.trim());
     }
+    if (SpuriousEofRecovery.isTransportFaultLog(log)) _transportFaultSeen = true;
     // A stream mpv gives up on at open (`error_on_track`) ends the file only
     // when the other stream is gone too; otherwise the load lives on with no
     // end-file and the viewer waits out the open deadline for an error mpv
@@ -228,12 +237,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     // as the deadline: a first frame or a latched error already settled this
     // open, and a superseded attempt's lines are not this open's business.
     if (_firstFrame.rendered || _hasFatalPlaybackError || !(_playbackAttempt?.isCurrent ?? false)) return;
-    final cause = openFailureCauseFromLog(
-      level: log.level,
-      prefix: log.prefix,
-      text: log.text,
-      isAndroid: Platform.isAndroid,
-    );
+    final cause = openFailureCauseFromLog(level: log.level, prefix: log.prefix, text: log.text);
     if (cause == null) return;
     appLogger.w('mpv gave up on a stream while opening — giving up on this open');
     _onPlayerError(PlayerError(log.text.trim(), cause: cause));
@@ -252,22 +256,28 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   }
 
   /// The attempt's open deadline passed: the backend started the load and
-  /// then neither loaded, failed, nor died. Its waiters are already aborted;
-  /// synthesize the error the backend never raised so the failure policy
-  /// runs (which stops the still-retrying load) and the viewer is not left
-  /// on a spinner. Same guard as the 503 watchdog: a first frame or a
-  /// latched error already settled this open.
+  /// then stopped moving without loading, failing, or dying. Its waiters are
+  /// already aborted; synthesize the error the backend never raised so the
+  /// failure policy runs (which stops the still-retrying load) and the viewer
+  /// is not left on a spinner. Same guard as the 503 watchdog: a first frame
+  /// or a latched error already settled this open.
   void _onOpenDeadlineExpired(Player currentPlayer, int generation) {
     if (!_isCurrentPlaybackGeneration(generation, currentPlayer) || _firstFrame.rendered || _hasFatalPlaybackError) {
       return;
     }
     appLogger.w(
-      'No first frame within ${VideoPlayerScreenState._openDeadline.inSeconds}s of load start — giving up on this open',
+      'No load progress for ${VideoPlayerScreenState._openDeadline.inSeconds}s before the first frame — giving up on this open',
     );
     _onPlayerError(PlayerError(t.messages.playbackFailed, cause: PlayerError.openTimedOut));
   }
 
   String _redactPlayerError(String message) => LogRedactionManager.redact(message);
+
+  Future<void> _showPlaybackNotAllowedDialog() async {
+    if (!mounted) return;
+    await showPlaybackNotAllowedDialog(context);
+    if (mounted) unawaited(_handleBackButton());
+  }
 
   Future<void> _showServerLimitDialog() async {
     if (!mounted) return;

@@ -4,10 +4,10 @@ import 'trakt_ids.dart';
 
 part 'trakt_scrobble_request.freezed.dart';
 
-/// Body for `POST /scrobble/{start|pause|stop}` and `POST /sync/history`.
+/// Body for `POST /scrobble/{start|pause|stop}`.
 ///
 /// Either movie IDs or show IDs + season/episode are set, never both.
-/// [progress] is the percent (0–100) for scrobble; ignored for `/sync/history`.
+/// [progress] is the percent (0–100).
 @freezed
 sealed class TraktScrobbleRequest with _$TraktScrobbleRequest {
   const TraktScrobbleRequest._();
@@ -38,34 +38,6 @@ sealed class TraktScrobbleRequest with _$TraktScrobbleRequest {
       'show': {'ids': showIds.toJson()},
       'episode': {'season': season, 'number': number},
       'progress': ?progress,
-    },
-  };
-
-  /// Build a `POST /sync/history[/remove]` body for this item. Both endpoints
-  /// take the same shape; only the removal path ignores [watchedAt].
-  ///
-  /// Optional [watchedAt] (ISO-8601 UTC) lets the server attribute the play
-  /// to a specific point in time; defaults to "now" on Trakt's side.
-  Map<String, dynamic> toHistoryBody({String? watchedAt}) => switch (this) {
-    TraktScrobbleMovieRequest(:final ids) => {
-      'movies': [
-        {'watched_at': ?watchedAt, 'ids': ids.toJson()},
-      ],
-    },
-    TraktScrobbleEpisodeRequest(:final showIds, :final season, :final number) => {
-      'shows': [
-        {
-          'ids': showIds.toJson(),
-          'seasons': [
-            {
-              'number': season,
-              'episodes': [
-                {'watched_at': ?watchedAt, 'number': number},
-              ],
-            },
-          ],
-        },
-      ],
     },
   };
 }

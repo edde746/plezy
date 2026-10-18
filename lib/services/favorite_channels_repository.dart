@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/livetv_channel.dart';
+import 'base_shared_preferences_service.dart';
+import 'prefs_recovery.dart';
 
 /// Persistence boundary for the per-connection favorite-channel list shown
 /// in the Live TV picker. Pulled out of `_JellyfinLiveTvSupport` so the
@@ -26,8 +28,13 @@ abstract class FavoriteChannelsRepository {
   Future<void> write(String key, List<FavoriteChannel> channels, {void Function()? checkCurrent});
 }
 
-/// Production implementation. Holds no state; the platform plugin has its
-/// own caching layer behind `SharedPreferences.getInstance()`.
+/// Production implementation. Holds no state; reads and writes go through
+/// the app-wide [BaseSharedPreferencesService.sharedCache] so favorites are
+/// covered by logout wipe, export and store salvage like every other pref.
+///
+/// Earlier builds wrote favorites with `SharedPreferences.getInstance()` —
+/// the legacy store, which the one-shot legacy→async migration had already
+/// left behind. Those lists are adopted into the shared cache on first read.
 class SharedPreferencesFavoriteChannelsRepository implements FavoriteChannelsRepository {
   const SharedPreferencesFavoriteChannelsRepository();
 
@@ -38,21 +45,45 @@ class SharedPreferencesFavoriteChannelsRepository implements FavoriteChannelsRep
     bool migrate = true,
     void Function()? checkCurrent,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    var raw = prefs.getString(key);
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    var raw = readTolerantString(prefs, key);
     if (raw == null) {
-      // Migrate from the legacy bare-machineId slot. Only the first user to
-      // read inherits it; the rest start empty (favorites were always
-      // user-scoped semantically — the legacy key just couldn't express it).
-      final legacy = prefs.getString(legacyKey);
-      if (legacy != null) {
+      // Older slots, most recent first: the bare-machineId key in the shared
+      // cache, then either key in the legacy store. Only the first user to
+      // read inherits a bare-machineId value; the rest start empty
+      // (favorites were always user-scoped semantically — the legacy key
+      // just couldn't express it).
+      final sources = <(String?, Future<void> Function())>[
+        (readTolerantString(prefs, legacyKey), () => prefs.remove(legacyKey)),
+      ];
+      if (PrefsRecovery.isSupportedPlatform) {
+        // Windows and Linux keep the legacy store in the same JSON file as the
+        // shared cache, under the `flutter.` prefix. The legacy plugin writes
+        // that whole file back from the copy it parsed at launch, so removing
+        // through it would drop every setting saved since then — the list
+        // just migrated included. The shared cache holds the current file, so
+        // read and clear the prefixed entries through it instead.
+        for (final slot in [key, legacyKey]) {
+          final prefixed = '$legacyKeyPrefix$slot';
+          sources.add((readTolerantString(prefs, prefixed), () => prefs.remove(prefixed)));
+        }
+      } else {
+        final legacyStore = await SharedPreferences.getInstance();
+        sources.addAll([
+          (legacyStore.getString(key), () => _removeLegacy(legacyStore, key)),
+          (legacyStore.getString(legacyKey), () => _removeLegacy(legacyStore, legacyKey)),
+        ]);
+      }
+      for (final (value, clear) in sources) {
+        if (value == null) continue;
         if (migrate) {
           checkCurrent?.call();
-          if (!await prefs.setString(key, legacy)) throw StateError('Favorite migration write failed');
+          await prefs.setString(key, value);
           checkCurrent?.call();
-          if (!await prefs.remove(legacyKey)) throw StateError('Favorite migration cleanup failed');
+          await clear();
         }
-        raw = legacy;
+        raw = value;
+        break;
       }
     }
     if (raw == null || raw.isEmpty) return const [];
@@ -65,10 +96,12 @@ class SharedPreferencesFavoriteChannelsRepository implements FavoriteChannelsRep
 
   @override
   Future<void> write(String key, List<FavoriteChannel> channels, {void Function()? checkCurrent}) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     checkCurrent?.call();
-    if (!await prefs.setString(key, jsonEncode(channels.map((c) => c.toJson()).toList()))) {
-      throw StateError('Favorite channel persistence failed');
-    }
+    await prefs.setString(key, jsonEncode(channels.map((c) => c.toJson()).toList()));
+  }
+
+  static Future<void> _removeLegacy(SharedPreferences legacyStore, String key) async {
+    if (!await legacyStore.remove(key)) throw StateError('Favorite migration cleanup failed');
   }
 }

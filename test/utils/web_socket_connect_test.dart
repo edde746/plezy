@@ -237,6 +237,27 @@ void main() {
       expect(await received.future.timeout(const Duration(seconds: 5)), 'still here');
     });
 
+    test('headers are sent with the upgrade request', () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      final authorization = Completer<String?>();
+      server.listen((request) async {
+        authorization.complete(request.headers.value('authorization'));
+        final socket = await WebSocketTransformer.upgrade(request);
+        unawaited(socket.close());
+      });
+
+      final attempt = WebSocketConnectAttempt(
+        Uri.parse('ws://${server.address.address}:${server.port}/socket'),
+        connectTimeout: const Duration(seconds: 30),
+        headers: const {'Authorization': 'MediaBrowser Client="Plezy Android TV"'},
+      );
+      final webSocket = await attempt.socket;
+      addTearDown(webSocket.close);
+
+      expect(await authorization.future.timeout(const Duration(seconds: 5)), 'MediaBrowser Client="Plezy Android TV"');
+    });
+
     test('redirected upgrade transfers ownership of the delivered transport', () async {
       final target = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final redirect = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);

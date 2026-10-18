@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -82,16 +81,11 @@ class VisualEffectsController {
     return w / h;
   }
 
-  /// Enable ambient lighting for the current video/player geometry.
-  /// Returns false when the aspect ratios cannot be determined yet.
+  /// Enable ambient lighting for the current picture.
+  /// Returns false when the picture aspect cannot be determined yet.
   Future<bool> _enableAmbientLighting(AmbientLightingService ambientLighting, ShaderProvider shaderProvider) async {
     final videoAspect = await _readVideoAspect();
     if (videoAspect == null) return false;
-
-    // Get player widget aspect ratio
-    final playerSize = _filterManager()?.playerSize;
-    if (playerSize == null || playerSize.height == 0) return false;
-    final outputAspect = playerSize.width / playerSize.height;
 
     // Clear shaders — ambient lighting and shaders are mutually exclusive
     if (shaderProvider.isShaderEnabled) {
@@ -102,7 +96,7 @@ class VisualEffectsController {
     // Force contain mode when enabling ambient lighting
     _filterManager()?.resetToContain();
 
-    await ambientLighting.enable(videoAspect, outputAspect);
+    await ambientLighting.enable(videoAspect);
     return true;
   }
 
@@ -228,16 +222,6 @@ class VisualEffectsController {
     setZoom(1.0);
   }
 
-  /// Update video-aspect-override when player size changes.
-  /// The shader adapts automatically via built-in target_size uniform.
-  void onResize(Size newSize) {
-    final ambientLighting = _ambientLighting();
-    if (ambientLighting == null || !ambientLighting.isEnabled) return;
-    if (newSize.height == 0) return;
-
-    ambientLighting.updateOutputAspect(newSize.width / newSize.height);
-  }
-
   /// Toggle ambient lighting effect on/off
   Future<void> toggleAmbientLighting() async {
     final ambientLighting = _ambientLighting();
@@ -246,7 +230,6 @@ class VisualEffectsController {
 
     if (ambientLighting.isEnabled) {
       await ambientLighting.disable();
-      unawaited(_filterManager()?.updateVideoFilter());
     } else {
       if (!await _enableAmbientLighting(ambientLighting, shaderProvider)) return;
     }

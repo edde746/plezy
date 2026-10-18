@@ -5,7 +5,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/library_filter_result.dart';
 import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/media_filter.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
@@ -64,6 +67,156 @@ void main() {
       'viewCount',
       'userRating',
     ]);
+  });
+
+  // Filter discovery reads the schema Plex publishes with `includeMeta=1`:
+  // the browsed type's fields plus the operators that type can evaluate. It
+  // is the only source for exclusion, ranges and text matching, so the shape
+  // it produces is pinned here rather than inferred from the browse tab.
+  group('filter schema discovery', () {
+    PlexClient metaClient(Future<http.Response> Function(http.Request request) handler, {List<Uri>? requests}) =>
+        makeClient((request) async {
+          requests?.add(request.url);
+          return handler(request);
+        });
+
+    test('parses fields and per-type operators, and never asks for items', () async {
+      final requests = <Uri>[];
+      final client = metaClient(requests: requests, (request) async {
+        if (request.url.path == '/library/sections/1/all') {
+          return http.Response(jsonEncode(_metaPayload()), 200, headers: {'content-type': 'application/json'});
+        }
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      final result = await client.fetchLibraryFiltersWithValues('1', libraryKind: MediaKind.movie);
+      final byField = {for (final filter in result.filters) filter.filter: filter};
+
+      expect(requests.single.queryParameters['includeMeta'], '1');
+      // Both parameters: PMS ignores a lone `Size=0` and returns the whole
+      // section, so discovery would download the library it is asking about.
+      expect(requests.single.queryParameters['X-Plex-Container-Start'], '0');
+      expect(requests.single.queryParameters['X-Plex-Container-Size'], '0');
+      expect(requests.single.queryParameters['type'], '1');
+
+      // A tag field can be included or excluded and lists its values.
+      expect(byField['genre']!.operators, [LibraryFilterOperator.is_, LibraryFilterOperator.isNot]);
+      expect(byField['genre']!.key, '/library/sections/1/genre?type=1');
+      expect(byField['genre']!.editorKind, FilterEditorKind.valueList);
+
+      // An integer field carries its bounds; `year` is one Plex also lists.
+      expect(byField['year']!.operators, contains(LibraryFilterOperator.atLeast));
+      expect(byField['year']!.operators, contains(LibraryFilterOperator.atMost));
+      expect(byField['year']!.key, '/library/sections/1/year?type=1');
+
+      // A sized integer has bounds but no value listing, so it gets the
+      // numeric editor rather than a list nobody can populate.
+      expect(byField['mediaSize']!.key, isEmpty);
+      expect(byField['mediaSize']!.editorKind, FilterEditorKind.number);
+      // Plex declares the storage unit in `subType`; the editor needs it to
+      // turn a typed 90 minutes into 5400000 ms rather than 90.
+      expect(byField['mediaSize']!.unit, MediaFilterUnit.fileSize);
+      expect(byField['duration']!.unit, MediaFilterUnit.duration);
+      expect(byField['year']!.unit, MediaFilterUnit.none);
+
+      // Free text exposes Plex's match modes and no listing.
+      expect(byField['title']!.operators, contains(LibraryFilterOperator.matches));
+      expect(byField['title']!.operators, contains(LibraryFilterOperator.beginsWith));
+      expect(byField['title']!.key, isEmpty);
+      expect(byField['title']!.editorKind, FilterEditorKind.text);
+
+      expect(byField['addedAt']!.editorKind, FilterEditorKind.date);
+      expect(byField['unwatched']!.isBoolean, isTrue);
+      expect(byField['unwatched']!.supportsExclusion, isTrue);
+
+      // Undocumented, movie/episode only: the filename and folder filter.
+      expect(byField[MediaFilterField.file], isNotNull);
+      expect(byField[MediaFilterField.file]!.editorKind, FilterEditorKind.text);
+      expect(result.cachedValues, isEmpty);
+    });
+
+    test('reads the active type and strips its own prefix', () async {
+      final client = metaClient((request) async {
+        if (request.url.path == '/library/sections/2/all') {
+          return http.Response(jsonEncode(_showMetaPayload()), 200, headers: {'content-type': 'application/json'});
+        }
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      final result = await client.fetchLibraryFiltersWithValues('2', libraryKind: MediaKind.show);
+      final fields = result.filters.map((f) => f.filter).toList();
+
+      // `show.genre` and a bare `genre` select the same rows on a show query,
+      // and the bare name is what value endpoints and saved selections use.
+      expect(fields, contains('genre'));
+      expect(fields, isNot(contains('show.genre')));
+      // The inactive `episode` type is a different browse surface; its fields
+      // are not offered here (a bare `genre` would match nothing under
+      // `type=4`, and the qualified spelling belongs to that query).
+      expect(fields, isNot(contains('episode.title')));
+      // Value listings always use the bare name.
+      final genre = result.filters.firstWhere((f) => f.filter == 'genre');
+      expect(genre.key, '/library/sections/2/genre?type=2');
+      // No file filter: a show-type query answers 500 for it.
+      expect(fields, isNot(contains(MediaFilterField.file)));
+    });
+
+    test('falls back to the legacy filter listing when the server publishes no schema', () async {
+      final paths = <String>[];
+      final client = metaClient((request) async {
+        paths.add(request.url.path);
+        return switch (request.url.path) {
+          // Old servers answer the browse endpoint without a Meta block.
+          '/library/sections/1/all' => http.Response(
+            jsonEncode({
+              'MediaContainer': {'size': 0},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          ),
+          '/library/sections/1/filters' => http.Response(
+            jsonEncode(_filtersPayload()),
+            200,
+            headers: {'content-type': 'application/json'},
+          ),
+          _ => http.Response('not found', 404),
+        };
+      });
+      addTearDown(client.close);
+
+      final result = await client.fetchLibraryFiltersWithValues('1', libraryKind: MediaKind.movie);
+
+      expect(paths, ['/library/sections/1/all', '/library/sections/1/filters']);
+      expect(result.filters.map((f) => f.filter), ['genre', 'year', 'unwatched']);
+      // Without a published vocabulary the editor still offers exclusion:
+      // every supported Plex version evaluates `!=` for these types.
+      final genre = result.filters.first;
+      expect(genre.supportsExclusion, isTrue);
+    });
+
+    test('percent-encoded value ids are decoded once, not re-encoded on the wire', () async {
+      // Plex lists `audioLayout` values as `5%2E1`. Encoding that again
+      // selects nothing (`audioLayout=5%252E1` → 0 rows on a real server).
+      expect(libraryFilterValueId('5%2E1', 'audioLayout'), '5.1');
+      expect(libraryFilterValueId('16%2B', 'contentRating'), '16+');
+      expect(libraryFilterValueId('/library/sections/1/all?genre=239', 'genre'), '239');
+      // A literal percent is not an encoding and must survive.
+      expect(libraryFilterValueId('100%', 'label'), '100%');
+    });
+
+    test('a shared library has no filter schema to read', () async {
+      var calls = 0;
+      final client = metaClient((request) async {
+        calls++;
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      expect(await client.fetchLibraryFiltersWithValues('shared'), LibraryFilterResult.empty);
+      expect(calls, 0);
+    });
   });
 
   test('appends Date Added, Plays, and User Rating sorts only for video libraries', () async {
@@ -239,36 +392,77 @@ void main() {
     expect(page.items.single.libraryTitle, 'Movies');
   });
 
-  test('library collections are fetched in pages', () async {
-    final requests = <Uri>[];
+  test('collection page stays under the server page-size cap', () async {
+    // Mirrors PMS servers that reject `/library/collections/{id}/children`
+    // pages above 120 items with HTTP 400 (#2468).
+    const total = 250;
     final client = makeClient((request) async {
-      if (request.url.path == '/library/sections/7/collections') {
-        requests.add(request.url);
-        final start = request.url.queryParameters['X-Plex-Container-Start'];
-        return http.Response(
-          jsonEncode({
-            'MediaContainer': {
-              'size': 1,
-              'totalSize': 2,
-              'Metadata': [
-                {'ratingKey': start == '0' ? '99' : '100', 'type': 'collection', 'title': 'Collection'},
-              ],
-            },
-          }),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      return http.Response('not found', 404);
+      if (request.url.path != '/library/collections/99/children') return http.Response('not found', 404);
+      final start = int.parse(request.url.queryParameters['X-Plex-Container-Start']!);
+      final size = int.parse(request.url.queryParameters['X-Plex-Container-Size']!);
+      if (size > 120) return http.Response('X-Plex-Container-Size header exceeds limit 120', 400);
+      final end = (start + size).clamp(start, total);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'offset': start,
+            'size': end - start,
+            'totalSize': total,
+            'Metadata': [
+              for (var i = start; i < end; i++) {'ratingKey': '$i', 'type': 'movie', 'title': 'Movie $i'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
     });
     addTearDown(client.close);
 
-    final collections = await client.fetchCollections('7');
+    final first = await client.fetchCollectionPage('99', start: 0, size: 200);
+    expect(first.items.map((item) => item.id), [for (var i = 0; i < 200; i++) '$i']);
+    expect(first.totalCount, total);
 
-    expect(collections.map((item) => item.id).toList(), ['99', '100']);
-    expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']).toList(), ['0', '1']);
-    expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
-    expect(requests.every((u) => u.queryParameters['includeGuids'] == '1'), isTrue);
+    final last = await client.fetchCollectionPage('99', start: 200, size: 200);
+    expect(last.items.map((item) => item.id), [for (var i = 200; i < total; i++) '$i']);
+    expect(last.offset, 200);
+  });
+
+  test('collection hub View All stays under the server page-size cap', () async {
+    // A library's collection hub is keyed by `/library/collections/{id}/children`,
+    // the endpoint PMS caps at 120 items per request (#2468).
+    const total = 250;
+    final sizes = <int>[];
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/collections/99/children') return http.Response('not found', 404);
+      final start = int.parse(request.url.queryParameters['X-Plex-Container-Start']!);
+      final size = int.parse(request.url.queryParameters['X-Plex-Container-Size']!);
+      sizes.add(size);
+      if (size > 120) return http.Response('X-Plex-Container-Size header exceeds limit 120', 400);
+      final end = (start + size).clamp(start, total);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'offset': start,
+            'size': end - start,
+            'totalSize': total,
+            'Metadata': [
+              for (var i = start; i < end; i++) {'ratingKey': '$i', 'type': 'movie', 'title': 'Movie $i'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchMoreHubItemsPage('/library/collections/99/children', start: 0, size: 200);
+    expect(page.items.map((item) => item.id), [for (var i = 0; i < 200; i++) '$i']);
+
+    final all = await client.fetchMoreHubItems('/library/collections/99/children');
+    expect(all.map((item) => item.id), [for (var i = 0; i < total; i++) '$i']);
+    expect(sizes, everyElement(lessThanOrEqualTo(120)));
   });
 
   test('library collection page passes requested pagination params', () async {
@@ -415,53 +609,6 @@ void main() {
     expect(page.offset, 20);
   });
 
-  test('fetchPlaylists walks playlist pages', () async {
-    final requests = <Uri>[];
-    final client = makeClient((request) async {
-      if (request.url.path == '/playlists') {
-        requests.add(request.url);
-        final start = int.parse(request.url.queryParameters['X-Plex-Container-Start'] ?? '0');
-        final metadata = start == 0
-            ? [
-                {'ratingKey': '1', 'type': 'playlist', 'playlistType': 'video', 'title': 'One'},
-                {'ratingKey': '2', 'type': 'playlist', 'playlistType': 'video', 'title': 'Two'},
-              ]
-            : [
-                {'ratingKey': '3', 'type': 'playlist', 'playlistType': 'video', 'title': 'Three'},
-              ];
-        return http.Response(
-          jsonEncode({
-            'MediaContainer': {'size': metadata.length, 'totalSize': 3, 'Metadata': metadata},
-          }),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      return http.Response('not found', 404);
-    });
-    addTearDown(client.close);
-
-    final playlists = await client.fetchPlaylists();
-
-    expect(playlists.map((p) => p.id), ['1', '2', '3']);
-    expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']), ['0', '2']);
-    expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
-  });
-
-  test('fetchPlaylists returns empty on list failure', () async {
-    final client = makeClient((request) async {
-      if (request.url.path == '/playlists') {
-        return http.Response('server error', 500);
-      }
-      return http.Response('not found', 404);
-    });
-    addTearDown(client.close);
-
-    final playlists = await client.fetchPlaylists();
-
-    expect(playlists, isEmpty);
-  });
-
   test('playlist item page passes requested pagination params', () async {
     Uri? requestUri;
     final client = makeClient((request) async {
@@ -553,6 +700,99 @@ void main() {
     expect(requestUri, isNotNull);
     expect(requestUri!.queryParameters['X-Plex-Container-Start'], '20');
     expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
+  });
+
+  group('person details', () {
+    http.Response json(Object body) =>
+        http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+
+    test('reads the person from Plex Discover with the plex.tv account token', () async {
+      final requests = <Uri>[];
+      String? discoverToken;
+      final client = makeClient((request) async {
+        requests.add(request.url);
+        if (request.url.host == 'discover.provider.plex.tv') {
+          discoverToken = request.headers['X-Plex-Token'];
+          return json({
+            'MediaContainer': {
+              'size': 1,
+              'Metadata': [
+                {
+                  'title': 'Heath Ledger',
+                  'summary': 'Heath Andrew Ledger was an Australian actor.',
+                  'bornAt': '1979-04-04',
+                  'diedAt': '2008-01-22',
+                  'birthPlace': ' Perth, Western Australia, Australia',
+                },
+              ],
+            },
+          });
+        }
+        if (request.url.path == '/library/people/38943') {
+          return json({
+            'MediaContainer': {
+              'size': 1,
+              'Directory': [
+                {'id': 38943, 'tag': 'Heath Ledger', 'tagType': 6, 'tagKey': '5d776825eb5d26001f1dd125'},
+              ],
+            },
+          });
+        }
+        return http.Response('not found', 404);
+      });
+      client.plexAccountToken = 'account-token';
+      addTearDown(client.close);
+
+      final details = await client.fetchPersonDetails('38943');
+
+      expect(requests.last.host, 'discover.provider.plex.tv');
+      expect(requests.last.path, '/library/people/5d776825eb5d26001f1dd125');
+      // Discover rejects a Home or shared user's server token as invalid.
+      expect(discoverToken, 'account-token');
+      expect(details.biography, 'Heath Andrew Ledger was an Australian actor.');
+      expect(details.birthDate, DateTime.utc(1979, 4, 4));
+      expect(details.deathDate, DateTime.utc(2008, 1, 22));
+      expect(details.birthPlace, 'Perth, Western Australia, Australia');
+    });
+
+    test('a tag without a plex.tv id has no details and never reaches Discover', () async {
+      final requests = <Uri>[];
+      final client = makeClient((request) async {
+        requests.add(request.url);
+        if (request.url.path == '/library/people/7') {
+          return json({
+            'MediaContainer': {
+              'size': 1,
+              'Directory': [
+                {'id': 7, 'tag': 'Local Actor', 'tagType': 6},
+              ],
+            },
+          });
+        }
+        return http.Response('not found', 404);
+      });
+      client.plexAccountToken = 'account-token';
+      addTearDown(client.close);
+
+      final details = await client.fetchPersonDetails('7');
+
+      expect(details.isEmpty, isTrue);
+      expect(requests.map((uri) => uri.host), isNot(contains('discover.provider.plex.tv')));
+    });
+
+    test('a client without a plex.tv account token has no details and sends nothing', () async {
+      final requests = <Uri>[];
+      final client = makeClient((request) async {
+        requests.add(request.url);
+        return http.Response('not found', 404);
+      });
+      addTearDown(client.close);
+
+      final details = await client.fetchPersonDetails('38943');
+
+      expect(details.isEmpty, isTrue);
+      expect(requests, isEmpty);
+    });
   });
 
   test('playable descendants page passes requested pagination params', () async {
@@ -682,6 +922,35 @@ void main() {
     expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']).toList(), ['0', '0', '2']);
     expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
   });
+
+  test('music hub content keeps the artists, albums and tracks its preview row shows', () async {
+    final client = makeClient((request) async {
+      if (request.url.path != '/hubs/sections/3/recentlyAdded') return http.Response('not found', 404);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'size': 3,
+            'totalSize': 3,
+            'Metadata': [
+              {'ratingKey': 'artist-1', 'type': 'artist', 'title': 'Artist'},
+              {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album'},
+              {'ratingKey': 'track-1', 'type': 'track', 'title': 'Track'},
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final all = await client.fetchMoreHubItems('/hubs/sections/3/recentlyAdded');
+    final page = await client.fetchMoreHubItemsPage('/hubs/sections/3/recentlyAdded', start: 0, size: 50);
+
+    expect(all.map((item) => item.id), ['artist-1', 'album-1', 'track-1']);
+    expect(page.items.map((item) => item.id), ['artist-1', 'album-1', 'track-1']);
+    expect(page.totalCount, 3);
+  });
 }
 
 Map<String, dynamic> _filtersPayload() => {
@@ -727,5 +996,113 @@ Map<String, dynamic> _sortsPayload() => {
       {'defaultDirection': 'desc', 'descKey': 'lastViewedAt:desc', 'key': 'lastViewedAt', 'title': 'Date Viewed'},
       {'defaultDirection': 'desc', 'descKey': 'random:desc', 'key': 'random', 'title': 'Randomly'},
     ],
+  },
+};
+
+/// `Meta` block as PMS 1.43 publishes it for a movie section, trimmed to the
+/// field shapes the editor has to tell apart.
+Map<String, dynamic> _metaPayload() => {
+  'MediaContainer': {
+    'size': 0,
+    'totalSize': 57,
+    'Meta': {
+      'Type': [
+        {
+          'type': 'movie',
+          'active': true,
+          'Field': [
+            {'key': 'title', 'title': 'Title', 'type': 'string'},
+            {'key': 'year', 'title': 'Year', 'type': 'integer'},
+            {'key': 'mediaSize', 'title': 'File Size', 'type': 'integer', 'subType': 'fileSize'},
+            {'key': 'duration', 'title': 'Duration', 'type': 'integer', 'subType': 'duration'},
+            {'key': 'genre', 'title': 'Genre', 'type': 'tag'},
+            {'key': 'addedAt', 'title': 'Date Added', 'type': 'date'},
+            {'key': 'unwatched', 'title': 'Unwatched', 'type': 'boolean'},
+          ],
+        },
+      ],
+      'FieldType': [
+        {
+          'type': 'tag',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+          ],
+        },
+        {
+          'type': 'integer',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+            {'key': '>>=', 'title': 'is greater than'},
+            {'key': '<<=', 'title': 'is less than'},
+          ],
+        },
+        {
+          'type': 'string',
+          'Operator': [
+            {'key': '=', 'title': 'contains'},
+            {'key': '!=', 'title': 'does not contain'},
+            {'key': '==', 'title': 'is'},
+            {'key': '!==', 'title': 'is not'},
+            {'key': '<=', 'title': 'begins with'},
+            {'key': '>=', 'title': 'ends with'},
+          ],
+        },
+        {
+          'type': 'boolean',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+          ],
+        },
+        {
+          'type': 'date',
+          'Operator': [
+            {'key': '<<=', 'title': 'is before'},
+            {'key': '>>=', 'title': 'is after'},
+          ],
+        },
+      ],
+    },
+  },
+};
+
+/// A show section qualifies every field with its owning type and returns one
+/// `Type` entry per browse surface, with `active` marking the queried one.
+/// The episode entry comes first here deliberately: the parser must pick the
+/// active type, not the first one carrying fields.
+Map<String, dynamic> _showMetaPayload() => {
+  'MediaContainer': {
+    'size': 0,
+    'Meta': {
+      'Type': [
+        {
+          'type': 'episode',
+          'active': false,
+          'Field': [
+            {'key': 'episode.title', 'title': 'Episode Title', 'type': 'string'},
+            {'key': 'episode.genre', 'title': 'Genre', 'type': 'tag'},
+          ],
+        },
+        {
+          'type': 'show',
+          'active': true,
+          'Field': [
+            {'key': 'show.title', 'title': 'Title', 'type': 'string'},
+            {'key': 'show.genre', 'title': 'Genre', 'type': 'tag'},
+          ],
+        },
+      ],
+      'FieldType': [
+        {
+          'type': 'tag',
+          'Operator': [
+            {'key': '=', 'title': 'is'},
+            {'key': '!=', 'title': 'is not'},
+          ],
+        },
+      ],
+    },
   },
 };

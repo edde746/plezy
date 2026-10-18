@@ -150,7 +150,11 @@ Widget _buildContent({
         // A tight box at the viewBox's own aspect: identical to the svg's
         // natural fit at this height, but with a width that is known before
         // layout so fitted lines can measure a badge exactly (#1893).
-        SizedBox(width: size * info.iconAspect, height: size, child: SvgPicture.asset(info.assetPath))
+        SizedBox(
+          width: size * info.iconAspect,
+          height: size,
+          child: SvgPicture.asset(info.assetPath, theme: SvgTheme(currentColor: foreground)),
+        )
       else
         AppIcon(fallbackIcon, fill: 1, color: foreground, size: size),
       SizedBox(width: spacing ?? 4),

@@ -97,12 +97,19 @@ class SeerrClient {
   }
 
   SeerrPublicSettings? _publicSettingsCache;
+  final FutureCoalescer<SeerrPublicSettings> _publicSettingsLoad = FutureCoalescer();
 
   /// Instance flags the request sheet gates on (4K enablement, partial
-  /// requests). Cached for the client's lifetime — admins change these
-  /// rarely and a new client is built per session rebind anyway.
+  /// requests) and the catalog's artwork host. Cached for the client's
+  /// lifetime — admins change these rarely and a new client is built per
+  /// session rebind anyway. Concurrent first calls (every Explore row at
+  /// once) share one request; a failure is not cached.
   Future<SeerrPublicSettings> getPublicSettings() async {
     if (_publicSettingsCache case final SeerrPublicSettings cached) return cached;
+    return _publicSettingsLoad.run(_loadPublicSettings);
+  }
+
+  Future<SeerrPublicSettings> _loadPublicSettings() async {
     final data = await _request('GET', '/settings/public');
     final settings = SeerrPublicSettings.fromJson(data as Map<String, dynamic>);
     _publicSettingsCache = settings;
@@ -111,6 +118,15 @@ class SeerrClient {
     // flag existed, and sessions whose instance changed product, converge.
     if (settings.product != _session.product) _adopt(_session.copyWith(product: settings.product));
     return settings;
+  }
+
+  /// URL that TMDB artwork paths (`/t/p/<size>/<file>`) resolve against on
+  /// this instance, or null when artwork loads from TMDB directly — the same
+  /// choice the Seerr web UI makes. See
+  /// [SeerrPublicSettings.tmdbImageProxyPath].
+  Future<String?> tmdbImageProxyUrl() async {
+    final path = (await getPublicSettings()).tmdbImageProxyPath;
+    return path == null ? null : '${_http.baseUrl}$path';
   }
 
   // ---------- Discover / search ----------

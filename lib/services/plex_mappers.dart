@@ -24,6 +24,8 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
+import '../media/media_part_timeline.dart';
+import '../media/media_person.dart';
 import '../media/media_playlist.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
@@ -217,18 +219,16 @@ Object? _readPartAccessible(Map json, String _) => _partAccessibleFromJson(json[
 
 Object? _readPartExists(Map json, String _) => _partExistsFromJson(json['Part']);
 
-Object? _readMediaParts(Map json, String _) {
-  return _mediaPartsFromJson(
-    json['Part'],
-    fallbackId: (json['id'] ?? '').toString(),
-    fallbackContainer: json['container']?.toString(),
-    media: Map<String, dynamic>.from(json),
-  );
-}
+Object? _readMediaParts(Map json, String _) => json;
 
 List<MediaPart> _mediaPartsFromReadValue(Object? raw) {
-  if (raw is List<MediaPart>) return raw;
-  return const [];
+  if (raw is! Map<String, dynamic>) return const [];
+  return _mediaPartsFromJson(
+    raw['Part'],
+    fallbackId: flexibleIntOrZero(raw['id']).toString(),
+    fallbackContainer: raw['container']?.toString(),
+    media: raw,
+  );
 }
 
 String _hubTitleFromJson(Object? raw) {
@@ -1029,7 +1029,8 @@ String? _nonEmptyRatingString(Object? value) {
 /// [PlexClient] keeps the DTO step internally for caching, copying, and
 /// OnDeck composition. A few raw-JSON helpers remain for callers without a
 /// DTO surface: [mediaItemFromCacheJson] (offline cache),
-/// [mediaVersionFromJson], and [displayCriteriaFromJson].
+/// [mediaVersionFromJson], [displayCriteriaFromJson], and
+/// [personFromSearchResultJson].
 ///
 /// Pure: no HTTP, no client state, no token-aware image-URL resolution.
 /// Token-aware image URLs are layered on at the [PlexClient] boundary via
@@ -1038,6 +1039,12 @@ String? _nonEmptyRatingString(Object? value) {
 /// instance.
 class PlexMappers {
   PlexMappers._();
+
+  /// Plex `tagType` of an actor (`Role`) tag.
+  static const int _actorTagType = 6;
+
+  /// Plex `tagType` of a `Director` tag.
+  static const int _directorTagType = 4;
 
   /// Parse a Plex `/library/metadata/{id}` JSON object into a neutral
   /// [MediaItem]. Used by the offline cache layer to convert persisted Plex
@@ -1143,16 +1150,65 @@ class PlexMappers {
     return MediaRole(id: dto.id?.toString(), tag: dto.tag, role: dto.role, thumbPath: dto.thumb);
   }
 
+  /// Map one `Directory` row of a `/library/search?searchTypes=people`
+  /// response into a [MediaPerson] owned by [serverId]. Returns null for rows
+  /// that are not an actor or director tag; throws [FormatException] for a
+  /// person tag without an id or name.
+  ///
+  /// [MediaPerson.thumbPath] keeps `thumb` verbatim — usually an absolute
+  /// `metadata-static.plex.tv` URL the client resolves at render time.
+  static MediaPerson? personFromSearchResultJson(
+    Map<String, dynamic> json, {
+    required ServerId serverId,
+    String? serverName,
+  }) {
+    if (json['type'] != 'tag') return null;
+    final credit = switch (flexibleInt(json['tagType'])) {
+      _actorTagType => PersonCredit.actor,
+      _directorTagType => PersonCredit.director,
+      _ => null,
+    };
+    if (credit == null) return null;
+
+    final id = flexibleInt(json['id']);
+    final name = _stringOrNull(json['tag']);
+    if (id == null || name == null) throw const FormatException('Plex person search row without id or name');
+    return MediaPerson(
+      id: id.toString(),
+      name: name,
+      thumbPath: _stringOrNull(json['thumb']),
+      credit: credit,
+      backend: MediaBackend.plex,
+      serverId: serverId,
+      serverName: serverName,
+    );
+  }
+
+  /// Map the row `discover.provider.plex.tv/library/people/{tagKey}` answers
+  /// with. An unknown person comes back as an empty container: null [json].
+  static MediaPersonDetails personDetails(Map<String, dynamic>? json) {
+    if (json == null) return MediaPersonDetails.empty;
+    return MediaPersonDetails(
+      biography: _stringOrNull(json['summary']),
+      birthDate: MediaPersonDetails.parseDate(json['bornAt']),
+      deathDate: MediaPersonDetails.parseDate(json['diedAt']),
+      birthPlace: _stringOrNull(json['birthPlace']),
+    );
+  }
+
   /// Map a parsed [PlexMediaVersionDto] into a [MediaVersion].
   static MediaVersion mediaVersion(PlexMediaVersionDto dto) {
-    final part = MediaPart(
-      id: dto.id.toString(),
-      streamPath: dto.partKey,
-      container: dto.container,
-      accessible: dto.accessible,
-      exists: dto.exists,
-    );
-    final parts = dto.parts.isEmpty ? [part] : dto.parts;
+    final parts = dto.parts.isEmpty
+        ? [
+            MediaPart(
+              id: dto.id.toString(),
+              streamPath: dto.partKey,
+              container: dto.container,
+              accessible: dto.accessible,
+              exists: dto.exists,
+            ),
+          ]
+        : dto.parts;
     return MediaVersion(
       id: dto.id.toString(),
       width: dto.width,
@@ -1166,26 +1222,8 @@ class PlexMappers {
   }
 
   /// Map a Plex Media JSON entry directly into a [MediaVersion].
-  static MediaVersion mediaVersionFromJson(Map<String, dynamic> json) {
-    final dto = PlexMediaVersionDto.fromJson(json);
-    final parts = _mediaPartsFromJson(
-      json['Part'],
-      fallbackId: dto.id.toString(),
-      fallbackContainer: dto.container,
-      media: json,
-    );
-    if (parts.isEmpty) return mediaVersion(dto);
-    return MediaVersion(
-      id: dto.id.toString(),
-      width: dto.width,
-      height: dto.height,
-      videoResolution: dto.videoResolution,
-      videoCodec: dto.videoCodec,
-      bitrate: dto.bitrate,
-      container: dto.container,
-      parts: parts,
-    );
-  }
+  static MediaVersion mediaVersionFromJson(Map<String, dynamic> json) =>
+      mediaVersion(PlexMediaVersionDto.fromJson(json));
 
   static MediaDisplayCriteria? displayCriteriaFromJson(Map<String, dynamic>? media, Map<String, dynamic>? videoStream) {
     if (videoStream == null) return null;
@@ -1279,6 +1317,9 @@ class PlexMappers {
 
 /// Authoritative version and playable-part selection shared by cache previews
 /// and playback. A stable id wins over a sibling-version signature and index.
+///
+/// A version stacked across several files opens the file holding [position]
+/// (item time); see [MediaPartTimeline].
 typedef PlexPlaybackSelection = ({List<Map> media, List<MediaVersion> versions, int mediaIndex, int partIndex});
 
 PlexPlaybackSelection? resolvePlexPlaybackSelection(
@@ -1288,6 +1329,7 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
   String? preferredVersionSignature,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
   bool preferPlayable = true,
+  Duration? position,
 }) {
   final media = [
     for (final value in flexibleList(metadata['Media']) ?? const [])
@@ -1310,8 +1352,28 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
       mediaIndex = fallback;
     }
   }
-  final playablePart = preferPlayable ? versions[mediaIndex].parts.indexWhere((part) => part.isPlayable) : 0;
-  return (media: media, versions: versions, mediaIndex: mediaIndex, partIndex: playablePart < 0 ? 0 : playablePart);
+  return (
+    media: media,
+    versions: versions,
+    mediaIndex: mediaIndex,
+    partIndex: _plexPartIndex(versions[mediaIndex].parts, position: position, preferPlayable: preferPlayable),
+  );
+}
+
+int _plexPartIndex(List<MediaPart> parts, {required Duration? position, required bool preferPlayable}) {
+  final timeline = MediaPartTimeline.fromParts(parts);
+  if (timeline == null) {
+    final playablePart = preferPlayable ? parts.indexWhere((part) => part.isPlayable) : 0;
+    return playablePart < 0 ? 0 : playablePart;
+  }
+  final held = timeline.indexAt(position ?? Duration.zero);
+  if (!preferPlayable || parts[held].isPlayable) return held;
+  // The file holding the position is gone: play on from the next file that
+  // is still there, else the first that is.
+  final later = parts.indexWhere((part) => part.isPlayable, held + 1);
+  if (later >= 0) return later;
+  final any = parts.indexWhere((part) => part.isPlayable);
+  return any >= 0 ? any : held;
 }
 
 MediaSourceInfo? plexMediaSourceInfoForSelection(
@@ -1340,6 +1402,10 @@ MediaSourceInfo? plexMediaSourceInfoForSelection(
     mediaSourceId: selection.versions[selection.mediaIndex].id,
     mediaIndex: selection.mediaIndex,
     partIndex: selection.partIndex,
+    partTimeline: MediaPartTimeline.fromParts(
+      selection.versions[selection.mediaIndex].parts,
+      currentIndex: selection.partIndex,
+    ),
     displayCriteria: PlexMappers.displayCriteriaFromJson(Map<String, dynamic>.from(media), streams.videoStream),
     videoAspectRatio: flexibleDouble(media['aspectRatio']),
   );

@@ -6,9 +6,9 @@ import 'dart:async';
 /// around HDMI renegotiations, and the hold that keeps the first frame behind
 /// the loading UI while the display is negotiated from it.
 ///
-/// One instance lives on the player screen; the open/reload pipelines call
-/// [resetForNewItem] before each open and the display-matching paths flip
-/// [applied]/[retries] as they negotiate.
+/// One instance lives on the player screen; the open/reload pipelines and
+/// Live TV channel opens call [resetForNewItem] before each open and the
+/// display-matching paths flip [applied]/[retries] as they negotiate.
 class FrameRateMatcher {
   /// Retries left for late fps detection (ExoPlayer reports container fps
   /// only after ~8 rendered frames).

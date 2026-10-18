@@ -29,6 +29,11 @@ sealed class DownloadProgress with _$DownloadProgress {
     String? errorMessage,
     String? currentFile,
     String? thumbPath,
+
+    /// Epoch milliseconds when the download completed, persisted on the row
+    /// and carried through progress events so sort-by-download-date works
+    /// without a database read.
+    int? downloadedAt,
   }) = _DownloadProgress;
 
   double get progressPercent => progress / 100.0;

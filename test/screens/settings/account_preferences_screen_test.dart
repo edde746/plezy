@@ -65,7 +65,7 @@ void main() {
         child: Provider<AccountPreferencesRepository>.value(
           value: repository,
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: AccountPreferencesScreen(targets: targets),
           ),
         ),
@@ -364,7 +364,7 @@ class _FakeAccountPreferencesSource implements AccountPreferencesSource {
 
   AccountPreferences _snapshot() => AccountPreferences(
     preferredAudioLanguage: _values[AccountPreferenceKey.preferredAudioLanguage] as String?,
-    playDefaultAudioTrack: _values[AccountPreferenceKey.autoSelectAudio] as bool?,
+    selectAudioByLanguage: _values[AccountPreferenceKey.autoSelectAudio] as bool?,
     preferredSubtitleLanguage: _values[AccountPreferenceKey.preferredSubtitleLanguage] as String?,
     subtitlePlaybackMode: _values[AccountPreferenceKey.subtitleMode] as SubtitlePlaybackMode?,
     rememberAudioSelections: _values[AccountPreferenceKey.rememberAudioSelections] as bool?,

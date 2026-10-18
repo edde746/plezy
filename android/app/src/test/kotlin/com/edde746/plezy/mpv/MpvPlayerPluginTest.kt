@@ -16,11 +16,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
-import com.edde746.plezy.libmpv.EndFileReason
-import com.edde746.plezy.libmpv.LogLevel
-import com.edde746.plezy.libmpv.LogMessage
-import com.edde746.plezy.libmpv.MpvEvent
-import com.edde746.plezy.libmpv.MpvPlayer
+import com.edde746.mpv.EndFileReason
+import com.edde746.mpv.LogLevel
+import com.edde746.mpv.MpvEvent
+import com.edde746.mpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerDelegate
@@ -999,9 +998,10 @@ class MpvPlayerPluginTest {
     }
   }
 
-  // Instrumenting libmpv lets Robolectric no-op System.loadLibrary, which
-  // MpvPlayer's companion runs on class initialization; see fakeNativePlayer.
-  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  // Instrumenting the mpv-android library lets Robolectric no-op
+  // System.loadLibrary, which MpvPlayer's companion runs on class
+  // initialization; see fakeNativePlayer.
+  @Config(instrumentedPackages = ["com.edde746.mpv"])
   @Test
   fun repeatedDisposalSharesTheFirstRetirementInsteadOfReportingItDone() {
     // A second dispose must join the retirement already running: answering
@@ -1090,7 +1090,7 @@ class MpvPlayerPluginTest {
   fun endFileDiagnosticsPreserveReasonIdAndExposeDependencyErrorLog() {
     val diagnostics = MpvEndFileDiagnostics()
     diagnostics.onStartFile()
-    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
+    diagnostics.onLogMessage(MpvEvent.LogMessage("ffmpeg", LogLevel.Error, "Invalid data found when processing input"))
 
     assertEquals(
       mapOf(
@@ -1105,7 +1105,7 @@ class MpvPlayerPluginTest {
   @Test
   fun endFileDiagnosticsDoNotAttachStaleOrInventedDetails() {
     val diagnostics = MpvEndFileDiagnostics()
-    diagnostics.onLogMessage(LogMessage("ffmpeg", LogLevel.Error, "old failure"))
+    diagnostics.onLogMessage(MpvEvent.LogMessage("ffmpeg", LogLevel.Error, "old failure"))
     diagnostics.onStartFile()
 
     assertEquals(mapOf("reason" to 0), diagnostics.onEndFile(MpvEvent.EndFile(EndFileReason.Eof, null)))
@@ -1295,7 +1295,7 @@ class MpvPlayerPluginTest {
     core.dispose()
   }
 
-  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Config(instrumentedPackages = ["com.edde746.mpv"])
   @Test
   fun osdRetirementDuringAGpuRefreshDoesNotStrandVideoReadiness() {
     // A session that has moved to a GPU vo retires its OSD plane while a
@@ -1341,7 +1341,7 @@ class MpvPlayerPluginTest {
    * its output restoring, and the retirement must still run once the core
    * answers.
    */
-  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Config(instrumentedPackages = ["com.edde746.mpv"])
   @Test
   fun aSurfaceRetirementOutlivingTheHandoffBudgetKeepsTheSessionAndStillRuns() {
     val blockerStarted = CountDownLatch(1)
@@ -1395,18 +1395,26 @@ class MpvPlayerPluginTest {
 
   /**
    * An adopted native session, without libmpv: Robolectric no-ops
-   * `System.loadLibrary`, and pre-closing the wrapper makes [MpvPlayer.close]
-   * return before its JNI call, so the core's lifecycle paths that require a
-   * player can run on the JVM.
+   * `System.loadLibrary`, and a player closed before any native call makes
+   * [MpvPlayer.close] return at once, so the core's lifecycle paths that
+   * require a player can run on the JVM. Its delivery thread is stopped too,
+   * as close would have.
    */
   private fun fakeNativePlayer(): MpvPlayer {
-    val player = MpvPlayer::class.java.getDeclaredConstructor(Long::class.javaPrimitiveType).run {
+    val player = MpvPlayer::class.java.getDeclaredConstructor(
+      Long::class.javaPrimitiveType,
+      MpvPlayer.Listener::class.java,
+      Long::class.javaPrimitiveType
+    ).run {
       isAccessible = true
-      newInstance(1L)
+      newInstance(1L, object : MpvPlayer.Listener {}, 0L)
     }
     MpvPlayer::class.java.getDeclaredField("closed").apply {
       isAccessible = true
       setBoolean(player, true)
+    }
+    MpvPlayer::class.java.getDeclaredField("dispatcher").apply { isAccessible = true }.get(player).let { dispatcher ->
+      dispatcher.javaClass.getDeclaredMethod("close").invoke(dispatcher)
     }
     return player
   }
@@ -1969,9 +1977,10 @@ class MpvPlayerPluginTest {
   @Test
   fun dvConversionModeMapsOntoForkDecoderOptions() {
     // The app-level `dv-conversion-mode` property must translate to the fork
-    // FFmpeg hevc_mediacodec options, mirroring the ExoPlayer DoviBridge
-    // modes. Robolectric reports no Dolby Vision display, so `auto` takes the
-    // no-DV branch deterministically.
+    // FFmpeg hevc_mediacodec options. Robolectric reports no Dolby Vision
+    // display and no file is loaded, so `auto` takes the no-DV branch for a
+    // file with no DOVI record deterministically; the per-file answer for a
+    // loaded P5/P8 is GpuVoPolicyTest's.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
@@ -1999,6 +2008,40 @@ class MpvPlayerPluginTest {
     assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=strip"), writes.toList())
 
     val invalid = apply("bogus")
+    assertTrue(invalid.isFailure)
+    assertTrue(writes.isEmpty())
+  }
+
+  @Test
+  fun disablingDolbyVisionOverridesEveryConversionMode() {
+    // `dolby-vision-output=no` (#2543) routes as auto on a display without
+    // DV whichever P7 mode the user picked, and `yes` restores that mode.
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+      writes.add(name to value)
+    })
+
+    fun apply(name: String, value: String): Result<Unit> {
+      writes.clear()
+      var outcome: Result<Unit>? = null
+      core.setProperty(name, value) { outcome = it }
+      awaitCondition { outcome != null }
+      return outcome!!
+    }
+
+    assertTrue(apply("dv-conversion-mode", "dv81").isSuccess)
+    assertTrue(apply("dolby-vision-output", "no").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    // A mode chosen while Dolby Vision is disabled does not bring it back.
+    assertTrue(apply("dv-conversion-mode", "disabled").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=0,dv_p7_mode=strip"), writes.toList())
+
+    assertTrue(apply("dolby-vision-output", "yes").isSuccess)
+    assertEquals(listOf("vd-lavc-o" to "dolby_vision=1,dv_p7_mode=native"), writes.toList())
+
+    val invalid = apply("dolby-vision-output", "maybe")
     assertTrue(invalid.isFailure)
     assertTrue(writes.isEmpty())
   }
@@ -2036,13 +2079,15 @@ class MpvPlayerPluginTest {
   @Test
   fun asynchronousMediaCodecFollowsMedia3sPlatformThreshold() {
     // Media3 trusts asynchronous MediaCodec from API 31; below it the decoder
-    // stays synchronous (bounded waits, polled), on the NDK either way.
+    // stays synchronous (bounded waits, polled). The Java wrapper on every
+    // level: the NDK one cannot read the crop rectangle below API 28 (#2427).
     fun entries(sdkInt: Int): Map<String, String> = MpvPlayerCore.initialDecoderEntries(sdkInt).toMap()
-    assertEquals("1", entries(31)["ndk_async"])
-    assertEquals("1", entries(36)["ndk_async"])
-    assertNull(entries(30)["ndk_async"])
-    assertNull(entries(25)["ndk_async"])
-    assertEquals("1", entries(25)["ndk_codec"])
+    assertEquals("1", entries(31)["async"])
+    assertEquals("1", entries(36)["async"])
+    assertNull(entries(30)["async"])
+    assertNull(entries(25)["async"])
+    assertEquals("0", entries(25)["ndk_codec"])
+    assertEquals("0", entries(36)["ndk_codec"])
   }
 
   private fun awaitQueueEntry(

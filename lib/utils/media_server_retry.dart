@@ -10,16 +10,16 @@ typedef MediaServerRetryCall<T> = Future<T> Function(Duration timeout, AbortCont
 /// Retry vs failover (see `FailoverHttpClient` for the other half): retry is
 /// for a *slow-but-working* endpoint, failover is for a *dead* one. Surfaces
 /// wrapped in this helper should pass `allowEndpointFailover: false` on the
-/// inner GET so a slow row doesn't move the whole client off an otherwise
-/// working endpoint — every existing combined call site does.
+/// inner GET so a row that misses its budget never starts a cascade inside
+/// it — every existing combined call site does.
 ///
 /// ## Why timeouts are not retried
 ///
-/// `http.Client.send` resolves when response *headers* arrive, so
-/// [MediaServerHttpClient]'s connect budget covers DNS + TCP + TLS + request +
-/// **the server's think time**. A Jellyfin `/Items/Latest` that needs 11s on a
-/// large library therefore raises a `TimeoutException`, which
-/// [MediaServerHttpException.from] types as
+/// `http.Client.send` resolves when response *headers* arrive, so the
+/// per-request budget each attempt is handed covers DNS + TCP + TLS +
+/// request + **the server's think time**. A Jellyfin `/Items/Latest` that
+/// needs 11s on a large library therefore raises a `TimeoutException` against
+/// a 10s budget, which [MediaServerHttpException.from] types as
 /// [MediaServerHttpErrorType.connectionTimeout] — indistinguishable from a
 /// failed socket connect.
 ///

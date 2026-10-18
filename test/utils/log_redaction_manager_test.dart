@@ -342,6 +342,21 @@ void main() {
       expect(r2.contains('server.example.com'), isFalse);
     });
 
+    test('redacts a registered plex.direct URL despite its IPv4-like address label', () {
+      const hash = '0123456789abcdef0123456789abcdef';
+      LogRedactionManager.registerServerUrl('https://203-0-113-10.$hash.plex.direct:32400');
+      final result = LogRedactionManager.redact('GET https://203-0-113-10.$hash.plex.direct:32400/library/sections');
+      expect(result, startsWith('GET [REDACTED_URL]'));
+      expect(result, isNot(contains(hash)));
+      expect(result, isNot(contains('203-')));
+    });
+
+    test('masks the server hash of an unregistered plex.direct host', () {
+      const hash = '0123456789ABCDEF0123456789abcdef';
+      final result = LogRedactionManager.redact('probe https://192-168-1-50.$hash.plex.direct:32400 failed');
+      expect(result, 'probe https://192-x-x-50.[REDACTED].plex.direct:32400 failed');
+    });
+
     test('redacts the mpv-escaped form used in option-value logs', () {
       LogRedactionManager.registerServerUrl('https://server.example.com');
       // mpv echoes list options like sub-files with ':' escaped as '\:'.

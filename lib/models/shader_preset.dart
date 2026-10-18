@@ -45,7 +45,7 @@ enum Anime4KQuality {
   /// Fast quality using Mode L shaders
   fast,
 
-  /// High quality using Mode VL/UL shaders
+  /// High quality using Mode VL shaders
   hq,
 }
 
@@ -137,7 +137,6 @@ class ShaderPreset {
     nvscalerConfig: NVScalerConfig(),
   );
 
-  /// Create an ArtCNN preset with the specified model and variant
   static ShaderPreset artcnnPreset(ArtCNNModel model, ArtCNNVariant variant) => ShaderPreset(
     id: 'artcnn_${model.name}_${variant.slug}',
     name: variant == ArtCNNVariant.neutral ? 'ArtCNN ${model.label}' : 'ArtCNN ${model.label} ${variant.label}',
@@ -145,7 +144,6 @@ class ShaderPreset {
     artcnnConfig: ArtCNNConfig(model: model, variant: variant),
   );
 
-  /// Create an Anime4K preset with the specified quality and mode
   static ShaderPreset anime4kPreset(Anime4KQuality quality, Anime4KMode mode) {
     final qualityName = quality == Anime4KQuality.fast ? 'Fast' : 'HQ';
 

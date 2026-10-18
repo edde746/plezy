@@ -20,7 +20,6 @@ mixin HierarchicalEventMixin {
   /// For a movie: []
   List<String> get parentChain;
 
-  /// Check if this event affects a specific item by id.
   bool affectsItem(String itemId) => this.itemId == itemId || parentChain.contains(itemId);
 
   /// Check if this event affects any item in a collection.

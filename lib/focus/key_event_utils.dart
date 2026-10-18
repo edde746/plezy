@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -111,7 +113,19 @@ KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, 
   }
   // Handle on KeyUpEvent to prevent double-pop when returning from child screens
   // (KeyDownEvent can be received by both the popping screen and the returned-to screen)
-  return handleBackKeyAction(event, () => Navigator.pop(context, result));
+  return handleBackKeyAction(event, () {
+    if (ModalRoute.of(context)?.popDisposition != RoutePopDisposition.doNotPop) {
+      Navigator.pop(context, result);
+      return;
+    }
+    // A PopScope refuses the pop. Deliver this back to it the way a system
+    // back arrives (maybePop runs its onPopInvokedWithResult): a guard keeps
+    // the screen, and a screen that only blocks the platform back pops itself
+    // there. Its BackKeyCoordinator dedup must not take this press for a
+    // duplicate of itself, so the marker is re-armed once the callback ran.
+    BackKeyCoordinator.clear();
+    unawaited(Navigator.maybePop(context, result).whenComplete(BackKeyCoordinator.markHandled));
+  });
 }
 
 /// Consumes all select-key events (down, repeat, up) so they don't reach
@@ -233,6 +247,15 @@ FocusOnKeyEventCallback dpadKeyHandler({
 
     return KeyEventResult.ignored;
   };
+}
+
+/// One-line rendering of a [KeyEvent] for the focus subsystem's debug logs.
+///
+/// The focus layer logs raw key events from several places, and a shared
+/// spelling keeps those lines diffable against each other.
+String describeKeyEvent(KeyEvent event) {
+  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
+      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
 }
 
 /// Navigator observer that automatically suppresses stray back KeyUp events

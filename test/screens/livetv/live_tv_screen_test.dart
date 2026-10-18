@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
@@ -13,6 +14,8 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/models/livetv_program.dart';
+import 'package:plezy/models/media_grab_operation.dart';
+import 'package:plezy/models/media_subscription.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/livetv/guide_search_sheet.dart';
 import 'package:plezy/screens/livetv/live_tv_screen.dart';
@@ -167,7 +170,7 @@ void main() {
         child: InputModeTracker(
           child: ChangeNotifierProvider<MultiServerProvider>.value(
             value: provider,
-            child: MaterialApp(theme: monoTheme(dark: true), home: const LiveTvScreen()),
+            child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const LiveTvScreen()),
           ),
         ),
       ),
@@ -217,12 +220,102 @@ void main() {
       <String>[],
     ]);
   });
+
+  testWidgets('What\'s On is hidden when no Live TV server is Plex', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+    harness.liveTv.favorites.complete(const []);
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.liveTv.guide), findsWidgets);
+    expect(find.text(t.liveTv.whatsOn), findsNothing);
+  });
+
+  testWidgets('a refresh that fails on every server keeps the loaded channels', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester, channelKeys: const ['channel-a', 'channel-b']);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+    harness.liveTv.favorites.complete(const []);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(t.liveTv.showAllChannels));
+    await tester.pumpAndSettle();
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+
+    harness.liveTv.channelsFailure = StateError('offline');
+    await tester.tap(find.byIcon(Symbols.refresh_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(_guideChannels(tester).map((channel) => channel.key), ['channel-a', 'channel-b']);
+    expect(find.text(t.errors.unableToLoad(context: t.liveTv.title)), findsOneWidget);
+    expect(find.text(t.liveTv.noChannels), findsNothing);
+  });
+
+  testWidgets('a first load that fails on every server shows the error state', (tester) async {
+    final harness = await _pumpLiveTvScreen(tester, channelsFailure: StateError('offline'));
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+
+    expect(find.text(t.errors.unableToLoad(context: t.liveTv.title)), findsOneWidget);
+    expect(find.text(t.liveTv.noChannels), findsNothing);
+  });
+
+  testWidgets('guide refresh reports a DVR reload failure instead of success', (tester) async {
+    final dvr = _FakeLiveTvDvrSupport(reloadFailure: StateError('reload failed'));
+    final harness = await _pumpLiveTvScreen(tester, dvr: dvr);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+    harness.liveTv.favorites.complete(const []);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.refresh_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(dvr.reloadedDvrKeys, ['dvr-a']);
+    expect(find.text(t.liveTv.guideReloadFailed), findsOneWidget);
+    expect(find.text(t.liveTv.guideReloadRequested), findsNothing);
+  });
+
+  testWidgets('guide refresh names the admin requirement when the DVR rejects it with 403', (tester) async {
+    final dvr = _FakeLiveTvDvrSupport(
+      reloadFailure: MediaServerHttpException(type: MediaServerHttpErrorType.unknown, statusCode: 403),
+    );
+    final harness = await _pumpLiveTvScreen(tester, dvr: dvr);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      harness.dispose();
+    });
+    harness.liveTv.favorites.complete(const []);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.refresh_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(t.liveTv.dvrAdminRequired), findsOneWidget);
+    expect(find.text(t.liveTv.guideReloadRequested), findsNothing);
+  });
 }
 
 List<LiveTvChannel> _guideChannels(WidgetTester tester) => tester.widget<GuideTab>(find.byType(GuideTab)).channels;
 
-Future<_LiveTvHarness> _pumpLiveTvScreen(WidgetTester tester, {List<String>? channelKeys}) async {
-  final liveTv = _FakeLiveTvSupport(channelKeys: channelKeys);
+Future<_LiveTvHarness> _pumpLiveTvScreen(
+  WidgetTester tester, {
+  List<String>? channelKeys,
+  _FakeLiveTvDvrSupport? dvr,
+  Object? channelsFailure,
+}) async {
+  final liveTv = _FakeLiveTvSupport(channelKeys: channelKeys, dvr: dvr)..channelsFailure = channelsFailure;
   final client = _FakeMediaServerClient(liveTv);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final provider = testMultiServerProvider(manager);
@@ -236,7 +329,7 @@ Future<_LiveTvHarness> _pumpLiveTvScreen(WidgetTester tester, {List<String>? cha
       child: InputModeTracker(
         child: ChangeNotifierProvider<MultiServerProvider>.value(
           value: provider,
-          child: MaterialApp(theme: monoTheme(dark: true), home: const LiveTvScreen()),
+          child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const LiveTvScreen()),
         ),
       ),
     ),
@@ -274,7 +367,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.jellyfin;
 
   @override
-  ServerCapabilities get capabilities => const ServerCapabilities(liveTv: true);
+  ServerCapabilities get capabilities => ServerCapabilities(liveTv: true, liveTvDvr: liveTv.dvr != null);
 
   @override
   void close() {}
@@ -284,12 +377,13 @@ class _FakeMediaServerClient implements MediaServerClient {
 }
 
 class _FakeLiveTvSupport implements LiveTvSupport {
-  _FakeLiveTvSupport({this.serverId = 'server-a', this.storeKey = 'test-store', List<String>? channelKeys})
+  _FakeLiveTvSupport({this.serverId = 'server-a', this.storeKey = 'test-store', List<String>? channelKeys, this.dvr})
     : channelKeys = channelKeys ?? [serverId == 'server-a' ? 'channel-a' : 'channel-$serverId'];
 
   final String serverId;
   final String storeKey;
   final List<String> channelKeys;
+  Object? channelsFailure;
   final List<Completer<List<FavoriteChannel>>> _favoriteRequests = [];
   int _servedFavoriteRequests = 0;
 
@@ -306,7 +400,7 @@ class _FakeLiveTvSupport implements LiveTvSupport {
   }
 
   @override
-  LiveTvDvrSupport? get dvr => null;
+  final LiveTvDvrSupport? dvr;
 
   @override
   String get favoriteStoreKey => storeKey;
@@ -319,6 +413,7 @@ class _FakeLiveTvSupport implements LiveTvSupport {
 
   @override
   Future<List<LiveTvChannel>> fetchChannels({String? lineup}) async => [
+    if (channelsFailure case final failure?) throw failure,
     for (final key in channelKeys)
       LiveTvChannel(
         key: key,
@@ -347,6 +442,33 @@ class _FakeLiveTvSupport implements LiveTvSupport {
     writes.add(List.of(channels));
     if (writeFailures.isNotEmpty) throw writeFailures.removeAt(0);
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeLiveTvDvrSupport implements LiveTvDvrSupport {
+  _FakeLiveTvDvrSupport({this.reloadFailure});
+
+  final Object? reloadFailure;
+  final List<String> reloadedDvrKeys = [];
+
+  @override
+  bool get supportsRuleProcessing => false;
+
+  @override
+  Future<void> reloadGuide(String dvrId) async {
+    reloadedDvrKeys.add(dvrId);
+    if (reloadFailure != null) throw reloadFailure!;
+  }
+
+  // The Recordings tab is built alongside the guide once a DVR exists.
+  @override
+  Future<List<MediaGrabOperation>> fetchScheduledRecordings() async => const [];
+
+  @override
+  Future<List<MediaSubscription>> fetchRecordingRules({bool includeGrabs = true, bool includeStorage = true}) async =>
+      const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

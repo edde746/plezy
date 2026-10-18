@@ -12,11 +12,6 @@ import 'input_mode_tracker.dart';
 import 'owned_focus_node_binding.dart';
 import 'key_event_utils.dart';
 
-String _describeFocusableKey(KeyEvent event) {
-  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
-      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
-}
-
 void _logFocusableWrapper(String message) {
   TextInputDiagnostics.log('FocusableWrapper', message);
 }
@@ -80,7 +75,6 @@ class _RenderPaintScale extends RenderProxyBox {
 /// A wrapper widget that makes its child focusable with D-pad navigation support.
 ///
 class FocusableWrapper extends StatefulWidget {
-  /// The child widget to wrap.
   final Widget child;
 
   /// Called when the item is selected (Enter/Select/GamepadA).
@@ -173,7 +167,6 @@ class FocusableWrapper extends StatefulWidget {
   /// Useful for elements like sliders where scaling looks odd.
   final bool disableScale;
 
-  /// Scale used for the focus animation.
   final double focusScale;
 
   /// Whether to draw a glow around the focused widget.
@@ -419,7 +412,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     KeyEventResult finish(KeyEventResult result, String reason) {
       if (diagnosticsEnabled) {
         _logFocusableWrapper(
-          'node=${node.debugLabel} result=$result reason=$reason key=(${_describeFocusableKey(event)}) '
+          'node=${node.debugLabel} result=$result reason=$reason key=(${describeKeyEvent(event)}) '
           'onNav(up=${widget.onNavigateUp != null},down=${widget.onNavigateDown != null},'
           'left=${widget.onNavigateLeft != null},right=${widget.onNavigateRight != null}) '
           'onSelect=${widget.onSelect != null} onBack=${widget.onBack != null}',
@@ -429,7 +422,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     }
 
     if (diagnosticsEnabled) {
-      _logFocusableWrapper('node=${node.debugLabel} received key=(${_describeFocusableKey(event)})');
+      _logFocusableWrapper('node=${node.debugLabel} received key=(${describeKeyEvent(event)})');
     }
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {

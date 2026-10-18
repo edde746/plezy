@@ -1,6 +1,12 @@
 part of '../../plex_client.dart';
 
+/// Plex's online metadata provider, where Plex Web reads a person's
+/// biography; Plex Media Server keeps only the name and photo.
+const _discoverPeopleUrl = 'https://discover.provider.plex.tv/library/people/';
+
 mixin _PlexCollectionMethods on _PlexClientInternals {
+  String? get plexAccountToken;
+
   _LibraryContentResult _extractLibraryContentResult(
     MediaServerResponse response, {
     int? librarySectionID,
@@ -8,12 +14,6 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     String? librarySectionTitle,
     int? start,
     int? requestedSize,
-  });
-
-  Future<List<PlexMetadataDto>> _fetchAllPages(
-    Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
-    // ignore: unused_element_parameter
-    AbortController? abort,
   });
 
   Future<_LibraryContentResult> _getLibraryCollectionsPage(
@@ -36,17 +36,6 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     );
   }
 
-  Future<List<PlexMetadataDto>> _getLibraryCollections(String sectionId) async {
-    try {
-      return await _fetchAllPages(
-        (start, size, abort) => _getLibraryCollectionsPage(sectionId, start: start, size: size, abort: abort),
-      );
-    } catch (e, st) {
-      appLogger.e('Failed to get library collections', error: e, stackTrace: st);
-      return [];
-    }
-  }
-
   Future<_LibraryContentResult> _getCollectionItems(
     String collectionId, {
     int? start,
@@ -66,16 +55,6 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
   Future<_LibraryContentResult> _getPersonMedia(String personId, {int? start, int? size, AbortController? abort}) =>
       _fetchPaginatedList('/library/people/$personId/media', start: start, size: size, abort: abort);
 
-  Future<List<PlexMetadataDto>> _fetchAllPersonMediaDto(String personId) {
-    return _fetchAllPages((start, size, abort) => _getPersonMedia(personId, start: start, size: size, abort: abort));
-  }
-
-  @override
-  Future<List<MediaItem>> fetchCollections(String libraryId) async {
-    final raw = await _getLibraryCollections(libraryId);
-    return raw.map(PlexMappers.mediaItem).toList();
-  }
-
   @override
   Future<LibraryPage<MediaItem>> fetchCollectionsPage(
     String libraryId, {
@@ -91,6 +70,13 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     );
   }
 
+  /// PMS caps `X-Plex-Container-Size` at 120 on
+  /// `/library/collections/{id}/children`. Some servers answer a larger page
+  /// with HTTP 400; the rest log that they eventually will (#2468).
+  static const int _collectionChildrenMaxPageSize = 120;
+
+  /// Serves [size] items from [start], split into requests the server
+  /// accepts. A null [size] reads to the end of the collection.
   @override
   Future<LibraryPage<MediaItem>> fetchCollectionPage(
     String collectionId, {
@@ -100,19 +86,153 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
     String? libraryId,
     String? libraryTitle,
   }) async {
-    final result = await _getCollectionItems(
-      collectionId,
-      start: start,
-      size: size,
-      abort: abort,
-      librarySectionID: libraryId,
-      librarySectionTitle: libraryTitle,
-    );
+    final offset = start ?? 0;
+    final items = <PlexMetadataDto>[];
+    int totalSize;
+    while (true) {
+      final remaining = size == null ? _collectionChildrenMaxPageSize : size - items.length;
+      final result = await _getCollectionItems(
+        collectionId,
+        start: offset + items.length,
+        size: remaining.clamp(0, _collectionChildrenMaxPageSize),
+        abort: abort,
+        librarySectionID: libraryId,
+        librarySectionTitle: libraryTitle,
+      );
+      items.addAll(result.items);
+      totalSize = result.totalSize;
+      if (result.items.isEmpty || offset + items.length >= totalSize) break;
+      if (size != null && items.length >= size) break;
+    }
     return LibraryPage<MediaItem>(
-      items: result.items.map(PlexMappers.mediaItem).toList(),
-      totalCount: result.totalSize,
-      offset: start ?? 0,
+      items: items.map(PlexMappers.mediaItem).toList(),
+      totalCount: totalSize,
+      offset: offset,
     );
+  }
+
+  /// Ids per batched `/library/metadata/{ids}` request. Plex ids are short,
+  /// so 100 keeps the URL well under proxy limits.
+  static const int _membershipLookupChunkSize = 100;
+
+  /// Page size for listing a library's collections during a membership lookup.
+  static const int _membershipCollectionsPageSize = 200;
+
+  /// `collectionMode` of a collection set to "Hide collection": it never
+  /// shows in the library, so it never groups downloads either.
+  static const String _collectionModeHidden = '0';
+
+  /// `collectionSort` values. Release date (`0`) is the default when absent.
+  static const String _collectionSortAlphabetical = '1';
+  static const String _collectionSortCustom = '2';
+
+  /// Membership comes from the items' `Collection` tags, whose `id` is the
+  /// collection's `index`. Batched detail rows carry those ids where list
+  /// rows carry only the tag text, which can differ from the collection's
+  /// title in case. Only a custom-ordered collection needs its children read;
+  /// release and alphabetical order follow from the members' own fields.
+  @override
+  Future<List<CollectionMembership>> fetchCollectionMemberships(Set<String> itemIds, {AbortController? abort}) async {
+    final ids = itemIds.toList()..sort();
+    final membersByTag = <int, List<Map<String, dynamic>>>{};
+    final tagsByLibrary = <String, Set<int>>{};
+    for (var start = 0; start < ids.length; start += _membershipLookupChunkSize) {
+      final end = start + _membershipLookupChunkSize < ids.length ? start + _membershipLookupChunkSize : ids.length;
+      final chunk = ids.sublist(start, end);
+      final response = await _getWithFailover(
+        '/library/metadata/${chunk.join(',')}',
+        queryParameters: _buildPaginationParams(0, chunk.length),
+        abort: abort,
+      );
+      final rows = _getMediaContainer(response)?['Metadata'];
+      if (rows is! List) continue;
+      for (final row in rows.whereType<Map<String, dynamic>>()) {
+        final itemId = row['ratingKey']?.toString();
+        final libraryId = row['librarySectionID']?.toString();
+        final tags = row['Collection'];
+        if (itemId == null || !itemIds.contains(itemId) || libraryId == null || tags is! List) continue;
+        for (final tag in tags.whereType<Map<String, dynamic>>()) {
+          final tagId = flexibleInt(tag['id']);
+          if (tagId == null) continue;
+          membersByTag.putIfAbsent(tagId, () => []).add(row);
+          tagsByLibrary.putIfAbsent(libraryId, () => {}).add(tagId);
+        }
+      }
+    }
+
+    final memberships = <CollectionMembership>[];
+    for (final MapEntry(key: libraryId, value: tagIds) in tagsByLibrary.entries) {
+      for (final json in await _libraryCollectionsJson(libraryId, abort: abort)) {
+        final tagId = flexibleInt(json['index']);
+        if (tagId == null || !tagIds.contains(tagId)) continue;
+        if (flexibleBool(json['smart']) || json['collectionMode']?.toString() == _collectionModeHidden) continue;
+        final collection = PlexMappers.mediaItem(
+          _createTaggedMetadataWithLibrary(json, librarySectionID: int.tryParse(libraryId)),
+        );
+        final memberIds = await _collectionOrderedMemberIds(
+          collection.id,
+          json['collectionSort']?.toString(),
+          membersByTag[tagId]!,
+          abort: abort,
+        );
+        memberships.add((collection: collection, memberIds: memberIds));
+      }
+    }
+    return memberships;
+  }
+
+  /// Every raw collection row of [libraryId], smart and hidden ones included.
+  Future<List<Map<String, dynamic>>> _libraryCollectionsJson(String libraryId, {AbortController? abort}) async {
+    final collections = <Map<String, dynamic>>[];
+    while (true) {
+      final response = await _getWithFailover(
+        '/library/sections/$libraryId/collections',
+        queryParameters: _buildPaginationParams(collections.length, _membershipCollectionsPageSize),
+        abort: abort,
+      );
+      final container = _getMediaContainer(response);
+      final rows = container?['Metadata'];
+      final page = rows is List ? rows.whereType<Map<String, dynamic>>().toList() : const <Map<String, dynamic>>[];
+      collections.addAll(page);
+      final total = flexibleInt(container?['totalSize']) ?? collections.length;
+      if (page.isEmpty || collections.length >= total) return collections;
+    }
+  }
+
+  /// The ids of [members] in the collection's [sort] order.
+  Future<List<String>> _collectionOrderedMemberIds(
+    String collectionId,
+    String? sort,
+    List<Map<String, dynamic>> members, {
+    AbortController? abort,
+  }) async {
+    if (sort == _collectionSortCustom) {
+      final memberIds = {for (final member in members) member['ratingKey'].toString()};
+      final children = await drainPages(
+        (start, size) => fetchCollectionPage(collectionId, start: start, size: size, abort: abort),
+        pageSize: _collectionChildrenMaxPageSize,
+        abort: abort,
+      );
+      return [
+        for (final child in children)
+          if (memberIds.remove(child.id)) child.id,
+      ];
+    }
+
+    String titleKey(Map<String, dynamic> row) => (row['titleSort'] ?? row['title'] ?? '').toString().toLowerCase();
+    final sorted = List.of(members)
+      ..sort((a, b) {
+        if (sort != _collectionSortAlphabetical) {
+          // Release order; undated members after dated ones.
+          final aDate = a['originallyAvailableAt']?.toString() ?? '${a['year'] ?? ''}';
+          final bDate = b['originallyAvailableAt']?.toString() ?? '${b['year'] ?? ''}';
+          if (aDate.isEmpty != bDate.isEmpty) return aDate.isEmpty ? 1 : -1;
+          final byDate = aDate.compareTo(bDate);
+          if (byDate != 0) return byDate;
+        }
+        return titleKey(a).compareTo(titleKey(b));
+      });
+    return [for (final member in sorted) member['ratingKey'].toString()];
   }
 
   @override
@@ -131,13 +251,23 @@ mixin _PlexCollectionMethods on _PlexClientInternals {
   }
 
   @override
-  Future<List<MediaItem>> fetchPersonMedia(String personId) {
-    return fetchAllPersonMediaAsMediaItems(personId);
-  }
-
-  Future<List<MediaItem>> fetchAllPersonMediaAsMediaItems(String personId) async {
-    final raw = await _fetchAllPersonMediaDto(personId);
-    return raw.map(PlexMappers.mediaItem).toList();
+  Future<MediaPersonDetails> fetchPersonDetails(String personId, {AbortController? abort}) async {
+    final accountToken = plexAccountToken;
+    if (isOfflineMode || accountToken == null || accountToken.isEmpty) return MediaPersonDetails.empty;
+    final tagResponse = await _getWithFailover('/library/people/$personId', abort: abort);
+    final tagKey = firstFlexibleMap(_getMediaContainer(tagResponse)?['Directory'])?['tagKey'];
+    if (tagKey is! String || tagKey.isEmpty) return MediaPersonDetails.empty;
+    // A plex.tv failure says nothing about this server's endpoints, so it
+    // must not walk (or exhaust) the server's failover list.
+    final response = await _http.get(
+      '$_discoverPeopleUrl${Uri.encodeComponent(tagKey)}',
+      headers: {'X-Plex-Token': accountToken},
+      abort: abort,
+      allowEndpointFailover: false,
+    );
+    throwIfHttpError(response);
+    final container = _getMediaContainer(response);
+    return PlexMappers.personDetails(firstFlexibleMap(container?['Metadata']));
   }
 
   @override

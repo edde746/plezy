@@ -20,6 +20,7 @@ import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/player_streams.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
@@ -174,6 +175,58 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
+    testWidgets('a prompt holding focus keeps the arrows from the shortcut fallback', (tester) async {
+      // Play Next / Still Watching sit outside the controls; with focus on
+      // their buttons the controls' node does not have focus, which the
+      // global fallback used to read as drift and answer arrows with a seek.
+      final first = FocusNode(debugLabel: 'PromptFirst');
+      final second = FocusNode(debugLabel: 'PromptSecond');
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+      await tester.pumpWidget(
+        shell(
+          Stack(
+            children: [
+              PlexVideoControls(
+                player: player,
+                volumeController: volume,
+                metadata: testMediaItem(id: 'prompt-focus'),
+                toastController: toast,
+                chromeController: chrome,
+                hasFirstFrame: hasFirstFrame,
+                canNavigateMediaItems: false,
+              ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(focusNode: first, onPressed: () {}, child: const Text('Cancel')),
+                    TextButton(focusNode: second, onPressed: () {}, child: const Text('Play')),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      first.requestFocus();
+      await tester.pumpAndSettle();
+      final positionBefore = player.state.position;
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      expect(player.state.position, positionBefore, reason: 'the arrow belongs to the prompt, not to a seek');
+      expect(first.hasPrimaryFocus, isFalse, reason: 'the arrow moved focus on from the prompt button');
+
+      chrome.cancelAutoHide();
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
     testWidgets('a control the viewer focused on purpose keeps the remote', (tester) async {
       await pumpControlsUnderScreenFocus(tester);
 
@@ -201,7 +254,6 @@ void main() {
 /// Minimal [Player] reporting steady playback, the state the player settles
 /// into once the media is open.
 class _PlayingPlayer implements Player {
-  final List<Duration> seeks = [];
   Duration _position = const Duration(minutes: 5);
 
   @override
@@ -213,31 +265,11 @@ class _PlayingPlayer implements Player {
 
   @override
   Future<void> seek(Duration position) async {
-    seeks.add(position);
     _position = position;
   }
 
   @override
-  PlayerStreams get streams => PlayerStreams(
-    playing: const Stream<bool>.empty(),
-    completed: const Stream<bool>.empty(),
-    buffering: const Stream<bool>.empty(),
-    position: const Stream<Duration>.empty(),
-    duration: const Stream<Duration>.empty(),
-    seekable: const Stream<bool>.empty(),
-    buffer: const Stream<Duration>.empty(),
-    volume: const Stream<double>.empty(),
-    rate: const Stream<double>.empty(),
-    tracks: const Stream<Tracks>.empty(),
-    track: const Stream<TrackSelection>.empty(),
-    log: const Stream<PlayerLog>.empty(),
-    error: const Stream<PlayerError>.empty(),
-    audioDevice: const Stream<AudioDevice>.empty(),
-    audioDevices: const Stream<List<AudioDevice>>.empty(),
-    bufferRanges: const Stream<List<BufferRange>>.empty(),
-    playbackRestart: const Stream<void>.empty(),
-    backendSwitched: const Stream<void>.empty(),
-  );
+  PlayerStreams get streams => emptyPlayerStreams();
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

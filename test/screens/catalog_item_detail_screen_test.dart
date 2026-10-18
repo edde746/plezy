@@ -337,7 +337,7 @@ Future<void> _pumpDetail(
           if (account != null) ChangeNotifierProvider<SeerrAccountProvider>.value(value: account),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: pushedRoute
               ? Builder(
                   builder: (context) => Scaffold(
@@ -909,8 +909,6 @@ void main() {
       title: 'Rated Movie',
       ids: CatalogItemIds(tmdb: 11),
       ratings: [
-        MediaRatingSource(source: 'simkl', value: 8.1, votes: 11),
-        MediaRatingSource(source: 'mal', value: 8.3, votes: 13),
         MediaRatingSource(source: 'critic', value: 7.2, votes: 14),
         MediaRatingSource(source: 'audience', value: 8.8, votes: 15),
       ],
@@ -920,8 +918,6 @@ void main() {
     await _pumpDetail(tester, source, item: item);
 
     expect(find.text(t.explore.detail.ratings), findsOneWidget);
-    expect(find.text('Simkl 8.1 (11 votes)'), findsOneWidget);
-    expect(find.text('MyAnimeList 8.3 (13 votes)'), findsOneWidget);
     expect(find.text('Critics 7.2 (14 votes)'), findsOneWidget);
     expect(find.text('Audience 8.8 (15 votes)'), findsOneWidget);
   });
@@ -937,6 +933,8 @@ void main() {
         MediaRatingSource(source: 'rottenTomatoesAudience', value: 4.1),
         MediaRatingSource(source: 'imdb', value: 7.9, votes: 12),
         MediaRatingSource(source: 'tmdb', value: 7.5),
+        MediaRatingSource(source: 'simkl', value: 8.1, votes: 11),
+        MediaRatingSource(source: 'mal', value: 8.3, votes: 13),
       ],
     );
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
@@ -954,6 +952,8 @@ void main() {
         'assets/rating_icons/rt_spilled.svg',
         'assets/rating_icons/imdb.svg',
         'assets/rating_icons/tmdb.svg',
+        'assets/simkl_mark.svg',
+        'assets/mal_mark.svg',
       ]),
     );
     // The mark carries the attribution, so the chip keeps only the score, on
@@ -962,6 +962,8 @@ void main() {
     expect(find.text('41%'), findsOneWidget);
     expect(find.text('7.9 (12 votes)'), findsOneWidget);
     expect(find.text('75%'), findsOneWidget);
+    expect(find.text('8.1 (11 votes)'), findsOneWidget);
+    expect(find.text('8.30 (13 votes)'), findsOneWidget);
     expect(find.text('${t.common.ratingSource.rottenTomatoesCritic} 8.4'), findsNothing);
   });
 

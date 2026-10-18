@@ -2,6 +2,7 @@ import 'dart:async' show Completer;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_base.dart';
@@ -53,6 +54,20 @@ final class _GuardedInvokingPlayerNative extends PlayerNative {
   Future<T?> debugInvoke<T>(String method) => invoke<T>(method);
 }
 
+/// Delivers [event] on the player event channel, waiting for the platform
+/// reply and one microtask turn so the stream handler has run before the
+/// caller's next statement.
+Future<void> _sendPlatformEvent(Object? event) async {
+  final done = Completer<void>();
+  await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+    'com.plezy/mpv_player/events',
+    const StandardMethodCodec().encodeSuccessEnvelope(event),
+    (_) => done.complete(),
+  );
+  await done.future;
+  await Future<void>.delayed(Duration.zero);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -60,7 +75,12 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
+    // Passthrough expectations below model a Windows/Linux device bitstream;
+    // the Apple system-decoder path opts in explicitly.
+    PlayerNative.debugUseAppleAudioOutput = false;
   });
+
+  tearDown(() => PlayerNative.debugUseAppleAudioOutput = null);
 
   test('MPV coalesces concurrent Dart initialization requests', () async {
     final initialize = Completer<bool>();
@@ -443,7 +463,7 @@ void main() {
             player.setVolume(25),
             player.setAudioPassthrough(true),
             player.setAudioNormalization(true),
-            player.setAudioDownmix(enabled: true, centerBoostDb: 3, normalize: true),
+            player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 3, normalize: true),
             player.updateFrame(),
             player.abandonAudioFocus(),
           ]);
@@ -535,33 +555,19 @@ void main() {
         final subscription = player.streams.hdrOutputChanged.listen((_) => changes++);
         try {
           await player.setLogLevel('warn');
-          final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-          const codec = StandardMethodCodec();
-
-          Future<void> sendEvent(Object? event) async {
-            final done = Completer<void>();
-            await messenger.handlePlatformMessage(
-              'com.plezy/mpv_player/events',
-              codec.encodeSuccessEnvelope(event),
-              (_) => done.complete(),
-            );
-            await done.future;
-            await Future<void>.delayed(Duration.zero);
-          }
-
-          await sendEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
+          await _sendPlatformEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
           expect(changes, 1);
 
           // The envelope needs both keys. Omitting `type` is not hypothetical -
           // it is exactly what the native side once sent, and the event was
           // dropped in silence, so the settings sheet kept whatever HDR verdict
           // it had from before the window moved.
-          await sendEvent(const {'name': 'hdr-output-changed'});
+          await _sendPlatformEvent(const {'name': 'hdr-output-changed'});
           expect(changes, 1);
 
           // And the channel is still live afterwards: a malformed sibling must
           // not take the subscription down with it.
-          await sendEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
+          await _sendPlatformEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
           expect(changes, 2);
         } finally {
           await subscription.cancel();
@@ -630,22 +636,9 @@ void main() {
         final player = PlayerNative();
         try {
           await player.setLogLevel('warn');
-          final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-          const codec = StandardMethodCodec();
-
-          Future<void> sendEvent(Object? event) async {
-            final done = Completer<void>();
-            await messenger.handlePlatformMessage(
-              'com.plezy/mpv_player/events',
-              codec.encodeSuccessEnvelope(event),
-              (_) => done.complete(),
-            );
-            await done.future;
-            await Future<void>.delayed(Duration.zero);
-          }
 
           Future<void> sendObservation(String name, Object? value) async {
-            await sendEvent([observations[name], value]);
+            await _sendPlatformEvent([observations[name], value]);
           }
 
           await sendObservation('track-list', const [
@@ -653,6 +646,8 @@ void main() {
               'type': 'audio',
               'id': 7,
               'title': 'Main',
+              'codec': 'dts',
+              'codec-profile': 'DTS-HD MA',
               'selected': true,
               'metadata': {
                 'nested': [true, 2, 3.5, null],
@@ -671,6 +666,7 @@ void main() {
 
           expect(player.state.tracks.audio.single.id, '7');
           expect(player.state.tracks.audio.single.title, 'Main');
+          expect(player.state.tracks.audio.single.codecProfile, 'DTS-HD MA');
           expect(player.state.buffer, const Duration(milliseconds: 12500));
           expect(player.state.bufferRanges.single.start, const Duration(seconds: 1));
           expect(player.state.bufferRanges.single.end, const Duration(milliseconds: 9250));
@@ -691,9 +687,9 @@ void main() {
 
           // Malformed envelopes and malformed siblings are ignored without
           // taking down the event subscription or discarding valid siblings.
-          await sendEvent(['not-a-property-id', const {}]);
-          await sendEvent({'type': 'event', 'name': 7, 'data': const {}});
-          await sendEvent({'type': 'event', 'name': 'unknown', 'data': 'not-a-map'});
+          await _sendPlatformEvent(['not-a-property-id', const {}]);
+          await _sendPlatformEvent({'type': 'event', 'name': 7, 'data': const {}});
+          await _sendPlatformEvent({'type': 'event', 'name': 'unknown', 'data': 'not-a-map'});
           await sendObservation('track-list', const [
             {'type': 7, 'id': 'bad'},
             {
@@ -702,6 +698,7 @@ void main() {
               'title': 12,
               'lang': false,
               'codec': {'unexpected': true},
+              'codec-profile': 5,
               'demux-channel-count': 'many',
               'selected': true,
             },
@@ -721,6 +718,7 @@ void main() {
           expect(player.state.tracks.audio.single.id, '8');
           expect(player.state.tracks.audio.single.title, isNull);
           expect(player.state.tracks.audio.single.channels, isNull);
+          expect(player.state.tracks.audio.single.codecProfile, isNull);
           expect(player.state.buffer, const Duration(milliseconds: 12500));
           expect(player.state.bufferRanges.single.start, const Duration(seconds: 2));
           expect(player.state.bufferRanges.single.end, const Duration(seconds: 6));
@@ -733,6 +731,82 @@ void main() {
           player.handlePropertyChange('aid', 'no');
           expect(player.state.track.audio, isNull);
         } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('MPV reports demuxer progress only when the file moves toward a frame', () async {
+    final observations = <String, int>{};
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'observeProperty') {
+          final arguments = call.arguments as Map;
+          observations[arguments['name'] as String] = arguments['id'] as int;
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        var progress = 0;
+        final subscription = player.streams.demuxerProgress.listen((_) => progress++);
+        try {
+          await player.setLogLevel('warn');
+
+          Future<void> startFile(int sourceId) => _sendPlatformEvent({
+            'type': 'event',
+            'name': 'start-file',
+            'data': {'sourceId': sourceId},
+          });
+          Future<void> sendCacheState(
+            int sourceId, {
+            double? readerPts,
+            required int totalBytes,
+            required bool underrun,
+            int rate = 0,
+          }) => _sendPlatformEvent([
+            observations['demuxer-cache-state'],
+            {'reader-pts': ?readerPts, 'total-bytes': totalBytes, 'underrun': underrun, 'raw-input-rate': rate},
+            sourceId,
+          ]);
+
+          await startFile(1);
+          // The first sample of a file is only the baseline.
+          await sendCacheState(1, totalBytes: 0, underrun: true);
+          expect(progress, 0);
+
+          // A precise resume seek decoding its way from the keyframe.
+          await sendCacheState(1, readerPts: 985.776, totalBytes: 131888, underrun: true);
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 288240, underrun: true);
+          expect(progress, 2);
+
+          // One decoder starving while the other stream's packets arrive.
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 400000, underrun: true);
+          expect(progress, 3);
+
+          // A pipeline that stopped pulling lets the demuxer read ahead into a
+          // full queue, and a stalled link refreshes nothing but its rate
+          // estimate. Neither moves the file toward a frame.
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 900000, underrun: false);
+          await sendCacheState(1, readerPts: 986.068, totalBytes: 900000, underrun: false, rate: 120);
+          expect(progress, 3);
+
+          // A late sample from the outgoing source is not this file's progress.
+          await sendCacheState(0, readerPts: 12, totalBytes: 5, underrun: true);
+          expect(progress, 3);
+
+          // The next file is measured against itself, not the one before it.
+          await startFile(2);
+          await sendCacheState(2, readerPts: 0, totalBytes: 10, underrun: true);
+          expect(progress, 3);
+          await sendCacheState(2, readerPts: 0.5, totalBytes: 20, underrun: true);
+          expect(progress, 4);
+        } finally {
+          await subscription.cancel();
           await player.dispose();
         }
       },
@@ -953,12 +1027,12 @@ void main() {
       testBody: () async {
         final player = PlayerNative();
         try {
-          await player.setAudioDownmix(enabled: true, centerBoostDb: 2, normalize: false);
+          await player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 2, normalize: false);
           writes.clear();
           rejectNextStereo = true;
 
           await expectLater(
-            player.setAudioDownmix(enabled: true, centerBoostDb: 9, normalize: true),
+            player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 9, normalize: true),
             throwsA(isA<PlatformException>()),
           );
 
@@ -1096,6 +1170,56 @@ void main() {
     );
   });
 
+  test('a 5.1 channel limit keeps passthrough, stereo takes it over, and original hands it back', () async {
+    final audioWrites = <(String, String)>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          final name = arguments['name'] as String;
+          if (name == 'audio-spdif' || name == 'audio-channels' || name == 'audio-swresample-o') {
+            audioWrites.add((name, arguments['value'] as String));
+          }
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioPassthrough(true);
+          await player.setAudioChannelLimit(AudioChannelLimit.surround51, centerBoostDb: 6, normalize: true);
+          expect(player.audioPassthroughActive, isTrue, reason: 'the 5.1 limit only shapes decoded PCM');
+
+          await player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 6, normalize: true);
+          expect(player.audioPassthroughActive, isFalse);
+
+          await player.setAudioChannelLimit(AudioChannelLimit.original, centerBoostDb: 6, normalize: true);
+          expect(player.audioPassthroughActive, isTrue);
+
+          expect(audioWrites, [
+            ('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd'),
+            // The center stays its own channel in a 5.1 fold, so no boost.
+            ('audio-swresample-o', ''),
+            ('audio-channels', 'auto-safe'),
+            ('audio-channels', 'stereo,5.1'),
+            ('audio-spdif', ''),
+            ('audio-swresample-o', 'center_mix_level=1.4125'),
+            ('audio-channels', 'auto-safe'),
+            ('audio-channels', 'stereo'),
+            ('audio-channels', 'auto-safe'),
+            ('audio-swresample-o', ''),
+            ('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd'),
+          ]);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
   test('passthrough requested while normalization is on stays decoded', () async {
     final audioWrites = <(String, String)>[];
     await withMockPlayerChannels(
@@ -1179,6 +1303,39 @@ void main() {
         try {
           await player.setAudioPassthrough(true);
           expect(player.audioPassthroughActive, isTrue);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('Apple passthrough hands only Dolby to the system decoder and never claims the device', () async {
+    PlayerNative.debugUseAppleAudioOutput = true;
+    final audioWrites = <(String, String)>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          final name = arguments['name'] as String;
+          if (name == 'audio-spdif' || name == 'audio-exclusive') audioWrites.add((name, arguments['value'] as String));
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioPassthrough(true);
+          expect(player.audioPassthroughActive, isTrue);
+          await player.setAudioPassthrough(false);
+          expect(player.audioPassthroughActive, isFalse);
+
+          // On macOS an exclusive hint would push every CoreAudio open, the
+          // PCM fallback included, into hog-mode coreaudio_exclusive.
+          expect(audioWrites, [('audio-spdif', 'ac3,eac3'), ('audio-spdif', '')]);
         } finally {
           await player.dispose();
         }

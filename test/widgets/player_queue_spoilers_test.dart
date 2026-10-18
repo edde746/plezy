@@ -318,7 +318,6 @@ PlaybackStateProvider _playbackWithQueue() {
   final playback = PlaybackStateProvider();
   playback.setPlaybackFromLocalQueue(
     LocalPlayQueue(
-      id: 'test-queue',
       currentIndex: 0,
       items: [
         _episode('spoiler-episode', title: 'Spoiler Episode'),

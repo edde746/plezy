@@ -82,7 +82,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
           _metric(t.performanceOverlay.aspect, _stats.aspectName!),
         if (_stats.rotate != null && _stats.rotate != 0) _metric(t.performanceOverlay.rotation, _stats.rotateFormatted),
         if (_stats.dvSourceProfile != null) _metric(t.performanceOverlay.dvSource, _stats.dvSourceProfileFormatted),
-        if (_stats.dvPlaybackPath != null) _metric(t.performanceOverlay.dvPath, _stats.dvPlaybackPathFormatted),
+        if (_stats.hasDvPlaybackPath) _metric(t.performanceOverlay.dvPath, _stats.dvPlaybackPathFormatted),
         if (_stats.dvConversionActive) _metric(t.performanceOverlay.p7Conversion, _stats.dvConversionFormatted),
       ]),
       _buildSection(Symbols.volume_up_rounded, t.fileInfo.audio, [

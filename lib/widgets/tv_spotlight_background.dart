@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -120,7 +121,7 @@ class TvSpotlightBackground extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media));
+                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media, constraints.maxWidth));
                         }
 
                         return Align(
@@ -128,7 +129,10 @@ class TvSpotlightBackground extends StatelessWidget {
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: .bottomLeft,
-                            child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media)),
+                            child: SizedBox(
+                              width: constraints.maxWidth,
+                              child: _buildInfo(context, media, constraints.maxWidth),
+                            ),
                           ),
                         );
                       },
@@ -181,7 +185,7 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
-  Widget _buildInfo(BuildContext context, MediaItem media) {
+  Widget _buildInfo(BuildContext context, MediaItem media, double width) {
     final scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
@@ -192,7 +196,7 @@ class TvSpotlightBackground extends StatelessWidget {
       crossAxisAlignment: .start,
       mainAxisSize: .min,
       children: [
-        _buildLogoOrTitle(context, media, title),
+        _buildLogoOrTitle(context, media, title, width),
         SizedBox(height: _sectionGap(scale)),
         _buildMetadataLine(context, media),
         if (summary != null && summary.isNotEmpty) ...[
@@ -224,7 +228,10 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
-  Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title) {
+  /// The logo is contained within its slot; the title fallback gets
+  /// [ClearLogoImage.fallbackWidthFor] of the info block's [availableWidth]
+  /// at the slot's height (#1796).
+  Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title, double availableWidth) {
     final theme = Theme.of(context);
     // The spotlight scrim washes artwork toward the scaffold background, so
     // light themes recolor light-toned logos to stay visible.
@@ -234,10 +241,11 @@ class TvSpotlightBackground extends StatelessWidget {
     );
     final scale = _scale(context);
     final logoPath = media.clearLogoPath;
-    final logoWidth = _logoWidth(scale);
+    final logoWidth = math.min(_logoWidth(scale), availableWidth);
     final logoHeight = _logoHeight(scale);
+    final width = ClearLogoImage.fallbackWidthFor(logoWidth: logoWidth, available: availableWidth);
     if (logoPath == null || logoPath.isEmpty) {
-      return SizedBox(width: logoWidth, height: logoHeight, child: _buildTitle(context, title));
+      return SizedBox(width: width, height: logoHeight, child: _buildTitle(context, title));
     }
     final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: ImageType.heroLogo);
     final (logoMemWidth, logoMemHeight) = MediaImageHelper.getMemCacheDimensions(
@@ -254,20 +262,27 @@ class TvSpotlightBackground extends StatelessWidget {
         memHeight: logoMemHeight,
       );
       return SizedBox(
-        width: logoWidth,
+        width: width,
         height: logoHeight,
-        child: blurArtwork(
-          Image(
-            image: logoToneTarget == null
-                ? bounded
-                : ToneMappedLogoImage(bounded, target: logoToneTarget, remapMixed: false),
-            fit: BoxFit.contain,
-            filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.heroLogo),
-            alignment: .centerLeft,
-            errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
+        child: Align(
+          alignment: .centerLeft,
+          child: blurArtwork(
+            Image(
+              image: logoToneTarget == null
+                  ? bounded
+                  : ToneMappedLogoImage(bounded, target: logoToneTarget, remapMixed: false),
+              width: logoWidth,
+              height: logoHeight,
+              fit: BoxFit.contain,
+              filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.heroLogo),
+              alignment: .centerLeft,
+              // Replaces the image under Align's loose constraints, so it
+              // takes the whole title slot rather than the logo's.
+              errorBuilder: (context, error, stackTrace) => SizedBox.expand(child: _buildTitle(context, title)),
+            ),
+            sigma: 10,
+            clip: false,
           ),
-          sigma: 10,
-          clip: false,
         ),
       );
     }
@@ -277,6 +292,7 @@ class TvSpotlightBackground extends StatelessWidget {
       logoPath: logoPath,
       width: logoWidth,
       height: logoHeight,
+      fallbackWidth: width,
       fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
       logoToneTarget: logoToneTarget,
       fallbackBuilder: (context) => _buildTitle(context, title),

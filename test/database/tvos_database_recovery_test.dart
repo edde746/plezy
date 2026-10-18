@@ -202,6 +202,17 @@ void main() {
     await _deleteDatabase(databaseFile);
   }
 
+  /// Lose the database and reopen it, checking that the preceding mutation
+  /// committed its recovery image. Call between mutations of one group: the
+  /// next wrapped mutation republishes the whole group and would hide a
+  /// missing wrapper here.
+  Future<void> recoverCriticalRows() async {
+    final expected = await _criticalRows(database!);
+    await closeAndDelete();
+    final result = await open();
+    expect(await _criticalRows(result.database), expected);
+  }
+
   setUp(() async {
     resetSharedPreferencesForTest();
     tempDir = await Directory.systemTemp.createTemp('plezy_tvos_recovery_');
@@ -1009,9 +1020,9 @@ void main() {
     expect(await restored.database.getPendingWatchActions(), isEmpty);
   });
 
-  test('pending mutation wrappers preserve updates, deletes, profile teardown, and clears', () async {
-    var result = await open();
-    await result.database.upsertProgressAction(
+  test('each pending mutation wrapper commits recovery for updates, deletes, profile teardown, and clears', () async {
+    await open();
+    await database!.upsertProgressAction(
       profileId: 'p1',
       serverId: ServerId('s1'),
       ratingKey: 'a',
@@ -1019,99 +1030,150 @@ void main() {
       duration: 100,
       shouldMarkWatched: false,
     );
-    await result.database.adoptLegacyOfflineWatchActionsForProfile('p1');
-    await result.database.insertWatchAction(
+    await recoverCriticalRows();
+
+    // Pre-v18 rows carry a null profile id — the only rows adoption claims.
+    await database!.insertWatchAction(
+      serverId: ServerId('s1'),
+      ratingKey: 'legacy',
+      actionType: OfflineActionType.watched.id,
+    );
+    await database!.insertWatchAction(
       profileId: 'p1',
       serverId: ServerId('s1'),
       ratingKey: 'b',
       actionType: OfflineActionType.watched.id,
     );
-    final rows = await result.database.getPendingWatchActions();
-    await result.database.updateSyncAttemptIfUnchanged(rows.first.id, rows.first.updatedAt, 'retry');
-    await result.database.deleteWatchActionIfUnchanged(rows.last.id, rows.last.updatedAt);
-    await result.database.insertWatchAction(
+    await database!.insertWatchAction(
       profileId: 'p2',
       serverId: ServerId('s1'),
       ratingKey: 'c',
       actionType: OfflineActionType.unwatched.id,
     );
-    await result.database.deleteWatchActionsForProfile('p1');
-    var expected = await _criticalRows(result.database);
-    await closeAndDelete();
-    result = await open();
-    expect(await _criticalRows(result.database), expected);
+    await database!.insertWatchAction(
+      profileId: 'p2',
+      serverId: ServerId('s1'),
+      ratingKey: 'd',
+      actionType: OfflineActionType.watched.id,
+    );
+    await recoverCriticalRows();
 
-    await result.database.clearAllWatchActions();
-    expected = await _criticalRows(result.database);
-    await closeAndDelete();
-    result = await open();
-    expect(await _criticalRows(result.database), expected);
-    expect(await result.database.getPendingWatchActions(), isEmpty);
+    await database!.adoptLegacyOfflineWatchActionsForProfile('p1');
+    expect(await database!.getPendingWatchActions(profileId: 'p1'), hasLength(3));
+    await recoverCriticalRows();
+
+    var rows = await database!.getPendingWatchActions(profileId: 'p1');
+    expect(await database!.updateSyncAttemptIfUnchanged(rows.first.id, rows.first.updatedAt, 'retry'), isTrue);
+    await recoverCriticalRows();
+
+    rows = await database!.getPendingWatchActions(profileId: 'p2');
+    expect(await database!.deleteWatchActionIfUnchanged(rows.first.id, rows.first.updatedAt), isTrue);
+    await recoverCriticalRows();
+
+    await database!.deleteWatchActionsForProfile('p1');
+    expect(await database!.getPendingWatchActions(), hasLength(1));
+    await recoverCriticalRows();
+
+    await database!.clearAllWatchActions();
+    await recoverCriticalRows();
+    expect(await database!.getPendingWatchActions(), isEmpty);
   });
 
-  test('identity mutation wrappers preserve defaults, tokens, cascades, teardown, and clears', () async {
-    var result = await open();
-    var connections = ConnectionRegistry(result.database);
-    var profiles = ProfileRegistry(result.database);
-    var joins = ProfileConnectionRegistry(result.database);
+  test(
+    'each identity mutation wrapper commits recovery for defaults, tokens, cascades, teardown, and clears',
+    () async {
+      await open();
+      ConnectionRegistry connections() => ConnectionRegistry(database!);
+      ProfileRegistry profiles() => ProfileRegistry(database!);
+      ProfileConnectionRegistry joins() => ProfileConnectionRegistry(database!);
 
-    await connections.upsert(_connection('c1'));
-    await connections.upsert(_connection('c2'));
-    await profiles.upsert(_profile('p1'));
-    await profiles.upsert(_profile('p2'));
-    await profiles.markUsed('p1', DateTime.fromMillisecondsSinceEpoch(9100));
-    await profiles.upsert(
-      Profile.plexHome(
-        id: 'legacy-home',
-        displayName: 'Legacy',
-        parentConnectionId: 'c1',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(1),
-      ),
-    );
-    await profiles.dropAllPlexHomeRows();
-    await joins.upsert(
-      const ProfileConnection(profileId: 'p1', connectionId: 'c1', userToken: 'token-1', userIdentifier: 'u1'),
-    );
-    await joins.upsert(
-      const ProfileConnection(profileId: 'p1', connectionId: 'c2', userToken: 'token-2', userIdentifier: 'u2'),
-    );
-    await joins.recordToken('p1', 'c1', 'token-refreshed');
-    final protectedToken = await CredentialVault.protect('token-clear-canary');
-    final protectedEnvelope = jsonDecode(protectedToken.substring('enc:v1:'.length)) as Map<String, dynamic>;
-    final ciphertext = protectedEnvelope['c'] as String;
-    protectedEnvelope['c'] = '${ciphertext.startsWith('A') ? 'B' : 'A'}${ciphertext.substring(1)}';
-    final corruptedToken = 'enc:v1:${jsonEncode(protectedEnvelope)}';
-    await (result.database.update(
-      result.database.profileConnections,
-    )..where((t) => t.connectionId.equals('c1'))).write(ProfileConnectionsCompanion(userToken: Value(corruptedToken)));
-    await joins.get('p1', 'c1');
-    final clearedTokenRow = await (result.database.select(
-      result.database.profileConnections,
-    )..where((t) => t.connectionId.equals('c1'))).getSingle();
-    expect(clearedTokenRow.userToken, isEmpty);
-    await joins.markUsed('p1', 'c1');
-    await joins.setDefault('p1', 'c2');
-    await joins.remove('p1', 'c2');
-    await joins.promoteMissingDefaults();
-    await joins.removeAllForConnection('c2');
-    await connections.remove('c2');
-    await profiles.remove('p2');
+      await connections().upsert(_connection('c1'));
+      await connections().upsert(_connection('c2'));
+      await connections().upsert(_connection('c3'));
+      await profiles().upsert(_profile('p1'));
+      await profiles().upsert(_profile('p2'));
+      await recoverCriticalRows();
 
-    var expected = await _criticalRows(result.database);
-    await closeAndDelete();
-    result = await open();
-    expect(await _criticalRows(result.database), expected);
+      await profiles().markUsed('p1', DateTime.fromMillisecondsSinceEpoch(9100));
+      await recoverCriticalRows();
 
-    connections = ConnectionRegistry(result.database);
-    profiles = ProfileRegistry(result.database);
-    joins = ProfileConnectionRegistry(result.database);
-    await joins.clear();
-    await profiles.clear();
-    await connections.clear();
-    expected = await _criticalRows(result.database);
-    await closeAndDelete();
-    result = await open();
-    expect(await _criticalRows(result.database), expected);
-    expect(expected.take(3).expand((rows) => rows), isEmpty);
-  });
+      await profiles().upsert(
+        Profile.plexHome(
+          id: 'legacy-home',
+          displayName: 'Legacy',
+          parentConnectionId: 'c1',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
+      );
+      expect(await profiles().dropAllPlexHomeRows(), 1);
+      await recoverCriticalRows();
+
+      await joins().upsert(
+        const ProfileConnection(profileId: 'p1', connectionId: 'c1', userToken: 'token-1', userIdentifier: 'u1'),
+      );
+      await joins().upsert(
+        const ProfileConnection(profileId: 'p1', connectionId: 'c2', userToken: 'token-2', userIdentifier: 'u2'),
+      );
+      await joins().upsert(
+        const ProfileConnection(profileId: 'p2', connectionId: 'c2', userToken: 'token-3', userIdentifier: 'u3'),
+      );
+      await joins().upsert(
+        const ProfileConnection(profileId: 'p2', connectionId: 'c3', userToken: 'token-4', userIdentifier: 'u4'),
+      );
+      await recoverCriticalRows();
+
+      await joins().recordToken('p1', 'c1', 'token-refreshed');
+      await recoverCriticalRows();
+
+      // The corrupting write is deliberately unwrapped: clearing an
+      // undecryptable token on read is the mutation that must commit.
+      final protectedToken = await CredentialVault.protect('token-clear-canary');
+      final protectedEnvelope = jsonDecode(protectedToken.substring('enc:v1:'.length)) as Map<String, dynamic>;
+      final ciphertext = protectedEnvelope['c'] as String;
+      protectedEnvelope['c'] = '${ciphertext.startsWith('A') ? 'B' : 'A'}${ciphertext.substring(1)}';
+      await (database!.update(database!.profileConnections)..where((t) => t.connectionId.equals('c1'))).write(
+        ProfileConnectionsCompanion(userToken: Value('enc:v1:${jsonEncode(protectedEnvelope)}')),
+      );
+      await joins().get('p1', 'c1');
+      final clearedTokenRow = await (database!.select(
+        database!.profileConnections,
+      )..where((t) => t.connectionId.equals('c1'))).getSingle();
+      expect(clearedTokenRow.userToken, isEmpty);
+      await recoverCriticalRows();
+
+      await joins().markUsed('p1', 'c1');
+      await recoverCriticalRows();
+
+      await joins().setDefault('p1', 'c2');
+      await recoverCriticalRows();
+
+      // Removing p1's default join re-promotes the surviving one.
+      await joins().remove('p1', 'c2');
+      expect((await joins().listForProfile('p1')).single.isDefault, isTrue);
+      await recoverCriticalRows();
+
+      // The connection FK cascade drops p2/c2, leaving p2 without a default.
+      await connections().remove('c2');
+      expect((await joins().listForProfile('p2')).single.isDefault, isFalse);
+      await recoverCriticalRows();
+
+      await joins().promoteMissingDefaults();
+      expect((await joins().listForProfile('p2')).single.isDefault, isTrue);
+      await recoverCriticalRows();
+
+      expect(await joins().removeAllForConnection('c3'), 1);
+      await recoverCriticalRows();
+
+      await profiles().remove('p2');
+      await recoverCriticalRows();
+
+      await joins().clear();
+      await recoverCriticalRows();
+      await profiles().clear();
+      await recoverCriticalRows();
+      await connections().clear();
+      await recoverCriticalRows();
+      expect((await _criticalRows(database!)).take(3).expand((rows) => rows), isEmpty);
+    },
+  );
 }

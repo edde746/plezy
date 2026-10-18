@@ -135,5 +135,29 @@ void main() {
       expect(starts, [1, 2, 2]);
       expect(loaded, [1, 2]);
     });
+
+    test('removing loaded records shrinks the total and shifts the cursor', () async {
+      final starts = <int>[];
+      final coordinator = ContinuationPaginationCoordinator<int>(
+        loadPage: (start) async {
+          starts.add(start);
+          return ContinuationPage(items: [start], totalCount: 3, consumedCount: 1);
+        },
+        onPage: (_) {},
+      );
+
+      coordinator.setContinuation(startIndex: 2, totalCount: 4);
+      coordinator.noteLoadedItemsRemoved();
+      expect(coordinator.totalCount, 3);
+      expect(coordinator.nextStartIndex, 1);
+      expect(await coordinator.loadRemaining(), ContinuationLoadStatus.completed);
+      expect(starts, [1, 2]);
+
+      // Fully loaded: the cursor stays closed and only the total follows.
+      coordinator.setContinuation(startIndex: 2, totalCount: 2);
+      coordinator.noteLoadedItemsRemoved();
+      expect(coordinator.totalCount, 1);
+      expect(coordinator.hasMore, isFalse);
+    });
   });
 }

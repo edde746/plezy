@@ -48,7 +48,9 @@ import 'utils/pointer_scroll_axis.dart';
 import 'services/apple_tv_remote_touch_service.dart';
 import 'services/discord_rpc_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'services/image_cache_service.dart';
+import 'services/app_icon/app_icon_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'services/playback_coordinator.dart';
@@ -56,6 +58,7 @@ import 'providers/account_preferences_controller.dart';
 import 'services/account_preferences_repository.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
+import 'services/supporter/supporter_service.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
@@ -82,6 +85,7 @@ import 'utils/app_logger.dart';
 import 'utils/certificate_trust.dart';
 import 'utils/managed_http_client.dart';
 import 'utils/media_server_http_client.dart';
+import 'utils/media_server_timeouts.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
 import 'i18n/app_locale_utils.dart';
@@ -135,6 +139,9 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
 void _registerTvosPlatformPlugins() {
   if (!Platform.isIOS) return; // tvOS reports as iOS via dart:io.
   SharedPreferencesFoundation.registerWith();
+  // in_app_purchase needs no entry here: `InAppPurchase.instance` registers
+  // its StoreKit platform on first use (tvOS reports iOS), which
+  // SupporterService reaches only in SUPPORTER_MODE=iap builds.
 }
 
 void main() {
@@ -179,11 +186,11 @@ void _bootstrapApp() {
       ),
       discard: (dependencies) => dependencies.appDatabase.close(),
       onCommitted: (dependencies) => _startNonessentialInitialization(dependencies.settings),
-      lightTheme: monoTheme(dark: false),
-      darkTheme: monoTheme(dark: true),
+      lightTheme: monoTheme(MonoPalette.light),
+      darkTheme: monoTheme(MonoPalette.dark),
       resolveTheme: _resolveStartupTheme,
       // Android runs the Flutter surface in transparent mode over a window
-      // whose background MainActivity already restored, so the loading frame
+      // whose background PlezyActivity already restored, so the loading frame
       // can leave the launch screen on display. Every other platform composites
       // opaquely and has nothing behind Flutter worth showing.
       transparentWhileLoading: Platform.isAndroid,
@@ -193,16 +200,30 @@ void _bootstrapApp() {
 
 /// Resolves the theme the app will settle on, for the frames that precede it.
 ///
+/// Also themes the native window frame, which is already on screen and would
+/// otherwise keep the platform theme until [ThemeProvider] exists.
+///
 /// Both singletons are memoised and awaited again by the gate, so this costs
 /// one preference load and one platform-channel round trip, shared. TV
 /// detection has to come first: the `themeMode` default is TV-aware and
 /// [TvDetectionService.isTVSync] answers false until its singleton exists,
 /// which would make a fresh Android TV install resolve the light theme.
+///
+/// A stored Supporter perk is gated by the cached entitlement, the same rule
+/// [ThemeProvider] applies, so a locked perk never flashes and an unlocked one
+/// never flashes the fallback. That fallback is the same TV-aware default.
 Future<StartupThemeResolution> _resolveStartupTheme() async {
   final settings = await SettingsService.getInstance();
   await TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode));
-  final mode = settings.read(SettingsService.themeMode);
-  return (themeMode: ThemeProvider.materialThemeModeFor(mode), darkTheme: ThemeProvider.darkThemeFor(mode));
+  final palette = ThemeProvider.resolveStored(settings, unlocked: SupporterService.startupUnlocked(settings)).palette;
+  ThemeProvider.applyWindowChromeBrightness(
+    ThemeProvider.isDarkFor(palette, WidgetsBinding.instance.platformDispatcher.platformBrightness),
+  );
+  return (
+    themeMode: ThemeProvider.materialThemeModeFor(palette),
+    lightTheme: ThemeProvider.lightThemeFor(palette),
+    darkTheme: ThemeProvider.darkThemeFor(palette),
+  );
 }
 
 /// Wraps [step] so a failure names the gate phase it came from.
@@ -265,9 +286,11 @@ Future<_StartupDependencies> _initializeApplication() async {
     // then run the whole gate — migrations, native recovery, database open —
     // a second time.
     await _optionalGatePhase(StartupPhase.crashReporting, () async {
+      final nativeDatabasePath = await _sentryNativeDatabasePath();
       await SentryFlutter.init((options) {
         options.dsn = _sentryDsn;
         options.release = _sentryRelease();
+        if (nativeDatabasePath != null) options.nativeDatabasePath = nativeDatabasePath;
         if (_sentryEnvironment.isNotEmpty) options.environment = _sentryEnvironment;
         if (_sentryDist.isNotEmpty) options.dist = _sentryDist;
         options.tracesSampleRate = 0;
@@ -308,6 +331,17 @@ String _sentryRelease() {
   if (gitCommit.length >= 7) return 'plezy@${gitCommit.substring(0, 7)}';
   if (gitCommit.isNotEmpty) return 'plezy@$gitCommit';
   return 'plezy@unknown';
+}
+
+Future<String?> _sentryNativeDatabasePath() async {
+  if (kIsWeb || !(Platform.isWindows || Platform.isLinux)) return null;
+  try {
+    final directory = await getApplicationSupportDirectory();
+    return p.join(directory.path, 'sentry-native');
+  } catch (error, stackTrace) {
+    appLogger.d('Sentry native database location unavailable', error: error, stackTrace: stackTrace);
+    return null;
+  }
 }
 
 const startupBootstrapProgressKey = Key('startup-bootstrap-progress');
@@ -600,7 +634,7 @@ Future<void> showRepairOutcomeDialog(
 }
 
 /// Theme the startup frames adopt once the persisted preference is readable.
-typedef StartupThemeResolution = ({material.ThemeMode themeMode, ThemeData darkTheme});
+typedef StartupThemeResolution = ({material.ThemeMode themeMode, ThemeData lightTheme, ThemeData darkTheme});
 
 /// Mounts a Flutter-owned startup frame before invoking the asynchronous
 /// initialization gate. The generic seam keeps frame ordering, failure, and
@@ -656,7 +690,7 @@ class StartupBootstrap<T> extends StatefulWidget {
   /// background, so the loading frame must not cover it.
   ///
   /// True only on Android, where `TransparencyMode.transparent` lets the
-  /// window decor show through and `MainActivity` has already restored the
+  /// window decor show through and `PlezyActivity` has already restored the
   /// persisted launch colour.
   final bool transparentWhileLoading;
 
@@ -811,7 +845,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
         builder: (context) => InputModeTracker(
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: widget.lightTheme,
+            theme: resolved?.lightTheme ?? widget.lightTheme,
             darkTheme: resolved?.darkTheme ?? widget.darkTheme,
             themeMode: resolved?.themeMode ?? widget.themeMode,
             home: Builder(builder: _buildBootstrapHome),
@@ -1213,6 +1247,17 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 @visibleForTesting
 bool shouldEnterOfflineModeAfterStartupBind({required bool bindingSucceeded, required bool hasOnlineServers}) {
   return !bindingSucceeded && !hasOnlineServers;
+}
+
+/// The splash's wait for the initial bind. With no OS network the wait is
+/// capped at [MediaServerTimeouts.noNetworkStartupBind] and a timeout reads
+/// as a failed bind: the bind keeps running, and
+/// [shouldEnterOfflineModeAfterStartupBind] still keeps the launch online
+/// when a server already connected.
+@visibleForTesting
+Future<bool> awaitStartupBindSettle(Future<bool> settle, {required bool hasNetwork}) {
+  if (hasNetwork) return settle;
+  return settle.timeout(MediaServerTimeouts.noNetworkStartupBind, onTimeout: () => false);
 }
 
 /// Top-level PIN prompt used by [ActiveProfileBinder] when it runs above the
@@ -1668,9 +1713,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // refresh + Jellyfin client creation. Hoisted out of MainScreen so
         // the splash can await its first settle — without this, MainScreen
         // mounts (and discover/libraries query) before any client exists.
-        // It is intentionally not auto-started here: SetupScreen first checks
-        // whether startup should go straight offline, otherwise the binder's
-        // microtask can begin network work before the offline decision lands.
+        // It is intentionally not auto-started here: SetupScreen starts it
+        // once the active profile is hydrated and the OS connectivity check
+        // has chosen the initial bind's PIN policy.
         Provider<ActiveProfileBinder>(
           lazy: false,
           create: (context) {
@@ -1784,10 +1829,29 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
           update: (_, controller, _) => controller.repository,
         ),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        // App-global: a Supporter purchase belongs to the store account on this
+        // device, not to a profile.
+        ChangeNotifierProvider(
+          create: (context) {
+            final supporter = SupporterService();
+            unawaited(supporter.init());
+            return supporter;
+          },
+        ),
+        ChangeNotifierProvider(create: (context) => ThemeProvider(supporter: context.read<SupporterService>())),
         // Shader presets are app-global — deliberately outside the
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
+        // Created eagerly: it must be listening when a Supporter refund is
+        // confirmed, so the default app icon comes back even with Settings closed.
+        ChangeNotifierProvider(
+          lazy: false,
+          create: (context) {
+            final appIcons = AppIconService(supporter: context.read<SupporterService>());
+            unawaited(appIcons.refresh());
+            return appIcons;
+          },
+        ),
       ],
       child: _AppShell(databaseRecoveryOutcome: widget.databaseRecoveryOutcome),
     );
@@ -2080,7 +2144,10 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       }
     }
 
-    // Check network connectivity early to fast-path airplane mode.
+    // OS connectivity only bounds how long the splash waits for the bind
+    // below. It never skips connecting: `none` means "no internet-capable
+    // adapter", and a loopback or LAN-without-WAN server is still reachable
+    // (#2505).
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Checking network connectivity', category: 'setup')));
     final hasNetwork = !(await ConnectivityProbe.check()).contains(ConnectivityResult.none);
 
@@ -2122,12 +2189,6 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
     if (!mounted) return;
 
-    // No network — skip connection attempts and go straight to offline mode
-    if (!hasNetwork) {
-      await _enterOfflineMode();
-      return;
-    }
-
     if (mounted) {
       setState(() {
         for (final conn in allConnections) {
@@ -2157,7 +2218,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Snapshot Provider refs before further awaits.
     final activeProfile = context.read<ActiveProfileProvider>();
     // The Provider is `lazy: false` so the binder is constructed already, but
-    // SetupScreen starts it only after the offline fast path has been ruled out.
+    // SetupScreen starts it only after the active profile has been hydrated.
     final binder = context.read<ActiveProfileBinder>();
     final downloadProvider = context.read<DownloadProvider>();
 
@@ -2178,11 +2239,11 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // checkmarks fill in even while the user is choosing a profile.
     _bindServerStatusListener();
 
-    // Start only after network/offline startup has been decided and the
-    // active profile snapshot is hydrated. This prevents an eager binder
-    // microtask from racing the no-network/manual-offline fast path.
+    // Start only after the active profile snapshot is hydrated. Without a
+    // network the initial bind stays PIN-free: plex.tv cannot verify a PIN,
+    // and the capped wait below would navigate out from under the dialog.
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.bindingStarted);
-    binder.start();
+    binder.start(allowInitialPinPrompt: hasNetwork);
 
     // If "prompt for profile on launch" is on (or no profile is selected
     // yet), surface the picker BEFORE waiting for the previously-active
@@ -2207,8 +2268,9 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       // race: per-server status flips on the splash list as each client comes
       // online, and we don't push MainScreen until they're all done (success
       // or fail). Eliminates the "Failed to load discover content: No servers
-      // available" race the old eager-navigate flow caused.
-      bindingSucceeded = await activeProfile.awaitBindingSettle();
+      // available" race the old eager-navigate flow caused. Without a network
+      // the wait is capped so airplane mode reaches the offline shell fast.
+      bindingSucceeded = await awaitStartupBindSettle(activeProfile.awaitBindingSettle(), hasNetwork: hasNetwork);
       if (!mounted) return;
     }
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.bindingSettled);

@@ -198,6 +198,23 @@ void main() {
       expect(await _runThroughConnect(() async => client.getUserSettings(), label: 'trakt'), isFalse);
       _expectNoCanaries(expectedText: ['TrackerRateLimitException(trakt, retry-after: 23 s)']);
     });
+
+    test('Simkl refusals stay typed and body-free', () async {
+      final client = SimklClient(
+        _session(),
+        onSessionInvalidated: () {},
+        httpClient: MockClient((_) async => http.Response(_rejectedBody, 429, headers: {'retry-after': '23'})),
+      );
+      addTearDown(client.dispose);
+
+      expect(await _runThroughConnect(() async => client.getUserSettings(), label: 'simkl'), isFalse);
+      _expectNoCanaries(
+        expectedText: [
+          'Simkl: refused (HTTP 429, rate limit); holding requests for 23s',
+          'TrackerRateLimitException(simkl, retry-after: 23 s)',
+        ],
+      );
+    });
   });
 
   group('auth diagnostics', () {
@@ -235,7 +252,7 @@ void main() {
       _expectNoCanaries(
         expectedText: [
           'DeviceCodeAuthFlowException: Trakt device code request failed: HTTP 502',
-          'DeviceCodeAuthFlowException: Simkl PIN request failed: HTTP 503',
+          'DeviceCodeAuthFlowException: Simkl device code request failed: HTTP 503',
         ],
       );
     });

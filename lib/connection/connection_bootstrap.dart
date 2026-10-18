@@ -44,7 +44,7 @@ class ConnectionBootstrap {
   /// Run all idempotent boot-time migrations. Best-effort — errors are
   /// logged but never thrown.
   Future<void> run() async {
-    await seedFromDevTokenDefine();
+    final seededDevAccount = await seedFromDevTokenDefine();
     final hadLegacyPlexToken = (storage.getPlexToken() ?? '').isNotEmpty;
     final hadLegacyProfileState = _hasLegacyProfileState();
     final migratedAccount = await migrateLegacyPlexAccount();
@@ -57,8 +57,16 @@ class ConnectionBootstrap {
       }
       // Drop any plex_home rows left over from the pre-refactor data
       // model — Plex Home users are now fetched live, never persisted.
-      await profileRegistry.dropAllPlexHomeRows();
-      if (account != null) {
+      final droppedPlexHomeRows = await profileRegistry.dropAllPlexHomeRows();
+      // Only a legacy install has a profile selection to carry over. Without
+      // legacy state the flag is missing because the install is fresh or
+      // because a preference-store repair lost it (with the active profile)
+      // while the database kept the migrated accounts; selecting the Home
+      // admin then would auto-resume it on this boot, skipping the picker
+      // and its PIN.
+      final hasSelectionToMigrate =
+          hadLegacyPlexToken || hadLegacyProfileState || droppedPlexHomeRows > 0 || seededDevAccount;
+      if (account != null && hasSelectionToMigrate) {
         final prepared = await _preparePlexVirtualProfile(account);
         if (!prepared) {
           if (migratedAccount != null && hadLegacyPlexToken) {
@@ -93,11 +101,12 @@ class ConnectionBootstrap {
   /// [PlexAccountConnection] directly when the env var is non-empty AND
   /// the registry doesn't already have a Plex account, fetching the user
   /// info + servers like the auth screen does. No-op in normal builds.
-  Future<void> seedFromDevTokenDefine() async {
+  /// Returns whether an account was seeded.
+  Future<bool> seedFromDevTokenDefine() async {
     const devToken = String.fromEnvironment('PLEX_TOKEN');
-    if (devToken.isEmpty) return;
+    if (devToken.isEmpty) return false;
     final existing = await connectionRegistry.list();
-    if (existing.whereType<PlexAccountConnection>().isNotEmpty) return;
+    if (existing.whereType<PlexAccountConnection>().isNotEmpty) return false;
 
     try {
       // The dev seed always keys its row by the device client id and aborts
@@ -106,8 +115,10 @@ class ConnectionBootstrap {
       final build = await buildPlexAccountConnection(devToken, keyByAccountUuid: false, tolerateUserInfoFailure: false);
       await connectionRegistry.upsert(build.connection);
       appLogger.i('Seeded Plex account from PLEX_TOKEN dart-define as ${build.connection.id}');
+      return true;
     } catch (e, st) {
       appLogger.w('PLEX_TOKEN seed failed', error: e, stackTrace: st);
+      return false;
     }
   }
 

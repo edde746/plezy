@@ -180,10 +180,16 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
   @override
   Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit) async {
     final response = await _client.getWatchlist(page: page, limit: limit);
-    return (
-      groups: [for (final item in _fromMetadata(response.items)) membershipKeysFor(item.kind, item.ids)],
-      hasMore: response.hasMore,
-    );
+    final groups = <List<String>>[];
+    final seen = <String>{};
+    for (final metadata in response.items) {
+      final kind = _kindFor(metadata['type']);
+      final title = _nonEmptyString(metadata['title']);
+      final ids = _idsFor(metadata);
+      if (kind == null || title == null || ids.plex == null) continue;
+      if (seen.add(ids.identityKeyFor(kind))) groups.add(membershipKeysFor(kind, ids));
+    }
+    return (groups: groups, hasMore: response.hasMore);
   }
 
   @override

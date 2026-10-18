@@ -202,7 +202,7 @@ void main() {
     await binder.rebindActive();
     expect(stack.active.lastBindingSucceeded, isTrue);
     expect(manager.getClient(ServerId('a')), isNull);
-    expect(manager.authErrorServerIds, contains('a-clientless'));
+    expect(manager.registeredServerIds, isNot(contains('a-clientless')));
     final bMatcher = newMatcher();
     final bMiss = await bMatcher.match(item);
     expect(bMiss.items, isEmpty);

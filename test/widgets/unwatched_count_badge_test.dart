@@ -7,7 +7,7 @@ void main() {
   Future<void> pumpBadge(WidgetTester tester, int count) {
     return tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: Scaffold(
           body: Center(child: UnwatchedCountBadge(count: count)),
         ),

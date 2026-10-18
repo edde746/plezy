@@ -266,9 +266,10 @@ void main() {
       fakeAsync((async) {
         window = const LiveSeekBounds(startEpoch: 950, endEpoch: 1050);
         final acc = build();
-        acc.seekBy(100); // 1000 -> 1100, clamped to 1050
+        // The readout may only claim the 50s the window let through (#2425).
+        expect(acc.seekBy(100), 50); // 1000 -> 1100, clamped to 1050
         expect(acc.pendingEpoch, 1050);
-        acc.seekBy(100); // stays at the edge
+        expect(acc.seekBy(100), 0); // stays at the edge
         expect(acc.pendingEpoch, 1050);
 
         async.elapse(const Duration(milliseconds: 300));
@@ -281,7 +282,7 @@ void main() {
       fakeAsync((async) {
         window = const LiveSeekBounds(startEpoch: 950, endEpoch: 1050);
         final acc = build();
-        acc.seekBy(-100); // 1000 -> 900, clamped to 950
+        expect(acc.seekBy(-100), -50); // 1000 -> 900, clamped to 950
         expect(acc.pendingEpoch, 950);
         acc.dispose();
       });
@@ -293,16 +294,83 @@ void main() {
         final acc = build();
 
         currentEpoch = 1050;
-        acc.seekBy(15);
+        expect(acc.seekBy(15), 0);
         expect(acc.pendingEpoch, isNull);
 
         currentEpoch = 950;
-        acc.seekBy(-15);
+        expect(acc.seekBy(-15), 0);
         expect(acc.pendingEpoch, isNull);
 
         async.elapse(const Duration(milliseconds: 300));
         expect(seeks, isEmpty);
         expect(changes, 0);
+        acc.dispose();
+      });
+    });
+
+    test('a rewind from past a stale live edge travels the full step', () {
+      // The window refreshes on a 10s heartbeat, so at the live edge the raw
+      // epoch routinely runs past `end`. Forward from there applies nothing;
+      // backward targets raw epoch minus the step and the readout owes the
+      // user that whole distance — a clamped origin would under-read it, and a
+      // step shorter than the overshoot would clamp back onto it and vanish.
+      fakeAsync((async) {
+        window = const LiveSeekBounds(startEpoch: 950, endEpoch: 1050);
+        final acc = build();
+
+        currentEpoch = 1060;
+        expect(acc.seekBy(15), 0);
+        expect(acc.pendingEpoch, isNull);
+        expect(acc.seekBy(-5), -5);
+        expect(acc.pendingEpoch, 1055);
+        expect(acc.seekBy(-10), -10);
+        expect(acc.pendingEpoch, 1045);
+
+        async.elapse(const Duration(milliseconds: 300));
+        expect(seeks, [1045]);
+        acc.dispose();
+      });
+    });
+
+    test('a skip from behind a rolled-past window start lands on the start', () {
+      // The buffer rolls forward, so a paused playhead can fall behind `start`.
+      // Unlike the live edge, a stale `start` only ever under-states the true
+      // one, so the start is the nearest reachable point: a forward press
+      // travels the whole gap and says so, while a backward press has nowhere
+      // to go and must not dispatch a re-open that moves the other way.
+      fakeAsync((async) {
+        window = const LiveSeekBounds(startEpoch: 950, endEpoch: 1050);
+        final acc = build();
+
+        currentEpoch = 940;
+        expect(acc.seekBy(-5), 0);
+        expect(acc.pendingEpoch, isNull);
+        expect(acc.seekBy(5), 10);
+        expect(acc.pendingEpoch, 950);
+
+        async.elapse(const Duration(milliseconds: 300));
+        expect(seeks, [950]);
+        acc.dispose();
+      });
+    });
+
+    test('a window that moves under a pending burst never reports travel against the press', () {
+      // A heartbeat inside the debounce can advance `start` past the pinned
+      // target. The next rewind is then clamped forward; the pin follows the
+      // clamp because that is where the flush lands anyway, but the readout is
+      // told nothing rather than a positive amount to add to a rewind total.
+      fakeAsync((async) {
+        window = const LiveSeekBounds(startEpoch: 900, endEpoch: 1050);
+        final acc = build();
+        expect(acc.seekBy(-50), -50);
+        expect(acc.pendingEpoch, 950);
+
+        window = const LiveSeekBounds(startEpoch: 960, endEpoch: 1060);
+        expect(acc.seekBy(-10), 0);
+        expect(acc.pendingEpoch, 960);
+
+        async.elapse(const Duration(milliseconds: 300));
+        expect(seeks, [960]);
         acc.dispose();
       });
     });

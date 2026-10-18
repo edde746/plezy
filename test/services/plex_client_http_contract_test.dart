@@ -591,6 +591,33 @@ void main() {
     expect(uris.last, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/children');
   });
 
+  test('show play queue starting at an episode selects it with key', () async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+
+    Map<String, String>? params;
+    final client = testPlexClient(
+      serverId: publicServerId,
+      profileScopeId: defaultProfileScopeId,
+      config: testPlexConfig(machineIdentifier: 'machine-1'),
+      handler: (request) async {
+        params = request.url.queryParameters;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {'playQueueID': '42', 'playQueueVersion': '5', 'Metadata': <dynamic>[]},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      },
+    );
+    addTearDown(client.close);
+
+    await client.createShowPlayQueue(showRatingKey: 'show-1', startingEpisodeKey: 'ep-12');
+
+    expect(params!['key'], '/library/metadata/ep-12');
+  });
+
   test('activities tolerate scalar drift and skip only malformed rows', () async {
     final client = makeClient(
       (_) async => http.Response(
@@ -683,6 +710,7 @@ void main() {
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           probeRequests.add(request);
           events.add('probe:${request.url.host}');
+          if (request.url.host == 'plex.example.com') throw TimeoutException('primary down');
           return identity('server-id');
         }),
       );
@@ -692,11 +720,14 @@ void main() {
 
       expect(events, [
         'application:plex.example.com',
+        'probe:plex.example.com',
         'probe:plex-fallback.example.com',
         'application:plex-fallback.example.com',
       ]);
-      expect(probeRequests.single.url.path, '/identity');
-      expect(probeRequests.single.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-plex-token')));
+      for (final probe in probeRequests) {
+        expect(probe.url.path, '/identity');
+        expect(probe.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-plex-token')));
+      }
       expect(client.config.baseUrl, fallback);
     });
 
@@ -721,6 +752,7 @@ void main() {
         ],
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           events.add('probe:${request.url.host}');
+          if (request.url.host == 'plex.example.com') throw TimeoutException('primary down');
           return identity(request.url.host == 'wrong-machine.example.com' ? 'other-server' : 'server-id');
         }),
         onAllEndpointsExhausted: () => exhausted++,
@@ -731,6 +763,7 @@ void main() {
 
       expect(events, [
         'application:plex.example.com',
+        'probe:plex.example.com',
         'probe:wrong-machine.example.com',
         'probe:valid.example.com',
         'application:valid.example.com',
@@ -761,7 +794,7 @@ void main() {
 
       expect(await client.getMachineIdentifier(), isNull);
 
-      expect(events, ['application:plex.example.com', 'probe:unreachable.example.com']);
+      expect(events, ['application:plex.example.com', 'probe:plex.example.com', 'probe:unreachable.example.com']);
       expect(exhausted, 1);
       expect(client.config.baseUrl, 'https://plex.example.com');
     });
@@ -791,6 +824,7 @@ void main() {
         prioritizedEndpoints: const [primary, fallback],
         endpointProbeHttpClientFactory: () => MockClient((request) async {
           events.add('probe:${request.url.host}');
+          if (request.url.host == 'plex.example.com') throw TimeoutException('primary down');
           return identity('server-id');
         }),
       );
@@ -799,7 +833,12 @@ void main() {
       final queue = await client.createPlayQueue(uri: 'server://items', type: 'audio');
 
       expect(queue.playQueueID, 7);
-      expect(events, ['POST:plex.example.com', 'probe:plex-fallback.example.com', 'POST:plex-fallback.example.com']);
+      expect(events, [
+        'POST:plex.example.com',
+        'probe:plex.example.com',
+        'probe:plex-fallback.example.com',
+        'POST:plex-fallback.example.com',
+      ]);
       expect(client.config.baseUrl, fallback);
     });
   });
@@ -1797,10 +1836,11 @@ void main() {
       );
     });
 
-    test('normal timeline reply does not throw', () async {
+    test('normal timeline reply completes and reports the paused position on the wire', () async {
+      Map<String, String>? query;
       final client = timelineClient({
         'MediaContainer': {'size': 0},
-      });
+      }, onRequest: (request) => query = request.url.queryParameters);
       addTearDown(client.close);
 
       await client.reportPlaybackProgress(
@@ -1809,6 +1849,12 @@ void main() {
         duration: const Duration(minutes: 20),
         isPaused: true,
       );
+
+      expect(query, containsPair('ratingKey', '42'));
+      expect(query, containsPair('key', '/library/metadata/42'));
+      expect(query, containsPair('state', 'paused'));
+      expect(query, containsPair('time', '120000'));
+      expect(query, containsPair('duration', '1200000'));
     });
   });
 }

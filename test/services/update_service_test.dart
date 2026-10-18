@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -61,6 +62,36 @@ void main() {
     'non-200 response': () async => http.Response('unavailable', 503),
     'parse failure': () async => http.Response('not-json', 200, headers: {'content-type': 'application/json'}),
   };
+
+  for (final failure in failedResponses.entries) {
+    test('a manual check reports a ${failure.key} as a failure, not as the latest version', () async {
+      final client = MediaServerHttpClient(client: MockClient((_) => failure.value()));
+      addTearDown(client.close);
+
+      await expectLater(
+        UpdateService.debugPerformUpdateCheck(respectCooldown: false, client: client, throwOnFailure: true),
+        throwsA(anything),
+      );
+    });
+  }
+
+  test('a manual check that finds no newer release returns null', () async {
+    final client = MediaServerHttpClient(
+      client: MockClient(
+        (_) async => http.Response(
+          jsonEncode({'tag_name': 'v1.0.0', 'html_url': 'https://example.com', 'published_at': '2026-01-01'}),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      ),
+    );
+    addTearDown(client.close);
+
+    expect(
+      await UpdateService.debugPerformUpdateCheck(respectCooldown: false, client: client, throwOnFailure: true),
+      isNull,
+    );
+  });
 
   for (final failure in failedResponses.entries) {
     test('startup ${failure.key} records cooldown before request and manual check bypasses it', () async {

@@ -142,6 +142,27 @@ void main() {
     expect(sent, ['stopped']);
   });
 
+  test('a heartbeat that arrives while one is pending is skipped, not queued', () async {
+    final queue = LiveTimelineReportQueue();
+    final gate = Completer<void>();
+    final sent = <String>[];
+    final first = queue.send(
+      stopped: false,
+      report: () {
+        sent.add('playing 100');
+        return gate.future;
+      },
+    );
+    await queue.send(stopped: false, report: () async => sent.add('playing 110'));
+    await queue.send(stopped: false, report: () async => sent.add('paused 120'));
+    expect(sent, ['playing 100']);
+
+    gate.complete();
+    await first;
+    await queue.send(stopped: false, report: () async => sent.add('paused 130'));
+    expect(sent, ['playing 100', 'paused 130']);
+  });
+
   group('runLiveTimelineReport', () {
     test('late pre-channel heartbeat cannot replace adopted channel buffer', () async {
       final bufferA = _buffer(1000);
@@ -345,6 +366,9 @@ class _FakeSession implements LiveTvPlaybackSession {
     _reports.add(completer);
     return completer.future;
   }
+
+  @override
+  Future<void> discard() async {}
 
   @override
   List<MediaSubtitleTrack> get subtitleTracks => const [];

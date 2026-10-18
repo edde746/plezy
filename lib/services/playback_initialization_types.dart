@@ -1,6 +1,7 @@
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
+import '../media/media_part_timeline.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
 import '../models/audio_quality_preset.dart';
@@ -61,6 +62,11 @@ class PlaybackInitializationOptions {
   /// for Plex transcode.
   final String? transcodeSessionId;
 
+  /// Where playback is about to start, in item time. An item stacked across
+  /// several files (Plex `Part 1`, `Part 2`) opens the file holding it; see
+  /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
+  final Duration? startPosition;
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -73,6 +79,7 @@ class PlaybackInitializationOptions {
     this.preferredSubtitleTrack,
     this.sessionIdentifier,
     this.transcodeSessionId,
+    this.startPosition,
   });
 }
 
@@ -90,6 +97,25 @@ class PlaybackSubtitleSidecar {
   final bool preload;
 
   const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track, this.preload = false});
+}
+
+/// What an OS-level external player is handed: a stream URL it can fetch
+/// without custom headers (token in the query string), plus the external
+/// subtitle files it can load alongside that stream.
+///
+/// [subtitles] are real sidecar files only — the player reads embedded tracks
+/// from the container itself. Their URIs are equally self-contained, and
+/// [SubtitleTrack.isDefault] marks the track the server selected for this
+/// user, which is the one the player should switch on.
+class ExternalPlaybackTarget {
+  final String url;
+  final List<SubtitleTrack> subtitles;
+
+  /// Where [url] sits on its item when the item is stacked across several
+  /// files: the external player gets that one file, on that file's clock.
+  final MediaPartTimeline? partTimeline;
+
+  const ExternalPlaybackTarget({required this.url, this.subtitles = const [], this.partTimeline});
 }
 
 /// Reason the transcode branch fell back to direct play.
@@ -174,6 +200,11 @@ class PlaybackInitializationResult {
 /// response body, or authentication metadata.
 enum PlaybackFailureReason {
   authenticationRequired,
+
+  /// The server answered HTTP 403: it knows this account and refuses it this
+  /// item or this connection (a Jellyfin user denied remote access, Plex's
+  /// remote-playback rules). Signing in again changes nothing.
+  playbackNotAllowed,
   serverUnavailable,
   cancelled,
   invalidPlaybackData,
@@ -198,8 +229,10 @@ class PlaybackException implements Exception {
 /// Backend-neutral on purpose: Plex and Jellyfin both throw the same
 /// [MediaServerException] hierarchy, so both clients classify identically.
 PlaybackException classifyPlaybackFailure(Object error) {
-  if (error is MediaServerAuthException ||
-      error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
+  if (error is MediaServerHttpException && error.statusCode == 403) {
+    return PlaybackException(t.messages.playbackNotAllowedBody, reason: PlaybackFailureReason.playbackNotAllowed);
+  }
+  if (error is MediaServerAuthException || error is MediaServerHttpException && error.statusCode == 401) {
     return PlaybackException(
       t.messages.playbackAuthenticationRequired,
       reason: PlaybackFailureReason.authenticationRequired,

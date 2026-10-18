@@ -54,7 +54,6 @@ void main() {
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
-    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   });
 

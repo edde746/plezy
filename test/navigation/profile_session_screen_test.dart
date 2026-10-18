@@ -35,28 +35,7 @@ void main() {
   });
 
   testWidgets('profile switch disposes the profile navigator, routes, and providers', (tester) async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profileRegistry = ProfileRegistry(db);
-    final connectionRegistry = ConnectionRegistry(db);
-    final profileConnectionRegistry = ProfileConnectionRegistry(db);
-    final storage = await StorageService.getInstance();
-    final plexHome = _FakePlexHomeService(
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-    );
-    final activeProfile = ActiveProfileProvider(
-      registry: profileRegistry,
-      plexHome: plexHome,
-      connections: connectionRegistry,
-      profileConnections: profileConnectionRegistry,
-      storage: storage,
-    );
-    final serverManager = MultiServerManager();
-    final multiServer = testMultiServerProvider(serverManager);
-    // The session tree instantiates MusicPlaybackServiceImpl (the mini-player
-    // overlay watches it), which needs the database + offline watch service.
-    final offlineWatch = OfflineWatchSyncService(database: db, serverManager: serverManager);
+    final graph = await _SessionGraph.create();
     final discoverProviders = <DiscoverProvider>[];
     final hiddenProviders = <HiddenLibrariesProvider>[];
     final trackerProviders = <TrackersProvider>[];
@@ -75,49 +54,27 @@ void main() {
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
-      await activeProfile.resetForTesting();
-      activeProfile.dispose();
-      multiServer.dispose();
-      serverManager.dispose();
-      await plexHome.dispose();
-      offlineWatch.dispose();
-      await db.close();
+      await graph.dispose();
     });
 
     final owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
     final kids = Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2));
-    await profileRegistry.upsert(owner);
-    await profileRegistry.upsert(kids);
-    await storage.saveHiddenLibrariesForProfile(owner.id, {'srv:owner'});
-    await storage.saveHiddenLibrariesForProfile(kids.id, {'srv:kids'});
-    await storage.setActiveProfileId(owner.id);
-    await activeProfile.initialize();
+    await graph.profileRegistry.upsert(owner);
+    await graph.profileRegistry.upsert(kids);
+    await graph.storage.saveHiddenLibrariesForProfile(owner.id, {'srv:owner'});
+    await graph.storage.saveHiddenLibrariesForProfile(kids.id, {'srv:kids'});
+    await graph.storage.setActiveProfileId(owner.id);
+    await graph.activeProfile.initialize();
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          Provider<StorageService>.value(value: storage),
-          Provider<AppDatabase>.value(value: db),
-          Provider<ConnectionRegistry>.value(value: connectionRegistry),
-          Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
-          Provider<PlexHomeService>.value(value: plexHome),
-          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
-          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
-          ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-        ],
-        child: MaterialApp(
-          home: ProfileSessionScreen.forTesting(
-            initialPromptHandled: true,
-            httpClientFactory: trackerHttpClientFactory,
-            profileShellBuilder: (context) => _ProfileProbeShell(
-              discoverProviders: discoverProviders,
-              hiddenProviders: hiddenProviders,
-              trackerProviders: trackerProviders,
-              companionProviders: companionProviders,
-              disposedActiveIds: disposedActiveIds,
-            ),
-          ),
-        ),
+    await graph.pump(
+      tester,
+      httpClientFactory: trackerHttpClientFactory,
+      profileShellBuilder: (context) => _ProfileProbeShell(
+        discoverProviders: discoverProviders,
+        hiddenProviders: hiddenProviders,
+        trackerProviders: trackerProviders,
+        companionProviders: companionProviders,
+        disposedActiveIds: disposedActiveIds,
       ),
     );
     await tester.pumpAndSettle();
@@ -144,7 +101,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('old profile route'), findsOneWidget);
 
-    expect(await activeProfile.activate(kids), isTrue);
+    expect(await graph.activeProfile.activate(kids), isTrue);
     await tester.pumpAndSettle();
     expect(trackerHttpClients, hasLength(trackerAuthClientsPerProfile * 2));
     final kidsHttpClients = trackerHttpClients.sublist(ownerHttpClients.length);
@@ -171,7 +128,7 @@ void main() {
     expect(SystemShelfService().debugActiveOwner, kids.id);
     expect(discoverProviders.last.profileId, kids.id);
 
-    await activeProfile.clearActiveProfile();
+    await graph.activeProfile.clearActiveProfile();
     await tester.pumpAndSettle();
     expect(trackerHttpClients, hasLength(trackerAuthClientsPerProfile * 3));
     final signedOutHttpClients = trackerHttpClients.sublist(ownerHttpClients.length + kidsHttpClients.length);
@@ -190,26 +147,7 @@ void main() {
   testWidgets(
     'a root-navigator route over the session blocks focus steals below it and hands focus back on pop (#2239)',
     (tester) async {
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
-      final profileRegistry = ProfileRegistry(db);
-      final connectionRegistry = ConnectionRegistry(db);
-      final profileConnectionRegistry = ProfileConnectionRegistry(db);
-      final storage = await StorageService.getInstance();
-      final plexHome = _FakePlexHomeService(
-        connections: connectionRegistry,
-        profileConnections: profileConnectionRegistry,
-        storage: storage,
-      );
-      final activeProfile = ActiveProfileProvider(
-        registry: profileRegistry,
-        plexHome: plexHome,
-        connections: connectionRegistry,
-        profileConnections: profileConnectionRegistry,
-        storage: storage,
-      );
-      final serverManager = MultiServerManager();
-      final multiServer = testMultiServerProvider(serverManager);
-      final offlineWatch = OfflineWatchSyncService(database: db, serverManager: serverManager);
+      final graph = await _SessionGraph.create();
       final rootNavigator = GlobalKey<NavigatorState>();
       final content = FocusNode(debugLabel: 'SessionContent');
       final sidebar = FocusNode(debugLabel: 'SessionSidebar');
@@ -221,45 +159,23 @@ void main() {
         content.dispose();
         sidebar.dispose();
         picker.dispose();
-        await activeProfile.resetForTesting();
-        activeProfile.dispose();
-        multiServer.dispose();
-        serverManager.dispose();
-        await plexHome.dispose();
-        offlineWatch.dispose();
-        await db.close();
+        await graph.dispose();
       });
 
       final owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
-      await profileRegistry.upsert(owner);
-      await storage.setActiveProfileId(owner.id);
-      await activeProfile.initialize();
+      await graph.profileRegistry.upsert(owner);
+      await graph.storage.setActiveProfileId(owner.id);
+      await graph.activeProfile.initialize();
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            Provider<StorageService>.value(value: storage),
-            Provider<AppDatabase>.value(value: db),
-            Provider<ConnectionRegistry>.value(value: connectionRegistry),
-            Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
-            Provider<PlexHomeService>.value(value: plexHome),
-            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
-            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
-            ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+      await graph.pump(
+        tester,
+        navigatorKey: rootNavigator,
+        httpClientFactory: () => FakeHttpClient(200, const <int>[]),
+        profileShellBuilder: (context) => Column(
+          children: [
+            Focus(focusNode: sidebar, child: const SizedBox(height: 10, width: 10)),
+            Focus(focusNode: content, autofocus: true, child: const SizedBox(height: 10, width: 10)),
           ],
-          child: MaterialApp(
-            navigatorKey: rootNavigator,
-            home: ProfileSessionScreen.forTesting(
-              initialPromptHandled: true,
-              httpClientFactory: () => FakeHttpClient(200, const <int>[]),
-              profileShellBuilder: (context) => Column(
-                children: [
-                  Focus(focusNode: sidebar, child: const SizedBox(height: 10, width: 10)),
-                  Focus(focusNode: content, autofocus: true, child: const SizedBox(height: 10, width: 10)),
-                ],
-              ),
-            ),
-          ),
         ),
       );
       await tester.pump();
@@ -294,6 +210,104 @@ void main() {
 void _expectCloseCount(Iterable<FakeHttpClient> clients, int expected) {
   for (final client in clients) {
     expect(client.closeCount, expected);
+  }
+}
+
+class _SessionGraph {
+  _SessionGraph._({
+    required this.db,
+    required this.profileRegistry,
+    required this.connectionRegistry,
+    required this.profileConnectionRegistry,
+    required this.storage,
+    required this.plexHome,
+    required this.activeProfile,
+    required this.serverManager,
+    required this.multiServer,
+    required this.offlineWatch,
+  });
+
+  final AppDatabase db;
+  final ProfileRegistry profileRegistry;
+  final ConnectionRegistry connectionRegistry;
+  final ProfileConnectionRegistry profileConnectionRegistry;
+  final StorageService storage;
+  final _FakePlexHomeService plexHome;
+  final ActiveProfileProvider activeProfile;
+  final MultiServerManager serverManager;
+  final MultiServerProvider multiServer;
+  final OfflineWatchSyncService offlineWatch;
+
+  static Future<_SessionGraph> create() async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final profileRegistry = ProfileRegistry(db);
+    final connectionRegistry = ConnectionRegistry(db);
+    final profileConnectionRegistry = ProfileConnectionRegistry(db);
+    final storage = await StorageService.getInstance();
+    final plexHome = _FakePlexHomeService(
+      connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
+      storage: storage,
+    );
+    final serverManager = MultiServerManager();
+    return _SessionGraph._(
+      db: db,
+      profileRegistry: profileRegistry,
+      connectionRegistry: connectionRegistry,
+      profileConnectionRegistry: profileConnectionRegistry,
+      storage: storage,
+      plexHome: plexHome,
+      activeProfile: ActiveProfileProvider(
+        registry: profileRegistry,
+        plexHome: plexHome,
+        connections: connectionRegistry,
+        profileConnections: profileConnectionRegistry,
+        storage: storage,
+      ),
+      serverManager: serverManager,
+      multiServer: testMultiServerProvider(serverManager),
+      // The session tree instantiates MusicPlaybackServiceImpl (the mini-player
+      // overlay watches it), which needs the database + offline watch service.
+      offlineWatch: OfflineWatchSyncService(database: db, serverManager: serverManager),
+    );
+  }
+
+  Future<void> pump(
+    WidgetTester tester, {
+    required FakeHttpClient Function() httpClientFactory,
+    required WidgetBuilder profileShellBuilder,
+    GlobalKey<NavigatorState>? navigatorKey,
+  }) => tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        Provider<StorageService>.value(value: storage),
+        Provider<AppDatabase>.value(value: db),
+        Provider<ConnectionRegistry>.value(value: connectionRegistry),
+        Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
+        Provider<PlexHomeService>.value(value: plexHome),
+        ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+        ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+        ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+      ],
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        home: ProfileSessionScreen.forTesting(
+          initialPromptHandled: true,
+          httpClientFactory: httpClientFactory,
+          profileShellBuilder: profileShellBuilder,
+        ),
+      ),
+    ),
+  );
+
+  Future<void> dispose() async {
+    await activeProfile.resetForTesting();
+    activeProfile.dispose();
+    multiServer.dispose();
+    serverManager.dispose();
+    await plexHome.dispose();
+    offlineWatch.dispose();
+    await db.close();
   }
 }
 

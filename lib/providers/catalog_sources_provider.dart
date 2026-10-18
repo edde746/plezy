@@ -4,6 +4,8 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_rating.dart';
 import '../media/media_server_client.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -15,6 +17,7 @@ import '../profiles/profile.dart';
 import '../services/base_shared_preferences_service.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
 import '../services/catalog/catalog_source.dart';
+import '../services/catalog/community_ratings.dart';
 import '../services/catalog/anilist_catalog_source.dart';
 import '../services/catalog/mdblist_catalog_source.dart';
 import '../services/catalog/mal_catalog_source.dart';
@@ -122,13 +125,18 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   CatalogSourceId? _preferredSourceId;
   String _activeUserUuid = '';
 
-  // Per-item watchlist candidates (see [watchlistCandidatesFor]): the future
-  // cache dedups/retries loads, the results map gives menu surfaces
-  // synchronous access for labeling, and the generation guard keeps a load
-  // that outlives a source rebind from repopulating disposed sources.
-  final KeyedFutureCache<String, List<WatchlistCandidate>> _watchlistCandidateLoads = KeyedFutureCache();
+  // Per-item watchlist candidates (see [watchlistCandidatesFor]): the
+  // coalescer keeps one load in flight per item, the results map gives menu
+  // surfaces synchronous access for labeling, and the generation guard keeps
+  // a load that outlives a source rebind from repopulating disposed sources.
+  final KeyedFutureCoalescer<String, List<WatchlistCandidate>> _watchlistCandidateLoads = KeyedFutureCoalescer();
   final Map<String, List<WatchlistCandidate>> _watchlistCandidateResults = {};
   int _watchlistCandidateGeneration = 0;
+
+  // Community scores for the detail screens (see [communityRatingsForLibraryItem]).
+  // Not invalidated on rebind: the scores are public, and only connected
+  // providers are ever asked.
+  final CommunityRatingsLoader _communityRatings = CommunityRatingsLoader();
 
   List<CatalogSource> get connectedSources => [
     ?_trakt.source,
@@ -182,17 +190,26 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   /// watchlist-capable source the item exists in, with its per-source ids.
   /// Shared by the detail screen and card context menus so an item resolves
   /// its external ids at most once per session. Failures are not cached (the
-  /// next call retries); a null [client] (server offline) resolves to
-  /// nothing without caching the miss. Invalidated when sources rebind.
+  /// next call retries) — nor is an answer missing a source that failed to
+  /// resolve, which would otherwise hide that source's action for the rest of
+  /// the session; a null [client] (server offline) resolves to nothing without
+  /// caching the miss. Invalidated when sources rebind.
   Future<List<WatchlistCandidate>> watchlistCandidatesFor(MediaItem item, {required MediaServerClient? client}) {
-    final cached = _watchlistCandidateResults[_watchlistItemKey(item)];
+    final key = _watchlistItemKey(item);
+    final cached = _watchlistCandidateResults[key];
     if (cached != null) return Future.value(cached);
     if (client == null) return Future.value(const []);
     final generation = _watchlistCandidateGeneration;
-    return _watchlistCandidateLoads.run(_watchlistItemKey(item), () async {
-      final candidates = await resolveWatchlistCandidates(client: client, item: item, sources: watchlistCapableSources);
-      if (!isDisposed && generation == _watchlistCandidateGeneration) {
-        _watchlistCandidateResults[_watchlistItemKey(item)] = candidates;
+    return _watchlistCandidateLoads.run(key, () async {
+      var complete = true;
+      final candidates = await resolveWatchlistCandidates(
+        client: client,
+        item: item,
+        sources: watchlistCapableSources,
+        onSourceFailed: (_) => complete = false,
+      );
+      if (complete && !isDisposed && generation == _watchlistCandidateGeneration) {
+        _watchlistCandidateResults[key] = candidates;
       }
       return candidates;
     });
@@ -208,6 +225,50 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     _watchlistCandidateGeneration++;
     _watchlistCandidateLoads.clear();
     _watchlistCandidateResults.clear();
+  }
+
+  /// The connected trackers' community scores for a library [item], growing
+  /// as each answers (see [CommunityRatingsLoader.load]). Each tracker's ids
+  /// come from [watchlistCandidatesFor] — every tracker with scores also has
+  /// a watchlist — so the item's external ids are fetched once for both, and
+  /// only when a tracker is connected. Movies and shows only: the trackers
+  /// score whole titles.
+  Stream<List<MediaRatingSource>> communityRatingsForLibraryItem(MediaItem item, {required MediaServerClient? client}) {
+    if (item.kind != MediaKind.movie && item.kind != MediaKind.show) return const Stream.empty();
+    Future<List<WatchlistCandidate>>? candidates;
+    return _communityRatings.load(item.kind, connectedSources, (source) async {
+      final resolved = await (candidates ??= watchlistCandidatesFor(item, client: client));
+      return resolved.firstWhereOrNull((candidate) => candidate.source.id == source.id)?.ids;
+    });
+  }
+
+  /// The connected trackers' community scores for a catalog [item]. A tracker
+  /// with a score of its own is not asked about its own items — their detail
+  /// already carries that score as the headline — and another tracker's copy
+  /// of it (MDBList's Trakt score on a Trakt item) is dropped; MDBList, which
+  /// has none, is asked about its own items too.
+  Stream<List<MediaRatingSource>> communityRatingsForCatalogItem(CatalogItem item) {
+    if (item.kind != MediaKind.movie && item.kind != MediaKind.show) return const Stream.empty();
+    final ownKey = communityRatingKeyFor(item.source);
+    return _communityRatings
+        .load(
+          item.kind,
+          [
+            for (final source in connectedSources)
+              if (ownKey == null || source.id != item.source) source,
+          ],
+          // A source that cannot place the item still gets its native ids
+          // (an AniList item's MAL id), which are all a fetcher reads.
+          (source) async => item.ids.mergedWith(
+            await source.resolveItemIds(item.kind, item.ids.toExternalIds()) ?? const CatalogItemIds(),
+          ),
+        )
+        .map(
+          (ratings) => [
+            for (final rating in ratings)
+              if (rating.source != ownKey) rating,
+          ],
+        );
   }
 
   /// Hydrate the per-profile active-source preference and Plex session.

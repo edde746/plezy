@@ -68,6 +68,10 @@ class CatalogItemIds {
     return null;
   }
 
+  /// [canonicalKey] namespaced by [kind], as [CatalogItem.identityKey] exposes
+  /// it for a built item.
+  String identityKeyFor(MediaKind kind) => '${kind.id}/$canonicalKey';
+
   /// Identity of *this* entry, preferring provider-native entry ids over the
   /// series ids it shares with its own other seasons.
   ///
@@ -458,7 +462,7 @@ class CatalogItem {
   );
 
   /// Kind-namespaced identity key for caches and dedupe.
-  String get identityKey => '${kind.id}/${ids.canonicalKey}';
+  String get identityKey => ids.identityKeyFor(kind);
 
   /// The narrowest poster at least [targetPx] wide, falling back to the
   /// widest variant and finally to [posterUrl].

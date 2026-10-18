@@ -22,21 +22,23 @@ typedef LibraryEventChannelFactory = LibraryEventConnection Function(Uri uri);
 /// upgrade completed, so the socket never holds a half-open channel. The
 /// [WebSocketConnectAttempt] behind it owns the transport, so the deadline
 /// and [LibraryEventConnection.cancel] close a pending or late socket instead
-/// of abandoning it.
-LibraryEventChannelFactory libraryEventChannelFactory({Duration connectTimeout = const Duration(seconds: 10)}) =>
-    (uri) {
-      final attempt = WebSocketConnectAttempt(uri, connectTimeout: connectTimeout);
-      return (
-        channel: attempt.socket.then((webSocket) {
-          // Transport-level pings keep NAT mappings alive and surface a dead
-          // peer as a close event; app-level keepalive (MediaBrowser) rides
-          // on top.
-          webSocket.pingInterval = const Duration(seconds: 30);
-          return IOWebSocketChannel(webSocket);
-        }),
-        cancel: attempt.cancel,
-      );
-    };
+/// of abandoning it. [headers] go out with every upgrade request.
+LibraryEventChannelFactory libraryEventChannelFactory({
+  Duration connectTimeout = const Duration(seconds: 10),
+  Map<String, String>? headers,
+}) => (uri) {
+  final attempt = WebSocketConnectAttempt(uri, connectTimeout: connectTimeout, headers: headers);
+  return (
+    channel: attempt.socket.then((webSocket) {
+      // Transport-level pings keep NAT mappings alive and surface a dead
+      // peer as a close event; app-level keepalive (MediaBrowser) rides
+      // on top.
+      webSocket.pingInterval = const Duration(seconds: 30);
+      return IOWebSocketChannel(webSocket);
+    }),
+    cancel: attempt.cancel,
+  );
+};
 
 /// Reconnecting websocket base for one server's library-change push channel.
 ///

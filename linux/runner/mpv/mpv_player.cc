@@ -1050,19 +1050,39 @@ void MpvPlayer::RemoveTrackedSources() {
 }
 
 bool MpvPlayer::ProcessEvents() {
-  if (disposed_ || !mpv_) return false;
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+  // The substituted wait stands in for the core; see SetPropertyAsync.
+  const bool has_events = test_event_wait_ || mpv_;
+#else
+  const bool has_events = mpv_ != nullptr;
+#endif
+  if (disposed_ || !has_events) return false;
 
+  bool running = true;
   while (true) {
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+    mpv_event* event = test_event_wait_ ? test_event_wait_() : mpv_wait_event(mpv_, 0);
+#else
     mpv_event* event = mpv_wait_event(mpv_, 0);
+#endif
     if (event->event_id == MPV_EVENT_NONE) {
       break;
     }
     if (event->event_id == MPV_EVENT_SHUTDOWN) {
-      return false;
+      running = false;
+      break;
     }
+    // The pass already drains to MPV_EVENT_NONE, which is the drain the hold
+    // needs; see ErrorEndFileHold. A hold that reaches its limit is released
+    // there and the rest of the pass is delivered as it comes.
+    const bool began_hold = plezy::mpv_common::IsErrorEndFile(event) && held_events_.Begin();
     HandleMpvEvent(event);
+    if (!began_hold && held_events_.CountDequeued()) ReleaseHeldEvents();
   }
-  return true;
+  // However the pass ended: nothing held may surface in a later pass, behind
+  // messages mpv produced after it.
+  ReleaseHeldEvents();
+  return running;
 }
 
 void MpvPlayer::LogRecovery(const std::string& text) {
@@ -1312,12 +1332,7 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
     fl_value_append_take(list, fl_value_new_null());
   }
 
-  EventCallback callback;
-  {
-    std::lock_guard<std::mutex> lock(callback_mutex_);
-    callback = event_callback_;
-  }
-  if (callback) callback(list);
+  DeliverEvent(list, false);
   fl_value_unref(list);
 }
 
@@ -1364,13 +1379,31 @@ void MpvPlayer::SendEvent(const std::string& name, FlValue* data) {
     fl_value_set_string_take(event_map, "data", fl_value_ref(data));
   }
 
+  DeliverEvent(event_map, name == "log-message");
+  fl_value_unref(event_map);
+}
+
+void MpvPlayer::DeliverEvent(FlValue* message, bool is_log_message) {
+  if (held_events_.ShouldHold(is_log_message)) {
+    held_events_.Hold(fl_value_ref(message));
+    return;
+  }
   EventCallback callback;
   {
     std::lock_guard<std::mutex> lock(callback_mutex_);
     callback = event_callback_;
   }
-  if (callback) callback(event_map);
-  fl_value_unref(event_map);
+  if (callback) callback(message);
+}
+
+void MpvPlayer::ReleaseHeldEvents() {
+  // Each goes out through DeliverEvent, which reads the callback afresh: one
+  // that Dispose has already cleared drops the rest instead of sending them
+  // after teardown.
+  for (FlValue* message : held_events_.Release()) {
+    DeliverEvent(message, false);
+    fl_value_unref(message);
+  }
 }
 
 void MpvPlayer::ApplyPropertySequence(
@@ -1496,6 +1529,8 @@ void MpvPlayer::ConfigurePropertyWritesForTesting(PropertyWriteForTesting writer
 void MpvPlayer::ConfigurePropertyReadsForTesting(PropertyReadForTesting reader) {
   test_property_read_ = std::move(reader);
 }
+
+void MpvPlayer::ConfigureEventWaitsForTesting(EventWaitForTesting wait) { test_event_wait_ = std::move(wait); }
 
 MpvPlayer::AppliedOutputColourSpace MpvPlayer::AppliedOutputColourSpaceForTesting() const {
   return {applied_target_trc_, applied_target_prim_, applied_tone_mapping_, applied_target_peak_};

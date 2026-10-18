@@ -37,7 +37,6 @@ DateTime posterCacheExpiryFromResponse(Object? responseData, {required DateTime 
   }
 }
 
-/// Cached poster URL with expiry timestamp.
 class _CachedUrl {
   final String url;
   final DateTime expiresAt;

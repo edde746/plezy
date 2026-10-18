@@ -45,7 +45,7 @@ void main() {
         onSessionInvalidated: () => invalidated++,
       );
 
-      await expectLater(client.getMyUser(), throwsA(isA<TrackerApiException>()));
+      await expectLater(client.getMyUser(), throwsA(isA<TrackerAuthException>()));
 
       expect(invalidated, 0);
       expect(client.session.refreshToken, 'refresh-old');
@@ -60,9 +60,31 @@ void main() {
         onSessionInvalidated: () => invalidated++,
       );
 
-      await expectLater(client.getMyUser(), throwsA(isA<TrackerApiException>()));
+      await expectLater(client.getMyUser(), throwsA(isA<TrackerAuthException>()));
 
       expect(invalidated, 1);
+
+      client.dispose();
+    });
+
+    test('a transient refresh failure stays transient for the write queue', () async {
+      final client = buildClient(
+        onRefresh: () => http.Response('temporary outage', 500),
+        onSessionInvalidated: () => fail('a transient refresh failure must not invalidate the session'),
+      );
+
+      Object? thrown;
+      try {
+        await client.getMyUser();
+      } catch (error) {
+        thrown = error;
+      }
+
+      expect(
+        isTrackerFailureTransient(thrown!),
+        isTrue,
+        reason: 'the queue must defer the write instead of spending one of its attempts',
+      );
 
       client.dispose();
     });

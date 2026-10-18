@@ -10,6 +10,8 @@ const browseGroupingArtists = 'artists';
 const browseGroupingAlbums = 'albums';
 const browseGroupingTracks = 'tracks';
 const browseGroupingFolders = 'folders';
+const browseGroupingLibrary = 'library';
+const browseGroupingCollections = 'collections';
 
 List<String> libraryBrowseGroupingOptions(MediaLibrary library, {required bool canGroupByFolders}) {
   if (library.isShared) {

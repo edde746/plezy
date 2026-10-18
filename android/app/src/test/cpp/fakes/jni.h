@@ -54,6 +54,7 @@ class JNIEnv {
   bool fail_next_write = false;
 
   JavaVM* vm = nullptr;
+  _jclass found_class;
   jobject (*on_new_global_ref)(jobject) = nullptr;
   void (*on_delete_global_ref)(jobject) = nullptr;
   jboolean (*on_is_same_object)(jobject, jobject) = nullptr;
@@ -65,6 +66,12 @@ class JNIEnv {
   }
 
   jobject NewGlobalRef(jobject object) { return on_new_global_ref ? on_new_global_ref(object) : object; }
+
+  // Every class resolves to the same handle: the test asserts only that
+  // main.cpp registers what it finds.
+  jclass FindClass(const char*) { return &found_class; }
+
+  void ExceptionClear() { exception_pending = false; }
 
   void DeleteGlobalRef(jobject object) {
     if (on_delete_global_ref) on_delete_global_ref(object);

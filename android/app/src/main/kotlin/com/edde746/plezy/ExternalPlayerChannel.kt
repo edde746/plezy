@@ -2,9 +2,11 @@ package com.edde746.plezy
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import androidx.core.content.FileProvider
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -40,6 +42,15 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
     private const val API_VIMU_RESULT_ID = "net.gtvbox.videoplayer.result"
     private const val API_VIMU_RESULT_ERROR = 4
     private const val API_VIMU_RESULT_PLAYBACK_COMPLETED = 1
+
+    // MX Player's subtitle API; mpv-android reads `subs` and `subs.enable`,
+    // Just Player `subs`, `subs.name` and `subs.enable`. VLC only takes
+    // `subtitles_location`, which it opens as a local file path, so remote
+    // sidecars cannot reach it that way.
+    private const val API_SUBS = "subs"
+    private const val API_SUBS_NAME = "subs.name"
+    private const val API_SUBS_FILENAME = "subs.filename"
+    private const val API_SUBS_ENABLE = "subs.enable"
 
     private val positionExtras = arrayOf(API_MX_RESULT_POSITION, API_VLC_RESULT_POSITION)
     private val durationExtras = arrayOf(API_MX_RESULT_DURATION, API_VLC_RESULT_DURATION)
@@ -118,6 +129,7 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
       ?: emptyList()
     val title = call.argument<String>("title")?.trim()?.takeIf(String::isNotEmpty)
     val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
+    val subtitleArguments = call.argument<List<Any?>>("subtitles") ?: emptyList()
 
     if (filePath == null) {
       result.error("INVALID_ARGUMENT", "filePath is required", null)
@@ -130,12 +142,13 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
 
     try {
       val source = resolveSource(filePath)
+      val subtitles = subtitleArguments.mapNotNull(::resolveSubtitle)
       val targetPackages = if (packageNames.isEmpty()) listOf<String?>(null) else packageNames
       for (packageName in targetPackages) {
         try {
           pendingResult = result
           activity.startActivityForResult(
-            buildIntent(source, packageName, startPositionMs, title),
+            buildIntent(source, packageName, startPositionMs, title, subtitles),
             REQUEST_CODE
           )
           return
@@ -158,6 +171,8 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
 
   internal data class Source(val uri: Uri, val grantRead: Boolean, val fileName: String?)
 
+  internal data class Subtitle(val source: Source, val name: String?, val enabled: Boolean)
+
   private fun resolveSource(filePath: String): Source {
     if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
       val uri = Uri.parse(filePath)
@@ -174,11 +189,27 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
     return Source(uri, grantRead = true, fileName = file.name)
   }
 
+  private fun resolveSubtitle(argument: Any?): Subtitle? {
+    val map = argument as? Map<*, *> ?: return null
+    val location = (map["uri"] as? String)?.takeIf(String::isNotEmpty) ?: return null
+    val source = try {
+      resolveSource(location)
+    } catch (error: IllegalArgumentException) {
+      // FileProvider refuses a path outside its roots. Losing one subtitle
+      // must not cost the whole launch.
+      android.util.Log.w("ExternalPlayerChannel", "Skipping a subtitle FileProvider cannot share", error)
+      return null
+    }
+    val name = (map["name"] as? String)?.trim()?.takeIf(String::isNotEmpty)
+    return Subtitle(source, name, enabled = map["enabled"] == true)
+  }
+
   internal fun buildIntent(
     source: Source,
     packageName: String?,
     startPositionMs: Long,
-    title: String?
+    title: String?,
+    subtitles: List<Subtitle> = emptyList()
   ): Intent = Intent(Intent.ACTION_VIEW).apply {
     setDataAndType(source.uri, "video/*")
     if (source.grantRead) addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -199,5 +230,21 @@ internal class ExternalPlayerChannel(private val activity: Activity) {
       putExtra(API_VIMU_TITLE, it)
     }
     source.fileName?.let { putExtra(API_MX_FILENAME, it) }
+    if (subtitles.isNotEmpty()) {
+      putExtra(API_SUBS, Array<Parcelable>(subtitles.size) { subtitles[it].source.uri })
+      putExtra(API_SUBS_NAME, Array(subtitles.size) { subtitles[it].name ?: subtitles[it].source.fileName.orEmpty() })
+      putExtra(API_SUBS_FILENAME, Array(subtitles.size) { subtitles[it].source.fileName.orEmpty() })
+      putExtra(API_SUBS_ENABLE, subtitles.filter { it.enabled }.map<Subtitle, Parcelable> { it.source.uri }.toTypedArray())
+      // FLAG_GRANT_READ_URI_PERMISSION reaches the data URI and ClipData,
+      // never extras: a downloaded sidecar's content:// URI has to ride in
+      // ClipData too, or the player is refused when it opens the file.
+      val shared = subtitles.filter { it.source.grantRead }.map { it.source.uri }
+      if (shared.isNotEmpty()) {
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        clipData = ClipData.newRawUri(null, shared.first()).apply {
+          shared.drop(1).forEach { addItem(ClipData.Item(it)) }
+        }
+      }
+    }
   }
 }

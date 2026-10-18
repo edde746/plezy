@@ -153,6 +153,17 @@ class $DownloadedMediaTable extends DownloadedMedia
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _additionalPartPathsMeta =
+      const VerificationMeta('additionalPartPaths');
+  @override
+  late final GeneratedColumn<String> additionalPartPaths =
+      GeneratedColumn<String>(
+        'additional_part_paths',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _safRootUriMeta = const VerificationMeta(
     'safRootUri',
   );
@@ -243,6 +254,28 @@ class $DownloadedMediaTable extends DownloadedMedia
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _libraryIdMeta = const VerificationMeta(
+    'libraryId',
+  );
+  @override
+  late final GeneratedColumn<String> libraryId = GeneratedColumn<String>(
+    'library_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _libraryTitleMeta = const VerificationMeta(
+    'libraryTitle',
+  );
+  @override
+  late final GeneratedColumn<String> libraryTitle = GeneratedColumn<String>(
+    'library_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -258,6 +291,7 @@ class $DownloadedMediaTable extends DownloadedMedia
     totalBytes,
     downloadedBytes,
     videoFilePath,
+    additionalPartPaths,
     safRootUri,
     thumbPath,
     downloadedAt,
@@ -266,6 +300,8 @@ class $DownloadedMediaTable extends DownloadedMedia
     bgTaskId,
     mediaIndex,
     mediaSourceId,
+    libraryId,
+    libraryTitle,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -379,6 +415,15 @@ class $DownloadedMediaTable extends DownloadedMedia
         ),
       );
     }
+    if (data.containsKey('additional_part_paths')) {
+      context.handle(
+        _additionalPartPathsMeta,
+        additionalPartPaths.isAcceptableOrUnknown(
+          data['additional_part_paths']!,
+          _additionalPartPathsMeta,
+        ),
+      );
+    }
     if (data.containsKey('saf_root_uri')) {
       context.handle(
         _safRootUriMeta,
@@ -436,6 +481,21 @@ class $DownloadedMediaTable extends DownloadedMedia
         mediaSourceId.isAcceptableOrUnknown(
           data['media_source_id']!,
           _mediaSourceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('library_id')) {
+      context.handle(
+        _libraryIdMeta,
+        libraryId.isAcceptableOrUnknown(data['library_id']!, _libraryIdMeta),
+      );
+    }
+    if (data.containsKey('library_title')) {
+      context.handle(
+        _libraryTitleMeta,
+        libraryTitle.isAcceptableOrUnknown(
+          data['library_title']!,
+          _libraryTitleMeta,
         ),
       );
     }
@@ -500,6 +560,10 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.string,
         data['${effectivePrefix}video_file_path'],
       ),
+      additionalPartPaths: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}additional_part_paths'],
+      ),
       safRootUri: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}saf_root_uri'],
@@ -532,6 +596,14 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.string,
         data['${effectivePrefix}media_source_id'],
       ),
+      libraryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_id'],
+      ),
+      libraryTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_title'],
+      ),
     );
   }
 
@@ -556,6 +628,13 @@ class DownloadedMediaItem extends DataClass
   final int? totalBytes;
   final int downloadedBytes;
   final String? videoFilePath;
+
+  /// Stored paths of the files after the first when the downloaded version is
+  /// stacked across several files (Plex `Part 2`, `Part 3`), as a JSON array in
+  /// playback order. Each entry has the same stored form as [videoFilePath]
+  /// (relative path or SAF `content://` URI), or is null while that file is
+  /// not stored yet. Null for single-file downloads and rows from before v24.
+  final String? additionalPartPaths;
   final String? safRootUri;
   final String? thumbPath;
   final int? downloadedAt;
@@ -564,6 +643,13 @@ class DownloadedMediaItem extends DataClass
   final String? bgTaskId;
   final int mediaIndex;
   final String? mediaSourceId;
+
+  /// Owning library identity, stamped at enqueue time so downloads can be
+  /// grouped/filtered by library while offline. Plex items carry
+  /// librarySectionID/Title natively; Jellyfin resolves them via ancestors.
+  /// Null for rows enqueued before v23 or when resolution was skipped/failed.
+  final String? libraryId;
+  final String? libraryTitle;
   const DownloadedMediaItem({
     required this.id,
     required this.serverId,
@@ -578,6 +664,7 @@ class DownloadedMediaItem extends DataClass
     this.totalBytes,
     required this.downloadedBytes,
     this.videoFilePath,
+    this.additionalPartPaths,
     this.safRootUri,
     this.thumbPath,
     this.downloadedAt,
@@ -586,6 +673,8 @@ class DownloadedMediaItem extends DataClass
     this.bgTaskId,
     required this.mediaIndex,
     this.mediaSourceId,
+    this.libraryId,
+    this.libraryTitle,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -613,6 +702,9 @@ class DownloadedMediaItem extends DataClass
     if (!nullToAbsent || videoFilePath != null) {
       map['video_file_path'] = Variable<String>(videoFilePath);
     }
+    if (!nullToAbsent || additionalPartPaths != null) {
+      map['additional_part_paths'] = Variable<String>(additionalPartPaths);
+    }
     if (!nullToAbsent || safRootUri != null) {
       map['saf_root_uri'] = Variable<String>(safRootUri);
     }
@@ -632,6 +724,12 @@ class DownloadedMediaItem extends DataClass
     map['media_index'] = Variable<int>(mediaIndex);
     if (!nullToAbsent || mediaSourceId != null) {
       map['media_source_id'] = Variable<String>(mediaSourceId);
+    }
+    if (!nullToAbsent || libraryId != null) {
+      map['library_id'] = Variable<String>(libraryId);
+    }
+    if (!nullToAbsent || libraryTitle != null) {
+      map['library_title'] = Variable<String>(libraryTitle);
     }
     return map;
   }
@@ -661,6 +759,9 @@ class DownloadedMediaItem extends DataClass
       videoFilePath: videoFilePath == null && nullToAbsent
           ? const Value.absent()
           : Value(videoFilePath),
+      additionalPartPaths: additionalPartPaths == null && nullToAbsent
+          ? const Value.absent()
+          : Value(additionalPartPaths),
       safRootUri: safRootUri == null && nullToAbsent
           ? const Value.absent()
           : Value(safRootUri),
@@ -681,6 +782,12 @@ class DownloadedMediaItem extends DataClass
       mediaSourceId: mediaSourceId == null && nullToAbsent
           ? const Value.absent()
           : Value(mediaSourceId),
+      libraryId: libraryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(libraryId),
+      libraryTitle: libraryTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(libraryTitle),
     );
   }
 
@@ -705,6 +812,9 @@ class DownloadedMediaItem extends DataClass
       totalBytes: serializer.fromJson<int?>(json['totalBytes']),
       downloadedBytes: serializer.fromJson<int>(json['downloadedBytes']),
       videoFilePath: serializer.fromJson<String?>(json['videoFilePath']),
+      additionalPartPaths: serializer.fromJson<String?>(
+        json['additionalPartPaths'],
+      ),
       safRootUri: serializer.fromJson<String?>(json['safRootUri']),
       thumbPath: serializer.fromJson<String?>(json['thumbPath']),
       downloadedAt: serializer.fromJson<int?>(json['downloadedAt']),
@@ -713,6 +823,8 @@ class DownloadedMediaItem extends DataClass
       bgTaskId: serializer.fromJson<String?>(json['bgTaskId']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
       mediaSourceId: serializer.fromJson<String?>(json['mediaSourceId']),
+      libraryId: serializer.fromJson<String?>(json['libraryId']),
+      libraryTitle: serializer.fromJson<String?>(json['libraryTitle']),
     );
   }
   @override
@@ -732,6 +844,7 @@ class DownloadedMediaItem extends DataClass
       'totalBytes': serializer.toJson<int?>(totalBytes),
       'downloadedBytes': serializer.toJson<int>(downloadedBytes),
       'videoFilePath': serializer.toJson<String?>(videoFilePath),
+      'additionalPartPaths': serializer.toJson<String?>(additionalPartPaths),
       'safRootUri': serializer.toJson<String?>(safRootUri),
       'thumbPath': serializer.toJson<String?>(thumbPath),
       'downloadedAt': serializer.toJson<int?>(downloadedAt),
@@ -740,6 +853,8 @@ class DownloadedMediaItem extends DataClass
       'bgTaskId': serializer.toJson<String?>(bgTaskId),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
       'mediaSourceId': serializer.toJson<String?>(mediaSourceId),
+      'libraryId': serializer.toJson<String?>(libraryId),
+      'libraryTitle': serializer.toJson<String?>(libraryTitle),
     };
   }
 
@@ -757,6 +872,7 @@ class DownloadedMediaItem extends DataClass
     Value<int?> totalBytes = const Value.absent(),
     int? downloadedBytes,
     Value<String?> videoFilePath = const Value.absent(),
+    Value<String?> additionalPartPaths = const Value.absent(),
     Value<String?> safRootUri = const Value.absent(),
     Value<String?> thumbPath = const Value.absent(),
     Value<int?> downloadedAt = const Value.absent(),
@@ -765,6 +881,8 @@ class DownloadedMediaItem extends DataClass
     Value<String?> bgTaskId = const Value.absent(),
     int? mediaIndex,
     Value<String?> mediaSourceId = const Value.absent(),
+    Value<String?> libraryId = const Value.absent(),
+    Value<String?> libraryTitle = const Value.absent(),
   }) => DownloadedMediaItem(
     id: id ?? this.id,
     serverId: serverId ?? this.serverId,
@@ -787,6 +905,9 @@ class DownloadedMediaItem extends DataClass
     videoFilePath: videoFilePath.present
         ? videoFilePath.value
         : this.videoFilePath,
+    additionalPartPaths: additionalPartPaths.present
+        ? additionalPartPaths.value
+        : this.additionalPartPaths,
     safRootUri: safRootUri.present ? safRootUri.value : this.safRootUri,
     thumbPath: thumbPath.present ? thumbPath.value : this.thumbPath,
     downloadedAt: downloadedAt.present ? downloadedAt.value : this.downloadedAt,
@@ -797,6 +918,8 @@ class DownloadedMediaItem extends DataClass
     mediaSourceId: mediaSourceId.present
         ? mediaSourceId.value
         : this.mediaSourceId,
+    libraryId: libraryId.present ? libraryId.value : this.libraryId,
+    libraryTitle: libraryTitle.present ? libraryTitle.value : this.libraryTitle,
   );
   DownloadedMediaItem copyWithCompanion(DownloadedMediaCompanion data) {
     return DownloadedMediaItem(
@@ -825,6 +948,9 @@ class DownloadedMediaItem extends DataClass
       videoFilePath: data.videoFilePath.present
           ? data.videoFilePath.value
           : this.videoFilePath,
+      additionalPartPaths: data.additionalPartPaths.present
+          ? data.additionalPartPaths.value
+          : this.additionalPartPaths,
       safRootUri: data.safRootUri.present
           ? data.safRootUri.value
           : this.safRootUri,
@@ -845,6 +971,10 @@ class DownloadedMediaItem extends DataClass
       mediaSourceId: data.mediaSourceId.present
           ? data.mediaSourceId.value
           : this.mediaSourceId,
+      libraryId: data.libraryId.present ? data.libraryId.value : this.libraryId,
+      libraryTitle: data.libraryTitle.present
+          ? data.libraryTitle.value
+          : this.libraryTitle,
     );
   }
 
@@ -864,6 +994,7 @@ class DownloadedMediaItem extends DataClass
           ..write('totalBytes: $totalBytes, ')
           ..write('downloadedBytes: $downloadedBytes, ')
           ..write('videoFilePath: $videoFilePath, ')
+          ..write('additionalPartPaths: $additionalPartPaths, ')
           ..write('safRootUri: $safRootUri, ')
           ..write('thumbPath: $thumbPath, ')
           ..write('downloadedAt: $downloadedAt, ')
@@ -871,7 +1002,9 @@ class DownloadedMediaItem extends DataClass
           ..write('retryCount: $retryCount, ')
           ..write('bgTaskId: $bgTaskId, ')
           ..write('mediaIndex: $mediaIndex, ')
-          ..write('mediaSourceId: $mediaSourceId')
+          ..write('mediaSourceId: $mediaSourceId, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('libraryTitle: $libraryTitle')
           ..write(')'))
         .toString();
   }
@@ -891,6 +1024,7 @@ class DownloadedMediaItem extends DataClass
     totalBytes,
     downloadedBytes,
     videoFilePath,
+    additionalPartPaths,
     safRootUri,
     thumbPath,
     downloadedAt,
@@ -899,6 +1033,8 @@ class DownloadedMediaItem extends DataClass
     bgTaskId,
     mediaIndex,
     mediaSourceId,
+    libraryId,
+    libraryTitle,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -917,6 +1053,7 @@ class DownloadedMediaItem extends DataClass
           other.totalBytes == this.totalBytes &&
           other.downloadedBytes == this.downloadedBytes &&
           other.videoFilePath == this.videoFilePath &&
+          other.additionalPartPaths == this.additionalPartPaths &&
           other.safRootUri == this.safRootUri &&
           other.thumbPath == this.thumbPath &&
           other.downloadedAt == this.downloadedAt &&
@@ -924,7 +1061,9 @@ class DownloadedMediaItem extends DataClass
           other.retryCount == this.retryCount &&
           other.bgTaskId == this.bgTaskId &&
           other.mediaIndex == this.mediaIndex &&
-          other.mediaSourceId == this.mediaSourceId);
+          other.mediaSourceId == this.mediaSourceId &&
+          other.libraryId == this.libraryId &&
+          other.libraryTitle == this.libraryTitle);
 }
 
 class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
@@ -941,6 +1080,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<int?> totalBytes;
   final Value<int> downloadedBytes;
   final Value<String?> videoFilePath;
+  final Value<String?> additionalPartPaths;
   final Value<String?> safRootUri;
   final Value<String?> thumbPath;
   final Value<int?> downloadedAt;
@@ -949,6 +1089,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<String?> bgTaskId;
   final Value<int> mediaIndex;
   final Value<String?> mediaSourceId;
+  final Value<String?> libraryId;
+  final Value<String?> libraryTitle;
   const DownloadedMediaCompanion({
     this.id = const Value.absent(),
     this.serverId = const Value.absent(),
@@ -963,6 +1105,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.totalBytes = const Value.absent(),
     this.downloadedBytes = const Value.absent(),
     this.videoFilePath = const Value.absent(),
+    this.additionalPartPaths = const Value.absent(),
     this.safRootUri = const Value.absent(),
     this.thumbPath = const Value.absent(),
     this.downloadedAt = const Value.absent(),
@@ -971,6 +1114,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.mediaSourceId = const Value.absent(),
+    this.libraryId = const Value.absent(),
+    this.libraryTitle = const Value.absent(),
   });
   DownloadedMediaCompanion.insert({
     this.id = const Value.absent(),
@@ -986,6 +1131,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.totalBytes = const Value.absent(),
     this.downloadedBytes = const Value.absent(),
     this.videoFilePath = const Value.absent(),
+    this.additionalPartPaths = const Value.absent(),
     this.safRootUri = const Value.absent(),
     this.thumbPath = const Value.absent(),
     this.downloadedAt = const Value.absent(),
@@ -994,6 +1140,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.mediaSourceId = const Value.absent(),
+    this.libraryId = const Value.absent(),
+    this.libraryTitle = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -1013,6 +1161,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<int>? totalBytes,
     Expression<int>? downloadedBytes,
     Expression<String>? videoFilePath,
+    Expression<String>? additionalPartPaths,
     Expression<String>? safRootUri,
     Expression<String>? thumbPath,
     Expression<int>? downloadedAt,
@@ -1021,6 +1170,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<String>? bgTaskId,
     Expression<int>? mediaIndex,
     Expression<String>? mediaSourceId,
+    Expression<String>? libraryId,
+    Expression<String>? libraryTitle,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1037,6 +1188,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (totalBytes != null) 'total_bytes': totalBytes,
       if (downloadedBytes != null) 'downloaded_bytes': downloadedBytes,
       if (videoFilePath != null) 'video_file_path': videoFilePath,
+      if (additionalPartPaths != null)
+        'additional_part_paths': additionalPartPaths,
       if (safRootUri != null) 'saf_root_uri': safRootUri,
       if (thumbPath != null) 'thumb_path': thumbPath,
       if (downloadedAt != null) 'downloaded_at': downloadedAt,
@@ -1045,6 +1198,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (bgTaskId != null) 'bg_task_id': bgTaskId,
       if (mediaIndex != null) 'media_index': mediaIndex,
       if (mediaSourceId != null) 'media_source_id': mediaSourceId,
+      if (libraryId != null) 'library_id': libraryId,
+      if (libraryTitle != null) 'library_title': libraryTitle,
     });
   }
 
@@ -1062,6 +1217,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<int?>? totalBytes,
     Value<int>? downloadedBytes,
     Value<String?>? videoFilePath,
+    Value<String?>? additionalPartPaths,
     Value<String?>? safRootUri,
     Value<String?>? thumbPath,
     Value<int?>? downloadedAt,
@@ -1070,6 +1226,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<String?>? bgTaskId,
     Value<int>? mediaIndex,
     Value<String?>? mediaSourceId,
+    Value<String?>? libraryId,
+    Value<String?>? libraryTitle,
   }) {
     return DownloadedMediaCompanion(
       id: id ?? this.id,
@@ -1085,6 +1243,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       totalBytes: totalBytes ?? this.totalBytes,
       downloadedBytes: downloadedBytes ?? this.downloadedBytes,
       videoFilePath: videoFilePath ?? this.videoFilePath,
+      additionalPartPaths: additionalPartPaths ?? this.additionalPartPaths,
       safRootUri: safRootUri ?? this.safRootUri,
       thumbPath: thumbPath ?? this.thumbPath,
       downloadedAt: downloadedAt ?? this.downloadedAt,
@@ -1093,6 +1252,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       bgTaskId: bgTaskId ?? this.bgTaskId,
       mediaIndex: mediaIndex ?? this.mediaIndex,
       mediaSourceId: mediaSourceId ?? this.mediaSourceId,
+      libraryId: libraryId ?? this.libraryId,
+      libraryTitle: libraryTitle ?? this.libraryTitle,
     );
   }
 
@@ -1140,6 +1301,11 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (videoFilePath.present) {
       map['video_file_path'] = Variable<String>(videoFilePath.value);
     }
+    if (additionalPartPaths.present) {
+      map['additional_part_paths'] = Variable<String>(
+        additionalPartPaths.value,
+      );
+    }
     if (safRootUri.present) {
       map['saf_root_uri'] = Variable<String>(safRootUri.value);
     }
@@ -1164,6 +1330,12 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (mediaSourceId.present) {
       map['media_source_id'] = Variable<String>(mediaSourceId.value);
     }
+    if (libraryId.present) {
+      map['library_id'] = Variable<String>(libraryId.value);
+    }
+    if (libraryTitle.present) {
+      map['library_title'] = Variable<String>(libraryTitle.value);
+    }
     return map;
   }
 
@@ -1183,6 +1355,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('totalBytes: $totalBytes, ')
           ..write('downloadedBytes: $downloadedBytes, ')
           ..write('videoFilePath: $videoFilePath, ')
+          ..write('additionalPartPaths: $additionalPartPaths, ')
           ..write('safRootUri: $safRootUri, ')
           ..write('thumbPath: $thumbPath, ')
           ..write('downloadedAt: $downloadedAt, ')
@@ -1190,7 +1363,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('retryCount: $retryCount, ')
           ..write('bgTaskId: $bgTaskId, ')
           ..write('mediaIndex: $mediaIndex, ')
-          ..write('mediaSourceId: $mediaSourceId')
+          ..write('mediaSourceId: $mediaSourceId, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('libraryTitle: $libraryTitle')
           ..write(')'))
         .toString();
   }
@@ -4289,6 +4464,662 @@ class SyncRuleDownloadsCompanion extends UpdateCompanion<SyncRuleDownloadItem> {
   }
 }
 
+class $DownloadCollectionsTable extends DownloadCollections
+    with TableInfo<$DownloadCollectionsTable, DownloadCollectionItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DownloadCollectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+    'server_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _collectionIdMeta = const VerificationMeta(
+    'collectionId',
+  );
+  @override
+  late final GeneratedColumn<String> collectionId = GeneratedColumn<String>(
+    'collection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _memberIdsMeta = const VerificationMeta(
+    'memberIds',
+  );
+  @override
+  late final GeneratedColumn<String> memberIds = GeneratedColumn<String>(
+    'member_ids',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    profileId,
+    serverId,
+    collectionId,
+    memberIds,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'download_collections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DownloadCollectionItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('collection_id')) {
+      context.handle(
+        _collectionIdMeta,
+        collectionId.isAcceptableOrUnknown(
+          data['collection_id']!,
+          _collectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_collectionIdMeta);
+    }
+    if (data.containsKey('member_ids')) {
+      context.handle(
+        _memberIdsMeta,
+        memberIds.isAcceptableOrUnknown(data['member_ids']!, _memberIdsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_memberIdsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, serverId, collectionId};
+  @override
+  DownloadCollectionItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DownloadCollectionItem(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      collectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}collection_id'],
+      )!,
+      memberIds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}member_ids'],
+      )!,
+    );
+  }
+
+  @override
+  $DownloadCollectionsTable createAlias(String alias) {
+    return $DownloadCollectionsTable(attachedDatabase, alias);
+  }
+}
+
+class DownloadCollectionItem extends DataClass
+    implements Insertable<DownloadCollectionItem> {
+  final String profileId;
+  final String serverId;
+  final String collectionId;
+  final String memberIds;
+  const DownloadCollectionItem({
+    required this.profileId,
+    required this.serverId,
+    required this.collectionId,
+    required this.memberIds,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<String>(profileId);
+    map['server_id'] = Variable<String>(serverId);
+    map['collection_id'] = Variable<String>(collectionId);
+    map['member_ids'] = Variable<String>(memberIds);
+    return map;
+  }
+
+  DownloadCollectionsCompanion toCompanion(bool nullToAbsent) {
+    return DownloadCollectionsCompanion(
+      profileId: Value(profileId),
+      serverId: Value(serverId),
+      collectionId: Value(collectionId),
+      memberIds: Value(memberIds),
+    );
+  }
+
+  factory DownloadCollectionItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DownloadCollectionItem(
+      profileId: serializer.fromJson<String>(json['profileId']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      collectionId: serializer.fromJson<String>(json['collectionId']),
+      memberIds: serializer.fromJson<String>(json['memberIds']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<String>(profileId),
+      'serverId': serializer.toJson<String>(serverId),
+      'collectionId': serializer.toJson<String>(collectionId),
+      'memberIds': serializer.toJson<String>(memberIds),
+    };
+  }
+
+  DownloadCollectionItem copyWith({
+    String? profileId,
+    String? serverId,
+    String? collectionId,
+    String? memberIds,
+  }) => DownloadCollectionItem(
+    profileId: profileId ?? this.profileId,
+    serverId: serverId ?? this.serverId,
+    collectionId: collectionId ?? this.collectionId,
+    memberIds: memberIds ?? this.memberIds,
+  );
+  DownloadCollectionItem copyWithCompanion(DownloadCollectionsCompanion data) {
+    return DownloadCollectionItem(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      collectionId: data.collectionId.present
+          ? data.collectionId.value
+          : this.collectionId,
+      memberIds: data.memberIds.present ? data.memberIds.value : this.memberIds,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadCollectionItem(')
+          ..write('profileId: $profileId, ')
+          ..write('serverId: $serverId, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('memberIds: $memberIds')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(profileId, serverId, collectionId, memberIds);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DownloadCollectionItem &&
+          other.profileId == this.profileId &&
+          other.serverId == this.serverId &&
+          other.collectionId == this.collectionId &&
+          other.memberIds == this.memberIds);
+}
+
+class DownloadCollectionsCompanion
+    extends UpdateCompanion<DownloadCollectionItem> {
+  final Value<String> profileId;
+  final Value<String> serverId;
+  final Value<String> collectionId;
+  final Value<String> memberIds;
+  final Value<int> rowid;
+  const DownloadCollectionsCompanion({
+    this.profileId = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.collectionId = const Value.absent(),
+    this.memberIds = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DownloadCollectionsCompanion.insert({
+    required String profileId,
+    required String serverId,
+    required String collectionId,
+    required String memberIds,
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       serverId = Value(serverId),
+       collectionId = Value(collectionId),
+       memberIds = Value(memberIds);
+  static Insertable<DownloadCollectionItem> custom({
+    Expression<String>? profileId,
+    Expression<String>? serverId,
+    Expression<String>? collectionId,
+    Expression<String>? memberIds,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (serverId != null) 'server_id': serverId,
+      if (collectionId != null) 'collection_id': collectionId,
+      if (memberIds != null) 'member_ids': memberIds,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DownloadCollectionsCompanion copyWith({
+    Value<String>? profileId,
+    Value<String>? serverId,
+    Value<String>? collectionId,
+    Value<String>? memberIds,
+    Value<int>? rowid,
+  }) {
+    return DownloadCollectionsCompanion(
+      profileId: profileId ?? this.profileId,
+      serverId: serverId ?? this.serverId,
+      collectionId: collectionId ?? this.collectionId,
+      memberIds: memberIds ?? this.memberIds,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (collectionId.present) {
+      map['collection_id'] = Variable<String>(collectionId.value);
+    }
+    if (memberIds.present) {
+      map['member_ids'] = Variable<String>(memberIds.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadCollectionsCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('serverId: $serverId, ')
+          ..write('collectionId: $collectionId, ')
+          ..write('memberIds: $memberIds, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DownloadCollectionSyncsTable extends DownloadCollectionSyncs
+    with TableInfo<$DownloadCollectionSyncsTable, DownloadCollectionSyncItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DownloadCollectionSyncsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
+  @override
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+    'server_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncedAtMeta = const VerificationMeta(
+    'syncedAt',
+  );
+  @override
+  late final GeneratedColumn<int> syncedAt = GeneratedColumn<int>(
+    'synced_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _checkedIdsMeta = const VerificationMeta(
+    'checkedIds',
+  );
+  @override
+  late final GeneratedColumn<String> checkedIds = GeneratedColumn<String>(
+    'checked_ids',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    profileId,
+    serverId,
+    syncedAt,
+    checkedIds,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'download_collection_syncs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DownloadCollectionSyncItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serverIdMeta);
+    }
+    if (data.containsKey('synced_at')) {
+      context.handle(
+        _syncedAtMeta,
+        syncedAt.isAcceptableOrUnknown(data['synced_at']!, _syncedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_syncedAtMeta);
+    }
+    if (data.containsKey('checked_ids')) {
+      context.handle(
+        _checkedIdsMeta,
+        checkedIds.isAcceptableOrUnknown(data['checked_ids']!, _checkedIdsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_checkedIdsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, serverId};
+  @override
+  DownloadCollectionSyncItem map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DownloadCollectionSyncItem(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      syncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}synced_at'],
+      )!,
+      checkedIds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}checked_ids'],
+      )!,
+    );
+  }
+
+  @override
+  $DownloadCollectionSyncsTable createAlias(String alias) {
+    return $DownloadCollectionSyncsTable(attachedDatabase, alias);
+  }
+}
+
+class DownloadCollectionSyncItem extends DataClass
+    implements Insertable<DownloadCollectionSyncItem> {
+  final String profileId;
+  final String serverId;
+  final int syncedAt;
+  final String checkedIds;
+  const DownloadCollectionSyncItem({
+    required this.profileId,
+    required this.serverId,
+    required this.syncedAt,
+    required this.checkedIds,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<String>(profileId);
+    map['server_id'] = Variable<String>(serverId);
+    map['synced_at'] = Variable<int>(syncedAt);
+    map['checked_ids'] = Variable<String>(checkedIds);
+    return map;
+  }
+
+  DownloadCollectionSyncsCompanion toCompanion(bool nullToAbsent) {
+    return DownloadCollectionSyncsCompanion(
+      profileId: Value(profileId),
+      serverId: Value(serverId),
+      syncedAt: Value(syncedAt),
+      checkedIds: Value(checkedIds),
+    );
+  }
+
+  factory DownloadCollectionSyncItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DownloadCollectionSyncItem(
+      profileId: serializer.fromJson<String>(json['profileId']),
+      serverId: serializer.fromJson<String>(json['serverId']),
+      syncedAt: serializer.fromJson<int>(json['syncedAt']),
+      checkedIds: serializer.fromJson<String>(json['checkedIds']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<String>(profileId),
+      'serverId': serializer.toJson<String>(serverId),
+      'syncedAt': serializer.toJson<int>(syncedAt),
+      'checkedIds': serializer.toJson<String>(checkedIds),
+    };
+  }
+
+  DownloadCollectionSyncItem copyWith({
+    String? profileId,
+    String? serverId,
+    int? syncedAt,
+    String? checkedIds,
+  }) => DownloadCollectionSyncItem(
+    profileId: profileId ?? this.profileId,
+    serverId: serverId ?? this.serverId,
+    syncedAt: syncedAt ?? this.syncedAt,
+    checkedIds: checkedIds ?? this.checkedIds,
+  );
+  DownloadCollectionSyncItem copyWithCompanion(
+    DownloadCollectionSyncsCompanion data,
+  ) {
+    return DownloadCollectionSyncItem(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
+      checkedIds: data.checkedIds.present
+          ? data.checkedIds.value
+          : this.checkedIds,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadCollectionSyncItem(')
+          ..write('profileId: $profileId, ')
+          ..write('serverId: $serverId, ')
+          ..write('syncedAt: $syncedAt, ')
+          ..write('checkedIds: $checkedIds')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(profileId, serverId, syncedAt, checkedIds);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DownloadCollectionSyncItem &&
+          other.profileId == this.profileId &&
+          other.serverId == this.serverId &&
+          other.syncedAt == this.syncedAt &&
+          other.checkedIds == this.checkedIds);
+}
+
+class DownloadCollectionSyncsCompanion
+    extends UpdateCompanion<DownloadCollectionSyncItem> {
+  final Value<String> profileId;
+  final Value<String> serverId;
+  final Value<int> syncedAt;
+  final Value<String> checkedIds;
+  final Value<int> rowid;
+  const DownloadCollectionSyncsCompanion({
+    this.profileId = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.syncedAt = const Value.absent(),
+    this.checkedIds = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DownloadCollectionSyncsCompanion.insert({
+    required String profileId,
+    required String serverId,
+    required int syncedAt,
+    required String checkedIds,
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       serverId = Value(serverId),
+       syncedAt = Value(syncedAt),
+       checkedIds = Value(checkedIds);
+  static Insertable<DownloadCollectionSyncItem> custom({
+    Expression<String>? profileId,
+    Expression<String>? serverId,
+    Expression<int>? syncedAt,
+    Expression<String>? checkedIds,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (serverId != null) 'server_id': serverId,
+      if (syncedAt != null) 'synced_at': syncedAt,
+      if (checkedIds != null) 'checked_ids': checkedIds,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DownloadCollectionSyncsCompanion copyWith({
+    Value<String>? profileId,
+    Value<String>? serverId,
+    Value<int>? syncedAt,
+    Value<String>? checkedIds,
+    Value<int>? rowid,
+  }) {
+    return DownloadCollectionSyncsCompanion(
+      profileId: profileId ?? this.profileId,
+      serverId: serverId ?? this.serverId,
+      syncedAt: syncedAt ?? this.syncedAt,
+      checkedIds: checkedIds ?? this.checkedIds,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (syncedAt.present) {
+      map['synced_at'] = Variable<int>(syncedAt.value);
+    }
+    if (checkedIds.present) {
+      map['checked_ids'] = Variable<String>(checkedIds.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadCollectionSyncsCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('serverId: $serverId, ')
+          ..write('syncedAt: $syncedAt, ')
+          ..write('checkedIds: $checkedIds, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ConnectionsTable extends Connections
     with TableInfo<$ConnectionsTable, ConnectionRow> {
   @override
@@ -6424,6 +7255,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncRulesTable syncRules = $SyncRulesTable(this);
   late final $SyncRuleDownloadsTable syncRuleDownloads =
       $SyncRuleDownloadsTable(this);
+  late final $DownloadCollectionsTable downloadCollections =
+      $DownloadCollectionsTable(this);
+  late final $DownloadCollectionSyncsTable downloadCollectionSyncs =
+      $DownloadCollectionSyncsTable(this);
   late final $ConnectionsTable connections = $ConnectionsTable(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $ProfileConnectionsTable profileConnections =
@@ -6497,6 +7332,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     offlineWatchProgress,
     syncRules,
     syncRuleDownloads,
+    downloadCollections,
+    downloadCollectionSyncs,
     connections,
     profiles,
     profileConnections,
@@ -6550,6 +7387,7 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<int?> totalBytes,
       Value<int> downloadedBytes,
       Value<String?> videoFilePath,
+      Value<String?> additionalPartPaths,
       Value<String?> safRootUri,
       Value<String?> thumbPath,
       Value<int?> downloadedAt,
@@ -6558,6 +7396,8 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
       Value<String?> mediaSourceId,
+      Value<String?> libraryId,
+      Value<String?> libraryTitle,
     });
 typedef $$DownloadedMediaTableUpdateCompanionBuilder =
     DownloadedMediaCompanion Function({
@@ -6574,6 +7414,7 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<int?> totalBytes,
       Value<int> downloadedBytes,
       Value<String?> videoFilePath,
+      Value<String?> additionalPartPaths,
       Value<String?> safRootUri,
       Value<String?> thumbPath,
       Value<int?> downloadedAt,
@@ -6582,6 +7423,8 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
       Value<String?> mediaSourceId,
+      Value<String?> libraryId,
+      Value<String?> libraryTitle,
     });
 
 class $$DownloadedMediaTableFilterComposer
@@ -6658,6 +7501,11 @@ class $$DownloadedMediaTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get additionalPartPaths => $composableBuilder(
+    column: $table.additionalPartPaths,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get safRootUri => $composableBuilder(
     column: $table.safRootUri,
     builder: (column) => ColumnFilters(column),
@@ -6695,6 +7543,16 @@ class $$DownloadedMediaTableFilterComposer
 
   ColumnFilters<String> get mediaSourceId => $composableBuilder(
     column: $table.mediaSourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryTitle => $composableBuilder(
+    column: $table.libraryTitle,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6773,6 +7631,11 @@ class $$DownloadedMediaTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get additionalPartPaths => $composableBuilder(
+    column: $table.additionalPartPaths,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get safRootUri => $composableBuilder(
     column: $table.safRootUri,
     builder: (column) => ColumnOrderings(column),
@@ -6810,6 +7673,16 @@ class $$DownloadedMediaTableOrderingComposer
 
   ColumnOrderings<String> get mediaSourceId => $composableBuilder(
     column: $table.mediaSourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get libraryTitle => $composableBuilder(
+    column: $table.libraryTitle,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -6874,6 +7747,11 @@ class $$DownloadedMediaTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get additionalPartPaths => $composableBuilder(
+    column: $table.additionalPartPaths,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get safRootUri => $composableBuilder(
     column: $table.safRootUri,
     builder: (column) => column,
@@ -6907,6 +7785,14 @@ class $$DownloadedMediaTableAnnotationComposer
 
   GeneratedColumn<String> get mediaSourceId => $composableBuilder(
     column: $table.mediaSourceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get libraryId =>
+      $composableBuilder(column: $table.libraryId, builder: (column) => column);
+
+  GeneratedColumn<String> get libraryTitle => $composableBuilder(
+    column: $table.libraryTitle,
     builder: (column) => column,
   );
 }
@@ -6961,6 +7847,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int?> totalBytes = const Value.absent(),
                 Value<int> downloadedBytes = const Value.absent(),
                 Value<String?> videoFilePath = const Value.absent(),
+                Value<String?> additionalPartPaths = const Value.absent(),
                 Value<String?> safRootUri = const Value.absent(),
                 Value<String?> thumbPath = const Value.absent(),
                 Value<int?> downloadedAt = const Value.absent(),
@@ -6969,6 +7856,8 @@ class $$DownloadedMediaTableTableManager
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String?> mediaSourceId = const Value.absent(),
+                Value<String?> libraryId = const Value.absent(),
+                Value<String?> libraryTitle = const Value.absent(),
               }) => DownloadedMediaCompanion(
                 id: id,
                 serverId: serverId,
@@ -6983,6 +7872,7 @@ class $$DownloadedMediaTableTableManager
                 totalBytes: totalBytes,
                 downloadedBytes: downloadedBytes,
                 videoFilePath: videoFilePath,
+                additionalPartPaths: additionalPartPaths,
                 safRootUri: safRootUri,
                 thumbPath: thumbPath,
                 downloadedAt: downloadedAt,
@@ -6991,6 +7881,8 @@ class $$DownloadedMediaTableTableManager
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
                 mediaSourceId: mediaSourceId,
+                libraryId: libraryId,
+                libraryTitle: libraryTitle,
               ),
           createCompanionCallback:
               ({
@@ -7007,6 +7899,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int?> totalBytes = const Value.absent(),
                 Value<int> downloadedBytes = const Value.absent(),
                 Value<String?> videoFilePath = const Value.absent(),
+                Value<String?> additionalPartPaths = const Value.absent(),
                 Value<String?> safRootUri = const Value.absent(),
                 Value<String?> thumbPath = const Value.absent(),
                 Value<int?> downloadedAt = const Value.absent(),
@@ -7015,6 +7908,8 @@ class $$DownloadedMediaTableTableManager
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String?> mediaSourceId = const Value.absent(),
+                Value<String?> libraryId = const Value.absent(),
+                Value<String?> libraryTitle = const Value.absent(),
               }) => DownloadedMediaCompanion.insert(
                 id: id,
                 serverId: serverId,
@@ -7029,6 +7924,7 @@ class $$DownloadedMediaTableTableManager
                 totalBytes: totalBytes,
                 downloadedBytes: downloadedBytes,
                 videoFilePath: videoFilePath,
+                additionalPartPaths: additionalPartPaths,
                 safRootUri: safRootUri,
                 thumbPath: thumbPath,
                 downloadedAt: downloadedAt,
@@ -7037,6 +7933,8 @@ class $$DownloadedMediaTableTableManager
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
                 mediaSourceId: mediaSourceId,
+                libraryId: libraryId,
+                libraryTitle: libraryTitle,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -8856,6 +9754,407 @@ typedef $$SyncRuleDownloadsTableProcessedTableManager =
       SyncRuleDownloadItem,
       PrefetchHooks Function({bool syncRuleId})
     >;
+typedef $$DownloadCollectionsTableCreateCompanionBuilder =
+    DownloadCollectionsCompanion Function({
+      required String profileId,
+      required String serverId,
+      required String collectionId,
+      required String memberIds,
+      Value<int> rowid,
+    });
+typedef $$DownloadCollectionsTableUpdateCompanionBuilder =
+    DownloadCollectionsCompanion Function({
+      Value<String> profileId,
+      Value<String> serverId,
+      Value<String> collectionId,
+      Value<String> memberIds,
+      Value<int> rowid,
+    });
+
+class $$DownloadCollectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $DownloadCollectionsTable> {
+  $$DownloadCollectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get collectionId => $composableBuilder(
+    column: $table.collectionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get memberIds => $composableBuilder(
+    column: $table.memberIds,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DownloadCollectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DownloadCollectionsTable> {
+  $$DownloadCollectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get collectionId => $composableBuilder(
+    column: $table.collectionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get memberIds => $composableBuilder(
+    column: $table.memberIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DownloadCollectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DownloadCollectionsTable> {
+  $$DownloadCollectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
+
+  GeneratedColumn<String> get collectionId => $composableBuilder(
+    column: $table.collectionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get memberIds =>
+      $composableBuilder(column: $table.memberIds, builder: (column) => column);
+}
+
+class $$DownloadCollectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DownloadCollectionsTable,
+          DownloadCollectionItem,
+          $$DownloadCollectionsTableFilterComposer,
+          $$DownloadCollectionsTableOrderingComposer,
+          $$DownloadCollectionsTableAnnotationComposer,
+          $$DownloadCollectionsTableCreateCompanionBuilder,
+          $$DownloadCollectionsTableUpdateCompanionBuilder,
+          (
+            DownloadCollectionItem,
+            BaseReferences<
+              _$AppDatabase,
+              $DownloadCollectionsTable,
+              DownloadCollectionItem
+            >,
+          ),
+          DownloadCollectionItem,
+          PrefetchHooks Function()
+        > {
+  $$DownloadCollectionsTableTableManager(
+    _$AppDatabase db,
+    $DownloadCollectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DownloadCollectionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DownloadCollectionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DownloadCollectionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> profileId = const Value.absent(),
+                Value<String> serverId = const Value.absent(),
+                Value<String> collectionId = const Value.absent(),
+                Value<String> memberIds = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadCollectionsCompanion(
+                profileId: profileId,
+                serverId: serverId,
+                collectionId: collectionId,
+                memberIds: memberIds,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileId,
+                required String serverId,
+                required String collectionId,
+                required String memberIds,
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadCollectionsCompanion.insert(
+                profileId: profileId,
+                serverId: serverId,
+                collectionId: collectionId,
+                memberIds: memberIds,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DownloadCollectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DownloadCollectionsTable,
+      DownloadCollectionItem,
+      $$DownloadCollectionsTableFilterComposer,
+      $$DownloadCollectionsTableOrderingComposer,
+      $$DownloadCollectionsTableAnnotationComposer,
+      $$DownloadCollectionsTableCreateCompanionBuilder,
+      $$DownloadCollectionsTableUpdateCompanionBuilder,
+      (
+        DownloadCollectionItem,
+        BaseReferences<
+          _$AppDatabase,
+          $DownloadCollectionsTable,
+          DownloadCollectionItem
+        >,
+      ),
+      DownloadCollectionItem,
+      PrefetchHooks Function()
+    >;
+typedef $$DownloadCollectionSyncsTableCreateCompanionBuilder =
+    DownloadCollectionSyncsCompanion Function({
+      required String profileId,
+      required String serverId,
+      required int syncedAt,
+      required String checkedIds,
+      Value<int> rowid,
+    });
+typedef $$DownloadCollectionSyncsTableUpdateCompanionBuilder =
+    DownloadCollectionSyncsCompanion Function({
+      Value<String> profileId,
+      Value<String> serverId,
+      Value<int> syncedAt,
+      Value<String> checkedIds,
+      Value<int> rowid,
+    });
+
+class $$DownloadCollectionSyncsTableFilterComposer
+    extends Composer<_$AppDatabase, $DownloadCollectionSyncsTable> {
+  $$DownloadCollectionSyncsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncedAt => $composableBuilder(
+    column: $table.syncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get checkedIds => $composableBuilder(
+    column: $table.checkedIds,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DownloadCollectionSyncsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DownloadCollectionSyncsTable> {
+  $$DownloadCollectionSyncsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncedAt => $composableBuilder(
+    column: $table.syncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get checkedIds => $composableBuilder(
+    column: $table.checkedIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DownloadCollectionSyncsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DownloadCollectionSyncsTable> {
+  $$DownloadCollectionSyncsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
+
+  GeneratedColumn<int> get syncedAt =>
+      $composableBuilder(column: $table.syncedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get checkedIds => $composableBuilder(
+    column: $table.checkedIds,
+    builder: (column) => column,
+  );
+}
+
+class $$DownloadCollectionSyncsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DownloadCollectionSyncsTable,
+          DownloadCollectionSyncItem,
+          $$DownloadCollectionSyncsTableFilterComposer,
+          $$DownloadCollectionSyncsTableOrderingComposer,
+          $$DownloadCollectionSyncsTableAnnotationComposer,
+          $$DownloadCollectionSyncsTableCreateCompanionBuilder,
+          $$DownloadCollectionSyncsTableUpdateCompanionBuilder,
+          (
+            DownloadCollectionSyncItem,
+            BaseReferences<
+              _$AppDatabase,
+              $DownloadCollectionSyncsTable,
+              DownloadCollectionSyncItem
+            >,
+          ),
+          DownloadCollectionSyncItem,
+          PrefetchHooks Function()
+        > {
+  $$DownloadCollectionSyncsTableTableManager(
+    _$AppDatabase db,
+    $DownloadCollectionSyncsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DownloadCollectionSyncsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$DownloadCollectionSyncsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DownloadCollectionSyncsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> profileId = const Value.absent(),
+                Value<String> serverId = const Value.absent(),
+                Value<int> syncedAt = const Value.absent(),
+                Value<String> checkedIds = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadCollectionSyncsCompanion(
+                profileId: profileId,
+                serverId: serverId,
+                syncedAt: syncedAt,
+                checkedIds: checkedIds,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileId,
+                required String serverId,
+                required int syncedAt,
+                required String checkedIds,
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadCollectionSyncsCompanion.insert(
+                profileId: profileId,
+                serverId: serverId,
+                syncedAt: syncedAt,
+                checkedIds: checkedIds,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DownloadCollectionSyncsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DownloadCollectionSyncsTable,
+      DownloadCollectionSyncItem,
+      $$DownloadCollectionSyncsTableFilterComposer,
+      $$DownloadCollectionSyncsTableOrderingComposer,
+      $$DownloadCollectionSyncsTableAnnotationComposer,
+      $$DownloadCollectionSyncsTableCreateCompanionBuilder,
+      $$DownloadCollectionSyncsTableUpdateCompanionBuilder,
+      (
+        DownloadCollectionSyncItem,
+        BaseReferences<
+          _$AppDatabase,
+          $DownloadCollectionSyncsTable,
+          DownloadCollectionSyncItem
+        >,
+      ),
+      DownloadCollectionSyncItem,
+      PrefetchHooks Function()
+    >;
 typedef $$ConnectionsTableCreateCompanionBuilder =
     ConnectionsCompanion Function({
       required String id,
@@ -10154,6 +11453,13 @@ class $AppDatabaseManager {
       $$SyncRulesTableTableManager(_db, _db.syncRules);
   $$SyncRuleDownloadsTableTableManager get syncRuleDownloads =>
       $$SyncRuleDownloadsTableTableManager(_db, _db.syncRuleDownloads);
+  $$DownloadCollectionsTableTableManager get downloadCollections =>
+      $$DownloadCollectionsTableTableManager(_db, _db.downloadCollections);
+  $$DownloadCollectionSyncsTableTableManager get downloadCollectionSyncs =>
+      $$DownloadCollectionSyncsTableTableManager(
+        _db,
+        _db.downloadCollectionSyncs,
+      );
   $$ConnectionsTableTableManager get connections =>
       $$ConnectionsTableTableManager(_db, _db.connections);
   $$ProfilesTableTableManager get profiles =>

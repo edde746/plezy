@@ -215,7 +215,7 @@ class ExoPlayerPlugin :
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
-    // MainActivity owns a self-created engine which is destroyed with the old
+    // PlezyActivity owns a self-created engine which is destroyed with the old
     // Activity. There is no cached-engine transfer contract, so retaining an
     // Activity-bound core here would orphan its views and native resources.
     teardownSession(clearActivity = true)
@@ -1171,7 +1171,7 @@ class ExoPlayerPlugin :
       return
     }
     if (usingMpvFallback) {
-      // mpv applies loudnorm via the 'af' property the Dart layer also sends.
+      // mpv normalizes via the 'audiotrack-normalize' property the Dart layer also sends.
       result.success(true)
       return
     }

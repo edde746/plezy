@@ -18,11 +18,16 @@ class HydratedWatchStatePatch {
   final int updatedAt;
   final int order;
 
+  /// Durable identity of the queued row this patch was rebuilt from, so a
+  /// promotion after restart still joins the entry it settled.
+  final WatchPatchId? patchId;
+
   const HydratedWatchStatePatch({
     required this.globalKey,
     required this.patch,
     required this.updatedAt,
     required this.order,
+    this.patchId,
   });
 }
 
@@ -320,6 +325,7 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
         updatedAt: hydrated.updatedAt,
         sequence: hydrated.order,
         isSessionEvent: false,
+        patchId: hydrated.patchId,
       );
       final existing = next[hydrated.globalKey];
       if (existing == null || candidate.isNewerThan(existing)) {

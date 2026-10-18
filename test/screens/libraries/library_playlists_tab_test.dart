@@ -3,13 +3,13 @@ import 'dart:math';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_playlist.dart';
@@ -24,7 +24,7 @@ import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/card_inflation_budget.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
-import 'package:plezy/widgets/media_card_sliver_layout.dart';
+import 'package:plezy/widgets/optimized_media_image.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
 import '../../test_helpers/library_tab_scaffold.dart';
@@ -63,7 +63,6 @@ void main() {
   testWidgets('grid lazily builds playlist cards and preserves focus navigation', (tester) async {
     final harness = _PlaylistHarness();
     addTearDown(harness.dispose);
-    addTearDown(harness.rebuild.dispose);
     var backCalls = 0;
     var sidebarCalls = 0;
 
@@ -80,38 +79,42 @@ void main() {
     expect(cards, isNotEmpty);
     expect(cards.length, lessThan(_PlaylistHarness.totalPlaylists));
 
-    final first = _cardFor(cards, 0);
-    final second = _cardFor(cards, 1);
-    expect(first.focusNode, isNotNull);
-    expect(first.onNavigateUp, isNotNull);
-    expect(first.onNavigateLeft, isNotNull);
-    expect(first.onBack, isNotNull);
-    // Every card now carries explicit navigation; default directional
-    // traversal is bypassed (it resets the NestedScrollView on UP).
-    expect(second.onNavigateUp, isNotNull);
-    expect(second.onNavigateLeft, isNotNull);
+    await _focusFirstCard(tester);
 
-    // First row: UP and BACK hand off to the tab bar, first-column LEFT to
-    // the sidebar. Second column's LEFT moves within the row instead.
-    first.onNavigateUp!();
-    first.onBack!();
-    first.onNavigateLeft!();
-    second.onNavigateLeft!();
-    expect(backCalls, 2);
+    // Within a row, RIGHT and LEFT move between neighbours.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(_cardFor(tester, 1).focusNode!.hasPrimaryFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(_cardFor(tester, 0).focusNode!.hasPrimaryFocus, isTrue);
+
+    // First column LEFT reaches the sidebar instead of moving inside the row.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
     expect(sidebarCalls, 1);
+    expect(_cardFor(tester, 0).focusNode!.hasPrimaryFocus, isTrue);
 
-    // Below the top row, UP moves focus up a row rather than leaving the grid.
-    final columns = cards.where((card) => identical(card.onNavigateUp, first.onNavigateUp)).length;
-    final firstColumnBelowTop = _cardFor(cards, columns);
-    expect(firstColumnBelowTop.onNavigateUp, isNotNull);
-    firstColumnBelowTop.onNavigateUp!();
+    // Below the top row, UP moves focus up a row rather than leaving the grid
+    // (default directional traversal resets the NestedScrollView on UP).
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(_cardFor(tester, 0).focusNode!.hasPrimaryFocus, isFalse);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(_cardFor(tester, 0).focusNode!.hasPrimaryFocus, isTrue);
+    expect(backCalls, 0);
+
+    // First row: UP and BACK hand off to the tab bar.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(backCalls, 1);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
     expect(backCalls, 2);
-
-    final firstWidget = tester.widget<FocusableMediaCard>(find.byKey(const Key('playlist-0')));
-    harness.rebuild.value++;
-    await tester.pump();
-    final rebuiltFirstWidget = tester.widget<FocusableMediaCard>(find.byKey(const Key('playlist-0')));
-    expect(identical(rebuiltFirstWidget, firstWidget), isTrue);
 
     final scrollableFinder = find.descendant(of: find.byType(LibraryPlaylistsTab), matching: find.byType(Scrollable));
     final scrollable = tester.state<ScrollableState>(scrollableFinder);
@@ -131,7 +134,6 @@ void main() {
     await SettingsService.instance.write(SettingsService.viewMode, ViewMode.list);
     final harness = _PlaylistHarness();
     addTearDown(harness.dispose);
-    addTearDown(harness.rebuild.dispose);
     var backCalls = 0;
     var sidebarCalls = 0;
 
@@ -147,54 +149,71 @@ void main() {
     final cards = tester.widgetList<FocusableMediaCard>(find.byType(FocusableMediaCard)).toList();
     expect(cards, isNotEmpty);
     expect(cards.length, lessThan(_PlaylistHarness.totalPlaylists));
+    expect(_cardFor(tester, 0).disableScale, isTrue);
 
-    final first = _cardFor(cards, 0);
-    final second = _cardFor(cards, 1);
-    expect(first.disableScale, isTrue);
-    expect(first.onNavigateUp, isNotNull);
-    expect(first.onNavigateLeft, isNotNull);
-    // Rows below the first navigate up explicitly; LEFT always reaches the
-    // sidebar in the single-column list.
-    expect(second.onNavigateUp, isNotNull);
-    expect(second.onNavigateLeft, isNotNull);
+    await _focusFirstCard(tester);
 
-    first.onNavigateUp!();
-    second.onNavigateLeft!();
-    second.onNavigateUp!();
-    expect(backCalls, 1);
+    // One card per row: DOWN and UP move between rows, and LEFT always
+    // reaches the sidebar.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(_cardFor(tester, 1).focusNode!.hasPrimaryFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
     expect(sidebarCalls, 1);
+    expect(_cardFor(tester, 1).focusNode!.hasPrimaryFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(_cardFor(tester, 0).focusNode!.hasPrimaryFocus, isTrue);
+    expect(backCalls, 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(backCalls, 1);
   });
 
-  testWidgets('music library playlists use square grid geometry and square cards', (tester) async {
+  testWidgets('music library playlists render square artwork, captions and square gutters', (tester) async {
     final harness = _PlaylistHarness(playlistType: 'audio');
     addTearDown(harness.dispose);
-    addTearDown(harness.rebuild.dispose);
     TvDetectionService.debugSetAppleTVOverride(true);
     await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
 
     await _pumpTab(tester, harness: harness, library: _musicLibrary, onBack: () {}, onSidebar: () {});
 
-    final layout = tester.widget<MediaCardSliverLayout>(find.byType(MediaCardSliverLayout));
-    expect(layout.shape, CardShape.square);
-    expect(layout.fullBleedImage, isFalse);
-    expect(
-      tester
-          .widgetList<FocusableMediaCard>(find.byType(FocusableMediaCard))
-          .every((card) => card.cardShapeOverride == CardShape.square),
-      isTrue,
+    // Square artwork rather than a poster: a poster cell renders artwork
+    // roughly half again as tall as it is wide.
+    final artwork = tester.getSize(
+      find.descendant(of: find.byKey(const Key('playlist-0')), matching: find.byType(OptimizedMediaImage)),
     );
+    expect(artwork.height, lessThan(artwork.width * 1.1));
+
+    // TV full-card layout never applies to square shapes, so the caption band
+    // outside the artwork stays rendered.
+    expect(find.text('Playlist 0'), findsOneWidget);
 
     // Square grids keep their square gutter spacing even on TV full-card
-    // layout (which is disabled for square shapes).
-    final gridDelegate =
-        tester.widget<SliverGrid>(find.byType(SliverGrid)).gridDelegate as SliverGridDelegateWithMaxCrossAxisExtent;
-    expect(gridDelegate.crossAxisSpacing, GridLayoutConstants.squareGridSpacing);
-    expect(gridDelegate.mainAxisSpacing, GridLayoutConstants.squareGridSpacing);
+    // layout.
+    expect(
+      tester.getTopLeft(find.byKey(const Key('playlist-1'))).dx -
+          tester.getTopRight(find.byKey(const Key('playlist-0'))).dx,
+      GridLayoutConstants.squareGridSpacing,
+    );
   });
 }
 
-FocusableMediaCard _cardFor(List<FocusableMediaCard> cards, int index) {
-  return cards.singleWhere((card) => (card.item as MediaPlaylist).id == 'playlist-$index');
+FocusableMediaCard _cardFor(WidgetTester tester, int index) =>
+    tester.widget<FocusableMediaCard>(find.byKey(Key('playlist-$index')));
+
+/// Switches to keyboard input mode and parks focus on the first card, the way
+/// a D-pad session enters the grid.
+Future<void> _focusFirstCard(WidgetTester tester) async {
+  await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+  await tester.pump();
+  _cardFor(tester, 0).focusNode!.requestFocus();
+  await tester.pumpAndSettle();
+  expect(_cardFor(tester, 0).focusNode!.hasPrimaryFocus, isTrue);
 }
 
 Future<void> _pumpTab(
@@ -207,10 +226,7 @@ Future<void> _pumpTab(
   await pumpLibraryTab(
     tester,
     provider: harness.provider,
-    tab: ValueListenableBuilder<int>(
-      valueListenable: harness.rebuild,
-      builder: (context, _, _) => LibraryPlaylistsTab(library: library, suppressAutoFocus: true, onBack: onBack),
-    ),
+    tab: LibraryPlaylistsTab(library: library, suppressAutoFocus: true, onBack: onBack),
     size: const Size(800, 600),
     focusSidebar: onSidebar,
   );
@@ -222,7 +238,6 @@ class _PlaylistHarness {
 
   final String playlistType;
   final requestStarts = <int>[];
-  final rebuild = ValueNotifier(0);
   late final PlexClient client;
   late final AppDatabase database;
   late final MultiServerManager manager;

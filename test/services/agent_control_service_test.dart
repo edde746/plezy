@@ -15,6 +15,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/agent_control_protocol.dart';
 import 'package:plezy/services/agent_control_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/settings_mutation_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/widgets/agent_control_scope.dart';
@@ -129,6 +130,22 @@ void main() {
     } finally {
       harness.active.finishIdentityMutationRequest(reservation);
     }
+  });
+
+  testWidgets('settings.list reports rootRebuild for exactly the prefs whose effect rebuilds the root', (tester) async {
+    final harness = await _Harness.mount(tester);
+    final listed = await harness.command('settings.list', const {});
+    final descriptors = ((listed['result'] as Map)['settings'] as List).cast<Map>();
+    final reported = {
+      for (final descriptor in descriptors)
+        if (descriptor['application'] == 'rootRebuild') descriptor['key'] as String,
+    };
+    final rebuilding = {
+      for (final pref in SettingsService.editableAppPrefs)
+        if (SettingsMutationService.needsRootRebuild(pref.key)) pref.key,
+    };
+    expect(rebuilding, isNotEmpty);
+    expect(reported, rebuilding);
   });
 
   test('malformed JSON produces a structured failure without reflecting input', () async {

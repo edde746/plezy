@@ -14,7 +14,9 @@ import '../multi_server_manager.dart';
 /// App-global: constructed next to [MultiServerManager] in `main.dart` and
 /// disposed with it. Which channels run follows two inputs:
 /// - the manager's [MultiServerManager.statusStream] (server online/offline,
-///   client or committed authentication session replaced on profile switch);
+///   client or committed authentication session replaced on profile switch)
+///   and [MultiServerManager.visibilityChanges] (only servers visible to the
+///   active profile get a channel);
 /// - app lifecycle via [suspend]/[resume] — sockets are foreground-only on
 ///   mobile, mirroring the companion remote's backoff pause. [resume] also
 ///   re-arms channels that exhausted their reconnect attempts.
@@ -25,12 +27,14 @@ class LibraryEventService {
   LibraryEventService(this._serverManager, {LibraryContentNotifier? notifier})
     : _notifier = notifier ?? LibraryContentNotifier() {
     _statusSubscription = _serverManager.statusStream.listen((_) => sync());
+    _visibilitySubscription = _serverManager.visibilityChanges.listen((_) => sync());
   }
 
   final MultiServerManager _serverManager;
   final LibraryContentNotifier _notifier;
 
   StreamSubscription<Map<String, bool>>? _statusSubscription;
+  StreamSubscription<void>? _visibilitySubscription;
   final Map<String, _ManagedChannel> _channels = {};
   bool _suspended = false;
   bool _disposed = false;
@@ -39,11 +43,12 @@ class LibraryEventService {
   Set<String> get activeServerIds => Set.unmodifiable(_channels.keys);
 
   /// Reconcile the managed channels against the manager's current online
-  /// clients. Runs on every status emission; call after [resume] or a
-  /// registration change that has no status emission of its own.
+  /// clients visible to the active profile. Runs on every status and
+  /// visibility emission; call after [resume] or a registration change that
+  /// has no emission of its own.
   void sync() {
     if (_disposed || _suspended) return;
-    final online = _serverManager.onlineClients;
+    final online = _serverManager.visibleOnlineClients;
 
     // A healthy Plex client can commit a new profile/token in place. Its
     // established websocket still belongs to the previous authentication
@@ -154,6 +159,8 @@ class LibraryEventService {
     }
     unawaited(_statusSubscription?.cancel());
     _statusSubscription = null;
+    unawaited(_visibilitySubscription?.cancel());
+    _visibilitySubscription = null;
     _disposed = true;
   }
 }

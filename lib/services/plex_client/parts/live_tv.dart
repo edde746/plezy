@@ -3,22 +3,38 @@ part of '../../plex_client.dart';
 const _favoriteChannelsUrl = 'https://epg.provider.plex.tv/settings/favoriteChannels';
 const _providerVersionHeader = {'X-Plex-Provider-Version': '5.1'};
 
+/// What a successful tune yields; see [_PlexLiveTvClientMethods._tuneChannel].
+typedef _PlexTuneResult = ({
+  PlexMetadataDto metadata,
+  String sessionPath,
+  String sessionIdentifier,
+  CaptureBuffer? captureBuffer,
+  int? beginsAt,
+  int? partId,
+  List<MediaSubtitleTrack> subtitleTracks,
+});
+
 mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport, LiveTvDvrSupport {
   PlexConfig get config;
+
+  String? get plexAccountId;
 
   List<PlexEpgProvider> get _providerEpg;
 
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json);
 
-  /// POST the tune endpoint with one retry on transient HTTP failure.
+  /// POST the tune endpoint, retrying once on a connection error — the
+  /// request most likely never reached the server (a dead pooled socket). A
+  /// timeout is never replayed: the server may already be tuning, and a
+  /// second tune can claim a second tuner.
   Future<MediaServerResponse> _postTuneWithRetry(String path, String sessionIdentifier) async {
     final query = {'X-Plex-Session-Identifier': sessionIdentifier};
     try {
-      return await _http.post(path, queryParameters: query, timeout: MediaServerTimeouts.tune);
+      return await _http.post(path, queryParameters: query, timeout: MediaServerTimeouts.tuneTransport);
     } on MediaServerHttpException catch (e) {
-      if (!e.isTransient) rethrow;
-      appLogger.w('Tune channel: transient failure, retrying once', error: e);
-      return await _http.post(path, queryParameters: query, timeout: MediaServerTimeouts.tune);
+      if (e.type != MediaServerHttpErrorType.connectionError) rethrow;
+      appLogger.w('Tune channel: connection failed, retrying once', error: e);
+      return await _http.post(path, queryParameters: query, timeout: MediaServerTimeouts.tuneTransport);
     }
   }
 
@@ -526,18 +542,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   /// POSTs to the tune endpoint and extracts metadata, session info, and
   /// capture buffer data from the response. Call [_buildLiveStreamPath] after
   /// to build the actual stream URL (with optional offset for time-shift).
-  Future<
-    ({
-      PlexMetadataDto metadata,
-      String sessionPath,
-      String sessionIdentifier,
-      CaptureBuffer? captureBuffer,
-      int? beginsAt,
-      int? partId,
-      List<MediaSubtitleTrack> subtitleTracks,
-    })?
-  >
-  _tuneChannel(String dvrKey, String channelIdentifier) async {
+  Future<_PlexTuneResult?> _tuneChannel(String dvrKey, String channelIdentifier) async {
     try {
       final sessionIdentifier = PlexClient.generateSessionIdentifier();
 
@@ -774,7 +779,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
           // target and gives up HEVC/MPEG-2 copy; Original, which the server
           // only encodes when the codec is unplayable, keeps the broadcast
           // copy codecs.
-          videoTranscodeTarget: isOriginal ? _plexHlsLiveVideoTranscodeTarget : _plexHlsVodTsVideoTranscodeTarget,
+          videoTranscodeTarget: isOriginal ? _plexHlsLiveVideoTranscodeTarget() : _plexHlsVodTsVideoTranscodeTarget,
           maxVideoBitrateKbps: isOriginal ? null : preset.videoBitrateKbps,
         ),
         'X-Plex-Incomplete-Segments': '1',
@@ -849,7 +854,13 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   /// Get favorite channels from the Plex cloud.
   @override
   Future<List<FavoriteChannel>> fetchFavoriteChannels({bool migrate = true, void Function()? checkCurrent}) async {
-    final response = await _http.get(_favoriteChannelsUrl, headers: _providerVersionHeader);
+    // A plex.tv failure says nothing about this media server's endpoints, so
+    // it must not walk (or exhaust) the server's failover list.
+    final response = await _http.get(
+      _favoriteChannelsUrl,
+      headers: _providerVersionHeader,
+      allowEndpointFailover: false,
+    );
     _throwIfFailed(response);
     final container = _getMediaContainer(response);
     if (container == null) {
@@ -917,8 +928,12 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     );
   }
 
+  /// The favorites list lives on plex.tv, one per account, while
+  /// X-Plex-Client-Identifier is shared by every account on the install.
+  /// Keying by it merged accounts: only one account's list was read, and
+  /// every account's favorites were written into it.
   @override
-  String get favoriteStoreKey => 'plex:${config.clientIdentifier}';
+  String get favoriteStoreKey => 'plex:${plexAccountId ?? config.clientIdentifier}';
 
   @override
   FavoriteChannelPersistenceMode get favoritePersistenceMode => FavoriteChannelPersistenceMode.sharedFullList;
@@ -980,6 +995,10 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession, LiveTvTimeshi
   /// Tune [channelKey] on [dvrKey]. The stream URL is built lazily via
   /// [streamUrlAt] so a watch-from-start decision between tune and first
   /// open doesn't cost an extra transcode-decision round-trip.
+  ///
+  /// The caller waits [MediaServerTimeouts.tune]; the tune itself runs on,
+  /// and a tune that answers after the caller gave up is discarded rather than
+  /// left holding a tuner until the server's idle expiry (#2394).
   static Future<_PlexLiveTvPlaybackSession?> start(
     PlexClient client, {
     required String dvrKey,
@@ -988,28 +1007,43 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession, LiveTvTimeshi
     bool directStream = true,
     bool directStreamAudio = true,
   }) async {
-    final tuneResult = await client._tuneChannel(dvrKey, channelKey);
-    if (tuneResult == null) return null;
+    _PlexLiveTvPlaybackSession? fromTune(_PlexTuneResult? tuneResult) => tuneResult == null
+        ? null
+        : _PlexLiveTvPlaybackSession._(
+            client,
+            dvrKey,
+            channelKey,
+            tuneResult.sessionPath,
+            tuneResult.sessionIdentifier,
+            PlexClient.generateSessionIdentifier(),
+            tuneResult.partId,
+            directStream,
+            directStreamAudio,
+            quality,
+            program: LiveProgramInfo(
+              id: tuneResult.metadata.ratingKey,
+              durationMs: tuneResult.metadata.duration,
+              beginsAt: tuneResult.beginsAt,
+            ),
+            captureBuffer: tuneResult.captureBuffer,
+            subtitleTracks: tuneResult.subtitleTracks,
+          );
 
-    return _PlexLiveTvPlaybackSession._(
-      client,
-      dvrKey,
-      channelKey,
-      tuneResult.sessionPath,
-      tuneResult.sessionIdentifier,
-      PlexClient.generateSessionIdentifier(),
-      tuneResult.partId,
-      directStream,
-      directStreamAudio,
-      quality,
-      program: LiveProgramInfo(
-        id: tuneResult.metadata.ratingKey,
-        durationMs: tuneResult.metadata.duration,
-        beginsAt: tuneResult.beginsAt,
-      ),
-      captureBuffer: tuneResult.captureBuffer,
-      subtitleTracks: tuneResult.subtitleTracks,
-    );
+    try {
+      final tuneResult = await client
+          ._tuneChannel(dvrKey, channelKey)
+          .timeoutReleasingLate(
+            MediaServerTimeouts.tune,
+            operation: 'Plex tune',
+            releaseLate: (lateTune) async {
+              await fromTune(lateTune)?.discard();
+            },
+          );
+      return fromTune(tuneResult);
+    } on TimeoutException catch (e) {
+      appLogger.w('Tune channel: no answer in time', error: e);
+      return null;
+    }
   }
 
   @override
@@ -1119,6 +1153,17 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession, LiveTvTimeshi
       duration: duration,
       playbackTime: positionMs,
     );
+  }
+
+  /// A stopped timeline for the tune's session releases the tuner instead of
+  /// leaving it to the server's idle expiry.
+  @override
+  Future<void> discard() async {
+    try {
+      await reportTimeline(state: 'stopped', positionMs: 0, durationMs: program.durationMs ?? 0);
+    } catch (error, stackTrace) {
+      appLogger.d('Failed to stop a discarded Plex live session', error: error, stackTrace: stackTrace);
+    }
   }
 
   @override

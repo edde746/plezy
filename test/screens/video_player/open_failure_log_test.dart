@@ -8,13 +8,8 @@ import 'package:plezy/screens/video_player/open_failure_log.dart';
 // mpv logged in the first seconds. The classifier is the only thing turning
 // those lines into a failure, so it must hit the terminal lines exactly and
 // nothing mpv recovers from on its own.
-String? classify(
-  String text, {
-  PlayerLogLevel level = PlayerLogLevel.error,
-  String prefix = 'cplayer',
-  bool isAndroid = false,
-}) {
-  return openFailureCauseFromLog(level: level, prefix: prefix, text: text, isAndroid: isAndroid);
+String? classify(String text, {PlayerLogLevel level = PlayerLogLevel.error, String prefix = 'cplayer'}) {
+  return openFailureCauseFromLog(level: level, prefix: prefix, text: text);
 }
 
 void main() {
@@ -29,12 +24,10 @@ void main() {
     expect(classify("Failed to initialize a decoder for codec 'hevc'.", prefix: 'vd'), PlayerError.streamInitFailed);
   });
 
-  test('a failed video chain is terminal except on Android, whose core recovers it', () {
+  test('a failed video chain is terminal', () {
+    // Android included: the plane's format rejection holds the chain for the
+    // core's GL vo switch and never logs this line.
     expect(classify('Could not initialize video chain.', level: PlayerLogLevel.fatal), PlayerError.streamInitFailed);
-    // MpvPlayerCore.kt consumes this line under vo=mediacodec to fall back to
-    // the GL vo and re-select the video track; Dart failing the open first
-    // would kill an open the device then plays.
-    expect(classify('Could not initialize video chain.', level: PlayerLogLevel.fatal, isAndroid: true), isNull);
   });
 
   test('a failed output conversion is terminal on the audio chain only', () {
@@ -44,8 +37,8 @@ void main() {
       PlayerError.streamInitFailed,
     );
     // video.c first forces a software-decode fallback, and when that fails
-    // too it logs "Could not initialize video chain." itself — on Android
-    // this vf line precedes the recoverable mediacodec -> GL fallback.
+    // too it logs "Could not initialize video chain." itself — or, on
+    // Android's video plane, holds the chain for the core's GL vo switch.
     expect(
       classify('Cannot convert decoder/filter output to any format supported by the output.', prefix: 'vf'),
       isNull,

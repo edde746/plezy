@@ -311,6 +311,9 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get cellularQualitySameAsDefault => 'Varsayılan Kaliteyle Aynı';
 	@override String get directPlayCoveredQuality => 'Küçük Videoları Orijinal Kalitede Oynat';
 	@override String get directPlayCoveredQualityDescription => 'Kalite sınırı içindeki videoları kod dönüştürme yerine doğrudan oynat';
+	@override String get videoCodecs => 'Video codec\'leri';
+	@override String get videoCodecsDescription => 'İşaretlenmemiş codec\'lerin kodunu sunucu dönüştürür';
+	@override String get videoCodecsAlwaysAccepted => 'Her zaman kabul edilir';
 	@override String get musicQualityTitle => 'Müzik Kalitesi';
 	@override String get subtitleStyling => 'Altyazı Biçimlendirmesi';
 	@override String get subtitleStylingDescription => 'Altyazı görünümünü özelleştirin';
@@ -434,6 +437,8 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get manageLibrariesDescription => 'Kitaplıkları yeniden sıralayın ve gizleyin';
 	@override String get companionRemoteServer => 'Yardımcı Uzaktan Kumanda Sunucusu';
 	@override String get companionRemoteServerDescription => 'Ağınızdaki mobil cihazların bu uygulamayı kontrol etmesine izin verin';
+	@override String get companionRemoteServerStartFailed => 'Yardımcı sunucu başlatılamadı';
+	@override String get companionRemoteServerStopFailed => 'Yardımcı sunucu durdurulamadı';
 	@override String get autoPip => 'Otomatik Pencere İçinde Pencere (PiP)';
 	@override String get autoPipDescription => 'Oynatma sırasında uygulamadan çıktığınızda otomatik olarak pencere içinde pencere moduna geç';
 	@override String get matchContentFrameRate => 'İçerik Kare Hızını Eşitle';
@@ -446,13 +451,11 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get matchDynamicRangeDescription => 'HDR içerik için HDR\'yi aç, ardından SDR\'ye geri dön';
 	@override String get displaySwitchDelay => 'Ekran Değiştirme Gecikmesi';
 	@override String get tunneledPlayback => 'Tünelli Oynatma';
-	@override String get tunneledPlaybackDescription => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa devre dışı bırakın.';
+	@override String get tunneledPlaybackDescription => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.';
 	@override String get audioPassthrough => 'Ses Doğrudan Geçişi (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.';
-	@override String get audioPassthroughDescriptionAppleTv => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.';
+	@override String get audioPassthroughDescriptionApple => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Ses normalleştirme açıkken kapalıdır';
-	@override String get audioDownmix => 'Stereo\'ya Dönüştür (Downmix)';
-	@override String get audioDownmixDescription => 'Çevreleyen sesi stereo hoparlörler veya kulaklıklar için iki kanala dönüştürür';
 	@override String get downmixCenterBoost => 'Merkez Kanal Yükseltme';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Yükseltme (dB)';
@@ -460,7 +463,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get audioDownmixNormalize => 'Dönüştürmede Sesi Normalleştir';
 	@override String get audioDownmixNormalizeDescription => 'Ses patlamalarını önlemek için karışımı düşürün. Orijinal sesi korumak için kapatın (yüksek sesli sahnelerde bozulma yapabilir).';
 	@override String get dvConversionMode => 'Dolby Vision Dönüştürme';
-	@override String get dvConversionModeDescription => 'ExoPlayer\'ın Dolby Vision Profile 7 dosyalarını nasıl işleyeceğini seçin.';
+	@override String get dvConversionModeDescription => 'Dolby Vision Profile 7 dosyalarının nasıl işleneceğini seçin.';
 	@override String get dvConversionAuto => 'Otomatik';
 	@override String get dvConversionNative => 'Yerel / Devre Dışı';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
@@ -469,6 +472,16 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Yerel DV7\'yi zorla ve DV dönüştürme yeniden denemesini engelle';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1\'e satır içi RPU dönüştürmeyi zorla';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision RPU/EL katmanlarını soy ve düz HEVC olarak sun';
+	@override String get disableDolbyVision => 'Dolby Vision\'ı Devre Dışı Bırak';
+	@override String get disableDolbyVisionDescription => 'Dosyada varsa Dolby Vision yerine HDR10 veya HLG katmanını oynat';
+	@override String get hdrSdrConversion => 'HDR\'den SDR\'ye Dönüştürme';
+	@override String get hdrSdrConversionDescription => 'Ekran HDR gösteremediğinde HDR videoyu neyin dönüştüreceğini seçin.';
+	@override String get hdrSdrConversionAuto => 'Otomatik';
+	@override String get hdrSdrConversionAutoDescription => 'Android 9 ve sonrasında cihaz, eski sürümlerde oynatıcı';
+	@override String get hdrSdrConversionDevice => 'Cihaz';
+	@override String get hdrSdrConversionDeviceDescription => 'Dönüştürmeyi cihazın video donanımı yapar. En hızlısı, ancak renkler cihaza bağlıdır';
+	@override String get hdrSdrConversionPlayer => 'Oynatıcı';
+	@override String get hdrSdrConversionPlayerDescription => 'Dönüştürmeyi oynatıcı yapar. Tutarlı renkler, ancak 4K düşük donanımlı TV kutularında takılabilir';
 	@override String get deinterlace => 'Deinterlacing';
 	@override String get deinterlaceDescription => 'Geçmeli videolardaki taraklanma bozukluklarını giderir (yalnızca mpv oynatıcı)';
 	@override String get requireProfileSelectionOnOpen => 'Uygulama açılışında profil sor';
@@ -875,6 +888,7 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get pipFailed => 'Pencere içinde pencere modu başlatılamadı';
 	@override String get screenshotSaved => 'Ekran görüntüsü kaydedildi';
 	@override String zoomPercent({required Object percent}) => 'Yakınlaştırma %${percent}';
+	@override String volumePercent({required Object percent}) => 'Ses %${percent}';
 	@override late final _Translations$videoControls$pipErrors$tr pipErrors = _Translations$videoControls$pipErrors$tr._(_root);
 	@override String get chapters => 'Kısımlar';
 	@override String get noChaptersAvailable => 'Kısım bulunmuyor';
@@ -963,6 +977,8 @@ class _Translations$messages$tr extends Translations$messages$en {
 	@override String get mediaUnreadableBody => 'Sunucu bu ögeyi buldu ancak dosyasını okuyamadı (HTTP 404). Dosya büyük olasılıkla taşındı, silindi veya depolama alanı çevrimdışı. Sunucu sahibinden dosyayı kontrol edip kitaplığı yeniden taramasını isteyin.';
 	@override String get serverBusyTitle => 'Akış kullanılamıyor';
 	@override String get serverBusyBody => 'Sunucu bu dosyayı yayınlamayı sürekli reddetti (HTTP 503). Sunucu yeniden başlatılıyor veya meşgul olabilir ya da dosyanın bulunduğu depolama birimi çevrim dışı olabilir. Kısa süre sonra tekrar deneyin — sorun devam ederse sunucu sahibinden sunucuyu ve dosyanın bulunduğu depolama birimini kontrol etmesini isteyin.';
+	@override String get playbackNotAllowedTitle => 'Oynatmaya izin verilmiyor';
+	@override String get playbackNotAllowedBody => 'Sunucu bu ögeyi yayınlamayı reddetti (HTTP 403). Hesabınızın bunu oynatma izni olmayabilir veya sunucu oynatmaya yalnızca kendi yerel ağında izin veriyor olabilir.';
 	@override String get logsUploaded => 'Günlükler yüklendi';
 	@override String get logsUploadFailed => 'Günlükler yüklenemedi';
 	@override String get logId => 'Günlük Kimliği (ID)';
@@ -1100,7 +1116,7 @@ class _Translations$profiles$tr extends Translations$profiles$en {
 	@override String borrowAddTo({required Object displayName}) => '${displayName} profiline ekle';
 	@override String get borrowExplain => 'Başka bir profilin bağlantısını ödünç alın. PIN korumalı profiller bir PIN gerektirir.';
 	@override String get borrowEmpty => 'Henüz ödünç alınacak bir şey yok.';
-	@override String get borrowEmptySubtitle => 'Önce başka bir profile Plex veya Jellyfin bağlayın.';
+	@override String get borrowEmptySubtitle => 'Önce başka bir profile Plex, Jellyfin veya Emby bağlayın.';
 	@override String get borrowLoadFailed => 'Mevcut bağlantılar yüklenemedi. Tekrar deneyin.';
 	@override String borrowFromProfile({required Object displayName}) => '${displayName} profilinden';
 	@override String get borrowConnectionBorrowed => 'Bağlantı ödünç alındı.';
@@ -1128,10 +1144,12 @@ class _Translations$connections$tr extends Translations$connections$en {
 	// Translations
 	@override String get sectionTitle => 'Bağlantılar';
 	@override String get addConnection => 'Bağlantı ekle';
-	@override String get addConnectionSubtitleNoProfile => 'Plex ile giriş yapın veya bir Jellyfin sunucusu bağlayın';
-	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} profiline ekle: Plex, Jellyfin veya başka bir profil bağlantısı';
+	@override String get addConnectionSubtitleNoProfile => 'Plex ile giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı';
 	@override String sessionExpiredOne({required Object name}) => '${name} için oturum süresi doldu';
 	@override String sessionExpiredMany({required Object count}) => '${count} sunucu için oturum süresi doldu';
+	@override String accessDeniedOne({required Object name}) => '${name} bu hesabın erişimini reddetti';
+	@override String accessDeniedMany({required Object count}) => '${count} sunucu bu hesabın erişimini reddetti';
 	@override String get signInAgain => 'Tekrar giriş yap';
 	@override String editMediaBrowserTitle({required Object product}) => '${product} bağlantısını düzenle';
 	@override String editMediaBrowserIntro({required Object serverName}) => '${serverName} için URL ekleyin veya kaldırın. Plezy, erişilebilir olan en düşük gecikmeli URL\'yi kullanacak.';
@@ -1236,6 +1254,13 @@ class _Translations$errors$tr extends Translations$errors$en {
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName} profiline geçilemedi';
 	@override String failedToDeleteProfile({required Object displayName}) => '${displayName} profili silinemedi';
 	@override String get failedToRate => 'Puan güncellenemedi';
+	@override String get reasonTimedOut => 'bağlantı zaman aşımına uğradı';
+	@override String get reasonUnreachable => 'sunucuya ulaşılamadı';
+	@override String get reasonRefused => 'sunucu isteği reddetti';
+	@override String get reasonNotFound => 'öğe artık sunucuda değil';
+	@override String get reasonServerError => 'sunucu bir hata bildirdi';
+	@override String get reasonCancelled => 'istek iptal edildi';
+	@override String get reasonUnexpected => 'beklenmeyen bir hata oluştu';
 }
 
 // Path: libraries
@@ -1302,7 +1327,7 @@ class _Translations$about$tr extends Translations$about$en {
 	@override String get title => 'Hakkında';
 	@override String get openSourceLicenses => 'Açık Kaynak Lisansları';
 	@override String versionLabel({required Object version}) => 'Sürüm ${version}';
-	@override String get appDescription => 'Flutter için şık bir Plex ve Jellyfin istemcisi';
+	@override String get appDescription => 'Flutter için şık bir Plex, Jellyfin ve Emby istemcisi';
 	@override String get viewLicensesDescription => 'Üçüncü taraf kütüphanelerin lisanslarını görüntüleyin';
 }
 
@@ -1541,7 +1566,9 @@ class _Translations$liveTv$tr extends Translations$liveTv$en {
 	@override String get editRuleAction => 'Düzenle';
 	@override String get recordingRuleUpdated => 'Kayıt kuralı güncellendi';
 	@override String get guideReloadRequested => 'Rehber yenilemesi istendi';
+	@override String get guideReloadFailed => 'Rehber yenilenemedi';
 	@override String get rulesProcessRequested => 'Kuralın yeniden değerlendirilmesi istendi';
+	@override String get rulesProcessFailed => 'Kayıt kuralları yeniden değerlendirilemedi';
 	@override String get recordShow => 'Programı kaydet';
 	@override late final _Translations$liveTv$recordSettings$tr recordSettings = _Translations$liveTv$recordSettings$tr._(_root);
 	@override String startingInMinutes({required Object minutes}) => '${minutes} dk içinde başlıyor';
@@ -1549,6 +1576,8 @@ class _Translations$liveTv$tr extends Translations$liveTv$en {
 	@override String invalidPlaybackData({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü';
 	@override String get failedToStartChannel => 'Canlı kanal başlatılamadı';
 	@override String get failedToBuildStreamUrl => 'Akış URL\'si oluşturulamadı';
+	@override String playbackStartFailed({required Object reason}) => 'Kanal başlatılamadı: ${reason}';
+	@override String channelSwitchFailed({required Object reason}) => 'Kanal değiştirilemedi: ${reason}';
 }
 
 // Path: collections
@@ -1759,7 +1788,7 @@ class _Translations$downloads$tr extends Translations$downloads$en {
 	@override String get downloadQueued => 'İndirme kuyruğa alındı';
 	@override String get downloadResumed => 'İndirme devam ettirildi';
 	@override String get serverErrorBitrate => 'Sunucu hatası: dosya uzak bit hızı sınırını aşıyor olabilir';
-	@override String get storageFull => 'Cihaz depolama alanı dolu olduğu için indirmeler durduruldu. Biraz alan boşaltıp tekrar deneyin.';
+	@override String get storageFull => 'Kullanılabilir depolama alanını korumak için indirmeler durduruldu. Alan boşaltın veya başka bir indirme konumu seçin, ardından tekrar deneyin.';
 	@override String get storageUnavailable => 'Kullanılabilir depolama alanı kontrol edilemediği için indirmeler durduruldu. İndirme konumunu kontrol edip tekrar deneyin.';
 	@override String episodesQueued({required Object count}) => 'İndirmek için ${count} bölüm kuyruğa alındı';
 	@override String get downloadDeleted => 'İndirme silindi';
@@ -1817,17 +1846,27 @@ class _Translations$downloads$tr extends Translations$downloads$en {
 	@override String get syncRuleAvailable => 'Kullanılabilir';
 	@override String get syncRuleOffline => 'Çevrimdışı';
 	@override String get syncRuleSignInRequired => 'Giriş gerekli';
+	@override String get syncRuleAccessDenied => 'Erişim reddedildi';
 	@override String get syncRuleNotAvailableForProfile => 'Mevcut profil için kullanılamaz';
 	@override String get syncRuleUnknownServer => 'Bilinmeyen sunucu';
 	@override String get syncRuleListCreated => 'Eşitleme kuralı oluşturuldu';
 	@override late final _Translations$downloads$backgroundWarning$tr backgroundWarning = _Translations$downloads$backgroundWarning$tr._(_root);
+	@override String get options => 'İndirme seçenekleri';
+	@override late final _Translations$downloads$groupings$tr groupings = _Translations$downloads$groupings$tr._(_root);
+	@override String get unknownLibrary => 'Bilinmeyen kitaplık';
 	@override String get unknownShow => 'Bilinmeyen Dizi';
 	@override String get unknownSeason => 'Bilinmeyen Sezon';
 	@override String get unknownAlbum => 'Bilinmeyen Albüm';
 	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} tamamlandı';
 	@override String get errorFileNotFound => 'Dosya bulunamadı (404)';
+	@override String get errorDownloadNotAllowed => 'Sunucu indirmeye izin vermiyor (403)';
 	@override String get errorDownloadFailed => 'İndirme başarısız oldu';
-	@override String errorPostProcessing({required Object error}) => 'Son işleme başarısız oldu: ${error}';
+	@override String errorDownloadFailedWithReason({required Object reason}) => 'İndirme başarısız oldu: ${reason}';
+	@override String errorHttpStatus({required Object status}) => 'İndirme başarısız oldu (HTTP ${status})';
+	@override String errorPostProcessing({required Object reason}) => 'Son işleme başarısız oldu: ${reason}';
+	@override String get reasonFileNotSaved => 'dosya bu cihaza kaydedilemedi';
+	@override String get reasonCannotResume => 'yarım kalan indirme sürdürülemedi';
+	@override String get reasonDeviceStorageFull => 'bu cihazda depolama alanı kalmadı';
 	@override String get notificationDownloading => 'İndiriliyor...';
 	@override String get notificationComplete => 'İndirme tamamlandı';
 	@override String get notificationPaused => 'İndirme duraklatıldı';
@@ -1905,8 +1944,6 @@ class _Translations$videoSettings$tr extends Translations$videoSettings$en {
 	@override String get audioOutputStereo => 'Stereo';
 	@override String get audioNormalization => 'Ses Yüksekliğini Normalleştir';
 	@override String get audioNormalizationDisablesPassthrough => 'Sesi PCM\'e çözer; bu açıkken doğrudan geçiş kapalıdır';
-	@override String get audioNormalizationStereoMix => 'Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır';
-	@override String get audioDownmix => 'Stereo\'ya Dönüştür';
 }
 
 // Path: performanceOverlay
@@ -2070,6 +2107,7 @@ class _Translations$metadataEdit$tr extends Translations$metadataEdit$en {
 	@override String get country => 'Ülke';
 	@override String get collection => 'Koleksiyon';
 	@override String get label => 'Etiket';
+	@override String get quickTag => 'Hızlı etiket...';
 }
 
 // Path: matchScreen
@@ -2280,6 +2318,8 @@ class _Translations$common$ratingSource$tr extends Translations$common$ratingSou
 	@override String get trakt => 'Trakt';
 	@override String get rottenTomatoesCritic => 'Rotten Tomatoes eleştirmenleri';
 	@override String get rottenTomatoesAudience => 'Rotten Tomatoes izleyicileri';
+	@override String get metacritic => 'Metacritic';
+	@override String get letterboxd => 'Letterboxd';
 }
 
 // Path: common.mediaKind
@@ -2512,6 +2552,9 @@ class _Translations$libraries$sortLabels$tr extends Translations$libraries$sortL
 	@override String get dateShared => 'Paylaşılma Tarihi';
 	@override String get latestEpisodeAirDate => 'Son Bölüm Yayın Tarihi';
 	@override String get lastEpisodeDateAdded => 'Eklenen Son Bölüm Tarihi';
+	@override String get dateDownloaded => 'İndirme Tarihi';
+	@override String get size => 'Boyut';
+	@override String get library => 'Kitaplık';
 }
 
 // Path: explore.rows
@@ -2807,6 +2850,16 @@ class _Translations$downloads$backgroundWarning$tr extends Translations$download
 	@override String get linkUnavailable => 'Bu cihazda dontkillmyapp.com açılamadı';
 }
 
+// Path: downloads.groupings
+class _Translations$downloads$groupings$tr extends Translations$downloads$groupings$en {
+	_Translations$downloads$groupings$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get library => 'Kitaplık';
+}
+
 // Path: companionRemote.session
 class _Translations$companionRemote$session$tr extends Translations$companionRemote$session$en {
 	_Translations$companionRemote$session$tr._(TranslationsTr root) : this._root = root, super.internal(root);
@@ -3061,6 +3114,8 @@ extension on TranslationsTr {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes eleştirmenleri',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes izleyicileri',
+			'common.ratingSource.metacritic' => 'Metacritic',
+			'common.ratingSource.letterboxd' => 'Letterboxd',
 			'common.notAvailable' => 'N/A',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
@@ -3174,6 +3229,9 @@ extension on TranslationsTr {
 			'settings.cellularQualitySameAsDefault' => 'Varsayılan Kaliteyle Aynı',
 			'settings.directPlayCoveredQuality' => 'Küçük Videoları Orijinal Kalitede Oynat',
 			'settings.directPlayCoveredQualityDescription' => 'Kalite sınırı içindeki videoları kod dönüştürme yerine doğrudan oynat',
+			'settings.videoCodecs' => 'Video codec\'leri',
+			'settings.videoCodecsDescription' => 'İşaretlenmemiş codec\'lerin kodunu sunucu dönüştürür',
+			'settings.videoCodecsAlwaysAccepted' => 'Her zaman kabul edilir',
 			'settings.musicQualityTitle' => 'Müzik Kalitesi',
 			'settings.subtitleStyling' => 'Altyazı Biçimlendirmesi',
 			'settings.subtitleStylingDescription' => 'Altyazı görünümünü özelleştirin',
@@ -3297,6 +3355,8 @@ extension on TranslationsTr {
 			'settings.manageLibrariesDescription' => 'Kitaplıkları yeniden sıralayın ve gizleyin',
 			'settings.companionRemoteServer' => 'Yardımcı Uzaktan Kumanda Sunucusu',
 			'settings.companionRemoteServerDescription' => 'Ağınızdaki mobil cihazların bu uygulamayı kontrol etmesine izin verin',
+			'settings.companionRemoteServerStartFailed' => 'Yardımcı sunucu başlatılamadı',
+			'settings.companionRemoteServerStopFailed' => 'Yardımcı sunucu durdurulamadı',
 			'settings.autoPip' => 'Otomatik Pencere İçinde Pencere (PiP)',
 			'settings.autoPipDescription' => 'Oynatma sırasında uygulamadan çıktığınızda otomatik olarak pencere içinde pencere moduna geç',
 			'settings.matchContentFrameRate' => 'İçerik Kare Hızını Eşitle',
@@ -3309,13 +3369,11 @@ extension on TranslationsTr {
 			'settings.matchDynamicRangeDescription' => 'HDR içerik için HDR\'yi aç, ardından SDR\'ye geri dön',
 			'settings.displaySwitchDelay' => 'Ekran Değiştirme Gecikmesi',
 			'settings.tunneledPlayback' => 'Tünelli Oynatma',
-			'settings.tunneledPlaybackDescription' => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa devre dışı bırakın.',
+			'settings.tunneledPlaybackDescription' => 'Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.',
 			'settings.audioPassthrough' => 'Ses Doğrudan Geçişi (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV\'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
+			'settings.audioPassthroughDescriptionApple' => 'Atmos dahil Dolby Digital Plus için Apple\'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Ses normalleştirme açıkken kapalıdır',
-			'settings.audioDownmix' => 'Stereo\'ya Dönüştür (Downmix)',
-			'settings.audioDownmixDescription' => 'Çevreleyen sesi stereo hoparlörler veya kulaklıklar için iki kanala dönüştürür',
 			'settings.downmixCenterBoost' => 'Merkez Kanal Yükseltme',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Yükseltme (dB)',
@@ -3323,7 +3381,7 @@ extension on TranslationsTr {
 			'settings.audioDownmixNormalize' => 'Dönüştürmede Sesi Normalleştir',
 			'settings.audioDownmixNormalizeDescription' => 'Ses patlamalarını önlemek için karışımı düşürün. Orijinal sesi korumak için kapatın (yüksek sesli sahnelerde bozulma yapabilir).',
 			'settings.dvConversionMode' => 'Dolby Vision Dönüştürme',
-			'settings.dvConversionModeDescription' => 'ExoPlayer\'ın Dolby Vision Profile 7 dosyalarını nasıl işleyeceğini seçin.',
+			'settings.dvConversionModeDescription' => 'Dolby Vision Profile 7 dosyalarının nasıl işleneceğini seçin.',
 			'settings.dvConversionAuto' => 'Otomatik',
 			'settings.dvConversionNative' => 'Yerel / Devre Dışı',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
@@ -3332,6 +3390,16 @@ extension on TranslationsTr {
 			'settings.dvConversionNativeDescription' => 'Yerel DV7\'yi zorla ve DV dönüştürme yeniden denemesini engelle',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1\'e satır içi RPU dönüştürmeyi zorla',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision RPU/EL katmanlarını soy ve düz HEVC olarak sun',
+			'settings.disableDolbyVision' => 'Dolby Vision\'ı Devre Dışı Bırak',
+			'settings.disableDolbyVisionDescription' => 'Dosyada varsa Dolby Vision yerine HDR10 veya HLG katmanını oynat',
+			'settings.hdrSdrConversion' => 'HDR\'den SDR\'ye Dönüştürme',
+			'settings.hdrSdrConversionDescription' => 'Ekran HDR gösteremediğinde HDR videoyu neyin dönüştüreceğini seçin.',
+			'settings.hdrSdrConversionAuto' => 'Otomatik',
+			'settings.hdrSdrConversionAutoDescription' => 'Android 9 ve sonrasında cihaz, eski sürümlerde oynatıcı',
+			'settings.hdrSdrConversionDevice' => 'Cihaz',
+			'settings.hdrSdrConversionDeviceDescription' => 'Dönüştürmeyi cihazın video donanımı yapar. En hızlısı, ancak renkler cihaza bağlıdır',
+			'settings.hdrSdrConversionPlayer' => 'Oynatıcı',
+			'settings.hdrSdrConversionPlayerDescription' => 'Dönüştürmeyi oynatıcı yapar. Tutarlı renkler, ancak 4K düşük donanımlı TV kutularında takılabilir',
 			'settings.deinterlace' => 'Deinterlacing',
 			'settings.deinterlaceDescription' => 'Geçmeli videolardaki taraklanma bozukluklarını giderir (yalnızca mpv oynatıcı)',
 			'settings.requireProfileSelectionOnOpen' => 'Uygulama açılışında profil sor',
@@ -3483,6 +3551,8 @@ extension on TranslationsTr {
 			'fileInfo.streamIdentifier' => 'Akış Tanımlayıcısı',
 			'fileInfo.streamIndex' => 'Akış Dizini',
 			'fileInfo.streamId' => 'Akış Kimliği',
+			_ => null,
+		} ?? switch (path) {
 			'fileInfo.language' => 'Dil',
 			'fileInfo.languageCode' => 'Dil Kodu',
 			'fileInfo.streamTitle' => 'Parça Başlığı',
@@ -3498,8 +3568,6 @@ extension on TranslationsTr {
 			'fileInfo.sourceStream' => 'Kopyalandığı Yer',
 			'fileInfo.temporary' => 'Geçici',
 			'fileInfo.timeBase' => 'Zaman Tabanı',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.overallBitrate' => 'Genel Bit Hızı',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.fileName' => 'Dosya Adı',
@@ -3674,6 +3742,7 @@ extension on TranslationsTr {
 			'videoControls.pipFailed' => 'Pencere içinde pencere modu başlatılamadı',
 			'videoControls.screenshotSaved' => 'Ekran görüntüsü kaydedildi',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Yakınlaştırma %${percent}',
+			'videoControls.volumePercent' => ({required Object percent}) => 'Ses %${percent}',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 veya daha yenisini gerektirir',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 veya daha yenisini gerektirir',
 			'videoControls.pipErrors.permissionDisabled' => 'Pencere içinde pencere devre dışı. Sistem ayarlarından etkinleştirin.',
@@ -3757,6 +3826,8 @@ extension on TranslationsTr {
 			'messages.mediaUnreadableBody' => 'Sunucu bu ögeyi buldu ancak dosyasını okuyamadı (HTTP 404). Dosya büyük olasılıkla taşındı, silindi veya depolama alanı çevrimdışı. Sunucu sahibinden dosyayı kontrol edip kitaplığı yeniden taramasını isteyin.',
 			'messages.serverBusyTitle' => 'Akış kullanılamıyor',
 			'messages.serverBusyBody' => 'Sunucu bu dosyayı yayınlamayı sürekli reddetti (HTTP 503). Sunucu yeniden başlatılıyor veya meşgul olabilir ya da dosyanın bulunduğu depolama birimi çevrim dışı olabilir. Kısa süre sonra tekrar deneyin — sorun devam ederse sunucu sahibinden sunucuyu ve dosyanın bulunduğu depolama birimini kontrol etmesini isteyin.',
+			'messages.playbackNotAllowedTitle' => 'Oynatmaya izin verilmiyor',
+			'messages.playbackNotAllowedBody' => 'Sunucu bu ögeyi yayınlamayı reddetti (HTTP 403). Hesabınızın bunu oynatma izni olmayabilir veya sunucu oynatmaya yalnızca kendi yerel ağında izin veriyor olabilir.',
 			'messages.logsUploaded' => 'Günlükler yüklendi',
 			'messages.logsUploadFailed' => 'Günlükler yüklenemedi',
 			'messages.logId' => 'Günlük Kimliği (ID)',
@@ -3858,7 +3929,7 @@ extension on TranslationsTr {
 			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName} profiline ekle',
 			'profiles.borrowExplain' => 'Başka bir profilin bağlantısını ödünç alın. PIN korumalı profiller bir PIN gerektirir.',
 			'profiles.borrowEmpty' => 'Henüz ödünç alınacak bir şey yok.',
-			'profiles.borrowEmptySubtitle' => 'Önce başka bir profile Plex veya Jellyfin bağlayın.',
+			'profiles.borrowEmptySubtitle' => 'Önce başka bir profile Plex, Jellyfin veya Emby bağlayın.',
 			'profiles.borrowLoadFailed' => 'Mevcut bağlantılar yüklenemedi. Tekrar deneyin.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => '${displayName} profilinden',
 			'profiles.borrowConnectionBorrowed' => 'Bağlantı ödünç alındı.',
@@ -3877,10 +3948,12 @@ extension on TranslationsTr {
 			'profiles.tokenIdentityMismatch' => 'Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi',
 			'connections.sectionTitle' => 'Bağlantılar',
 			'connections.addConnection' => 'Bağlantı ekle',
-			'connections.addConnectionSubtitleNoProfile' => 'Plex ile giriş yapın veya bir Jellyfin sunucusu bağlayın',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiline ekle: Plex, Jellyfin veya başka bir profil bağlantısı',
+			'connections.addConnectionSubtitleNoProfile' => 'Plex ile giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profiline ekle: Plex, Jellyfin, Emby veya başka bir profil bağlantısı',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} için oturum süresi doldu',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} sunucu için oturum süresi doldu',
+			'connections.accessDeniedOne' => ({required Object name}) => '${name} bu hesabın erişimini reddetti',
+			'connections.accessDeniedMany' => ({required Object count}) => '${count} sunucu bu hesabın erişimini reddetti',
 			'connections.signInAgain' => 'Tekrar giriş yap',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => '${product} bağlantısını düzenle',
 			'connections.editMediaBrowserIntro' => ({required Object serverName}) => '${serverName} için URL ekleyin veya kaldırın. Plezy, erişilebilir olan en düşük gecikmeli URL\'yi kullanacak.',
@@ -3978,6 +4051,13 @@ extension on TranslationsTr {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName} profiline geçilemedi',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName} profili silinemedi',
 			'errors.failedToRate' => 'Puan güncellenemedi',
+			'errors.reasonTimedOut' => 'bağlantı zaman aşımına uğradı',
+			'errors.reasonUnreachable' => 'sunucuya ulaşılamadı',
+			'errors.reasonRefused' => 'sunucu isteği reddetti',
+			'errors.reasonNotFound' => 'öğe artık sunucuda değil',
+			'errors.reasonServerError' => 'sunucu bir hata bildirdi',
+			'errors.reasonCancelled' => 'istek iptal edildi',
+			'errors.reasonUnexpected' => 'beklenmeyen bir hata oluştu',
 			'libraries.title' => 'Kitaplıklar',
 			'libraries.fallbackTitle' => 'Kitaplık',
 			'libraries.scanLibraryFiles' => 'Kitaplık Dosyalarını Tarayınız',
@@ -3985,6 +4065,8 @@ extension on TranslationsTr {
 			'libraries.analyze' => 'Analiz Et',
 			'libraries.analyzeLibrary' => 'Kitaplığı Analiz Et',
 			'libraries.refreshMetadata' => 'Meta Verileri Yenile',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.emptyTrash' => 'Çöpü Boşalt',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" için çöp boşaltılıyor...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" için çöp boşaltıldı',
@@ -4012,8 +4094,6 @@ extension on TranslationsTr {
 			'libraries.showLibrary' => 'Kitaplığı göster',
 			'libraries.hideLibrary' => 'Kitaplığı gizle',
 			'libraries.libraryOptions' => 'Kitaplık seçenekleri',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.content' => 'kitaplık içeriği',
 			'libraries.selectLibrary' => 'Kitaplık seç',
 			'libraries.filtersWithCount' => ({required Object count}) => 'Filtreler (${count})',
@@ -4062,10 +4142,13 @@ extension on TranslationsTr {
 			'libraries.sortLabels.dateShared' => 'Paylaşılma Tarihi',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Son Bölüm Yayın Tarihi',
 			'libraries.sortLabels.lastEpisodeDateAdded' => 'Eklenen Son Bölüm Tarihi',
+			'libraries.sortLabels.dateDownloaded' => 'İndirme Tarihi',
+			'libraries.sortLabels.size' => 'Boyut',
+			'libraries.sortLabels.library' => 'Kitaplık',
 			'about.title' => 'Hakkında',
 			'about.openSourceLicenses' => 'Açık Kaynak Lisansları',
 			'about.versionLabel' => ({required Object version}) => 'Sürüm ${version}',
-			'about.appDescription' => 'Flutter için şık bir Plex ve Jellyfin istemcisi',
+			'about.appDescription' => 'Flutter için şık bir Plex, Jellyfin ve Emby istemcisi',
 			'about.viewLicensesDescription' => 'Üçüncü taraf kütüphanelerin lisanslarını görüntüleyin',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email}) için sunucu bulunamadı',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Sunucular yüklenemedi: ${error}',
@@ -4332,7 +4415,9 @@ extension on TranslationsTr {
 			'liveTv.editRuleAction' => 'Düzenle',
 			'liveTv.recordingRuleUpdated' => 'Kayıt kuralı güncellendi',
 			'liveTv.guideReloadRequested' => 'Rehber yenilemesi istendi',
+			'liveTv.guideReloadFailed' => 'Rehber yenilenemedi',
 			'liveTv.rulesProcessRequested' => 'Kuralın yeniden değerlendirilmesi istendi',
+			'liveTv.rulesProcessFailed' => 'Kayıt kuralları yeniden değerlendirilemedi',
 			'liveTv.recordShow' => 'Programı kaydet',
 			'liveTv.recordSettings.startEarly' => 'Erken başlat (saniye)',
 			'liveTv.recordSettings.endLate' => 'Geç bitir (saniye)',
@@ -4347,6 +4432,8 @@ extension on TranslationsTr {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü',
 			'liveTv.failedToStartChannel' => 'Canlı kanal başlatılamadı',
 			'liveTv.failedToBuildStreamUrl' => 'Akış URL\'si oluşturulamadı',
+			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Kanal başlatılamadı: ${reason}',
+			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Kanal değiştirilemedi: ${reason}',
 			'collections.title' => 'Koleksiyonlar',
 			'collections.collection' => 'Koleksiyon',
 			'collections.empty' => 'Koleksiyon boş',
@@ -4492,6 +4579,8 @@ extension on TranslationsTr {
 			'watchTogether.waitingForName' => ({required Object name}) => '${name} bekleniyor...',
 			'watchTogether.recentRooms' => 'Son Odalar',
 			'watchTogether.renameRoom' => 'Odayı Yeniden Adlandır',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.removeRoom' => 'Kaldır',
 			'watchTogether.guestSwitchUnavailable' => 'Geçiş yapılamadı — eşitleme için sunucu mevcut değil',
 			'watchTogether.guestSwitchFailed' => 'Geçiş yapılamadı — içerik bu sunucuda bulunamadı',
@@ -4515,7 +4604,7 @@ extension on TranslationsTr {
 			'downloads.downloadQueued' => 'İndirme kuyruğa alındı',
 			'downloads.downloadResumed' => 'İndirme devam ettirildi',
 			'downloads.serverErrorBitrate' => 'Sunucu hatası: dosya uzak bit hızı sınırını aşıyor olabilir',
-			'downloads.storageFull' => 'Cihaz depolama alanı dolu olduğu için indirmeler durduruldu. Biraz alan boşaltıp tekrar deneyin.',
+			'downloads.storageFull' => 'Kullanılabilir depolama alanını korumak için indirmeler durduruldu. Alan boşaltın veya başka bir indirme konumu seçin, ardından tekrar deneyin.',
 			'downloads.storageUnavailable' => 'Kullanılabilir depolama alanı kontrol edilemediği için indirmeler durduruldu. İndirme konumunu kontrol edip tekrar deneyin.',
 			'downloads.episodesQueued' => ({required Object count}) => 'İndirmek için ${count} bölüm kuyruğa alındı',
 			'downloads.downloadDeleted' => 'İndirme silindi',
@@ -4526,8 +4615,6 @@ extension on TranslationsTr {
 			'downloads.resumeDownload' => 'İndirmeyi devam ettir',
 			'downloads.cancelledDownload' => 'İptal edilen indirme',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eşitleniyor)',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'İndirildi ${file} - Tamamlamak için tıklayın',
 			'downloads.partialDownloadClickToComplete' => 'Kısmen indirildi - Tamamlamak için tıklayın',
 			'downloads.deleting' => 'Siliniyor...',
@@ -4575,6 +4662,7 @@ extension on TranslationsTr {
 			'downloads.syncRuleAvailable' => 'Kullanılabilir',
 			'downloads.syncRuleOffline' => 'Çevrimdışı',
 			'downloads.syncRuleSignInRequired' => 'Giriş gerekli',
+			'downloads.syncRuleAccessDenied' => 'Erişim reddedildi',
 			'downloads.syncRuleNotAvailableForProfile' => 'Mevcut profil için kullanılamaz',
 			'downloads.syncRuleUnknownServer' => 'Bilinmeyen sunucu',
 			'downloads.syncRuleListCreated' => 'Eşitleme kuralı oluşturuldu',
@@ -4604,13 +4692,22 @@ extension on TranslationsTr {
 			'downloads.backgroundWarning.statusUnknown' => 'Henüz kontrol edilmedi',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Bu cihazda sistem ayarları açılamadı',
 			'downloads.backgroundWarning.linkUnavailable' => 'Bu cihazda dontkillmyapp.com açılamadı',
+			'downloads.options' => 'İndirme seçenekleri',
+			'downloads.groupings.library' => 'Kitaplık',
+			'downloads.unknownLibrary' => 'Bilinmeyen kitaplık',
 			'downloads.unknownShow' => 'Bilinmeyen Dizi',
 			'downloads.unknownSeason' => 'Bilinmeyen Sezon',
 			'downloads.unknownAlbum' => 'Bilinmeyen Albüm',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} tamamlandı',
 			'downloads.errorFileNotFound' => 'Dosya bulunamadı (404)',
+			'downloads.errorDownloadNotAllowed' => 'Sunucu indirmeye izin vermiyor (403)',
 			'downloads.errorDownloadFailed' => 'İndirme başarısız oldu',
-			'downloads.errorPostProcessing' => ({required Object error}) => 'Son işleme başarısız oldu: ${error}',
+			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'İndirme başarısız oldu: ${reason}',
+			'downloads.errorHttpStatus' => ({required Object status}) => 'İndirme başarısız oldu (HTTP ${status})',
+			'downloads.errorPostProcessing' => ({required Object reason}) => 'Son işleme başarısız oldu: ${reason}',
+			'downloads.reasonFileNotSaved' => 'dosya bu cihaza kaydedilemedi',
+			'downloads.reasonCannotResume' => 'yarım kalan indirme sürdürülemedi',
+			'downloads.reasonDeviceStorageFull' => 'bu cihazda depolama alanı kalmadı',
 			'downloads.notificationDownloading' => 'İndiriliyor...',
 			'downloads.notificationComplete' => 'İndirme tamamlandı',
 			'downloads.notificationPaused' => 'İndirme duraklatıldı',
@@ -4719,8 +4816,6 @@ extension on TranslationsTr {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Ses Yüksekliğini Normalleştir',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Sesi PCM\'e çözer; bu açıkken doğrudan geçiş kapalıdır',
-			'videoSettings.audioNormalizationStereoMix' => 'Sesi stereo karışıma çözer; bu açıkken doğrudan geçiş kapalıdır',
-			'videoSettings.audioDownmix' => 'Stereo\'ya Dönüştür',
 			'performanceOverlay.color' => 'Renk',
 			'performanceOverlay.performance' => 'Performans',
 			'performanceOverlay.buffer' => 'Arabellek',
@@ -4857,6 +4952,7 @@ extension on TranslationsTr {
 			'metadataEdit.country' => 'Ülke',
 			'metadataEdit.collection' => 'Koleksiyon',
 			'metadataEdit.label' => 'Etiket',
+			'metadataEdit.quickTag' => 'Hızlı etiket...',
 			'matchScreen.match' => 'Eşleştir...',
 			'matchScreen.fixMatch' => 'Eşleşmeyi Düzelt...',
 			'matchScreen.unmatch' => 'Eşleşmeyi Kaldır',
@@ -4997,6 +5093,8 @@ extension on TranslationsTr {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} sunucunuza giriş yapın. ${name} profiline bağlanır.',
 			'addServer.borrowFromAnotherProfile' => 'Başka bir profilden ödünç al',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
 			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',

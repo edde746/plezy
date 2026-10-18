@@ -19,20 +19,30 @@ void _logPlatformClient(String platform, String client) {
 /// dart:io leaves TCP connects unbounded (Darwin retries SYNs for ~75 s) and
 /// `package:http` cannot abort a request whose connection is still being
 /// established, so every IOClient gets an explicit connect bound and
-/// permission to force-close after a failed drain (#1972).
+/// permission to force-close after a failed drain (#1972). The bound covers
+/// only reaching the server: `Client.send` then waits for response headers,
+/// which is the server's think time and the caller's deadline to set.
 ///
-/// The pool is always tuned. Every surface that matters fans out — Plex and
+/// The pool is always widened. Every surface that matters fans out — Plex and
 /// Jellyfin home loads, artwork rails, tracker and Seerr traffic all issue
-/// several concurrent requests per pass — and the dart:io defaults of 6
-/// connections per host and a 15 s idle timeout cost a fresh TLS handshake per
-/// request on a high-RTT or CDN link. On a 60-way artwork fan-out, 12/90 s
-/// measured ~4x the default's throughput on Linux and ~2x on Android, so there
-/// is no case left for the opt-in the tuning used to be.
-ManagedHttpClient _createIoClient(String debugLabel) {
+/// several concurrent requests per pass — and dart:io's default of 6
+/// connections per host queues them. On a 60-way artwork fan-out, 12
+/// connections measured ~4x the default's throughput on Linux and ~2x on
+/// Android.
+///
+/// The idle timeout has to stay below the server's keep-alive, because dart:io
+/// never resends a request that fails on a reused connection
+/// (dart-lang/sdk#21798). Plex sends `Keep-Alive: timeout=20`, and over TLS it
+/// stops answering an idle connection at 20 s but closes it only ~3 s later.
+/// Every request the pool hands that connection in between fails with
+/// "Connection closed before full header was received"; at 90 s that blanked
+/// whole rows of posters (#2670). Retiring connections at 15 s, before Plex
+/// does, costs a handshake only after a lull, never inside a fan-out.
+ManagedHttpClient _createIoClient(String debugLabel, Duration connectTimeout) {
   final httpClient = HttpClient()
-    ..connectionTimeout = MediaServerTimeouts.connect
+    ..connectionTimeout = connectTimeout
     ..maxConnectionsPerHost = 12
-    ..idleTimeout = const Duration(seconds: 90)
+    ..idleTimeout = const Duration(seconds: 15)
     ..connectionFactory = happyEyeballsConnectionFactory;
   return ManagedHttpClient(IOClient(httpClient), debugLabel: debugLabel, forceCloseOnDrainTimeout: true);
 }
@@ -47,18 +57,27 @@ ManagedHttpClient _createIoClient(String debugLabel) {
 /// measured slower than this client on the request shapes Plezy actually
 /// issues — Cronet by ~10x on LAN body throughput — so neither survived; see
 /// issue #2140.
-http.Client createPlatformClient() {
+///
+/// Both transports bound only the connect, to [connectTimeout]. Waiting on
+/// the server is left to the caller's deadlines, as dart:io already does:
+/// WinHTTP's own 30 s per-read default would otherwise cut a slow server's
+/// answer short and surface it as a connection error, which endpoint failover
+/// reads as a dead endpoint (#2581).
+http.Client createPlatformClient({Duration connectTimeout = MediaServerTimeouts.connect}) {
   if (Platform.isWindows) {
     try {
-      final client = WinHttpClient.defaultConfiguration();
+      final client = WinHttpClient.fromConfiguration(
+        // A zero receive timeout is WinHTTP's "wait indefinitely".
+        WinHttpClientConfiguration(connectTimeout: connectTimeout, receiveTimeout: Duration.zero),
+      );
       _logPlatformClient('windows', 'WinHttpClient');
       return ManagedHttpClient(client, debugLabel: 'WinHttpClient');
     } catch (e, st) {
       appLogger.w('WinHttpClient init failed, falling back to IOClient', error: e, stackTrace: st);
       _logPlatformClient('windows', 'IOClient (fallback)');
-      return _createIoClient('IOClient (fallback)');
+      return _createIoClient('IOClient (fallback)', connectTimeout);
     }
   }
   _logPlatformClient(Platform.operatingSystem, 'IOClient');
-  return _createIoClient('IOClient');
+  return _createIoClient('IOClient', connectTimeout);
 }

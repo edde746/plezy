@@ -1253,6 +1253,77 @@ void main() {
     });
   });
 
+  group('desktop timeline key seeking', () {
+    testWidgets('a press at the start of the item commits no seek on release', (tester) async {
+      // The focused timeline coalesces a held arrow into one seek on release.
+      // A first press back while already at 0:00 has nothing to preview and
+      // nothing to commit: it used to seek to the position already occupied.
+      // The forward press proves the same keys do reach the accumulator.
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await initializeDateFormatting('en');
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      final settings = await SettingsService.getInstance();
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      final volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
+      addTearDown(volume.dispose);
+      final seekEnds = <Duration>[];
+
+      final watchTogether = WatchTogetherProvider();
+      addTearDown(watchTogether.dispose);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WatchTogetherProvider>.value(
+          value: watchTogether,
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1000,
+                height: 700,
+                child: DesktopVideoControls(
+                  useDpadNavigation: true,
+                  player: player,
+                  volumeController: volume,
+                  metadata: testMediaItem(id: 'desktop-timeline'),
+                  onPlayPause: () {},
+                  chapters: const [],
+                  chaptersLoaded: true,
+                  seekTimeSmall: 10,
+                  onSeekToPreviousChapter: () {},
+                  onSeekToNextChapter: () {},
+                  onSeek: (_) {},
+                  onSeekEnd: seekEnds.add,
+                  getReplayIcon: (_) => Icons.replay,
+                  getForwardIcon: (_) => Icons.forward_10,
+                  trackControlsState: const TrackControlsState(canControl: true),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      tester.widget<VideoTimelineBar>(find.byType(VideoTimelineBar)).focusNode!.requestFocus();
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(seekEnds, isEmpty, reason: 'nothing to rewind through, so nothing to commit');
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(seekEnds, [const Duration(seconds: 10)]);
+    });
+  });
+
   group('mobile header', () {
     Future<void> pumpMobileControls(
       WidgetTester tester, {

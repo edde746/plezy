@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -92,17 +94,26 @@ void main() {
     test('totalCount falls back to size then items length', () async {
       final p = PlaybackStateProvider();
       final items = [_item('a', 1), _item('b', 2)];
+      final requested = <({int queueId, String? center, int window})>[];
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 0}) async {
+        requested.add((queueId: playQueueId, center: center, window: window));
+        return _queue(playQueueID: playQueueId, selectedItemID: 2, totalCount: 7, items: [...items, _item('c', 3)]);
+      });
 
-      // totalCount missing, size present → uses size
-      await p.setPlaybackFromPlayQueue(_queue(size: 7, items: items), null);
-      expect(p.loadedItems, hasLength(2));
-      // The fallback is internal but observable via getNextEpisode at end-of-window:
-      // size=7 means the window isn't at the end, so the loop guard differs.
+      // totalCount missing, size present → size is the queue length, so the
+      // loaded window is not the queue end and stepping past it asks the
+      // server for a window centred on the anchor.
+      await p.setPlaybackFromPlayQueue(_queue(selectedItemID: 2, size: 7, items: items), null);
+      expect((await p.getNextEpisode('b')).item?.id, 'c');
+      expect(requested, [(queueId: 1, center: '2', window: 50)]);
 
-      // Reset: totalCount=null, size=null, items length used.
+      // totalCount and size missing → items length is the queue length, so 'b'
+      // is the last item and no window is requested.
       p.clearShuffle();
-      await p.setPlaybackFromPlayQueue(_queue(items: items), null);
-      expect(p.loadedItems, hasLength(2));
+      requested.clear();
+      await p.setPlaybackFromPlayQueue(_queue(selectedItemID: 2, items: items), null);
+      expect((await p.getNextEpisode('b')).status, QueueNavigationStatus.boundary);
+      expect(requested, isEmpty);
 
       p.dispose();
     });
@@ -260,6 +271,66 @@ void main() {
       expect(fetchCount, 1);
     });
 
+    test('window fetched for a replaced queue is dropped instead of published', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final oldItem = _item('old-a', 1001);
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [oldItem]),
+        null,
+      );
+      final fetchStarted = Completer<void>();
+      final gate = Completer<PlayQueueResponse?>();
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) {
+        fetchStarted.complete();
+        return gate.future;
+      });
+      final pending = p.getNextEpisode('old-a');
+      await fetchStarted.future;
+
+      // The user starts a different queue while the old queue's window is in flight.
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 2, selectedItemID: 2001, totalCount: 1, items: [_item('new-a', 2001)]),
+        null,
+      );
+      var notified = 0;
+      p.addListener(() => notified++);
+      final staleWindow = [oldItem, _item('old-b', 1002)];
+      gate.complete(_queue(playQueueID: 1, selectedItemID: 1001, shuffled: true, totalCount: 2, items: staleWindow));
+      final next = await pending;
+
+      expect(next.status, QueueNavigationStatus.failed);
+      expect(p.loadedItems.map((item) => item.id), ['new-a']);
+      expect(p.isShuffleActive, isFalse);
+      expect(notified, 0);
+    });
+
+    test('window fetched for a cleared queue is dropped instead of reviving it', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final item = _item('a', 1001);
+      await p.setPlaybackFromPlayQueue(
+        _queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [item]),
+        null,
+      );
+      final fetchStarted = Completer<void>();
+      final gate = Completer<PlayQueueResponse?>();
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) {
+        fetchStarted.complete();
+        return gate.future;
+      });
+      final pending = p.getNextEpisode('a');
+      await fetchStarted.future;
+
+      p.clearShuffle();
+      gate.complete(_queue(playQueueID: 1, selectedItemID: 1001, totalCount: 2, items: [item, _item('b', 1002)]));
+      final next = await pending;
+
+      expect(next.status, QueueNavigationStatus.failed);
+      expect(p.isQueueActive, isFalse);
+      expect(p.loadedItems, isEmpty);
+    });
+
     test('getNextEpisode reports unavailable with no active queue', () async {
       final p = PlaybackStateProvider();
       final next = await p.getNextEpisode('any-key');
@@ -332,10 +403,7 @@ void main() {
       final ep2 = testMediaItem(id: 'ep2', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
       final outsider = testMediaItem(id: 'ep-other', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
 
-      p.setPlaybackFromLocalQueue(
-        LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2], currentIndex: 0),
-        contextKey: 'playlist-X',
-      );
+      p.setPlaybackFromLocalQueue(LocalPlayQueue(items: [ep1, ep2], currentIndex: 0), contextKey: 'playlist-X');
 
       expect(p.playQueueItemIdFor(ep1), 0);
       expect(p.playQueueItemIdFor(ep2), 1);

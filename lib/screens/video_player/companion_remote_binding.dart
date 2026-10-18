@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../models/companion_remote/remote_command.dart';
 import '../../mpv/mpv.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/companion_remote/companion_remote_receiver.dart';
@@ -27,10 +26,10 @@ class CompanionRemoteBinding {
     required this._isMounted,
     required this._canControlPlayback,
     required this._volumeController,
-    required this._hasNextEpisode,
+    required this._hasNextItem,
     required this._onStop,
-    required this._onPlayNext,
-    required this._onPlayPrevious,
+    required this._onNavigateToNextItem,
+    required this._onNavigateToPreviousItem,
     required this._skipByConfiguredStep,
     required this._onCycleSubtitles,
     required this._onCycleAudio,
@@ -42,10 +41,10 @@ class CompanionRemoteBinding {
   final bool Function() _isMounted;
   final bool Function() _canControlPlayback;
   final VideoVolumeController? Function() _volumeController;
-  final bool Function() _hasNextEpisode;
+  final bool Function() _hasNextItem;
   final void Function() _onStop;
-  final void Function() _onPlayNext;
-  final Future<void> Function() _onPlayPrevious;
+  final Future<void> Function() _onNavigateToNextItem;
+  final Future<void> Function() _onNavigateToPreviousItem;
   final void Function({required bool forward}) _skipByConfiguredStep;
   final void Function() _onCycleSubtitles;
   final void Function() _onCycleAudio;
@@ -68,10 +67,10 @@ class CompanionRemoteBinding {
       if (_isMounted()) _onStop();
     };
     receiver.onNextTrack = () {
-      if (_isMounted() && _hasNextEpisode()) _onPlayNext();
+      if (_isMounted() && _hasNextItem()) unawaited(_onNavigateToNextItem());
     };
     receiver.onPreviousTrack = () {
-      if (_isMounted()) unawaited(_onPlayPrevious());
+      if (_isMounted()) unawaited(_onNavigateToPreviousItem());
     };
     receiver.onSeekForward = () => _dispatchSeek(forward: true);
     receiver.onSeekBackward = () => _dispatchSeek(forward: false);
@@ -96,7 +95,7 @@ class CompanionRemoteBinding {
     // Store provider reference for use in dispose and notify remote
     try {
       _provider = _readProvider();
-      _provider!.sendCommand(RemoteCommandType.syncState, data: {'playerActive': true});
+      _provider!.setHostPlayerActive(true);
     } catch (e) {
       appLogger.d('CompanionRemote provider unavailable', error: e);
     }
@@ -157,7 +156,7 @@ class CompanionRemoteBinding {
     _savedOnHome = null;
 
     // Notify only when the active player owner exits.
-    _provider?.sendCommand(RemoteCommandType.syncState, data: {'playerActive': false});
+    _provider?.setHostPlayerActive(false);
     _provider = null;
   }
 }

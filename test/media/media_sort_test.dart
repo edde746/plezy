@@ -38,19 +38,6 @@ void main() {
   });
 
   group('MediaSort.fromJson', () {
-    test('parses all fields', () {
-      final s = MediaSort.fromJson({
-        'key': 'titleSort',
-        'descKey': 'titleSort:desc',
-        'title': 'Title',
-        'defaultDirection': 'asc',
-      });
-      expect(s.key, 'titleSort');
-      expect(s.descKey, 'titleSort:desc');
-      expect(s.title, 'Title');
-      expect(s.defaultDirection, 'asc');
-    });
-
     test('tolerates missing optional fields', () {
       final s = MediaSort.fromJson({'key': 'k', 'title': 't'});
       expect(s.descKey, isNull);

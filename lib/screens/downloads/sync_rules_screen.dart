@@ -109,6 +109,7 @@ class _SyncRuleTile extends StatefulWidget {
 class _SyncRuleTileState extends State<_SyncRuleTile> {
   final _rowFocusNode = FocusNode(debugLabel: 'sync_rule_row');
   final _switchFocusNode = FocusNode(debugLabel: 'sync_rule_switch');
+  final _removeFocusNode = FocusNode(debugLabel: 'sync_rule_remove');
 
   SyncRuleItem get rule => widget.rule;
   Map<String, MediaItem> get metadata => widget.metadata;
@@ -120,6 +121,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
   void dispose() {
     _rowFocusNode.dispose();
     _switchFocusNode.dispose();
+    _removeFocusNode.dispose();
     super.dispose();
   }
 
@@ -181,6 +183,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
   String _serverStatusForRule(_RuleServerInfo serverInfo) {
     if (!serverInfo.isKnown) return t.downloads.syncRuleUnknownServer;
     if (multiServerProvider.authErrorServerIds.contains(rule.serverId)) return t.downloads.syncRuleSignInRequired;
+    if (multiServerProvider.accessDeniedServerIds.contains(rule.serverId)) return t.downloads.syncRuleAccessDenied;
     if (!multiServerProvider.serverIds.contains(rule.serverId)) return t.downloads.syncRuleNotAvailableForProfile;
     return multiServerProvider.isServerOnline(ServerId(rule.serverId))
         ? t.downloads.syncRuleAvailable
@@ -258,18 +261,43 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
                   Text(serverLine, maxLines: 1, overflow: .ellipsis),
                 ],
               ),
-              trailing: FocusableWrapper(
-                focusNode: _switchFocusNode,
-                disableScale: true,
-                useBackgroundFocus: true,
-                descendantsAreFocusable: false,
-                borderRadius: 20,
-                onSelect: () => downloadProvider.updateSyncRuleOptions(rule.globalKey, enabled: !rule.enabled),
-                onNavigateLeft: () => _rowFocusNode.requestFocus(),
-                child: Switch(
-                  value: rule.enabled,
-                  onChanged: (value) => downloadProvider.updateSyncRuleOptions(rule.globalKey, enabled: value),
-                ),
+              trailing: Row(
+                mainAxisSize: .min,
+                children: [
+                  FocusableWrapper(
+                    focusNode: _switchFocusNode,
+                    disableScale: true,
+                    useBackgroundFocus: true,
+                    descendantsAreFocusable: false,
+                    borderRadius: 20,
+                    onSelect: () => downloadProvider.updateSyncRuleOptions(rule.globalKey, enabled: !rule.enabled),
+                    onNavigateLeft: () => _rowFocusNode.requestFocus(),
+                    onNavigateRight: () => _removeFocusNode.requestFocus(),
+                    child: Switch(
+                      value: rule.enabled,
+                      onChanged: (value) => downloadProvider.updateSyncRuleOptions(rule.globalKey, enabled: value),
+                    ),
+                  ),
+                  // The swipe action is touch-only; this is the remove path for
+                  // D-pad, keyboard and mouse — the only one for list rules,
+                  // whose edit dialog has no remove option.
+                  FocusableWrapper(
+                    focusNode: _removeFocusNode,
+                    disableScale: true,
+                    useBackgroundFocus: true,
+                    descendantsAreFocusable: false,
+                    borderRadius: 20,
+                    semanticLabel: t.downloads.removeSyncRule,
+                    onSelect: () => _removeRule(context),
+                    onNavigateLeft: () => _switchFocusNode.requestFocus(),
+                    child: IconButton(
+                      key: const ValueKey('sync_rule_remove'),
+                      tooltip: t.downloads.removeSyncRule,
+                      icon: const AppIcon(Symbols.delete_rounded, fill: 1, size: 20),
+                      onPressed: () => _removeRule(context),
+                    ),
+                  ),
+                ],
               ),
               onTap: () => _onTap(context),
             ),

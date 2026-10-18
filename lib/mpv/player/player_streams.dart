@@ -30,10 +30,8 @@ class PlayerSourceFailed {
 /// Subscribe to these streams to receive updates when the player state changes.
 /// For synchronous state access, use [PlayerState].
 class PlayerStreams {
-  /// Stream of playing state changes.
   final Stream<bool> playing;
 
-  /// Stream of completion state changes.
   final Stream<bool> completed;
 
   /// Stream of buffering state changes.
@@ -76,7 +74,6 @@ class PlayerStreams {
   /// Stream of buffer position updates.
   final Stream<Duration> buffer;
 
-  /// Stream of volume changes.
   final Stream<double> volume;
 
   /// Stream of playback rate changes.
@@ -85,16 +82,12 @@ class PlayerStreams {
   /// Stream of available tracks updates.
   final Stream<Tracks> tracks;
 
-  /// Stream of track selection changes.
   final Stream<TrackSelection> track;
 
-  /// Stream of log messages from the player.
   final Stream<PlayerLog> log;
 
-  /// Stream of player errors.
   final Stream<PlayerError> error;
 
-  /// Stream of audio device changes.
   final Stream<AudioDevice> audioDevice;
 
   /// Stream of available audio devices.
@@ -131,6 +124,13 @@ class PlayerStreams {
   /// the current file. Unlike [fileLoaded], this can fire before remote
   /// subtitle sidecars finish opening.
   final Stream<void> primaryMediaReady;
+
+  /// Emits when an mpv file moves toward its next frame: the decoders took
+  /// packets from the demuxer (`reader-pts` moved), or a demuxer that is
+  /// starving a decoder received data. Silence while a load is pending means
+  /// neither the network nor the decode pipeline is moving. Backends without
+  /// mpv's demuxer reader state (ExoPlayer) never emit.
+  final Stream<void> demuxerProgress;
 
   /// Emits when the compositor's preferred colour description for the video
   /// plane changes: the window moved to another output, or an output's HDR
@@ -178,6 +178,7 @@ class PlayerStreams {
     this.sourceReady = const Stream<PlayerSourceReady>.empty(),
     this.sourceFailed = const Stream<PlayerSourceFailed>.empty(),
     this.primaryMediaReady = const Stream<void>.empty(),
+    this.demuxerProgress = const Stream<void>.empty(),
     this.hdrOutputChanged = const Stream<void>.empty(),
     required this.backendSwitched,
     this.trackTransition = const Stream<String>.empty(),

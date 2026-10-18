@@ -9,6 +9,7 @@ import '../mixins/controller_disposer_mixin.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_list_tile.dart';
+import '../widgets/scroll_ink_boundary.dart';
 import 'focus_utils.dart';
 
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
@@ -209,6 +210,29 @@ class ScopedLoadingDialogController {
   }
 }
 
+/// Shows the server-side 403 modal: the server refused this account or
+/// connection. Never relay the refusal's response body: Plex's names a paid
+/// plan, which the app must not advertise (#2510).
+Future<void> showPlaybackNotAllowedDialog(BuildContext context) async {
+  await showScopedDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.playbackNotAllowedTitle),
+      content: Text(t.messages.playbackNotAllowedBody),
+      actions: [
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
 Future<void> showServerLimitDialog(BuildContext context) async {
   await showScopedDialog<void>(
@@ -291,6 +315,73 @@ Future<bool> showDeleteConfirmation(
     confirmText: confirmText ?? t.common.delete,
     isDestructive: true,
     warning: warning,
+  );
+}
+
+/// Shows a confirmation whose destructive side effect is opt-in through one
+/// switch that starts off. Returns null when cancelled, otherwise the switch
+/// value. The confirm button takes the error colour when [isDestructive], or
+/// once the switch is on.
+Future<bool?> showConfirmWithSwitchDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmText,
+  required String switchTitle,
+  String? switchSubtitle,
+  bool isDestructive = false,
+  Key? switchKey,
+}) {
+  var switchValue = false;
+  return showScopedDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return AlertDialog(
+            title: Text(title),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(message),
+                const SizedBox(height: 12),
+                FocusableSwitchListTile(
+                  key: switchKey,
+                  value: switchValue,
+                  onChanged: (value) => setState(() => switchValue = value),
+                  title: Text(switchTitle),
+                  subtitle: switchSubtitle == null ? null : Text(switchSubtitle),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+            actions: [
+              DialogActionButton(
+                autofocus: true,
+                onPressed: () => Navigator.pop(dialogContext),
+                label: t.common.cancel,
+                style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+              ),
+              DialogActionButton(
+                onPressed: () => Navigator.pop(dialogContext, switchValue),
+                label: confirmText,
+                isPrimary: true,
+                style: isDestructive || switchValue
+                    ? FilledButton.styleFrom(
+                        padding: _buttonPadding,
+                        shape: _buttonShape,
+                        backgroundColor: colorScheme.error,
+                        foregroundColor: colorScheme.onError,
+                      )
+                    : FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+              ),
+            ],
+          );
+        },
+      );
+    },
   );
 }
 
@@ -532,53 +623,62 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
       constraints: const BoxConstraints(minWidth: 304),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       children: [
-        if (toggle != null)
-          MergeSemantics(
-            child: FocusableListTile(
-              title: Row(
-                children: [
-                  if (toggle.icon != null) ...[
-                    AppIcon(toggle.icon!, fill: 1, size: 24),
-                    const SizedBox(width: rowHorizontalTitleGap),
-                  ],
-                  Expanded(
-                    child: Text(
-                      toggle.label,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+        // SimpleDialog owns the scroll view, so the ink boundary goes inside it.
+        ScrollInkBoundary(
+          child: Column(
+            mainAxisSize: .min,
+            crossAxisAlignment: .stretch,
+            children: [
+              if (toggle != null)
+                MergeSemantics(
+                  child: FocusableListTile(
+                    title: Row(
+                      children: [
+                        if (toggle.icon != null) ...[
+                          AppIcon(toggle.icon!, fill: 1, size: 24),
+                          const SizedBox(width: rowHorizontalTitleGap),
+                        ],
+                        Expanded(
+                          child: Text(
+                            toggle.label,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: rowHorizontalTitleGap),
+                        ExcludeFocus(
+                          child: Switch(value: _toggleValue, onChanged: updateToggle),
+                        ),
+                      ],
                     ),
+                    contentPadding: rowPadding,
+                    onTap: () => updateToggle(!_toggleValue),
                   ),
-                  const SizedBox(width: rowHorizontalTitleGap),
-                  ExcludeFocus(
-                    child: Switch(value: _toggleValue, onChanged: updateToggle),
-                  ),
-                ],
-              ),
-              contentPadding: rowPadding,
-              onTap: () => updateToggle(!_toggleValue),
-            ),
+                ),
+              ...List.generate(widget.options.length, (index) {
+                final option = widget.options[index];
+                final icon = option.icon;
+                return FocusableListTile(
+                  focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                  leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
+                  title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+                  contentPadding: rowPadding,
+                  horizontalTitleGap: rowHorizontalTitleGap,
+                  minLeadingWidth: rowMinLeadingWidth,
+                  onTap: () async {
+                    if (widget.onBeforeClose != null) {
+                      final result = await widget.onBeforeClose!(option.value);
+                      if (context.mounted) Navigator.pop(context, result);
+                    } else {
+                      Navigator.pop(context, option.value);
+                    }
+                  },
+                );
+              }),
+            ],
           ),
-        ...List.generate(widget.options.length, (index) {
-          final option = widget.options[index];
-          final icon = option.icon;
-          return FocusableListTile(
-            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-            leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
-            title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
-            contentPadding: rowPadding,
-            horizontalTitleGap: rowHorizontalTitleGap,
-            minLeadingWidth: rowMinLeadingWidth,
-            onTap: () async {
-              if (widget.onBeforeClose != null) {
-                final result = await widget.onBeforeClose!(option.value);
-                if (context.mounted) Navigator.pop(context, result);
-              } else {
-                Navigator.pop(context, option.value);
-              }
-            },
-          );
-        }),
+        ),
       ],
     );
   }

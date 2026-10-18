@@ -80,6 +80,15 @@ func newTestServer(t *testing.T, stateFile string) *Server {
 	return s
 }
 
+// write is the synchronous storage-test entry point; production uses the
+// single writer's writeNextGeneration.
+func (sn *snapshotter) write() error {
+	sn.writeMu.Lock()
+	defer sn.writeMu.Unlock()
+	_, err := sn.captureAndPersist()
+	return err
+}
+
 func mustReconnectToken(t *testing.T) (string, reconnectVerifier) {
 	t.Helper()
 	token, verifier, err := mintReconnectToken()
@@ -108,6 +117,76 @@ func makeRoomSnapshots(count int, maximumLengthIDs bool, now time.Time) []roomSn
 		})
 	}
 	return rooms
+}
+
+func TestSnapshotKeepsOccupiedRoomsAcrossRestart(t *testing.T) {
+	dir := t.TempDir()
+	stateFile := filepath.Join(dir, "rooms.json")
+	h := newRelayHarnessAt(t, t.TempDir(), stateFile)
+	createModernRoomWithGuest(t, h, "BUSY", "6.9.0.1", "6.9.0.2")
+
+	// Only relayed messages have happened since the last membership change,
+	// and those never dirty the snapshot.
+	h.srv.mu.RLock()
+	room := h.srv.rooms["BUSY"]
+	h.srv.mu.RUnlock()
+	stale := time.Now().Add(-emptyRoomMaxAge - time.Minute)
+	room.mu.Lock()
+	room.LastActivityAt = stale
+	room.mu.Unlock()
+
+	captured := h.srv.buildSnapshot()
+	if len(captured.Rooms) != 1 || !captured.Rooms[0].LastActivityAt.Equal(captured.SavedAt) {
+		t.Fatalf("occupied room activity=%v, want capture time %v", captured.Rooms, captured.SavedAt)
+	}
+
+	// The periodic cleanup persists that activity without any mutation.
+	waitForSnapshot := func(done func(stateSnapshot) bool) stateSnapshot {
+		t.Helper()
+		deadline := time.Now().Add(2 * time.Second)
+		for {
+			var persisted stateSnapshot
+			data, err := os.ReadFile(stateFile)
+			if err == nil && json.Unmarshal(data, &persisted) == nil && done(persisted) {
+				return persisted
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("expected snapshot was never persisted: %s", data)
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+	admitted := waitForSnapshot(func(persisted stateSnapshot) bool {
+		return len(persisted.Rooms) == 1 && persisted.Rooms[0].PeerReservations["G"].Verifier != ""
+	})
+	h.srv.runCleanupStep(time.Now())
+	waitForSnapshot(func(persisted stateSnapshot) bool {
+		return persisted.SavedAt.After(admitted.SavedAt) &&
+			len(persisted.Rooms) == 1 && persisted.Rooms[0].LastActivityAt.Equal(persisted.SavedAt)
+	})
+
+	restarted := newTestServer(t, copySnapshotForRestart(t, stateFile))
+	if _, err := restarted.loadSnapshot(restarted.snap.path); err != nil {
+		t.Fatalf("loadSnapshot: %v", err)
+	}
+	if restarted.rooms["BUSY"] == nil {
+		t.Fatal("restart dropped a room that had connected peers")
+	}
+
+	// An empty room keeps its own activity and still ages out.
+	empty := &Room{
+		SessionID:      "IDLE",
+		HostPeerID:     "H",
+		Peers:          map[string]*Client{},
+		CreatedAt:      stale,
+		LastActivityAt: stale,
+	}
+	restarted.rooms["IDLE"] = empty
+	for _, snapshot := range restarted.buildSnapshot().Rooms {
+		if snapshot.SessionID == "IDLE" && !snapshot.LastActivityAt.Equal(stale) {
+			t.Fatalf("empty room activity=%v, want %v", snapshot.LastActivityAt, stale)
+		}
+	}
 }
 
 func TestSnapshotRoundTrip(t *testing.T) {
@@ -1742,57 +1821,69 @@ func TestClientWriteFailureClosesConnection(t *testing.T) {
 }
 
 func TestRateLimiterBurstExhausts(t *testing.T) {
-	rl := newRateLimiter(5, 10)
-	for i := 0; i < 5; i++ {
-		if !rl.allow() {
+	now := time.Unix(1700000000, 0)
+	rl := newRateLimiterAt(5, 10, now)
+	for i := range 5 {
+		if !rl.allowAt(now) {
 			t.Fatalf("allow %d: expected true", i)
 		}
 	}
-	if rl.allow() {
+	if rl.allowAt(now) {
 		t.Fatal("allow 6: expected false (burst exhausted)")
 	}
 }
 
 func TestRateLimiterRefillsOverTime(t *testing.T) {
-	rl := newRateLimiter(5, 10)
-	for i := 0; i < 5; i++ {
-		rl.allow()
+	start := time.Unix(1700000000, 0)
+	rl := newRateLimiterAt(5, 10, start)
+	for range 5 {
+		rl.allowAt(start)
 	}
-	if rl.allow() {
-		t.Fatal("burst should be exhausted before sleep")
+	if rl.allowAt(start) {
+		t.Fatal("burst should be exhausted before any refill")
 	}
-	time.Sleep(1200 * time.Millisecond)
-	count := 0
-	for rl.allow() {
-		count++
+
+	// 250ms at 10 tokens/s refills 2.5 tokens: two admissions, no third.
+	partial := start.Add(250 * time.Millisecond)
+	for i := range 2 {
+		if !rl.allowAt(partial) {
+			t.Fatalf("partial refill allow %d: expected true", i)
+		}
 	}
-	if count < 1 {
-		t.Fatalf("expected at least 1 token after 1.2s refill, got %d", count)
+	if rl.allowAt(partial) {
+		t.Fatal("fractional token admitted a third request")
 	}
-	if count > 5 {
-		t.Fatalf("expected at most burst=5 after refill, got %d", count)
+
+	saturated := start.Add(time.Hour)
+	for i := range 5 {
+		if !rl.allowAt(saturated) {
+			t.Fatalf("saturated allow %d: expected true", i)
+		}
+	}
+	if rl.allowAt(saturated) {
+		t.Fatal("refill exceeded burst capacity")
 	}
 }
 
 func TestRateLimiterAllowRace(t *testing.T) {
-	rl := newRateLimiter(100, 1000)
+	now := time.Unix(1700000000, 0)
+	rl := newRateLimiterAt(100, 1000, now)
 	var wg sync.WaitGroup
 	var successes atomic.Int64
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for j := 0; j < 50; j++ {
-				if rl.allow() {
+			for range 50 {
+				if rl.allowAt(now) {
 					successes.Add(1)
 				}
 			}
 		}()
 	}
 	wg.Wait()
-	// Spot-check the result bounds; -race checks synchronization.
-	if got := successes.Load(); got <= 0 || got > 500 {
-		t.Fatalf("unexpected successes count %d (want 1..500)", got)
+	if got := successes.Load(); got != 100 {
+		t.Fatalf("concurrent admissions=%d, want exactly burst=100", got)
 	}
 }
 
@@ -2180,7 +2271,7 @@ func TestGenerateLogIDShape(t *testing.T) {
 			t.Fatalf("len=%d want %d (id=%q)", len(id), logIDLength, id)
 		}
 		for _, c := range id {
-			if !strings.ContainsRune(idChars, c) {
+			if !strings.ContainsRune(logIDChars, c) {
 				t.Fatalf("id %q has unexpected char %q", id, c)
 			}
 		}
@@ -3690,6 +3781,62 @@ func TestStalePeerSkipsCleanupBroadcast(t *testing.T) {
 	}
 }
 
+func TestRoomLookupsAreThrottledPerSourceExceptProvenIdentities(t *testing.T) {
+	h := newRelayHarness(t)
+	_, _, _, guestToken := createModernRoomWithGuest(t, h, "REAL1", "6.10.0.1", "6.10.0.2")
+
+	probeIP := "6.10.0.3"
+	prober := h.dial(t, probeIP)
+	for i := range roomLookupRateBurst {
+		token, _ := mustReconnectToken(t)
+		prober.send(clientMsg{
+			Type:            relayTypeJoin,
+			SessionID:       fmt.Sprintf("NOPE%02d", i),
+			PeerID:          "P",
+			ReconnectToken:  token,
+			ProtocolVersion: relayProtocolVersion,
+		})
+		prober.expectError(relayErrorRoomNotFound)
+	}
+
+	// An exhausted source gets one answer whether or not a code is live, by
+	// join and by create alike.
+	for _, msg := range []clientMsg{
+		{Type: relayTypeJoin, SessionID: "REAL1"},
+		{Type: relayTypeJoin, SessionID: "NOPE99"},
+		{Type: relayTypeCreate, SessionID: "REAL1"},
+	} {
+		token, _ := mustReconnectToken(t)
+		msg.PeerID = "P"
+		msg.ReconnectToken = token
+		msg.ProtocolVersion = relayProtocolVersion
+		prober.send(msg)
+		prober.expectError(relayErrorRateLimited)
+	}
+
+	// A reconnect proving a held identity is not a guess.
+	resumed := h.dial(t, probeIP)
+	resumed.send(clientMsg{
+		Type:            relayTypeResume,
+		SessionID:       "REAL1",
+		PeerID:          "G",
+		ReconnectToken:  guestToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	resumed.expectAuthority(relayTypeResumed, "H")
+
+	otherToken, _ := mustReconnectToken(t)
+	other := h.dial(t, "6.10.0.4")
+	other.send(clientMsg{
+		Type:            relayTypeJoin,
+		SessionID:       "REAL1",
+		PeerID:          "O",
+		ReconnectToken:  otherToken,
+		ProtocolVersion: relayProtocolVersion,
+	})
+	other.expectAuthority(relayTypeJoined, "H")
+}
+
 func TestResumeCannotEnterReplacementRoom(t *testing.T) {
 	for _, replacementHost := range []string{"NEW_HOST", "H"} {
 		t.Run(replacementHost, func(t *testing.T) {
@@ -4591,8 +4738,8 @@ func TestTerminalPersistenceFailureSuppressesSuccess(t *testing.T) {
 			ProtocolVersion: relayProtocolVersion,
 		})
 		failure := guest.expectError(relayErrorInvalidMessage)
-		if !strings.Contains(failure.Message, "persist") {
-			t.Fatalf("leave persistence error message=%q", failure.Message)
+		if strings.Contains(failure.Message, injectedErr.Error()) {
+			t.Fatalf("leave failure disclosed the internal persistence error: %q", failure.Message)
 		}
 		h.srv.mu.RLock()
 		room := h.srv.rooms["FAILED_LEAVE"]
@@ -4643,8 +4790,8 @@ func TestTerminalPersistenceFailureSuppressesSuccess(t *testing.T) {
 			ProtocolVersion: relayProtocolVersion,
 		})
 		failure := host.expectError(relayErrorInvalidMessage)
-		if !strings.Contains(failure.Message, "persist") {
-			t.Fatalf("end persistence error message=%q", failure.Message)
+		if strings.Contains(failure.Message, injectedErr.Error()) {
+			t.Fatalf("end failure disclosed the internal persistence error: %q", failure.Message)
 		}
 		messages, err := guest.recvUntilClosed(2 * time.Second)
 		if err != nil {
@@ -6617,6 +6764,11 @@ func postLog(t *testing.T, baseURL, ip string, body []byte) *http.Response {
 	return resp
 }
 
+// filePath is where the store keeps the log stored under the canonical id.
+func (ls *logStore) filePath(id string) string {
+	return ls.artifactStore.filePath(id + logFileExt)
+}
+
 func getLog(t *testing.T, baseURL, ip, id string) *http.Response {
 	t.Helper()
 	req, err := http.NewRequest(http.MethodGet, baseURL+"/logs/"+id, nil)
@@ -6737,7 +6889,7 @@ func (w *blockingLogResponseWriter) SetWriteDeadline(deadline time.Time) error {
 
 func TestLogResponseTransmissionReleasesLookupSlotAndUsesDeadline(t *testing.T) {
 	logs := newLogStore(t.TempDir())
-	id, _, err := logs.store([]byte("diagnostic"), time.Now())
+	id, _, err := logs.store("", []byte("diagnostic"), time.Now())
 	if err != nil {
 		t.Fatalf("store log: %v", err)
 	}
@@ -6905,7 +7057,7 @@ func assertLogResponseDeadlineLifecycle(
 	id := strings.Repeat("a", logIDLength)
 	if present {
 		var err error
-		id, _, err = logs.store([]byte(wantBody), time.Now())
+		id, _, err = logs.store("", []byte(wantBody), time.Now())
 		if err != nil {
 			t.Fatalf("store log: %v", err)
 		}
@@ -7126,7 +7278,7 @@ func TestLogsUploadDoesNotWriteCapabilityToOperationalLog(t *testing.T) {
 	if strings.Contains(output.String(), id) {
 		t.Fatalf("operational log retained bearer capability %q", id)
 	}
-	if !strings.Contains(output.String(), "logs: stored 15 bytes from 203.0.113.40") {
+	if !strings.Contains(output.String(), "203.0.113.40") {
 		t.Fatalf("successful upload was not observable: %q", output.String())
 	}
 }
@@ -7164,7 +7316,7 @@ func TestLogStoreRetiresLegacyCapabilitiesOnStartup(t *testing.T) {
 	}
 }
 
-func TestLogsFailedLookupsAreBoundedButValidCapabilitiesRemainAvailable(t *testing.T) {
+func TestLogLookupsAreThrottledPerSourceBeforeResolvingIDs(t *testing.T) {
 	h := newRelayHarness(t)
 	payload := []byte("retrievable")
 	validID := postLogAndGetID(t, h.baseURL, "203.0.113.1", payload)
@@ -7190,10 +7342,18 @@ func TestLogsFailedLookupsAreBoundedButValidCapabilitiesRemainAvailable(t *testi
 		t.Fatalf("throttled Cache-Control=%q", got)
 	}
 
-	success := getLog(t, h.baseURL, source, validID)
+	// An exhausted source must not learn which guesses hit: a valid ID is
+	// refused exactly like an unknown one.
+	exhaustedHit := getLog(t, h.baseURL, source, validID)
+	exhaustedHit.Body.Close()
+	if exhaustedHit.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("valid capability from exhausted source status=%d, want 429", exhaustedHit.StatusCode)
+	}
+
+	success := getLog(t, h.baseURL, "203.0.113.51", validID)
 	defer success.Body.Close()
 	if success.StatusCode != http.StatusOK {
-		t.Fatalf("valid capability after exhausted failures status=%d", success.StatusCode)
+		t.Fatalf("valid capability from independent source status=%d", success.StatusCode)
 	}
 	got, err := io.ReadAll(success.Body)
 	if err != nil || !bytes.Equal(got, payload) {
@@ -7203,34 +7363,104 @@ func TestLogsFailedLookupsAreBoundedButValidCapabilitiesRemainAvailable(t *testi
 		t.Fatalf("success Cache-Control=%q", cache)
 	}
 
-	independent := getLog(t, h.baseURL, "203.0.113.51", strings.Repeat("x", logIDLength))
-	independent.Body.Close()
-	if independent.StatusCode != http.StatusNotFound {
-		t.Fatalf("independent source status=%d, want 404", independent.StatusCode)
+	// Hits spend the same budget as misses.
+	hitter := "203.0.113.52"
+	for i := range logLookupRateBurst {
+		resp := getLog(t, h.baseURL, hitter, validID)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("hit %d status=%d, want 200", i, resp.StatusCode)
+		}
+	}
+	overBudget := getLog(t, h.baseURL, hitter, validID)
+	overBudget.Body.Close()
+	if overBudget.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("hit beyond budget status=%d, want 429", overBudget.StatusCode)
 	}
 }
 
-func TestLogFailedLookupCleanupIsDeterministic(t *testing.T) {
+func TestLogStoreKeepsServingLegacyLengthIDsUntilExpiry(t *testing.T) {
+	dir := t.TempDir()
+	// Legacy IDs predate logIDChars and may hold i, l, o, and u.
+	legacyIDs := []string{"legacyloiu", "qloiu"}
+	for _, legacyID := range legacyIDs {
+		if err := os.WriteFile(filepath.Join(dir, legacyID+logFileExt), []byte("legacy link"), 0o644); err != nil {
+			t.Fatalf("seed legacy log %q: %v", legacyID, err)
+		}
+	}
+	now := time.Now()
+	store := newLogStore(dir)
+	for _, legacyID := range legacyIDs {
+		if _, err := os.Stat(store.filePath(legacyID)); err != nil {
+			t.Fatalf("legacy log %q was retired on startup: %v", legacyID, err)
+		}
+		if _, ok, err := store.lookup(legacyID, now); err != nil || !ok {
+			t.Fatalf("legacy lookup %q=(ok=%v, err=%v), want indexed", legacyID, ok, err)
+		}
+		if _, ok, err := store.lookup(legacyID, now.Add(logMaxAge+time.Minute)); err != nil || ok {
+			t.Fatalf("expired legacy lookup %q=(ok=%v, err=%v), want absent", legacyID, ok, err)
+		}
+	}
+	id, _, err := store.store("", []byte("new"), now)
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	if len(id) != logIDLength {
+		t.Fatalf("new id=%q len=%d, want %d", id, len(id), logIDLength)
+	}
+}
+
+// Log IDs are copied by hand from TV screens: case and the look-alikes that
+// Crockford's alphabet leaves out must still reach the stored log.
+func TestLogsGetResolvesLookAlikeSpellings(t *testing.T) {
+	h := newRelayHarness(t)
+	h.srv.logs.mu.Lock()
+	h.srv.logs.generateID = func() string { return "01abcd" }
+	h.srv.logs.mu.Unlock()
+	id := postLogAndGetID(t, h.baseURL, "7.3.0.9", []byte("look-alike body"))
+	if id != "01abcd" {
+		t.Fatalf("stored id=%q, want 01abcd", id)
+	}
+
+	for _, typed := range []string{"01abcd", "01ABCD", "o1abcd", "OIabcd", "0labcd", "0Labcd"} {
+		resp := getLog(t, h.baseURL, "", typed)
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			t.Fatalf("read %q: %v", typed, err)
+		}
+		if resp.StatusCode != http.StatusOK || string(body) != "look-alike body" {
+			t.Fatalf("typed %q: status=%d body=%q, want the stored log", typed, resp.StatusCode, body)
+		}
+	}
+	miss := getLog(t, h.baseURL, "", "u1abcd")
+	miss.Body.Close()
+	if miss.StatusCode != http.StatusNotFound {
+		t.Fatalf("u is outside the alphabet: status=%d, want 404", miss.StatusCode)
+	}
+}
+
+func TestLogLookupLimiterCleanupIsDeterministic(t *testing.T) {
 	store := newLogStore(t.TempDir())
 	now := time.Unix(1_700_000_000, 0)
-	id, _, err := store.store([]byte("keep"), now)
+	id, _, err := store.store("", []byte("keep"), now)
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
 	for range logLookupRateBurst {
-		if !store.allowFailedLookup("203.0.113.1", now) {
+		if !store.allowLookup("203.0.113.1", now) {
 			t.Fatal("burst rejected early")
 		}
 	}
-	if store.allowFailedLookup("203.0.113.1", now) {
+	if store.allowLookup("203.0.113.1", now) {
 		t.Fatal("lookup beyond burst unexpectedly allowed")
 	}
 	store.cleanup(now)
-	if _, ok := store.failedLookupRate["203.0.113.1"]; !ok {
+	if _, ok := store.lookupRate["203.0.113.1"]; !ok {
 		t.Fatal("cleanup removed an effective limiter")
 	}
 	store.cleanup(now.Add(time.Duration(logLookupRateBurst) * time.Second))
-	if _, ok := store.failedLookupRate["203.0.113.1"]; ok {
+	if _, ok := store.lookupRate["203.0.113.1"]; ok {
 		t.Fatal("cleanup retained a fully refilled limiter")
 	}
 	if _, ok := store.entries[id]; !ok {
@@ -7243,7 +7473,7 @@ func TestLogStorePersistsAcrossRestartAndAvoidsIDCollisions(t *testing.T) {
 	now := time.Now().Add(-time.Second)
 	first := newLogStore(dir)
 	first.generateID = func() string { return strings.Repeat("a", logIDLength) }
-	firstID, _, err := first.store([]byte("original"), now)
+	firstID, _, err := first.store("", []byte("original"), now)
 	if err != nil {
 		t.Fatalf("store original: %v", err)
 	}
@@ -7260,7 +7490,7 @@ func TestLogStorePersistsAcrossRestartAndAvoidsIDCollisions(t *testing.T) {
 		ids = ids[1:]
 		return id
 	}
-	secondID, _, err := restarted.store([]byte("second"), time.Now())
+	secondID, _, err := restarted.store("", []byte("second"), time.Now())
 	if err != nil {
 		t.Fatalf("store after restart: %v", err)
 	}
@@ -7331,9 +7561,9 @@ func TestLogsUseTrustedCanonicalClientIdentity(t *testing.T) {
 		}
 		h.srv.logs.mu.RLock()
 		defer h.srv.logs.mu.RUnlock()
-		if len(h.srv.logs.entries) != 0 || len(h.srv.logs.rateLimit) != 0 || len(h.srv.logs.failedLookupRate) != 0 {
+		if len(h.srv.logs.entries) != 0 || len(h.srv.logs.rateLimit) != 0 || len(h.srv.logs.lookupRate) != 0 {
 			t.Fatalf("malformed chain mutated log state: entries=%d uploads=%d failures=%d",
-				len(h.srv.logs.entries), len(h.srv.logs.rateLimit), len(h.srv.logs.failedLookupRate))
+				len(h.srv.logs.entries), len(h.srv.logs.rateLimit), len(h.srv.logs.lookupRate))
 		}
 	})
 
@@ -7892,7 +8122,7 @@ func servePosterGet(s *Server, path, remoteAddr string) *httptest.ResponseRecord
 func TestPosterGetRateLimitedPerIPWithBoundedConcurrency(t *testing.T) {
 	s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
 	now := time.Now()
-	_, entry, err := s.posters.store(minimalPNG, "image/png", now)
+	_, entry, err := s.posters.store("", minimalPNG, "image/png", now)
 	if err != nil {
 		t.Fatalf("store poster: %v", err)
 	}
@@ -7950,11 +8180,11 @@ func TestPosterGetRateLimitedPerIPWithBoundedConcurrency(t *testing.T) {
 func TestPosterLookupConcurrentHitsAndExpiryAreRaceClean(t *testing.T) {
 	ps := newPosterStore(t.TempDir(), 1024, time.Hour)
 	now := time.Now()
-	liveID, liveEntry, err := ps.store([]byte{1, 2, 3}, "image/png", now)
+	liveID, liveEntry, err := ps.store("", []byte{1, 2, 3}, "image/png", now)
 	if err != nil {
 		t.Fatalf("store live poster: %v", err)
 	}
-	expiredID, expiredEntry, err := ps.store([]byte{4, 5, 6, 7}, "image/png", now.Add(-2*time.Hour))
+	expiredID, expiredEntry, err := ps.store("", []byte{4, 5, 6, 7}, "image/png", now.Add(-2*time.Hour))
 	if err != nil {
 		t.Fatalf("store expired poster: %v", err)
 	}
@@ -8029,11 +8259,11 @@ func TestPosterStoreEvictsOldestOverQuota(t *testing.T) {
 	now := time.Now()
 	payload := []byte{1, 2, 3, 4, 5, 6, 7}
 
-	id1, entry1, err := ps.store(payload, "image/png", now)
+	id1, entry1, err := ps.store("", payload, "image/png", now)
 	if err != nil {
 		t.Fatalf("store first: %v", err)
 	}
-	id2, entry2, err := ps.store(payload, "image/png", now.Add(time.Minute))
+	id2, entry2, err := ps.store("", payload, "image/png", now.Add(time.Minute))
 	if err != nil {
 		t.Fatalf("store second: %v", err)
 	}
@@ -8061,10 +8291,88 @@ func TestPosterStoreEvictsOldestOverQuota(t *testing.T) {
 	}
 }
 
+func TestPosterStoreRecyclesOnlyTheUploadingSourcesShare(t *testing.T) {
+	ps := newPosterStore(t.TempDir(), 100, time.Hour)
+	ps.ownerLimit = 7
+	now := time.Now()
+	payload := []byte{1, 2, 3}
+
+	otherID, _, err := ps.store("198.51.100.2", payload, "image/png", now)
+	if err != nil {
+		t.Fatalf("store other source: %v", err)
+	}
+	var ids []string
+	for i := range 4 {
+		id, _, err := ps.store("198.51.100.1", payload, "image/png", now.Add(time.Duration(i+1)*time.Minute))
+		if err != nil {
+			t.Fatalf("store %d: %v", i, err)
+		}
+		ids = append(ids, id)
+	}
+
+	ps.mu.RLock()
+	defer ps.mu.RUnlock()
+	for i, id := range ids {
+		_, retained := ps.entries[id]
+		if want := i >= len(ids)-2; retained != want {
+			t.Fatalf("source poster %d retained=%v, want %v", i, retained, want)
+		}
+	}
+	if _, ok := ps.entries[otherID]; !ok {
+		t.Fatal("one source's uploads evicted another source's poster")
+	}
+	if got := ps.ownerUsed["198.51.100.1"]; got != 6 {
+		t.Fatalf("source usage=%d, want 6", got)
+	}
+	if got := ps.used; got != 9 {
+		t.Fatalf("store usage=%d, want 9", got)
+	}
+}
+
+func TestLogStoreCapsEachSourceShare(t *testing.T) {
+	h := newRelayHarness(t)
+	source := "198.51.100.10"
+	now := time.Now()
+	var firstID string
+	for i := range maxLogEntriesPerSource {
+		id, _, err := h.srv.logs.store(source, []byte("log"), now)
+		if err != nil {
+			t.Fatalf("store %d: %v", i, err)
+		}
+		if i == 0 {
+			firstID = id
+		}
+	}
+	if _, _, err := h.srv.logs.store(source, []byte("over"), now); !errors.Is(err, errLogSourceQuota) {
+		t.Fatalf("store beyond source share err=%v, want errLogSourceQuota", err)
+	}
+
+	refused := postLog(t, h.baseURL, source, []byte("over"))
+	refused.Body.Close()
+	if refused.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("upload beyond source share status=%d, want 429", refused.StatusCode)
+	}
+	other := postLog(t, h.baseURL, "198.51.100.11", []byte("other"))
+	other.Body.Close()
+	if other.StatusCode != http.StatusOK {
+		t.Fatalf("other source upload status=%d, want 200", other.StatusCode)
+	}
+
+	h.srv.logs.mu.Lock()
+	err := h.srv.logs.deleteEntryLocked(firstID)
+	h.srv.logs.mu.Unlock()
+	if err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if _, _, err := h.srv.logs.store(source, []byte("after expiry"), now); err != nil {
+		t.Fatalf("store after a slot was freed: %v", err)
+	}
+}
+
 func TestPosterStoreCleanupExpiresOldPosters(t *testing.T) {
 	ps := newPosterStore(t.TempDir(), 1024, time.Hour)
 	now := time.Now()
-	id, entry, err := ps.store([]byte{1, 2, 3}, "image/png", now.Add(-2*time.Hour))
+	id, entry, err := ps.store("", []byte{1, 2, 3}, "image/png", now.Add(-2*time.Hour))
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
@@ -8113,7 +8421,7 @@ func TestLogStoreRemovalFailureRetainsEntryUntilRetry(t *testing.T) {
 	ls := newLogStoreWithRemover(dir, remover.remove)
 	ls.generateID = func() string { return strings.Repeat("a", logIDLength) }
 	now := time.Now()
-	id, _, err := ls.store([]byte("retained"), now)
+	id, _, err := ls.store("", []byte("retained"), now)
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
@@ -8170,7 +8478,7 @@ func TestRemovalFailureDoesNotBlockUploadsWhileCapacityRemains(t *testing.T) {
 			return id
 		}
 		now := time.Now()
-		firstID, _, err := store.store([]byte("expired"), now)
+		firstID, _, err := store.store("", []byte("expired"), now)
 		if err != nil {
 			t.Fatalf("store expired log: %v", err)
 		}
@@ -8181,7 +8489,7 @@ func TestRemovalFailureDoesNotBlockUploadsWhileCapacityRemains(t *testing.T) {
 		store.mu.Unlock()
 		remover.fail(store.filePath(firstID), fs.ErrPermission)
 
-		secondID, _, err := store.store([]byte("new"), now)
+		secondID, _, err := store.store("", []byte("new"), now)
 		if err != nil {
 			t.Fatalf("unrelated removal failure blocked log upload: %v", err)
 		}
@@ -8199,13 +8507,13 @@ func TestRemovalFailureDoesNotBlockUploadsWhileCapacityRemains(t *testing.T) {
 		remover := newDeterministicRemover()
 		store := newPosterStoreWithRemover(dir, 1024, time.Hour, remover.remove)
 		now := time.Now()
-		firstID, first, err := store.store([]byte{1, 2, 3}, "image/png", now.Add(-2*time.Hour))
+		firstID, first, err := store.store("", []byte{1, 2, 3}, "image/png", now.Add(-2*time.Hour))
 		if err != nil {
 			t.Fatalf("store expired poster: %v", err)
 		}
 		remover.fail(store.filePath(first.Filename), fs.ErrPermission)
 
-		secondID, _, err := store.store([]byte{4, 5, 6}, "image/png", now)
+		secondID, _, err := store.store("", []byte{4, 5, 6}, "image/png", now)
 		if err != nil {
 			t.Fatalf("unrelated removal failure blocked poster upload: %v", err)
 		}
@@ -8224,7 +8532,7 @@ func TestLogStoreErrNotExistCommitsDeletionOnce(t *testing.T) {
 	ls := newLogStoreWithRemover(t.TempDir(), remover.remove)
 	ls.generateID = func() string { return strings.Repeat("a", logIDLength) }
 	now := time.Now()
-	id, _, err := ls.store([]byte("gone"), now)
+	id, _, err := ls.store("", []byte("gone"), now)
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
@@ -8262,7 +8570,7 @@ func TestLogStoreTracksFailedTempCleanup(t *testing.T) {
 	cleanupErr := errors.New("synthetic temp removal failure")
 	remover.fail(tmpPath, cleanupErr)
 
-	if _, _, err := ls.store([]byte("payload"), time.Now()); err == nil {
+	if _, _, err := ls.store("", []byte("payload"), time.Now()); err == nil {
 		t.Fatal("store succeeded despite temp write failure")
 	}
 	ls.mu.RLock()
@@ -8319,7 +8627,7 @@ func TestLogStoreStartupReconcilesLiveAndPendingRemovals(t *testing.T) {
 	if !live || pending != 2 || artifacts != 3 {
 		t.Fatalf("startup accounting: live=%v pending=%d artifacts=%d", live, pending, artifacts)
 	}
-	newID, _, err := ls.store([]byte("new"), now)
+	newID, _, err := ls.store("", []byte("new"), now)
 	if err != nil {
 		t.Fatalf("startup cleanup failure blocked new log: %v", err)
 	}
@@ -8359,7 +8667,7 @@ func TestStoresReconcileConfinedNonEmptyStaleDirectories(t *testing.T) {
 			t.Fatalf("stale log directory remains: %v", err)
 		}
 		store.generateID = func() string { return strings.Repeat("a", logIDLength) }
-		if _, _, err := store.store([]byte("new log"), time.Now()); err != nil {
+		if _, _, err := store.store("", []byte("new log"), time.Now()); err != nil {
 			t.Fatalf("store after reconciliation: %v", err)
 		}
 	})
@@ -8381,7 +8689,7 @@ func TestStoresReconcileConfinedNonEmptyStaleDirectories(t *testing.T) {
 		if _, err := os.Stat(staleDir); !errors.Is(err, fs.ErrNotExist) {
 			t.Fatalf("stale poster directory remains: %v", err)
 		}
-		if _, _, err := store.store([]byte{1, 2, 3}, "image/png", time.Now()); err != nil {
+		if _, _, err := store.store("", []byte{1, 2, 3}, "image/png", time.Now()); err != nil {
 			t.Fatalf("store after reconciliation: %v", err)
 		}
 	})
@@ -8413,14 +8721,14 @@ func TestPosterQuotaRemovalFailureDoesNotReclaimAccounting(t *testing.T) {
 	ps := newPosterStoreWithRemover(dir, 12, time.Hour, remover.remove)
 	now := time.Now()
 	payload := []byte{1, 2, 3, 4, 5, 6, 7}
-	oldID, oldEntry, err := ps.store(payload, "image/png", now)
+	oldID, oldEntry, err := ps.store("", payload, "image/png", now)
 	if err != nil {
 		t.Fatalf("store oldest: %v", err)
 	}
 	oldPath := ps.filePath(oldEntry.Filename)
 	remover.fail(oldPath, fs.ErrPermission)
 
-	newID, newEntry, err := ps.store(payload, "image/png", now.Add(time.Minute))
+	newID, newEntry, err := ps.store("", payload, "image/png", now.Add(time.Minute))
 	if !errors.Is(err, fs.ErrPermission) {
 		t.Fatalf("quota store error=%v want permission error", err)
 	}
@@ -8441,7 +8749,7 @@ func TestPosterQuotaRemovalFailureDoesNotReclaimAccounting(t *testing.T) {
 	}
 
 	remover.recover(oldPath)
-	retryID, retryEntry, err := ps.store(payload, "image/png", now.Add(time.Minute))
+	retryID, retryEntry, err := ps.store("", payload, "image/png", now.Add(time.Minute))
 	if err != nil {
 		t.Fatalf("retry store: %v", err)
 	}
@@ -8465,7 +8773,7 @@ func TestPosterExpiredRemovalFailureAndErrNotExistAreExactOnce(t *testing.T) {
 		remover := newDeterministicRemover()
 		ps := newPosterStoreWithRemover(t.TempDir(), 1024, time.Hour, remover.remove)
 		now := time.Now()
-		id, entry, err := ps.store([]byte{1, 2, 3}, "image/png", now)
+		id, entry, err := ps.store("", []byte{1, 2, 3}, "image/png", now)
 		if err != nil {
 			t.Fatalf("store: %v", err)
 		}
@@ -8510,7 +8818,7 @@ func TestPosterExpiredRemovalFailureAndErrNotExistAreExactOnce(t *testing.T) {
 		remover := newDeterministicRemover()
 		ps := newPosterStoreWithRemover(t.TempDir(), 1024, time.Hour, remover.remove)
 		now := time.Now()
-		id, entry, err := ps.store([]byte{1, 2, 3}, "image/png", now)
+		id, entry, err := ps.store("", []byte{1, 2, 3}, "image/png", now)
 		if err != nil {
 			t.Fatalf("store: %v", err)
 		}
@@ -8555,7 +8863,7 @@ func TestPosterStoreKnownCleanupDebtConsumesCapacityAndRetries(t *testing.T) {
 	if ps.startupErr == nil {
 		t.Fatal("startup removal failure was not reported")
 	}
-	if _, _, err := ps.store([]byte{1, 2}, "image/png", time.Now()); err == nil {
+	if _, _, err := ps.store("", []byte{1, 2}, "image/png", time.Now()); err == nil {
 		t.Fatal("upload exceeded capacity after known stale bytes were accounted")
 	}
 	ps.mu.RLock()
@@ -8570,7 +8878,7 @@ func TestPosterStoreKnownCleanupDebtConsumesCapacityAndRetries(t *testing.T) {
 	}
 
 	remover.recover(stalePath)
-	if _, entry, err := ps.store([]byte{1, 2}, "image/png", time.Now()); err != nil {
+	if _, entry, err := ps.store("", []byte{1, 2}, "image/png", time.Now()); err != nil {
 		t.Fatalf("store after known debt recovery: %v", err)
 	} else if entry.Size != 2 {
 		t.Fatalf("stored entry size=%d, want 2", entry.Size)
@@ -8599,7 +8907,7 @@ func TestPosterStoreUnknownCleanupDebtDoesNotBlockUploadAndRecovers(t *testing.T
 	if calls := remover.callCount(unknownPath); calls != 1 {
 		t.Fatalf("startup remove calls=%d, want 1", calls)
 	}
-	if _, entry, err := ps.store([]byte{1, 2, 3}, "image/png", time.Now()); err != nil {
+	if _, entry, err := ps.store("", []byte{1, 2, 3}, "image/png", time.Now()); err != nil {
 		t.Fatalf("capacity-safe upload blocked by unknown artifact: %v", err)
 	} else if entry.Size != 3 {
 		t.Fatalf("stored entry size=%d, want 3", entry.Size)
@@ -8646,11 +8954,11 @@ func TestStorageHandlersReturnGenericErrorsForRemovalFailures(t *testing.T) {
 	h := newStorageHarness(t, logs, posters)
 	now := time.Now()
 
-	logID, _, err := logs.store([]byte("expired log"), now)
+	logID, _, err := logs.store("", []byte("expired log"), now)
 	if err != nil {
 		t.Fatalf("store log: %v", err)
 	}
-	posterID, poster, err := posters.store([]byte{1, 2, 3}, "image/png", now)
+	posterID, poster, err := posters.store("", []byte{1, 2, 3}, "image/png", now)
 	if err != nil {
 		t.Fatalf("store poster: %v", err)
 	}
@@ -8666,8 +8974,10 @@ func TestStorageHandlersReturnGenericErrorsForRemovalFailures(t *testing.T) {
 	posters.mu.Unlock()
 	logPath := logs.filePath(logID)
 	posterPath := posters.filePath(poster.Filename)
-	remover.fail(logPath, fs.ErrPermission)
-	remover.fail(posterPath, fs.ErrPermission)
+	privateDetail := "removal-detail-b7f1"
+	removalErr := fmt.Errorf("%s: %w", privateDetail, fs.ErrPermission)
+	remover.fail(logPath, removalErr)
+	remover.fail(posterPath, removalErr)
 
 	for name, target := range map[string]string{
 		"log":    h.baseURL + "/logs/" + logID,
@@ -8685,9 +8995,10 @@ func TestStorageHandlersReturnGenericErrorsForRemovalFailures(t *testing.T) {
 		if resp.StatusCode != http.StatusInternalServerError {
 			t.Fatalf("%s status=%d want 500", name, resp.StatusCode)
 		}
-		want := "Failed to retrieve " + name + "\n"
-		if string(body) != want {
-			t.Fatalf("%s response=%q want %q", name, body, want)
+		for _, secret := range []string{privateDetail, logID, logPath, posterPath} {
+			if strings.Contains(string(body), secret) {
+				t.Fatalf("%s response leaked %q: %q", name, secret, body)
+			}
 		}
 	}
 
@@ -8714,12 +9025,13 @@ func TestPosterHandlerRejectsUploadWhenQuotaRemovalFails(t *testing.T) {
 	payload := []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3}
 	posters := newPosterStoreWithRemover(t.TempDir(), int64(len(payload)+1), time.Hour, remover.remove)
 	now := time.Now()
-	oldID, oldEntry, err := posters.store(payload, "image/png", now)
+	oldID, oldEntry, err := posters.store("", payload, "image/png", now)
 	if err != nil {
 		t.Fatalf("store old poster: %v", err)
 	}
 	oldPath := posters.filePath(oldEntry.Filename)
-	remover.fail(oldPath, fs.ErrPermission)
+	privateDetail := "quota-removal-detail-4c2a"
+	remover.fail(oldPath, fmt.Errorf("%s: %w", privateDetail, fs.ErrPermission))
 	h := newStorageHarness(t, logs, posters)
 
 	resp := postPoster(t, h.baseURL, "9.9.9.9", payload)
@@ -8728,8 +9040,13 @@ func TestPosterHandlerRejectsUploadWhenQuotaRemovalFails(t *testing.T) {
 	if readErr != nil {
 		t.Fatalf("read failed upload response: %v", readErr)
 	}
-	if resp.StatusCode != http.StatusInternalServerError || string(body) != "Failed to store poster\n" {
-		t.Fatalf("failed upload status=%d body=%q", resp.StatusCode, body)
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("failed upload status=%d want 500", resp.StatusCode)
+	}
+	for _, secret := range []string{privateDetail, oldPath, oldEntry.Filename} {
+		if strings.Contains(string(body), secret) {
+			t.Fatalf("failed upload response leaked %q: %q", secret, body)
+		}
 	}
 	posters.mu.RLock()
 	_, retained := posters.entries[oldID]
@@ -8754,11 +9071,11 @@ func TestCleanupStepContinuesAfterRemovalFailureAndThrottlesLogging(t *testing.T
 	logs.generateID = func() string { return strings.Repeat("a", logIDLength) }
 	posters := newPosterStoreWithRemover(t.TempDir(), 1024, time.Hour, remover.remove)
 	now := time.Now()
-	logID, _, err := logs.store([]byte("expired"), now)
+	logID, _, err := logs.store("", []byte("expired"), now)
 	if err != nil {
 		t.Fatalf("store log: %v", err)
 	}
-	posterID, poster, err := posters.store([]byte{1, 2, 3}, "image/png", now)
+	posterID, poster, err := posters.store("", []byte{1, 2, 3}, "image/png", now)
 	if err != nil {
 		t.Fatalf("store poster: %v", err)
 	}
@@ -8822,7 +9139,7 @@ func TestRemovalFailureLogDoesNotExposeCapabilityPath(t *testing.T) {
 	id := strings.Repeat("c", logIDLength)
 	store.generateID = func() string { return id }
 	now := time.Now()
-	if _, _, err := store.store([]byte("sensitive"), now); err != nil {
+	if _, _, err := store.store("", []byte("sensitive"), now); err != nil {
 		t.Fatalf("store: %v", err)
 	}
 	path := store.filePath(id)
@@ -8856,9 +9173,10 @@ func TestRemovalFailureLogDoesNotExposeCapabilityPath(t *testing.T) {
 	if strings.Contains(message, id) || strings.Contains(message, path) {
 		t.Fatalf("removal log exposed capability path: %q", message)
 	}
-	want := fmt.Sprintf("logs: cleanup removal failed: category=permission errno=%d", syscall.EACCES)
-	if !strings.Contains(message, want) {
-		t.Fatalf("removal log=%q, want sanitized context %q", message, want)
+	for _, field := range []string{"category=permission", fmt.Sprintf("errno=%d", syscall.EACCES)} {
+		if !strings.Contains(message, field) {
+			t.Fatalf("removal log=%q, want sanitized field %q", message, field)
+		}
 	}
 }
 

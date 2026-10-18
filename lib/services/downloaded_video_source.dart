@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import '../database/app_database.dart';
+import '../database/download_operations.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/downloaded_version_match.dart';
@@ -27,11 +28,17 @@ typedef DownloadedVideoSource = ({String path, int mediaIndex, String? mediaSour
 ///
 /// Callers own their own preconditions (profile ownership, how the row was
 /// looked up); this only judges the row itself.
+///
+/// [partIndex] picks a file of a version stacked across several files (0 is
+/// the first file, the row's video). A later file that was not stored — a
+/// download from before stacked items were fetched whole, or a file index the
+/// row does not have — returns null, never another file.
 Future<DownloadedVideoSource?> resolveDownloadedVideoSource(
   DownloadedMediaItem row, {
   int? requestedMediaIndex,
   String? requestedMediaSourceId,
   bool allowAnyDownloadedVersion = false,
+  int partIndex = 0,
 }) async {
   if (row.status != DownloadStatus.completed.index) {
     appLogger.d('Download not complete for ${row.globalKey}. Status: ${row.status}');
@@ -58,9 +65,13 @@ Future<DownloadedVideoSource?> resolveDownloadedVideoSource(
     );
   }
 
-  final storedPath = row.videoFilePath;
+  final storedPath = row.storedPartPath(partIndex);
   if (storedPath == null) {
-    appLogger.d('Video file path is null for ${row.globalKey}');
+    appLogger.d(
+      partIndex == 0
+          ? 'Video file path is null for ${row.globalKey}'
+          : 'No stored file ${partIndex + 1} of ${row.partCount} for ${row.globalKey}',
+    );
     return null;
   }
 

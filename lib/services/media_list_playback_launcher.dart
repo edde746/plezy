@@ -19,6 +19,7 @@ import 'jellyfin_sequential_launcher.dart';
 import 'play_queue_launcher.dart';
 import 'settings_service.dart';
 import '../widgets/dialog_action_button.dart';
+import '../utils/error_message_utils.dart';
 
 /// Result type for play queue launches. Same shape as the previous
 /// [PlexPlayQueueLauncher] result so existing call sites can keep their
@@ -207,14 +208,14 @@ abstract class MediaListPlaybackLauncher {
       }
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
+        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: localizedErrorReason(e)));
       }
       return PlayQueueError(e);
     } catch (e) {
       if (abort?.isAborted ?? false) return const PlayQueueCancelled();
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
+        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: localizedErrorReason(e)));
       }
       return PlayQueueError(e);
     } finally {
@@ -241,8 +242,8 @@ abstract class MediaListPlaybackLauncher {
       return PlayQueueError(RangeError.index(currentIndex, queue.items, 'currentIndex'));
     }
 
-    playbackState.setPlaybackFromLocalQueue(queue, contextKey: contextKey);
     var itemToPlay = queue.items[currentIndex];
+    var queueToPublish = queue;
     // Shuffle + "start at beginning" (#2303): strip the resume offset so
     // external players — which read viewOffsetMs directly and cannot take an
     // explicit start position — also open at 0:00. The built-in player
@@ -250,8 +251,17 @@ abstract class MediaListPlaybackLauncher {
     if (queue.shuffled && (itemToPlay.viewOffsetMs ?? 0) > 0) {
       if ((await SettingsService.getInstance()).read(SettingsService.shuffleStartsFromBeginning)) {
         itemToPlay = itemToPlay.copyWith(viewOffsetMs: 0);
+        // The published queue must hold the instance that is launched: queue
+        // membership is by identity (see isItemInActiveQueue), so launching a
+        // copy the queue does not hold would make the player drop the queue.
+        queueToPublish = LocalPlayQueue(
+          items: [...queue.items]..[currentIndex] = itemToPlay,
+          currentIndex: queue.currentIndex,
+          shuffled: queue.shuffled,
+        );
       }
     }
+    playbackState.setPlaybackFromLocalQueue(queueToPublish, contextKey: contextKey);
     if (navigateForTesting != null) {
       await navigateForTesting(itemToPlay);
     } else {

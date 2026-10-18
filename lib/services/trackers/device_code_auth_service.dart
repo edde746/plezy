@@ -21,7 +21,6 @@ abstract class DeviceCodeAuthServiceBase {
 
   void dispose() => httpClient.close();
 
-  /// Service-specific device-code request.
   Future<DeviceCode> createDeviceCode();
 
   /// One service-specific poll attempt — called at each interval tick.

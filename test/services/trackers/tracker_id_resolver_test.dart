@@ -32,15 +32,23 @@ class _FakeFribbLookup implements FribbMappingLookup {
   final List<FribbMappingRow> rows;
   int lookups = 0;
   int? lastAnidbId;
+  bool? lastMovie;
 
   _FakeFribbLookup(this.rows);
 
   /// Mirrors the real store: an AniDB id is the dataset's primary key and
   /// resolves at most one row, so it short-circuits the tvdb/tmdb/imdb ladder.
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async {
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async {
     lookups++;
     lastAnidbId = anidbId;
+    lastMovie = movie;
     if (anidbId != null) {
       final hit = rows.where((row) => row.anidbId == anidbId).firstOrNull;
       if (hit != null) return [hit];
@@ -149,14 +157,7 @@ void main() {
       final resolver = _resolver(
         animeProgress: animeProgress,
         rows: const [
-          FribbMappingRow(
-            tvdbId: 81797,
-            tmdbIds: [37854],
-            imdbIds: ['tt0388629'],
-            malId: 21,
-            anilistId: 21,
-            type: 'TV',
-          ),
+          FribbMappingRow(tvdbId: 81797, tmdbTvId: 37854, imdbIds: ['tt0388629'], malId: 21, anilistId: 21, type: 'TV'),
         ],
       );
 
@@ -306,6 +307,116 @@ void main() {
     });
   });
 
+  group('TrackerIdResolver AniDB specials', () {
+    test('an episode Anime-Lists maps to an AniDB special writes no series progress', () async {
+      final animeProgress = _FakeAnimeProgressLookup(3);
+      final resolver = _resolver(
+        animeProgress: animeProgress,
+        animeLists: const _FakeAnimeListsLookup(
+          matches: {
+            '1-13': AnimeEpisodeMatch(
+              anidbId: 111,
+              anidbSeason: 0,
+              anidbEpisode: 3,
+              provider: AnimeListProvider.tvdb,
+              externalSeason: 1,
+              externalEpisode: 13,
+              kind: AnimeListMatchKind.explicit,
+            ),
+          },
+        ),
+        rows: const [FribbMappingRow(anidbId: 111, tvdbId: 81797, malId: 101, tvdbSeason: 1, type: 'TV')],
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 13));
+
+      expect(ids?.external.tvdb, 81797);
+      expect(ids?.anime, isNull);
+      expect(ids?.animeEpisodeNumber, isNull);
+      expect(ids?.animeProgress, isNull);
+      expect(animeProgress.resolveCalls, 0);
+    });
+  });
+
+  group('TrackerIdResolver unmapped seasons', () {
+    const season1 = FribbMappingRow(tvdbId: 81797, malId: 100, tvdbSeason: 1, tmdbSeason: 1, type: 'TV');
+
+    test('a season Fribb has not mapped yet does not fall back to season 1', () async {
+      final animeProgress = _FakeAnimeProgressLookup(1);
+      final resolver = _resolver(rows: const [season1], animeProgress: animeProgress);
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 2, number: 1));
+
+      expect(ids?.external.tvdb, 81797, reason: 'catalog-id trackers still get the episode');
+      expect(ids?.anime, isNull);
+      expect(ids?.animeProgress, isNull);
+      expect(animeProgress.resolveCalls, 0);
+    });
+
+    test('a season rating does not land on another season entry', () async {
+      final resolver = TrackerIdResolver(
+        _FakeMediaServerClient({'show-1': const ExternalIds(tvdb: 81797)}),
+        store: _FakeFribbLookup(const [season1]),
+        animeLists: const _FakeAnimeListsLookup(),
+        animeProgress: _FakeAnimeProgressLookup(null),
+      );
+      final season2 = testMediaItem(
+        id: 'season-2',
+        backend: MediaBackend.plex,
+        kind: MediaKind.season,
+        title: 'Season 2',
+        parentId: 'show-1',
+        index: 2,
+      );
+
+      final ctx = await resolver.resolveForRating(season2);
+
+      expect(ctx?.ids.anime, isNull);
+    });
+
+    test('an absolute-numbered row still covers later seasons beside mapped ones', () async {
+      // Gintama's shape: the first entry spans TVDB seasons 1-4 in absolute
+      // order, later entries are mapped per season.
+      final resolver = _resolver(
+        animeProgress: _FakeAnimeProgressLookup(null),
+        rows: const [
+          FribbMappingRow(tvdbId: 81797, malId: 918, type: 'TV'),
+          FribbMappingRow(tvdbId: 81797, malId: 9969, tvdbSeason: 5, tmdbSeason: 5, type: 'TV'),
+        ],
+      );
+
+      final third = await resolver.resolveShowForEpisode(_episode(season: 3, number: 4));
+      final fifth = await resolver.resolveShowForEpisode(_episode(season: 5, number: 4));
+
+      expect(third?.anime?.mal, 918);
+      expect(fifth?.anime?.mal, 9969);
+    });
+
+    test('a special without a season-0 row maps to nothing', () async {
+      final resolver = _resolver(
+        animeProgress: _FakeAnimeProgressLookup(null),
+        rows: const [FribbMappingRow(tvdbId: 81797, malId: 21, type: 'TV')],
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 0, number: 3));
+
+      expect(ids?.anime, isNull);
+    });
+
+    test('an AniDB id keeps its entry whatever season Fribb maps it to', () async {
+      // HAMA numbers every entry as season 1, sequels included.
+      final resolver = _resolver(
+        animeProgress: _FakeAnimeProgressLookup(null),
+        showIds: const ExternalIds(anidb: 8126),
+        rows: const [FribbMappingRow(anidbId: 8126, tvdbId: 79895, malId: 9969, tvdbSeason: 5, type: 'TV')],
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 4));
+
+      expect(ids?.anime?.mal, 9969);
+    });
+  });
+
   group('TrackerIdResolver AniDB-only items', () {
     const hamaRow = FribbMappingRow(anidbId: 11905, malId: 21, anilistId: 30, simklId: 40, type: 'TV');
 
@@ -396,6 +507,33 @@ void main() {
 
       expect(ids?.external.tvdb, 81797);
       expect(ids?.anime, isNull);
+    });
+  });
+
+  group('TrackerIdResolver id namespaces', () {
+    // TMDB and TVDB number films apart from series, so the store must be told
+    // which one a library item's ids belong to.
+    test('a movie looks its ids up as movie ids', () async {
+      final lookup = _FakeFribbLookup(const []);
+      final resolver = TrackerIdResolver(
+        _FakeMediaServerClient({'movie-1': const ExternalIds(tmdb: 982)}),
+        store: lookup,
+        animeLists: const _FakeAnimeListsLookup(),
+        animeProgress: _FakeAnimeProgressLookup(null),
+      );
+
+      await resolver.resolveForMovie('movie-1');
+
+      expect(lookup.lastMovie, isTrue);
+    });
+
+    test('an episode looks its show ids up as series ids', () async {
+      final lookup = _FakeFribbLookup(const []);
+      final resolver = _resolver(rows: const [], lookup: lookup, animeProgress: _FakeAnimeProgressLookup(null));
+
+      await resolver.resolveShowForEpisode(_episode(season: 1, number: 4));
+
+      expect(lookup.lastMovie, isFalse);
     });
   });
 }

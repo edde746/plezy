@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import '../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../focus/focusable_wrapper.dart';
 import '../focus/focusable_button.dart';
@@ -10,6 +13,8 @@ import '../media/media_item.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
 import '../metadata_edit/metadata_edit_models.dart';
 import '../services/file_picker_service.dart';
+import '../profiles/active_profile_provider.dart';
+import '../services/recent_tags_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
@@ -99,11 +104,35 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
     if (adapter == null || draft == null || !_hasChanges || _isCommitting) return;
 
     setState(() => _isCommitting = true);
+    // Snapshot newly added values per stringList field before save() runs
+    // acceptChanges() and erases the diff. Recorded as recents only on success.
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    final serverId = metadata.serverId;
+    final addedByField = <String, List<String>>{
+      for (final field
+          in adapter
+              .schemaFor(draft)
+              .expand((section) => section.fields)
+              .where((field) => field.type == MetadataEditFieldType.stringList))
+        if (metadataStringList(
+              draft.values[field.id],
+            ).where((tag) => !metadataStringList(draft.originalValues[field.id]).contains(tag)).toList()
+            case final added when added.isNotEmpty)
+          field.id: added,
+    };
     bool success = false;
     try {
       success = await adapter.save(draft);
     } catch (e, st) {
       appLogger.e('Failed to update metadata', error: e, stackTrace: st);
+    }
+
+    if (success && addedByField.isNotEmpty && profileId != null && profileId.isNotEmpty && serverId != null) {
+      for (final entry in addedByField.entries) {
+        unawaited(
+          RecentTagsService.addRecentTags(entry.value, profileId: profileId, serverId: serverId, fieldId: entry.key),
+        );
+      }
     }
 
     if (!mounted) return;
@@ -163,11 +192,31 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   }
 
   Future<void> _editStringList(MetadataEditField field) async {
+    final adapter = _adapter;
     final draft = _draft;
-    if (draft == null || _isCommitting) return;
+    if (adapter == null || draft == null || _isCommitting) return;
+    final profileId = context.read<ActiveProfileProvider>().activeId;
+    final serverId = widget.metadata.serverId;
+    final recent = (profileId == null || profileId.isEmpty || serverId == null)
+        ? const <String>[]
+        : RecentTagsService.getRecentTags(profileId: profileId, serverId: serverId, fieldId: field.id);
+    final suggestionsFuture = adapter
+        .fetchTagSuggestions(draft, field)
+        .then(
+          (serverTags) => RecentTagsService.mergeSuggestions(
+            recent: recent,
+            serverTags: serverTags,
+            existing: metadataStringList(draft.values[field.id]),
+          ),
+        )
+        .catchError((_) => recent);
     final result = await showScopedDialog<List<String>>(
       context: context,
-      builder: (context) => TagEditDialog(title: field.label, initialTags: metadataStringList(draft.values[field.id])),
+      builder: (context) => TagEditDialog(
+        title: field.label,
+        initialTags: metadataStringList(draft.values[field.id]),
+        suggestionsFuture: suggestionsFuture,
+      ),
     );
     if (result != null && mounted && !_isCommitting && identical(_draft, draft)) {
       setState(() => draft.setValue(field.id, result));

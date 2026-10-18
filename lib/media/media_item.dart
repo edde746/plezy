@@ -174,6 +174,11 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemStringList) List<String>? styles,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? moods,
     @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? roles,
+
+    /// The item's versions, one per Plex `Media`. Null means the response
+    /// carried none, so fetch the item; a non-empty list is complete.
+    /// Version pickers, saved-version resolution and delete impact trust it
+    /// without a detail fetch. Plex inlines every `Media` on list rows.
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
@@ -261,6 +266,11 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemStringList) List<String>? styles,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? moods,
     @JsonKey(fromJson: _mediaItemRolesFromJson) List<MediaRole>? roles,
+
+    /// The item's versions, one per `MediaSources` entry. Same contract as
+    /// the Plex variant: null means not fetched, non-empty means complete.
+    /// Emby list rows are complete only when `AlternateMediaSources` is
+    /// requested beside `MediaSources` (#2474); the client adds it.
     @JsonKey(fromJson: _mediaItemVersionsFromJson) List<MediaVersion>? mediaVersions,
     String? libraryId,
     String? libraryTitle,
@@ -349,7 +359,7 @@ sealed class MediaItem with _$MediaItem {
       final playedFile = _filePathForPart(playedPartId);
       if (playedFile != null) return otherFiles.contains(playedFile);
     }
-    return allPartFiles.intersection(otherFiles).isNotEmpty;
+    return allPartFiles.any(otherFiles.contains);
   }
 
   /// The file path of this item's part with [partId], or null when unknown.
@@ -376,7 +386,9 @@ sealed class MediaItem with _$MediaItem {
   /// Whether this item still counts toward an "unwatched only" selection:
   /// not fully watched, or watched-but-resumable (has active progress). The
   /// shared predicate behind every `unwatchedOnly` filter (downloads, sync
-  /// rules, the unwatched-episode lookups in episode_collection.dart).
+  /// rules, the unwatched-episode lookups in episode_collection.dart) and its
+  /// inverse, the auto-remove-watched-downloads sweep, so a sweep never
+  /// deletes what a rule would immediately re-queue.
   bool get isUnwatchedOrInProgress => !isWatched || hasActiveProgress;
 
   /// Positive leaf total used for aggregate watch state, or null when this
@@ -435,14 +447,9 @@ sealed class MediaItem with _$MediaItem {
   /// Copy with the watched flag applied so [isWatched] reflects it for every
   /// kind. This is the single mutation seam used by watch-state overlays.
   MediaItem withWatchedFlag(bool isWatched) {
-    var updated = copyWith(viewCount: isWatched ? 1 : 0);
     final total = leafWatchTotal;
-    if (total != null) {
-      updated = updated.copyWith(viewedLeafCount: isWatched ? total : 0);
-    } else if (!kind.usesLeafWatchCounts && viewedLeafCount != null) {
-      updated = updated.copyWith(viewedLeafCount: null);
-    }
-    return updated;
+    final viewedLeaf = total != null ? (isWatched ? total : 0) : (kind.usesLeafWatchCounts ? viewedLeafCount : null);
+    return copyWith(viewCount: isWatched ? 1 : 0, viewedLeafCount: viewedLeaf);
   }
 
   /// Display-friendly title that prefers the show name for episodes/seasons.
@@ -590,8 +597,9 @@ sealed class MediaItem with _$MediaItem {
     return primary == null || primary.isEmpty ? const [] : [primary];
   }
 
-  /// Every inherited series backdrop in Jellyfin display order. Older
-  /// persisted objects fall back to [grandparentArtPath].
+  /// Every backdrop inherited from an ancestor (the series, for episodes and
+  /// seasons) in Jellyfin display order. Older persisted objects fall back to
+  /// [grandparentArtPath].
   List<String> get resolvedGrandparentBackdropPaths {
     final paths = grandparentBackdropPaths;
     if (paths != null && paths.isNotEmpty) return paths;
@@ -600,13 +608,16 @@ sealed class MediaItem with _$MediaItem {
   }
 
   /// Backdrops eligible for rotation. Episodes prefer inherited series art;
-  /// other kinds rotate only their own artwork.
+  /// every other kind rotates its own artwork and falls back to inherited art
+  /// only when it has none. Jellyfin applies the same rule: it sends
+  /// `ParentBackdropImageTags` only for items without backdrops of their own.
   List<String> get heroBackdropPaths {
     if (kind == MediaKind.episode) {
       final inherited = resolvedGrandparentBackdropPaths;
-      if (inherited.isNotEmpty) return inherited;
+      return inherited.isNotEmpty ? inherited : resolvedBackdropPaths;
     }
-    return resolvedBackdropPaths;
+    final own = resolvedBackdropPaths;
+    return own.isNotEmpty ? own : resolvedGrandparentBackdropPaths;
   }
 
   /// The backdrops a hero may rotate through in a container of
@@ -635,8 +646,8 @@ sealed class MediaItem with _$MediaItem {
     final preferred = switch (kind) {
       MediaKind.episode when isNearSquare => <String?>[backgroundSquarePath, ...inherited, ...own],
       MediaKind.episode => <String?>[...inherited, ...own, backgroundSquarePath],
-      _ when isNearSquare => <String?>[backgroundSquarePath, ...own],
-      _ => <String?>[...own, backgroundSquarePath],
+      _ when isNearSquare => <String?>[backgroundSquarePath, ...own, ...inherited],
+      _ => <String?>[...own, ...inherited, backgroundSquarePath],
     };
 
     final candidates = <String>[];

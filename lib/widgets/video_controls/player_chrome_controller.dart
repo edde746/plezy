@@ -5,7 +5,7 @@ import 'package:flutter/material.dart'
     show BuildContext, ListenableBuilder, MouseRegion, StatelessWidget, SystemMouseCursors, Widget;
 
 /// Reasons that keep the video-player chrome visible and suppress auto-hide.
-enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub }
+enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub, pointerPress }
 
 /// Owns video-player chrome visibility and auto-hide policy for one player route.
 class PlayerChromeController extends ChangeNotifier implements ValueListenable<bool> {
@@ -27,6 +27,8 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   final Set<PlayerChromeHold> _holds = <PlayerChromeHold>{};
   final Stopwatch _pointerActivityStopwatch = Stopwatch()..start();
   int _lastPointerActivityMs = -1000;
+  final Set<int> _pressedPointers = <int>{};
+  bool _pointerLeftWhilePressed = false;
 
   @override
   bool get value => _controlsVisible;
@@ -194,9 +196,36 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
 
   void restartAutoHideForCurrentPlaybackState() => _startAutoHideForCurrentPlaybackState();
 
+  /// Hides the chrome when the pointer leaves the player. A press that drags
+  /// out keeps the chrome until it lifts, so a slider or scrub in progress is
+  /// not unmounted under the pointer.
   void hideForPointerExit() {
     if (_holds.contains(PlayerChromeHold.pip)) return;
+    if (_holds.contains(PlayerChromeHold.pointerPress)) {
+      _pointerLeftWhilePressed = true;
+      return;
+    }
     hide(ignoreHolds: true);
+  }
+
+  /// The pointer came back over the player, so a press that left and returned
+  /// no longer hides the chrome when it lifts.
+  void recordPointerEnter() {
+    _pointerLeftWhilePressed = false;
+  }
+
+  /// A pointer went down on interactive chrome. The chrome is held until every
+  /// pressed pointer lifts.
+  void recordPointerDown(int pointer) {
+    if (!_pressedPointers.add(pointer) || _pressedPointers.length > 1) return;
+    hold(PlayerChromeHold.pointerPress);
+  }
+
+  void recordPointerUp(int pointer) {
+    if (!_pressedPointers.remove(pointer) || _pressedPointers.isNotEmpty) return;
+    final pointerLeft = _pointerLeftWhilePressed;
+    release(PlayerChromeHold.pointerPress);
+    if (pointerLeft) hideForPointerExit();
   }
 
   void cancelAutoHide() {
@@ -216,6 +245,10 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
 
   void release(PlayerChromeHold hold, {bool notify = true, bool restartAutoHide = true}) {
     if (!_holds.remove(hold)) return;
+    if (hold == PlayerChromeHold.pointerPress) {
+      _pressedPointers.clear();
+      _pointerLeftWhilePressed = false;
+    }
     if (notify) notifyListeners();
     if (restartAutoHide && _holds.isEmpty) _startAutoHideForCurrentPlaybackState();
   }
@@ -248,6 +281,7 @@ class PlayerChromeInteractionRegion extends StatelessWidget {
         return MouseRegion(
           cursor: controller.controlsVisible ? SystemMouseCursors.basic : SystemMouseCursors.none,
           onHover: (_) => controller.recordPointerActivity(),
+          onEnter: hideOnExit ? (_) => controller.recordPointerEnter() : null,
           onExit: (_) {
             if (!hideOnExit) return;
             controller.cancelAutoHide();

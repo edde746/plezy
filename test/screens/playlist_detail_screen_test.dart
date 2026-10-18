@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/dpad_select_long_press_controller.dart';
+import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
@@ -15,6 +17,8 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
+import 'package:plezy/models/plex/play_queue_response.dart';
+import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -26,11 +30,14 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card_sliver_layout.dart';
@@ -43,6 +50,7 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -372,7 +380,7 @@ void main() {
         Scaffold(
           body: SizedBox(
             width: 640,
-            child: MediaCard(item: _playlist, forceListMode: true, onListRefresh: () => reloads++),
+            child: MediaCard(item: _playlist, viewModeOverride: ViewMode.list, onListRefresh: () => reloads++),
           ),
         ),
       ),
@@ -397,7 +405,7 @@ void main() {
         Scaffold(
           body: SizedBox(
             width: 640,
-            child: MediaCard(item: _playlist, forceListMode: true, onListRefresh: () => reloads++),
+            child: MediaCard(item: _playlist, viewModeOverride: ViewMode.list, onListRefresh: () => reloads++),
           ),
         ),
       ),
@@ -455,6 +463,50 @@ void main() {
     expect(harness.playbackState.isQueueActive, isFalse);
     expect(find.byType(PlaylistDetailScreen), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('activating a smart playlist card plays the playlist from that entry (#2634)', (tester) async {
+    final items = _mediaItems(3);
+    final client = _PlexQueuePlaylistClient(items);
+    final harness = await _createHarness(items, client: client);
+    await tester.pumpWidget(
+      harness.wrap(
+        const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _smartVideoPlaylist)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final cards = find.byType(FocusableMediaCard);
+    expect(cards, findsNWidgets(3));
+
+    Future<void> expectSequentialLaunchFrom(String itemId) async {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      final request = client.queueRequests.last;
+      expect(request.playlistID, 42);
+      expect(request.key, '/library/metadata/$itemId');
+      expect(request.shuffle, 0);
+      final dialogTitle = find.descendant(of: find.byType(AlertDialog), matching: find.text(t.common.play));
+      expect(dialogTitle, findsOneWidget);
+
+      await tester.tap(find.text(t.common.cancel));
+      request.completeEmpty();
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(harness.playbackState.isQueueActive, isFalse);
+    }
+
+    // Pointer tap.
+    await tester.tap(cards.at(1));
+    await expectSequentialLaunchFrom('item_1');
+
+    // D-pad SELECT on a focused card takes the same path.
+    tester.widget<FocusableMediaCard>(cards.at(2)).focusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await expectSequentialLaunchFrom('item_2');
+
+    expect(client.queueRequests, hasLength(2));
+    expect(find.byType(PlaylistDetailScreen), findsOneWidget);
   });
 
   testWidgets('pending D-pad move disables playlist mutations and restores the exact order on rejection', (
@@ -553,6 +605,53 @@ void main() {
     expect(harness.client.peakMutationCount, 1);
   });
 
+  testWidgets('a successful removal keeps the playlist editable', (tester) async {
+    final harness = await _createHarness(_mediaItems(3));
+    await _pushPlaylistRoute(tester, harness);
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    harness.client.completeRemove(0, true, applyToServer: true);
+    await tester.pumpAndSettle();
+
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_2']);
+    expect(
+      tester.widgetList<PlaylistItemCard>(find.byType(PlaylistItemCard)),
+      everyElement(
+        isA<PlaylistItemCard>()
+            .having((card) => card.canReorder, 'canReorder', isTrue)
+            .having((card) => card.onRemove, 'onRemove', isNotNull),
+      ),
+    );
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    expect(harness.client.removeRequests, hasLength(2));
+    harness.client.completeRemove(1, true, applyToServer: true);
+    await tester.pumpAndSettle();
+    expect(_visiblePlaylistItemIds(tester), ['item_2']);
+  });
+
+  testWidgets('refreshing a row keeps its playlist entry id for the next removal', (tester) async {
+    final items = [
+      for (final (index, item) in _mediaItems(2).indexed) (item as PlexMediaItem).copyWith(playlistItemId: 100 + index),
+    ];
+    final harness = await _createHarness(items);
+    await _pushPlaylistRoute(tester, harness);
+
+    final firstCard = tester.widget<PlaylistItemCard>(find.byType(PlaylistItemCard).first);
+    firstCard.onRefresh!(firstCard.item);
+    await tester.pumpAndSettle();
+    expect(find.text('Item 0 (refreshed)'), findsOneWidget);
+
+    await tester.tap(find.byTooltip(t.playlists.removeItem).first);
+    await tester.pump();
+    final removed = harness.client.removeRequests.single.item as PlexMediaItem;
+    expect(removed.playlistItemId, 100);
+    harness.client.completeRemove(0, true, applyToServer: true);
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('D-pad walking a long playlist keeps the whole focused card on screen', (tester) async {
     final harness = await _createHarness(_mediaItems(60));
     await _pushPlaylistRoute(tester, harness);
@@ -575,6 +674,77 @@ void main() {
       expect(rect.top, greaterThanOrEqualTo(viewport.top), reason: 'focused card $index is clipped at the top');
       expect(rect.bottom, lessThanOrEqualTo(viewport.bottom), reason: 'focused card $index is clipped at the bottom');
     }
+  });
+
+  testWidgets('D-pad context-menu key and a SELECT hold open the focused playlist item menu', (tester) async {
+    final harness = await _createHarness(_mediaItems(2));
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: harness.wrap(const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _playlist))),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final listFocus = find.byWidgetPredicate(
+      (widget) => widget is Focus && widget.focusNode?.debugLabel == 'playlist_list',
+    );
+    final listFocusNode = tester.widget<Focus>(listFocus).focusNode!;
+    listFocusNode.requestFocus();
+    await tester.pump();
+
+    // An arrow enters keyboard mode and moves the focused row to item_1.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    final secondCard = find.byWidgetPredicate((widget) => widget is PlaylistItemCard && widget.index == 1);
+    expect(tester.widget<PlaylistItemCard>(secondCard).isFocused, isTrue);
+
+    final menu = find.byWidgetPredicate((widget) => widget is AppMenuSheet<Object?>);
+    expect(menu, findsNothing);
+
+    // Gamepad X / context-menu key.
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonX);
+    await tester.pumpAndSettle();
+    expect(menu, findsOneWidget);
+    expect(tester.widget<AppMenuSheet<Object?>>(menu).title, contains('Item 1'));
+    expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+    expect(find.text(t.mediaMenu.rate), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+    expect(menu, findsNothing);
+    expect(listFocusNode.hasPrimaryFocus, isTrue, reason: 'closing the menu hands focus back to the list');
+
+    // Holding SELECT past the long-press threshold opens it too (a short
+    // press keeps its column action — see the move-mode tests above).
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+    await tester.pump(DpadSelectLongPressController.defaultDuration + const Duration(milliseconds: 1));
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(menu, findsOneWidget);
+    expect(tester.widget<AppMenuSheet<Object?>>(menu).title, contains('Item 1'));
+  });
+
+  testWidgets('pointer drag reorder moves the card through the drag proxy without duplicating its key', (tester) async {
+    final harness = await _createHarness(_mediaItems(3));
+    await _pushPlaylistRoute(tester, harness);
+
+    final firstRow = tester.getRect(find.byType(PlaylistItemCard).first);
+    final secondRow = tester.getRect(find.byType(PlaylistItemCard).at(1));
+    await tester.timedDrag(
+      find.byType(ReorderableDragStartListener).first,
+      Offset(0, secondRow.top - firstRow.top),
+      const Duration(milliseconds: 300),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(harness.client.moveRequests, hasLength(1));
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_0', 'item_2']);
+
+    harness.client.completeMove(0, true, applyToServer: true);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(_visiblePlaylistItemIds(tester), ['item_1', 'item_0', 'item_2']);
   });
 }
 
@@ -658,6 +828,16 @@ const _smartAudioPlaylist = MediaPlaylist(
   serverName: 'Server',
 );
 
+const _smartVideoPlaylist = MediaPlaylist(
+  id: '42',
+  backend: MediaBackend.plex,
+  title: 'Smart Video Playlist',
+  playlistType: 'video',
+  smart: true,
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
 List<MediaItem> _mediaItems(int count) {
   return List.generate(
     count,
@@ -677,6 +857,7 @@ Future<_PlaylistHarness> _createHarness(
   int? failOnceAt,
   bool deleteResult = false,
   MediaBackend backend = MediaBackend.plex,
+  _PagedPlaylistClient? client,
 }) async {
   await SettingsService.getInstance();
 
@@ -693,12 +874,15 @@ Future<_PlaylistHarness> _createHarness(
   final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
   await downloadProvider.ensureInitialized();
 
-  final client = _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult, backend: backend);
+  client ??= _PagedPlaylistClient(items, failOnceAt: failOnceAt, deleteResult: deleteResult, backend: backend);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
   final multiServerProvider = testMultiServerProvider(manager);
   final playbackState = PlaybackStateProvider();
+  // The item context menu resolves admin gating through the active profile.
+  final profiles = await ProfileStack.create(db: db, withStorage: false);
 
   addTearDown(() async {
+    await profiles.dispose();
     downloadProvider.dispose();
     downloadManager.dispose();
     multiServerProvider.dispose();
@@ -711,6 +895,7 @@ Future<_PlaylistHarness> _createHarness(
     multiServerProvider: multiServerProvider,
     downloadProvider: downloadProvider,
     playbackState: playbackState,
+    activeProfile: profiles.active,
   );
 }
 
@@ -719,12 +904,14 @@ class _PlaylistHarness {
   final MultiServerProvider multiServerProvider;
   final DownloadProvider downloadProvider;
   final PlaybackStateProvider playbackState;
+  final ActiveProfileProvider activeProfile;
 
   const _PlaylistHarness({
     required this.client,
     required this.multiServerProvider,
     required this.downloadProvider,
     required this.playbackState,
+    required this.activeProfile,
   });
 
   Widget wrap(Widget child, {TargetPlatform platform = TargetPlatform.android}) {
@@ -734,9 +921,10 @@ class _PlaylistHarness {
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
           ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: platform),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: platform),
           home: child,
         ),
       ),
@@ -878,11 +1066,69 @@ class _PagedPlaylistClient implements MediaServerClient {
     return deleteResult;
   }
 
+  /// Item metadata, like the real endpoints: it carries no playlist entry id.
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    final item = items.firstWhere((item) => item.id == id);
+    return item is PlexMediaItem ? item.copyWith(playlistItemId: null, title: '${item.title} (refreshed)') : item;
+  }
+
   @override
   void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Plex flavour of [_PagedPlaylistClient] for launches: the Plex launcher
+/// resolves a [PlexClient] and creates a server-side play queue. Each queue
+/// request stays open until the test completes it, so the loading dialog can
+/// be inspected and cancelled.
+class _PlexQueuePlaylistClient extends _PagedPlaylistClient implements PlexClient {
+  _PlexQueuePlaylistClient(List<MediaItem> items)
+    : profileScopeId = buildPlexProfileScopeId(serverId: ServerId('server_1'), profileId: 'profile_1'),
+      super._(items, null, false, MediaBackend.plex);
+
+  final List<_QueueRequest> queueRequests = [];
+
+  @override
+  PlexProfileScopeId profileScopeId;
+
+  @override
+  String get scopedServerId => profileScopeId;
+
+  @override
+  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) async {}
+
+  @override
+  Future<PlayQueueResponse> createPlayQueue({
+    String? uri,
+    int? playlistID,
+    required String type,
+    String? key,
+    int shuffle = 0,
+    int repeat = 0,
+    int continuous = 0,
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) {
+    final request = _QueueRequest(playlistID: playlistID, key: key, shuffle: shuffle);
+    queueRequests.add(request);
+    return request.result.future;
+  }
+}
+
+class _QueueRequest {
+  final int? playlistID;
+  final String? key;
+  final int shuffle;
+  final Completer<PlayQueueResponse> result = Completer<PlayQueueResponse>();
+
+  _QueueRequest({required this.playlistID, required this.key, required this.shuffle});
+
+  /// Answer with an empty queue; used after the launch was cancelled.
+  void completeEmpty() =>
+      result.complete(PlayQueueResponse(playQueueID: 1, playQueueShuffled: false, playQueueTotalCount: 0));
 }
 
 class _MoveRequest {

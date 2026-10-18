@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/utils/key_event_simulator.dart';
 
 void main() {
@@ -97,6 +98,28 @@ void main() {
       LogicalKeyboardKey.gameButtonX,
     ]);
     expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.gamepad));
+  });
+
+  testWidgets('a simulated release ends a select suppression no focus handler consumed', (tester) async {
+    await _pumpKeyEventRecorder(tester);
+    final simulator = KeyEventSimulatorController();
+    addTearDown(simulator.dispose);
+    addTearDown(SelectKeyUpSuppressor.clearSuppression);
+
+    simulator.simulateKeyDown(LogicalKeyboardKey.enter);
+    await tester.pump();
+    // A long press arms the suppressor and moves focus into a menu, so the
+    // release (delivered to the key-down node) reaches no consumer of it.
+    SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+    simulator.simulateKeyUp(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    const nextPress = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.enter,
+      logicalKey: LogicalKeyboardKey.enter,
+      timeStamp: Duration.zero,
+    );
+    expect(SelectKeyUpSuppressor.consumeIfSuppressed(nextPress), isFalse, reason: 'the next press must not be eaten');
   });
 
   testWidgets('simulateKeyUp returns to the key-down focus when focus changes', (tester) async {

@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -10,8 +7,7 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
-
-http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+import '../test_helpers/http_fixtures.dart';
 
 Map<String, dynamic> _series({String id = 'series-1', int tmdb = 42}) => {
   'Id': id,
@@ -41,7 +37,7 @@ void main() {
         if (request.url.path == '/Items') {
           final searchTerm = request.url.queryParameters['SearchTerm']!;
           searchTerms.add(searchTerm);
-          return _json({
+          return jsonResponse({
             'Items': switch (searchTerm) {
               'Parent Series' => [_series()],
               'Oya Series' => [_series(), _series(id: 'series-romaji')],
@@ -50,11 +46,11 @@ void main() {
           });
         }
         if (request.url.path == '/Items/series-1/Ancestors') {
-          return _json([
+          return jsonResponse([
             {'Id': 'library-1', 'Name': 'Shows', 'Type': 'CollectionFolder'},
           ]);
         }
-        if (request.url.path == '/Items/series-romaji/Ancestors') return _json(<Object>[]);
+        if (request.url.path == '/Items/series-romaji/Ancestors') return jsonResponse(<Object>[]);
         fail('Unexpected request: ${request.url}');
       }),
     );
@@ -76,7 +72,7 @@ void main() {
     final client = testJellyfinClient(
       httpClient: MockClient((request) async {
         expect(request.url.path, '/Items');
-        return _json({
+        return jsonResponse({
           'Items': [_series(tmdb: 99)],
         });
       }),
@@ -99,11 +95,11 @@ void main() {
         if (request.url.path == '/Items') {
           searches.add(request.url);
           final searchTerm = request.url.queryParameters['SearchTerm'];
-          return _json({
+          return jsonResponse({
             'Items': searchTerm == 'Parent Series' ? [_series()] : <Object>[],
           });
         }
-        if (request.url.path == '/Items/series-1/Ancestors') return _json(<Object>[]);
+        if (request.url.path == '/Items/series-1/Ancestors') return jsonResponse(<Object>[]);
         fail('Unexpected request: ${request.url}');
       }),
     );
@@ -127,19 +123,19 @@ void main() {
       final client = testJellyfinClient(
         httpClient: MockClient((request) async {
           if (request.url.path == '/Items') {
-            return _json({
+            return jsonResponse({
               'Items': [_series()],
             });
           }
           if (request.url.path == '/Shows/series-1/Seasons') {
-            return _json({
+            return jsonResponse({
               'Items': [
                 for (final number in seasonNumbers)
                   {'Id': 'season-$number', 'Type': 'Season', 'Name': 'Season $number', 'IndexNumber': number},
               ],
             });
           }
-          if (request.url.path == '/Items/series-1/Ancestors') return _json(<Object>[]);
+          if (request.url.path == '/Items/series-1/Ancestors') return jsonResponse(<Object>[]);
           fail('Unexpected request: ${request.url}');
         }),
       );
@@ -163,11 +159,11 @@ void main() {
     final client = testJellyfinClient(
       httpClient: MockClient((request) async {
         if (request.url.path == '/Items') {
-          return _json({
+          return jsonResponse({
             'Items': [_series()],
           });
         }
-        if (request.url.path == '/Items/series-1/Ancestors') return _json(<Object>[]);
+        if (request.url.path == '/Items/series-1/Ancestors') return jsonResponse(<Object>[]);
         fail('Season hierarchy must not be requested: ${request.url}');
       }),
     );
@@ -187,7 +183,7 @@ void main() {
     final client = testJellyfinClient(
       httpClient: MockClient((request) async {
         if (request.url.path == '/Items') {
-          return _json({
+          return jsonResponse({
             'Items': [
               {
                 'Id': 'movie-4k',
@@ -205,12 +201,12 @@ void main() {
           });
         }
         if (request.url.path == '/Items/movie-4k/Ancestors') {
-          return _json([
+          return jsonResponse([
             {'Id': 'library-4k', 'Name': 'Movies 4K', 'Type': 'CollectionFolder'},
           ]);
         }
         if (request.url.path == '/Items/movie-hd/Ancestors') {
-          return _json([
+          return jsonResponse([
             {'Id': 'library-hd', 'Name': 'Movies', 'Type': 'CollectionFolder'},
           ]);
         }

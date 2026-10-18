@@ -616,6 +616,70 @@ void main() {
     expect(errors, isEmpty);
     expect(statuses, [RemoteSessionStatus.disconnected]);
   });
+
+  group('advertised host addresses', () {
+    CompanionRemotePeerService hostWith(List<NetworkInterface> interfaces) {
+      final host = CompanionRemotePeerService.forTesting(listNetworkInterfaces: () async => interfaces);
+      addTearDown(host.dispose);
+      return host;
+    }
+
+    test('keep every interface whose name contains the loopback name (#2390)', () async {
+      // `NetworkInterface.list` already withholds loopback addresses, so the
+      // host must not second-guess it by name: systemd onboard Wi-Fi (`wlo1`)
+      // and Windows' "Local Area Connection" both contain "lo".
+      final host = hostWith([
+        _FakeNetworkInterface('wlo1', ['192.168.1.20']),
+        _FakeNetworkInterface('Local Area Connection', ['10.0.0.5']),
+      ]);
+
+      final session = await host.createSessionForContexts('Test Host', 'linux', [_authContext]);
+
+      // Wi-Fi/Ethernet addresses lead, so `hostAddress` is the LAN address a
+      // remote should try first.
+      expect(session.addresses, ['192.168.1.20:${session.port}', '10.0.0.5:${session.port}']);
+      expect(host.hostAddress, '192.168.1.20:${session.port}');
+    });
+
+    test('fail with noNetworkInterface when no interface carries a routable address', () async {
+      final host = hostWith(const []);
+
+      await expectLater(
+        host.createSessionForContexts('Test Host', 'linux', [_authContext]),
+        throwsA(
+          isA<PeerError>()
+              .having((error) => error.type, 'type', PeerErrorType.networkError)
+              .having((error) => error.message, 'message', t.companionRemote.errors.noNetworkInterface),
+        ),
+      );
+    });
+  });
+}
+
+class _FakeNetworkInterface extends Fake implements NetworkInterface {
+  _FakeNetworkInterface(this.name, List<String> addresses)
+    : addresses = [for (final address in addresses) _FakeInterfaceAddress(InternetAddress(address))];
+
+  @override
+  final String name;
+
+  @override
+  final List<InterfaceAddress> addresses;
+}
+
+class _FakeInterfaceAddress extends Fake implements InterfaceAddress {
+  _FakeInterfaceAddress(this._address);
+
+  final InternetAddress _address;
+
+  @override
+  String get address => _address.address;
+
+  @override
+  InternetAddressType get type => _address.type;
+
+  @override
+  bool get isLoopback => _address.isLoopback;
 }
 
 typedef _TestRaceProbeConnection = ({Future<void> Function() close, Future<void> ready, Stream<dynamic> stream});

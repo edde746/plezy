@@ -25,22 +25,6 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
   String externalImageUrl(String url, {int? width, int? height, bool cover = true}) => url;
 
   @override
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
-    // Tracks stream from /Audio/{id}/stream; the URL contract (Static=true,
-    // api_key in the query string) is otherwise identical to the video one.
-    final isTrack = item.kind == MediaKind.track;
-    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
-    if (bundle == null) {
-      return isTrack ? buildAudioDirectStreamUrl(item.id) : buildDirectStreamUrl(item.id);
-    }
-    final container = bundle.container;
-    final pinnedSourceId = bundle.pinnedSourceId;
-    return isTrack
-        ? buildAudioDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId)
-        : buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId);
-  }
-
-  @override
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     final selectedSourceId = bundle?.selectedSourceId;
@@ -111,10 +95,11 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
       if (index is! int) continue;
       final codec = fields.codec?.toLowerCase();
       final delivery = fields.deliveryUrl;
+      final streamFile = _segment('Stream.${CodecUtils.getSubtitleExtension(codec)}');
       final url = _withApiKey(
         delivery != null && delivery.isNotEmpty
             ? delivery
-            : '/Videos/${_segment(item.id)}/${_segment(subtitleMediaSourceId)}/Subtitles/$index/${_segment('Stream.${codec ?? 'srt'}')}',
+            : '/Videos/${_segment(item.id)}/${_segment(subtitleMediaSourceId)}/Subtitles/$index/$streamFile',
       );
       subtitles.add(
         DownloadSubtitleSpec(

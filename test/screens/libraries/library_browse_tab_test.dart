@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_filter_result.dart';
 import 'package:plezy/media/library_change_event.dart';
@@ -23,6 +24,7 @@ import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/libraries/alpha_jump_bar.dart';
 import 'package:plezy/screens/libraries/alpha_scroll_handle.dart';
 import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
@@ -171,6 +173,36 @@ void main() {
     await _pumpUntil(tester, () => harness.clientA.pageRequestCount > requestsBefore);
     final sort = harness.clientA.pageQueries.last.sort;
     expect(sort?.field, 'year');
+
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('a sort change after a failed load clears the stale error', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+
+    const sorts = [MediaSort(key: 'title', title: 'Title'), MediaSort(key: 'year', title: 'Year')];
+    final client = _BrowseClient('server-a', 'Library A', sortResponse: Future.value(sorts));
+    final harness = _BrowseHarness(clientA: client);
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    await _pumpUntil(tester, () => client.pageRequestCount >= 1);
+
+    client.pageResponses.add(() => Future<LibraryPage<MediaItem>>.error(StateError('temporary browse failure')));
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Year').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(ErrorStateWidget), findsOneWidget);
+
+    client.pageResponses.add(() => Future.value(const LibraryPage<MediaItem>(items: [], totalCount: 0)));
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Title').last);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ErrorStateWidget), findsNothing);
+    expect(find.byType(EmptyStateWidget), findsOneWidget);
 
     debugDefaultTargetPlatformOverride = null;
   });
@@ -334,6 +366,80 @@ void main() {
     expect(cardRights, isNotEmpty);
     expect(cardRights, everyElement(lessThanOrEqualTo(size.width - trailingInset)));
   });
+
+  testWidgets('TV keeps the alpha bar off the screen edge and clear of a focused last-column card', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    await SettingsService.instance.write(SettingsService.tvFullCardLayout, true);
+    const size = Size(1280, 720);
+
+    final harness = _PlexBrowseHarness();
+    addTearDown(harness.dispose);
+
+    await pumpLibraryTab(
+      tester,
+      provider: harness.provider,
+      size: size,
+      tab: LibraryBrowseTab(library: harness.library, canGroupByFolders: true, isActive: true),
+    );
+    await _pumpUntil(tester, () => harness.pageRequestCount >= 1 && harness.firstCharacterRequestCount >= 1);
+    await pumpRequestFrames(tester);
+
+    final bar = tester.getRect(find.byType(AlphaJumpBar));
+    final cards = [
+      for (final card in find.byType(FocusableMediaCard).evaluate()) tester.getRect(find.byWidget(card.widget)),
+    ];
+    expect(cards, isNotEmpty);
+
+    // TVs crop the frame edge (#2053): the letters need a margin from it.
+    expect(bar.right, lessThanOrEqualTo(size.width - 16));
+    // A focused full card grows around its centre and strokes its border
+    // outside; all of that must stay left of the bar (#2218).
+    final lastColumn = cards.reduce((a, b) => a.right >= b.right ? a : b);
+    final focusedRight =
+        lastColumn.right +
+        lastColumn.width * (FocusTheme.fullCardFocusScale - 1) / 2 +
+        FocusTheme.focusBorderWidth * FocusTheme.fullCardFocusScale;
+    expect(focusedRight, lessThanOrEqualTo(bar.left));
+  });
+
+  testWidgets('folder grouping loads only the tree and reports its own readiness', (tester) async {
+    final harness = _PlexBrowseHarness();
+    addTearDown(harness.dispose);
+    final storage = await StorageService.getInstance();
+    await storage.saveLibraryGrouping(harness.library.globalKey, 'folders');
+    var readyNotifications = 0;
+
+    await pumpLibraryTab(
+      tester,
+      provider: harness.provider,
+      tab: LibraryBrowseTab(
+        library: harness.library,
+        canGroupByFolders: true,
+        isActive: true,
+        onDataLoaded: () => readyNotifications++,
+      ),
+    );
+    await _pumpUntil(tester, () => readyNotifications >= 1);
+    await pumpRequestFrames(tester);
+
+    expect(find.text('Folder One'), findsOneWidget);
+    expect(harness.folderRequestCount, greaterThanOrEqualTo(1));
+    // The tree is the rendered surface, so the flat page and the alpha
+    // character buckets are never fetched.
+    expect(harness.pageRequestCount, 0);
+    expect(harness.firstCharacterRequestCount, 0);
+    // Discovery still runs (the chips come back when the grouping changes),
+    // but it only asks for the filter schema.
+    expect(harness.filterMetadataRequestCount, 1);
+    // An assertion inside the mock handler could not fail this test: the HTTP
+    // client rewraps anything thrown there as a transport error, which
+    // discovery catches and answers from `/filters`.
+    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Size'], '0');
+    // A lone `Size=0` makes PMS return the whole section, so the schema probe
+    // has to carry the start offset too.
+    expect(harness.filterMetadataRequests.single.queryParameters['X-Plex-Container-Start'], '0');
+  });
 }
 
 FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
@@ -481,6 +587,9 @@ class _PlexBrowseHarness {
   late final MultiServerProvider provider;
   var pageRequestCount = 0;
   var firstCharacterRequestCount = 0;
+  var folderRequestCount = 0;
+  var filterMetadataRequestCount = 0;
+  final filterMetadataRequests = <Uri>[];
 
   _PlexBrowseHarness() : database = AppDatabase.forTesting(NativeDatabase.memory()) {
     PlexApiCache.initialize(database);
@@ -510,6 +619,60 @@ class _PlexBrowseHarness {
     Map<String, Object?> container;
     switch (request.url.path) {
       case '/library/sections/movies/all':
+        // Filter discovery reads the same endpoint with `includeMeta=1` and
+        // an explicit zero page size: it asks for the field/operator schema,
+        // never for items, so it is not a page request.
+        if (request.url.queryParameters['includeMeta'] == '1') {
+          filterMetadataRequestCount++;
+          filterMetadataRequests.add(request.url);
+          return http.Response(
+            jsonEncode({
+              'MediaContainer': {
+                'size': 0,
+                'totalSize': _itemCount,
+                'Meta': {
+                  'Type': [
+                    {
+                      'type': 'movie',
+                      'active': true,
+                      'Field': [
+                        {'key': 'genre', 'title': 'Genre', 'type': 'tag'},
+                        {'key': 'year', 'title': 'Year', 'type': 'integer'},
+                        {'key': 'unwatched', 'title': 'Unwatched', 'type': 'boolean'},
+                      ],
+                    },
+                  ],
+                  'FieldType': [
+                    {
+                      'type': 'tag',
+                      'Operator': [
+                        {'key': '=', 'title': 'is'},
+                        {'key': '!=', 'title': 'is not'},
+                      ],
+                    },
+                    {
+                      'type': 'integer',
+                      'Operator': [
+                        {'key': '=', 'title': 'is'},
+                        {'key': '>>=', 'title': 'is greater than'},
+                        {'key': '<<=', 'title': 'is less than'},
+                      ],
+                    },
+                    {
+                      'type': 'boolean',
+                      'Operator': [
+                        {'key': '=', 'title': 'is'},
+                        {'key': '!=', 'title': 'is not'},
+                      ],
+                    },
+                  ],
+                },
+              },
+            }),
+            200,
+            headers: const {'content-type': 'application/json'},
+          );
+        }
         pageRequestCount++;
         final start = int.tryParse(request.url.queryParameters['X-Plex-Container-Start'] ?? '') ?? 0;
         final requested = int.tryParse(request.url.queryParameters['X-Plex-Container-Size'] ?? '') ?? _itemCount;
@@ -528,6 +691,13 @@ class _PlexBrowseHarness {
           'Directory': [
             for (final letter in const ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
               {'key': letter, 'title': letter, 'size': '${_itemCount ~/ 8}'},
+          ],
+        };
+      case '/library/sections/movies/folder':
+        folderRequestCount++;
+        container = {
+          'Directory': [
+            {'key': '/library/sections/movies/folder?parent=1', 'type': 'folder', 'title': 'Folder One'},
           ],
         };
       case '/library/sections/movies/sorts':

@@ -2,6 +2,41 @@
   "app": {
     "title": "Plezy"
   },
+  "appIcon": {
+    "title": "App icon",
+    "defaultIcon": "Default",
+    "current": "Current icon",
+    "locked": "Supporter perk",
+    "lockedHint": "Alternate icons are a Supporter perk.",
+    "changeFailed": "Couldn't change the app icon",
+    "launcherHint": "The new icon appears on your home screen once you leave Plezy.",
+    "tvLauncherHint": "The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.",
+    "names": {
+      "midnight": "Midnight",
+      "ember": "Ember",
+      "paper": "Paper",
+      "oled": "OLED",
+      "line": "Line",
+      "ocean": "Ocean",
+      "ultraviolet": "Ultraviolet",
+      "matcha": "Matcha",
+      "sunset": "Sunset",
+      "gold": "Gold",
+      "titanium": "Titanium",
+      "glass": "Glass",
+      "crt": "CRT",
+      "vhs": "VHS",
+      "synthwave": "Synthwave",
+      "pixel": "Pixel",
+      "neon": "Neon",
+      "sticker": "Sticker",
+      "ticket": "Ticket",
+      "pop": "Pop",
+      "strata": "Strata",
+      "facet": "Facet",
+      "tilde": "Tilde"
+    }
+  },
   "auth": {
     "signInWithPlex": "Sign in with Plex",
     "showQRCode": "Show QR Code",
@@ -79,7 +114,9 @@
       "anilist": "AniList",
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes critics",
-      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+      "rottenTomatoesAudience": "Rotten Tomatoes audience",
+      "metacritic": "Metacritic",
+      "letterboxd": "Letterboxd"
     },
     "notAvailable": "N/A",
     "url": "URL",
@@ -115,6 +152,33 @@
     "latestVersion": "You are on the latest version",
     "checkFailed": "Failed to check for updates"
   },
+  "supporter": {
+    "title": "Plezy Supporter",
+    "intro": "A one-time purchase that supports Plezy's development and unlocks cosmetic extras:",
+    "presetThemes": "Preset themes",
+    "presetThemesDescription": "Ember, Glacier, Forest, Plum and Paper",
+    "customTheme": "Custom theme",
+    "customThemeDescription": "Pick every color yourself",
+    "appIcons": "App icons",
+    "appIconsDescription": "Choose an alternate Plezy icon",
+    "buy": "Buy for ${price}",
+    "loadingPrice": "Loading price...",
+    "restore": "Restore Purchases",
+    "pending": "Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.",
+    "thankYouTitle": "Thank you for supporting Plezy",
+    "thankYouBody": "Your Supporter extras are unlocked.",
+    "tileSubtitle": "Unlock themes and app icons with a one-time purchase",
+    "tileSubtitleThemesOnly": "Unlock themes with a one-time purchase",
+    "tileUnlocked": "Thank you for your support",
+    "errors": {
+      "storeUnavailable": "Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.",
+      "productNotFound": "The Supporter purchase isn't available in your store right now.",
+      "productQueryFailed": "Couldn't load the price. Check your connection and try again.",
+      "purchaseFailed": "The purchase didn't go through. Try again.",
+      "restoreFailed": "Couldn't reach the store to restore your purchase. Try again.",
+      "nothingToRestore": "No Supporter purchase was found for this store account."
+    }
+  },
   "settings": {
     "title": "Settings",
     "supportDeveloper": "Support Plezy",
@@ -139,6 +203,11 @@
     "lightTheme": "Light",
     "darkTheme": "Dark",
     "oledTheme": "OLED",
+    "emberTheme": "Ember",
+    "glacierTheme": "Glacier",
+    "forestTheme": "Forest",
+    "plumTheme": "Plum",
+    "paperTheme": "Paper",
     "libraryDensity": "Library Density",
     "displayScale": "Display Scale",
     "compact": "Compact",
@@ -202,6 +271,9 @@
     "cellularQualitySameAsDefault": "Same as Default Quality",
     "directPlayCoveredQuality": "Play Smaller Videos at Original Quality",
     "directPlayCoveredQualityDescription": "Direct play videos already within the quality limit instead of transcoding them",
+    "videoCodecs": "Video Codecs",
+    "videoCodecsDescription": "Unchecked codecs are transcoded by the server",
+    "videoCodecsAlwaysAccepted": "Always accepted",
     "musicQualityTitle": "Music Quality",
     "subtitleStyling": "Subtitle Styling",
     "subtitleStylingDescription": "Customize subtitle appearance",
@@ -259,6 +331,7 @@
     "importSettingsInvalidFile": "This file isn't a valid Plezy settings export",
     "importSettingsNoUser": "Sign in before importing settings",
     "shortcutsReset": "Shortcuts reset to defaults",
+    "resetShortcutsConfirm": "This will replace your custom shortcuts with the defaults. Continue?",
     "about": "About",
     "aboutDescription": "App information and licenses",
     "updates": "Updates",
@@ -325,6 +398,8 @@
     "manageLibrariesDescription": "Reorder and hide libraries",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Allow mobile devices on your network to control this app",
+    "companionRemoteServerStartFailed": "Couldn't start the companion server",
+    "companionRemoteServerStopFailed": "Couldn't stop the companion server",
     "autoPip": "Auto Picture-in-Picture",
     "autoPipDescription": "Automatically enter picture-in-picture when you leave the app during playback",
     "matchContentFrameRate": "Match Content Frame Rate",
@@ -340,10 +415,16 @@
     "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video or motion stutters.",
     "audioPassthrough": "Audio Passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
-    "audioPassthroughDescriptionAppleTv": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
+    "audioPassthroughDescriptionApple": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
     "audioPassthroughOverriddenByNormalization": "Off while loudness normalization is on",
-    "audioDownmix": "Downmix to Stereo",
-    "audioDownmixDescription": "Mix surround audio down to two channels for stereo speakers or headphones",
+    "audioChannelLimit": "Audio Channels",
+    "audioChannelLimitDescription": "Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel",
+    "audioChannelLimitOriginal": "Original",
+    "audioChannelLimitOriginalDescription": "Play every channel in the track",
+    "audioChannelLimitSurround51": "Up to 5.1",
+    "audioChannelLimitSurround51Description": "Mix 7.1 down to 5.1 for TVs and receivers that only take 5.1 PCM. Passthrough is unaffected.",
+    "audioChannelLimitStereo": "Stereo",
+    "audioChannelLimitStereoDescription": "Mix down to two channels for stereo speakers or headphones. Turns passthrough off.",
     "downmixCenterBoost": "Center Channel Boost",
     "downmixCenterBoostValue": "${db} dB",
     "downmixCenterBoostLabel": "Boost (dB)",
@@ -360,8 +441,24 @@
     "dvConversionNativeDescription": "Force native DV7 and suppress DV conversion retry",
     "dvConversionDv81Description": "Force inline RPU conversion to Dolby Vision profile 8.1",
     "dvConversionHevcStripDescription": "Strip Dolby Vision RPU/EL layers and present plain HEVC",
+    "disableDolbyVision": "Disable Dolby Vision",
+    "disableDolbyVisionDescription": "Play the file's HDR10 or HLG layer instead of Dolby Vision, when it has one",
+    "hdrSdrConversion": "HDR to SDR Conversion",
+    "hdrSdrConversionDescription": "Choose what converts HDR video when the display can't show HDR.",
+    "hdrSdrConversionAuto": "Auto",
+    "hdrSdrConversionAutoDescription": "Device on Android 9 and later, player on older versions",
+    "hdrSdrConversionDevice": "Device",
+    "hdrSdrConversionDeviceDescription": "Your device's video hardware converts it. Fastest, but colors depend on the device",
+    "hdrSdrConversionPlayer": "Player",
+    "hdrSdrConversionPlayerDescription": "The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes",
     "deinterlace": "Deinterlacing",
     "deinterlaceDescription": "Remove combing artifacts from interlaced video (mpv player only)",
+    "deinterlaceOff": "Off",
+    "deinterlaceOffDescription": "Show interlaced video as it is decoded",
+    "deinterlaceVideo": "Video",
+    "deinterlaceVideoDescription": "Turn each field into a full frame. For video shot for TV, like sports, news, and concerts",
+    "deinterlaceFilm": "Film",
+    "deinterlaceFilmDescription": "Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video",
     "requireProfileSelectionOnOpen": "Ask for profile on app open",
     "requireProfileSelectionOnOpenDescription": "Show profile selection every time the app is opened",
     "forceTvMode": "Force TV mode",
@@ -418,11 +515,56 @@
     "playerScopeTitle": "Per show or movie",
     "exportDialogTitle": "Export Plezy settings"
   },
+  "themeEditor": {
+    "builtIn": "Built-in",
+    "presets": "Presets",
+    "custom": "Custom",
+    "customEmpty": "Not created yet",
+    "editCustom": "Edit custom theme",
+    "editCustomDescription": "Choose every color yourself",
+    "locked": "Unlock with Supporter",
+    "savedLocked": "Saved — unlocks with Supporter",
+    "title": "Custom Theme",
+    "startFrom": "Start from",
+    "startFromDescription": "Copy all colors from another theme",
+    "colors": "Colors",
+    "preview": "Preview",
+    "slots": {
+      "bg": "Background",
+      "surface": "Surface",
+      "outline": "Outline",
+      "text": "Text",
+      "textMuted": "Secondary text",
+      "accent": "Accent"
+    },
+    "opacity": "Opacity",
+    "hexHint": "#RRGGBB or #AARRGGBB",
+    "fromOtherThemes": "From other themes",
+    "swatchLabel": "${theme} ${color}",
+    "contrast": {
+      "textOnBg": "Text on background",
+      "textOnSurface": "Text on surface",
+      "textMutedOnBg": "Secondary text on background",
+      "textMutedOnSurface": "Secondary text on surface",
+      "accentOnBg": "Accent on background",
+      "accentOnSurface": "Accent on surface",
+      "labelOnAccent": "Button label on accent"
+    },
+    "lowContrast": "${pair}: ${ratio}:1, below the recommended ${minimum}:1",
+    "discardTitle": "Discard changes?",
+    "discardMessage": "Your unsaved color changes will be lost.",
+    "discard": "Discard",
+    "previewCardTitle": "Episode ${number}",
+    "previewCardSubtitle": "${minutes} min left",
+    "previewSwitch": "Autoplay",
+    "previewMutedText": "Secondary text reads like this"
+  },
   "search": {
     "hint": "Search movies, shows, music...",
     "tryDifferentTerm": "Try a different search term",
     "searchYourMedia": "Search your media",
-    "enterTitleActorOrKeyword": "Enter a title, actor, or keyword"
+    "enterTitleActorOrKeyword": "Enter a title, actor, or keyword",
+    "people": "People"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",
@@ -729,6 +871,7 @@
     "pipFailed": "Picture-in-picture failed to start",
     "screenshotSaved": "Screenshot saved",
     "zoomPercent": "Zoom ${percent}%",
+    "volumePercent": "Volume ${percent}%",
     "pipErrors": {
       "androidVersion": "Requires Android 8.0 or newer",
       "iosVersion": "Requires iOS 15.0 or newer",
@@ -820,6 +963,8 @@
     "mediaUnreadableBody": "The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.",
     "serverBusyTitle": "Stream unavailable",
     "serverBusyBody": "The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.",
+    "playbackNotAllowedTitle": "Playback not allowed",
+    "playbackNotAllowedBody": "The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
     "logId": "Log ID",
@@ -893,6 +1038,8 @@
     "signOut": "Sign out",
     "signOutPlexTitle": "Sign out of Plex?",
     "signOutPlexMessage": "Remove ${displayName} and all Plex Home users? Sign back in anytime.",
+    "signOutPlexDeleteDownloads": "Also delete downloads",
+    "signOutPlexDeleteDownloadsDescription": "Otherwise they stay on this device and come back when you sign back in to this account.",
     "signedOutPlex": "Signed out of Plex.",
     "signOutFailed": "Sign out failed.",
     "sectionTitle": "Profiles",
@@ -954,6 +1101,8 @@
     "addConnectionSubtitleScoped": "Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection",
     "sessionExpiredOne": "Session expired for ${name}",
     "sessionExpiredMany": "Session expired for ${count} servers",
+    "accessDeniedOne": "${name} refused access for this account",
+    "accessDeniedMany": "${count} servers refused access for this account",
     "signInAgain": "Sign in again",
     "editMediaBrowserTitle": "Edit ${product} connection",
     "editMediaBrowserIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
@@ -1057,6 +1206,13 @@
     "titleCount": {
       "one": "${n} title",
       "other": "${n} titles"
+    },
+    "person": {
+      "born": "Born",
+      "died": "Died",
+      "birthplace": "Birthplace",
+      "dateWithAge": "${date} (age ${age})",
+      "dateWithAgeAtDeath": "${date} (aged ${age})"
     }
   },
   "errors": {
@@ -1071,7 +1227,14 @@
     "failedToVerifyToken": "Failed to verify token: ${error}",
     "failedToSwitchProfile": "Failed to switch to ${displayName}",
     "failedToDeleteProfile": "Failed to delete ${displayName}",
-    "failedToRate": "Couldn't update rating"
+    "failedToRate": "Couldn't update rating",
+    "reasonTimedOut": "the connection timed out",
+    "reasonUnreachable": "the server could not be reached",
+    "reasonRefused": "the server refused the request",
+    "reasonNotFound": "the item is no longer on the server",
+    "reasonServerError": "the server reported an error",
+    "reasonCancelled": "the request was cancelled",
+    "reasonUnexpected": "an unexpected error occurred"
   },
   "libraries": {
     "title": "Libraries",
@@ -1140,7 +1303,8 @@
       "tag": "Tag",
       "unwatched": "Unwatched",
       "unplayed": "Unplayed",
-      "favorites": "Favorites"
+      "favorites": "Favorites",
+      "filePath": "File Path"
     },
     "sortLabels": {
       "title": "Title",
@@ -1162,7 +1326,38 @@
       "random": "Random",
       "dateShared": "Date Shared",
       "latestEpisodeAirDate": "Latest Episode Air Date",
-      "lastEpisodeDateAdded": "Last Episode Date Added"
+      "lastEpisodeDateAdded": "Last Episode Date Added",
+      "dateDownloaded": "Date Downloaded",
+      "size": "Size",
+      "library": "Library"
+    },
+    "advancedFilters": {
+      "include": "Include",
+      "exclude": "Exclude",
+      "any": "Any",
+      "yes": "Yes",
+      "no": "No",
+      "not": "Not ${value}",
+      "valueCount": "${count} selected",
+      "valueCountExcluded": "${count} excluded",
+      "searchValues": "Search values",
+      "noValues": "No values",
+      "matchContains": "Contains",
+      "matchNotContains": "Does not contain",
+      "matchIs": "Is",
+      "matchIsNot": "Is not",
+      "matchBeginsWith": "Begins with",
+      "matchEndsWith": "Ends with",
+      "textHint": "Type to match",
+      "from": "From",
+      "to": "To",
+      "range": "${from} to ${to}",
+      "atLeast": "${value} and up",
+      "atMost": "Up to ${value}",
+      "dateLastDays": "Last ${count} days",
+      "dateLastYear": "Past year",
+      "dateOlderThanDays": "Older than ${count} days",
+      "dateOlderThanYear": "Older than a year"
     }
   },
   "about": {
@@ -1355,6 +1550,7 @@
       "otherMedia": "Other"
     },
     "creditRole": {
+      "actor": "Actor",
       "director": "Director",
       "writer": "Writer",
       "producer": "Producer",
@@ -1493,7 +1689,9 @@
     "editRuleAction": "Edit",
     "recordingRuleUpdated": "Recording rule updated",
     "guideReloadRequested": "Guide refresh requested",
+    "guideReloadFailed": "Couldn't refresh the guide",
     "rulesProcessRequested": "Rule re-evaluation requested",
+    "rulesProcessFailed": "Couldn't re-evaluate recording rules",
     "recordShow": "Record show",
     "recordSettings": {
       "startEarly": "Start early (seconds)",
@@ -1509,7 +1707,9 @@
     "dayAtTime": "${day} at ${time}",
     "invalidPlaybackData": "${product} returned invalid Live TV playback data",
     "failedToStartChannel": "Could not start the live channel",
-    "failedToBuildStreamUrl": "Could not build the stream URL"
+    "failedToBuildStreamUrl": "Could not build the stream URL",
+    "playbackStartFailed": "Couldn't start the channel: ${reason}",
+    "channelSwitchFailed": "Couldn't switch channel: ${reason}"
   },
   "collections": {
     "title": "Collections",
@@ -1700,6 +1900,9 @@
     "episodesQueued": "${count} episodes queued for download",
     "downloadDeleted": "Download deleted",
     "deleteConfirm": "Delete \"${title}\" from this device?",
+    "deleteCollectionDownloads": "Delete downloads",
+    "deleteCollectionDownloadsConfirm": "Delete every download in \"${title}\" from this device?",
+    "collectionDownloadsDeleted": "Downloads deleted",
     "cancelledDownloadTitle": "Canceled Download",
     "cancelledDownloadMessage": "This download was canceled. What would you like to do?",
     "allEpisodesAlreadyDownloaded": "All episodes already downloaded",
@@ -1717,6 +1920,8 @@
     "noDownloadsTree": "No downloads",
     "pauseAll": "Pause all",
     "resumeAll": "Resume all",
+    "retryAll": "Retry all",
+    "retryFailed": "Retry failed downloads",
     "deleteAll": "Delete all",
     "selectVersion": "Select Version",
     "allEpisodes": "All episodes",
@@ -1753,6 +1958,7 @@
     "syncRuleAvailable": "Available",
     "syncRuleOffline": "Offline",
     "syncRuleSignInRequired": "Sign in required",
+    "syncRuleAccessDenied": "Access denied",
     "syncRuleNotAvailableForProfile": "Not available for current profile",
     "syncRuleUnknownServer": "Unknown server",
     "syncRuleListCreated": "Sync rule created",
@@ -1784,13 +1990,25 @@
       "settingsUnavailable": "Couldn't open system settings on this device",
       "linkUnavailable": "Couldn't open dontkillmyapp.com on this device"
     },
+    "options": "Downloads options",
+    "groupings": {
+      "library": "Library",
+      "collections": "Collections"
+    },
+    "unknownLibrary": "Unknown library",
     "unknownShow": "Unknown Show",
     "unknownSeason": "Unknown Season",
     "unknownAlbum": "Unknown Album",
     "completedOfTotal": "${completed}/${total} completed",
     "errorFileNotFound": "File not found (404)",
+    "errorDownloadNotAllowed": "Download not allowed by the server (403)",
     "errorDownloadFailed": "Download failed",
-    "errorPostProcessing": "Post-processing failed: ${error}",
+    "errorDownloadFailedWithReason": "Download failed: ${reason}",
+    "errorHttpStatus": "Download failed (HTTP ${status})",
+    "errorPostProcessing": "Post-processing failed: ${reason}",
+    "reasonFileNotSaved": "the file could not be saved on this device",
+    "reasonCannotResume": "the partial download could not be resumed",
+    "reasonDeviceStorageFull": "this device is out of storage",
     "notificationDownloading": "Downloading...",
     "notificationComplete": "Download complete",
     "notificationPaused": "Download paused"
@@ -1912,9 +2130,7 @@
     "audioOutputSpatial": "Spatial Audio",
     "audioOutputStereo": "Stereo",
     "audioNormalization": "Normalize Loudness",
-    "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on",
-    "audioNormalizationStereoMix": "Decodes audio to a stereo mix; passthrough is off while this is on",
-    "audioDownmix": "Downmix to Stereo"
+    "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on"
   },
   "performanceOverlay": {
     "color": "Color",
@@ -1929,6 +2145,13 @@
     "rotation": "Rotation",
     "dvSource": "DV Source",
     "dvPath": "DV Path",
+    "dvRouteDecoder": "Dolby Vision decoder",
+    "dvRouteDecoderP81": "Dolby Vision decoder (P7→8.1)",
+    "dvRouteBaseLayer": "Base layer",
+    "dvRouteBaseLayerHdr10": "HDR10 base layer",
+    "dvRouteBaseLayerHlg": "HLG base layer",
+    "dvRouteBaseLayerSdr": "SDR base layer",
+    "dvRouteReshaped": "RPU reshaped (gpu-next)",
     "p7Conversion": "P7 Conv",
     "sampleRate": "Sample Rate",
     "pixelFormat": "Pixel Fmt",
@@ -2056,7 +2279,8 @@
     "producer": "Producer",
     "country": "Country",
     "collection": "Collection",
-    "label": "Label"
+    "label": "Label",
+    "quickTag": "Quick Tag..."
   },
   "matchScreen": {
     "match": "Match...",
@@ -2157,6 +2381,10 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "mdblist": "MDBList"
+    },
+    "simklReconnect": {
+      "title": "Reconnect Simkl",
+      "subtitle": "Simkl is retiring the sign-in method this connection uses. Reconnecting opens simkl.com to approve Plezy — Plezy never sees your password. Your watch history stays on Simkl."
     },
     "deviceCode": {
       "title": "Activate Plezy on ${service}",

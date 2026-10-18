@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/profiles/active_profile_binder.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
@@ -20,6 +23,7 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/profile/profile_teardown.dart';
 import 'package:plezy/services/plex_auth_service.dart';
+import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/system_shelf_service.dart';
@@ -105,6 +109,7 @@ void main() {
 
   setUp(() {
     resetSharedPreferencesForTest();
+    CredentialVault.resetKeyForTesting();
   });
 
   tearDown(() {
@@ -136,7 +141,62 @@ void main() {
     expect(events, ['delete-downloads:inactive']);
   });
 
-  testWidgets('Plex sign-out keeps account and joins when download deletion fails, then retry completes', (
+  testWidgets(
+    'Plex sign-out that deletes downloads keeps account and joins when deletion fails, then retry completes',
+    (tester) async {
+      final events = <String>[];
+      final harness = await _pumpHarness(tester, events: events, channel: channel);
+      addTearDown(harness.dispose);
+      const homeUserUuid = 'aaaaaaaaaaaaaaaa';
+      final account = _plexAccount();
+      final virtualProfileId = plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: homeUserUuid);
+      await _linkAccount(harness, account, virtualProfileId: virtualProfileId, homeUserUuid: homeUserUuid);
+      await harness.database.addDownloadOwner(profileId: virtualProfileId, globalKey: 'plex-machine:episode-1');
+      await harness.database.insertSyncRule(
+        profileId: virtualProfileId,
+        serverId: ServerId('plex-machine'),
+        ratingKey: 'show-1',
+        globalKey: 'plex-machine:show-1',
+        targetType: 'show',
+        episodeCount: 1,
+      );
+      await harness.database.insertWatchAction(
+        profileId: virtualProfileId,
+        serverId: ServerId('plex-machine'),
+        ratingKey: 'episode-1',
+        actionType: 'watched',
+      );
+
+      Future<bool> signOutDeletingDownloads() async {
+        final signOut = confirmAndSignOutPlexAccount(harness.context, accountConnectionId: account.id);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(SwitchListTile));
+        await tester.pump();
+        await tester.tap(find.byType(FilledButton));
+        await tester.pumpAndSettle();
+        return signOut;
+      }
+
+      expect(await signOutDeletingDownloads(), isFalse);
+      expect(await harness.connections.get(account.id), isNotNull);
+      expect((await harness.profileConnections.listForConnection(account.id)).map((row) => row.profileId).toSet(), {
+        'active',
+        virtualProfileId,
+      });
+      expect(await harness.database.getSyncRules(profileId: virtualProfileId), hasLength(1));
+      expect(await harness.database.getPendingSyncCount(profileId: virtualProfileId), 1);
+
+      expect(await signOutDeletingDownloads(), isTrue);
+      expect(await harness.connections.get(account.id), isNull);
+      expect(await harness.profileConnections.listForConnection(account.id), isEmpty);
+      expect(await harness.database.getSyncRules(profileId: virtualProfileId), isEmpty);
+      expect(await harness.database.getPendingSyncCount(profileId: virtualProfileId), 0);
+      expect(events.where((event) => event == 'delete-downloads:$virtualProfileId'), hasLength(2));
+      expect(events, contains('release-downloads:active:[plex-machine]'));
+    },
+  );
+
+  testWidgets('Plex sign-out keeps downloads by default and they return when the same account signs back in', (
     tester,
   ) async {
     final events = <String>[];
@@ -145,64 +205,55 @@ void main() {
     const homeUserUuid = 'aaaaaaaaaaaaaaaa';
     final account = _plexAccount();
     final virtualProfileId = plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: homeUserUuid);
-    await harness.connections.upsert(account);
-    await harness.profileConnections.upsert(
-      ProfileConnection(
-        profileId: virtualProfileId,
-        connectionId: account.id,
-        userToken: 'virtual-token',
-        userIdentifier: homeUserUuid,
-      ),
-    );
-    await harness.profileConnections.upsert(
-      ProfileConnection(
-        profileId: 'active',
-        connectionId: account.id,
-        userToken: 'borrower-token',
-        userIdentifier: homeUserUuid,
-      ),
-    );
-    await harness.database.insertSyncRule(
-      profileId: virtualProfileId,
-      serverId: ServerId('plex-machine'),
-      ratingKey: 'show-1',
-      globalKey: 'plex-machine:show-1',
-      targetType: 'show',
-      episodeCount: 1,
-    );
-    await harness.database.insertWatchAction(
-      profileId: virtualProfileId,
-      serverId: ServerId('plex-machine'),
-      ratingKey: 'episode-1',
-      actionType: 'watched',
-    );
+    await _linkAccount(harness, account, virtualProfileId: virtualProfileId, homeUserUuid: homeUserUuid);
+    const homeDownload = 'plex-machine:movie-1';
+    const borrowedDownload = 'plex-machine:movie-2';
+    await harness.database.addDownloadOwner(profileId: virtualProfileId, globalKey: homeDownload);
+    await harness.database.addDownloadOwner(profileId: 'active', globalKey: borrowedDownload);
 
-    final failedSignOut = confirmAndSignOutPlexAccount(harness.context, accountConnectionId: account.id);
+    final signOut = confirmAndSignOutPlexAccount(harness.context, accountConnectionId: account.id);
     await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse);
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 
-    expect(await failedSignOut, isFalse);
-    expect(await harness.connections.get(account.id), isNotNull);
-    expect((await harness.profileConnections.listForConnection(account.id)).map((row) => row.profileId).toSet(), {
-      'active',
-      virtualProfileId,
-    });
-    expect(await harness.database.getSyncRules(profileId: virtualProfileId), hasLength(1));
-    expect(await harness.database.getPendingSyncCount(profileId: virtualProfileId), 1);
-
-    final retry = confirmAndSignOutPlexAccount(harness.context, accountConnectionId: account.id);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(FilledButton));
-    await tester.pumpAndSettle();
-
-    expect(await retry, isTrue);
+    expect(await signOut, isTrue);
     expect(await harness.connections.get(account.id), isNull);
-    expect(await harness.profileConnections.listForConnection(account.id), isEmpty);
-    expect(await harness.database.getSyncRules(profileId: virtualProfileId), isEmpty);
-    expect(await harness.database.getPendingSyncCount(profileId: virtualProfileId), 0);
-    expect(events.where((event) => event == 'delete-downloads:$virtualProfileId'), hasLength(2));
-    expect(events, contains('release-downloads:active:[plex-machine]'));
+    expect(events.where((event) => event.contains('-downloads:')), isEmpty);
+    expect(await harness.database.getDownloadOwnerKeysForProfile('active'), {borrowedDownload});
+    // Dormant while the account is gone, so no other profile can use it...
+    expect(await harness.database.getValidDownloadOwnersForKey(homeDownload), isEmpty);
+
+    // ...and owned again once the same Plex Home user's account returns.
+    await harness.connections.upsert(account);
+    expect((await harness.database.getValidDownloadOwnersForKey(homeDownload)).map((owner) => owner.profileId), [
+      virtualProfileId,
+    ]);
+  });
+
+  testWidgets('Plex sign-out asks about downloads a borrower holds from the account servers only', (tester) async {
+    final events = <String>[];
+    final harness = await _pumpHarness(tester, events: events, channel: channel);
+    addTearDown(harness.dispose);
+    const homeUserUuid = 'aaaaaaaaaaaaaaaa';
+    final account = _plexAccount();
+    final virtualProfileId = plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: homeUserUuid);
+    await _linkAccount(harness, account, virtualProfileId: virtualProfileId, homeUserUuid: homeUserUuid);
+    await harness.database.addDownloadOwner(profileId: 'active', globalKey: 'other-machine:movie-1');
+
+    unawaited(confirmAndSignOutPlexAccount(harness.context, accountConnectionId: account.id));
+    await tester.pumpAndSettle();
+    expect(find.byType(SwitchListTile), findsNothing);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    await harness.database.addDownloadOwner(profileId: 'active', globalKey: 'plex-machine:movie-2');
+    unawaited(confirmAndSignOutPlexAccount(harness.context, accountConnectionId: account.id));
+    await tester.pumpAndSettle();
+    expect(find.byType(SwitchListTile), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(await harness.connections.get(account.id), isNotNull);
   });
 
   testWidgets('full logout clears shelf before companion, identity, or credential teardown', (tester) async {
@@ -358,5 +409,30 @@ PlexAccountConnection _plexAccount() {
     ],
     createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
     lastAuthenticatedAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
+  );
+}
+
+Future<void> _linkAccount(
+  _Harness harness,
+  PlexAccountConnection account, {
+  required String virtualProfileId,
+  required String homeUserUuid,
+}) async {
+  await harness.connections.upsert(account);
+  await harness.profileConnections.upsert(
+    ProfileConnection(
+      profileId: virtualProfileId,
+      connectionId: account.id,
+      userToken: 'virtual-token',
+      userIdentifier: homeUserUuid,
+    ),
+  );
+  await harness.profileConnections.upsert(
+    ProfileConnection(
+      profileId: 'active',
+      connectionId: account.id,
+      userToken: 'borrower-token',
+      userIdentifier: homeUserUuid,
+    ),
   );
 }

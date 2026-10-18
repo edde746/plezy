@@ -157,10 +157,16 @@ void main() {
     expect(observed, InputMode.keyboard);
   });
 
-  testWidgets('reporting device input with no tracker mounted is a no-op', (tester) async {
+  testWidgets('reporting device input after the tracker unmounts is a no-op', (tester) async {
+    await tester.pumpWidget(const InputModeTracker(child: SizedBox.shrink()));
     await tester.pumpWidget(const SizedBox.shrink());
 
-    expect(InputModeTracker.reportNonPointerInput, returnsNormally);
+    // A stale registration would either setState on the disposed tracker
+    // (throws) or still arm keyboard focus chrome for a tree that no longer
+    // exists.
+    InputModeTracker.reportNonPointerInput();
+
+    expect(FocusManager.instance.highlightStrategy, FocusHighlightStrategy.automatic);
   });
 }
 

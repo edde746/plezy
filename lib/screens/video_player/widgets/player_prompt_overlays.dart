@@ -11,6 +11,7 @@ import '../../../media/ids.dart';
 import '../../../media/media_item.dart';
 import '../../../media/media_item_types.dart';
 import '../../../providers/playback_state_provider.dart';
+import '../../../services/download_artwork_service.dart';
 import '../../../services/download_storage_service.dart';
 import '../../../services/pip_service.dart';
 import '../../../services/settings_service.dart';
@@ -276,7 +277,7 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
     final client = context.tryGetMediaClientForServer(serverId);
     final localFilePath = serverId == null
         ? null
-        : DownloadStorageService.instance.getArtworkPathSync(serverId, thumbPath);
+        : DownloadArtworkService.localPathSync(DownloadStorageService.instance, serverId, thumbPath);
     if (client == null && localFilePath == null) return null;
     final image = OptimizedMediaImage.thumb(
       client: client,

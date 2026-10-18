@@ -175,7 +175,7 @@ This project uses `slang` for internationalization with JSON files.
 
 ### Adding New Strings
 
-1. Add your string to `lib/i18n/strings.i18n.json`:
+1. Add your string to `lib/i18n/en.i18n.json` (the base locale; other locales live beside it):
    ```json
    {
      "section": {

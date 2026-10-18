@@ -8,6 +8,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/metadata_edit/jellyfin_metadata_edit_adapter.dart';
+import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
@@ -40,7 +41,11 @@ void main() {
 
   test('Jellyfin save does not send the name-pair arrays', () async {
     final postedBodies = <String>[];
-    final client = _clientForDto(connection: _jellyfinConnection(), dto: _jellyfinItem(), postedBodies: postedBodies);
+    final client = _clientForDto(
+      connection: testJellyfinConnection(createdAt: DateTime.fromMillisecondsSinceEpoch(0)),
+      dto: _jellyfinItem(),
+      postedBodies: postedBodies,
+    );
     addTearDown(client.close);
     final adapter = JellyfinMetadataEditAdapter(client);
     final draft = await adapter.load(_sourceItem(MediaBackend.jellyfin));
@@ -84,6 +89,35 @@ void main() {
       {'Name': 'archive'},
     ]);
   });
+
+  test('Emby label suggestions come from the per-facet /Tags route', () async {
+    Uri? tagsUri;
+    final client = JellyfinClient.forTesting(
+      connection: testEmbyConnection(),
+      httpClient: MockClient((request) async {
+        if (request.url.path == '/Tags') {
+          tagsUri = request.url;
+          return jsonResponse({
+            'Items': [
+              {'Name': 'kids'},
+              {'Name': 'horror'},
+            ],
+          });
+        }
+        return http.Response('Unexpected ${request.url}', 500);
+      }),
+    );
+    addTearDown(client.close);
+
+    final adapter = JellyfinMetadataEditAdapter(client);
+    final item = _sourceItem(MediaBackend.emby);
+    final draft = MetadataEditDraft(sourceItem: item, currentItem: item, values: {});
+    final labelField = adapter.buildSchema(draft).expand((s) => s.fields).singleWhere((f) => f.id == 'label');
+
+    expect(await adapter.fetchTagSuggestions(draft, labelField), ['kids', 'horror']);
+    expect(tagsUri!.queryParameters['Recursive'], 'true');
+    expect(tagsUri!.queryParameters.containsKey('ParentId'), isFalse);
+  });
 }
 
 JellyfinClient _clientForDto({
@@ -103,21 +137,6 @@ JellyfinClient _clientForDto({
       }
       return http.Response('Unexpected ${request.method} ${request.url}', 500);
     }),
-  );
-}
-
-JellyfinConnection _jellyfinConnection() {
-  return JellyfinConnection(
-    id: 'srv-1/user-1',
-    baseUrl: 'https://jf.example.com',
-    serverName: 'Home',
-    serverMachineId: 'srv-1',
-    userId: 'user-1',
-    userName: 'User',
-    accessToken: 'token',
-    deviceId: 'device-1',
-    isAdministrator: false,
-    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
   );
 }
 

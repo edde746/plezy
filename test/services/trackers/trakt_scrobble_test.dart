@@ -32,6 +32,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   @override
   final double watchedThreshold;
 
+  /// Set once a reconnect has replaced this client: a closed client cancels
+  /// every request.
+  bool closed = false;
+
   _FakeMediaServerClient({required this.externalIdsByItem, this.watchedThreshold = 0.9})
     : serverId = ServerId('server-1');
 
@@ -39,7 +43,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   MediaBackend get backend => MediaBackend.plex;
 
   @override
-  Future<ExternalIds> fetchExternalIds(String itemId) async => externalIdsByItem[itemId] ?? const ExternalIds();
+  Future<ExternalIds> fetchExternalIds(String itemId) async {
+    if (closed) throw StateError('client closed');
+    return externalIdsByItem[itemId] ?? const ExternalIds();
+  }
 
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => const [];
@@ -350,6 +357,38 @@ void main() {
 
       expect(recorder.paths, ['/scrobble/start']);
       expect(replacement.calls, isEmpty);
+    });
+
+    test('a reconnect under the same server id keeps scrobbling through the new client', () async {
+      final before = _client();
+      await startAtZero(client: before);
+      await coordinator.stopPlayback();
+
+      // The reconnect swaps in a new client for the same server and closes the
+      // old one; the next episode must resolve through the replacement.
+      before.closed = true;
+      final after = _FakeMediaServerClient(externalIdsByItem: {'show-2': const ExternalIds(tvdb: 67890)});
+      await coordinator.startPlayback(
+        testMediaItem(
+          id: 'episode-2-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Episode 1',
+          serverId: ServerId('server-1'),
+          libraryId: 'lib-1',
+          parentIndex: 2,
+          index: 1,
+          grandparentId: 'show-2',
+          durationMs: 100000,
+        ),
+        after,
+      );
+      await pumpEventQueue();
+
+      expect(recorder.callsFor('/scrobble/start'), hasLength(2));
+      expect(recorder.callsFor('/scrobble/start').last.body['show'], {
+        'ids': {'tvdb': 67890},
+      });
     });
   });
 }

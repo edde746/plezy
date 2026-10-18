@@ -110,7 +110,6 @@ class ConnectionRegistry {
     );
   }
 
-  /// Remove a stored connection.
   Future<void> remove(String id) async {
     await _db.runIdentityMutation(() async {
       await (_db.delete(_db.connections)..where((t) => t.id.equals(id))).go();

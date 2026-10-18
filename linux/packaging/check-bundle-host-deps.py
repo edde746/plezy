@@ -252,8 +252,9 @@ def main() -> int:
             f"no host libraries were found for {arguments.bundle} at all, which cannot be right - "
             "ldd produced nothing usable, so this proved nothing"
         )
+    owners = {}
     for soname, path in sorted(needed.items()):
-        owner = deb_owner(path)
+        owner = owners[soname] = deb_owner(path)
         if not owner:
             errors.append(f"{soname} ({path}) belongs to no deb package, so it cannot be checked or declared")
         elif not (deb_names(owner) & declared["deb"]):
@@ -273,8 +274,8 @@ def main() -> int:
         return 1
 
     print(f"every one of the {len(needed)} host libraries the bundle needs is declared on all {len(distros)} distros:")
-    for soname in sorted(needed):
-        print(f"  {soname:<28} {deb_owner(needed[soname])}")
+    for soname, owner in owners.items():
+        print(f"  {soname:<28} {owner}")
     return 0
 
 

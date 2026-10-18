@@ -46,6 +46,10 @@ class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource
     notifyListeners();
   }
 
+  /// A connectivity-only change: the real provider notifies without moving
+  /// [isOffline] when the network drops while a server stays reachable.
+  void notifyConnectivityChanged() => notifyListeners();
+
   // ChangeNotifier.hasListeners is `@protected` — re-export for tests.
   @override
   // ignore: unnecessary_overrides
@@ -135,12 +139,17 @@ class _RecordingPlexClient extends _RecordingMediaClient implements PlexClient, 
 }
 
 /// Build a service against an in-memory database and a bare-metal
-/// [MultiServerManager] (no servers added).
+/// [MultiServerManager] (no servers added), disposed at test teardown.
 ({OfflineWatchSyncService svc, AppDatabase db, MultiServerManager mgr}) _makeService() {
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   JellyfinApiCache.initialize(db);
   final mgr = MultiServerManager();
   final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
+  addTearDown(() async {
+    svc.dispose();
+    mgr.dispose();
+    await db.close();
+  });
   return (svc: svc, db: db, mgr: mgr);
 }
 
@@ -159,12 +168,7 @@ void main() {
 
   group('initial state', () {
     test('a freshly constructed service is not syncing and has no pending count', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       expect(svc.isSyncing, isFalse);
       expect(await svc.getPendingSyncCount(), 0);
@@ -173,12 +177,7 @@ void main() {
     });
 
     test('isWatchedByProgress: pure math (no DB / network)', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       // duration=0 short-circuits to false (avoids divide-by-zero).
       expect(svc.isWatchedByProgress(0, 0), isFalse);
@@ -192,12 +191,7 @@ void main() {
     });
 
     test('getWatchedThreshold falls back to default 0.9 when no client + no settings', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       // No SettingsService initialized, no client registered → default 90/100.
       expect(svc.getWatchedThreshold(ServerId('unknown-server')), 0.9);
@@ -206,12 +200,7 @@ void main() {
 
   group('queueMarkWatched / queueMarkUnwatched', () {
     test('queueMarkWatched persists a "watched" action and bumps pending count', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       var notifications = 0;
       svc.addListener(() => notifications++);
@@ -231,12 +220,7 @@ void main() {
     });
 
     test('queueMarkUnwatched persists an "unwatched" action', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueMarkUnwatched(serverId: ServerId('srv'), itemId: '42');
 
@@ -246,12 +230,7 @@ void main() {
     });
 
     test('queueing the opposite action replaces the prior action (single row)', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
       expect(await svc.getPendingSyncCount(), 1);
@@ -267,12 +246,7 @@ void main() {
     });
 
     test('concurrent watched then unwatched leaves exactly one unwatched action', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
       svc.setActiveProfileId('profile-a');
 
       final watched = svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
@@ -289,12 +263,7 @@ void main() {
     });
 
     test('different ratingKeys persist independently', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '1');
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '2');
@@ -310,12 +279,7 @@ void main() {
 
   group('syncPendingItems retry preservation', () {
     test('server unavailable keeps queued action without consuming attempts', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
 
@@ -328,12 +292,7 @@ void main() {
     });
 
     test('max-attempt action is retained for explicit cleanup instead of deleted', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
       var action = await db.getLatestWatchAction('srv:42');
@@ -352,11 +311,6 @@ void main() {
 
     test('partial Plex offline progress replays as offline stopped progress', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
       svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
@@ -377,12 +331,7 @@ void main() {
     });
 
     test('unknown-duration offline progress still replays stopped position', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: _, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
@@ -403,11 +352,6 @@ void main() {
 
     test('completed Plex offline progress replays at duration and marks watched', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
       svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
@@ -429,12 +373,7 @@ void main() {
     });
 
     test('completed Jellyfin offline progress marks watched via the stop report, not markWatched (#1287)', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: _, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
@@ -456,11 +395,6 @@ void main() {
   group('syncPendingItems profile scoping', () {
     test('defers entirely when no profile is active', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       svc.setActiveProfileId('p1');
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.plex);
@@ -478,11 +412,6 @@ void main() {
 
     test('requeues remaining actions when the active profile changes mid-sync', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       svc.setActiveProfileId('p1');
       final posts = <String>[];
@@ -518,12 +447,7 @@ void main() {
 
   group('queueProgressUpdate', () {
     test('persists a progress row with shouldMarkWatched=false below threshold', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       // 50% progress → below default 0.9 threshold.
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50, duration: 100);
@@ -537,12 +461,7 @@ void main() {
     });
 
     test('persists unknown-duration progress without marking watched', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50, duration: null);
 
@@ -555,12 +474,7 @@ void main() {
     });
 
     test('persists shouldMarkWatched=true at/above the default 0.9 threshold', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 95, duration: 100);
 
@@ -569,12 +483,7 @@ void main() {
     });
 
     test('repeated progress updates merge into the same row', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 10, duration: 100);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 20, duration: 100);
@@ -595,12 +504,7 @@ void main() {
     // mark. Replaying the stale row afterwards rewrites the resume position the
     // mark cleared, which pins the item to Continue Watching on MediaBrowser.
     test('a watched event drops the queued progress row for that item', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
       expect(await svc.getPendingSyncCount(), 1);
@@ -613,12 +517,7 @@ void main() {
     });
 
     test('an unwatched event drops it too', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
 
@@ -629,12 +528,7 @@ void main() {
     });
 
     test('other items and queued manual marks are left alone', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '43', viewOffset: 50000, duration: 100000);
@@ -649,12 +543,7 @@ void main() {
     });
 
     test('progress recorded after the mark survives — that is a rewatch', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       WatchStateNotifier().notifyWatched(item: itemFor('42'));
       await pumpEventQueue();
@@ -664,12 +553,7 @@ void main() {
     });
 
     test('a superseded row never reaches the server on the next sync', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: _, mgr: mgr) = _makeService();
       svc.setActiveProfileId('p1');
 
       final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
@@ -689,44 +573,24 @@ void main() {
 
   group('getLocalWatchStatus', () {
     test('returns null when no local action exists', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
       expect(await svc.getLocalWatchStatus('srv:none'), isNull);
     });
 
     test('returns true for a "watched" action', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '1');
       expect(await svc.getLocalWatchStatus('srv:1'), isTrue);
     });
 
     test('returns false for an "unwatched" action', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
       await svc.queueMarkUnwatched(serverId: ServerId('srv'), itemId: '1');
       expect(await svc.getLocalWatchStatus('srv:1'), isFalse);
     });
 
     test('returns watched status only for explicit actions or threshold-crossing progress', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       // Below threshold is resume-only; it must not override stale watched metadata.
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '1', viewOffset: 50, duration: 100);
@@ -740,22 +604,12 @@ void main() {
 
   group('getLocalViewOffset', () {
     test('returns null when no local action exists', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
       expect(await svc.getLocalViewOffset('srv:none'), isNull);
     });
 
     test('returns null for a "watched" or "unwatched" action (no offset)', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '1');
       expect(await svc.getLocalViewOffset('srv:1'), isNull);
@@ -765,24 +619,14 @@ void main() {
     });
 
     test('returns the stored offset for a "progress" action', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '1', viewOffset: 12345, duration: 60000);
       expect(await svc.getLocalViewOffset('srv:1'), 12345);
     });
 
     test('progress is replaced by a manual "watched" action — offset becomes null', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '1', viewOffset: 5000, duration: 10000);
       expect(await svc.getLocalViewOffset('srv:1'), 5000);
@@ -797,12 +641,7 @@ void main() {
 
   group('getPendingSyncCount', () {
     test('counts every queued action (manual + progress)', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       expect(await svc.getPendingSyncCount(), 0);
 
@@ -813,12 +652,7 @@ void main() {
     });
 
     test('progress upsert does NOT increment count', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '1', viewOffset: 10, duration: 100);
       await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '1', viewOffset: 20, duration: 100);
@@ -828,22 +662,12 @@ void main() {
 
   group('getLocalWatchStatusesBatched', () {
     test('empty input returns empty map without touching the DB', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
       expect(await svc.getLocalWatchStatusesBatched({}), isEmpty);
     });
 
     test('returns null for missing keys, statuses for queued items', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '1');
       await svc.queueMarkUnwatched(serverId: ServerId('srv'), itemId: '2');
@@ -865,11 +689,6 @@ void main() {
 
     test('filters batched local statuses by active Jellyfin scope', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final activeUserB = JellyfinClient.forTesting(
         connection: _jellyfinConnection('user-b'),
@@ -905,12 +724,7 @@ void main() {
     });
 
     test('local watch actions are isolated by active profile', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       svc.setActiveProfileId('profile-a');
       await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
@@ -933,11 +747,6 @@ void main() {
   group('Plex scoped sync', () {
     test('queues and replays through the exact active Plex profile scope', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
       svc.setActiveProfileId('profile-a');
       final clientA = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-a');
       mgr.debugRegisterClientForTesting(clientA);
@@ -954,11 +763,6 @@ void main() {
 
     test('does not replay a queued Plex owner action through a foreign active profile', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
       svc.setActiveProfileId('profile-a');
       final scopeA = buildPlexProfileScopeId(serverId: ServerId('plex-machine'), profileId: 'profile-a');
       final clientB = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-b');
@@ -981,11 +785,6 @@ void main() {
   group('Jellyfin scoped sync', () {
     test('empty active scope falls back to the downloaded scope during client pre-bind', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       await db.insertDownload(
         serverId: ServerId('jf-machine'),
@@ -1011,12 +810,7 @@ void main() {
     });
 
     test('queues with downloaded Jellyfin source scope when no active client is registered', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final (svc: svc, db: db, mgr: _) = _makeService();
 
       await db.insertDownload(
         serverId: ServerId('jf-machine'),
@@ -1035,11 +829,6 @@ void main() {
 
     test('local status and resume offset use active scope over downloaded source scope', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final activeUserB = JellyfinClient.forTesting(
         connection: _jellyfinConnection('user-b'),
@@ -1082,11 +871,6 @@ void main() {
 
     test('queues with active Jellyfin user instead of downloaded source scope', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       await db.insertDownload(
         serverId: ServerId('jf-machine'),
@@ -1113,11 +897,6 @@ void main() {
 
     test('replays through the queued Jellyfin user after active user changes', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
       svc.setActiveProfileId('p1');
 
       final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
@@ -1160,11 +939,6 @@ void main() {
 
     test('legacy Jellyfin rows without clientScopeId are not synced through the active server client', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final paths = <String>[];
       final client = JellyfinClient.forTesting(
@@ -1197,11 +971,6 @@ void main() {
 
     test('legacy Jellyfin rows without clientScopeId do not borrow downloaded source scope during replay', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
 
@@ -1251,11 +1020,6 @@ void main() {
 
     test('watch-state pull uses active scope for shared movie downloads', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
 
@@ -1307,11 +1071,6 @@ void main() {
 
     test('watch-state pull does not treat Jellyfin PlayCount alone as watched', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final paths = <String>[];
       final userB = JellyfinClient.forTesting(
@@ -1354,11 +1113,6 @@ void main() {
 
     test('watch-state pull uses active scope for shared episode season batches', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final pathsByUser = <String, List<String>>{'user-a': [], 'user-b': []};
 
@@ -1416,11 +1170,6 @@ void main() {
 
     test('watch-state pull ignores physical downloads not owned by active profile', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
 
       final paths = <String>[];
       final userB = JellyfinClient.forTesting(
@@ -1448,16 +1197,110 @@ void main() {
 
       expect(paths, isEmpty);
     });
+
+    test('watch-state pull stops when the active profile changes mid-pull', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+
+      final requestedItems = <String>[];
+      final userB = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-b'),
+        httpClient: MockClient((request) async {
+          final itemId = RegExp(r'^/Users/user-b/Items/(item-\d)$').firstMatch(request.url.path)?.group(1);
+          if (request.method != 'GET' || itemId == null) return http.Response('not found', 404);
+          requestedItems.add(itemId);
+          // The user switches profile while the first item is in flight; the
+          // same server id now belongs to another user's session.
+          svc.setActiveProfileId('profile-c');
+          return http.Response(
+            '{"Id":"$itemId","Type":"Movie","Name":"Movie","UserData":{"PlayCount":1,"Played":true}}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(userB.close);
+      final events = <WatchStateEvent>[];
+      final sub = WatchStateNotifier().stream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      for (final itemId in ['item-1', 'item-2']) {
+        await db.insertDownload(
+          serverId: ServerId('jf-machine'),
+          clientScopeId: 'jf-machine/user-b',
+          ratingKey: itemId,
+          globalKey: 'jf-machine:$itemId',
+          type: 'movie',
+          status: 3,
+        );
+        await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:$itemId');
+      }
+      svc.setActiveProfileId('profile-b');
+
+      mgr.debugRegisterJellyfinClientForTesting(userB);
+      await svc.syncWatchStatesFromServer();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(requestedItems, hasLength(1));
+      expect(events, isEmpty, reason: 'the previous profile must not announce the new user\'s watch state');
+    });
+
+    test('servers connecting after a profile switch sync the new profile', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+
+      var itemRequests = 0;
+      final userA = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((request) async {
+          if (request.method == 'GET' && request.url.path == '/Users/user-a/Items/item-1') {
+            itemRequests++;
+            return http.Response(
+              '{"Id":"item-1","Type":"Movie","Name":"Movie","UserData":{"PlayCount":0,"Played":false}}',
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(userA.close);
+
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'item-1',
+        globalKey: 'jf-machine:item-1',
+        type: 'movie',
+        status: 3,
+      );
+      for (final profileId in ['profile-a', 'profile-b']) {
+        await db.addDownloadOwner(profileId: profileId, globalKey: 'jf-machine:item-1');
+      }
+      mgr.debugRegisterJellyfinClientForTesting(userA);
+
+      Future<void> waitForRequests(int count) async {
+        for (var i = 0; i < 200 && itemRequests < count; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+        // Let the rest of the pass settle before the next step.
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+
+      svc.setActiveProfileId('profile-a');
+      svc.onServersConnected();
+      await waitForRequests(1);
+      expect(itemRequests, 1);
+
+      svc.setActiveProfileId('profile-b');
+      svc.onServersConnected();
+      await waitForRequests(2);
+
+      expect(itemRequests, 2);
+    });
   });
 
   group('clearAll', () {
     test('removes every queued action and notifies listeners', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '1');
       await svc.queueMarkUnwatched(serverId: ServerId('srv'), itemId: '2');
@@ -1474,7 +1317,10 @@ void main() {
 
   group('startConnectivityMonitoring + dispose', () {
     test('attaches a listener to the source', () {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(db);
+      final mgr = MultiServerManager();
+      final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
       addTearDown(() async {
         mgr.dispose();
         await db.close();
@@ -1492,12 +1338,7 @@ void main() {
     });
 
     test('replacing the source detaches the prior listener', () {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
-      addTearDown(() async {
-        svc.dispose();
-        mgr.dispose();
-        await db.close();
-      });
+      final svc = _makeService().svc;
 
       final first = _FakeOfflineModeSource();
       final second = _FakeOfflineModeSource();
@@ -1512,8 +1353,33 @@ void main() {
       expect(second.hasListeners, isTrue);
     });
 
+    test('syncs when the source comes online, not on connectivity-only notifications', () async {
+      final (svc: svc, db: _, mgr: mgr) = _makeService();
+      svc.setActiveProfileId('profile-a');
+      final client = _RecordingPlexClient(serverId: ServerId('plex-machine'), profileId: 'profile-a');
+      mgr.debugRegisterClientForTesting(client);
+      final source = _FakeOfflineModeSource(initial: true);
+      svc.startConnectivityMonitoring(source);
+
+      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
+      source.setOffline(false);
+      await pumpEventQueue();
+      expect(client.watched, ['item-1']);
+
+      // The network drops while the server stays reachable: the source
+      // notifies but is still online, so no pass (and no retry attempt) runs.
+      await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-2');
+      source.notifyConnectivityChanged();
+      await pumpEventQueue();
+      expect(client.watched, ['item-1']);
+      expect(await svc.getPendingSyncCount(), 1);
+    });
+
     test('dispose() before startConnectivityMonitoring is safe', () async {
-      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(db);
+      final mgr = MultiServerManager();
+      final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
       addTearDown(() async {
         mgr.dispose();
         await db.close();
@@ -1521,6 +1387,27 @@ void main() {
 
       // Never called startConnectivityMonitoring → both fields are null.
       expect(svc.dispose, returnsNormally);
+    });
+
+    test('a queued write that lands after dispose completes without notifying', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      JellyfinApiCache.initialize(db);
+      final mgr = MultiServerManager();
+      final svc = OfflineWatchSyncService(database: db, serverManager: mgr);
+      addTearDown(() async {
+        mgr.dispose();
+        await db.close();
+      });
+      var notifications = 0;
+      svc.addListener(() => notifications++);
+
+      // A profile switch disposes the service while the database write is
+      // still in flight; the completion must not trip the disposed assert.
+      final pending = svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
+      svc.dispose();
+      await pending;
+
+      expect(notifications, 0);
     });
   });
 }

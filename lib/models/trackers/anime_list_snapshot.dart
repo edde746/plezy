@@ -17,5 +17,15 @@ class AnimeListSnapshot {
   /// Zero when the entry is absent or the service omitted the field.
   final int rewatchCount;
 
-  const AnimeListSnapshot({this.episodeCount, this.rewatching = false, this.completed = false, this.rewatchCount = 0});
+  /// Episodes the entry currently counts as watched (AniList `progress`,
+  /// MAL `num_watched_episodes`). Zero when the entry is absent.
+  final int progress;
+
+  const AnimeListSnapshot({
+    this.episodeCount,
+    this.rewatching = false,
+    this.completed = false,
+    this.rewatchCount = 0,
+    this.progress = 0,
+  });
 }

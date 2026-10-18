@@ -58,4 +58,61 @@ void main() {
     expect(chromeController.controlsVisible, isFalse);
     expect(exits, 0);
   });
+
+  group('music transport', () {
+    final receiver = CompanionRemoteReceiver.instance;
+    late List<RemoteCommandType> routed;
+
+    setUp(() {
+      routed = [];
+      receiver.musicTransport = (type) {
+        routed.add(type);
+        return true;
+      };
+    });
+
+    tearDown(() {
+      receiver.musicTransport = null;
+      receiver.playerOwner = null;
+      receiver.onSeekForward = null;
+    });
+
+    test('transport buttons reach the music session while no video player owns them', () {
+      for (final type in const [
+        RemoteCommandType.playPause,
+        RemoteCommandType.play,
+        RemoteCommandType.pause,
+        RemoteCommandType.nextTrack,
+        RemoteCommandType.previousTrack,
+        RemoteCommandType.seekForward,
+        RemoteCommandType.seekBackward,
+        RemoteCommandType.stop,
+      ]) {
+        receiver.handleCommand(RemoteCommand(type: type), null);
+      }
+      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.volumeUp), null);
+
+      expect(routed, const [
+        RemoteCommandType.playPause,
+        RemoteCommandType.play,
+        RemoteCommandType.pause,
+        RemoteCommandType.nextTrack,
+        RemoteCommandType.previousTrack,
+        RemoteCommandType.seekForward,
+        RemoteCommandType.seekBackward,
+        RemoteCommandType.stop,
+      ]);
+    });
+
+    test('a video player owning the transport slots keeps them', () {
+      var seeks = 0;
+      receiver.playerOwner = Object();
+      receiver.onSeekForward = () => seeks++;
+
+      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.seekForward), null);
+
+      expect(routed, isEmpty);
+      expect(seeks, 1);
+    });
+  });
 }

@@ -40,8 +40,9 @@ tags:
 - extendedWaitUntil:
     visible: "(?s)^.*Audio & Subtitles$"
     timeout: 30000
-# The pending pass is wall-clock driven and a paused frame settles instantly,
-# so playback has to run for the wait below to consume real time.
+# The pending pass is wall-clock driven: while playing, the OSD's auto-hide is
+# a real 30s timer in Maestro builds, so waiting for it to disappear observes
+# 30s of wall clock after this pick — past the deadline armed back at open.
 - runFlow:
     when:
       visible: "Play"
@@ -50,12 +51,10 @@ tags:
 - extendedWaitUntil:
     visible: "Pause"
     timeout: 20000
-- repeat:
-    times: 14
-    commands:
-      - waitForAnimationToEnd:
-          timeout: 3000
-# Chrome auto-hides after 30s even in Maestro builds, so bring it back.
+- extendedWaitUntil:
+    notVisible: "(?s)^.*Audio & Subtitles$"
+    timeout: 45000
+# Bring the chrome back.
 - tapOn:
     point: 50%, 50%
 - extendedWaitUntil:

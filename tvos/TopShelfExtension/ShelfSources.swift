@@ -97,6 +97,14 @@ enum ShelfSourceStore {
     return join(payload: payload, tokensByServerId: loadTokens(ownerId: payload.ownerId))
   }
 
+  /// Owner of the sources persisted right now, read without the keychain.
+  static func currentOwnerId() -> String? {
+    guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
+      let data = defaults.data(forKey: sourcesKey)
+    else { return nil }
+    return decodePayload(data)?.ownerId
+  }
+
   /// Pure resolution used by tests: validates the persisted payload and
   /// attaches externally supplied tokens.
   static func resolve(payloadData: Data, tokensByServerId: [String: String]) -> Sources? {

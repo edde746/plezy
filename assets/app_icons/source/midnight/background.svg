@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<linearGradient id="brand" x1="22.67" y1="425.72" x2="201.83" y2="115.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ab543a"/><stop offset="1" stop-color="#ff7e57"/></linearGradient><radialGradient id="glow" cx="512" cy="500" r="620" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3a1e14"/><stop offset="0.5" stop-color="#1a1310"/><stop offset="1" stop-color="#0b0b0c"/></radialGradient>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="url(#glow)"/>
+</g>
+</svg>

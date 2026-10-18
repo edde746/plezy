@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:background_downloader/background_downloader.dart' show RequireWiFi;
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,8 @@ import 'package:plezy/services/file_picker_service.dart';
 import 'package:plezy/services/settings_export_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/services/supporter/supporter_mode.dart';
+import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/services/update_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -369,6 +372,51 @@ void main() {
     expect(SettingsService.instance.read(SettingsService.customDownloadPath), selectedDirectory.path);
   });
 
+  testWidgets('toggling Wi-Fi only re-evaluates downloads that are already queued', (tester) async {
+    final requirements = <RequireWiFi>[];
+    final harness = await _pumpSettingsScreen(
+      tester,
+      requireWiFiOverride: (requirement) async {
+        requirements.add(requirement);
+        return true;
+      },
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.downloadOnWifiOnly));
+    await _pumpUi(tester);
+    expect(SettingsService.instance.read(SettingsService.downloadOnWifiOnly), isTrue);
+
+    await tester.tap(find.text(t.settings.downloadOnWifiOnly));
+    await _pumpUi(tester);
+
+    expect(requirements, [RequireWiFi.forAllTasks, RequireWiFi.forNoTasks]);
+  });
+
+  testWidgets('importing Wi-Fi only applies it to downloads that are already queued', (tester) async {
+    final requirements = <RequireWiFi>[];
+    final harness = await _pumpSettingsScreen(
+      tester,
+      requireWiFiOverride: (requirement) async {
+        requirements.add(requirement);
+        return true;
+      },
+      settingsImporter: () async {
+        await SettingsService.instance.write(SettingsService.downloadOnWifiOnly, true);
+        return const ImportResult(keysImported: 1, keysSkipped: 0);
+      },
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.importSettings));
+    await _pumpUi(tester);
+    await tester.tap(find.widgetWithText(DialogActionButton, t.settings.importSettings));
+    await _pumpUi(tester);
+
+    expect(SettingsService.instance.read(SettingsService.downloadOnWifiOnly), isTrue);
+    expect(requirements, [RequireWiFi.forAllTasks]);
+  });
+
   testWidgets('download location reset uses the provider coordinator', (tester) async {
     await SettingsService.instance.write(
       SettingsService.customDownloadPath,
@@ -631,6 +679,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService,
   bool pushSettingsRoute = false,
   List<MediaLibrary> initialLibraries = const [],
+  Future<bool> Function(RequireWiFi requirement)? requireWiFiOverride,
 }) async {
   tester.view.physicalSize = const Size(1800, 3200);
   tester.view.devicePixelRatio = 1;
@@ -655,7 +704,9 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   final libraries = _FixtureLibrariesProvider(initialLibraries);
   final hiddenLibraries = HiddenLibrariesProvider(storageService: _FakeHiddenLibrariesStorage());
   await hiddenLibraries.ensureInitialized();
-  final theme = ThemeProvider();
+  final supporter = SupporterService.forTesting(availability: SupporterAvailability.hidden);
+  addTearDown(supporter.dispose);
+  final theme = ThemeProvider(supporter: supporter);
   final trackerHttpClients = <FakeHttpClient>[];
   FakeHttpClient trackerHttpClientFactory() {
     final client = FakeHttpClient(HttpStatus.ok, const <int>[]);
@@ -677,7 +728,8 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     database: database,
     storageService: _WritableDownloadStorage(),
     clientResolver: (_, {clientScopeId}) => null,
-    downloadsSupportedOverride: false,
+    downloadsSupportedOverride: requireWiFiOverride != null,
+    requireWiFiOverride: requireWiFiOverride,
     downloadLocationReader: () => (
       path: settingsService.read(SettingsService.customDownloadPath),
       type: settingsService.read(SettingsService.customDownloadPathType),
@@ -725,7 +777,7 @@ Future<_SettingsHarness> _pumpSettingsScreen(
           ChangeNotifierProvider<AccountPreferencesController>.value(value: accountPreferences),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
           home: pushSettingsRoute
               ? Builder(
                   builder: (context) => Scaffold(

@@ -106,6 +106,11 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
       return backResult;
     }
 
+    // SELECT is one-shot: holding OK must not repeat a destructive column
+    // action (e.g. removing a favorite) or flip move mode on and off.
+    final selectResult = handleOneShotSelect(event, _activateSelect);
+    if (selectResult != KeyEventResult.ignored) return selectResult;
+
     if (!event.isActionable) return KeyEventResult.ignored;
 
     final int? moving = movingIndex;
@@ -117,16 +122,6 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
       }
       if (key.isDownKey && moving < reorderItems.length - 1) {
         _swapMovingItem(moving, moving + 1);
-        return KeyEventResult.handled;
-      }
-      if (key.isSelectKey) {
-        // Confirm move - apply the reorder
-        onReorderMoveConfirmed();
-        setState(() {
-          movingIndex = null;
-          _originalIndex = null;
-          _originalOrder = null;
-        });
         return KeyEventResult.handled;
       }
     } else {
@@ -155,19 +150,6 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
         setState(() => focusedColumn++);
         return KeyEventResult.handled;
       }
-      if (key.isSelectKey) {
-        if (focusedColumn == 0) {
-          // Enter move mode
-          setState(() {
-            movingIndex = focusedIndex;
-            _originalIndex = focusedIndex;
-            _originalOrder = List<E>.from(reorderItems);
-          });
-        } else {
-          onReorderColumnActivated(focusedColumn, focusedIndex);
-        }
-        return KeyEventResult.handled;
-      }
     }
 
     // Block d-pad keys at boundaries so focus doesn't escape the dialog
@@ -176,6 +158,30 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  void _activateSelect() {
+    if (movingIndex != null) {
+      // Confirm move - apply the reorder
+      onReorderMoveConfirmed();
+      setState(() {
+        movingIndex = null;
+        _originalIndex = null;
+        _originalOrder = null;
+      });
+      return;
+    }
+    if (focusedIndex >= reorderItems.length) return;
+    if (focusedColumn == 0) {
+      // Enter move mode
+      setState(() {
+        movingIndex = focusedIndex;
+        _originalIndex = focusedIndex;
+        _originalOrder = List<E>.from(reorderItems);
+      });
+    } else {
+      onReorderColumnActivated(focusedColumn, focusedIndex);
+    }
   }
 
   void _swapMovingItem(int from, int to) {

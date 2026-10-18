@@ -61,7 +61,7 @@ class _FakeClient implements MediaServerClient {
   ServerId get serverId => ServerId('server-1');
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend backend = MediaBackend.jellyfin;
 
   @override
   ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
@@ -138,6 +138,7 @@ void main() {
 
   testWidgets('create still requires a target when eligible libraries exist and none resolves', (tester) async {
     final client = _FakeClient()
+      ..backend = MediaBackend.plex
       // An int-id show library makes the picker eligible, but nothing is
       // selected and the template names no section — the Plex guard holds.
       ..libraries = [
@@ -154,6 +155,25 @@ void main() {
 
     expect(outcome, RecordOutcome.targetMissing);
     expect(client.dvr.created, isEmpty);
+  });
+
+  testWidgets('Emby numeric library ids are not treated as Plex recording targets', (tester) async {
+    final client = _FakeClient()
+      ..backend = MediaBackend.emby
+      ..libraries = [
+        MediaLibrary(
+          id: '12',
+          title: 'TV',
+          kind: MediaKind.show,
+          backend: MediaBackend.emby,
+          serverId: ServerId('server-1'),
+        ),
+      ];
+
+    final outcome = await _pumpAndSave(tester, client, _mediaBrowserEntry());
+
+    expect(outcome, RecordOutcome.scheduled);
+    expect(client.dvr.created.single.targetLibrarySectionID, isNull);
   });
 
   testWidgets('RecordingConflictException maps to the alreadyScheduled outcome', (tester) async {

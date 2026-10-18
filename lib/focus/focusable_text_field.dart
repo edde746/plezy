@@ -95,11 +95,6 @@ class TvTextInputController {
   void focusAndOpenTextInput() => _host?._focusAndOpenTextInput();
 }
 
-String _describeTextInputKey(KeyEvent event) {
-  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
-      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
-}
-
 void _logTvTextInput(String message) {
   TextInputDiagnostics.log('FlutterTextField', message);
 }
@@ -183,7 +178,7 @@ KeyEventResult _handleInputKey({
   KeyEventResult finish(KeyEventResult result, String reason) {
     if (diagnosticsEnabled) {
       _logTvTextInput(
-        'result=$result reason=$reason key=(${_describeTextInputKey(event)}) '
+        'result=$result reason=$reason key=(${describeKeyEvent(event)}) '
         'usesTvKeyboard=$usesTvKeyboard enabled=$enabled textLength=${controller.text.length} '
         'selection=${controller.selection} onNav(up=${onNavigateUp != null},down=${onNavigateDown != null},'
         'left=${onNavigateLeft != null},right=${onNavigateRight != null}) onSelect=${onSelect != null} onBack=${onBack != null}',
@@ -194,7 +189,7 @@ KeyEventResult _handleInputKey({
 
   if (diagnosticsEnabled) {
     _logTvTextInput(
-      'received key=(${_describeTextInputKey(event)}) usesTvKeyboard=$usesTvKeyboard enabled=$enabled '
+      'received key=(${describeKeyEvent(event)}) usesTvKeyboard=$usesTvKeyboard enabled=$enabled '
       'textLength=${controller.text.length} selection=${controller.selection}',
     );
   }
@@ -343,7 +338,7 @@ bool _shouldPassNativeTvKeyToPlatform({
       _logTvTextInput(
         'native-pass=false reason=inactive-disabled-or-custom enabled=$enabled '
         'usesTvKeyboard=$usesTvKeyboard nativeTextInputActive=$nativeTextInputActive '
-        'isAppleTV=${PlatformDetector.isAppleTV()} key=(${_describeTextInputKey(event)})',
+        'isAppleTV=${PlatformDetector.isAppleTV()} key=(${describeKeyEvent(event)})',
       );
     }
     return false;
@@ -362,7 +357,7 @@ bool _shouldPassNativeTvKeyToPlatform({
   if (TextInputDiagnostics.enabled) {
     _logTvTextInput(
       'native-pass=$shouldPass reason=${shouldPass ? "remote-navigation-key" : "not-navigation-key"} '
-      'key=(${_describeTextInputKey(event)})',
+      'key=(${describeKeyEvent(event)})',
     );
   }
   return shouldPass;
@@ -1132,7 +1127,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
   void _syncNativeTextInputFocus() {
     // Activation-based, not focus-based: the platform hint pauses the gamepad
     // bridge and defers the pre-IME D-pad intercept to the IME, and it arms
-    // MainActivity's soft-input show-retry/repair session — all of which must
+    // PlezyActivity's soft-input show-retry/repair session — all of which must
     // track a *live* text input session, not a merely focused (read-only
     // gated) field. A dismissed keyboard therefore hands D-pad routing back
     // to the app immediately.
@@ -1371,7 +1366,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
     if (previous != null && !identical(previous, _keyHandler)) {
       final result = previous(node, event);
       _logTvTextInput(
-        'Host.previousOnKeyEvent node=${node.debugLabel} result=$result key=(${_describeTextInputKey(event)})',
+        'Host.previousOnKeyEvent node=${node.debugLabel} result=$result key=(${describeKeyEvent(event)})',
       );
       if (result != KeyEventResult.ignored) return result;
     }
@@ -1403,7 +1398,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
       } else if (event.logicalKey.isBackKey) {
         // Android: a healthy IME consumes Back to dismiss itself before the
         // app ever sees it. One arriving here means the keyboard is already
-        // gone (or its key session is broken and MainActivity's repair budget
+        // gone (or its key session is broken and PlezyActivity's repair budget
         // ran out): close the session and claim the whole press — coordinator
         // mark so a same-press platform popRoute dedupes, suppressor armed so
         // the matching KeyUp (delivered to this node with the session closed,
@@ -1415,7 +1410,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
       } else if (event.isTvSelectEvent) {
         // Android: Select on a field whose keyboard was dismissed re-raises
         // it (EditText parity). Toggle the connection so the engine issues a
-        // fresh TextInput.show; MainActivity's show-retry covers the
+        // fresh TextInput.show; PlezyActivity's show-retry covers the
         // served-view race (#1051/#1079).
         _endNativeTextInput(_NativeTextInputEndReason.restart);
         _scheduleNativeTextInputReactivation();
@@ -1423,7 +1418,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
       }
       // Android arrows fall through deliberately: a healthy visible IME
       // consumes them before the app, and leaked ones are repaired and eaten
-      // by MainActivity — so an arrow reaching this handler is real caret or
+      // by PlezyActivity — so an arrow reaching this handler is real caret or
       // traversal input (BT keyboards included) and keeps the caret-aware
       // edge-escape semantics below.
     }

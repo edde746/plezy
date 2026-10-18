@@ -250,6 +250,9 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
 //   3) Strip WS_OVERLAPPEDWINDOW and move+size in a single SetWindowPos so
 //      Flutter only relayouts once, at the final DPI/size.
 //   4) On exit, restore styles and WINDOWPLACEMENT, re-maximizing if needed.
+//
+// The channel also carries setDarkMode, the app's frame theme: window_manager's
+// setBrightness cannot make the caption darker than the OS app theme.
 // ---------------------------------------------------------------------------
 void FlutterWindow::RegisterWindowChannel() {
   auto messenger = flutter_controller_->engine()->messenger();
@@ -272,6 +275,14 @@ void FlutterWindow::RegisterWindowChannel() {
       result->Success();
     } else if (name == "isFullScreen") {
       result->Success(flutter::EncodableValue(is_fullscreen_));
+    } else if (name == "setDarkMode") {
+      const bool* dark = std::get_if<bool>(call.arguments());
+      if (dark == nullptr) {
+        result->Error("invalid_arguments", "setDarkMode expects a bool");
+        return;
+      }
+      SetDarkMode(*dark);
+      result->Success();
     } else {
       result->NotImplemented();
     }

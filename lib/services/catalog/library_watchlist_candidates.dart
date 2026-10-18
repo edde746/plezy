@@ -17,11 +17,14 @@ typedef WatchlistCandidate = ({CatalogSource source, CatalogItemIds ids});
 /// Fribb; Plex Discover matches server-side). A source that cannot hold the
 /// item (non-anime on MAL, no usable ids) is simply absent from the result.
 /// Per-source resolution failures are logged and skipped so one flaky
-/// provider does not hide the rest; a failed external-id fetch throws.
+/// provider does not hide the rest, and reported through [onSourceFailed] so a
+/// caller can tell that partial answer from a complete one; a failed
+/// external-id fetch throws.
 Future<List<WatchlistCandidate>> resolveWatchlistCandidates({
   required MediaServerClient? client,
   required MediaItem item,
   required List<CatalogSource> sources,
+  void Function(CatalogSource source)? onSourceFailed,
 }) async {
   if (client == null || sources.isEmpty) return const [];
   final ids = await client.fetchExternalIds(item.id);
@@ -33,6 +36,7 @@ Future<List<WatchlistCandidate>> resolveWatchlistCandidates({
       if (resolved != null) candidates.add((source: source, ids: resolved));
     } catch (e, stackTrace) {
       appLogger.d('Watchlist external-id resolution failed for ${source.id.name}', error: e, stackTrace: stackTrace);
+      onSourceFailed?.call(source);
     }
   }
   return candidates;

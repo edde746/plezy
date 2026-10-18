@@ -68,12 +68,6 @@ class AnilistTracker extends TrackerBase with ClientBackedTracker<AnilistClient>
   }
 
   @override
-  Future<void> deleteAnimeEntry(AnilistClient client, int anilistId) async {
-    await client.deleteMediaListEntry(anilistId);
-    appLogger.d('AniList: deleted entry (anilist=$anilistId)');
-  }
-
-  @override
   Future<void> setAnimeRating(AnilistClient client, int anilistId, int score) async {
     await client.setMediaListScore(mediaId: anilistId, score: score);
     appLogger.d(

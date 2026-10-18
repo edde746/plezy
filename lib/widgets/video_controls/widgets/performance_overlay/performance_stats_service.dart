@@ -46,7 +46,6 @@ class PerformanceStatsService {
 
   PerformanceStatsService(this.player);
 
-  /// Stream of performance stats updates.
   Stream<PerformanceStats> get statsStream => _statsController.stream;
 
   /// Start polling for stats at regular intervals.
@@ -73,7 +72,6 @@ class PerformanceStatsService {
     appLogger.d('Performance stats: runtime player type updated to $_runtimePlayerType');
   }
 
-  /// Start tracking UI frame rate.
   void _startFpsTracking() {
     _frameCount = 0;
     _lastFpsUpdate = DateTime.now();
@@ -98,7 +96,6 @@ class PerformanceStatsService {
     }
   }
 
-  /// Stop polling for stats.
   void stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
@@ -195,6 +192,9 @@ class PerformanceStatsService {
         // Other
         aspectName: statsMap['video-params/aspect-name'] as String?,
         rotate: _parseInt(statsMap['video-params/rotate'] as String?),
+        // Dolby Vision: the bitstream's profile and what decodes it
+        dvSourceProfile: (statsMap['dvSourceProfile'] as num?)?.toInt(),
+        dvRoute: DvRoute.fromId(statsMap['dvRoute'] as String?),
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
       );

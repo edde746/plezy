@@ -73,7 +73,6 @@ String formatDurationTextual(int milliseconds, {bool abbreviated = true}) {
 ///
 /// Used for: sleep timer countdown.
 String formatDurationWithSeconds(Duration duration) {
-  // Get the appropriate locale for the duration package
   final durationLocale = _getDurationLocale();
 
   return prettyDuration(
@@ -153,22 +152,16 @@ String formatClockTime(DateTime time, {required bool is24Hour, bool includeSecon
 /// Formats a date as Today/Tomorrow or a localized abbreviated weekday.
 String formatRelativeDayLabel(DateTime date, {DateTime? now}) {
   final reference = now ?? DateTime.now();
-  final today = DateTime(reference.year, reference.month, reference.day);
-  final targetDay = DateTime(date.year, date.month, date.day);
+  // Whole calendar days, counted in UTC: local midnights are 23 or 25 hours
+  // apart across a DST change, which inDays would truncate.
+  final today = DateTime.utc(reference.year, reference.month, reference.day);
+  final targetDay = DateTime.utc(date.year, date.month, date.day);
   final diff = targetDay.difference(today).inDays;
   return switch (diff) {
     0 => t.liveTv.today,
     1 => t.liveTv.tomorrow,
     _ => DateFormat.E(LocaleSettings.currentLocale.intlLocaleName).format(date),
   };
-}
-
-/// Formats the clock time at which media will finish playing, given the remaining duration.
-/// Returns a localized time string like "6:12 PM" or "18:12" depending on system setting.
-String formatFinishTime(Duration remaining, {double rate = 1.0, required bool is24Hour}) {
-  final adjustedRemaining = remaining * (1.0 / rate);
-  final finishTime = DateTime.now().add(adjustedRemaining);
-  return formatClockTime(finishTime, is24Hour: is24Hour);
 }
 
 String toBulletedString(List<String> parts) {

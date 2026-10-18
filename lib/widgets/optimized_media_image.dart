@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -461,7 +462,12 @@ class OptimizedMediaImage extends StatelessWidget {
 /// 4.17∶1 logo into 2.78∶1.
 ///
 /// [fallbackBuilder] renders the title in place of the logo when the path is
-/// missing, the URL can't be built, or the image fails to load.
+/// missing, the URL can't be built, or the image fails to load. The title
+/// gets [fallbackWidth] — see [fallbackWidthFor] — not the logo's [width]:
+/// that cap keeps a wide mark from filling the hero under `BoxFit.contain`,
+/// but a title confined to it wraps and ellipsizes long before the hero runs
+/// out of room (#1796). Both share [height], so a caller's hero height budget
+/// is the same whichever renders.
 class ClearLogoImage extends StatelessWidget {
   const ClearLogoImage({
     super.key,
@@ -469,6 +475,7 @@ class ClearLogoImage extends StatelessWidget {
     required this.logoPath,
     required this.width,
     required this.height,
+    required this.fallbackWidth,
     required this.fallbackBuilder,
     this.alignment = Alignment.centerLeft,
     this.fadeInDuration = const Duration(milliseconds: 300),
@@ -477,9 +484,25 @@ class ClearLogoImage extends StatelessWidget {
 
   final MediaServerClient? client;
   final String? logoPath;
+
+  /// Logo slot; the mark is contained within [width] × [height].
   final double width;
   final double height;
+
+  /// Title slot width, at least [width]; see [fallbackWidthFor].
+  final double fallbackWidth;
   final WidgetBuilder fallbackBuilder;
+
+  /// Width of the title slot for a hero whose logo slot is [logoWidth] wide
+  /// inside an [available]-wide content column: twice the logo, capped to
+  /// the column. Confined to the logo slot a title ellipsizes early (#1796);
+  /// given the whole column it runs one 1400px line across a desktop hero,
+  /// where a two-line block is what reads as a title. Twice the logo keeps
+  /// it a block; [FittingTitleText] shrinks whatever still does not fit.
+  static double fallbackWidthFor({required double logoWidth, required double available}) =>
+      math.min(available, 2 * logoWidth);
+
+  /// Positions the logo slot within the title slot and the mark within it.
   final Alignment alignment;
   final Duration fadeInDuration;
 
@@ -491,25 +514,30 @@ class ClearLogoImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final path = logoPath;
     return SizedBox(
-      width: width,
+      width: fallbackWidth,
       height: height,
       child: path == null || path.isEmpty
           ? fallbackBuilder(context)
-          : OptimizedMediaImage(
-              client: client,
-              imagePath: path,
-              width: width,
-              height: height,
-              fit: BoxFit.contain,
+          : Align(
               alignment: alignment,
-              imageType: ImageType.heroLogo,
-              fadeInDuration: fadeInDuration,
-              logoToneTarget: logoToneTarget,
-              // Clear logos render on heroes where a mark's color is part of
-              // its identity: mixed-tone marks stay untouched.
-              logoToneRemapMixed: false,
-              placeholder: (context, _) => const SizedBox.shrink(),
-              errorWidget: (context, _, _) => fallbackBuilder(context),
+              child: OptimizedMediaImage(
+                client: client,
+                imagePath: path,
+                width: width,
+                height: height,
+                fit: BoxFit.contain,
+                alignment: alignment,
+                imageType: ImageType.heroLogo,
+                fadeInDuration: fadeInDuration,
+                logoToneTarget: logoToneTarget,
+                // Clear logos render on heroes where a mark's color is part of
+                // its identity: mixed-tone marks stay untouched.
+                logoToneRemapMixed: false,
+                placeholder: (context, _) => const SizedBox.shrink(),
+                // Replaces the image under Align's loose constraints, so it can
+                // take the whole title slot rather than the logo's.
+                errorWidget: (context, _, _) => SizedBox.expand(child: fallbackBuilder(context)),
+              ),
             ),
     );
   }

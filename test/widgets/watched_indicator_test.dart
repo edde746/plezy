@@ -22,7 +22,7 @@ void main() {
 
   Future<void> pump(WidgetTester tester, WatchedIndicator indicator) => tester.pumpWidget(
     MaterialApp(
-      theme: monoTheme(dark: true),
+      theme: monoTheme(MonoPalette.dark),
       home: SizedBox(width: 200, height: 300, child: indicator),
     ),
   );

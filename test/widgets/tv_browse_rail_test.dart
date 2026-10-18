@@ -406,7 +406,7 @@ void main() {
         create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Builder(
               // The semantic selection proxy is gated on accessibleNavigation:
               // it only exists while an accessibility service is attached.
@@ -485,7 +485,7 @@ void main() {
         create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Builder(
               // The semantic selection proxy is gated on accessibleNavigation:
               // it only exists while an accessibility service is attached.
@@ -533,7 +533,7 @@ void main() {
 
   testWidgets('active hub header uses theme foreground in light mode', (tester) async {
     final serverManager = MultiServerManager();
-    final theme = monoTheme(dark: false);
+    final theme = monoTheme(MonoPalette.light);
     final episode = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.plex,
@@ -586,7 +586,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -630,7 +630,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -673,7 +673,7 @@ void main() {
         create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -763,7 +763,7 @@ void main() {
         create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -843,7 +843,7 @@ void main() {
         create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -922,7 +922,7 @@ void main() {
         create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -982,7 +982,7 @@ void main() {
         create: (_) => testMultiServerProvider(serverManager),
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -1051,7 +1051,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -1106,7 +1106,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) {
@@ -1168,7 +1168,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -1220,7 +1220,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -1262,7 +1262,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -1338,7 +1338,7 @@ void main() {
         value: multiServerProvider,
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -1382,7 +1382,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -1462,7 +1462,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setParentState) {
@@ -1575,7 +1575,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -1658,7 +1658,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -1734,7 +1734,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setParentState) {
@@ -1836,7 +1836,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setParentState) {
@@ -1912,7 +1912,7 @@ void main() {
         ChangeNotifierProvider<MultiServerProvider>(
           create: (_) => testMultiServerProvider(serverManager),
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 700,
@@ -2001,7 +2001,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -2074,7 +2074,7 @@ void main() {
         ChangeNotifierProvider<MultiServerProvider>(
           create: (_) => testMultiServerProvider(serverManager),
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -2166,7 +2166,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -2237,7 +2237,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: Stack(
               children: [
@@ -2302,7 +2302,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -2328,7 +2328,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
   });
 
-  testWidgets('lays out when bottom-positioned in a stack', (tester) async {
+  testWidgets('self-sizes and hugs the bottom edge when bottom-positioned in a stack', (tester) async {
     final serverManager = MultiServerManager();
     final item = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
     final hub = MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: [item], size: 1);
@@ -2337,12 +2337,13 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 896,
               height: 540,
               child: Stack(
+                key: const Key('rail_host'),
                 children: [
                   Positioned(
                     left: 0,
@@ -2363,7 +2364,15 @@ void main() {
     );
     await tester.pump();
 
-    expect(tester.takeException(), isNull);
+    // `Positioned(bottom: 0)` hands the rail unbounded height: it has to size
+    // itself from its layout metrics rather than expand or overflow.
+    final stackRect = tester.getRect(find.byKey(const Key('rail_host')));
+    final railRect = tester.getRect(find.byType(TvBrowseRail));
+    expect(railRect.height, allOf(greaterThan(0), lessThan(stackRect.height)));
+    expect(railRect.bottom, stackRect.bottom);
+    expect(railRect.width, stackRect.width);
+    expect(find.text('Movie'), findsOneWidget);
+    expect(tester.getRect(find.text('Movie')).bottom, lessThanOrEqualTo(railRect.bottom));
   });
 
   testWidgets('background gradient stays full bleed beside pushed foreground', (tester) async {
@@ -2382,7 +2391,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>(
         create: (_) => testMultiServerProvider(serverManager),
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1060,
@@ -2423,7 +2432,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>.value(
         value: multiServerProvider,
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -2477,7 +2486,7 @@ void main() {
         value: multiServerProvider,
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -2555,7 +2564,7 @@ void main() {
         value: multiServerProvider,
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -2824,7 +2833,7 @@ void main() {
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -2908,7 +2917,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>.value(
         value: multiServerProvider,
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -2960,7 +2969,7 @@ void main() {
       return ChangeNotifierProvider<MultiServerProvider>.value(
         value: multiServerProvider,
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,
@@ -3027,7 +3036,7 @@ void main() {
         child: ChangeNotifierProvider<MultiServerProvider>.value(
           value: multiServerProvider,
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: SizedBox(
                 width: 1280,
@@ -3098,7 +3107,7 @@ void main() {
       ChangeNotifierProvider<MultiServerProvider>.value(
         value: multiServerProvider,
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 1280,

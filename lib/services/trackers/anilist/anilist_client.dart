@@ -267,23 +267,29 @@ class AnilistClient implements DisposableTrackerClient {
     await query(mutation, variables: {'mediaId': mediaId, 'progress': progress, 'status': status, 'repeat': ?repeat});
   }
 
-  Future<void> deleteMediaListEntry(int mediaId) async {
+  /// Delete the viewer's list entry for [mediaId] if it is still on Planning.
+  ///
+  /// AniList deletes the whole entry — progress, score, dates and rewatches —
+  /// so an entry that has moved on to another status is left alone. Returns
+  /// whether an entry was deleted; false when there was none on Planning.
+  Future<bool> deletePlanningMediaListEntry(int mediaId) async {
     const idQuery = '''
       query(\$mediaId: Int) {
         Media(id: \$mediaId, type: ANIME) {
           mediaListEntry {
             id
+            status
           }
         }
       }
     ''';
     final data = await query(idQuery, variables: {'mediaId': mediaId});
     final media = data['Media'];
-    if (media is! Map) return;
+    if (media is! Map) return false;
     final entry = media['mediaListEntry'];
-    if (entry is! Map) return;
+    if (entry is! Map || entry['status'] != 'PLANNING') return false;
     final entryId = flexibleInt(entry['id']);
-    if (entryId == null) return;
+    if (entryId == null) return false;
 
     const mutation = '''
       mutation(\$id: Int) {
@@ -293,6 +299,7 @@ class AnilistClient implements DisposableTrackerClient {
       }
     ''';
     await query(mutation, variables: {'id': entryId});
+    return true;
   }
 
   Future<void> setMediaListScore({required int mediaId, required int score}) async {
@@ -326,6 +333,28 @@ class AnilistClient implements DisposableTrackerClient {
     return (scoreRaw / 10).round().clamp(1, 10).toInt();
   }
 
+  /// An anime's 0-100 community average (`Media.averageScore`), by its AniList [id] or else its MAL [idMal]; null
+  /// while AniList has no average yet or when it does not know the anime (HTTP 404, "Not Found.").
+  Future<int?> getAverageScore({int? id, int? idMal}) async {
+    if (id == null && idMal == null) throw ArgumentError('getAverageScore needs an AniList or MAL id');
+    const mediaQuery = '''
+      query(\$id: Int, \$idMal: Int) {
+        Media(id: \$id, idMal: \$idMal, type: ANIME) {
+          averageScore
+        }
+      }
+    ''';
+    final Map<String, dynamic> data;
+    try {
+      data = await query(mediaQuery, variables: id != null ? {'id': id} : {'idMal': idMal});
+    } on TrackerApiException catch (e) {
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
+    final media = data['Media'];
+    return media is Map ? flexibleInt(media['averageScore']) : null;
+  }
+
   /// Episode count plus the viewer's list entry in one request, so the
   /// rewatch-preserving scrobble path costs no extra call.
   Future<AnimeListSnapshot?> getAnimeListSnapshot(int mediaId) async {
@@ -336,6 +365,7 @@ class AnilistClient implements DisposableTrackerClient {
           mediaListEntry {
             status
             repeat
+            progress
           }
         }
       }
@@ -351,6 +381,7 @@ class AnilistClient implements DisposableTrackerClient {
       rewatching: status == 'REPEATING',
       completed: status == 'COMPLETED',
       rewatchCount: entry is Map ? (flexibleInt(entry['repeat']) ?? 0) : 0,
+      progress: entry is Map ? (flexibleInt(entry['progress']) ?? 0) : 0,
     );
   }
 

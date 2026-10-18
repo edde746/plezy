@@ -144,6 +144,12 @@ abstract class MetadataEditAdapter {
     return success;
   }
 
+  /// Server-side suggestion values for a `stringList` field (e.g. the `label`
+  /// field's existing tags, `genre`'s genre list). Best-effort: backends
+  /// without a listing endpoint return empty and the UI falls back to
+  /// locally recorded recents.
+  Future<List<String>> fetchTagSuggestions(MetadataEditDraft draft, MetadataEditField field) async => const [];
+
   Future<List<MetadataArtworkOption>> fetchArtwork(MetadataEditDraft draft, MetadataEditField field);
 
   Future<bool> applyArtworkOption(MetadataEditDraft draft, MetadataEditField field, MetadataArtworkOption option) {

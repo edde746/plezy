@@ -9,9 +9,11 @@ import '../tracker.dart';
 import '../tracker_constants.dart';
 import '../tracker_id_resolver.dart';
 import '../tracker_write_queue.dart';
+import '../tracker_history_body.dart';
 import '../tracker_rating_match.dart';
 import '../tracker_session.dart';
 import 'simkl_client.dart';
+import 'simkl_constants.dart';
 
 /// Simkl tracker.
 ///
@@ -72,41 +74,45 @@ class SimklTracker extends TrackerBase
   void rebindSession(
     TrackerSession? session, {
     required void Function() onSessionInvalidated,
+    void Function(TrackerSession session)? onSessionUpdated,
     http.Client? httpClient,
+    Duration? writeSpacing,
   }) {
     rebindTrackerClient(
       session,
-      createClient: (session) =>
-          SimklClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient),
+      createClient: (session) => SimklClient(
+        session,
+        onSessionInvalidated: onSessionInvalidated,
+        onSessionUpdated: onSessionUpdated,
+        httpClient: httpClient,
+        writeSpacing: writeSpacing ?? SimklConstants.writeSpacing,
+      ),
     );
   }
 
-  /// [watchedAt] is ignored: the history body Simkl accepts here carries no
-  /// timestamp, so a replayed write records as "now".
   @override
-  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
+  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) =>
+      writeHistory([(ctx: ctx, watchedAt: watchedAt)], watched: true);
+
+  @override
+  Future<void> markUnwatched(TrackerContext ctx) => writeHistory([(ctx: ctx, watchedAt: null)], watched: false);
+
+  /// [TrackerHistoryEntry.watchedAt] is not sent, so a replayed write records
+  /// as "now".
+  @override
+  Future<void> writeHistory(List<TrackerHistoryEntry> entries, {required bool watched}) async {
     final client = this.client;
     if (client == null) return;
 
-    final ids = _buildIds(external: ctx.external, anime: ctx.anime);
-    if (ids.isEmpty) return;
+    final body = trackerHistoryBody(
+      entries,
+      idsFor: (ctx) => _buildIds(external: ctx.external, anime: ctx.anime),
+      includeWatchedAt: false,
+    );
+    if (body == null) return;
 
-    final body = _historyBody(ctx, ids);
-
-    await client.addToHistory(body);
-    appLogger.d('Simkl: marked watched (ids=$ids, isMovie=${ctx.isMovie})');
-  }
-
-  @override
-  Future<void> markUnwatched(TrackerContext ctx) async {
-    final client = this.client;
-    if (client == null) return;
-
-    final ids = _buildIds(external: ctx.external, anime: ctx.anime);
-    if (ids.isEmpty) return;
-
-    await client.removeFromHistory(_historyBody(ctx, ids));
-    appLogger.d('Simkl: marked unwatched (ids=$ids, isMovie=${ctx.isMovie})');
+    await (watched ? client.addToHistory(body) : client.removeFromHistory(body));
+    appLogger.d('Simkl: marked ${entries.length} item(s) ${watched ? 'watched' : 'unwatched'}');
   }
 
   @override
@@ -157,30 +163,6 @@ class SimklTracker extends TrackerBase
             'progress': progress,
             'show': {'ids': ids},
             'episode': {'season': ctx.season, 'number': ctx.episodeNumber},
-          };
-  }
-
-  Map<String, dynamic> _historyBody(TrackerContext ctx, Map<String, Object> ids) {
-    return ctx.isMovie
-        ? {
-            'movies': [
-              {'ids': ids},
-            ],
-          }
-        : {
-            'shows': [
-              {
-                'ids': ids,
-                'seasons': [
-                  {
-                    'number': ctx.season,
-                    'episodes': [
-                      {'number': ctx.episodeNumber},
-                    ],
-                  },
-                ],
-              },
-            ],
           };
   }
 

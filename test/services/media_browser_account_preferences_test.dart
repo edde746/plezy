@@ -101,7 +101,7 @@ void main() {
 
       expect(source.capabilities, same(AccountPreferencesCapabilities.jellyfin));
       expect(preferences.preferredAudioLanguage, 'jpn');
-      expect(preferences.playDefaultAudioTrack, isFalse);
+      expect(preferences.selectAudioByLanguage, isTrue);
       expect(preferences.preferredSubtitleLanguage, isNull);
       expect(preferences.subtitlePlaybackMode, SubtitlePlaybackMode.smart);
       expect(preferences.rememberAudioSelections, isTrue);
@@ -179,6 +179,27 @@ void main() {
       expect(posted['SubtitleLanguagePreference'], 'x-custom');
     });
 
+    test('choosing audio by language is the inverse of PlayDefaultAudioTrack on both dialects (#2617)', () async {
+      for (final dialect in MediaBrowserDialect.values) {
+        for (final byLanguage in [true, false]) {
+          final reason = '${dialect.name} byLanguage=$byLanguage';
+          final source = _source(
+            _accountHandler(configuration: {'PlayDefaultAudioTrack': !byLanguage}),
+            dialect: dialect,
+          );
+          final read = await source.read();
+          expect(read.selectAudioByLanguage, byLanguage, reason: reason);
+          expect(read.autoSelectAudio, byLanguage, reason: reason);
+
+          final posted = await _postBodyFor(
+            AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, byLanguage),
+            dialect: dialect,
+          );
+          expect(posted['PlayDefaultAudioTrack'], !byLanguage, reason: reason);
+        }
+      }
+    });
+
     test('writes every subtitle mode with the MediaBrowser server spelling', () async {
       const expected = {
         SubtitlePlaybackMode.none: 'None',
@@ -202,9 +223,9 @@ void main() {
             if (request.url.path.startsWith('/DisplayPreferences/')) return jsonResponse({'CustomPrefs': {}});
             final expectedPath = dialect == MediaBrowserDialect.jellyfin ? '/Users/Me' : '/Users/user-1';
             expect(request.url.path, expectedPath);
-            // The server retains its own normalized value, not the posted false.
+            // The server retains its own normalized value, not the posted true.
             return jsonResponse({
-              'Configuration': {'PlayDefaultAudioTrack': true},
+              'Configuration': {'PlayDefaultAudioTrack': false},
             });
           }
           expect(request.method, 'POST');
@@ -215,7 +236,7 @@ void main() {
         final updated = await source.write(AccountPreferencesPatch.of(AccountPreferenceKey.autoSelectAudio, false));
 
         expect(writePath, '/Users/user-1/Configuration', reason: dialect.name);
-        expect(updated.playDefaultAudioTrack, isTrue);
+        expect(updated.selectAudioByLanguage, isTrue);
       }
     });
 

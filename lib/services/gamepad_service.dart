@@ -142,6 +142,20 @@ class GamepadService with WindowListener {
     GamepadButton.x: LogicalKeyboardKey.gameButtonX,
   };
 
+  static const Map<GamepadButton, TraversalDirection> _directionByDpadButton = {
+    GamepadButton.dpadUp: TraversalDirection.up,
+    GamepadButton.dpadDown: TraversalDirection.down,
+    GamepadButton.dpadLeft: TraversalDirection.left,
+    GamepadButton.dpadRight: TraversalDirection.right,
+  };
+
+  /// Derived from [_syntheticKeyByButton] so a direction repeats the same key
+  /// the duplicate guard checks for its D-pad button.
+  static final Map<TraversalDirection, LogicalKeyboardKey> _syntheticKeyByDirection = {
+    for (final MapEntry(key: button, value: direction) in _directionByDpadButton.entries)
+      direction: _syntheticKeyByButton[button]!,
+  };
+
   static final Map<LogicalKeyboardKey, PhysicalKeyboardKey> _gamepadPhysicalKeyByLogicalKey = {
     LogicalKeyboardKey.arrowUp: PhysicalKeyboardKey.arrowUp,
     LogicalKeyboardKey.arrowDown: PhysicalKeyboardKey.arrowDown,
@@ -201,10 +215,8 @@ class GamepadService with WindowListener {
 
   key_sim.KeyEventSimulatorController? _keyEventSimulator;
 
-  bool _leftStickUp = false;
-  bool _leftStickDown = false;
-  bool _leftStickLeft = false;
-  bool _leftStickRight = false;
+  TraversalDirection? _leftStickYLatch;
+  TraversalDirection? _leftStickXLatch;
 
   final Set<GamepadButton> _pressedButtons = {};
   final Set<GamepadButton> _suppressedButtons = {};
@@ -281,21 +293,6 @@ class GamepadService with WindowListener {
     appLogger.i('GamepadService: Listening for gamepad events');
   }
 
-  void stop() {
-    _stopDirectionRepeat();
-    _unregisterNativeKeyHandler();
-    _subscription?.cancel();
-    _subscription = null;
-    _duplicateInputGuard.clear();
-    _suppressedButtons.clear();
-    _keyEventSimulator?.dispose();
-    _keyEventSimulator = null;
-    if (_isDesktop) {
-      windowManager.removeListener(this);
-    }
-    Gamepad.instance.dispose();
-  }
-
   @override
   void onWindowFocus() {
     _windowFocused = true;
@@ -330,22 +327,14 @@ class GamepadService with WindowListener {
     _duplicateInputGuard.clear();
 
     // Reset analog stick state so re-focus doesn't inherit stale direction
-    _leftStickUp = false;
-    _leftStickDown = false;
-    _leftStickLeft = false;
-    _leftStickRight = false;
+    _leftStickYLatch = null;
+    _leftStickXLatch = null;
   }
 
   void _registerNativeKeyHandler() {
     if (_nativeKeyHandlerRegistered || !_steamInputInjectsKeys()) return;
     HardwareKeyboard.instance.addHandler(_handleNativeKeyEvent);
     _nativeKeyHandlerRegistered = true;
-  }
-
-  void _unregisterNativeKeyHandler() {
-    if (!_nativeKeyHandlerRegistered) return;
-    HardwareKeyboard.instance.removeHandler(_handleNativeKeyEvent);
-    _nativeKeyHandlerRegistered = false;
   }
 
   bool _handleNativeKeyEvent(KeyEvent event) {
@@ -460,49 +449,34 @@ class GamepadService with WindowListener {
       }
 
       // D-pad — navigate with auto-repeat while held
+      final direction = _directionByDpadButton[event.button];
+      if (direction != null) {
+        if (TextInputDiagnostics.enabled) {
+          _logGamepadDiag('button starts direction repeat ${direction.name} ${_describeGamepadButton(event)}');
+        }
+        _startDirectionRepeat(direction);
+        return;
+      }
+
       switch (event.button) {
-        case GamepadButton.dpadUp:
-          if (TextInputDiagnostics.enabled) {
-            _logGamepadDiag('button starts direction repeat up ${_describeGamepadButton(event)}');
-          }
-          _startDirectionRepeat(TraversalDirection.up);
-          return;
-        case GamepadButton.dpadDown:
-          if (TextInputDiagnostics.enabled) {
-            _logGamepadDiag('button starts direction repeat down ${_describeGamepadButton(event)}');
-          }
-          _startDirectionRepeat(TraversalDirection.down);
-          return;
-        case GamepadButton.dpadLeft:
-          if (TextInputDiagnostics.enabled) {
-            _logGamepadDiag('button starts direction repeat left ${_describeGamepadButton(event)}');
-          }
-          _startDirectionRepeat(TraversalDirection.left);
-          return;
-        case GamepadButton.dpadRight:
-          if (TextInputDiagnostics.enabled) {
-            _logGamepadDiag('button starts direction repeat right ${_describeGamepadButton(event)}');
-          }
-          _startDirectionRepeat(TraversalDirection.right);
-          return;
         // Face buttons — send KeyDown on press, KeyUp on release
         // so widget-level long-press timers work naturally
         case GamepadButton.a:
           if (TextInputDiagnostics.enabled) {
             _logGamepadDiag('button simulates key down enter ${_describeGamepadButton(event)}');
           }
-          _simulateKeyDown(LogicalKeyboardKey.enter);
+          _simulator.simulateKeyDown(LogicalKeyboardKey.enter);
         case GamepadButton.x:
           if (TextInputDiagnostics.enabled) {
             _logGamepadDiag('button simulates key down context/menu ${_describeGamepadButton(event)}');
           }
-          _simulateKeyDown(LogicalKeyboardKey.gameButtonX);
+          _simulator.simulateKeyDown(LogicalKeyboardKey.gameButtonX);
         // Immediate actions on press
         case GamepadButton.b:
           if (TextInputDiagnostics.enabled) {
             _logGamepadDiag('button simulates key press back ${_describeGamepadButton(event)}');
           }
-          _simulateKeyPress(LogicalKeyboardKey.gameButtonB);
+          _simulator.simulateKeyPress(LogicalKeyboardKey.gameButtonB);
         case GamepadButton.leftShoulder:
           _dispatchTabNavigation(previous: true);
         case GamepadButton.rightShoulder:
@@ -534,12 +508,12 @@ class GamepadService with WindowListener {
           if (TextInputDiagnostics.enabled) {
             _logGamepadDiag('button simulates key up enter ${_describeGamepadButton(event)}');
           }
-          _simulateKeyUp(LogicalKeyboardKey.enter);
+          _simulator.simulateKeyUp(LogicalKeyboardKey.enter);
         case GamepadButton.x:
           if (TextInputDiagnostics.enabled) {
             _logGamepadDiag('button simulates key up context/menu ${_describeGamepadButton(event)}');
           }
-          _simulateKeyUp(LogicalKeyboardKey.gameButtonX);
+          _simulator.simulateKeyUp(LogicalKeyboardKey.gameButtonX);
         default:
           break;
       }
@@ -575,10 +549,21 @@ class GamepadService with WindowListener {
     }
 
     switch (event.axis) {
+      // W3C: leftStickY -1.0 = up, 1.0 = down
       case GamepadAxis.leftStickY:
-        _handleLeftStickY(event.value);
+        _leftStickYLatch = _latchStickAxis(
+          event.value,
+          _leftStickYLatch,
+          negative: TraversalDirection.up,
+          positive: TraversalDirection.down,
+        );
       case GamepadAxis.leftStickX:
-        _handleLeftStickX(event.value);
+        _leftStickXLatch = _latchStickAxis(
+          event.value,
+          _leftStickXLatch,
+          negative: TraversalDirection.left,
+          positive: TraversalDirection.right,
+        );
       default:
         break;
     }
@@ -588,7 +573,7 @@ class GamepadService with WindowListener {
   void _startDirectionRepeat(TraversalDirection direction) {
     if (TextInputDiagnostics.enabled) _logGamepadDiag('startDirectionRepeat direction=$direction');
     _stopDirectionRepeat();
-    final logicalKey = _directionToKey(direction);
+    final logicalKey = _syntheticKeyByDirection[direction]!;
     if (TextInputDiagnostics.enabled) {
       _logGamepadDiag(
         'moveFocus direction=$direction logicalKey=${logicalKey.keyLabel}/${logicalKey.keyId} nativeTextInputFocused=$_nativeTextInputFocused',
@@ -604,65 +589,25 @@ class GamepadService with WindowListener {
     _keyEventSimulator?.stopKeyRepeat();
   }
 
-  LogicalKeyboardKey _directionToKey(TraversalDirection direction) {
-    switch (direction) {
-      case TraversalDirection.up:
-        return LogicalKeyboardKey.arrowUp;
-      case TraversalDirection.down:
-        return LogicalKeyboardKey.arrowDown;
-      case TraversalDirection.left:
-        return LogicalKeyboardKey.arrowLeft;
-      case TraversalDirection.right:
-        return LogicalKeyboardKey.arrowRight;
+  /// Latches one stick axis to the direction it is deflected past the
+  /// deadzone. A fresh deflection starts the repeat, holding it past the
+  /// deadzone is ignored so the repeat is not restarted, and re-centring stops
+  /// it. Returns the axis's new latch; [held] is its previous one.
+  TraversalDirection? _latchStickAxis(
+    double value,
+    TraversalDirection? held, {
+    required TraversalDirection negative,
+    required TraversalDirection positive,
+  }) {
+    if (value > _stickDeadzone) {
+      if (held != positive) _startDirectionRepeat(positive);
+      return positive;
     }
-  }
-
-  /// Simulate a full key press (down + up) in a single frame.
-  void _simulateKeyPress(LogicalKeyboardKey logicalKey) {
-    _simulator.simulateKeyPress(logicalKey);
-  }
-
-  /// Simulate only key down — pair with [_simulateKeyUp] on release
-  /// so widget-level long-press timers see real hold duration.
-  void _simulateKeyDown(LogicalKeyboardKey logicalKey) {
-    _simulator.simulateKeyDown(logicalKey);
-  }
-
-  /// Simulate only key up — the release half of [_simulateKeyDown].
-  void _simulateKeyUp(LogicalKeyboardKey logicalKey) {
-    _simulator.simulateKeyUp(logicalKey);
-  }
-
-  // W3C: leftStickY -1.0 = up, 1.0 = down
-  void _handleLeftStickY(double value) {
-    if (value > _stickDeadzone && !_leftStickDown) {
-      _leftStickDown = true;
-      _leftStickUp = false;
-      _startDirectionRepeat(TraversalDirection.down);
-    } else if (value < -_stickDeadzone && !_leftStickUp) {
-      _leftStickUp = true;
-      _leftStickDown = false;
-      _startDirectionRepeat(TraversalDirection.up);
-    } else if (value.abs() <= _stickDeadzone) {
-      if (_leftStickUp || _leftStickDown) _stopDirectionRepeat();
-      _leftStickUp = false;
-      _leftStickDown = false;
+    if (value < -_stickDeadzone) {
+      if (held != negative) _startDirectionRepeat(negative);
+      return negative;
     }
-  }
-
-  void _handleLeftStickX(double value) {
-    if (value < -_stickDeadzone && !_leftStickLeft) {
-      _leftStickLeft = true;
-      _leftStickRight = false;
-      _startDirectionRepeat(TraversalDirection.left);
-    } else if (value > _stickDeadzone && !_leftStickRight) {
-      _leftStickRight = true;
-      _leftStickLeft = false;
-      _startDirectionRepeat(TraversalDirection.right);
-    } else if (value.abs() <= _stickDeadzone) {
-      if (_leftStickLeft || _leftStickRight) _stopDirectionRepeat();
-      _leftStickLeft = false;
-      _leftStickRight = false;
-    }
+    if (held != null) _stopDirectionRepeat();
+    return null;
   }
 }

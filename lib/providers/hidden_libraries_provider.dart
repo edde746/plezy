@@ -24,7 +24,6 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
   /// Check if the provider has completed initialization
   bool get isInitialized => _isInitialized;
 
-  /// Get an unmodifiable copy of hidden library keys
   Set<String> get hiddenLibraryKeys => Set.unmodifiable(_hiddenLibraryKeys);
 
   /// Initialize the provider by loading hidden libraries from storage
@@ -47,7 +46,6 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
   Future<void> hideLibrary(String libraryKey, {void Function()? checkCurrent}) =>
       setLibraryHidden(libraryKey, true, checkCurrent: checkCurrent);
 
-  /// Unhide a library by its key.
   Future<void> unhideLibrary(String libraryKey, {void Function()? checkCurrent}) =>
       setLibraryHidden(libraryKey, false, checkCurrent: checkCurrent);
 

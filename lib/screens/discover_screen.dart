@@ -21,6 +21,7 @@ import '../media/media_hub.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
+import '../widgets/hero_carousel_backdrop.dart';
 import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
@@ -95,7 +96,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _switchingProfile = false;
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
-  int _currentHeroIndex = 0;
   final ValueNotifier<int> _heroIndex = ValueNotifier<int>(0);
   Timer? _autoScrollTimer;
   Timer? _indicatorTimer;
@@ -325,7 +325,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
   }
@@ -363,17 +362,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final generation = _discover.loadGeneration;
     final isNewLoad = generation != _seenLoadGeneration;
     _seenLoadGeneration = generation;
-    final heroOutOfBounds = _currentHeroIndex >= _onDeck.length;
+    final heroOutOfBounds = _heroIndex.value >= _onDeck.length;
     final signature = _renderSignature;
     final renderChanged = isNewLoad || heroOutOfBounds || signature != _seenRenderSignature;
     _seenRenderSignature = signature;
 
     if (renderChanged) {
       setState(() {
-        if (isNewLoad || heroOutOfBounds) {
-          _currentHeroIndex = 0;
-          _heroIndex.value = 0;
-        }
+        if (isNewLoad || heroOutOfBounds) _heroIndex.value = 0;
         _updateHubKeys();
       });
     }
@@ -432,20 +428,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       },
       onUp: _focusTopActions,
       onLeft: () {
-        if (_currentHeroIndex > 0) {
+        if (_heroIndex.value > 0) {
           _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
         } else {
           _navigateToSidebar();
         }
       },
       onRight: () {
-        if (_currentHeroIndex < _onDeck.length - 1) {
+        if (_heroIndex.value < _onDeck.length - 1) {
           _heroController.nextPage(duration: tokens(context).slow, curve: Curves.easeInOut);
         }
       },
       onSelect: () {
-        if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
-          navigateToMediaItem(context, _onDeck[_currentHeroIndex], playDirectly: true);
+        final heroIndex = _heroIndex.value;
+        if (_onDeck.isNotEmpty && heroIndex < _onDeck.length) {
+          navigateToMediaItem(context, _onDeck[heroIndex], playDirectly: true);
         }
       },
     )(node, event);
@@ -499,12 +496,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       // Validate current index is within bounds before calculating next page
-      if (_currentHeroIndex >= _onDeck.length) {
-        _currentHeroIndex = 0;
-        _heroIndex.value = 0;
-      }
+      if (_heroIndex.value >= _onDeck.length) _heroIndex.value = 0;
 
-      final nextPage = (_currentHeroIndex + 1) % _onDeck.length;
+      final nextPage = (_heroIndex.value + 1) % _onDeck.length;
       _heroController.animateToPage(nextPage, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
       // Wait for page transition to complete before resetting progress
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -592,7 +586,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     // Center the active dot when possible
-    final center = _currentHeroIndex;
+    final center = _heroIndex.value;
     final int start = (center - 2).clamp(0, totalDots - 5);
     final int end = start + 4; // 5 dots total (0-4 inclusive)
 
@@ -657,8 +651,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // `initState` already fired `load()`. On cold start that pass is still
     // running when the online-entry hook primes the tab, and asking again only
     // queues an identical trailing pass — the whole home fan-out twice (#1784).
-    // When nothing is in flight (reconnect-from-offline, or a first pass that
-    // gave up because no server was online yet) a real refresh is still owed.
+    // When nothing is in flight (reconnect-from-offline, a first pass that
+    // gave up because no server was online yet, or one skipped because the
+    // profile was still binding) a real refresh is still owed.
     if (_discover.isLoadInFlight) return;
     fullRefresh();
   }
@@ -811,6 +806,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
             builder: (context, watchTogether, companionRemote, _) {
               final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
+              void openWatchTogether() =>
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen()));
+              void openCompanionRemote() {
+                if (isDesktop) {
+                  RemoteSessionDialog.show(context);
+                } else {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
+                }
+              }
 
               return FocusableActionBar(
                 key: _actionBarKey,
@@ -820,8 +824,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
                   // Watch Together
                   FocusableAction(
-                    onPressed: () =>
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                    onPressed: openWatchTogether,
                     child: Stack(
                       children: [
                         IconButton(
@@ -830,8 +833,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: watchTogether.isInSession ? 1 : 0,
                             color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
                           ),
-                          onPressed: () =>
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                          onPressed: openWatchTogether,
                           tooltip: t.watchTogether.title,
                         ),
                         if (watchTogether.isInSession && watchTogether.participantCount > 1)
@@ -855,13 +857,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   ),
                   // Companion Remote
                   FocusableAction(
-                    onPressed: () {
-                      if (isDesktop) {
-                        RemoteSessionDialog.show(context);
-                      } else {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const MobileRemoteScreen()));
-                      }
-                    },
+                    onPressed: openCompanionRemote,
                     child: Stack(
                       children: [
                         IconButton(
@@ -870,16 +866,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: companionRemote.isConnected ? 1 : 0,
                             color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
                           ),
-                          onPressed: () {
-                            if (isDesktop) {
-                              RemoteSessionDialog.show(context);
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
-                              );
-                            }
-                          },
+                          onPressed: openCompanionRemote,
                           tooltip: t.companionRemote.title,
                         ),
                         if (companionRemote.isConnected)
@@ -1087,8 +1074,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
       isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
       usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
-      loadMoreItems: (hub) =>
-          hub.id == 'continue_watching' ? _discover.loadAllContinueWatching() : Future.value(hub.items),
+      // Every other hub pages from its server in View All, as on phones; handing
+      // it the preview items only showed that preview again.
+      loadMoreItems: (hub) => hub.id == 'continue_watching' ? _discover.loadAllContinueWatching : null,
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
@@ -1165,12 +1153,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              Positioned.fill(child: _buildHeroBackdrop(heroHeight)),
               PageView.builder(
                 controller: _heroController,
                 itemCount: _onDeck.length,
                 onPageChanged: (index) {
                   if (index >= 0 && index < _onDeck.length) {
-                    _currentHeroIndex = index;
                     _heroIndex.value = index;
                     _resetAutoScrollTimer();
                   }
@@ -1215,13 +1203,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       const SizedBox(width: 8),
                       ValueListenableBuilder<int>(
                         valueListenable: _heroIndex,
-                        builder: (context, _, _) {
+                        builder: (context, heroIndex, _) {
                           final range = _getVisibleDotRange();
                           return Row(
                             mainAxisSize: MainAxisSize.min,
                             children: List.generate(range.end - range.start + 1, (i) {
                               final index = range.start + i;
-                              final isActive = _currentHeroIndex == index;
+                              final isActive = heroIndex == index;
                               final dotSize = _getDotSize(index, range.start, range.end);
 
                               return isActive
@@ -1278,13 +1266,105 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
+  /// Artwork and scrim behind the hero pages. One shared layer instead of
+  /// per-page artwork, so a swipe crossfades between backdrops rather than
+  /// sliding two images past each other with a hard seam (#2660).
+  Widget _buildHeroBackdrop(double heroHeight) {
+    final isTv = PlatformDetector.isTV();
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          // Vertical-scroll parallax plus a fade/zoom when the hero first shows.
+          ClipRect(
+            child: AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+                return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
+              },
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: 1.0 + (0.1 * (1 - value)),
+                    child: Opacity(opacity: value, child: child),
+                  );
+                },
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _heroIndex,
+                  builder: (context, heroIndex, _) => HeroCarouselBackdrop(
+                    controller: _heroController,
+                    currentIndex: heroIndex,
+                    itemCount: _onDeck.length,
+                    backdropBuilder: (context, index, active, artSize) =>
+                        _buildHeroArtwork(_onDeck[index], heroHeight, artSize: artSize, active: active),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Gradient Overlay - blends into scaffold background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: -4, // Extend past stack bounds to ensure coverage
+            child: Builder(
+              builder: (context) {
+                final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      // Reach full bg before the bottom edge so the hero
+                      // blends seamlessly into the content below and the
+                      // page dots sit on a solid band.
+                      colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
+                      stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroArtwork(MediaItem heroItem, double heroHeight, {required Size artSize, required bool active}) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final heroAspectRatio = screenWidth / heroHeight;
+    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: heroAspectRatio);
+    final fallbackColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    if (heroArtPaths.isEmpty) return ColoredBox(color: fallbackColor);
+    // heroClient resolves to the actual server's client (Plex or Jellyfin) so
+    // each backend's transcoder builds sized URLs. Size the request to the
+    // drift box, which is wider than the hero, so the art stays sharp.
+    return blurArtwork(
+      CyclingMediaBackdrop(
+        mediaKey: heroItem.globalKey,
+        imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
+        fallbackImagePaths: heroArtPaths,
+        client: _getMediaClientForItem(heroItem),
+        active: active && _isTabVisible,
+        width: artSize.width,
+        height: artSize.height,
+        fallbackColor: fallbackColor,
+      ),
+    );
+  }
+
   Widget _buildHeroItem(MediaItem heroItem, double heroHeight) {
     final heroClient = _getMediaClientForItem(heroItem);
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final heroAspectRatio = screenWidth / heroHeight;
-    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: heroAspectRatio);
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
     final isTv = PlatformDetector.isTV();
     final alignLeft = isTv || isLargeScreen;
@@ -1319,6 +1399,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       hint: t.accessibility.tapToPlay,
       child: ClickableCursor(
         child: GestureDetector(
+          // The artwork lives in the shared backdrop below the PageView, so
+          // the page itself must claim taps on its empty area.
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             appLogger.d('Activating hero item: ${heroItem.title}');
             navigateToMediaItem(context, heroItem, playDirectly: true);
@@ -1327,78 +1410,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             fit: StackFit.expand,
             clipBehavior: Clip.none,
             children: [
-              // Background Image with fade/zoom animation and parallax
-              if (heroArtPaths.isNotEmpty)
-                ClipRect(
-                  child: AnimatedBuilder(
-                    animation: _scrollController,
-                    builder: (context, child) {
-                      final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                      return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
-                    },
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: 1.0 + (0.1 * (1 - value)),
-                          child: Opacity(opacity: value, child: child),
-                        );
-                      },
-                      child: Builder(
-                        builder: (context) {
-                          // heroClient resolves to the actual server's client
-                          // (Plex or Jellyfin) so each backend's transcoder
-                          // builds sized URLs.
-                          return blurArtwork(
-                            CyclingMediaBackdrop(
-                              mediaKey: heroItem.globalKey,
-                              imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
-                              fallbackImagePaths: heroArtPaths,
-                              client: heroClient,
-                              active: _isTabVisible,
-                              width: screenWidth,
-                              height: heroHeight,
-                              fallbackColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                )
-              else
-                ColoredBox(color: colorScheme.surfaceContainerHighest),
-
-              // Gradient Overlay - blends into scaffold background
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: -4, // Extend past stack bounds to ensure coverage
-                child: IgnorePointer(
-                  child: Builder(
-                    builder: (context) {
-                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            // Reach full bg before the bottom edge so the hero
-                            // blends seamlessly into the content below and the
-                            // page dots sit on a solid band.
-                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor, bgColor],
-                            stops: isTv ? const [0.25, 0.78, 0.94, 1.0] : const [0.5, 0.85, 0.94, 1.0],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
               // Content with responsive alignment
               Positioned(
                 bottom: isTv
@@ -1438,24 +1449,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                           mainAxisSize: .min,
                           children: [
-                            // Show logo, falling back to the name/title
-                            ClearLogoImage(
-                              client: heroClient,
-                              logoPath: heroItem.clearLogoPath,
-                              width: heroLogoWidth,
-                              height: heroLogoHeight,
-                              alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                              // The hero scrim washes artwork toward the scaffold
-                              // background; light themes recolor light-toned logos.
-                              logoToneTarget: logoToneTargetFor(
-                                surface: theme.scaffoldBackgroundColor,
-                                foreground: colorScheme.onSurface,
-                              ),
-                              fallbackBuilder: (context) => FittingTitleText(
-                                showName,
-                                style: heroTitleStyle,
-                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                            // Show logo, falling back to the name/title. The
+                            // logo keeps its slot; the title gets a wider one.
+                            LayoutBuilder(
+                              builder: (context, constraints) => ClearLogoImage(
+                                client: heroClient,
+                                logoPath: heroItem.clearLogoPath,
+                                width: math.min(heroLogoWidth, constraints.maxWidth),
+                                height: heroLogoHeight,
+                                fallbackWidth: ClearLogoImage.fallbackWidthFor(
+                                  logoWidth: heroLogoWidth,
+                                  available: constraints.maxWidth,
+                                ),
+                                alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                                // The hero scrim washes artwork toward the scaffold
+                                // background; light themes recolor light-toned logos.
+                                logoToneTarget: logoToneTargetFor(
+                                  surface: theme.scaffoldBackgroundColor,
+                                  foreground: colorScheme.onSurface,
+                                ),
+                                fallbackBuilder: (context) => FittingTitleText(
+                                  showName,
+                                  style: heroTitleStyle,
+                                  textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                  alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                                ),
                               ),
                             ),
 

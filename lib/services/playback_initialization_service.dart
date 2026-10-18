@@ -68,12 +68,14 @@ class PlaybackInitializationService {
   /// streaming an explicitly requested non-downloaded version. With
   /// [allowAnyDownloadedVersion] the single downloaded version is returned on
   /// mismatch instead — for offline flows where the alternative is failing.
+  /// [partIndex] picks a file of an item stacked across several files.
   Future<DownloadedVideoSource?> _resolveOfflineVideoSource(
     ServerId serverId,
     String ratingKey, {
     required int mediaIndex,
     String? selectedMediaSourceId,
     bool allowAnyDownloadedVersion = false,
+    int partIndex = 0,
   }) async {
     if (database == null) {
       return null;
@@ -96,6 +98,7 @@ class PlaybackInitializationService {
         requestedMediaIndex: mediaIndex,
         requestedMediaSourceId: selectedMediaSourceId,
         allowAnyDownloadedVersion: allowAnyDownloadedVersion,
+        partIndex: partIndex,
       );
     } catch (e) {
       appLogger.w('Error checking offline video path', error: e);
@@ -118,30 +121,62 @@ class PlaybackInitializationService {
     final serverId = metadata.serverId ?? client?.serverId;
 
     DownloadedVideoSource? offlineSource;
+    // With no client, or when playback must stay offline, there is nothing
+    // to stream from, so any downloaded version beats failing. Otherwise the
+    // strict match must stand: an explicitly requested non-downloaded version
+    // streams from the server (issue #1440).
+    final offlineOnly = client == null || requireOffline;
     if (serverId != null && (preferOffline || client == null) && database != null) {
       offlineSource = await _resolveOfflineVideoSource(
         ServerId(serverId),
         metadata.id,
         mediaIndex: options.selectedMediaIndex,
         selectedMediaSourceId: options.selectedMediaSourceId,
-        // With no client there is nothing to stream from, so any downloaded
-        // version beats failing. With a client the strict match must stand:
-        // an explicitly requested non-downloaded version streams from the
-        // server (issue #1440).
-        allowAnyDownloadedVersion: client == null,
+        allowAnyDownloadedVersion: offlineOnly,
       );
     }
 
     // Downloaded playback must not wait on a live server. Cached media info
     // preserves track labels where available; the local file is enough to play.
     if (offlineSource != null) {
-      appLogger.d('Using offline playback for ${metadata.id}');
-      return _buildOfflineResult(
-        metadata: metadata,
-        offlineVideoPath: offlineSource.path,
-        selectedMediaIndex: offlineSource.mediaIndex,
-        selectedMediaSourceId: offlineSource.mediaSourceId,
-      );
+      final mediaInfo = await _cachedMediaInfo(metadata, offlineSource.mediaIndex, position: options.startPosition);
+      var offlineVideoPath = offlineSource.path;
+      // A stacked item plays the downloaded file holding the start position.
+      final partIndex = mediaInfo?.partTimeline?.currentIndex ?? 0;
+      if (partIndex > 0) {
+        final partSource = await _resolveOfflineVideoSource(
+          ServerId(serverId!),
+          metadata.id,
+          mediaIndex: offlineSource.mediaIndex,
+          selectedMediaSourceId: offlineSource.mediaSourceId,
+          allowAnyDownloadedVersion: true,
+          partIndex: partIndex,
+        );
+        if (partSource == null) {
+          // A copy downloaded before stacked items were fetched whole holds
+          // only the first file: stream the rest when a server is there.
+          appLogger.w('Downloaded copy of ${metadata.id} has no file for part ${partIndex + 1}');
+          if (offlineOnly) {
+            throw const PlaybackException(
+              'The downloaded media file is unavailable.',
+              reason: PlaybackFailureReason.noPlayableSource,
+            );
+          }
+          offlineSource = null;
+        } else {
+          offlineVideoPath = partSource.path;
+        }
+      }
+      if (offlineSource != null) {
+        appLogger.d('Using offline playback for ${metadata.id}');
+        return _buildOfflineResult(
+          metadata: metadata,
+          offlineVideoPath: offlineVideoPath,
+          mediaInfo: mediaInfo,
+          selectedMediaIndex: offlineSource.mediaIndex,
+          selectedMediaSourceId: offlineSource.mediaSourceId,
+        );
+      }
     }
     if (requireOffline) {
       throw const PlaybackException(
@@ -169,24 +204,10 @@ class PlaybackInitializationService {
   Future<PlaybackInitializationResult> _buildOfflineResult({
     required MediaItem metadata,
     required String offlineVideoPath,
+    required MediaSourceInfo? mediaInfo,
     required int selectedMediaIndex,
     String? selectedMediaSourceId,
   }) async {
-    MediaSourceInfo? mediaInfo;
-    try {
-      final cacheServerId = await _resolveCacheServerId(metadata);
-      if (cacheServerId != null) {
-        mediaInfo = await CachedPlaybackMetadataService.fetchMediaSourceInfo(
-          backend: metadata.backend,
-          cacheServerId: cacheServerId,
-          itemId: metadata.id,
-          mediaIndex: selectedMediaIndex,
-        );
-      }
-    } catch (e) {
-      appLogger.d('Could not load cached media info for offline playback', error: e);
-    }
-
     final subtitleSidecars = await _discoverSidecarSubtitles(
       offlineVideoPath,
       metadata: metadata,
@@ -203,6 +224,36 @@ class PlaybackInitializationService {
       selectedMediaIndex: selectedMediaIndex,
       selectedMediaSourceId: selectedMediaSourceId,
     );
+  }
+
+  /// Sidecar subtitles the downloader wrote for the local copy at
+  /// [videoPath] (a plain path or a SAF `content://` URI), labelled from the
+  /// cached media info when it is available. Used by the external-player
+  /// handoff, which plays the same local copy outside the app.
+  Future<List<PlaybackSubtitleSidecar>> discoverDownloadedSubtitles(
+    MediaItem metadata, {
+    required String videoPath,
+    required int mediaIndex,
+  }) async {
+    final mediaInfo = await _cachedMediaInfo(metadata, mediaIndex);
+    return _discoverSidecarSubtitles(videoPath, metadata: metadata, mediaInfo: mediaInfo);
+  }
+
+  Future<MediaSourceInfo?> _cachedMediaInfo(MediaItem metadata, int mediaIndex, {Duration? position}) async {
+    try {
+      final cacheServerId = await _resolveCacheServerId(metadata);
+      if (cacheServerId == null) return null;
+      return await CachedPlaybackMetadataService.fetchMediaSourceInfo(
+        backend: metadata.backend,
+        cacheServerId: cacheServerId,
+        itemId: metadata.id,
+        mediaIndex: mediaIndex,
+        position: position,
+      );
+    } catch (e) {
+      appLogger.d('Could not load cached media info for offline playback', error: e);
+      return null;
+    }
   }
 
   Future<String?> _resolveCacheServerId(MediaItem metadata) async {
@@ -227,7 +278,8 @@ class PlaybackInitializationService {
   /// Find sidecar subtitle files written by the downloader. Plain file videos
   /// use `{video}_subs/{trackId}.{ext}` with a legacy `{videoDir}/subtitles/*`
   /// fallback. SAF videos are `content://` URIs, so sidecars live in the
-  /// app-managed subtitle directory keyed by server/item id.
+  /// app-managed subtitle directory keyed by server/item id — and for a later
+  /// file of a stacked item, by that file too.
   Future<List<PlaybackSubtitleSidecar>> _discoverSidecarSubtitles(
     String videoPath, {
     required MediaItem metadata,
@@ -235,7 +287,7 @@ class PlaybackInitializationService {
   }) async {
     final subtitles = <PlaybackSubtitleSidecar>[];
     final dirs = videoPath.startsWith('content://')
-        ? await _safSidecarSubtitleDirs(metadata)
+        ? await _safSidecarSubtitleDirs(metadata, partIndex: mediaInfo?.partTimeline?.currentIndex ?? 0)
         : await _fileSidecarSubtitleDirs(videoPath);
 
     for (final subsDir in dirs) {
@@ -279,11 +331,12 @@ class PlaybackInitializationService {
     return [Directory(p.join(File(videoPath).parent.path, 'subtitles'))];
   }
 
-  Future<List<Directory>> _safSidecarSubtitleDirs(MediaItem metadata) async {
+  Future<List<Directory>> _safSidecarSubtitleDirs(MediaItem metadata, {required int partIndex}) async {
     final serverId = metadata.serverId;
     if (serverId == null) return const [];
 
     final storage = DownloadStorageService.instance;
+    if (partIndex > 0) return [await storage.getPartSubtitlesDirectory(ServerId(serverId), metadata.id, partIndex)];
     final dirs = <Directory>[];
     if (metadata.isEpisode && metadata.title != null) {
       dirs.add(await storage.getEpisodeSubtitlesDirectory(metadata));

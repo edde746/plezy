@@ -1,5 +1,6 @@
 import '../../i18n/strings.g.dart';
 import '../../media/media_kind.dart';
+import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../models/catalog/catalog_metadata.dart';
@@ -20,7 +21,7 @@ import 'catalog_watchlist_machinery.dart';
 /// Wraps the catalog [TraktClient] owned by `TrackersProvider` (not owned here
 /// — never disposed by this class). Watchlist membership rides
 /// [CatalogWatchlistMachinery] with kind-namespaced keys over every id form.
-class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
+class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogCommunityRatings {
   final TraktClient _client;
 
   TraktCatalogSource(this._client);
@@ -151,6 +152,28 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     );
   }
 
+  /// Trakt's own community score, its 0-10 average (`/{movies|shows}/{id}/ratings`). A title known only by
+  /// TMDB (or a show's TVDB) id is first looked up for its Trakt id.
+  @override
+  Future<List<MediaRatingSource>> fetchCommunityRatings(MediaKind kind, CatalogItemIds ids) async {
+    final type = switch (kind) {
+      MediaKind.movie => TraktCatalogType.movies,
+      MediaKind.show => TraktCatalogType.shows,
+      _ => null,
+    };
+    if (type == null) return const [];
+    final id = ids.trakt?.toString() ?? ids.slug ?? ids.imdb ?? (await _lookupTraktId(type, ids))?.toString();
+    if (id == null) return const [];
+    final rating = await _client.getCommunityRating(type, id);
+    return [?MediaRatingSource.fromScale('trakt', rating?.rating, scale: 10, votes: rating?.votes)];
+  }
+
+  Future<int?> _lookupTraktId(TraktCatalogType type, CatalogItemIds ids) async {
+    if (ids.tmdb case final tmdb?) return _client.lookupTraktId('tmdb', tmdb, type);
+    if (ids.tvdb case final tvdb? when type == TraktCatalogType.shows) return _client.lookupTraktId('tvdb', tvdb, type);
+    return null;
+  }
+
   Future<T?> _withoutFailure<T>(Future<T> request, String requestName, CatalogItem item) async {
     try {
       return await request;
@@ -226,10 +249,14 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
   @override
   Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit) async {
     final res = await _client.getWatchlist(page: page, limit: limit);
-    return (
-      groups: [for (final item in _fromEntries(res.items)) membershipKeysFor(item.kind, item.ids)],
-      hasMore: res.hasMore,
-    );
+    final groups = <List<String>>[];
+    for (final entry in res.items) {
+      final media = entry.media;
+      final kind = _entryKind(entry, null);
+      if (media == null || kind == null || !media.ids.hasAny) continue;
+      groups.add(membershipKeysFor(kind, _idsFor(media.ids)));
+    }
+    return (groups: groups, hasMore: res.hasMore);
   }
 
   @override
@@ -270,6 +297,9 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     };
   }
 
+  static CatalogItemIds _idsFor(TraktIds ids) =>
+      CatalogItemIds(trakt: ids.trakt, slug: ids.slug, imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
+
   /// Normalize Trakt's status strings. Movies' `released` maps to null —
   /// a "Released" chip on every movie is noise.
   static CatalogAirStatus? airStatusFor(String? status) => switch (status) {
@@ -307,13 +337,7 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       airStatus: airStatusFor(media.status),
       episodeCount: media.airedEpisodes,
       network: media.network,
-      ids: CatalogItemIds(
-        trakt: media.ids.trakt,
-        slug: media.ids.slug,
-        imdb: media.ids.imdb,
-        tmdb: media.ids.tmdb,
-        tvdb: media.ids.tvdb,
-      ),
+      ids: _idsFor(media.ids),
       posterUrl: media.images?.primaryPoster,
       backdropUrl: media.images?.primaryBackdrop,
       logoUrl: media.images?.primaryLogo,

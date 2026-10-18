@@ -25,9 +25,31 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     );
   }
 
+  /// Release a live start's or zap's transition lock and run recovery for a
+  /// failure of its replacement stream that arrived before it committed.
+  void _finishLiveReplacement(PlaybackTransitionLease lease, int replacement, {required bool committed}) {
+    final ownsLock = _transitionGate.owns(lease);
+    final runDeferred = _live.endReplacement(replacement, committed: committed && ownsLock);
+    _transitionGate.release(lease);
+    if (runDeferred && mounted && !_shuttingDown && !_isExiting.value && !_hasFatalPlaybackError) {
+      appLogger.w('Replacement live stream failed before its transition committed; recovering now');
+      _beginLiveLadderRetry();
+    }
+  }
+
   /// Advance the fallback ladder and retry — the error path's entry point.
   void _beginLiveLadderRetry() {
     if (_shuttingDown) return;
+    // A start or zap that already opened its stream owns it but has not
+    // adopted its session yet: recovering now would re-tune the session being
+    // replaced, and the gate turns the retry away. Park the failure until the
+    // replacement commits (see [_finishLiveReplacement]).
+    final transition = _transitionGate.transition;
+    if ((transition == PlaybackTransition.startingLive || transition == PlaybackTransition.switchingChannel) &&
+        _live.deferReplacementFailure()) {
+      appLogger.d('Live stream failure deferred until ${transition.name} commits');
+      return;
+    }
     _live.fallbackLevel++;
     _live.retrying = true;
     appLogger.w('Live stream failed, retrying with fallback level ${_live.fallbackLevel}');
@@ -107,6 +129,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
           isMounted: () => mounted,
           commit: (update) {
             if (requestStreamGeneration != _live.streamGeneration) return;
+            final hadSeekWindow = _live.captureBuffer != null;
             _setPlayerState(() {
               final playbackStream = update.playbackStream;
               if (playbackStream != null &&
@@ -121,6 +144,12 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
                   ..start();
               }
             });
+            // Time-shift arrived with this heartbeat (Plex publishes the
+            // capture buffer a beat after the tune): the session can now
+            // advertise ±skip through it.
+            if (!hadSeekWindow && _live.captureBuffer != null) {
+              unawaited(_mediaControls.syncAvailability());
+            }
           },
         ),
       );
@@ -129,18 +158,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Fire-and-forget a stopped heartbeat for a session that started but was
-  /// never adopted (unmount or superseded mid-start) so the backend tears
-  /// down its tuner/transcode resources instead of waiting for a timeout.
-  void _abandonLiveSession(LiveTvPlaybackSession session) {
-    unawaited(() async {
-      try {
-        await session.reportTimeline(state: 'stopped', positionMs: 0, durationMs: session.program.durationMs ?? 0);
-      } catch (e) {
-        appLogger.d('Failed to stop abandoned live session', error: e);
-      }
-    }());
-  }
+  /// Release a session that started but was never adopted (unmount or
+  /// superseded mid-start) so the backend frees its tuner/transcode instead of
+  /// holding it until an idle timeout, or forever (#2394).
+  void _abandonLiveSession(LiveTvPlaybackSession session) => unawaited(session.discard());
 
   /// Resolve the owning live-TV server for [channel] and start a playback
   /// session on it — the shared resolution path for initial launch and
@@ -160,6 +181,21 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     return client.liveTv.startPlayback(channel.key, dvrKey: serverInfo.dvrKey, quality: _selectedQualityPreset);
   }
 
+  /// The item that stands in for [channel] once a zap adopts its session.
+  ///
+  /// Resolves the channel's server the same way [_startLiveSession] does, so a
+  /// cross-server channel list cannot leave every `_currentMetadata` consumer
+  /// describing the channel that was tuned first.
+  MediaItem _liveChannelItem(LiveTvChannel channel) {
+    final multiServer = context.read<MultiServerProvider>();
+    final serverInfo = liveTvServerInfoForChannel(multiServer, channel);
+    // An unscoped channel names no server of its own; the live TV server the
+    // tune would pick is the one that can serve its logo.
+    final serverId = serverInfo?.serverId ?? channel.serverId;
+    final client = serverId == null ? null : multiServer.getClientForServer(ServerId(serverId));
+    return liveTvChannelItem(channel, backend: client?.backend ?? _currentMetadata.backend, serverId: serverId);
+  }
+
   /// Retry the live stream with degraded direct-stream settings.
   ///
   /// The session owns the per-backend recovery: Plex re-tunes the channel
@@ -170,24 +206,49 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _liveSeek.cancel();
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null) return;
-    final generation = _transitionGate.generation;
-    final intent = _liveSeek.intentGeneration;
-    final retryOwner = _live.beginRetry();
     final session = _live.session;
-    bool isCurrent() =>
-        _isCurrentPlaybackGeneration(generation, currentPlayer) &&
-        identical(_live.session, session) &&
-        intent == _liveSeek.intentGeneration &&
-        _live.ownsRetry(retryOwner);
-    _live.playbackPosition(currentPlayer.currentPosition);
-    _live.invalidatePlayback();
     if (session == null) {
-      _live.finishRetry(retryOwner);
+      _live.retrying = false;
       appLogger.w('Cannot retry live stream — no session');
       showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
       unawaited(_handleBackButton());
       return;
     }
+
+    // Recovery reopens the stream, so it holds the transition lock like any
+    // other in-place transition. A zap or start in flight is replacing the
+    // stream that failed; recovering the old session under it would reopen
+    // the previous channel over the new one. The new stream reports its own
+    // failures once it is in place.
+    final lease = _transitionGate.tryAcquire(PlaybackTransition.recoveringLive);
+    if (lease == null) {
+      _live.retrying = false;
+      appLogger.d('Live stream retry skipped: ${_transitionGate.transition.name} in flight');
+      return;
+    }
+    try {
+      await _recoverLiveStream(currentPlayer, session, lease);
+    } finally {
+      _transitionGate.release(lease);
+    }
+  }
+
+  Future<void> _recoverLiveStream(
+    Player currentPlayer,
+    LiveTvPlaybackSession session,
+    PlaybackTransitionLease lease,
+  ) async {
+    final generation = _transitionGate.generation;
+    final intent = _liveSeek.intentGeneration;
+    final retryOwner = _live.beginRetry();
+    bool isCurrent() =>
+        _isCurrentPlaybackGeneration(generation, currentPlayer) &&
+        _transitionGate.owns(lease, expected: PlaybackTransition.recoveringLive) &&
+        identical(_live.session, session) &&
+        intent == _liveSeek.intentGeneration &&
+        _live.ownsRetry(retryOwner);
+    _live.playbackPosition(currentPlayer.currentPosition);
+    _live.invalidatePlayback();
 
     final ds = _live.fallbackLevel < 1;
     final dsa = _live.fallbackLevel < 2;
@@ -215,7 +276,13 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       open: (streamUrl) async {
         _live.markStreamRestartedAtLiveEdge(recoveredCaptureBuffer);
         final targetEpoch = recoveredCaptureBuffer == null ? null : _live.streamStartEpoch;
-        await _openLiveStream(currentPlayer, streamUrl, targetEpoch: targetEpoch, applyOptions: false);
+        await _openLiveStream(
+          currentPlayer,
+          streamUrl,
+          targetEpoch: targetEpoch,
+          applyOptions: false,
+          isCurrent: isCurrent,
+        );
       },
       isCurrent: isCurrent,
       adoptSession: (recovered) {
@@ -225,7 +292,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       },
       // Jellyfin's recover() returns the receiver, so the recovered object can
       // be the still-current session; the retry helper skips the discard by
-      // identity so a failed retry cannot terminally stop-report it.
+      // identity so a failed retry cannot terminally release it.
       currentSession: () => _live.session,
       discardSession: _abandonLiveSession,
       reportFailure: (error, stackTrace) {
@@ -328,6 +395,58 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
 
   double? get _currentPositionEpoch =>
       _liveSeek.pendingEpoch ?? _live.playbackPosition(player?.currentPosition ?? Duration.zero).epoch;
+
+  /// Arm display negotiation for a live open that tunes a channel — the
+  /// launch and every zap. Android mpv and Apple TV open the stream paused
+  /// and negotiate from what the player presents at its first frame, the way
+  /// a VOD open does ([_firstFrameStartupPlan]). Broadcast is where
+  /// interlaced video lives, and a MediaCodec decoder that deinterlaces by
+  /// itself presents one frame per field with only the measured cadence to
+  /// say so: matched from the container rate, 1080i25 got a 25 Hz mode that
+  /// dropped every other frame and let video fall behind audio (#2568).
+  ///
+  /// [firstFrame] is the open's first-frame signal, armed before the open:
+  /// the launch's attempt outcome, or the one a zap arms for itself. Null —
+  /// open as before — on ExoPlayer, which keeps its post-first-frame
+  /// detection, and on desktop. Time-shift seeks, subtitle rebuilds and
+  /// stream recovery reopen the same channel and keep its negotiated mode.
+  _FrameRateStartupPlan? _armLiveDisplayNegotiation(Player currentPlayer, PlaybackOpenOutcome firstFrame) {
+    final plan = _firstFrameStartupPlan(currentPlayer, SettingsService.instance, hasVideoUrl: true);
+    if (plan == null) return null;
+    _frameRate.resetForNewItem();
+    if (plan.countsAsApplied) _frameRate.applied = true;
+    plan.armFirstFrameGate(firstFrame, _frameRate);
+    return plan;
+  }
+
+  /// Release a gate [_armLiveDisplayNegotiation] armed: negotiate the display
+  /// at the stream's first frame, then resume it. Runs once the start or zap
+  /// gave up its transition lock, so a channel that never shows a frame
+  /// cannot hold the next zap up. Any later live open (zap, recovery,
+  /// time-shift seek, subtitle rebuild) supersedes it and owns the play state
+  /// it leaves. [stream] is the [LiveTvSessionState.streamGeneration] the
+  /// gated open produced; null when that open did not commit, which only
+  /// releases the first-frame hold.
+  Future<void> _releaseLiveDisplayNegotiation(
+    Player currentPlayer,
+    _FrameRateStartupPlan plan, {
+    required int? stream,
+  }) async {
+    final generation = _transitionGate.generation;
+    try {
+      if (stream == null || !plan.holdPlaybackStart) return;
+      await _releaseFrameRateStartupGate(
+        currentPlayer: currentPlayer,
+        settingsService: SettingsService.instance,
+        plan: plan,
+        isCurrent: () => _isCurrentPlaybackGeneration(generation, currentPlayer) && _live.streamGeneration == stream,
+        resumeAfterStartupGate: (reason) =>
+            _resumeAfterFrameRateStartupGate(currentPlayer: currentPlayer, reason: reason),
+      );
+    } finally {
+      _frameRate.endDisplayNegotiation(plan.displayNegotiation);
+    }
+  }
 
   LiveTvTimeline _liveTimelineForPosition(Duration position) {
     final session = _live.session;
@@ -595,8 +714,17 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
 
+    // Zapping away from a failing channel must not wait out its recovery (a
+    // re-tune can take the whole tune budget): the zap replaces that stream,
+    // so it supersedes the recovery, which discards whatever it recovered.
+    if (_transitionGate.transition == PlaybackTransition.recoveringLive) {
+      _transitionGate.forceIdle();
+      _live.retrying = false;
+    }
     final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingChannel);
     if (transitionLease == null) return; // debounce concurrent switches
+    final replacement = _live.beginReplacement();
+    var committed = false;
     bool isCurrentChannelSwitch() =>
         mounted &&
         !_shuttingDown &&
@@ -612,6 +740,9 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
 
     LiveTvPlaybackSession? session;
     var replacementOpenStarted = false;
+    PlaybackOpenOutcome? zapOutcome;
+    _FrameRateStartupPlan? frameRatePlan;
+    int? openedStream;
     try {
       // Channel switch IS a fresh start: same resolution path as launch. Keep
       // the old session alive until the replacement stream is actually open so
@@ -641,10 +772,15 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       });
       _live.markStreamRestartedAtLiveEdge(session.captureBuffer);
       final targetEpoch = session.captureBuffer == null ? null : _live.streamStartEpoch;
-      await _openLiveStream(
+      // A zap starts no playback attempt, so it arms its own first-frame
+      // signal; the deadline bounds a stream that stops moving before one.
+      zapOutcome = PlaybackOpenOutcome.arm(currentPlayer, deadline: VideoPlayerScreenState._openDeadline);
+      frameRatePlan = _armLiveDisplayNegotiation(currentPlayer, zapOutcome);
+      final opened = await _openLiveStream(
         currentPlayer,
         streamUrl,
         targetEpoch: targetEpoch,
+        play: (frameRatePlan?.holdPlaybackStart ?? false) ? false : null,
         onOpenStarted: () {
           replacementOpenStarted = true;
           // The native state belongs to the replacement from this point,
@@ -653,6 +789,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
           widget.launchObserver?.detach();
         },
       );
+      if (opened) openedStream = _live.streamGeneration;
       if (!isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;
@@ -673,12 +810,29 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       _live.fallbackLevel = 0;
       _live.cancelRetry();
       _live.retryFailed = false;
+      committed = true;
 
       if (!mounted) return;
       _setPlayerState(() {
         _live.channelIndex = newIndex;
         _live.channelName = channel.displayName;
+        _currentMetadata = _liveChannelItem(channel);
       });
+
+      // The screen now describes a different channel: republish before the
+      // heartbeats restart, or the OS controls, the client lookups and the
+      // scoped player preferences stay pinned to the channel tuned first.
+      final mediaControlsManager = _mediaControlsManager;
+      if (mediaControlsManager != null) {
+        unawaited(
+          mediaControlsManager.updateMetadata(
+            metadata: _currentMetadata,
+            client: _getOnlineMediaServerClient(context),
+            duration: null,
+          ),
+        );
+      }
+      unawaited(_mediaControls.syncAvailability());
 
       // Restart timeline heartbeats for the new session
       _startLiveTimelineUpdates();
@@ -694,9 +848,14 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         });
       }
       appLogger.e('Failed to switch channel', error: e);
-      if (mounted) showErrorSnackBar(context, e.toString());
+      if (mounted) showErrorSnackBar(context, t.liveTv.channelSwitchFailed(reason: localizedErrorReason(e)));
     } finally {
-      _transitionGate.release(transitionLease);
+      _finishLiveReplacement(transitionLease, replacement, committed: committed);
+      if (!committed) zapOutcome?.abort('channel switch did not commit');
+      final plan = frameRatePlan;
+      if (plan != null) {
+        await _releaseLiveDisplayNegotiation(currentPlayer, plan, stream: committed ? openedStream : null);
+      }
     }
   }
 

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
@@ -12,13 +11,13 @@ import '../../media/stepped_seek.dart';
 import '../../mpv/mpv.dart';
 import '../../media/media_source_info.dart';
 import '../../services/fullscreen_state_manager.dart';
+import '../../services/live_seek_accumulator.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/video_volume_controller.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
-import '../../focus/focusable_wrapper.dart';
 import '../../media/live_tv_timeline.dart';
 import 'models/track_controls_state.dart';
 import 'player_chrome_controller.dart';
@@ -26,11 +25,13 @@ import 'widgets/content_strip.dart';
 import 'widgets/content_strip_panel.dart';
 import 'widgets/live_timeline_bar.dart';
 import 'widgets/first_frame_guard.dart';
+import 'widgets/finish_time_builder.dart';
 import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 import 'widgets/volume_control.dart';
 import 'widgets/track_chapter_controls.dart';
+import 'video_control_button.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatefulWidget {
@@ -73,25 +74,23 @@ class DesktopVideoControls extends StatefulWidget {
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
   final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
-  /// Channel name for live TV display
   final String? liveChannelName;
 
   // Live TV time-shift
   final LiveTvTimeline Function(Duration position)? liveTimelineForPosition;
   final ValueChanged<double>? onLiveSeek;
 
-  /// Relative live-TV skip callback (delta seconds); parent accumulates+debounces.
-  final ValueChanged<int>? onLiveSeekBy;
-  final ValueChanged<int>? onLiveSeekByWithPreview;
+  /// Relative live-TV skip entry point (delta seconds); the parent accumulates
+  /// and debounces, and reports back the seconds it actually applied.
+  final LiveSeekBy? onLiveSeekBy;
+  final LiveSeekBy? onLiveSeekByWithPreview;
   final VoidCallback? onJumpToLive;
 
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)
   final bool useDpadNavigation;
 
-  /// Server ID for content strip images
   final String? serverId;
 
-  /// Whether to show the queue tab in the content strip
   final bool showQueueTab;
 
   /// Called when a queue item is selected in the content strip
@@ -100,7 +99,6 @@ class DesktopVideoControls extends StatefulWidget {
   /// Called to cancel auto-hide timer (e.g., when content strip is shown)
   final VoidCallback? onCancelAutoHide;
 
-  /// Called to start auto-hide timer
   final VoidCallback? onStartAutoHide;
 
   /// Called when content strip visibility changes
@@ -200,7 +198,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   FocusNode? _lastFocusedButtonNode;
 
-  /// Whether the content strip has any content to show
   bool get _hasStripContent {
     return widget.chapters.isNotEmpty || (widget.showQueueTab && widget.onQueueItemSelected != null);
   }
@@ -495,7 +492,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     );
   }
 
-  /// Reset progressive seek state
   void _resetSeekState() {
     _seekDirection = null;
     _seekRepeatCount = 0;
@@ -623,33 +619,37 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 const Spacer(),
                 // When content strip is visible, hide the normal controls (like mobile)
                 if (!_contentStripVisible)
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _buildBottomControlsContent(context, hasFrame: true),
-                      // Down arrow hint when strip content is available
-                      if (widget.useDpadNavigation && _hasStripContent)
-                        const ContentStripHint(Symbols.keyboard_arrow_down_rounded),
-                    ],
+                  _absorbMissedClicks(
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        _buildBottomControlsContent(context, hasFrame: true),
+                        // Down arrow hint when strip content is available
+                        if (widget.useDpadNavigation && _hasStripContent)
+                          const ContentStripHint(Symbols.keyboard_arrow_down_rounded),
+                      ],
+                    ),
                   ),
                 // Content strip (TV/dpad only) — replaces normal controls
                 if (_contentStripVisible && widget.useDpadNavigation)
-                  ContentStripPanel(
-                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
-                    chevron: Symbols.keyboard_arrow_up_rounded,
-                    child: ContentStrip(
-                      key: _contentStripKey,
-                      player: widget.player,
-                      chapters: widget.chapters,
-                      serverId: widget.serverId,
-                      canControl: _canControl,
-                      showQueueTab: widget.showQueueTab,
-                      onQueueItemSelected: widget.onQueueItemSelected,
-                      onSeekRequested: widget.onSeekRequested,
-                      onSeekCompleted: widget.onSeekCompleted,
-                      useFocusNavigation: true,
-                      onNavigateUp: _onContentStripNavigateUp,
-                      onFocusActivity: widget.onFocusActivity,
+                  _absorbMissedClicks(
+                    ContentStripPanel(
+                      padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
+                      chevron: Symbols.keyboard_arrow_up_rounded,
+                      child: ContentStrip(
+                        key: _contentStripKey,
+                        player: widget.player,
+                        chapters: widget.chapters,
+                        serverId: widget.serverId,
+                        canControl: _canControl,
+                        showQueueTab: widget.showQueueTab,
+                        onQueueItemSelected: widget.onQueueItemSelected,
+                        onSeekRequested: widget.onSeekRequested,
+                        onSeekCompleted: widget.onSeekCompleted,
+                        useFocusNavigation: true,
+                        onNavigateUp: _onContentStripNavigateUp,
+                        onFocusActivity: widget.onFocusActivity,
+                      ),
                     ),
                   ),
               ],
@@ -660,20 +660,27 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     );
   }
 
+  /// A bar is chrome, not video. The controls overlay behind it treats every
+  /// tap no control claims as a click on the video — play/pause, fullscreen on
+  /// a double click, or hiding the chrome — so a click that misses a button or
+  /// the seek bar by a few pixels would act on playback (#2578). This claims
+  /// those taps without acting on them; the bar's own controls sit deeper in
+  /// the hit-test path and still win the gesture arena.
+  Widget _absorbMissedClicks(Widget bar) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    excludeFromSemantics: true,
+    // ignore: no-empty-block - claims taps that miss every control in the bar
+    onTap: () {},
+    child: bar,
+  );
+
   Widget _buildTopBar(BuildContext _) {
     // Use global fullscreen state for padding
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
       builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-        // In fullscreen on macOS, use less left padding since traffic lights auto-hide
-        // In normal mode on macOS, need more padding to avoid traffic lights
-        double leftPadding;
-        if (Platform.isMacOS) {
-          leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
-        } else {
-          leftPadding = DesktopWindowPadding.macOSLeftFullscreen;
-        }
+        // On macOS the traffic lights need clearing in normal mode; they auto-hide in fullscreen.
+        final leftPadding = Platform.isMacOS ? DesktopWindowPadding.macOSLeftCurrent : 0.0;
 
         return _buildTopBarContent(context, leftPadding);
       },
@@ -713,7 +720,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       ),
     );
 
-    return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
+    return DesktopAppBarHelper.wrapWithGestureDetector(_absorbMissedClicks(topBar), opaque: true);
   }
 
   Widget _buildBottomControlsContent(BuildContext _, {required bool hasFrame}) {
@@ -887,48 +894,19 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   const Spacer()
                 else
                   Expanded(
-                    child: StreamBuilder<Duration>(
-                      stream: widget.player.streams.duration,
-                      initialData: widget.player.state.duration,
-                      builder: (context, durationSnapshot) {
-                        final duration = durationSnapshot.data ?? Duration.zero;
-                        return StreamBuilder<double>(
-                          stream: widget.player.streams.rate,
-                          initialData: widget.player.state.rate,
-                          builder: (context, rateSnapshot) {
-                            final rate = rateSnapshot.data ?? 1.0;
-                            final initialRemaining = duration - widget.player.state.position;
-                            return StreamBuilder<Duration>(
-                              stream: widget.player.streams.position.map((position) => duration - position).distinct((
-                                previous,
-                                next,
-                              ) {
-                                final previousHasRemaining = previous.inSeconds > 0;
-                                final nextHasRemaining = next.inSeconds > 0;
-                                return previousHasRemaining == nextHasRemaining &&
-                                    (!previousHasRemaining || previous.inMinutes == next.inMinutes);
-                              }),
-                              initialData: initialRemaining,
-                              builder: (context, remainingSnapshot) {
-                                final remaining = remainingSnapshot.data ?? Duration.zero;
-                                if (remaining.inSeconds <= 0) return const SizedBox.shrink();
+                    child: FinishTimeBuilder(
+                      player: widget.player,
+                      builder: (context, finishTime) {
+                        if (finishTime == null) return const SizedBox.shrink();
 
-                                final text = t.videoControls.endsAt(
-                                  time: formatFinishTime(
-                                    remaining,
-                                    rate: rate,
-                                    is24Hour: MediaQuery.alwaysUse24HourFormatOf(context),
-                                  ),
-                                );
-                                const style = TextStyle(color: Colors.white70, fontSize: 13);
+                        final text = t.videoControls.endsAt(
+                          time: formatClockTime(finishTime, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context)),
+                        );
+                        const style = TextStyle(color: Colors.white70, fontSize: 13);
 
-                                return Padding(
-                                  padding: const EdgeInsets.only(left: 8),
-                                  child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
-                                );
-                              },
-                            );
-                          },
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
                         );
                       },
                     ),
@@ -996,26 +974,16 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     double iconSize = 24,
     String? tooltip,
   }) {
-    return FocusableWrapper(
+    return VideoControlButton(
+      icon: icon,
+      iconSize: iconSize,
+      color: color,
+      tooltip: tooltip,
+      semanticLabel: semanticLabel,
       focusNode: focusNode,
-      onSelect: onPressed,
       onKeyEvent: (node, event) => _handleButtonKeyEvent(node, event, index),
       onFocusChange: _onFocusChange,
-      borderRadius: 20,
-      autoScroll: false,
-      useBackgroundFocus: true,
-      semanticLabel: semanticLabel,
-      child: Semantics(
-        label: semanticLabel,
-        button: true,
-        excludeSemantics: true,
-        child: IconButton(
-          icon: AppIcon(icon, fill: 1, color: color, size: iconSize),
-          iconSize: iconSize,
-          tooltip: tooltip,
-          onPressed: onPressed,
-        ),
-      ),
+      onPressed: onPressed,
     );
   }
 }

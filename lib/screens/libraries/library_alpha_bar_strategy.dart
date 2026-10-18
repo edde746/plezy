@@ -30,7 +30,7 @@ abstract class LibraryAlphaBarStrategy {
   /// Returns the new helper plus the synthesised character list — the caller
   /// stores both in widget state.
   Future<({List<LibraryFirstCharacter> chars, AlphaJumpHelper helper})> loadCharacters({
-    required Map<String, String> filters,
+    required Map<String, dynamic> filters,
     required int? typeId,
     required bool descending,
   });
@@ -99,7 +99,7 @@ class PlexAlphaBarStrategy implements LibraryAlphaBarStrategy {
 
   @override
   Future<({List<LibraryFirstCharacter> chars, AlphaJumpHelper helper})> loadCharacters({
-    required Map<String, String> filters,
+    required Map<String, dynamic> filters,
     required int? typeId,
     required bool descending,
   }) async {
@@ -108,7 +108,7 @@ class PlexAlphaBarStrategy implements LibraryAlphaBarStrategy {
       return (chars: const <LibraryFirstCharacter>[], helper: AlphaJumpHelper(const []));
     }
     final client = plexClientProvider();
-    final params = Map<String, String>.from(filters);
+    final params = Map<String, dynamic>.from(filters);
     params['includeCollections'] = '1';
     final chars = await client.getFirstCharacters(libraryKey, type: typeId, filters: params.isNotEmpty ? params : null);
     return (chars: chars, helper: AlphaJumpHelper(chars, descending: descending));
@@ -185,7 +185,7 @@ class MediaBrowserAlphaBarStrategy implements LibraryAlphaBarStrategy {
 
   @override
   Future<({List<LibraryFirstCharacter> chars, AlphaJumpHelper helper})> loadCharacters({
-    required Map<String, String> filters,
+    required Map<String, dynamic> filters,
     required int? typeId,
     required bool descending,
   }) async {

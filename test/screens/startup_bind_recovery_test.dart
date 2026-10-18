@@ -1,7 +1,11 @@
+import 'dart:async';
+
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/main.dart';
 import 'package:plezy/navigation/navigation_tabs.dart';
 import 'package:plezy/screens/main_screen.dart';
+import 'package:plezy/utils/media_server_timeouts.dart';
 
 List<NavigationTabId> _ids(List<NavigationTab> tabs) => tabs.map((tab) => tab.id).toList();
 
@@ -11,6 +15,28 @@ void main() {
       expect(shouldEnterOfflineModeAfterStartupBind(bindingSucceeded: false, hasOnlineServers: false), isTrue);
       expect(shouldEnterOfflineModeAfterStartupBind(bindingSucceeded: true, hasOnlineServers: false), isFalse);
       expect(shouldEnterOfflineModeAfterStartupBind(bindingSucceeded: false, hasOnlineServers: true), isFalse);
+    });
+
+    test('without a network the splash waits for the bind only up to the cap', () {
+      fakeAsync((async) {
+        bool? capped;
+        bool? uncapped;
+        bool? settledEarly;
+        unawaited(awaitStartupBindSettle(Completer<bool>().future, hasNetwork: false).then((v) => capped = v));
+        unawaited(awaitStartupBindSettle(Completer<bool>().future, hasNetwork: true).then((v) => uncapped = v));
+        unawaited(awaitStartupBindSettle(Future.value(true), hasNetwork: false).then((v) => settledEarly = v));
+
+        async.flushMicrotasks();
+        expect(settledEarly, isTrue, reason: 'a loopback server that binds fast is not held back');
+
+        async.elapse(MediaServerTimeouts.noNetworkStartupBind - const Duration(milliseconds: 1));
+        expect(capped, isNull);
+        async.elapse(const Duration(milliseconds: 1));
+        expect(capped, isFalse, reason: 'airplane mode reaches the offline shell after the cap');
+
+        async.elapse(const Duration(minutes: 1));
+        expect(uncapped, isNull, reason: 'with a network the splash waits for the real outcome');
+      });
     });
 
     test('retries active profile bind when reconnect has no visible servers', () {

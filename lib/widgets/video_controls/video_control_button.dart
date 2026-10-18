@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 
+import '../../focus/focus_theme.dart';
 import '../../focus/focusable_wrapper.dart';
+import 'widgets/player_focus_disc.dart';
 
-/// A standardized button for video player controls with improved tap targets.
+/// A standardized icon button for the video player's control rows.
 ///
-/// This widget ensures consistent tap target sizing across all video control
-/// buttons without changing their visual appearance. The larger tap area makes
-/// buttons easier to interact with, especially on mobile devices.
+/// Guarantees a 40px tap target without changing the idle appearance. With a
+/// [focusNode] it is D-pad/keyboard focusable and shows the player's focus
+/// treatment: a solid disc with the icon inverted ([PlayerFocusDisc]), scaled
+/// by [FocusTheme.playerControlFocusScale].
 class VideoControlButton extends StatelessWidget {
   final IconData icon;
 
@@ -15,6 +18,8 @@ class VideoControlButton extends StatelessWidget {
 
   /// The color of the icon. Defaults to white, or amber if [isActive] is true.
   final Color? color;
+
+  final double iconSize;
 
   /// Optional tooltip text shown on hover or long press.
   final String? tooltip;
@@ -49,6 +54,7 @@ class VideoControlButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.color,
+    this.iconSize = 24,
     this.tooltip,
     this.semanticLabel,
     this.semanticValue,
@@ -62,20 +68,19 @@ class VideoControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color ?? (isActive ? Colors.amber : Colors.white);
+    final idleColor = color ?? (isActive ? Colors.amber : Colors.white);
+    final effectiveSemanticLabel = semanticLabel ?? tooltip;
 
-    final button = IconButton(
-      icon: AppIcon(icon, fill: 1, color: effectiveColor),
+    Widget button(Color iconColor) => IconButton(
+      icon: AppIcon(icon, fill: 1, color: iconColor, size: iconSize),
+      iconSize: iconSize,
       onPressed: onPressed,
       tooltip: tooltip,
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     );
 
-    final effectiveSemanticLabel = semanticLabel ?? tooltip;
-    Widget result = button;
-
     if (focusNode != null) {
-      result = FocusableWrapper(
+      return FocusableWrapper(
         focusNode: focusNode,
         onSelect: onPressed,
         onKeyEvent: onKeyEvent,
@@ -84,24 +89,27 @@ class VideoControlButton extends StatelessWidget {
         semanticLabel: effectiveSemanticLabel,
         semanticValue: semanticValue,
         checked: checked,
-        borderRadius: 20,
         autoScroll: false,
-        useBackgroundFocus: true,
-        child: result,
-      );
-    } else if (effectiveSemanticLabel != null) {
-      result = Semantics(
-        label: effectiveSemanticLabel,
-        value: semanticValue,
-        button: true,
-        enabled: onPressed != null,
-        checked: checked,
-        onTap: onPressed,
-        excludeSemantics: true,
-        child: result,
+        delegateFocusBorder: true,
+        focusScale: FocusTheme.playerControlFocusScale,
+        child: PlayerFocusDisc(
+          iconColor: idleColor,
+          isActive: isActive,
+          builder: (context, iconColor) => button(iconColor),
+        ),
       );
     }
 
-    return result;
+    if (effectiveSemanticLabel == null) return button(idleColor);
+    return Semantics(
+      label: effectiveSemanticLabel,
+      value: semanticValue,
+      button: true,
+      enabled: onPressed != null,
+      checked: checked,
+      onTap: onPressed,
+      excludeSemantics: true,
+      child: button(idleColor),
+    );
   }
 }

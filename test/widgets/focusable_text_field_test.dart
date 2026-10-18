@@ -1252,7 +1252,7 @@ void main() {
 
     // Remote keys reach Flutter only when the IME is not consuming them
     // (keyboard dismissed, or a broken key session already repaired and eaten
-    // by MainActivity). Back closes the session and is consumed once so the
+    // by PlezyActivity). Back closes the session and is consumed once so the
     // same press cannot also pop the route underneath.
     final backResult = handler(fieldFocusNode, _remoteKey(LogicalKeyboardKey.goBack));
     await tester.pump();
@@ -1524,7 +1524,7 @@ void main() {
     );
 
     // First focus is suppressed by afterFirstFocus: no live input session, so
-    // the platform hint stays silent — MainActivity keeps the pre-IME D-pad
+    // the platform hint stays silent — PlezyActivity keeps the pre-IME D-pad
     // intercept and the gamepad bridge active for plain navigation.
     fieldFocusNode.requestFocus();
     await tester.pump();
@@ -1532,7 +1532,7 @@ void main() {
     expect(sentStates, isEmpty);
 
     // An explicit Select opens the session: only now does the platform learn
-    // about it (arming the soft-input show-retry in MainActivity).
+    // about it (arming the soft-input show-retry in PlezyActivity).
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pump();
     await tester.pump();

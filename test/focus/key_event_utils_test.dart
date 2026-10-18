@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -104,6 +105,83 @@ void main() {
     expect(handleOneShotSelect(unrelated, () => activations++), KeyEventResult.ignored);
     expect(activations, 1);
   });
+  group('handleBackKeyNavigation', () {
+    Future<List<bool>> pumpPushedRoute(
+      WidgetTester tester, {
+      required bool canPop,
+      void Function(BuildContext context)? onPopRefused,
+    }) async {
+      final popInvocations = <bool>[];
+      final navigatorKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(MaterialApp(navigatorKey: navigatorKey, home: const Text('home')));
+      unawaited(
+        navigatorKey.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (context) => PopScope(
+              canPop: canPop,
+              onPopInvokedWithResult: (didPop, _) {
+                popInvocations.add(didPop);
+                if (!didPop) onPopRefused?.call(context);
+              },
+              child: Focus(
+                autofocus: true,
+                onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
+                child: const Text('pushed'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return popInvocations;
+    }
+
+    testWidgets('defers to a PopScope that blocks the pop', (tester) async {
+      final popInvocations = await pumpPushedRoute(tester, canPop: false);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.text('pushed'), findsOneWidget);
+      expect(popInvocations, [false]);
+    });
+
+    testWidgets('a screen that only blocks the platform back still pops once', (tester) async {
+      // The detail screens' pattern: canPop:false keeps the platform back from
+      // double-popping, and the refusal callback pops unless the key path
+      // already handled this press.
+      var pops = 0;
+      final popInvocations = await pumpPushedRoute(
+        tester,
+        canPop: false,
+        onPopRefused: (context) {
+          if (BackKeyCoordinator.consumeIfHandled()) return;
+          pops++;
+          Navigator.pop(context);
+        },
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.text('pushed'), findsNothing);
+      expect(find.text('home'), findsOneWidget);
+      // Refused, then the callback's own pop.
+      expect(popInvocations, [false, true]);
+      expect(pops, 1);
+    });
+
+    testWidgets('pops a route whose PopScope allows it', (tester) async {
+      final popInvocations = await pumpPushedRoute(tester, canPop: true);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(find.text('pushed'), findsNothing);
+      expect(popInvocations, [true]);
+    });
+  });
+
   group('BackKeyCoordinator', () {
     testWidgets('suppresses one parallel back dispatch in the current frame', (tester) async {
       BackKeyCoordinator.markHandled();

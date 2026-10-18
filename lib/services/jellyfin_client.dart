@@ -11,7 +11,6 @@ import '../media/account_preferences.dart';
 import '../media/artist_discography.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
-import '../media/library_first_character.dart';
 import '../media/library_query.dart';
 import 'favorite_channels_repository.dart';
 import 'live_session_tracker.dart';
@@ -23,6 +22,7 @@ import '../media/lyrics.dart';
 import '../media/media_backend.dart';
 import '../media/media_browser_dialect.dart';
 import '../media/library_change_event.dart';
+import 'library_events/library_event_socket.dart';
 import 'library_events/media_browser_library_event_socket.dart';
 import '../media/media_file_info.dart';
 import '../media/media_hub.dart';
@@ -30,6 +30,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
+import '../media/media_person.dart';
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
@@ -57,6 +58,7 @@ import '../utils/log_redaction_manager.dart';
 import '../utils/external_ids.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/resolution_label.dart';
+import '../utils/search_relevance.dart';
 import '../utils/track_label_builder.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
@@ -121,6 +123,13 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
   MediaItem? _mapItem(Map<String, dynamic> json);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
   String? _absolutizeImagePath(String? path);
+
+  /// Per-facet value listing shared by the browse part (library filters) and
+  /// the metadata-edit part (server-wide tag suggestions when [libraryId] is
+  /// null). Emby-only route shape; Jellyfin callers use `/Items/Filters`.
+  /// Throws [MediaServerHttpException] on any request failure — each caller
+  /// picks its own degradation.
+  Future<List<String>> _fetchFilterFacet(String endpoint, String? libraryId);
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
     String itemId, {
     int sourceIndex = 0,
@@ -134,8 +143,14 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     String? playSessionId,
     String? liveStreamId,
     int? audioStreamIndex,
+    bool containerExtension = false,
   });
-  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId});
+  String buildAudioDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    bool containerExtension = false,
+  });
   Future<Map<String, dynamic>> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,
@@ -197,12 +212,32 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     'UserDataLastPlayedDate',
   ];
 
+  /// Emby's companion to `MediaSources` on list rows.
+  ///
+  /// Emby list routes answer `Fields=MediaSources` with the row item's own
+  /// file only, dropping every version merged with it; the single-item route
+  /// returns them all. Measured on Emby 4.10.0.40 with two merged episode
+  /// versions: `/Shows/{id}/Episodes` and `/Users/{id}/Items?ParentId=` gave
+  /// one source to admin and non-admin users alike, and two — in the detail
+  /// route's order — once this token was named. Emby staff recommend it for
+  /// exactly this (community topic 148258). A one-entry list on a merged item
+  /// breaks the [MediaItem.mediaVersions] completeness contract: pickers,
+  /// saved-version resolution and delete impact all trust it (#2474).
+  ///
+  /// Only added where `MediaSources` is already requested: the server resolves
+  /// alternates per row, a cost the lighter row sets have no use for.
+  static const _embyAlternateMediaSourcesField = 'AlternateMediaSources';
+
   /// Append the fields this dialect withholds, skipping any the set already
   /// names so Jellyfin's request strings stay byte-identical.
   String _withDialectRowFields(String fields) {
     if (dialect != MediaBrowserDialect.emby) return fields;
     final present = fields.split(',').map((field) => field.trim()).toSet();
-    final missing = _embyWithheldRowFields.where((field) => !present.contains(field));
+    final missing = [
+      ..._embyWithheldRowFields.where((field) => !present.contains(field)),
+      if (present.contains('MediaSources') && !present.contains(_embyAlternateMediaSourcesField))
+        _embyAlternateMediaSourcesField,
+    ];
     return missing.isEmpty ? fields : '$fields,${missing.join(',')}';
   }
 
@@ -348,7 +383,7 @@ class JellyfinClient
     return client;
   }
 
-  /// Mutable so [isHealthy] can refresh `Policy.IsAdministrator` from the
+  /// Mutable so [checkHealth] can refresh `Policy.IsAdministrator` from the
   /// current-user probe response — admin status changed server-side should
   /// propagate without forcing the user to re-auth.
   JellyfinConnection _connection;
@@ -453,14 +488,24 @@ class JellyfinClient
   /// reconnect; Emby only routes `LibraryChanged` to sessions that registered
   /// capabilities, so that dialect registers before each connect.
   /// [LibraryEventService] owns the returned channel's lifecycle.
+  ///
+  /// The upgrade carries the same `Authorization: MediaBrowser …` header as
+  /// HTTP requests. With only the query token, the server falls back to the
+  /// client name stored when the token was issued; sessions are keyed by
+  /// client + device + user, so a token from before the client name changed
+  /// splits the device into two sessions and the dashboard loses "now playing".
   @override
   LibraryEventChannel? createLibraryEventChannel() {
+    final authorization = _http.defaultHeaders['Authorization'];
     return MediaBrowserLibraryEventSocket(
       serverId: serverId,
       dialect: dialect,
       baseUrl: () => _http.baseUrl,
       accessToken: connection.accessToken,
       deviceId: connection.deviceId,
+      channelFactory: authorization == null
+          ? null
+          : libraryEventChannelFactory(headers: {'Authorization': authorization}),
       registerCapabilities: dialect.requiresSessionCapabilitiesForLibraryEvents
           ? _registerSessionCapabilitiesForEvents
           : null,
@@ -513,8 +558,10 @@ class JellyfinClient
   /// profile avatars catch server-side changes without requiring re-auth
   /// (see [onConnectionUpdated]).
   ///
-  /// 401/403 surfaces as [HealthStatus.authError] so the manager can
-  /// distinguish a revoked token from a generic transport failure.
+  /// 401 surfaces as [HealthStatus.authError] and 403 as
+  /// [HealthStatus.accessDenied] (a user denied remote access or outside their
+  /// parental schedule) so the manager can tell a revoked token and a refused
+  /// account from a generic transport failure.
   @override
   Future<HealthStatus> checkHealth() async {
     try {
@@ -548,20 +595,19 @@ class JellyfinClient
         }
         return HealthStatus.online;
       }
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        return HealthStatus.authError;
-      }
-      return HealthStatus.offline;
+      return _refusalHealth(response.statusCode) ?? HealthStatus.offline;
     } on MediaServerHttpException catch (e) {
-      if (e.statusCode == 401 || e.statusCode == 403) return HealthStatus.authError;
-      return HealthStatus.offline;
+      return _refusalHealth(e.statusCode) ?? HealthStatus.offline;
     } catch (_) {
       return HealthStatus.offline;
     }
   }
 
-  @override
-  Future<bool> isHealthy() async => (await checkHealth()) == HealthStatus.online;
+  static HealthStatus? _refusalHealth(int? statusCode) => switch (statusCode) {
+    401 => HealthStatus.authError,
+    403 => HealthStatus.accessDenied,
+    _ => null,
+  };
 
   @override
   Future<String?> getMachineIdentifier() async {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
@@ -44,6 +45,11 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   /// Re-invoked by the retry timer. Most recent range-load args.
   VoidCallback? _scheduledRetry;
 
+  /// Size of the page whose response set [totalSize] to a [fallbackPageTotal]
+  /// sentinel (a full page, total claimed one past it), or null when the total
+  /// looks authoritative. Such a total is no bound on the next request.
+  int? _openEndedPageSize;
+
   /// Fetch a page of items. Subclass implements this — typically delegating
   /// to a paginated client method that returns a [LibraryPage].
   Future<LibraryPage<T>> fetchPage(int start, int size, AbortController? abort);
@@ -69,9 +75,18 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     _lastEagerPrefetch = null;
     _scheduledRetry = null;
     _paginationError = null;
+    _openEndedPageSize = null;
     loadedItems.clear();
     _loadingRanges.clear();
     totalSize = 0;
+  }
+
+  /// Record whether [page], fetched from [start] with [requestedSize], carries
+  /// a [fallbackPageTotal] sentinel rather than the server's own count.
+  void _trackOpenEndedTotal(int start, int requestedSize, LibraryPage<T> page) {
+    final count = page.items.length;
+    final sentinel = requestedSize > 0 && count >= requestedSize && page.totalCount == start + count + 1;
+    _openEndedPageSize = sentinel ? requestedSize : null;
   }
 
   /// Fetch the first page. Await from outside `setState`. Mutates
@@ -100,6 +115,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
       loadedItems[i] = result.items[i];
     }
     totalSize = result.totalCount;
+    _trackOpenEndedTotal(0, pageSize, result);
     onPageLoaded(0, result.items);
     return (page: result, applied: true);
   }
@@ -163,7 +179,10 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     for (var i = firstIndex - 1; i >= lookBehindStart; i--) {
       if (!loadedItems.containsKey(i) && !_loadingRanges.contains(i)) {
         _lastEagerPrefetch = now;
-        _fetchRange(i, pageSize);
+        // Scanning upward finds the gap's last index: fetch the page that ends
+        // there, not one starting there (that would refetch the viewport).
+        final start = (i - pageSize + 1).clamp(0, i);
+        _fetchRange(start, i - start + 1);
         return;
       }
     }
@@ -281,6 +300,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
       totalSize = page.totalCount;
       loadedItems.removeWhere((index, _) => index >= totalSize);
     });
+    _trackOpenEndedTotal(start, size, page);
     onPageLoaded(start, page.items);
     return (anchorOldIndex: anchorOldIndex, anchorNewIndex: anchorNewIndex);
   }
@@ -333,10 +353,19 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     _paginationError = null;
     onPaginationStateChanged();
 
+    // A sentinel total ends one past the last full page, so clamping to it
+    // would ask for a one-item tail page (and page one item at a time from
+    // there). Past the known items, request a page as big as the one that
+    // came back full; the server returns only what exists.
+    final openEndedPageSize = _openEndedPageSize;
+    final requestSize = openEndedPageSize != null && start + clampedSize >= totalSize
+        ? math.max(size, openEndedPageSize)
+        : clampedSize;
+
     final generation = _requestId;
 
     try {
-      final result = await fetchPage(start, clampedSize, _cancelToken);
+      final result = await fetchPage(start, requestSize, _cancelToken);
       if (generation != _requestId || !mounted) return false;
 
       setState(() {
@@ -345,6 +374,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
         }
         if (result.totalCount != totalSize) totalSize = result.totalCount;
       });
+      _trackOpenEndedTotal(start, requestSize, result);
 
       _retryCount = 0;
       onPageLoaded(start, result.items);

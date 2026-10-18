@@ -1,5 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_person.dart';
+import 'package:plezy/media/search_hit.dart';
 import 'package:plezy/utils/search_relevance.dart';
 
 import '../test_helpers/media_items.dart';
@@ -125,8 +130,47 @@ void main() {
       expect(() => rankMediaSearchResults(items, '!!!', limit: -1), throwsRangeError);
     });
   });
+
+  group('rankSearchHits', () {
+    test('a title outranks people whose names match the query the same way', () {
+      // Every candidate starts with "Rick"; the shorter names earn the larger
+      // closeness bonus, so at a title's full weight the actors came first.
+      final hits = <SearchHit>[
+        PersonSearchHit(_person('rick-zahn', 'Rick Zahn')),
+        PersonSearchHit(_person('rick-james', 'Rick James')),
+        MediaSearchHit(testMediaItem(id: 'rick-and-morty', kind: MediaKind.show, title: 'Rick and Morty')),
+      ];
+
+      expect(_hitIds(rankSearchHits(hits, 'Rick')).first, 'rick-and-morty');
+    });
+
+    test('an exact name and a name prefix still beat weaker title matches', () {
+      final exactName = <SearchHit>[
+        MediaSearchHit(testMediaItem(id: 'portrait', title: 'Christoph Waltz: Portrait of an Actor')),
+        PersonSearchHit(_person('waltz', 'Christoph Waltz')),
+      ];
+      final namePrefix = <SearchHit>[
+        MediaSearchHit(testMediaItem(id: 'variations', title: 'The Nolan Variations')),
+        PersonSearchHit(_person('north', 'Nolan North')),
+      ];
+
+      expect(_hitIds(rankSearchHits(exactName, 'Christoph Waltz')), ['waltz', 'portrait']);
+      expect(_hitIds(rankSearchHits(namePrefix, 'Nolan')), ['north', 'variations']);
+    });
+  });
 }
 
 List<String> _ids(Iterable<MediaItem> items) => [for (final item in items) item.id];
+
+MediaPerson _person(String id, String name) =>
+    MediaPerson(id: id, name: name, backend: MediaBackend.plex, serverId: ServerId('plex-1'));
+
+List<String> _hitIds(Iterable<SearchHit> hits) => [
+  for (final hit in hits)
+    switch (hit) {
+      MediaSearchHit(:final item) => item.id,
+      PersonSearchHit(:final person) => person.id,
+    },
+];
 
 List<String> _fullyRankedIds(List<MediaItem> items, String query) => _ids(rankMediaSearchResults(items, query));

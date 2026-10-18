@@ -142,6 +142,56 @@ void main() {
       expect(queue.downloadArtwork, isFalse);
     });
 
+    test('a re-queue without library identity keeps the earlier stamp', () async {
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+        libraryId: 'lib-7',
+        libraryTitle: 'Movies',
+      );
+      await db.updateDownloadStatus('srv:existing', DownloadStatus.failed.index);
+
+      // Re-queue offline: no library resolution, must not erase the stamp.
+      final outcome = await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+      );
+
+      expect(outcome, QueueDownloadOutcome.admitted);
+      final row = (await db.getDownloadedMedia('srv:existing'))!;
+      expect(row.libraryId, 'lib-7');
+      expect(row.libraryTitle, 'Movies');
+    });
+
+    test('a re-queue with fresh library identity overwrites the stamp', () async {
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+        libraryId: 'lib-7',
+        libraryTitle: 'Movies',
+      );
+      await db.updateDownloadStatus('srv:existing', DownloadStatus.failed.index);
+
+      await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+        libraryId: 'lib-9',
+        libraryTitle: 'Moved',
+      );
+
+      final row = (await db.getDownloadedMedia('srv:existing'))!;
+      expect(row.libraryId, 'lib-9');
+      expect(row.libraryTitle, 'Moved');
+    });
+
     test('admits cancelled and partial rows for a fresh attempt', () async {
       for (final status in [DownloadStatus.cancelled, DownloadStatus.partial]) {
         final key = 'srv:${status.name}';
@@ -595,6 +645,19 @@ void main() {
       expect(r.downloadedAt! <= after, isTrue);
     });
 
+    test('updateVideoFilePath without stamping preserves the original timestamp', () async {
+      await seed();
+      await db.updateVideoFilePath('srv:100', '/tmp/file.mkv');
+      final stamped = (await db.select(db.downloadedMedia).get()).single.downloadedAt;
+      expect(stamped, isNotNull);
+
+      await db.updateVideoFilePath('srv:100', 'downloads/normalized/file.mkv', stampDownloadedAt: false);
+
+      final row = (await db.select(db.downloadedMedia).get()).single;
+      expect(row.videoFilePath, 'downloads/normalized/file.mkv');
+      expect(row.downloadedAt, stamped);
+    });
+
     test('SAF root assignment and reference queries track physical rows', () async {
       await seed(key: 'srv:100');
       await seed(key: 'srv:200');
@@ -1001,6 +1064,116 @@ void main() {
       expect(await db.deleteDownload('nope:nope'), isNull);
       expect(await db.select(db.downloadedMedia).get(), isEmpty);
       expect(await db.select(db.downloadQueue).get(), isEmpty);
+    });
+  });
+
+  group('stacked files', () {
+    Future<DownloadedMediaItem> seed({
+      String key = 'srv:100',
+      DownloadStatus status = DownloadStatus.downloading,
+    }) async {
+      await db.insertDownload(
+        serverId: ServerId(key.split(':').first),
+        ratingKey: key.split(':').last,
+        globalKey: key,
+        type: 'movie',
+        status: status.index,
+      );
+      return (await db.getDownloadedMedia(key))!;
+    }
+
+    test('a row without later files is single-file, as every pre-v24 row is', () async {
+      final row = await seed();
+      expect(row.additionalPartPathList, isNull);
+      expect(row.partCount, 1);
+      expect(row.nextMissingPartIndex, 0);
+      expect(row.storedPartPath(1), isNull);
+
+      await db.updateVideoFilePath('srv:100', 'downloads/a.mkv');
+      final stored = (await db.getDownloadedMedia('srv:100'))!;
+      expect(stored.nextMissingPartIndex, isNull);
+      expect(stored.storedPartPaths, ['downloads/a.mkv']);
+    });
+
+    test('files are recorded in order and the last one stamps completion', () async {
+      await seed();
+      await db.updateVideoFilePath('srv:100', 'downloads/stale.mkv', stampDownloadedAt: false);
+      await db.resetDownloadParts('srv:100', additionalPartCount: 2);
+
+      var row = (await db.getDownloadedMedia('srv:100'))!;
+      expect(row.videoFilePath, isNull, reason: 'a restart stores nothing yet');
+      expect(row.additionalPartPathList, [null, null]);
+      expect(row.partCount, 3);
+      expect(row.nextMissingPartIndex, 0);
+
+      await db.updateVideoFilePath('srv:100', 'downloads/a.mkv', stampDownloadedAt: false);
+      await db.updateAdditionalPartPath('srv:100', 1, 'downloads/a - part2.mkv', stampDownloadedAt: false);
+      row = (await db.getDownloadedMedia('srv:100'))!;
+      expect(row.nextMissingPartIndex, 2);
+      expect(row.downloadedAt, isNull);
+
+      await db.updateAdditionalPartPath('srv:100', 2, 'content://doc/a - part3.mp4');
+      row = (await db.getDownloadedMedia('srv:100'))!;
+      expect(row.nextMissingPartIndex, isNull);
+      expect(row.downloadedAt, isNotNull);
+      expect(row.storedPartPaths, ['downloads/a.mkv', 'downloads/a - part2.mkv', 'content://doc/a - part3.mp4']);
+      expect(row.storedPartPath(2), 'content://doc/a - part3.mp4');
+      expect(row.storedPartPath(3), isNull);
+
+      await expectLater(db.updateAdditionalPartPath('srv:100', 3, 'downloads/x.mkv'), throwsStateError);
+
+      await db.resetDownloadParts('srv:100', additionalPartCount: 0);
+      row = (await db.getDownloadedMedia('srv:100'))!;
+      expect(row.additionalPartPaths, isNull);
+      expect(row.videoFilePath, isNull);
+    });
+
+    test('a malformed value reads as single-file', () {
+      expect(decodeAdditionalPartPaths('not json'), isNull);
+      expect(decodeAdditionalPartPaths('{"a":1}'), isNull);
+      expect(decodeAdditionalPartPaths('[]'), isNull);
+      expect(decodeAdditionalPartPaths('["a", null, 3]'), ['a', null, null]);
+    });
+
+    test('another download recording a file as a later part keeps it shared', () async {
+      await seed(key: 'srv:100', status: DownloadStatus.completed);
+      await seed(key: 'srv:200', status: DownloadStatus.completed);
+      await db.updateVideoFilePath('srv:200', 'downloads/b.mkv');
+      await db.updateAdditionalPartPaths('srv:200', ['downloads/shared.mkv']);
+
+      expect(
+        await db.isVideoFilePathRecordedByOtherDownload('downloads/shared.mkv', excludingGlobalKey: 'srv:100'),
+        isTrue,
+      );
+      expect(await db.isVideoFilePathRecordedByOtherDownload('downloads/b.mkv', excludingGlobalKey: 'srv:100'), isTrue);
+      expect(
+        await db.isVideoFilePathRecordedByOtherDownload('downloads/shared.mkv', excludingGlobalKey: 'srv:200'),
+        isFalse,
+      );
+      expect(
+        await db.isVideoFilePathRecordedByOtherDownload('downloads/other.mkv', excludingGlobalKey: 'srv:100'),
+        isFalse,
+      );
+    });
+
+    test('re-admitting a failed stacked download keeps its recorded files for the caller', () async {
+      await seed(status: DownloadStatus.failed);
+      await db.updateVideoFilePath('srv:100', 'downloads/a.mkv');
+      await db.updateAdditionalPartPaths('srv:100', ['downloads/a - part2.mkv', null]);
+
+      final outcome = await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: '100',
+        globalKey: 'srv:100',
+        type: 'movie',
+        mediaIndex: 1,
+      );
+
+      expect(outcome, QueueDownloadOutcome.admitted);
+      final row = (await db.getDownloadedMedia('srv:100'))!;
+      // Forgetting them here would orphan the files on disk.
+      expect(row.storedPartPaths, ['downloads/a.mkv', 'downloads/a - part2.mkv']);
+      expect(row.additionalPartPathList, ['downloads/a - part2.mkv', null]);
     });
   });
 }

@@ -1,6 +1,7 @@
 #
 # This podspec is NOT to be published. It is only used as a local source!
-# This is a generated file; do not edit or check into version control.
+# The Flutter tool does not generate a tvOS Flutter.podspec, so this file is
+# hand-maintained and must stay checked in (see tvos/.gitignore).
 #
 
 Pod::Spec.new do |s|

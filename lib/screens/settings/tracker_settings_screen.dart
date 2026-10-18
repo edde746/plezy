@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +11,9 @@ import '../../services/trackers/oauth_proxy_client.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../services/settings_service.dart';
 import '../../utils/dialogs.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/oauth_proxy_dialog.dart';
 import '../../widgets/settings_page.dart';
 import 'tracker_account_settings_body.dart';
@@ -57,6 +61,22 @@ Future<void> startSimklConnection(BuildContext context) {
   );
 }
 
+/// Move a legacy AUTH V1 Simkl session onto AUTH V2. Same dialog as a first
+/// connect; the current session stays bound until the new one replaces it.
+Future<void> startSimklReconnection(BuildContext context) {
+  final account = context.read<TrackersProvider>();
+  final name = t.services.names.simkl;
+  return launchTrackerConnect<DeviceCode>(
+    context,
+    isBusyOrConnected: account.isConnecting(TrackerService.simkl) || !account.isSimklLegacy,
+    serviceName: name,
+    connect: (cb) => account.reconnectSimkl(onCodeReady: cb),
+    onCancel: account.cancelConnect,
+    buildDialog: (p, cancel) => DeviceCodeDialog(code: p, serviceName: name, onCancel: cancel),
+    urlFor: (p) => p.verificationUrlComplete ?? p.verificationUrl,
+  );
+}
+
 Future<void> startMdblistConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
   final name = t.services.names.mdblist;
@@ -80,12 +100,16 @@ class TrackerConfig {
   final String? Function(TrackersProvider) username;
   final Future<void> Function(TrackersProvider) disconnect;
 
+  /// Extra rows for the account section, shown under the account tile.
+  final List<Widget> Function(BuildContext context, TrackersProvider account)? accountActions;
+
   const TrackerConfig({
     required this.service,
     required this.displayName,
     required this.isConnected,
     required this.username,
     required this.disconnect,
+    this.accountActions,
   });
 
   Pref<bool> get scrobblePref => SettingsService.scrobblePref(service);
@@ -112,6 +136,15 @@ class TrackerConfig {
     isConnected: (a) => a.isSimklConnected,
     username: (a) => a.simklUsername,
     disconnect: (a) => a.disconnectSimkl(),
+    accountActions: (context, a) => [
+      if (a.isSimklLegacy)
+        FocusableListTile(
+          leading: const AppIcon(Symbols.sync_rounded, fill: 1),
+          title: Text(t.services.simklReconnect.title),
+          subtitle: Text(t.services.simklReconnect.subtitle),
+          onTap: () => unawaited(startSimklReconnection(context)),
+        ),
+    ],
   );
 
   static TrackerConfig mdblist() => TrackerConfig(
@@ -163,6 +196,7 @@ class TrackerSettingsScreen extends StatelessWidget {
           title: title,
           accountTitle: username != null ? t.services.connectedAs(username: username) : config.displayName,
           service: config.service,
+          accountActions: config.accountActions?.call(context, account) ?? const [],
           toggles: [
             TrackerSettingsToggle(
               pref: config.scrobblePref,

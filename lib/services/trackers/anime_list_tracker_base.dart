@@ -31,7 +31,6 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     required bool rewatching,
     int? rewatchCount,
   });
-  Future<void> deleteAnimeEntry(TClient client, int animeId);
   Future<void> setAnimeRating(TClient client, int animeId, int score);
   Future<int?> loadAnimeRating(TClient client, int animeId);
 
@@ -91,21 +90,28 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     _listSnapshotLoads.remove(id);
   }
 
+  /// Unwatching is a progress write, never a removal: the list entry carries
+  /// dates, score, tags and rewatch history that Plezy cannot restore (issue
+  /// #2424). A completed entry is left alone — it is a finished record, and new
+  /// progress on it becomes a rewatch through [markWatched]. An in-progress
+  /// entry goes back to zero and keeps its rewatch flag.
+  ///
+  /// Skipped entirely when the snapshot is unavailable: a blind reset is the
+  /// one write that could destroy state, so a failed read means no write.
   @override
   Future<void> markUnwatched(TrackerContext ctx) async {
-    if (ctx.isMovie) {
-      await removeFromList(ctx);
-    }
-  }
-
-  @override
-  Future<void> removeFromList(TrackerContext ctx) async {
     final activeClient = client;
     final id = animeId(ctx.anime);
     if (activeClient == null || id == null) return;
-    await deleteAnimeEntry(activeClient, id);
-    // The entry is gone; the memoized snapshot still describes it. Same
-    // keep-on-failure contract as [markWatched]. Ratings skip this: the
+
+    final snapshot = await _listSnapshot(activeClient, id);
+    if (snapshot == null || snapshot.progress == 0) return;
+    // MAL keeps status=completed through a rewatch and flags is_rewatching, so
+    // the flag decides whether the entry is a finished record or in progress.
+    if (snapshot.completed && !snapshot.rewatching) return;
+
+    await saveAnimeProgress(activeClient, animeId: id, progress: 0, completed: false, rewatching: snapshot.rewatching);
+    // Same keep-on-failure contract as [markWatched]. Ratings skip this: the
     // snapshot carries no rating field, so [setAnimeRating] changes nothing
     // the cache mirrors.
     _listSnapshotLoads.remove(id);

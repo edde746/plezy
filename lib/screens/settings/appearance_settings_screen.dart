@@ -8,22 +8,31 @@ import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
-import '../../services/settings_service.dart' as settings show ThemeMode;
 import '../../focus/focusable_slider.dart';
 import '../../services/device_performance.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
+import 'app_icon_setting.dart';
 import 'settings_utils.dart';
+import 'theme_settings_screen.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Hosts the App icon picker and the Supporter sheet it opens. Content
+    // builds below the host so they find it instead of falling back to a
+    // modal route, which keeps its drag handle and gives no D-pad focus on TV.
+    return OverlaySheetHost(canPop: true, child: Builder(builder: _buildContent));
+  }
+
+  Widget _buildContent(BuildContext context) {
     // Nullable watch: hosts without the profile session scope (tests) simply
     // never show the Explore toggle, mirroring the tab's own visibility.
     final hasExplore = context.watch<CatalogSourcesProvider?>()?.hasAnySource ?? false;
@@ -34,6 +43,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.display,
           children: [
             _themeSelector(),
+            if (AppIconSetting.isShown(context)) const AppIconSetting(),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             if (Platform.isAndroid) _visualEffectsSelector(context),
           ],
@@ -178,17 +188,17 @@ class AppearanceSettingsScreen extends StatelessWidget {
     );
   }
 
-  // Writes the pref directly; ThemeProvider listens to the pref's listenable
-  // and applies the change live. The Consumer only feeds the dynamic icon.
+  // Opens the theme picker; the subtitle and icon follow the theme on screen,
+  // which is the device's default theme while a stored Supporter theme is
+  // locked.
   Widget _themeSelector() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
-        return SettingSelectionTile<settings.ThemeMode>(
-          pref: SettingsService.themeMode,
+        return SettingNavigationTile(
           icon: themeProvider.themeModeIcon,
           title: t.settings.theme,
-          subtitleBuilder: themeModeLabel,
-          options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: themeModeLabel(m))).toList(),
+          subtitle: themeModeLabel(themeProvider.themeMode),
+          destinationBuilder: (_) => const ThemeSettingsScreen(),
         );
       },
     );

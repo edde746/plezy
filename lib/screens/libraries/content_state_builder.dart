@@ -154,7 +154,6 @@ class ContentStateBuilder<T> extends StatelessWidget {
   /// Error message to display (null if no error)
   final String? errorMessage;
 
-  /// The list of items to display
   final List<T> items;
 
   /// Icon to display when the list is empty

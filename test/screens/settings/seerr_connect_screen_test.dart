@@ -85,7 +85,7 @@ void main() {
     return ChangeNotifierProvider<SeerrAccountProvider>.value(
       value: account,
       child: MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: onRoute == null
             ? const SeerrConnectScreen()
             : Builder(

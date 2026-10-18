@@ -27,6 +27,20 @@ Future<bool> deferTranscodeSubtitleSelection({
   return true;
 }
 
+/// Whether a reload's [next] source keeps the outgoing one's subtitle stream
+/// ids, so a carried selection may match by identity. The same version is
+/// not enough when the item is stacked across several files: each file has
+/// streams of its own.
+bool _sameSubtitleSource({
+  required String? previousMediaSourceId,
+  required int? previousPartId,
+  required MediaSourceInfo next,
+}) {
+  if (previousPartId != null && previousPartId == next.partId) return true;
+  final samePart = previousPartId == null || next.partId == null;
+  return samePart && previousMediaSourceId != null && previousMediaSourceId == next.mediaSourceId;
+}
+
 /// The screen's in-place media transition engine: source/quality/audio/
 /// subtitle switches and full item reloads that reuse the live player
 /// instead of pushing a new route. Shared by episode navigation, lifecycle
@@ -128,7 +142,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       } catch (e) {
         if (sourceSwitchWasSuperseded()) return PlaybackSourceChangeOutcome.superseded;
         if (mounted) {
-          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
         }
         return PlaybackSourceChangeOutcome.failed;
       }
@@ -196,6 +210,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
 
+      // A quality picked here outranks a downloaded copy from now on — for
+      // this switch, a retry of it, and later episodes (issue #2466).
+      if (isPresetChange) _qualityPresetExplicit = true;
+
       final outcome = await _reloadMediaInPlace(
         metadata: _currentMetadata.copyWith(viewOffsetMs: currentPlayer.state.position.inMilliseconds),
         selectedMediaIndex: effectiveMediaIndex,
@@ -228,7 +246,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // lease; real errors after an owned phase change must remain failures.
       if (sourceSwitchWasSuperseded()) return PlaybackSourceChangeOutcome.superseded;
       if (mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
       }
       return PlaybackSourceChangeOutcome.failed;
     }
@@ -406,8 +424,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // and the first-frame flag.
       final previousMetadata = _playbackSession?.metadata ?? _currentMetadata;
       final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
-      final previousPartId = _currentMediaInfo?.partId;
-      final previousMediaSourceId = _currentMediaInfo?.mediaSourceId;
+      final previousMediaInfo = _currentMediaInfo;
+      final previousPartId = previousMediaInfo?.partId;
+      final previousMediaSourceId = previousMediaInfo?.mediaSourceId;
       final previousFirstFrame = _firstFrame.snapshot();
       final previousHasFatalPlaybackError = _hasFatalPlaybackError;
       final previousOpenRequest = _currentOpenRequest;
@@ -415,6 +434,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       _hasFatalPlaybackError = false;
       _dismissPlaybackFailure();
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
+      // Another file of the same stacked item: its streams carry their own
+      // ids, so selections cross by meaning, exactly like a source change.
+      final previousPartTimeline = previousMediaInfo?.partTimeline;
+      final crossesPart =
+          !isItemChange &&
+          previousPartTimeline != null &&
+          resumePosition != null &&
+          !previousPartTimeline.covers(resumePosition);
 
       final currentAudioTrack = preserveCurrentTrackSelection
           ? preservedAudioTrack ?? currentPlayer.state.track.audio
@@ -461,7 +488,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       } catch (e, stackTrace) {
         appLogger.e('Failed to prepare media reload during $reason', error: e, stackTrace: stackTrace);
         if (mounted && showErrorUi) {
-          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
         }
         _clearEpisodeLoadingFlags();
         return MediaReloadOutcome.failed;
@@ -477,7 +504,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
       final targetQualityPreset = qualityPreset ?? _selectedQualityPreset;
-      final targetAudioStreamId = useCurrentAudioStreamSelection
+      final downloadOutranksQuality = _downloadOutranksQuality;
+      final targetAudioStreamId = crossesPart
+          ? null
+          : useCurrentAudioStreamSelection
           ? selectedAudioStreamId ?? _selectedAudioStreamId
           : selectedAudioStreamId;
       final targetLaunchIdentity = VideoPlayerLaunchIdentity(
@@ -498,6 +528,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       );
       final preservesRequestedSubtitleSource =
           !isItemChange &&
+          !crossesPart &&
           targetMediaIndex == _effectiveSelectedMediaIndex &&
           (selectedMediaSourceId == null || selectedMediaSourceId == previousMediaSourceId);
       final initializationSubtitleTrack = preservesRequestedSubtitleSource
@@ -561,8 +592,10 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             preferredSubtitleTrack: initializationSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            startPosition: openResumePosition,
           ),
           offlineLibraryMode: _offlineLibraryMode,
+          downloadOutranksQuality: downloadOutranksQuality,
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final result = playbackContext.result;
@@ -591,8 +624,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
           preserveSubtitleSourceIdentity:
               result.mediaInfo != null &&
-              ((previousMediaSourceId != null && previousMediaSourceId == result.mediaInfo!.mediaSourceId) ||
-                  (previousPartId != null && previousPartId == result.mediaInfo!.partId)),
+              _sameSubtitleSource(
+                previousMediaSourceId: previousMediaSourceId,
+                previousPartId: previousPartId,
+                next: result.mediaInfo!,
+              ),
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
@@ -676,13 +712,15 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
 
             // Versions/mediaInfo come from the committed session; rebuild so
             // the controls pick them up. Same-part switches
-            // (quality/audio/subtitle) keep the scrub-preview source —
-            // BIF/trickplay is per part, so a reset would re-download
+            // (quality/audio/subtitle) and moves between the files of one
+            // stacked version keep the scrub-preview source — a BIF is per
+            // part (a stacked preview spans them all) and Jellyfin/Emby
+            // previews are per source, so a reset would re-download
             // identical bytes.
             final reusesScrubPreview =
                 previousMetadata.globalKey == metadata.globalKey &&
-                previousPartId != null &&
-                previousPartId == result.mediaInfo?.partId;
+                previousMediaInfo != null &&
+                scrubPreviewServes(previousMediaInfo, result.mediaInfo);
             if (reusesScrubPreview) {
               _setPlayerState(() {});
             } else {
@@ -721,6 +759,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           playMethod: _playbackPlayMethod,
           mediaInfo: _currentMediaInfo,
         );
+        // The first open failed before the service layer came up; this
+        // recovery is the first playback it can describe.
+        if (_playbackServicesDeferred) unawaited(_initializeServices(perItemServicesWired: true));
 
         if (isItemChange) {
           unawaited(_reapplyScopedPlayerPrefsForItemChange(previousMetadata: previousMetadata, metadata: metadata));
@@ -810,7 +851,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (isItemChange) _showChromeForSwappedItem();
         appLogger.e('Failed to reload media in-place during $reason', error: e);
         if (mounted && showErrorUi) {
-          showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
         }
         return didOpenReplacement ? MediaReloadOutcome.opened : MediaReloadOutcome.failed;
       } finally {
@@ -857,16 +898,18 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Re-push scope-persisted player values whose resolution changed with the
-  /// item swapped in by [_reloadMediaInPlace].
+  /// Re-push scope-persisted player values for the item swapped in by
+  /// [_reloadMediaInPlace].
   ///
   /// Shader, box-fit, and sync offsets are applied once per screen/player and
-  /// otherwise survive an in-place reload as latent native state — correct as
-  /// long as both items resolve to the same value, wrong the moment a Watch
-  /// Together swap or a next-episode hop crosses a library/title boundary.
-  /// Only changed resolutions are pushed so a session-local tweak keeps
-  /// carrying over exactly as it does today. Playback speed needs no handling
-  /// here: TrackManager re-resolves it on every open.
+  /// otherwise survive an in-place reload as latent native state. Sync offsets
+  /// are file timing, so every item starts from its own resolved offset and a
+  /// session-only tweak stays with the item it was made on (#2449). Shader and
+  /// box-fit are picture preferences: only changed resolutions are pushed, so
+  /// a session-local tweak keeps carrying over, and a Watch Together swap or a
+  /// next-episode hop across a library/title boundary still switches them.
+  /// Playback speed needs no handling here: TrackManager re-resolves it on
+  /// every open.
   Future<void> _reapplyScopedPlayerPrefsForItemChange({
     required MediaItem previousMetadata,
     required MediaItem metadata,
@@ -874,17 +917,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
     try {
-      final previousAudioOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, previousMetadata);
-      final audioOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, metadata);
-      if (audioOffset != previousAudioOffset) {
-        await currentPlayer.setProperty('audio-delay', (audioOffset / 1000.0).toString());
-      }
-
-      final previousSubtitleOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, previousMetadata);
-      final subtitleOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, metadata);
-      if (subtitleOffset != previousSubtitleOffset) {
-        await currentPlayer.setProperty('sub-delay', (subtitleOffset / 1000.0).toString());
-      }
+      await PlayerSyncOffsets.of(currentPlayer).applyFor(metadata);
 
       final previousBoxFit = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, previousMetadata);
       final boxFit = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, metadata);

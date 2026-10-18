@@ -91,9 +91,13 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode)
     if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _skipMarkerFocusNode.requestFocus();
-        }
+        if (!mounted) return;
+        // An open sheet (tracks, settings, subtitle search) or a route above
+        // the player owns the remote; the button stays reachable, but a marker
+        // appearing must not pull focus out from under them.
+        if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) return;
+        if (ModalRoute.of(context)?.isCurrent == false) return;
+        _skipMarkerFocusNode.requestFocus();
       });
     }
   }

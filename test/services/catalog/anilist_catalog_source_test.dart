@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/anilist/anilist_media.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
@@ -36,11 +37,17 @@ class _FakeFribb implements FribbMappingLookup {
   _FakeFribb(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => [
+  Future<List<FribbMappingRow>> lookup({
+    required bool movie,
+    int? anidbId,
+    int? tvdbId,
+    int? tmdbId,
+    String? imdbId,
+  }) async => [
     for (final row in rows)
       if ((anidbId != null && row.anidbId == anidbId) ||
-          (tvdbId != null && row.tvdbId == tvdbId) ||
-          (tmdbId != null && (row.tmdbIds?.contains(tmdbId) ?? false)) ||
+          (!movie && tvdbId != null && row.tvdbId == tvdbId) ||
+          (tmdbId != null && (movie ? (row.tmdbMovieIds?.contains(tmdbId) ?? false) : row.tmdbTvId == tmdbId)) ||
           (imdbId != null && (row.imdbIds?.contains(imdbId) ?? false)))
         row,
   ];
@@ -139,7 +146,7 @@ void main() {
   const movie = FribbMappingRow(
     anilistId: 21519,
     malId: 32281,
-    tmdbIds: [372058],
+    tmdbMovieIds: [372058],
     imdbIds: ['tt5311514'],
     type: 'MOVIE',
   );
@@ -416,8 +423,10 @@ void main() {
       await client.getPlanningIdsPage(7);
 
       final query = _requestBody(requests.single)['query'] as String;
-      expect(query, contains('id idMal'));
-      expect(query, isNot(contains(r'id\nidMal')));
+      // A literal backslash-n between the fields (an escape slip in the Dart
+      // string) reaches the wire verbatim and AniList rejects it as a syntax error.
+      expect(query, isNot(contains(r'\n')));
+      expect(query, matches(RegExp(r'media\s*\{\s*id\s+idMal\s*\}')));
     });
 
     test('row and detail documents select metadata on the deliberate request path', () async {
@@ -562,17 +571,71 @@ void main() {
       expect(requests, hasLength(1));
     });
 
-    test('remove is a no-op when the media-list entry is already absent', () async {
-      responder = (request) {
-        final query = _requestBody(request)['query'] as String;
-        expect(query, contains('mediaListEntry'));
+    /// Answers the snapshot load with [planned] on Planning, and the entry
+    /// lookup with [entry]; any other request (a delete) fails the test.
+    http.Response Function(http.Request) listResponder({
+      required List<int> planned,
+      required Map<String, dynamic>? entry,
+    }) => (request) {
+      final query = _requestBody(request)['query'] as String;
+      if (query.contains('Viewer { id }')) {
         return _data({
-          'Media': {'mediaListEntry': null},
+          'Viewer': {'id': 7},
         });
-      };
+      }
+      if (query.contains('MediaListCollection')) {
+        return _data({
+          'MediaListCollection': {
+            'hasNextChunk': false,
+            'lists': [
+              {
+                'isCustomList': false,
+                'entries': [
+                  for (final id in planned)
+                    {
+                      'media': {'id': id, 'idMal': id},
+                    },
+                ],
+              },
+            ],
+          },
+        });
+      }
+      expect(query, contains('mediaListEntry'), reason: 'nothing may be deleted');
+      return _data({
+        'Media': {'mediaListEntry': entry},
+      });
+    };
+
+    test('remove is a no-op when the media-list entry is already absent', () async {
+      responder = listResponder(planned: const [], entry: null);
 
       await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498));
-      expect(requests, hasLength(1));
+      await source.ensureWatchlistLoaded();
+
+      expect(
+        requests.map((request) => _requestBody(request)['query'] as String),
+        everyElement(isNot(contains('DeleteMediaListEntry'))),
+      );
+    });
+
+    test('remove leaves an entry that moved past Planning alone', () async {
+      responder = listResponder(planned: const [16498], entry: {'id': 99, 'status': 'PLANNING'});
+      await source.ensureWatchlistLoaded();
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498)), isTrue);
+
+      // The snapshot still lists it, but the user has since started watching:
+      // AniList would delete the entry's progress, score and dates with it.
+      responder = listResponder(planned: const [], entry: {'id': 99, 'status': 'CURRENT'});
+      requests.clear();
+      await source.removeFromWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498));
+      await source.ensureWatchlistLoaded();
+
+      expect(requests.map((request) => _requestBody(request)['query'] as String), [
+        contains('mediaListEntry'),
+        contains('MediaListCollection'),
+      ]);
+      expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498)), isFalse);
     });
 
     test('failed mutation restores optimistic watchlist membership', () async {
@@ -603,7 +666,7 @@ void main() {
         if (query.contains('mediaListEntry')) {
           return _data({
             'Media': {
-              'mediaListEntry': {'id': 99},
+              'mediaListEntry': {'id': 99, 'status': 'PLANNING'},
             },
           });
         }
@@ -809,6 +872,71 @@ void main() {
       expect(detail.related, isEmpty);
       expect(detail.relations, isEmpty);
       expect(requests, isEmpty);
+    });
+
+    test('community ratings ask by AniList id, else by MAL id, for a 0-100 average', () async {
+      // graphql.anilist.co's answer for Death Note (`idMal: 1535`), 2026-10-04.
+      responder = (_) => _data({
+        'Media': {'id': 1535, 'idMal': 1535, 'averageScore': 84},
+      });
+
+      final byAnilist = await source.fetchCommunityRatings(
+        MediaKind.show,
+        const CatalogItemIds(anilist: 1535, mal: 1535),
+      );
+      final byMal = await source.fetchCommunityRatings(MediaKind.movie, const CatalogItemIds(mal: 1535));
+
+      final bodies = requests.map(_requestBody).toList();
+      expect(bodies.map((body) => body['variables']), [
+        {'id': 1535},
+        {'idMal': 1535},
+      ]);
+      expect(bodies.first['query'] as String, contains('averageScore'));
+      final expected = isA<MediaRatingSource>()
+          .having((rating) => rating.source, 'source', 'anilist')
+          .having((rating) => rating.value, 'value', closeTo(8.4, 1e-9))
+          .having((rating) => rating.votes, 'votes', isNull);
+      expect(byAnilist, [expected]);
+      expect(byMal, [expected]);
+    });
+
+    test('community ratings are empty without an average or for an anime AniList does not know', () async {
+      final answers = [
+        _data({'Media': null}),
+        _data({
+          'Media': {'id': 1, 'averageScore': null},
+        }),
+        http.Response(
+          json.encode({
+            'errors': [
+              {'message': 'Not Found.', 'status': 404},
+            ],
+            'data': {'Media': null},
+          }),
+          404,
+        ),
+      ];
+      responder = (_) => answers.removeAt(0);
+
+      for (var i = 0; i < 3; i++) {
+        expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(anilist: 1)), isEmpty);
+      }
+      expect(requests, hasLength(3));
+    });
+
+    test('community ratings need a movie or show with an AniList or MAL id', () async {
+      expect(await source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(tvdb: 267440)), isEmpty);
+      expect(await source.fetchCommunityRatings(MediaKind.season, const CatalogItemIds(anilist: 16498)), isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('community ratings propagate a failure other than 404', () async {
+      responder = (_) => http.Response('oops', 500);
+
+      await expectLater(
+        source.fetchCommunityRatings(MediaKind.show, const CatalogItemIds(anilist: 16498)),
+        throwsA(isA<TrackerApiException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
     });
   });
 

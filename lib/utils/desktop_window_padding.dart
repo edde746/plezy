@@ -21,9 +21,6 @@ class DesktopWindowPadding {
   /// Left padding for macOS traffic lights (normal window mode)
   static const double macOSLeft = 80.0;
 
-  /// Left padding for macOS in fullscreen (reduced since traffic lights auto-hide)
-  static const double macOSLeftFullscreen = 0.0;
-
   /// Right padding for macOS to prevent actions from being too close to edge
   static const double macOSRight = 16.0;
 
@@ -31,8 +28,13 @@ class DesktopWindowPadding {
   static const double mobileRight = 6.0;
 
   /// Left padding for macOS reflecting the current fullscreen state
-  static double get macOSLeftCurrent => FullscreenStateManager().isFullscreen ? macOSLeftFullscreen : macOSLeft;
+  /// (none in fullscreen, since the traffic lights auto-hide)
+  static double get macOSLeftCurrent => FullscreenStateManager().isFullscreen ? 0.0 : macOSLeft;
 }
+
+/// Whether the widget tree at [context] must reserve space for the macOS traffic
+/// lights. A side navigation already occupies that area, so nothing under it pads.
+bool _trafficLightPaddingApplies(BuildContext context) => Platform.isMacOS && !SideNavigationScope.isPresent(context);
 
 /// Helper class for adjusting app bar widgets to account for desktop window controls
 class DesktopAppBarHelper {
@@ -57,12 +59,16 @@ class DesktopAppBarHelper {
   ///
   /// [includeGestureDetector] - If true, wraps in GestureDetector to prevent window dragging
   /// [context] - Required to check if side navigation is visible
-  static Widget? buildAdjustedLeading(Widget? leading, {bool includeGestureDetector = false, BuildContext? context}) {
-    if (!Platform.isMacOS || leading == null) {
-      return leading;
+  static Widget? buildAdjustedLeading(
+    Widget? leading, {
+    bool includeGestureDetector = false,
+    required BuildContext context,
+  }) {
+    if (leading == null) {
+      return null;
     }
 
-    if (context != null && SideNavigationScope.isPresent(context)) {
+    if (!_trafficLightPaddingApplies(context)) {
       return includeGestureDetector ? wrapWithGestureDetector(leading, opaque: true) : leading;
     }
 
@@ -90,12 +96,8 @@ class DesktopAppBarHelper {
 
   /// Calculates the leading width for SliverAppBar to account for macOS traffic lights
   /// [context] - Required to check if side navigation is visible
-  static double? calculateLeadingWidth(Widget? leading, {BuildContext? context}) {
-    if (!Platform.isMacOS || leading == null) {
-      return null;
-    }
-
-    if (context != null && SideNavigationScope.isPresent(context)) {
+  static double? calculateLeadingWidth(Widget? leading, {required BuildContext context}) {
+    if (leading == null || !_trafficLightPaddingApplies(context)) {
       return null;
     }
 
@@ -137,7 +139,7 @@ class DesktopTitleBarPadding extends StatelessWidget {
       return child;
     }
 
-    if (SideNavigationScope.isPresent(context)) {
+    if (!_trafficLightPaddingApplies(context)) {
       final right = rightPadding ?? 0.0;
       if (right == 0.0) {
         return child;

@@ -352,7 +352,7 @@ void main() {
           final player = PlayerAndroid();
           try {
             await player.setAudioNormalization(true);
-            await player.setAudioDownmix(enabled: true, centerBoostDb: 4, normalize: false);
+            await player.setAudioChannelLimit(AudioChannelLimit.stereo, centerBoostDb: 4, normalize: false);
 
             expect(calls.where((call) => call.method == 'setAudioNormalization'), isEmpty);
             expect(calls.where((call) => call.method == 'setAudioDownmix'), isEmpty);
@@ -363,6 +363,39 @@ void main() {
             expect((normalization.arguments as Map)['enabled'], isTrue);
             final downmix = calls.singleWhere((call) => call.method == 'setAudioDownmix');
             expect(downmix.arguments, {'enabled': true, 'centerBoostDb': 4, 'normalize': false});
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer plays a 5.1 channel limit as the original layout', () async {
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) async {
+          calls.add(call);
+          if (call.method == 'initialize') return true;
+          if (call.method == 'requestAudioFocus') return true;
+          return null;
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            expect(await player.requestAudioFocus(), isTrue);
+            calls.clear();
+
+            await player.setAudioChannelLimit(AudioChannelLimit.surround51, centerBoostDb: 4, normalize: false);
+
+            final downmix = calls.singleWhere((call) => call.method == 'setAudioDownmix');
+            expect(downmix.arguments, {'enabled': false, 'centerBoostDb': 4, 'normalize': false});
+            // The mpv fallback replays these; it must match what ExoPlayer plays.
+            final channels = calls
+                .where((call) => call.method == 'setMpvProperty' && (call.arguments as Map)['name'] == 'audio-channels')
+                .map((call) => (call.arguments as Map)['value']);
+            expect(channels, ['auto-safe']);
           } finally {
             await player.dispose();
           }
@@ -839,7 +872,7 @@ void main() {
               'replace',
               '-1',
               'sub-files=${_fixedLengthPathList([subtitle])},sid=no,secondary-sid=no,'
-                  'demuxer-lavf-o-append=live_start_index=0',
+                  'demuxer-lavf-o-append=live_start_index=0,cache-pause-initial=yes,cache-pause-wait=6',
             ]);
           } finally {
             await player.dispose();
@@ -866,7 +899,6 @@ void main() {
         testBody: () async {
           final player = PlayerNative();
           try {
-            expect(player.attachesExternalSubtitlesAtOpen, isTrue);
             const english = 'https://example.test/library/parts/1/subtitle.srt?token=a,b:c';
             const french = 'https://example.test/subtitles/fr forced.ass';
 
@@ -886,6 +918,50 @@ void main() {
               'sub-files=${_fixedLengthPathList([english, french])},sid=no,secondary-sid=no',
             ]);
             expect(_commandCalls(calls, 'sub-add'), isEmpty);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV keeps backslashes in external subtitle entries verbatim', () async {
+      final calls = <MethodCall>[];
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            await player.open(
+              Media('https://example.test/movie.mkv'),
+              externalSubtitles: const [
+                SubtitleTrack(id: 'external-a', uri: r'/subs/a\b.srt'),
+                SubtitleTrack(id: 'external-c', uri: r'/subs/c\:d;e.srt'),
+              ],
+            );
+
+            // mpv's path-list splitter drops only a backslash directly before
+            // the separator; every other backslash must reach it undoubled.
+            expect(_loadfileArgs(calls), [
+              'loadfile',
+              'https://example.test/movie.mkv',
+              'replace',
+              '-1',
+              Platform.isWindows
+                  ? r'sub-files=%31%/subs/a\b.srt;/subs/c\:d\;e.srt,sid=no,secondary-sid=no'
+                  : r'sub-files=%31%/subs/a\b.srt:/subs/c\\:d;e.srt,sid=no,secondary-sid=no',
+            ]);
           } finally {
             await player.dispose();
           }
@@ -1480,6 +1556,67 @@ void main() {
       );
     });
 
+    test('MPV lays one file of a stacked item onto the item timeline', () async {
+      final calls = <MethodCall>[];
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          return call.method == 'initialize' ? Future.value(true) : Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            // Part 2 of a 50 + 40 minute item, resumed five minutes into it.
+            const partStart = Duration(minutes: 50);
+            await player.open(
+              Media('https://example.test/part2.mkv', start: const Duration(minutes: 55)),
+              timelineDuration: const Duration(minutes: 90),
+              timelineOffset: partStart,
+            );
+
+            // The file starts on its own clock; everything reported is item time.
+            expect(_setPropertyValue(calls[_setPropertyCallIndex(calls, 'start')]), '300.0');
+            expect(player.state.position, const Duration(minutes: 55));
+            expect(player.state.duration, const Duration(minutes: 90));
+
+            player.handlePlayerEvent('start-file', {'sourceId': 1});
+            player.handlePropertyChange('duration', 2400.0);
+            player.handlePropertyChange('time-pos', 310.0, sourceId: 1);
+            expect(player.currentPosition, const Duration(minutes: 55, seconds: 10));
+            expect(player.state.duration, const Duration(minutes: 90));
+
+            player.handlePropertyChange('demuxer-cache-state', {
+              'cache-end': 400.0,
+              'seekable-ranges': [
+                {'start': 300.0, 'end': 400.0},
+              ],
+            });
+            expect(player.state.buffer, const Duration(minutes: 56, seconds: 40));
+            expect(player.state.bufferRanges, [
+              const BufferRange(start: Duration(minutes: 55), end: Duration(minutes: 56, seconds: 40)),
+            ]);
+
+            await player.seek(const Duration(minutes: 60));
+            final seekCall = calls.lastWhere((call) => call.method == 'command');
+            final args = Map<Object?, Object?>.from(seekCall.arguments as Map)['args'] as List;
+            expect(args, ['seek', '600.0', 'absolute']);
+            expect(player.state.position, const Duration(minutes: 60));
+
+            // The next single-file open is back on its own clock.
+            await player.open(Media('https://example.test/other.mkv', start: const Duration(minutes: 2)));
+            player.handlePlayerEvent('start-file', {'sourceId': 2});
+            player.handlePropertyChange('time-pos', 121.0, sourceId: 2);
+            expect(player.currentPosition, const Duration(minutes: 2, seconds: 1));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV forwards preserve display mode flag on dispose', () async {
       final calls = <MethodCall>[];
 
@@ -1593,6 +1730,4 @@ String _fixedLengthPathList(List<String> values) {
   return '%${utf8.encode(escaped).length}%$escaped';
 }
 
-String _escapePathListEntry(String value, String separator) {
-  return value.replaceAll(r'\', r'\\').replaceAll(separator, '\\$separator');
-}
+String _escapePathListEntry(String value, String separator) => value.replaceAll(separator, '\\$separator');

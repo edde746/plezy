@@ -44,17 +44,31 @@ void main() {
       expect(info!.assetPath, 'assets/rating_icons/tmdb.svg');
       expect(info.formattedValue, '68%');
     });
+
+    test('every other source is written the way its own site writes it', () {
+      const cases = [
+        ('metacritic', 8.2, '82'), // the Metascore, whole
+        ('letterboxd', 9.2, '4.6'), // 0-5 stars
+        ('trakt', 9.13, '91%'),
+        ('anilist', 8.5, '85%'),
+        ('simkl', 8.43, '8.4'),
+        ('mal', 8.612, '8.61'), // two decimals, as MyAnimeList shows its mean
+      ];
+      for (final (source, value, written) in cases) {
+        expect(ratingInfoForSource(source, value)?.formattedValue, written, reason: source);
+      }
+    });
   });
 
   group('ratingInfoForSource - unbranded sources', () {
     test('sources without a logo get no badge so they stay label-only', () {
-      for (final source in ['critic', 'audience', 'simkl', 'mal', 'anilist', 'trakt']) {
+      for (final source in ['critic', 'audience']) {
         expect(ratingInfoForSource(source, 8.0), isNull, reason: source);
       }
     });
 
     test('an unknown key gets no badge', () {
-      expect(ratingInfoForSource('letterboxd', 8.0), isNull);
+      expect(ratingInfoForSource('rogerebert', 8.0), isNull);
       expect(ratingInfoForSource('', 8.0), isNull);
     });
   });
@@ -69,6 +83,8 @@ void main() {
         'rottenTomatoes',
         'rottenTomatoesCritic',
         'rottenTomatoesAudience',
+        'metacritic',
+        'letterboxd',
         'simkl',
         'mal',
         'anilist',
@@ -84,7 +100,7 @@ void main() {
     });
 
     test('returns null for an unknown key so it can be dropped rather than shown raw', () {
-      expect(ratingSourceLabel('letterboxd'), isNull);
+      expect(ratingSourceLabel('rogerebert'), isNull);
       expect(ratingSourceLabel(''), isNull);
     });
   });
