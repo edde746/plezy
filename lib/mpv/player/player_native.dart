@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../models/audio_channel_limit.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/platform_detector.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
 import 'player_base.dart';
@@ -22,6 +23,9 @@ typedef _AudioStateRequest = ({
 });
 
 typedef _AudioStateGenerations = ({int passthrough, int normalization, int downmix, int rate});
+
+/// What `audio-spdif` hands past mpv's decoder.
+enum _SpdifMode { none, spatial, passthrough }
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
@@ -1025,6 +1029,7 @@ class PlayerNative extends PlayerBase {
 
   bool _passthroughRequested = false;
   bool _passthroughActive = false;
+  _SpdifMode _spdifMode = _SpdifMode.none;
   bool _normalizationRequested = false;
   bool _normalizationActive = false;
   AudioChannelLimit _channelLimitRequested = AudioChannelLimit.original;
@@ -1055,6 +1060,8 @@ class PlayerNative extends PlayerBase {
   /// ([usesAppleAudioOutput]), which only handles Dolby Digital (Plus); a DTS
   /// or TrueHD entry would just cost an output probe before decoding to PCM.
   /// Windows and Linux do real device passthrough for the full list.
+  /// iPhone, iPad and Apple TV ask their plugin, which adds TrueHD and DTS-HD
+  /// from 26 for mpv-build's spatial output.
   ///
   /// Android does not use this list: mpv's audiotrack AO only opens stereo
   /// IEC 61937 tracks at the 48kHz mixer rate, so naming a codec the route
@@ -1062,8 +1069,22 @@ class PlayerNative extends PlayerBase {
   /// The plugin derives the value from the current audio route instead.
   static String get _passthroughCodecs => usesAppleAudioOutput ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
 
+  /// iPhone, iPad and Apple TV hand TrueHD and DTS-HD to mpv-build's spatial
+  /// output from 26 whatever the passthrough setting says; their plugin
+  /// reports the codecs, empty on older systems.
+  static bool get _hasSpatialAudioOutput => Platform.isIOS || PlatformDetector.isAppleTV();
+
+  Future<String> _resolveSpatialCodecs() async {
+    try {
+      return await invoke<String>('getSpatialAudioCodecs') ?? '';
+    } catch (error, stackTrace) {
+      appLogger.w('MPV: spatial audio inspection failed; decoding instead', error: error, stackTrace: stackTrace);
+      return '';
+    }
+  }
+
   Future<String> _resolvePassthroughCodecs() async {
-    if (!Platform.isAndroid) return _passthroughCodecs;
+    if (!Platform.isAndroid && !Platform.isIOS && !PlatformDetector.isAppleTV()) return _passthroughCodecs;
     try {
       return await invoke<String>('getAudioSpdifCodecs') ?? '';
     } catch (error, stackTrace) {
@@ -1170,19 +1191,24 @@ class PlayerNative extends PlayerBase {
     // about everything that plays. Passthrough therefore only engages when
     // nothing else claims the decoded stream; the 5.1 limit only shapes
     // decoded PCM, so a bitstream passes it.
-    final passthroughShouldBeActive =
-        target.passthrough &&
-        target.rate == 1.0 &&
-        target.channelLimit != AudioChannelLimit.stereo &&
-        !target.normalization;
+    // Spatial audio is a bitstream as well, so the same claims turn it off.
+    final bitstreamAllowed =
+        target.rate == 1.0 && target.channelLimit != AudioChannelLimit.stereo && !target.normalization;
+    final spdifMode = !bitstreamAllowed
+        ? _SpdifMode.none
+        : target.passthrough
+        ? _SpdifMode.passthrough
+        : _hasSpatialAudioOutput
+        ? _SpdifMode.spatial
+        : _SpdifMode.none;
     final normalizationShouldBeActive = target.normalization;
 
     // Ordering keeps loudnorm off a bitstream in both directions: leave
     // passthrough before `af` is written below, and when normalization turns
     // off with passthrough requested, `af` is cleared before `audio-spdif` is
     // rewritten at the end.
-    if (_passthroughActive && !passthroughShouldBeActive) {
-      await _applyPassthrough(false);
+    if (_spdifMode != _SpdifMode.none && spdifMode == _SpdifMode.none) {
+      await _applySpdifMode(_SpdifMode.none);
     }
     if (_currentRate != target.rate) {
       await _setProperty('speed', target.rate.toString(), synchronizeRate: false);
@@ -1206,8 +1232,8 @@ class PlayerNative extends PlayerBase {
       await super.setAudioNormalization(normalizationShouldBeActive);
       _normalizationActive = normalizationShouldBeActive;
     }
-    if (passthroughShouldBeActive && !_passthroughActive) {
-      await _applyPassthrough(true);
+    if (spdifMode != _spdifMode) {
+      await _applySpdifMode(spdifMode);
     }
   }
 
@@ -1218,13 +1244,22 @@ class PlayerNative extends PlayerBase {
     return _enqueueAudioStateReconciliation(_passthroughAudioField);
   }
 
-  Future<void> _applyPassthrough(bool enabled) async {
-    await setProperty('audio-spdif', enabled ? await _resolvePassthroughCodecs() : '');
+  Future<void> _applySpdifMode(_SpdifMode mode) async {
+    final codecs = switch (mode) {
+      _SpdifMode.none => '',
+      _SpdifMode.spatial => await _resolveSpatialCodecs(),
+      _SpdifMode.passthrough => await _resolvePassthroughCodecs(),
+    };
+    await setProperty('audio-spdif', codecs);
     if (_nativeCoreUnavailable) return;
 
     // audio-spdif is the authoritative transition. Publish only after mpv
     // accepts it; audio-exclusive below is an independent device-mode hint.
+    final enabled = mode == _SpdifMode.passthrough;
+    final changed = enabled != _passthroughActive;
+    _spdifMode = mode;
     _passthroughActive = enabled;
+    if (!changed) return;
     // audio-exclusive claims the device for bitstreaming on Windows and Linux
     // (exclusive WASAPI on Windows). Apple passthrough decodes in the system
     // and must not claim it: on macOS the hint would push every CoreAudio

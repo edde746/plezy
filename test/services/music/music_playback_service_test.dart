@@ -2118,11 +2118,19 @@ void main() {
       expect(h.player.passthroughWrites, [(true, 0)]);
     });
 
+    test('an Apple music player applies the setting when off too, for spatial audio', () async {
+      await bootstrapSettings(passthrough: false);
+      useAppleAudioOutput(true);
+
+      await h.playTracks([t1]);
+
+      expect(h.player.passthroughWrites, [(false, 0)]);
+    });
+
     test(
-      'music stays decoded when the setting is off, normalization overrides it, or the output is not Apple',
+      'music stays decoded when normalization overrides passthrough or the output is not Apple',
       () async {
         for (final (passthrough, normalization, apple) in [
-          (false, false, true),
           (true, true, true),
           (true, false, false),
         ]) {
