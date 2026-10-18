@@ -1,5 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -241,6 +243,259 @@ void main() {
       );
       expect(client.stopped.last, (positionMs: itemMs, durationMs: itemMs));
       expect(client.watched, ['item-1']);
+    });
+  });
+
+  group('x-callback-url return links', () {
+    String link(String result, String session, [String query = '']) =>
+        'plezy://external-player/$result/$session${query.isEmpty ? '' : '?$query'}';
+
+    test('cancel reports the position the player stopped at, in seconds', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 6000000),
+        client: client,
+      );
+
+      final handled = await ExternalPlayerService.handleCallbackUrl(
+        link('cancel', session, 'url=http%3A%2F%2Fsrv%2Fv.mkv&position=1234.5&duration=6000'),
+      );
+
+      expect(handled, isTrue);
+      expect(client.stopped, [(positionMs: 1234500, durationMs: 6000000)]);
+      expect(client.watched, isEmpty);
+    });
+
+    test('a reported duration matching the runtime in milliseconds switches units', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 6000000),
+        client: client,
+      );
+
+      await ExternalPlayerService.handleCallbackUrl(link('cancel', session, 'position=30000&duration=6000000'));
+
+      expect(client.stopped, [(positionMs: 30000, durationMs: 6000000)]);
+    });
+
+    test('success marks the item watched', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 100000),
+        client: client,
+      );
+
+      await ExternalPlayerService.handleCallbackUrl(link('success', session, 'url=x'));
+
+      expect(client.stopped, [(positionMs: 100000, durationMs: 100000)]);
+      expect(client.watched, ['item-1']);
+    });
+
+    test('Infuse success mid-video saves the position without marking watched', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 1420016),
+        client: client,
+      );
+
+      // Infuse sends lastPlayedUrl and position (seconds), never a duration.
+      await ExternalPlayerService.handleCallbackUrl(
+        link('success', session, 'lastPlayedUrl=http%3A%2F%2Fsrv%2Fv.mkv&position=600'),
+      );
+
+      expect(client.stopped, [(positionMs: 600000, durationMs: 1420016)]);
+      expect(client.watched, isEmpty);
+    });
+
+    test('Infuse success past the watched threshold marks watched', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 1420016),
+        client: client,
+      );
+
+      await ExternalPlayerService.handleCallbackUrl(
+        link('success', session, 'lastPlayedUrl=http%3A%2F%2Fsrv%2Fv.mkv&position=1400'),
+      );
+
+      expect(client.stopped, [(positionMs: 1400000, durationMs: 1420016)]);
+      expect(client.watched, ['item-1']);
+    });
+
+    test('Infuse error reports nothing', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 1420016),
+        client: client,
+      );
+
+      await ExternalPlayerService.handleCallbackUrl(
+        link('error', session, 'errorCode=1&errorMessage=Playback%20failed&failedUrl=http%3A%2F%2Fsrv%2Fv.mkv'),
+      );
+
+      expect(client.started, isEmpty);
+      expect(client.stopped, isEmpty);
+    });
+
+    test('error reports nothing', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 100000),
+        client: client,
+      );
+
+      await ExternalPlayerService.handleCallbackUrl(link('error', session, 'position=50'));
+
+      expect(client.started, isEmpty);
+      expect(client.stopped, isEmpty);
+    });
+
+    test('VLC success means stopped somewhere unknown: nothing is reported or marked watched', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 1420016),
+        client: client,
+        playerId: 'vlc',
+      );
+
+      // VLC appends nothing to its return links.
+      expect(await ExternalPlayerService.handleCallbackUrl(link('success', session)), isTrue);
+
+      expect(client.started, isEmpty);
+      expect(client.stopped, isEmpty);
+      expect(client.watched, isEmpty);
+    });
+
+    test('VLC error reports nothing', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 1420016),
+        client: client,
+        playerId: 'vlc',
+      );
+
+      await ExternalPlayerService.handleCallbackUrl(link('error', session));
+
+      expect(client.started, isEmpty);
+      expect(client.stopped, isEmpty);
+    });
+
+    test('Outplayer success without a position still means it played to the end', () async {
+      final client = _RecordingClient();
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 1420016),
+        client: client,
+        playerId: 'outplayer',
+      );
+
+      await ExternalPlayerService.handleCallbackUrl(link('success', session));
+
+      expect(client.stopped, [(positionMs: 1420016, durationMs: 1420016)]);
+      expect(client.watched, ['item-1']);
+    });
+
+    test('a link from a replaced launch is ignored, and each link is used once', () async {
+      final client = _RecordingClient();
+      final stale = ExternalPlayerService.beginCallbackSessionForTesting(metadata: _item(), client: client);
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+      final current = ExternalPlayerService.beginCallbackSessionForTesting(metadata: _item(), client: client);
+
+      expect(await ExternalPlayerService.handleCallbackUrl(link('cancel', stale, 'position=10')), isFalse);
+      expect(await ExternalPlayerService.handleCallbackUrl(link('cancel', current, 'position=10')), isTrue);
+      expect(await ExternalPlayerService.handleCallbackUrl(link('cancel', current, 'position=20')), isFalse);
+      expect(client.stopped, [(positionMs: 10000, durationMs: null)]);
+    });
+
+    testWidgets('the deep-link observer claims return links before the navigator', (tester) async {
+      final client = _RecordingClient();
+      final observer = ExternalPlayerService.callbackLinkObserverForTesting();
+      tester.binding.addObserver(observer);
+      addTearDown(() => tester.binding.removeObserver(observer));
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      final session = ExternalPlayerService.beginCallbackSessionForTesting(
+        metadata: _item(durationMs: 1420016),
+        client: client,
+      );
+
+      // The exact shape Outplayer opened: the stream URL appended unencoded.
+      final location = link(
+        'cancel',
+        session,
+        'url=https://srv.plex.direct:32400/library/parts/1/2/file.mkv?X-Plex-Token=t&position=283.283&duration=1420.016',
+      );
+      await tester.runAsync(
+        () => tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+          SystemChannels.navigation.name,
+          SystemChannels.navigation.codec.encodeMethodCall(
+            MethodCall('pushRouteInformation', {'location': location, 'state': null}),
+          ),
+          (_) {},
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(client.stopped, [(positionMs: 283283, durationMs: 1420016)]);
+    });
+
+    test('a link that is not an external-player return link is left to the navigator', () async {
+      final observer = ExternalPlayerService.callbackLinkObserverForTesting();
+      final claimed = await observer.didPushRouteInformation(
+        RouteInformation(uri: Uri.parse('plezy://live?channel=4.1')),
+      );
+      expect(claimed, isFalse);
+    });
+
+    test('other plezy links are not callbacks', () async {
+      expect(await ExternalPlayerService.handleCallbackUrl('plezy://live?channel=4.1'), isFalse);
+    });
+  });
+
+  group('player file name', () {
+    const plexUrl = 'https://srv.plex.direct:32400/library/parts/28182/1791123620/file.mkv?X-Plex-Token=t';
+
+    test('movies use Title (Year) with the stream extension', () {
+      final item = testMediaItem(kind: MediaKind.movie, title: 'Inception', year: 2010);
+      expect(ExternalPlayerService.playerFilename(item, plexUrl), 'Inception (2010).mkv');
+    });
+
+    test('episodes use Show - S01E02 - Title', () {
+      final item = testMediaItem(
+        kind: MediaKind.episode,
+        title: 'The Dundies',
+        grandparentTitle: 'The Office',
+        parentIndex: 2,
+        index: 1,
+      );
+      expect(ExternalPlayerService.playerFilename(item, plexUrl), 'The Office - S02E01 - The Dundies.mkv');
+    });
+
+    test('specials keep season 0 and an untitled episode drops the title', () {
+      final item = testMediaItem(kind: MediaKind.episode, grandparentTitle: 'Doctor Who', parentIndex: 0, index: 12);
+      expect(ExternalPlayerService.playerFilename(item, plexUrl), 'Doctor Who - S00E12.mkv');
+    });
+
+    test('characters file names cannot hold are replaced', () {
+      final item = testMediaItem(kind: MediaKind.movie, title: 'Mission: Impossible / Fallout', year: 2018);
+      expect(ExternalPlayerService.playerFilename(item, plexUrl), 'Mission Impossible Fallout (2018).mkv');
+    });
+
+    test('Jellyfin stream URLs give their container as the extension', () {
+      final item = testMediaItem(backend: MediaBackend.jellyfin, kind: MediaKind.movie, title: 'Dune', year: 2021);
+      expect(
+        ExternalPlayerService.playerFilename(item, 'https://jf.example/Videos/abc/stream.mp4?Static=true&api_key=k'),
+        'Dune (2021).mp4',
+      );
+    });
+
+    test('an episode without season or episode numbers gets no name', () {
+      final item = testMediaItem(kind: MediaKind.episode, title: 'Pilot', grandparentTitle: 'Show', index: 1);
+      expect(ExternalPlayerService.playerFilename(item, plexUrl), isNull);
+    });
+
+    test('other kinds get no name', () {
+      final item = testMediaItem(kind: MediaKind.clip, title: 'Trailer');
+      expect(ExternalPlayerService.playerFilename(item, plexUrl), isNull);
     });
   });
 }
