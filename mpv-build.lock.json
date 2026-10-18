@@ -2,9 +2,9 @@
   "artifacts": {
     "android": {
       "aar": {
-        "asset": "mpv-android-504d364899fe.aar",
-        "checksum": "b8a5d65b57c0c9fd01c92703e27e185ae0e717b1607b4402a64d43dcd6cc2180",
-        "key": "504d364899fe"
+        "asset": "mpv-android-c1014380930d.aar",
+        "checksum": "3a5bc46c123ac52be00a7d89d5f88450e9f1b71bbba5d5d6b873a294cc22cfc7",
+        "key": "c1014380930d"
       },
       "assetBase": "https://github.com/edde746/mpv-build/releases/download/binaries-android"
     },
@@ -37,7 +37,7 @@
       "key": "3b5fe9282d30"
     }
   },
-  "commit": "505e1616594870da97bd3c591d4809a01d11d313",
+  "commit": "8ad6d9b8290c4705573969415e9d97f7bffd51ff",
   "formatVersion": 1,
   "repo": "edde746/mpv-build"
 }
