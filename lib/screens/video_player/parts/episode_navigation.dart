@@ -27,12 +27,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   /// session and the companion remote — so no surface can advertise a step
   /// another refuses. Live TV steps through the channel list, and each
   /// direction is answered by its own list adjacency. Off live, `next` needs
-  /// a loaded next item, while `previous` always has a target for an episode:
-  /// [_restartOrPlayPrevious] restarts when nothing earlier is loaded.
+  /// a loaded next item, while `previous` always has a target:
+  /// [_restartOrPlayPrevious] restarts the current item — a movie as much as
+  /// an episode — when nothing earlier is loaded.
   bool get _hasNextItem => widget.isLive ? _hasNextChannel : _episode.next != null;
 
-  bool get _hasPreviousItem =>
-      widget.isLive ? _hasPreviousChannel : _currentMetadata.isEpisode || _episode.previous != null;
+  bool get _hasPreviousItem => !widget.isLive || _hasPreviousChannel;
 
   /// The transport's next command: a channel zap on live TV, the next
   /// episode/queue item otherwise. Both targets no-op without one.
