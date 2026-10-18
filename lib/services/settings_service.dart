@@ -623,7 +623,7 @@ class _PreferenceGroupListenable extends ChangeNotifier {
 
 class SettingsService extends BaseSharedPreferencesService {
   static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
-  static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
+  static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
