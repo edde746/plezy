@@ -674,6 +674,11 @@ class MpvPlayerCoreBase: NSObject {
       return
     }
 
+    if name == "speed" {
+      setSpeedAsync(value, completion: completion)
+      return
+    }
+
     if name == "hdr-enabled" {
       let enabled = value == "yes" || value == "true" || value == "1"
       setHDREnabled(enabled, completion: completion)
@@ -699,6 +704,41 @@ class MpvPlayerCoreBase: NSObject {
     }
 
     setRawStringPropertyAsync(name, value: value, completion: completion)
+  }
+
+  /// mpv applies a new `speed` only to audio it filters after the write, and
+  /// ao_avfoundation holds about four seconds already filtered: mpv's buffer
+  /// plus what AVSampleBufferAudioRenderer reads ahead. That audio plays out
+  /// at the old speed, the video follows its clock, and playback lands
+  /// (old - new) x four seconds away from where the new speed puts it: a Watch
+  /// Together room's pause, rate change and play left Plezy 1.8 s ahead or 2 s
+  /// behind. Seeking back to the position read before the write flushes that
+  /// audio, so playback continues at the new speed from where it was. The
+  /// position is read first because mpv's audio clock is the queued audio
+  /// times the speed, so it jumps the moment the write lands. Other AOs keep
+  /// a short buffer and need no flush.
+  private func setSpeedAsync(_ value: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    getPropertyAsync("current-ao") { [weak self] ao in
+      guard let self else { return completion(.failure(MpvLifecycleUnavailableError("Player disposed"))) }
+      guard case .success("avfoundation") = ao else {
+        self.setRawStringPropertyAsync("speed", value: value, completion: completion)
+        return
+      }
+      self.getPropertyAsync("time-pos") { [weak self] position in
+        guard let self else { return completion(.failure(MpvLifecycleUnavailableError("Player disposed"))) }
+        self.setRawStringPropertyAsync("speed", value: value) { [weak self] result in
+          guard let self, case .success = result, case .success(let position?) = position else {
+            return completion(result)
+          }
+          self.commandAsync(["seek", position, "absolute+exact"]) { seek in
+            if case .failure(let error) = seek {
+              MpvLog.debug("[MpvPlayerCore] Audio flush after speed change failed: \(error.localizedDescription)")
+            }
+            completion(result)
+          }
+        }
+      }
+    }
   }
 
   private func parseBoolProperty(_ value: String) -> Bool {
