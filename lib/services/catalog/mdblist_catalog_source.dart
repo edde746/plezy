@@ -285,6 +285,8 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
           : flexibleStringList(entry['genres']) ??
                 [for (final genre in flexibleMapList(entry['genres'])) ?_string(genre['title'] ?? genre['name'])],
       certification: _string(entry['certification']),
+      trailerUrl: _string(entry['trailer']),
+      airStatus: _airStatusFor(entry['status']),
       network: _string(entry['network']),
       releaseDate: DateTime.tryParse('${entry['released'] ?? entry['release_date']}'),
       ids: ids,
@@ -306,6 +308,19 @@ class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   }
 
   static String? _string(Object? value) => value is String && value.isNotEmpty ? value : null;
+
+  static CatalogAirStatus? _airStatusFor(Object? value) => switch (_string(value)?.trim().toLowerCase()) {
+    'returning series' || 'continuing' => CatalogAirStatus.airing,
+    'ended' => CatalogAirStatus.ended,
+    'canceled' || 'cancelled' => CatalogAirStatus.canceled,
+    'in production' ||
+    'post production' ||
+    'planned' ||
+    'upcoming' ||
+    'pilot' ||
+    'rumored' => CatalogAirStatus.upcoming,
+    _ => null,
+  };
 
   static MediaKind? _kindFor(Object? type) => switch (type) {
     'movie' => MediaKind.movie,

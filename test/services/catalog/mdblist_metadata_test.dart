@@ -94,6 +94,84 @@ void main() {
     expect(results.last.runtimeMinutes, isNull, reason: 'Series duration is not episode runtime');
   });
 
+  test('movie and show trailers survive batch enrichment and full detail retrieval', () async {
+    setup((request) {
+      if (request.url.path == '/search/any') {
+        return jsonResponse({
+          'search': [
+            for (final kind in ['movie', 'show'])
+              {
+                'title': kind,
+                'type': kind,
+                'ids': {'tmdb': 10},
+              },
+          ],
+        });
+      }
+      final kind = request.url.path.contains('/show') ? 'show' : 'movie';
+      final body = {...media(10, kind: kind), 'trailer': 'https://www.youtube.com/watch?v=trailer'};
+      return jsonResponse(request.method == 'POST' ? [body] : body);
+    });
+    for (final item in await source.search('Title')) {
+      expect(item.trailerUrl, 'https://www.youtube.com/watch?v=trailer');
+      expect((await source.fetchDetail(item)).item.trailerUrl, item.trailerUrl);
+    }
+    expect(requests, hasLength(5), reason: 'Trailer mapping needs no additional API requests');
+  });
+
+  test('available series status is normalized; unknown and released status stay absent', () async {
+    final statuses = <String?, CatalogAirStatus?>{
+      'Ended': CatalogAirStatus.ended,
+      'Returning Series': CatalogAirStatus.airing,
+      'continuing': CatalogAirStatus.airing,
+      'Canceled': CatalogAirStatus.canceled,
+      'Cancelled': CatalogAirStatus.canceled,
+      ' In Production ': CatalogAirStatus.upcoming,
+      'Post Production': CatalogAirStatus.upcoming,
+      'Planned': CatalogAirStatus.upcoming,
+      'Upcoming': CatalogAirStatus.upcoming,
+      'Pilot': CatalogAirStatus.upcoming,
+      'Rumored': CatalogAirStatus.upcoming,
+      'Released': null,
+      'unrecognized': null,
+      null: null,
+    };
+    setup((request) {
+      final id = int.parse(request.url.pathSegments.last);
+      return jsonResponse({...media(id, kind: 'show'), 'status': statuses.keys.elementAt(id - 1)});
+    });
+    var id = 0;
+    for (final entry in statuses.entries) {
+      final item = CatalogItem(
+        source: CatalogSourceId.mdblist,
+        kind: MediaKind.show,
+        title: 'Show',
+        ids: CatalogItemIds(tmdb: ++id),
+      );
+      expect((await source.fetchDetail(item)).item.airStatus, entry.value, reason: '${entry.key}');
+    }
+  });
+
+  test('provider aggregate zero and calendar release date remain distinct from community scores', () async {
+    setup(
+      (request) =>
+          jsonResponse({...media(10, kind: 'show'), 'score': 0, 'score_average': 72, 'released': '2026-06-11'}),
+    );
+    final item = CatalogItem(
+      source: CatalogSourceId.mdblist,
+      kind: MediaKind.show,
+      title: 'Show',
+      ids: const CatalogItemIds(tmdb: 10),
+    );
+    final detail = await source.fetchDetail(item);
+    expect(detail.item.rating, 0, reason: 'Do not silently substitute score_average or a different provider');
+    expect(detail.item.ratings!.single.value, 8.6);
+    expect(detail.item.releaseDate, DateTime(2026, 6, 11));
+    expect(detail.item.runtimeMinutes, isNull, reason: 'A series total is not an episode runtime');
+    expect(detail.item.trailerUrl, isNull);
+    expect(detail.item.airStatus, isNull);
+  });
+
   test('missing and conflicting identities retain original results; no internal-ID fallback', () async {
     setup(
       (request) => request.method == 'GET'
