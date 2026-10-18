@@ -431,6 +431,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   final Map<String, TvBrowseRailLayoutMetrics> _metricsByHub = {};
   final Map<String, TvRailTrailing> _lastTrailingByHubKey = {};
   final Map<String, GlobalKey<MediaContextMenuState>> _leadingMenuKeys = {};
+  final Map<String, GlobalKey<MediaContextMenuState>> _heroMenuKeys = {};
   final Map<int, _HubArtworkDim> _artworkDims = {};
 
   int _hubIndex = 0;
@@ -1097,6 +1098,12 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     return _leadingMenuKeys.putIfAbsent(_hubKey(hub), () => GlobalKey<MediaContextMenuState>());
   }
 
+  /// Context menu host for a Hero hub's banner item (a Hero hub draws no
+  /// cards, so there is no [MediaCardState] to open the menu from).
+  GlobalKey<MediaContextMenuState> _heroMenuKeyFor(MediaHub hub) {
+    return _heroMenuKeys.putIfAbsent(_hubKey(hub), () => GlobalKey<MediaContextMenuState>());
+  }
+
   void _showLeadingContextMenu(MediaHub hub, {Offset? position}) {
     _leadingMenuKeyFor(hub).currentState?.showContextMenu(context, position: position);
   }
@@ -1110,6 +1117,10 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     }
     if (_itemAtSlot(hub, _itemIndex) == null) return;
     if (_isPersonHub(hub)) return;
+    if (hub.heroStyle) {
+      _heroMenuKeyFor(hub).currentState?.showContextMenu(context);
+      return;
+    }
     _cardKeyFor(hub, _itemIndex).currentState?.showContextMenu();
   }
 
@@ -1403,14 +1414,33 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           // focused (2026-09-10 bug). The header also means the row's own
           // name shows the same way every other row's does — no separate
           // "which row is this" label needed elsewhere.
-          return ListenableSelector<bool>(
+          //
+          // With no cards, the header also hosts the context menu for the
+          // banner's current item, so long press / the menu key still reach
+          // the usual options (Remove from Continue Watching, Mark as
+          // Watched, ...). It follows the focus position so the menu always
+          // targets the card the banner is showing.
+          return ListenableSelector<(int, int)>(
             listenable: _focusModel,
-            selector: isActiveHub,
-            builder: (context, isActive, _) => SizedBox(
-              key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
-              height: sectionHeight,
-              child: _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
-            ),
+            selector: () => _focusModel.position,
+            builder: (context, position, _) {
+              final isActive = position.$1 == hubIndex;
+              final header = SizedBox(
+                key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
+                height: sectionHeight,
+                child: _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+              );
+              final item = isActive && !_isPersonHub(hub) ? _itemAtSlot(hub, position.$2) : null;
+              if (item == null) return header;
+              return MediaContextMenu(
+                key: _heroMenuKeyFor(hub),
+                item: item,
+                onRefresh: widget.onRefresh,
+                onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
+                isInContinueWatching: _isContinueWatchingHub(hub),
+                child: header,
+              );
+            },
           );
         }
 
