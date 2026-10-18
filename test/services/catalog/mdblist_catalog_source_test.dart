@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/mdblist_explore_shelf.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/mdblist_catalog_source.dart';
 import 'package:plezy/services/trackers/mdblist/mdblist_client.dart';
@@ -144,6 +145,103 @@ void main() {
       await source.removeFromWatchlist(MediaKind.movie, const CatalogItemIds(imdb: 'tt0133093', tmdb: 603));
       expect(requests.single.url.path, '/watchlist/items/remove');
       expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(tmdb: 603)), isFalse);
+    });
+
+    test('account discovery uses OAuth and filters private and unsupported lists', () async {
+      handlers.add(
+        (_) => http.Response(
+          json.encode([
+            {'id': 20, 'name': 'Copied movies', 'type': 'dynamic', 'private': false, 'mediatype': 'movie'},
+            {'id': 21, 'name': 'Private shows', 'private': true, 'mediatype': 'show'},
+            {'id': 22, 'name': 'Public shows', 'mediatype': 'show'},
+            {'id': 23, 'name': 'Unsupported', 'mediatype': 'episode'},
+            {'name': 'Missing ID'},
+          ]),
+          200,
+        ),
+      );
+      final lists = await client.getAccountLists();
+      expect(requests.single.url.path, '/lists/user');
+      expect(requests.single.url.queryParameters, {'include_shared': 'true'});
+      expect(requests.single.headers['Authorization'], 'Bearer access');
+      expect(lists.map((list) => list.id), [20, 22]);
+      expect(lists.every((list) => !list.isPrivate), isTrue);
+    });
+
+    test('unified shelves preserve mixed source order, IDs and the pagination header', () async {
+      source.dispose();
+      source = MdblistCatalogSource(client, shelves: const [MdblistExploreShelf(listId: 20, sourceName: 'Mixed')]);
+      handlers.add(
+        (_) => http.Response(
+          json.encode([
+            {
+              'title': 'First show',
+              'mediatype': 'show',
+              'rank': 3000,
+              'ids': {'tmdb': 12, 'imdb': 'tt123', 'tvdb': 42},
+            },
+            {'title': 'Second movie', 'mediatype': 'movie', 'rank': 1000, 'id': 13},
+          ]),
+          200,
+          headers: {'x-has-more': 'false'},
+        ),
+      );
+      final page = await source.fetchHub('20', page: 2, limit: 2);
+      expect(page.items.map((item) => item.title), ['First show', 'Second movie']);
+      expect(page.items.map((item) => item.kind), [MediaKind.show, MediaKind.movie]);
+      expect(page.items.first.ids.tvdb, 42);
+      expect(page.items.last.ids.tmdb, 13);
+      expect(page.hasMore, isFalse);
+      expect(requests.single.url.queryParameters['offset'], '2');
+      expect(requests.single.url.queryParameters['unified'], 'true');
+      expect(requests.single.url.queryParameters.containsKey('sort'), isFalse);
+    });
+
+    test('one unavailable shelf does not hide siblings; disabled shelves issue no request', () async {
+      source.dispose();
+      source = MdblistCatalogSource(
+        client,
+        shelves: const [
+          MdblistExploreShelf(listId: 20, sourceName: 'Source', displayName: 'My movies'),
+          MdblistExploreShelf(listId: 21, sourceName: 'Unavailable'),
+          MdblistExploreShelf(listId: 22, sourceName: 'Disabled', enabled: false),
+        ],
+      );
+      handlers.add((_) => http.Response('[{"title":"Movie","mediatype":"movie","id":13}]', 200));
+      handlers.add((_) => http.Response('{}', 404));
+      final hubs = await source.fetchHubs();
+      expect(hubs.map((hub) => hub.title), ['My movies', 'Unavailable']);
+      expect(hubs.first.page.items.single.ids.tmdb, 13);
+      expect(hubs.first.errorMessage, isNull);
+      expect(hubs.last.errorMessage, contains('unavailable'));
+      expect(requests.length, 2);
+      expect(source.supportedRows, [CatalogRowId.watchlist]);
+    });
+
+    test('shelf count is not limited by the four-request concurrency window', () async {
+      source.dispose();
+      source = MdblistCatalogSource(
+        client,
+        shelves: [for (var id = 1; id <= 5; id++) MdblistExploreShelf(listId: id, sourceName: 'Shelf $id')],
+      );
+      for (var id = 1; id <= 5; id++) {
+        handlers.add((_) => http.Response('[]', 200));
+      }
+      final hubs = await source.fetchHubs();
+      expect(hubs.map((hub) => hub.id), ['1', '2', '3', '4', '5']);
+      expect(requests.length, 5);
+    });
+
+    test('invalid items do not prematurely terminate a page', () async {
+      source.dispose();
+      source = MdblistCatalogSource(client, shelves: const [MdblistExploreShelf(listId: 20, sourceName: 'Mixed')]);
+      handlers.add(
+        (_) =>
+            http.Response('[{"title":"Episode","mediatype":"episode","id":1}]', 200, headers: {'x-has-more': 'true'}),
+      );
+      final page = await source.fetchHub('20');
+      expect(page.items, isEmpty);
+      expect(page.hasMore, isTrue);
     });
 
     test('search maps movies and shows and ignores unsupported media', () async {

@@ -3763,6 +3763,7 @@ class Translations$explore$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+	late final Translations$explore$mdblistShelves$en mdblistShelves = Translations$explore$mdblistShelves$en.internal(_root);
 
 	/// en: 'Explore'
 	String get title => 'Explore';
@@ -6782,6 +6783,66 @@ class Translations$libraries$advancedFilters$en {
 	String get dateOlderThanYear => 'Older than a year';
 }
 
+// Path: explore.mdblistShelves
+class Translations$explore$mdblistShelves$en {
+	Translations$explore$mdblistShelves$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Manage Explore shelves'
+	String get manage => 'Manage Explore shelves';
+
+	/// en: 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.'
+	String get description => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.';
+
+	/// en: 'Selected shelves'
+	String get selected => 'Selected shelves';
+
+	/// en: 'Available account lists'
+	String get available => 'Available account lists';
+
+	/// en: 'No public movie or TV lists returned. Create or copy a list on MDBList, then refresh.'
+	String get noLists => 'No public movie or TV lists returned. Create or copy a list on MDBList, then refresh.';
+
+	/// en: 'Shelf display name'
+	String get displayName => 'Shelf display name';
+
+	/// en: 'Leave blank to use the source list name.'
+	String get nameHint => 'Leave blank to use the source list name.';
+
+	/// en: 'Add shelf'
+	String get add => 'Add shelf';
+
+	/// en: 'Save shelves'
+	String get save => 'Save shelves';
+
+	/// en: 'Move ${title} up'
+	String moveUp({required Object title}) => 'Move ${title} up';
+
+	/// en: 'Move ${title} down'
+	String moveDown({required Object title}) => 'Move ${title} down';
+
+	/// en: 'This list is unavailable. Retry or remove its shelf in settings.'
+	String get unavailable => 'This list is unavailable. Retry or remove its shelf in settings.';
+
+	/// en: 'MDBList request limit reached. Please retry later.'
+	String get rateLimited => 'MDBList request limit reached. Please retry later.';
+
+	/// en: 'Could not load shelves. Check your connection and retry.'
+	String get loadFailed => 'Could not load shelves. Check your connection and retry.';
+
+	/// en: 'Could not save shelves. Please retry.'
+	String get saveFailed => 'Could not save shelves. Please retry.';
+
+	/// en: 'The account or profile changed. Reopen these settings.'
+	String get accountChanged => 'The account or profile changed. Reopen these settings.';
+
+	/// en: 'Saved shelves could not be read. Select your lists again to replace these settings.'
+	String get settingsUnreadable => 'Saved shelves could not be read. Select your lists again to replace these settings.';
+}
+
 // Path: explore.rows
 class Translations$explore$rows$en {
 	Translations$explore$rows$en.internal(this._root);
@@ -9096,6 +9157,23 @@ extension on Translations {
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
 			'navigation.explore' => 'Explore',
+			'explore.mdblistShelves.manage' => 'Manage Explore shelves',
+			'explore.mdblistShelves.description' => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.',
+			'explore.mdblistShelves.selected' => 'Selected shelves',
+			'explore.mdblistShelves.available' => 'Available account lists',
+			'explore.mdblistShelves.noLists' => 'No public movie or TV lists returned. Create or copy a list on MDBList, then refresh.',
+			'explore.mdblistShelves.displayName' => 'Shelf display name',
+			'explore.mdblistShelves.nameHint' => 'Leave blank to use the source list name.',
+			'explore.mdblistShelves.add' => 'Add shelf',
+			'explore.mdblistShelves.save' => 'Save shelves',
+			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} up',
+			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} down',
+			'explore.mdblistShelves.unavailable' => 'This list is unavailable. Retry or remove its shelf in settings.',
+			'explore.mdblistShelves.rateLimited' => 'MDBList request limit reached. Please retry later.',
+			'explore.mdblistShelves.loadFailed' => 'Could not load shelves. Check your connection and retry.',
+			'explore.mdblistShelves.saveFailed' => 'Could not save shelves. Please retry.',
+			'explore.mdblistShelves.accountChanged' => 'The account or profile changed. Reopen these settings.',
+			'explore.mdblistShelves.settingsUnreadable' => 'Saved shelves could not be read. Select your lists again to replace these settings.',
 			'explore.title' => 'Explore',
 			'explore.selectSource' => 'Select source',
 			'explore.rows.watchlist' => 'Watchlist',
@@ -9312,6 +9390,8 @@ extension on Translations {
 			'liveTv.editRule' => 'Edit rule',
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
@@ -9329,8 +9409,6 @@ extension on Translations {
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Couldn\'t start the channel: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Couldn\'t switch channel: ${reason}',
@@ -9826,6 +9904,8 @@ extension on Translations {
 			'metadataEdit.accountDefault' => 'Account default',
 			'metadataEdit.seriesDefault' => 'Series default',
 			'metadataEdit.episodeSorting' => 'Episode Sorting',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.oldestFirst' => 'Oldest first',
 			'metadataEdit.newestFirst' => 'Newest first',
 			'metadataEdit.keep' => 'Keep',
@@ -9843,8 +9923,6 @@ extension on Translations {
 			'metadataEdit.show' => 'Show',
 			'metadataEdit.hide' => 'Hide',
 			'metadataEdit.episodeOrdering' => 'Episode Ordering',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',

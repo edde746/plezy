@@ -92,6 +92,36 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
   /// Raw load failure (unlocalized); the screen wraps it for display.
   String? get errorMessage => _errorMessage;
 
+  List<CatalogHub> get failedHubs => [
+    for (final hub in _providerHubs)
+      if (hub.errorMessage != null) hub,
+  ];
+  final Set<String> _retryingHubs = {};
+  bool isRetryingHub(String id) => _retryingHubs.contains(id);
+
+  Future<void> retryHub(String id) async {
+    final source = _source;
+    if (source is! CatalogHubSource || !_retryingHubs.add(id)) return;
+    final generation = _generation;
+    safeNotifyListeners();
+    try {
+      final page = await (source as CatalogHubSource).fetchHub(id, limit: rowLimit);
+      if (isDisposed || generation != _generation) return;
+      _providerHubs = [
+        for (final hub in _providerHubs)
+          if (hub.id == id) CatalogHub(id: hub.id, title: hub.title, style: hub.style, page: page) else hub,
+      ];
+      _rowsEpoch++;
+    } catch (_) {
+      // The named failure and its settings/removal action remain available.
+    } finally {
+      if (!isDisposed && generation == _generation) {
+        _retryingHubs.remove(id);
+        safeNotifyListeners();
+      }
+    }
+  }
+
   /// Non-empty rows of the active source in display order. Memoized on row
   /// content (and one localized string, so a locale change busts the cache).
   List<ExploreRowHub> get rowHubs {
@@ -303,6 +333,7 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     _source = next;
     _source?.watchlistChanges.addListener(_onWatchlistChanged);
     _generation++;
+    _retryingHubs.clear();
     _watchlistRefreshTimer?.cancel();
     // Detach any in-flight passes for the old source: their generation guard
     // already discards their results, but the new source's load must not

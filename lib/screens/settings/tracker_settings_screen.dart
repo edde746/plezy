@@ -18,6 +18,7 @@ import '../../widgets/oauth_proxy_dialog.dart';
 import '../../widgets/settings_page.dart';
 import 'tracker_account_settings_body.dart';
 import 'tracker_connect_launcher.dart';
+import 'mdblist_explore_shelves_screen.dart';
 
 Future<void> startMalConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
@@ -153,6 +154,16 @@ class TrackerConfig {
     isConnected: (a) => a.isMdblistConnected,
     username: (a) => a.mdblistUsername,
     disconnect: (a) => a.disconnectMdblist(),
+    accountActions: (context, a) => [
+      FocusableListTile(
+        leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
+        title: Text(t.explore.mdblistShelves.manage),
+        subtitle: const Text('Choose and arrange lists from your MDBList account'),
+        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+        onTap: () =>
+            Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MdblistExploreShelvesScreen())),
+      ),
+    ],
   );
 }
 

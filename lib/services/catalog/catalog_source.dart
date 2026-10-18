@@ -80,10 +80,14 @@ class CatalogHub {
   final String title;
   final CatalogPage page;
 
+  /// A failed shelf remains visible with retry/settings actions while its
+  /// siblings continue to render. Never include raw authenticated responses.
+  final String? errorMessage;
+
   /// The provider's presentation hint, or null when it sent none.
   final CatalogHubStyle? style;
 
-  const CatalogHub({required this.id, required this.title, required this.page, this.style});
+  const CatalogHub({required this.id, required this.title, required this.page, this.style, this.errorMessage});
 }
 
 /// Everything a catalog detail screen needs from the item's own provider.

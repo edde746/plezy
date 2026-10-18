@@ -91,6 +91,7 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
   bool returnEmptyHubs = false;
   CatalogHubStyle? hubStyle;
   int? hubTotalResults;
+  String? hubError;
 
   CatalogItem _hubItem(String title) => CatalogItem(
     source: id,
@@ -112,6 +113,7 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
         id: 'trending-plex',
         title: 'Trending on Plex',
         style: hubStyle,
+        errorMessage: hubError,
         page: CatalogPage(items: [_hubItem('Initial Recommendation')], hasMore: true, totalResults: hubTotalResults),
       ),
     ];
@@ -157,6 +159,19 @@ void main() {
         explore.dispose();
         sources.dispose();
       });
+    });
+
+    test('a named hub failure can be retried without refetching healthy rows', () async {
+      final source = _FakeHubSource(CatalogSourceId.plex)..hubError = 'List unavailable';
+      addTearDown(source.dispose);
+      sources.setActive(source);
+      await explore.load();
+      expect(explore.failedHubs.single.title, 'Trending on Plex');
+      final watchlistFetches = source.fetches[CatalogRowId.watchlist];
+      await explore.retryHub('trending-plex');
+      expect(explore.failedHubs, isEmpty);
+      expect(explore.rowHubs.last.hub.items.single.title, 'Recommendation Page 1');
+      expect(source.fetches[CatalogRowId.watchlist], watchlistFetches);
     });
 
     test('source switch during an in-flight load starts the new load instead of coalescing', () async {
