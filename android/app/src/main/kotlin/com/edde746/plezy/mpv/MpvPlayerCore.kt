@@ -1049,6 +1049,16 @@ class MpvPlayerCore private constructor(
                   // the others' keys.
                   decoderOptions.putAll(initialDecoderEntries(Build.VERSION.SDK_INT))
                   setOption("vd-lavc-o", decoderOptions.compose())
+                  // mpv's default hwdec-codecs leaves out mpeg2video, so
+                  // broadcast MPEG-2 (Live TV at Original quality) would decode
+                  // in software and leave the plane for a GL vo, where 1080i with
+                  // deinterlacing falls behind on Fire TV-class CPUs (#2748). The
+                  // hardware decoder deinterlaces by itself and stays on the
+                  // plane. This is every bundled MediaCodec video wrapper except
+                  // mpeg4, which stays off so Xvid/DivX keep the software path
+                  // from #2602. Without an MPEG-2 decoder, mpv falls back to
+                  // software as before.
+                  setOption("hwdec-codecs", "h264,hevc,mpeg2video,vp8,vp9,av1")
                   if (hardwareDecoding) {
                     // Rationale on DECODER_QUEUE_OPTIONS.
                     for ((name, value) in DECODER_QUEUE_OPTIONS) setOption(name, value)
