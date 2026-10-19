@@ -778,6 +778,12 @@ class Translations$settings$en {
 	/// en: 'Customize subtitle appearance'
 	String get subtitleStylingDescription => 'Customize subtitle appearance';
 
+	/// en: 'Search subtitles by filename'
+	String get subtitleSearchByFilename => 'Search subtitles by filename';
+
+	/// en: 'Start subtitle searches from the video's filename instead of its title'
+	String get subtitleSearchByFilenameDescription => 'Start subtitle searches from the video\'s filename instead of its title';
+
 	/// en: 'Small Skip Duration'
 	String get smallSkipDuration => 'Small Skip Duration';
 
@@ -8044,6 +8050,8 @@ extension on Translations {
 			'settings.musicQualityTitle' => 'Music Quality',
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
+			'settings.subtitleSearchByFilename' => 'Search subtitles by filename',
+			'settings.subtitleSearchByFilenameDescription' => 'Start subtitle searches from the video\'s filename instead of its title',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
 			'settings.largeSkipDuration' => 'Large Skip Duration',
 			'settings.rewindOnResume' => 'Rewind on Resume',
@@ -8299,10 +8307,10 @@ extension on Translations {
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			'themeEditor.slots.accent' => 'Accent',
-			'themeEditor.opacity' => 'Opacity',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Accent',
+			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'From other themes',
 			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
@@ -8813,10 +8821,10 @@ extension on Translations {
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
-			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
-			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
 			_ => null,
 		} ?? switch (path) {
+			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
 			'connections.accessDeniedOne' => ({required Object name}) => '${name} refused access for this account',
@@ -9327,10 +9335,10 @@ extension on Translations {
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
-			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
-			'liveTv.failedToStartChannel' => 'Could not start the live channel',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
+			'liveTv.failedToStartChannel' => 'Could not start the live channel',
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
 			'liveTv.playbackStartFailed' => ({required Object reason}) => 'Couldn\'t start the channel: ${reason}',
 			'liveTv.channelSwitchFailed' => ({required Object reason}) => 'Couldn\'t switch channel: ${reason}',
@@ -9841,10 +9849,10 @@ extension on Translations {
 			'metadataEdit.onNextRefresh' => 'On next refresh',
 			'metadataEdit.seasons' => 'Seasons',
 			'metadataEdit.show' => 'Show',
-			'metadataEdit.hide' => 'Hide',
-			'metadataEdit.episodeOrdering' => 'Episode Ordering',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.hide' => 'Hide',
+			'metadataEdit.episodeOrdering' => 'Episode Ordering',
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
