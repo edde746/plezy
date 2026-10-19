@@ -48,8 +48,9 @@ void main() {
     List<Uri> captured, {
     Map<String, List<Map<String, dynamic>>> itemsByParent = const {},
     List<Map<String, dynamic>> views = _views,
+    JellyfinClient Function({http.Client? httpClient}) factory = testJellyfinClient,
   }) {
-    return testJellyfinClient(
+    return factory(
       httpClient: MockClient((request) async {
         captured.add(request.url);
         final path = request.url.path;
@@ -400,6 +401,49 @@ void main() {
       'lib-mvids': {'Video', 'MusicVideo'},
       'lib-mixed': {'Movie', 'Series', 'Episode', 'MusicAlbum', 'Audio'},
     });
+  });
+
+  test('Emby searches a movie library by media type and keeps only its movies', () async {
+    final captured = <Uri>[];
+    final client = makeClient(
+      captured,
+      factory: testEmbyClient,
+      itemsByParent: {
+        // Untyped, the mock returns every row, as Emby would for other video
+        // items a movie library can hold.
+        'lib-movies': [_hit('movie-1', 'Movie', 'The Movie'), _hit('trailer-1', 'Trailer', 'The Trailer')],
+        'lib-shows': [_hit('show-1', 'Series', 'The Show')],
+      },
+    );
+    addTearDown(client.close);
+
+    final results = await client.searchItems('the');
+
+    expect(results.map((item) => item.id), containsAll(['movie-1', 'show-1']));
+    expect(results.map((item) => item.id), isNot(contains('trailer-1')));
+    final byLibrary = {
+      for (final uri in captured.where((uri) => uri.path == '/Items' && uri.queryParameters['ParentId'] != 'lib-music'))
+        uri.queryParameters['ParentId']: uri.queryParameters,
+    };
+    // Emby takes seconds for `IncludeItemTypes=Movie` on a large movie library
+    // and milliseconds for `MediaTypes=Video`.
+    expect(byLibrary['lib-movies']!['MediaTypes'], 'Video');
+    expect(byLibrary['lib-movies']!.containsKey('IncludeItemTypes'), isFalse);
+    expect(byLibrary['lib-shows']!['IncludeItemTypes'], 'Series,Episode');
+  });
+
+  test('Jellyfin keeps the typed movie library search', () async {
+    final captured = <Uri>[];
+    final client = makeClient(captured);
+    addTearDown(client.close);
+
+    await client.searchItems('the');
+
+    final movies = captured.singleWhere(
+      (uri) => uri.path == '/Items' && uri.queryParameters['ParentId'] == 'lib-movies',
+    );
+    expect(movies.queryParameters['IncludeItemTypes'], 'Movie');
+    expect(movies.queryParameters.containsKey('MediaTypes'), isFalse);
   });
 
   test('home and music video libraries surface their videos', () async {

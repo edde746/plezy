@@ -1416,6 +1416,27 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               ...jellyfinImageQueryParameters,
             }, abort: abort),
           ]
+        : library.kind == MediaKind.movie && dialect.searchesMovieLibrariesByMediaType
+        // Emby answers `IncludeItemTypes=Movie` searches in seconds on large
+        // libraries; `MediaTypes=Video` returns the same rows in milliseconds.
+        ? <Future<List<Map<String, dynamic>>>>[
+            _fetchItemsArray('/Items', {
+              'userId': connection.userId,
+              'SearchTerm': query,
+              'Recursive': 'true',
+              'Limit': limit.toString(),
+              'MediaTypes': 'Video',
+              'ParentId': library.id,
+              'Fields': _browseFields,
+              'EnableTotalRecordCount': 'false',
+              ...jellyfinImageQueryParameters,
+            }, abort: abort).then(
+              (rows) => [
+                for (final row in rows)
+                  if (row['Type'] == 'Movie') row,
+              ],
+            ),
+          ]
         : <Future<List<Map<String, dynamic>>>>[
             _fetchItemsArray('/Items', {
               'userId': connection.userId,
