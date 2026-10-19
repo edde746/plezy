@@ -139,6 +139,12 @@ class PlaybackSettingsScreen extends StatelessWidget {
                   subtitle: t.settings.subtitleStylingDescription,
                   destinationBuilder: (_) => const SubtitleStylingScreen(),
                 ),
+                SettingSwitchTile(
+                  pref: SettingsService.subtitleSearchByFilename,
+                  icon: Symbols.manage_search_rounded,
+                  title: t.settings.subtitleSearchByFilename,
+                  subtitle: t.settings.subtitleSearchByFilenameDescription,
+                ),
               ],
             ),
 
