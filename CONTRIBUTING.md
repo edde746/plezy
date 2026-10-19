@@ -37,11 +37,11 @@ The project includes automated CI checks that run on all pull requests:
 3. **Generated Code**: Ensures generated translations and model files are current
    - Run locally: `scripts/codegen.sh --check`
 
-4. **Tests**: Runs unit and widget tests (when available)
+4. **Tests**: Runs unit and widget tests
    - Run locally: `scripts/run_tests.sh`
-   - This is `flutter test` with `-j` set to the core count. The default is half your cores, which
-     leaves most of the machine idle because the suite is dominated by per-file compilation.
+   - This is `flutter test` with `-j` bounded by the host's CPU/affinity and cgroup quota.
      Arguments are forwarded, so `scripts/run_tests.sh test/widgets/some_test.dart` works.
+     On shared or memory-constrained hosts, override concurrency with `scripts/run_tests.sh -j 4`.
 
 All these checks must pass before your changes can be merged.
 

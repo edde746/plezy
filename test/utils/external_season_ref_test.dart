@@ -28,10 +28,15 @@ void main() {
       expect(const ExternalSeasonRef().isSequel, isFalse);
     });
 
-    test('round-trips through JSON', () {
+    test('preserves provider-specific JSON keys and omits absent seasons', () {
       const ref = ExternalSeasonRef(tvdb: 2, tmdb: 1);
-      expect(ExternalSeasonRef.fromJson(ref.toJson()), ref);
-      expect(ExternalSeasonRef.fromJson(const ExternalSeasonRef().toJson()).hasAny, isFalse);
+      const json = {'tvdb': 2, 'tmdb': 1};
+      expect(ref.toJson(), json);
+      expect(ExternalSeasonRef.fromJson(json), ref);
+      expect(const ExternalSeasonRef(tvdb: 2).toJson(), {'tvdb': 2});
+      expect(ExternalSeasonRef.fromJson({'tvdb': 2}), const ExternalSeasonRef(tvdb: 2));
+      expect(const ExternalSeasonRef().toJson(), isEmpty);
+      expect(ExternalSeasonRef.fromJson({}).hasAny, isFalse);
     });
   });
 }

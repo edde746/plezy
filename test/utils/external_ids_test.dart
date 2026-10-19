@@ -132,12 +132,14 @@ void main() {
       expect(merged.anidb, 11905);
     });
 
-    test('round-trips every id through JSON', () {
+    test('preserves persisted JSON keys and omits absent ids', () {
       const ids = ExternalIds(imdb: 'tt1', tmdb: 2, tvdb: 3, anidb: 4);
-      final restored = ExternalIds.fromJson(ids.toJson());
-
+      const json = {'imdb': 'tt1', 'tmdb': 2, 'tvdb': 3, 'anidb': 4};
+      expect(ids.toJson(), json);
+      final restored = ExternalIds.fromJson(json);
       expect((restored.imdb, restored.tmdb, restored.tvdb, restored.anidb), ('tt1', 2, 3, 4));
-      expect(ExternalIds.fromJson(const ExternalIds().toJson()).hasAny, isFalse);
+      expect(const ExternalIds().toJson(), isEmpty);
+      expect(ExternalIds.fromJson({}).hasAny, isFalse);
     });
 
     test('intersects matches on an AniDB id alone', () {
