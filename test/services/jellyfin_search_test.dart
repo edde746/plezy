@@ -568,7 +568,7 @@ void main() {
           final path = request.url.path;
           final params = request.url.queryParameters;
           if (path.endsWith('/Views')) return jsonResponse({'Items': peopleViews});
-          if (path == '/Persons') {
+          if (path == '/Persons' || (path == '/Items' && params['IncludeItemTypes'] == 'Person')) {
             final limit = int.tryParse(params['Limit'] ?? '');
             return jsonResponse({'Items': limit == null ? persons : persons.take(limit).toList()});
           }
@@ -590,7 +590,15 @@ void main() {
       );
     }
 
-    List<Uri> titleChecks(List<Uri> captured) => captured.where((uri) => uri.path == '/Items').toList();
+    List<Uri> titleChecks(List<Uri> captured) =>
+        captured.where((uri) => uri.path == '/Items' && uri.queryParameters.containsKey('PersonIds')).toList();
+
+    List<Uri> candidateSearches(List<Uri> captured) => captured
+        .where(
+          (uri) =>
+              uri.path == '/Persons' || (uri.path == '/Items' && uri.queryParameters['IncludeItemTypes'] == 'Person'),
+        )
+        .toList();
 
     test('ranks the name-ordered candidates before cutting them to the limit', () async {
       final captured = <Uri>[];
@@ -651,6 +659,35 @@ void main() {
       });
     }
 
+    test('Emby searches people through /Items, Jellyfin through /Persons', () async {
+      for (final (factory, expectedPath) in [(testJellyfinClient, '/Persons'), (testEmbyClient, '/Items')]) {
+        final captured = <Uri>[];
+        final client = makePeopleClient(
+          captured,
+          factory: factory,
+          persons: [personRow('p-christopher', 'Christopher Nolan')],
+          titlesByPerson: {
+            'p-christopher': {'lib-movies': 'Movie'},
+          },
+        );
+        addTearDown(client.close);
+
+        final results = await client.searchPeople('Nolan');
+
+        expect(results.map((person) => person.id), ['p-christopher']);
+        final searches = candidateSearches(captured);
+        expect(searches, hasLength(1));
+        expect(searches.single.path, expectedPath);
+        expect(searches.single.queryParameters['SearchTerm'], 'Nolan');
+        expect(searches.single.queryParameters['PersonTypes'], 'Actor,Director');
+        if (expectedPath == '/Items') {
+          // Emby's `/Persons` takes 20+ s on a large server.
+          expect(searches.single.queryParameters['Recursive'], 'true');
+          expect(captured.where((uri) => uri.path == '/Persons'), isEmpty);
+        }
+      }
+    });
+
     test('a person whose only titles sit in a hidden library is left out', () async {
       final captured = <Uri>[];
       final client = makePeopleClient(
@@ -694,7 +731,8 @@ void main() {
       final results = await client.searchPeople('Waltz', excludedLibraryIds: {'lib-movies', 'lib-shows', 'lib-anime'});
 
       expect(results, isEmpty);
-      expect(captured.where((uri) => uri.path == '/Persons' || uri.path == '/Items'), isEmpty);
+      expect(candidateSearches(captured), isEmpty);
+      expect(titleChecks(captured), isEmpty);
     });
 
     test('a thumb exists only for a person with a primary image tag', () async {

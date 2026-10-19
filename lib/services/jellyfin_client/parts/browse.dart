@@ -1496,9 +1496,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       if (visible.length < titleLibraries.length) checkedLibraries = visible;
     }
 
-    final rows = await _fetchItemsArray('/Persons', {
+    // Emby's `/Persons` takes 20+ s on a large server, past the search
+    // deadline; its `/Items` index answers the same query in milliseconds
+    // (see [MediaBrowserDialect.searchesPeopleThroughItems]).
+    final viaItems = dialect.searchesPeopleThroughItems;
+    final rows = await _fetchItemsArray(viaItems ? '/Items' : '/Persons', {
       'userId': connection.userId,
       'SearchTerm': query,
+      if (viaItems) ...{'IncludeItemTypes': 'Person', 'Recursive': 'true'},
       'PersonTypes': 'Actor,Director',
       'Limit': '$_peopleSearchCandidateLimit',
       'EnableImageTypes': 'Primary',

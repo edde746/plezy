@@ -241,6 +241,19 @@ enum MediaBrowserDialect {
   /// side and every playlist is returned regardless of the requested type.
   bool get playlistsFilterByMediaType => this == MediaBrowserDialect.jellyfin;
 
+  /// People search reads `/Items?IncludeItemTypes=Person&SearchTerm=` instead
+  /// of `/Persons?SearchTerm=`.
+  ///
+  /// Emby-only. Measured on Emby 4.10.1 with ~70k movies and ~480k episodes:
+  /// `/Persons` takes 20–25 s for any term under every parameter combination
+  /// tried (with or without `userId`, `PersonTypes`, image options, `Limit`
+  /// 24 or 100), which overran the per-server search deadline on every search
+  /// and kept the server busy for each abandoned query. The same search
+  /// through `/Items` answers in 40–75 ms with the same `Person` DTOs and,
+  /// apart from the cut-off at the limit, the same people — it is what the
+  /// Emby web client uses. Jellyfin keeps `/Persons`.
+  bool get searchesPeopleThroughItems => this == MediaBrowserDialect.emby;
+
   /// True when the dialect only accepts the pre-10.9 `/Users/{userId}/…`
   /// spelling of the user-scoped item routes.
   bool get requiresUserScopedItemRoutes => this == MediaBrowserDialect.emby;
