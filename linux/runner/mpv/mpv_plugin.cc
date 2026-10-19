@@ -434,6 +434,11 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
   const int width = self->video_surface->width();
   const int height = self->video_surface->height();
   const guint64 generation = self->generation;
+  // The job consumes the owed render here, at dispatch, not at its completion.
+  // A setVideoRect or setVisible that lands mid-flight re-arms the flag, and
+  // that edge has to survive into the render the completion runs next - with
+  // the video paused nothing else will draw the plane at its new size.
+  self->plane_needs_render = FALSE;
   self->render_in_flight = TRUE;
   const bool posted = post_render_job(
       self,
@@ -454,10 +459,10 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
         if (self->generation != generation) return;
         self->render_in_flight = FALSE;
         if (self->video_surface == nullptr) return;
-        // A swap failure leaves plane_needs_render set, so the retry - and the
-        // frame callback CompletePresent just cleared - are owed to the next
-        // event that moves the plane, or to the delayed retry scheduled below.
-        if (self->video_surface->CompletePresent(swapped)) self->plane_needs_render = FALSE;
+        // A frame that did not present is still owed, so the retry - and the
+        // frame callback CompletePresent just cleared - fall to the next event
+        // that moves the plane, or to the delayed retry scheduled below.
+        if (!self->video_surface->CompletePresent(swapped)) self->plane_needs_render = TRUE;
         // Work that had to wait out the flight, in dependency order: geometry
         // first (wl_egl_window_resize must not race a swap), then the HDR
         // transaction pump (a transition staged mid-flight would pair an
@@ -481,6 +486,7 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
     // Shutdown has begun; the job will never run. Undo the prepare so the
     // frame callback does not wait forever on a commit that is not coming.
     self->render_in_flight = FALSE;
+    self->plane_needs_render = TRUE;
     self->video_surface->CompletePresent(false);
   }
 }
