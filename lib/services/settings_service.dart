@@ -903,6 +903,12 @@ class SettingsService extends BaseSharedPreferencesService {
     legacyFalse: AudioChannelLimit.original,
   );
   static const audioDownmixNormalize = BoolPref('audio_downmix_normalize', defaultValue: true);
+
+  /// mpv `audio-device` name last picked in the player's Audio Output menu;
+  /// `auto` leaves the choice to mpv. Applied to each new mpv core only while
+  /// that core lists the device (see `applyPreferredAudioDevice`). Names are
+  /// per machine, so reset-only in the registry.
+  static const audioOutputDevice = StringPref('audio_output_device', defaultValue: 'auto');
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
@@ -1609,6 +1615,7 @@ class SettingsService extends BaseSharedPreferencesService {
     companionRemoteLastHostAddress,
     rememberedBrightnessLevel,
     refusedVideoCodecs,
+    audioOutputDevice,
   ];
 
   /// Settings that "Reset All Settings" actually resets.

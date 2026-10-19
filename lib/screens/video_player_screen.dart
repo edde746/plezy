@@ -70,6 +70,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
 import '../services/media_control_router.dart';
 import '../services/player_sync_offsets.dart';
+import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
@@ -2096,6 +2097,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       if (PlatformDetector.isDesktopOS()) {
         await currentPlayer.setProperty('screenshot-directory', '~/Pictures');
+      }
+
+      // Before custom mpv.conf, so an `audio-device` line there still wins.
+      if (!(Platform.isAndroid && useExoPlayer)) {
+        await applyPreferredAudioDevice(currentPlayer, settingsService.read(SettingsService.audioOutputDevice));
       }
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));

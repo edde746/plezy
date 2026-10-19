@@ -552,6 +552,28 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     }());
   }
 
+  // Remembered for later players (#2744); applyPreferredAudioDevice replays it
+  // at the next player start. The device takes the pick first, so a name mpv
+  // refuses is never stored. No undo when the store refuses instead: the
+  // previous name may belong to a device that is gone, and forcing it back would
+  // silence this session.
+  void _setAudioDevice(AudioDevice device) {
+    final targetPlayer = widget.player;
+    final key = SettingsService.audioOutputDevice.key;
+    final writeToken = _prefWrites.begin(key);
+    unawaited(() async {
+      try {
+        await _prefWrites.commitIfLatest(key, writeToken, () async {
+          await targetPlayer.setAudioDevice(device);
+          await SettingsService.instance.write(SettingsService.audioOutputDevice, device.name);
+        });
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to set the audio output device', error: error, stackTrace: stackTrace);
+      }
+    }());
+    OverlaySheetController.of(context).close();
+  }
+
   void _setDebugDvConversionMode(String mode) {
     final targetPlayer = widget.player;
     final generation = ++_dvConversionWriteGeneration;
@@ -1318,10 +1340,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return FocusableListTile(
       title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
       trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
-      onTap: () {
-        widget.player.setAudioDevice(device);
-        OverlaySheetController.of(context).close();
-      },
+      onTap: () => _setAudioDevice(device),
     );
   }
 
