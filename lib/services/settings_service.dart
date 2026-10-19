@@ -75,8 +75,9 @@ class LibraryDensity {
   static double factor(int density) => (density.clamp(min, max) - min) / (max - min);
 }
 
-/// Gap between cards in media grids (#2083, #1597). [tight] is the
-/// pre-setting look, so nothing moves on update.
+/// Gap between cards in media grids (#2083, #1597). Touch, pointer and car
+/// default to [tight], the pre-setting look; TV defaults to [normal] because
+/// gapless cards read as one slab from across the room.
 enum GridSpacing { tight, normal, spacious }
 
 extension GridSpacingMetrics on GridSpacing {
@@ -986,10 +987,11 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: PlaybackBufferTier.auto,
   );
   static const libraryDensity = _LibraryDensityPref();
+  static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
     values: GridSpacing.values,
-    defaultValue: GridSpacing.tight,
+    defaultValueProvider: _tvAwareGridSpacingDefault,
   );
   static const automotiveUiScale = _AutomotiveUiScalePref();
   static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');

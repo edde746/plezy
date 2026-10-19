@@ -12,7 +12,7 @@ class GridSizeCalculator {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final f = LibraryDensity.factor(density);
 
-    if (PlatformDetector.isTV()) return _lerp(120, 220, f);
+    if (PlatformDetector.isTV()) return _lerp(90, 180, f);
     if (ScreenBreakpoints.isDesktopOrLarger(screenWidth)) return _lerp(140, 280, f);
     if (ScreenBreakpoints.isTablet(screenWidth)) return _lerp(120, 230, f);
     return _lerp(100, 200, f);

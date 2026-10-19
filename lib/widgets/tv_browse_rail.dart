@@ -149,7 +149,7 @@ class TvBrowseRailLayout {
     required double itemGap,
   }) {
     final f = LibraryDensity.factor(density);
-    final minWidth = (useWideLayout ? 280 : 170) * scale;
+    final minWidth = (useWideLayout ? 200 : 130) * scale;
     final maxWidth = (useWideLayout ? 420 : 250) * scale;
     final targetCards = useWideLayout ? 4.2 - (f * 1.4) : 7.0 - (f * 2.0);
     final usableWidth = (availableWidth - horizontalPadding).clamp(1.0, double.infinity).toDouble();
@@ -205,7 +205,7 @@ class TvBrowseRailLayout {
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
     final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
     final containerHeight = (posterHeight + labelHeight).ceilToDouble();
-    final height = containerHeight + focusExtra + (10 * scale);
+    final height = containerHeight + focusExtra + (22 * scale);
 
     return TvBrowseRailLayoutMetrics(
       isPersonHub: isPersonHub,
@@ -1668,7 +1668,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         slivers: [
           if (leadingCount > 0)
             SliverPadding(
-              padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, 0, 6 * scale),
+              padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, 0, 18 * scale),
               sliver: SliverToBoxAdapter(
                 child: Align(
                   alignment: .topLeft,
@@ -1683,7 +1683,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             ),
           SliverPadding(
             key: centerSliverKey,
-            padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
+            padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 18 * scale),
             sliver: SliverFixedExtentList(
               // A fixed extent keeps all sliver offset and child-index math O(1).
               itemExtent: TvBrowseRailLayout.itemExtentForIndex(index: 0, metrics: metrics),

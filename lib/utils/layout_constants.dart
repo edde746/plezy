@@ -73,8 +73,8 @@ class TvLayoutConstants {
   static const double heroContentMaxWidth = 760;
   static const double heroLogoWidth = 520;
   static const double heroLogoHeight = 150;
-  static const double compactHeroLogoWidth = 420;
-  static const double compactHeroLogoHeight = 112;
+  static const double compactHeroLogoWidth = 360;
+  static const double compactHeroLogoHeight = 96;
 
   static double scaleForHeight(double height) => (height / 1080).clamp(0.85, 1.35).toDouble();
 

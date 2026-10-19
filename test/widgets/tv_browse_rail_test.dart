@@ -35,27 +35,50 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('TvBrowseRailLayout', () {
-    test('density changes card width', () {
-      final item = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
-      final hub = MediaHub(id: 'hub_1', title: 'Movies', type: 'movie', items: [item], size: 1);
-
-      final compact = TvBrowseRailLayout.metricsForHub(
-        hub: hub,
-        availableWidth: 1040,
-        density: LibraryDensity.min,
-        episodePosterMode: EpisodePosterMode.seriesPoster,
-        scale: 0.85,
+    test('every density step changes card width on the 960x540 TV canvas', () {
+      // Every mainstream TV lays Plezy out at 960x540 logical, so the rail
+      // gets the 0.85 scale floor and the width left beside the collapsed
+      // sidebar. A card-width floor above the fitted width collapses several
+      // densities onto one size, which made densities 1-3 look identical.
+      const size = Size(960, 540);
+      final scale = TvBrowseRailLayout.scaleForSize(size);
+      final availableWidth =
+          size.width - SideNavigationRailState.tvCollapsedWidth - TvBrowseRailLayout.horizontalInsetForScale(scale);
+      final movie = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+      final episode = testMediaItem(
+        id: 'episode_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode 1',
+        thumbPath: '/episode-thumb',
       );
-      final comfortable = TvBrowseRailLayout.metricsForHub(
-        hub: hub,
-        availableWidth: 1040,
-        density: LibraryDensity.max,
-        episodePosterMode: EpisodePosterMode.seriesPoster,
-        scale: 0.85,
-      );
+      final hubs = [
+        MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: [movie], size: 1),
+        MediaHub(id: 'episodes', title: 'Episodes', type: 'episode', items: [episode], size: 1),
+      ];
 
-      expect(comfortable.cardWidth, greaterThan(compact.cardWidth));
-      expect(comfortable.posterWidth, greaterThan(compact.posterWidth));
+      for (final hub in hubs) {
+        for (final spacing in GridSpacing.values) {
+          final widths = [
+            for (var density = LibraryDensity.min; density <= LibraryDensity.max; density++)
+              TvBrowseRailLayout.metricsForHub(
+                hub: hub,
+                availableWidth: availableWidth,
+                density: density,
+                episodePosterMode: EpisodePosterMode.episodeThumbnail,
+                scale: scale,
+                gridSpacing: spacing,
+              ).cardWidth,
+          ];
+          for (var i = 1; i < widths.length; i++) {
+            expect(
+              widths[i],
+              greaterThan(widths[i - 1]),
+              reason: '${hub.id} $spacing: density ${i + 1} must be wider than density $i ($widths)',
+            );
+          }
+        }
+      }
     });
 
     test('detail episode hubs can force episode thumbnails', () {
@@ -1018,6 +1041,7 @@ void main() {
       density: LibraryDensity.defaultValue,
       episodePosterMode: EpisodePosterMode.seriesPoster,
       scale: scale,
+      gridSpacing: SettingsService.instance.read(SettingsService.gridSpacing),
     );
 
     expect(viewAllText, findsOneWidget);

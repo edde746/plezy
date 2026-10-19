@@ -352,6 +352,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                 onNavigateToSidebar: _navigateToSidebar,
                 onBack: widget.onBack,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+                widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
               ),
             ),
     );
