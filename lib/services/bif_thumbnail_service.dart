@@ -65,22 +65,23 @@ class BifThumbnailService implements ScrubPreviewSource {
 
   double? _aspectRatio;
 
+  /// Largest BIF this service holds. The whole file stays in memory while the
+  /// player is open, so an item whose BIF is larger goes without previews.
+  static int get _maxFileBytes => PlatformDetector.isDesktopOS() ? 200 * 1024 * 1024 : 50 * 1024 * 1024;
+
   /// Download and parse the BIF file through [fetchBytes] (Plex's
   /// `/library/parts/{id}/indexes/sd`, Emby's `/Videos/{id}/index.bif`).
   /// Returns silently on failure (thumbnails simply won't be available).
-  Future<void> load(Future<Uint8List?> Function() fetchBytes, {double? aspectRatio}) async {
+  ///
+  /// [fetchBytes] receives the size budget and must stop reading once the body
+  /// exceeds it: checking only the finished download let an oversized BIF be
+  /// buffered whole first, which ran 32-bit Android TV boxes out of memory.
+  Future<void> load(Future<Uint8List?> Function(int maxBytes) fetchBytes, {double? aspectRatio}) async {
     _aspectRatio = aspectRatio;
     _entries = null;
     try {
-      final bytes = await fetchBytes();
+      final bytes = await fetchBytes(_maxFileBytes);
       if (bytes == null || bytes.isEmpty) return;
-      const fiftyMb = 50 * 1024 * 1024;
-      const twoHundredMb = 200 * 1024 * 1024;
-      final maxBytes = PlatformDetector.isDesktopOS() ? twoHundredMb : fiftyMb;
-      if (bytes.length > maxBytes) {
-        appLogger.w('BIF file too large (${bytes.length} bytes), skipping');
-        return;
-      }
       // Parsed in place: the walk only reads the index table and hands out
       // views into [bytes] (well under a millisecond for thousands of
       // entries), where Isolate.run would first copy the whole file — tens of
