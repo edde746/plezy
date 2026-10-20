@@ -148,6 +148,16 @@ void main() {
       player.audioPassthroughActive = true;
       expect(adapter.canSetRate, isFalse);
     });
+
+    test("seeks land exactly; a file that shows frames but can't seek is followed by rate only", () {
+      expect(_adapter(player: _Player(seekable: true, hasRenderedFrame: true)).adapter.seekAccuracyMs, 0);
+      // Still opening: not known yet, so the room may seek once it can.
+      expect(_adapter(player: _Player(seekable: false)).adapter.seekAccuracyMs, 0);
+      expect(
+        _adapter(player: _Player(seekable: false, hasRenderedFrame: true)).adapter.seekAccuracyMs,
+        PlezyPlayerAdapter.cannotSeekAccuracyMs,
+      );
+    });
   });
 
   group('commands', () {

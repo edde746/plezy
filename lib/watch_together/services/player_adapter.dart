@@ -37,6 +37,10 @@ final class PlezyPlayerAdapter extends owp.PlayerAdapter {
   static const Duration landingTimeout = Duration(seconds: 10);
   static const Duration _poll = Duration(milliseconds: 50);
 
+  /// The seek accuracy of a file that can't seek: longer than any file, so
+  /// the room follows it by rate only (SDK.md §11.2).
+  static const int cannotSeekAccuracyMs = 7 * 24 * 60 * 60 * 1000;
+
   final Player player;
   final WatchCopy copy;
   final PlayerCommands commands;
@@ -87,6 +91,13 @@ final class PlezyPlayerAdapter extends owp.PlayerAdapter {
 
   @override
   bool get canSetRate => !player.audioPassthroughActive;
+
+  /// mpv's absolute seeks and ExoPlayer's seeks land where asked, so 0 while
+  /// the file can seek. A file that shows frames but can't seek (a stream
+  /// without an index) would otherwise be sought again every couple of
+  /// seconds.
+  @override
+  int get seekAccuracyMs => player.state.hasRenderedFrame && !player.state.seekable ? cannotSeekAccuracyMs : 0;
 
   @override
   Future<void> play() async {
