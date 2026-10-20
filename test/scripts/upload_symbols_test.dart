@@ -325,22 +325,47 @@ void main() {
     expect(batchSymbolArtifacts([one, two], maxObjects: 3, maxBytes: 480).map((b) => b.length), [2]);
     expect(batchSymbolArtifacts([one, two], maxObjects: 2, maxBytes: 480).map((b) => b.length), [1, 1]);
     expect(batchSymbolArtifacts([one, two], maxObjects: 3, maxBytes: 479).map((b) => b.length), [1, 1]);
-    expect(() => batchSymbolArtifacts([two], maxBytes: 319), throwsA(isA<SymbolFailure>()));
+    // Over the byte bound but within the per-object limit: a batch of its own.
+    expect(batchSymbolArtifacts([one, two, one], maxBytes: 319).map((b) => b.length), [1, 1, 1]);
+    expect(() => batchSymbolArtifacts([two], maxObjects: 1), throwsA(isA<SymbolFailure>()));
+    expect(() => batchSymbolArtifacts([one], maxObjectBytes: 159), throwsA(isA<SymbolFailure>()));
   });
 
-  test('artifacts beyond bounded upload capacity are dropped and reported', () {
+  test('only artifacts beyond the per-object limit are dropped, and reported', () {
     final file = put('fat', elf(1));
     SymbolArtifact artifact(String id, int count) =>
         SymbolArtifact(file, 'elf', List.generate(count, (i) => SymbolVariant('$id$i', 'arm64', null)), {'debug'}, 0);
     final one = artifact('a', 1);
     final two = artifact('b', 2);
-    final warnings = StringBuffer();
-    expect(withinUploadCapacity([one, two], maxBytes: 480, warnings: warnings), [one, two]);
+    // 'two' is charged 320 bytes against a batch, but no slice exceeds its 160-byte file.
+    expect(withinUploadCapacity([one, two], maxObjectBytes: 160, warnings: warnings), [one, two]);
     expect(warnings.toString(), isEmpty);
-    // 'two' is charged once per slice, so it alone exceeds a 319-byte bound.
-    expect(withinUploadCapacity([one, two], maxBytes: 319, warnings: warnings), [one]);
-    expect(warnings.toString(), contains('Skipping artifact beyond bounded upload capacity'));
-    expect(withinUploadCapacity([one, two], maxObjects: 1, maxBytes: 480), [one]);
+    expect(withinUploadCapacity([one, two], maxObjectBytes: 159, warnings: warnings), isEmpty);
+    expect(warnings.toString(), contains('Skipping artifact beyond bounded upload capacity: ${file.path} (160 bytes)'));
+    expect(withinUploadCapacity([one, two], maxObjects: 1), [one]);
+  });
+
+  test('debug files larger than a batch are planned and upload alone at their real sizes', () {
+    // libmpv-2.pdb as mpv-build's winbuild graph links it (zhongfly/mpv-winbuild's
+    // mpv.pdb) and the patched engine's PDB from run 38170180917, as sparse files.
+    SymbolArtifact sized(String name, int size, int seed) {
+      final file = File(path.join(repository.path, name));
+      file.openSync(mode: FileMode.write)
+        ..truncateSync(size)
+        ..closeSync();
+      return SymbolArtifact(file, 'pdb', [SymbolVariant(fixtureDebugId(seed), 'x86_64', null)], {'debug'}, 20);
+    }
+
+    final libmpv = sized('libmpv-2.pdb', 369782784, 1);
+    final engine = sized('flutter_windows.dll.pdb', 264859648, 2);
+    final runner = sized('plezy.pdb', 4 * 1024 * 1024, 3);
+    expect(withinUploadCapacity([runner, libmpv, engine], warnings: warnings), [runner, libmpv, engine]);
+    expect(warnings.toString(), isEmpty);
+    expect(batchSymbolArtifacts([runner, libmpv, engine]), [
+      [runner],
+      [libmpv],
+      [engine],
+    ]);
   });
 
   test('native, Dart, map and release errors stop before later phases', () async {

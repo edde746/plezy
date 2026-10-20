@@ -10,6 +10,9 @@ import 'symbol_cli.dart';
 
 const symbolBatchObjects = 8;
 const symbolBatchBytes = 256 * 1024 * 1024;
+// sentry-cli 2.58.6's per-object limit (DEFAULT_MAX_DIF_SIZE), which is also
+// the chunk-upload maxFileSize the tracker advertises by default.
+const symbolObjectBytes = 2 * 1024 * 1024 * 1024;
 
 typedef SymbolCommand = Future<ProcessResult> Function(List<String> arguments);
 typedef SymbolDownload = Future<void> Function(Uri url, File destination);
@@ -87,39 +90,44 @@ List<SymbolArtifact> selectSymbolArtifacts(Iterable<SymbolArtifact> candidates) 
   return selected..sort((a, b) => a.keys.first.compareTo(b.keys.first));
 }
 
-// An artifact larger than a whole batch cannot be uploaded at all. Dropping it
-// costs symbolication for that one binary; failing the run costs every artifact
-// and the release that carries them. Flutter's macOS engine dSYM crossed this
-// bound in 3.47.1 (a fat dSYM is charged once per slice, see SymbolArtifact.bytes).
+// The CLI sends every object in 8 MiB chunks, so an artifact larger than a
+// batch still uploads, in a batch of its own: Flutter 3.47.1's macOS engine
+// dSYM (~505 MB, two slices) and mpv-build's libmpv-2.pdb (~370 MB) do. Only
+// an object beyond the per-object limit cannot. Dropping it costs
+// symbolication for that one binary; failing the run costs every artifact and
+// the release that carries them. No slice of a fat file exceeds the file.
 List<SymbolArtifact> withinUploadCapacity(
   List<SymbolArtifact> artifacts, {
   int maxObjects = symbolBatchObjects,
-  int maxBytes = symbolBatchBytes,
+  int maxObjectBytes = symbolObjectBytes,
   StringSink? warnings,
 }) {
   return artifacts.where((artifact) {
-    if (artifact.variants.length <= maxObjects && artifact.bytes <= maxBytes) return true;
-    warnings?.writeln(
-      'Skipping artifact beyond bounded upload capacity: ${artifact.file.path} (${artifact.bytes} bytes)',
-    );
+    final size = artifact.file.lengthSync();
+    if (artifact.variants.length <= maxObjects && size <= maxObjectBytes) return true;
+    warnings?.writeln('Skipping artifact beyond bounded upload capacity: ${artifact.file.path} ($size bytes)');
     return false;
   }).toList();
 }
 
+// Batches bound each CLI invocation's assemble; an artifact over the byte
+// bound fills a batch alone.
 List<List<SymbolArtifact>> batchSymbolArtifacts(
   List<SymbolArtifact> artifacts, {
   int maxObjects = symbolBatchObjects,
   int maxBytes = symbolBatchBytes,
+  int maxObjectBytes = symbolObjectBytes,
 }) {
   final batches = <List<SymbolArtifact>>[];
   var batch = <SymbolArtifact>[];
   var objects = 0;
   var bytes = 0;
   for (final artifact in artifacts) {
-    if (artifact.variants.length > maxObjects || artifact.bytes > maxBytes) {
-      throw SymbolFailure('Artifact exceeds bounded upload capacity: ${artifact.file.path} (${artifact.bytes} bytes)');
+    final size = artifact.file.lengthSync();
+    if (artifact.variants.length > maxObjects || size > maxObjectBytes) {
+      throw SymbolFailure('Artifact exceeds bounded upload capacity: ${artifact.file.path} ($size bytes)');
     }
-    if (objects + artifact.variants.length > maxObjects || bytes + artifact.bytes > maxBytes) {
+    if (batch.isNotEmpty && (objects + artifact.variants.length > maxObjects || bytes + artifact.bytes > maxBytes)) {
       batches.add(batch);
       batch = [];
       objects = 0;
@@ -163,7 +171,11 @@ class SymbolPlan {
     'source_jobs': sourceJobs.map((a) => a.file.path).toList(),
     'source_policy':
         'Generate separately; measure resulting bundles before explicit bounded uploads. No implicit include-sources expansion.',
-    'batch_limits': {'objects': symbolBatchObjects, 'uncompressed_bytes': symbolBatchBytes},
+    'batch_limits': {
+      'objects': symbolBatchObjects,
+      'uncompressed_bytes': symbolBatchBytes,
+      'object_bytes': symbolObjectBytes,
+    },
     'maps': mapPath == null
         ? []
         : dart.map((a) => {'map': mapPath, 'debug_file': a.file.path, 'debug_id': a.variants.single.debugId}).toList(),

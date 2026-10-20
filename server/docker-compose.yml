@@ -25,7 +25,9 @@ services:
     # Platforms: linux/amd64, linux/arm64
     image: ghcr.io/edde746/bugs:sha-c996cf3@sha256:540d985c51f953704c8b97c6c568d0ffc107b91223dd5279136cce1c5522598b
     restart: unless-stopped
-    mem_limit: 512m
+    # Debug-file conversion peaked at ~500 MiB for Flutter's 265 MB Windows engine PDB
+    # and its 505 MB macOS engine dSYM; the ~370 MB libmpv-2.pdb needs more.
+    mem_limit: 1536m
     volumes:
       - bugs_data:/data
     environment:
