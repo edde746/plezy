@@ -70,6 +70,10 @@ class MediaCardSliverLayout extends StatelessWidget {
   final int density;
   final EdgeInsetsGeometry padding;
   final MediaCardSliverItemBuilder itemBuilder;
+
+  /// Maps a card's key to the index now holding its item, so a realized card
+  /// follows its item when indices shift. Must return an index whose item
+  /// builds a card with that key, or null.
   final ChildIndexGetter? findChildIndexCallback;
   final bool fullBleedImage;
   final bool useWideAspectRatio;
@@ -89,7 +93,7 @@ class MediaCardSliverLayout extends StatelessWidget {
           addSemanticIndexes: false,
           itemCount: itemCount,
           findChildIndexCallback: findChildIndexCallback,
-          itemBuilder: (context, index) => itemBuilder(
+          itemBuilder: (context, index) => _buildChild(
             context,
             MediaCardSliverPosition(
               index: index,
@@ -130,7 +134,7 @@ class MediaCardSliverLayout extends StatelessWidget {
               gridDelegate: geometry.delegate,
               itemCount: itemCount,
               findChildIndexCallback: findChildIndexCallback,
-              itemBuilder: (context, index) => itemBuilder(
+              itemBuilder: (context, index) => _buildChild(
                 context,
                 MediaCardSliverPosition(
                   index: index,
@@ -146,5 +150,23 @@ class MediaCardSliverLayout extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Builds the card at [position], presenting its key only at the index
+  /// [findChildIndexCallback] resolves that key to.
+  ///
+  /// On every rebuild the sliver moves each realized child to the index its
+  /// key resolves to. Offset-paged data can hold one item at two indices (the
+  /// server's order moved between page fetches); if both copies kept the key,
+  /// a shift would move both into one slot and the displaced element would
+  /// never unmount — its render box stays in the sliver with no layout offset
+  /// and every later layout, paint, and hit test throws. Other copies are
+  /// built unkeyed, which the sliver leaves at their own index.
+  Widget _buildChild(BuildContext context, MediaCardSliverPosition position) {
+    final child = itemBuilder(context, position);
+    final key = child.key;
+    final findIndex = findChildIndexCallback;
+    if (key == null || findIndex == null || findIndex(key) == position.index) return child;
+    return KeyedSubtree(child: child);
   }
 }
