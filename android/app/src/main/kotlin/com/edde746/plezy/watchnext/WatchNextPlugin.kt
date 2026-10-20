@@ -29,14 +29,20 @@ class WatchNextPlugin() :
 
     /**
      * Returns the payload to forward to Dart: the `content_id` of a
-     * `plezy://play` shelf link, or the whole URI of a `plezy://live` link
-     * (parsed by `LiveTvDeepLink` on the Dart side).
+     * `plezy://play` shelf link (the whole URI if it has a `profile`), or the
+     * whole URI of a `plezy://live` link (parsed by `LiveTvDeepLink` on the
+     * Dart side).
      */
     fun handleIntent(intent: Intent?): String? {
       val data = intent?.data ?: return null
       if (data.scheme != "plezy") return null
       return when (data.authority) {
-        "play" -> data.getQueryParameter("content_id")
+        "play" ->
+          if (data.getQueryParameter("profile").isNullOrBlank()) {
+            data.getQueryParameter("content_id")
+          } else {
+            data.toString()
+          }
         "live" -> data.toString()
         else -> null
       }

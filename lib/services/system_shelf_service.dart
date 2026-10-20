@@ -55,6 +55,7 @@ class SystemShelfService {
   String? _activeOwner;
   int _generation = 0;
   Future<void> _mutationTail = Future<void>.value();
+  ({String profileId, String link})? _heldLink;
 
   @visibleForTesting
   String? get debugActiveOwner => _activeOwner;
@@ -201,6 +202,24 @@ class SystemShelfService {
       label: 'System shelf initial deep link failed',
       failureLabel: 'Failed to get system shelf initial deep link',
     );
+  }
+
+  /// Hold a deep link until [profileId] is active (a profile switch remounts MainScreen).
+  void holdLinkForProfile(String profileId, String link) {
+    _heldLink = (profileId: profileId, link: link);
+  }
+
+  /// Take the held deep link if it belongs to [profileId].
+  String? takeLinkHeldFor(String? profileId) {
+    final held = _heldLink;
+    if (held == null || held.profileId != profileId) return null;
+    _heldLink = null;
+    return held.link;
+  }
+
+  /// Drop [link] if it is still held.
+  void dropHeldLink(String link) {
+    if (_heldLink?.link == link) _heldLink = null;
   }
 
   /// Check whether the current platform has a launcher shelf integration.
