@@ -138,4 +138,138 @@ void main() {
     expect(BackKeyCoordinator.consumeIfHandled(), isTrue);
     await tester.pump();
   });
+
+  testWidgets('a field remounted within one frame keeps handling keys once the replaced host is disposed', (
+    tester,
+  ) async {
+    // A remount builds the replacement host before the old one is disposed at
+    // the end of the frame, so both briefly sit on the caller's node.
+    final baseDowns = <LogicalKeyboardKey>[];
+    KeyEventResult baseHandler(FocusNode _, KeyEvent event) {
+      if (event is KeyDownEvent) baseDowns.add(event.logicalKey);
+      return KeyEventResult.ignored;
+    }
+
+    final node = FocusNode(debugLabel: 'field', onKeyEvent: baseHandler);
+    addTearDown(node.dispose);
+    final original = node.onKeyEvent;
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    final downs = <int>[];
+    var generation = 0;
+    var showField = true;
+    late StateSetter setShellState;
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                setShellState = setState;
+                if (!showField) return const SizedBox.shrink();
+                final built = generation;
+                return FocusableTextField(
+                  key: ValueKey(built),
+                  controller: controller,
+                  focusNode: node,
+                  onNavigateDown: () => downs.add(built),
+                  tvTextInputPresentation: TvTextInputPresentation.platform,
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    node.requestFocus();
+    await tester.pump();
+    // Enter keyboard mode; the first host handles this press.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(downs, [0]);
+
+    setShellState(() => generation++);
+    await tester.pump();
+    node.requestFocus();
+    await tester.pump();
+    expect(node.hasPrimaryFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(downs, [0, 1], reason: 'only the live host handles the press');
+    expect(baseDowns, [LogicalKeyboardKey.arrowDown, LogicalKeyboardKey.arrowDown]);
+
+    setShellState(() => showField = false);
+    await tester.pump();
+    expect(node.onKeyEvent, same(original));
+  });
+
+  for (final newerLeavesFirst in [false, true]) {
+    final (first, second) = newerLeavesFirst ? ('newer', 'older') : ('older', 'newer');
+    testWidgets('hosts sharing a focus node hand it over when the $first one leaves first', (tester) async {
+      // Presses go through the node's handler directly: once the newer field
+      // leaves, the framework detaches the shared node from the tree, so no
+      // real press can reach it — yet its handler must be the survivor's.
+      KeyEventResult baseHandler(FocusNode _, KeyEvent _) => KeyEventResult.ignored;
+      final node = FocusNode(debugLabel: 'shared', onKeyEvent: baseHandler);
+      addTearDown(node.dispose);
+      final original = node.onKeyEvent;
+      const labels = ['older', 'newer'];
+      final controllers = {for (final label in labels) label: TextEditingController()};
+      for (final controller in controllers.values) {
+        addTearDown(controller.dispose);
+      }
+      final shown = {...labels};
+      final downs = <String>[];
+      late StateSetter setShellState;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                setShellState = setState;
+                return Column(
+                  children: [
+                    for (final label in labels)
+                      if (shown.contains(label))
+                        FocusableTextField(
+                          key: ValueKey(label),
+                          controller: controllers[label]!,
+                          focusNode: node,
+                          onNavigateDown: () => downs.add(label),
+                          tvTextInputPresentation: TvTextInputPresentation.platform,
+                        ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      KeyEventResult pressDown() => node.onKeyEvent!(
+        node,
+        const KeyDownEvent(
+          physicalKey: PhysicalKeyboardKey.arrowDown,
+          logicalKey: LogicalKeyboardKey.arrowDown,
+          timeStamp: Duration.zero,
+        ),
+      );
+
+      expect(pressDown(), KeyEventResult.handled);
+      expect(downs, ['newer'], reason: 'the newest host owns the node');
+
+      setShellState(() => shown.remove(first));
+      await tester.pump();
+      expect(pressDown(), KeyEventResult.handled);
+      expect(downs, ['newer', second]);
+
+      setShellState(() => shown.remove(second));
+      await tester.pump();
+      expect(node.onKeyEvent, same(original));
+    });
+  }
 }
